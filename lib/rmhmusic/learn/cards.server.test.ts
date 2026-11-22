@@ -208,7 +208,7 @@ describe('applyReviews', () => {
       NOW,
     );
     expect((await loadCards('u1'))[0].reps).toBe(1);
-    expect((await loadCards('u2'))[0].stability).toBe(0);
+    expect((await loadCards('u2'))[0].stability).toBeCloseTo(0.212, 6);
   });
 
   it('throws on a non-finite clock rather than writing NaN', async () => {

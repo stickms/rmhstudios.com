@@ -26,11 +26,12 @@ import { gameSurfaceDpr } from '@/lib/display-scale';
 import { nestedDelete, nestedMove, nestedPlace } from '@features/slice-it/engine/editor/nesting';
 import { barBeatAt, gridLines, quantizationOf, snapTime } from '@features/slice-it/engine/editor/snap';
 import { BASE_PIXELS_PER_SECOND, editorState, useEditorStore } from '@features/slice-it/engine/editor/store';
-import type { EditorNote, TimingPoint } from '@features/slice-it/engine/editor/types';
+import type { EditorNote, LintIssue, TimingPoint } from '@features/slice-it/engine/editor/types';
 import { newNoteId } from '@features/slice-it/engine/editor/uuid';
 import { envelopePeak } from '@features/slice-it/engine/beatmap/envelope';
 import type { EditorArtefacts, GhostOnset } from '@features/slice-it/engine/editor/artefacts';
 import { activePlaytest } from '@features/slice-it/engine/editor/playtest';
+import { useLintIssues } from '@features/slice-it/engine/editor/useLint';
 import type { DifficultyPlan } from '@features/slice-it/engine/editor/generate';
 import { QUANT_COLORS, readEditorTheme, type EditorTheme } from './theme';
 
@@ -49,7 +50,7 @@ const WAVE_W = 30;
 /** Left edge of the playable lanes. */
 const LANES_X = GUTTER + WAVE_W;
 /** Where the playhead sits vertically, as a fraction of the canvas height. */
-const PLAYHEAD_FRACTION = 0.78;
+export const PLAYHEAD_FRACTION = 0.78;
 /** Note body height in CSS pixels. Constant — zoom changes spacing, not size. */
 const NOTE_H = 15;
 /** Pointer slop for hit-testing a note, in CSS pixels. */
@@ -214,6 +215,11 @@ export function Timeline() {
   });
 
   const active = useEditorStore((s) => s.active);
+  // The open difficulty's lint findings, by note id. Rebuilt only when the lint
+  // result or the tab changes; the draw loop reads it through a ref.
+  const issueMap = useLintIssues(active);
+  const issuesRef = useRef(issueMap);
+  issuesRef.current = issueMap;
   const notes = useEditorStore((s) => s.charts[s.active].notes);
   const keys = useEditorStore((s) => s.keys);
   const playhead = useEditorStore((s) => s.playhead);
@@ -240,6 +246,7 @@ export function Timeline() {
       // number the buffer was sized with or the whole surface scales.
       const dpr = gameSurfaceDpr(window);
       dprRef.current = dpr;
+      editorState().setViewHeight(height);
       sizeRef.current = {
         width,
         height,
@@ -278,7 +285,21 @@ export function Timeline() {
   /* ── Repaint on any state the drawing depends on ──────────────────────── */
   useEffect(() => {
     dirtyRef.current = true;
-  }, [active, notes, keys, playhead, zoom, timingPoints, snap, tool, preview, playtesting, artefacts, showGhosts]);
+  }, [
+    active,
+    notes,
+    keys,
+    playhead,
+    zoom,
+    timingPoints,
+    snap,
+    tool,
+    preview,
+    playtesting,
+    artefacts,
+    showGhosts,
+    issueMap,
+  ]);
 
   /* ── Draw loop ────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -311,6 +332,7 @@ export function Timeline() {
         loop: state.loop,
         artefacts: state.artefacts,
         showGhosts: state.showGhosts,
+        issues: issuesRef.current,
       });
 
       // A running playtest moves the world every frame: the playhead is written
@@ -700,6 +722,8 @@ interface DrawOptions {
   /** Waveform, ghosts and sections (§6). Null for a song with no stored artefacts. */
   artefacts: EditorArtefacts | null;
   showGhosts: boolean;
+  /** Lint findings for the open difficulty, by note id (read once per note, never rebuilt per frame). */
+  issues: ReadonlyMap<string, readonly LintIssue[]>;
 }
 
 /** Preview colours. Fixed, like the quantisation palette, and for the same reason. */
@@ -734,7 +758,7 @@ function draw(
   // author can see in place, with a line through it, rather than a gap they have
   // to infer.
   drawPreview(ctx, view, options.preview);
-  drawNotes(ctx, view, notes, points, theme, options.hover);
+  drawNotes(ctx, view, notes, points, theme, options.hover, options.issues);
   drawHitMarks(ctx, view, notes);
   drawSelectionBox(ctx, theme, options.drag);
   drawPlayhead(ctx, view, theme);
@@ -1039,6 +1063,7 @@ function drawNotes(
     x: number;
     y: number;
   } | null,
+  issues: ReadonlyMap<string, readonly LintIssue[]>,
 ) {
   const { from, to } = visibleRange(notes, view.startTime, view.endTime);
   const width = Math.min(96, laneWidth(view) * 0.72);
@@ -1106,9 +1131,48 @@ function drawNotes(
       ctx.restore();
     }
 
-    // TODO(phase 7 — §9): `note.issues` draws a severity ring plus an icon here.
+    // Lint ring (§9): solid and thick for an error, dashed for a warning, with a
+    // "!" beside the head so the ring is not the only signal.
+    const noteIssues = issues.size > 0 ? issues.get(note.id) : undefined;
+    if (noteIssues) drawIssueRing(ctx, note, cx, cy, width, noteIssues, theme);
   }
 }
+
+function drawIssueRing(
+  ctx: CanvasRenderingContext2D,
+  note: EditorNote,
+  cx: number,
+  cy: number,
+  width: number,
+  noteIssues: readonly LintIssue[],
+  theme: EditorTheme,
+) {
+  let isError = false;
+  for (let i = 0; i < noteIssues.length; i++) {
+    if (noteIssues[i].severity === 'error') {
+      isError = true;
+      break;
+    }
+  }
+  const color = isError ? theme.danger : theme.warning;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash(isError ? ISSUE_DASH_SOLID : ISSUE_DASH_WARNING);
+  noteShape(ctx, note, cx, cy, width + 6);
+  ctx.stroke();
+  ctx.setLineDash(ISSUE_DASH_SOLID);
+  ctx.font = '700 12px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('!', cx + width / 2 + 10, cy);
+  ctx.restore();
+}
+
+/** Allocated once: `setLineDash` would otherwise take a fresh array per ring per frame. */
+const ISSUE_DASH_SOLID: number[] = [];
+const ISSUE_DASH_WARNING: number[] = [5, 3];
 
 function nearestNoteTime(
   notes: readonly EditorNote[],

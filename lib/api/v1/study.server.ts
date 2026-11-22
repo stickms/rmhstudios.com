@@ -11,6 +11,8 @@ import { RATE_LIMIT_POLICIES, rateLimit } from '@/lib/rate-limit';
 import type { ApiContext } from '@/lib/api/with-developer-api.server';
 import type { z } from 'zod';
 import { AUTHORED_WHERE } from '@/lib/study/card-query.server';
+import { CARD_IMAGE_SELECT, fromColumns, type CardImage } from '@/lib/study/card-images';
+import { resolveMediaUrls } from '@/lib/study/card-images.server';
 import {
   createDeck,
   deleteCard,
@@ -52,6 +54,126 @@ export interface ApiCard {
   back: string;
   position: number;
   externalId: string | null;
+  /** The picture on the front, or null (s08-15). */
+  frontImage: CardImage | null;
+  /** The picture on the back, or null. */
+  backImage: CardImage | null;
+}
+
+/** A picture to set on a card side: a `media_id` from `POST /api/v1/images` and its description. */
+export interface ApiPictureWrite {
+  media_id: string;
+  alt: string;
+}
+
+/** A card as the API receives it: pictures by `media_id`. `null` removes one, absent leaves it. */
+type WithApiPictures<T> = Omit<T, 'frontImage' | 'backImage'> & {
+  frontImage?: ApiPictureWrite | null | undefined;
+  backImage?: ApiPictureWrite | null | undefined;
+};
+
+type MediaRefusal = {
+  ok: false;
+  status: 400;
+  error: string;
+  code: 'invalid_media';
+};
+
+/**
+ * Turn the `media_id`s of cards into the addresses the editor stores. A `media_id` must be the key owner's own upload
+ * (an unknown or foreign one is `invalid_media`, the same answer for both); the editor then claims it on save.
+ */
+async function resolvePictures<
+  T extends {
+    frontImage?: ApiPictureWrite | null | undefined;
+    backImage?: ApiPictureWrite | null | undefined;
+  },
+>(
+  userId: string,
+  items: readonly T[],
+): Promise<
+  | {
+      ok: true;
+      items: (Omit<T, 'frontImage' | 'backImage'> & {
+        frontImage?: CardImage | null | undefined;
+        backImage?: CardImage | null | undefined;
+      })[];
+    }
+  | MediaRefusal
+> {
+  const ids = items.flatMap((item) =>
+    [item.frontImage?.media_id, item.backImage?.media_id].filter((id): id is string => !!id),
+  );
+  const urls = ids.length > 0 ? await resolveMediaUrls(userId, ids) : new Map<string, string>();
+  const out: (Omit<T, 'frontImage' | 'backImage'> & {
+    frontImage?: CardImage | null | undefined;
+    backImage?: CardImage | null | undefined;
+  })[] = [];
+  for (const item of items) {
+    const { frontImage, backImage, ...rest } = item;
+    const side = (write: ApiPictureWrite | null | undefined): CardImage | null | undefined | 'unknown' => {
+      if (write === undefined || write === null) return write;
+      const url = urls.get(write.media_id);
+      return url
+        ? {
+            url,
+            alt: write.alt,
+          }
+        : 'unknown';
+    };
+    const front = side(frontImage);
+    const back = side(backImage);
+    if (front === 'unknown' || back === 'unknown')
+      return {
+        ok: false,
+        status: 400,
+        code: 'invalid_media',
+        error: 'Unknown media_id. Upload the picture with POST /api/v1/images (surface=flashcard) first.',
+      };
+    out.push({
+      ...rest,
+      ...(front !== undefined
+        ? {
+            frontImage: front,
+          }
+        : {}),
+      ...(back !== undefined
+        ? {
+            backImage: back,
+          }
+        : {}),
+    });
+  }
+  return {
+    ok: true,
+    items: out,
+  };
+}
+
+/** A card row as the API returns it. */
+function apiCard(row: {
+  id: string;
+  kind: string;
+  front: string;
+  back: string;
+  position: number;
+  externalId: string | null;
+  frontImageUrl: string | null;
+  frontImageAlt: string | null;
+  backImageUrl: string | null;
+  backImageAlt: string | null;
+}): ApiCard {
+  const { frontImage, backImage } = fromColumns(row);
+  return {
+    id: row.id,
+    kind: row.kind,
+    front: row.front,
+    back: row.back,
+    position: row.position,
+    externalId: row.externalId,
+    frontImage,
+    backImage,
+  };
 }
 
 export interface Page<T> {
@@ -287,6 +409,7 @@ const cardSelect = {
   back: true,
   position: true,
   externalId: true,
+  ...CARD_IMAGE_SELECT,
 } satisfies Prisma.FlashcardSelect;
 
 /** A deck's authored cards in deck order, keyset on (`position`, `id`); null when the deck is not the owner's. */
@@ -345,7 +468,7 @@ export async function listMyCards(
   const items = more ? rows.slice(0, limit) : rows;
   const last = items[items.length - 1];
   return {
-    data: items,
+    data: items.map(apiCard),
     nextCursor: more && last ? encodeCardCursor(last.position, last.id) : null,
   };
 }
@@ -366,8 +489,10 @@ async function ownedCard(userId: string, deckId: string, cardId: string) {
 }
 
 /** Add 1 to 100 cards in one transaction; nothing is written when any is invalid or the deck would overflow. */
-export async function createMyCards(userId: string, deckId: string, drafts: readonly CardDraft[]) {
-  const result = await importCardsDetailed(userId, deckId, drafts, {
+export async function createMyCards(userId: string, deckId: string, drafts: readonly WithApiPictures<CardDraft>[]) {
+  const resolved = await resolvePictures(userId, drafts);
+  if (!resolved.ok) return resolved;
+  const result = await importCardsDetailed(userId, deckId, resolved.items, {
     max: API_BATCH_MAX,
   });
   if (!result.ok) return result;
@@ -391,20 +516,22 @@ export async function createMyCards(userId: string, deckId: string, drafts: read
   });
   return {
     ok: true,
-    cards: rows,
+    cards: rows.map(apiCard),
     cardCount: result.cardCount,
   } as const;
 }
 
-export async function patchMyCard(userId: string, deckId: string, cardId: string, patch: CardPatch) {
+export async function patchMyCard(userId: string, deckId: string, cardId: string, patch: WithApiPictures<CardPatch>) {
   if (!(await ownedCard(userId, deckId, cardId))) return notFound();
-  const result = await updateCard(userId, cardId, patch);
+  const resolved = await resolvePictures(userId, [patch]);
+  if (!resolved.ok) return resolved;
+  const result = await updateCard(userId, cardId, resolved.items[0] as CardPatch);
   if (!result.ok) return result;
   const card = await ownedCard(userId, deckId, cardId);
   return card
     ? ({
         ok: true,
-        card,
+        card: apiCard(card),
       } as const)
     : notFound();
 }
@@ -415,14 +542,21 @@ export async function deleteMyCard(userId: string, deckId: string, cardId: strin
 }
 
 /** Create or update the card keyed `externalId`; `created` tells which. */
-export async function upsertMyCard(userId: string, deckId: string, externalId: string, draft: CardDraft) {
-  const result = await upsertCardByExternalId(userId, deckId, externalId, draft);
+export async function upsertMyCard(
+  userId: string,
+  deckId: string,
+  externalId: string,
+  draft: WithApiPictures<CardDraft>,
+) {
+  const resolved = await resolvePictures(userId, [draft]);
+  if (!resolved.ok) return resolved;
+  const result = await upsertCardByExternalId(userId, deckId, externalId, resolved.items[0] as CardDraft);
   if (!result.ok) return result;
   const card = await ownedCard(userId, deckId, result.id);
   return card
     ? ({
         ok: true,
-        card,
+        card: apiCard(card),
         created: result.created,
       } as const)
     : notFound();
@@ -469,8 +603,10 @@ export function editFailure(
   result: {
     status: 400 | 404 | 409;
     error: string;
+    code?: 'invalid_media';
   },
 ) {
+  if (result.code === 'invalid_media') return error('invalid_media', result.error, 400);
   if (result.status === 404) return error('not_found', 'Not found.', 404);
   if (result.status === 409) return error('conflict', result.error, 409);
   return error('invalid_request', result.error, 400);

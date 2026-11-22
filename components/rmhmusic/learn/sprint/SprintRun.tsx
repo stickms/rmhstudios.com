@@ -9,6 +9,10 @@
  *   same bias for every prompt, and it is the hub's clock, so note times compare with it;
  * - every note event from the hub as it is (its own `time`; nothing here reads a clock for a note);
  * - the chord window's close as a timer (`close`), and the feedback's short pause before `next`;
+ * - Learning mode (an unscored freeplay run): a wrong prompt's feedback stays longer and the same
+ *   prompt comes back; the wrong note is drawn on the staff beside the written one and told in
+ *   words (`sprint/miss.ts`, `feedbackParts`). Once a freeplay run ends, `review` posts what it
+ *   taught the scheduler (`sprint/reviews.ts`), best effort and apart from the run's own save;
  * - `save` through the run's saver, with every prompt's result, answered with its attempt, and
  *   `onStart` when Start is pressed on a scored run (the daily challenge records its start);
  * - `resume` when a dialog that paused the run closes, so the prompt is drawn and timed afresh.
@@ -28,6 +32,9 @@ import { CHORD_WINDOW_MS } from '@/lib/rmhmusic/learn/input/chord-window';
 import { noteList } from '@/lib/rmhmusic/learn/note-list';
 import type { Instrument, LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import type { SprintPrompt } from '@/lib/rmhmusic/learn/sprint/generate';
+import { sprintMiss } from '@/lib/rmhmusic/learn/sprint/miss';
+import { reviewsOfRun } from '@/lib/rmhmusic/learn/sprint/reviews';
+import type { ReviewInput } from '@/lib/rmhmusic/learn/schemas';
 import { createSprintMachine, type SprintMode, type SprintSaveOutcome } from '@/lib/rmhmusic/learn/sprint/machine';
 import type { PromptResult, RunSummary } from '@/lib/rmhmusic/learn/sprint/scoring';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from '../buttons';
@@ -38,7 +45,7 @@ import { useMachine } from '../useMachine';
 import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from '../useLearnInput';
 import { focusOf } from './focus';
 import { beginActivity } from '@/lib/rmhmusic/learn/activity-clock';
-import { askHint, feedbackLine, promptLabel, resultSentence, saveSentence } from './sprint-text';
+import { askHint, feedbackParts, promptLabel, resultSentence, saveSentence } from './sprint-text';
 
 const RETURN_TO = '/rmhmusic/sprint';
 
@@ -46,6 +53,8 @@ const RETURN_TO = '/rmhmusic/sprint';
 export const BEAT_MS = 600;
 /** How long a prompt's feedback stays before the next prompt. */
 export const FEEDBACK_MS = 700;
+/** Learning mode: a wrong answer's feedback stays long enough to read what was played. */
+export const MISS_FEEDBACK_MS = 2600;
 
 export function SprintRun({
   prompts,
@@ -61,7 +70,19 @@ export function SprintRun({
   save,
   lowCard: lowRange = false,
   saved,
+  learning = false,
+  review,
 }: {
+  /**
+   * Learning mode: a wrong prompt comes back until it is answered right. Honoured only for an
+   * unscored freeplay run (the machine ignores it for the daily challenge or a scored run).
+   */
+  learning?: boolean;
+  /**
+   * What a finished freeplay run taught the scheduler, posted once when the run ends (best effort;
+   * never affects the run's own save). Not called for the daily challenge.
+   */
+  review?: (reviews: ReviewInput[]) => void;
   /**
    * Shown at the end of the page once the run is saved (the Daily board line). It sits last, so
    * nothing above it moves when it arrives.
@@ -95,6 +116,7 @@ export function SprintRun({
       // A singer's run skips the chord prompts whatever the input (one voice, one note).
       mic: input === 'mic' || instrument === 'voice',
       instrument,
+      learning,
     }),
   );
   const phases = useInputPhases();
@@ -161,6 +183,30 @@ export function SprintRun({
     onLockChange(inRun);
   }, [inRun, onLockChange]);
 
+  // A finished freeplay run posts what it taught the scheduler, once (the daily challenge is a
+  // fixed, shared set and teaches nothing). The results array is the run's: a new run has a new one.
+  const reviewRef = useRef(review);
+  useEffect(() => {
+    reviewRef.current = review;
+  });
+  const reviewed = useRef<readonly PromptResult[] | null>(null);
+  const finishedResults =
+    state.kind === 'complete' ||
+    state.kind === 'saving' ||
+    state.kind === 'saved' ||
+    state.kind === 'failed' ||
+    state.kind === 'signed-out'
+      ? state.results
+      : null;
+  const finishedMode = state.mode;
+  const finishedPrompts = state.prompts;
+  useEffect(() => {
+    if (finishedResults === null || finishedMode !== 'freeplay' || reviewed.current === finishedResults) return;
+    reviewed.current = finishedResults;
+    const reviews = reviewsOfRun(finishedPrompts, finishedResults);
+    if (reviews.length > 0) reviewRef.current?.(reviews);
+  }, [finishedResults, finishedMode, finishedPrompts]);
+
   // A dialog paused the run: once it closes, the prompt is drawn and timed afresh.
   const wasPaused = useRef(paused);
   useEffect(() => {
@@ -217,8 +263,12 @@ export function SprintRun({
     return () => clearTimeout(id);
   }, [windowAt, carry, send]);
 
-  // Feedback stays a moment, then the next prompt.
+  // Feedback stays a moment, then the next prompt (or, in Learning mode after a miss, the same
+  // one again, after long enough to read what was played).
   const feedbackIndex = state.kind === 'feedback' ? state.index : -1;
+  // A retry of the same prompt in Learning mode is a new feedback with the same index.
+  const feedbackMisses = state.kind === 'feedback' ? state.misses : undefined;
+  const feedbackWait = state.kind === 'feedback' && state.right === false ? MISS_FEEDBACK_MS : FEEDBACK_MS;
   useEffect(() => {
     if (feedbackIndex < 0 || paused) return;
     const id = setTimeout(
@@ -228,10 +278,10 @@ export function SprintRun({
             type: 'next',
           }),
         ),
-      FEEDBACK_MS,
+      feedbackWait,
     );
     return () => clearTimeout(id);
-  }, [feedbackIndex, paused, carry, send]);
+  }, [feedbackIndex, feedbackWait, feedbackMisses, paused, carry, send]);
 
   // Focus follows the run: Start on entry, the sheet once the count starts, the next action at the
   // end — the control that had it is gone each time.
@@ -253,8 +303,9 @@ export function SprintRun({
   const sheetSize = lowCard ? 'aspect-[200/117]' : 'aspect-[200/102]';
 
   let sheet: ReactNode;
-  let line = '';
+  let line: ReactNode = '';
   let said = '';
+  let lineKey = '';
   if (state.kind === 'ready' || state.kind === 'countdown') {
     sheet = (
       <div>
@@ -282,11 +333,22 @@ export function SprintRun({
         : t('sprint-ready-line', {
             defaultValue: 'The first prompt is coming.',
           });
-    said = line;
+    said = typeof line === 'string' ? line : '';
   } else if (state.kind === 'asking' || state.kind === 'feedback') {
     const prompt = state.prompts[state.index];
     if (prompt) {
-      const right = state.kind === 'feedback' && state.result.correct;
+      const right = state.kind === 'feedback' && (state.right ?? state.result.correct);
+      // The wrong note against the written one: what to draw, and what to say about it.
+      const miss =
+        state.kind === 'feedback' && !right
+          ? sprintMiss({
+              prompt,
+              targets: state.targets[state.index] ?? [],
+              played: state.played,
+              instrument,
+              exact: input === 'midi',
+            })
+          : null;
       sheet = (
         <SprintSheet
           key={state.index}
@@ -302,6 +364,14 @@ export function SprintRun({
           label={promptLabel(t, prompt, state.kind === 'feedback', names(prompt))}
           range={lowCard ? 'low' : 'deck'}
           octaveClef={guitar || !!prompt.octaveClef}
+          played={
+            miss
+              ? {
+                  notes: miss.heads,
+                  dx: miss.dx,
+                }
+              : null
+          }
         />
       );
       if (state.kind === 'asking') {
@@ -313,8 +383,18 @@ export function SprintRun({
         const target = state.targets[state.index]?.[missed];
         const written = prompt.notes[missed];
         const exact = written && target !== undefined ? `${sheetNoteName(written)}${Math.floor(target / 12) - 1}` : '';
-        line = feedbackLine(t, i18n.language, state, names(prompt), exact);
-        said = line;
+        const parts = feedbackParts(t, i18n.language, state, names(prompt), exact, miss ? miss.facts : null);
+        lineKey = `fb:${state.index}:${state.misses ?? 0}`;
+        line = (
+          <>
+            {parts.map((part, i) => (
+              <span key={i} className="block">
+                {part}
+              </span>
+            ))}
+          </>
+        );
+        said = parts.join(' ');
       }
     }
   } else {
@@ -463,7 +543,10 @@ export function SprintRun({
           {shownCount}
         </p>
         <div className="mx-auto w-full max-w-72 sm:max-w-80">{sheet}</div>
-        <p key={`line:${line}`} className="min-h-12 text-sm leading-6 text-app-text-muted">
+        <p
+          key={`line:${lineKey || (typeof line === 'string' ? line : '')}`}
+          className="min-h-12 text-sm leading-6 text-app-text-muted"
+        >
           {line}
         </p>
         <p role="status" className="sr-only">

@@ -1,0 +1,17 @@
+{
+  "add-back-picture": "Add a picture to the back",
+  "add-front-picture": "Add a picture to the front",
+  "back-picture-file": "Back picture file",
+  "description": "Picture description",
+  "description-hint": "Required. A screen reader reads this in place of the picture, so say what it shows.",
+  "description-required": "Describe the picture before you save the card",
+  "front-picture-file": "Front picture file",
+  "no-description": "Picture without a description",
+  "reason-invalid-picture": "A picture has no description, is on a cloze front, or is not one of your uploads",
+  "remove-back-picture": "Remove the back picture",
+  "remove-front-picture": "Remove the front picture",
+  "replace-back-picture": "Replace the back picture",
+  "replace-front-picture": "Replace the front picture",
+  "upload-failed": "The picture could not be uploaded.",
+  "upload-limit": "JPEG, PNG or WebP, up to 5 MB."
+}

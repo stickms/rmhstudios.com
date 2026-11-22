@@ -344,6 +344,10 @@ export class NightrailRenderer3D {
   private pixelRatio = 1;
   private maxPixelRatio: number;
   private reducedMotion: boolean;
+  private calmVisuals = false;
+  private colorSafe = false;
+  private dotTexture: THREE.CanvasTexture | null = null;
+  private ceilingTexture: THREE.CanvasTexture | null = null;
   private wantsBloom: boolean;
   private time = 0;
   private disposed = false;
@@ -467,6 +471,34 @@ export class NightrailRenderer3D {
     this.reducedMotion = on;
   }
 
+  /**
+   * Assist (calm visuals): no camera shake, no crash flash, no immunity blink and
+   * no speed-line streaks. Independent of reduced motion, which only softens them.
+   */
+  setCalmVisuals(on: boolean): void {
+    this.calmVisuals = on;
+    if (on) this.shake = 0;
+  }
+
+  /**
+   * Assist (colour-safe): freight and ceilings carry a pattern as well as a colour
+   * (the barriers already carry stripes), so a hazard is never told apart by hue alone.
+   */
+  setColorSafe(on: boolean): void {
+    if (on === this.colorSafe) return;
+    this.colorSafe = on;
+    const freight = this.fxFreight?.material as THREE.MeshStandardMaterial | undefined;
+    const ceiling = this.fxCeiling?.material as THREE.MeshStandardMaterial | undefined;
+    if (freight) {
+      freight.map = on ? (this.dotTexture ??= this.makeDotTexture()) : null;
+      freight.needsUpdate = true;
+    }
+    if (ceiling) {
+      ceiling.map = on ? (this.ceilingTexture ??= this.makeStripeTexture('#4a5272')) : null;
+      ceiling.needsUpdate = true;
+    }
+  }
+
   /** One frame. Called by the React shell's loop — never by this file. */
   draw(state: RunState, dt: number): void {
     if (this.disposed) return;
@@ -505,6 +537,8 @@ export class NightrailRenderer3D {
     this.sleeperTexture?.dispose();
     this.haloTexture?.dispose();
     this.stripeTexture?.dispose();
+    this.dotTexture?.dispose();
+    this.ceilingTexture?.dispose();
     this.vignetteTexture?.dispose();
     this.cloudTexture?.dispose();
     this.envTarget?.dispose();
@@ -717,7 +751,7 @@ export class NightrailRenderer3D {
     // Crash shake, triggered off the immunity timer's rising edge — the sim
     // hands out immunity exactly when it wrecks you, and unlike `events` it is
     // still true on the frame after, so a dropped event can't lose the shake.
-    if (train.immuneFor > this.prevImmune + 0.01) this.shake = 1;
+    if (train.immuneFor > this.prevImmune + 0.01 && !this.calmVisuals) this.shake = 1;
     this.prevImmune = train.immuneFor;
     this.shake = Math.max(0, this.shake - dt * SHAKE_DECAY);
 
@@ -1443,7 +1477,7 @@ export class NightrailRenderer3D {
     // see, without reading the HUD, that a hit right now costs nothing. Kept
     // at 2.5 Hz and suppressed entirely under reduced motion — a full-body
     // flash is exactly the effect that setting exists to turn off.
-    const blink = !this.reducedMotion && train.immuneFor > 0 && Math.sin(this.time * 16) > 0;
+    const blink = !this.reducedMotion && !this.calmVisuals && train.immuneFor > 0 && Math.sin(this.time * 16) > 0;
     this.leadCar.visible = !blink;
   }
 
@@ -1849,7 +1883,7 @@ export class NightrailRenderer3D {
     // Speed lines live in camera space, so they always rush the viewer.
     const boosting = train.boostTime > 0;
     const strength = clamp(speedNorm * 0.8 + (boosting ? 0.45 : 0) - 0.35, 0, 1);
-    this.streaks.visible = strength > 0.02 && !this.reducedMotion;
+    this.streaks.visible = strength > 0.02 && !this.reducedMotion && !this.calmVisuals;
     if (this.streaks.visible) {
       const material = this.streaks.material as THREE.LineBasicMaterial;
       material.opacity = strength * 0.45;
@@ -2491,16 +2525,34 @@ export class NightrailRenderer3D {
     return texture;
   }
 
-  private makeStripeTexture(): THREE.CanvasTexture {
+  private makeStripeTexture(base = '#c62b4a'): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 16;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.fillStyle = '#c62b4a';
+      ctx.fillStyle = base;
       ctx.fillRect(0, 0, 64, 16);
       ctx.fillStyle = '#f2f2f2';
       for (let x = 0; x < 64; x += 16) ctx.fillRect(x, 0, 8, 16);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  private makeDotTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#6b4a78';
+      ctx.fillRect(0, 0, 32, 32);
+      ctx.fillStyle = '#f2f2f2';
+      ctx.beginPath();
+      ctx.arc(16, 16, 7, 0, Math.PI * 2);
+      ctx.fill();
     }
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;

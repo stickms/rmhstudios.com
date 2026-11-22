@@ -322,7 +322,7 @@ describe('ingest', () => {
   });
 
   it('covers every surface the design named', () => {
-    const surfaces: MediaSurface[] = ['avatar', 'post', 'album', 'library', 'build', 'chat'];
+    const surfaces: MediaSurface[] = ['avatar', 'post', 'album', 'library', 'build', 'chat', 'flashcard'];
     expect(Object.keys(POLICIES).sort()).toEqual([...surfaces].sort());
   });
 });

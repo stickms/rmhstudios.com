@@ -28,6 +28,8 @@ import { InputSetup } from './InputSetup';
 import { MatchNoteLesson, MatchStaffBox } from './MatchNoteLesson';
 import { ModeToggle } from './ModeToggle';
 import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
+import { KeySignatureLesson } from './KeySignatureLesson';
+import { PlayScaleLesson, ScaleNameBox } from './PlayScaleLesson';
 import { RhythmLesson } from './RhythmLesson';
 import { STAFF_BOX, STAFF_LOW_ASPECT } from './StaffCard';
 import { useLearnerShape } from './useLearnerShape';
@@ -268,6 +270,52 @@ function PlayChordSkeleton() {
 }
 
 /**
+ * The scale lesson's placeholder: its boxes exactly: the sheet (title line, the scale's name, the
+ * eight places, the sentence line) and the input region below it.
+ */
+function PlayScaleSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-chord space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <ScaleNameBox skeleton />
+        <div className="min-h-14" />
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-input-region">
+        <div className="app-skeleton h-full w-full" />
+      </div>
+    </div>
+  );
+}
+
+/** The key-signature lesson's placeholder: the sheet with its staff card, and the four buttons. */
+function KeySignatureSkeleton() {
+  return (
+    <div aria-hidden="true" className="space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <div className="app-skeleton mx-auto aspect-[200/102] w-full max-w-72 sm:max-w-80" />
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="grid grid-cols-2 gap-3">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="app-skeleton h-11 w-full" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * The rhythm lessons' placeholder: their boxes exactly — the sheet (title line, the 8rem question
  * box, the sentence line) and the 12.5rem answers box (`.rmm-rhythm__answers`). All three rhythm
  * lessons share it.
@@ -327,7 +375,11 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   const instrument = useLearnStore((s) => s.profile?.instrument ?? 'piano');
   const chosen = useLearnStore((s) => s.profile?.sound ?? null);
   const mode = lesson?.mode;
-  const pitched = playable && mode !== 'rhythm-basics';
+  const pitched =
+    playable &&
+    mode !== 'rhythm-basics' &&
+    // A key signature is read from the page: no note is played, so no sound is loaded.
+    mode !== 'key-signature';
   const soundId =
     mode === 'ear-chord' || mode === 'play-chord'
       ? chordSoundFor({
@@ -426,6 +478,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
           sound={sound}
           onChangeInput={() => setSetupOpen(true)}
         />
+      ) : lesson.mode === 'play-scale' ? (
+        <PlayScaleLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
+      ) : lesson.mode === 'key-signature' ? (
+        <KeySignatureLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
@@ -481,6 +537,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <EarSkeleton />
       ) : lesson.mode === 'play-chord' ? (
         <PlayChordSkeleton />
+      ) : lesson.mode === 'play-scale' ? (
+        <PlayScaleSkeleton />
+      ) : lesson.mode === 'key-signature' ? (
+        <KeySignatureSkeleton />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmSkeleton />
       ) : (

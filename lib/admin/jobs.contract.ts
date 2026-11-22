@@ -1,12 +1,14 @@
 /** Contracts for the background jobs console. Client-safe: types only, by `import type`. */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { JobDetail, JobRow, QueueSummary } from '@/lib/admin/jobs';
+import type { FanoutSummary, JobDetail, JobRow, QueueSummary } from '@/lib/admin/jobs';
 import type { jobActionBodySchema, listJobsQuerySchema } from '@/lib/admin/jobs-schema';
 
 export const listAdminJobQueuesApi = endpoint<{
   res: {
     queues: QueueSummary[];
+    /** Additive (s08-05): the durable fan-out runs. */
+    fanouts: FanoutSummary;
   };
 }>()({
   method: 'GET',

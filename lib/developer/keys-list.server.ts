@@ -25,6 +25,8 @@ export async function listDeveloperKeysView(userId: string) {
         createdAt: true,
         allowedCidrs: true,
         rateLimitPerMinute: true,
+        suspendedAt: true,
+        suspendReason: true,
       },
     }),
   ]);

@@ -17,7 +17,7 @@
  *   go by, so a repeat must not activate whatever it lands on (`key-repeat.ts`).
  */
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isHeldOnControl } from '@/lib/rmhmusic/learn/input/key-repeat';
@@ -33,7 +33,12 @@ import { useMachine } from './useMachine';
 /** One question of a finished session and whether it was answered right. */
 export interface AnsweredQuestion<C> {
   card: C;
+  /** Right on the FIRST answer: a right answer after a miss (Learning mode) is not. */
   right: boolean;
+  /** Wrong answers given to the question before it moved on. */
+  misses?: number;
+  /** Milliseconds from the question being on screen to its first answer; null when not timed. */
+  ms?: number | null;
 }
 
 export interface QuestionSession<C, A, S extends SessionState<C, A> = SessionState<C, A>, X = never> {
@@ -102,6 +107,9 @@ export function useQuestionSession<
   const answerGroup = useRef<HTMLDivElement>(null);
   const answersBox = useRef<HTMLDivElement>(null);
   const movedOn = useRef(false);
+  // When the current question was put up, and how long its first answer took, by question index.
+  const shownAt = useRef<number | null>(null);
+  const firstMs = useRef<Record<number, number | null>>({});
 
   const perform = (effects: (SessionEffect | F)[]) => {
     for (const fx of effects) {
@@ -125,6 +133,10 @@ export function useQuestionSession<
 
   const answer = (a: A) => {
     if (paused) return;
+    if (lesson.kind === 'asking' && (lesson.misses ?? 0) === 0 && firstMs.current[lesson.index] === undefined) {
+      firstMs.current[lesson.index] =
+        shownAt.current === null ? null : Math.max(0, Math.round(performance.now() - shownAt.current));
+    }
     perform(
       send({
         type: 'answer',
@@ -137,7 +149,10 @@ export function useQuestionSession<
     if (lesson.kind === 'feedback') {
       const result = {
         card: lesson.cards[lesson.index],
-        right: lesson.right,
+        // A right answer after a miss (Learning mode) does not count as a right question.
+        right: lesson.right && (lesson.misses ?? 0) === 0,
+        misses: lesson.misses ?? 0,
+        ms: firstMs.current[lesson.index] ?? null,
       };
       answered.current[lesson.index] = result;
       setLast(result);
@@ -169,6 +184,11 @@ export function useQuestionSession<
   // moved focus off it when this runs, so focus on Next (or inside any inert subtree) counts as
   // nowhere.
   const index = lesson.kind === 'asking' || lesson.kind === 'feedback' ? lesson.index : -1;
+  // A new question starts its clock (a retry of the same question does not restart it).
+  const retried = lesson.kind === 'asking' && (lesson.misses ?? 0) > 0;
+  useEffect(() => {
+    if (lesson.kind === 'asking' && !retried) shownAt.current = performance.now();
+  }, [lesson.kind, index, retried]);
   useLayoutEffect(() => {
     const active = document.activeElement;
     const nowhere =
@@ -250,17 +270,20 @@ export function SessionSheet<C, A>({
   line,
   lineKey,
   said,
+  retry = false,
 }: {
   session: QuestionSession<C, A>;
   title: string;
   /** The question: a staff card of a fixed box. */
   question: ReactNode;
   /** The sentence beside Next: a hint, what went wrong, or the score. */
-  line: string;
+  line: ReactNode;
   /** Changes when the sentence stands for a new thing, so it is replaced rather than edited. */
   lineKey: string;
   /** What the live region says: a string, or {@link SaidParts} for several sentences. */
   said: ReactNode;
+  /** Learning mode after a miss: the button asks the same question again, so it says so. */
+  retry?: boolean;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const { lesson } = session;
@@ -292,9 +315,13 @@ export function SessionSheet<C, A>({
           inert={!feedback || undefined}
           className={cn(PRIMARY_BUTTON, !feedback && 'hidden')}
         >
-          {t('flash-next', {
-            defaultValue: 'Next',
-          })}
+          {retry
+            ? t('flash-try-again', {
+                defaultValue: 'Try again',
+              })
+            : t('flash-next', {
+                defaultValue: 'Next',
+              })}
         </button>
         {/* Inside this row, not after it: as the section's last child it would take the
             row's place in the section's spacing (space-y spaces all but the last child). */}

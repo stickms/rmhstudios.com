@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { gradeWritten, type WrittenQuestion } from '@/lib/study/practice-test';
+import { CardPicture } from '@/components/study/CardPicture';
 import { Verdict } from '@/components/study/questions/Verdict';
 
 /** A typed answer, graded forgivingly; a one-edit slip is "almost" and the student may accept it. */
@@ -31,6 +32,7 @@ export function Written({
       <legend className="t-prose whitespace-pre-wrap text-site-text" dir="auto">
         {question.prompt}
       </legend>
+      {question.promptImage && <CardPicture image={question.promptImage} eager />}
       <label htmlFor={id} className="t-label block">
         {t('written-label', { defaultValue: 'Your answer' })}
       </label>

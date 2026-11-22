@@ -33,6 +33,7 @@ import { buildCommentErasureOps } from '@/lib/builds/comments.server';
 import { communityBanErasureOps } from '@/lib/communities/bans.server';
 import { communityNoteErasureOps } from '@/lib/communities/member-notes.server';
 import { feedbackErasureOps } from '@/lib/feedback/inbox.server';
+import { typeGhostErasureOps } from '@/lib/rmhtype/ghost.server';
 import { jamThemeErasureOps } from '@/lib/competitive/jam-themes.server';
 import { eventOverrideErasureOps } from '@/lib/events/occurrences.server';
 import { eventUpdateErasureOps } from '@/lib/events/updates.server';
@@ -57,6 +58,7 @@ import { cohostErasureOps } from '@/lib/events/cohosts.server';
 import { jamTeamErasureOps } from '@/lib/competitive/jam-teams.server';
 import { jamFeedbackErasureOps } from '@/lib/competitive/jam-feedback.server';
 import { replayErasureOps } from '@/lib/replays.server';
+import { rmhTubeStatsErasureOps } from '@/lib/rmhtube/stats.server';
 import { leaveAllGroups } from '@/lib/group-chat/manage.server';
 import { repostMuteErasureOps } from '@/lib/feed/repost-mutes.server';
 import { blockMuteErasureOps } from '@/lib/moderation/blocked-muted.server';
@@ -69,6 +71,9 @@ import { studioHistoryErasureOps } from '@/lib/studio/project-history.server';
 import { readingTimeErasureOps } from '@/lib/reading/time.server';
 import { bulkErasureOps } from '@/lib/bulk/bulk.server';
 import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
+import { privateDataErasureOps } from '@/lib/account/erasure-private.server';
+import { dropGameBoardCaches, gameProgressErasureOps, scrubMatchSnapshots } from '@/lib/account/erasure-games.server';
+import { recurringThreadErasureOps } from '@/lib/communities/recurring.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -574,6 +579,23 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // registry in erasure-registry.ts classifies every other model.
     ...coverageErasureOps(userId),
 
+    // Sprint 08 erasures (docs/autonomous/sprint-08/plan.md §Anchors): each feature adds its operations under its own line.
+    // s08-01 rmhtube-stats
+    ...rmhTubeStatsErasureOps(userId),
+
+    // s08-09 recurring-threads
+    // s08-09: the member's recurring thread templates go to the community owner, paused (or are deleted).
+    ...(await recurringThreadErasureOps(userId)),
+
+    // s08-11 type-ghost
+    ...typeGhostErasureOps(userId),
+
+    // s08-19 erasure-private
+    ...privateDataErasureOps(userId),
+
+    // s08-20 erasure-games
+    ...gameProgressErasureOps(userId),
+
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
@@ -613,4 +635,7 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   ]);
   // Off the RMH Music Daily boards (and friends lists) now, not when their cached lists expire.
   await dropLearnerBoardCaches(userId, Date.now());
+  // s08-20 erasure-games (after the transaction)
+  await dropGameBoardCaches(userId);
+  await scrubMatchSnapshots(userId);
 }

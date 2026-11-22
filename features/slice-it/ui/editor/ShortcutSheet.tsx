@@ -14,6 +14,7 @@
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ClipboardShortcuts } from './ClipboardShortcuts';
+import { IssueShortcuts } from './NoteIssues';
 
 interface ShortcutSheetProps {
   open: boolean;
@@ -148,6 +149,7 @@ export function ShortcutSheet({ open, onOpenChange }: ShortcutSheetProps) {
             </div>
           ))}
           <ClipboardShortcuts />
+          <IssueShortcuts />
         </dl>
       </DialogContent>
     </Dialog>

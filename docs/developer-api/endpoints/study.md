@@ -167,7 +167,7 @@ Permanently delete the deck, its cards and their review history.
 
 ### `GET /api/v1/me/decks/{id}/cards`
 
-The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion) are not listed.
+The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`.
 
 **Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDeckCards`
 
@@ -188,7 +188,9 @@ The cards you wrote, in deck order. Cards generated from them (the reverse side 
       "front": "hablar",
       "back": "to speak",
       "position": 0,
-      "externalId": null
+      "externalId": null,
+      "frontImage": null,
+      "backImage": null
     }
   ],
   "nextCursor": null
@@ -209,7 +211,7 @@ Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate
 
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
-| `cards` | `object[]` | yes | 1–100 cards: `{ kind?, front, back?, externalId? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. |
+| `cards` | `object[]` | yes | 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. |
 
 ```json
 {
@@ -239,7 +241,9 @@ Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate
       "front": "hablar",
       "back": "to speak",
       "position": 0,
-      "externalId": null
+      "externalId": null,
+      "frontImage": null,
+      "backImage": null
     }
   ],
   "cardCount": 2
@@ -264,6 +268,8 @@ Change a card’s kind, front or back. Its review history stays; its generated c
 | `kind` | `string` | no | `basic`, `reversible` or `cloze`. |
 | `front` | `string` | no | The front (a cloze card’s whole text). |
 | `back` | `string` | no | The back. |
+| `frontImage` | `object` | no | A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. |
+| `backImage` | `object` | no | The picture on the back, the same shape as `frontImage`. |
 
 ```json
 {
@@ -280,7 +286,9 @@ Change a card’s kind, front or back. Its review history stays; its generated c
   "front": "hablar",
   "back": "to speak",
   "position": 0,
-  "externalId": null
+  "externalId": null,
+  "frontImage": null,
+  "backImage": null
 }
 ```
 
@@ -313,6 +321,8 @@ Create the card keyed by your own id in this deck, or update it. The same body s
 | `kind` | `string` | no | `basic` (default), `reversible` or `cloze`. |
 | `front` | `string` | yes | The front. |
 | `back` | `string` | no | The back (not used by cloze cards). |
+| `frontImage` | `object` | no | A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. A side you leave out keeps its picture. |
+| `backImage` | `object` | no | The picture on the back, the same shape as `frontImage`. |
 
 ```json
 {
@@ -330,7 +340,9 @@ Create the card keyed by your own id in this deck, or update it. The same body s
   "front": "hablar",
   "back": "to speak",
   "position": 0,
-  "externalId": "verbs-001"
+  "externalId": "verbs-001",
+  "frontImage": null,
+  "backImage": null
 }
 ```
 

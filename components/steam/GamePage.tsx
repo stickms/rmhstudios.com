@@ -25,6 +25,8 @@ import { ReplayBoard } from '@/components/replays/ReplayBoard';
 import type { BoardReplay } from '@/lib/game/replay-library';
 import { TitleArt } from './TitleArt';
 import { PersonalBests } from './PersonalBests';
+import { PlayingThisGame } from './PlayingThisGame';
+import { capabilitiesFor } from '@/lib/game-capabilities';
 import { scoredGameIds } from '@/lib/game/registry';
 
 export type GamePageData = {
@@ -207,6 +209,7 @@ export function GamePage({ data }: { data: GamePageData }) {
               ))}
             </ul>
           </section>
+          {isGame ? <PlayingThisGame gameId={data.gameId} caps={capabilitiesFor(data.gameId)} /> : null}
           {data.alsoPlayed.length > 0 ? (
             <section className="stm-card" aria-labelledby="stm-also-h">
               <h2 id="stm-also-h" className="stm-card-head">

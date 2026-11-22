@@ -80,6 +80,13 @@ function CardText({ card }: { card: Side }) {
   );
 }
 
+/** Whether the two versions of a card show different pictures or descriptions (a picture-only change has no text diff). */
+function picturesDiffer(mine: Side, theirs: Side): boolean {
+  const same = (a?: { url: string; alt: string } | null, b?: { url: string; alt: string } | null) =>
+    (a?.url ?? null) === (b?.url ?? null) && (a?.alt ?? null) === (b?.alt ?? null);
+  return !same(mine.frontImage, theirs.frontImage) || !same(mine.backImage, theirs.backImage);
+}
+
 export function DeckUpdatesDialog({ deckId, open, onOpenChange, onApplied }: Props) {
   const { t } = useTranslation('deck-updates');
   const uid = useId();
@@ -299,6 +306,13 @@ export function DeckUpdatesDialog({ deckId, open, onOpenChange, onApplied }: Pro
             <WordDiff before={row.mine.back} after={row.theirs.back} />
           </p>
         )}
+        {picturesDiffer(row.mine, row.theirs) && (
+          <p className="t-meta">
+            {t('picture-changed', {
+              defaultValue: 'Picture changed',
+            })}
+          </p>
+        )}
         {row.mine.kind !== row.theirs.kind && (
           <p className="t-meta">
             {t('kind-changed', {
@@ -328,6 +342,13 @@ export function DeckUpdatesDialog({ deckId, open, onOpenChange, onApplied }: Pro
             })}
           </p>
           <CardText card={row.theirs} />
+          {picturesDiffer(row.mine, row.theirs) && (
+            <p className="t-meta">
+              {t('picture-changed', {
+                defaultValue: 'Picture changed',
+              })}
+            </p>
+          )}
         </div>
         <div
           className="flex gap-2"

@@ -24,8 +24,10 @@ import { formatCount } from './format-count';
 import { useHideCountsInFeed } from './use-hide-counts-in-feed';
 import { bumpCount, displayCount } from '@/lib/feed/quiet-counts';
 import { cn } from '@/lib/utils';
-import { likePostApi, repostPostApi } from '@/lib/feed/rmhark-actions.contract';
+import { bookmarkPostApi, likePostApi, repostPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { usePostAction } from './feed-nav';
+import { toast } from '@/lib/toast';
 
 interface RMHarkActionsProps {
   item: FeedItem;
@@ -81,8 +83,8 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
   const updateItem = onUpdate ?? storeUpdate;
   const actualId = item.actualId ?? item.id;
 
-  const handleCommentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCommentClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (onReply) {
       onReply();
       return;
@@ -90,8 +92,8 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
     navigate({ to: `/u/${item.user?.handle || item.user?.id}/post/${actualId}` });
   };
 
-  const toggleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const toggleLike = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!session) {
       promptSignIn(t('like-sign-in', { defaultValue: 'Sign in to like RMHarks.' }));
       return;
@@ -128,6 +130,49 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
     });
   };
 
+  // The repost button's click, also the `t` key's.
+  const toggleRepostMenu = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    // Every item in this menu needs an account, so a signed-out visitor gets
+    // the prompt at the trigger instead of a menu that dead-ends.
+    if (!session) {
+      promptSignIn(t('rermhark-sign-in', { defaultValue: 'Sign in to reRMHark.' }));
+      return;
+    }
+    setRepostMenu((v) => !v);
+  };
+
+  // The `s` key: the post menu's Bookmark row, without the menu (the home row's menu is not mounted until it opens).
+  const { run: runBookmark } = useOptimisticAction();
+  const toggleSave = () => {
+    if (!session) {
+      toast.error(t('bookmark-sign-in', { defaultValue: 'Please sign in to bookmark posts.' }));
+      return;
+    }
+    const was = !!item.bookmarked;
+    runBookmark({
+      apply: () => updateItem(item.id, { bookmarked: !was }),
+      rollback: () => updateItem(item.id, { bookmarked: was }),
+      commit: async () => {
+        const data = await api(bookmarkPostApi, { params: { id: actualId } });
+        updateItem(item.id, { bookmarked: !!data.bookmarked });
+        toast.success(
+          data.bookmarked
+            ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' })
+            : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' }),
+        );
+      },
+    });
+  };
+
+  // Keyboard: `l`, `t`, `r` and `s` on the focused post run these same handlers (feed-nav.tsx).
+  // An optimistic or deleted post has nothing to act on (its card ignores the pointer too).
+  const actable = !item.pending && !item.deletedAt;
+  usePostAction(item.id, 'like', toggleLike, actable);
+  usePostAction(item.id, 'repost', toggleRepostMenu, actable);
+  usePostAction(item.id, 'reply', handleCommentClick, actable);
+  usePostAction(item.id, 'save', toggleSave, actable);
+
   const repostLabel = t('action-repost', { defaultValue: 'Repost' });
   const likeLabel = t('like', { defaultValue: 'Like' });
   const replyLabel = t('reply', { defaultValue: 'Reply' });
@@ -159,16 +204,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
           onPointerEnter={session ? () => void loadRepostMenu() : undefined}
           onPointerDown={session ? () => void loadRepostMenu() : undefined}
           onFocus={session ? () => void loadRepostMenu() : undefined}
-          onClick={(e) => {
-            e.stopPropagation();
-            // Every item in this menu needs an account, so a signed-out visitor gets
-            // the prompt at the trigger instead of a menu that dead-ends.
-            if (!session) {
-              promptSignIn(t('rermhark-sign-in', { defaultValue: 'Sign in to reRMHark.' }));
-              return;
-            }
-            setRepostMenu((v) => !v);
-          }}
+          onClick={toggleRepostMenu}
           data-on={item.reposted ? '' : undefined}
           className="feed-action"
           aria-haspopup="menu"

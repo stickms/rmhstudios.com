@@ -1,41 +1,23 @@
 /**
- * Spaced-repetition scheduler for note cards ("FSRS-lite").
+ * Spaced-repetition scheduler for every RMH Music drill, on FSRS-6 (`fsrs.ts`).
  *
- * A deliberately small model with three numbers per card. It borrows the idea
- * of separate stability and difficulty from FSRS but none of its fitted
- * constants: the numbers below are hand-picked, simple to reason about, and
- * only meant to space a handful of staff-reading cards sensibly.
+ * A card keeps the two numbers FSRS needs — stability (days until recall falls to 90%) and
+ * difficulty (1–10) — plus when it was last reviewed and when it is next due. On a review with
+ * grade g at time `now`:
  *
- *   stability   S, in days. Roughly "how long until I would likely forget this
- *               card". It is also the interval the card is next shown after.
- *               0 means never successfully reviewed.
- *   difficulty  D, in [1, 10], starting at 5. How hard this card is for this
- *               learner. It moves a little on every review (again +1,
- *               hard +0.4, good -0.2, easy -0.5) and damps or boosts growth.
+ *   elapsed  days since the last review (0 for a card never reviewed, and for a clock that went
+ *            backwards), which fixes the recall chance R the learner actually had;
+ *   memory   FSRS's new stability and difficulty from (D, S, R, g); a card with stability 0 has
+ *            never been remembered and starts from the first-review values for g;
+ *   due      `again` comes back after MIN_INTERVAL_DAYS (10 minutes); anything else after the
+ *            number of whole days at which recall would fall to the desired 90%, at least one day
+ *            and at most MAX_INTERVAL_DAYS.
  *
- * On a review with grade g at time `now`:
- *
- *   again  The learner missed it. S falls to 30% of its old value (so it is
- *          no larger; equal only at S = 0), the card comes back after
- *          MIN_INTERVAL_DAYS (~15 minutes), and it counts as a lapse only if
- *          the card had been successfully reviewed (S > 0): a card that was
- *          never remembered has nothing to forget, however many times it was
- *          missed. (A missed card keeps S > 0 afterwards, so missing a
- *          remembered card twice in a row is two lapses.)
- *   others S grows: S' = base * (1 + (F_g - 1) * k_D * k_t), where
- *            base = max(S, 1 day) (so a lapsed or brand-new card restarts
- *                   from a one-day footing, not from minutes),
- *            F_g  = grade factor: hard 1.2, good 2.2, easy 3.5,
- *            k_D  = 1 - 0.05 * (D - 5), in [0.75, 1.2]: harder cards grow
- *                   less, easier ones more (uses D before this review),
- *            k_t  = elapsed / base clamped to [0.5, 1.5]: reviewing early
- *                   earns less growth, reviewing late a little more. Fixed
- *                   at 1 for a card with no prior review.
- *          Because (F_g - 1) > 0 and k_D, k_t > 0, S' > base for every
- *          non-again grade, and easy > good > hard from the same state.
- *
- * The interval used for `due` is clamp(S', MIN_INTERVAL_DAYS, MAX_INTERVAL_DAYS)
- * days after `now`, and S' itself is capped at MAX_INTERVAL_DAYS.
+ * Stored rows from the earlier hand-tuned scheduler ("FSRS-lite") keep the same two columns on
+ * the same scales (stability in days, difficulty 1–10), so they are read as FSRS memory as they
+ * are; no migration is needed, and the first review after the switch simply uses the new curve.
+ * A lapse is a miss on a card whose stability had reached a day (it had graduated); a miss while
+ * still learning is not one.
  *
  * Totality. Elapsed time is max(0, now - last), so a clock that went
  * backwards counts as zero elapsed and `due` is always `>= now`. `now` itself
@@ -67,6 +49,8 @@
  * was far ahead when `last` was written, which the skew rule above handles.
  */
 
+import { AGAIN, EASY, GOOD, HARD, intervalFor, nextMemory, retrievability, type Rating } from './fsrs';
+
 export type Grade = 'again' | 'hard' | 'good' | 'easy';
 
 export interface CardState {
@@ -83,34 +67,25 @@ export interface CardState {
 }
 
 export const DAY_MS = 86_400_000;
-/** About 15 minutes: when a missed card comes back. */
-export const MIN_INTERVAL_DAYS = 0.01;
+/** 10 minutes: when a missed card comes back. */
+export const MIN_INTERVAL_DAYS = 10 / 1440;
 export const MAX_INTERVAL_DAYS = 365;
 /** A review this far ahead of `now` means the clock was wrong when it was written. */
 export const CLOCK_SKEW_TOLERANCE_MS = DAY_MS;
 
-const GRADE_FACTOR = {
-  hard: 1.2,
-  good: 2.2,
-  easy: 3.5,
-} as const;
-const DIFFICULTY_DELTA: Record<Grade, number> = {
-  again: 1,
-  hard: 0.4,
-  good: -0.2,
-  easy: -0.5,
+const RATING: Record<Grade, Rating> = {
+  again: AGAIN,
+  hard: HARD,
+  good: GOOD,
+  easy: EASY,
 };
 const DEFAULT_DIFFICULTY = 5;
 const MIN_DIFFICULTY = 1;
 const MAX_DIFFICULTY = 10;
-/** Weight of (difficulty - 5) in the growth damping. */
-const DIFFICULTY_WEIGHT = 0.05;
-/** What a lapse leaves of the old stability. */
-const LAPSE_KEEP = 0.3;
-/** Growth starts from at least a day, so relearned cards do not crawl. */
-const BASE_STABILITY_DAYS = 1;
-const TIMING_MIN = 0.5;
-const TIMING_MAX = 1.5;
+/** A card whose stability has reached this many days has graduated: missing it is a lapse. */
+const LAPSE_STABILITY_DAYS = 1;
+/** A remembered card is never shown again sooner than this (FSRS rounds to whole days). */
+const MIN_PASS_INTERVAL_DAYS = 1;
 
 /** Clamp that maps NaN to `fallback` (so every output is a real number). */
 // eslint-disable-next-line no-restricted-syntax -- clamp with a NaN fallback argument
@@ -171,37 +146,45 @@ export function newCard(now: number): CardState {
 
 export function review(s: CardState, grade: Grade, now: number): CardState {
   assertNow(now);
-  if (!Object.prototype.hasOwnProperty.call(DIFFICULTY_DELTA, grade)) {
+  if (!Object.prototype.hasOwnProperty.call(RATING, grade)) {
     throw new RangeError(`unknown grade ${String(grade)}`);
   }
+  const rating = RATING[grade];
   const c = sanitize(s);
-  const difficulty = clamp(c.difficulty + DIFFICULTY_DELTA[grade], MIN_DIFFICULTY, MAX_DIFFICULTY, DEFAULT_DIFFICULTY);
-  const reps = c.reps + 1;
-
-  let stability: number;
-  let lapses = c.lapses;
-  if (grade === 'again') {
-    stability = c.stability * LAPSE_KEEP;
-    if (c.stability > 0) lapses += 1;
-  } else {
-    const base = Math.max(c.stability, BASE_STABILITY_DAYS);
-    // `now - last` can be Infinity or negative for wild clocks; clamp handles both.
-    const elapsedDays = c.last === null ? 0 : Math.max(0, now - c.last) / DAY_MS;
-    const timing = c.last === null ? 1 : clamp(elapsedDays / base, TIMING_MIN, TIMING_MAX, 1);
-    const difficultyTerm = 1 - DIFFICULTY_WEIGHT * (c.difficulty - DEFAULT_DIFFICULTY);
-    stability = clamp(base * (1 + (GRADE_FACTOR[grade] - 1) * difficultyTerm * timing), 0, MAX_INTERVAL_DAYS);
-  }
-
-  const intervalDays = clamp(stability, MIN_INTERVAL_DAYS, MAX_INTERVAL_DAYS);
-  const reviewed = grade === 'again' ? MIN_INTERVAL_DAYS : intervalDays;
+  const elapsedDays = c.last === null ? 0 : Math.max(0, now - c.last) / DAY_MS;
+  // A card that was never remembered (stability 0) starts the memory afresh, whatever else is stored.
+  const memory = nextMemory(
+    c.stability > 0 ? { stability: c.stability, difficulty: c.difficulty } : null,
+    elapsedDays,
+    rating,
+  );
+  const stability = clamp(memory.stability, 0, MAX_INTERVAL_DAYS);
+  // A miss on a card that had graduated (its stability had reached a day) is a lapse; a miss while
+  // still learning it is not.
+  const lapses = grade === 'again' && c.stability >= LAPSE_STABILITY_DAYS ? c.lapses + 1 : c.lapses;
+  const days =
+    grade === 'again'
+      ? MIN_INTERVAL_DAYS
+      : clamp(Math.round(intervalFor(stability)), MIN_PASS_INTERVAL_DAYS, MAX_INTERVAL_DAYS);
   return {
-    due: now + reviewed * DAY_MS,
+    due: now + days * DAY_MS,
     stability,
-    difficulty,
-    reps,
+    difficulty: memory.difficulty,
+    reps: c.reps + 1,
     lapses,
     last: now,
   };
+}
+
+/**
+ * The chance the learner would recall the card at `now` (FSRS retrievability), 0–1, or null for a
+ * card never remembered. Total: a clock behind the last review counts as no time elapsed.
+ */
+export function recallChance(s: CardState, now: number): number | null {
+  assertNow(now);
+  const c = sanitize(s);
+  if (c.reps === 0 || c.stability <= 0 || c.last === null) return null;
+  return retrievability(Math.max(0, now - c.last) / DAY_MS, c.stability);
 }
 
 export function isDue(s: CardState, now: number): boolean {

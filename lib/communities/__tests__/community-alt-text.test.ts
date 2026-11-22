@@ -89,6 +89,7 @@ vi.mock('@/lib/prisma.server', () => {
         };
       },
     },
+    $executeRaw: async () => 0,
     $transaction: async (cb: (tx: unknown) => unknown) => cb(prisma),
   };
   return {

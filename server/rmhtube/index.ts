@@ -26,6 +26,7 @@ import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
 import { protocolGuard, protocolLogger } from '../shared/protocol';
 import { boundedFlush } from './shutdown';
+import { statsRecorder } from './stats-recorder';
 import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
@@ -126,6 +127,8 @@ io.on('connection', (socket) => {
 syncEngine.startHeartbeat();
 partyHandler.start();
 roomManager.startGarbageCollector();
+// Watch statistics (lib/rmhtube/stats.ts): a 5 s sampler over the rooms and a 60 s batched flush, off the socket path.
+statsRecorder.start(() => roomManager.rooms.values());
 
 // ─── Graceful shutdown ───────────────────────────────────────────
 
@@ -157,12 +160,15 @@ function shutdown(signal: string): void {
   // which would drop every buffered message. Bounded so a hung write cannot hold
   // shutdown past its budget; the close callback flushes again for stragglers.
   const chatFlushed = boundedFlush(chatHandler.flushPersistence(), FLUSH_BOUND_MS);
+  // Watch statistics: stop the sampler and write what is held, bounded like the chat flush.
+  const statsFlushed = boundedFlush(statsRecorder.stop(), FLUSH_BOUND_MS);
 
   httpServer.close(() => {
     logger.info({ event: 'http_server_closed' });
     Promise.allSettled([
       partyStopped,
       chatFlushed,
+      statsFlushed,
       boundedFlush(chatHandler.flushPersistence(), FLUSH_BOUND_MS),
     ]).then(() => disconnectPrisma()).finally(() => {
       process.exit(0);

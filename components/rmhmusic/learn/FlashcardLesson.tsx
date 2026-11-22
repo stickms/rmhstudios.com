@@ -39,6 +39,8 @@ import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
 import { createFlashcardsMachine, type Answer, type Effect } from '@/lib/rmhmusic/learn/machines/flashcards';
 import type { CompleteOutcome } from '@/lib/rmhmusic/learn/machines/learn-data';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
+import { describeMiss, type Miss } from '@/lib/rmhmusic/learn/miss';
+import { getPracticeMode } from '@/lib/rmhmusic/learn/practice-mode';
 import { starsFor, scoreFrom } from '@/lib/rmhmusic/learn/scoring/stars';
 import { isSharp } from '@/lib/rmhmusic/learn/staff';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -46,7 +48,9 @@ import { noteLetter, type NoteLetter } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
 import { DeviceRegion, LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
+import { PracticeModeToggle } from './PracticeModeToggle';
 import {
+  SaidParts,
   SessionFrame,
   SessionSheet,
   cardStateOf,
@@ -74,6 +78,64 @@ function isTypingTarget(target: EventTarget | null): boolean {
 /** The letter the learner gave (letter answers) or the note they played (midi answers). */
 function answerName(answer: Answer): string {
   return answer.kind === 'letter' ? answer.letter : midiToName(answer.midi);
+}
+
+/**
+ * The sentences that tell a wrong answer: what was played (or named) against the right note, then
+ * how far off it sits on the staff. Each is its own translated string.
+ */
+export function missSentences(
+  t: (key: string, options: Record<string, unknown>) => string,
+  miss: Miss,
+  played: boolean,
+  note: string,
+  said: string,
+): string[] {
+  const lead = played
+    ? t('flash-miss-played', {
+        played: said,
+        note,
+        defaultValue: 'You played {{played}}, not {{note}}.',
+      })
+    : t('flash-miss-named', {
+        played: said,
+        note,
+        defaultValue: 'You named {{played}}, not {{note}}.',
+      });
+  const above = miss.direction === 'above';
+  let how: string;
+  if (miss.direction === 'level') {
+    how = t('flash-miss-level', {
+      defaultValue: 'Right line or space, wrong accidental.',
+    });
+  } else if (miss.steps === 7 && miss.sameLetter) {
+    how = above
+      ? t('flash-miss-octave-above', {
+          defaultValue: 'An octave above the right note.',
+        })
+      : t('flash-miss-octave-below', {
+          defaultValue: 'An octave below the right note.',
+        });
+  } else if (miss.steps === 1) {
+    how = above
+      ? t('flash-miss-above-one', {
+          defaultValue: 'One step above the right note.',
+        })
+      : t('flash-miss-below-one', {
+          defaultValue: 'One step below the right note.',
+        });
+  } else {
+    how = above
+      ? t('flash-miss-above', {
+          n: miss.steps,
+          defaultValue: '{{n}} steps above the right note.',
+        })
+      : t('flash-miss-below', {
+          n: miss.steps,
+          defaultValue: '{{n}} steps below the right note.',
+        });
+  }
+  return [lead, how];
 }
 
 /** One card of a finished session and whether it was named right. */
@@ -154,7 +216,7 @@ export function FlashcardSession({
   const { t } = useTranslation('c-rmhmusic');
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const session = useQuestionSession<Card, Answer>({
-    machine: () => createFlashcardsMachine(cards),
+    machine: () => createFlashcardsMachine(cards, () => getPracticeMode() === 'learning'),
     save,
     paused,
   });
@@ -246,20 +308,43 @@ export function FlashcardSession({
               defaultValue: 'Tap its letter, or play it on the piano below.',
             });
 
-  // The sentence line: the hint while asking; after a wrong answer what the note was (with its
-  // octave when a note was played, since then the octave counted); the score at the end.
-  let line = '';
+  // The sentence line: the hint while asking; after a wrong answer what was played against the
+  // right note (with how far off it sits on the staff); the score at the end.
+  let line: ReactNode = '';
   let lineKey = 'hint';
+  // The sentences of a wrong answer, one string each (the live region reads them as they are).
+  let missParts: string[] = [];
+  let miss: Miss | null = null;
   if (lesson.kind === 'asking') {
     line = hint;
   } else if (lesson.kind === 'feedback') {
-    lineKey = `fb-${lesson.index}`;
+    lineKey = `fb-${lesson.index}-${lesson.misses ?? 0}`;
     if (!lesson.right) {
       const c = lesson.cards[lesson.index];
-      line = t('flash-that-was', {
-        note: lesson.answer.kind === 'midi' ? midiToName(c.midi) : noteLetter(c.midi),
-        defaultValue: 'That was {{note}}.',
-      });
+      miss = describeMiss(c.midi, lesson.answer);
+      missParts = miss
+        ? missSentences(
+            t,
+            miss,
+            lesson.answer.kind === 'midi',
+            midiToName(c.midi),
+            lesson.answer.kind === 'letter' ? lesson.answer.letter : miss.name,
+          )
+        : [
+            t('flash-that-was', {
+              note: lesson.answer.kind === 'midi' ? midiToName(c.midi) : noteLetter(c.midi),
+              defaultValue: 'That was {{note}}.',
+            }),
+          ];
+      line = (
+        <>
+          {missParts.map((part, i) => (
+            <span key={i} className="block">
+              {part}
+            </span>
+          ))}
+        </>
+      );
     }
   } else {
     lineKey = 'score';
@@ -272,21 +357,29 @@ export function FlashcardSession({
 
   // What a screen reader hears once a card is answered, the next card when it is dealt (its
   // visible title, "Card 2 of 10"), and the score at the end.
-  const said =
-    lesson.kind === 'feedback'
-      ? lesson.right
-        ? t('flash-right-sr', {
-            note: answerName(lesson.answer),
-            defaultValue: 'Right: {{note}}.',
-          })
-        : line
-      : lesson.kind === 'asking'
-        ? session.announce
-          ? title
-          : ''
-        : inSession
-          ? ''
-          : line;
+  const said: ReactNode =
+    lesson.kind === 'feedback' ? (
+      lesson.right ? (
+        t('flash-right-sr', {
+          note: answerName(lesson.answer),
+          defaultValue: 'Right: {{note}}.',
+        })
+      ) : (
+        <SaidParts parts={missParts} />
+      )
+    ) : lesson.kind === 'asking' ? (
+      session.announce ? (
+        title
+      ) : (
+        ''
+      )
+    ) : inSession ? (
+      ''
+    ) : typeof line === 'string' ? (
+      line
+    ) : (
+      ''
+    );
 
   const correctLetter = lesson.kind === 'feedback' ? noteLetter(lesson.cards[lesson.index].midi) : null;
   const givenLetter = lesson.kind === 'feedback' && lesson.answer.kind === 'letter' ? lesson.answer.letter : null;
@@ -371,12 +464,19 @@ export function FlashcardSession({
 
   return (
     <SessionFrame className="rmm-flash space-y-4">
+      <PracticeModeToggle />
       <SessionSheet
         session={session}
         title={title}
         question={
           card ? (
-            <StaffCard card={card} octaveClef={octaveClef} range={lowCard ? 'low' : 'deck'} state={cardState} />
+            <StaffCard
+              card={card}
+              octaveClef={octaveClef}
+              range={lowCard ? 'low' : 'deck'}
+              state={cardState}
+              played={miss?.midi}
+            />
           ) : (
             <div aria-hidden="true" className={STAFF_BOX}>
               <div className={cn(lowCard ? STAFF_LOW_ASPECT : 'aspect-[200/102]', 'w-full')} />
@@ -387,6 +487,7 @@ export function FlashcardSession({
         line={line}
         lineKey={lineKey}
         said={said}
+        retry={lesson.kind === 'feedback' && !lesson.right && getPracticeMode() === 'learning'}
       />
       <div ref={session.answersBox} className="rmm-flash__answers">
         {answers}

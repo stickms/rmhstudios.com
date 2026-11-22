@@ -61,13 +61,57 @@ const NULLABLE: Record<string, string> = {
   // s07-17 build-screenshots
   thumbnailAlt: 'string | null',
 
+  // Sprint 08
+  // s08-02 api-tournaments
+  gameTitle: 'string | null',
+  swissRounds: 'number | null',
+  startsAt: 'string | null',
+  checkInMinutes: 'number | null',
+  checkInOpensAt: 'string | null',
+  matchDeadlineHours: 'number | null',
+  startedAt: 'string | null',
+  completedAt: 'string | null',
+  playerA: '{ entrantId: string; seed: number | null; handle: string; name: string } | null',
+  playerB: '{ entrantId: string; seed: number | null; handle: string; name: string } | null',
+  seed: 'number | null',
+  placement: 'number | null',
+  winnerEntrantId: 'string | null',
+  resultSource: 'string | null',
+  scheduledAt: 'string | null',
+  deadlineAt: 'string | null',
+  claim: "{ state: 'open' | 'disputed'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null",
+  nextMatch: '{ id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: \'open\' | \'disputed\'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null } | null',
+
+  // s08-03 api-scheduled
+  held: "'community_sanction' | 'image_descriptions' | null",
+  postId: 'string | null',
+
+  // s08-14 api-search
+  bio: 'string | null',
+  location: 'string | null',
+  website: 'string | null',
+
+  // s08-15 card-images
+  frontImage: '{ url: string; alt: string } | null',
+  backImage: '{ url: string; alt: string } | null',
+
+};
+
+const SCHEDULED_ROW_FIELDS: Record<string, string> = {
+  scheduledAt: 'string | null',
+  poll: 'Record<string, unknown> | null',
 };
 
 function tsOf(v: unknown, k = ''): string {
   if (v === null) return NULLABLE[k] ?? 'unknown';
   if (Array.isArray(v)) return v.length ? `${tsOf(v[0])}[]` : 'unknown[]';
   if (typeof v === 'object') {
-    const entries = Object.entries(v as Json).map(([k, x]) => `${key(k)}: ${tsOf(x, k)}`);
+    // A drafts/scheduled row (s08-03): `scheduledAt` is null on a draft and `poll` is the stored payload, not a post's poll.
+    const row = 'held' in (v as Json) && 'postId' in (v as Json) && 'kind' in (v as Json);
+    const entries = Object.entries(v as Json).map(([k, x]) => {
+      const over = row ? SCHEDULED_ROW_FIELDS[k] : undefined;
+      return `${key(k)}: ${over ?? tsOf(x, k)}`;
+    });
     return entries.length ? `{ ${entries.join('; ')} }` : 'Record<string, unknown>';
   }
   return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'

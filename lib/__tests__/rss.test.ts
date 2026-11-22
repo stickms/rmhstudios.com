@@ -76,3 +76,27 @@ describe('renderRssFeed', () => {
     expect(xml).toContain('<enclosure url="https://rmhstudios.com/cover.jpg"');
   });
 });
+
+describe('renderRssFeed control characters', () => {
+  it('drops characters XML 1.0 forbids from titles and descriptions', () => {
+    const xml = renderRssFeed({
+      title: 'T\u0000itle',
+      link: 'https://rmhstudios.com/x',
+      feedUrl: 'https://rmhstudios.com/x/rss.xml',
+      description: 'd',
+      items: [
+        {
+          title: 'a\u0001b',
+          link: 'https://rmhstudios.com/x/1',
+          guid: 'https://rmhstudios.com/x/1',
+          description: 'c\u0008d\u001Fe',
+        },
+      ],
+    });
+    // eslint-disable-next-line no-control-regex
+    expect(xml).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    expect(xml).toContain('<title>Title</title>');
+    expect(xml).toContain('<title>ab</title>');
+    expect(xml).toContain('<![CDATA[cde]]>');
+  });
+});

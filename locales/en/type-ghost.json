@@ -1,0 +1,15 @@
+{
+  "ahead-of-best": "Ahead of your best by {{seconds}} s",
+  "behind-best": "Behind by {{seconds}} s",
+  "clear-button": "Clear my ghosts",
+  "clear-confirm": "Clear ghosts",
+  "clear-description": "Your runs and best scores stay. The next attempt on a passage has no second caret until you set a new best.",
+  "clear-failed": "Could not clear your ghosts",
+  "clear-title": "Clear all your ghosts?",
+  "cleared": "Ghosts cleared",
+  "racing-note": "Racing your best of {{wpm}} WPM",
+  "section-body": "Your best run on each passage is kept as a pace curve so you can race it. It holds positions only, not what you typed.",
+  "section-title": "Ghosts",
+  "switch-hint": "Show a second caret that types at the pace of your best run on the passage.",
+  "switch-label": "Race my best"
+}

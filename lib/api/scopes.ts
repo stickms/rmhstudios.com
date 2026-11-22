@@ -199,6 +199,45 @@ export const SCOPES: ScopeDetail[] = [
     group: 'Reading',
     description: 'Edit, publish, unpublish and delete your highlights and notes, and edit your shelves.',
   },
+
+  // Sprint 08
+  // s08-02 api-tournaments
+  {
+    id: 'read:tournaments',
+    action: 'read',
+    group: 'Tournaments',
+    description: 'Read public tournaments and brackets, and your own entries and matches.',
+  },
+  {
+    id: 'write:tournaments',
+    action: 'write',
+    group: 'Tournaments',
+    description:
+      'Check yourself in and report, confirm or withdraw your match results. Never registers or moves coins.',
+  },
+
+  // s08-03 api-scheduled
+  {
+    id: 'read:scheduled',
+    action: 'read',
+    group: 'Scheduled',
+    description: 'Read your drafts, scheduled posts and time capsules.',
+  },
+  {
+    id: 'write:scheduled',
+    action: 'write',
+    group: 'Scheduled',
+    description:
+      'Save, change, discard and publish your drafts and scheduled posts. Community posts also need write:communities; time capsules are never changed.',
+  },
+
+  // s08-14 api-search
+  {
+    id: 'read:search',
+    action: 'read',
+    group: 'Search',
+    description: 'Search public posts and people by keyword. Each search counts as 3 requests against the daily quota.',
+  },
 ];
 
 export const ALL_SCOPES: string[] = SCOPES.map((s) => s.id);

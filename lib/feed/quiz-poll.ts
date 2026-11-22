@@ -194,6 +194,7 @@ export const QUIZ_NEVER_PATHS: Readonly<Record<string, string>> = {
   'app/routes/_site/u/$userid/post/$postid.tsx': 'head() reads only the poll question',
   'app/routes/embed.post.$id.tsx': 'the embed shows the post text, no poll body and no answer',
   'lib/rss.ts': 'feeds carry post text, never an answer',
+  'lib/feed/rss-community.server.ts': 'a community feed item shows the question and the option texts, never an answer',
   'lib/feed-sse.ts': 'live events carry no poll answer; a client re-reads through a mapper',
   'lib/scheduled/list.server.ts': 'the scheduled list shows the question to its author, never the answer',
   'lib/feed/poll-lifecycle.server.ts': 'poll-ended notices name the leading option, never the correct one',

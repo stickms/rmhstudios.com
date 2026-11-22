@@ -11,6 +11,8 @@ import { ACTIVE_REVIEW_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/c
 import { LEECH_RESET, NEW_PER_SESSION, SESSION_MAX, type QueueCard, type SuspendReason } from '@/lib/study/queue';
 import type { ReviewQueueRes } from '@/lib/study/queue.contract';
 
+import { CARD_IMAGE_SELECT, picturesOfRow } from '@/lib/study/card-images';
+
 const EXPORT_CAP = 50_000;
 
 const cardSelect = {
@@ -21,6 +23,11 @@ const cardSelect = {
   sourceId: true,
   clozeIndex: true,
   deckId: true,
+  ...CARD_IMAGE_SELECT,
+  // A generated card shows its source's pictures; the siblings hold none of their own.
+  source: {
+    select: CARD_IMAGE_SELECT,
+  },
   deck: {
     select: {
       title: true,
@@ -42,6 +49,21 @@ function toQueueCard(c: CardRow): QueueCard {
     sourceId: c.sourceId,
     deckId: c.deckId,
     deckTitle: c.deck.title,
+    ...(() => {
+      const pictures = picturesOfRow(c, c.source);
+      return {
+        ...(pictures.frontImage
+          ? {
+              frontImage: pictures.frontImage,
+            }
+          : {}),
+        ...(pictures.backImage
+          ? {
+              backImage: pictures.backImage,
+            }
+          : {}),
+      };
+    })(),
   };
 }
 

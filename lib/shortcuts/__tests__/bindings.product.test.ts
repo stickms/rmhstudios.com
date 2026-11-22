@@ -89,7 +89,7 @@ describe('overrides', () => {
 describe('validateOverride', () => {
   it('accepts a free key and a free sequence', () => {
     expect(validateOverride('site.compose', ['n'], SITE_SHORTCUTS)).toEqual({ ok: true });
-    expect(validateOverride('site.compose', ['x', 'y'], SITE_SHORTCUTS)).toEqual({ ok: true });
+    expect(validateOverride('site.compose', ['q', 'y'], SITE_SHORTCUTS)).toEqual({ ok: true });
     expect(validateOverride('site.compose', ['c'], SITE_SHORTCUTS)).toEqual({ ok: true });
   });
 
@@ -105,9 +105,9 @@ describe('validateOverride', () => {
   });
 
   it('judges a clash against the keys the others have now', () => {
-    const moved = applyOverrides(SITE_SHORTCUTS, { 'site.search': ['x'] });
+    const moved = applyOverrides(SITE_SHORTCUTS, { 'site.search': ['q'] });
     expect(validateOverride('site.compose', ['/'], moved)).toEqual({ ok: true });
-    expect(validateOverride('site.compose', ['x'], moved)).toMatchObject({
+    expect(validateOverride('site.compose', ['q'], moved)).toMatchObject({
       ok: false,
       reason: 'conflict',
     });
@@ -142,7 +142,7 @@ describe('validateOverride', () => {
 
   it('keeps the palette to one keystroke', () => {
     expect(validateOverride('site.palette', ['mod+j'], SITE_SHORTCUTS)).toEqual({ ok: true });
-    expect(validateOverride('site.palette', ['x', 'y'], SITE_SHORTCUTS)).toEqual({
+    expect(validateOverride('site.palette', ['q', 'y'], SITE_SHORTCUTS)).toEqual({
       ok: false,
       reason: 'grammar',
     });
@@ -151,7 +151,7 @@ describe('validateOverride', () => {
 
 describe('validateOverrides and sanitizePrefs', () => {
   it('validates a whole map against itself', () => {
-    expect(validateOverrides({ 'site.compose': ['n'], 'site.search': ['x'] }, SITE_SHORTCUTS)).toEqual({ ok: true });
+    expect(validateOverrides({ 'site.compose': ['n'], 'site.search': ['q'] }, SITE_SHORTCUTS)).toEqual({ ok: true });
     const clash = validateOverrides({ 'site.compose': ['n'], 'site.search': ['n'] }, SITE_SHORTCUTS);
     expect(clash).toMatchObject({ ok: false, error: { reason: 'conflict' } });
   });

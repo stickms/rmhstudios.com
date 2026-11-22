@@ -15,6 +15,8 @@ export const submitDreamRiftScoreApi = endpoint<{
     success: true;
     linked?: true;
     created?: true;
+    /** False when the run was assisted: it never reached the board. */
+    ranked: boolean;
   };
 }>()({
   method: 'POST',

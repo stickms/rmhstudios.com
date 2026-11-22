@@ -58,10 +58,11 @@ import {
   type SoundStatus,
 } from '@/lib/rmhmusic/learn/audio/voice';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import { buildEarSession, earReviews, msSinceHeard } from '@/lib/rmhmusic/learn/ear-review';
+import { getPracticeMode } from '@/lib/rmhmusic/learn/practice-mode';
 import {
   EAR_QUESTIONS,
   createEarMachine,
-  dealQuestions,
   earKind,
   earPool,
   type Answer,
@@ -79,7 +80,8 @@ import { EarSoundRow, soundProblem } from './EarSoundRow';
 import { fallbackLine, useFallbackNotice } from './useSoundNotice';
 import { LessonResult } from './LessonParts';
 import { qualityName } from './PlayChordLesson';
-import { SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
+import { PracticeModeToggle, usePracticeMode } from './PracticeModeToggle';
+import { SaidParts, SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
 
 type Extra =
   | {
@@ -105,7 +107,16 @@ export function EarLesson({
   const lessonDef = getLesson(lessonId);
   const kind = earKind(lessonDef);
   const pool = earPool(lessonDef);
-  const [questions] = useState(() => dealQuestions(kind, pool, EAR_QUESTIONS, Math.random));
+  const [questions] = useState(() => {
+    // The learner's due and weak names first, when their cards have already loaded (the home
+    // loads them); otherwise the plain, evenly spread deal.
+    const { cards, cardsStatus } = useLearnStore.getState();
+    return buildEarSession(kind, pool, cardsStatus === 'ready' ? cards : [], Date.now(), EAR_QUESTIONS, Math.random);
+  });
+  const mode = usePracticeMode();
+  // When the sound of the current question started, and how long its first answer took.
+  const heardAt = useRef<number | null>(null);
+  const firstMs = useRef<Record<number, number | null>>({});
   // The lesson is rendered only once the store has loaded in the browser (never on the server), so
   // the audio state can be read at once: the sound row is right from its first paint.
   const [status, setStatus] = useState<SoundStatus>(soundStatus);
@@ -143,8 +154,25 @@ export function EarLesson({
   );
 
   const session = useQuestionSession<Question, Answer, State, Extra, Effect>({
-    machine: () => createEarMachine(questions),
-    save: (fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score),
+    machine: () => createEarMachine(questions, () => getPracticeMode() === 'learning'),
+    save: async (fx, answered) => {
+      const outcome = await useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score);
+      // The reviews follow the lesson's own save and never change its outcome: a failed
+      // post just leaves the schedule as it was.
+      if (outcome === 'saved') {
+        try {
+          const reviews = earReviews(questions, answered, firstMs.current);
+          if (reviews.length > 0)
+            void useLearnStore
+              .getState()
+              .saveReviews(reviews)
+              .catch(() => {});
+        } catch {
+          // Best effort.
+        }
+      }
+      return outcome;
+    },
     paused,
     focusFirst: 'button',
     onEffect: (fx) => {
@@ -153,7 +181,27 @@ export function EarLesson({
       if (!playback.start(fx.index, fx.kind, fx.notes)) refresh();
     },
   });
-  const { lesson, total, answer, answerGroup } = session;
+  const { lesson, total, answerGroup } = session;
+  // The clock starts when the sound has been heard (the machine's `played`), once per question: a
+  // retry of the same question (Learning mode) and replays do not restart it.
+  const heardNow = lesson.kind === 'asking' && lesson.heard;
+  const retried = lesson.kind === 'asking' && (lesson.misses ?? 0) > 0;
+  const unheard = lesson.kind === 'asking' && !lesson.heard;
+  useEffect(() => {
+    if (heardNow && !retried) heardAt.current = performance.now();
+    else if (unheard) heardAt.current = null;
+  }, [heardNow, retried, unheard]);
+  const answer = (a: Answer) => {
+    if (
+      !paused &&
+      lesson.kind === 'asking' &&
+      lesson.heard &&
+      (lesson.misses ?? 0) === 0 &&
+      firstMs.current[lesson.index] === undefined
+    )
+      firstMs.current[lesson.index] = msSinceHeard(heardAt.current, performance.now());
+    session.answer(a);
+  };
   const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
   const index = inSession ? lesson.index : -1;
   useEffect(() => {
@@ -288,14 +336,19 @@ export function EarLesson({
   const nameOf = (name: EarName) =>
     kind === 'chord' ? qualityName(t, name as ChordQuality) : intervalName(t, name as IntervalName);
 
-  // The sentence line: the instruction while asking; after a wrong answer what it was; the score.
-  let line = '';
+  // The sentence line: the instruction while asking; after a wrong answer what was answered against
+  // what it was; the score.
+  let line: ReactNode = '';
+  let fallbackText = '';
   let lineKey = 'hint';
   let wrong = false;
+  // The sentences of a wrong answer, one string each (the live region reads them as they are).
+  let missParts: string[] = [];
   if (lesson.kind === 'asking' && fellBack) {
     // Said once, on the question where the lesson fell back to the simple tone.
     lineKey = 'fallback';
-    line = fallbackLine(t, fellBack);
+    fallbackText = fallbackLine(t, fellBack);
+    line = fallbackText;
   } else if (lesson.kind === 'asking') {
     line =
       kind === 'chord'
@@ -306,20 +359,48 @@ export function EarLesson({
             defaultValue: 'Listen, then pick the interval.',
           });
   } else if (lesson.kind === 'feedback') {
-    lineKey = `fb-${lesson.index}`;
+    lineKey = `fb-${lesson.index}-${lesson.misses ?? 0}`;
     if (!lesson.right) {
       wrong = true;
-      const was = nameOf(lesson.cards[lesson.index].answer);
-      line =
+      const rightName = lesson.cards[lesson.index].answer;
+      const givenAnswer = lesson.answer.name;
+      missParts = [
         kind === 'chord'
-          ? t('ear-that-was-chord', {
-              name: was,
-              defaultValue: 'That was the {{name}} chord.',
+          ? t('ear-you-answered-chord', {
+              given: nameOf(givenAnswer),
+              name: nameOf(rightName),
+              defaultValue: 'You answered the {{given}} chord, not the {{name}} chord.',
             })
-          : t('ear-that-was-interval', {
-              name: was,
-              defaultValue: 'That was the {{name}}.',
-            });
+          : t('ear-you-answered-interval', {
+              given: nameOf(givenAnswer),
+              name: nameOf(rightName),
+              defaultValue: 'You answered the {{given}}, not the {{name}}.',
+            }),
+      ];
+      // How far apart, said only where it is plain: intervals are ordered by width, chord
+      // qualities are not a scale.
+      if (kind === 'interval') {
+        const order = INTERVAL_NAMES as readonly string[];
+        const wider = order.indexOf(givenAnswer) > order.indexOf(rightName);
+        missParts.push(
+          wider
+            ? t('ear-miss-wider', {
+                defaultValue: 'Your answer is the wider interval.',
+              })
+            : t('ear-miss-narrower', {
+                defaultValue: 'Your answer is the narrower interval.',
+              }),
+        );
+      }
+      line = (
+        <>
+          {missParts.map((part, i) => (
+            <span key={i} className="block">
+              {part}
+            </span>
+          ))}
+        </>
+      );
     }
   } else {
     lineKey = 'score';
@@ -331,19 +412,25 @@ export function EarLesson({
   }
 
   const problem = soundProblem(t, sound);
-  const said =
-    lesson.kind === 'feedback'
-      ? lesson.right
-        ? t('ear-right-sr', {
-            name: nameOf(lesson.cards[lesson.index].answer),
-            defaultValue: 'Right: {{name}}.',
-          })
-        : line
-      : lesson.kind === 'asking'
-        ? [session.announce ? title : '', problem, fellBack ? line : ''].filter(Boolean).join('. ')
-        : inSession
-          ? ''
-          : line;
+  const said: ReactNode =
+    lesson.kind === 'feedback' ? (
+      lesson.right ? (
+        t('ear-right-sr', {
+          name: nameOf(lesson.cards[lesson.index].answer),
+          defaultValue: 'Right: {{name}}.',
+        })
+      ) : (
+        <SaidParts parts={missParts} />
+      )
+    ) : lesson.kind === 'asking' ? (
+      [session.announce ? title : '', problem, fallbackText].filter(Boolean).join('. ')
+    ) : inSession ? (
+      ''
+    ) : typeof line === 'string' ? (
+      line
+    ) : (
+      ''
+    );
 
   const correctName = lesson.kind === 'feedback' ? lesson.cards[lesson.index].answer : null;
   const givenName = lesson.kind === 'feedback' && wrong ? lesson.answer.name : null;
@@ -426,6 +513,7 @@ export function EarLesson({
 
   return (
     <SessionFrame className="rmm-ear space-y-4">
+      <PracticeModeToggle />
       <SessionSheet
         session={session}
         title={title}
@@ -437,6 +525,7 @@ export function EarLesson({
         line={line}
         lineKey={lineKey}
         said={said}
+        retry={wrong && mode === 'learning'}
       />
       <div ref={session.answersBox} className="rmm-ear__answers">
         {answers}

@@ -340,6 +340,27 @@ function AdminDashboardPage() {
           {/* Sprint 07 admin tools */}
           {/* s07-13 admin-batch-lookup */}
 
+          {/* Sprint 08 admin tools */}
+          {/* s08-08 admin-api-oversight */}
+          <AdminHubCard
+            to="/admin/api-keys"
+            title={t('card-title', { ns: 'admin-api-oversight', defaultValue: 'API keys' })}
+            description={t('card-description', {
+              ns: 'admin-api-oversight',
+              defaultValue: 'Developer keys ranked by use, with error rates. Suspend a key or cap its rate.',
+            })}
+          />
+
+          {/* s08-18 admin-spam-sweep */}
+          <AdminHubCard
+            to="/admin/sweeps"
+            title={t('card-title', { ns: 'admin-spam-sweep', defaultValue: 'Spam sweeps' })}
+            description={t('card-description', {
+              ns: 'admin-spam-sweep',
+              defaultValue: 'Remove a spam account\'s recent posts and replies in one step, and undo it.',
+            })}
+          />
+
         </div>
       </AdminBody>
     </PageLayout>

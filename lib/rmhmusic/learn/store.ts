@@ -19,7 +19,9 @@ import { create } from 'zustand';
 import { createInputHub, type InputHub } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
 import { createFanOut } from './input/fan-out';
-import { createMicInput, type MicFrame } from './input/mic';
+import { createMicInput, setMicSettings, type MicFrame } from './input/mic';
+import { clampMicGain, clampMicGate, isMicHum, type MicHum } from './input/mic-gain';
+import { hydratePracticeMode, isPracticeMode, type PracticeMode } from './practice-mode';
 import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
 import type { LessonProgressRow, Profile } from './progress.server';
@@ -77,6 +79,16 @@ export interface LearnState {
   setSound(sound: InstrumentId | null): Promise<void>;
   /** A singer's range (soprano, alto, tenor, bass). */
   setVoiceRange(range: VoiceRange): Promise<void>;
+  /** Learning or Test mode, saved on the profile (and applied at once). */
+  setPracticeMode(mode: PracticeMode): Promise<void>;
+  /** The microphone's manual input gain, 1 to 16 (applied to the running microphone at once). */
+  setMicGain(gain: number): Promise<void>;
+  /** Automatic microphone sensitivity on or off. */
+  setMicAuto(auto: boolean): Promise<void>;
+  /** The manual cutoff: sound quieter than this level (RMS) is ignored. */
+  setMicGate(gate: number): Promise<void>;
+  /** The mains-hum filter. */
+  setMicHum(hum: MicHum): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(lessonId: string, stars: number, score: number): Promise<CompleteOutcome>;
 
@@ -106,14 +118,18 @@ type BuiltInput = {
 
 let input: BuiltInput | null = null;
 
-/** Listeners for the microphone's input level (RMS, 0..1), fed while the mic runs. */
-const micLevelListeners = new Set<(rms: number) => void>();
+/**
+ * Listeners for the microphone's input level (RMS, 0..1), fed while the mic runs, with the cutoff in
+ * force and the gain applied (both move by themselves in automatic mode).
+ */
+type MicLevelListener = (rms: number, gate: number, gain: number) => void;
+const micLevelListeners = new Set<MicLevelListener>();
 
 /**
  * Hear the microphone's level (about 40 times a second while it is on), for a
  * level meter. Returns a function that removes the listener.
  */
-export function subscribeMicLevel(l: (rms: number) => void): () => void {
+export function subscribeMicLevel(l: MicLevelListener): () => void {
   micLevelListeners.add(l);
   return () => {
     micLevelListeners.delete(l);
@@ -140,8 +156,8 @@ function ensureInput(): BuiltInput | null {
     const midi = createMidiInput();
     const mic = createMicInput({
       onFrame: micFrames.emit,
-      onLevel: (rms) => {
-        for (const l of [...micLevelListeners]) l(rms);
+      onLevel: (rms, gate, gain) => {
+        for (const l of [...micLevelListeners]) l(rms, gate, gain);
       },
     });
     const hub = createInputHub([mic, midi, createKeyboardInput(), screen]);
@@ -240,7 +256,12 @@ const sameProfile = (a: Profile | null, b: Profile | null) =>
     a.latencyMs === b.latencyMs &&
     a.dailyGoal === b.dailyGoal &&
     a.sound === b.sound &&
-    a.voiceRange === b.voiceRange);
+    a.voiceRange === b.voiceRange &&
+    a.practiceMode === b.practiceMode &&
+    a.micGain === b.micGain &&
+    a.micAuto === b.micAuto &&
+    a.micGate === b.micGate &&
+    a.micHum === b.micHum);
 
 const sameList = <T>(a: readonly T[], b: readonly T[]) =>
   a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
@@ -262,6 +283,12 @@ export function project(sync: data.State, prev?: Projection): Projection {
   };
 }
 
+/** The profile's settings that act outside the store: the microphone's gain and the practice mode. */
+function applyProfileSettings(profile: Profile): void {
+  setMicSettings({ auto: profile.micAuto, gain: profile.micGain, gate: profile.micGate, hum: profile.micHum });
+  hydratePracticeMode(profile.practiceMode);
+}
+
 export const useLearnStore = create<LearnState>()((set, get) => {
   /** Callers waiting on an id (a load token, a write, a completion). */
   const waiters = new Map<number, ((outcome?: CompleteOutcome) => void)[]>();
@@ -270,11 +297,15 @@ export const useLearnStore = create<LearnState>()((set, get) => {
   function send(event: data.Event, waiter?: (outcome?: CompleteOutcome) => void): void {
     const current = get();
     const { state, effects } = data.step(current.sync, event);
-    if (state !== current.sync)
+    if (state !== current.sync) {
+      const next = project(state, current);
       set({
         sync: state,
-        ...project(state, current),
+        ...next,
       });
+      // The profile carries two settings that act outside the store: apply them as they change.
+      if (next.profile !== current.profile && next.profile) applyProfileSettings(next.profile);
+    }
     for (const fx of effects) {
       switch (fx.type) {
         case 'fetch':
@@ -454,6 +485,32 @@ export const useLearnStore = create<LearnState>()((set, get) => {
         key: 'voiceRange',
         value: range,
       });
+    },
+    setPracticeMode(mode) {
+      if (!isPracticeMode(mode)) return Promise.resolve();
+      return change({
+        key: 'practiceMode',
+        value: mode,
+      });
+    },
+    setMicGain(gain) {
+      if (typeof gain !== 'number' || !Number.isFinite(gain)) return Promise.resolve();
+      return change({
+        key: 'micGain',
+        value: clampMicGain(gain),
+      });
+    },
+    setMicAuto(auto) {
+      if (typeof auto !== 'boolean') return Promise.resolve();
+      return change({ key: 'micAuto', value: auto });
+    },
+    setMicGate(gate) {
+      if (typeof gate !== 'number' || !Number.isFinite(gate)) return Promise.resolve();
+      return change({ key: 'micGate', value: clampMicGate(gate) });
+    },
+    setMicHum(hum) {
+      if (!isMicHum(hum)) return Promise.resolve();
+      return change({ key: 'micHum', value: hum });
     },
     setLatency(ms) {
       if (!Number.isFinite(ms)) return Promise.resolve();

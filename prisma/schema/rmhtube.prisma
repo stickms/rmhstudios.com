@@ -136,10 +136,27 @@ model RmhTubeUserStats {
   messagesSent          Int      @default(0)
   reactionsUsed         Int      @default(0)
   updatedAt             DateTime @updatedAt
+  /// The member paused recording: the hub counts nothing for them while this is true (re-read at join and every 60 s).
+  paused                Boolean  @default(false)
+  pausedAt              DateTime?
+  /// When the member last cleared their statistics. The hub drops any delta it accumulated before this instant.
+  clearedAt             DateTime?
 
   user User @relation(fields: [userId], references: [id])
 
   @@map("rmhtube_user_stats")
+}
+
+/// Minutes watched per UTC day ("YYYY-MM-DD"), kept 90 days; the member's own figures, never which videos.
+model RmhTubeWatchDay {
+  userId  String
+  day     String
+  minutes Int    @default(0)
+
+  user User @relation("RmhTubeWatchDays", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+  @@map("rmhtube_watch_day")
 }
 
 /// A user's saved, persistent playlist of media (music tracks or videos). The

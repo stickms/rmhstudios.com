@@ -1,4 +1,5 @@
 import { createContext, useContext, useId, useState } from 'react';
+import { usePostAction } from '@/components/feed/feed-nav';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CoveredLine } from '@/components/feed/CoveredLine';
@@ -19,10 +20,13 @@ export const WarningRevealedContext = createContext(false);
  */
 export function ContentWarningCover({
   post,
+  postId,
   children,
   className = '',
 }: {
   post: ContentWarningSubject;
+  /** The feed item's id: lets the `x` key on the focused post reveal or cover it (feed-nav.tsx). */
+  postId?: string;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -31,6 +35,7 @@ export function ContentWarningCover({
   const [revealed, setRevealed] = useState(false);
   const regionId = useId();
   const reasonId = useId();
+  usePostAction(postId, 'reveal', () => setRevealed((v) => !v), applied.coverText);
 
   if (!applied.coverText && !applied.showLabel) return <>{children}</>;
 

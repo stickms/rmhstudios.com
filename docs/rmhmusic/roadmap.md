@@ -2,8 +2,8 @@
 
 > **For LLMs and auditors:** this is the single place for RMH Music (`/rmhmusic`, the beginner
 > piano, guitar and singing programme) status, unfinished work, future features, known gaps and
-> hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-15
-> (Phase 5: more instrument sounds, and voice as a learner instrument). If this file disagrees
+> hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-22
+> (FSRS, Learning/Test mode and the wrong note on the staff; before that Phase 5). If this file disagrees
 > with the code, the code wins; fix this file. Plans live in `docs/superpowers/plans/`.
 
 ## 1. What shipped (in production on `main`)
@@ -29,6 +29,49 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 `onNoteStart`, `onAllStarted`).
 
 ## 2. Recent work
+
+### 2.0000000 Microphone sensitivity: automatic mode, cutoff, gain and hum filter — done
+
+- **Chain** (`input/mic.ts`): source → rumble high-pass (40 Hz) → two mains-hum notches (the mains
+  frequency and its second harmonic; all-pass, i.e. off, by default) → gain → analyser. The level
+  meter, the cutoff and the pitch detector all see that one signal. `detectPitch` is given the cutoff
+  as its `minRms` (it has its own silence gate, default 0.01, which would otherwise drop quiet notes).
+- **Automatic sensitivity** (`input/mic-auto.ts`, on by default, pure and unit-tested): the room's noise
+  floor is tracked from frames with no pitched note (falls fast, rises over ~10 s) and the cutoff sits
+  3x above it (0.002–0.04); while a pitch is found the gain is steered toward a steady level (down
+  quickly, up slowly, never while a note is only dying away, 0.25x–16x). With no note the gain holds, so
+  silence and noise are never amplified, and a steady noise (a fan) only moves the floor, never the gain.
+  A note too quiet to reach the detector at all is the manual gain's job.
+- **Manual**: with automatic off, a gain slider (1x–16x, log) and a cutoff slider (0.002–0.2 RMS, shown
+  in dB, drawn as a line over the live level bar) are the learner's; the hum filter is Off / 50 Hz / 60 Hz.
+- **Stored** on `MusicLearnProfile`: `micAuto`, `micGain`, `micGate`, `micHum` (migrations
+  `20261128010000`, `20261128020000`; a learner who had already raised the gain is moved to manual).
+- **Not built**: a neural noise suppressor (RNNoise is trained on speech and mangles instruments; the
+  browser's own is off on purpose because it bends pitch), source separation (Demucs/Spleeter are far
+  too heavy to run live), Essentia.js (AGPL), CREPE (heavy, adds delay). Basic Pitch (Spotify, Apache-2.0)
+  is the candidate if "check my chord" on the microphone is ever wanted: it hears several notes at once
+  but works in chunks of a couple of seconds.
+
+### 2.000000 FSRS, Learning/Test mode and the wrong note on the staff — done
+
+- **Scheduler:** `srs/schedule.ts` now runs FSRS-6 (`srs/fsrs.ts`, default weights, no optimizer or
+  fuzz; golden values in `fsrs.test.ts` come from the reference implementation). Stored
+  `music_learn_card` rows are read as FSRS memory as they are (stability in days, difficulty 1–10), so
+  there was no migration. Desired retention is fixed at 90%; a missed card returns in 10 minutes; a
+  lapse is a miss on a card whose stability had reached a day.
+- **Grades** come from the FIRST answer only (`srs/grade.ts`): a miss is `again`, a right answer is
+  `easy`/`good`/`hard` by speed (`STAFF_TIMES`, `EAR_TIMES`, `SPRINT_TIMES`).
+- **Items** (`srs/items.ts`): staff cards (`treble:64`), ear (`ear:interval:third`, `ear:chord:minor`)
+  and Sprint (`sprint:note:…`, `sprint:chord:…`) share the one table and the cards API; Practice
+  still deals only staff cards. Ear lessons and Sprint freeplay deal due and weak items first.
+- **Learning / Test mode** (`practice-mode.ts`, device preference, default Learning): Learning keeps
+  a wrong question on screen until it is answered right (`sessionStep(isRight, {learning})`); the
+  miss still grades `again` and scores nothing. Applies to staff flashcards, Practice, ear training
+  and Sprint freeplay. The Daily challenge and any scored run are always Test; Learning Sprint runs
+  save no best. Not applied to the note finder or rhythm lessons.
+- **The wrong note** is drawn on the staff beside the right one (`StaffCard` `played`, `SprintSheet`
+  `played`) with "You played E4, not C4." and the distance in staff steps (`miss.ts`). A letter-only
+  answer (button, computer key, voice) is drawn at the octave nearest the right note.
 
 ### 2.00000 Friends' progress and Share a result (Phase 6, PR C and PR D) — done
 

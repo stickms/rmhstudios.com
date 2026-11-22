@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TrueFalseQuestion } from '@/lib/study/practice-test';
+import { CardPicture } from '@/components/study/CardPicture';
 import { Verdict } from '@/components/study/questions/Verdict';
 
 /** A prompt and a proposed answer; the student says whether the pair is right. */
@@ -26,7 +27,8 @@ export function TrueFalse({
       <legend className="t-label">
         {t('true-false-legend', { defaultValue: 'Is this answer right for this card?' })}
       </legend>
-      <div className="space-y-1 border-y border-site-border py-3">
+      <div className="space-y-2 border-y border-site-border py-3">
+        {question.promptImage && <CardPicture image={question.promptImage} eager />}
         <p className="t-prose whitespace-pre-wrap text-site-text" dir="auto">
           {question.prompt}
         </p>

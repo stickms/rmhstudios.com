@@ -10,6 +10,7 @@ import { useDreamRift } from '@features/dream-rift/engine/store';
 import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
 import { saveHiScore } from '@features/dream-rift/engine/highscore';
 import { RunPanel } from '@/components/arcade/RunPanel';
+import { NotRankedNote } from '@/components/games/assist-run-island';
 import { formatClockSeconds } from '@/lib/core/format';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
@@ -29,6 +30,8 @@ export function ResultScreen({
   const result = useDreamRift((s) => s.result);
   const session = useSession();
   const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  // The server's verdict: false when the run was assisted and so kept off the board.
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const [submitMsg, setSubmitMsg] = useState('');
 
   useEffect(() => {
@@ -58,9 +61,10 @@ export function ResultScreen({
         spellsCaptured: result.spellsCaptured,
       },
     })
-      .then(() => {
+      .then((res) => {
         setSubmitState('done');
-        setSubmitMsg('High score saved to the leaderboard!');
+        setRanked(typeof res?.ranked === 'boolean' ? res.ranked : null);
+        setSubmitMsg(res?.ranked === false ? 'Run saved.' : 'High score saved to the leaderboard!');
       })
       .catch((e: unknown) => {
         setSubmitState('error');
@@ -157,6 +161,7 @@ export function ResultScreen({
           submitState === 'done' ? (
             <div className="rounded-lg border border-emerald-400/40 bg-emerald-500/10 py-2 text-sm text-emerald-200">
               {submitMsg}
+              <NotRankedNote ranked={ranked} className="mt-1 text-xs text-[color:var(--dr-cream-dim)]" />
             </div>
           ) : submitState === 'error' ? (
             <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 py-2 text-sm text-rose-200">

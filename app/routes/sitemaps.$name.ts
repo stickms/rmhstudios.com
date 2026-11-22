@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { parseChunkName } from '@/lib/sitemap';
 import { respondSitemap } from '@/lib/sitemap-serve.server';
 
@@ -10,15 +10,19 @@ import { respondSitemap } from '@/lib/sitemap-serve.server';
  * lives in one tested function.
  */
 
+// A server route answers its own 404: `notFound()` is for the router's render path, and thrown from a
+// server handler it reaches the client as a 500.
+const NOT_FOUND = () => new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+
 export const Route = createFileRoute('/sitemaps/$name')({
   server: {
     handlers: {
       GET: async ({ params, request }) => {
         const parsed = parseChunkName(params.name);
-        if (!parsed) throw notFound();
+        if (!parsed) return NOT_FOUND();
 
         const response = await respondSitemap(request, parsed.section, parsed.chunk);
-        if (!response) throw notFound();
+        if (!response) return NOT_FOUND();
         return response;
       },
     },

@@ -25,6 +25,8 @@ Non-2xx responses use a stable envelope:
 | `code` | `type` | HTTP status |
 | ------ | ------ | ----------- |
 | `account_suspended` | `authorization_error` | `403` |
+| `automod_held` | `invalid_request_error` | `422` |
+| `confirm_on_site` | `conflict_error` | `409` |
 | `conflict` | `conflict_error` | `409` |
 | `feature_not_available` | `authorization_error` | `403` |
 | `forbidden` | `authorization_error` | `403` |
@@ -36,6 +38,7 @@ Non-2xx responses use a stable envelope:
 | `invalid_request` | `invalid_request_error` | `400` |
 | `ip_not_allowed` | `authorization_error` | `403` |
 | `key_expired` | `authentication_error` | `401` |
+| `key_suspended` | `authorization_error` | `403` |
 | `list_private` | `authorization_error` | `403` |
 | `method_not_allowed` | `invalid_request_error` | `405` |
 | `missing_key` | `authentication_error` | `401` |

@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { CARD_KINDS, validateCard } from '@/lib/study/card-types';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX, MAX_DECK_CARDS, MAX_IMPORT_CARDS } from '@/lib/study/limits';
+import { addPictureIssue, cardPicturesShape } from '@/lib/study/card-images-schema';
 
 export const createDeckBody = z.object({
   title: z.string().min(1).max(100),
@@ -28,10 +29,12 @@ const authoredCard = z
     kind: z.enum(CARD_KINDS).optional(),
     front: z.string().trim().min(1).max(CLOZE_TEXT_MAX),
     back: z.string().trim().max(CARD_SIDE_MAX).optional(),
+    ...cardPicturesShape,
   })
   .superRefine((card, ctx) => {
     const checked = validateCard(card);
     if (!checked.ok) ctx.addIssue({ code: 'custom', message: checked.error });
+    addPictureIssue(card, ctx);
   });
 
 /** POST one card to a deck. */
@@ -51,14 +54,25 @@ export const updateDeckBody = z
       b.title !== undefined || b.description !== undefined || b.isPublic !== undefined || b.notifyUpdates !== undefined,
   );
 
-/** PATCH a card: any of its kind and sides; the review history stays. The merged card is checked by the server. */
+/**
+ * PATCH a card: any of its kind, sides and pictures; the review history stays. The merged card is checked by the
+ * server (a picture needs a description; a cloze front takes none). `null` removes a picture.
+ */
 export const updateCardBody = z
   .object({
     kind: z.enum(CARD_KINDS).optional(),
     front: z.string().trim().min(1).max(CLOZE_TEXT_MAX).optional(),
     back: z.string().trim().max(CARD_SIDE_MAX).optional(),
+    ...cardPicturesShape,
   })
-  .refine((b) => b.front !== undefined || b.back !== undefined || b.kind !== undefined);
+  .refine(
+    (b) =>
+      b.front !== undefined ||
+      b.back !== undefined ||
+      b.kind !== undefined ||
+      b.frontImage !== undefined ||
+      b.backImage !== undefined,
+  );
 
 /** POST bulk cards: one import, at most 500 authored cards. */
 export const importCardsBody = z.object({

@@ -374,6 +374,50 @@ html.ios-webkit .steam {
   border-color: transparent;
 }
 
+.stm-access-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stm-kinds-wrap {
+  flex-wrap: wrap;
+}
+.stm-kinds-wrap button {
+  flex: 0 1 auto;
+  min-height: 28px;
+}
+
+@media (pointer: coarse) {
+  .stm-kinds-wrap button {
+    min-height: 44px;
+  }
+}
+
+.stm-access {
+  padding: 4px 16px 0;
+}
+.stm-access h3 {
+  margin: 12px 0 4px;
+  color: var(--stm-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.stm-access ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-access li,
+.stm-access p {
+  margin: 0;
+  padding: 2px 0;
+  color: var(--stm-text);
+  font-size: 13px;
+}
+.stm-access a {
+  color: var(--stm-link);
+}
+
 .stm-list {
   flex: 1;
   min-height: 0;

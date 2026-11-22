@@ -100,9 +100,9 @@ export function ruledLine(i: number, x0: number, x1: number): string {
 }
 
 /** A ledger line at `y`, short and slightly tilted, centred on the note. */
-export function ledgerLine(y: number, n: number): string {
+export function ledgerLine(y: number, n: number, x: number = CARD_NOTE_X): string {
   const t = n % 2 === 0 ? 0.35 : -0.3;
-  return `M ${CARD_NOTE_X - 12} ${f(y + t)} L ${CARD_NOTE_X + 12} ${f(y - t)}`;
+  return `M ${x - 12} ${f(y + t)} L ${x + 12} ${f(y - t)}`;
 }
 
 // ── Calligraphic strokes ─────────────────────────────────────────────────────

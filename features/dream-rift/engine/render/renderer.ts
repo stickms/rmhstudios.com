@@ -27,6 +27,7 @@ import {
   type FairyVariant,
 } from './sprites';
 import type { Surface } from './surface';
+import { BULLET_RING_DASH, CALM_FLASH_CAP } from '../assist-profile';
 import type { BossSheetDef, LoadedSheet, LoadedSpriteAssets, SpriteSheetDef } from '../assets';
 
 const SS = 3;
@@ -93,6 +94,10 @@ export class Renderer {
   private frameScale = 1;
   private cssW = CANVAS_W;
   private cssH = CANVAS_H;
+  /** Assist: calm visuals (no strobe, no additive hit-flash). Set by the session. */
+  calmVisuals = false;
+  /** Assist: colour-safe rings on bullets. Set by the session. */
+  colorSafe = false;
   private flash = 0;
   private flashColor = '#ffffff';
   /** When true, always draw a thin hitbox box on the local player (setting). */
@@ -195,7 +200,7 @@ export class Renderer {
   }
 
   flashScreen(color: string, amount = 0.5): void {
-    this.flash = amount;
+    this.flash = this.calmVisuals ? Math.min(amount, CALM_FLASH_CAP) : amount;
     this.flashColor = color;
   }
 
@@ -286,6 +291,7 @@ export class Renderer {
     this.drawItems(world);
     this.drawShots(world);
     this.drawBullets(world);
+    if (this.colorSafe) this.drawColorSafeRings(world);
     this.drawPlayers(world, localSlot);
     this.drawEffects(world);
     this.drawComments();
@@ -319,6 +325,30 @@ export class Renderer {
   /** Interpolate a coordinate between its previous and current sim-frame value. */
   private lerp(prev: number, cur: number): number {
     return prev + (cur - prev) * this.alpha;
+  }
+
+  /**
+   * Assist (colour-safe): a dashed ring round every live bullet, its pattern set by
+   * the bullet's colour, so a bullet's colour is never the only cue. Only runs
+   * while the assist is on.
+   */
+  private drawColorSafeRings(world: World): void {
+    const ctx = this.ctx;
+    const a = this.alpha;
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    world.bullets.forEach((b: Bullet) => {
+      if (b.dying > 0) return;
+      const ix = b.prevX + (b.x - b.prevX) * a;
+      const iy = b.prevY + (b.y - b.prevY) * a;
+      if (ix < 0 || ix > PLAYFIELD_W || iy < 0 || iy > PLAYFIELD_H) return;
+      ctx.setLineDash(BULLET_RING_DASH[b.color] as number[]);
+      ctx.beginPath();
+      ctx.arc(ix, iy, b.drawRadius * 0.62 + 3, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+    ctx.restore();
   }
 
   private drawBullets(world: World): void {
@@ -426,7 +456,7 @@ export class Renderer {
       const fr = frames[Math.floor(this.time / 140) % frames.length];
       const sc = e.variant === 'sentinel' ? 1.5 : 1.2;
       ctx.save();
-      if (e.hitFlash > 0) {
+      if (e.hitFlash > 0 && !this.calmVisuals) {
         ctx.globalCompositeOperation = 'lighter';
       }
       ctx.drawImage(
@@ -450,7 +480,7 @@ export class Renderer {
     const sheet = this.currentBossSheet ? this.spriteAssets?.bosses[this.currentBossSheet] : undefined;
     ctx.save();
     if (b.introFrames > 0) ctx.globalAlpha = Math.min(1, (180 - b.introFrames) / 60);
-    if (b.hitFlash > 0) ctx.globalCompositeOperation = 'lighter';
+    if (b.hitFlash > 0 && !this.calmVisuals) ctx.globalCompositeOperation = 'lighter';
     if (sheet && sheet.def.frames.length) {
       const idx = sheet.def.frames[Math.floor(this.time / 130) % sheet.def.frames.length];
       // boss cells carry transparent padding, so scale generously

@@ -29,6 +29,23 @@ export interface FakeCard {
   clozeIndex?: number | null;
   originCardId?: string | null;
   originHash?: string | null;
+  frontImageUrl?: string | null;
+  frontImageAlt?: string | null;
+  backImageUrl?: string | null;
+  backImageAlt?: string | null;
+}
+/** A `Media` row, for the pictures on cards (s08-15). */
+export interface FakeMedia {
+  id: string;
+  userId: string;
+  key: string;
+  url: string;
+  /** Absent means a still WebP within the cap, what the flashcard surface stores. */
+  contentType?: string;
+  bytes?: number;
+  status: 'PENDING' | 'ATTACHED';
+  postId?: string | null;
+  attachedAt?: Date | null;
 }
 export interface FakeReview {
   id: string;
@@ -40,6 +57,8 @@ export interface FakeDb {
   decks: FakeDeck[];
   cards: FakeCard[];
   reviews: FakeReview[];
+  /** `Media` rows (only the pictures-on-cards code reads them). */
+  media?: FakeMedia[];
   /** Practice-test results written. */
   results?: Record<string, unknown>[];
   /** Counts every mutating call, so a refused request can be shown to have written nothing. */
@@ -67,7 +86,11 @@ function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
       if (!deck || !matches(db, deck as unknown as Row, want as Row)) return false;
     } else {
       const have = key === 'kind' ? (row.kind ?? 'basic') : (row[key] ?? null);
-      if (want !== null && typeof want === 'object' && 'in' in (want as Row)) {
+      if (want !== null && typeof want === 'object' && 'not' in (want as Row)) {
+        if (have === (want as { not: unknown }).not) return false;
+      } else if (want !== null && typeof want === 'object' && 'lte' in (want as Row)) {
+        if (typeof have !== 'number' || have > (want as { lte: number }).lte) return false;
+      } else if (want !== null && typeof want === 'object' && 'in' in (want as Row)) {
         if (!(want as { in: unknown[] }).in.includes(have)) return false;
       } else if (have !== want) return false;
     }
@@ -81,6 +104,10 @@ const withDefaults = (c: FakeCard): Required<FakeCard> => ({
   clozeIndex: null,
   originCardId: null,
   originHash: null,
+  frontImageUrl: null,
+  frontImageAlt: null,
+  backImageUrl: null,
+  backImageAlt: null,
   ...c,
 });
 
@@ -174,6 +201,14 @@ export function makeStudyPrisma(db: FakeDb) {
       },
       count: async ({ where }: { where: Row }) =>
         db.decks.filter((d) => matches(db, d as unknown as Row, where)).length,
+      /** A deck's cards and their reviews go with it (the foreign keys' cascade). */
+      deleteMany: async ({ where }: { where: Row }) => {
+        const doomed = db.decks.filter((d) => matches(db, d as unknown as Row, where));
+        for (const d of doomed) removeCards(db.cards.filter((c) => c.deckId === d.id).map((c) => c.id));
+        db.decks = db.decks.filter((d) => !doomed.includes(d));
+        if (doomed.length > 0) db.writes++;
+        return { count: doomed.length };
+      },
     },
     flashcard: {
       findFirst: async ({ where }: { where: Row }) => {
@@ -190,6 +225,7 @@ export function makeStudyPrisma(db: FakeDb) {
         cardsOf(where)
           .map((c) => ({
             ...asCard(c),
+            deck: db.decks.find((d) => d.id === c.deckId),
             reviews: db.reviews.filter(
               (r) => r.cardId === c.id && matches(db, r as unknown as Row, select?.reviews?.where),
             ),
@@ -229,6 +265,22 @@ export function makeStudyPrisma(db: FakeDb) {
         return made.map((c) => ({ id: c.id, position: c.position }));
       },
     },
+    media: {
+      updateMany: async ({ where, data }: { where: Row; data: Partial<FakeMedia> }) => {
+        const found = (db.media ??= []).filter((m) => matches(db, m as unknown as Row, where));
+        for (const m of found) Object.assign(m, data);
+        if (found.length > 0) db.writes++;
+        return { count: found.length };
+      },
+      findMany: async ({ where }: { where?: Row }) =>
+        (db.media ??= []).filter((m) => matches(db, m as unknown as Row, where)).map((m) => ({ ...m })),
+      deleteMany: async ({ where }: { where: Row }) => {
+        const doomed = (db.media ??= []).filter((m) => matches(db, m as unknown as Row, where));
+        db.media = (db.media ?? []).filter((m) => !doomed.includes(m));
+        if (doomed.length > 0) db.writes++;
+        return { count: doomed.length };
+      },
+    },
   };
 
   const extras = {
@@ -250,7 +302,12 @@ export function makeStudyPrisma(db: FakeDb) {
     ...extras,
     // A throw rolls back everything the callback wrote, as a real transaction does.
     $transaction: async (fn: (tx: typeof client) => Promise<unknown>) => {
-      const snapshot = structuredClone({ decks: db.decks, cards: db.cards, reviews: db.reviews });
+      const snapshot = structuredClone({
+        decks: db.decks,
+        cards: db.cards,
+        reviews: db.reviews,
+        media: db.media ?? [],
+      });
       try {
         return await fn(client);
       } catch (error) {

@@ -250,6 +250,17 @@ describe('submitGameScore and assisted runs', () => {
     expect(await consumeAssistRun('u1', 'void-breaker')).toBe(false);
   });
 
+  it('keepClaim reads the claim twice; the first clear happens only without it', async () => {
+    h.settings = plain;
+    h.redis.set('assist-run:dream-rift:u1', { at: 1 });
+    expect(await consumeAssistRun('u1', 'dream-rift', { keepClaim: true, settleClaim: true })).toBe(true);
+    expect(await consumeAssistRun('u1', 'dream-rift', { keepClaim: true })).toBe(true);
+    expect(h.redis.has('assist-run:dream-rift:u1')).toBe(true);
+    expect(await consumeAssistRun('u1', 'dream-rift')).toBe(true);
+    expect(h.redis.has('assist-run:dream-rift:u1')).toBe(false);
+    expect(await consumeAssistRun('u1', 'dream-rift', { keepClaim: true })).toBe(false);
+  });
+
   it('treats a run as unranked when the stored settings cannot be read', async () => {
     h.settings = 'throw';
     expect(await consumeAssistRun('u1', 'void-breaker')).toBe(true);

@@ -26,6 +26,10 @@ export interface EditorTheme {
   primary: string;
   accent: string;
   holdTrail: string;
+  /** Lint error ring. */
+  danger: string;
+  /** Lint warning ring. */
+  warning: string;
 }
 
 export function readEditorTheme(element: HTMLElement): EditorTheme {
@@ -41,6 +45,8 @@ export function readEditorTheme(element: HTMLElement): EditorTheme {
     primary: v('--slice-primary', '#2db3f0'),
     accent: v('--slice-accent', '#f4509f'),
     holdTrail: v('--slice-hold-trail', 'rgba(234, 246, 255, 0.5)'),
+    danger: v('--slice-danger', '#f4509f'),
+    warning: v('--slice-warning', '#f5c542'),
   };
 }
 

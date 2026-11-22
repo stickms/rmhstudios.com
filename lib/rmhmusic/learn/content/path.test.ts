@@ -48,6 +48,11 @@ describe('learning path', () => {
       'ear-fifth-octave',
       'ear-major-minor',
       'chord-play-c-major',
+      'scales-major-white',
+      'key-signatures-major',
+      'scales-major-all',
+      'key-signatures-minor',
+      'scales-minor-natural',
       'rhythm-note-values',
       'rhythm-44-vs-34',
       'rhythm-tap-the-beat',
@@ -66,6 +71,22 @@ describe('learning path', () => {
     for (const id of ['rhythm-note-values', 'rhythm-44-vs-34', 'rhythm-tap-the-beat']) {
       expect(getLesson(id)?.mode, id).toBe('rhythm-basics');
       expect(getLesson(id)?.unit, id).toBe('rhythm-basics');
+    }
+  });
+  it('has a Scales and keys unit of five lessons after the chords, in both new modes', () => {
+    const unit = PATH.find((u) => u.id === 'scales-and-keys');
+    expect(unit?.lessons.map((l) => [l.id, l.mode])).toEqual([
+      ['scales-major-white', 'play-scale'],
+      ['key-signatures-major', 'key-signature'],
+      ['scales-major-all', 'play-scale'],
+      ['key-signatures-minor', 'key-signature'],
+      ['scales-minor-natural', 'play-scale'],
+    ]);
+    const at = (id: string) => PATH.findIndex((u) => u.id === id);
+    expect(at('scales-and-keys')).toBe(at('train-your-ear') + 1);
+    for (const l of unit?.lessons ?? []) {
+      expect(l.unit).toBe('scales-and-keys');
+      expect(isPlayable(l), l.id).toBe(true);
     }
   });
   it('wires every available lesson to an activity the lesson screen runs', () => {

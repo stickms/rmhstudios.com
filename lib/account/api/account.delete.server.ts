@@ -70,6 +70,32 @@ export const route = apiRoute('/api/account/delete', {
       });
       await Promise.all(resumeObjects.map(({ storageKey }) => deleteObject(storageKey)));
 
+      // The pronunciation clip is a recording of the member's voice in object
+      // storage. Storage I/O stays out of `anonymizeAccount`, so, as with the
+      // resume files, the object goes here and the key is nulled once it is gone.
+      const plus = await prisma.profilePlus.findUnique({
+        where: { userId },
+        select: { pronunciationKey: true },
+      });
+      if (plus?.pronunciationKey) {
+        // A missing object counts as removed (the storage helpers tolerate it).
+        // Any other storage failure is logged and must not stop the deletion
+        // the member asked for; the key is kept then, so the clip stays findable.
+        const removed = await deleteObject(plus.pronunciationKey).then(
+          () => true,
+          (err) => {
+            console.error('[account] pronunciation clip removal failed:', err);
+            return false;
+          },
+        );
+        if (removed) {
+          await prisma.profilePlus.updateMany({
+            where: { userId },
+            data: { pronunciationKey: null, pronunciationMs: null },
+          });
+        }
+      }
+
       // Schedule rather than erase (B12). The account is signed out and
       // hidden immediately, but the anonymisation runs 30 days later, so a
       // deletion made in anger at 2am is recoverable — by signing back in,

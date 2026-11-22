@@ -133,3 +133,21 @@ model RmhTypeDailyEntry {
   @@index([day, wpm(sort: Desc)])
   @@map("rmhtype_daily_entry")
 }
+
+/// A member's best run on one passage, kept as a coarse progress curve so the next
+/// attempt can race it. Positions only (characters reached per 250 ms) — no key
+/// identities, no errors, nothing a key logger would want. At most 500 per member.
+model RmhTypeGhost {
+  userId    String
+  user      User     @relation("RmhTypeGhosts", fields: [userId], references: [id], onDelete: Cascade)
+  passageId String
+  wpm       Float
+  timeMs    Int
+  samples   Int[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, passageId])
+  @@index([userId, updatedAt])
+  @@map("rmhtype_ghost")
+}

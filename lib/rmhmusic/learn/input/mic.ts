@@ -12,7 +12,9 @@
 import { getAudioContext } from '@/lib/shared/platform';
 import { resumeAudio } from '../audio/resume';
 import { freqToMidi } from '../pitch/notes';
-import { DEFAULT_MIN_RMS, detectPitch } from '../pitch/yin';
+import { detectPitch } from '../pitch/yin';
+import { DEFAULT_MIC_SETTINGS, normalizeMicSettings, type MicHum, type MicSettings } from './mic-gain';
+import { createAutoLevel, type AutoLevel } from './mic-auto';
 import type { InputAdapter, NoteEvent, NoteListener } from './events';
 import { createDeviceRunner } from './device-runner';
 import { createSegmenter, type Segmenter } from './mic-segmenter';
@@ -61,9 +63,67 @@ export function setMicReattack(on: boolean): void {
   reattackOn = on;
 }
 
+/**
+ * The microphone chain's settings (`mic-gain.ts`), read live: a slider moved while the mic runs
+ * changes what it hears at once. The signal goes source → rumble filter → hum notches → gain →
+ * analyser, so the level meter, the cutoff and the pitch detector all see the same cleaned, amplified
+ * signal. With `auto` the level controller (`mic-auto.ts`) owns the gain and the cutoff; otherwise
+ * `gain` and `gate` are used as set.
+ */
+let settings: MicSettings = { ...DEFAULT_MIC_SETTINGS };
+
+interface Chain {
+  gain: GainNode;
+  /** The mains-hum notches (the fundamental and its second harmonic), bypassed when the hum is off. */
+  notches: BiquadFilterNode[];
+  /** Present while `auto` is on. */
+  auto: AutoLevel | null;
+}
+let chain: Chain | null = null;
+
+/** Below the lowest note anyone sings or plays here (a guitar's E2 is 82 Hz): rumble, wind, handling. */
+const RUMBLE_HZ = 40;
+/** Narrow, so the notes next to a hum frequency are barely touched. */
+const NOTCH_Q = 35;
+
+function applyHum(notches: readonly BiquadFilterNode[], hum: MicHum): void {
+  notches.forEach((n, i) => {
+    if (hum === 'off') {
+      // An all-pass leaves the level alone, so "off" costs nothing and the chain keeps its shape.
+      n.type = 'allpass';
+    } else {
+      n.type = 'notch';
+      n.frequency.value = Number(hum) * (i + 1);
+      n.Q.value = NOTCH_Q;
+    }
+  });
+}
+
+function applyChain(c: Chain, was: MicSettings | null): void {
+  if (settings.auto) {
+    // Start the controller from the gain in force, so switching to automatic does not jump.
+    if (!c.auto || !was?.auto) c.auto = createAutoLevel(c.gain.gain.value);
+  } else {
+    c.auto = null;
+    c.gain.gain.value = settings.gain;
+  }
+  applyHum(c.notches, settings.hum);
+}
+
+export function setMicSettings(next: Partial<MicSettings>): void {
+  const was = settings;
+  settings = normalizeMicSettings({ ...settings, ...next });
+  if (chain) applyChain(chain, was);
+}
+
+export function getMicSettings(): MicSettings {
+  return settings;
+}
+
 export function createMicInput(
   opts: {
-    onLevel?: (rms: number) => void;
+    /** Every poll: the level, the cutoff in force (the learner's, or the automatic one) and the gain. */
+    onLevel?: (rms: number, gate: number, gain: number) => void;
     /** Every poll's frame while the mic runs (about 40 a second): the tuner's input. */
     onFrame?: (frame: Readonly<MicFrame>) => void;
   } = {},
@@ -76,6 +136,9 @@ export function createMicInput(
   let timer: ReturnType<typeof setInterval> | null = null;
   let stream: MediaStream | null = null;
   let source: MediaStreamAudioSourceNode | null = null;
+  let rumble: BiquadFilterNode | null = null;
+  let notches: BiquadFilterNode[] = [];
+  let gain: GainNode | null = null;
   let analyser: AnalyserNode | null = null;
   let segmenter: Segmenter | null = null;
 
@@ -84,9 +147,16 @@ export function createMicInput(
     timer = null;
     stream?.getTracks().forEach((t) => t.stop());
     source?.disconnect();
+    rumble?.disconnect();
+    notches.forEach((n) => n.disconnect());
+    gain?.disconnect();
     analyser?.disconnect();
+    if (chain?.gain === gain) chain = null;
     stream = null;
     source = null;
+    rumble = null;
+    notches = [];
+    gain = null;
     analyser = null;
   };
 
@@ -127,7 +197,25 @@ export function createMicInput(
       source = ctx.createMediaStreamSource(media);
       analyser = ctx.createAnalyser();
       analyser.fftSize = fftSizeFor(ctx.sampleRate);
-      source.connect(analyser);
+      // The cleaning and the gain sit before the analyser, so the meter, the cutoff and the pitch
+      // detector all see the same signal (a quiet microphone is raised, not just drawn louder).
+      rumble = ctx.createBiquadFilter();
+      rumble.type = 'highpass';
+      rumble.frequency.value = RUMBLE_HZ;
+      rumble.Q.value = Math.SQRT1_2;
+      notches = [ctx.createBiquadFilter(), ctx.createBiquadFilter()];
+      gain = ctx.createGain();
+      gain.gain.value = settings.gain;
+      source.connect(rumble);
+      let tail: AudioNode = rumble;
+      for (const n of notches) {
+        tail.connect(n);
+        tail = n;
+      }
+      tail.connect(gain);
+      gain.connect(analyser);
+      chain = { gain, notches, auto: null };
+      applyChain(chain, null);
       segmenter = createSegmenter({
         reattack: () => reattackOn,
       });
@@ -155,7 +243,10 @@ export function createMicInput(
         let sumSq = 0;
         for (let i = 0; i < buf.length; i++) sumSq += buf[i] * buf[i];
         const rms = Math.sqrt(sumSq / buf.length);
-        opts.onLevel?.(rms);
+        // The cutoff in force: the automatic one while the controller runs, else the learner's.
+        const live = chain;
+        const gate = live?.auto ? live.auto.gate : settings.gate;
+        opts.onLevel?.(rms, gate, live ? live.gain.gain.value : settings.gain);
 
         heard.time = now;
         heard.rms = rms;
@@ -163,9 +254,10 @@ export function createMicInput(
         heard.clarity = 0;
         // Silence (most frames) skips the detector entirely; a NaN level fails this test too.
         let pitched = false;
-        if (rms >= DEFAULT_MIN_RMS) {
-          // detectPitch only ever returns a finite, positive freq (or null).
-          const pitch = detectPitch(buf, rate);
+        if (rms >= gate) {
+          // detectPitch only ever returns a finite, positive freq (or null). It has its own silence
+          // gate, so it is given ours: left at its default it would drop every note below 0.01.
+          const pitch = detectPitch(buf, rate, { minRms: gate });
           if (pitch) {
             heard.freq = pitch.freq;
             heard.clarity = pitch.clarity;
@@ -176,6 +268,8 @@ export function createMicInput(
             pitched = true;
           }
         }
+        // Steer the automatic gain from this frame (a no-op when it is off).
+        if (live?.auto) live.gain.gain.value = live.auto.step({ rms, pitched }).gain;
         const events = seg.push(pitched ? frame : null, now);
         for (let i = 0; i < events.length; i++) emit(events[i]);
         // The notes first: a frame listener (the tuner) runs after them, and its own bug

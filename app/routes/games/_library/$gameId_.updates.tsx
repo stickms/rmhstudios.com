@@ -1,13 +1,14 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
+import { RssLink } from '@/components/feed/RssLink';
 import { GameUpdates } from '@/components/steam/GameUpdates';
 import { SteamPane } from '@/components/steam/SteamPane';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getFollowState, listPatchNotes, updatesGame } from '@/lib/arcade/updates.server';
 import type { PatchNoteItem } from '@/lib/arcade/updates';
 import type { FollowState } from '@/lib/arcade/updates.contract';
-import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
+import { SITE_URL, buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 import { breadcrumbSchema, jsonLdScript } from '@/lib/schema';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 
@@ -65,7 +66,15 @@ export const Route = createFileRoute('/games/_library/$gameId_/updates')({
         image: ogCardPath('game', params.gameId),
         imageAlt: `${title} on RMH Studios.`,
       }),
-      links: [buildCanonical(path)],
+      links: [
+        buildCanonical(path),
+        {
+          rel: 'alternate',
+          type: 'application/rss+xml',
+          title: `${title} updates — RMH Studios`,
+          href: `${SITE_URL}${path}/rss.xml`,
+        },
+      ],
       scripts: [
         jsonLdScript([
           breadcrumbSchema([
@@ -104,6 +113,10 @@ function UpdatesPage() {
       })}
       backTo={`/games/${data.gameId}`}
     >
+      {/* The games library keeps its own look (L8): the steam shell's muted text, not the site's Steel classes. */}
+      <p className="stm-muted">
+        <RssLink href={`/games/${data.gameId}/updates/rss.xml`} className="inline-flex items-center gap-1.5" />
+      </p>
       <GameUpdates
         gameId={data.gameId}
         signedIn={data.signedIn}

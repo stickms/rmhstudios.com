@@ -258,7 +258,7 @@ describe('isDue', () => {
     // Reviewed while the device clock ran 5000 days ahead: stability 2.2 days,
     // so the stored due is ~T0 + 5002 days.
     const s = review(newCard(T0), 'good', T0 + 5000 * DAY_MS);
-    expect(days(s, s.last!)).toBeCloseTo(2.2, 6);
+    expect(days(s, s.last!)).toBeCloseTo(2, 6);
     expect(s.due).toBeGreaterThan(T0 + 5000 * DAY_MS);
     // The clock is corrected: the card is shown by T0 + 3 days, not ~5000 days later.
     expect(isDue(s, T0)).toBe(true);
@@ -306,7 +306,7 @@ describe('isDue', () => {
 
   it('keeps the exact stored due of a legitimate card', () => {
     const s = review(newCard(T0), 'good', T0);
-    expect(days(s, T0)).toBeCloseTo(2.2, 6);
+    expect(days(s, T0)).toBeCloseTo(2, 6);
     expect(isDue(s, s.due - 1)).toBe(false);
     expect(isDue(s, s.due)).toBe(true);
     const long = review(

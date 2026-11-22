@@ -243,6 +243,34 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
         actor,
         defaultValue: '{{actor}} cancelled a challenge',
       });
+    case 'recurring_created':
+      return t('recurring-created', {
+        ns: 'recurring-threads',
+        actor,
+        name: named,
+        defaultValue: '{{actor}} added the recurring thread {{name}}',
+      });
+    case 'recurring_updated':
+      return t('recurring-updated', {
+        ns: 'recurring-threads',
+        actor,
+        name: named,
+        defaultValue: '{{actor}} changed the recurring thread {{name}}',
+      });
+    case 'recurring_paused':
+      return t('recurring-paused', {
+        ns: 'recurring-threads',
+        actor,
+        name: named,
+        defaultValue: '{{actor}} paused the recurring thread {{name}}',
+      });
+    case 'recurring_deleted':
+      return t('recurring-deleted', {
+        ns: 'recurring-threads',
+        actor,
+        name: named,
+        defaultValue: '{{actor}} deleted the recurring thread {{name}}',
+      });
   }
 }
 

@@ -53,3 +53,20 @@ describe('recipe Discord webhook allowlist', () => {
     expect(DISCORD_WEBHOOK_RE.test('https://169.254.169.254/')).toBe(false);
   });
 });
+
+describe('test-mode tournaments (s08-02)', () => {
+  it('answers the tournament reads with the documented fixture', () => {
+    const r = sandboxResponse('GET', '/api/v1/tournaments/abc/matches', null, id);
+    expect(r?.status).toBe(200);
+    expect(r?.body).toMatchObject({ nextCursor: null });
+  });
+
+  it('acknowledges a write and changes nothing, and refuses the prize-deciding confirm', () => {
+    const ok = sandboxResponse('POST', '/api/v1/tournaments/t/matches/m/claim/confirm', null, id);
+    expect(ok?.status).toBe(200);
+    expect(ok?.body).toMatchObject({ sandbox: true });
+    const refused = sandboxResponse('POST', '/api/v1/tournaments/t/matches/match_test_final/claim/confirm', null, id);
+    expect(refused?.status).toBe(409);
+    expect(refused?.body).toMatchObject({ error: { code: 'confirm_on_site' } });
+  });
+});

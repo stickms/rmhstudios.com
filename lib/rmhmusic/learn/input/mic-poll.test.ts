@@ -5,6 +5,8 @@ import type { NoteEvent } from './events';
 // becomes one note, and stopping leaves no timer and releases the note.
 const signal = vi.hoisted(() => ({
   freq: 0,
+  /** Peak amplitude of the fake tone (its RMS is about 0.7 of this). */
+  amp: 0.4,
 }));
 const ctx = vi.hoisted(() => ({
   state: 'running',
@@ -14,12 +16,24 @@ const ctx = vi.hoisted(() => ({
     connect: () => {},
     disconnect: () => {},
   }),
+  createBiquadFilter: () => ({
+    type: 'lowpass',
+    frequency: { value: 350 },
+    Q: { value: 1 },
+    connect: () => {},
+    disconnect: () => {},
+  }),
+  createGain: () => ({
+    gain: { value: 1 },
+    connect: () => {},
+    disconnect: () => {},
+  }),
   createAnalyser: () => ({
     fftSize: 0,
     disconnect: () => {},
     getFloatTimeDomainData: (buf: Float32Array) => {
       for (let i = 0; i < buf.length; i++) {
-        buf[i] = signal.freq ? 0.4 * Math.sin((2 * Math.PI * signal.freq * i) / 48000) : 0;
+        buf[i] = signal.freq ? signal.amp * Math.sin((2 * Math.PI * signal.freq * i) / 48000) : 0;
       }
     },
   }),
@@ -41,12 +55,13 @@ vi.mock('../pitch/yin', async (orig) => {
   };
 });
 
-import { createMicInput } from './mic';
+import { createMicInput, setMicSettings } from './mic';
 
 describe('mic poll', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     signal.freq = 0;
+    signal.amp = 0.4;
     detect.calls = 0;
     const track = {
       stop: vi.fn(),
@@ -140,5 +155,54 @@ describe('mic poll', () => {
     expect(calls).toBe(10);
     expect(got.map((e) => [e.type, e.midi])).toEqual([['on', 69]]);
     mic.stop();
+  });
+
+  describe('the cutoff', () => {
+    afterEach(() => setMicSettings({ auto: true, gain: 1, gate: 0.01, hum: 'off' }));
+
+    it('keeps sound below the cutoff away from the detector, and hears it once the cutoff is lowered', async () => {
+      setMicSettings({ auto: false, gate: 0.05 });
+      signal.freq = 440;
+      signal.amp = 0.05; // RMS about 0.035: under 0.05
+      const got: NoteEvent[] = [];
+      const levels: [number, number][] = [];
+      const mic = createMicInput({ onLevel: (rms, gate) => levels.push([rms, gate]) });
+      mic.subscribe((e) => got.push(e));
+      await mic.start();
+      await vi.advanceTimersByTimeAsync(250);
+      expect(detect.calls).toBe(0);
+      expect(got).toEqual([]);
+      expect(levels.every(([, gate]) => gate === 0.05)).toBe(true);
+      setMicSettings({ gate: 0.01 });
+      await vi.advanceTimersByTimeAsync(250);
+      expect(detect.calls).toBeGreaterThan(0);
+      expect(got.map((e) => [e.type, e.midi])).toEqual([['on', 69]]);
+      mic.stop();
+    });
+
+    it('hears a note quieter than the old fixed 0.01 floor, because the detector is given the cutoff too', async () => {
+      setMicSettings({ auto: false, gate: 0.002 });
+      signal.freq = 440;
+      signal.amp = 0.012; // RMS about 0.0085
+      const got: NoteEvent[] = [];
+      const mic = createMicInput();
+      mic.subscribe((e) => got.push(e));
+      await mic.start();
+      await vi.advanceTimersByTimeAsync(250);
+      expect(got.map((e) => [e.type, e.midi])).toEqual([['on', 69]]);
+      mic.stop();
+    });
+
+    it('in automatic mode learns the room from silence and reports the cutoff and gain it uses', async () => {
+      setMicSettings({ auto: true });
+      const seen: [number, number][] = [];
+      const mic = createMicInput({ onLevel: (_rms, gate, gain) => seen.push([gate, gain]) });
+      await mic.start();
+      await vi.advanceTimersByTimeAsync(500);
+      const [gate, gain] = seen[seen.length - 1]!;
+      expect(gate).toBe(0.002); // a silent room: the lowest automatic cutoff
+      expect(gain).toBe(1); // nothing sounded, so the gain held
+      mic.stop();
+    });
   });
 });

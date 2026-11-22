@@ -20,6 +20,7 @@ import { TournamentError } from './tournament-error';
 import { orderForStart } from './seeding.server';
 import { ratingSeedingAvailable, type SeedingMethod } from './seeding';
 import { randomUUID } from 'node:crypto';
+import { emitMatchSettled } from '@/lib/webhooks/activity-emit.server';
 import { stampDeadline, stampTournamentDeadlines } from './deadline.server';
 import { isDeadlineHours } from './scheduling';
 
@@ -561,7 +562,7 @@ export async function settleMatch(
     if (!match || match.tournamentId !== opts.tournamentId) {
       throw new TournamentError('Match not found', 'NOT_FOUND', 404);
     }
-    if (match.state === 'COMPLETE') return { settled: false, isFinal: false, swiss: false };
+    if (match.state === 'COMPLETE') return { settled: false, isFinal: false, swiss: false, round: 0, loserId: null, at: null };
     if (match.state === 'CANCELLED') throw matchCancelledError();
     const validEntrants = [match.entrantAId, match.entrantBId].filter(Boolean) as string[];
     if (!validEntrants.includes(opts.winnerEntrantId)) {
@@ -575,6 +576,7 @@ export async function settleMatch(
     if (tournament?.status !== 'LIVE') {
       throw new TournamentError('Tournament is not live', 'NOT_LIVE', 409);
     }
+    const settledAt = new Date();
     const swiss = tournament.format === 'SWISS';
     const double = tournament.format === 'DOUBLE_ELIM';
     // Double elimination: the winners champion's first grand-final loss is not an
@@ -594,13 +596,13 @@ export async function settleMatch(
         winnerEntrantId: opts.winnerEntrantId,
         state: 'COMPLETE',
         resultSource: opts.source.slice(0, 24),
-        completedAt: new Date(),
+        completedAt: settledAt,
         // s07-06: a settled match ignores scheduling; a live proposal goes with it.
         proposedAt: null,
         proposedById: null,
       },
     });
-    if (claimed.count === 0) return { settled: false, isFinal: false, swiss: false };
+    if (claimed.count === 0) return { settled: false, isFinal: false, swiss: false, round: 0, loserId: null, at: null };
     if (opts.inTx) await opts.inTx(tx);
     await tx.tournamentEntrant.update({
       where: { id: opts.winnerEntrantId },
@@ -634,8 +636,21 @@ export async function settleMatch(
       await stampDeadline(tx, reset.id);
     }
     const isFinal = match.nextMatchId == null && !resetFollows;
-    return { settled: true, isFinal, swiss };
+    return { settled: true, isFinal, swiss, round: match.round, loserId, at: settledAt };
   });
+
+  // After the settle committed (a rolled-back settle never gets here): one `tournament.match_settled` per
+  // player, to that player's own endpoints. A bye has no loser and emits nothing. Never throws.
+  if (outcome.settled && outcome.at) {
+    await emitMatchSettled(db, {
+      tournamentId: opts.tournamentId,
+      matchId: opts.matchId,
+      round: outcome.round,
+      winnerEntrantId: opts.winnerEntrantId,
+      loserEntrantId: outcome.loserId,
+      settledAt: outcome.at,
+    });
+  }
 
   let tournamentComplete = false;
   if (outcome.settled && outcome.swiss) {

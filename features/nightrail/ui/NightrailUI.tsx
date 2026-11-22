@@ -40,6 +40,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TrickSubmit } from './TrickSubmit';
+import { AssistStartNotice, NotRankedNote, parseRanked } from '@/components/games/assist-run-island';
+import { AssistSettingsLink } from './assist-ui';
 import { useSession } from '@/components/session/session-context';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
@@ -139,6 +141,8 @@ export function NightrailUI({
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const lbArrival = useArrival(leaderboard.length > 0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  // The server's verdict on the run: false when it was assisted and so kept off the board.
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   // A ref, not the state flag, guards the POST: state updates are async, and
   // two effect runs in the same tick would both read `false` and double-submit.
@@ -189,6 +193,7 @@ export function NightrailUI({
           if (e instanceof HttpError) return null;
           throw e;
         });
+        setRanked(parseRanked(body));
         void takeScoreMoment(body);
         void fetchLeaderboard();
       } catch {
@@ -201,6 +206,7 @@ export function NightrailUI({
     if (uiState === 'playing') {
       submitting.current = false;
       setScoreSubmitted(false);
+      setRanked(null);
       clearScoreMoment();
     }
   }, [uiState, clearScoreMoment]);
@@ -317,6 +323,10 @@ export function NightrailUI({
             </p>
             <p className="sm:hidden">
               {t('touch-controls-hint', { defaultValue: 'Touch controls appear during the run' })}
+            </p>
+            <AssistStartNotice signedIn={signedIn} className="text-center text-xs text-slate-300" />
+            <p>
+              <AssistSettingsLink />
             </p>
           </div>
         </div>
@@ -527,6 +537,8 @@ export function NightrailUI({
             </Button>
           )}
 
+          <NotRankedNote ranked={ranked} className="text-center text-xs text-amber-300" />
+
           {signedIn && scoreSubmitted ? <TrickSubmit runStats={runStats} /> : null}
 
           <div className="flex gap-2">
@@ -660,6 +672,8 @@ export function NightrailUI({
               {t('sign-in-to-submit', { defaultValue: 'Sign In to Submit Score' })}
             </Button>
           )}
+
+          <NotRankedNote ranked={ranked} className="text-center text-xs text-amber-300" />
 
           {signedIn && scoreSubmitted ? <TrickSubmit runStats={runStats} /> : null}
 

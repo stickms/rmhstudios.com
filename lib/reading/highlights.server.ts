@@ -21,6 +21,7 @@ import { cached, invalidateCached } from '@/lib/cached.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { getBook } from '@/lib/library/library.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
+import { emitHighlightCreated } from '@/lib/webhooks/activity-emit.server';
 import { MIN_READERS_TO_SHOW, type PassageRef } from './passages';
 import {
   MAX_HIGHLIGHTS_PER_DOC,
@@ -306,6 +307,13 @@ export async function createHighlight(userId: string, input: NewHighlight): Prom
     return created;
   });
   invalidateDoc(input.kind, input.key);
+  // After commit; the payload names the document and the highlight, never its text or note.
+  await emitHighlightCreated(userId, {
+    highlightId: row.id,
+    docKind: input.kind,
+    docKey: input.key,
+    createdAt: row.createdAt,
+  });
   return { ok: true, highlight: toView(row) };
 }
 

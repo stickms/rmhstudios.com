@@ -20,6 +20,8 @@ const ROUTED: Record<LessonMode, true> = {
   'ear-chord': true,
   'play-chord': true,
   'sing-interval': true,
+  'play-scale': true,
+  'key-signature': true,
 };
 
 /** The modes `LessonScreen` has an activity for. */

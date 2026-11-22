@@ -9,6 +9,7 @@ import { useDreamRift } from '@features/dream-rift/engine/store';
 import { BIND_ACTIONS, BIND_LABELS, DEFAULT_BINDINGS, keyLabel, normalizeKey, rebind, type BindAction } from '@features/dream-rift/engine/keybinds';
 import { useRuntime } from './runtime';
 import { Switch } from '@/components/ui/switch';
+import { AssistSettingsLink } from './assist-ui';
 
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
     const { music, sfx, input } = useRuntime();
@@ -57,6 +58,9 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
                     <h3 className="dr-serif mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--dr-gold-soft)]">Gameplay</h3>
                     <Toggle label="Always show hitbox" checked={showHitbox} onChange={setShowHitbox} />
                     <p className="mt-1 text-xs text-[color:var(--dr-cream-faint)]">Draws a thin box around your true hitbox at all times (not just while focusing).</p>
+                    <p className="mt-3">
+                        <AssistSettingsLink />
+                    </p>
                 </section>
 
                 {/* Controls */}

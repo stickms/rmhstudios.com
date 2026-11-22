@@ -8,6 +8,7 @@ import { hasApiImageUpload } from '@/lib/entitlements';
 import { keyedLimit, checkDailyUploadQuota } from '@/lib/media/quota.server';
 import { optimizeImage } from '@/lib/image-optimize';
 import { detectImageExt } from '@features/slice-it/engine/upload-validation';
+import { ingest, IngestError } from '@/lib/media/ingest.server';
 
 const MAX_DIMENSION = 2048;
 const WEBP_QUALITY = 82;
@@ -84,6 +85,30 @@ export const Route = createFileRoute('/api/v1/images')({
                 `Image too large. Maximum size is ${MEDIA_MAX_BYTES / 1024 / 1024} MB.`,
                 400,
               );
+            }
+
+            // `surface=flashcard` stores the picture through the flashcard ingest policy (JPEG, PNG or WebP, 5 MB,
+            // metadata stripped) so it can be set on a card side as `{ media_id, alt }`. The quota above was
+            // already drawn down, so the policy's own allowance check is not repeated here.
+            const surface = form.get('surface');
+            if (surface !== null && surface !== 'flashcard') {
+              return error('invalid_request', 'Unknown `surface`. The only value is `flashcard`.', 400);
+            }
+            if (surface === 'flashcard') {
+              try {
+                const stored = await ingest(file, 'flashcard', { userId, record: true });
+                return json(
+                  {
+                    id: stored.mediaId,
+                    type: 'image',
+                    expires_at: stored.expiresAt?.toISOString() ?? null,
+                  },
+                  201,
+                );
+              } catch (err) {
+                if (err instanceof IngestError) return error('invalid_request', err.message, 400);
+                throw err;
+              }
             }
 
             const rawBuffer = Buffer.from(await file.arrayBuffer());

@@ -99,6 +99,8 @@ vi.mock('@/lib/notifications.server', () => ({
     });
   },
 }));
+const emitted = vi.hoisted(() => ({ release: vi.fn(async () => {}) }));
+vi.mock('@/lib/webhooks/activity-emit.server', () => ({ emitBuildReleased: emitted.release }));
 vi.mock('@/lib/shop/catalog', () => ({ getShopItem: () => null }));
 vi.mock('@/lib/listings/listings.server', () => ({ lowestCosmeticPrice: async () => null }));
 
@@ -149,6 +151,7 @@ beforeEach(() => {
   db.notifications = [];
   db.seq = 0;
   created.length = 0;
+  emitted.release.mockClear();
   getSession.mockReset();
   getSession.mockResolvedValue(null);
   addBuild('b1', 'PUBLIC');
@@ -409,5 +412,28 @@ describe('notifying about a release', () => {
     );
     expect(res.status).toBe(201);
     await vi.waitFor(() => expect(created.map((c) => c.userId)).toEqual(['fan']));
+  });
+});
+
+describe('release webhook emit (s08-12)', () => {
+  const build = { id: 'b1', userId: 'owner', slug: 'b1-slug', title: 'Build b1', visibility: 'PUBLIC' as const };
+
+  it('emits once, after the row exists, with the owner as recipient', async () => {
+    const res = await createRelease(build, 'owner', { version: '1.0.0' } as never);
+    expect(res.ok).toBe(true);
+    expect(db.versions).toHaveLength(1);
+    expect(emitted.release).toHaveBeenCalledTimes(1);
+    expect(emitted.release).toHaveBeenCalledWith(
+      'owner',
+      expect.objectContaining({ buildSlug: 'b1-slug', version: '1.0.0', title: 'Build b1' }),
+    );
+  });
+
+  it('emits nothing for a duplicate version or a non-owner', async () => {
+    await createRelease(build, 'owner', { version: '1.0.0' } as never);
+    emitted.release.mockClear();
+    expect((await createRelease(build, 'owner', { version: '1.0.0' } as never)).ok).toBe(false);
+    expect((await createRelease(build, 'other', { version: '2.0.0' } as never)).ok).toBe(false);
+    expect(emitted.release).not.toHaveBeenCalled();
   });
 });

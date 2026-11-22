@@ -16,6 +16,10 @@ import { useGameSession } from '@/hooks/useGameSession';
 import { setPeerLeftHandler, setResumeHandlers } from '@features/dream-rift/engine/net/connection';
 import { PEER_GRACE_MS } from '@/lib/shared/realtime/types';
 import { useRuntime } from './runtime';
+import { useRunAssists } from './useRunAssists';
+import { AssistRunLine, CoopAssistLine } from './assist-ui';
+import { useSession } from '@/components/Providers';
+import type { DreamRiftAssistFlags } from '@features/dream-rift/engine/assist-profile';
 import { MobileControls } from './MobileControls';
 import { PhoneControllerHost } from '@/components/party/PhoneControllerHost';
 import { DialogueOverlay, PauseOverlay, StageBanner } from './Overlays';
@@ -36,6 +40,10 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<GameSession | null>(null);
+  const account = useSession();
+  const loadAssists = useRunAssists(!!account.data?.user);
+  const [assistFlags, setAssistFlags] = useState<DreamRiftAssistFlags | null>(null);
+  const coop = start.roster.length > 1;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -76,9 +84,30 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
     ro.observe(wrap);
     window.addEventListener('orientationchange', applyResize);
 
-    session.start();
+    // Solo, practice and the seeded daily: the server hands out the assist profile (and records the
+    // claim that keeps an assisted run off every board) before the run begins. Co-op starts at once,
+    // because guests must not miss the host's first messages, and applies the two visual assists
+    // (calm visuals, colour-safe) when they arrive: they change only what this screen draws.
+    let cancelled = false;
+    const isCoop = start.roster.length > 1;
+    const apply = (flags: DreamRiftAssistFlags) => {
+      if (cancelled) return;
+      session.setAssist(flags);
+      setAssistFlags(flags);
+    };
+    if (isCoop) {
+      session.start();
+      void loadAssists(true).then(apply);
+    } else {
+      void loadAssists(false).then((flags) => {
+        if (cancelled) return;
+        apply(flags);
+        session.start();
+      });
+    }
 
     return () => {
+      cancelled = true;
       ro.disconnect();
       window.removeEventListener('orientationchange', applyResize);
       session.destroy();
@@ -173,6 +202,10 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
       />
       <StageBanner />
       <DialogueOverlay />
+      {assistFlags?.active && !coop && <AssistRunLine />}
+      {coop && (
+        <CoopAssistLine className="pointer-events-none absolute inset-x-0 bottom-2 z-20 px-4 text-center text-[11px] text-[color:var(--dr-cream-dim)]" />
+      )}
       {reconnecting && (
         <div
           role="status"

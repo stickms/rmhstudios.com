@@ -28,7 +28,7 @@ import type { Tier } from '@/lib/entitlements';
 import { sandboxResponse } from '@/lib/api/test-mode';
 import { ipAllowed } from '@/lib/api/ip-allowlist';
 import { recordKeyRefusal } from '@/lib/api/key-refusals.server';
-import { effectiveMinuteLimit } from '@/lib/api/tier-limits';
+import { effectiveRateLimit } from '@/lib/admin/api-keys';
 
 interface LimitResult {
   allowed: boolean;
@@ -201,12 +201,14 @@ export async function withDeveloperApi(
   // 3. Per-key per-minute rate limit: the tier's, or the key's own when lower.
   // A limit the owner chose is exact; the deployment-wide multiplier only
   // widens the tier default.
-  const max = effectiveMinuteLimit(auth.tier, auth.rateLimitPerMinute);
+  // An admin's cap is exact too, and the lowest of the tier, the owner's limit and the cap wins.
+  const adminCap = auth.adminRateLimitPerMinute ?? null;
+  const max = effectiveRateLimit(auth.tier, auth.rateLimitPerMinute, adminCap);
   const rl = await limit(
     `dev-api:apikey:${auth.keyId}`,
     max,
     60_000,
-    auth.rateLimitPerMinute === null,
+    auth.rateLimitPerMinute === null && adminCap === null,
   );
   const minuteHeaders = rateHeaders(rl);
   if (!rl.allowed) {

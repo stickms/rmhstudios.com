@@ -178,11 +178,12 @@ export const CONTENT_WARNING_READ_PATHS: readonly string[] = [
   'lib/profile/api/profile.$id.rmharks.server.ts',
   'lib/bookmarks.server.ts',
   'lib/scheduled/list.server.ts',
-  'lib/scheduled/api/scheduled.server.ts',
+  'lib/scheduled/create.server.ts',
   'lib/scheduled/publish.server.ts',
   // The developer API passes the text through and adds `sensitive` and `contentWarning`.
   'lib/api/serializers.server.ts',
   'app/routes/api/v1/feed.ts',
+  'lib/api/v1/search.server.ts',
   'lib/api/v1/communities.server.ts',
   'app/routes/api/v1/posts.ts',
   'app/routes/api/v1/posts/$id.ts',
@@ -190,6 +191,7 @@ export const CONTENT_WARNING_READ_PATHS: readonly string[] = [
   'app/routes/api/v1/me/bookmarks.ts',
   // Surfaces that cannot be revealed leave the text out for a post with a reason.
   'lib/feed/rss.server.ts',
+  'lib/feed/rss-community.server.ts',
   'lib/og/post-visibility.ts',
   'lib/og/api/og.post.$id.server.ts',
   'lib/og/api/og.post.$id.story.server.ts',
@@ -224,6 +226,7 @@ export const CONTENT_WARNING_EXEMPT_PATHS: Readonly<Record<string, string>> = {
     'returns the text to the member who just paid; the card already carries the reason and the client covers it',
   'app/routes/api/v1/posts/$id/comments.ts': 'comments, which have no warnings; it reads the post only to check access',
   'lib/admin/lookup.server.ts': 'staff lookup of a member’s own posts',
+  'lib/admin/sweeps.server.ts': 'staff sweep preview of one member’s posts, shown only to the admin removing them',
   'lib/ai/api/ai.bio.server.ts': 'the author’s own posts, summarised for their bio',
   'lib/ai/api/rmharks.$id.translate.server.ts':
     'viewer-requested translation of a post the viewer has opened and revealed',

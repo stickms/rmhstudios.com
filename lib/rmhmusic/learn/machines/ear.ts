@@ -166,7 +166,12 @@ export function earPool(lesson: Pick<Lesson, 'mode' | 'pool'> | undefined): EarN
   return names.length > 0 ? names : [...DEFAULT_POOL[kind]];
 }
 
-const base = sessionStep<Question, Answer>((q, a) => q.answer === a.name);
+const isRight = (q: Question, a: Answer) => q.answer === a.name;
+
+const testBase = sessionStep<Question, Answer>(isRight);
+const learningBase = sessionStep<Question, Answer>(isRight, {
+  learning: true,
+});
 
 export function initial(questions: Question[]): State {
   const s = sessionInitial<Question, Answer>(questions);
@@ -181,7 +186,8 @@ const same = (state: State) => ({
   effects: [] as Effect[],
 });
 
-export function step(
+function stepWith(
+  base: typeof testBase,
   s: State,
   e: Event,
 ): {
@@ -221,12 +227,14 @@ export function step(
       state: s,
       effects: r.effects,
     };
-  // A question reached by Next starts unheard.
+  // A question reached by Next starts unheard. The same question asked again (Learning mode, after
+  // a miss) was already heard, so it can be answered at once; Replay still plays it.
+  const retry = r.state.kind === 'asking' && s.kind === 'feedback' && r.state.index === s.index;
   const state = (
     r.state.kind === 'asking'
       ? {
           ...r.state,
-          heard: false,
+          heard: retry,
         }
       : r.state
   ) as State;
@@ -236,15 +244,37 @@ export function step(
   };
 }
 
+/** One step in Test mode: one answer per question, then on to the next. */
+export function step(s: State, e: Event) {
+  return stepWith(testBase, s, e);
+}
+
+/** One step in Learning mode: a wrong answer brings the same question back, already heard. */
+export function learningStep(s: State, e: Event) {
+  return stepWith(learningBase, s, e);
+}
+
 export const earMachine = {
   initial,
   step,
 };
 
-/** The machine for one lesson's questions, in the shape `createRunner` takes. */
-export function createEarMachine(questions: Question[]): Machine<State, Event, Effect> {
+/**
+ * The machine for one lesson's questions, in the shape `createRunner` takes. `learning` is Learning
+ * mode (retry until right) or Test mode, or a getter read at every event so a mode switched
+ * mid-lesson is obeyed from the next answer.
+ */
+export function createEarMachine(
+  questions: Question[],
+  learning: boolean | (() => boolean) = false,
+): Machine<State, Event, Effect> {
   return {
     initial: initial(questions),
-    step,
+    step:
+      typeof learning === 'function'
+        ? (s, e) => (learning() ? learningStep : step)(s, e)
+        : learning
+          ? learningStep
+          : step,
   };
 }

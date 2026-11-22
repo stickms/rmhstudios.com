@@ -46,6 +46,7 @@
   "no-cards-hint": "Paste a list in Import, or add cards one at a time from the deck page.",
   "notify-updates": "Tell me about updates",
   "notify-updates-hint": "Show on the deck page when the author changes or adds cards.",
+  "picture-changed": "Picture changed",
   "reorder-failed": "Could not save the new order",
   "resolve-conflict": "Resolve this conflict",
   "retry": "Try again",

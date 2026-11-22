@@ -482,10 +482,10 @@ export interface ListMyDeckCardsArgs {
   cursor?: string;
 }
 
-export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null }[]; nextCursor: string | null };
+export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null }[]; nextCursor: string | null };
 
 export interface CreateMyDeckCardsBody {
-  /** 1–100 cards: `{ kind?, front, back?, externalId? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. */
+  /** 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. */
   cards?: string[];
 }
 
@@ -497,7 +497,7 @@ export interface CreateMyDeckCardsArgs {
   body: CreateMyDeckCardsBody;
 }
 
-export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null }[]; cardCount: number };
+export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null }[]; cardCount: number };
 
 export interface UpdateMyDeckCardBody {
   /** `basic`, `reversible` or `cloze`. */
@@ -506,6 +506,10 @@ export interface UpdateMyDeckCardBody {
   front?: string;
   /** The back. */
   back?: string;
+  /** A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. */
+  frontImage?: Record<string, unknown>;
+  /** The picture on the back, the same shape as `frontImage`. */
+  backImage?: Record<string, unknown>;
 }
 
 export interface UpdateMyDeckCardArgs {
@@ -518,7 +522,7 @@ export interface UpdateMyDeckCardArgs {
   body: UpdateMyDeckCardBody;
 }
 
-export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null };
+export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null };
 
 export interface DeleteMyDeckCardArgs {
   /** The deck id. */
@@ -536,6 +540,10 @@ export interface UpsertMyDeckCardBody {
   front?: string;
   /** The back (not used by cloze cards). */
   back?: string;
+  /** A picture for this side: `{ media_id, alt }`, where `media_id` is an upload of yours from `POST /api/v1/images` with `surface=flashcard` and `alt` is the description a screen reader reads (required, up to 1,000 characters). `null` removes the picture. A cloze card takes a picture on the back only. You can have pictures on at most 500 cards. A side you leave out keeps its picture. */
+  frontImage?: Record<string, unknown>;
+  /** The picture on the back, the same shape as `frontImage`. */
+  backImage?: Record<string, unknown>;
 }
 
 export interface UpsertMyDeckCardArgs {
@@ -548,7 +556,7 @@ export interface UpsertMyDeckCardArgs {
   body: UpsertMyDeckCardBody;
 }
 
-export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string };
+export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null };
 
 export interface GetMyDeckDueArgs {
   /** The deck id. */
@@ -753,6 +761,210 @@ export interface GetMyReadingGoalArgs {
 }
 
 export type GetMyReadingGoalResponse = { year: number; goal: { unit: 'books' | 'pages'; target: number; books: number; pages: number; done: number } | null };
+
+export interface ListTournamentsArgs {
+  /** Only tournaments in this status. */
+  status?: string;
+  /** Only tournaments of this game id. */
+  game?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListTournamentsResponse = { data: { id: string; name: string; gameId: string; gameTitle: string | null; format: string; status: string; entryFeeCoins: number; prizePoolCoins: number; minPlayers: number; maxPlayers: number; playerCount: number; swissRounds: number | null; seeding: string; startsAt: string | null; checkInMinutes: number | null; checkInOpensAt: string | null; matchDeadlineHours: number | null; startedAt: string | null; completedAt: string | null; createdAt: string; host: { handle: string; name: string } }[]; nextCursor: string | null };
+
+export interface GetTournamentArgs {
+  /** The tournament id. */
+  id: string;
+}
+
+export type GetTournamentResponse = { id: string; name: string; gameId: string; gameTitle: string | null; format: string; status: string; entryFeeCoins: number; prizePoolCoins: number; minPlayers: number; maxPlayers: number; playerCount: number; swissRounds: number | null; seeding: string; startsAt: string | null; checkInMinutes: number | null; checkInOpensAt: string | null; matchDeadlineHours: number | null; startedAt: string | null; completedAt: string | null; createdAt: string; host: { handle: string; name: string }; you: { entered: boolean; checkedIn: boolean } };
+
+export interface ListTournamentMatchesArgs {
+  /** The tournament id. */
+  id: string;
+  /** Page size, 1–200 (default 100). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListTournamentMatchesResponse = { data: { id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: 'open' | 'disputed'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null }[]; nextCursor: string | null };
+
+export interface ListMyTournamentsArgs {
+  /** Only tournaments in this status. */
+  status?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyTournamentsResponse = { data: { tournament: { id: string; name: string; gameId: string; gameTitle: string | null; format: string; status: string; entryFeeCoins: number; prizePoolCoins: number; minPlayers: number; maxPlayers: number; playerCount: number; swissRounds: number | null; seeding: string; startsAt: string | null; checkInMinutes: number | null; checkInOpensAt: string | null; matchDeadlineHours: number | null; startedAt: string | null; completedAt: string | null; createdAt: string; host: { handle: string; name: string } }; entry: { entrantId: string; seed: number | null; placement: number | null; checkedIn: boolean; wins: number; losses: number }; nextMatch: { id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: 'open' | 'disputed'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null } | null }[]; nextCursor: string | null };
+
+export interface CheckInToTournamentArgs {
+  /** The tournament id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type CheckInToTournamentResponse = { tournamentId: string; checkedIn: boolean };
+
+export interface ClaimTournamentMatchResultBody {
+  /** `me` or `opponent`. */
+  winner?: string;
+}
+
+export interface ClaimTournamentMatchResultArgs {
+  /** The tournament id. */
+  id: string;
+  /** The match id. */
+  matchId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: ClaimTournamentMatchResultBody;
+}
+
+export type ClaimTournamentMatchResultResponse = { status: string; settled: boolean; tournamentComplete: boolean };
+
+export interface ConfirmTournamentMatchResultArgs {
+  /** The tournament id. */
+  id: string;
+  /** The match id. */
+  matchId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type ConfirmTournamentMatchResultResponse = { settled: boolean; tournamentComplete: boolean };
+
+export interface WithdrawTournamentMatchResultArgs {
+  /** The tournament id. */
+  id: string;
+  /** The match id. */
+  matchId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type WithdrawTournamentMatchResultResponse = { withdrawn: boolean };
+
+export interface ListMyScheduledArgs {
+  /** Filter: `draft`, `scheduled` or `capsule`. */
+  kind?: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyScheduledResponse = { data: { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
+
+export interface CreateMyScheduledBody {
+  /** The post text, up to 1,000 characters. A post needs text, a poll or an image. */
+  content?: string;
+  /** ISO 8601 time to publish, UTC. 2 minutes to 365 days ahead. Absent or null saves a draft. */
+  scheduledAt?: string;
+  /** `PUBLIC` (default), `FOLLOWERS` or `PRIVATE`. */
+  audience?: string;
+  /** `EVERYONE` (default), `FOLLOWING` or `MENTIONED`. */
+  replyControl?: string;
+  /** A reason for a content warning, 1–80 characters on one line; null removes it. */
+  contentWarning?: string;
+  /** Up to 4 ids from `POST /api/v1/images`, your own uploads. */
+  media_ids?: string[];
+  /** A description per image, in the same order, up to 1,000 characters each. */
+  media_alts?: string[];
+  /** A poll (`question`, `options`, optionally `multiSelect`, `ranked`, `durationHours`, or a quiz). Cannot be combined with `communityId`. */
+  poll?: { question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string };
+  /** Post into a community you belong to. Needs `write:communities` too, and the community gate (membership, bans, flair, descriptions, AutoMod) runs when you save. */
+  communityId?: string;
+}
+
+export interface CreateMyScheduledArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateMyScheduledBody;
+}
+
+export type CreateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+
+export interface GetMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+}
+
+export type GetMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+
+export interface UpdateMyScheduledBody {
+  /** The post text, up to 1,000 characters. A post needs text, a poll or an image. */
+  content?: string;
+  /** ISO 8601 time to publish, UTC. 2 minutes to 365 days ahead. Absent or null saves a draft. */
+  scheduledAt?: string;
+  /** `PUBLIC` (default), `FOLLOWERS` or `PRIVATE`. */
+  audience?: string;
+  /** `EVERYONE` (default), `FOLLOWING` or `MENTIONED`. */
+  replyControl?: string;
+  /** A reason for a content warning, 1–80 characters on one line; null removes it. */
+  contentWarning?: string;
+  /** Up to 4 ids from `POST /api/v1/images`, your own uploads. */
+  media_ids?: string[];
+  /** A description per image, in the same order, up to 1,000 characters each. */
+  media_alts?: string[];
+  /** A poll (`question`, `options`, optionally `multiSelect`, `ranked`, `durationHours`, or a quiz). Cannot be combined with `communityId`. */
+  poll?: { question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string };
+  /** Post into a community you belong to. Needs `write:communities` too, and the community gate (membership, bans, flair, descriptions, AutoMod) runs when you save. */
+  communityId?: string;
+}
+
+export interface UpdateMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyScheduledBody;
+}
+
+export type UpdateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+
+export interface DeleteMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface PublishMyScheduledArgs {
+  /** The draft or scheduled post id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type PublishMyScheduledResponse = { published: boolean; postId: string };
+
+export interface SearchPostsArgs {
+  /** The query, 1–200 characters. Free text plus the site's operators: `from:@handle`, `in:community-slug`, `has:media`, `before:YYYY-MM-DD`, `after:YYYY-MM-DD`. Operators alone return matching posts newest first. */
+  q: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. Ranked results page through the best 120 matches. */
+  cursor?: string;
+}
+
+export type SearchPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
+
+export interface SearchPeopleArgs {
+  /** A name, handle or display name, 1–100 characters. */
+  q: string;
+  /** Page size, 1–25 (default 10). */
+  limit?: number;
+}
+
+export type SearchPeopleResponse = { data: { id: string; name: string; handle: string; image: string; bio: string | null; location: string | null; website: string | null; createdAt: string }[]; nextCursor: string | null };
 
 export class RmhClient {
   private apiKey: string;
@@ -1138,5 +1350,85 @@ export class RmhClient {
   /** Get your reading goal (scope: read:reading) */
   getMyReadingGoal(args: GetMyReadingGoalArgs = {}): Promise<GetMyReadingGoalResponse> {
     return this.request<GetMyReadingGoalResponse>("GET", { path: "/api/v1/me/reading-goal", query: { year: args.year } });
+  }
+
+  /** List tournaments (scope: read:tournaments) */
+  listTournaments(args: ListTournamentsArgs = {}): Promise<ListTournamentsResponse> {
+    return this.request<ListTournamentsResponse>("GET", { path: "/api/v1/tournaments", query: { status: args.status, game: args.game, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get a tournament (scope: read:tournaments) */
+  getTournament(args: GetTournamentArgs): Promise<GetTournamentResponse> {
+    return this.request<GetTournamentResponse>("GET", { path: "/api/v1/tournaments/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Read a tournament bracket (scope: read:tournaments) */
+  listTournamentMatches(args: ListTournamentMatchesArgs): Promise<ListTournamentMatchesResponse> {
+    return this.request<ListTournamentMatchesResponse>("GET", { path: "/api/v1/tournaments/{id}/matches", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List your tournaments (scope: read:tournaments) */
+  listMyTournaments(args: ListMyTournamentsArgs = {}): Promise<ListMyTournamentsResponse> {
+    return this.request<ListMyTournamentsResponse>("GET", { path: "/api/v1/me/tournaments", query: { status: args.status, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Check in to a tournament (scope: write:tournaments) */
+  checkInToTournament(args: CheckInToTournamentArgs): Promise<CheckInToTournamentResponse> {
+    return this.request<CheckInToTournamentResponse>("POST", { path: "/api/v1/tournaments/{id}/check-in", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Report a match result (scope: write:tournaments) */
+  claimTournamentMatchResult(args: ClaimTournamentMatchResultArgs): Promise<ClaimTournamentMatchResultResponse> {
+    return this.request<ClaimTournamentMatchResultResponse>("POST", { path: "/api/v1/tournaments/{id}/matches/{matchId}/claim", pathParams: { id: args.id, matchId: args.matchId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Confirm a reported result (scope: write:tournaments) */
+  confirmTournamentMatchResult(args: ConfirmTournamentMatchResultArgs): Promise<ConfirmTournamentMatchResultResponse> {
+    return this.request<ConfirmTournamentMatchResultResponse>("POST", { path: "/api/v1/tournaments/{id}/matches/{matchId}/claim/confirm", pathParams: { id: args.id, matchId: args.matchId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Withdraw a reported result (scope: write:tournaments) */
+  withdrawTournamentMatchResult(args: WithdrawTournamentMatchResultArgs): Promise<WithdrawTournamentMatchResultResponse> {
+    return this.request<WithdrawTournamentMatchResultResponse>("POST", { path: "/api/v1/tournaments/{id}/matches/{matchId}/claim/withdraw", pathParams: { id: args.id, matchId: args.matchId }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your drafts and scheduled posts (scope: read:scheduled) */
+  listMyScheduled(args: ListMyScheduledArgs = {}): Promise<ListMyScheduledResponse> {
+    return this.request<ListMyScheduledResponse>("GET", { path: "/api/v1/me/scheduled", query: { kind: args.kind, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Save a draft or schedule a post (scope: write:scheduled) */
+  createMyScheduled(args: CreateMyScheduledArgs): Promise<CreateMyScheduledResponse> {
+    return this.request<CreateMyScheduledResponse>("POST", { path: "/api/v1/me/scheduled", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get a draft or scheduled post (scope: read:scheduled) */
+  getMyScheduled(args: GetMyScheduledArgs): Promise<GetMyScheduledResponse> {
+    return this.request<GetMyScheduledResponse>("GET", { path: "/api/v1/me/scheduled/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Change a draft or scheduled post (scope: write:scheduled) */
+  updateMyScheduled(args: UpdateMyScheduledArgs): Promise<UpdateMyScheduledResponse> {
+    return this.request<UpdateMyScheduledResponse>("PATCH", { path: "/api/v1/me/scheduled/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Discard a draft or scheduled post (scope: write:scheduled) */
+  deleteMyScheduled(args: DeleteMyScheduledArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/scheduled/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Publish a draft or scheduled post now (scope: write:scheduled) */
+  publishMyScheduled(args: PublishMyScheduledArgs): Promise<PublishMyScheduledResponse> {
+    return this.request<PublishMyScheduledResponse>("POST", { path: "/api/v1/me/scheduled/{id}/publish", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Search public posts (scope: read:search) */
+  searchPosts(args: SearchPostsArgs): Promise<SearchPostsResponse> {
+    return this.request<SearchPostsResponse>("GET", { path: "/api/v1/search/posts", query: { q: args.q, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Search people (scope: read:search) */
+  searchPeople(args: SearchPeopleArgs): Promise<SearchPeopleResponse> {
+    return this.request<SearchPeopleResponse>("GET", { path: "/api/v1/search/people", query: { q: args.q, limit: args.limit } });
   }
 }

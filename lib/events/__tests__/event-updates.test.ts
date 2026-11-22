@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CreateNotificationInput } from '@/lib/notifications.server';
 
 // Event updates: who may post, the rolling limit under the lock, the delete window, cancelled events, who the
 // fan-out tells (going, maybe, waitlist; never no, the author or a blocked pair) and that the job claims once.
@@ -30,6 +31,15 @@ const h = vi.hoisted(() => {
     notified: [] as { userId: string; preview: string; entityType: string }[],
     sent: [] as { name: string; data: unknown; opts: unknown }[],
     seq: 0,
+    fanoutRuns: [] as unknown[],
+    stored: [] as {
+      userId: string;
+      type: string;
+      entityType: string;
+      entityId: string;
+      link: string;
+      createdAt: Date;
+    }[],
   };
   return state;
 });
@@ -84,6 +94,11 @@ const prismaMock = vi.hoisted(() => {
     userBlock: {
       findMany: vi.fn(async () => h.blocks),
     },
+    notification: {
+      findMany: vi.fn(async (args: { where: { userId: { in: string[] }; createdAt: { gte: Date } } }) =>
+        h.stored.filter((n) => args.where.userId.in.includes(n.userId) && n.createdAt >= args.where.createdAt.gte),
+      ),
+    },
     user: {
       findMany: vi.fn(async (args?: { where?: { id?: { in: string[] }; bannedUntil?: unknown } }) =>
         args?.where?.bannedUntil
@@ -96,7 +111,11 @@ const prismaMock = vi.hoisted(() => {
   return p;
 });
 
-vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
+vi.mock('@/lib/prisma.server', async () => {
+  // The durable run (s08-05): the in-memory fake lives in lib/fanout/__tests__.
+  const { createFanoutRunFake } = await import('@/lib/fanout/__tests__/fake-fanout-run');
+  return { prisma: { ...prismaMock, fanoutRun: createFanoutRunFake(h.fanoutRuns as never).fanoutRun } };
+});
 vi.mock('@/lib/db/advisory-lock.server', () => ({
   lockKey: vi.fn(async (_tx: unknown, key: string) => {
     h.order.push(`lock:${key}`);
@@ -108,7 +127,7 @@ vi.mock('@/lib/events/cohosts.server', () => ({
 vi.mock('@/lib/events.server', () => ({ canViewEvent: vi.fn(async () => true) }));
 vi.mock('@/lib/events/occurrences.server', () => ({ overridesFor: vi.fn(async () => []) }));
 vi.mock('@/lib/notifications.server', () => ({
-  createNotification: vi.fn(async (a: { userId: string; preview: string; entityType: string }) => {
+  createNotification: vi.fn(async (a: { userId: string; preview: string; entityType: string; link: string }) => {
     h.notified.push({ userId: a.userId, preview: a.preview, entityType: a.entityType });
   }),
 }));
@@ -158,6 +177,8 @@ beforeEach(() => {
   h.event.canceledAt = null;
   h.event.recurrence = null;
   h.seq = 0;
+  h.fanoutRuns.length = 0;
+  h.stored.length = 0;
   vi.clearAllMocks();
 });
 
@@ -334,6 +355,45 @@ describe('recipients and the fan-out', () => {
     expect(await runEventUpdateFanout('up1')).toBe(0);
     expect(h.notified).toHaveLength(1);
     expect(h.updates[0]!.notifiedAt).toBeInstanceOf(Date);
+  });
+
+  it('survives a worker killed mid-send: 300 attendees each hear once after the restart', async () => {
+    for (let i = 0; i < 300; i++) h.rsvps.push(rsvp(`u${String(i).padStart(3, '0')}`, 'going'));
+    post();
+    const { createNotification } = await import('@/lib/notifications.server');
+    // The worker dies in the middle of the second batch (after 50 of its 200 were told).
+    // Someone was told about an EARLIER update of the same event in this window: not this update's alert.
+    h.stored.push({
+      userId: 'u290',
+      type: 'SYSTEM',
+      entityType: 'event_update',
+      entityId: 'ev1',
+      link: '/calendar#update-up0',
+      createdAt: NOW,
+    });
+    let calls = 0;
+    const original = vi.mocked(createNotification).getMockImplementation();
+    vi.mocked(createNotification).mockImplementation(async (a: CreateNotificationInput) => {
+      if (++calls === 251) throw new Error('killed');
+      h.notified.push({ userId: a.userId, preview: a.preview ?? '', entityType: a.entityType ?? '' });
+      h.stored.push({
+        userId: a.userId,
+        type: 'SYSTEM',
+        entityType: a.entityType ?? '',
+        entityId: 'ev1',
+        link: a.link ?? '',
+        createdAt: NOW,
+      });
+    });
+    await expect(runEventUpdateFanout('up1', NOW)).rejects.toThrow('killed');
+    expect(h.fanoutRuns[0]).toMatchObject({ status: 'RUNNING', sent: 200 });
+    expect(await runEventUpdateFanout('up1', NOW)).toBe(300);
+    expect(h.notified).toHaveLength(300);
+    expect(h.notified.map((n) => n.userId)).toContain('u290');
+    expect(new Set(h.notified.map((n) => n.userId)).size).toBe(300);
+    expect(await runEventUpdateFanout('up1', NOW)).toBe(0);
+    expect(h.notified).toHaveLength(300);
+    if (original) vi.mocked(createNotification).mockImplementation(original);
   });
 
   it('tells nobody for a deleted update', async () => {

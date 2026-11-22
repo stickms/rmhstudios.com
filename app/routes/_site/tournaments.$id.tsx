@@ -14,7 +14,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
-import { BracketView } from '@/components/tournaments/BracketView';
+import { BracketViewSwitch } from '@/components/tournaments/BracketViewSwitch';
+import { parseBracketView, type BracketViewChoice } from '@/lib/tournaments/rounds-view';
 import { DisputesPanel } from '@/components/tournaments/DisputesPanel';
 import { CheckInPanel, EntrantCheckIn, useStartRefusal } from '@/components/tournaments/CheckInPanel';
 import { SeedingPanel } from '@/components/tournaments/SeedingPanel';
@@ -91,6 +92,10 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
       links: [buildCanonical(path)],
     };
   },
+  validateSearch: (search: Record<string, unknown>): { view?: BracketViewChoice } => {
+    const view = parseBracketView(search.view);
+    return view ? { view } : {};
+  },
   component: TournamentDetailPage,
 });
 
@@ -98,6 +103,8 @@ function TournamentDetailPage() {
   const { t } = useTranslation('c-tournaments');
   const startRefusal = useStartRefusal();
   const { id } = Route.useParams();
+  const { view } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
@@ -345,13 +352,15 @@ function TournamentDetailPage() {
             </h2>
             <YourNextMatch tourney={tourney} viewerId={viewerId} />
             {canReport && <DisputesPanel tournament={tourney} onChanged={load} />}
-            <BracketView
+            <BracketViewSwitch
               tournament={tourney}
               canReport={canReport}
               reportingId={reportingId}
               onReport={report}
               viewerId={viewerId}
               onChanged={load}
+              urlView={view ?? null}
+              onViewChange={(next) => void navigate({ search: { view: next }, replace: true })}
             />
             {canReport && (
               <p className="mt-3 text-xs text-site-text-muted">

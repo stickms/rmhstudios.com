@@ -4,19 +4,24 @@
  */
 
 import type { CuratedBuild } from '@/lib/builds/curated';
+import { capabilitiesFor } from '@/lib/game-capabilities';
+import { matchesAccess, type AccessFilter } from '@/lib/games/access-filter';
 
 export type LibraryKind = 'all' | 'game' | 'app';
 
 export type RailQuery = {
   kind: LibraryKind;
   search: string;
+  /** "Can be played with" and "Accessibility" options; every selected one must hold. */
+  access?: AccessFilter;
 };
 
-/** Filter the rail by kind and a case-insensitive search over title and tags. */
+/** Filter the rail by kind, the access filters and a case-insensitive search over title and tags. */
 export function filterRail(items: CuratedBuild[], q: RailQuery): CuratedBuild[] {
   const needle = q.search.trim().toLowerCase();
   return items.filter((b) => {
     if (q.kind !== 'all' && b.kind !== q.kind) return false;
+    if (q.access && !matchesAccess(capabilitiesFor(b.id), q.access)) return false;
     if (!needle) return true;
     return b.title.toLowerCase().includes(needle) || b.tags.some((t) => t.toLowerCase().includes(needle));
   });

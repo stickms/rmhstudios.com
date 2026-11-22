@@ -32,6 +32,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ModeratorNotes } from '@/components/admin/ModeratorNotes';
 import { SecureAccountSection } from '@/components/admin/SecureAccountSection';
+import { SweepDialog } from '@/components/admin/sweeps/SweepDialog';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Form = 'strike' | 'timeout' | 'ban' | null;
@@ -64,6 +65,7 @@ export function UserModerationPanel({
   const [reason, setReason] = useState('');
   const [feature, setFeature] = useState<RestrictableFeature>('post');
   const [days, setDays] = useState('7');
+  const [sweepOpen, setSweepOpen] = useState(false);
   const [banDays, setBanDays] = useState('7');
 
   // The record is client-owned admin state, loaded when the panel opens.
@@ -265,6 +267,14 @@ export function UserModerationPanel({
             })}
           </Button>
         )}
+        {!isAdminUser && (
+          <Button size="sm" variant="default" onClick={() => setSweepOpen(true)}>
+            {t('sweep-open', {
+              ns: 'admin-spam-sweep',
+              defaultValue: 'Sweep content',
+            })}
+          </Button>
+        )}
         {!isAdminUser &&
           (data.bannedUntil ? (
             <Button size="sm" variant="default" disabled={busy} onClick={unban}>
@@ -425,6 +435,15 @@ export function UserModerationPanel({
       {!isAdminUser && <SecureAccountSection userId={userId} displayName={displayName} />}
 
       <ModeratorNotes userId={userId} reveal={revealNotes} />
+
+      {!isAdminUser && (
+        <SweepDialog
+          open={sweepOpen}
+          onOpenChange={setSweepOpen}
+          subjectId={userId}
+          subjectLabel={displayName || userId}
+        />
+      )}
     </div>
   );
 }

@@ -49,7 +49,7 @@ export const COMMUNITY_ALT_WRITE_PATHS: readonly string[] = [
   // create through the developer API (POST /api/v1/posts with a communityId)
   'lib/api/v1/communities.server.ts',
   // scheduled create
-  'lib/scheduled/api/scheduled.server.ts',
+  'lib/scheduled/create.server.ts',
   // scheduled publish (refused with a notice, the draft stays)
   'lib/scheduled/publish.server.ts',
   // post edit

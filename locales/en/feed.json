@@ -1491,11 +1491,14 @@
   "swap": "Swap",
   "swap-gif-aria": "Swap GIF",
   "system-label-achievement": "Achievement",
+  "system-label-api-key-restored": "API key restored",
+  "system-label-api-key-suspended": "API key suspended",
   "system-label-blog_post": "Logs",
   "system-label-community_handover": "Communities",
   "system-label-community_ban": "Communities",
   "system-label-feedback_reply": "Feedback",
   "system-label-community_post": "Communities",
+  "system-label-community-recurring-paused": "Recurring thread paused",
   "system-label-default": "RMH Studios",
   "system-label-event_cohost": "Events",
   "system-label-event_waitlist": "Events",
@@ -1975,5 +1978,7 @@
   "system-label-match-agreed": "Match times",
   "system-label-match-reminder": "Match reminders",
   "system-label-match-deadline": "Match deadlines",
-  "system-label-match-awarded": "Match awards"
+  "system-label-match-awarded": "Match awards",
+  "system-label-moderation-sweep": "Content removed",
+  "system-label-moderation-sweep-undone": "Content restored"
 }
