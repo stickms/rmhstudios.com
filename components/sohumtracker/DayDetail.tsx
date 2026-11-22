@@ -214,6 +214,7 @@ export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
           value: t('fact-typing-abandoned-value', {
             count: day.typingAbandoned,
             duration: formatDuration(day.typingAbandonedSec),
+            defaultValue_one: '{{count}} draft · {{duration}}',
             defaultValue: '{{count}} drafts · {{duration}}',
           }),
         }

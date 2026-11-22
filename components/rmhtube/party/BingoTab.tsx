@@ -54,6 +54,7 @@ export default function BingoTab() {
         <div className="flex items-center justify-between">
           <span className={muted}>
             {t('bingo-count', {
+              defaultValue_one: '{{count}} square',
               defaultValue: '{{count}} squares',
               count,
             })}

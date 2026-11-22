@@ -126,6 +126,8 @@ export function MissingAltTextSection() {
                     {t('missing', {
                       missing: row.missing,
                       total: row.imageUrls.length,
+                      count: Number(row.imageUrls.length),
+                      defaultValue_one: '{{missing}} of {{total}} image without a description',
                       defaultValue: '{{missing}} of {{total}} images without a description',
                     })}
                   </span>

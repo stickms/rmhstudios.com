@@ -125,6 +125,8 @@ export function MessageActions({
           <p className="px-3 py-2 text-xs text-site-text-muted">
             {t('message-edit-window-closed', {
               minutes: Math.round(MESSAGE_EDIT_WINDOW_MS / 60_000),
+              count: Number(Math.round(MESSAGE_EDIT_WINDOW_MS / 60_000)),
+              defaultValue_one: 'Editing closes {{minutes}} minute after sending',
               defaultValue: 'Editing closes {{minutes}} minutes after sending',
             })}
           </p>

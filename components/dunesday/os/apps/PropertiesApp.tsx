@@ -85,7 +85,7 @@ function TitleProps({ win }: AppProps) {
       <dl>
         <Row label={t('props-type', { defaultValue: 'Type:' })}>
           {x.kind === 'series'
-            ? t('props-series', { defaultValue: 'Series · {{n}} episodes', n: x.episodes ?? 0 })
+            ? t('props-series', { count: Number(x.episodes ?? 0), defaultValue_one: 'Series · {{n}} episode', defaultValue: 'Series · {{n}} episodes', n: x.episodes ?? 0 })
             : x.kind === 'special'
               ? t('type-special', { defaultValue: 'Special' })
               : t('type-film', { defaultValue: 'Film' })}

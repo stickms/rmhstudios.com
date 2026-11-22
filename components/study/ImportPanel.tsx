@@ -230,6 +230,8 @@ export function ImportPanel({
             <p role="alert" className="t-body text-site-danger">
               {t('too-many', {
                 max: MAX_IMPORT_CARDS,
+                count: Number(MAX_IMPORT_CARDS),
+                defaultValue_one: 'One import adds at most {{max}} card. Split the list.',
                 defaultValue: 'One import adds at most {{max}} cards. Split the list.',
               })}
             </p>
@@ -238,6 +240,8 @@ export function ImportPanel({
             <p role="alert" className="t-body text-site-danger">
               {t('deck-full', {
                 max: MAX_DECK_CARDS,
+                count: Number(MAX_DECK_CARDS),
+                defaultValue_one: 'A deck holds at most {{max}} card.',
                 defaultValue: 'A deck holds at most {{max}} cards.',
               })}
             </p>
@@ -249,6 +253,7 @@ export function ImportPanel({
                 {cards.length > PREVIEW_ROWS
                   ? t('preview-caption-first', {
                       count: PREVIEW_ROWS,
+                      defaultValue_one: 'Preview: the first {{count}} card',
                       defaultValue: 'Preview: the first {{count}} cards',
                     })
                   : t('preview-caption', { defaultValue: 'Preview' })}

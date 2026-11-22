@@ -106,7 +106,7 @@ export function LeaguePanel({ year, initialCode }: { year: number; initialCode?:
     void run(async () => {
       const picks = readMyMap(year);
       const r = await api<{ saved: number }>(`/api/elections/leagues/${league.code}/picks`, { method: 'PUT', body: JSON.stringify({ picks }) });
-      setMsg(t('league.saved', { defaultValue: 'Saved — {{n}} calls in your map.', n: r.saved }));
+      setMsg(t('league.saved', { count: Number(r.saved), defaultValue_one: 'Saved — {{n}} call in your map.', defaultValue: 'Saved — {{n}} calls in your map.', n: r.saved }));
     });
   const leave = () =>
     league &&
@@ -216,7 +216,7 @@ export function LeaguePanel({ year, initialCode }: { year: number; initialCode?:
                       <span className="el-league__score">
                         <strong>{s.score.correct}</strong> {t('league.right', { defaultValue: 'right' })} · {s.score.wrong}{' '}
                         {t('league.wrong', { defaultValue: 'wrong' })}
-                        <span className="el-eyebrow"> · {t('league.calls', { defaultValue: '{{n}} calls', n: s.calls })}</span>
+                        <span className="el-eyebrow"> · {t('league.calls', { count: Number(s.calls), defaultValue_one: '{{n}} call', defaultValue: '{{n}} calls', n: s.calls })}</span>
                       </span>
                     </li>
                   ))}

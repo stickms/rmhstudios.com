@@ -38,14 +38,14 @@ function FeedRow({ f }: { f: FeedSummary }) {
         <p className="mt-0.5 truncate text-xs text-site-text-muted">
           {bits.slice(0, 6).join(' · ')}
           {f.peopleCount
-            ? ` · ${t('feeds-people', { count: f.peopleCount, defaultValue: '{{count}} people' })}`
+            ? ` · ${t('feeds-people', { count: f.peopleCount, defaultValue_one: '{{count}} person', defaultValue: '{{count}} people' })}`
             : ''}
         </p>
         {f.isPublic && (
           <p className="mt-0.5 text-xs text-site-text-muted">
             {t('feeds-subscribers', {
               count: f.subscriberCount,
-              defaultValue: '{{count}} subscribers',
+              defaultValue_one: '{{count}} subscriber', defaultValue: '{{count}} subscribers',
             })}
           </p>
         )}

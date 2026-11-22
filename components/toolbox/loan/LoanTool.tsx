@@ -104,6 +104,8 @@ export function LoanTool() {
               ? t('loan-error-rate', { defaultValue: 'Enter a rate from 0 to 100 percent.' })
               : validation === 'months'
                 ? t('loan-error-months', {
+                    count: Number(MAX_LOAN_MONTHS / 12),
+                    defaultValue_one: 'Enter a term from one month to {{years}} year.',
                     defaultValue: 'Enter a term from one month to {{years}} years.',
                     years: MAX_LOAN_MONTHS / 12,
                   })

@@ -110,7 +110,11 @@ export function DateCalcTool() {
               return (
                 <ToolSection title={t('date-difference', { defaultValue: 'Difference' })}>
                   <p className="t-title font-mono" aria-live="polite">
-                    {t('date-days', { defaultValue: '{{count}} days', count: diff.totalDays })}
+                    {t('date-days', {
+                      defaultValue_one: '{{count}} day',
+                      defaultValue: '{{count}} days',
+                      count: diff.totalDays,
+                    })}
                   </p>
                   <div>
                     <ResultRow

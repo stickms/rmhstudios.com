@@ -321,6 +321,8 @@ export function FlashcardSession({
     line = t('flash-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You named {{correct}} of {{total}} note.',
       defaultValue: 'You named {{correct}} of {{total}} notes.',
     });
   }

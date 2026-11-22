@@ -210,7 +210,7 @@ function CompaniesPage() {
         />
         <span className="text-sm text-site-text-muted">
           {t('ladder.companies.count', {
-            defaultValue: '{{count}} companies',
+            defaultValue_one: '{{count}} company', defaultValue: '{{count}} companies',
             count: rows.length,
           })}
         </span>

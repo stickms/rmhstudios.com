@@ -59,6 +59,8 @@ export function WebhooksConsole() {
           {data && (
             <p className="t-meta">
               {t('console-count', {
+                count: Number(max),
+                defaultValue_one: '{{n}} of {{max}} endpoint',
                 defaultValue: '{{n}} of {{max}} endpoints',
                 n: endpoints.length,
                 max,

@@ -158,11 +158,11 @@ export function StorefrontColumn({
       title: t('storefront-buy-title', { title: p.title, defaultValue: 'Buy {{title}}?' }),
       description: t('storefront-buy-desc', {
         price: fmt(p.price),
-        defaultValue: 'This spends {{price}} coins and shows you the deliverable.',
+        count: Number(fmt(p.price)), defaultValue_one: 'This spends {{price}} coin and shows you the deliverable.', defaultValue: 'This spends {{price}} coins and shows you the deliverable.',
       }),
       confirmLabel: t('storefront-buy-confirm', {
         price: fmt(p.price),
-        defaultValue: 'Buy for {{price}} coins',
+        count: Number(fmt(p.price)), defaultValue_one: 'Buy for {{price}} coin', defaultValue: 'Buy for {{price}} coins',
       }),
     });
     if (!ok) return;

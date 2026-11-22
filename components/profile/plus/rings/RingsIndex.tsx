@@ -194,6 +194,8 @@ export default function RingsIndex() {
               <span className="text-xs text-site-text-muted">
                 {t('ring-limit', {
                   max: RING_MAX_OWNED,
+                  count: Number(RING_MAX_OWNED),
+                  defaultValue_one: 'You can run up to {{max}} ring.',
                   defaultValue: 'You can run up to {{max}} rings.',
                 })}
               </span>

@@ -354,7 +354,7 @@ function ConsolePanel({ con, inputRef, onClose }: { con: GameConsole; inputRef: 
     const text = core.lines.map((l) => l.text).join('\n');
     try {
       await navigator.clipboard.writeText(text);
-      con.print(t('console_copied', { defaultValue: 'Copied {{n}} lines to the clipboard.', n: core.lines.length }), 'success');
+      con.print(t('console_copied', { count: Number(core.lines.length), defaultValue_one: 'Copied {{n}} line to the clipboard.', defaultValue: 'Copied {{n}} lines to the clipboard.', n: core.lines.length }), 'success');
     } catch {
       con.print(t('console_copy_failed', { defaultValue: 'The browser did not allow copying to the clipboard.' }), 'error');
     }

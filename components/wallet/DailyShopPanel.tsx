@@ -242,6 +242,8 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
             >
               {full
                 ? t('bundle-buy-for', {
+                    count: Number(fmt.number(discounted)),
+                    defaultValue_one: 'Buy bundle for {{price}} coin',
                     defaultValue: 'Buy bundle for {{price}} coins',
                     price: fmt.number(discounted),
                   })
@@ -308,6 +310,8 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                         loading={buy.isPending && buy.variables?.id === item.id}
                         onClick={() => buy.mutate(item)}
                         aria-label={t('daily-buy-aria', {
+                          count: Number(item.price),
+                          defaultValue_one: 'Buy {{name}} for {{price}} coin',
                           defaultValue: 'Buy {{name}} for {{price}} coins',
                           name: item.name,
                           price: item.price,

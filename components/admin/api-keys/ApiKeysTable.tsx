@@ -157,6 +157,8 @@ export function ApiKeysTable() {
         const n = v.trim().length;
         return n < SUSPEND_REASON_MIN || n > SUSPEND_REASON_MAX
           ? t('suspend-reason-length', {
+              count: Number(SUSPEND_REASON_MAX),
+              defaultValue_one: 'The reason is {{min}} to {{max}} character.',
               defaultValue: 'The reason is {{min}} to {{max}} characters.',
               min: SUSPEND_REASON_MIN,
               max: SUSPEND_REASON_MAX,
@@ -415,11 +417,13 @@ export function ApiKeysTable() {
                   <p className="t-meta break-words text-site-text-muted">
                     {row.prefix}…{row.lastFour ?? ''} ·{' '}
                     {t('row-scopes', {
+                      defaultValue_one: '{{count}} scope',
                       defaultValue: '{{count}} scopes',
                       count: row.scopes.length,
                     })}{' '}
                     ·{' '}
                     {t('row-ranges', {
+                      defaultValue_one: '{{count}} address range',
                       defaultValue: '{{count}} address ranges',
                       count: row.allowedCidrCount,
                     })}{' '}
@@ -471,11 +475,14 @@ export function ApiKeysTable() {
                     })}{' '}
                     ·{' '}
                     {t('row-refusals', {
+                      defaultValue_one: '{{count}} address refusal',
                       defaultValue: '{{count}} address refusals',
                       count: row.refusals,
                     })}{' '}
                     ·{' '}
                     {t('row-webhooks', {
+                      count: Number(row.webhooks.total),
+                      defaultValue_one: '{{total}} webhook, {{disabled}} disabled',
                       defaultValue: '{{total}} webhooks, {{disabled}} disabled',
                       total: row.webhooks.total,
                       disabled: row.webhooks.disabled,

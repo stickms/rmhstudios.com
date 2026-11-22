@@ -100,6 +100,8 @@ function TargetingLists({ flagKey }: { flagKey: string }) {
       } else if (error instanceof HttpError && errorField<string>(error, 'code') === 'full') {
         toast.error(
           t('add-full', {
+            count: Number(data?.max ?? 200),
+            defaultValue_one: 'A list holds at most {{max}} member.',
             defaultValue: 'A list holds at most {{max}} members.',
             max: data?.max ?? 200,
           }),

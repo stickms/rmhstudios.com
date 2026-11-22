@@ -78,6 +78,7 @@ export function useComposeUploads() {
         setImageError(
           t('image-over-limit', {
             count: MAX_IMAGES,
+            defaultValue_one: 'You can attach at most {{count}} image.',
             defaultValue: 'You can attach at most {{count}} images.',
           }),
         );

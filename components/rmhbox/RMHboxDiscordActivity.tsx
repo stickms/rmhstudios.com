@@ -475,7 +475,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                                     </div>
                                                     <div className="flex items-center gap-4 text-sm">
                                                         <span className="text-app-text-muted">{t("wins-count", { count: s.wins, defaultValue: "{{count}} win" })}</span>
-                                                        <span className="font-bold text-app-accent">{t("score-pts-rmhbox-discord-activity", { count: s.totalScore, defaultValue: "{{count}} pts" })}</span>
+                                                        <span className="font-bold text-app-accent">{t("score-pts-rmhbox-discord-activity", { count: s.totalScore, defaultValue_one: "{{count}} pt", defaultValue: "{{count}} pts" })}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -491,7 +491,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                                 <div key={m.matchId} className="flex items-center justify-between rounded-lg bg-app-bg px-4 py-2 text-sm">
                                                     <div>
                                                         <span className="font-semibold">{m.minigameDisplayName}</span>
-                                                        <span className="ml-2 text-app-text-muted">· {t("player-count", { count: m.playerCount, defaultValue: "{{count}} players" })}</span>
+                                                        <span className="ml-2 text-app-text-muted">· {t("player-count", { count: m.playerCount, defaultValue_one: "{{count}} player", defaultValue: "{{count}} players" })}</span>
                                                     </div>
                                                     <span className="text-app-success flex items-center gap-1">
                                                         <Trophy className="h-3.5 w-3.5" /> {m.winnerUserName ?? 'N/A'}

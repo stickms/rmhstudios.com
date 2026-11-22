@@ -666,7 +666,7 @@ export function TierEditor({
                         {t(
                           'tier-price-range',
                           {
-                            defaultValue:
+                            count: Number(TIER_PRICE_MAX), defaultValue_one: 'Between {{min}} and {{max}} coin', defaultValue:
                               'Between {{min}} and {{max}} coins',
                             min: TIER_PRICE_MIN,
                             max: TIER_PRICE_MAX,

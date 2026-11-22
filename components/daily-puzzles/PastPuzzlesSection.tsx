@@ -125,6 +125,8 @@ export function PastPuzzlesSection({ gameMode, selectedDateKey, onSelectDate, re
                       ) : (
                         <span className="font-mono text-sm font-semibold text-site-text">
                           {t('score-pts', {
+                            count: Number(result.score),
+                            defaultValue_one: '{{score}} pt',
                             defaultValue: '{{score}} pts',
                             score: result.score,
                           })}

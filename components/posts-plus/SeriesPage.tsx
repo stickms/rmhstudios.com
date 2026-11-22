@@ -280,6 +280,8 @@ export function SeriesPage({ id }: { id: string }) {
             </Link>
             {' · '}
             {t('series-parts', {
+              count: Number(series.total),
+              defaultValue_one: '{{n}} part',
               defaultValue: '{{n}} parts',
               n: series.total,
             })}

@@ -41,7 +41,7 @@
   "marathon-schedule": "Schedule",
   "marathon-share": "Copy share link",
   "marathon-shared-intro": "{{count}} titles, to finish by {{date}}. Planned from today.",
-  "marathon-shared-intro_one": "{{count}} titles, to finish by {{date}}. Planned from today.",
+  "marathon-shared-intro_one": "{{count}} title, to finish by {{date}}. Planned from today.",
   "marathon-shared-intro_other": "{{count}} titles, to finish by {{date}}. Planned from today.",
   "marathon-signin": "Sign in to build and share a watch list.",
   "marathon-summary": "{{total}} in total - about {{perDay}} a day finishes on {{date}}.",

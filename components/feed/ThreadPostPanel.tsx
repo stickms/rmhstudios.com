@@ -88,7 +88,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
         <p className="mt-2 text-xs text-site-danger">
           {t('thread-too-long', {
             max: MAX_THREAD_POSTS,
-            defaultValue: 'A thread can have at most {{max}} posts. Shorten the draft.',
+            count: Number(MAX_THREAD_POSTS), defaultValue_one: 'A thread can have at most {{max}} post. Shorten the draft.', defaultValue: 'A thread can have at most {{max}} posts. Shorten the draft.',
           })}
         </p>
       )}

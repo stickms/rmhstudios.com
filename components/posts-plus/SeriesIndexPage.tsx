@@ -103,6 +103,8 @@ export function SeriesIndexPage() {
         <span className="block text-sm font-medium text-site-text">{s.title}</span>
         <span className="mt-1 block text-xs text-site-text-muted">
           {t('series-parts', {
+            count: Number(s.postCount),
+            defaultValue_one: '{{n}} part',
             defaultValue: '{{n}} parts',
             n: s.postCount,
           })}

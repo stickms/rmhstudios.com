@@ -368,6 +368,7 @@ export function PianoRollView() {
         </span>
         <span className="text-xs text-app-text-muted">
           {t('note-count', {
+            defaultValue_one: '{{count}} note',
             defaultValue: '{{count}} notes',
             count: clip.notes.length,
           })}

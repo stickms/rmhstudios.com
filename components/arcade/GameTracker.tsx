@@ -183,6 +183,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
       <p className={cn('text-sm text-site-text-muted', arrival)}>
         {median
           ? t('median-line', {
+              defaultValue_one: 'Median time to finish: {{time}} ({{count}} player)',
               defaultValue: 'Median time to finish: {{time}} ({{count}} players)',
               time: formatMinutes(median),
               count: data?.stats.count ?? 0,

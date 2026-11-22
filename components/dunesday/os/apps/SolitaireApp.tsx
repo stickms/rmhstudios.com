@@ -1077,6 +1077,8 @@ export default function SolitaireApp({ win }: AppProps) {
         >
           <p>
             {t('cards-won-body', {
+              count: Number(g.moves),
+              defaultValue_one: 'Score {{score}} in {{time}}, {{moves}} move.',
               defaultValue: 'Score {{score}} in {{time}}, {{moves}} moves.',
               score: g.score,
               time: formatTime(seconds),

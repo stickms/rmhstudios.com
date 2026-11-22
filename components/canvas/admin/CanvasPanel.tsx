@@ -147,6 +147,7 @@ export default function CanvasPanel() {
               <p className="truncate font-medium text-site-text">{e.title}</p>
               <p className="t-body text-site-text-muted">
                 {t('admin-row', {
+                  defaultValue_one: '{{size}}px, {{phase}}, {{count}} pixel placed',
                   defaultValue: '{{size}}px, {{phase}}, {{count}} pixels placed',
                   size: e.width,
                   phase: e.phase,

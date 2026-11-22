@@ -68,7 +68,14 @@ function useRefusalToast() {
         }),
       );
     } else if (code === 'full') {
-      toast.error(t('error-full', { max: MAX_TEAMMATES, defaultValue: 'A team can have at most {{max}} teammates.' }));
+      toast.error(
+        t('error-full', {
+          max: MAX_TEAMMATES,
+          count: Number(MAX_TEAMMATES),
+          defaultValue_one: 'A team can have at most {{max}} teammate.',
+          defaultValue: 'A team can have at most {{max}} teammates.',
+        }),
+      );
     } else if (code === 'blocked' || code === 'banned') {
       toast.error(t('error-ineligible', { defaultValue: "That member can't be invited." }));
     } else if (code === 'closed') {

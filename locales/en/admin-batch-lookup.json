@@ -1,5 +1,5 @@
 {
-  "ambiguous_one": "Matches {{count}} things",
+  "ambiguous_one": "Matches {{count}} thing",
   "ambiguous_other": "Matches {{count}} things",
   "copied": "Copied",
   "copy-results": "Copy results",

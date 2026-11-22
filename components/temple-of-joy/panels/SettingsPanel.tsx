@@ -244,6 +244,9 @@ export function SettingsPanel() {
       <p className="toj-panel-note">
         {t('save-note', {
           seconds: Math.round(AUTOSAVE_INTERVAL_MS / 1000),
+          count: Number(Math.round(AUTOSAVE_INTERVAL_MS / 1000)),
+          defaultValue_one:
+            'The temple saves itself every {{seconds}} second, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.',
           defaultValue:
             'The temple saves itself every {{seconds}} seconds, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.',
         })}

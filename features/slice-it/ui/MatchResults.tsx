@@ -192,7 +192,7 @@ function TeamScoreboard({ teams }: { teams: TeamTotal[] }) { const fmt = useLoca
             <span className="slice-mr__meta">
               {(team.accuracy * 100).toFixed(1)}% ·{' '}
               {t('mp-team-players', {
-                defaultValue: '{{count}} players',
+                defaultValue_one: '{{count}} player', defaultValue: '{{count}} players',
                 count: team.players,
               })}
             </span>

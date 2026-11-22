@@ -305,6 +305,7 @@ export function LedgerSubtotal({ cents, count }: { cents: number; count: number 
   return (
     <span className="text-sm text-site-text-muted tabular-nums">
       {t('log.subtotal', {
+        defaultValue_one: '{{amount}} itemised across {{count}} line',
         defaultValue: '{{amount}} itemised across {{count}} lines',
         amount: formatDebt(cents),
         count,

@@ -71,7 +71,7 @@ function useLastRunLine(lastRun: Record<string, unknown> | null): string {
     });
   }
   return t('ladder-last-run-line', {
-    defaultValue: 'Last run · {{ago}} · {{found}} found · {{errors}} errors',
+    count: Number(lastRun.errorCount ?? 0), defaultValue_one: 'Last run · {{ago}} · {{found}} found · {{errors}} error', defaultValue: 'Last run · {{ago}} · {{found}} found · {{errors}} errors',
     ago: formatRelativeTime(lastRun.startedAt as Date, i18n.language),
     found: lastRun.discoveredCount ?? 0,
     errors: lastRun.errorCount ?? 0,

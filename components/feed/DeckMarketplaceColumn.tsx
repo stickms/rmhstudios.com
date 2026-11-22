@@ -135,7 +135,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  </p>
  )}
  <p className="mt-2 text-xs text-site-text-muted">
- {t('deck-card-count', { defaultValue:'{{n}} cards', n: deck.cardCount })}
+ {t('deck-card-count', { count: Number(deck.cardCount), defaultValue_one: '{{n}} card', defaultValue:'{{n}} cards', n: deck.cardCount })}
  {deck.user.name || deck.user.handle
  ? `· ${t('deck-by', { defaultValue:'by'})} ${deck.user.name ||'@'+ deck.user.handle}`
  :''}

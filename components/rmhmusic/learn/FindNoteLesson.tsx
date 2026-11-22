@@ -248,6 +248,8 @@ export function FindNoteLesson({
     line = t('find-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You found {{correct}} of {{total}} note.',
       defaultValue: 'You found {{correct}} of {{total}} notes.',
     });
   }

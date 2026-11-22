@@ -17,7 +17,7 @@
   "invite-links-description": "Anyone signed in who opens a link can join, until it expires, runs out or you revoke it.",
   "invite-links-title": "Invite links",
   "join": "Join group",
-  "limit-reached_one": "A group can have {{count}} links at a time. Revoke one to make another.",
+  "limit-reached_one": "A group can have {{count}} link at a time. Revoke one to make another.",
   "limit-reached_other": "A group can have {{count}} links at a time. Revoke one to make another.",
   "live-heading": "Live links",
   "load-error": "Could not load the links.",

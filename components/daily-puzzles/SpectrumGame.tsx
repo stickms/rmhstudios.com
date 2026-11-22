@@ -335,7 +335,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                                                 ))}
                                             </span>
                                         ),
-                                        label: t("points-earned", { defaultValue: "{{points}} points earned", points: result.points }),
+                                        label: t("points-earned", { count: Number(result.points), defaultValue_one: "{{points}} point earned", defaultValue: "{{points}} points earned", points: result.points }),
                                     },
                                 ]}
                             />

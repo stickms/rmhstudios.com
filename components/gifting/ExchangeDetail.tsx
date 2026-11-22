@@ -112,7 +112,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
           {isMixtape
             ? t('detail-theme', { defaultValue: 'Theme: {{theme}}', theme: ex.theme ?? '' })
             : t('detail-budget', {
-                defaultValue: 'Up to {{budget}} coins each',
+                count: Number(ex.budget ?? 0), defaultValue_one: 'Up to {{budget}} coin each', defaultValue: 'Up to {{budget}} coins each',
                 budget: ex.budget ?? 0,
               })}
           {' · '}

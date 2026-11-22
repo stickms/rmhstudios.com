@@ -43,7 +43,12 @@ export function DiceTool() {
       case 'too-many-dice':
         return t('dice-error-count', { defaultValue: 'Roll from 1 to {{max}} dice at a time.', max: MAX_DICE });
       case 'too-many-sides':
-        return t('dice-error-sides', { defaultValue: 'A die has from 2 to {{max}} sides.', max: MAX_SIDES });
+        return t('dice-error-sides', {
+          count: Number(MAX_SIDES),
+          defaultValue_one: 'A die has from 2 to {{max}} side.',
+          defaultValue: 'A die has from 2 to {{max}} sides.',
+          max: MAX_SIDES,
+        });
       case 'too-many-terms':
         return t('dice-error-terms', { defaultValue: 'Use at most 20 parts.' });
       case 'bad-keep':

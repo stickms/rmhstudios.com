@@ -532,6 +532,9 @@ function Alley() {
                   <p className="toj-bowl-sub">
                     {t('bowl-sub', {
                       minutes: Math.round(BOWL_BOOST_SECONDS / 60),
+                      count: Number(Math.round(BOWL_BOOST_SECONDS / 60)),
+                      defaultValue_one:
+                        'One frame a day. Every pin is worth more rate for {{minutes}} minute — and your hands are still until it ends.',
                       defaultValue:
                         'One frame a day. Every pin is worth more rate for {{minutes}} minutes — and your hands are still until it ends.',
                     })}

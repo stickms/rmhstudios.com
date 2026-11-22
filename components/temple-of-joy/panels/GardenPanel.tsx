@@ -232,6 +232,8 @@ export function GardenPanel() {
         {t('garden-known', {
           known: known.length,
           total: SEEDS.length,
+          count: Number(SEEDS.length),
+          defaultValue_one: '{{known}} of {{total}} seed discovered.',
           defaultValue: '{{known}} of {{total}} seeds discovered.',
         })}
       </p>

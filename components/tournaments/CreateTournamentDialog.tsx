@@ -226,6 +226,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
               {SIZES.filter((s) => s >= MIN_TOURNAMENT_PLAYERS && s <= MAX_TOURNAMENT_PLAYERS).map((s) => (
                 <option key={s} value={s}>
                   {t('players-count', {
+                    defaultValue_one: '{{count}} player',
                     defaultValue: '{{count}} players',
                     count: s,
                   })}

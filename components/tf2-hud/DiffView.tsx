@@ -154,7 +154,7 @@ export default function DiffView() {
             {Array.isArray(rows) && display.length > MAX_ROWS ? (
               <p className="px-3 py-2 text-center text-[11px] text-app-text-dim">
                 {t('diff-truncated', {
-                  defaultValue: 'Showing the first {{n}} rows.',
+                  count: Number(MAX_ROWS), defaultValue_one: 'Showing the first {{n}} row.', defaultValue: 'Showing the first {{n}} rows.',
                   n: MAX_ROWS,
                 })}
               </p>

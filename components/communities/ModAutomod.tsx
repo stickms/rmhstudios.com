@@ -109,7 +109,7 @@ export function ModAutomod({ slug }: { slug: string }) {
       parts.push(
         t('automod-d-age', {
           n: c.accountAgeLtDays,
-          defaultValue: 'account younger than {{n}} days',
+          count: Number(c.accountAgeLtDays), defaultValue_one: 'account younger than {{n}} day', defaultValue: 'account younger than {{n}} days',
         }),
       );
     if (c.keywords)

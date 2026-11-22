@@ -144,6 +144,8 @@ export function SupportTierPicker({ creatorId, tiers, creatorName, trigger, onJo
                   disabled={joining !== null}
                 >
                   {t('join-tier', {
+                    count: Number(tier.priceCoins),
+                    defaultValue_one: 'Join for {{price}} coin',
                     defaultValue: 'Join for {{price}} coins',
                     price: tier.priceCoins,
                   })}

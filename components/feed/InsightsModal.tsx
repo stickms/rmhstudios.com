@@ -107,7 +107,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) { c
  <div className="flex items-center gap-2">
  <Unlock className="h-4 w-4 text-site-accent"/>
  <div>
- <p className="text-sm font-semibold text-site-text">{t('unlocks-count', { count: fmt(data.unlocks), defaultValue:'{{count}} unlocks'})}</p>
+ <p className="text-sm font-semibold text-site-text">{t('unlocks-count', { count: fmt(data.unlocks), defaultValue_one: '{{count}} unlock', defaultValue:'{{count}} unlocks'})}</p>
  <p className="text-xs text-site-text-muted">{t('unlock-price-each', { price: data.unlockPrice, defaultValue:'at {{price}} each'})}</p>
  </div>
  </div>
@@ -134,7 +134,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) { c
  transform: `scaleY(${maxTrend > 0 ? d.count / maxTrend : 0})`,
  minHeight: d.count > 0 ? 4 : 0,
  }}
- title={t('bar-likes-count', { count: d.count, defaultValue:'{{count}} likes'})}
+ title={t('bar-likes-count', { count: d.count, defaultValue_one: '{{count}} like', defaultValue:'{{count}} likes'})}
  />
  </div>
  <span className="text-tiny text-site-text-muted">

@@ -74,14 +74,20 @@ export function CardForm({
     'front-required': t('error-front-required', { defaultValue: 'Add the front of the card' }),
     'back-required': t('error-back-required', { defaultValue: 'Add the back of the card' }),
     'front-too-long': t('error-front-too-long', {
+      count: Number(CARD_SIDE_MAX),
+      defaultValue_one: 'The front is over {{max}} character',
       defaultValue: 'The front is over {{max}} characters',
       max: CARD_SIDE_MAX,
     }),
     'back-too-long': t('error-back-too-long', {
+      count: Number(CARD_SIDE_MAX),
+      defaultValue_one: 'The back is over {{max}} character',
       defaultValue: 'The back is over {{max}} characters',
       max: CARD_SIDE_MAX,
     }),
     'cloze-too-long': t('error-cloze-too-long', {
+      count: Number(CLOZE_TEXT_MAX),
+      defaultValue_one: 'The text is over {{max}} character',
       defaultValue: 'The text is over {{max}} characters',
       max: CLOZE_TEXT_MAX,
     }),

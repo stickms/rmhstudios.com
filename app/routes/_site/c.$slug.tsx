@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { plural } from '@/lib/core/format';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
@@ -69,7 +70,7 @@ export const Route = createFileRoute('/_site/c/$slug')({
         title: `${community.name} — community | RMH Studios`,
         description:
           community.description ||
-          `${community.name} on RMH Studios — ${community.memberCount} members and ${community.postCount} posts.`,
+          `${community.name} on RMH Studios — ${community.memberCount} ${plural(community.memberCount, 'member', 'members')} and ${community.postCount} ${plural(community.postCount, 'post', 'posts')}.`,
         path,
         image: community.icon || undefined,
         imageAlt: community.icon ? `${community.name}'s community icon.` : undefined,

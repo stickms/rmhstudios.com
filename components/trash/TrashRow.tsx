@@ -36,6 +36,7 @@ export function TrashRow({ item, busy, onRestore, onPurge, className }: TrashRow
     item.daysRemaining > 0
       ? t('trash-days-left', {
           count: item.daysRemaining,
+          defaultValue_one: '{{count}} day left',
           defaultValue: '{{count}} days left',
         })
       : t('trash-expired', {

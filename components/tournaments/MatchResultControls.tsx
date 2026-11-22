@@ -211,6 +211,8 @@ export function MatchResultControls({ tournamentId, match, entrants, viewerId, i
                   validate: (v) =>
                     v.length > DISPUTE_NOTE_MAX
                       ? t('dispute-too-long', {
+                          count: Number(DISPUTE_NOTE_MAX),
+                          defaultValue_one: 'Keep it to {{max}} character.',
                           defaultValue: 'Keep it to {{max}} characters.',
                           max: DISPUTE_NOTE_MAX,
                         })

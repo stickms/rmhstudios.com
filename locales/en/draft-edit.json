@@ -3,7 +3,7 @@
   "audience-private": "Private",
   "audience-public": "Public",
   "cancel": "Cancel",
-  "characters-left_one": "{{count}} characters left",
+  "characters-left_one": "{{count}} character left",
   "characters-left_other": "{{count}} characters left",
   "discard-cancel": "Keep editing",
   "discard-confirm": "Discard",

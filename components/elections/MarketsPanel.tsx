@@ -188,7 +188,9 @@ export function MarketsPanel({
                       : t(
                           'markets.vol',
                           {
-                            defaultValue:
+                            count: Number(fmtInt(
+                              m.volume,
+                            )), defaultValue_one: '{{n}} coin traded', defaultValue:
                               '{{n}} coins traded',
                             n: fmtInt(
                               m.volume,

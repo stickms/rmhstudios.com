@@ -170,7 +170,7 @@ export function SampleBrowser() {
                 <p className="mt-0.5 text-xs text-app-text-muted">{pack.description}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="rounded-app-sm bg-app-accent-dim px-1.5 py-0.5 text-xs text-app-accent">
-                    {t("samples-count", { defaultValue: "{{count}} samples", count: pack.samples.length })}
+                    {t("samples-count", { defaultValue_one: "{{count}} sample", defaultValue: "{{count}} samples", count: pack.samples.length })}
                   </span>
                   <span className="text-xs text-app-text-muted">{pack.license}</span>
                 </div>

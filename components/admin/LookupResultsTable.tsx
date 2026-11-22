@@ -65,6 +65,7 @@ export function LookupResultsTable({ groups }: { groups: readonly LookupBatchGro
                 <p className="t-meta mt-1">
                   {t('ambiguous', {
                     count: g.results.length,
+                    defaultValue_one: 'Matches {{count}} thing',
                     defaultValue: 'Matches {{count}} things',
                   })}
                 </p>

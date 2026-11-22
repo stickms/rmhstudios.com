@@ -279,7 +279,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
               <p className="text-xs text-site-text-muted">
                 <EntryCredit owner={e.user} team={e.team} />
                 {jam.results &&
-                  ` · ${t('jam-ratings', { defaultValue: '{{n}} ratings', n: e.ratingCount })}`}
+                  ` · ${t('jam-ratings', { count: Number(e.ratingCount), defaultValue_one: '{{n}} rating', defaultValue: '{{n}} ratings', n: e.ratingCount })}`}
               </p>
               {jam.results && e.averages && (
                 <p className="text-xs text-site-text-muted">

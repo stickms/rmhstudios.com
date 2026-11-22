@@ -78,6 +78,7 @@ export function ErrorsTab() {
             )}
             <span className="font-mono t-meta">
               {t('errors-count', {
+                defaultValue_one: '{{count}} event',
                 defaultValue: '{{count}} events',
                 count: g.count,
               })}

@@ -179,7 +179,7 @@ export function BallotMeasures({ cycle, live }: { cycle: string; live: boolean }
         ) : null}
       </div>
 
-      <p className="el-eyebrow" role="status">{t('measures.count', { defaultValue: '{{n}} measures', n: rows.length })}</p>
+      <p className="el-eyebrow" role="status">{t('measures.count', { count: Number(rows.length), defaultValue_one: '{{n}} measure', defaultValue: '{{n}} measures', n: rows.length })}</p>
       <div className="el-measure__grid">
         {rows.slice(0, shown).map((m) => (
           <MeasureCard key={m.id} m={m} />

@@ -95,6 +95,8 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
             </div>
             <p className="mt-1 text-xs text-app-text-dim">
               {t('challenge-entries', {
+                count: Number(c.entryCount),
+                defaultValue_one: '{{n}} entry',
                 defaultValue: '{{n}} entries',
                 n: c.entryCount,
               })}
@@ -292,6 +294,8 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
               {c.phase === 'finished' && (
                 <span className="text-xs text-app-text-muted">
                   {t('votes', {
+                    count: Number(e.voteCount),
+                    defaultValue_one: '{{n}} vote',
                     defaultValue: '{{n}} votes',
                     n: e.voteCount,
                   })}

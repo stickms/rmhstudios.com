@@ -16,7 +16,7 @@
   "undo": "Undo",
   "undo-for": "Undo check-in for {{name}}",
   "window-label": "Check-in window",
-  "window-minutes_one": "{{count}} minutes before the start",
+  "window-minutes_one": "{{count}} minute before the start",
   "window-minutes_other": "{{count}} minutes before the start",
   "window-off": "Off",
   "you-checked-in": "Checked in"

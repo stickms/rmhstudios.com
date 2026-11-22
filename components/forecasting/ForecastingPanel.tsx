@@ -340,7 +340,9 @@ function SeasonCard({
             {t(
               'season-meta',
               {
-                defaultValue:
+                count: Number(board
+                    .season
+                    .marketCount), defaultValue_one: '{{title}}: {{resolved}} of {{total}} market resolved. Points only, no coins.', defaultValue:
                   '{{title}}: {{resolved}} of {{total}} markets resolved. Points only, no coins.',
                 title:
                   board

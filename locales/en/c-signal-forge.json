@@ -67,7 +67,7 @@
   "overwriter-pen-label": "Overwriter's Pen",
   "overwriter-pen-title": "Transform a card in hand (one-time)",
   "paused": "Paused",
-  "pile-card-count_one": "{{count}} cards",
+  "pile-card-count_one": "{{count}} card",
   "pile-card-count_other": "{{count}} cards",
   "pile-summary": "Draw pile: {{draw}} | Hand: {{hand}} | Discard: {{discard}}",
   "purge-glitch-label": "Purge {{val}} Glitch",

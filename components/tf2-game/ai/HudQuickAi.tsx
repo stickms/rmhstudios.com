@@ -228,7 +228,7 @@ export default function HudQuickAi({
     say(
       dry.applied.length
         ? t('ai_hud_ready', {
-            defaultValue: '{{count}} changes ready to apply. {{summary}}',
+            defaultValue_one: '{{count}} change ready to apply. {{summary}}', defaultValue: '{{count}} changes ready to apply. {{summary}}',
             count: dry.applied.length,
             summary,
           })
@@ -379,7 +379,7 @@ export default function HudQuickAi({
       setApplied({ overlay: after, count: done.applied.length });
       setProposal(null);
       const msg = t('ai_hud_applied', {
-        defaultValue: 'Applied {{count}} changes. Playing with {{name}}.',
+        defaultValue_one: 'Applied {{count}} change. Playing with {{name}}.', defaultValue: 'Applied {{count}} changes. Playing with {{name}}.',
         count: done.applied.length,
         name: useEditor.getState().meta.name,
       });
@@ -590,7 +590,7 @@ function ProposalCard({
             <>
               <p className="text-xs font-semibold text-app-text-muted">
                 {t('ai_hud_diff_summary', {
-                  defaultValue: '{{count}} changes in {{files}} files',
+                  defaultValue_one: '{{count}} change in {{files}} files', defaultValue: '{{count}} changes in {{files}} files',
                   count: applied.length,
                   files,
                 })}

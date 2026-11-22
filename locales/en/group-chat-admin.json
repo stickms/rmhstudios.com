@@ -5,7 +5,7 @@
   "add-people": "Add people",
   "added-count_one": "{{count}} person added",
   "added-count_other": "{{count}} people added",
-  "batch-full_one": "You can add up to {{count}} people at a time.",
+  "batch-full_one": "You can add up to {{count}} person at a time.",
   "batch-full_other": "You can add up to {{count}} people at a time.",
   "could-not-change": "Could not change the group",
   "group-info": "Group info",

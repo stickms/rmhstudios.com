@@ -87,6 +87,8 @@ export function shareText(t: T, language: string, p: SharePayload): CardLines {
   const title = t('share-points', {
     ns: 'c-rmhmusic',
     score: p.score,
+    count: Number(p.score),
+    defaultValue_one: '{{score}} point',
     defaultValue: '{{score}} points',
   });
   const stars = t('share-stars', {

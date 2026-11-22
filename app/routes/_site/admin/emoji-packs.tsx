@@ -201,7 +201,7 @@ function AdminEmojiPacksPage() {
                 {p.itemCount > p.items.length && (
                   <p className="t-body text-site-text-muted">
                     {t('emoji-pack-more-items', {
-                      defaultValue: 'Showing {{shown}} of {{count}} items.',
+                      defaultValue_one: 'Showing {{shown}} of {{count}} item.', defaultValue: 'Showing {{shown}} of {{count}} items.',
                       shown: p.items.length,
                       count: p.itemCount,
                     })}

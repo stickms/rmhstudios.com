@@ -224,7 +224,7 @@ export function NewsList({
           <span className="font-mono">
             {t('results-count', {
               count: filteredArticles.length,
-              defaultValue: '{{count}} results',
+              defaultValue_one: '{{count}} result', defaultValue: '{{count}} results',
             })}
           </span>
           <Button type="button" variant="ghost" size="sm" onClick={clearAllFilters}>

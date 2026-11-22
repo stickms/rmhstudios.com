@@ -34,7 +34,7 @@
  */
 
 import React from 'react';
-import { formatDateShort } from '@/lib/core/format';
+import { formatDateShort, plural } from '@/lib/core/format';
 import satori from '@/lib/og/satori.server';
 import { dedupeOgRender, svgToPng } from './render.server';
 import {
@@ -147,10 +147,6 @@ export interface PostOgData {
 interface Tile {
   image: OgImage;
   box: TileBox;
-}
-
-function plural(n: number, one: string, many: string): string {
-  return n === 1 ? one : many;
 }
 
 function compact(n: number): string {

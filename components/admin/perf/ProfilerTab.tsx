@@ -514,7 +514,9 @@ export function ProfilerTab() {
             {t(
               'profile-result-meta',
               {
-                defaultValue:
+                count: Number(fmtInt(
+                    result.sampleCount,
+                  )), defaultValue_one: '{{samples}} sample; the worker was idle {{idle}}% of the time.', defaultValue:
                   '{{samples}} samples; the worker was idle {{idle}}% of the time.',
                 samples:
                   fmtInt(

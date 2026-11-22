@@ -89,9 +89,9 @@ export function LiquidGlobe({ leans }: { leans: Partial<Record<'senate' | 'house
               </p>
               <p className="el-eyebrow" style={{ margin: 0, textTransform: 'none', letterSpacing: 0 }}>
                 {lean.basis === 'final'
-                  ? t('globe.noteFinal', { defaultValue: 'Every race is decided. Dashed line: {{n}} seats for a majority.', n: lean.toWin })
+                  ? t('globe.noteFinal', { count: Number(lean.toWin), defaultValue_one: 'Every race is decided. Dashed line: {{n}} seat for a majority.', defaultValue: 'Every race is decided. Dashed line: {{n}} seats for a majority.', n: lean.toWin })
                   : t('globe.note', {
-                      defaultValue:
+                      count: Number(lean.undecided), defaultValue_one: 'An indicative model from ratings and the count so far, not a forecast. {{n}} race still open. Dashed line: {{w}} seats for a majority.', defaultValue:
                         'An indicative model from ratings and the count so far, not a forecast. {{n}} races still open. Dashed line: {{w}} seats for a majority.',
                       n: lean.undecided,
                       w: lean.toWin,

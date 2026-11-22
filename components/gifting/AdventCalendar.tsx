@@ -32,6 +32,8 @@ export default function AdventCalendar() {
     onSuccess: (r) => {
       toast.success(
         t('advent-opened', {
+          count: Number(r.coins),
+          defaultValue_one: 'Door {{door}} opened: +{{coins}} coin',
           defaultValue: 'Door {{door}} opened: +{{coins}} coins',
           door: r.door,
           coins: r.coins,

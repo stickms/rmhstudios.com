@@ -291,6 +291,7 @@ export function ChartEditor({ songId }: { songId: string }) {
         );
         announce(
           t('editor-announce-moved', {
+            defaultValue_one: 'Moved {{count}} note',
             defaultValue: 'Moved {{count}} notes',
             count: selection.length,
           }),
@@ -313,6 +314,7 @@ export function ChartEditor({ songId }: { songId: string }) {
           state.apply(nestedDelete(state.nestingMode, state.charts, state.active, selection));
           announce(
             t('editor-announce-deleted', {
+              defaultValue_one: 'Deleted {{count}} note',
               defaultValue: 'Deleted {{count}} notes',
               count: selection.length,
             }),

@@ -177,6 +177,8 @@ export function StatTiles({ stats, nowMs }: { stats: DebtStats; nowMs: number })
           defaultValue: 'Archive covers',
         })}
         value={t('stats.tile.spanValue', {
+          count: Number((derived.spanDays / 365.2425).toFixed(1)),
+          defaultValue_one: '{{years}} year',
           defaultValue: '{{years}} years',
           years: (derived.spanDays / 365.2425).toFixed(1),
         })}

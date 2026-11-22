@@ -250,6 +250,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
                 })}
                 value={formatDebt(principalCents)}
                 detail={t('stats.itemisedDetail', {
+                  defaultValue_one: '{{count}} line recovered',
                   defaultValue: '{{count}} lines recovered',
                   count: entryCount,
                 })}
@@ -261,6 +262,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
                 })}
                 value={formatDebt(memberPrincipalCents)}
                 detail={t('stats.membersDetail', {
+                  defaultValue_one: '{{count}} line',
                   defaultValue: '{{count}} lines',
                   count: memberEntryCount,
                 })}

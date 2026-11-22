@@ -409,7 +409,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  #{highlightMatch(t.tag, query)}
  </span>
  <span className="block text-xs text-site-text-muted">
- {tl("tag-post-count", { count: t.count, defaultValue:"{{count}} posts"})}
+ {tl("tag-post-count", { count: t.count, defaultValue_one: "{{count}} post", defaultValue:"{{count}} posts"})}
  </span>
  </span>
  </button>

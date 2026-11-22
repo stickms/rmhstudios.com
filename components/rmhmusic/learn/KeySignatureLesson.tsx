@@ -204,6 +204,8 @@ export function KeySignatureLesson({
     line = t('key-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You named {{correct}} of {{total}} key.',
       defaultValue: 'You named {{correct}} of {{total}} keys.',
     });
   } else {

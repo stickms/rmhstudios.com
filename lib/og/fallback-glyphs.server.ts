@@ -117,7 +117,7 @@ async function loadFamily(family: string, text: string): Promise<{ weight: FontW
       }
       return out;
     },
-    { shouldCache: (v) => v.length > 0 },
+    { shouldCache: (v) => Array.isArray(v) && v.length > 0 },
   );
 }
 

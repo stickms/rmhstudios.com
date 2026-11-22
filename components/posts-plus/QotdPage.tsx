@@ -154,6 +154,8 @@ export function QotdPage({ day }: { day?: string }) {
             <h2 className="mt-1 text-xl font-medium text-site-text">{selected.text}</h2>
             <p className="mt-1 text-sm text-site-text-muted">
               {t('qotd-answer-count', {
+                count: Number(selected.answerCount),
+                defaultValue_one: '{{n}} answer',
                 defaultValue: '{{n}} answers',
                 n: selected.answerCount,
               })}
@@ -273,6 +275,8 @@ export function QotdPage({ day }: { day?: string }) {
                     <span className="min-w-0 flex-1 text-sm text-site-text">{d.text}</span>
                     <span className="shrink-0 text-xs text-site-text-muted">
                       {t('qotd-answer-count', {
+                        count: Number(d.answerCount),
+                        defaultValue_one: '{{n}} answer',
                         defaultValue: '{{n}} answers',
                         n: d.answerCount,
                       })}

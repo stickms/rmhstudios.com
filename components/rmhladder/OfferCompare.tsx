@@ -119,6 +119,7 @@ export function OfferCompare({
             {o.payPeriod === 'hour' && o.hoursPerWeek ? (
               <span className="t-meta block">
                 {t('compare.hours', {
+                  defaultValue_one: '{{count}} hour a week',
                   defaultValue: '{{count}} hours a week',
                   count: o.hoursPerWeek,
                 })}
@@ -207,6 +208,7 @@ export function OfferCompare({
             {money(offerTotals(o).equityPerYear, o.currency)}
             <span className="t-meta block">
               {t('compare.equityGrant', {
+                defaultValue_one: '{{grant}} over {{count}} year',
                 defaultValue: '{{grant}} over {{count}} years',
                 grant: money(o.equityGrant, o.currency),
                 count: o.equityYears,
@@ -277,6 +279,7 @@ export function OfferCompare({
         o.ptoDays === null
           ? none
           : t('compare.ptoDays', {
+              defaultValue_one: '{{count}} day',
               defaultValue: '{{count}} days',
               count: o.ptoDays,
             }),
@@ -545,6 +548,7 @@ function AcceptDialog({
       });
       toast.success(
         t('accept.done', {
+          defaultValue_one: 'Offer accepted. {{count}} application withdrawn.',
           defaultValue: 'Offer accepted. {{count}} applications withdrawn.',
           count: result.withdrawn,
         }),

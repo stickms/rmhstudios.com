@@ -162,6 +162,7 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
               <div className="stk-section__head">
                 <h2 className="stk-section__title" id="stk-figures">
                   {t('figures-heading', {
+                    defaultValue_one: 'The last {{count}} day',
                     defaultValue: 'The last {{count}} days',
                     count: totals.days,
                   })}
@@ -206,6 +207,7 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
                   value={formatCount(totals.messages)}
                   note={t('stat-messages-note', {
                     count: totals.words,
+                    defaultValue_one: '{{count}} word',
                     defaultValue: '{{count}} words',
                   })}
                 />
@@ -238,6 +240,7 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
                   value={formatDuration(totals.lateNightSec)}
                   note={t('stat-late-note', {
                     count: totals.lateNightMessages,
+                    defaultValue_one: '{{count}} message after midnight',
                     defaultValue: '{{count}} messages after midnight',
                   })}
                   alarm
@@ -248,10 +251,12 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
                   })}
                   value={t('stat-streak-value', {
                     count: totals.currentStreak,
+                    defaultValue_one: '{{count}} day',
                     defaultValue: '{{count}} days',
                   })}
                   note={t('stat-streak-note', {
                     count: totals.longestStreak,
+                    defaultValue_one: 'best run {{count}} day',
                     defaultValue: 'best run {{count}} days',
                   })}
                 />
@@ -292,6 +297,7 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
                         })
                       : t('stat-job-value', {
                           count: totals.daysSinceJobMention,
+                          defaultValue_one: '{{count}} day',
                           defaultValue: '{{count}} days',
                         })
                   }
@@ -299,10 +305,12 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
                     totals.daysSinceJobMention === null
                       ? t('stat-job-never-note', {
                           count: totals.days,
+                          defaultValue_one: 'not once in {{count}} day',
                           defaultValue: 'not once in {{count}} days',
                         })
                       : t('stat-job-note', {
                           count: totals.jobMentions,
+                          defaultValue_one: '{{count}} mention in the period',
                           defaultValue: '{{count}} mentions in the period',
                         })
                   }
@@ -315,6 +323,7 @@ export function SohumTrackerPage({ initialState, historyDays, initialSelectedKey
                     })}
                     value={t('stat-drafts-value', {
                       count: totals.typingAbandoned,
+                      defaultValue_one: '{{count}} draft',
                       defaultValue: '{{count}} drafts',
                     })}
                     note={t('stat-drafts-note', {

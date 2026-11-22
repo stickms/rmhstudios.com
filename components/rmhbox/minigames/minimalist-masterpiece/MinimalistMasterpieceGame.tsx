@@ -573,7 +573,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           <p className="text-sm text-app-text-muted">
             {t("auction-remaining", { defaultValue: "Remaining: {{currency}} coins • Time: {{seconds}}s", currency, seconds: timeRemaining })}
             {bidSubmitStatus && (
-              <span className="ml-2" aria-label={t("bid-submit-aria", { defaultValue: "{{submitted}} of {{total}} players submitted bids", submitted: bidSubmitStatus.submitted, total: bidSubmitStatus.total })}>
+              <span className="ml-2" aria-label={t("bid-submit-aria", { count: Number(bidSubmitStatus.total), defaultValue_one: "{{submitted}} of {{total}} player submitted bids", defaultValue: "{{submitted}} of {{total}} players submitted bids", submitted: bidSubmitStatus.submitted, total: bidSubmitStatus.total })}>
                 {t("bid-submit-status", { defaultValue: "• {{submitted}}/{{total}} submitted", submitted: bidSubmitStatus.submitted, total: bidSubmitStatus.total })}
               </span>
             )}

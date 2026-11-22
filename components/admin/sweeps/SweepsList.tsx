@@ -48,6 +48,9 @@ export function SweepsList() {
       title: t('undo-title', { defaultValue: 'Undo this sweep?' }),
       description: t('undo-body', {
         number: fmt.number(s.removedCount),
+        count: Number(fmt.number(s.removedCount)),
+        defaultValue_one:
+          'Up to {{number}} item come back, except any that were removed again or deleted by their author. Its strike is withdrawn and the member gets one notice.',
         defaultValue:
           'Up to {{number}} items come back, except any that were removed again or deleted by their author. Its strike is withdrawn and the member gets one notice.',
       }),

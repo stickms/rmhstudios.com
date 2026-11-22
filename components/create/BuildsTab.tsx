@@ -224,7 +224,7 @@ export function UserBuildsTab() {
           ),
         meta:
           b.viewCount > 0
-            ? t('views-count', { count: b.viewCount, defaultValue: '{{count}} views' })
+            ? t('views-count', { count: b.viewCount, defaultValue_one: '{{count}} view', defaultValue: '{{count}} views' })
             : undefined,
       })),
     [userItems, t],

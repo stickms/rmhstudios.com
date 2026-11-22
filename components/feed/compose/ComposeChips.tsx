@@ -19,7 +19,7 @@ export function UnlockPricePill({ price, onEdit }: { price: number; onEdit: () =
         <span>
           {t('unlock-price-pill', {
             price,
-            defaultValue: 'Locked · {{price}} coins',
+            count: Number(price), defaultValue_one: 'Locked · {{price}} coin', defaultValue: 'Locked · {{price}} coins',
           })}
         </span>
       </button>

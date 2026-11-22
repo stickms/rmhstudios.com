@@ -11,6 +11,7 @@ export default function WarningList({ warnings, idx }: { warnings: readonly Load
     switch (w.kind) {
       case 'cosmetic-limit':
         return t('warn-limit', {
+          defaultValue_one: '{{count}} cosmetic equipped; the game allows {{limit}}.',
           defaultValue: '{{count}} cosmetics equipped; the game allows {{limit}}.',
           count: w.count,
           limit: w.limit,

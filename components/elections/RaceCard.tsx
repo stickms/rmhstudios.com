@@ -184,6 +184,8 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
               })
             : race.pctReporting != null
               ? t('card.reporting', {
+                  count: Number(fmtInt(race.totalVotes)),
+                  defaultValue_one: '{{pct}}% in · {{votes}} vote',
                   defaultValue: '{{pct}}% in · {{votes}} votes',
                   pct: Math.round(race.pctReporting),
                   votes: fmtInt(race.totalVotes),
@@ -295,6 +297,8 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
                 src: race.official.source,
               })
             : t('card.officialDiff', {
+                count: Number(race.official.deltaPts ?? 0),
+                defaultValue_one: '⚠ {{src}} count differs by {{pts}} pt',
                 defaultValue: '⚠ {{src}} count differs by {{pts}} pts',
                 src: race.official.source,
                 pts: race.official.deltaPts ?? 0,

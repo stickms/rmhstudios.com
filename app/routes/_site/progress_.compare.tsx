@@ -115,6 +115,7 @@ function Comparison({ handle }: { handle: string }) {
         errorField(error, 'code') === 'limit'
           ? tn('track-limit', {
               count: trackedQuery.data?.max ?? 5,
+              defaultValue_one: 'You can track up to {{count}} achievement. Untrack one first.',
               defaultValue: 'You can track up to {{count}} achievements. Untrack one first.',
             })
           : tn('track-failed', { defaultValue: 'Could not update your tracked achievements.' }),

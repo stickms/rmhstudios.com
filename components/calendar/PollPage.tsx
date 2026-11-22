@@ -650,7 +650,7 @@ function LockDialog({
             <Select value={String(effLen)} onChange={(e) => setLen(Number(e.target.value))}>
               {Array.from({ length: maxLen }, (_, i) => (
                 <option key={i} value={i + 1}>
-                  {t('lock-minutes', { defaultValue: '{{count}} minutes', count: (i + 1) * slot })}
+                  {t('lock-minutes', { defaultValue_one: '{{count}} minute', defaultValue: '{{count}} minutes', count: (i + 1) * slot })}
                 </option>
               ))}
             </Select>

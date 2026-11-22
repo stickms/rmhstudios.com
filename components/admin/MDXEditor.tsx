@@ -563,6 +563,9 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
                           />
                           <p id="announcement-expires-help" className="t-body text-site-text-muted">
                             {t('announcement-expires-help', {
+                              count: Number(ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS),
+                              defaultValue_one:
+                                'Optional. When empty, it stops showing {{days}} day after it is announced.',
                               defaultValue:
                                 'Optional. When empty, it stops showing {{days}} days after it is announced.',
                               days: ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS,

@@ -273,7 +273,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
       {/* Views are a fact, not an action: metadata at the inline end of the row, in `t-meta`. */}
       {(viewCount ?? 0) > 0 && (
         <span className="feed-actions__views t-meta">
-          {t('post-views', { n: formatCount(viewCount), defaultValue: '{{n}} views' })}
+          {t('post-views', { n: formatCount(viewCount), count: Number(formatCount(viewCount)), defaultValue_one: '{{n}} view', defaultValue: '{{n}} views' })}
         </span>
       )}
     </div>

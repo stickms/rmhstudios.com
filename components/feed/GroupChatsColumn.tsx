@@ -241,7 +241,7 @@ export function GroupChatsColumn({
                   className={`t-body truncate ${g.unread ? 'font-semibold text-site-text' : 'text-site-text-muted'}`}
                 >
                   {g.lastMessage ??
-                    t('member-count', { count: g.memberCount, defaultValue: '{{count}} members' })}
+                    t('member-count', { count: g.memberCount, defaultValue_one: '{{count}} member', defaultValue: '{{count}} members' })}
                 </p>
               </Link>
             </SpineItem>

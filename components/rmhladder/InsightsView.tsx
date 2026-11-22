@@ -455,6 +455,8 @@ export function InsightsView({
               <option key={choice} value={choice}>
                 {t('quiet.choice', {
                   n: Number(choice),
+                  count: Number(Number(choice)),
+                  defaultValue_one: '{{n}} day without news',
                   defaultValue: '{{n}} days without news',
                 })}
               </option>

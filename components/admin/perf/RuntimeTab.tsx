@@ -246,7 +246,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
                       [
                         t('cg-cpu-quota', { defaultValue: 'CPU quota' }),
                         c.cpuCores
-                          ? t('cg-cores', { defaultValue: '{{count}} cores', count: c.cpuCores })
+                          ? t('cg-cores', { defaultValue_one: '{{count}} core', defaultValue: '{{count}} cores', count: c.cpuCores })
                           : t('no-limit-short', { defaultValue: 'no limit' }),
                       ],
                       [
@@ -254,7 +254,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
                         c.cpuCoresUsedLastMinute === null
                           ? '—'
                           : t('cg-cores', {
-                              defaultValue: '{{count}} cores',
+                              defaultValue_one: '{{count}} core', defaultValue: '{{count}} cores',
                               count: c.cpuCoresUsedLastMinute,
                             }),
                       ],

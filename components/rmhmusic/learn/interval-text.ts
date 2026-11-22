@@ -132,7 +132,13 @@ export function intervalMissSentences(t: T, q: IntervalQuestion, said: StaffInte
     how = miss.wider
       ? single
         ? t('interval-read-wide-step-single', { ns: 'c-rmhmusic', defaultValue: 'Your answer is one step too wide.' })
-        : t('interval-read-wide-steps', { ns: 'c-rmhmusic', n, defaultValue: 'Your answer is {{n}} steps too wide.' })
+        : t('interval-read-wide-steps', {
+            ns: 'c-rmhmusic',
+            n,
+            count: Number(n),
+            defaultValue_one: 'Your answer is {{n}} step too wide.',
+            defaultValue: 'Your answer is {{n}} steps too wide.',
+          })
       : single
         ? t('interval-read-narrow-step-single', {
             ns: 'c-rmhmusic',
@@ -141,6 +147,8 @@ export function intervalMissSentences(t: T, q: IntervalQuestion, said: StaffInte
         : t('interval-read-narrow-steps', {
             ns: 'c-rmhmusic',
             n,
+            count: Number(n),
+            defaultValue_one: 'Your answer is {{n}} step too narrow.',
             defaultValue: 'Your answer is {{n}} steps too narrow.',
           });
   } else {
@@ -153,6 +161,8 @@ export function intervalMissSentences(t: T, q: IntervalQuestion, said: StaffInte
         : t('interval-read-wide-semitones', {
             ns: 'c-rmhmusic',
             n,
+            count: Number(n),
+            defaultValue_one: 'Your answer is {{n}} semitone too wide.',
             defaultValue: 'Your answer is {{n}} semitones too wide.',
           })
       : single
@@ -163,6 +173,8 @@ export function intervalMissSentences(t: T, q: IntervalQuestion, said: StaffInte
         : t('interval-read-narrow-semitones', {
             ns: 'c-rmhmusic',
             n,
+            count: Number(n),
+            defaultValue_one: 'Your answer is {{n}} semitone too narrow.',
             defaultValue: 'Your answer is {{n}} semitones too narrow.',
           });
   }

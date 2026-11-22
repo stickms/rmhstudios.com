@@ -191,7 +191,7 @@ export function PunchCard({ days }: { days: WatchDayDTO[] }) {
             weekday: weekdayNames[card.busiest.weekday].long,
             hour: hourLabel(card.busiest.hour),
             count: card.sampledDays,
-            defaultValue:
+            defaultValue_one: 'Busiest hour of his week: {{weekday}} at {{hour}}. Folded from {{count}} day.', defaultValue:
               'Busiest hour of his week: {{weekday}} at {{hour}}. Folded from {{count}} days.',
           })
         ) : (

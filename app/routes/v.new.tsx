@@ -139,7 +139,7 @@ function VibeNew() {
   if (preview) {
     const status = writing
       ? t('live-status-writing', {
-          defaultValue: 'Writing {{file}} · {{done}} of {{total}} files',
+          count: Number(preview.total), defaultValue_one: 'Writing {{file}} · {{done}} of {{total}} file', defaultValue: 'Writing {{file}} · {{done}} of {{total}} files',
           file: writing,
           done: preview.done,
           total: preview.total,

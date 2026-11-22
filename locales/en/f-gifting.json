@@ -78,7 +78,7 @@
   "list-empty": "No exchanges yet",
   "list-empty-desc": "Start one above, or open a link a friend sent you.",
   "list-members": "{{count}} members",
-  "list-members_one": "{{count}} members",
+  "list-members_one": "{{count}} member",
   "list-members_other": "{{count}} members",
   "list-title": "Your exchanges",
   "members-title": "Members ({{count}})",

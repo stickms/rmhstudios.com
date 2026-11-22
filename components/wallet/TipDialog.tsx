@@ -48,7 +48,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
     setSubmitting(true);
     try {
       await api(tipApi, { body: parsed.data });
-      toast.success(t("tip-success", { defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
+      toast.success(t("tip-success", { count: Number(amount), defaultValue_one: "Tipped {{amount}} coin{{recipient}}!", defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
       onOpenChange(false);
       setNote('');
     } catch (e) {

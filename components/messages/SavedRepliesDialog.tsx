@@ -157,6 +157,8 @@ export function SavedRepliesDialog({
                 {t('count', {
                   used: replies.length,
                   max: MAX_SAVED_REPLIES,
+                  count: Number(MAX_SAVED_REPLIES),
+                  defaultValue_one: '{{used}} of {{max}} reply',
                   defaultValue: '{{used}} of {{max}} replies',
                 })}
               </p>

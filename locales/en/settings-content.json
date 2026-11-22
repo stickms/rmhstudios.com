@@ -44,7 +44,7 @@
   "none": "None",
   "remove-tag": "Remove",
   "trash-crumb-settings": "Settings",
-  "trash-days-left_one": "{{count}} days left",
+  "trash-days-left_one": "{{count}} day left",
   "trash-days-left_other": "{{count}} days left",
   "trash-deleted-on": "Deleted {{date}}",
   "trash-empty-body": "Posts and comments you delete will show up here so you can undo it.",
@@ -74,6 +74,6 @@
   "trash-sign-in": "Sign in",
   "trash-signed-out": "Sign in to see your deleted content",
   "trash-view-thread": "View thread",
-  "trash-window-note_one": "Posts and comments you delete stay here for {{count}} days, then go for good.",
+  "trash-window-note_one": "Posts and comments you delete stay here for {{count}} day, then go for good.",
   "trash-window-note_other": "Posts and comments you delete stay here for {{count}} days, then go for good."
 }

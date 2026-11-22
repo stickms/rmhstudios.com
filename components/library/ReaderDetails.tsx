@@ -119,6 +119,7 @@ export function ReaderDetails({
               <dd>
                 {t('page-count', {
                   count: numPages || book.pages,
+                  defaultValue_one: '{{count}} page',
                   defaultValue: '{{count}} pages',
                 })}
               </dd>

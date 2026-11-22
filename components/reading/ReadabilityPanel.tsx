@@ -133,6 +133,8 @@ export default function ReadabilityPanel({ text, className }: { text: string; cl
                 <span className="me-2 font-mono text-xs font-semibold text-site-warning">
                   {t('n-words', {
                     n: e.words,
+                    count: Number(e.words),
+                    defaultValue_one: '{{n}} word',
                     defaultValue: '{{n}} words',
                   })}
                 </span>

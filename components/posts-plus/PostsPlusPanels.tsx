@@ -245,6 +245,8 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
                 <span className="min-w-0 flex-1 truncate text-left">{s.title}</span>
                 <span className="text-xs text-site-text-muted">
                   {t('series-parts', {
+                    count: Number(s.postCount),
+                    defaultValue_one: '{{n}} part',
                     defaultValue: '{{n}} parts',
                     n: s.postCount,
                   })}

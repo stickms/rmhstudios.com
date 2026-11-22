@@ -39,12 +39,14 @@ function BuildMiniCard({ build }: { build: Build }) {
           <div className="flex items-center gap-2 mt-1 text-xs text-site-text-muted">
             <span>
               {t('likes-count', {
+                defaultValue_one: '{{count}} like',
                 defaultValue: '{{count}} likes',
                 count: build.likeCount,
               })}
             </span>
             <span>
               {t('views-count', {
+                defaultValue_one: '{{count}} view',
                 defaultValue: '{{count}} views',
                 count: build.viewCount,
               })}

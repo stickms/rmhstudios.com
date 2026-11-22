@@ -41,7 +41,7 @@ export function GroupHeader({
           />
         </h1>
         <p className="t-meta truncate">
-          {t('member-count', { count: group.members.length, defaultValue: '{{count}} members' })}
+          {t('member-count', { count: group.members.length, defaultValue_one: '{{count}} member', defaultValue: '{{count}} members' })}
           <ViewerRoleMeta role={group.members.find((m) => m.id === currentUserId)?.role ?? 'member'} />
         </p>
       </div>

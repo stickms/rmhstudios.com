@@ -12,7 +12,7 @@
   "admin-page-desc": "Schedule community canvas events and moderate context notes on posts.",
   "admin-page-title": "Canvas and context notes",
   "admin-row": "{{size}}px, {{phase}}, {{count}} pixels placed",
-  "admin-row_one": "{{size}}px, {{phase}}, {{count}} pixels placed",
+  "admin-row_one": "{{size}}px, {{phase}}, {{count}} pixel placed",
   "admin-row_other": "{{size}}px, {{phase}}, {{count}} pixels placed",
   "admin-size": "Canvas size",
   "admin-start": "Starts",

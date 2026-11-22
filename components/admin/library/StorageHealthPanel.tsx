@@ -167,6 +167,8 @@ export function StorageHealthPanel({
           {t('missing-objects', {
             missing: health.missing.length,
             total: health.total,
+            count: Number(health.total),
+            defaultValue_one: '{{missing}} of {{total}} book are missing their file in storage',
             defaultValue: '{{missing}} of {{total}} books are missing their file in storage',
           })}
         </h2>

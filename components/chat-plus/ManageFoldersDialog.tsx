@@ -171,6 +171,7 @@ function FolderRow({
       <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
         {t('folder-chat-count', {
           count: folder.scopeKeys.length,
+          defaultValue_one: '{{count}} chat',
           defaultValue: '{{count}} chats',
         })}
       </span>

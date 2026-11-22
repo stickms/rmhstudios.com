@@ -599,7 +599,7 @@ export function EarningsTab() {
                   {t(
                     'payout-note',
                     {
-                      defaultValue:
+                      count: Number(MIN_PAYOUT_COINS), defaultValue_one: 'Payouts require a verified creator account and admin review (min {{n}} coin).', defaultValue:
                         'Payouts require a verified creator account and admin review (min {{n}} coins).',
                       n: MIN_PAYOUT_COINS,
                     },

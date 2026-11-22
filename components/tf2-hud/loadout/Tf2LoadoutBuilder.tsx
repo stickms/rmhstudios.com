@@ -1175,6 +1175,7 @@ export function Picker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search-items', {
+              defaultValue_one: 'Search {{count}} item',
               defaultValue: 'Search {{count}} items',
               count: all.length,
             })}

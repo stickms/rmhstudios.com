@@ -353,7 +353,7 @@ export function PlaylistsColumn({
                           </span>
                           <span className="block text-xs text-site-text-muted">
                             {t('playlist-item-count', {
-                              defaultValue: '{{n}} items',
+                              count: Number(pl.itemCount), defaultValue_one: '{{n}} item', defaultValue: '{{n}} items',
                               n: pl.itemCount,
                             })}
                             {''}· {pl.kind}

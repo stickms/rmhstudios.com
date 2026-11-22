@@ -99,7 +99,7 @@ export function ArcadeHub({
         t('arcade-claimed', {
           xp: data.xp ?? 0,
           coins: data.coins ?? 0,
-          defaultValue: 'Reward claimed! +{{xp}} XP, +{{coins}} coins',
+          count: Number(data.coins ?? 0), defaultValue_one: 'Reward claimed! +{{xp}} XP, +{{coins}} coin', defaultValue: 'Reward claimed! +{{xp}} XP, +{{coins}} coins',
         }),
       );
       await refresh();

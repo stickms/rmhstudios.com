@@ -220,7 +220,7 @@ export function RecipesManager() {
                 </p>
                 <p className="text-xs text-site-text-muted">
                   {t('recipes-fired', {
-                    defaultValue: 'Fired {{count}} times',
+                    defaultValue_one: 'Fired {{count}} time', defaultValue: 'Fired {{count}} times',
                     count: r.fireCount,
                   })}
                   {r.lastError ? ` · ${r.lastError}` : ''}

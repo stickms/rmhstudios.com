@@ -154,7 +154,7 @@ export function OtherOffices({ cycle, live }: { cycle: string; live: boolean }) 
         ) : null}
       </div>
 
-      <p className="el-eyebrow" role="status">{t('office.count', { defaultValue: '{{n}} races', n: rows.length })}</p>
+      <p className="el-eyebrow" role="status">{t('office.count', { count: Number(rows.length), defaultValue_one: '{{n}} race', defaultValue: '{{n}} races', n: rows.length })}</p>
       <div className="el-measure__grid">
         {rows.slice(0, shown).map((r) => (
           <OfficeCard key={r.id} r={r} />

@@ -180,7 +180,7 @@ export default function OfficeHoursManage() {
             >
               {OFFICE_HOURS_SLOT_LENGTHS.map((n) => (
                 <option key={n} value={n}>
-                  {t('oh-minutes', { defaultValue: '{{count}} minutes', count: n })}
+                  {t('oh-minutes', { defaultValue_one: '{{count}} minute', defaultValue: '{{count}} minutes', count: n })}
                 </option>
               ))}
             </Select>

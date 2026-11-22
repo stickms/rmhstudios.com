@@ -81,6 +81,8 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
     >
       <p className="mb-1 font-mono text-xs text-site-text-muted">
         {t('activity-summary', {
+          count: Number(HEATMAP_WEEKS),
+          defaultValue_one: 'Posts in the last {{weeks}} week: {{total}}',
           defaultValue: 'Posts in the last {{weeks}} weeks: {{total}}',
           total: data.total,
           weeks: HEATMAP_WEEKS,

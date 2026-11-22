@@ -26,6 +26,7 @@ function SparkCard({ label, values, format, inkClass }: SparkCardProps) {
         values={values}
         className={inkClass}
         label={t('spark-label', {
+          defaultValue_one: '{{label}}, last {{count}} minute, latest {{latest}}',
           defaultValue: '{{label}}, last {{count}} minutes, latest {{latest}}',
           label,
           count: values.length,

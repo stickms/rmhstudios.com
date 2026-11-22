@@ -119,7 +119,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         >
           <ShoppingBag size={16} />
           {t("meta-shop", { defaultValue: "Meta Shop" })}
-          <span className="ml-auto text-sm text-(--altair-amber) font-mono">{t("coins-count", { defaultValue: "{{coins}} coins", coins })}</span>
+          <span className="ml-auto text-sm text-(--altair-amber) font-mono">{t("coins-count", { count: Number(coins), defaultValue_one: "{{coins}} coin", defaultValue: "{{coins}} coins", coins })}</span>
         </button>
 
         <button

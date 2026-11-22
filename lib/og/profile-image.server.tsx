@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { plural } from '@/lib/core/format';
 import satori from '@/lib/og/satori.server';
 import { dedupeOgRender, svgToPng } from './render.server';
 import {
@@ -103,12 +104,12 @@ async function renderProfileOgImageUncached(data: ProfileOgData): Promise<Buffer
   const stats: Stat[] = [
     {
       value: formatCount(data.followerCount ?? 0),
-      label: 'followers',
+      label: plural(data.followerCount ?? 0, 'follower', 'followers'),
       lead: true,
     },
     {
       value: formatCount(data.postCount ?? 0),
-      label: 'posts',
+      label: plural(data.postCount ?? 0, 'post', 'posts'),
     },
   ];
 

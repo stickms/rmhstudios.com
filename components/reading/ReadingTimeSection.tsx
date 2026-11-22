@@ -123,6 +123,8 @@ export default function ReadingTimeSection() {
         t('target-invalid', {
           min: WEEKLY_TARGET_MIN,
           max: nf.format(WEEKLY_TARGET_MAX),
+          count: Number(nf.format(WEEKLY_TARGET_MAX)),
+          defaultValue_one: 'Enter a target between {{min}} and {{max}} minute.',
           defaultValue: 'Enter a target between {{min}} and {{max}} minutes.',
         }),
       );

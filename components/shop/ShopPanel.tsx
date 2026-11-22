@@ -375,6 +375,8 @@ export function ShopPanel({
               <Button variant="primary" loading={busy} disabled={short > 0} onClick={() => buy(open)}>
                 {t('shop-buy-for', {
                   price: fmt.number(open.price),
+                  count: Number(fmt.number(open.price)),
+                  defaultValue_one: 'Buy for {{price}} coin',
                   defaultValue: 'Buy for {{price}} coins',
                 })}
               </Button>

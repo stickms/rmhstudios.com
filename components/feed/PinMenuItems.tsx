@@ -93,6 +93,8 @@ export function PinMenuItems({ item, enabled, onDone, onUpdate }: PinMenuItemsPr
         toast.error(
           t('limit-reached', {
             max: limit,
+            count: Number(limit),
+            defaultValue_one: 'You can pin up to {{max}} post. Unpin one first.',
             defaultValue: 'You can pin up to {{max}} posts. Unpin one first.',
           }),
         );

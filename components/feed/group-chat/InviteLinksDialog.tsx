@@ -214,6 +214,7 @@ function InviteLinksBody({ groupId }: { groupId: string }) {
           <p className="t-meta">
             {t('limit-reached', {
               count: MAX_LIVE_INVITES,
+              defaultValue_one: 'A group can have {{count}} link at a time. Revoke one to make another.',
               defaultValue: 'A group can have {{count}} links at a time. Revoke one to make another.',
             })}
           </p>

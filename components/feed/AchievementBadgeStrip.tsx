@@ -82,7 +82,7 @@ export function AchievementBadgeStrip({
  </span>
  <span className="flex items-center gap-1 text-site-text-muted">
  <Trophy className="h-3.5 w-3.5 text-site-warning"aria-hidden />
- {t('achievements-count', { count: unlockedCount, defaultValue:'{{count}} achievements'})}
+ {t('achievements-count', { count: unlockedCount, defaultValue_one: '{{count}} achievement', defaultValue:'{{count}} achievements'})}
  </span>
  </button>
  );

@@ -283,7 +283,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         setResultMessage(
           won
             ? t('result-won', { defaultValue: 'You won {{payout}} coins!', payout })
-            : t('result-lost', { defaultValue: 'Ball landed in bin {{bin}}. You lost {{amount}} coins.', bin: landedBin + 1, amount: betAmount })
+            : t('result-lost', { count: Number(betAmount), defaultValue_one: 'Ball landed in bin {{bin}}. You lost {{amount}} coin.', defaultValue: 'Ball landed in bin {{bin}}. You lost {{amount}} coins.', bin: landedBin + 1, amount: betAmount })
         );
         setGameState('result');
 

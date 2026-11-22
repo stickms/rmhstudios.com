@@ -554,7 +554,9 @@ export function verifiedBadge(size: number): React.ReactElement {
 
 const PAD = 24 * SCALE;
 const PAD_STORY = 44 * SCALE;
-const MARK = 21 * SCALE;
+/* The brand row is a label, not the subject: kept small so the body (the post, the
+   profile, the game) owns the card at the ~500px an unfurl is shown at. */
+const MARK = 16 * SCALE;
 const MARK_STORY = 30 * SCALE;
 /** The chip row / URL line at the bottom. Tallest thing that goes there. */
 const FOOTER = 27 * SCALE;
@@ -650,13 +652,13 @@ export function cardFrame({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 10 * SCALE,
+            gap: (centred ? 10 : 8) * SCALE,
           }}
         >
           {brandMark(markSize)}
           <span
             style={{
-              fontSize: (centred ? 20 : 15) * SCALE,
+              fontSize: (centred ? 20 : 12) * SCALE,
               fontWeight: 600,
               letterSpacing: '-0.022em',
               color: INK,
@@ -665,7 +667,7 @@ export function cardFrame({
             RMH Studios
           </span>
         </div>
-        {eyebrow && !centred ? kicker(eyebrow, MUTED) : null}
+        {eyebrow && !centred ? kicker(eyebrow, MUTED, 0.85) : null}
       </div>
 
       {/* A 1px rule under the brand row: rules before boxes (R3). */}

@@ -117,6 +117,7 @@ export function InterviewReports({
           {data && data.count > 0 && (
             <span className="font-normal text-site-text-muted">
               {t('ir-summary', {
+                defaultValue_one: '{{count}} report · average difficulty {{avg}}/5',
                 defaultValue: '{{count}} reports · average difficulty {{avg}}/5',
                 count: data.count,
                 avg: data.avgDifficulty,
