@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
@@ -9,7 +10,7 @@ import { Spinner } from'@/components/ui/spinner';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { liquidVTName } from'@/lib/view-transition';
 import { AI_TIMEOUT_MS, api } from'@/lib/contract/client';
-import { HttpError, serverError } from'@/lib/http';
+import { HttpError } from '@/lib/http';
 import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ export function PersonaChatColumn({
  initialData?: { persona: Persona; messages: Msg[]; signedIn: boolean } | null;
 }) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const confirm = useConfirm();
  // Seed from the loader when it ran (even a `null`result is a definitive
  // not-found seed) so the column paints immediately without a mount fetch.
@@ -112,7 +114,7 @@ export function PersonaChatColumn({
  ...m,
  {
  role:'assistant',
- content: `(${serverError(e) ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
+ content: `(${refusalText.maybe(e) ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
  },
  ]);
  }

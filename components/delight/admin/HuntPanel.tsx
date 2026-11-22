@@ -235,6 +235,8 @@ export default function HuntPanel() {
               <p className="t-body font-medium text-site-text">{h.title}</p>
               <p className="t-body text-site-text-muted">
                 {t('hunt-admin-meta', {
+                  count: Number(h._count.progress),
+                  defaultValue_one: '{{clues}} clues, {{done}} finisher',
                   defaultValue: '{{clues}} clues, {{done}} finishers',
                   clues: h.clues.length,
                   done: h._count.progress,

@@ -254,7 +254,7 @@ describe('bulk import', () => {
     for (let i = 0; i < 1897; i++) db.cards.push(card(`fill${i}`, 'mine', 3 + i));
     db.decks[0].cardCount = 1900;
     const r = await importCards('me', 'mine', batch(101));
-    expect(r).toEqual({
+    expect(r).toMatchObject({
       ok: false,
       status: 400,
       error: 'Deck is full',

@@ -3,7 +3,7 @@
  * for the signed-in user.
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
@@ -84,6 +84,14 @@ function PrivacySettingsPage() {
           />
         ) : (
           <>
+            <p className="t-body">
+              <Link to="/settings/preview" className="underline underline-offset-2">
+                {t('preview-link', {
+                  ns: 'profile-preview',
+                  defaultValue: 'See your profile as someone signed out, or not following you, sees it.',
+                })}
+              </Link>
+            </p>
             <PresencePrivacyControls />
             <CircleManager />
             <CallPrivacyControls />

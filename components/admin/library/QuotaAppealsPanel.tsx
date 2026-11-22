@@ -7,13 +7,13 @@
  * second. See `app/routes/_site/admin/library.tsx`.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Inbox, X } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   adminQuotaDecideApi,
   adminQuotaRequestsApi,
@@ -41,6 +41,7 @@ type QuotaRequest = {
 
 export function QuotaAppealsPanel() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const prompt = usePrompt();
   const [requests, setRequests] = useState<QuotaRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,11 +99,11 @@ export function QuotaAppealsPanel() { const fmt = useLocaleFormat();
         setRequests((prev) => prev.filter((r) => r.id !== req.id));
       } else {
         toast.error(
-          serverError(failure) ?? t('quota-decide-failed', { defaultValue: 'Could not update the request.' }),
+          refusalText.maybe(failure) ?? t('quota-decide-failed', { defaultValue: 'Could not update the request.' }),
         );
       }
     },
-    [prompt, t],
+    [prompt, t, refusalText],
   );
 
   if (loading) {

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -7,7 +8,6 @@ import { splitThread } from '@/lib/feed/thread-splitter';
 import type { FeedItem } from '@/lib/feed-types';
 
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createThreadApi } from '@/lib/feed/compose-assist.contract';
 /** Mirrors MAX_SEGMENTS in lib/feed/api/rmharks.thread.server.ts. */
 const MAX_THREAD_POSTS = 25;
@@ -36,6 +36,7 @@ interface ThreadPostPanelProps {
  */
 export default function ThreadPostPanel({ content, blockedBy, onPosted }: ThreadPostPanelProps) {
   const { t } = useTranslation('f-feed-plus');
+  const refusalText = useRefusalText();
   const [busy, setBusy] = useState(false);
   const posts = useMemo(() => splitThread(content), [content]);
   const count = posts.length;
@@ -50,7 +51,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
       toast.success(t('thread-posted', { defaultValue: 'Thread posted' }));
       onPosted(item);
     } catch (e) {
-      toast.error(serverError(e) ?? t('thread-failed', { defaultValue: 'Could not post the thread' }));
+      toast.error(refusalText.maybe(e) ?? t('thread-failed', { defaultValue: 'Could not post the thread' }));
     } finally {
       setBusy(false);
     }
@@ -88,7 +89,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
         <p className="mt-2 text-xs text-site-danger">
           {t('thread-too-long', {
             max: MAX_THREAD_POSTS,
-            defaultValue: 'A thread can have at most {{max}} posts. Shorten the draft.',
+            count: Number(MAX_THREAD_POSTS), defaultValue_one: 'A thread can have at most {{max}} post. Shorten the draft.', defaultValue: 'A thread can have at most {{max}} posts. Shorten the draft.',
           })}
         </p>
       )}

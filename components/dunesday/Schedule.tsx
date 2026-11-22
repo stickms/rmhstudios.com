@@ -539,6 +539,7 @@ export function Schedule({
                       defaultValue: 'Show the next two weeks',
                     })
                   : t('show-all', {
+                      defaultValue_one: 'Show all {{count}} day',
                       defaultValue: 'Show all {{count}} days',
                       count: plan.days.length,
                     })}

@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Timer } from 'lucide-react';
@@ -33,9 +34,10 @@ import { SpeedrunBoard, SpeedrunQueue } from '@/components/speedrun/SpeedrunBoar
 import { SubmitRunPanel } from '@/components/speedrun/SubmitRunPanel';
 import { TierNote } from '@/components/speedrun/VerificationBadge';
 import { versionsOf } from '@/lib/speedrun/versions';
-import { api } from '@/lib/contract/client';
+import { api, apiQuery } from '@/lib/contract/client';
 import {
   getSpeedrunLeaderboardApi,
+  listMySpeedrunRunsApi,
   listSpeedrunCategoriesApi,
   upsertSpeedrunCategoryApi,
 } from '@/lib/speedrun/speedrun.contract';
@@ -113,6 +115,14 @@ export function SpeedrunsSection() {
     }
     if (!slug || !slugs.some((c) => c.slug === slug)) setSlug(slugs[0].slug);
   }, [slugs, slug]);
+
+  // The reason of a verdict is the runner's own: read from their own runs, never from the public board.
+  const myRuns = useQuery({ ...apiQuery(listMySpeedrunRunsApi), enabled: Boolean(viewer) });
+  const ownReasons = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const run of myRuns.data?.runs ?? []) if (run.rejectReason) out[run.id] = run.rejectReason;
+    return out;
+  }, [myRuns.data]);
 
   const loadBoard = useCallback(async () => {
     if (!game || !slug) return;
@@ -249,7 +259,7 @@ export function SpeedrunsSection() {
                 version={version}
                 viewerId={viewer?.id ?? null}
               />
-              <SpeedrunQueue entries={board.entries} tier={selected?.tier ?? 'manual'} />
+              <SpeedrunQueue entries={board.entries} tier={selected?.tier ?? 'manual'} ownReasons={ownReasons} />
             </div>
           )}
 

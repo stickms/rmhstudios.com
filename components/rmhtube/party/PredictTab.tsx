@@ -92,7 +92,7 @@ export default function PredictTab() {
           {myPick && (
             <p className={muted}>
               {t('predict-your-pick', {
-                defaultValue: 'You picked {{choice}} for {{points}} pts.',
+                count: Number(myPick.points), defaultValue_one: 'You picked {{choice}} for {{points}} pt.', defaultValue: 'You picked {{choice}} for {{points}} pts.',
                 choice:
                   myPick.choice === 'yes'
                     ? t('yes', { defaultValue: 'Yes' })

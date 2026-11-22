@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { createScheduledMessageApi, listScheduledMessagesApi } from '@/lib/messages/scheduled.contract';
@@ -32,6 +33,7 @@ export const route = apiRoute('/api/messages/scheduled', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

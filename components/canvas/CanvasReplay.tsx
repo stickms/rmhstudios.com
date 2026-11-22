@@ -156,6 +156,8 @@ export default function CanvasReplay({ event }: { event: CanvasEventView }) {
       </div>
       <p className="text-xs text-site-text-muted">
         {t('replay-count', {
+          count: Number(cells.length),
+          defaultValue_one: '{{done}} of {{total}} pixel',
           defaultValue: '{{done}} of {{total}} pixels',
           done: pos,
           total: cells.length,

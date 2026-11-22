@@ -139,6 +139,8 @@ export function EngagementHoursGrid({ grid }: { grid: EngagementGrid }) {
               <span>{slotText(slot)}</span>
               <span className="t-meta">
                 {t('slot-count', {
+                  count: Number(number.format(slot.count)),
+                  defaultValue_one: '{{n}} interaction',
                   defaultValue: '{{n}} interactions',
                   n: number.format(slot.count),
                 })}

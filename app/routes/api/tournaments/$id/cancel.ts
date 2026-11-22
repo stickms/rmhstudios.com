@@ -1,3 +1,4 @@
+import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/api/tournaments/$id/cancel')({
           return Response.json({ ok: true });
         } catch (error) {
           if (error instanceof TournamentError) {
-            return Response.json({ error: error.message }, { status: error.status });
+            return Response.json({ error: error.message, ...tournamentRefusal(error) }, { status: error.status });
           }
           console.error('Tournament cancel error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

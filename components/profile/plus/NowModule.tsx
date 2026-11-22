@@ -83,6 +83,8 @@ export default function NowModule({ title, userId, isOwner }: { title: string; u
                 ? t('now-stale', {
                     date: updated,
                     days: NOW_STALE_DAYS,
+                    count: Number(NOW_STALE_DAYS),
+                    defaultValue_one: 'Updated {{date}} — not refreshed in over {{days}} day',
                     defaultValue: 'Updated {{date}} — not refreshed in over {{days}} days',
                   })
                 : t('now-updated', {

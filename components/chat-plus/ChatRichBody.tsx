@@ -678,7 +678,7 @@ function DmPollCard({
           {
             count:
               view.totalVotes,
-            defaultValue:
+            defaultValue_one: '{{count}} vote', defaultValue:
               '{{count}} votes',
           },
         )}

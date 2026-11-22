@@ -522,6 +522,9 @@ function FindBody({
           {t('truncated', {
             shown: MAX_ROWS,
             total: flat.length,
+            count: Number(flat.length),
+            defaultValue_one:
+              'Showing the first {{shown}} of {{total}} match. Next and Previous still reach every one.',
             defaultValue: 'Showing the first {{shown}} of {{total}} matches. Next and Previous still reach every one.',
           })}
         </p>

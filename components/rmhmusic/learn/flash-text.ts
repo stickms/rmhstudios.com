@@ -79,10 +79,14 @@ export function missSentences(t: Translate, miss: Miss, played: boolean, note: s
     how = above
       ? t('flash-miss-above', {
           n: miss.steps,
+          count: Number(miss.steps),
+          defaultValue_one: '{{n}} step above the right note.',
           defaultValue: '{{n}} steps above the right note.',
         })
       : t('flash-miss-below', {
           n: miss.steps,
+          count: Number(miss.steps),
+          defaultValue_one: '{{n}} step below the right note.',
           defaultValue: '{{n}} steps below the right note.',
         });
   }
@@ -139,12 +143,16 @@ export function landmarkSentence(t: Translate, hint: LandmarkHint, note: string)
         note,
         landmark,
         n: hint.steps,
+        count: Number(hint.steps),
+        defaultValue_one: '{{note}} is {{n}} step above {{landmark}}.',
         defaultValue: '{{note}} is {{n}} steps above {{landmark}}.',
       })
     : t('flash-landmark-below', {
         note,
         landmark,
         n: hint.steps,
+        count: Number(hint.steps),
+        defaultValue_one: '{{note}} is {{n}} step below {{landmark}}.',
         defaultValue: '{{note}} is {{n}} steps below {{landmark}}.',
       });
 }

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -7,7 +8,6 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
-import { serverError } from '@/lib/http';
 import { api } from '@/lib/contract/client';
 import { adminEmailCampaigns, adminEmailResume, type EmailCampaignRow } from '@/lib/admin/email.contract';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,7 @@ function statusBadge(t: TFunction, status: EmailCampaignRow['status']) {
 export function CampaignHistory({ refreshKey }: { refreshKey: number }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const [rows, setRows] = useState<EmailCampaignRow[] | null>(null);
   const arrival = useArrival(rows !== null);
 
@@ -80,7 +81,7 @@ export function CampaignHistory({ refreshKey }: { refreshKey: number }) {
       load();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('email-resume-failed', {
             defaultValue: 'Could not resume',
           }),

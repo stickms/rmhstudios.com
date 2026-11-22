@@ -154,6 +154,25 @@ export function systemLabels(t: TFunction): Record<string, string> {
       defaultValue: 'Scheduled posts waited',
     }),
 
+    // Sprint 10 system labels (docs/autonomous/sprint-10/plan.md §Anchors)
+    // s10-04 deck-suggestions
+    'deck-suggestion': t('system-label-deck-suggestion', { ns: 'feed', defaultValue: 'Deck suggestion' }),
+
+    // s10-09 build-issues
+    'build-issue': t('system-label-build-issue', { ns: 'feed', defaultValue: 'Build issue' }),
+
+    // s10-15 admin-webhooks
+    'webhook-admin-disabled': t('system-label-webhook-admin-disabled', {
+      ns: 'feed',
+      defaultValue: 'Webhook turned off',
+    }),
+
+    // s10-16 speedrun-queue
+    'speedrun-verdict': t('system-label-speedrun-verdict', { ns: 'feed', defaultValue: 'Speedrun verdict' }),
+
+    // s10-17 admin-communities
+    'community-delisted': t('system-label-community-delisted', { ns: 'feed', defaultValue: 'Out of discovery' }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

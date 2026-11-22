@@ -180,6 +180,8 @@ export default function FocusGoal({
                   duration: formatMinutes(parsed, locale),
                 })
               : t('goal-hint', {
+                  count: Number(GOAL_MAX_MINUTES),
+                  defaultValue_one: 'From {{min}} minutes to {{max}} minute (50 hours).',
                   defaultValue: 'From {{min}} minutes to {{max}} minutes (50 hours).',
                   min: GOAL_MIN_MINUTES,
                   max: GOAL_MAX_MINUTES,

@@ -4,6 +4,7 @@
  * inventory from `/api/shop` (owned flag) and filters to tradable items.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -18,7 +19,6 @@ import { ItemPicture } from '@/components/shop/ItemPicture';
 import { RarityMark } from '@/components/shop/RarityMark';
 import { getShopApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createListingApi } from '@/lib/market/market.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,7 @@ export function SellSheet({
 }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [items, setItems] = useState<OwnedItem[] | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -87,6 +88,8 @@ export function SellSheet({
         t('market-price-bounds', {
           min: floor,
           max: fmt.number(MAX_PRICE),
+          count: Number(fmt.number(MAX_PRICE)),
+          defaultValue_one: 'Enter a whole number between {{min}} and {{max}} coin',
           defaultValue: 'Enter a whole number between {{min}} and {{max}} coins',
         }),
       );
@@ -111,7 +114,7 @@ export function SellSheet({
       onListed?.();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('market-list-failed', {
             defaultValue: "Couldn't list that item",
           }),

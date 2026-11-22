@@ -1007,8 +1007,9 @@ describe('reviews are not writable', () => {
     readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : [join(d, n)]));
 
   it('has no review route and no review write in the v1 study code', () => {
+    // Match the path below the routes folder: a checkout whose own path says "review" must not fail the test.
     const files = walk(dir);
-    expect(files.filter((f) => /review|grade/i.test(f))).toEqual([]);
+    expect(files.filter((f) => /review|grade/i.test(f.slice(dir.length)))).toEqual([]);
     for (const file of [...files, join(process.cwd(), 'lib/api/v1/study.server.ts')]) {
       expect(readFileSync(file, 'utf8')).not.toMatch(
         /flashcardReview\.(create|upsert|update|delete)|flashcardReviewLog/,

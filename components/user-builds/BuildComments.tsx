@@ -207,7 +207,7 @@ function CommentItem({
                 {showReplies
                   ? t('hide-replies', { defaultValue: 'Hide' })
                   : t('show-replies', {
-                      defaultValue: 'Show {{count}} replies',
+                      defaultValue_one: 'Show {{count}} reply', defaultValue: 'Show {{count}} replies',
                       count: comment.replyCount,
                     })}
               </Button>

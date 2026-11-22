@@ -117,6 +117,8 @@ export const GIF_ALT_READ_PATHS: readonly string[] = [
   'app/routes/api/v1/feed.ts',
   'lib/api/v1/search.server.ts',
   'lib/api/v1/communities.server.ts',
+  // s10-13: a moderator's queue; the held post goes through `serializePublicPost`, which carries the reason, the GIF description and quiet counts.
+  'lib/api/v1/moderation.server.ts',
   'lib/api/v1/feeds.server.ts',
   'app/routes/api/v1/users/$handle/posts.ts',
   'app/routes/api/v1/me/bookmarks.ts',
@@ -136,6 +138,7 @@ export const GIF_ALT_EXEMPT_PATHS: Readonly<Record<string, string>> = {
   'lib/communities/automod.ts': 'classifies a post kind from whether it has a GIF; no GIF is shown',
   'lib/posts-plus/capsules.server.ts': 'a capsule row says it has a GIF (hasGif); the GIF is not shown until it opens',
   'lib/og/post-image.server.tsx': 'OG cards do not change (the card draws the picture, not an alt)',
+  'lib/feed/first-link.ts': 'reads whether a post has a GIF to skip its link card; no GIF is shown or returned',
   'lib/og/api/og.post.$id.server.ts': 'OG cards do not change (the card draws the picture, not an alt)',
   'lib/messages.server.ts': 'the inbox row shows the "GIF" preview label for a last message, never the GIF',
   'lib/messages/api/messages.search.server.ts': 'the inbox search row shows the "GIF" preview label, never the GIF',
@@ -148,4 +151,6 @@ export const GIF_ALT_EXEMPT_PATHS: Readonly<Record<string, string>> = {
     'the shared-media grid lists thumbnails by type; images have no description there either',
   'lib/chat-plus/pins.server.ts': 'a pinned-message row says it has media (hasMedia); the media is not shown',
   'lib/chat-plus/saved.server.ts': 'a saved-message row checks for media to build its label; the media is not shown',
+  'lib/profile/preview.server.ts':
+    'a preview row says the post includes media (hasMedia); neither the GIF nor its description is returned',
 };

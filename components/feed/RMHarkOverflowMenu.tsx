@@ -15,6 +15,7 @@
  * parent owns that state and passes a `translate`control for the menu item.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { lazy, Suspense, useRef, useState, type RefObject } from'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -47,6 +48,8 @@ import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from'@/lib/utils';
 import { PostMenuTrigger } from './PostMenuTrigger';
 import { RepostMuteMenuItem } from './RepostMuteMenuItem';
+import { MuteDurationChoices, useMutedToastText } from './MuteDurationMenu';
+import type { AccountMuteDuration } from '@/lib/moderation/mute-expiry';
 import { PinMenuItems } from './PinMenuItems';
 import { CommunityPinMenuItems } from '@/components/communities/CommunityPinMenuItems';
 import {
@@ -62,7 +65,7 @@ import { api } from '@/lib/contract/client';
 import { getRulesApi } from '@/lib/communities/rules.contract';
 import type { ReportableRules } from '@/lib/communities/rules';
 import { toggleBlockApi, toggleMuteApi } from '@/lib/moderation/moderation.contract';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 
 // These dialogs render only after a menu action — code-split so they stay out of
 // the initial feed chunk and their (per-post) code isn't evaluated during
@@ -162,6 +165,7 @@ export function RMHarkOverflowPanel({
  anchorRef,
 }: RMHarkOverflowPanelProps) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const confirm = useConfirm();
  // Shared root-level session (one subscription for the whole app).
  const { data: session } = useSession();
@@ -195,6 +199,9 @@ export function RMHarkOverflowPanel({
  const [altOpen, setAltOpen] = useState(false);
  // Conversation mute: the choice loads when the menu opens; the four options are a small menu of their own.
  const [muteChoicesOpen, setMuteChoicesOpen] = useState(false);
+ // Account mute: the duration is chosen from a small menu of its own (s10-10).
+ const [muteDurationOpen, setMuteDurationOpen] = useState(false);
+ const mutedToastText = useMutedToastText();
  const conversationMute = useConversationMute(actualId, menuOpen && !!session);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
  const { run: runBookmark } = useOptimisticAction();
@@ -315,7 +322,7 @@ export function RMHarkOverflowPanel({
  applyPollView(await api(endPollApi, { params: { id: actualId } }));
  toast.success(t('end-done', { ns: 'poll-lifecycle', defaultValue: 'Poll ended' }));
  } catch (e) {
- toast.error(serverError(e) || t('end-error', { ns: 'poll-lifecycle', defaultValue: 'Could not end the poll' }));
+ toast.error(refusalText.maybe(e) || t('end-error', { ns: 'poll-lifecycle', defaultValue: 'Could not end the poll' }));
  }
  };
 
@@ -331,23 +338,19 @@ export function RMHarkOverflowPanel({
  );
  if (data.blocked) onRemove?.();
  } catch (e) {
- toast.error(serverError(e) || t('block-error', { defaultValue:'Could not block user'}));
+ toast.error(refusalText.maybe(e) || t('block-error', { defaultValue:'Could not block user'}));
  }
  };
 
- const handleMute = async () => {
- setMenuOpen(false);
+ const handleMute = async (duration: AccountMuteDuration) => {
  if (!targetUserId) return;
  try {
- const data = await api(toggleMuteApi, { body: { targetUserId } });
- toast.success(
- data.muted
- ? t('user-muted', { defaultValue:'User muted'})
- : t('user-unmuted', { defaultValue:'User unmuted'}),
- );
- if (data.muted) onRemove?.();
+ // An explicit `mute: true` so a stale menu never flips an existing mute off.
+ await api(toggleMuteApi, { body: { targetUserId, mute: true, duration } });
+ toast.success(mutedToastText(duration));
+ onRemove?.();
  } catch (e) {
- toast.error(serverError(e) || t('mute-error', { defaultValue:'Could not mute user'}));
+ toast.error(refusalText.maybe(e) || t('mute-error', { defaultValue:'Could not mute user'}));
  }
  };
 
@@ -537,7 +540,13 @@ export function RMHarkOverflowPanel({
  >
  {t('report', { defaultValue:'Report'})}
  </MenuItem>
- <MenuItem icon={VolumeX} onSelect={handleMute}>
+ <MenuItem
+ icon={VolumeX}
+ onSelect={() => {
+ setMenuOpen(false);
+ setMuteDurationOpen(true);
+ }}
+ >
  {t('mute', { defaultValue:'Mute'})}
  </MenuItem>
  <RepostMuteMenuItem item={item} enabled={menuOpen} onDone={() => setMenuOpen(false)} />
@@ -565,6 +574,13 @@ export function RMHarkOverflowPanel({
  <CommunityPinMenuItems item={item} enabled={menuOpen} onDone={() => setMenuOpen(false)} />
  )}
  </AnchoredMenu>
+
+ <MuteDurationChoices
+ open={muteDurationOpen}
+ onClose={() => setMuteDurationOpen(false)}
+ anchorRef={anchorRef}
+ onChoose={(duration) => void handleMute(duration)}
+ />
 
  <MuteConversationChoices
  open={muteChoicesOpen}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS, newCard, review, type CardState } from '../srs/schedule';
-import { DECKS, cardId, voiceDeck } from './decks';
+import { DECKS, cardId, deckCards, voiceDeck } from './decks';
 import {
   PRACTICE_CARDS,
   buildPracticeSession,
@@ -42,7 +42,8 @@ function seen(
   };
 }
 
-const decks = practiceDecks();
+// The shared path's decks (the guitar learner's): the piano path adds the bass clef unit's (bass-path.product.test.ts).
+const decks = practiceDecks('guitar');
 const pool = new Set(decks.flatMap((d) => d.midis.map((m) => cardId(d.clef, m))));
 
 describe('practiceDecks', () => {
@@ -241,7 +242,7 @@ describe('practiceAvailable (the home link)', () => {
   });
 
   it('goes away once every shipped card is remembered and none is due', () => {
-    const all = practiceDecks().flatMap((d) => d.midis.map((m) => cardId(d.clef, m)));
+    const all = practiceDecks().flatMap((d) => deckCards(d).map((c) => c.id));
     const rows = [...new Set(all)].map((id) =>
       row({
         cardId: id,
@@ -261,9 +262,10 @@ describe('Practice for singers (the voice path)', () => {
   it('deals a singer new cards from their range’s deck, not the piano and guitar decks', () => {
     expect(practiceDecks('voice', 'tenor')).toEqual([voiceDeck('tenor')]);
     expect(practiceDecks('voice', 'bass')).toEqual([voiceDeck('bass')]);
-    // Piano and guitar keep the shipped decks of their path.
+    // A guitarist keeps the shipped decks of the shared path; a pianist's path adds the bass clef unit's decks.
     expect(practiceDecks('piano')).toEqual(practiceDecks());
-    expect(practiceDecks('guitar', null)).toEqual(practiceDecks());
+    expect(practiceDecks('guitar', null)).toEqual(practiceDecks('guitar'));
+    expect(practiceDecks('guitar').map((d) => d.id)).toEqual(['treble-lines', 'treble-all', 'middle-c']);
   });
 
   it('has no new cards for a singer who has not chosen a range (never assumed alto)', () => {

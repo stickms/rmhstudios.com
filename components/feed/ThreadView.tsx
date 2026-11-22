@@ -17,7 +17,7 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
       backLabel={t('back', { defaultValue: 'Back' })}
       headerRight={
         <span className="t-meta">
-          {t('thread-count', { defaultValue: '{{n}} posts', n: items.length })}
+          {t('thread-count', { count: Number(items.length), defaultValue_one: '{{n}} post', defaultValue: '{{n}} posts', n: items.length })}
         </span>
       }
     >

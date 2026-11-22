@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, Users, X } from 'lucide-react';
@@ -15,7 +16,6 @@ import { useRefusedToast } from './group-chat/useRefusedToast';
 import { SearchField } from '@/components/ui/search-field';
 import { ChatFolderBar } from '@/components/chat-plus/ChatFolderBar';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createGroupChatApi,
   listGroupChatsApi,
@@ -31,6 +31,7 @@ export function GroupChatsColumn({
   initialData?: { groups: GroupRow[]; signedIn: boolean } | null;
 } = {}) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const refusedToast = useRefusedToast();
   const navigate = useNavigate();
   const seeded = useRef(initialData !== undefined && initialData !== null);
@@ -105,7 +106,7 @@ export function GroupChatsColumn({
       refusedToast(data.refused);
       navigate({ to: `/groups/${data.id}` as string });
     } catch (e) {
-      setError(serverError(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
+      setError(refusalText.maybe(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }
@@ -241,7 +242,7 @@ export function GroupChatsColumn({
                   className={`t-body truncate ${g.unread ? 'font-semibold text-site-text' : 'text-site-text-muted'}`}
                 >
                   {g.lastMessage ??
-                    t('member-count', { count: g.memberCount, defaultValue: '{{count}} members' })}
+                    t('member-count', { count: g.memberCount, defaultValue_one: '{{count}} member', defaultValue: '{{count}} members' })}
                 </p>
               </Link>
             </SpineItem>

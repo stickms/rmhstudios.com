@@ -149,7 +149,7 @@ function ActivityPicker({
             <p className="text-[#949ba4] text-xs flex items-center justify-center gap-2">
               <Users className="w-4 h-4" aria-hidden />
               {t('gateway-participant-count', {
-                defaultValue: '{{count}} people in this Activity',
+                defaultValue_one: '{{count}} person in this Activity', defaultValue: '{{count}} people in this Activity',
                 count: participantCount,
               })}
             </p>

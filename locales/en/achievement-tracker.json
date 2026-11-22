@@ -15,7 +15,7 @@
   "state-unlocked": "Unlocked",
   "track": "Track",
   "track-failed": "Could not update your tracked achievements.",
-  "track-limit_one": "You can track up to {{count}} achievements. Untrack one first.",
+  "track-limit_one": "You can track up to {{count}} achievement. Untrack one first.",
   "track-limit_other": "You can track up to {{count}} achievements. Untrack one first.",
   "track-named": "Track {{name}}",
   "tracked-empty": "Track up to {{max}} achievements to follow them here.",

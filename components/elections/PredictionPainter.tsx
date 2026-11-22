@@ -630,7 +630,7 @@ export function PredictionPainter({
               : t(
                   'predict.open',
                   {
-                    defaultValue:
+                    count: Number(proj.open), defaultValue_one: '{{n}} seat still open — {{need}} needed for control', defaultValue:
                       '{{n}} seats still open — {{need}} needed for control',
                     n: proj.open,
                     need: proj.toWin,

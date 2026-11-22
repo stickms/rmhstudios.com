@@ -5,6 +5,7 @@
  * user's row, as rows on rules.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +16,7 @@ import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { banAdminUserApi, strikeAdminUserApi } from '@/lib/admin/admin-ops.contract';
 import type { AdminUserModeration } from '@/lib/moderation/admin-moderation.contract';
 import type { RestrictableFeature } from '@/lib/moderation/restrictions';
@@ -56,6 +57,7 @@ export function UserModerationPanel({
 }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const featureLabels = useFeatureLabels();
   const timeoutLabel = useTimeoutLabel();
   const ids = useId();
@@ -107,7 +109,7 @@ export function UserModerationPanel({
       await load();
     } catch (e) {
       toast.error(
-        (e instanceof HttpError && serverError(e)) ||
+        (e instanceof HttpError && refusalText.maybe(e)) ||
           t('mod-action-failed', {
             defaultValue: 'That did not go through.',
           }),
@@ -204,7 +206,7 @@ export function UserModerationPanel({
       await load();
     } catch (e) {
       toast.error(
-        (e instanceof HttpError && serverError(e)) ||
+        (e instanceof HttpError && refusalText.maybe(e)) ||
           t('mod-action-failed', {
             defaultValue: 'That did not go through.',
           }),

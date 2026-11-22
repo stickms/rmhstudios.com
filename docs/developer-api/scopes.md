@@ -8,9 +8,11 @@ Three wildcards are accepted and stored literally on the key:
 
 | Wildcard | Grants |
 | -------- | ------ |
-| `*` | Everything. |
+| `*` | Everything except explicit scopes (below). |
 | `read:*` | Every read scope. |
-| `write:*` | Every write scope (likewise `manage:*`). |
+| `write:*` | Every write scope (likewise `manage:*`, except explicit scopes). |
+
+**Explicit scopes.** A scope marked explicit is granted only when a key lists it by name: `*` and `manage:*` do not include it. `manage:moderation` is the one explicit scope. It lets a key time out and ban members, so a key made before it existed, or made with "All" selected, never gains it; the key-creation page shows it unticked and says so.
 
 Grant the least privilege an integration needs. A key that only reads the public feed should carry `read:feed` and nothing else — if it leaks, that is the whole blast radius.
 
@@ -56,6 +58,10 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `read:feeds` | Feeds | Read your feeds, lists, saved searches and keyword alerts, and page the posts of a feed or list. Reading posts also needs read:posts. |
 | `write:feeds` | Feeds | Replace the members of your lists. Feeds are created, renamed and deleted on the site. |
 | `read:practice` | Practice | Read your own typing, music practice and focus-session history. Read-only: practice cannot be written through the API. |
+| `manage:events` | Events | Create, edit and cancel events you host, and post updates to the people coming. |
+| `manage:moderation` | Moderation | Moderate communities where you are a moderator: the mod queue and timeouts and bans. Not included in `*` or `manage:*`: a key must list it itself. |
+| `read:rmhtube` | RMHTube | Read your Watch later list and watch statistics, and upcoming watch parties. |
+| `write:rmhtube` | RMHTube | Add to and remove from Watch later, and say whether you are going to a watch party. |
 
 <!-- END GENERATED: scopes -->
 

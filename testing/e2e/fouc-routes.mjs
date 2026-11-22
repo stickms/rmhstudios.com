@@ -108,6 +108,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of the school page (an unknown slug is a 404 from the loader).',
   },
+  '/builds/$slug/issues': {
+    path: '/builds/fouc-audit-no-such-build/issues',
+    fidelity: 'shell',
+    why: "Not-found branch of a build's issue list (s10-09).",
+  },
   '/create/builds/$slug/insights': {
     path: '/create/builds/fouc-audit-no-such-build/insights',
     fidelity: 'shell',

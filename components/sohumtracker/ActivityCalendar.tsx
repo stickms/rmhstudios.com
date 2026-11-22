@@ -185,6 +185,7 @@ export function ActivityCalendar({
             day?.messages
               ? t('cal-cell-messages', {
                   count: day.messages,
+                  defaultValue_one: '{{count}} message',
                   defaultValue: '{{count}} messages',
                 })
               : null,

@@ -60,9 +60,12 @@ describe('Practice and the new decks', () => {
   });
 
   it('never changes the decks a beginner already has', () => {
-    const before = ids(practiceDecks('piano', null, new Set()));
+    const before = ids(practiceDecks('guitar', null, new Set()));
     expect(before).toEqual(expect.arrayContaining(['treble-lines', 'treble-all', 'middle-c']));
-    expect(before).not.toContain('bass-all'); // no lesson uses it: unchanged
+    expect(before).not.toContain('bass-all'); // no lesson on the shared path uses it: unchanged
+    // The piano path's bass clef unit adds its own decks, and no spelled one.
+    const piano = ids(practiceDecks('piano', null, new Set()));
+    expect(piano).toEqual(expect.arrayContaining([...before, 'bass-lines', 'bass-all', 'grand-middle']));
   });
 
   it('keeps a singer’s Practice to their range’s deck', () => {

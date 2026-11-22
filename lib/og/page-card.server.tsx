@@ -38,7 +38,7 @@ import {
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
-  stripEmoji,
+  cardText,
   truncate,
 } from '@/lib/og/shared.server';
 import {
@@ -121,7 +121,7 @@ export interface PageCardData {
 }
 
 function clean(s: string | null | undefined, n: number): string {
-  return truncate(stripEmoji(s ?? ''), n);
+  return truncate(cardText(s ?? ''), n);
 }
 
 async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {

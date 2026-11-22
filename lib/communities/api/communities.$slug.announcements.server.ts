@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
@@ -58,7 +59,7 @@ export const route = apiRoute('/api/communities/$slug/announcements', {
 
       const role = await getRole(community.id, session.user.id);
       if (!canModerate(role))
-        return Response.json({ error: 'Only mods can post announcements' }, { status: 403 });
+        return Response.json({ ...refusalBody('COMMUNITY_ANNOUNCE_MODS_ONLY') }, { status: 403 });
 
       const created = await prisma.$transaction(async (tx) => {
         const row = await tx.communityAnnouncement.create({

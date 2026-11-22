@@ -3,6 +3,7 @@
  * the pure rules (version, commit link, order) are in `releases.ts`. Which caller may do what is decided here, so the
  * two endpoint modules only identify the caller and translate the outcome.
  */
+import { refusalBody } from '@/lib/errors/codes';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { emitBuildReleased } from '@/lib/webhooks/activity-emit.server';
@@ -81,11 +82,11 @@ export async function createRelease(
   userId: string,
   input: CreateReleaseInput,
 ): Promise<CreateReleaseResult> {
-  if (!build) return { ok: false, status: 404, error: 'Build not found' };
+  if (!build) return { ok: false, status: 404, ...refusalBody('BUILD_NOT_FOUND') };
   if (build.userId !== userId) {
     return build.visibility === 'PRIVATE'
-      ? { ok: false, status: 404, error: 'Build not found' }
-      : { ok: false, status: 403, error: 'Only the build’s owner can publish a release' };
+      ? { ok: false, status: 404, ...refusalBody('BUILD_NOT_FOUND') }
+      : { ok: false, status: 403, ...refusalBody('BUILD_RELEASE_OWNER_ONLY') };
   }
   let release: ReleaseView;
   let released: Date;
@@ -103,7 +104,7 @@ export async function createRelease(
     released = row.createdAt;
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-      return { ok: false, status: 409, error: 'This build already has that version' };
+      return { ok: false, status: 409, ...refusalBody('BUILD_VERSION_EXISTS') };
     }
     throw e;
   }
@@ -125,14 +126,14 @@ export async function deleteRelease(
   releaseId: string,
   userId: string,
 ): Promise<DeleteReleaseResult> {
-  if (!build) return { ok: false, status: 404, error: 'Build not found' };
+  if (!build) return { ok: false, status: 404, ...refusalBody('BUILD_NOT_FOUND') };
   if (build.userId !== userId) {
     return build.visibility === 'PRIVATE'
-      ? { ok: false, status: 404, error: 'Build not found' }
-      : { ok: false, status: 403, error: 'Only the build’s owner can delete a release' };
+      ? { ok: false, status: 404, ...refusalBody('BUILD_NOT_FOUND') }
+      : { ok: false, status: 403, ...refusalBody('BUILD_RELEASE_DELETE_OWNER_ONLY') };
   }
   const { count } = await prisma.buildVersion.deleteMany({ where: { id: releaseId, buildId: build.id } });
-  return count > 0 ? { ok: true } : { ok: false, status: 404, error: 'Release not found' };
+  return count > 0 ? { ok: true } : { ok: false, status: 404, ...refusalBody('BUILD_RELEASE_NOT_FOUND') };
 }
 
 /**

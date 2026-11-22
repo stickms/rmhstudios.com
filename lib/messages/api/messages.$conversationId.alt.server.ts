@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { editMessageAltsApi } from '@/lib/messages/message-actions.contract';
@@ -35,6 +36,7 @@ export const route = apiRoute('/api/messages/$conversationId/alt', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

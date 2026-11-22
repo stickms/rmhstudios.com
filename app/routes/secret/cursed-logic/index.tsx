@@ -52,7 +52,7 @@ function CursedLogicPage() {
 
       <div className="shrink-0 flex flex-wrap justify-center items-center gap-2 sm:gap-4 pt-4 px-4 pb-[calc(1rem+var(--safe-bottom,0px))] bg-[#0a0a0f]/95 border-t border-white/10">
         <span className="font-mono text-amber-200 text-lg font-bold px-4 py-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 shadow-lg">
-          {t("fragments-count", { defaultValue: "{{count}} Fragments", count: fragments })}
+          {t("fragments-count", { defaultValue_one: "{{count}} Fragment", defaultValue: "{{count}} Fragments", count: fragments })}
         </span>
         <button
           type="button"

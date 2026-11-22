@@ -15,14 +15,19 @@ import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadgesLazy';
 import { cn, relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 import { useLocaleStore } from '@/stores/localeStore';
-import { ARRIVE } from '@/components/ui/arrive';
+import { ARRIVE, ArrivalSuspense } from '@/components/ui/arrive';
 import { CoveredLine } from '@/components/feed/CoveredLine';
 import { useAppliedContentWarning } from '@/components/feed/use-show-content-warnings';
 import { feedKickerLabel } from '@/components/feed/kicker-labels';
 import { usePostAction } from '@/components/feed/feed-nav';
+import { postLinkPreviewUrl } from '@/lib/feed/first-link';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
+// The link card loads with the first row that has a link, not with the feed.
+const LinkPreview = lazy(() =>
+  import('@/components/feed/LinkPreview').then((m) => ({ default: m.LinkPreview })),
+);
 const FeedRowMenu = lazy(loadFeedRowMenu);
 
 /** "GAME_ANNOUNCEMENT" → "Game announcement": the last-resort label when a feed category has no translation. */
@@ -64,6 +69,8 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
     userId: item.user?.id,
   });
   const covered = isRmhark && warning.coverText;
+  // The first link of a post with no media of its own unfurls under it (lib/feed/first-link.ts).
+  const linkPreviewUrl = isRmhark && !covered && !item.locked ? postLinkPreviewUrl(item) : null;
   const rawKicker = item.category || item.type;
   const kicker = feedKickerLabel(t, rawKicker) ?? humanizeKicker(rawKicker);
   const href = hrefFor(item);
@@ -231,6 +238,12 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
           {body}
         </Link>
       )}
+      {/* The link card is the row link's sibling: an anchor cannot sit inside another. */}
+      {linkPreviewUrl && !pending ? (
+        <ArrivalSuspense fallback={<div aria-hidden className="mt-3 h-20" />}>
+          <LinkPreview url={linkPreviewUrl} className="mt-3" />
+        </ArrivalSuspense>
+      ) : null}
       {hasMenu ? (
         <div className="feed-row__menu">
           <PostMenuTrigger

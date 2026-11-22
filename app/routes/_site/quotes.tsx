@@ -212,7 +212,7 @@ function QuotesPage() {
           </div>
           <div className="relative flex justify-center">
             <span className="bg-site-bg px-3 font-mono text-xs text-site-text-muted">
-              {t('quotes-count', { count: quotes.length, defaultValue: '{{count}} Quotes' })}
+              {t('quotes-count', { count: quotes.length, defaultValue_one: '{{count}} Quote', defaultValue: '{{count}} Quotes' })}
             </span>
           </div>
         </div>

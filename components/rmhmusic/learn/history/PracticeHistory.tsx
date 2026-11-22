@@ -359,6 +359,8 @@ export function PracticeHistory() {
             summary={
               yearBest && yearBest.count > 0
                 ? t('year-summary', {
+                    count: Number(number.format(yearActive)),
+                    defaultValue_one: '{{label}}: practised on {{days}} day. Busiest day {{date}}.',
                     defaultValue: '{{label}}: practised on {{days}} days. Busiest day {{date}}.',
                     label: yearLabel,
                     days: number.format(yearActive),

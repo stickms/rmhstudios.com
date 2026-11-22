@@ -38,7 +38,7 @@
   "feeds-signin-cta": "Sign in",
   "feeds-subscribed": "Subscribed",
   "feeds-subscribers": "{{count}} subscribers",
-  "feeds-subscribers_one": "{{count}} subscribers",
+  "feeds-subscribers_one": "{{count}} subscriber",
   "feeds-subscribers_other": "{{count}} subscribers",
   "feeds-tab-alerts": "Alerts",
   "feeds-tab-feeds": "Feeds",

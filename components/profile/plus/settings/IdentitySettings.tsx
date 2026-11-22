@@ -487,7 +487,7 @@ export default function IdentitySettings({
               'now-hint',
               {
                 days: NOW_STALE_DAYS,
-                defaultValue:
+                count: Number(NOW_STALE_DAYS), defaultValue_one: 'It greys out if you don’t update it for {{days}} day.', defaultValue:
                   'It greys out if you don’t update it for {{days}} days.',
               },
             )}

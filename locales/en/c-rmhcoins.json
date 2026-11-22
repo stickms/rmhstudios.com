@@ -126,7 +126,7 @@
   "push": "Push",
   "quick-bets": "Quick bets",
   "raise": "Raise",
-  "rebuy-coins_one": "Rebuy ({{count}} coins)",
+  "rebuy-coins_one": "Rebuy ({{count}} coin)",
   "rebuy-coins_other": "Rebuy ({{count}} coins)",
   "result-blackjack": "BLACKJACK!",
   "result-blackjack-blackjack-controls": "Blackjack! (3:2)",

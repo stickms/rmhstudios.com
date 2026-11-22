@@ -43,6 +43,7 @@ import {
   type FindNoteMode,
   type Target,
 } from '@/lib/rmhmusic/learn/machines/find-note';
+import { grandStaffLayout } from '@/lib/rmhmusic/learn/grand-staff-layout';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { getPracticeMode } from '@/lib/rmhmusic/learn/practice-mode';
 import { starsFor, scoreFrom } from '@/lib/rmhmusic/learn/scoring/stars';
@@ -58,7 +59,8 @@ import { LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
 import { PracticeModeToggle, usePracticeMode } from './PracticeModeToggle';
 import { SessionFrame, SessionSheet, cardStateOf, sessionTitle, useQuestionSession } from './QuestionSession';
-import { STAFF_BOX, STAFF_LOW_ASPECT, StaffCard } from './StaffCard';
+import { STAFF_BOX, STAFF_GRAND_ASPECT, STAFF_LOW_ASPECT, StaffCard } from './StaffCard';
+import { useStaffSpotText } from './staff-spot-text';
 import { chooseInput, useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
 
 /** The control focus returns to after Next: the fretboard's roving cell, or the first piano key. */
@@ -82,8 +84,15 @@ export function FindNoteLesson({
 }) {
   const { t } = useTranslation('c-rmhmusic');
   // Read once: the board and the targets are dealt for the instrument the lesson opened with.
-  const [instrument] = useState<Instrument>(() => useLearnStore.getState().profile?.instrument ?? 'piano');
-  const mode: FindNoteMode = getLesson(lessonId)?.mode === 'fretboard' ? 'fretboard' : 'keyboard-map';
+  const [learnerInstrument] = useState<Instrument>(() => useLearnStore.getState().profile?.instrument ?? 'piano');
+  const lessonMode = getLesson(lessonId)?.mode;
+  const mode: FindNoteMode =
+    lessonMode === 'fretboard' ? 'fretboard' : lessonMode === 'grand-staff-find' ? 'grand-staff-find' : 'keyboard-map';
+  // Play what you read: the target is drawn on the grand staff and the keys are the answer, whoever opened it
+  // (the unit is on the piano path only; a guitarist who follows a link to it plays it on the keys).
+  const grandStaff = mode === 'grand-staff-find';
+  const instrument: Instrument = grandStaff ? 'piano' : learnerInstrument;
+  const spotText = useStaffSpotText();
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const guitar = instrument === 'guitar';
   const practiceMode = usePracticeMode();
@@ -248,6 +257,8 @@ export function FindNoteLesson({
     line = t('find-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You found {{correct}} of {{total}} note.',
       defaultValue: 'You found {{correct}} of {{total}} notes.',
     });
   }
@@ -271,7 +282,7 @@ export function FindNoteLesson({
   if (target) {
     const staff = targetStaff(target.midi, instrument);
     const written = midiToName(staff.midi);
-    const label = guitar
+    const staffLabel = guitar
       ? t('find-staff-guitar', {
           note: name,
           written,
@@ -286,6 +297,10 @@ export function FindNoteLesson({
             note: name,
             defaultValue: '{{note}} on the treble staff',
           });
+    // On the grand staff the image names the staff and where the note sits on it.
+    const label = grandStaff
+      ? spotText.named(name, staff.clef, grandStaffLayout(staff.clef, staff.midi).step, true)
+      : staffLabel;
     question = (
       <StaffCard
         card={{
@@ -295,6 +310,7 @@ export function FindNoteLesson({
         }}
         state={cardStateOf(session)}
         range="low"
+        grand={grandStaff}
         octaveClef={guitar}
         caption={name}
         label={label}
@@ -336,8 +352,9 @@ export function FindNoteLesson({
         tall
         // The letters would give the answer away: the learner finds the key by its place.
         hideLabels
-        // The two-octave lesson asks C3 to B4: open on C3, so a wide screen shows all of it.
-        startOctave={mode === 'fretboard' ? 3 : 4}
+        // The two-octave lesson asks C3 to B4 and the grand staff lesson A2 to E4: open on C3, so a wide
+        // screen shows nearly all of it (the octave buttons reach A2 and B2).
+        startOctave={mode === 'keyboard-map' ? 4 : 3}
         rightKey={lesson.kind === 'feedback' && target ? target.midi : null}
         wrongKey={lesson.kind === 'feedback' && !lesson.right ? playedMidi : null}
       />
@@ -360,7 +377,7 @@ export function FindNoteLesson({
       <SessionSheet
         session={session}
         title={title}
-        question={question ?? <FindNoteStaffBox />}
+        question={question ?? <FindNoteStaffBox grand={grandStaff} />}
         line={line}
         lineKey={lineKey}
         said={said}
@@ -373,11 +390,11 @@ export function FindNoteLesson({
   );
 }
 
-/** The staff card's box with nothing in it: the low card's aspect (its name is drawn inside it). */
-export function FindNoteStaffBox({ skeleton = false }: { skeleton?: boolean }) {
+/** The staff card's box with nothing in it: the low card's aspect, or the grand staff's (its name is drawn inside it). */
+export function FindNoteStaffBox({ skeleton = false, grand = false }: { skeleton?: boolean; grand?: boolean }) {
   return (
     <div aria-hidden="true" className={STAFF_BOX}>
-      <div className={cn(skeleton && 'app-skeleton', STAFF_LOW_ASPECT, 'w-full')} />
+      <div className={cn(skeleton && 'app-skeleton', grand ? STAFF_GRAND_ASPECT : STAFF_LOW_ASPECT, 'w-full')} />
     </div>
   );
 }

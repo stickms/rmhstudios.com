@@ -1,6 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { DISCOVERABLE_POST_SQL } from '@/lib/communities/discovery';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
@@ -75,6 +76,8 @@ export async function listTagFeed(
           AND NOT EXISTS (SELECT 1 FROM community_member m WHERE m."communityId" = c.id AND m."userId" = ${viewerId})))`
     : Prisma.sql`(r."communityId" IS NULL OR NOT EXISTS (
         SELECT 1 FROM community c WHERE c.id = r."communityId" AND c."isPrivate"))`;
+  // Out of discovery (s10-17): a hashtag page offers posts to people browsing, so a delisted community's posts stay out.
+  const discoverable = Prisma.raw(DISCOVERABLE_POST_SQL);
   const hiddenClause = hidden.length
     ? Prisma.sql`AND r."userId" <> ALL(${hidden}::text[])`
     : Prisma.empty;
@@ -102,6 +105,7 @@ export async function listTagFeed(
       AND r."deletedAt" IS NULL
       AND ${audience}
       AND ${communityVisible}
+      AND ${discoverable}
       ${hiddenClause}
       ${cursorClause}
     ORDER BY ph."createdAt" DESC, ph."rmheetId" DESC

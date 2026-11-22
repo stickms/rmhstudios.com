@@ -5,6 +5,7 @@
  * in"; everyone sees the count; the host can set the window, and check
  * entrants in by hand (`EntrantCheckIn`, on each row).
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -13,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { serverError } from '@/lib/http';
 import { checkInSelf as checkInSelfApi, setCheckInWindow, setEntrantCheckIn } from '@/lib/tournaments/checkin.queries';
 import { CHECK_IN_MINUTES, checkInPhase, isCheckInMinutes } from '@/lib/tournaments/checkin';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
@@ -49,6 +49,7 @@ interface PanelProps {
 
 export function CheckInPanel({ tourney, viewerId, canManage, onChanged }: PanelProps) {
   const { t, i18n } = useTranslation('tournament-checkin');
+  const refusalText = useRefusalText();
   const phase = useCheckInPhase(tourney);
   const [busy, setBusy] = useState(false);
   if (tourney.status !== 'REGISTRATION') return null;
@@ -68,7 +69,7 @@ export function CheckInPanel({ tourney, viewerId, canManage, onChanged }: PanelP
       if (okMsg) toast.success(okMsg);
       await onChanged();
     } catch (e) {
-      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Check-in could not be saved' }));
+      toast.error(refusalText.maybe(e) ?? t('failed', { defaultValue: 'Check-in could not be saved' }));
     } finally {
       setBusy(false);
     }
@@ -167,6 +168,7 @@ export function CheckInWindowField({ id, value, hasStart, disabled, onChange, cl
         {CHECK_IN_MINUTES.map((m) => (
           <option key={m} value={m}>
             {t('window-minutes', {
+              defaultValue_one: '{{count}} minute before the start',
               defaultValue: '{{count}} minutes before the start',
               count: m,
             })}
@@ -244,6 +246,7 @@ interface EntrantProps {
 /** One entrant row's check-in mark (text, not only an icon) and the host's by-hand toggle. */
 export function EntrantCheckIn({ tourney, entrant, canManage, onChanged }: EntrantProps) {
   const { t } = useTranslation('tournament-checkin');
+  const refusalText = useRefusalText();
   const phase = useCheckInPhase(tourney);
   const [busy, setBusy] = useState(false);
   if (tourney.status !== 'REGISTRATION' || tourney.checkInMinutes == null) return null;
@@ -258,7 +261,7 @@ export function EntrantCheckIn({ tourney, entrant, canManage, onChanged }: Entra
       await setEntrantCheckIn(tourney.id, userId, !entrant.checkedIn);
       await onChanged();
     } catch (e) {
-      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Check-in could not be saved' }));
+      toast.error(refusalText.maybe(e) ?? t('failed', { defaultValue: 'Check-in could not be saved' }));
     } finally {
       setBusy(false);
     }

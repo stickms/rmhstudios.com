@@ -381,6 +381,8 @@ export default function ChallengePanel({
                     <span className="text-xs tabular-nums text-site-text-muted">
                       {t('challenge-votes', {
                         n: e.voteCount,
+                        count: Number(e.voteCount),
+                        defaultValue_one: '{{n}} vote',
                         defaultValue: '{{n}} votes',
                       })}
                     </span>

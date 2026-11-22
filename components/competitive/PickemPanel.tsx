@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -5,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { PICK_ROLES, type PickRole } from '@/lib/competitive/pickem';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { getPickemApi, setPickemApi, type PickemView as PickemData } from '@/lib/competitive/pickem.contract';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 import { useArrival } from '@/components/ui/arrive';
@@ -26,6 +26,7 @@ export function PickemPanel({
   signedIn: boolean;
 }) {
   const { t } = useTranslation('f-competitive');
+  const refusalText = useRefusalText();
   const [data, setData] = useState<PickemData | null>(null);
   const [card, setCard] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -64,7 +65,7 @@ export function PickemPanel({
       try {
         await api(setPickemApi, { params: { id }, body: { picks } });
       } catch (err) {
-        toast.error(serverError(err) ?? t('pk-failed', { defaultValue: 'Could not save picks' }));
+        toast.error(refusalText.maybe(err) ?? t('pk-failed', { defaultValue: 'Could not save picks' }));
         return;
       }
       toast.success(t('pk-saved', { defaultValue: 'Picks saved' }));

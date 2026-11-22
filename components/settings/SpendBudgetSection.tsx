@@ -89,6 +89,9 @@ export function SpendBudgetSection({
       </div>
       <p id="spend-budget-hint" className="t-meta">
         {t('hint', {
+          count: Number(num(MAX_SPEND_CAP)),
+          defaultValue_one:
+            'Shop, unlocks, tips, gifts, memberships and market buys, per calendar month (UTC). Leave blank for no budget. Allowed: {{min}} to {{max}} coin.',
           defaultValue:
             'Shop, unlocks, tips, gifts, memberships and market buys, per calendar month (UTC). Leave blank for no budget. Allowed: {{min}} to {{max}} coins.',
           min: num(MIN_SPEND_CAP),

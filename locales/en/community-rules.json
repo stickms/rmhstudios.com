@@ -20,7 +20,7 @@
   "mod-tab": "Rules",
   "queue-action-report": "Reported",
   "queue-reported-rule": "Reported: {{rule}}",
-  "queue-reporters_one": "{{count}} members reported this",
+  "queue-reporters_one": "{{count}} member reported this",
   "queue-reporters_other": "{{count}} members reported this",
   "queue-status-removed-cited": "Removed for breaking rule {{n}}: {{title}}",
   "report-rate-limited": "You have sent a lot of reports. Try again later.",

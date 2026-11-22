@@ -128,6 +128,7 @@ export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
                   <>
                     <span className="ls-muted ls-numeric shrink-0 text-[10px]">
                       {t('races-played', {
+                        defaultValue_one: '{{count}} race',
                         defaultValue: '{{count}} races',
                         count: row.versusPlayed,
                       })}

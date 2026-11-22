@@ -80,10 +80,14 @@ export function SellCard({ gameId, cardIndex, foil }: { gameId: string; cardInde
       <span className="stm-muted stm-sell-note">
         {valid
           ? t('steam-market-receive', {
+              count: Number(marketFee(n).proceeds),
+              defaultValue_one: 'You receive {{n}} coin',
               defaultValue: 'You receive {{n}} coins',
               n: marketFee(n).proceeds,
             })
           : t('steam-market-range', {
+              count: Number(CARD_MAX_PRICE),
+              defaultValue_one: '{{min}} to {{max}} coin',
               defaultValue: '{{min}} to {{max}} coins',
               min: CARD_MIN_PRICE,
               max: CARD_MAX_PRICE,

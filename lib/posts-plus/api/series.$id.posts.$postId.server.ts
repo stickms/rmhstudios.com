@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { moveSeriesPostApi, removeSeriesPostApi } from '@/lib/posts-plus/series.contract';
@@ -14,13 +15,13 @@ export const route = apiRoute('/api/series/$id/posts/$postId', {
     { rateLimit: 'write', body: seriesReorderBody },
     async ({ userId, params, body }) => {
       const res = await movePost(userId, params.id, params.postId, body.direction);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({ ok: true });
     },
   ),
   DELETE: implement(removeSeriesPostApi, { rateLimit: 'write' }, async ({ userId, params }) => {
     const res = await removePost(userId, params.id, params.postId);
-    if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+    if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
     return Response.json({ ok: true });
   }),
 });

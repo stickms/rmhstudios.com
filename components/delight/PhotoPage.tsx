@@ -185,7 +185,7 @@ export function PhotoPage() {
                       </Button>
                     )}
                     <span className="text-sm tabular-nums text-site-text-muted">
-                      {t('potd-votes', { defaultValue: '{{count}} votes', count: n.votes })}
+                      {t('potd-votes', { defaultValue_one: '{{count}} vote', defaultValue: '{{count}} votes', count: n.votes })}
                     </span>
                     {(n.mine || isAdmin) && (
                       <IconButton

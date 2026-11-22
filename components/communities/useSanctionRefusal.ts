@@ -9,7 +9,7 @@
  */
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { HttpError } from '@/lib/http';
 
 type RefusalCode = 'community_banned' | 'community_timed_out';
@@ -33,34 +33,19 @@ export function sanctionRefusal(source: unknown): {
   };
 }
 
-/** `(errorOrBody) => text | null`: the translated refusal, or `null` when it is not a sanction refusal. */
+/**
+ * `(errorOrBody) => text | null`: the translated refusal, or `null` when it is not a sanction refusal.
+ *
+ * s10-20: the sentence now comes from `useRefusalText` (the `COMMUNITY_BANNED` and `COMMUNITY_TIMED_OUT` cases keep
+ * their `community-bans` keys, so every catalogue string is the one it was); this hook only decides whether a body is
+ * a sanction refusal at all.
+ */
 export function useSanctionRefusal(): (source: unknown) => string | null {
-  const { t } = useTranslation('community-bans');
-  const fmt = useLocaleFormat();
+  // Keeps the `community-bans` namespace loading for the sentences `useRefusalText` renders from it.
+  useTranslation('community-bans');
+  const refusalText = useRefusalText();
   return useCallback(
-    (source: unknown) => {
-      const refusal = sanctionRefusal(source);
-      if (!refusal) return null;
-      const end = refusal.endsAt;
-      if (refusal.code === 'community_timed_out') {
-        return end
-          ? t('refusal-timeout-until', {
-              date: fmt.dateTime(end),
-              defaultValue: 'You are timed out of this community until {{date}}. You can read but not post.',
-            })
-          : t('refusal-timeout-open', {
-              defaultValue: 'You are timed out of this community. You can read but not post.',
-            });
-      }
-      return end
-        ? t('refusal-ban-until', {
-            date: fmt.dateTime(end),
-            defaultValue: 'You are banned from this community until {{date}}.',
-          })
-        : t('refusal-ban-open', {
-            defaultValue: 'You are banned from this community until a moderator lifts it.',
-          });
-    },
-    [t, fmt],
+    (source: unknown) => (sanctionRefusal(source) ? (refusalText.maybe(source) ?? null) : null),
+    [refusalText],
   );
 }

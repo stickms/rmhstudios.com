@@ -141,6 +141,8 @@ export function StatsPage({
   const heatmapSummary =
     heatmapMax && heatmapMax.count > 0
       ? t('heatmap-summary', {
+          count: Number(days.length),
+          defaultValue_one: '{{label}}: {{total}} in {{days}} day. Busiest day {{date}} with {{max}}.',
           defaultValue: '{{label}}: {{total}} in {{days}} days. Busiest day {{date}} with {{max}}.',
           label: heatmapLabel,
           total: number.format(days.reduce((a, d) => a + d.count, 0)),
@@ -149,6 +151,8 @@ export function StatsPage({
           max: number.format(heatmapMax.count),
         })
       : t('heatmap-summary-empty', {
+          count: Number(days.length),
+          defaultValue_one: '{{label}}: nothing in {{days}} day.',
           defaultValue: '{{label}}: nothing in {{days}} days.',
           label: heatmapLabel,
           days: days.length,
@@ -159,6 +163,7 @@ export function StatsPage({
     r.rate === null
       ? t('retention-too-few', { defaultValue: 'Not enough reviews yet' })
       : t('retention-value', {
+          defaultValue_one: '{{rate}} of {{count}} review',
           defaultValue: '{{rate}} of {{count}} reviews',
           rate: percent.format(r.rate),
           count: r.samples,

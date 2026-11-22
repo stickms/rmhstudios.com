@@ -256,6 +256,8 @@ export function PlayScaleLesson({
     line = t('scale-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You played {{correct}} of {{total}} scale.',
       defaultValue: 'You played {{correct}} of {{total}} scales.',
     });
   }

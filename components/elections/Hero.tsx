@@ -75,7 +75,7 @@ export function Hero({
                 : phase === 'archive'
                   ? t('hero.subArchive', { defaultValue: 'The final board. Every race, every margin.' })
                   : t('hero.subLive', {
-                      defaultValue: '{{called}} of {{total}} races called. Updating every 20 seconds.',
+                      count: Number(racesTotal), defaultValue_one: '{{called}} of {{total}} race called. Updating every 20 seconds.', defaultValue: '{{called}} of {{total}} races called. Updating every 20 seconds.',
                       called: racesCalled,
                       total: racesTotal,
                     })}

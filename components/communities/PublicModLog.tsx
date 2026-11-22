@@ -92,6 +92,12 @@ export function PublicModLog({
     if (e.action === 'pins_reordered') {
       return t('public-pins-reordered', { ns: 'community-pins', defaultValue: 'Pinned posts reordered' });
     }
+    if (e.action === 'event_hosted') {
+      return t('public-event-hosted', { ns: 'community-events', defaultValue: 'A moderator hosted an event' });
+    }
+    if (e.action === 'event_cancelled') {
+      return t('public-event-cancelled', { ns: 'community-events', defaultValue: 'A moderator cancelled an event' });
+    }
     if (e.action === 'content_removed') {
       return e.targetType === 'comment'
         ? t('public-comment-removed', {

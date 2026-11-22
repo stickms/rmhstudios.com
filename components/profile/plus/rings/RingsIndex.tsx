@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -15,7 +16,6 @@ import { useSession } from '@/components/Providers';
 import { RING_DESCRIPTION_MAX, RING_MAX_OWNED, RING_NAME_MAX, type RingSummary } from '@/lib/profile/webrings';
 import { useJson } from '../useJson';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createRingApi } from '@/lib/profile/webrings.contract';
 
 function RingCard({ ring }: { ring: RingSummary }) {
@@ -45,6 +45,7 @@ function RingCard({ ring }: { ring: RingSummary }) {
 /** P6 — the ring directory: rings you are in, popular rings, and starting one. */
 export default function RingsIndex() {
   const { t } = useTranslation('f-profile-plus');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user);
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function RingsIndex() {
       });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('ring-create-failed', {
             defaultValue: "Couldn't start that ring",
           }),
@@ -194,6 +195,8 @@ export default function RingsIndex() {
               <span className="text-xs text-site-text-muted">
                 {t('ring-limit', {
                   max: RING_MAX_OWNED,
+                  count: Number(RING_MAX_OWNED),
+                  defaultValue_one: 'You can run up to {{max}} ring.',
                   defaultValue: 'You can run up to {{max}} rings.',
                 })}
               </span>

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { discoverableCommunityWhere } from '@/lib/communities/discovery';
 import type { OwnRequestState } from '@/lib/communities/join-requests.server';
 
 export interface CommunityListItem {
@@ -41,7 +42,8 @@ export async function listCommunities(opts: {
   // member count, lock badge, request button). Their content stays members-only
   // everywhere else; the sitemap still excludes them.
   const communities = await prisma.community.findMany({
-    where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
+    // Out of discovery (s10-17): a delisted community is not offered here; its page and members are unchanged.
+    where: discoverableCommunityWhere(q ? { name: { contains: q, mode: 'insensitive' as const } } : {}),
     orderBy: { memberCount: 'desc' },
     take: 50,
     select: {

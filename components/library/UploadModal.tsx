@@ -10,6 +10,7 @@
  * editable per row, and "Publish" uploads them one after another (the upload API
  * is one-file-per-request), reporting per-row success/failure.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LibraryDialogShell } from './LibraryDialogShell';
 import { useNavigate } from '@tanstack/react-router';
@@ -22,7 +23,6 @@ import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 import '@/components/library/library.css';
 
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   deleteLibraryUploadApi,
   draftLibraryMetadataApi,
@@ -87,6 +87,7 @@ export function UploadModal({
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('c-library');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const maxBytes = libraryPdfMaxBytes(isAdmin);
   const maxMb = Math.round(maxBytes / 1024 / 1024);
@@ -125,13 +126,13 @@ export function UploadModal({
       try {
         await api(requestLibraryQuotaApi, { body: { requestedTotal, reason } });
       } catch (error) {
-        setError(serverError(error) ?? t('error-generic', { defaultValue: 'Something went wrong.' }));
+        setError(refusalText.maybe(error) ?? t('error-generic', { defaultValue: 'Something went wrong.' }));
         return false;
       }
       await fetchQuota();
       return true;
     },
-    [fetchQuota, t],
+    [fetchQuota, t, refusalText],
   );
 
   // Live mirror so the sequential analysis loop reads fresh state across awaits.
@@ -231,7 +232,7 @@ export function UploadModal({
       const allowMany = isAdmin;
       const room = allowMany ? MAX_BATCH - itemsRef.current.length : 1;
       if (room <= 0) {
-        setError(t('error-too-many', { max: MAX_BATCH, defaultValue: 'You can upload up to {{max}} files at once.' }));
+        setError(t('error-too-many', { max: MAX_BATCH, count: Number(MAX_BATCH), defaultValue_one: 'You can upload up to {{max}} file at once.', defaultValue: 'You can upload up to {{max}} files at once.' }));
         return;
       }
       const accepted: UploadItem[] = [];
@@ -311,7 +312,7 @@ export function UploadModal({
         patch(it.id, { status: 'done', slug: data.slug });
         results.push({ slug: data.slug ?? null, ok: true });
       } catch (e) {
-        patch(it.id, { status: 'error', error: serverError(e) ?? t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
+        patch(it.id, { status: 'error', error: refusalText.maybe(e) ?? t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
         results.push({ slug: null, ok: false });
       }
     };

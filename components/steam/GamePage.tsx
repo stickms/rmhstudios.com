@@ -76,7 +76,7 @@ export function GamePage({ data }: { data: GamePageData }) {
         ? t('steam-today', { defaultValue: 'Today' })
         : last.key === 'yesterday'
           ? t('steam-yesterday', { defaultValue: 'Yesterday' })
-          : t('steam-days-ago', { defaultValue: '{{n}} days ago', n: last.days });
+          : t('steam-days-ago', { count: Number(last.days), defaultValue_one: '{{n}} day ago', defaultValue: '{{n}} days ago', n: last.days });
 
   return (
     <article className="stm-hub">

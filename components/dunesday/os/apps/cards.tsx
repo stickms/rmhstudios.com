@@ -370,7 +370,7 @@ export function useCardText() {
         return t(
           'cards-pile-label',
           {
-            defaultValue:
+            count: Number(cards.length), defaultValue_one: '{{pile}}, {{top}}, {{n}} card', defaultValue:
               '{{pile}}, {{top}}, {{n}} cards',
             pile: pileName,
             top: desc,

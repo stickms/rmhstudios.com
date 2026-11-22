@@ -109,7 +109,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
                           : t('role-respondent', { defaultValue: 'You answered' })}
                       {' · '}
                       {t('home-responses', {
-                        defaultValue: '{{count}} responses',
+                        defaultValue_one: '{{count}} response', defaultValue: '{{count}} responses',
                         count: p.respondentCount,
                       })}
                     </span>

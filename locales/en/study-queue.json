@@ -19,7 +19,7 @@
   "grade-hard": "Hard",
   "keep-going": "Keep going",
   "leech-edit": "Edit",
-  "leech-line_one": "Set aside: you have missed this card {{count}} times. Edit it or unsuspend it from the deck.",
+  "leech-line_one": "Set aside: you have missed this card {{count}} time. Edit it or unsuspend it from the deck.",
   "leech-line_other": "Set aside: you have missed this card {{count}} times. Edit it or unsuspend it from the deck.",
   "leeches-title_one": "Leech: {{count}} card set aside after repeated misses",
   "leeches-title_other": "Leeches: {{count}} cards set aside after repeated misses",

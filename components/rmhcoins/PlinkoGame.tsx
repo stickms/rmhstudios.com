@@ -1,7 +1,8 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { placePlinkoBetApi } from '@/lib/coins.contract';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '../ui/CoinIcon';
@@ -133,6 +134,7 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number) {
 // ---- Component ----
 export function PlinkoGame({ coins, setCoins }: Props) {
   const { t } = useTranslation('c-rmhcoins');
+  const refusalText = useRefusalText();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
 
@@ -283,7 +285,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         setResultMessage(
           won
             ? t('result-won', { defaultValue: 'You won {{payout}} coins!', payout })
-            : t('result-lost', { defaultValue: 'Ball landed in bin {{bin}}. You lost {{amount}} coins.', bin: landedBin + 1, amount: betAmount })
+            : t('result-lost', { count: Number(betAmount), defaultValue_one: 'Ball landed in bin {{bin}}. You lost {{amount}} coin.', defaultValue: 'Ball landed in bin {{bin}}. You lost {{amount}} coins.', bin: landedBin + 1, amount: betAmount })
         );
         setGameState('result');
 
@@ -344,7 +346,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         data = await api(placePlinkoBetApi, { body: { bin: selectedBin, amount } });
       } catch (e) {
         if (!(e instanceof HttpError)) throw e;
-        setResultMessage(serverError(e) ?? t('error-generic', { defaultValue: 'Something went wrong' }));
+        setResultMessage(refusalText.maybe(e) ?? t('error-generic', { defaultValue: 'Something went wrong' }));
         setResultWon(false);
         setGameState('result');
         setTimeout(() => {

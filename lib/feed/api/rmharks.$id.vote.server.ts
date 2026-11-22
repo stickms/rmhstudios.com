@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -95,7 +96,7 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
       });
 
       if (!option || option.poll.rmheetId !== id) {
-        return Response.json({ error: 'Invalid option' }, { status: 400 });
+        return Response.json({ ...refusalBody('CHAT_POLL_OPTION_INVALID') }, { status: 400 });
       }
 
       // Ended by the clock or by its author. Checked again under the poll's lock below, where it is race-safe.

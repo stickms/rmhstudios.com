@@ -1,5 +1,6 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { transformTextApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
@@ -28,6 +29,7 @@ const feedRewrite: AssistRewrite = async (text, action) =>
 
 export function useComposeAssist(value: string, onChange: (v: string) => void, rewrite: AssistRewrite = feedRewrite) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [busy, setBusy] = useState<AssistAction | null>(null);
 
  const labels: Record<AssistAction, string> = {
@@ -49,7 +51,7 @@ export function useComposeAssist(value: string, onChange: (v: string) => void, r
  if (e instanceof HttpError && e.status === 503) {
  toast.error(t('ai-unavailable', { defaultValue:'AI assist is unavailable right now.'}));
  } else {
- toast.error(serverError(e) || t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
+ toast.error(refusalText.maybe(e) || t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
  }
  } finally {
  setBusy(null);

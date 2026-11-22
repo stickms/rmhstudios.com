@@ -47,7 +47,7 @@ function SharedMarathon() {
         <div className={cn('space-y-3 px-4 pt-4 pb-12', arrival)}>
           <p className="text-sm text-site-text-muted">
             {t('marathon-shared-intro', {
-              defaultValue: '{{count}} titles, to finish by {{date}}. Planned from today.',
+              defaultValue_one: '{{count}} title, to finish by {{date}}. Planned from today.', defaultValue: '{{count}} titles, to finish by {{date}}. Planned from today.',
               count: list.items.length,
               date: list.deadline,
             })}

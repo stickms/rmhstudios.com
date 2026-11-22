@@ -8,6 +8,7 @@
  * the game version it was recorded on and whether a board is open for it.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -19,7 +20,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { formatRunTime } from '@/lib/speedrun/versions';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { listSubmittableReplaysApi, submitSpeedrunRunApi } from '@/lib/speedrun/speedrun.contract';
 import { useArrival } from '@/components/ui/arrive';
 
@@ -41,6 +41,7 @@ interface SubmitRunPanelProps {
 
 export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: SubmitRunPanelProps) {
   const { t } = useTranslation('c-tournaments');
+  const refusalText = useRefusalText();
   const [replays, setReplays] = useState<SubmittableReplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
@@ -85,7 +86,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
         });
       } catch (e) {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('speedrun-submit-failed', {
               defaultValue: 'Could not submit that run',
             }),

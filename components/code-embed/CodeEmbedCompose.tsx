@@ -148,6 +148,8 @@ export function CodeEmbedDialog({ ce }: { ce: CodeEmbedCompose }) {
           ))}
           <p className={`text-xs ${valid || total === 0 ? 'text-site-text-muted' : 'text-site-danger'}`}>
             {t('embed-size', {
+              count: Number(EMBED_TOTAL_MAX),
+              defaultValue_one: '{{used}} of {{max}} character',
               defaultValue: '{{used}} of {{max}} characters',
               used: total,
               max: EMBED_TOTAL_MAX,

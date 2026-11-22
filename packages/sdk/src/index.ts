@@ -486,7 +486,7 @@ export interface ListMyDeckCardsArgs {
   since?: string;
 }
 
-export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null }[]; nextCursor: string | null };
+export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; frontSound: { url: string; transcript: string; durationMs: number } | null; backSound: { url: string; transcript: string; durationMs: number } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null }[]; nextCursor: string | null };
 
 export interface CreateMyDeckCardsBody {
   /** 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage?, occlusion? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000; an occlusion card’s `front` is an optional prompt and its `back` an optional note); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. An occlusion card needs a front picture (a still image) and `occlusion: { mode: "hide-all" | "hide-one", masks: [{ id?, x, y, w, h, label }] }`: 1–20 masks in picture-relative units (0–1, at least 0.02 wide and tall, inside the picture), `label` the answer (up to 200 characters); a mask with no `id` takes the next free one. */
@@ -501,7 +501,7 @@ export interface CreateMyDeckCardsArgs {
   body: CreateMyDeckCardsBody;
 }
 
-export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null }[]; cardCount: number };
+export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; frontSound: { url: string; transcript: string; durationMs: number } | null; backSound: { url: string; transcript: string; durationMs: number } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null }[]; cardCount: number };
 
 export interface UpdateMyDeckCardBody {
   /** `basic`, `reversible`, `cloze` or `occlusion`. */
@@ -528,7 +528,7 @@ export interface UpdateMyDeckCardArgs {
   body: UpdateMyDeckCardBody;
 }
 
-export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null };
+export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; frontSound: { url: string; transcript: string; durationMs: number } | null; backSound: { url: string; transcript: string; durationMs: number } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null };
 
 export interface DeleteMyDeckCardArgs {
   /** The deck id. */
@@ -564,7 +564,7 @@ export interface UpsertMyDeckCardArgs {
   body: UpsertMyDeckCardBody;
 }
 
-export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null };
+export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; frontSound: { url: string; transcript: string; durationMs: number } | null; backSound: { url: string; transcript: string; durationMs: number } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null };
 
 export interface GetMyDeckDueArgs {
   /** The deck id. */
@@ -588,12 +588,80 @@ export interface ListEventsArgs {
 
 export type ListEventsResponse = { data: { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null }[]; nextCursor: string | null };
 
+export interface CreateEventBody {
+  /** 3–120 characters. */
+  title?: string;
+  /** ISO 8601 timestamp with an offset. */
+  starts_at?: string;
+  /** `SPACE`, `TOURNAMENT`, `GAME`, `URL` or `IRL`. */
+  venue_kind?: string;
+  /** Up to 2000 characters. */
+  description?: string;
+  /** ISO 8601 timestamp, after `starts_at`. */
+  ends_at?: string;
+  /** The address (`URL` venues, required) or a place name. */
+  venue?: string;
+  /** Seats, 1–1,000,000. Omit for no limit. */
+  capacity?: number;
+  /** Slug of a community you moderate. */
+  community?: string;
+  /** `public` (default) or `private`. */
+  visibility?: string;
+  /** `W` (weekly) or `M` (monthly). Needs `repeat_tz`. */
+  repeat?: string;
+  /** IANA time zone the repeat follows, e.g. `America/New_York`. */
+  repeat_tz?: string;
+  /** Last date, an ISO 8601 timestamp with an offset. */
+  repeat_until?: string;
+}
+
+export interface CreateEventArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateEventBody;
+}
+
+export type CreateEventResponse = { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null; nextOccurrences: { occurrence: string; startsAt: string; endsAt: string | null; state: string; note: string | null }[]; updates: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
+
 export interface GetEventArgs {
   /** The event id. */
   id: string;
 }
 
 export type GetEventResponse = { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null; nextOccurrences: { occurrence: string; startsAt: string; endsAt: string; state: string; note: string }[]; updates: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
+
+export interface UpdateEventBody {
+  /** 3–120 characters. */
+  title?: string;
+  /** Up to 2000 characters. */
+  description?: string;
+  /** ISO 8601 timestamp with an offset. */
+  starts_at?: string;
+  /** ISO 8601 timestamp, or `null` to clear. */
+  ends_at?: string;
+  /** `SPACE`, `TOURNAMENT`, `GAME`, `URL` or `IRL`. */
+  venue_kind?: string;
+  /** The address or place name, or `null` to clear. */
+  venue?: string;
+  /** Seats, or `null` for no limit. */
+  capacity?: number;
+  /** `W` or `M` (needs `repeat_tz`), or `null` to stop repeating. Host only. */
+  repeat?: string;
+  /** IANA time zone the repeat follows. */
+  repeat_tz?: string;
+  /** Last date, an ISO 8601 timestamp with an offset. */
+  repeat_until?: string;
+}
+
+export interface UpdateEventArgs {
+  /** The event id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateEventBody;
+}
+
+export type UpdateEventResponse = { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null; nextOccurrences: { occurrence: string; startsAt: string; endsAt: string | null; state: string; note: string | null }[]; updates: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
 
 export interface ListEventAttendeesArgs {
   /** The event id. */
@@ -869,7 +937,7 @@ export interface ListMyScheduledArgs {
   cursor?: string;
 }
 
-export type ListMyScheduledResponse = { data: { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
+export type ListMyScheduledResponse = { data: { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | 'automod' | null; postId: string | null; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
 
 export interface CreateMyScheduledBody {
   /** The post text, up to 1,000 characters. A post needs text, a poll or an image. */
@@ -898,14 +966,14 @@ export interface CreateMyScheduledArgs {
   body: CreateMyScheduledBody;
 }
 
-export type CreateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+export type CreateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | 'automod' | null; postId: string | null; createdAt: string; updatedAt: string };
 
 export interface GetMyScheduledArgs {
   /** The draft or scheduled post id. */
   id: string;
 }
 
-export type GetMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+export type GetMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | 'automod' | null; postId: string | null; createdAt: string; updatedAt: string };
 
 export interface UpdateMyScheduledBody {
   /** The post text, up to 1,000 characters. A post needs text, a poll or an image. */
@@ -936,7 +1004,7 @@ export interface UpdateMyScheduledArgs {
   body: UpdateMyScheduledBody;
 }
 
-export type UpdateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | null; postId: string | null; createdAt: string; updatedAt: string };
+export type UpdateMyScheduledResponse = { id: string; kind: string; content: string; audience: string; replyControl: string; contentWarning: string | null; communityId: string | null; poll: Record<string, unknown> | null; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; scheduledAt: string | null; held: 'community_sanction' | 'image_descriptions' | 'automod' | null; postId: string | null; createdAt: string; updatedAt: string };
 
 export interface DeleteMyScheduledArgs {
   /** The draft or scheduled post id. */
@@ -1070,6 +1138,175 @@ export interface ListMyDeletedArgs {
 }
 
 export type ListMyDeletedResponse = { data: { id: string; kind: string; deletedAt: string }[]; nextCursor: string | null };
+
+export interface CancelEventArgs {
+  /** The event id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type CancelEventResponse = { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null; nextOccurrences: { occurrence: string; startsAt: string; endsAt: string | null; state: string; note: string | null }[]; updates: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
+
+export interface ListEventUpdatesArgs {
+  /** The event id. */
+  id: string;
+}
+
+export type ListEventUpdatesResponse = { data: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
+
+export interface PostEventUpdateBody {
+  /** 1–500 characters. */
+  body?: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+}
+
+export interface PostEventUpdateArgs {
+  /** The event id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: PostEventUpdateBody;
+}
+
+export type PostEventUpdateResponse = { id: string; body: string; occurrence: string | null; createdAt: string };
+
+export interface ListModQueueArgs {
+  /** The community slug. */
+  slug: string;
+  /** `pending` (default) or `log`. */
+  view?: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListModQueueResponse = { data: { id: string; type: string; action: string; status: string; ruleName: string; snapshot: string; text: string; reporters: number | null; citedRule: { position: number; title: string } | null; createdAt: string; author: { id: string; name: string; handle: string; image: string }; post: { id: string; content: string; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; createdAt: string; author: { id: string; name: string | null; handle: string | null; image: string | null }; metrics: { likes: number | null; comments: number | null; reposts: number | null; views: number | null } } | null }[]; nextCursor: string | null };
+
+export interface DecideModItemBody {
+  /** `approve` or `remove`. */
+  decision?: string;
+  /** The community rule a removal cites (`GET /communities/{slug}/rules`). */
+  rule_id?: string;
+  /** A note sent to the author with a removal, up to 1000 characters. */
+  message?: string;
+}
+
+export interface DecideModItemArgs {
+  /** The community slug. */
+  slug: string;
+  /** The queue item id. */
+  itemId: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: DecideModItemBody;
+}
+
+export type DecideModItemResponse = { id: string; status: string };
+
+export interface ListSanctionsArgs {
+  /** The community slug. */
+  slug: string;
+  /** `true` (default) or `false`. */
+  active?: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListSanctionsResponse = { data: { id: string; kind: string; member: { id: string; name: string; handle: string }; moderator: { id: string; name: string | null; handle: string | null } | null; endsAt: string | null; createdAt: string; liftedAt: string | null; rule: { id: string; title: string } | null; reason: string }[]; nextCursor: string | null };
+
+export interface CreateSanctionBody {
+  /** The member, with or without a leading `@`. */
+  handle?: string;
+  /** `timeout` or `ban`. */
+  kind?: string;
+  /** `1h`, `1d`, `3d`, `7d`, `30d` or `forever`; which are allowed depends on `kind`. */
+  duration?: string;
+  /** The community rule the sanction cites. */
+  rule_id?: string;
+  /** A private note for moderators, up to 300 characters. */
+  reason?: string;
+}
+
+export interface CreateSanctionArgs {
+  /** The community slug. */
+  slug: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: CreateSanctionBody;
+}
+
+export type CreateSanctionResponse = { id: string; kind: string; endsAt: string | null };
+
+export interface LiftSanctionArgs {
+  /** The community slug. */
+  slug: string;
+  /** The sanction id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface ListMyWatchLaterArgs {
+  /** Page size, 1–50 (default 50). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyWatchLaterResponse = { data: { id: string; url: string; title: string; createdAt: string }[]; nextCursor: string | null };
+
+export interface AddToWatchLaterBody {
+  /** The video URL, up to 2048 characters. */
+  url?: string;
+  /** A label, up to 256 characters. */
+  title?: string;
+}
+
+export interface AddToWatchLaterArgs {
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: AddToWatchLaterBody;
+}
+
+export type AddToWatchLaterResponse = { id: string; url: string; title: string; createdAt: string };
+
+export interface RemoveFromWatchLaterArgs {
+  /** The Watch later item id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type ListRmhtubePartiesResponse = { data: { id: string; name: string; description: string; startsAt: string; isPublic: boolean; maxMembers: number; host: { id: string; name: string }; goingCount: number; going: boolean; isHost: boolean; closed: boolean }[] };
+
+export interface GetRmhtubePartyArgs {
+  /** The party room code. */
+  id: string;
+}
+
+export type GetRmhtubePartyResponse = { id: string; name: string; description: string; startsAt: string; isPublic: boolean; maxMembers: number; host: { id: string; name: string }; goingCount: number; going: boolean; isHost: boolean; closed: boolean };
+
+export interface SetRmhtubePartyGoingBody {
+  /** `true` to go, `false` to take it back. */
+  going?: boolean;
+}
+
+export interface SetRmhtubePartyGoingArgs {
+  /** The party room code. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: SetRmhtubePartyGoingBody;
+}
+
+export type SetRmhtubePartyGoingResponse = { id: string; name: string; description: string; startsAt: string; isPublic: boolean; maxMembers: number; host: { id: string; name: string }; goingCount: number; going: boolean; isHost: boolean; closed: boolean };
+
+export type GetMyRmhtubeStatsResponse = { counters: { totalWatchTimeMinutes: number; videosWatched: number; roomsCreated: number; roomsJoined: number; messagesSent: number; reactionsUsed: number }; paused: boolean; days: { day: string; minutes: number }[] };
 
 export class RmhClient {
   private apiKey: string;
@@ -1377,9 +1614,19 @@ export class RmhClient {
     return this.request<ListEventsResponse>("GET", { path: "/api/v1/events", query: { from: args.from, to: args.to, community: args.community, limit: args.limit, cursor: args.cursor } });
   }
 
+  /** Create an event (scope: manage:events) */
+  createEvent(args: CreateEventArgs): Promise<CreateEventResponse> {
+    return this.request<CreateEventResponse>("POST", { path: "/api/v1/events", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
   /** Get an event (scope: read:events) */
   getEvent(args: GetEventArgs): Promise<GetEventResponse> {
     return this.request<GetEventResponse>("GET", { path: "/api/v1/events/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Edit an event (scope: manage:events) */
+  updateEvent(args: UpdateEventArgs): Promise<UpdateEventResponse> {
+    return this.request<UpdateEventResponse>("PATCH", { path: "/api/v1/events/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
   }
 
   /** List attendees (scope: read:events) */
@@ -1585,5 +1832,80 @@ export class RmhClient {
   /** List what you deleted (scope: read:reading) */
   listMyDeleted(args: ListMyDeletedArgs): Promise<ListMyDeletedResponse> {
     return this.request<ListMyDeletedResponse>("GET", { path: "/api/v1/me/deleted", query: { kind: args.kind, since: args.since, cursor: args.cursor, limit: args.limit } });
+  }
+
+  /** Cancel an event (scope: manage:events) */
+  cancelEvent(args: CancelEventArgs): Promise<CancelEventResponse> {
+    return this.request<CancelEventResponse>("POST", { path: "/api/v1/events/{id}/cancel", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List event updates (scope: read:events) */
+  listEventUpdates(args: ListEventUpdatesArgs): Promise<ListEventUpdatesResponse> {
+    return this.request<ListEventUpdatesResponse>("GET", { path: "/api/v1/events/{id}/updates", pathParams: { id: args.id } });
+  }
+
+  /** Post an event update (scope: manage:events) */
+  postEventUpdate(args: PostEventUpdateArgs): Promise<PostEventUpdateResponse> {
+    return this.request<PostEventUpdateResponse>("POST", { path: "/api/v1/events/{id}/updates", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List a community's mod queue (scope: manage:moderation) */
+  listModQueue(args: ListModQueueArgs): Promise<ListModQueueResponse> {
+    return this.request<ListModQueueResponse>("GET", { path: "/api/v1/communities/{slug}/modqueue", pathParams: { slug: args.slug }, query: { view: args.view, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Approve or remove a queued item (scope: manage:moderation) */
+  decideModItem(args: DecideModItemArgs): Promise<DecideModItemResponse> {
+    return this.request<DecideModItemResponse>("POST", { path: "/api/v1/communities/{slug}/modqueue/{itemId}", pathParams: { slug: args.slug, itemId: args.itemId }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List a community's timeouts and bans (scope: manage:moderation) */
+  listSanctions(args: ListSanctionsArgs): Promise<ListSanctionsResponse> {
+    return this.request<ListSanctionsResponse>("GET", { path: "/api/v1/communities/{slug}/sanctions", pathParams: { slug: args.slug }, query: { active: args.active, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Time out or ban a member (scope: manage:moderation) */
+  createSanction(args: CreateSanctionArgs): Promise<CreateSanctionResponse> {
+    return this.request<CreateSanctionResponse>("POST", { path: "/api/v1/communities/{slug}/sanctions", pathParams: { slug: args.slug }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Lift a timeout or ban (scope: manage:moderation) */
+  liftSanction(args: LiftSanctionArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/communities/{slug}/sanctions/{id}", pathParams: { slug: args.slug, id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your Watch later (scope: read:rmhtube) */
+  listMyWatchLater(args: ListMyWatchLaterArgs = {}): Promise<ListMyWatchLaterResponse> {
+    return this.request<ListMyWatchLaterResponse>("GET", { path: "/api/v1/me/rmhtube/watch-later", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Save a video to Watch later (scope: write:rmhtube) */
+  addToWatchLater(args: AddToWatchLaterArgs): Promise<AddToWatchLaterResponse> {
+    return this.request<AddToWatchLaterResponse>("POST", { path: "/api/v1/me/rmhtube/watch-later", body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Remove a video from Watch later (scope: write:rmhtube) */
+  removeFromWatchLater(args: RemoveFromWatchLaterArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/rmhtube/watch-later/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List upcoming watch parties (scope: read:rmhtube) */
+  listRmhtubeParties(): Promise<ListRmhtubePartiesResponse> {
+    return this.request<ListRmhtubePartiesResponse>("GET", { path: "/api/v1/rmhtube/parties" });
+  }
+
+  /** Get a watch party (scope: read:rmhtube) */
+  getRmhtubeParty(args: GetRmhtubePartyArgs): Promise<GetRmhtubePartyResponse> {
+    return this.request<GetRmhtubePartyResponse>("GET", { path: "/api/v1/rmhtube/parties/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Say whether you are going to a watch party (scope: write:rmhtube) */
+  setRmhtubePartyGoing(args: SetRmhtubePartyGoingArgs): Promise<SetRmhtubePartyGoingResponse> {
+    return this.request<SetRmhtubePartyGoingResponse>("PUT", { path: "/api/v1/rmhtube/parties/{id}/going", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Your RMHTube watch statistics (scope: read:rmhtube) */
+  getMyRmhtubeStats(): Promise<GetMyRmhtubeStatsResponse> {
+    return this.request<GetMyRmhtubeStatsResponse>("GET", { path: "/api/v1/me/rmhtube/stats" });
   }
 }

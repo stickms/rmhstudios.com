@@ -1,3 +1,4 @@
+import { refusalBeside } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { EventError } from '@/lib/events/event-error';
@@ -39,7 +40,7 @@ function refused(error: unknown): Response {
     if (error.code === 'FORBIDDEN') {
       return Response.json(
         {
-          error: 'Only the host or a co-host can change dates',
+          ...refusalBeside('EVENT_DATES_HOST_ONLY'),
           code: 'FORBIDDEN',
         },
         {
@@ -61,7 +62,7 @@ function refused(error: unknown): Response {
     const status = error.code === 'CANCELED' ? 409 : 400;
     return Response.json(
       {
-        error: 'That date cannot be changed',
+        ...refusalBeside('EVENT_DATE_LOCKED'),
         code: error.code,
       },
       {

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { seriesDetailQuery } from '@/lib/posts-plus/series-detail.queries';
@@ -20,7 +21,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   deleteSeriesApi,
   followSeriesApi,
@@ -58,6 +59,7 @@ interface View {
  */
 export function SeriesPage({ id }: { id: string }) {
   const { t } = useTranslation('f-posts-plus');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const confirm = useConfirm();
   const navigate = useNavigate();
@@ -101,7 +103,7 @@ export function SeriesPage({ id }: { id: string }) {
       await run();
       return true;
     } catch (e) {
-      toast.error(serverError(e) ?? failed);
+      toast.error(refusalText.maybe(e) ?? failed);
       return false;
     } finally {
       setBusy(false);
@@ -280,6 +282,8 @@ export function SeriesPage({ id }: { id: string }) {
             </Link>
             {' · '}
             {t('series-parts', {
+              count: Number(series.total),
+              defaultValue_one: '{{n}} part',
               defaultValue: '{{n}} parts',
               n: series.total,
             })}

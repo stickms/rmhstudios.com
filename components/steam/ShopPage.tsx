@@ -149,7 +149,7 @@ export function ShopPage({ data }: { data: ShopPageData }) { const fmt = useLoca
                         className="stm-btn stm-btn-blue"
                         disabled={status === 'poor' || busy === item.id}
                         aria-label={t('steam-shop-buy-aria', {
-                          defaultValue: 'Buy {{name}} for {{price}} coins',
+                          count: Number(item.price), defaultValue_one: 'Buy {{name}} for {{price}} coin', defaultValue: 'Buy {{name}} for {{price}} coins',
                           name: item.name,
                           price: item.price,
                         })}

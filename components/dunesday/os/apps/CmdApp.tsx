@@ -1114,11 +1114,15 @@ export default function CmdApp({ win }: AppProps) {
             `  ${
               plan.onTime
                 ? t('cmd-ds-finish-ok', {
+                    count: Number(plan.slackDays),
+                    defaultValue_one: 'Finish date ..... {{date}} (on track, {{n}} day to spare)',
                     defaultValue: 'Finish date ..... {{date}} (on track, {{n}} days to spare)',
                     date: dayLabel(plan.finishDate),
                     n: plan.slackDays,
                   })
                 : t('cmd-ds-finish-late', {
+                    count: Number(-plan.slackDays),
+                    defaultValue_one: 'Finish date ..... {{date}} ({{n}} day late — pick up the pace)',
                     defaultValue: 'Finish date ..... {{date}} ({{n}} days late — pick up the pace)',
                     date: dayLabel(plan.finishDate),
                     n: -plan.slackDays,
@@ -1130,6 +1134,8 @@ export default function CmdApp({ win }: AppProps) {
         }
         out.push(
           `  ${t('cmd-ds-day', {
+            count: Number(Math.max(0, daysLeft)),
+            defaultValue_one: 'Dunesday ........ {{date}} ({{n}} day away)',
             defaultValue: 'Dunesday ........ {{date}} ({{n}} days away)',
             date: dayLabel(DUNESDAY),
             n: Math.max(0, daysLeft),

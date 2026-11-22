@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -10,11 +11,11 @@ const schema = z.object({ question: z.string().min(1).max(1000) });
 export const route = apiRoute('/api/study/tutor', {
   POST: defineHandler({}, async ({ request }) => {
     if (!isTutorConfigured())
-      return Response.json({ error: 'AI tutor is not configured' }, { status: 503 });
+      return Response.json({ ...refusalBody('STUDY_TUTOR_OFFLINE') }, { status: 503 });
 
     const ip = getClientIp(request);
     const { allowed } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'study-tutor' });
-    if (!allowed) return Response.json({ error: 'Slow down a moment' }, { status: 429 });
+    if (!allowed) return Response.json({ ...refusalBody('STUDY_TUTOR_SLOW') }, { status: 429 });
 
     const body = await request.json().catch(() => ({}));
     const parsed = schema.safeParse(body);

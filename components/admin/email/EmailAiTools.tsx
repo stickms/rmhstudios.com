@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImagePlus, X } from 'lucide-react';
@@ -5,7 +6,6 @@ import { IconButton } from '@/components/ui/icon-button';
 import { AIImageButton, type AiImageGenerate } from '@/components/feed/AIImageButton';
 import type { AssistRewrite } from '@/components/feed/ComposeAssist';
 import { toast } from '@/lib/toast';
-import { serverError } from '@/lib/http';
 import { AI_IMAGE_TIMEOUT_MS, AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { adminEmailAiImage, adminEmailAiRewrite } from '@/lib/admin/email.contract';
@@ -67,6 +67,7 @@ export function EmailImages({
   leading?: ReactNode;
 }) {
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const full = images.length >= MAX_EMAIL_IMAGES;
@@ -85,7 +86,7 @@ export function EmailImages({
       onImages((prev) => [...prev, ...urls].slice(0, MAX_EMAIL_IMAGES));
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('email-image-upload-failed', {
             defaultValue: 'Upload failed',
           }),
@@ -143,6 +144,8 @@ export function EmailImages({
           {t('email-image-count', {
             n: images.length,
             max: MAX_EMAIL_IMAGES,
+            count: Number(MAX_EMAIL_IMAGES),
+            defaultValue_one: '{{n}} of {{max}} picture',
             defaultValue: '{{n}} of {{max}} pictures',
           })}
         </span>

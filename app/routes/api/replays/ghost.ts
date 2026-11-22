@@ -3,12 +3,14 @@ import { implement } from '@/lib/api/implement.server';
 import { getGhostApi, saveGhostApi } from '@/lib/game/replay.contract';
 import { getGhostQuery, saveGhostBody } from '@/lib/game/replay-schema';
 import { getGhost, ReplayError, saveGhost } from '@/lib/replays.server';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
 
 /**
  * Race ghosts (plan U9).
  *
  * GET  /api/replays/ghost?game=neon-driftway&level=1&vs=pb|top — the trace to race.
- * POST /api/replays/ghost — store the caller's ghost for a level (on a new best).
+ * POST /api/replays/ghost — store the caller's ghost for a level (on a new best). An assisted run stores nothing
+ * and answers `{ saved: false, reason: 'assisted' }`.
  */
 export const Route = createFileRoute('/api/replays/ghost')({
   server: {
@@ -32,6 +34,11 @@ export const Route = createFileRoute('/api/replays/ghost')({
         async ({ userId, body }) => {
           if (body.data.level !== body.level) {
             return Response.json({ error: 'Level mismatch' }, { status: 400 });
+          }
+          // An assisted run is not a record, so it sets no ghost. The server decides this from the run-start
+          // claim (read, not cleared, like the other second submit paths), never from the client.
+          if (await consumeAssistRun(userId, body.game, { keepClaim: true, settleClaim: true })) {
+            return Response.json({ saved: false, reason: 'assisted' });
           }
           try {
             const saved = await saveGhost({ userId, ...body });

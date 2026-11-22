@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -14,7 +15,6 @@ import { useSession } from '@/components/Providers';
 import type { RingDetail } from '@/lib/profile/webrings';
 import { useJson } from '../useJson';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { closeRingApi, joinRingApi, leaveRingApi } from '@/lib/profile/webrings.contract';
 
 const ReportDialog = lazy(() =>
@@ -26,6 +26,7 @@ const ReportDialog = lazy(() =>
 /** P6 — one ring: its members in join order, and join / leave / close / report. */
 export default function RingPage({ slug }: { slug: string }) {
   const { t } = useTranslation('f-profile-plus');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user);
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export default function RingPage({ slug }: { slug: string }) {
       reload();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('ring-join-failed', {
             defaultValue: "Couldn't update that",
           }),

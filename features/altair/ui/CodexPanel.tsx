@@ -113,6 +113,8 @@ export default function CodexPanel({ onBack }: { onBack: () => void }) {
         </h2>
         <p className="text-xs text-(--altair-text-muted)">
           {t('codex-progress', {
+            count: Number(total),
+            defaultValue_one: '{{found}}/{{total}} entry - {{pct}}% complete',
             defaultValue: '{{found}}/{{total}} entries - {{pct}}% complete',
             found,
             total,

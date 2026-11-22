@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -8,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createScheduledApi } from '@/lib/scheduled/scheduled.contract';
 import { DAY_MS, MAX_SERIES_TITLE, POST_TTLS, capsuleDateError, type PostTtl } from '@/lib/posts-plus/constants';
 import type { PostsPlusCompose } from './PostsPlusCompose';
@@ -130,6 +130,7 @@ interface SeriesOption {
 
 function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => void }) {
   const { t } = useTranslation('f-posts-plus');
+  const refusalText = useRefusalText();
   const [mine, setMine] = useState<SeriesOption[] | null>(null);
   // Steel M9: the series list replaces the spinner inside the open dialog.
   const arrival = useArrival(mine !== null);
@@ -176,7 +177,7 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
       });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('series-create-failed', {
             defaultValue: 'Could not create the series',
           }),
@@ -245,6 +246,8 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
                 <span className="min-w-0 flex-1 truncate text-left">{s.title}</span>
                 <span className="text-xs text-site-text-muted">
                   {t('series-parts', {
+                    count: Number(s.postCount),
+                    defaultValue_one: '{{n}} part',
                     defaultValue: '{{n}} parts',
                     n: s.postCount,
                   })}
@@ -305,6 +308,7 @@ function CapsuleDialog({
 }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('f-posts-plus');
+  const refusalText = useRefusalText();
   const [value, setValue] = useState('');
   const [min, setMin] = useState('');
   const [busy, setBusy] = useState(false);
@@ -379,7 +383,7 @@ function CapsuleDialog({
       onClose();
     } catch (e) {
       setError(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('capsule-failed', {
             defaultValue: 'Could not seal the capsule',
           }),

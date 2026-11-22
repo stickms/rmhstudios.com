@@ -10,14 +10,26 @@ import type { Prisma } from '@prisma/client';
 import type { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { RATE_LIMIT_POLICIES, rateLimit } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
-import { canViewEvent, rsvp, unrsvp, EventError } from '@/lib/events.server';
+import {
+  canViewEvent,
+  rsvp,
+  unrsvp,
+  createEvent,
+  updateEvent,
+  cancelEvent,
+  EventError,
+  type CreateEventInput,
+  type UpdateEventInput,
+} from '@/lib/events.server';
+import { UpdateError, listUpdates, postUpdate } from '@/lib/events/updates.server';
 import { EVENT_KIND, WHOLE_EVENT, durationMs, seriesOf, startsBetween } from '@/lib/calendar/event-model';
 import { attendanceBetween } from '@/lib/calendar/feed-entries';
 import { effectiveAttendance, hostFor, occurrenceIndexOf } from '@/lib/calendar/recurrence';
 import { OVERRIDE_MARGIN_MS, applyOverrides, upcomingOccurrences } from '@/lib/events/occurrences';
 import { overridesForEvents } from '@/lib/events/occurrences.server';
-import type { rsvpBody } from '@/lib/api/v1/events-schema';
+import type { rsvpBody, createEventBody, updateEventBody, postUpdateApiBody } from '@/lib/api/v1/events-schema';
 import { denyText } from '@/lib/communities/bans';
 import {
   decodeOccurrenceCursor,
@@ -1041,4 +1053,342 @@ export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
 
 export async function readBody<T extends z.ZodType>(request: Request, schema: T) {
   return readInput(await request.json().catch(() => null), schema);
+}
+
+/* ── Hosting: create, edit, cancel and post updates as the key owner (`manage:events`) ───────────────────────── */
+
+export type HostFailure = {
+  code:
+    | 'not_found'
+    | 'forbidden'
+    | 'not_host'
+    | 'invalid_request'
+    | 'invalid_dates'
+    | 'invalid_venue_url'
+    | 'invalid_recurrence'
+    | 'canceled'
+    | 'already_canceled'
+    | 'rate_limited';
+  message: string;
+  status: 400 | 403 | 404 | 409 | 429;
+};
+
+export type HostResult<T> =
+  | {
+      ok: true;
+      result: T;
+    }
+  | ({
+      ok: false;
+    } & HostFailure);
+
+const hostFail = (f: HostFailure) =>
+  ({
+    ok: false,
+    ...f,
+  }) as const;
+
+const NOT_FOUND: HostFailure = {
+  code: 'not_found',
+  message: 'Not found.',
+  status: 404,
+};
+
+/** An `EventError` of a hosting write as a v1 error. `forbidden` is the caller's own `FORBIDDEN` wording. */
+function hostFailureOf(e: EventError, forbidden: HostFailure): HostFailure {
+  switch (e.code) {
+    case 'NOT_FOUND':
+      return NOT_FOUND;
+    case 'FORBIDDEN':
+      return forbidden;
+    case 'INVALID_DATES':
+      return {
+        code: 'invalid_dates',
+        message: '`ends_at` must be after `starts_at`, and both must be valid dates.',
+        status: 400,
+      };
+    case 'INVALID_VENUE_URL':
+      return {
+        code: 'invalid_venue_url',
+        message: 'A venue of kind URL needs a public http(s) address.',
+        status: 400,
+      };
+    case 'INVALID_RECURRENCE':
+      return {
+        code: 'invalid_recurrence',
+        message: 'Those repeat settings are not allowed.',
+        status: 400,
+      };
+    case 'CANCELED':
+      return {
+        code: 'canceled',
+        message: 'This event was canceled.',
+        status: 409,
+      };
+    default:
+      return {
+        code: 'invalid_request',
+        message: 'Could not save the event.',
+        status: 400,
+      };
+  }
+}
+
+const iso = (v: Date | string | undefined) => (v === undefined ? undefined : new Date(v));
+
+/**
+ * The site's own event-create limit (10 a minute), keyed by the key owner. The site's create handler takes from the
+ * same `event-create:<userId>` bucket (through `checkRateLimit`, so it is shared across instances), so the API and the
+ * site form together cannot exceed it.
+ */
+export async function createBudgetExceeded(userId: string): Promise<boolean> {
+  return !(
+    await checkRateLimit(userId, {
+      limit: 10,
+      windowMs: 60_000,
+      prefix: 'event-create',
+    })
+  ).allowed;
+}
+
+/**
+ * `POST /events`: the site's `createEvent` with the key owner as host. A community event is `forbidden` unless the
+ * owner moderates that community (the site's check); an unknown community slug is `not_found`.
+ */
+export async function createEventForKey(
+  ownerId: string,
+  body: z.infer<typeof createEventBody>,
+): Promise<HostResult<ApiEventDetail>> {
+  try {
+    let communityId: string | null = null;
+    if (body.community) {
+      const community = await prisma.community.findUnique({
+        where: {
+          slug: body.community,
+        },
+        select: {
+          id: true,
+        },
+      });
+      if (!community) return hostFail(NOT_FOUND);
+      communityId = community.id;
+    }
+    const input: CreateEventInput = {
+      hostId: ownerId,
+      communityId,
+      title: body.title,
+      description: body.description ?? null,
+      startsAt: new Date(body.starts_at),
+      endsAt: iso(body.ends_at) ?? null,
+      venueKind: body.venue_kind,
+      venueRef: body.venue ?? null,
+      capacity: body.capacity ?? null,
+      recurrence: body.repeat
+        ? {
+            rule: body.repeat,
+            tz: body.repeat_tz ?? '',
+            until: iso(body.repeat_until) ?? null,
+            rotatingHostIds: [],
+          }
+        : null,
+      visibility: body.visibility === 'private' ? 'PRIVATE' : 'PUBLIC',
+    };
+    const made = await createEvent(input);
+    const event = await getEventForKey(made.id, ownerId);
+    if (!event) return hostFail(NOT_FOUND);
+    return {
+      ok: true,
+      result: event,
+    };
+  } catch (e) {
+    if (e instanceof EventError)
+      return hostFail(
+        hostFailureOf(e, {
+          code: 'forbidden',
+          message: 'Only moderators of a community can host its events.',
+          status: 403,
+        }),
+      );
+    throw e;
+  }
+}
+
+const NOT_HOST: HostFailure = {
+  code: 'not_host',
+  message: 'Only the host or a co-host can change this event; only the host can change how it repeats.',
+  status: 403,
+};
+
+/** `PATCH /events/{id}`: the site's `updateEvent` (host or accepted co-host). A co-host may not touch the repeat rule. */
+export async function updateEventForKey(
+  id: string,
+  ownerId: string,
+  body: z.infer<typeof updateEventBody>,
+): Promise<HostResult<ApiEventDetail>> {
+  try {
+    if (!(await loadVisible(id, ownerId))) return hostFail(NOT_FOUND);
+    const input: UpdateEventInput = {
+      id,
+      hostId: ownerId,
+      ...(body.title !== undefined && {
+        title: body.title,
+      }),
+      ...(body.description !== undefined && {
+        description: body.description,
+      }),
+      ...(body.starts_at !== undefined && {
+        startsAt: new Date(body.starts_at),
+      }),
+      ...(body.ends_at !== undefined && {
+        endsAt: body.ends_at === null ? null : new Date(body.ends_at),
+      }),
+      ...(body.venue_kind !== undefined && {
+        venueKind: body.venue_kind,
+      }),
+      ...(body.venue !== undefined && {
+        venueRef: body.venue,
+      }),
+      ...(body.capacity !== undefined && {
+        capacity: body.capacity,
+      }),
+      ...(body.repeat !== undefined && {
+        recurrence:
+          body.repeat === null
+            ? null
+            : {
+                rule: body.repeat,
+                tz: body.repeat_tz ?? '',
+                until: iso(body.repeat_until) ?? null,
+                rotatingHostIds: [],
+              },
+      }),
+    };
+    await updateEvent(input);
+    const event = await getEventForKey(id, ownerId);
+    if (!event) return hostFail(NOT_FOUND);
+    return {
+      ok: true,
+      result: event,
+    };
+  } catch (e) {
+    if (e instanceof EventError) return hostFail(hostFailureOf(e, NOT_HOST));
+    throw e;
+  }
+}
+
+/** `POST /events/{id}/cancel`: the site's `cancelEvent` (the host only); a second cancel is `already_canceled`. */
+export async function cancelEventForKey(id: string, ownerId: string): Promise<HostResult<ApiEventDetail>> {
+  try {
+    const row = await loadVisible(id, ownerId);
+    if (!row) return hostFail(NOT_FOUND);
+    if (row.hostId !== ownerId)
+      return hostFail({
+        code: 'not_host',
+        message: 'Only the host can cancel this event.',
+        status: 403,
+      });
+    if (row.canceledAt)
+      return hostFail({
+        code: 'already_canceled',
+        message: 'This event is already canceled.',
+        status: 409,
+      });
+    await cancelEvent(id, ownerId);
+    const event = await getEventForKey(id, ownerId);
+    if (!event) return hostFail(NOT_FOUND);
+    return {
+      ok: true,
+      result: event,
+    };
+  } catch (e) {
+    if (e instanceof EventError)
+      return hostFail(
+        hostFailureOf(e, {
+          code: 'not_host',
+          message: 'Only the host can cancel this event.',
+          status: 403,
+        }),
+      );
+    throw e;
+  }
+}
+
+export interface ApiEventUpdate {
+  id: string;
+  body: string;
+  /** The original start of the date it is about (repeating events); null for the whole series or a one-off. */
+  occurrence: string | null;
+  createdAt: string;
+}
+
+/** `GET /events/{id}/updates`: the live updates as an attendee sees them (the site's `listUpdates`, newest first). */
+export async function listUpdatesForKey(id: string, ownerId: string): Promise<ApiEventUpdate[] | null> {
+  const rows = await listUpdates(id, ownerId, false);
+  if (!rows) return null;
+  return rows.map((u) => ({
+    id: u.id,
+    body: u.body,
+    occurrence: u.occurrenceAt,
+    createdAt: u.createdAt,
+  }));
+}
+
+/**
+ * `POST /events/{id}/updates`: the site's `postUpdate`, which checks the host or an accepted co-host, takes the
+ * per-event limit under its lock and queues the durable fan-out to the people coming. Never as an admin.
+ */
+export async function postUpdateForKey(
+  id: string,
+  ownerId: string,
+  body: z.infer<typeof postUpdateApiBody>,
+): Promise<HostResult<ApiEventUpdate>> {
+  try {
+    if (!(await loadVisible(id, ownerId))) return hostFail(NOT_FOUND);
+    const u = await postUpdate(id, ownerId, false, {
+      body: body.body,
+      occurrenceAt:
+        body.occurrence === undefined ? undefined : body.occurrence === null ? null : new Date(body.occurrence),
+    });
+    return {
+      ok: true,
+      result: {
+        id: u.id,
+        body: u.body,
+        occurrence: u.occurrenceAt,
+        createdAt: u.createdAt,
+      },
+    };
+  } catch (e) {
+    if (e instanceof UpdateError) {
+      switch (e.code) {
+        case 'NOT_FOUND':
+          return hostFail(NOT_FOUND);
+        case 'FORBIDDEN':
+          return hostFail({
+            code: 'not_host',
+            message: 'Only the host or a co-host can post updates.',
+            status: 403,
+          });
+        case 'CANCELED':
+          return hostFail({
+            code: 'canceled',
+            message: 'This event was canceled.',
+            status: 409,
+          });
+        case 'RATE_LIMITED':
+          return hostFail({
+            code: 'rate_limited',
+            message: e.nextAt ? `Too many updates. Try again after ${e.nextAt.toISOString()}.` : 'Too many updates.',
+            status: 429,
+          });
+        default:
+          return hostFail({
+            code: 'invalid_request',
+            message: "That date is not one of this event's upcoming dates.",
+            status: 400,
+          });
+      }
+    }
+    throw e;
+  }
 }

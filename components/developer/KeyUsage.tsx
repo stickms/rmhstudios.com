@@ -77,6 +77,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
     return (
       <p className={cn('py-3 text-xs text-site-text-muted', arrival)}>
         {t('usage-none', {
+          defaultValue_one: 'No requests in the last {{count}} day.',
           defaultValue: 'No requests in the last {{count}} days.',
           count: data.days,
         })}
@@ -95,6 +96,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
         <Activity className="size-3.5 text-site-accent" aria-hidden />
         <span className="text-xs font-semibold text-site-text">
           {t('usage-last-days', {
+            defaultValue_one: 'Last {{count}} day',
             defaultValue: 'Last {{count}} days',
             count: data.days,
           })}
@@ -122,6 +124,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
               height: `${Math.max(2, (d.requests / peak) * 100)}%`,
             }}
             title={t('usage-day-title', {
+              defaultValue_one: '{{date}}: {{count}} request',
               defaultValue: '{{date}}: {{count}} requests',
               date: d.date,
               count: nf.format(d.requests),

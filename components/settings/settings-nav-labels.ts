@@ -128,6 +128,15 @@ export function settingsNavText(t: TFunction): Record<string, SettingsNavText> {
       }),
     },
 
+    // s10-08 profile-preview
+    preview: {
+      label: t('settings-nav-preview', { ns: 'profile-preview', defaultValue: 'Preview your profile' }),
+      hint: t('settings-nav-preview-hint', {
+        ns: 'profile-preview',
+        defaultValue: 'Your profile as someone signed out, or not following you, sees it',
+      }),
+    },
+
     privacy: {
       label: t('settings-nav-privacy', { ns: 'feed', defaultValue: 'Privacy & data' }),
       hint: t('settings-nav-privacy-hint', {

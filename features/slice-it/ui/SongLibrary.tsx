@@ -3646,7 +3646,8 @@ function UploadForm({
           t(
             'audio-too-long',
             {
-              defaultValue:
+              count: Number(MAX_SONG_DURATION_SEC /
+                60), defaultValue_one: 'Tracks must be under {{minutes}} minute.', defaultValue:
                 'Tracks must be under {{minutes}} minutes.',
               minutes:
                 MAX_SONG_DURATION_SEC /
@@ -3826,7 +3827,7 @@ function UploadForm({
                 ? t(
                     'upload-success-notes',
                     {
-                      defaultValue:
+                      defaultValue_one: 'Track uploaded — {{count}} note charted.', defaultValue:
                         'Track uploaded — {{count}} notes charted.',
                       count:
                         expert,

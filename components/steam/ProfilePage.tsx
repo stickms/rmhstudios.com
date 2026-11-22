@@ -213,7 +213,7 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
                               : last.key === 'yesterday'
                                 ? ` · ${t('steam-last-yesterday', { defaultValue: 'last played yesterday' })}`
                                 : last.key === 'days'
-                                  ? ` · ${t('steam-last-days', { defaultValue: 'last played {{n}} days ago', n: last.days })}`
+                                  ? ` · ${t('steam-last-days', { count: Number(last.days), defaultValue_one: 'last played {{n}} day ago', defaultValue: 'last played {{n}} days ago', n: last.days })}`
                                   : ''}
                           </span>
                         </span>

@@ -37,6 +37,9 @@ function makeDeps(
       feedAnnouncement: { findMany: vi.fn(async (): Promise<Array<{ imageUrls: string[] }>> => []) },
       chatMessage: { findMany: vi.fn(async (): Promise<Array<{ imageUrls: string[] }>> => []) },
       scheduledChatMessage: { findMany: vi.fn(async (): Promise<Array<{ imageUrls: string[] }>> => []) },
+      homeListing: { findMany: vi.fn(async (): Promise<Array<{ images: string[] }>> => []) },
+      emailCampaign: { findMany: vi.fn(async (): Promise<Array<{ imageUrls: string[] }>> => []) },
+      siteEra: { findMany: vi.fn(async (): Promise<Array<{ imageUrl: string | null }>> => []) },
     },
     deleteObject: vi.fn(async (_key: string) => {}),
     purgeFromCdn: vi.fn(async (_key: string) => {}),
@@ -143,7 +146,14 @@ describe('sweepUnreferencedMedia', () => {
       const schedArgs = firstQuery(deps.prisma.scheduledPost.findMany);
       expect(schedArgs.where).toEqual({ publishedId: null, imageUrls: { hasSome: urls } });
       const cardArgs = firstQuery(deps.prisma.flashcard.findMany);
-      expect(cardArgs.where).toEqual({ OR: [{ frontImageUrl: { in: urls } }, { backImageUrl: { in: urls } }] });
+      expect(cardArgs.where).toEqual({
+        OR: [
+          { frontImageUrl: { in: urls } },
+          { backImageUrl: { in: urls } },
+          { frontSoundUrl: { in: urls } },
+          { backSoundUrl: { in: urls } },
+        ],
+      });
       const shotArgs = firstQuery(deps.prisma.buildScreenshot.findMany);
       expect(shotArgs.where).toEqual({ url: { in: urls } });
       const buildArgs = firstQuery(deps.prisma.userBuild.findMany);
@@ -247,6 +257,9 @@ function tableDeps(
       feedAnnouncement: { findMany: vi.fn(async () => []) },
       chatMessage: { findMany: vi.fn(async () => []) },
       scheduledChatMessage: { findMany: vi.fn(async () => []) },
+      homeListing: { findMany: vi.fn(async () => []) },
+      emailCampaign: { findMany: vi.fn(async () => []) },
+      siteEra: { findMany: vi.fn(async () => []) },
     },
     deleteObject: vi.fn(async (_key: string) => {}),
     purgeFromCdn: vi.fn(async (_key: string) => {}),
@@ -432,5 +445,36 @@ describe('sweepMedia: a row attached or referenced after selection survives', ()
     const res = await sweepUnreferencedMedia(deps);
     expect(res).toEqual({ deleted: 1 });
     expect(deps.deleteObject).not.toHaveBeenCalledWith(live.key);
+  });
+
+  it('keeps a row a homes listing photo names (live listing photos survive the orphan rule)', async () => {
+    const photo = media('listing');
+    const deps = makeDeps([photo, media('gone')]);
+    deps.prisma.homeListing.findMany.mockImplementation(async () => [{ images: [photo.url] }]);
+    const res = await sweepUnreferencedMedia(deps);
+    expect(res).toEqual({ deleted: 1 });
+    expect(deps.deleteObject).not.toHaveBeenCalledWith(photo.key);
+    const q = firstQuery(deps.prisma.homeListing.findMany);
+    expect(q.where).toEqual({ images: { hasSome: expect.arrayContaining([photo.url]) } });
+  });
+
+  it('keeps a row an admin email campaign picture names', async () => {
+    const pic = media('mail');
+    const deps = makeDeps([pic, media('gone')]);
+    deps.prisma.emailCampaign.findMany.mockImplementation(async () => [{ imageUrls: [pic.url] }]);
+    const res = await sweepUnreferencedMedia(deps);
+    expect(res).toEqual({ deleted: 1 });
+    expect(deps.deleteObject).not.toHaveBeenCalledWith(pic.key);
+  });
+
+  it('keeps a row a museum era screenshot names', async () => {
+    const shot = media('era');
+    const deps = makeDeps([shot, media('gone')]);
+    deps.prisma.siteEra.findMany.mockImplementation(async () => [{ imageUrl: shot.url }]);
+    const res = await sweepUnreferencedMedia(deps);
+    expect(res).toEqual({ deleted: 1 });
+    expect(deps.deleteObject).not.toHaveBeenCalledWith(shot.key);
+    const q = firstQuery(deps.prisma.siteEra.findMany);
+    expect(q.where).toEqual({ imageUrl: { in: expect.arrayContaining([shot.url]) } });
   });
 });

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Repeat2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,6 @@ import { api } from '@/lib/contract/client';
 import type { FeedItem } from '@/lib/feed-types';
 import { listRepostMutesApi, setRepostMuteApi } from '@/lib/feed/repost-mutes.contract';
 import { repostMuteTarget, withoutRepostsBy } from '@/lib/feed/repost-mutes';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { useFeedStore } from '@/stores/feedStore';
 
@@ -31,6 +31,7 @@ interface RepostMuteMenuItemProps {
  */
 export function RepostMuteMenuItem({ item, enabled, onDone }: RepostMuteMenuItemProps) {
   const { t } = useTranslation('repost-mutes');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const target = repostMuteTarget(item, session?.user?.id);
@@ -107,7 +108,7 @@ export function RepostMuteMenuItem({ item, enabled, onDone }: RepostMuteMenuItem
                 })
                 .catch((e) =>
                   toast.error(
-                    serverError(e) ||
+                    refusalText.maybe(e) ||
                       t('undo-error', {
                         defaultValue: 'Could not undo that',
                       }),
@@ -119,7 +120,7 @@ export function RepostMuteMenuItem({ item, enabled, onDone }: RepostMuteMenuItem
       );
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('error', {
             defaultValue: 'Could not change reposts for this member',
           }),

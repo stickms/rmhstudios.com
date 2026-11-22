@@ -1,3 +1,4 @@
+import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { confirmMatchResultApi } from '@/lib/tournaments/match-results.contract';
@@ -9,6 +10,7 @@ function failure(error: unknown): Response {
     return Response.json(
       {
         error: error.message,
+        ...tournamentRefusal(error),
         code: error.code,
       },
       {

@@ -8,13 +8,13 @@
  * buttons. "Confirm" is the one ink primary. The time left is worked out when
  * this renders and never ticks (R5).
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
 import {
   confirmMatchResultApi,
@@ -56,6 +56,7 @@ export function useClaimWhen() {
 
 export function MatchResultControls({ tournamentId, match, entrants, viewerId, isManager, onChanged }: Props) {
   const { t } = useTranslation('match-results');
+  const refusalText = useRefusalText();
   const prompt = usePrompt();
   const claimWhen = useClaimWhen();
   const [busy, setBusy] = useState(false);
@@ -79,7 +80,7 @@ export function MatchResultControls({ tournamentId, match, entrants, viewerId, i
       await onChanged();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('failed', {
             defaultValue: 'Something went wrong',
           }),
@@ -211,6 +212,8 @@ export function MatchResultControls({ tournamentId, match, entrants, viewerId, i
                   validate: (v) =>
                     v.length > DISPUTE_NOTE_MAX
                       ? t('dispute-too-long', {
+                          count: Number(DISPUTE_NOTE_MAX),
+                          defaultValue_one: 'Keep it to {{max}} character.',
                           defaultValue: 'Keep it to {{max}} characters.',
                           max: DISPUTE_NOTE_MAX,
                         })

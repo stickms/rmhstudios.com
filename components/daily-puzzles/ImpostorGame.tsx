@@ -314,7 +314,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                         <PuzzleResultStack>
                             <PuzzleResultCard
                                 tone={finalScore >= 50 ? 'success' : finalScore > 0 ? 'warning' : 'danger'}
-                                title={t("score-pts", { defaultValue: "{{score}} pts", score: finalScore })}
+                                title={t("score-pts", { count: Number(finalScore), defaultValue_one: "{{score}} pt", defaultValue: "{{score}} pts", score: finalScore })}
                                 description={
                                     <>
                                         {t("impostors-found", { defaultValue: "{{found}}/2 impostors found", found: foundFakes.length })}

@@ -7,6 +7,7 @@
  * 409 instead of being approved unseen — the queue then reloads.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { moderateAdminEmojiPackApi } from '@/lib/admin/admin-ops.contract';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminEmojiPacksQuery } from '@/lib/admin/admin-ops.queries';
@@ -54,6 +55,7 @@ type Action = 'approve' | 'remove';
 
 function AdminEmojiPacksPage() {
   const { t, i18n } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const query = adminEmojiPacksQuery();
   // A failed read shows an empty queue.
@@ -82,7 +84,7 @@ function AdminEmojiPacksPage() {
         });
       } catch (e) {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('emoji-pack-action-failed', { defaultValue: 'Could not update that pack.' }),
         );
         // A 409 means the pack changed or was decided elsewhere: show the
@@ -201,7 +203,7 @@ function AdminEmojiPacksPage() {
                 {p.itemCount > p.items.length && (
                   <p className="t-body text-site-text-muted">
                     {t('emoji-pack-more-items', {
-                      defaultValue: 'Showing {{shown}} of {{count}} items.',
+                      defaultValue_one: 'Showing {{shown}} of {{count}} item.', defaultValue: 'Showing {{shown}} of {{count}} items.',
                       shown: p.items.length,
                       count: p.itemCount,
                     })}

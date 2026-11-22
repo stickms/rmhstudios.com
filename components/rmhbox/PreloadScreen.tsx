@@ -88,6 +88,8 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
         {t('players-ready', {
           readyCount,
           total: players.length,
+          count: Number(players.length),
+          defaultValue_one: '{{readyCount}} / {{total}} player ready',
           defaultValue: '{{readyCount}} / {{total}} players ready',
         })}
       </span>

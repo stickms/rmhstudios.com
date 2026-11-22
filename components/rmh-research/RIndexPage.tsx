@@ -352,7 +352,7 @@ function SiftScene({ ex }: { ex: SiftExample }) {
             <h3 className="h3">{t('rix-sift-2-title', { defaultValue: 'Remove the dead ends' })}</h3>
             <p className="body mute">
               {t('rix-sift-2-body', {
-                defaultValue:
+                count: Number(n(GRACE_YEARS)), defaultValue_one: 'A citing paper that no one else has ever cited is where the idea stopped. Papers from the last {{years}} year of the archive ({{from}} on) have not had time to be built on, so they stay. Removed here: {{n}}.', defaultValue:
                   'A citing paper that no one else has ever cited is where the idea stopped. Papers from the last {{years}} years of the archive ({{from}} on) have not had time to be built on, so they stay. Removed here: {{n}}.',
                 years: n(GRACE_YEARS),
                 from: graceFrom,
@@ -465,7 +465,7 @@ function CutScene({ ex }: { ex: CutExample }) {
             </Link>
             <span className="meta rix-paper-meta">
               {m.author.lab} · {labels.name(m.author.field)} ·{' '}
-              {t('rix-cut-papers', { defaultValue: '{{n}} papers', n: n(m.papers) })}
+              {t('rix-cut-papers', { count: Number(n(m.papers)), defaultValue_one: '{{n}} paper', defaultValue: '{{n}} papers', n: n(m.papers) })}
             </span>
           </p>
         </header>
@@ -585,7 +585,7 @@ function Definition() {
           <div className="prose body">
             <p>
               {t('rix-def-p1', {
-                defaultValue:
+                count: Number(n(GRACE_YEARS)), defaultValue_one: 'Take every citation a paper receives from inside the archive. It is independent when the citing paper shares no author with the cited one. It is live when the citing paper has itself been independently cited at least once, or was published in the last {{years}} year of the archive. It is carried when it is live and the citing paper belongs to another field.', defaultValue:
                   'Take every citation a paper receives from inside the archive. It is independent when the citing paper shares no author with the cited one. It is live when the citing paper has itself been independently cited at least once, or was published in the last {{years}} years of the archive. It is carried when it is live and the citing paper belongs to another field.',
                 years: n(GRACE_YEARS),
               })}
@@ -698,7 +698,7 @@ function Scatter() {
             viewBox="0 0 100 100"
             role="img"
             aria-label={t('rix-scatter-aria', {
-              defaultValue:
+              count: Number(n(AUTHOR_RANKING.length)), defaultValue_one: 'Scatter plot of {{n}} author, h-index across and r-index up. {{above}} sit above the diagonal, where r is higher than h; {{on}} sit on it; {{below}} sit below it.', defaultValue:
                 'Scatter plot of {{n}} authors, h-index across and r-index up. {{above}} sit above the diagonal, where r is higher than h; {{on}} sit on it; {{below}} sit below it.',
               n: n(AUTHOR_RANKING.length),
               above: n(above),
@@ -834,7 +834,7 @@ function Questions() {
     {
       q: t('rix-q4', { defaultValue: 'What is the grace window for?' }),
       a: t('rix-a4', {
-        defaultValue:
+        count: Number(n(GRACE_YEARS)), defaultValue_one: 'A paper from last year has not had time to be cited. Without the window, every citation from recent work would be a dead end, and new results would count for nothing. Citing papers from the last {{years}} year of the archive are treated as live.', defaultValue:
           'A paper from last year has not had time to be cited. Without the window, every citation from recent work would be a dead end, and new results would count for nothing. Citing papers from the last {{years}} years of the archive are treated as live.',
         years: n(GRACE_YEARS),
       }),

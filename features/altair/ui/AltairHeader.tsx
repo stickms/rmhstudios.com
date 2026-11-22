@@ -101,7 +101,7 @@ export default function AltairHeader({
         )}
         {isShop && (
           <span className="text-sm font-bold text-(--altair-warning)">
-            {t("coins-balance", { defaultValue: "{{count}} coins", count: coins })}
+            {t("coins-balance", { defaultValue_one: "{{count}} coin", defaultValue: "{{count}} coins", count: coins })}
           </span>
         )}
         {isGame && onSettings && (

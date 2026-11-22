@@ -574,11 +574,24 @@ export async function runSweep(id: string, now: Date = new Date()): Promise<void
   }
 }
 
+/**
+ * What a stopped removal has done so far: items in either state, confirmed or still `pending`. A pending row is a
+ * removal the sweep may have made and not yet confirmed; undo settles it (confirms or drops it) before it reads,
+ * so a FAILED sweep holding only pending rows must not read "0 removed" and refuse undo.
+ */
+async function removedOrPendingCount(sweepId: string): Promise<number> {
+  return prisma.moderationSweepItem.count({
+    where: { sweepId, OR: [{ undone: null }, { undone: PENDING_ITEM }] },
+  });
+}
+
 async function markFailed(row: SweepRow, lease: Date, message: string): Promise<void> {
+  // An undo that fails keeps the count of the removal it was undoing.
+  const removed = row.phase === 'undo' ? row.removedCount : await removedOrPendingCount(row.id);
   await prisma.$transaction(async (tx) => {
     const { count } = await tx.moderationSweep.updateMany({
       where: { id: row.id, status: 'RUNNING', heartbeatAt: lease },
-      data: { status: 'FAILED', error: message.slice(0, 300), finishedAt: new Date() },
+      data: { status: 'FAILED', error: message.slice(0, 300), finishedAt: new Date(), removedCount: removed },
     });
     if (count === 0) return;
     await recordAdminActionIn(
@@ -673,8 +686,12 @@ async function removeBatch(
         sweep: { id: row.id },
       });
     } catch (error) {
-      await dropPending(row.id, item.type, item.id);
-      if (error instanceof ModerationError) continue;
+      // A clean refusal means nothing was removed: drop the row. Anything else may have thrown AFTER the removal
+      // landed, so the row stays `pending` and `settlePendingItems` decides from the content's state.
+      if (error instanceof ModerationError) {
+        await dropPending(row.id, item.type, item.id);
+        continue;
+      }
       throw error;
     }
     const after = await itemState(item.type, item.id);
@@ -903,6 +920,8 @@ export async function reclaimStalledSweeps(now: Date = new Date(), take = 20): P
     take,
     select: {
       id: true,
+      phase: true,
+      removedCount: true,
       reclaims: true,
       claimedAt: true,
       reclaimedAt: true,
@@ -930,9 +949,11 @@ export async function reclaimStalledSweeps(now: Date = new Date(), take = 20): P
     }
     const seen = { id: r.id, reclaims: r.reclaims, claimedAt: r.claimedAt, reclaimedAt: r.reclaimedAt, ...expired };
     if (verdict === 'fail') {
+      const removed = r.phase === 'undo' ? r.removedCount : await removedOrPendingCount(r.id);
       await prisma.moderationSweep.updateMany({
         where: seen,
         data: {
+          removedCount: removed,
           status: 'FAILED',
           error: failedForNoWorker(input) ? NO_WORKER_ERROR : SWEEP_REPEATED_RESTARTS_ERROR,
           finishedAt: now,

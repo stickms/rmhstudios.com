@@ -17,6 +17,7 @@
 
 import { researchSitemapRoutes } from '@/lib/rmh-research/sitemap';
 import { prisma } from '@/lib/prisma.server';
+import { discoverableCommunityWhere } from '@/lib/communities/discovery';
 import { publishedLogWhere } from '@/lib/blog/publication';
 import { cachedSWR } from '@/lib/cached.server';
 import type { Prisma } from '@prisma/client';
@@ -181,7 +182,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
         prisma.libraryDocument.count({ where: { hidden: false, reported: false } }),
         prisma.album.count(),
         prisma.gameGuide.count({ where: { published: true } }),
-        prisma.communityPage.count({ where: { community: { isPrivate: false } } }),
+        prisma.communityPage.count({ where: { community: discoverableCommunityWhere({ isPrivate: false }) } }),
       ]);
       return blog + news + docs + albums + guides + wiki;
     },
@@ -221,7 +222,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
         }),
         // A private community's pages are for its members and never listed (s09-04).
         prisma.communityPage.findMany({
-          where: { community: { isPrivate: false } },
+          where: { community: discoverableCommunityWhere({ isPrivate: false }) },
           select: { slug: true, updatedAt: true, community: { select: { slug: true } } },
           orderBy: { updatedAt: 'desc' },
           take: CAPS.content,
@@ -372,7 +373,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
     cap: CAPS.community,
     count: async () => {
       const [communities, personas, decks, tournaments] = await Promise.all([
-        prisma.community.count({ where: { isPrivate: false } }),
+        prisma.community.count({ where: discoverableCommunityWhere({ isPrivate: false }) }),
         prisma.aiPersona.count({ where: { isPublic: true } }),
         prisma.flashcardDeck.count({ where: { isPublic: true } }),
         prisma.tournament.count({ where: { visibility: 'public' } }),
@@ -382,7 +383,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
     page: async (skip, take) => {
       const [communities, personas, decks, tournaments] = await Promise.all([
         prisma.community.findMany({
-          where: { isPrivate: false },
+          where: discoverableCommunityWhere({ isPrivate: false }),
           select: { slug: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
           take: CAPS.community,

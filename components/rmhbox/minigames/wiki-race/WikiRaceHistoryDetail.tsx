@@ -174,7 +174,7 @@ export default function WikiRaceHistoryDetail({
         <div className="rounded-app-sm border border-app-border bg-app-bg p-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-app-text-muted uppercase">
-              {t("wiki-race-n-rounds", { defaultValue: "Wiki-Race — {{count}} Rounds", count: totalRounds })}
+              {t("wiki-race-n-rounds", { defaultValue_one: "Wiki-Race — {{count}} Round", defaultValue: "Wiki-Race — {{count}} Rounds", count: totalRounds })}
             </h4>
             {timeLimit && (
               <span className="text-xs text-app-text-muted">
@@ -421,7 +421,7 @@ function RoundSection({
                 t("game-over", { defaultValue: "Game over" })}
             </span>
             {' — '}
-            {t("players-finished", { defaultValue: "{{finished}}/{{total}} players finished", finished: round.endAction.payload.finishedCount as number, total: round.endAction.payload.totalPlayers as number })}
+            {t("players-finished", { count: Number(round.endAction.payload.totalPlayers as number), defaultValue_one: "{{finished}}/{{total}} player finished", defaultValue: "{{finished}}/{{total}} players finished", finished: round.endAction.payload.finishedCount as number, total: round.endAction.payload.totalPlayers as number })}
           </div>
         </div>
       )}

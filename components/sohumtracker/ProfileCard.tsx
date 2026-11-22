@@ -330,6 +330,7 @@ function VoicePanel({
         })
       : t('voice-with', {
           count: voice.peers,
+          defaultValue_one: 'with {{count}} other',
           defaultValue: 'with {{count}} others',
         });
 

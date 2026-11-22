@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
@@ -22,11 +23,11 @@ export const route = apiRoute('/api/communities/$slug/members/$userId', {
     if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const actorRole = await getRole(community.id, session.user.id);
-    if (!canModerate(actorRole)) return Response.json({ error: 'Not allowed' }, { status: 403 });
+    if (!canModerate(actorRole)) return Response.json({ ...refusalBody('COMMUNITY_NOT_ALLOWED') }, { status: 403 });
 
     // The creator's ADMIN role is fixed.
     if (params.userId === community.createdById) {
-      return Response.json({ error: "The owner's role can't be changed" }, { status: 400 });
+      return Response.json({ ...refusalBody('COMMUNITY_OWNER_ROLE_LOCKED') }, { status: 400 });
     }
 
     const parsed = patchSchema.safeParse(await request.json().catch(() => ({})));
@@ -36,9 +37,9 @@ export const route = apiRoute('/api/communities/$slug/members/$userId', {
       where: { communityId_userId: { communityId: community.id, userId: params.userId } },
       select: { id: true, role: true },
     });
-    if (!target) return Response.json({ error: 'Not a member' }, { status: 404 });
+    if (!target) return Response.json({ ...refusalBody('COMMUNITY_NOT_A_MEMBER') }, { status: 404 });
     if (target.role === 'ADMIN')
-      return Response.json({ error: "Can't change an admin" }, { status: 400 });
+      return Response.json({ ...refusalBody('COMMUNITY_ADMIN_ROLE_LOCKED') }, { status: 400 });
 
     await prisma.$transaction(async (tx) => {
       await tx.communityMember.update({
@@ -61,20 +62,20 @@ export const route = apiRoute('/api/communities/$slug/members/$userId', {
     if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
     const actorRole = await getRole(community.id, session.user.id);
-    if (!canModerate(actorRole)) return Response.json({ error: 'Not allowed' }, { status: 403 });
+    if (!canModerate(actorRole)) return Response.json({ ...refusalBody('COMMUNITY_NOT_ALLOWED') }, { status: 403 });
 
     if (params.userId === community.createdById) {
-      return Response.json({ error: "The owner can't be removed" }, { status: 400 });
+      return Response.json({ ...refusalBody('COMMUNITY_OWNER_NOT_REMOVABLE') }, { status: 400 });
     }
 
     const target = await prisma.communityMember.findUnique({
       where: { communityId_userId: { communityId: community.id, userId: params.userId } },
       select: { id: true, role: true },
     });
-    if (!target) return Response.json({ error: 'Not a member' }, { status: 404 });
+    if (!target) return Response.json({ ...refusalBody('COMMUNITY_NOT_A_MEMBER') }, { status: 404 });
     // Only the admin can remove a mod; mods can remove plain members.
     if (target.role !== 'MEMBER' && actorRole !== 'ADMIN') {
-      return Response.json({ error: 'Only the owner can remove a mod' }, { status: 403 });
+      return Response.json({ ...refusalBody('COMMUNITY_MOD_REMOVE_OWNER_ONLY') }, { status: 403 });
     }
 
     await prisma.$transaction(async (tx) => {

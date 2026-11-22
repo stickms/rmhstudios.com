@@ -189,6 +189,53 @@ export function parseOpenGraph(html: string): ParsedMeta {
   };
 }
 
+const LINK_TAG = /<link\b([^>]*)>/gi;
+
+/**
+ * The best icon a page declares, as an absolute URL, for a link card with no `og:image`.
+ *
+ * Preference: `apple-touch-icon` (a 180px PNG on nearly every site), then a PNG/SVG
+ * `rel="icon"`. An `.ico` is skipped because the image proxy re-encodes through sharp, which
+ * cannot read ICO; with nothing usable declared, the icon comes from Google's favicon service
+ * (a PNG for any domain). The caller still proxies whatever this returns.
+ */
+export function siteIconUrl(html: string, pageUrl: string): string | null {
+  let page: URL;
+  try {
+    page = new URL(pageUrl);
+  } catch {
+    return null;
+  }
+  let touch: string | null = null;
+  let icon: string | null = null;
+  LINK_TAG.lastIndex = 0;
+  let tag: RegExpExecArray | null;
+  while ((tag = LINK_TAG.exec(html))) {
+    const attrs = new Map<string, string>();
+    ATTR.lastIndex = 0;
+    let attr: RegExpExecArray | null;
+    while ((attr = ATTR.exec(tag[1]))) {
+      attrs.set(attr[1].toLowerCase(), attr[2] ?? attr[3] ?? attr[4] ?? '');
+    }
+    const rel = (attrs.get('rel') ?? '').toLowerCase().split(/\s+/);
+    const href = clean(attrs.get('href'));
+    if (!href) continue;
+    let abs: URL;
+    try {
+      abs = new URL(href, page);
+    } catch {
+      continue;
+    }
+    if (abs.protocol !== 'https:' && abs.protocol !== 'http:') continue;
+    if (!touch && (rel.includes('apple-touch-icon') || rel.includes('apple-touch-icon-precomposed'))) {
+      touch = abs.toString();
+    } else if (!icon && rel.includes('icon') && !/\.ico$/i.test(abs.pathname)) {
+      icon = abs.toString();
+    }
+  }
+  return touch ?? icon ?? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(page.hostname)}&sz=64`;
+}
+
 /**
  * Rewrite an unfurled image to our own proxy.
  *

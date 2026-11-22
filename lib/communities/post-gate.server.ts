@@ -7,6 +7,7 @@
  * AutoMod), the removal log and the challenge window. It returns a plain value; the caller stores the post
  * (held posts carry the AutoMod marker) and files the mod-queue entry, because only it knows how it stores content.
  */
+import { refusalBody } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
 import { activeSanction } from '@/lib/communities/bans.server';
@@ -78,7 +79,7 @@ export async function prepareCommunityPost(args: PrepareCommunityPostInput): Pro
         status: 403,
         code: null,
         body: {
-          error: 'Join the community to post in it',
+          ...refusalBody('COMMUNITY_POST_JOIN_REQUIRED'),
         },
       },
     };

@@ -136,6 +136,8 @@ export function HuntPage() {
               <h2 className="text-lg font-semibold text-site-text">{s.title}</h2>
               <p className="text-sm text-site-text-muted">
                 {t('hunt-progress', {
+                  count: Number(s.total),
+                  defaultValue_one: '{{solved}} of {{total}} clue solved',
                   defaultValue: '{{solved}} of {{total}} clues solved',
                   solved: s.solved,
                   total: s.total,

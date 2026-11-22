@@ -112,10 +112,15 @@ export function RegexTool() {
           title={
             result.truncated
               ? t('regex-matches-capped', {
+                  defaultValue_one: 'First {{count}} match',
                   defaultValue: 'First {{count}} matches',
                   count: MAX_MATCHES,
                 })
-              : t('regex-matches', { defaultValue: '{{count}} matches', count: result.matches.length })
+              : t('regex-matches', {
+                  defaultValue_one: '{{count}} match',
+                  defaultValue: '{{count}} matches',
+                  count: result.matches.length,
+                })
           }
         >
           {subject && (

@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
@@ -36,7 +37,7 @@ export const route = apiRoute('/api/group-chats/$id/react', {
 
     const parsed = reactSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success || !isValidReactionEmoji(parsed.data.emoji)) {
-      return Response.json({ error: 'Invalid emoji' }, { status: 400 });
+      return Response.json({ ...refusalBody('MESSAGE_EMOJI_INVALID') }, { status: 400 });
     }
 
     const result = await toggleGroupMessageReaction(
@@ -45,7 +46,7 @@ export const route = apiRoute('/api/group-chats/$id/react', {
       parsed.data.messageId,
       parsed.data.emoji,
     );
-    if (!result.found) return Response.json({ error: 'Message not found' }, { status: 404 });
+    if (!result.found) return Response.json({ ...refusalBody('MESSAGE_NOT_FOUND') }, { status: 404 });
 
     publishGroupEvent(params.id, {
       type: 'reaction',

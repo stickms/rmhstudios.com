@@ -1,8 +1,8 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { joinCreatorTierApi } from '@/lib/creator/join.contract';
 import { Coins, Heart, Check } from 'lucide-react';
 import {
@@ -34,6 +34,7 @@ export interface SupportTierPickerProps {
  */
 export function SupportTierPicker({ creatorId, tiers, creatorName, trigger, onJoined }: SupportTierPickerProps) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [open, setOpen] = useState(false);
   const [joining, setJoining] = useState<string | null>(null);
 
@@ -64,7 +65,7 @@ export function SupportTierPicker({ creatorId, tiers, creatorName, trigger, onJo
       setOpen(false);
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('join-failed', {
             defaultValue: 'Could not join',
           }),
@@ -144,6 +145,8 @@ export function SupportTierPicker({ creatorId, tiers, creatorName, trigger, onJo
                   disabled={joining !== null}
                 >
                   {t('join-tier', {
+                    count: Number(tier.priceCoins),
+                    defaultValue_one: 'Join for {{price}} coin',
                     defaultValue: 'Join for {{price}} coins',
                     price: tier.priceCoins,
                   })}

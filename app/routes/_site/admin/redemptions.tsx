@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute } from '@tanstack/react-router';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -14,7 +15,6 @@ import { api } from '@/lib/contract/client';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { adminRedemptionsQuery } from '@/lib/admin/admin-ops.queries';
 
-import { serverError } from '@/lib/http';
 import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ const KIND_ICON = { SUB_CREDIT: Gift, MERCH: Package, PAYOUT: Banknote } as cons
 
 function AdminRedemptionsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const query = adminRedemptionsQuery();
   // A failed read shows an empty queue.
@@ -55,7 +56,7 @@ function AdminRedemptionsPage() { const fmt = useLocaleFormat();
         await api(reviewRedemptionApi, { params: { id }, body: { action } });
       } catch (error) {
         toast.error(
-          serverError(error) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }),
+          refusalText.maybe(error) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }),
         );
         return;
       }
@@ -103,7 +104,7 @@ function AdminRedemptionsPage() { const fmt = useLocaleFormat();
                         <div className="truncate t-heading text-site-text">
                           {r.kind === 'SUB_CREDIT'
                             ? t('sub-summary', {
-                                defaultValue: '{{months}} months of {{tier}}',
+                                count: Number(r.monthsGranted ?? 1), defaultValue_one: '{{months}} month of {{tier}}', defaultValue: '{{months}} months of {{tier}}',
                                 months: r.monthsGranted ?? 1,
                                 tier: r.tierGranted ?? '',
                               })

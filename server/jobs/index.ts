@@ -85,7 +85,10 @@ import {
   registerClipSweepCron,
   registerMediaSweepCron,
 } from '@/lib/media/sweep-jobs.server';
+import { HANDLE_CHANGE_QUEUE, registerHandleChangeCron } from '@/lib/account/handle-change-jobs.server';
+import { MUTE_EXPIRY_QUEUE, registerMuteExpiryCron } from '@/lib/moderation/mute-expiry-jobs.server';
 import { TOMBSTONE_PRUNE_QUEUE, registerTombstonePruneCron } from '@/lib/sync/tombstones.server';
+import { SPEEDRUN_REVERIFY_QUEUE, registerSpeedrunReverifyCron } from '@/lib/speedrun/review-jobs.server';
 import { CENSUS_QUEUE, registerCensusCron } from '@/lib/admin/census.server';
 import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
 import {
@@ -307,6 +310,18 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s09-16: a work queue fed by account deletion when an after-erasure step failed (one job per member); retried with backoff, idempotent.
   { queue: AFTER_ERASURE_QUEUE, register: registerAfterErasureWorker },
 
+  // Sprint 10 (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-16 speedrun-queue
+  // s10-16: daily at 04:23 UTC, re-run the verifier over queued speedruns (batches of 200, at most 2,000 a night); a changed verdict tells the runner once.
+  { queue: SPEEDRUN_REVERIFY_QUEUE, register: registerSpeedrunReverifyCron },
+
+  // s10-10 timed-mutes
+  // s10-10: daily at 03:53 UTC, delete account mutes whose end has passed in batches of 1,000 (readers already ignore them).
+  { queue: MUTE_EXPIRY_QUEUE, register: registerMuteExpiryCron },
+
+  // s10-19 erasure-follows
+  // s10-19: daily at 04:07 UTC, delete deleted accounts' handle changes past the 30-day reclaim window in batches of 1,000.
+  { queue: HANDLE_CHANGE_QUEUE, register: registerHandleChangeCron },
 ];
 
 /**

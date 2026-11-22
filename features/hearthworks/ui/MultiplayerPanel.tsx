@@ -343,7 +343,7 @@ export function MultiplayerPanel() {
                 {r.locked && <Lock aria-label={t('mp-locked-badge', { defaultValue: 'Password protected' })} size={14} />} {r.name}
                 <span className="hw-muted">
                   {' '}
-                  · {r.host} · {t('mp-room-count', { defaultValue: '{{players}}/{{max}} players', players: r.players, max: r.maxPlayers })}
+                  · {r.host} · {t('mp-room-count', { count: Number(r.maxPlayers), defaultValue_one: '{{players}}/{{max}} player', defaultValue: '{{players}}/{{max}} players', players: r.players, max: r.maxPlayers })}
                 </span>
               </span>
               <button

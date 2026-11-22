@@ -371,7 +371,7 @@ function SendGiftForm() { const fmt = useLocaleFormat();
             <Send />
             {item
               ? t('send-submit-price', {
-                  defaultValue: 'Send for {{price}} coins',
+                  count: Number(fmt.number(item.price)), defaultValue_one: 'Send for {{price}} coin', defaultValue: 'Send for {{price}} coins',
                   price: fmt.number(item.price),
                 })
               : t('send-submit', { defaultValue: 'Send gift' })}

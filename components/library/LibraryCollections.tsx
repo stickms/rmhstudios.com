@@ -10,6 +10,7 @@
  * by the page (which owns the collection list so the main shelf can hide books that
  * already live in a collection) and calls `onChanged` after each change.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useState } from 'react';
 import { BookLeaves } from './BookLeaves';
 import { LibraryDialogShell } from './LibraryDialogShell';
@@ -27,7 +28,6 @@ import { toast } from '@/lib/toast';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   addLibraryCollectionBookApi,
   createLibraryCollectionApi,
@@ -60,6 +60,7 @@ export function LibraryCollections({
   query?: string;
 }) {
   const { t } = useTranslation('library');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const prompt = usePrompt();
   const [creating, setCreating] = useState(false);
@@ -157,7 +158,7 @@ export function LibraryCollections({
       await onChanged();
     } else {
       toast.error(
-        serverError(failure) ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
+        refusalText.maybe(failure) ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
       );
     }
   }
@@ -283,7 +284,7 @@ function CollectionTile({
   const revealRef = useReveal();
   const menu = useContextMenu();
   const count = c.books.length;
-  const countLabel = t('book-count', { count, defaultValue: '{{count}} books' });
+  const countLabel = t('book-count', { count, defaultValue_one: '{{count}} book', defaultValue: '{{count}} books' });
 
   const items: MenuItem[] = [
     { type: 'label', label: c.title },

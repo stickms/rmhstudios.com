@@ -3,8 +3,10 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ClozeText } from '@/components/study/ClozeText';
 import { CardPicture } from '@/components/study/CardPicture';
+import { CardSound } from '@/components/study/CardSound';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
+import { SuggestFixButton } from '@/components/study/SuggestFixDialog';
 import { cardLabel } from '@/lib/study/card-types';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
@@ -137,10 +139,13 @@ export function DeckCardList({
           <div key={c.id} className="flex items-start gap-2 border-b border-site-border py-3">
             <div className="min-w-0 flex-1 space-y-1.5">
               {c.frontImage && <CardPicture image={c.frontImage} compact />}
+              {/* Sounds arrive only in the owner's payload (s10-02), so no one else is offered a play button. */}
+              {c.frontSound && <CardSound sound={c.frontSound} side="front" showTranscript className="items-start" />}
               {c.kind === 'cloze' ? (
                 <>
                   <ClozeText text={c.front} index={null} reveal className="t-body text-site-text" />
                   {c.backImage && <CardPicture image={c.backImage} compact />}
+                  {c.backSound && <CardSound sound={c.backSound} side="back" showTranscript className="items-start" />}
                 </>
               ) : c.kind === 'occlusion' ? (
                 <>
@@ -154,12 +159,14 @@ export function DeckCardList({
                       defaultValue: 'Picture occlusion, {{count}} cards',
                     })}
                   </p>
+                  {c.backSound && <CardSound sound={c.backSound} side="back" showTranscript className="items-start" />}
                 </>
               ) : (
                 <>
                   <p className="t-body font-medium">{c.front}</p>
                   {c.backImage && <CardPicture image={c.backImage} compact />}
                   <p className="t-body text-site-text-muted">{c.back}</p>
+                  {c.backSound && <CardSound sound={c.backSound} side="back" showTranscript className="items-start" />}
                 </>
               )}
               {c.suspended && (
@@ -175,15 +182,19 @@ export function DeckCardList({
               )}
             </div>
             {signedIn && (
-              <Button variant="ghost" size="sm" disabled={pending === c.id} onClick={() => void toggle(c)}>
-                {c.suspended
-                  ? t('unsuspend', {
-                      defaultValue: 'Unsuspend',
-                    })
-                  : t('suspend', {
-                      defaultValue: 'Suspend',
-                    })}
-              </Button>
+              <div className="flex shrink-0 flex-col items-end">
+                <Button variant="ghost" size="sm" disabled={pending === c.id} onClick={() => void toggle(c)}>
+                  {c.suspended
+                    ? t('unsuspend', {
+                        defaultValue: 'Unsuspend',
+                      })
+                    : t('suspend', {
+                        defaultValue: 'Suspend',
+                      })}
+                </Button>
+                {/* Only where the deck (or the deck a copy came from) turned suggestions on; text cards only. */}
+                {c.suggestTarget && <SuggestFixButton target={c.suggestTarget} card={c} />}
+              </div>
             )}
           </div>
         ))}

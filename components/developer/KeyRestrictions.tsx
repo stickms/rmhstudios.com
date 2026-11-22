@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -7,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { updateDeveloperKeyApi, type DeveloperKeyListRow, type KeyRefusals } from '@/lib/developer/keys.contract';
 import { MAX_ALLOWED_ENTRIES, parseAllowlist, type AllowlistError } from '@/lib/api/ip-allowlist';
 import { parseLimitInput, type LimitInputError } from '@/lib/api/tier-limits';
@@ -42,6 +42,8 @@ function cidrErrorText(t: TFunction, e: AllowlistError): string {
       });
     case 'too_many':
       return t('error-too-many', {
+        count: Number(e.max),
+        defaultValue_one: 'Line {{line}}: at most {{max}} address are allowed.',
         defaultValue: 'Line {{line}}: at most {{max}} addresses are allowed.',
         line: e.line,
         max: e.max,
@@ -197,6 +199,7 @@ export function KeyRestrictionsPanel({
   onSaved: () => void | Promise<void>;
 }) {
   const { t } = useTranslation('key-restrictions');
+  const refusalText = useRefusalText();
   const initialCidrs = keyRow.allowedCidrs.join('\n');
   const initialLimit = keyRow.rateLimitPerMinute === null ? '' : String(keyRow.rateLimitPerMinute);
   const [cidrText, setCidrText] = useState(initialCidrs);
@@ -226,7 +229,7 @@ export function KeyRestrictionsPanel({
       await onSaved();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('save-failed', {
             defaultValue: 'Could not save the restrictions',
           }),

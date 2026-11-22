@@ -114,6 +114,8 @@ export default function QotdCard() {
         <Link to="/qotd" className="t-body text-site-text-muted underline hover:text-site-text">
           {today.answerCount > 0
             ? t('qotd-see-answers', {
+                count: Number(today.answerCount),
+                defaultValue_one: 'See all {{n}} answer',
                 defaultValue: 'See all {{n}} answers',
                 n: today.answerCount,
               })

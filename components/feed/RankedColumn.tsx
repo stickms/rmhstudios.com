@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
@@ -11,7 +12,6 @@ import { HandleInput } from'./HandleInput';
 import { ColumnHeader } from'./ColumnHeader';
 import type { RankTier } from'@/lib/ranked/tiers';
 import { api } from'@/lib/contract/client';
-import { serverError } from'@/lib/http';
 import {
  actOnRankedChallengeApi,
  createRankedChallengeApi,
@@ -94,6 +94,7 @@ export function RankedColumn({
  const [busy, setBusy] = useState<string | null>(null);
 
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
 
  // Challenge form
  const [game, setGame] = useState(initialData?.games?.[0]?.id ??'');
@@ -172,7 +173,7 @@ export function RankedColumn({
  body: { game, opponent: opponent.trim().replace(/^@/,'') },
  });
  } catch (e) {
- setFormMsg(serverError(e) ?? t('could-not-send', { defaultValue:'Could not send'}));
+ setFormMsg(refusalText.maybe(e) ?? t('could-not-send', { defaultValue:'Could not send'}));
  return;
  }
  setOpponent('');
@@ -190,7 +191,7 @@ export function RankedColumn({
  try {
  await api(actOnRankedChallengeApi, { params: { id }, body });
  } catch (e) {
- const message = serverError(e);
+ const message = refusalText.maybe(e);
  if (message) toast.error(message);
  return;
  }

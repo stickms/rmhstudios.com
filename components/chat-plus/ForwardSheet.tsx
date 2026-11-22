@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +15,6 @@ import type { ChatRef } from '@/lib/chat-plus/types';
 import { useChatPlusUi, type ForwardTarget } from '@/lib/chat-plus/ui-store';
 import { api } from '@/lib/contract/client';
 import { getSavedMessagesApi, listConversationsApi } from '@/lib/messages/messages.contract';
-import { serverError } from '@/lib/http';
 import { forwardChatMessageApi, listGroupChatsApi } from '@/lib/group-chat/group-chat.contract';
 
 interface Destination {
@@ -81,6 +81,7 @@ function useDestinations() {
 
 export default function ForwardSheet({ target }: { target: ForwardTarget }) {
   const { t } = useTranslation('f-messaging');
+  const refusalText = useRefusalText();
   const close = useChatPlusUi((s) => s.close);
   const { data, isLoading } = useDestinations();
   const arrival = useArrival(!isLoading);
@@ -129,7 +130,7 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
       close();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('forward-failed', {
             defaultValue: 'Could not forward that message',
           }),
@@ -156,6 +157,8 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
                 })
               : t('forward-note', {
                   max: limit,
+                  count: Number(limit),
+                  defaultValue_one: 'Choose up to {{max}} chat.',
                   defaultValue: 'Choose up to {{max}} chats.',
                 })}
           </SheetDescription>

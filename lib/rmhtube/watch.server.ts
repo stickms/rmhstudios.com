@@ -49,12 +49,40 @@ export const listWatchLater = (userId: string) =>
     select: { id: true, url: true, title: true },
   });
 
+/** One page of the list, oldest first by a `(createdAt, id)` keyset; the table is bounded to 200 rows per member. */
+export async function listWatchLaterPage(
+  userId: string,
+  limit: number,
+  after: { at: Date; id: string } | null,
+) {
+  const rows = await prisma.rmhTubeWatchLater.findMany({
+    where: {
+      userId,
+      ...(after
+        ? {
+            OR: [{ createdAt: { gt: after.at } }, { createdAt: after.at, id: { gt: after.id } }],
+          }
+        : {}),
+    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: limit + 1,
+    select: { id: true, url: true, title: true, createdAt: true },
+  });
+  return { rows: rows.slice(0, limit), hasMore: rows.length > limit };
+}
+
+export const findWatchLater = (userId: string, url: string) =>
+  prisma.rmhTubeWatchLater.findUnique({
+    where: { userId_url: { userId, url } },
+    select: { id: true, url: true, title: true, createdAt: true },
+  });
+
 export async function addWatchLater(userId: string, url: string, title: string) {
   const row = await prisma.rmhTubeWatchLater.upsert({
     where: { userId_url: { userId, url } },
     create: { userId, url, title },
     update: {},
-    select: { id: true, url: true, title: true },
+    select: { id: true, url: true, title: true, createdAt: true },
   });
   // Bounded list: drop the oldest beyond 200.
   const extra = await prisma.rmhTubeWatchLater.findMany({

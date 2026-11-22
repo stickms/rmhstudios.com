@@ -19,6 +19,7 @@
  * filename and refuses anyone who is not a participant.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { getUserTier } from '@/lib/entitlements';
 import { getObject, putObject } from '@/lib/storage/s3.server';
@@ -96,7 +97,7 @@ export async function sendVoiceMessage(args: {
   const now = args.now ?? new Date();
 
   const conversation = await loadParticipantConversation(args.conversationId, args.userId);
-  if (!conversation) return { ok: false, status: 404, error: 'Conversation not found' };
+  if (!conversation) return { ok: false, status: 404, ...refusalBody('CONVERSATION_NOT_FOUND') };
 
   const recipientId = otherParticipant(conversation, args.userId);
 
@@ -110,17 +111,17 @@ export async function sendVoiceMessage(args: {
     ? ({ outcome: 'allowed' } as const)
     : await requestGate(args.userId, recipientId, { request: conversation.request ?? null });
   if (gate.outcome === 'request') {
-    return { ok: false, status: 403, error: 'A message request can only contain text.' };
+    return { ok: false, status: 403, ...refusalBody('MESSAGE_REQUEST_TEXT_ONLY') };
   }
   if (gate.outcome === 'refused') {
     switch (gate.reason) {
       case 'NONE':
-        return { ok: false, status: 403, error: 'This user is no longer accepting messages.' };
+        return { ok: false, status: 403, ...refusalBody('MESSAGE_NO_LONGER_ACCEPTING') };
       case 'FOLLOWERS':
         return {
           ok: false,
           status: 403,
-          error: 'This user only accepts messages from people they follow.',
+          ...refusalBody('MESSAGE_FOLLOWS_ONLY'),
         };
       case 'cap':
         return { ok: false, status: 429, error: gateRefusalCopy('cap') };
@@ -145,7 +146,7 @@ export async function sendVoiceMessage(args: {
   }
 
   const ext = voiceExtForContentType(args.contentType);
-  if (!ext) return { ok: false, status: 400, error: 'That audio format is not supported.' };
+  if (!ext) return { ok: false, status: 400, ...refusalBody('AUDIO_FORMAT_UNSUPPORTED') };
 
   const note = (args.note ?? '').trim().slice(0, MESSAGE_MAX_LENGTH);
   const peaks = normalizePeaks(args.peaks, VOICE_PEAK_BUCKETS);

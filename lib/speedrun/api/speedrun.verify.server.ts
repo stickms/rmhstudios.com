@@ -41,13 +41,20 @@ export const route = apiRoute('/api/speedrun/verify', {
     Response.json({ pending: await getPendingQueue(query.limit) }),
   ),
 
-  POST: defineHandler({ auth: 'admin', rateLimit: 'write', body: bodySchema }, async ({ body }) => {
+  POST: defineHandler({ auth: 'admin', rateLimit: 'write', body: bodySchema }, async ({ body, userId }) => {
     if (body.action === 'drain') {
       return Response.json({ result: await reverifyPending(body.limit) });
     }
     try {
-      const entry = await reviewEntry(body);
-      return Response.json({ entry });
+      const result = await reviewEntry({ ...body, adminId: userId });
+      if (!result.ok) {
+        // Already decided (a compare-and-set on `pending`): say who, never overwrite.
+        return Response.json(
+          { error: 'This run was already decided.', status: result.status, decidedBy: result.decidedBy },
+          { status: 409 },
+        );
+      }
+      return Response.json({ entry: result.entry });
     } catch (error) {
       if (error instanceof SpeedrunError && error.code === 'ENTRY_NOT_FOUND') {
         return Response.json({ error: 'No such run.' }, { status: 404 });

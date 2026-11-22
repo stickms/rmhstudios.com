@@ -179,10 +179,10 @@ function ManageContent() {
                       {build.visibility}
                     </Badge>
                     <span>
-                      {t('like-count', { count: build.likeCount, defaultValue: '{{count}} likes' })}
+                      {t('like-count', { count: build.likeCount, defaultValue_one: '{{count}} like', defaultValue: '{{count}} likes' })}
                     </span>
                     <span>
-                      {t('view-count', { count: build.viewCount, defaultValue: '{{count}} views' })}
+                      {t('view-count', { count: build.viewCount, defaultValue_one: '{{count}} view', defaultValue: '{{count}} views' })}
                     </span>
                   </div>
                 </div>

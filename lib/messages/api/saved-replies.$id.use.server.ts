@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { recordSavedReplyUseApi } from '@/lib/messages/saved-replies.contract';
@@ -9,7 +10,7 @@ export const route = apiRoute('/api/saved-replies/$id/use', {
     const result = await recordSavedReplyUse(userId, params.id);
     if (!result.ok)
       return Response.json(
-        { error: result.error, ...(result.code ? { code: result.code } : {}) },
+        { error: result.error, ...refusalCodeOf(result), ...refusalCodeOf(result) },
         { status: result.status },
       );
     return { success: true as const };

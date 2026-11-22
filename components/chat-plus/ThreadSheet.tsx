@@ -187,6 +187,7 @@ export default function ThreadSheet({ target, viewerId }: { target: ThreadTarget
               <p className={cn('mt-2 text-xs text-site-text-muted', arrival)}>
                 {t('thread-reply-count', {
                   count: replies.length,
+                  defaultValue_one: '{{count}} reply',
                   defaultValue: '{{count}} replies',
                 })}
               </p>

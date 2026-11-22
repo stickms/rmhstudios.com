@@ -6,6 +6,7 @@
  * on `(scopeKey, createdAt)`, and it adds nothing to the hot message tables.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { type ChatAccess, publishChatUpdate } from '@/lib/chat-plus/access.server';
@@ -112,7 +113,7 @@ export async function setPin(
     const found = await loadPinnedMessages(access, [messageId]);
     const msg = found.get(messageId);
     if (!msg || msg.kind === 'system' || msg.kind === 'tip') {
-      return { ok: false, status: 404, error: 'Message not found' };
+      return { ok: false, status: 404, ...refusalBody('MESSAGE_NOT_FOUND') };
     }
     const existing = await prisma.chatPin.findUnique({
       where: { scopeKey_messageId: { scopeKey: access.scopeKey, messageId } },
@@ -121,7 +122,7 @@ export async function setPin(
     if (existing) return { ok: true };
     const count = await prisma.chatPin.count({ where: { scopeKey: access.scopeKey } });
     if (count >= MAX_PINS_PER_CHAT) {
-      return { ok: false, status: 409, error: `You can pin up to ${MAX_PINS_PER_CHAT} messages` };
+      return { ok: false, status: 409, ...refusalBody('CHAT_PIN_LIMIT', { max: MAX_PINS_PER_CHAT }) };
     }
     await prisma.chatPin.create({
       data: { scopeKey: access.scopeKey, messageId, pinnedById: access.viewerId },

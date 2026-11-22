@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useRef, useState } from 'react';
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { CARD_IMAGE_ALT_MAX, type CardImage } from '@/lib/study/card-images';
 import { uploadCardImageApi } from '@/lib/study/card-images.contract';
 import { CardPicture } from '@/components/study/CardPicture';
@@ -29,6 +29,7 @@ export function CardImageField({
   showMissing: boolean;
 }) {
   const { t } = useTranslation('card-images');
+  const refusalText = useRefusalText();
   const uid = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -46,7 +47,7 @@ export function CardImageField({
       // Replacing keeps the description the member already wrote.
       onChange({ url: stored.url, alt: value?.alt ?? '' });
     } catch (err) {
-      toast.error(serverError(err) ?? t('upload-failed', { defaultValue: 'The picture could not be uploaded.' }));
+      toast.error(refusalText.maybe(err) ?? t('upload-failed', { defaultValue: 'The picture could not be uploaded.' }));
     } finally {
       setBusy(false);
     }

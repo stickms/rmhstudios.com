@@ -134,6 +134,8 @@ export function ModInsights({ slug }: { slug: string }) {
       {INSIGHT_RANGES.map((days) => (
         <option key={days} value={String(days)}>
           {t('range-option', {
+            count: Number(days),
+            defaultValue_one: 'Last {{days}} day',
             defaultValue: 'Last {{days}} days',
             days,
           })}
@@ -186,6 +188,8 @@ export function ModInsights({ slug }: { slug: string }) {
       {c ? (
         <dd className="t-meta m-0">
           {t('vs-previous', {
+            count: Number(data.range),
+            defaultValue_one: 'Previous {{days}} day: {{previous}} ({{change}})',
             defaultValue: 'Previous {{days}} days: {{previous}} ({{change}})',
             days: data.range,
             previous: number.format(c.previous),

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { GifEmbed } from '@/components/feed/GifEmbedLazy';
 import { GifDescriptionField } from '@/components/feed/compose/GifDescriptionField';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { editPostAltsApi } from '@/lib/feed/alt-text-edit.contract';
 import { MAX_IMAGE_ALT_LENGTH, alignAlts } from '@/lib/feed/alt-text-edit';
@@ -112,6 +112,7 @@ function AltFields({
   onCancel: () => void;
 }) {
   const { t } = useTranslation('alt-text-editing');
+  const refusalText = useRefusalText();
   const base = useId();
   const [drafts, setDrafts] = useState(saved);
   const [saving, setSaving] = useState(false);
@@ -148,7 +149,7 @@ function AltFields({
       onSaved(res.imageAlts, res.gifAlt);
     } catch (e) {
       setError(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('save-failed', {
             defaultValue: 'Could not save the descriptions. Try again.',
           }),

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { discoverableCommunityWhere, discoverablePostWhere } from '@/lib/communities/discovery';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
@@ -137,7 +138,7 @@ async function loadExploreBase(): Promise<ExploreBase> {
     }),
     // Communities to discover: most members first, public only.
     prisma.community.findMany({
-      where: { isPrivate: false },
+      where: discoverableCommunityWhere({ isPrivate: false }),
       orderBy: { memberCount: 'desc' },
       take: 6,
       select: {
@@ -206,7 +207,13 @@ const HOT_CANDIDATE_POOL = 100;
 async function loadHotPostCandidateIds(): Promise<{ ids: string[]; fallback: boolean }> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const rows = await prisma.rMHark.findMany({
-    where: { deletedAt: null, createdAt: { gte: since }, audience: 'PUBLIC', likeCount: { gt: 0 } },
+    where: {
+      deletedAt: null,
+      createdAt: { gte: since },
+      audience: 'PUBLIC',
+      likeCount: { gt: 0 },
+      ...discoverablePostWhere(),
+    },
     orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
     take: HOT_CANDIDATE_POOL,
     select: { id: true },
@@ -221,7 +228,7 @@ async function loadHotPostCandidateIds(): Promise<{ ids: string[]; fallback: boo
   // it keeps the tab populated while engagement is thin, and stops applying the
   // moment a single post is liked.
   const recent = await prisma.rMHark.findMany({
-    where: { deletedAt: null, audience: 'PUBLIC' },
+    where: { deletedAt: null, audience: 'PUBLIC', ...discoverablePostWhere() },
     orderBy: { createdAt: 'desc' },
     take: HOT_CANDIDATE_POOL,
     select: { id: true },
@@ -255,7 +262,7 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   // scan. Order isn't guaranteed by an `IN` query, so re-sort by likeCount.
   const hotRows = hotCandidateIds.length
     ? await prisma.rMHark.findMany({
-        where: { id: { in: hotCandidateIds }, deletedAt: null, ...notHidden, ...aud },
+        where: { id: { in: hotCandidateIds }, deletedAt: null, ...notHidden, ...aud, ...discoverablePostWhere() },
         include: rmharkIncludeLite(viewerId),
       })
     : [];

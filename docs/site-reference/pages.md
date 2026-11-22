@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 414 routes. 220 render inside the standard site shell (sidebar, nav, context rail); 194 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 420 routes. 225 render inside the standard site shell (sidebar, nav, context rail); 195 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -34,6 +34,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/bots` | AI Bots \| Admin | admin | `app/routes/_site/admin/bots.tsx` |
 | `/admin/canvas` | Canvas \| Admin | admin | `app/routes/_site/admin/canvas.tsx` |
 | `/admin/census` | Census | admin | `app/routes/_site/admin/census.tsx` |
+| `/admin/communities` | Communities \| Admin | admin | `app/routes/_site/admin/communities.tsx` |
 | `/admin/deepseek` | DeepSeek Balance | admin | `app/routes/_site/admin/deepseek.tsx` |
 | `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
@@ -62,15 +63,18 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
 | `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
+| `/admin/speedruns` | Speedrun review \| Admin | admin | `app/routes/_site/admin/speedruns.tsx` |
 | `/admin/studio-challenges` | Studio sample flip \| Admin | admin | `app/routes/_site/admin/studio-challenges.tsx` |
 | `/admin/sweeps` | Spam sweeps \| Admin | admin | `app/routes/_site/admin/sweeps.tsx` |
 | `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
+| `/admin/webhooks` | Webhooks \| Admin | admin | `app/routes/_site/admin/webhooks.tsx` |
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/arcade` | redirects to `/compete?tab=leaderboard` | public | `app/routes/_site/arcade.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
+| `/builds/:slug/issues` | Build issues | public | `app/routes/_site/builds/$slug_.issues.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/c/:slug/invite/:code` | Community invite | public | `app/routes/_site/c.$slug_.invite.$code.tsx` |
 | `/c/:slug/wiki` | — | public | `app/routes/_site/c.$slug_.wiki.index.tsx` |
@@ -186,6 +190,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/keyboard` | Keyboard | public | `app/routes/_site/settings/keyboard.tsx` |
 | `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
+| `/settings/preview` | — | public | `app/routes/_site/settings/preview.tsx` |
 | `/settings/privacy` | Privacy & data | public | `app/routes/_site/settings/privacy.tsx` |
 | `/settings/profile` | Profile customization | public | `app/routes/_site/settings/profile.tsx` |
 | `/settings/replays` | — | public | `app/routes/_site/settings/replays.tsx` |
@@ -385,6 +390,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhtype/multiplayer` | — | sign-in | `app/routes/rmhtype/multiplayer.tsx` |
 | `/rmhtype/progress` | — | sign-in | `app/routes/rmhtype/progress.tsx` |
 | `/rmhtype/solo` | — | sign-in | `app/routes/rmhtype/solo.tsx` |
+| `/rmhtype/texts` | — | sign-in | `app/routes/rmhtype/texts.tsx` |
 | `/secret` | Secret | public | `app/routes/secret/index.tsx` |
 | `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |
 | `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |

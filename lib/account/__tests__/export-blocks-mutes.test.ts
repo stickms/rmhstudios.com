@@ -121,6 +121,8 @@ describe('account export: blocked and muted accounts', () => {
           userId: 'm1',
           handle: null,
           since: '2026-11-03T10:00:00.000Z',
+          // S10-10: a mute's end, null for "until you unmute".
+          expiresAt: null,
         },
       ],
     });

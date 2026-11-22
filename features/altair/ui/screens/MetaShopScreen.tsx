@@ -136,6 +136,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
                         }`}
                       >
                         {t('cost-coins', {
+                          defaultValue_one: '{{count}} coin',
                           defaultValue: '{{count}} coins',
                           count: nextCost,
                         })}

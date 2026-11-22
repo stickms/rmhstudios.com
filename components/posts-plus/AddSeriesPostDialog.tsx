@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { profilePostsApi } from '@/lib/feed/feed-reads.contract';
 import { addSeriesPostApi } from '@/lib/posts-plus/series.contract';
 import { useArrival } from '@/components/ui/arrive';
@@ -29,6 +29,7 @@ export default function AddSeriesPostDialog({
   onAdded: () => void;
 }) {
   const { t } = useTranslation('f-posts-plus');
+  const refusalText = useRefusalText();
   const [posts, setPosts] = useState<FeedItem[] | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
   // Steel M9: the posts replace the spinner inside the open dialog.
@@ -72,7 +73,7 @@ export default function AddSeriesPostDialog({
       onAdded();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('series-add-failed', {
             defaultValue: 'Could not add that post',
           }),

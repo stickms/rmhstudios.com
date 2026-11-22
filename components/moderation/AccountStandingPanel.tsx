@@ -8,6 +8,7 @@
  * a support email.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +16,6 @@ import { toast } from '@/lib/toast';
 import { ShieldCheck, ShieldAlert, ShieldX, ExternalLink } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { appealStrikeApi } from '@/lib/moderation/standing.contract';
 import { accountStandingQuery } from '@/lib/moderation/standing.queries';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +72,7 @@ function entityHref(s: Strike): string | null {
 export function AccountStandingPanel() {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const { data: standing, isPending: loading, refetch } = useQuery(accountStandingQuery());
   const [openId, setOpenId] = useState<string | null>(null);
   const arrival = useArrival(!loading);
@@ -99,7 +100,7 @@ export function AccountStandingPanel() {
       void refetch();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('appeal-failed', {
             defaultValue: 'Could not submit your appeal.',
           }),
@@ -218,6 +219,7 @@ export function AccountStandingPanel() {
             </dt>
             <dd className="text-lg font-semibold text-site-text">
               {t('standing-appeal-days', {
+                defaultValue_one: '{{count}} day',
                 defaultValue: '{{count}} days',
                 count: standing.appealWindowDays,
               })}

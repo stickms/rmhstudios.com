@@ -1,0 +1,14 @@
+{
+  "grant-cancel": "Cancel",
+  "grant-description": "A gift membership starts now and ends after the months you choose.",
+  "grant-months": "Months",
+  "grant-months-hint": "A whole number from {{min}} to {{max}}.",
+  "grant-revoke": "Revoke",
+  "grant-submit": "Grant",
+  "grant-tier": "Tier",
+  "grant-tier-pro": "Pro",
+  "grant-tier-revoke": "Revoke active grants",
+  "grant-tier-starter": "Starter",
+  "grant-title": "Membership for {{name}}",
+  "handle-hint-30-days": "Used for mentions and your profile URL. You can change it once every 30 days, and the old one is held for 30 days."
+}

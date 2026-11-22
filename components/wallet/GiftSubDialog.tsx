@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -6,7 +7,7 @@ import { CoinIcon } from '@/components/ui/CoinIcon';
 import { Gift } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { giftSubApi } from '@/lib/gifting/gift.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -23,6 +24,7 @@ const MONTH_OPTIONS = [1, 3, 6, 12];
 
 export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }: GiftSubDialogProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-economy");
+  const refusalText = useRefusalText();
   const [tier, setTier] = useState<'starter' | 'pro'>('starter');
   const [months, setMonths] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -44,7 +46,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
       if (e instanceof HttpError && e.status === 401) {
         toast.error(t('gift-sign-in', { defaultValue: 'Please sign in to gift a membership.' }));
       } else {
-        toast.error(serverError(e) || t('gift-error', { defaultValue: 'Could not gift membership' }));
+        toast.error(refusalText.maybe(e) || t('gift-error', { defaultValue: 'Could not gift membership' }));
       }
     } finally {
       setSubmitting(false);

@@ -621,7 +621,7 @@ export default function MinesweeperApp({ win }: AppProps) {
     if (c.adj === 0) return t('ms-state-empty', { defaultValue: 'no mines nearby' });
     return c.adj === 1
       ? t('ms-state-one', { defaultValue: '1 mine nearby' })
-      : t('ms-state-many', { defaultValue: '{{n}} mines nearby', n: c.adj });
+      : t('ms-state-many', { count: Number(c.adj), defaultValue_one: '{{n}} mine nearby', defaultValue: '{{n}} mines nearby', n: c.adj });
   };
 
   const gridStyle = { '--ms-cell': `${cell}px`, '--ms-cols': game.cols } as CSSProperties;

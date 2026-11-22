@@ -302,7 +302,12 @@ export function FollowManager({ query, onQueryChange }: FollowManagerProps) {
         : t('filter-not-followed-back', { defaultValue: "You don't follow back" });
     }
     if (id === 'inactive') {
-      return t('filter-inactive', { days: INACTIVE_DAYS, defaultValue: 'Inactive {{days}} days' });
+      return t('filter-inactive', {
+        days: INACTIVE_DAYS,
+        count: Number(INACTIVE_DAYS),
+        defaultValue_one: 'Inactive {{days}} day',
+        defaultValue: 'Inactive {{days}} days',
+      });
     }
     return t('filter-all', { defaultValue: 'Everyone' });
   };

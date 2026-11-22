@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -14,13 +15,13 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import { PACK_MAX_PROMPTS, PACK_MIN_PROMPTS, type PackView } from '@/lib/party/packs';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createPackApi, listPacksApi, type PackLists } from '@/lib/party/packs.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 export function PacksPage() {
   const { t } = useTranslation('f-party');
+  const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
   const isAdmin = !!(
@@ -81,7 +82,7 @@ export function PacksPage() {
     } catch (e) {
       setBusy(false);
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('create-failed', {
             defaultValue: 'Could not create the pack.',
           }),
@@ -161,6 +162,7 @@ export function PacksPage() {
           <h3 className="truncate font-semibold text-site-text">{p.name}</h3>
           <p className="text-xs text-site-text-muted">
             {t('pack-meta', {
+              defaultValue_one: '{{count}} prompt by {{author}}',
               defaultValue: '{{count}} prompts by {{author}}',
               count: p.promptCount,
               author: p.author?.name ?? p.author?.handle ?? '?',
@@ -293,6 +295,7 @@ export function PacksPage() {
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-site-text-muted">
                 {t('prompt-count', {
+                  defaultValue_one: '{{count}} prompt (need {{min}} to {{max}})',
                   defaultValue: '{{count}} prompts (need {{min}} to {{max}})',
                   count: prompts.length,
                   min: PACK_MIN_PROMPTS,

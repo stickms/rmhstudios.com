@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { plural } from '@/lib/core/format';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
@@ -69,7 +70,7 @@ export const Route = createFileRoute('/_site/c/$slug')({
         title: `${community.name} — community | RMH Studios`,
         description:
           community.description ||
-          `${community.name} on RMH Studios — ${community.memberCount} members and ${community.postCount} posts.`,
+          `${community.name} on RMH Studios — ${community.memberCount} ${plural(community.memberCount, 'member', 'members')} and ${community.postCount} ${plural(community.postCount, 'post', 'posts')}.`,
         path,
         image: community.icon || undefined,
         imageAlt: community.icon ? `${community.name}'s community icon.` : undefined,
@@ -86,12 +87,16 @@ export const Route = createFileRoute('/_site/c/$slug')({
       ],
     };
   },
+  // `?tab=events` opens the Events tab; any other value is dropped.
+  validateSearch: (search: Record<string, unknown>): { tab?: 'events' } =>
+    search.tab === 'events' ? { tab: 'events' } : {},
   loader: ({ params }) => fetchCommunityPage({ data: params.slug }),
   component: CommunityPage,
 });
 
 function CommunityPage() {
   const { slug } = Route.useParams();
+  const { tab } = Route.useSearch();
   // createServerFn's `.validator` + FeedItem's recursive `original` type defeat
   // loader-data inference (it collapses to `undefined`); the runtime shape is
   // exactly the loader's return, so assert it.
@@ -123,6 +128,7 @@ function CommunityPage() {
         initialCommunity={community}
         initialItems={feed?.items ?? null}
         initialPinned={feed?.pinned ?? null}
+        initialTab={tab}
       />
     </PageFrame>
   );

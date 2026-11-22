@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { sendFeedbackApi } from '@/lib/feedback.contract';
 import { recentClientErrorMessages } from '@/lib/client-errors';
 import {
@@ -26,6 +27,7 @@ import { CONTEXT_ITEMS, collectContext, pickContext, type ContextItem } from '@/
  */
 export function FeedbackForm({ onSent, className }: { onSent: () => void; className?: string }) {
   const { t } = useTranslation('feedback-inbox');
+  const refusalText = useRefusalText();
   const uid = useId();
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   const [message, setMessage] = useState('');
@@ -161,7 +163,7 @@ export function FeedbackForm({ onSent, className }: { onSent: () => void; classN
         );
       } else {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('failed', {
               defaultValue: 'Could not send feedback.',
             }),

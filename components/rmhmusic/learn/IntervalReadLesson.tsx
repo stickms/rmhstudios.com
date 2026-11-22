@@ -159,6 +159,8 @@ function IntervalSession({
     line = t('interval-read-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You named {{correct}} of {{total}} interval.',
       defaultValue: 'You named {{correct}} of {{total}} intervals.',
     });
   }

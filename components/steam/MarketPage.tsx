@@ -58,7 +58,7 @@ export function MarketPage({ data }: { data: MarketData }) {
           {data.balance !== null ? (
             <span className="stm-balance">
               <Coins aria-hidden size={16} />
-              {t('steam-market-balance', { defaultValue: '{{n}} coins', n: data.balance })}
+              {t('steam-market-balance', { count: Number(data.balance), defaultValue_one: '{{n}} coin', defaultValue: '{{n}} coins', n: data.balance })}
             </span>
           ) : null}
         </div>
@@ -81,7 +81,7 @@ export function MarketPage({ data }: { data: MarketData }) {
                   <span className="stm-person-body">
                     <span className="stm-person-name">{cardName(l.gameId, l.cardIndex)}</span>
                     <span className="stm-person-sub">
-                      {l.title} · {t('steam-market-price', { defaultValue: '{{n}} coins', n: l.priceCoins })}
+                      {l.title} · {t('steam-market-price', { count: Number(l.priceCoins), defaultValue_one: '{{n}} coin', defaultValue: '{{n}} coins', n: l.priceCoins })}
                     </span>
                   </span>
                   <button
@@ -146,7 +146,7 @@ export function MarketPage({ data }: { data: MarketData }) {
                       </span>
                     </span>
                     <span className="stm-market-price">
-                      {t('steam-market-from', { defaultValue: 'From {{n}} coins', n: g.lowestPrice })}
+                      {t('steam-market-from', { count: Number(g.lowestPrice), defaultValue_one: 'From {{n}} coin', defaultValue: 'From {{n}} coins', n: g.lowestPrice })}
                     </span>
                     {data.signedIn ? (
                       <button

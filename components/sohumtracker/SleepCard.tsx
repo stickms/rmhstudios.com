@@ -92,6 +92,7 @@ export function SleepCard({ days }: { days: WatchDayDTO[] }) {
         <p className="stk-chart__note">
           {t('sleep-sample', {
             count: sleep.nights.length,
+            defaultValue_one: 'from {{count}} night',
             defaultValue: 'from {{count}} nights',
           })}
         </p>

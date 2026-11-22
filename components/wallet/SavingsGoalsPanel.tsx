@@ -107,7 +107,7 @@ export default function SavingsGoalsPanel() { const fmt = useLocaleFormat();
       });
     }
     return t('goals-eta', {
-      defaultValue: 'About {{days}} days · around {{date}} · +{{perDay}}/day',
+      count: Number(p.daysLeft), defaultValue_one: 'About {{days}} day · around {{date}} · +{{perDay}}/day', defaultValue: 'About {{days}} days · around {{date}} · +{{perDay}}/day',
       days: p.daysLeft,
       date: g.etaDate ? fmtDate.format(new Date(`${g.etaDate}T00:00:00Z`)) : '',
       perDay: fmt.number(Math.round(p.perDay)),

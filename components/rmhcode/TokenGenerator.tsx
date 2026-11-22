@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon: <Spinner> renders role="status" and would join the button accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Key, Check, RefreshCw, Trash2, Clock, AlertCircle } from 'lucide-react';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '@/components/ui/copy-button';
 import { tokenExpiry } from '@/lib/rmhcode/token-expiry';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   generateRmhCodeTokenApi,
   listRmhCodeTokensApi,
@@ -26,6 +27,7 @@ interface Token {
 
 export default function TokenGenerator() {
   const { t, i18n } = useTranslation("c-rmhcode");
+  const refusalText = useRefusalText();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -63,7 +65,7 @@ export default function TokenGenerator() {
       fetchTokens();
     } catch (e) {
       setError(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           (e instanceof Error && !(e instanceof HttpError) ? e.message : 'Failed to generate token'),
       );
     } finally {

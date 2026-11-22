@@ -41,7 +41,7 @@ export function DeckViewer({ cards, pileLabel, onClose }: Props) {
     <div className="w-full h-full bg-black bg-opacity-80 flex items-center justify-center z-50 p-6" onClick={onClose}>
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-3xl w-full max-h-full overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-cyan-400">{pileLabel} ({t("pile-card-count", { count: cards.length, defaultValue: "{{count}} cards" })})</h2>
+          <h2 className="text-xl font-bold text-cyan-400">{pileLabel} ({t("pile-card-count", { count: cards.length, defaultValue_one: "{{count}} card", defaultValue: "{{count}} cards" })})</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">&times;</button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

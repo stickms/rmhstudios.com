@@ -20,7 +20,7 @@
   "link-copied": "Seed link copied",
   "load-failed": "Could not load today’s challenge.",
   "median-line": "Median time to finish: {{time}} ({{count}} players)",
-  "median-line_one": "Median time to finish: {{time}} ({{count}} players)",
+  "median-line_one": "Median time to finish: {{time}} ({{count}} player)",
   "median-line_other": "Median time to finish: {{time}} ({{count}} players)",
   "median-none": "No completion times yet.",
   "notice-daily": "Today's mutator is loaded. Start a solo run to take your one counted attempt.",

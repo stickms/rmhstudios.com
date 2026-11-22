@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/ui/CoinIcon';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { tipApi } from '@/lib/economy/tip.contract';
 import { TIP_MAX, TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
 import { parseTipAmount } from '@/lib/economy/tip-amount';
@@ -26,6 +27,7 @@ const QUICK_AMOUNTS = [5, 10, 25, 50, 100];
 /** Reusable "tip jar" dialog — sends coins to another user. */
 export function TipDialog({ open, onOpenChange, recipientId, recipientName, entityType, entityId }: TipDialogProps) {
   const { t, i18n } = useTranslation("c-economy");
+  const refusalText = useRefusalText();
   const [amount, setAmount] = useState(10);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -48,14 +50,14 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
     setSubmitting(true);
     try {
       await api(tipApi, { body: parsed.data });
-      toast.success(t("tip-success", { defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
+      toast.success(t("tip-success", { count: Number(amount), defaultValue_one: "Tipped {{amount}} coin{{recipient}}!", defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
       onOpenChange(false);
       setNote('');
     } catch (e) {
       if (e instanceof HttpError && e.status === 401) {
         toast.error(t("tip-sign-in", { defaultValue: "Please sign in to tip." }));
       } else {
-        toast.error(serverError(e) || t("tip-error", { defaultValue: "Could not send tip" }));
+        toast.error(refusalText.maybe(e) || t("tip-error", { defaultValue: "Could not send tip" }));
       }
     } finally {
       setSubmitting(false);

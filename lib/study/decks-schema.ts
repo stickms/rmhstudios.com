@@ -3,9 +3,13 @@
  * client reaches the same types through `decks.contract.ts` with `import type`.
  */
 import { z } from 'zod';
+
+/** `?tz=` on the deck list: the member's IANA zone, for the day a paced deck's counts use (UTC when unknown). */
+export const listDecksQuery = z.object({ tz: z.string().min(1).max(64).optional() });
 import { CARD_KINDS, validateCard } from '@/lib/study/card-types';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX, MAX_DECK_CARDS, MAX_IMPORT_CARDS } from '@/lib/study/limits';
 import { addPictureIssue, cardPicturesShape } from '@/lib/study/card-images-schema';
+import { addSoundIssue, cardSoundsShape } from '@/lib/study/card-sound-schema';
 import { occlusionShape } from '@/lib/study/occlusion-schema';
 
 export const createDeckBody = z.object({
@@ -26,22 +30,31 @@ export const reviewCardBody = z.object({
  * card's optional note), plus the masks of an occlusion card. The per-kind rules are `validateCard`'s,
  * the same ones the editor shows inline and the server re-checks.
  */
-const authoredCard = z
-  .object({
-    kind: z.enum(CARD_KINDS).optional(),
-    front: z.string().trim().max(CLOZE_TEXT_MAX).default(''),
-    back: z.string().trim().max(CARD_SIDE_MAX).optional(),
-    ...cardPicturesShape,
-    ...occlusionShape,
-  })
+const authoredFields = {
+  kind: z.enum(CARD_KINDS).optional(),
+  front: z.string().trim().max(CLOZE_TEXT_MAX).default(''),
+  back: z.string().trim().max(CARD_SIDE_MAX).optional(),
+  ...cardPicturesShape,
+  ...occlusionShape,
+};
+const authoredCard = z.object(authoredFields).superRefine((card, ctx) => {
+  const checked = validateCard(card);
+  if (!checked.ok) ctx.addIssue({ code: 'custom', message: checked.error });
+  addPictureIssue(card, ctx);
+});
+
+/**
+ * POST one card to a deck. Only the card form's own save takes sounds (s10-02): a bulk import and the developer API
+ * never carry one, so `authoredCard` above stays soundless.
+ */
+export const addCardBody = z
+  .object({ ...authoredFields, ...cardSoundsShape })
   .superRefine((card, ctx) => {
     const checked = validateCard(card);
     if (!checked.ok) ctx.addIssue({ code: 'custom', message: checked.error });
     addPictureIssue(card, ctx);
+    addSoundIssue(card, ctx);
   });
-
-/** POST one card to a deck. */
-export const addCardBody = authoredCard;
 
 /** PATCH a deck: any of its settings. A blank description clears it. */
 export const updateDeckBody = z
@@ -51,10 +64,16 @@ export const updateDeckBody = z
     isPublic: z.boolean().optional(),
     /** "Tell me about updates", on a copied deck. */
     notifyUpdates: z.boolean().optional(),
+    /** Let people who study the deck suggest fixes (s10-04); off until the author turns it on. */
+    acceptsSuggestions: z.boolean().optional(),
   })
   .refine(
     (b) =>
-      b.title !== undefined || b.description !== undefined || b.isPublic !== undefined || b.notifyUpdates !== undefined,
+      b.title !== undefined ||
+      b.description !== undefined ||
+      b.isPublic !== undefined ||
+      b.notifyUpdates !== undefined ||
+      b.acceptsSuggestions !== undefined,
   );
 
 /**
@@ -67,6 +86,7 @@ export const updateCardBody = z
     front: z.string().trim().max(CLOZE_TEXT_MAX).optional(),
     back: z.string().trim().max(CARD_SIDE_MAX).optional(),
     ...cardPicturesShape,
+    ...cardSoundsShape,
     ...occlusionShape,
   })
   .refine(
@@ -76,6 +96,8 @@ export const updateCardBody = z
       b.kind !== undefined ||
       b.frontImage !== undefined ||
       b.backImage !== undefined ||
+      b.frontSound !== undefined ||
+      b.backSound !== undefined ||
       b.occlusion !== undefined,
   );
 

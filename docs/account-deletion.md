@@ -22,16 +22,17 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-385 models are classified.
+390 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 217 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 234 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
 | `Account` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
 | `AchievementTrack` | erase | The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires. |
+| `Activity` | erase | Derived "X did Y" rows that followers see; the content they point at follows its own rule. `meta` goes with the row. |
 | `AiPersona` | erase | Only private personas (isPublic = false) that no other member has chatted with are the member's tool and are erased; their messages go by the cascade. Public personas stay under the tombstone as published content others chat with (chatCount). A persona made private after being public, with other members' chats, is kept so their chats survive (it is unreachable: its owner is a tombstone). The generated avatar object stays in storage (no personal data; classified not-recorded). |
 | `AiPersonaMessage` | erase | The member's side of persona chats, on any persona (rows with the member as userId). |
 | `AltairCoopProfile` | erase | The co-op board orders this table (`totalCoopWins`, `totalRevivesGiven` indexes) at read time; the row going takes the member off it. |
@@ -47,6 +48,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `BlogAnnouncementSeen` | erase | The member's seen markers. |
 | `BracketPick` | erase | Rule 1: the member's own pick'em picks; standings are computed from picks when read, so nobody else's points change. |
 | `BuildComment` | deidentify | Published build comments stay under "Deleted user" (as post comments do); only where the member hid comments is the reference (hiddenById) nulled. |
+| `BuildIssueVote` | erase | The member's "I see this too" marks are their own: deleted, and each issue's voteCount is decremented in the same transaction. |
 | `BuildView` | deidentify | A first view is a count on the creator's insights; the row stays without its viewer. |
 | `BulkOperation` | erase | Bulk clean-up operations (sprint 07 bulk-durable); a run in progress stops at its next chunk. |
 | `CalcNotebook` | erase | Rule 1: the member's own calculator notebooks. |
@@ -74,8 +76,10 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `ContentReport` | deidentify | The report stays as the moderators' record; the reporter's free-text details are nulled. |
 | `ConversationPref` | erase | Per-conversation notification choices (muted posts and chats). |
 | `CustomFeed` | erase | Only feeds where isPublic is false and visibility is not PUBLIC (private and by-link): the member's tools, with members and subscribers going by the cascade. Public feeds (either flag) have subscribers and stay under the tombstone as published content. |
+| `CustomFeedSubscription` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `CustomFeed.subscriberCount` is decremented (floored) in the same transaction. |
 | `DailyPuzzleScore` | erase | The daily leaderboard and results endpoints read at request time; the member's cached stats (`dailyStatsKey`) are dropped after the transaction. |
 | `DeckFolder` | erase | Private deck folders (sprint 07 deck-folders); decks stay, folderless. |
+| `DeckSuggestion` | erase | The member's proposed corrections to other members' cards are their own writing, private to them and the deck's author: erased, so open ones leave the author's list. Scope: rows where the member is the suggester (suggesterId); suggestions to the member's own decks stay with the decks. |
 | `DeletionHold` | erase | The ids of the keys and webhooks a deletion request paused (sprint 09 deletion-pause); the hold has no use once the account is anonymised. |
 | `DeveloperApiKey` | erase | Hashed developer API keys; deleting a key also cascades its usage, refusal and idempotency rows. |
 | `DevRecipe` | erase | The member's automation recipes (webhook and DM actions). |
@@ -121,9 +125,12 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `GameThreadPost` | erase | Community Hub discussions: replies, then threads (with everyone's replies). |
 | `GemEntry` | erase | Gem balance and entries. |
 | `GlobeSetPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `HandleChange` | erase | Rows past the 30-day reclaim window go with the account; newer ones stay so the released handle is still protected, and a daily job erases them once they pass it. "Previously known as" is never shown for a deleted profile. Scope: Rows older than the reclaim window at deletion; the rest by the daily job. |
 | `HeldNotification` | erase | Rule 1: notifications held for the member by quiet hours. |
 | `HistoryEntry` | erase | Rule 1: the member's own browsing history. |
 | `HomeFavorite` | erase | The member's saved homes. |
+| `HomeListing` | erase | The member's listings (inquiries and favourites cascade from the listing). |
+| `HomeRoommateProfile` | erase | The member's roommate profile. |
 | `HomeWatch` | erase | The member's saved home searches. |
 | `HuntProgress` | erase | The hunt's finish board orders `durationMs` at read; the row going takes the member off it. |
 | `KeyboardPreference` | erase | Rule 1: settings only the member sees. |
@@ -149,10 +156,13 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `LadderWatchlistEntry` | erase | Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes. |
 | `LaundryPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `LayoutPreference` | erase | Rule 1: settings only the member sees. |
+| `LibraryCollection` | erase | The member's own collections (items cascade). An official collection they own is the site's: `ownerUserId` is nulled instead. Scope: Own collections where `official` is false. |
+| `LibraryQuotaRequest` | erase | The member's quota requests; where the member decided others' requests as an admin, `decidedByUserId` is nulled. |
 | `LibraryReaderMark` | erase | Synced reading places, bookmarks and notes (sprint 04 reading-sync). |
 | `Listing` | erase | Live market listings (the escrowed card goes with the inventory); finished sales stay as anonymous price history. Scope: active listings only. |
 | `LoadoutPreset` | erase | Saved cosmetic loadouts; the items stay with the inventory decision. |
 | `MarathonList` | erase | A personal reading list; its shareId page 404s afterwards (the share page reads only this row). |
+| `Media` | deidentify | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. The exception is the member's own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it. |
 | `MemberMemory` | erase | Private memories; the table has no child rows. |
 | `MemoriesOptIn` | erase | Rule 1: the member's own opt-in to memories. |
 | `MessageRequest` | erase | Requests the member sent or received; decided ones are removed too. |
@@ -175,6 +185,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `Passkey` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
 | `Player` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `PostAutoDelete` | erase | The member's own auto-delete rule. |
+| `PostSeriesFollow` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `PostSeries.followCount` is decremented (floored) in the same transaction. |
 | `ProfileLayout` | erase | The member's profile layout. |
 | `ProfileLink` | erase | The member's profile links; the profile itself is scrubbed, so the links go with it. |
 | `ProfilePlus` | erase | Pronunciation clip, pronouns, time zone and visit counts of the member's profile (`ProfileVisitDay` goes by cascade); the clip's stored object is deleted by the deletion request. |
@@ -192,6 +203,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `Reminder` | erase | Rule 1: the member's own reminders. |
 | `RepostMute` | erase | The member's own mute and block lists (and reposts muted); rows where others blocked or muted them are the others' safety choices and stay. Scope: rows where the member is either side. |
 | `RideSavedPlace` | erase | The member's saved places. |
+| `RideshareDriver` | erase | The driver application (vehicle, plate, licence, last location). Rides reference the user, not this row; where the member reviewed others' applications `reviewedById` is nulled. |
 | `RMHark` | deidentify | Posts are published content and stay under "Deleted user"; only the member's pin (pinnedAt) is cleared. |
 | `RMHboxProfile` | deidentify | Has children (`RMHboxMatchPlayer.profile` cascades), so the profile is reset to defaults, never deleted; the RMHBox boards (socket and `/api/rmhbox/leaderboard`) list only `totalGamesPlayed > 0`. The `RMHboxMatchPlayer.userName` copies and the name inside `RMHboxMatch.results` become "Deleted user"; `RMHboxMatch.gameLog` (free-form) is a follow-up. |
 | `RmhboxSettingsPreset` | erase | Saved RMHBox game settings. |
@@ -208,6 +220,9 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `RmhTypeKeyStat` | erase | Private per-key counters; no board. |
 | `RmhTypeLessonProgress` | erase | Private lesson progress; no board. |
 | `RmhTypeProfile` | deidentify | Has children (`RmhTypeMatchPlayer.profile` cascades), so totals and bests are reset to defaults, never deleted; `fetchLeaderboard` already requires `bestWpm > 0`. The `RmhTypeMatchPlayer.userName` copies become "Deleted user". |
+| `RmhTypeText` | erase | Rule 1: the member's own saved practice texts; deleted in anonymizeAccount (sprint 10 05). Never on a board. |
+| `RmhTypeTextRun` | erase | Rule 1: the member's runs on their saved texts; deleted in anonymizeAccount (sprint 10 05). |
+| `Rsvp` | erase | Every RSVP row, after `releaseSeatsOf` has freed seats and promoted the waitlist; attendee lists no longer show a deleted member and past turnout drops by one. |
 | `SavedItem` | erase | Rule 1: saved items with a private note; erased before SaveFolder. |
 | `SavedReply` | erase | Private saved replies. |
 | `SaveFolder` | erase | Rule 1: the member's own save folders; erased after SavedItem, which refers to them. |
@@ -240,11 +255,13 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `UserMute` | erase | The member's own mute and block lists (and reposts muted); rows where others blocked or muted them are the others' safety choices and stay. Scope: rows where the member is either side. |
 | `UserPlayLimits` | erase | The member's own staking caps, cool-off and exclusion dates (sprint 04 spending-budget). |
 | `UserProfile` | deidentify | Profile PII (display name, bio, location, website, image, profile song) is nulled; the row stays. |
+| `UserQuest` | erase | Progress only; rewards already paid stay in the coin ledger. |
 | `VegaPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `VersecraftProgress` | erase | A game save; no board. |
 | `VersecraftSave` | erase | A game save; no board. |
 | `VibePage` | deidentify | Vibe pages are remixed and embedded by others, so they move to the shared "Deleted user" owner rather than being erased. |
 | `VoidBreakerPlayer` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
+| `Watch` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; notification levels on things, never on people; no counter. |
 | `WebhookEndpoint` | erase | Would keep POSTing the account's events to third-party URLs; cascades its queued deliveries. |
 | `WishlistEntry` | erase | The private wishlist, price-alert state included; no child rows. |
 
@@ -266,6 +283,7 @@ Kept for a stated reason: a ledger, an audit trail, another member's record, or 
 | `BotQueuedPost` | keep | Rows of a bot persona (botId), not a member's data; bots are never deleted through member deletion. |
 | `BotReaction` | keep | Rows of a bot persona (botId), not a member's data; bots are never deleted through member deletion. |
 | `BuildGrant` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `BuildIssue` | keep | Rules 2 and 3: a published bug report on a build stays under "Deleted user" (as build comments do; the reporter row is anonymised in place, so it keeps no name); the creator's status and the other members' "me too" marks are theirs. |
 | `BuildLike` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
 | `BuildUnlock` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
 | `Call` | keep | Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone. |
@@ -329,7 +347,6 @@ Kept for a stated reason: a ledger, an audit trail, another member's record, or 
 | `LadderInterviewReport` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `LibraryDocument` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `ListingPurchase` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
-| `Media` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `ModerationSweep` | keep | Rule 4: the audit trail of an admin moderation action (who removed what from whom, and why); the sweep and its items stay when either member is deleted. Its items hold only ids and a timestamp. |
 | `NewsStory` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `NightrailTrick` | keep | Rule 3: published content others use stays under "Deleted user". |
@@ -402,7 +419,7 @@ Kept for a stated reason: a ledger, an audit trail, another member's record, or 
 
 ## Owner decision
 
-An open owner decision from an earlier sprint. Their handling is unchanged and a test pins it until the owner decides. 6 models.
+An open owner decision from an earlier sprint. Their handling is unchanged and a test pins it until the owner decides. 7 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -412,27 +429,15 @@ An open owner decision from an earlier sprint. Their handling is unchanged and a
 | `GameJamEntry` | owner | Open owner decision: a deleted member's jam entries (sprint 05 README); entries stay. |
 | `GameReview` | owner | Open owner decision: a deleted member's game reviews (sprint 05 README); rows untouched. |
 | `GameReviewVote` | owner | Votes on reviews follow the open game-reviews decision; rows untouched. |
+| `RmhTubeSubscription` | owner | Subscriptions to a member's channel are the social graph: the open owner decision on a deleted member's follows (as `Follow`); rows untouched. |
 
 ## TODO
 
-Not handled yet, each with the reason it was deferred. Each is a later, reviewable change that lowers `TODO_CEILING` (now 17). 17 models.
+Not handled yet, each with the reason it was deferred. Each is a later, reviewable change that lowers `TODO_CEILING` (now 4). 4 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
-| `Activity` | todo | Rule 2: activity feed rows that followers see; needs a product call. |
-| `CustomFeedSubscription` | todo | Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision. |
-| `HandleChange` | todo | Rule 4/5: audit trail of former handles; needs a product call on keeping them for impersonation guards. |
-| `HomeListing` | todo | Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal. |
-| `HomeRoommateProfile` | todo | Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal. |
-| `LibraryCollection` | todo | Rule 5: library collections can be shared and a quota request is an admin workflow; needs a product call. |
-| `LibraryQuotaRequest` | todo | Rule 5: library collections can be shared and a quota request is an admin workflow; needs a product call. |
-| `PostSeriesFollow` | todo | Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision. |
 | `RebarReservation` | todo | Rule 5: a table booking holds name, e-mail and an allergy note (userId is nullable for guests); needs a product call on how long bookings are kept. |
-| `RideshareDriver` | todo | Rule 5: a driver application with vehicle and plate details and an aggregate rating; needs a product call. |
-| `RmhTubeSubscription` | todo | Rule 2: subscriber counts shown on a channel; needs a counter correction and a link to the follows decision. |
-| `Rsvp` | todo | Rule 2: attendee lists show the member to hosts; releaseSeatsOf frees seats but the row stays; needs a product call on attendee lists. |
 | `Streak` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
 | `UserInventory` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
-| `UserQuest` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
 | `UserSeasonProgress` | todo | Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics. |
-| `Watch` | todo | Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision. |

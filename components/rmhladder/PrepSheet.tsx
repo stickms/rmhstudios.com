@@ -17,6 +17,7 @@
  *    as a complete one.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock, Lightbulb, Loader2, Sparkles } from 'lucide-react';
@@ -24,7 +25,7 @@ import { toast } from '@/lib/toast';
 import type { PrepSheet as PrepSheetData } from '@/lib/rmhladder/prep.server';
 import type { UpgradeRequiredBody } from '@/lib/entitlements/features';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { buildPrepSheetApi } from '@/lib/rmhladder/prep.contract';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [sheet, setSheet] = useState<PrepSheetData | null>(initialSheet);
   const [loading, setLoading] = useState(false);
   const [upgrade, setUpgrade] = useState<UpgradeRequiredBody | null>(null);
@@ -76,7 +78,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
           setUpgrade((e.body ?? {}) as UpgradeRequiredBody);
           return;
         }
-        throw new Error(serverError(e) ?? 'Could not build a prep sheet.', {
+        throw new Error(refusalText.maybe(e) ?? 'Could not build a prep sheet.', {
           cause: e,
         });
       }
@@ -92,7 +94,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
     } finally {
       setLoading(false);
     }
-  }, [applicationId, t]);
+  }, [applicationId, t, refusalText]);
 
   return (
     <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-prep-heading">
@@ -159,6 +161,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
             <p className="flex flex-wrap items-center gap-2 text-sm text-site-text">
               <CalendarClock className="size-4 text-site-accent" aria-hidden />
               {t('ladder.prepCountdown', {
+                defaultValue_one: '{{count}} day until your interview',
                 defaultValue: '{{count}} days until your interview',
                 count: sheet.daysUntilInterview,
               })}

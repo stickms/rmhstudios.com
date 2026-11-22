@@ -202,6 +202,8 @@ export function WinPanel({ win }: { win: HudWinPanel }) {
                 <span className="tf2g-team-text">{p.name}</span>
                 <span>
                   {t('win_points', {
+                    count: Number(p.score),
+                    defaultValue_one: '{{n}} point',
                     defaultValue: '{{n}} points',
                     n: p.score,
                   })}

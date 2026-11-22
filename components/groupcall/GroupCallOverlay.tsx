@@ -222,6 +222,8 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
       lastInviteRejection.reason === 'full'
         ? t('room-full', {
             max: MAX_GROUP_CALL_PARTICIPANTS,
+            count: Number(MAX_GROUP_CALL_PARTICIPANTS),
+            defaultValue_one: 'This call is full — it holds up to {{max}} person.',
             defaultValue: 'This call is full — it holds up to {{max}} people.',
           })
         : t('invite-failed', {

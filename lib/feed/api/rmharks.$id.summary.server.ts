@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
@@ -57,7 +58,7 @@ export const route = apiRoute('/api/rmharks/$id/summary', {
         user: { select: authorSelect },
       },
     });
-    if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
+    if (!post) return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
     if (
       !(await canReadThread(
         {
@@ -69,10 +70,10 @@ export const route = apiRoute('/api/rmharks/$id/summary', {
         viewerId,
       ))
     ) {
-      return Response.json({ error: 'Post not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
     }
     if (isLocked(post, viewerId)) {
-      return Response.json({ error: 'This post is locked' }, { status: 403 });
+      return Response.json({ ...refusalBody('POST_LOCKED') }, { status: 403 });
     }
 
     // Cache is keyed by post id and only reached after authorization above.

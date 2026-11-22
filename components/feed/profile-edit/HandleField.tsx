@@ -7,12 +7,12 @@ import { cn } from '@/lib/utils';
 import { FieldHeader } from './FieldHeader';
 import { MAX_HANDLE, type HandleStatus } from './profile-edit-state';
 
-function formatCooldown(ms: number, t: TFunction<'feed'>): string {
+function formatCooldown(ms: number, t: TFunction<['feed', 'race-fixes']>): string {
   const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
   if (days <= 1) {
     return t('cooldown-less-than-a-day', { defaultValue: 'less than a day' });
   }
-  return t('cooldown-days', { days, defaultValue: '{{days}} days' });
+  return t('cooldown-days', { days, count: Number(days), defaultValue_one: '{{days}} day', defaultValue: '{{days}} days' });
 }
 
 export function HandleField({
@@ -30,7 +30,7 @@ export function HandleField({
   cooldownMs: number;
   onChange: (value: string) => void;
 }) {
-  const { t } = useTranslation('feed');
+  const { t } = useTranslation(['feed', 'race-fixes']);
   return (
     <div>
       <FieldHeader
@@ -94,8 +94,10 @@ export function HandleField({
                     defaultValue:
                       'Use 3–20 lowercase letters, numbers, or underscores; start with a letter.',
                   })
-                : t('handle-hint', {
-                    defaultValue: 'Used for mentions and your profile URL.',
+                : t('handle-hint-30-days', {
+                    ns: 'race-fixes',
+                    defaultValue:
+                      'Used for mentions and your profile URL. You can change it once every 30 days, and the old one is held for 30 days.',
                   })}
       </p>
     </div>

@@ -84,6 +84,8 @@ export function ExportMixDialog() {
             defaultValue: 'Set a loop region first, or export the whole song.',
           })
         : t('refuse-too-long', {
+            count: Number(MAX_EXPORT_SECONDS / 60),
+            defaultValue_one: 'This is {{length}} long. An export can be at most {{max}} minute; shorten the range.',
             defaultValue: 'This is {{length}} long. An export can be at most {{max}} minutes; shorten the range.',
             length: formatClock(range.durationSeconds),
             max: MAX_EXPORT_SECONDS / 60,

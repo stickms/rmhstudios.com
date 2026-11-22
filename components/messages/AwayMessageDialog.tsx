@@ -57,7 +57,14 @@ export function AwayMessageDialog({
     onError: (e) => {
       const code = errorField(e, 'code');
       if (code === 'too-far') {
-        setError(t('error-too-far', { days: AWAY_MAX_DAYS, defaultValue: 'Choose an end date within {{days}} days.' }));
+        setError(
+          t('error-too-far', {
+            days: AWAY_MAX_DAYS,
+            count: Number(AWAY_MAX_DAYS),
+            defaultValue_one: 'Choose an end date within {{days}} day.',
+            defaultValue: 'Choose an end date within {{days}} days.',
+          }),
+        );
       } else if (code === 'ended' || code === 'end-before-start') {
         setError(t('error-dates', { defaultValue: 'The end date must be today or later, and not before the start.' }));
       } else {

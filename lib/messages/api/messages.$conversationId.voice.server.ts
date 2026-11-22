@@ -1,3 +1,4 @@
+import { refusalBody, refusalCodeOf } from '@/lib/errors/codes';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
@@ -53,7 +54,7 @@ export const route = apiRoute('/api/messages/$conversationId/voice', {
       // Rejected before the body is buffered. The multipart envelope adds a
       // little overhead, hence the slack above the absolute object ceiling.
       if (contentLength > VOICE_ABSOLUTE_MAX_BYTES + 64 * 1024) {
-        return Response.json({ error: 'That recording is too large.' }, { status: 413 });
+        return Response.json({ ...refusalBody('VOICE_TOO_LARGE') }, { status: 413 });
       }
 
       let form: FormData;
@@ -65,7 +66,7 @@ export const route = apiRoute('/api/messages/$conversationId/voice', {
 
       const audio = form.get('audio');
       if (!(audio instanceof File) || audio.size === 0) {
-        return Response.json({ error: 'No recording provided' }, { status: 400 });
+        return Response.json({ ...refusalBody('VOICE_MISSING') }, { status: 400 });
       }
 
       const durationMs = Number(form.get('durationMs'));
@@ -74,7 +75,7 @@ export const route = apiRoute('/api/messages/$conversationId/voice', {
         durationMs <= 0 ||
         durationMs > VOICE_ABSOLUTE_MAX_DURATION_MS
       ) {
-        return Response.json({ error: 'Invalid recording length' }, { status: 400 });
+        return Response.json({ ...refusalBody('VOICE_LENGTH_INVALID') }, { status: 400 });
       }
 
       let peaks: unknown = [];
@@ -103,7 +104,7 @@ export const route = apiRoute('/api/messages/$conversationId/voice', {
       });
 
       if (!result.ok) {
-        return Response.json({ error: result.error }, { status: result.status });
+        return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       }
       return Response.json({ message: result.message });
     },

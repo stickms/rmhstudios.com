@@ -1,5 +1,5 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AI_IMAGE_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { aiGenerateImageApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
@@ -45,6 +45,7 @@ export function useAiImage(
  generateImage: AiImageGenerate = feedImage,
 ) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [loading, setLoading] = useState(false);
  const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +60,7 @@ export function useAiImage(
  }
  return null;
  } catch (e) {
- const message = serverError(e) || t('ai-image-failed', { defaultValue:'Failed to generate image'});
+ const message = refusalText.maybe(e) || t('ai-image-failed', { defaultValue:'Failed to generate image'});
  setError(message);
  return message;
  } finally {

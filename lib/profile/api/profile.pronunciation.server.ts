@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -28,7 +29,7 @@ export const route = apiRoute('/api/profile/pronunciation', {
     async ({ request, userId }) => {
       const contentLength = Number(request.headers.get('content-length') ?? 0);
       if (contentLength > PRONUNCIATION_MAX_BYTES + 64 * 1024) {
-        return Response.json({ error: 'That recording is too large.' }, { status: 413 });
+        return Response.json({ ...refusalBody('VOICE_TOO_LARGE') }, { status: 413 });
       }
       let form: FormData;
       try {
@@ -38,10 +39,10 @@ export const route = apiRoute('/api/profile/pronunciation', {
       }
       const audio = form.get('audio');
       if (!(audio instanceof File) || audio.size === 0) {
-        return Response.json({ error: 'No recording provided' }, { status: 400 });
+        return Response.json({ ...refusalBody('VOICE_MISSING') }, { status: 400 });
       }
       if (audio.size > PRONUNCIATION_MAX_BYTES) {
-        return Response.json({ error: 'That recording is too large.' }, { status: 413 });
+        return Response.json({ ...refusalBody('VOICE_TOO_LARGE') }, { status: 413 });
       }
       const durationMs = Number(form.get('durationMs'));
       const result = await savePronunciation(

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -21,7 +22,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { ColumnHeader } from './ColumnHeader';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   addPlaylistCollaboratorApi,
   createPlaylistApi,
@@ -74,6 +74,7 @@ export function PlaylistsColumn({
   searchQuery?: string;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const prompt = usePrompt();
   const [playlists, setPlaylists] = useState<Summary[]>(initialData.playlists ?? []);
@@ -115,7 +116,7 @@ export function PlaylistsColumn({
       await refresh();
     } catch (err) {
       toast.error(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }),
       );
     } finally {
@@ -191,7 +192,7 @@ export function PlaylistsColumn({
         await api(addPlaylistCollaboratorApi, { params: { id: playlistId }, body: { handle } });
       } catch (err) {
         toast.error(
-          serverError(err) ??
+          refusalText.maybe(err) ??
             t('playlist-collab-add-failed', { defaultValue: 'Could not add collaborator.' }),
         );
         return;
@@ -353,7 +354,7 @@ export function PlaylistsColumn({
                           </span>
                           <span className="block text-xs text-site-text-muted">
                             {t('playlist-item-count', {
-                              defaultValue: '{{n}} items',
+                              count: Number(pl.itemCount), defaultValue_one: '{{n}} item', defaultValue: '{{n}} items',
                               n: pl.itemCount,
                             })}
                             {''}· {pl.kind}

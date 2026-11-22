@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
@@ -14,7 +15,6 @@ import { formatDateShort } from '@/lib/core/format';
 import { api } from '@/lib/contract/client';
 import { listRepostMutesApi, setRepostMuteApi } from '@/lib/feed/repost-mutes.contract';
 import { REPOST_MUTE_SEARCH_THRESHOLD, type RepostMutePage, type RepostMuteRow } from '@/lib/feed/repost-mutes';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 
 const listKey = (q: string) => ['feed', 'repost-mutes', q] as const;
@@ -26,6 +26,7 @@ const listKey = (q: string) => ['feed', 'repost-mutes', q] as const;
  */
 export function RepostMutesSection() {
   const { t, i18n } = useTranslation('repost-mutes');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [q, setQ] = useState('');
@@ -86,7 +87,7 @@ export function RepostMutesSection() {
       );
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('error', {
             defaultValue: 'Could not change reposts for this member',
           }),

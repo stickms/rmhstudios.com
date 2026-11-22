@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +22,6 @@ import '@/components/ui/spine.css';
 import { toast } from '@/lib/toast';
 
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { saveBlogPostApi } from '@/lib/admin/admin-tools.contract';
 import { uploadBlogMediaApi } from '@/lib/admin/blog-media.contract';
 import { BUSINESSES, DEFAULT_BUSINESS_ID, isBusinessId, type BusinessId } from '@/lib/businesses';
@@ -50,6 +50,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
   const navigate = useRouter().navigate;
   const { t } = useTranslation('c-admin');
   const { t: ts } = useTranslation('log-drafts');
+  const refusalText = useRefusalText();
 
   const [formData, setFormData] = useState({
     title: asString(initialData?.title),
@@ -142,7 +143,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
       }
     } catch (error) {
       toast.error(
-        serverError(error) ||
+        refusalText.maybe(error) ||
           t('media-upload-failed', {
             defaultValue: 'Could not upload that file',
           }),
@@ -206,7 +207,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
         });
       } catch (error) {
         throw new Error(
-          serverError(error) ||
+          refusalText.maybe(error) ||
             t('failed-to-create-post', {
               defaultValue: 'Failed to create post',
             }),
@@ -563,6 +564,9 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: Initi
                           />
                           <p id="announcement-expires-help" className="t-body text-site-text-muted">
                             {t('announcement-expires-help', {
+                              count: Number(ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS),
+                              defaultValue_one:
+                                'Optional. When empty, it stops showing {{days}} day after it is announced.',
                               defaultValue:
                                 'Optional. When empty, it stops showing {{days}} days after it is announced.',
                               days: ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS,

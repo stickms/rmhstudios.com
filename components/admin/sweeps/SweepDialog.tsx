@@ -104,12 +104,16 @@ function SweepForm({
     const age = p.account.old
       ? t('confirm-old-account', {
           days: fmt.number(p.account.ageDays),
+          count: Number(fmt.number(p.account.ageDays)),
+          defaultValue_one: 'This account is {{days}} day old.',
           defaultValue: 'This account is {{days}} days old.',
         })
       : '';
     const ok = await confirm({
       title: t('confirm-title', {
         number: fmt.number(p.total),
+        count: Number(fmt.number(p.total)),
+        defaultValue_one: 'Remove {{number}} item?',
         defaultValue: 'Remove {{number}} items?',
       }),
       description: [
@@ -137,6 +141,8 @@ function SweepForm({
             {t('preview-counts', {
               posts: fmt.number(p.posts),
               replies: fmt.number(p.replies),
+              count: Number(fmt.number(p.replies)),
+              defaultValue_one: '{{posts}} posts and {{replies}} reply in the window.',
               defaultValue: '{{posts}} posts and {{replies}} replies in the window.',
             })}
           </DialogDescription>
@@ -152,7 +158,12 @@ function SweepForm({
           <div className="flex justify-between gap-4">
             <dt className="t-label">{t('account-age', { defaultValue: 'Account age' })}</dt>
             <dd className="t-meta">
-              {t('account-age-days', { days: fmt.number(p.account.ageDays), defaultValue: '{{days}} days' })}
+              {t('account-age-days', {
+                days: fmt.number(p.account.ageDays),
+                count: Number(fmt.number(p.account.ageDays)),
+                defaultValue_one: '{{days}} day',
+                defaultValue: '{{days}} days',
+              })}
             </dd>
           </div>
           <div className="flex justify-between gap-4">
@@ -211,7 +222,12 @@ function SweepForm({
             disabled={p.overLimit || p.total === 0 || start.isPending}
             onClick={() => void confirmStart()}
           >
-            {t('start-action', { number: fmt.number(p.total), defaultValue: 'Remove {{number}} items' })}
+            {t('start-action', {
+              number: fmt.number(p.total),
+              count: Number(fmt.number(p.total)),
+              defaultValue_one: 'Remove {{number}} item',
+              defaultValue: 'Remove {{number}} items',
+            })}
           </Button>
         </DialogFooter>
       </div>

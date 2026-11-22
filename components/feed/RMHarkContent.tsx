@@ -17,10 +17,7 @@ const SPOILER_REGEX = /\|\|([\s\S]+?)\|\|/g;
 const MARKDOWN_REGEX =
  /(\*\*([^*]+?)\*\*|~~([^~]+?)~~|\*([^*\s][^*]*?)\*|_([^_\s][^_]*?)_)/;
 
-export function extractFirstUrl(text: string): string | null {
- const match = text.match(/https?:\/\/[^\s<>"']+/i);
- return match ? match[0] : null;
-}
+export { extractFirstUrl } from '@/lib/feed/first-link';
 
 /** Render plain text with @mentions, #hashtags, and links linkified. */
 function renderTokens(text: string, keyPrefix: string): React.ReactNode {

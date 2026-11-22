@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
@@ -18,7 +19,7 @@ export const route = apiRoute('/api/rmharks/$id/quotes', {
     },
     async ({ userId, params, query }) => {
       const page = await listQuotes(params.id, userId, query.cursor ?? null);
-      if (!page) return Response.json({ error: 'Post not found' }, { status: 404 });
+      if (!page) return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
       return Response.json(page, { headers: { 'Cache-Control': 'private, no-store' } });
     },
   ),

@@ -110,6 +110,8 @@ export function ChatSystemLine({
           from: who(action.fromId),
           to: who(action.toId),
           amount: action.amount,
+          count: Number(action.amount),
+          defaultValue_one: '{{from}} tipped {{to}} {{amount}} coin',
           defaultValue: '{{from}} tipped {{to}} {{amount}} coins',
         });
         break;

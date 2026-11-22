@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
@@ -15,7 +16,6 @@ import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useArrival } from '@/components/ui/arrive';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { createGroupInvite, listGroupInvites, revokeGroupInvite } from '@/lib/group-chat/invites.queries';
 import {
@@ -63,6 +63,7 @@ export function InviteLinksDialog({ groupId }: { groupId: string }) {
 
 function InviteLinksBody({ groupId }: { groupId: string }) {
   const { t, i18n } = useTranslation('group-invites');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const [rows, setRows] = useState<InviteRow[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -98,7 +99,7 @@ function InviteLinksBody({ groupId }: { groupId: string }) {
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('could-not-create', {
             defaultValue: 'Could not create the link',
           }),
@@ -128,7 +129,7 @@ function InviteLinksBody({ groupId }: { groupId: string }) {
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('could-not-revoke', {
             defaultValue: 'Could not revoke the link',
           }),
@@ -214,6 +215,7 @@ function InviteLinksBody({ groupId }: { groupId: string }) {
           <p className="t-meta">
             {t('limit-reached', {
               count: MAX_LIVE_INVITES,
+              defaultValue_one: 'A group can have {{count}} link at a time. Revoke one to make another.',
               defaultValue: 'A group can have {{count}} links at a time. Revoke one to make another.',
             })}
           </p>

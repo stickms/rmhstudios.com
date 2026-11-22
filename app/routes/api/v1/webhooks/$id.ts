@@ -70,9 +70,19 @@ export const Route = createFileRoute('/api/v1/webhooks/$id')({
               if (parsed.data.enabled) data.failureCount = 0; // re-enabling clears the failure streak
             }
 
+            // An admin switch-off (s10-15) cannot be undone from here: the condition is in the write, so a disable
+            // that lands between the read above and this statement still wins.
+            if (parsed.data.enabled) {
+              const { count } = await prisma.webhookEndpoint.updateMany({
+                where: { id: params.id, userId, adminDisabledAt: null },
+                data,
+              });
+              if (count === 0) return error('conflict', 'An admin turned this webhook off. It stays off until they lift it.', 409);
+            }
+
             const updated = await prisma.webhookEndpoint.update({
               where: { id: params.id },
-              data,
+              data: parsed.data.enabled ? {} : data,
               select: { id: true, url: true, events: true, description: true, enabled: true, failureCount: true, lastDeliveryAt: true, createdAt: true },
             });
             return json(updated);

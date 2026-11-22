@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCopyFallback } from '@/components/ui/copy-fallback';
@@ -14,7 +15,6 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createConnectionGridApi,
   deleteConnectionGridApi,
@@ -143,6 +143,7 @@ export function ConnectionsSection() {
 
 export function ConnectionsNew() {
   const { t } = useTranslation('f-party');
+  const refusalText = useRefusalText();
   const session = useSession();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
@@ -171,7 +172,7 @@ export function ConnectionsNew() {
       void navigate({ to: '/connections/u/$id', params: { id } });
     } catch (err) {
       setBusy(false);
-      toast.error(serverError(err) ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
+      toast.error(refusalText.maybe(err) ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
     }
   }
 
@@ -248,6 +249,7 @@ export function ConnectionsNew() {
 
 export function ConnectionsPlay({ id }: { id: string }) {
   const { t } = useTranslation('f-party');
+  const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
   const isAdmin = !!(session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
@@ -303,7 +305,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
     try {
       r = await api(guessConnectionGridApi, { params: { id }, body: { items: picked } });
     } catch (err) {
-      toast.error(serverError(err) ?? t('guess-failed', { defaultValue: 'Could not check that guess.' }));
+      toast.error(refusalText.maybe(err) ?? t('guess-failed', { defaultValue: 'Could not check that guess.' }));
       return;
     }
     setMsg(
@@ -493,7 +495,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                   size="icon-sm"
                   variant={(grid.myRating ?? 0) >= n ? 'default' : 'default'}
                   onClick={() => void rate(n)}
-                  aria-label={t('stars', { defaultValue: '{{n}} stars', n })}
+                  aria-label={t('stars', { count: Number(n), defaultValue_one: '{{n}} star', defaultValue: '{{n}} stars', n })}
                 >
                   <Star aria-hidden />
                 </Button>
@@ -509,7 +511,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
         {grid.rating != null ? (
           <p className="text-center text-xs text-site-text-muted">
             {t('stats-line', {
-              defaultValue: '{{rating}} stars from {{n}} ratings · {{plays}} plays',
+              count: Number(grid.ratingCount), defaultValue_one: '{{rating}} stars from {{n}} rating · {{plays}} plays', defaultValue: '{{rating}} stars from {{n}} ratings · {{plays}} plays',
               rating: grid.rating,
               n: grid.ratingCount,
               plays: grid.plays,

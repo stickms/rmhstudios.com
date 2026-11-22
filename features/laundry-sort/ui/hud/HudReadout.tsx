@@ -92,6 +92,8 @@ export function HudReadout({ matchRef, running, untimed = false, onFinish }: Pro
       if (!match) return;
       setAnnouncement(
         t('sr-status', {
+          count: Number(Math.ceil(match.remaining)),
+          defaultValue_one: '{{seconds}} second left. Score {{score}}.',
           defaultValue: '{{seconds}} seconds left. Score {{score}}.',
           seconds: Math.ceil(match.remaining),
           score: match.stats.score,

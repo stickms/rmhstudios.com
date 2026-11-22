@@ -597,7 +597,7 @@ function Library() {
                       <span className="lib__section-count">
                         {t('playlist-count', {
                           count: playlists.length,
-                          defaultValue: '{{count}} playlists',
+                          defaultValue_one: '{{count}} playlist', defaultValue: '{{count}} playlists',
                         })}
                       </span>
                     )}
@@ -756,7 +756,7 @@ function Section({
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
         <span className="lib__section-count">
-          {t('book-count', { count: books.length, defaultValue: '{{count}} books' })}
+          {t('book-count', { count: books.length, defaultValue_one: '{{count}} book', defaultValue: '{{count}} books' })}
         </span>
       </div>
       <div className="lib__shelf lib__shelf--catalog" role="list">
@@ -900,7 +900,7 @@ function BookSpine({
             <span>
               <FileText size={12} aria-hidden="true" />
               {book.pages > 0
-                ? t('page-count', { count: book.pages, defaultValue: '{{count}} pages' })
+                ? t('page-count', { count: book.pages, defaultValue_one: '{{count}} page', defaultValue: '{{count}} pages' })
                 : book.format.toUpperCase()}
             </span>
             <span>{book.format.toUpperCase()}</span>

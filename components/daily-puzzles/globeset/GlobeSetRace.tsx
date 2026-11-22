@@ -341,7 +341,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
                   aria-pressed={lobby.sprintTarget === target}
                   onClick={() => updateSettings({ sprintTarget: target as SprintTarget })}
                 >
-                  {t('globeset-race-sprint-n', { defaultValue: '{{n}} sets', n: target })}
+                  {t('globeset-race-sprint-n', { count: Number(target), defaultValue_one: '{{n}} set', defaultValue: '{{n}} sets', n: target })}
                 </Button>
               ))}
             <Button

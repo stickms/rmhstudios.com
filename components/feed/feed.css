@@ -172,6 +172,13 @@
   display: flex;
   color: var(--site-text-muted);
 }
+/* A wrapper around one action (the repost button and its menu). It is a flex box, not a block: a block gives the
+   inline-flex button a text line box with descender room under it, which lifted that one icon above the others. */
+.feed-actions__slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
 .feed-actions__views {
   margin-inline-start: auto;
 }

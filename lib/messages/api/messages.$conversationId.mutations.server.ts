@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { messageMutationsApi } from '@/lib/messages/message-actions.contract';
@@ -36,7 +37,7 @@ export const route = apiRoute('/api/messages/$conversationId/mutations', {
         userId,
         since,
       });
-      if (!result) return Response.json({ error: 'Conversation not found' }, { status: 404 });
+      if (!result) return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
 
       return { ...result, now: new Date().toISOString() };
     },

@@ -139,6 +139,8 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
           </h1>
           <p className="text-(--altair-text-muted) text-xs">
             {t('creatures-discovered', {
+              count: Number(totalEnemies + totalBosses),
+              defaultValue_one: '{{discovered}}/{{total}} creature discovered',
               defaultValue: '{{discovered}}/{{total}} creatures discovered',
               discovered: discoveredEnemies + discoveredBosses,
               total: totalEnemies + totalBosses,
@@ -351,6 +353,7 @@ function EnemyCard({
       {discovered && stats && stats.killed > 0 && (
         <span className="text-xs text-(--altair-text-dim)">
           {t('kills-count', {
+            defaultValue_one: '{{count}} kill',
             defaultValue: '{{count}} kills',
             count: stats.killed,
           })}
@@ -432,6 +435,7 @@ function EnemyDetail({
           <Skull size={12} />
           <span>
             {t('stat-deaths', {
+              defaultValue_one: '{{count}} death',
               defaultValue: '{{count}} deaths',
               count: s.killedBy,
             })}
@@ -637,6 +641,7 @@ function BossDetail({
           <Skull size={12} />
           <span>
             {t('stat-deaths', {
+              defaultValue_one: '{{count}} death',
               defaultValue: '{{count}} deaths',
               count: s.killedBy,
             })}

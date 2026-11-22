@@ -28,7 +28,10 @@ export const ogOembedApi = endpoint<{
     title: string | null;
     description: string | null;
     image: string | null;
+    icon: string | null;
     siteName: string;
+    archivedUrl?: string;
+    archivedAt?: string | null;
   };
 }>()({
   method: 'GET',

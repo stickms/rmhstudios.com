@@ -1,10 +1,10 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListChecks, Plus, X } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createChatChecklistApi } from '@/lib/chat-plus/chat.contract';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CHECKLIST_ITEM_MAX, CHECKLIST_MAX_ITEMS, CHECKLIST_TITLE_MAX, type ChatRef } from '@/lib/chat-plus/types';
@@ -24,6 +24,7 @@ export function ChecklistComposer({
   disabled?: boolean;
 }) {
   const { t } = useTranslation('f-messaging');
+  const refusalText = useRefusalText();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [items, setItems] = useState<string[]>(['', '']);
@@ -56,7 +57,7 @@ export function ChecklistComposer({
       setOpen(false);
     } catch (err) {
       toast.error(
-        serverError(err) ||
+        refusalText.maybe(err) ||
           t('checklist-failed', {
             defaultValue: 'Could not post the checklist',
           }),

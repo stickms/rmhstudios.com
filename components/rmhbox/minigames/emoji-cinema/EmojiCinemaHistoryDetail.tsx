@@ -135,7 +135,7 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
                 return (
                   <div key={userId} className="flex items-center justify-between rounded-app-sm bg-app-surface px-3 py-1.5 text-sm">
                     <span className="text-app-text">#{i + 1} {player?.userName ?? t("unknown", { defaultValue: "Unknown" })}</span>
-                    <span className="font-medium text-app-accent">{t("score-pts", { defaultValue: "{{score}} pts", score })}</span>
+                    <span className="font-medium text-app-accent">{t("score-pts", { count: Number(score), defaultValue_one: "{{score}} pt", defaultValue: "{{score}} pts", score })}</span>
                   </div>
                 );
               })}

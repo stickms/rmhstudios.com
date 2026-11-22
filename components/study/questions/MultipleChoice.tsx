@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MultipleChoiceQuestion } from '@/lib/study/practice-test';
+import { CardSound } from '@/components/study/CardSound';
 import { PromptPicture, useQuestionPrompt } from '@/components/study/questions/PromptPicture';
 import { Verdict } from '@/components/study/questions/Verdict';
 
@@ -25,6 +26,7 @@ export function MultipleChoice({
         {prompt}
       </legend>
       {question.promptImage && <PromptPicture image={question.promptImage} occlusion={question.promptOcclusion} />}
+      {question.promptSound && <CardSound sound={question.promptSound} side={question.promptSoundSide ?? 'front'} showTranscript={false} />}
       <div className="border-t border-site-border">
         {question.options.map((option, i) => {
           const isAnswer = i === question.answerIndex;

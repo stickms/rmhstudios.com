@@ -7,6 +7,7 @@
  * Postgres re-reads the row under its lock before applying the second UPDATE.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { type ChatAccess, publishChatUpdate } from '@/lib/chat-plus/access.server';
@@ -75,7 +76,7 @@ export async function toggleChecklistItem(
       AND jsonb_array_length("meta" -> 'items') > ${index}
     RETURNING "meta"`);
   const meta = rows[0]?.meta;
-  if (!meta) return { ok: false, status: 404, error: 'Checklist not found' };
+  if (!meta) return { ok: false, status: 404, ...refusalBody('CHAT_CHECKLIST_NOT_FOUND') };
 
   publishChatUpdate(access, {
     kind: access.kind,

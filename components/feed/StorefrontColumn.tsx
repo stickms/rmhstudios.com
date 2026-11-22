@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -21,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CoinAmount } from '@/components/shop/CoinAmount';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   createStorefrontProductApi,
   deleteStorefrontProductApi,
@@ -77,6 +78,7 @@ export function StorefrontColumn({
   } | null;
 }) { const fmt = useLocaleFormat().number; 
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const formId = useId();
   // Seed from the loader when provided so the storefront paints immediately and
@@ -142,7 +144,7 @@ export function StorefrontColumn({
       await load();
     } catch (e) {
       setError(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('storefront-create-failed', {
             defaultValue: 'The product was not listed. Check the fields and try again.',
           }),
@@ -158,11 +160,11 @@ export function StorefrontColumn({
       title: t('storefront-buy-title', { title: p.title, defaultValue: 'Buy {{title}}?' }),
       description: t('storefront-buy-desc', {
         price: fmt(p.price),
-        defaultValue: 'This spends {{price}} coins and shows you the deliverable.',
+        count: Number(fmt(p.price)), defaultValue_one: 'This spends {{price}} coin and shows you the deliverable.', defaultValue: 'This spends {{price}} coins and shows you the deliverable.',
       }),
       confirmLabel: t('storefront-buy-confirm', {
         price: fmt(p.price),
-        defaultValue: 'Buy for {{price}} coins',
+        count: Number(fmt(p.price)), defaultValue_one: 'Buy for {{price}} coin', defaultValue: 'Buy for {{price}} coins',
       }),
     });
     if (!ok) return;
@@ -173,7 +175,7 @@ export function StorefrontColumn({
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ?? t('storefront-buy-failed', { defaultValue: 'Purchase failed' }),
+        refusalText.maybe(e) ?? t('storefront-buy-failed', { defaultValue: 'Purchase failed' }),
       );
     } finally {
       setBusy(null);
@@ -188,7 +190,7 @@ export function StorefrontColumn({
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('storefront-update-failed', { defaultValue: 'That did not save. Try again.' }),
       );
     } finally {
@@ -214,7 +216,7 @@ export function StorefrontColumn({
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('storefront-delete-failed', { defaultValue: 'That was not deleted. Try again.' }),
       );
     } finally {

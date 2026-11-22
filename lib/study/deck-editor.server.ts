@@ -8,6 +8,7 @@
  * regenerates rows takes `lockKey(tx, 'deck-cards:<deckId>')` first, so the cap
  * holds when saves and imports race.
  */
+import { refusalBody } from '@/lib/errors/codes';
 import { Prisma } from '@prisma/client';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { recordTombstone } from '@/lib/sync/tombstones.server';
@@ -34,17 +35,32 @@ import {
   type CardPictures,
 } from '@/lib/study/card-images';
 import { attachCardImages, deleteCardImageObjects, releaseCardImages } from '@/lib/study/card-images.server';
+import {
+  CARD_SOUND_SELECT,
+  cardSoundProblem,
+  fromSoundColumns,
+  hasSounds,
+  soundUrls,
+  toSoundColumns,
+  type CardSound,
+  type CardSounds,
+} from '@/lib/study/card-sound';
+import { attachCardSounds, releaseCardSounds } from '@/lib/study/card-sound.server';
 
 export type EditResult<T = object> = ({ ok: true } & T) | { ok: false; status: 400 | 404 | 409; error: string };
 
 const NOT_FOUND = { ok: false, status: 404, error: 'Not found' } as const;
-const DECK_FULL = { ok: false, status: 400, error: 'Deck is full' } as const;
-const INVALID_CARD = { ok: false, status: 400, error: 'Invalid card' } as const;
+const DECK_FULL = { ok: false, status: 400, ...refusalBody('STUDY_DECK_FULL') } as const;
+const INVALID_CARD = { ok: false, status: 400, ...refusalBody('STUDY_CARD_INVALID') } as const;
 /** A picture with no description, a cloze front picture, or an address the flashcard surface never stored. */
-const INVALID_PICTURE = { ok: false, status: 400, error: 'Invalid picture' } as const;
-const BAD_MEDIA = { ok: false, status: 400, error: 'Upload the picture again' } as const;
-const ANIMATED_PICTURE = { ok: false, status: 400, error: 'Use a still picture, not an animated one' } as const;
-const PICTURE_LIMIT = { ok: false, status: 409, error: 'Too many cards carry a picture' } as const;
+const INVALID_PICTURE = { ok: false, status: 400, ...refusalBody('STUDY_PICTURE_INVALID') } as const;
+const BAD_MEDIA = { ok: false, status: 400, ...refusalBody('STUDY_PICTURE_REUPLOAD') } as const;
+const ANIMATED_PICTURE = { ok: false, status: 400, ...refusalBody('STUDY_PICTURE_ANIMATED') } as const;
+const PICTURE_LIMIT = { ok: false, status: 409, ...refusalBody('STUDY_PICTURE_CARD_LIMIT') } as const;
+/** A sound with no transcript, a cloze or occlusion front sound, or an address the sound upload never stored (s10-02). */
+const INVALID_SOUND = { ok: false, status: 400, ...refusalBody('STUDY_SOUND_INVALID') } as const;
+const BAD_SOUND_MEDIA = { ok: false, status: 400, ...refusalBody('STUDY_SOUND_REUPLOAD') } as const;
+const SOUND_LIMIT = { ok: false, status: 409, ...refusalBody('STUDY_SOUND_CARD_LIMIT') } as const;
 
 const CONFLICT = { ok: false, status: 409, error: 'External id already used in this deck' } as const;
 
@@ -55,7 +71,8 @@ const occlusionForCreate = (occlusion: Occlusion | null | undefined) =>
 const occlusionForUpdate = (occlusion: Occlusion | null | undefined) =>
   occlusion ? (occlusion as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
 
-const lockDeckCards = (tx: Prisma.TransactionClient, deckId: string) => lockKey(tx, `deck-cards:${deckId}`);
+/** The per-deck lock every write to a deck's rows takes; one definition, shared with `highlight-cards.server.ts`. */
+export const lockDeckCards = (tx: Prisma.TransactionClient, deckId: string) => lockKey(tx, `deck-cards:${deckId}`);
 
 /** A card as the API receives it: the kind is basic when absent. */
 export interface CardDraft {
@@ -67,6 +84,9 @@ export interface CardDraft {
   /** A picture per side, each with its description (s08-15). Absent or null: none. */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** A recorded sound per side with its transcript (s10-02); the owner's own, never carried by a copy. */
+  frontSound?: CardSound | null | undefined;
+  backSound?: CardSound | null | undefined;
   /** The masks of an occlusion card (s09-03); checked by `validateCard`, so it may arrive as parsed JSON. */
   occlusion?: unknown;
 }
@@ -94,7 +114,7 @@ export async function createDeck(
     // The cap is a check-then-insert, so concurrent creates serialise per member.
     await lockKey(tx, `decks:${userId}`);
     const count = await tx.flashcardDeck.count({ where: { userId } });
-    if (count >= MAX_DECKS_PER_MEMBER) return { ok: false, status: 400, error: 'Too many decks' } as const;
+    if (count >= MAX_DECKS_PER_MEMBER) return { ok: false, status: 400, ...refusalBody('STUDY_DECK_LIMIT') } as const;
     const deck = await tx.flashcardDeck.create({
       data: {
         userId,
@@ -120,10 +140,18 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
     deck: { userId },
     OR: [{ frontImageUrl: { not: null } }, { backImageUrl: { not: null } }],
   } satisfies Prisma.FlashcardWhereInput;
-  // A deck with no pictures (nearly every deck) is the plain delete it always was.
+  const soundedWhere = {
+    deckId,
+    sourceId: null,
+    deck: { userId },
+    OR: [{ frontSoundUrl: { not: null } }, { backSoundUrl: { not: null } }],
+  } satisfies Prisma.FlashcardWhereInput;
+  // A deck with no pictures or sounds (nearly every deck) is the plain delete it always was.
   const anyPictures =
     ((await prisma.flashcard.findMany({ where: picturedWhere, select: CARD_IMAGE_SELECT, take: 1 })) ?? []).length > 0;
-  if (!anyPictures) {
+  const anySounds =
+    ((await prisma.flashcard.findMany({ where: soundedWhere, select: CARD_SOUND_SELECT, take: 1 })) ?? []).length > 0;
+  if (!anyPictures && !anySounds) {
     const { count } = await prisma.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
     if (count === 0) return NOT_FOUND;
     // One deck tombstone; a client drops the deck's cards with it.
@@ -134,13 +162,22 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
     // Pictures first (read again under the transaction): once the cards are gone, a picture no card shows is deleted
     // with its object, and one a copy still shows is kept.
     const pictured = await tx.flashcard.findMany({ where: picturedWhere, select: CARD_IMAGE_SELECT });
+    // Sounds are one object per side: they go with their cards (s10-02).
+    const sounded = await tx.flashcard.findMany({ where: soundedWhere, select: CARD_SOUND_SELECT });
     const { count } = await tx.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
     if (count === 0) return null;
     await recordTombstone(tx, userId, 'deck', deckId);
-    return releaseCardImages(
-      tx,
-      (Array.isArray(pictured) ? pictured : []).flatMap((row) => pictureUrls(row)),
-    );
+    return [
+      ...(await releaseCardImages(
+        tx,
+        (Array.isArray(pictured) ? pictured : []).flatMap((row) => pictureUrls(row)),
+      )),
+      ...(await releaseCardSounds(
+        tx,
+        userId,
+        (Array.isArray(sounded) ? sounded : []).flatMap((row) => soundUrls(row)),
+      )),
+    ];
   });
   if (keys === null) return NOT_FOUND;
   await deleteCardImageObjects(keys);
@@ -150,14 +187,27 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
 export async function updateDeck(
   userId: string,
   deckId: string,
-  patch: { title?: string; description?: string; isPublic?: boolean; notifyUpdates?: boolean },
+  patch: {
+    title?: string;
+    description?: string;
+    isPublic?: boolean;
+    notifyUpdates?: boolean;
+    acceptsSuggestions?: boolean;
+  },
 ): Promise<EditResult> {
-  const data: { title?: string; description?: string | null; isPublic?: boolean; notifyUpdates?: boolean } = {};
+  const data: {
+    title?: string;
+    description?: string | null;
+    isPublic?: boolean;
+    notifyUpdates?: boolean;
+    acceptsSuggestions?: boolean;
+  } = {};
   if (patch.title !== undefined) data.title = patch.title;
   // A blank description clears it.
   if (patch.description !== undefined) data.description = patch.description || null;
   if (patch.isPublic !== undefined) data.isPublic = patch.isPublic;
   if (patch.notifyUpdates !== undefined) data.notifyUpdates = patch.notifyUpdates;
+  if (patch.acceptsSuggestions !== undefined) data.acceptsSuggestions = patch.acceptsSuggestions;
   const { count } = await prisma.flashcardDeck.updateMany({ where: { id: deckId, userId }, data });
   return count === 0 ? NOT_FOUND : { ok: true };
 }
@@ -181,7 +231,7 @@ async function stampCardsChanged(tx: Prisma.TransactionClient, deckId: string) {
 export async function insertCards(
   tx: Prisma.TransactionClient,
   deckId: string,
-  cards: readonly (CardInput & OriginInput & CardPictures & { externalId?: string | undefined })[],
+  cards: readonly (CardInput & OriginInput & CardPictures & CardSounds & { externalId?: string | undefined })[],
 ) {
   const last = await tx.flashcard.aggregate({ where: { deckId }, _max: { position: true } });
   const start = (last._max.position ?? -1) + 1;
@@ -197,6 +247,8 @@ export async function insertCards(
       externalId: c.externalId ?? null,
       occlusion: occlusionForCreate(c.occlusion),
       ...toColumns(c),
+      // Only a card the member just recorded a sound for writes these columns: a copy and a sync never do.
+      ...(c.frontSound || c.backSound ? toSoundColumns(c) : {}),
     })),
     select: { id: true, position: true },
   });
@@ -224,15 +276,22 @@ export async function insertCards(
 function checkDrafts(
   drafts: readonly CardDraft[],
 ):
-  | { ok: true; cards: (CardInput & CardPictures)[] }
-  | { ok: false; error: typeof INVALID_CARD | typeof INVALID_PICTURE } {
-  const out: (CardInput & CardPictures)[] = [];
+  | { ok: true; cards: (CardInput & CardPictures & CardSounds)[] }
+  | { ok: false; error: typeof INVALID_CARD | typeof INVALID_PICTURE | typeof INVALID_SOUND } {
+  const out: (CardInput & CardPictures & CardSounds)[] = [];
   for (const draft of drafts) {
     const checked = validateCard(draft);
     if (!checked.ok) return { ok: false, error: INVALID_CARD };
     const pictures = { frontImage: draft.frontImage ?? null, backImage: draft.backImage ?? null };
     if (cardImageProblem(checked.card.kind, pictures)) return { ok: false, error: INVALID_PICTURE };
-    out.push({ ...checked.card, ...pictures });
+    // A sound field is carried only when the draft names one, so a draft that says nothing about sounds (the
+    // developer API's upserts) never reads as "remove the sound" further down.
+    const sounds = {
+      ...(draft.frontSound ? { frontSound: draft.frontSound } : {}),
+      ...(draft.backSound ? { backSound: draft.backSound } : {}),
+    };
+    if (cardSoundProblem(checked.card.kind, sounds)) return { ok: false, error: INVALID_SOUND };
+    out.push({ ...checked.card, ...pictures, ...sounds });
   }
   return { ok: true, cards: out };
 }
@@ -242,6 +301,15 @@ function picturePlan(cards: readonly CardPictures[]) {
   const urls = cards.flatMap((c) => pictureUrls(toColumns(c)));
   return { urls, adding: cards.filter((c) => hasPictures(toColumns(c))).length };
 }
+
+/** The sounds a save of `cards` introduces: their URLs, and how many cards will carry one. */
+function soundPlan(cards: readonly CardSounds[]) {
+  const columns = cards.map((c) => toSoundColumns(c));
+  return { urls: columns.flatMap((c) => soundUrls(c)), adding: columns.filter((c) => hasSounds(c)).length };
+}
+
+const soundFailure = (failure: { code: 'LIMIT' | 'MEDIA_NOT_FOUND' }) =>
+  failure.code === 'LIMIT' ? SOUND_LIMIT : BAD_SOUND_MEDIA;
 
 /** Whether the picture refusal is the cap, an animated picture or a picture the member never uploaded. */
 const attachFailure = (failure: { code: 'LIMIT' | 'MEDIA_NOT_FOUND' | 'ANIMATED' }) =>
@@ -270,6 +338,9 @@ export interface CardPatch {
   /** A picture to set, `null` to remove it, absent to leave it (s08-15). */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** A sound to set, `null` to remove it, absent to leave it (s10-02). Copies and deck sync never send one. */
+  frontSound?: CardSound | null | undefined;
+  backSound?: CardSound | null | undefined;
   /** The masks to set; `null` clears them, absent keeps them (and a card that is no longer occlusion loses them). */
   occlusion?: unknown;
 }
@@ -303,6 +374,7 @@ export async function updateCardIn(
         originCardId: true,
         occlusion: true,
         ...CARD_IMAGE_SELECT,
+        ...CARD_SOUND_SELECT,
         siblings: { select: { id: true, kind: true, front: true, back: true, clozeIndex: true } },
       },
     });
@@ -341,6 +413,27 @@ export async function updateCardIn(
       if (!attached.ok) return attachFailure(attached);
     }
 
+    // Sounds (s10-02): the stored ones with the patch laid over them, the same rules as a new card. A patch with no
+    // sound field (every copy and deck-sync edit) leaves the six columns alone, and writes nothing to them.
+    const soundsTouched = patch.frontSound !== undefined || patch.backSound !== undefined;
+    const hadSounds = fromSoundColumns(current);
+    const sounds = {
+      frontSound: patch.frontSound === undefined ? hadSounds.frontSound : patch.frontSound,
+      backSound: patch.backSound === undefined ? hadSounds.backSound : patch.backSound,
+    };
+    if (cardSoundProblem(next.kind, sounds)) return INVALID_SOUND;
+    const nextSoundColumns = toSoundColumns(sounds);
+    const soundsBefore = soundUrls(current);
+    const soundsAfter = soundUrls(nextSoundColumns);
+    const freshSounds = soundsAfter.filter((url) => !soundsBefore.includes(url));
+    if (soundsTouched && (freshSounds.length > 0 || hasSounds(nextSoundColumns) !== hasSounds(current))) {
+      const attachedSounds = await attachCardSounds(tx, userId, {
+        urls: freshSounds,
+        adding: hasSounds(nextSoundColumns) && !hasSounds(current) ? 1 : 0,
+      });
+      if (!attachedSounds.ok) return soundFailure(attachedSounds);
+    }
+
     const plan = planRegeneration(current.siblings, siblingsFor(next));
     const rows = await tx.flashcard.count({ where: { deckId: found.deckId } });
     if (rows - plan.remove.length + plan.create.length > MAX_DECK_CARDS) return DECK_FULL;
@@ -353,6 +446,7 @@ export async function updateCardIn(
         back: next.back,
         occlusion: occlusionForUpdate(next.occlusion),
         ...nextColumns,
+        ...(soundsTouched ? nextSoundColumns : {}),
       },
     });
     if (plan.remove.length > 0) {
@@ -380,6 +474,14 @@ export async function updateCardIn(
       tx,
       before.filter((url) => !after.includes(url)),
     );
+    // A sound this card no longer shows is its own object: it goes (s10-02).
+    released.push(
+      ...(await releaseCardSounds(
+        tx,
+        userId,
+        soundsBefore.filter((url) => !soundsAfter.includes(url)),
+      )),
+    );
     return { ok: true, released } as const;
   }
 }
@@ -389,7 +491,7 @@ export async function deleteCard(userId: string, cardId: string): Promise<EditRe
   const outcome = await prisma.$transaction(async (tx) => {
     const card = await tx.flashcard.findFirst({
       where: { id: cardId, sourceId: null, deck: { userId } },
-      select: { deckId: true, ...CARD_IMAGE_SELECT },
+      select: { deckId: true, ...CARD_IMAGE_SELECT, ...CARD_SOUND_SELECT },
     });
     if (!card) return NOT_FOUND;
     // deleteMany: a concurrent second delete finds nothing and answers 404, not a 500. The siblings
@@ -401,11 +503,16 @@ export async function deleteCard(userId: string, cardId: string): Promise<EditRe
       where: { id: card.deckId },
       data: { cardCount: { decrement: 1 }, cardsChangedAt: new Date() },
     });
-    return { ok: true, released: await releaseCardImages(tx, pictureUrls(card)) } as const;
+    const released = await releaseCardImages(tx, pictureUrls(card));
+    // The card's own sounds go with it (s10-02).
+    released.push(...(await releaseCardSounds(tx, userId, soundUrls(card))));
+    return { ok: true, released } as const;
   });
   await deleteCardImageObjects(outcome.ok ? outcome.released : []);
   return outcome.ok ? { ok: true } : outcome;
 }
+
+const normalizeSoundOf = (sound: CardSound): CardSound => ({ ...sound, transcript: sound.transcript.trim() });
 
 /** The card row a client needs after adding one. */
 export interface AddedCard {
@@ -417,6 +524,9 @@ export interface AddedCard {
   sourceId: null;
   frontImage: CardImage | null;
   backImage: CardImage | null;
+  /** The sounds the owner just saved; absent when the card has none (s10-02). */
+  frontSound?: CardSound;
+  backSound?: CardSound;
   occlusion: Occlusion | null;
 }
 
@@ -437,6 +547,8 @@ export async function addCard(
     if (rows + rowsFor(cards[0] as CardInput) > MAX_DECK_CARDS) return DECK_FULL;
     const attached = await attachCardImages(tx, userId, picturePlan(cards));
     if (!attached.ok) return attachFailure(attached);
+    const attachedSounds = await attachCardSounds(tx, userId, soundPlan(cards));
+    if (!attachedSounds.ok) return soundFailure(attachedSounds);
     const [row] = await insertCards(tx, deckId, cards);
     await tx.flashcardDeck.update({
       where: { id: deckId },
@@ -454,6 +566,8 @@ export async function addCard(
         sourceId: null,
         frontImage: cards[0]?.frontImage ?? null,
         backImage: cards[0]?.backImage ?? null,
+        ...(cards[0]?.frontSound ? { frontSound: normalizeSoundOf(cards[0].frontSound) } : {}),
+        ...(cards[0]?.backSound ? { backSound: normalizeSoundOf(cards[0].backSound) } : {}),
         occlusion: card.occlusion ?? null,
       },
     } as const;
@@ -471,10 +585,10 @@ export async function importCardsDetailed(
   opts: { max?: number } = {},
 ): Promise<EditResult<{ created: number; cardCount: number; cards: { id: string; position: number }[] }>> {
   if (drafts.length === 0 || drafts.length > (opts.max ?? MAX_IMPORT_CARDS)) {
-    return { ok: false, status: 400, error: 'Invalid import' };
+    return { ok: false, status: 400, ...refusalBody('STUDY_IMPORT_INVALID') };
   }
   const checked = checkDrafts(drafts);
-  if (!checked.ok) return { ok: false, status: 400, error: 'Invalid import' };
+  if (!checked.ok) return { ok: false, status: 400, ...refusalBody('STUDY_IMPORT_INVALID') };
   const cards = checked.cards.map((card, i) => ({ ...card, externalId: drafts[i]?.externalId }));
   const keys = cards.flatMap((c) => (c.externalId === undefined ? [] : [c.externalId]));
   if (new Set(keys).size !== keys.length) return CONFLICT;

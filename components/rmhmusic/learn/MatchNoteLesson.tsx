@@ -480,6 +480,8 @@ export function MatchNoteLesson({
     line = t('match-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You matched {{correct}} of {{total}} note.',
       defaultValue: 'You matched {{correct}} of {{total}} notes.',
     });
   }

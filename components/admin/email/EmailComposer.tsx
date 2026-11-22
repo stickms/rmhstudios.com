@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
-import { serverError } from '@/lib/http';
 import { api } from '@/lib/contract/client';
 import {
   adminEmailPreview,
@@ -51,6 +51,7 @@ import { categoryHelp, categoryName } from '@/components/admin/email/labels';
  */
 export function EmailComposer() {
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
 
   const [subject, setSubject] = useState('');
@@ -216,7 +217,7 @@ export function EmailComposer() {
       }
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('email-test-failed', {
             defaultValue: 'The test could not be sent',
           }),
@@ -243,6 +244,9 @@ export function EmailComposer() {
           : ignoreFrequencyCap
             ? t('email-confirm-override', {
                 hours: BULK_MIN_GAP_HOURS,
+                count: Number(BULK_MIN_GAP_HOURS),
+                defaultValue_one:
+                  'This goes to people who had an email in the last {{hours}} hour too. An email cannot be recalled once sent.',
                 defaultValue:
                   'This goes to people who had an email in the last {{hours}} hours too. An email cannot be recalled once sent.',
               })
@@ -297,7 +301,7 @@ export function EmailComposer() {
       setHistoryKey((k) => k + 1);
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('email-send-failed', {
             defaultValue: 'The email could not be sent',
           }),
@@ -503,6 +507,8 @@ export function EmailComposer() {
               {ignoreFrequencyCap
                 ? ` ${t('email-preview-override', {
                     hours: BULK_MIN_GAP_HOURS,
+                    count: Number(BULK_MIN_GAP_HOURS),
+                    defaultValue_one: 'Includes people who had an email in the last {{hours}} hour.',
                     defaultValue: 'Includes people who had an email in the last {{hours}} hours.',
                   })}`
                 : ''}
@@ -512,6 +518,8 @@ export function EmailComposer() {
                 <span id="email-override-cap" className="t-body text-site-text">
                   {t('email-override-cap', {
                     hours: BULK_MIN_GAP_HOURS,
+                    count: Number(BULK_MIN_GAP_HOURS),
+                    defaultValue_one: 'Also send to people emailed in the last {{hours}} hour',
                     defaultValue: 'Also send to people emailed in the last {{hours}} hours',
                   })}
                 </span>

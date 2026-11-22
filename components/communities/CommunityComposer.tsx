@@ -36,12 +36,16 @@ function PostingNotice({
     text = t('posting-account-age', {
       days: posting.value,
       wait,
+      count: Number(posting.value),
+      defaultValue_one: 'This community requires accounts at least {{days}} day old. You can post in {{wait}}.',
       defaultValue: 'This community requires accounts at least {{days}} days old. You can post in {{wait}}.',
     });
   } else {
     text = t('posting-member-age', {
       minutes: posting.value,
       wait,
+      count: Number(posting.value),
+      defaultValue_one: 'New members can post after {{minutes}} minute in this community. You can post in {{wait}}.',
       defaultValue: 'New members can post after {{minutes}} minutes in this community. You can post in {{wait}}.',
     });
   }

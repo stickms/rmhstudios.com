@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useState } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { toast } from '@/lib/toast';
@@ -5,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   editMessageApi,
   hideMessageApi,
@@ -41,6 +41,7 @@ export function useMessageActions({
   applyMutation: (mutation: MessageMutation) => void;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const [reactionMenu, setReactionMenu] = useState<{
     x: number;
@@ -113,7 +114,7 @@ export function useMessageActions({
           ),
         );
         toast.error(
-          serverError(err) ||
+          refusalText.maybe(err) ||
             t('message-edit-failed', {
               defaultValue: 'Could not edit that message.',
             }),
@@ -122,7 +123,7 @@ export function useMessageActions({
         setSavingEdit(false);
       }
     },
-    [conversationId, messages, setMessages, t],
+    [conversationId, messages, setMessages, t, refusalText],
   );
 
   const handleUnsend = useCallback(
@@ -161,14 +162,14 @@ export function useMessageActions({
         });
       } catch (err) {
         toast.error(
-          serverError(err) ||
+          refusalText.maybe(err) ||
             t('message-unsend-failed', {
               defaultValue: 'Could not unsend that message.',
             }),
         );
       }
     },
-    [applyMutation, confirm, conversationId, t],
+    [applyMutation, confirm, conversationId, t, refusalText],
   );
 
   const handleHide = useCallback(

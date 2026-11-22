@@ -89,7 +89,7 @@ export function scheduleBoundsError(scheduledAt: string, now: number = Date.now(
 }
 
 /** Why a row is not going out, or null. Computed from the publish checks; never stored. */
-export type HeldReason = 'community_sanction' | 'image_descriptions';
+export type HeldReason = 'community_sanction' | 'image_descriptions' | 'automod';
 
 /** The list is newest-updated first; a cursor is the last row's `(createdAt, id)`. */
 export function encodeScheduledCursor(createdAt: Date, id: string): string {

@@ -40,7 +40,7 @@
   "paste-label": "Paste cards",
   "paste-placeholder": "One card per line: term, then a tab, comma, dash, = or : and the definition",
   "preview-caption": "Preview",
-  "preview-caption-first_one": "Preview: the first {{count}} cards",
+  "preview-caption-first_one": "Preview: the first {{count}} card",
   "preview-caption-first_other": "Preview: the first {{count}} cards",
   "preview-summary_one": "{{count}} card ready to import",
   "preview-summary_other": "{{count}} cards ready to import",

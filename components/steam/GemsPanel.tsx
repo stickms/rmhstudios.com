@@ -69,6 +69,8 @@ export function GemsPanel({
     if (r.ok) {
       toast.success(
         t('steam-gems-bought', {
+          count: Number(units * BUY_UNIT_GEMS),
+          defaultValue_one: 'Bought {{n}} gem.',
           defaultValue: 'Bought {{n}} gems.',
           n: units * BUY_UNIT_GEMS,
         }),
@@ -122,6 +124,8 @@ export function GemsPanel({
           </h3>
           <p className="stm-muted">
             {t('steam-gems-buy-note', {
+              count: Number(coins),
+              defaultValue_one: 'One coin per gem. You have {{n}} coin.',
               defaultValue: 'One coin per gem. You have {{n}} coins.',
               n: coins,
             })}

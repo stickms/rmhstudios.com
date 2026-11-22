@@ -17,6 +17,7 @@ import { EndpointFormDialog, type EndpointSaved } from './webhooks/EndpointFormD
 import { failureText, formatWhen } from './webhooks/format';
 import { SecretDialog, type RevealedSecret } from './webhooks/SecretDialog';
 import { HealthBadge } from './webhooks/StatusBadges';
+import { AdminDisabledLine } from './webhooks/AdminDisabledLine';
 
 /** The webhooks console: the member's endpoints, and the detail view of the one they open. */
 export function WebhooksConsole() {
@@ -59,6 +60,8 @@ export function WebhooksConsole() {
           {data && (
             <p className="t-meta">
               {t('console-count', {
+                count: Number(max),
+                defaultValue_one: '{{n}} of {{max}} endpoint',
                 defaultValue: '{{n}} of {{max}} endpoints',
                 n: endpoints.length,
                 max,
@@ -170,7 +173,10 @@ function EndpointListRow({
               : t('row-never', { defaultValue: 'Never delivered' })}
           </span>
         </span>
-        {!endpoint.enabled && (
+        {endpoint.adminDisabled && (
+          <AdminDisabledLine at={endpoint.adminDisabled.at} reason={endpoint.adminDisabled.reason} />
+        )}
+        {!endpoint.enabled && !endpoint.adminDisabled && (
           <span className="t-meta block text-site-danger">
             {endpoint.disabledReason
               ? t('row-disabled-reason', {
@@ -181,13 +187,15 @@ function EndpointListRow({
           </span>
         )}
       </button>
-      <Switch
-        checked={endpoint.enabled}
-        disabled={toggling}
-        onCheckedChange={onToggle}
-        aria-label={t('row-enabled', { defaultValue: 'Enabled: {{url}}', url: endpoint.url })}
-        className="mt-1"
-      />
+      {!endpoint.adminDisabled && (
+        <Switch
+          checked={endpoint.enabled}
+          disabled={toggling}
+          onCheckedChange={onToggle}
+          aria-label={t('row-enabled', { defaultValue: 'Enabled: {{url}}', url: endpoint.url })}
+          className="mt-1"
+        />
+      )}
     </li>
   );
 }

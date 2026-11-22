@@ -58,7 +58,7 @@
   "save-game": "Save Game",
   "saved-to-slot": "Saved to slot {{slotId}}",
   "select-poem-prompt": "Select a poem to view details.",
-  "select-words-prompt_one": "Select {{count}} words to compose your poem",
+  "select-words-prompt_one": "Select {{count}} word to compose your poem",
   "select-words-prompt_other": "Select {{count}} words to compose your poem",
   "settings": "Settings",
   "share-seed-copy-prompt": "Copy this seed to share your version:",

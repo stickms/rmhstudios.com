@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, type FormEvent } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,6 @@ import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { listAdminApiKeysApi, patchAdminApiKeyApi } from '@/lib/admin/api-keys.contract';
 import {
   ADMIN_CAP_MAX,
@@ -34,6 +34,7 @@ type StatusFilter = 'all' | ApiKeyStatus;
  */
 export function ApiKeysTable() {
   const { t } = useTranslation('admin-api-oversight');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const confirm = useConfirm();
   const prompt = usePrompt();
@@ -129,7 +130,7 @@ export function ApiKeysTable() {
       });
     } catch (error) {
       toast.error(
-        serverError(error) ??
+        refusalText.maybe(error) ??
           t('change-failed', {
             defaultValue: 'That change did not save. Try again.',
           }),
@@ -157,6 +158,8 @@ export function ApiKeysTable() {
         const n = v.trim().length;
         return n < SUSPEND_REASON_MIN || n > SUSPEND_REASON_MAX
           ? t('suspend-reason-length', {
+              count: Number(SUSPEND_REASON_MAX),
+              defaultValue_one: 'The reason is {{min}} to {{max}} character.',
               defaultValue: 'The reason is {{min}} to {{max}} characters.',
               min: SUSPEND_REASON_MIN,
               max: SUSPEND_REASON_MAX,
@@ -415,11 +418,13 @@ export function ApiKeysTable() {
                   <p className="t-meta break-words text-site-text-muted">
                     {row.prefix}…{row.lastFour ?? ''} ·{' '}
                     {t('row-scopes', {
+                      defaultValue_one: '{{count}} scope',
                       defaultValue: '{{count}} scopes',
                       count: row.scopes.length,
                     })}{' '}
                     ·{' '}
                     {t('row-ranges', {
+                      defaultValue_one: '{{count}} address range',
                       defaultValue: '{{count}} address ranges',
                       count: row.allowedCidrCount,
                     })}{' '}
@@ -471,11 +476,14 @@ export function ApiKeysTable() {
                     })}{' '}
                     ·{' '}
                     {t('row-refusals', {
+                      defaultValue_one: '{{count}} address refusal',
                       defaultValue: '{{count}} address refusals',
                       count: row.refusals,
                     })}{' '}
                     ·{' '}
                     {t('row-webhooks', {
+                      count: Number(row.webhooks.total),
+                      defaultValue_one: '{{total}} webhook, {{disabled}} disabled',
                       defaultValue: '{{total}} webhooks, {{disabled}} disabled',
                       total: row.webhooks.total,
                       disabled: row.webhooks.disabled,

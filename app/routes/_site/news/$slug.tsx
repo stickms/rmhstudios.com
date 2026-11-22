@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { setResponseHeader } from '@tanstack/react-start/server';
 import { isAdminRequest } from '@/lib/auth/server-fn-guards.server';
 import { getNewsArticleBySlug } from '@/lib/news';
+import { parsePassageSearch } from '@/lib/library/passage-search';
 import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import { ShareButton } from '@/components/blog/ShareButton';
@@ -42,6 +43,11 @@ const fetchArticle = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/news/$slug')({
+  // `p` is a passage link (lib/library/passage-link.ts): the reader scrolls to it; the canonical URL stays the article's.
+  validateSearch: (search: Record<string, unknown>) => {
+    const p = parsePassageSearch(search.p);
+    return p ? { p } : {};
+  },
   loader: ({ params }) => fetchArticle({ data: params.slug }),
   head: ({ loaderData, params }) => ({
     meta: loaderData
@@ -82,6 +88,7 @@ function NewsArticlePage() {
   const article = Route.useLoaderData();
   const minutes = article ? readingTimeMinutes(article.content) : 0;
   const { slug } = Route.useParams();
+  const { p: passage } = Route.useSearch();
 
   if (!article) {
     return (
@@ -146,7 +153,7 @@ function NewsArticlePage() {
 
         {/* The body is the article's spine (ArticleBody): each section heading is a station, the paragraphs hang under
             it as `t-prose`. `markdownComponents` carries all of the body's styling. */}
-        <ArticleBody kind="news" slug={slug} content={article.content} />
+        <ArticleBody kind="news" slug={slug} content={article.content} title={article.title} passage={passage} />
 
         {/* Below the body, after the reader has the article. Renders nothing for members / un-consented visitors; see
             lib/ads/adsense.ts. */}

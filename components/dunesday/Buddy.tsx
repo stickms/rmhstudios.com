@@ -11,11 +11,12 @@
  * server-side.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { MessageCircle, Send, ShieldCheck, ShieldOff, Smile } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { askDunesdayApi } from '@/lib/dunesday/ask.contract';
 import type { DunesdayAsk } from '@/lib/dunesday/ask-schema';
 import { allTitles, isIncluded } from '@/lib/dunesday/state';
@@ -41,6 +42,7 @@ function renderText(text: string): ReactNode[] {
 
 export function BuddyChat({ initialQuestion }: { initialQuestion?: string }) {
   const { t } = useTranslation('c-dunesday');
+  const refusalText = useRefusalText();
   const { plan, state, actions, today, remainingMinutes } = useDunesday();
   const profile = useProfile();
   const label = useEntryLabel(state);
@@ -168,7 +170,7 @@ export function BuddyChat({ initialQuestion }: { initialQuestion?: string }) {
             ? t('ask-slow-down', {
                 defaultValue: 'Whoa, lots of questions! Give it a minute and try again.',
               })
-            : (serverError(cause) ??
+            : (refusalText.maybe(cause) ??
                 t('ask-failed', {
                   defaultValue: 'That didn’t go through. Try again.',
                 })),

@@ -339,7 +339,7 @@ describe('visibility predicates', () => {
     }
 
     await SITEMAP_SECTIONS.community.count();
-    expect(prismaMock.community.count.mock.calls[0][0]).toEqual({ where: { isPrivate: false } });
+    expect(prismaMock.community.count.mock.calls[0][0]).toEqual({ where: { isPrivate: false, delistedAt: null } });
   });
 
   it('builds post URLs from the author handle, not the post author id', async () => {
@@ -356,7 +356,7 @@ describe('visibility predicates', () => {
     const { SITEMAP_SECTIONS } = await import('@/lib/sitemap.server');
     await SITEMAP_SECTIONS.community.page(0, 10);
 
-    expect(prismaMock.community.findMany.mock.calls[0][0].where).toEqual({ isPrivate: false });
+    expect(prismaMock.community.findMany.mock.calls[0][0].where).toEqual({ isPrivate: false, delistedAt: null });
     expect(prismaMock.aiPersona.findMany.mock.calls[0][0].where).toEqual({ isPublic: true });
     expect(prismaMock.flashcardDeck.findMany.mock.calls[0][0].where).toEqual({ isPublic: true });
     expect(prismaMock.tournament.findMany.mock.calls[0][0].where).toEqual({

@@ -168,6 +168,8 @@ export function MetricChart({
               <line x1="1" x2="1" y1="0" y2="12" stroke="currentColor" strokeWidth="2" />
             </svg>
             {t('chart-deploys', {
+              count: Number(marks.length),
+              defaultValue_one: '{{n}} deploy',
               defaultValue: '{{n}} deploys',
               n: marks.length,
             })}

@@ -303,7 +303,7 @@ export function BlackjackControls({
               {t(
                 'bet-placed',
                 {
-                  defaultValue:
+                  count: Number(myPlayer?.bet), defaultValue_one: 'Bet placed: {{coins}} coin', defaultValue:
                     'Bet placed: {{coins}} coins',
                   coins:
                     myPlayer?.bet,
@@ -485,7 +485,7 @@ export function BlackjackControls({
             {t(
               'insurance-description',
               {
-                defaultValue:
+                count: Number(insuranceCost), defaultValue_one: 'Dealer showing Ace. Insurance costs {{cost}} coin (half your bet). Pays 2:1 if dealer has blackjack.', defaultValue:
                   'Dealer showing Ace. Insurance costs {{cost}} coins (half your bet). Pays 2:1 if dealer has blackjack.',
                 cost: insuranceCost,
               },

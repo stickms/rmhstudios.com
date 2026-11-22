@@ -587,7 +587,7 @@ export default function RmhStudyRoom() {
                   </div>
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
-                    {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.workDurationMs / 60000) })}
+                    {t('n-minutes', { defaultValue_one: '{{count}} minute', defaultValue: '{{count}} minutes', count: Math.round(room.settings.workDurationMs / 60000) })}
                   </div>
                 )}
               </div>
@@ -616,7 +616,7 @@ export default function RmhStudyRoom() {
                   </div>
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
-                    {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.shortBreakMs / 60000) })}
+                    {t('n-minutes', { defaultValue_one: '{{count}} minute', defaultValue: '{{count}} minutes', count: Math.round(room.settings.shortBreakMs / 60000) })}
                   </div>
                 )}
               </div>
@@ -645,7 +645,7 @@ export default function RmhStudyRoom() {
                   </div>
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
-                    {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.longBreakMs / 60000) })}
+                    {t('n-minutes', { defaultValue_one: '{{count}} minute', defaultValue: '{{count}} minutes', count: Math.round(room.settings.longBreakMs / 60000) })}
                   </div>
                 )}
               </div>
@@ -667,7 +667,7 @@ export default function RmhStudyRoom() {
                   />
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
-                    {t('n-sessions', { defaultValue: '{{count}} sessions', count: room.settings.sessionsBeforeLongBreak })}
+                    {t('n-sessions', { defaultValue_one: '{{count}} session', defaultValue: '{{count}} sessions', count: room.settings.sessionsBeforeLongBreak })}
                   </div>
                 )}
               </div>

@@ -8,7 +8,7 @@
   "edit": "Edit",
   "edit-build": "Edit Build",
   "error-loading-build": "Error Loading Build",
-  "like-count_one": "{{count}} likes",
+  "like-count_one": "{{count}} like",
   "like-count_other": "{{count}} likes",
   "manage-subtitle": "Manage your published and draft builds",
   "my-builds": "My Builds",
@@ -24,6 +24,6 @@
   "submit-a-build": "Submit a Build",
   "update-build-details": "Update your build details below.",
   "view": "View",
-  "view-count_one": "{{count}} views",
+  "view-count_one": "{{count}} view",
   "view-count_other": "{{count}} views"
 }

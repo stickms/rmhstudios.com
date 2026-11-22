@@ -29,6 +29,8 @@ export function TableLog({ log }: { log: LogEntry[] }) {
     switch (entry.kind) {
       case 'deal':
         return t('log-deal', {
+          count: Number(entry.amount),
+          defaultValue_one: 'Dealt {{amount}} card each.',
           defaultValue: 'Dealt {{amount}} cards each.',
           amount: entry.amount,
         });

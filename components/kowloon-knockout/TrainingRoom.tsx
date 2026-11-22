@@ -410,7 +410,7 @@ export function TrainingPanel({
             t(
               'kk-train-playing',
               {
-                defaultValue:
+                count: Number(view.slotLength), defaultValue_one: 'Replaying {{n}} frame', defaultValue:
                   'Replaying {{n}} frames',
                 n: view.slotLength,
               },
@@ -422,7 +422,7 @@ export function TrainingPanel({
               ? t(
                   'kk-train-saved',
                   {
-                    defaultValue:
+                    count: Number(view.slotLength), defaultValue_one: 'Slot holds {{n}} frame', defaultValue:
                       'Slot holds {{n}} frames',
                     n: view.slotLength,
                   },

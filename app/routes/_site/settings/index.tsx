@@ -134,7 +134,7 @@ function SettingsPage() {
                     <span className="settings-row__hint block">
                       {t('settings-language-count', {
                         count: LOCALES.length,
-                        defaultValue: 'RMH Studios is available in {{count}} languages.',
+                        defaultValue_one: 'RMH Studios is available in {{count}} language.', defaultValue: 'RMH Studios is available in {{count}} languages.',
                       })}
                     </span>
                   </span>

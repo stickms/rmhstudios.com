@@ -70,6 +70,8 @@ export function PracticeTestResults({
           {t('time-taken', { defaultValue: 'Time {{time}}', time: formatDuration(durationMs) })}
           {score.answered < questions.length &&
             ` · ${t('ended-early', {
+              count: Number(questions.length),
+              defaultValue_one: 'Ended after {{answered}} of {{total}} question',
               defaultValue: 'Ended after {{answered}} of {{total}} questions',
               answered: score.answered,
               total: questions.length,
@@ -118,7 +120,13 @@ export function PracticeTestResults({
                 {right
                   ? t('row-correct', { defaultValue: 'Correct' })
                   : q.kind === 'matching'
-                    ? t('row-pairs', { defaultValue: '{{points}} of {{max}} pairs', points: s.points, max: s.max })
+                    ? t('row-pairs', {
+                        count: Number(s.max),
+                        defaultValue_one: '{{points}} of {{max}} pair',
+                        defaultValue: '{{points}} of {{max}} pairs',
+                        points: s.points,
+                        max: s.max,
+                      })
                     : t('row-wrong', { defaultValue: 'Wrong' })}
               </p>
               {q.kind === 'multiple-choice' && response.kind === 'multiple-choice' && (

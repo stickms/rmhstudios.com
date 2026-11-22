@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ExportForChallenge } from '@/components/studio/ExportForChallenge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/contract/client';
-import { fetchJson, serverError } from '@/lib/http';
+import { fetchJson } from '@/lib/http';
 import { uploadChallengeAudioApi } from '@/lib/creator/challenge-upload.contract';
 import type { ChallengeDetail, ChallengeView } from '@/lib/studio/challenge/shared';
 import { useArrival } from '@/components/ui/arrive';
@@ -95,6 +96,8 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
             </div>
             <p className="mt-1 text-xs text-app-text-dim">
               {t('challenge-entries', {
+                count: Number(c.entryCount),
+                defaultValue_one: '{{n}} entry',
                 defaultValue: '{{n}} entries',
                 n: c.entryCount,
               })}
@@ -109,6 +112,7 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
 function Detail({ id, onBack }: { id: string; onBack: () => void }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('f-creative');
+  const refusalText = useRefusalText();
   const qc = useQueryClient();
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
@@ -151,7 +155,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
         const data = await api(uploadChallengeAudioApi, {
           body: form,
         }).catch((e: unknown) => {
-          throw new Error(serverError(e) ?? 'Upload failed');
+          throw new Error(refusalText.maybe(e) ?? 'Upload failed');
         });
         if (!data.key) throw new Error('Upload failed');
         audioKey = data.key;
@@ -292,6 +296,8 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
               {c.phase === 'finished' && (
                 <span className="text-xs text-app-text-muted">
                   {t('votes', {
+                    count: Number(e.voteCount),
+                    defaultValue_one: '{{n}} vote',
                     defaultValue: '{{n}} votes',
                     n: e.voteCount,
                   })}

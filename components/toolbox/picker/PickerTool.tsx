@@ -66,7 +66,13 @@ export function PickerTool() {
       <div className="flex flex-col gap-2">
         <Label htmlFor={entriesId}>{t('picker-entries', { defaultValue: 'Entries, one per line' })}</Label>
         <Textarea id={entriesId} value={text} onChange={(e) => setText(e.target.value)} rows={8} />
-        <p className="t-meta">{t('picker-count', { defaultValue: '{{count}} entries', count: entries.length })}</p>
+        <p className="t-meta">
+          {t('picker-count', {
+            defaultValue_one: '{{count}} entry',
+            defaultValue: '{{count}} entries',
+            count: entries.length,
+          })}
+        </p>
       </div>
       <ToolSwitch
         label={t('picker-dedupe', { defaultValue: 'Count repeated entries once' })}
@@ -140,6 +146,7 @@ export function PickerTool() {
                 <div key={i} className="flex flex-col gap-1 border-b border-site-border py-2 last:border-b-0">
                   <h3 className="t-label">
                     {t('picker-team-size', {
+                      defaultValue_one: 'Team {{n}}, {{count}} person',
                       defaultValue: 'Team {{n}}, {{count}} people',
                       n: i + 1,
                       count: team.length,

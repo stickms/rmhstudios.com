@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/post-alerts.contract';
@@ -24,7 +25,7 @@ export const route = apiRoute('/api/communities/$slug/alerts', {
       if (!alerts)
         return Response.json(
           {
-            error: 'Join the community first',
+            ...refusalBody('COMMUNITY_JOIN_REQUIRED'),
           },
           {
             status: 403,
@@ -46,7 +47,7 @@ export const route = apiRoute('/api/communities/$slug/alerts', {
       if (!alerts)
         return Response.json(
           {
-            error: 'Join the community first',
+            ...refusalBody('COMMUNITY_JOIN_REQUIRED'),
           },
           {
             status: 403,

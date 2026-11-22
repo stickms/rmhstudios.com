@@ -1,4 +1,6 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute } from '@tanstack/react-router';
+import { plural } from '@/lib/core/format';
 import { createServerFn } from '@tanstack/react-start';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +30,6 @@ import { getTournamentApi } from '@/lib/tournaments/tournaments.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { serverError } from '@/lib/http';
 import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
 
 /**
@@ -86,7 +87,7 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
     return {
       meta: buildMeta({
         title: `${loaderData.name} — ${game} tournament | RMH Studios`,
-        description: `A ${game} tournament on RMH Studios: ${loaderData.playerCount} of ${loaderData.maxPlayers} players, ${loaderData.prizePoolCoins} coins in the prize pool.`,
+        description: `A ${game} tournament on RMH Studios: ${loaderData.playerCount} of ${loaderData.maxPlayers} ${plural(loaderData.maxPlayers, 'player', 'players')}, ${loaderData.prizePoolCoins} ${plural(loaderData.prizePoolCoins, 'coin', 'coins')} in the prize pool.`,
         path,
       }),
       links: [buildCanonical(path)],
@@ -101,6 +102,7 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
 
 function TournamentDetailPage() {
   const { t } = useTranslation('c-tournaments');
+  const refusalText = useRefusalText();
   const startRefusal = useStartRefusal();
   const { id } = Route.useParams();
   const { view } = Route.useSearch();
@@ -161,7 +163,7 @@ function TournamentDetailPage() {
       else toast.success(t('result-recorded', { defaultValue: 'Result recorded' }));
       await load();
     } catch (e) {
-      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Something went wrong' }));
+      toast.error(refusalText.maybe(e) ?? t('failed', { defaultValue: 'Something went wrong' }));
     } finally {
       setReportingId(null);
     }
@@ -251,7 +253,7 @@ function TournamentDetailPage() {
             </div>
             <div className="font-medium">
               {tourney.entryFeeCoins > 0
-                ? t('n-coins', { defaultValue: '{{n}} coins', n: tourney.entryFeeCoins })
+                ? t('n-coins', { count: Number(tourney.entryFeeCoins), defaultValue_one: '{{n}} coin', defaultValue: '{{n}} coins', n: tourney.entryFeeCoins })
                 : t('free', { defaultValue: 'Free' })}
             </div>
           </div>

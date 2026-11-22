@@ -106,6 +106,8 @@ export function AltTextEditor({
                 <p className="t-meta">
                   {t('editor-remaining', {
                     remaining: MAX_MESSAGE_IMAGE_ALT_LENGTH - draft.length,
+                    count: Number(MAX_MESSAGE_IMAGE_ALT_LENGTH - draft.length),
+                    defaultValue_one: '{{remaining}} character left',
                     defaultValue: '{{remaining}} characters left',
                   })}
                 </p>

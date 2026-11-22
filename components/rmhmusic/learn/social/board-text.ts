@@ -58,12 +58,16 @@ export function boardRowSentence(t: T, language: string, row: DailyBoardRow): st
         ns: 'c-rmhmusic',
         ...vars,
         seconds,
+        count: Number(seconds),
+        defaultValue_one: 'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} second a note, without chords',
         defaultValue: 'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note, without chords',
       })
     : t('board-row-time', {
         ns: 'c-rmhmusic',
         ...vars,
         seconds,
+        count: Number(seconds),
+        defaultValue_one: 'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} second a note',
         defaultValue: 'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note',
       });
 }

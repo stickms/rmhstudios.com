@@ -12,6 +12,8 @@ type Row = Record<string, any>;
 const db = vi.hoisted(() => ({
   highlights: [] as Row[],
   calls: [] as Row[],
+  links: [] as Row[],
+  linkCalls: [] as Row[],
 }));
 
 vi.mock('@/lib/prisma.server', () => {
@@ -29,6 +31,13 @@ vi.mock('@/lib/prisma.server', () => {
       count: vi.fn(async (args: Row) => {
         db.calls.push(args);
         return db.highlights.filter((h) => h.userId === args.where.userId).length;
+      }),
+    },
+    // The decks holding a card made from a highlight (s10-01), read once per page.
+    highlightCardLink: {
+      findMany: vi.fn(async (args: Row) => {
+        db.linkCalls.push(args);
+        return db.links.filter((l) => args.where.highlightId.in.includes(l.highlightId));
       }),
     },
     blogPost: {
@@ -168,6 +177,24 @@ describe('searchHighlights', () => {
     expect(page.nextCursor).toBeNull();
     expect(db.calls.every((c) => c.where.userId === 'me')).toBe(true);
     expect(db.calls[0]!.where.OR).toHaveLength(2);
+  });
+
+  it('adds the decks holding a card to each row, from one query for the page and only for the member', async () => {
+    db.linkCalls = [];
+    db.links = [
+      { highlightId: 'm1', card: { deck: { id: 'd1', title: 'Tides' } } },
+      { highlightId: 'm1', card: { deck: { id: 'd1', title: 'Tides' } } },
+      { highlightId: 'm1', card: { deck: { id: 'd2', title: 'Sea' } } },
+    ];
+    const page = await searchHighlights('me', {}, null);
+    expect(page.items.find((i) => i.id === 'm1')?.cardDecks).toEqual([
+      { id: 'd1', title: 'Tides' },
+      { id: 'd2', title: 'Sea' },
+    ]);
+    expect(page.items.find((i) => i.id === 'm2')?.cardDecks).toEqual([]);
+    expect(db.linkCalls).toHaveLength(1);
+    expect(db.linkCalls[0]!.where.highlight).toEqual({ userId: 'me' });
+    db.links = [];
   });
 
   it('pages with a cursor when more rows match than fit', async () => {

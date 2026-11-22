@@ -286,7 +286,7 @@ export function ReferralBoard() {
                       <span className="text-sm text-site-text-muted">{o.roles}</span>
                       <Badge variant="default">
                         {t('rb-spots', {
-                          defaultValue: '{{count}} spots left',
+                          defaultValue_one: '{{count}} spot left', defaultValue: '{{count}} spots left',
                           count: o.spotsLeft,
                         })}
                       </Badge>

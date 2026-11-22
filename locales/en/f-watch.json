@@ -4,7 +4,7 @@
   "bingo-card": "Your bingo card",
   "bingo-claim": "Bingo!",
   "bingo-count": "{{count}} squares",
-  "bingo-count_one": "{{count}} squares",
+  "bingo-count_one": "{{count}} square",
   "bingo-count_other": "{{count}} squares",
   "bingo-end": "End game",
   "bingo-free": "FREE",

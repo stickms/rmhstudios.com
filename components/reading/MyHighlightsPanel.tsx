@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Globe,
   Highlighter,
+  Layers,
   Lock,
   Trash2,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { apiJson } from '@/lib/reading/client';
+import { CardDecksLine, useMakeCard } from './MakeCardKit';
 import type {
   MyHighlightRow,
   MyHighlightsPage,
@@ -96,6 +98,11 @@ export default function MyHighlightsPanel() {
           row.id,
       ),
     );
+
+  const makeCard = useMakeCard(() => {
+    void qc.invalidateQueries({ queryKey: ['reading-my-highlights'] });
+    void qc.invalidateQueries({ queryKey: ['reading-notebook'] });
+  });
 
   if (
     !session
@@ -280,6 +287,11 @@ export default function MyHighlightsPanel() {
                       }
                     </p>
                   ) : null}
+                  {row.cardDecks.length > 0 ? (
+                    <p className="t-meta">
+                      <CardDecksLine decks={row.cardDecks} />
+                    </p>
+                  ) : null}
                 </div>
                 <span className="mt-1 text-site-text-muted">
                   {row.isPublic ? (
@@ -312,6 +324,26 @@ export default function MyHighlightsPanel() {
                   </span>
                 </span>
                 <IconButton
+                  label={t('make-card', {
+                    ns: 'highlight-cards',
+                    defaultValue: 'Make a card',
+                  })}
+                  icon={Layers}
+                  onClick={(e) =>
+                    makeCard.start(
+                      [
+                        {
+                          id: row.id,
+                          exact: row.exact,
+                          note: row.note,
+                          title: row.title,
+                        },
+                      ],
+                      e.currentTarget,
+                    )
+                  }
+                />
+                <IconButton
                   label={t(
                     'remove-highlight',
                     {
@@ -334,6 +366,7 @@ export default function MyHighlightsPanel() {
           ),
         )}
       </ul>
+      {makeCard.view}
       {q.hasNextPage ? (
         <div className="flex justify-center">
           <Button

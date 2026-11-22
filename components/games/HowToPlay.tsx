@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { howToPlayApi } from '@/lib/developer/how-to-play.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 /** I1 — "How do I play?" Q&A panel, collapsed until opened (no work on first paint). */
 export function HowToPlay({ gameId }: { gameId: string }) {
   const { t } = useTranslation('f-devplatform');
+  const refusalText = useRefusalText();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
       setAnswer(data.answer);
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('howToPlay-error', {
             defaultValue: 'Could not get an answer',
           }),

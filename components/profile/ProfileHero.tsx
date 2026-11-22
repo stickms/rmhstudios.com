@@ -315,6 +315,11 @@ export function ProfileHero({
                 {t('profile-cosmetics-title', { defaultValue: 'Profile customization' })}
               </Link>
             </Button>
+            <Button asChild variant="ghost">
+              <Link to="/settings/preview">
+                {t('preview-profile', { ns: 'profile-preview', defaultValue: 'Preview as others see it' })}
+              </Link>
+            </Button>
           </>
         ) : signedIn ? (
           <>
@@ -507,7 +512,7 @@ export function ProfileHero({
               {t('creator-member-summary', {
                 count: profile.memberCount ?? 0,
                 price: profile.membershipPriceCoins,
-                defaultValue: '{{count}} members · {{price}} coins/month',
+                defaultValue_one: '{{count}} member · {{price}} coins/month', defaultValue: '{{count}} members · {{price}} coins/month',
               })}
             </p>
           ) : profile.isMember ? (
@@ -519,7 +524,7 @@ export function ProfileHero({
               <p className="t-body mt-1 text-site-text-muted">
                 {t('membership-pitch', {
                   price: profile.membershipPriceCoins,
-                  defaultValue: 'Support this creator for {{price}} coins/month.',
+                  count: Number(profile.membershipPriceCoins), defaultValue_one: 'Support this creator for {{price}} coin/month.', defaultValue: 'Support this creator for {{price}} coins/month.',
                 })}
               </p>
               <Button

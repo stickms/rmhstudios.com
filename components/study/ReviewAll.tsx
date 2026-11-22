@@ -8,6 +8,7 @@ import { StudyTabs } from '@/components/feed/StudyTabs';
 import { ClozeText } from '@/components/study/ClozeText';
 import { OcclusionReview } from '@/components/study/OcclusionReview';
 import { CardPicture, usePreloadPicture } from '@/components/study/CardPicture';
+import { CardSound, useStopCardSoundOnUnmount } from '@/components/study/CardSound';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -19,10 +20,22 @@ import { api, apiQuery } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { reviewCardApi } from '@/lib/study/decks.contract';
 import { reviewQueueApi, suspendCardApi } from '@/lib/study/queue.contract';
+import { setDeckPaceApi } from '@/lib/study/pace.contract';
+import { LEARN_MORE_STEP } from '@/lib/study/pace';
 import { useReviewKeys } from '@/components/study/useReviewKeys';
 import { LEECH_THRESHOLD } from '@/lib/study/queue';
+import { stopCardSound, toggleCardSound } from '@/lib/study/card-sound-player';
 
 const GRADES = [0, 1, 2, 3] as const;
+
+/** The member's IANA zone, so a paced deck's "today" is theirs (the server falls back to UTC). */
+function viewerTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
 
 type Notice =
   | {
@@ -48,9 +61,17 @@ export function ReviewAll({
   const [after, setAfter] = useState<string | undefined>(undefined);
   // Keyboard: Space or Enter shows the answer, 1-4 grade it (Again, Hard, Good, Easy).
   const keysRef = useReviewKeys();
+  const lastKeyRef = useRef('');
+  const lastKeyAtRef = useRef(0);
+  const timeZone = viewerTimeZone();
   const query = useQuery({
     ...apiQuery(reviewQueueApi, {
       query: {
+        ...(timeZone
+          ? {
+              tz: timeZone,
+            }
+          : {}),
         ...(after
           ? {
               after,
@@ -76,10 +97,46 @@ export function ReviewAll({
   const [busy, setBusy] = useState(false);
   // The next card's picture is fetched ahead of time (that card's only, never the whole session's).
   usePreloadPicture(batch?.cards[idx + 1]?.frontImage);
+  // Leaving the review silences whatever is playing.
+  useStopCardSoundOnUnmount();
   const [reviewed, setReviewed] = useState(0);
   const [setAside, setSetAside] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
   const busyRef = useRef(false);
+  const [learning, setLearning] = useState<string | null>(null);
+
+  // "Learn more": ten more new cards from a paced deck for the rest of the day, then the queue is read again.
+  async function learnMore(deckId: string) {
+    setLearning(deckId);
+    try {
+      await api(setDeckPaceApi, {
+        params: {
+          id: deckId,
+        },
+        body: {
+          learnMore: true,
+          ...(timeZone
+            ? {
+                tz: timeZone,
+              }
+            : {}),
+        },
+      });
+      setIdx(0);
+      setRevealed(false);
+      setNotice(null);
+      await query.refetch();
+    } catch {
+      toast.error(
+        t('learn-more-failed', {
+          ns: 'study-pace',
+          defaultValue: 'Could not add more cards',
+        }),
+      );
+    } finally {
+      setLearning(null);
+    }
+  }
 
   const header = (
     <>
@@ -222,6 +279,42 @@ export function ReviewAll({
               })}
             </p>
           )}
+          {batch.learnMore && batch.learnMore.length > 0 && (
+            <div>
+              <p className="t-label">
+                {t('learn-more-heading', {
+                  ns: 'study-pace',
+                  defaultValue: "Today's new cards are used up.",
+                })}
+              </p>
+              <ul>
+                {batch.learnMore.map((d) => (
+                  <li
+                    key={d.deckId}
+                    className="flex items-center justify-between gap-2 border-b border-site-border py-2"
+                  >
+                    <span className="t-body min-w-0 truncate" dir="auto">
+                      {d.deckTitle}
+                    </span>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      loading={learning === d.deckId}
+                      disabled={learning !== null}
+                      onClick={() => void learnMore(d.deckId)}
+                    >
+                      {t('learn-more', {
+                        ns: 'study-pace',
+                        count: LEARN_MORE_STEP,
+                        defaultValue_one: 'Learn {{count}} more',
+                        defaultValue_other: 'Learn {{count}} more',
+                      })}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex gap-2">
             {batch.next && (
               <Button
@@ -267,6 +360,7 @@ export function ReviewAll({
   };
 
   const advance = () => {
+    stopCardSound();
     setIdx((i) => i + 1);
     setRevealed(false);
   };
@@ -345,10 +439,24 @@ export function ReviewAll({
   }
 
   keysRef.current = (e) => {
+    const afterG = lastKeyRef.current === 'g' && e.timeStamp - lastKeyAtRef.current < 1500;
+    lastKeyRef.current = e.key;
+    lastKeyAtRef.current = e.timeStamp;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const el = e.target as HTMLElement | null;
     const tag = el?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+    // `p` plays the current side's sound (s10-02): the front's until the answer is shown, then the back's. Only
+    // while this review is mounted, and never on a card with no sound.
+    // `g` then `p` is the site's Progress chord, so a `p` straight after a `g` is left to it.
+    if (e.key === 'p' && !afterG) {
+      const sound = revealed ? (card?.backSound ?? card?.frontSound) : card?.frontSound;
+      if (sound) {
+        e.preventDefault();
+        void toggleCardSound(sound.url);
+      }
+      return;
+    }
     if (!revealed) {
       if ((e.key === ' ' || e.key === 'Enter') && tag !== 'BUTTON' && tag !== 'A') {
         e.preventDefault();
@@ -371,6 +479,8 @@ export function ReviewAll({
           <p role="status" className="t-meta border-b border-site-border pb-2">
             {t('leech-line', {
               count: LEECH_THRESHOLD,
+              defaultValue_one:
+                'Set aside: you have missed this card {{count}} time. Edit it or unsuspend it from the deck.',
               defaultValue:
                 'Set aside: you have missed this card {{count}} times. Edit it or unsuspend it from the deck.',
             })}
@@ -399,7 +509,12 @@ export function ReviewAll({
         </div>
         <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center">
           {card.kind === 'occlusion' && card.occlusion && card.frontImage ? (
-            <OcclusionReview image={card.frontImage} prompt={card.front} data={card.occlusion} revealed={revealed} />
+            <>
+              <OcclusionReview image={card.frontImage} prompt={card.front} data={card.occlusion} revealed={revealed} />
+              {revealed && card.backSound && (
+                <CardSound sound={card.backSound} side="back" showTranscript className="mt-4 items-center" />
+              )}
+            </>
           ) : card.clozeIndex !== null ? (
             <>
               <ClozeText text={card.front} index={card.clozeIndex} reveal={false} className="t-prose text-site-text" />
@@ -408,12 +523,23 @@ export function ReviewAll({
                   <div className="my-4 h-px w-16 bg-site-border" />
                   <ClozeText text={card.front} index={card.clozeIndex} reveal className="t-prose text-site-text" />
                   {card.backImage && <CardPicture image={card.backImage} eager className="mt-4" />}
+                  {card.backSound && (
+                    <CardSound sound={card.backSound} side="back" showTranscript className="mt-4 items-center" />
+                  )}
                 </>
               )}
             </>
           ) : (
             <>
               {card.frontImage && <CardPicture image={card.frontImage} eager className="mb-4" />}
+              {card.frontSound && (
+                <CardSound
+                  sound={card.frontSound}
+                  side="front"
+                  showTranscript={revealed}
+                  className="mb-4 items-center"
+                />
+              )}
               <p dir="auto" className="t-heading break-words">
                 {card.front}
               </p>
@@ -424,6 +550,9 @@ export function ReviewAll({
                   <p dir="auto" className="t-prose whitespace-pre-wrap break-words text-site-text-muted">
                     {card.back}
                   </p>
+                  {card.backSound && (
+                    <CardSound sound={card.backSound} side="back" showTranscript className="mt-4 items-center" />
+                  )}
                 </>
               )}
             </>

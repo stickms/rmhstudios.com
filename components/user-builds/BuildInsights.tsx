@@ -54,7 +54,12 @@ export function BuildInsights({
       onChange={(id) => onRangeChange(Number(id) as BuildInsightRange)}
       tabs={BUILD_INSIGHT_RANGES.map((days) => ({
         id: String(days),
-        label: t('range-option', { defaultValue: 'Last {{days}} days', days }),
+        label: t('range-option', {
+          count: Number(days),
+          defaultValue_one: 'Last {{days}} day',
+          defaultValue: 'Last {{days}} days',
+          days,
+        }),
       }))}
     />
   );
@@ -114,6 +119,8 @@ export function BuildInsights({
       <dd className="t-title m-0">{number.format(c.value)}</dd>
       <dd className="t-meta m-0">
         {t('vs-previous', {
+          count: Number(data.range),
+          defaultValue_one: '{{change}} vs previous {{days}} day',
           defaultValue: '{{change}} vs previous {{days}} days',
           change: signed.format(c.change),
           days: data.range,
@@ -165,7 +172,12 @@ export function BuildInsights({
 
       {empty ? (
         <p className="t-body mt-8 border-t border-site-border pt-4 text-site-text-muted">
-          {t('empty', { defaultValue: 'Nothing happened on this build in the last {{days}} days.', days: data.range })}
+          {t('empty', {
+            count: Number(data.range),
+            defaultValue_one: 'Nothing happened on this build in the last {{days}} day.',
+            defaultValue: 'Nothing happened on this build in the last {{days}} days.',
+            days: data.range,
+          })}
         </p>
       ) : null}
 
@@ -180,6 +192,8 @@ export function BuildInsights({
               bars={data.days.map((d) => ({ label: shortDay(d.day), value: d.views }))}
               label={viewsLabel}
               summary={t('chart-views-summary', {
+                count: Number(data.range),
+                defaultValue_one: '{{views}} first views in the last {{days}} day, as bars.',
                 defaultValue: '{{views}} first views in the last {{days}} days, as bars.',
                 views: number.format(data.totals.views.value),
                 days: data.range,

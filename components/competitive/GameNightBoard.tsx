@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -13,7 +14,6 @@ import { useSession } from '@/components/Providers';
 import { games } from '@/lib/catalog';
 import { lobbyLink, lobbyPathLink } from '@/lib/lobby-link';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createGameNightApi,
   listGameNightsApi,
@@ -59,6 +59,7 @@ function joinHref(p: Pick & { lobbyCode: string | null }): string {
 
 function AdminCreate({ onCreated }: { onCreated: () => void }) {
   const { t } = useTranslation('f-competitive');
+  const refusalText = useRefusalText();
   const [picked, setPicked] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const days = [
@@ -88,7 +89,7 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
       });
       onCreated();
     } catch (e) {
-      toast.error(serverError(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
+      toast.error(refusalText.maybe(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
     } finally {
       setBusy(false);
     }
@@ -171,6 +172,7 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
 
 function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }) {
   const { t } = useTranslation('f-competitive');
+  const refusalText = useRefusalText();
   const [code, setCode] = useState('');
   if (!night.nowPlaying) return null;
   const gameId = night.nowPlaying.gameId;
@@ -182,7 +184,7 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
       setCode('');
       onSaved();
     } catch (e) {
-      toast.error(serverError(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
+      toast.error(refusalText.maybe(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
     }
   };
   return (

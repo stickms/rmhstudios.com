@@ -373,7 +373,7 @@ export function NightrailUI({
                       <div className="mt-0.5 truncate text-xs text-slate-400">{level.subtitle}</div>
                       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                         <span>
-                          {t('rails-count', { defaultValue: '{{n}} rails', n: level.rails })}
+                          {t('rails-count', { count: Number(level.rails), defaultValue_one: '{{n}} rail', defaultValue: '{{n}} rails', n: level.rails })}
                         </span>
                         <span>
                           {t('par-time', {
@@ -382,7 +382,7 @@ export function NightrailUI({
                           })}
                         </span>
                         <span>
-                          {t('cargo-count', { defaultValue: '{{n}} crates', n: level.cargo })}
+                          {t('cargo-count', { count: Number(level.cargo), defaultValue_one: '{{n}} crate', defaultValue: '{{n}} crates', n: level.cargo })}
                         </span>
                       </div>
                     </div>

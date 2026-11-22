@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Award, Star, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -7,7 +8,6 @@ import { AWARD_CATALOG } from '@/lib/awards/catalog';
 import { formatPlaytime } from '@/lib/games/format-playtime';
 import { recommendation, summaryLabel } from '@/lib/games/review-extras';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { giveAwardApi } from '@/lib/awards/awards.contract';
 import {
   listGameReviewsApi,
@@ -64,6 +64,7 @@ export function SteamReviews({
   initialAgg: RatingAgg;
 }) {
   const { t } = useTranslation('games-hub');
+  const refusalText = useRefusalText();
   const [reviews, setReviews] = useState(initialReviews);
   const [agg, setAgg] = useState(initialAgg);
   const mine = reviews.find((r) => r.isMine);
@@ -135,7 +136,7 @@ export function SteamReviews({
       await refresh();
     } catch (e) {
       toast.error(
-        serverError(e) === 'INSUFFICIENT_COINS'
+        refusalText.maybe(e) === 'INSUFFICIENT_COINS'
           ? t('steam-gems-err-coins', { defaultValue: 'You do not have enough coins.' })
           : t('steam-rev-award-err', { defaultValue: 'Could not give that award.' }),
       );
@@ -275,7 +276,7 @@ export function SteamReviews({
                       <div className="stm-collmenu-panel">
                         {AWARD_CATALOG.map((a) => (
                           <button key={a.id} type="button" className="stm-btn" onClick={() => void award(r, a.id)}>
-                            <span aria-hidden>{a.emoji}</span> {a.name} · {t('steam-market-price', { defaultValue: '{{n}} coins', n: a.priceCoins })}
+                            <span aria-hidden>{a.emoji}</span> {a.name} · {t('steam-market-price', { count: Number(a.priceCoins), defaultValue_one: '{{n}} coin', defaultValue: '{{n}} coins', n: a.priceCoins })}
                           </button>
                         ))}
                       </div>

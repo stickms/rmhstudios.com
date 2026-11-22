@@ -4,6 +4,7 @@
  * Review pending driver applications (vehicle details + self-reported licence
  * number) and approve or reject.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -23,7 +24,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatUsd } from '@/lib/rideshare/geo';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   adminDecideDriverApplicationApi,
   adminListDriverApplicationsApi,
@@ -126,6 +127,7 @@ function appStatusLabel(status: Status, t: TFn): string {
 
 function AdminRidesharePage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const [view, setView] = useState<View>('applications');
   const [status, setStatus] = useState<Status>('PENDING');
   const [items, setItems] = useState<Application[]>([]);
@@ -192,7 +194,7 @@ function AdminRidesharePage() { const fmt = useLocaleFormat();
     } catch (e) {
       toast.error(
         e instanceof HttpError
-          ? serverError(e) || t('action-failed', { defaultValue: 'Action failed.' })
+          ? refusalText.maybe(e) || t('action-failed', { defaultValue: 'Action failed.' })
           : t('something-went-wrong', { defaultValue: 'Something went wrong.' }),
       );
     } finally {

@@ -292,6 +292,8 @@ export function useProjectSession(): ProjectSession {
         toast.error(
           t('limit-reached', {
             max: MAX_CLOUD_PROJECTS,
+            count: Number(MAX_CLOUD_PROJECTS),
+            defaultValue_one: 'You can keep {{max}} project on your account. Delete one to save this.',
             defaultValue: 'You can keep {{max}} projects on your account. Delete one to save this.',
           }),
         );
@@ -389,6 +391,8 @@ export function useProjectSession(): ProjectSession {
             ? null
             : t('name-invalid', {
                 max: MAX_PROJECT_NAME,
+                count: Number(MAX_PROJECT_NAME),
+                defaultValue_one: 'Enter a name of 1 to {{max}} character.',
                 defaultValue: 'Enter a name of 1 to {{max}} characters.',
               }),
       }),

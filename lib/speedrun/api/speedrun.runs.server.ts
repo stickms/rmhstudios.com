@@ -9,9 +9,8 @@
 
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import { submitSpeedrunRunApi } from '@/lib/speedrun/speedrun.contract';
+import { listMySpeedrunRunsApi, submitSpeedrunRunApi } from '@/lib/speedrun/speedrun.contract';
 import {
   getRunsForUser,
   submitRun,
@@ -39,12 +38,13 @@ const ERROR_MAP: Record<SpeedrunErrorCode, [string, number]> = {
   NO_CATEGORY_FOR_VERSION: ['No board is open for the game version this run was recorded on.', 409],
   DUPLICATE_RUN: ['That replay has already been submitted.', 409],
   ENTRY_NOT_FOUND: ['No such run.', 404],
+  ALREADY_DECIDED: ['Another admin has already decided this run.', 409],
 };
 
 export const route = apiRoute('/api/speedrun/runs', {
-  GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
-    return Response.json({ runs: await getRunsForUser(userId) });
-  }),
+  GET: implement(listMySpeedrunRunsApi, { rateLimit: 'read' }, async ({ userId }) => ({
+    runs: await getRunsForUser(userId),
+  })),
 
   POST: implement(
     submitSpeedrunRunApi,

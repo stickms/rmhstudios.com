@@ -27,6 +27,11 @@ export interface Card {
   accidental?: Alteration;
   /** A key card: the major key whose signature is drawn after the clef. */
   key?: KeyCardKey;
+  /**
+   * A grand-staff card (`grand:<staff>:<midi>`): drawn on the grand staff, on the staff `clef` names. The
+   * same pitch on the other staff is another card with its own schedule.
+   */
+  grand?: true;
 }
 
 export interface Deck {
@@ -40,10 +45,21 @@ export interface Deck {
   octaveClef?: boolean;
   /** Drawn on the low card (`range="low"`): an alto's G3 is below the deck card's floor. */
   lowCard?: boolean;
+  /** Its cards are drawn on the grand staff (the lesson's placeholder takes the grand card's box). */
+  grand?: boolean;
 }
 
 export function cardId(clef: Clef, midi: number): string {
   return `${clef}:${midi}`;
+}
+
+/** The id of a grand-staff card: `grand:<staff>:<midi>`, so each staff's reading of a pitch is scheduled on its own. */
+export function grandCardId(staff: Clef, midi: number): string {
+  return `grand:${staff}:${midi}`;
+}
+
+function grandCard(staff: Clef, midi: number): Card {
+  return { id: grandCardId(staff, midi), clef: staff, midi, grand: true };
 }
 
 const NATURAL_PITCH_CLASSES = [0, 2, 4, 5, 7, 9, 11];
@@ -99,11 +115,41 @@ export const DECKS: Record<string, Deck> = {
     clef: 'treble',
     midis: [59, 60, 62, 72],
   },
+  /** G2 B2 D3 F3 A3 */
+  'bass-lines': {
+    id: 'bass-lines',
+    clef: 'bass',
+    midis: [43, 47, 50, 53, 57],
+  },
+  /** A2 C3 E3 G3 */
+  'bass-spaces': {
+    id: 'bass-spaces',
+    clef: 'bass',
+    midis: [45, 48, 52, 55],
+  },
   /** E2 to C4 */
   'bass-all': {
     id: 'bass-all',
     clef: 'bass',
     midis: naturals(40, 60),
+  },
+  /**
+   * A3 to E4 on the grand staff, each note on the staff a pianist reads it on: A3 B3 and middle C under
+   * the bass staff, middle C again and D4 E4 on the treble. Middle C is two cards, one per staff.
+   */
+  'grand-middle': {
+    id: 'grand-middle',
+    clef: 'treble',
+    midis: [],
+    grand: true,
+    cards: [
+      grandCard('bass', 57),
+      grandCard('bass', 59),
+      grandCard('bass', 60),
+      grandCard('treble', 60),
+      grandCard('treble', 62),
+      grandCard('treble', 64),
+    ],
   },
   ...SPELLED_DECKS,
   /** The natural notes of each voice range, as that range reads them (`voice/range.ts`). */

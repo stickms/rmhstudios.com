@@ -1,9 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
-import { listQuery, resolveWindow } from '@/lib/api/v1/events-schema';
-import { listEventsForKey, queryOf, readInput } from '@/lib/api/v1/events.server';
+import { createEventBody, listQuery, resolveWindow } from '@/lib/api/v1/events-schema';
+import {
+  createBudgetExceeded,
+  createEventForKey,
+  listEventsForKey,
+  queryOf,
+  readBody,
+  readInput,
+  writeBudgetExceeded,
+} from '@/lib/api/v1/events.server';
 
-/** GET /api/v1/events — events you can see, repeating ones expanded into dates inside a window of at most 31 days. */
+/**
+ * GET  /api/v1/events — events you can see, repeating ones expanded into dates inside a window of at most 31 days.
+ * POST /api/v1/events — host a new event as the key owner (`manage:events`), through the site's `createEvent`.
+ */
 export const Route = createFileRoute('/api/v1/events')({
   server: {
     handlers: {
@@ -29,6 +40,24 @@ export const Route = createFileRoute('/api/v1/events')({
           },
           {
             scope: 'read:events',
+          },
+        ),
+
+      POST: ({ request }) =>
+        withDeveloperApi(
+          request,
+          async ({ userId, json, error }) => {
+            const body = await readBody(request, createEventBody);
+            if (!body.ok) return error('invalid_request', body.message, 400);
+            if (writeBudgetExceeded(userId) || (await createBudgetExceeded(userId)))
+              return error('rate_limited', 'Too many events created. Slow down.', 429);
+            const out = await createEventForKey(userId, body.data);
+            if (!out.ok) return error(out.code, out.message, out.status);
+            return json(out.result, 201);
+          },
+          {
+            scope: 'manage:events',
+            idempotent: true,
           },
         ),
     },

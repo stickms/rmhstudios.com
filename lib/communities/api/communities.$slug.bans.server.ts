@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { requireMod } from '@/lib/communities/guard.server';
@@ -68,6 +69,7 @@ export const route = apiRoute('/api/communities/$slug/bans', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

@@ -174,7 +174,7 @@ function ArtistPage() { const fmt = useLocaleFormat();
                           </span>
                           <span className="block text-xs text-slice-text-light">
                             {t('pack-track-count', {
-                              defaultValue: '{{count}} tracks',
+                              defaultValue_one: '{{count}} track', defaultValue: '{{count}} tracks',
                               count: album.songCount,
                             })}
                           </span>
@@ -207,7 +207,7 @@ function ArtistPage() { const fmt = useLocaleFormat();
                       </span>
                       <span className="tabular-nums text-xs text-slice-text-light whitespace-nowrap w-16 text-right">
                         {t('artist-play-count', {
-                          defaultValue: '{{count}} plays',
+                          defaultValue_one: '{{count}} play', defaultValue: '{{count}} plays',
                           count: song.plays,
                         })}
                       </span>

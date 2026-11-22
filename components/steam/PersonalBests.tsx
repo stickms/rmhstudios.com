@@ -220,6 +220,8 @@ export function PersonalBests({ gameId }: { gameId: string }) {
             </DialogTitle>
             <DialogDescription>
               {t('all-description', {
+                count: Number(rows.length),
+                defaultValue_one: '{{n}} record, newest first.',
                 defaultValue: '{{n}} records, newest first.',
                 n: rows.length,
               })}

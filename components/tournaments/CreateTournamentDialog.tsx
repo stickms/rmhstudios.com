@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { SwissFormatOption } from '@/components/competitive/SwissStandings';
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
@@ -23,7 +24,6 @@ import { SeedingMethodField } from '@/components/tournaments/SeedingPanel';
 import { MatchDeadlineField, deadlineChoice } from '@/components/tournaments/MatchSchedule';
 import { ratingSeedingAvailable, type SeedingMethod } from '@/lib/tournaments/seeding';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createTournamentApi } from '@/lib/tournaments/tournaments.contract';
 
 interface Props {
@@ -35,6 +35,7 @@ const SIZES = [4, 8, 16, 32];
 
 export function CreateTournamentDialog({ open, onClose }: Props) {
   const { t } = useTranslation('c-tournaments');
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [gameId, setGameId] = useState(WAGER_ELIGIBLE_GAMES[0].id);
@@ -88,7 +89,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
         });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('create-failed', {
             defaultValue: 'Could not create tournament',
           }),
@@ -226,6 +227,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
               {SIZES.filter((s) => s >= MIN_TOURNAMENT_PLAYERS && s <= MAX_TOURNAMENT_PLAYERS).map((s) => (
                 <option key={s} value={s}>
                   {t('players-count', {
+                    defaultValue_one: '{{count}} player',
                     defaultValue: '{{count}} players',
                     count: s,
                   })}

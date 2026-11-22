@@ -71,7 +71,7 @@ function AdminEconomyPage() {
 
   const tabs: TabItem[] = WINDOWS.map((w) => ({
     id: w,
-    label: t('economy-window-days', { defaultValue: '{{count}} days', count: Number(w) }),
+    label: t('economy-window-days', { defaultValue_one: '{{count}} day', defaultValue: '{{count}} days', count: Number(w) }),
   }));
 
   // Below 1 means more coins are destroyed than created — a shrinking supply.
@@ -118,7 +118,7 @@ function AdminEconomyPage() {
                 <div>
                   <p className="t-body font-semibold text-site-danger">
                     {t('economy-negative-title', {
-                      defaultValue: '{{count}} accounts have a negative balance',
+                      defaultValue_one: '{{count}} account has a negative balance', defaultValue: '{{count}} accounts have a negative balance',
                       count: data.negativeBalances,
                     })}
                   </p>

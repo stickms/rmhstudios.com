@@ -34,9 +34,12 @@ export const getGhostApi = endpoint<{
 /** Store the caller's ghost for a level (on a new best). */
 export const saveGhostApi = endpoint<{
   body: z.infer<typeof saveGhostBody>;
-  res: {
-    id: string;
-  };
+  res:
+    | {
+        id: string;
+      }
+    // An assisted run is not a record: nothing is stored (200).
+    | { saved: false; reason: 'assisted' };
 }>()({
   method: 'POST',
   path: '/api/replays/ghost',

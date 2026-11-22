@@ -5,6 +5,7 @@
  * only asks. Apply is the dialog's one ink primary.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useRef, useState } from 'react';
 import { Coins } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,7 +31,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { HttpError, errorField, serverError } from '@/lib/http';
+import { HttpError, errorField } from '@/lib/http';
 import {
   ADJUSTMENT_MAX,
   ADJUSTMENT_NOTE_MAX,
@@ -56,6 +57,7 @@ interface Props {
 
 function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChange }: Props) {
   const { t, i18n } = useTranslation('coin-adjustments');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const ids = useId();
@@ -106,7 +108,7 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
         }),
       );
     } else if (e instanceof HttpError && e.status === 409) {
-      toast.error(serverError(e) ?? t('error-failed', { defaultValue: 'The change could not be applied.' }));
+      toast.error(refusalText.maybe(e) ?? t('error-failed', { defaultValue: 'The change could not be applied.' }));
     } else {
       toast.error(t('error-failed', { defaultValue: 'The change could not be applied.' }));
     }
@@ -155,6 +157,8 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
       title: t('reverse-title', { defaultValue: 'Reverse this adjustment?' }),
       description: t('reverse-body', {
         amount: signed.format(-row.delta),
+        count: Number(signed.format(-row.delta)),
+        defaultValue_one: 'This applies {{amount}} coin to the member and cannot be undone.',
         defaultValue: 'This applies {{amount}} coins to the member and cannot be undone.',
       }),
       confirmLabel: t('reverse', { defaultValue: 'Reverse' }),
@@ -190,7 +194,12 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
         ) : (
           <div className={cn('space-y-1', arrival)}>
             <p className="t-heading">
-              {t('balance', { amount: nf.format(data.balance), defaultValue: 'Balance: {{amount}} coins' })}
+              {t('balance', {
+                amount: nf.format(data.balance),
+                count: Number(nf.format(data.balance)),
+                defaultValue_one: 'Balance: {{amount}} coin',
+                defaultValue: 'Balance: {{amount}} coins',
+              })}
             </p>
             <p className="t-meta">
               {data.reconciliation.ok

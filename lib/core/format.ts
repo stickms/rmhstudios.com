@@ -212,3 +212,12 @@ export function formatDurationLong(ms: number, locale: string): string {
       }),
   ).format(Math.round(abs / size));
 }
+
+/**
+ * `one` when `n` is exactly 1, else `many` — for the English the server writes
+ * outside `t()` (OG cards, meta descriptions). UI text pluralises through `t()`
+ * with `count` and `defaultValue_one` instead.
+ */
+export function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}

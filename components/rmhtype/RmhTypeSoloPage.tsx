@@ -12,16 +12,24 @@ import { C2S } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/shared/app-toast';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
-import { useRouter } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useRouter, useSearch } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { SoloSourcePicker, SourcePracticeNote } from '@/components/rmhtype/SoloSourcePicker';
 import { autoIndent, backspaceIndent, type SoloSource } from '@/lib/rmhtype/sources';
 import { formatSoloResult } from '@/lib/rmhtype/result-text';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { useArrival } from '@/components/ui/arrive';
-import { GHOST_STEP_MS, buildSamples, ghostPositionAt } from '@/lib/rmhtype/ghost';
-import { recordKeyStats, rmhTypeGhostQuery } from '@/lib/rmhtype/rmhtype.queries';
+import { GHOST_STEP_MS, buildSamples, ghostPositionAt, textPassageId } from '@/lib/rmhtype/ghost';
+import {
+  RMHTYPE_GHOST_KEY,
+  RMHTYPE_TEXTS_KEY,
+  recordKeyStats,
+  recordRmhTypeTextRun,
+  rmhTypeGhostQuery,
+  rmhTypeTextQuery,
+} from '@/lib/rmhtype/rmhtype.queries';
+import type { RmhTypeGhost } from '@/lib/rmhtype/ghost.contract';
 import { createKeyStatAccumulator } from '@/lib/rmhtype/keystats';
 import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
 import { RecordKeyStatsSwitch } from '@/components/rmhtype/RecordKeyStatsSwitch';
@@ -29,6 +37,7 @@ import { GhostRacingNote, GhostResultLine, GhostSwitch } from '@/components/rmht
 
 export default function RmhTypeSolo() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const soloPassage = useRmhTypeStore((s) => s.soloPassage);
   const passageArrival = useArrival(!!soloPassage);
   const soloPassageId = useRmhTypeStore((s) => s.soloPassageId);
@@ -49,6 +58,15 @@ export default function RmhTypeSolo() {
 
   const { t } = useTranslation("c-rmhtype");
 
+  // `?text=<id>`: one of the member's saved texts (s10-05). One read by id; the list is never fetched here.
+  const { text: textId } = useSearch({ strict: false }) as { text?: string };
+  const textQuery = useQuery(rmhTypeTextQuery(textId ?? '', textId !== undefined));
+  const [textRun, setTextRun] = useState(false);
+  const textStartedRef = useRef<string | null>(null);
+  // The ghost as it was when the run began, so the finish line compares with the best that was raced.
+  const ghostRef = useRef<RmhTypeGhost | null>(null);
+  const resultGhostRef = useRef<RmhTypeGhost | null>(null);
+
   const [typedText, setTypedText] = useState('');
   const [startTime, setStartTime] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
@@ -66,6 +84,8 @@ export default function RmhTypeSolo() {
   const pendingPractice = useRmhTypeStore((s) => s.pendingPractice);
   const [customRun, setCustomRun] = useState(false);
   const customTextRef = useRef('');
+  // Code, and a saved text with line breaks, are typed in a textarea with Enter and indentation handled.
+  const codeLike = source === 'code' || (textRun && !!soloPassage?.includes('\n'));
   const [tabHidden, setTabHidden] = useState(false);
   const passageRef = useRef<HTMLDivElement>(null);
 
@@ -136,12 +156,29 @@ export default function RmhTypeSolo() {
     store.clearSolo();
     customTextRef.current = pendingPractice;
     setCustomRun(true);
+    setTextRun(false);
     setStarted(true);
     store.setSoloPassage('custom-practice', pendingPractice);
   }, [pendingPractice]);
 
+  // Start a saved text once it has loaded. Unranked, scored here like a pasted test, and recorded once at the end.
+  useEffect(() => {
+    const body = textQuery.data?.text.body;
+    if (!textId || body === undefined || textStartedRef.current === textId) return;
+    textStartedRef.current = textId;
+    const store = useRmhTypeStore.getState();
+    store.setPendingPractice(null);
+    store.clearSolo();
+    customTextRef.current = body;
+    setCustomRun(true);
+    setTextRun(true);
+    setStarted(true);
+    store.setSoloPassage(textPassageId(textId), body);
+  }, [textId, textQuery.data]);
+
   const handleSoloStart = useCallback(() => {
     setCustomRun(false);
+    setTextRun(false);
     updateSettings({ soloDifficulty, soloPassageLength: soloLength });
     useRmhTypeStore.getState().clearSolo();
     setStarted(true);
@@ -156,7 +193,7 @@ export default function RmhTypeSolo() {
   const handleTyping = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!soloPassage || finished) return;
     let value = e.target.value;
-    if (source === 'code') {
+    if (codeLike) {
       value = backspaceIndent(soloPassage, typedText, value);
       value = autoIndent(soloPassage, value);
     }
@@ -197,14 +234,29 @@ export default function RmhTypeSolo() {
         // A practice test is not a server passage: score it here and keep it off the boards.
         const timeMs = Math.max(1, Date.now() - (startTime ?? Date.now()));
         const correct = value.length - errors;
+        const wpm = Math.min(300, Math.round((correct / 5 / (timeMs / 60000)) * 10) / 10);
+        const accuracy = Math.round((correct / Math.max(1, value.length)) * 1000) / 10;
         useRmhTypeStore.getState().setSoloResult({
-          wpm: Math.min(300, Math.round((correct / 5 / (timeMs / 60000)) * 10) / 10),
-          accuracy: Math.round((correct / Math.max(1, value.length)) * 1000) / 10,
+          wpm,
+          accuracy,
           timeMs,
           timedOut: false,
           scorePosted: false,
           practice: true,
         });
+        if (textRun && textId) {
+          // A saved text: one write for the finished run, scored here and re-checked by the server against the
+          // stored body. It reaches no board. The ghost shown on the result is the best that was raced.
+          resultGhostRef.current = ghostRef.current;
+          recordRmhTypeTextRun(textId, { wpm, accuracy, timeMs, typedLength: value.length, samples: buildSamples(marksRef.current, elapsed) })
+            .then(() =>
+              Promise.all([
+                queryClient.invalidateQueries({ queryKey: [...RMHTYPE_GHOST_KEY, textPassageId(textId)] }),
+                queryClient.invalidateQueries({ queryKey: RMHTYPE_TEXTS_KEY }),
+              ]),
+            )
+            .catch(() => toast.error(t('run-not-saved', { ns: 'type-texts', defaultValue: 'This run could not be saved to your text.' })));
+        }
         return;
       }
 
@@ -215,7 +267,7 @@ export default function RmhTypeSolo() {
         samples: buildSamples(marksRef.current, elapsed),
       });
     }
-  }, [soloPassage, soloPassageId, finished, startTime, source, typedText, customRun]);
+  }, [soloPassage, soloPassageId, finished, startTime, codeLike, typedText, customRun, textRun, textId, queryClient, t]);
 
   const handleRetry = useCallback(() => {
     if (customRun) {
@@ -225,7 +277,7 @@ export default function RmhTypeSolo() {
       setTypedText('');
       setStartTime(null);
       setFinished(false);
-      store.setSoloPassage('custom-practice', customTextRef.current);
+      store.setSoloPassage(textRun && textId ? textPassageId(textId) : 'custom-practice', customTextRef.current);
       return;
     }
     // Same gate as the Start button: offline, SOLO_START goes nowhere and the
@@ -242,7 +294,7 @@ export default function RmhTypeSolo() {
       topic: source === 'standard' ? topic.trim() || undefined : undefined,
       source,
     });
-  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source, customRun]);
+  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source, customRun, textRun, textId]);
 
   // Quick restart: Esc while typing, Enter on the results screen. Tab is left to
   // keyboard navigation. Enter on a focused button/link is left to the browser so
@@ -269,8 +321,9 @@ export default function RmhTypeSolo() {
 
   // The ghost: one read per passage start. Never for a written-to-order passage (the server keeps none).
   const raceGhost = settings.raceGhost !== false;
-  const ghostQuery = useQuery(rmhTypeGhostQuery(soloPassageId ?? '', raceGhost && started && !!soloPassageId && !customRun));
+  const ghostQuery = useQuery(rmhTypeGhostQuery(soloPassageId ?? '', raceGhost && started && !!soloPassageId && (!customRun || textRun)));
   const ghost = raceGhost ? (ghostQuery.data?.ghost ?? null) : null;
+  if (!finished) ghostRef.current = ghost;
   const racing = typingNow && ghost !== null;
   // The one 250 ms interval of the solo page: alive only while a run is typing and a ghost is shown, so the
   // caret keeps moving when the member pauses. Cleared on the result, the timeout, a hidden tab and unmount.
@@ -305,17 +358,49 @@ export default function RmhTypeSolo() {
 
   const handleBackToSettings = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
+    if (textRun) {
+      // A saved text has no settings screen: back is the library.
+      void router.navigate({ to: '/rmhtype/texts' });
+      return;
+    }
     setCustomRun(false);
     setStarted(false);
     setTypedText('');
     setStartTime(null);
     setFinished(false);
-  }, []);
+  }, [textRun, router]);
 
   const handleBack = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
     router.navigate({ to: '/rmhtype' });
   }, [router]);
+
+  // A saved text is on its way (or is not the member's): there are no settings to choose first.
+  if (!started && textId) {
+    return (
+      <div className="app-page">
+        <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} backHref="/rmhtype/texts" />
+        <div className="flex-1 p-4 md:p-8">
+          <div className="max-w-lg mx-auto" role="status">
+            {textQuery.isError ? (
+              <>
+                <p className="text-app-danger">
+                  {t('text-not-found', { ns: 'type-texts', defaultValue: 'That text could not be found.' })}
+                </p>
+                <Link to="/rmhtype/texts" className="mt-2 inline-block underline">
+                  {t('to-texts', { ns: 'type-texts', defaultValue: 'Go to your texts' })}
+                </Link>
+              </>
+            ) : (
+              <p className="animate-pulse text-app-text-muted">
+                {t('text-loading', { ns: 'type-texts', defaultValue: 'Loading your text...' })}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Settings screen (shown on fresh load / refresh)
   if (!started) {
@@ -456,7 +541,11 @@ export default function RmhTypeSolo() {
 
               {/* A practice run has its own reason for not posting, and it is
                   not a failure — so it must not wear the failure colour. */}
-              {customRun ? (
+              {textRun ? (
+                <p className="text-sm text-app-text-muted mb-4">
+                  {t('result-note', { ns: 'type-texts', defaultValue: 'Your text, not on the boards' })}
+                </p>
+              ) : customRun ? (
                 <p className="text-sm text-app-text-muted mb-4">
                   {t('practice-result-note', { ns: 'weak-keys', defaultValue: 'Practice, not on the boards.' })}
                 </p>
@@ -476,6 +565,9 @@ export default function RmhTypeSolo() {
 
               {ghost && !soloResult.timedOut && !soloResult.practice && (
                 <GhostResultLine ghostTimeMs={ghost.timeMs} runTimeMs={soloResult.timeMs} />
+              )}
+              {textRun && resultGhostRef.current && (
+                <GhostResultLine ghostTimeMs={resultGhostRef.current.timeMs} runTimeMs={soloResult.timeMs} />
               )}
 
               <div className="grid grid-cols-3 gap-4 mb-6">
@@ -559,7 +651,7 @@ export default function RmhTypeSolo() {
 
               {/* Passage — fills remaining space, scrolls internally */}
               <div ref={passageRef} className="flex-1 min-h-0 rounded-app app-glass p-6 rmhtype-passage-scroll">
-                <div className={`rmhtype-passage select-none${source === 'code' ? ' font-mono whitespace-pre-wrap' : ''}`}>
+                <div dir="auto" className={`rmhtype-passage select-none${codeLike ? ' font-mono whitespace-pre-wrap' : ''}`}>
                   {[...soloPassage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
                     if (i < typedText.length) {
@@ -579,8 +671,9 @@ export default function RmhTypeSolo() {
               {ghost && racing && <GhostRacingNote wpm={ghost.wpm} />}
 
               {/* Input — pinned below passage, seamless on mobile */}
-              {source === 'code' ? (
+              {codeLike ? (
                 <textarea
+                  dir="auto"
                   ref={inputRef as React.RefObject<HTMLTextAreaElement | null>}
                   rows={3}
                   value={typedText}
@@ -599,6 +692,7 @@ export default function RmhTypeSolo() {
                 <input
                   ref={inputRef}
                   type="text"
+                  dir="auto"
                   value={typedText}
                   onChange={handleTyping}
                   onPaste={(e) => e.preventDefault()}

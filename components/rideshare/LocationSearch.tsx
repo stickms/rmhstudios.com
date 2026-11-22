@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import type { RidePlace } from '@/lib/rideshare/geo';
 import { api } from '@/lib/contract/client';
-import { errorField, HttpError, serverError } from '@/lib/http';
+import { errorField, HttpError } from '@/lib/http';
 import { geocodeApi, reverseGeocodeApi } from '@/lib/rideshare/rideshare.contract';
 
 interface GeocodeResult {
@@ -45,6 +46,7 @@ export function LocationSearch({
   allowCurrentLocation,
 }: LocationSearchProps) {
   const { t } = useTranslation('c-rideshare');
+  const refusalText = useRefusalText();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -116,7 +118,7 @@ export function LocationSearch({
       } catch (e) {
         if (cancelled) return;
         if (e instanceof HttpError) {
-          setError(serverError(e) || t('search-failed', { defaultValue: 'Search failed' }));
+          setError(refusalText.maybe(e) || t('search-failed', { defaultValue: 'Search failed' }));
           setResults([]);
         } else {
           setError(t('search-failed', { defaultValue: 'Search failed' }));
@@ -129,7 +131,7 @@ export function LocationSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, value, t]);
+  }, [query, value, t, refusalText]);
 
   // Close dropdown on outside click.
   useEffect(() => {

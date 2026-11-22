@@ -102,7 +102,7 @@ describe('an animated picture is refused at the claim', () => {
       { kind: 'occlusion' as const, front: '', back: '', frontImage: pic('m1'), occlusion: masks },
       { kind: 'cloze' as const, front: 'The {{c1::heart}}', backImage: pic('m1') },
     ]) {
-      expect(await addCard('me', 'mine', card)).toEqual({
+      expect(await addCard('me', 'mine', card)).toMatchObject({
         ok: false,
         status: 400,
         error: 'Use a still picture, not an animated one',

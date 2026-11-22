@@ -4,6 +4,7 @@
  * rail (their existence is not secret, their relationships are).
  */
 import { prisma } from '@/lib/prisma.server';
+import { discoverableCommunityWhere } from '@/lib/communities/discovery';
 import { logModAction } from '@/lib/communities/modlog.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { SISTERS_MAX, type SisterDTO } from '@/lib/communities/plus';
@@ -26,7 +27,7 @@ export async function getSisters(communityId: string): Promise<SisterDTO[]> {
     TTL_MS,
     async () => {
       const links = await prisma.communitySister.findMany({
-        where: { communityId, related: { isPrivate: false } },
+        where: { communityId, related: discoverableCommunityWhere({ isPrivate: false }) },
         orderBy: { position: 'asc' },
         take: SISTERS_MAX,
         select: {

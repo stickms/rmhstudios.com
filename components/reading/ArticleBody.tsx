@@ -23,7 +23,11 @@ import { useDocBundle } from '@/lib/reading/client';
 import { useReadingRuler } from '@/lib/reading/ruler';
 import type { GlossaryTermView, ReadingDocKind } from '@/lib/reading/schema';
 import { extractOutline } from '@/lib/reading/outline';
+import { useTranslation } from 'react-i18next';
+import { parsePassageSearch } from '@/lib/library/passage-link';
 import { ArticleOutline } from './ArticleOutline';
+import { PassageMissingNote } from './PassageMenu';
+import { usePassageArrival } from './usePassageArrival';
 import { ReadingToolbar } from './ReadingToolbar';
 import { FootnoteList, FootnoteRef, GlossaryContext, GlossaryTermLink } from './ArticleNotes';
 import './reading.css';
@@ -38,11 +42,18 @@ export function ArticleBody({
   kind,
   slug,
   content,
+  title,
+  passage,
 }: {
   kind: Exclude<ReadingDocKind, 'library'>;
   slug: string;
   content: string;
+  /** The article's title, for "Post this passage". */
+  title?: string;
+  /** The `?p=` passage code from the route's search, if any. */
+  passage?: string;
 }) {
+  const { t } = useTranslation('passage-links');
   const idle = useIdleReady();
   const ref = useRef<HTMLDivElement>(null);
   const [ruler] = useReadingRuler();
@@ -51,6 +62,15 @@ export function ArticleBody({
   const bundle = useDocBundle(kind, slug, idle);
 
   const glossary = bundle.data?.glossary ?? EMPTY;
+  const arrival = usePassageArrival({
+    code: parsePassageSearch(passage),
+    unit: '',
+    ready: true,
+    // The glossary links split text nodes once the bundle lands; the mark is re-laid then, never re-scrolled.
+    textKey: `${glossary.length}`,
+    rootRef: ref,
+    label: t('linked-passage', { defaultValue: 'Linked passage' }),
+  });
   const glossaryMap = useMemo(() => new Map(glossary.map((g) => [g.id, g])), [glossary]);
   const rehypePlugins = useMemo(
     () => (glossary.length ? [rehypeGlossary(buildGlossaryMatcher(glossary))] : []),
@@ -107,6 +127,7 @@ export function ArticleBody({
         <ReadingToolbar rootRef={ref} resetKey={`${kind}:${slug}`} />
       </div>
       <ArticleOutline items={outline} containerRef={ref} />
+      {arrival === 'missing' ? <PassageMissingNote className="max-w-2xl" /> : null}
       <div
         ref={ref}
         className="rf-article spine max-w-2xl break-words"
@@ -120,7 +141,7 @@ export function ArticleBody({
       </div>
       {idle ? (
         <Suspense fallback={null}>
-          <ArticleReading kind={kind} docKey={slug} containerRef={ref} />
+          <ArticleReading kind={kind} docKey={slug} containerRef={ref} title={title} />
         </Suspense>
       ) : null}
       {ruler ? (

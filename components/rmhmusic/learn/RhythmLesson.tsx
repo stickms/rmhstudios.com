@@ -480,6 +480,7 @@ function MeterLesson({ lessonId, paused }: { lessonId: string; paused: boolean }
       lesson.right ? (
         t('rhythm-meter-right-sr', {
           count: lesson.cards[lesson.index].beatsPerBar,
+          defaultValue_one: 'Right: {{count}} beat in a bar.',
           defaultValue: 'Right: {{count}} beats in a bar.',
         })
       ) : (

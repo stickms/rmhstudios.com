@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Heart, Eye, GitBranch, ExternalLink, Calendar, Edit, Trash2, Lock, ChartColumn } from 'lucide-react';
@@ -16,6 +17,7 @@ import type { Build } from '@/lib/user-builds-types';
 import { liquidVTName } from '@/lib/view-transition';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
+import { BuildIssuesLink } from './BuildIssuesLink';
 import { BuildReleases } from './BuildReleases';
 import { ScreenshotStrip } from './ScreenshotStrip';
 import { PostAwards } from '@/components/awards/PostAwards';
@@ -24,7 +26,6 @@ import { safeHref } from '@/lib/url-safety';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   deleteUserBuildApi,
   getUserBuildApi,
@@ -55,6 +56,7 @@ function formatDate(dateStr: string, locale: string): string {
 export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('c-user-builds');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const navigate = useNavigate();
   const { data: session } = useSession();
@@ -112,7 +114,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
         demoUrl: data.demoUrl ?? prev.demoUrl,
       }));
     } catch (error) {
-      const message = serverError(error);
+      const message = refusalText.maybe(error);
       if (message) toast.error(message);
     } finally {
       setUnlocking(false);
@@ -440,6 +442,11 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
           createdAt: v.createdAt,
         }))}
       />
+
+      {/* Issues */}
+      {(build.visibility !== 'PRIVATE' || session?.user?.id === build.user.id) && (
+        <BuildIssuesLink buildId={build.id} slug={build.slug} />
+      )}
 
       {/* Comments */}
       <Card>

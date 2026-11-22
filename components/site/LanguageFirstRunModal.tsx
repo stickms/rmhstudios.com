@@ -73,6 +73,8 @@ export function LanguageFirstRunModal() {
           {/* Interpolated from LOCALES, not written by hand — the copy claimed
               32 languages while the app ships 16. */}
           {t('lang-firstrun-body', {
+            defaultValue_one:
+              'RMH Studios is available in {{count}} language. You can change this any time in Settings.',
             defaultValue: 'RMH Studios is available in {{count}} languages. You can change this any time in Settings.',
             count: LOCALES.length,
           })}

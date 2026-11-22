@@ -1,3 +1,4 @@
+import { refusalBody, refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
@@ -25,7 +26,7 @@ export const route = apiRoute('/api/user-builds/$id/releases', {
     async ({ params, userId }) => {
       const build = await findReleaseBuild(params.id);
       const items = build ? await listReleases(build.id, userId) : null;
-      if (!items) return Response.json({ error: 'Build not found' }, { status: 404 });
+      if (!items) return Response.json({ ...refusalBody('BUILD_NOT_FOUND') }, { status: 404 });
       return { items };
     },
   ),
@@ -42,7 +43,8 @@ export const route = apiRoute('/api/user-builds/$id/releases', {
       if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
       const build = await findReleaseBuild(params.id);
       const result = await createRelease(build, userId, body);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok)
+        return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       // After the write, not awaited: a slow or failing notification never delays or fails the publish.
       if (build) void notifyRelease(build, result.release).catch(() => {});
       return Response.json({ release: result.release }, { status: 201 });

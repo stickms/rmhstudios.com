@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { deleteBuildCommentApi, editBuildCommentApi } from '@/lib/builds/comments.contract';
@@ -21,6 +22,7 @@ export const route = apiRoute('/api/user-builds/$id/comments/$commentId', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,
@@ -46,6 +48,7 @@ export const route = apiRoute('/api/user-builds/$id/comments/$commentId', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,
