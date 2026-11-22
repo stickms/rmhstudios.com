@@ -18,6 +18,8 @@
  */
 
 import {
+  Accessibility,
+  HardDrive,
   Bell,
   UserX,
   CloudUpload,
@@ -239,6 +241,31 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] =
       keywords: 'feedback report bug problem accessibility send reply',
       requiresAuth: true,
     },
+    // Sprint 07
+    // s07-02 game-assists
+    {
+      id: 'game-assists',
+      to: '/settings/game-assists',
+      group: 'account',
+      icon: Accessibility,
+      label: 'Game assists',
+      hint: 'Calmer visuals, a slower clock and no timed input for the games that support them',
+      keywords:
+        'game assists accessibility epilepsy flashing photosensitive slow speed colorblind color blind hold motor timer unranked',
+      requiresAuth: true,
+    },
+
+    // s07-03 device-data
+    {
+      id: 'device',
+      to: '/settings/device',
+      group: 'account',
+      icon: HardDrive,
+      label: 'This device',
+      hint: 'What this site keeps in this browser, and clearing it',
+      keywords: 'device storage browser cache indexeddb local clear sign out shared computer samples drafts offline',
+    },
+
     {
       id: 'privacy',
       to: '/settings/privacy',

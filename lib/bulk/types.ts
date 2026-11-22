@@ -29,6 +29,8 @@ export const BULK_KINDS =
     'unfollow',
     'clear-history',
     'clear-bookmarks',
+    'unlike-posts',
+    'delete-reposts',
   ] as const;
 
 export type BulkKind =
@@ -47,6 +49,22 @@ export function isBulkKind(
     )
   );
 }
+
+/**
+ * Kinds that remove rows outright. The deletes of posts and comments go to the
+ * bin and come back; likes and reposts have no bin, so the panel says so in the
+ * confirm.
+ */
+export const NOT_UNDOABLE_KINDS: readonly BulkKind[] = [
+  'unfollow',
+  'clear-history',
+  'clear-bookmarks',
+  'unlike-posts',
+  'delete-reposts',
+];
+
+/** The `error` an operation carries when the reclaim sweep gave up on it (the panel shows its own wording for it). */
+export const REPEATED_RESTARTS_ERROR = 'Stopped after repeated restarts';
 
 /** Mirrors `BulkOperation.status` (`VarChar(12)`). */
 export const BULK_STATUSES =
@@ -124,6 +142,17 @@ export const FILTER_SUPPORT: Record<
         'before',
       ],
     'clear-bookmarks':
+      [
+        'olderThanDays',
+        'before',
+      ],
+    // A like or a repost has a creation date and nothing else worth filtering on.
+    'unlike-posts':
+      [
+        'olderThanDays',
+        'before',
+      ],
+    'delete-reposts':
       [
         'olderThanDays',
         'before',
@@ -480,6 +509,30 @@ export function buildBookmarkWhere(
   return where;
 }
 
+/** The member's own likes on posts (they are the liker, never the post's author). Filters on when the like was given. */
+export function buildLikeWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape = { userId };
+  const before = createdBefore(filter, now);
+  if (before) where.createdAt = { lt: before };
+  return where;
+}
+
+/** The member's own reposts. Filters on when the repost was made. */
+export function buildRepostWhere(
+  userId: string,
+  filter: BulkFilter,
+  now: Date,
+): WhereShape {
+  const where: WhereShape = { userId };
+  const before = createdBefore(filter, now);
+  if (before) where.createdAt = { lt: before };
+  return where;
+}
+
 /** The one dispatch from kind to predicate, shared by preview, sample and run. */
 export function buildWhere(
   kind: BulkKind,
@@ -525,6 +578,10 @@ export function buildWhere(
         normalized,
         now,
       );
+    case 'unlike-posts':
+      return buildLikeWhere(userId, normalized, now);
+    case 'delete-reposts':
+      return buildRepostWhere(userId, normalized, now);
   }
 }
 
@@ -567,6 +624,8 @@ export interface BulkOperationView {
   finishedAt:
     | string
     | null;
+  /** How many times a restart interrupted the run and the sweep picked it up again. */
+  reclaims: number;
 }
 
 /** Percent complete, 0–100. `total: 0` is a finished no-op, not a division. */

@@ -75,9 +75,11 @@ interface MentionTextareaProps
  * matches are shown first, ahead of (and deduped against) global results.
  */
  priorityUsers?: UserSuggestion[];
+ /** True when something else offers `@` members (the group composer's picker); `#` and `:` still work here. */
+ skipAtTrigger?: boolean;
 }
 
-export const MentionTextarea = function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, ref: forwardedRef, ...props }: MentionTextareaProps & { ref?: React.Ref<HTMLTextAreaElement> }) {
+export const MentionTextarea = function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, skipAtTrigger, ref: forwardedRef, ...props }: MentionTextareaProps & { ref?: React.Ref<HTMLTextAreaElement> }) {
  const { t: tl } = useTranslation('feed');
  const innerRef = useRef<HTMLTextAreaElement>(null);
  useImperativeHandle(forwardedRef, () => innerRef.current as HTMLTextAreaElement, []);
@@ -117,6 +119,10 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  return;
  }
  const [, type, query] = match;
+ if (type ==='@'&& skipAtTrigger) {
+ close();
+ return;
+ }
  const start = caret - query.length - 1;
  setTrigger({ type: type as'@'|'#', query, start });
 
@@ -125,7 +131,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  top: caretCoords.top + caretCoords.height + 2,
  left: caretCoords.left,
  });
- }, [close]);
+ }, [close, skipAtTrigger]);
 
  // Fetch suggestions whenever the trigger/query changes (debounced).
  useEffect(() => {

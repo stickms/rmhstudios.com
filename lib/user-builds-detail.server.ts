@@ -30,6 +30,11 @@ const buildInclude = {
   category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
   tags: { select: { name: true } },
   versions: { orderBy: [{ createdAt: 'desc' as const }, { id: 'desc' as const }], take: RELEASES_PAGE },
+  // s07-17: only the single-build read carries screenshots; the list endpoints select their own fields.
+  screenshots: {
+    orderBy: [{ position: 'asc' as const }, { id: 'asc' as const }],
+    select: { url: true, width: true, height: true, description: true },
+  },
 };
 
 /** Resolve a build by id, then by slug — the order the API route has always used. */
@@ -86,6 +91,9 @@ export function projectBuildDetail(
     description: build.description,
     readme: locked ? null : build.readme,
     thumbnailUrl: build.thumbnailUrl,
+    thumbnailAlt: build.thumbnailAlt ?? null,
+    // The pictures are the page's, not the paid content: they show before an unlock, which is their point.
+    screenshots: build.screenshots,
     repoUrl: locked ? null : build.repoUrl,
     demoUrl: locked ? null : build.demoUrl,
     price,

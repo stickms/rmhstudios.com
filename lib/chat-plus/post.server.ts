@@ -242,6 +242,10 @@ export function systemFallback(action: SystemAction): string {
       return `${action.targetName ?? 'Someone'} was removed from the group`;
     case 'owner':
       return `${action.targetName ?? 'Someone'} is now the owner`;
+    case 'admin-added':
+      return `${action.targetName ?? 'Someone'} was made an admin`;
+    case 'admin-removed':
+      return `${action.targetName ?? 'Someone'} was removed as an admin`;
   }
 }
 

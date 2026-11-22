@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/contract/client';
 import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { submitGameScoreApi } from '@/lib/game/score.contract';
+import { NotRankedNote } from '@/components/games/assist-run-island';
 import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@features/void-breaker/engine/bossRush';
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { useArrival } from '@/components/ui/arrive';
@@ -86,13 +87,14 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
   const { t } = useTranslation('f-action');
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState<'idle' | 'sent' | 'failed'>('idle');
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const statusArrival = useArrival(status !== 'idle');
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (signedIn) {
         try {
-          await api(submitGameScoreApi, {
+          const saved = await api(submitGameScoreApi, {
             params: { id: BOSS_RUSH_GAME_ID },
             body: {
               score: runStats.score,
@@ -100,7 +102,10 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
               durationMs: runStats.timeSurvivedMs,
             },
           });
-          if (!cancelled) setStatus('sent');
+          if (!cancelled) {
+            setStatus('sent');
+            setRanked(saved.ranked);
+          }
         } catch {
           if (!cancelled) setStatus('failed');
         }
@@ -127,6 +132,7 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
             : t('vb-rush-failed', { defaultValue: 'Could not submit this score' })}
         </p>
       )}
+      <NotRankedNote ranked={ranked} className="text-center text-[10px] font-mono text-[#c9a227]/80" />
       <Board rows={rows} />
     </div>
   );

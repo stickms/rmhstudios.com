@@ -58,6 +58,12 @@ async function getDB(): Promise<IDBPDatabase> {
       DB_NAME,
       DB_VERSION,
       {
+        // Clearing this device (/settings/device) deletes the database; let it go instead of holding the delete.
+        blocking() {
+          dbInstance?.close();
+          dbInstance =
+            null;
+        },
         upgrade(
           db,
         ) {

@@ -22,6 +22,7 @@ import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { BossRushMenu, BossRushResult } from './BossRush';
+import { AssistStartNotice, NotRankedNote, parseRanked } from '@/components/games/assist-run-island';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -71,6 +72,7 @@ export function VoidBreakerUI({
   const [lb, setLb] = useState<LBEntry[]>([]);
   const lbArrival = useArrival(lb.length > 0);
   const [submitted, setSubmitted] = useState(false);
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -113,6 +115,7 @@ export function VoidBreakerUI({
           if (e instanceof HttpError) return null;
           throw e;
         });
+        setRanked(parseRanked(body));
         void takeScoreMoment(body);
         fetchLb();
       } catch { /* ignore */ }
@@ -122,6 +125,7 @@ export function VoidBreakerUI({
   useEffect(() => {
     if (uiState === 'playing') {
       setSubmitted(false);
+      setRanked(null);
       clearScoreMoment();
     }
   }, [uiState, clearScoreMoment]);
@@ -598,6 +602,7 @@ export function VoidBreakerUI({
               </div>
             )}
 
+            <AssistStartNotice signedIn={!!session.data} className="text-center text-xs text-zinc-400" />
             {!session.data ? (
               <Button onClick={() => navigate('/login')}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
@@ -734,6 +739,8 @@ export function VoidBreakerUI({
               </div>
             </div>
           )}
+
+          {!runStats.bossRush && <NotRankedNote ranked={ranked} className="text-center text-[10px] font-mono text-[#c9a227]/80" />}
 
           {runStats.bossRush && <BossRushResult runStats={runStats} signedIn={!!session.data} />}
 

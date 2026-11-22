@@ -14,8 +14,32 @@ model StudioProject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions StudioProjectRevision[]
 
   @@index([userId, updatedAt(sort: Desc)])
   @@map("studio_project")
+}
+
+/// An earlier version of a cloud project: the `data` a save replaced (kept at most once per ten minutes,
+/// up to 20 per project and 20 MB per member). `revision` is the project revision this data had.
+/// `userId` is a plain column (no relation): erasure and the per-member byte cap read by it.
+model StudioProjectRevision {
+  id         String   @id @default(cuid())
+  projectId  String   @db.VarChar(64)
+  userId     String
+  revision   Int
+  name       String   @db.VarChar(80)
+  data       Json
+  sizeBytes  Int
+  /// Number of tracks in `data`, computed at capture so the list never reads the blob.
+  trackCount Int
+  /// When this version was saved (the replaced row's `updatedAt`).
+  savedAt    DateTime
+
+  project StudioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, revision])
+  @@index([userId, savedAt])
+  @@map("studio_project_revision")
 }

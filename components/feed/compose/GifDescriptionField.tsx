@@ -32,6 +32,7 @@ export function GifDescriptionField({
       </label>
       <Input
         id={id}
+        data-gif-alt-input=""
         value={value}
         maxLength={MAX_GIF_ALT_LENGTH}
         onChange={(e) => onChange(e.target.value)}

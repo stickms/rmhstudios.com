@@ -231,7 +231,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: false,
     // SynapseStormPlayer is a score row (lib/game/adapters.server.ts), not progress.
     save: 'none',
-    accessibility: [],
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'],
     descriptors: ['flashing'],
     partyCapable: true,
   },
@@ -315,7 +315,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     engine: 'webgl',
     demanding: true,
     save: 'shared-table',
-    accessibility: [],
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'],
     descriptors: ['flashing'],
   },
   'kowloon-knockout': {

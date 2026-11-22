@@ -119,7 +119,7 @@ export function BuildCard({
                     build.thumbnailUrl
                   }
                   alt={
-                    build.title
+                    build.thumbnailAlt || build.title
                   }
                   fit="cover"
                   width={

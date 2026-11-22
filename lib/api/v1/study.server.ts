@@ -49,6 +49,8 @@ export interface ApiDeck {
   isPublic: boolean;
   cardCount: number;
   dueCount: number;
+  /** Cards the key owner has set aside (manually or as leeches); not in `dueCount`. */
+  suspended: number;
   updatedAt: string;
 }
 
@@ -88,6 +90,7 @@ export async function dueCounts(
     {
       dueNow: number;
       dueNext24h: number;
+      suspended: number;
     }
   >
 > {
@@ -97,6 +100,7 @@ export async function dueCounts(
       {
         dueNow: number;
         dueNext24h: number;
+        suspended: number;
       }
     >();
   for (const id of deckIds)
@@ -105,6 +109,7 @@ export async function dueCounts(
       {
         dueNow: 0,
         dueNext24h: 0,
+        suspended: 0,
       },
     );
   if (
@@ -123,11 +128,13 @@ export async function dueCounts(
         deckId: string;
         dueNow: number;
         dueNext24h: number;
+        suspended: number;
       }[]
     >(Prisma.sql`
     SELECT c."deckId" AS "deckId",
-           COUNT(*) FILTER (WHERE r."id" IS NULL OR r."dueAt" <= ${now})::int AS "dueNow",
-           COUNT(*) FILTER (WHERE r."dueAt" > ${now} AND r."dueAt" <= ${soon})::int AS "dueNext24h"
+           COUNT(*) FILTER (WHERE r."id" IS NULL OR (r."suspendedAt" IS NULL AND r."dueAt" <= ${now}))::int AS "dueNow",
+           COUNT(*) FILTER (WHERE r."suspendedAt" IS NULL AND r."dueAt" > ${now} AND r."dueAt" <= ${soon})::int AS "dueNext24h",
+           COUNT(*) FILTER (WHERE r."suspendedAt" IS NOT NULL)::int AS "suspended"
     FROM "flashcard" c
     LEFT JOIN "flashcard_review" r ON r."cardId" = c."id" AND r."userId" = ${userId}
     WHERE c."deckId" = ANY(${deckIds}::text[])
@@ -145,6 +152,8 @@ export async function dueCounts(
           row.dueNow,
         dueNext24h:
           row.dueNext24h,
+        suspended:
+          row.suspended,
       },
     );
   }
@@ -169,6 +178,7 @@ type DeckRow =
 function toDeck(
   row: DeckRow,
   dueNow: number,
+  suspended: number,
 ): ApiDeck {
   return {
     id: row.id,
@@ -182,6 +192,7 @@ function toDeck(
       row.cardCount,
     dueCount:
       dueNow,
+    suspended,
     updatedAt:
       row.updatedAt.toISOString(),
   };
@@ -300,6 +311,11 @@ export async function listMyDecks(
           )
             ?.dueNow ??
             0,
+          due.get(
+            d.id,
+          )
+            ?.suspended ??
+            0,
         ),
     ),
     nextCursor:
@@ -347,6 +363,11 @@ export async function getMyDeck(
       row.id,
     )
       ?.dueNow ??
+      0,
+    due.get(
+      row.id,
+    )
+      ?.suspended ??
       0,
   );
 }
@@ -784,6 +805,7 @@ export async function dueFor(
     ) ?? {
       dueNow: 0,
       dueNext24h: 0,
+      suspended: 0,
     };
   return {
     deckId,

@@ -19,6 +19,13 @@ import { soundManager } from './sounds';
 import { synapseStormMusic } from './music';
 import { getSettings } from './settings';
 import {
+  NO_ASSIST_FLAGS,
+  puzzleDrainSeconds,
+  rampSeconds,
+  spawnDelayMs,
+  type SynapseAssistFlags,
+} from './assist-profile';
+import {
   generatePuzzleDeterministic,
   getDifficultyAtTime,
   deterministicPosition,
@@ -235,6 +242,12 @@ export function useGameEngine(
     useRef(
       mpConfig,
     );
+  // The assist profile for the current solo run (set by `configureAssist` before the run starts).
+  // Multiplayer shares one wall clock, so it never applies one.
+  const assistRef =
+    useRef<SynapseAssistFlags>(
+      NO_ASSIST_FLAGS,
+    );
 
   useEffect(() => {
     modeRef.current =
@@ -367,9 +380,12 @@ export function useGameEngine(
         400 *
         spawnMultiplier;
       const nextInterval =
-        config.spawnInterval *
-          spawnMultiplier +
-        jitter;
+        spawnDelayMs(
+          config.spawnInterval *
+            spawnMultiplier +
+            jitter,
+          assistRef.current,
+        );
 
       if (
         s
@@ -545,9 +561,12 @@ export function useGameEngine(
             modeRef.current ===
             'multiplayer'
               ? rawDt
-              : Math.min(
-                  rawDt,
-                  0.5,
+              : puzzleDrainSeconds(
+                  Math.min(
+                    rawDt,
+                    0.5,
+                  ),
+                  assistRef.current,
                 );
           const totalTime =
             (now -
@@ -563,7 +582,10 @@ export function useGameEngine(
           const scalarByTime =
             Math.min(
               1,
-              totalTime /
+              rampSeconds(
+                totalTime,
+                assistRef.current,
+              ) /
                 300,
             );
           const intensityScalar =
@@ -1542,6 +1564,52 @@ export function useGameEngine(
       ],
     );
 
+  /** Set the assist levers for the next solo run. Multiplayer ignores them. */
+  const configureAssist =
+    useCallback(
+      (
+        flags: SynapseAssistFlags,
+      ) => {
+        assistRef.current =
+          modeRef.current ===
+          'multiplayer'
+            ? NO_ASSIST_FLAGS
+            : flags;
+      },
+      [],
+    );
+
+  /** The player ends the run (the only way a run with no timers can end). */
+  const endRun =
+    useCallback(() => {
+      apply(
+        (
+          prev,
+        ) => {
+          if (
+            prev.status !==
+            'playing'
+          )
+            return prev;
+          soundManager.gameOver();
+          synapseStormMusic.stop();
+          return {
+            ...prev,
+            status:
+              'gameover' as const,
+            totalTime:
+              (Date.now() -
+                prev.startTime) /
+              1000,
+            lastTickAt:
+              Date.now(),
+          };
+        },
+      );
+    }, [
+      apply,
+    ]);
+
   // Return to menu
   const returnToMenu =
     useCallback(() => {
@@ -1571,5 +1639,7 @@ export function useGameEngine(
     solvePuzzle,
     skipMemoryPhase,
     returnToMenu,
+    configureAssist,
+    endRun,
   };
 }

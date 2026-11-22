@@ -220,6 +220,50 @@ export const SCOPES: ScopeDetail[] =
       description:
         'Create and manage webhook subscriptions.',
     },
+
+    // Sprint 07
+    // s07-10 api-events
+    {
+      id: 'read:events',
+      action: 'read',
+      group: 'Events',
+      description: 'Read events you can see and your RSVPs.',
+    },
+    {
+      id: 'write:events',
+      action: 'write',
+      group: 'Events',
+      description: 'RSVP to events and cancel your RSVP.',
+    },
+
+    // s07-11 api-communities
+    {
+      id: 'read:communities',
+      action: 'read',
+      group: 'Communities',
+      description: 'Read communities you can see, their rules and posts, and your memberships.',
+    },
+    {
+      id: 'write:communities',
+      action: 'write',
+      group: 'Communities',
+      description: 'Post into communities you are a member of.',
+    },
+
+    // s07-12 api-reading
+    {
+      id: 'read:reading',
+      action: 'read',
+      group: 'Reading',
+      description: 'Read your highlights, notes, shelves and reading goal.',
+    },
+    {
+      id: 'write:reading',
+      action: 'write',
+      group: 'Reading',
+      description: 'Edit, publish, unpublish and delete your highlights and notes, and edit your shelves.',
+    },
+
   ];
 
 export const ALL_SCOPES: string[] =

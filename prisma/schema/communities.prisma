@@ -29,6 +29,8 @@ model Community {
   rulesRequireAgreement Boolean @default(false)
   // s03-14: members may read the content part of the moderation log.
   publicModLog      Boolean  @default(false)
+  // s07-16: every image posted here needs a description.
+  requireImageAlt   Boolean  @default(false)
   createdById       String
   createdAt         DateTime @default(now())
   /// Catalog id of the game/app this community is the home of (shown on that

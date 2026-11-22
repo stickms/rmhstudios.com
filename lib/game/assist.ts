@@ -203,7 +203,7 @@ export function profileFor(
 /**
  * Games whose client actually honours an assist profile.
  *
- * **Empty, and that is the correct state today.** See the module header: a game
+ * **Two games today: Synapse Storm and Void Breaker.** See the module header: a game
  * added here without client support trades its players' leaderboard
  * eligibility for nothing. Adding an entry is part of the change that teaches
  * the game to read the profile, alongside the `accessibility` entries in
@@ -211,7 +211,12 @@ export function profileFor(
  * those two to each other so the two halves cannot ship apart.
  */
 export const ASSIST_CAPABLE: ReadonlySet<string> =
-  new Set<string>();
+  new Set<string>(
+    [
+      'synapse-storm',
+      'void-breaker',
+    ],
+  );
 
 /**
  * Which `AccessibilityFeature` strings a game must declare once it adopts.

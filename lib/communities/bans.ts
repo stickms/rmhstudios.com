@@ -150,10 +150,14 @@ export const BAN_ENFORCEMENT_PATHS =
     'lib/communities/invites.server.ts',
     'lib/communities/api/communities.$slug.join-request.server.ts',
     'lib/communities/gate.server.ts',
+    // the shared create check the site and POST /api/v1/posts both call (explicit ban/timeout refusal before the gate)
+    'lib/communities/post-gate.server.ts',
     'app/routes/api/v1/posts/$id/comments.ts',
     'lib/communities/join-requests.server.ts',
     'lib/scheduled/publish.server.ts',
     'lib/scheduled/api/scheduled.server.ts',
+    // RSVPs to a community's events: the site route and PUT /api/v1/events/{id}/rsvp both call `rsvp` (s07-10)
+    'lib/events.server.ts',
   ] as const;
 
 const NOTICE_DATE: Intl.DateTimeFormatOptions =

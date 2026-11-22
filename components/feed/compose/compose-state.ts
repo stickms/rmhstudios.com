@@ -7,6 +7,7 @@
 import type { FeedItem } from '@/lib/feed-types';
 import { MIN_POLL_OPTIONS } from '@/lib/rmhark-limits';
 import { rankedPollIssues } from '@/lib/feed/ranked-poll';
+import { quizPollIssues } from '@/lib/feed/quiz-poll';
 
 export const MAX_IMAGES = 4;
 
@@ -30,6 +31,22 @@ export interface PollDraft {
   multiSelect: boolean;
   /** s06-19: a ranked-choice poll (3 to 6 options, a required length). Absent means false. */
   ranked?: boolean;
+  /** s07-19: a quiz (single choice, 2 to 4 options, one correct answer). Absent means false. */
+  quiz?: boolean;
+  /** A quiz: the position of the correct answer among ALL option rows (a blank row may sit before it). */
+  correctIndex?: number;
+  /** A quiz: the explanation shown with the answer (280 characters at most). */
+  explanation?: string;
+}
+
+/**
+ * A quiz's correct answer as a position among the FILLED options (what the server stores), or null when the marked
+ * row is blank or nothing is marked. Blank rows are dropped before posting, so the raw row index would drift.
+ */
+export function quizCorrectAmongFilled(poll: PollDraft): number | null {
+  if (!poll.quiz || poll.correctIndex === undefined) return null;
+  if (!poll.options[poll.correctIndex]?.trim()) return null;
+  return poll.options.slice(0, poll.correctIndex).filter((o) => o.trim()).length;
 }
 
 /** A fresh, empty poll. A new object each call — state must never share one. */
@@ -75,13 +92,24 @@ export function isPollPostable(
       },
     ).length ===
       0);
+  const quizOk =
+    !poll.quiz ||
+    quizPollIssues({
+      quiz: true,
+      multiSelect: poll.multiSelect,
+      ranked: poll.ranked,
+      optionCount: filled,
+      correctIndex: quizCorrectAmongFilled(poll),
+      explanation: poll.explanation,
+    }).length === 0;
   return (
     attachment ===
       'poll' &&
     !!poll.question.trim() &&
     filled >=
       MIN_POLL_OPTIONS &&
-    rankedOk
+    rankedOk &&
+    quizOk
   );
 }
 
@@ -257,6 +285,22 @@ export function buildComposeBody(
           .ranked
           ? {
               ranked: true,
+            }
+          : {}),
+        ...(i.poll.quiz
+          ? {
+              quiz: true,
+              correctIndex:
+                quizCorrectAmongFilled(
+                  i.poll,
+                ) ??
+                undefined,
+              ...(i.poll.explanation?.trim()
+                ? {
+                    explanation:
+                      i.poll.explanation.trim(),
+                  }
+                : {}),
             }
           : {}),
         ...(i.pollDuration >
@@ -505,6 +549,14 @@ export function buildOptimisticItem(
             ? {
                 ranked:
                   true as const,
+              }
+            : {}),
+          // The author wrote the answer, so their own optimistic card carries it (s07-19).
+          ...(i.poll.quiz && quizCorrectAmongFilled(i.poll) !== null
+            ? {
+                quiz: true as const,
+                correctOptionId: `${id}-opt-${quizCorrectAmongFilled(i.poll)}`,
+                ...(i.poll.explanation?.trim() ? { explanation: i.poll.explanation.trim() } : {}),
               }
             : {}),
           totalVotes: 0,

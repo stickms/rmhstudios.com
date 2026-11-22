@@ -224,6 +224,10 @@ vi.mock(
     const prisma =
       {
         gamePersonalBest,
+        // s07-02: score submission reads the member's assist settings; none here.
+        gameAssistPreference: {
+          findUnique: async () => null,
+        },
         // The prune: keep the newest `offset` rows of the member's game, delete the rest.
         $executeRaw:
           vi.fn(

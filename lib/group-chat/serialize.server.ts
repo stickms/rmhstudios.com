@@ -7,6 +7,8 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { GroupMessagePayload } from '@/lib/group-events';
 import type { ReactionRow } from '@/lib/social/reactions';
+import { asRole } from '@/lib/group-chat/roles';
+import type { GroupMember } from '@/lib/group-chat/types';
 
 export const groupMessageSelect = {
   id: true,
@@ -106,4 +108,11 @@ export async function serializeGroupMessages(
       expiresAt: m.expiresAt?.toISOString() ?? null,
     };
   });
+}
+
+/** The member list of a group payload: each member as an author, plus their role (s07-04; additive). */
+export function serializeGroupMembers(
+  rows: { role?: string | null; user: Parameters<typeof resolveUser>[0] }[],
+): GroupMember[] {
+  return rows.map((m) => ({ ...resolveUser(m.user), role: asRole(m.role) }));
 }

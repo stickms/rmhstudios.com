@@ -5,14 +5,16 @@
 
 import type { Prisma } from '@prisma/client';
 
-/** Revoke every live link `userId` made for a group (ownership moved on). Runs inside the caller's transaction. */
+/** Revoke every live link `userId` made for a group (ownership or admin standing moved on); how many were live. Runs inside the caller's transaction. */
 export async function revokeInvitesOf(
   tx: Prisma.TransactionClient,
   chatId: string,
   userId: string,
-): Promise<void> {
-  await tx.chatInvite.updateMany({
+): Promise<number> {
+  const done = await tx.chatInvite.updateMany({
     where: { chatId, createdById: userId, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+  // A stub that records calls answers with an op object, not a count.
+  return typeof done?.count === 'number' ? done.count : 0;
 }

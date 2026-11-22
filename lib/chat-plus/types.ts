@@ -194,6 +194,20 @@ export type SystemAction =
       actorId: string;
       targetId: string;
       targetName: string | null;
+    }
+  // s07-04 group admin lines. `revokedLinks` is how many of the demoted admin's live invite links were revoked.
+  | {
+      action: 'admin-added';
+      actorId: string;
+      targetId: string;
+      targetName: string | null;
+    }
+  | {
+      action: 'admin-removed';
+      actorId: string;
+      targetId: string;
+      targetName: string | null;
+      revokedLinks?: number;
     };
 
 /* -------------------------------------------------------------------------- */

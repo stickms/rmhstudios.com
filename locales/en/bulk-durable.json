@@ -1,0 +1,11 @@
+{
+  "failed-repeated-restarts": "Stopped after repeated restarts. Start it again to finish.",
+  "kind-delete-reposts": "Remove reposts",
+  "kind-delete-reposts-blurb": "Permanent. There is no bin for reposts, so this cannot be undone. Each post’s repost count goes down by one.",
+  "kind-unlike-posts": "Remove likes",
+  "kind-unlike-posts-blurb": "Permanent. There is no bin for likes, so this cannot be undone. Each post’s like count goes down by one.",
+  "progress-count": "{{processed}} of {{total}}",
+  "resuming-line": "Resuming after a restart",
+  "unit-likes": "likes",
+  "unit-reposts": "reposts"
+}

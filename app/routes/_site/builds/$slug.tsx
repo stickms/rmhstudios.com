@@ -72,7 +72,7 @@ export const Route = createFileRoute('/_site/builds/$slug')({
           loaderData.kind === 'official'
             ? ogCardPath(games.some((g) => g.id === d.id) ? 'game' : 'app', d.id)
             : ogCardPath('build', 'slug' in d ? d.slug : params.slug),
-        imageAlt: `${d.title} on RMH Studios`,
+        imageAlt: ('thumbnailAlt' in d && d.thumbnailAlt) || `${d.title} on RMH Studios`,
         type: 'article',
       }),
       links: [

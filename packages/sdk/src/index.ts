@@ -86,6 +86,14 @@ export interface CreatePostBody {
   media_ids?: string[];
   /** `PUBLIC` (default), `FOLLOWERS`, or `PRIVATE`. */
   audience?: string;
+  /** Post into this community instead of only your timeline. Needs the `write:communities` scope as well as `write:posts`, and you must be a member. The community's own rules apply (flair, verification, AutoMod, image descriptions, bans and timeouts): a held post answers `202` with `{ "status": "held", "id": … }`, an AutoMod removal `422` with the rule name, and a refusal the gate's `code` (a ban or timeout also carries `endsAt`). */
+  communityId?: string;
+  /** A flair of that community (needs `communityId`); required when the community requires one. */
+  flairId?: string;
+  /** With `communityId`: a description for each `media_ids` image, in order. A community can require one on every image. */
+  media_alts?: string[];
+  /** A poll on the post (not with `communityId`): `question`, 2 to 4 `options` (strings), optional `multiSelect` and `durationHours` (1 to 720). A quiz adds `quiz: true`, `correctIndex` (the zero-based position of the one correct option) and an optional `explanation` of at most 280 characters; a quiz is single choice, so it cannot also set `multiSelect`. A post may carry just a poll, with no `content`. */
+  poll?: { question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string };
 }
 
 export interface CreatePostArgs {
@@ -101,7 +109,7 @@ export interface GetPostArgs {
   id: string;
 }
 
-export type GetPostResponse = { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null; poll: { id: string; question: string; multiSelect: boolean; ranked: boolean; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null; author: { id: string; name: string; handle: string; image: string } };
+export type GetPostResponse = { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; pinnedOrder: number | null; poll: { id: string; question: string; multiSelect: boolean; ranked: boolean; quiz: boolean; correctOptionId: string | null; explanation: string | null; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null; author: { id: string; name: string; handle: string; image: string } };
 
 export interface DeletePostArgs {
   /** The post id. */
@@ -263,7 +271,7 @@ export interface GetBuildArgs {
   slug: string;
 }
 
-export type GetBuildResponse = { slug: string; title: string; description: string; readme: string; repoUrl: unknown; demoUrl: unknown; author: { id: string; name: string; handle: string; image: string }; technologies: string[]; metrics: { likes: number; comments: number; views: number }; versions: { version: string; changelog: string; createdAt: string }[]; releases: { version: string; changelog: string; commitHash: string; createdAt: string }[] };
+export type GetBuildResponse = { slug: string; title: string; description: string; readme: string; repoUrl: unknown; demoUrl: unknown; thumbnailAlt: string | null; screenshots: { url: string; width: number; height: number; description: string }[]; author: { id: string; name: string; handle: string; image: string }; technologies: string[]; metrics: { likes: number; comments: number; views: number }; versions: { version: string; changelog: string; createdAt: string }[]; releases: { version: string; changelog: string; commitHash: string; createdAt: string }[] };
 
 export interface ListBlogArgs {
   /** Page size, 1–50 (default 20). */
@@ -413,7 +421,7 @@ export interface ListMyDecksArgs {
   cursor?: string;
 }
 
-export type ListMyDecksResponse = { data: { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string }[]; nextCursor: string | null };
+export type ListMyDecksResponse = { data: { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string }[]; nextCursor: string | null };
 
 export interface CreateMyDeckBody {
   /** 1–100 characters. */
@@ -430,14 +438,14 @@ export interface CreateMyDeckArgs {
   body: CreateMyDeckBody;
 }
 
-export type CreateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string };
+export type CreateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string };
 
 export interface GetMyDeckArgs {
   /** The deck id. */
   id: string;
 }
 
-export type GetMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string };
+export type GetMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string };
 
 export interface UpdateMyDeckBody {
   /** 1–100 characters. */
@@ -456,7 +464,7 @@ export interface UpdateMyDeckArgs {
   body: UpdateMyDeckBody;
 }
 
-export type UpdateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; updatedAt: string };
+export type UpdateMyDeckResponse = { id: string; title: string; description: string | null; isPublic: boolean; cardCount: number; dueCount: number; suspended: number; updatedAt: string };
 
 export interface DeleteMyDeckArgs {
   /** The deck id. */
@@ -548,6 +556,203 @@ export interface GetMyDeckDueArgs {
 }
 
 export type GetMyDeckDueResponse = { deckId: string; dueNow: number; dueNext24h: number; asOf: string };
+
+export interface ListEventsArgs {
+  /** Start of the window, an ISO 8601 date or timestamp (default now). */
+  from?: string;
+  /** End of the window (default 31 days after `from`; at most 31 days after it). */
+  to?: string;
+  /** Only events of this community (id or slug). */
+  community?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListEventsResponse = { data: { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null }[]; nextCursor: string | null };
+
+export interface GetEventArgs {
+  /** The event id. */
+  id: string;
+}
+
+export type GetEventResponse = { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null; nextOccurrences: { occurrence: string; startsAt: string; endsAt: string; state: string; note: string }[]; updates: { id: string; body: string; occurrence: string | null; createdAt: string }[] };
+
+export interface ListEventAttendeesArgs {
+  /** The event id. */
+  id: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListEventAttendeesResponse = { data: { id: string; handle: string; name: string; status: string }[]; nextCursor: string | null };
+
+export interface ListMyEventsArgs {
+  /** Start of the window, an ISO 8601 date or timestamp (default now). */
+  from?: string;
+  /** End of the window (default 31 days after `from`; at most 31 days after it). */
+  to?: string;
+  /** Page size, 1–100 (default 25). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyEventsResponse = { data: { id: string; title: string; description: string; startsAt: string; endsAt: string | null; timeZone: string | null; occurrence: string | null; state: string; note: string | null; repeats: boolean; venueKind: string; venue: string | null; capacity: number | null; communityId: string | null; canceled: boolean; host: { id: string; handle: string; name: string }; cohosts: { id: string; handle: string; name: string }[]; counts: { going: number; maybe: number; waitlisted: number }; yourRsvp: 'going' | 'maybe' | 'waitlisted' | null }[]; nextCursor: string | null };
+
+export interface RsvpToEventBody {
+  /** `going` or `maybe`. */
+  status?: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+  /** Answer for every date of a repeating event. */
+  everyTime?: boolean;
+}
+
+export interface RsvpToEventArgs {
+  /** The event id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: RsvpToEventBody;
+}
+
+export type RsvpToEventResponse = { eventId: string; status: string; occurrence: string | null; everyTime: boolean; counts: { going: number; maybe: number; waitlisted: number }; waitlistPosition: number | null };
+
+export interface CancelEventRsvpArgs {
+  /** The event id. */
+  id: string;
+  /** The date's original start, an ISO 8601 timestamp (repeating events). */
+  occurrence?: string;
+  /** `true` to leave the whole series. */
+  everyTime?: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export type CancelEventRsvpResponse = { eventId: string; status: string; occurrence: string | null; everyTime: boolean; counts: { going: number; maybe: number; waitlisted: number }; waitlistPosition: number | null };
+
+export interface ListMyCommunitiesArgs {
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyCommunitiesResponse = { data: { id: string; slug: string; name: string; icon: string; isPrivate: boolean; memberCount: number; role: string; joinedAt: string }[]; nextCursor: string | null };
+
+export interface GetCommunityArgs {
+  /** The community slug. */
+  slug: string;
+}
+
+export type GetCommunityResponse = { id: string; slug: string; name: string; description: string; icon: string; color: string; isPrivate: boolean; memberCount: number; createdAt: string; isMember: boolean; role: string; posting: { verification: { level: string; value: number }; flairRequired: boolean; requireImageAlt: boolean }; flairs: { id: string; name: string; color: string }[] };
+
+export interface GetCommunityRulesArgs {
+  /** The community slug. */
+  slug: string;
+}
+
+export type GetCommunityRulesResponse = { data: { id: string; position: number; title: string; description: string }[] };
+
+export interface ListCommunityPostsArgs {
+  /** The community slug. */
+  slug: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+  /** Only posts with this flair id. */
+  flair?: string;
+}
+
+export type ListCommunityPostsResponse = { data: { id: string; content: string; imageUrls: unknown[]; imageAlts: unknown[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; createdAt: string; author: { id: string; name: string; handle: string; image: string }; metrics: { likes: number; comments: number; reposts: number; views: number }; flair: { id: string; name: string; color: string } }[]; nextCursor: string | null };
+
+export interface ListMyHighlightsArgs {
+  /** Page size, 1–100 (default 30). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor`. */
+  cursor?: string;
+  /** Only `library`, `blog` or `news` highlights. */
+  kind?: string;
+  /** Only highlights updated after this ISO 8601 instant, oldest update first. */
+  since?: string;
+  /** `true` for highlights with a note, `false` for those without. */
+  hasNote?: boolean;
+  /** `public` or `private`. */
+  visibility?: string;
+}
+
+export type ListMyHighlightsResponse = { data: { id: string; kind: string; key: string; document: { title: string; url: string } | null; quote: string; note: string | null; isPublic: boolean; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
+
+export interface UpdateMyHighlightBody {
+  /** Up to 2000 characters; null or empty clears it. */
+  note?: string;
+  /** Show the highlight and its note publicly. */
+  isPublic?: boolean;
+}
+
+export interface UpdateMyHighlightArgs {
+  /** The highlight id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: UpdateMyHighlightBody;
+}
+
+export type UpdateMyHighlightResponse = { id: string; kind: string; key: string; document: { title: string; url: string } | null; quote: string; note: string | null; isPublic: boolean; createdAt: string; updatedAt: string };
+
+export interface DeleteMyHighlightArgs {
+  /** The highlight id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface ListMyShelvesArgs {
+  /** `want`, `reading` or `read`. */
+  shelf?: string;
+}
+
+export type ListMyShelvesResponse = { data: { slug: string; title: string; shelf: string; pages: number; finishedAt: string | null; updatedAt: string }[] };
+
+export interface SetMyShelfBody {
+  /** `want`, `reading` or `read`. */
+  shelf?: string;
+  /** Page count, used only when the book has none of its own. */
+  pages?: number;
+  /** ISO 8601 finish date; only with `read`, not in the future. */
+  finishedAt?: string;
+}
+
+export interface SetMyShelfArgs {
+  /** The library book slug. */
+  slug: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: SetMyShelfBody;
+}
+
+export type SetMyShelfResponse = { slug: string; title: string; shelf: string; pages: number; finishedAt: string | null; updatedAt: string };
+
+export interface RemoveMyShelfArgs {
+  /** The library book slug. */
+  slug: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+}
+
+export interface GetMyReadingGoalArgs {
+  /** The year, 2000–2200 (default the current UTC year). */
+  year?: number;
+}
+
+export type GetMyReadingGoalResponse = { year: number; goal: { unit: 'books' | 'pages'; target: number; books: number; pages: number; done: number } | null };
 
 export class RmhClient {
   private apiKey: string;
@@ -848,5 +1053,90 @@ export class RmhClient {
   /** Get due counts (scope: read:study) */
   getMyDeckDue(args: GetMyDeckDueArgs): Promise<GetMyDeckDueResponse> {
     return this.request<GetMyDeckDueResponse>("GET", { path: "/api/v1/me/decks/{id}/due", pathParams: { id: args.id } });
+  }
+
+  /** List events (scope: read:events) */
+  listEvents(args: ListEventsArgs = {}): Promise<ListEventsResponse> {
+    return this.request<ListEventsResponse>("GET", { path: "/api/v1/events", query: { from: args.from, to: args.to, community: args.community, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get an event (scope: read:events) */
+  getEvent(args: GetEventArgs): Promise<GetEventResponse> {
+    return this.request<GetEventResponse>("GET", { path: "/api/v1/events/{id}", pathParams: { id: args.id } });
+  }
+
+  /** List attendees (scope: read:events) */
+  listEventAttendees(args: ListEventAttendeesArgs): Promise<ListEventAttendeesResponse> {
+    return this.request<ListEventAttendeesResponse>("GET", { path: "/api/v1/events/{id}/attendees", pathParams: { id: args.id }, query: { occurrence: args.occurrence, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List your events (scope: read:events) */
+  listMyEvents(args: ListMyEventsArgs = {}): Promise<ListMyEventsResponse> {
+    return this.request<ListMyEventsResponse>("GET", { path: "/api/v1/me/events", query: { from: args.from, to: args.to, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** RSVP to an event (scope: write:events) */
+  rsvpToEvent(args: RsvpToEventArgs): Promise<RsvpToEventResponse> {
+    return this.request<RsvpToEventResponse>("PUT", { path: "/api/v1/events/{id}/rsvp", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Cancel your RSVP (scope: write:events) */
+  cancelEventRsvp(args: CancelEventRsvpArgs): Promise<CancelEventRsvpResponse> {
+    return this.request<CancelEventRsvpResponse>("DELETE", { path: "/api/v1/events/{id}/rsvp", pathParams: { id: args.id }, query: { occurrence: args.occurrence, everyTime: args.everyTime }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your communities (scope: read:communities) */
+  listMyCommunities(args: ListMyCommunitiesArgs = {}): Promise<ListMyCommunitiesResponse> {
+    return this.request<ListMyCommunitiesResponse>("GET", { path: "/api/v1/me/communities", query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get a community (scope: read:communities) */
+  getCommunity(args: GetCommunityArgs): Promise<GetCommunityResponse> {
+    return this.request<GetCommunityResponse>("GET", { path: "/api/v1/communities/{slug}", pathParams: { slug: args.slug } });
+  }
+
+  /** Get a community's rules (scope: read:communities) */
+  getCommunityRules(args: GetCommunityRulesArgs): Promise<GetCommunityRulesResponse> {
+    return this.request<GetCommunityRulesResponse>("GET", { path: "/api/v1/communities/{slug}/rules", pathParams: { slug: args.slug } });
+  }
+
+  /** List a community's posts (scope: read:communities) */
+  listCommunityPosts(args: ListCommunityPostsArgs): Promise<ListCommunityPostsResponse> {
+    return this.request<ListCommunityPostsResponse>("GET", { path: "/api/v1/communities/{slug}/posts", pathParams: { slug: args.slug }, query: { limit: args.limit, cursor: args.cursor, flair: args.flair } });
+  }
+
+  /** List your highlights and notes (scope: read:reading) */
+  listMyHighlights(args: ListMyHighlightsArgs = {}): Promise<ListMyHighlightsResponse> {
+    return this.request<ListMyHighlightsResponse>("GET", { path: "/api/v1/me/highlights", query: { limit: args.limit, cursor: args.cursor, kind: args.kind, since: args.since, hasNote: args.hasNote, visibility: args.visibility } });
+  }
+
+  /** Edit a highlight (scope: write:reading) */
+  updateMyHighlight(args: UpdateMyHighlightArgs): Promise<UpdateMyHighlightResponse> {
+    return this.request<UpdateMyHighlightResponse>("PATCH", { path: "/api/v1/me/highlights/{id}", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Delete a highlight (scope: write:reading) */
+  deleteMyHighlight(args: DeleteMyHighlightArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/highlights/{id}", pathParams: { id: args.id }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** List your shelves (scope: read:reading) */
+  listMyShelves(args: ListMyShelvesArgs = {}): Promise<ListMyShelvesResponse> {
+    return this.request<ListMyShelvesResponse>("GET", { path: "/api/v1/me/shelves", query: { shelf: args.shelf } });
+  }
+
+  /** Put a book on a shelf (scope: write:reading) */
+  setMyShelf(args: SetMyShelfArgs): Promise<SetMyShelfResponse> {
+    return this.request<SetMyShelfResponse>("PUT", { path: "/api/v1/me/shelves/{slug}", pathParams: { slug: args.slug }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Take a book off your shelves (scope: write:reading) */
+  removeMyShelf(args: RemoveMyShelfArgs): Promise<void> {
+    return this.request<void>("DELETE", { path: "/api/v1/me/shelves/{slug}", pathParams: { slug: args.slug }, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Get your reading goal (scope: read:reading) */
+  getMyReadingGoal(args: GetMyReadingGoalArgs = {}): Promise<GetMyReadingGoalResponse> {
+    return this.request<GetMyReadingGoalResponse>("GET", { path: "/api/v1/me/reading-goal", query: { year: args.year } });
   }
 }

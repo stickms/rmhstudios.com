@@ -89,7 +89,7 @@ describe('saveReview', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(
       saveReview({ userId: 'u1', cardId: 'c1', deckId: 'd1', grade: 2, next }),
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ leech: false });
     expect(db.reviews).toHaveLength(1);
     spy.mockRestore();
   });

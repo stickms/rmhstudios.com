@@ -139,6 +139,7 @@ model Tournament {
   checkInMinutes Int? // null = no check-in; else 10, 15, 30 or 60 minutes before startsAt
   checkInNoticeAt DateTime? // when entrants were told check-in opened (claimed once by the cron)
   seeding        String           @default("join") @db.VarChar(8) // join | rating | random | manual; applied at start
+  matchDeadlineHours Int? // s07-06: each match must be played within this many hours of becoming ready (24, 48, 72 or 168); null = no deadline
   startedAt      DateTime?
   completedAt    DateTime?
   createdAt      DateTime         @default(now())
@@ -204,6 +205,14 @@ model TournamentMatch {
   resultSource    String?              @db.VarChar(24)
   scheduledAt     DateTime?
   completedAt     DateTime?
+  // s07-06: the deadline stamped when the match became ready, and the time the
+  // entrants agree. Plain refs (the proposer's user id) so erasure can null it.
+  deadlineAt       DateTime?
+  proposedAt       DateTime?
+  proposedById     String?
+  remindedAt       DateTime? // the 60-minute reminder was sent (claimed once by the cron)
+  deadlineNoticeAt DateTime? // the 12-hour deadline notice was sent
+  agreedNoticeAt   DateTime? // when the entrants were told a time was agreed
   // s06-20: a participant's report is a claim the opponent confirms or disputes.
   // Plain refs (entrant id, user id) so erasure can null the actor.
   claimedWinnerId String?
@@ -224,6 +233,8 @@ model TournamentMatch {
   @@index([tournamentId, state])
   @@index([gameSessionRef])
   @@index([claimedAt])
+  @@index([deadlineAt])
+  @@index([scheduledAt])
   @@map("tournament_match")
 }
 
@@ -369,12 +380,52 @@ model GameJam {
   ratingEndsAt DateTime
   createdById  String
   createdAt    DateTime @default(now())
+  /// s07-07: opt-in theme vote. `theme` stays required: for a voting jam it holds the first candidate until
+  /// `themeResolvedAt` is set at the start (then it holds the winner). Never sent before startsAt.
+  themeVoting      Boolean   @default(false)
+  themeVoteOpensAt DateTime?
+  themeResolvedAt  DateTime?
 
-  createdBy User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  entries   GameJamEntry[]
+  createdBy       User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  entries         GameJamEntry[]
+  themeCandidates GameJamThemeCandidate[]
+  themeVotes      GameJamThemeVote[]
 
   @@index([startsAt])
   @@map("game_jam")
+}
+
+/// s07-07: one shortlisted theme for a voting jam; `position` is the admin's order (ties go to the lowest).
+model GameJamThemeCandidate {
+  id        String   @id @default(cuid())
+  jamId     String
+  text      String   @db.VarChar(120)
+  position  Int
+  createdAt DateTime @default(now())
+
+  jam   GameJam            @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  votes GameJamThemeVote[]
+
+  @@unique([jamId, position])
+  @@map("game_jam_theme_candidate")
+}
+
+/// s07-07: one approval mark (at most three per member per jam). Private: never listed by voter.
+/// `jamId` is copied from the candidate so the cap is one indexed count.
+model GameJamThemeVote {
+  jamId       String
+  candidateId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  jam       GameJam               @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  candidate GameJamThemeCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, userId])
+  @@index([jamId, userId])
+  @@index([jamId, candidateId])
+  @@map("game_jam_theme_vote")
 }
 
 model GameJamEntry {

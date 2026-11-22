@@ -269,6 +269,10 @@ export function CommunityComposer({
         communityId={
           communityId
         }
+        requireImageAlt={
+          extras?.requireImageAlt ??
+          false
+        }
         extraBody={{
           ...(flairId
             ? {

@@ -1,5 +1,7 @@
 import { refineRankedPoll } from '@/lib/feed/ranked-poll-schema';
 import { RANKED_MAX_OPTIONS } from '@/lib/feed/ranked-poll';
+import { quizPollFields, refineQuizPoll } from '@/lib/feed/quiz-poll-schema';
+import { QUIZ_EXPLANATION_MAX } from '@/lib/feed/quiz-poll';
 import { z } from 'zod';
 import { MAX_GIF_ALT_LENGTH } from '@/lib/feed/gif-alt';
 import { contentWarningFieldSchema } from '@/lib/feed/content-warning-schema';
@@ -156,10 +158,24 @@ const pollSchema =
             720,
           )
           .optional(),
+      // s07-19: a quiz (single choice, 2-4 options, one correct answer by position, an optional explanation).
+      ...quizPollFields,
     },
   )
   .superRefine(
-    refineRankedPoll,
+    (
+      poll,
+      ctx,
+    ) => {
+      refineRankedPoll(
+        poll,
+        ctx,
+      );
+      refineQuizPoll(
+        poll,
+        ctx,
+      );
+    },
   );
 
 export const createRMHarkSchema =
@@ -385,6 +401,18 @@ export const editRMHarkSchema =
           .optional(),
       contentWarning:
         contentWarningFieldSchema,
+      // s07-19: a quiz author fixes the answer or the explanation until somebody has voted (409 QUIZ_LOCKED after).
+      quizCorrectOptionId:
+        z
+          .string()
+          .min(1)
+          .max(64)
+          .optional(),
+      quizExplanation:
+        z
+          .string()
+          .max(QUIZ_EXPLANATION_MAX)
+          .nullish(),
     },
   );
 

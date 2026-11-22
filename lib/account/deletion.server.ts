@@ -26,11 +26,14 @@
  * tries unprompted. See {@link cancelDeletion} for the call site.
  */
 
+import { deckFolderErasureOps } from '@/lib/study/folders.server';
+import { groupMentionErasureOps } from '@/lib/group-chat/mentions.server';
 import { awayErasureOps } from '@/lib/messages/away.server';
 import { buildCommentErasureOps } from '@/lib/builds/comments.server';
 import { communityBanErasureOps } from '@/lib/communities/bans.server';
 import { communityNoteErasureOps } from '@/lib/communities/member-notes.server';
 import { feedbackErasureOps } from '@/lib/feedback/inbox.server';
+import { jamThemeErasureOps } from '@/lib/competitive/jam-themes.server';
 import { eventOverrideErasureOps } from '@/lib/events/occurrences.server';
 import { eventUpdateErasureOps } from '@/lib/events/updates.server';
 import { groupInviteErasureOps } from '@/lib/group-chat/invites.server';
@@ -59,7 +62,13 @@ import { repostMuteErasureOps } from '@/lib/feed/repost-mutes.server';
 import { blockMuteErasureOps } from '@/lib/moderation/blocked-muted.server';
 import { savedReplyErasureOps } from '@/lib/messages/saved-replies.server';
 import { leaderboardErasureOps } from '@/lib/game/leaderboard-privacy.server';
+import { assistErasureOps } from '@/lib/game/assist-run.server';
 import { matchResultErasureOps } from '@/lib/tournaments/match-results.server';
+import { matchScheduleErasureOps } from '@/lib/tournaments/scheduling.server';
+import { studioHistoryErasureOps } from '@/lib/studio/project-history.server';
+import { readingTimeErasureOps } from '@/lib/reading/time.server';
+import { bulkErasureOps } from '@/lib/bulk/bulk.server';
+import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -527,6 +536,43 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // s06-20 match-results
     // Match rows are tournament records and stay; where the member was the claimant or disputer the reference is nulled.
     ...matchResultErasureOps(userId),
+
+    // Sprint 07 erasures (docs/autonomous/sprint-07/plan.md §Anchors): each feature adds its operations under its own line.
+    // s07-02 game-assists
+    // The cross-game assist preference is deleted with the member; a run-start claim in Redis expires on its own.
+    ...assistErasureOps(userId),
+
+    // s07-05 group-mentions
+    // Mentions that name the member go; the member's own messages keep theirs.
+    ...groupMentionErasureOps(userId),
+
+    // s07-06 match-scheduling
+    // A live time proposal the member made is withdrawn (the cascade never fires for an anonymised account).
+    ...matchScheduleErasureOps(userId),
+
+    // s07-07 jam-themes
+    ...jamThemeErasureOps(userId),
+
+    // s07-09 deck-folders
+    // Private deck folders (the cascade never fires for an anonymised account); decks keep, folderless.
+    ...deckFolderErasureOps(userId),
+
+    // s07-14 studio-history
+    // Earlier Studio project versions (the cascade never fires for an anonymised account).
+    ...studioHistoryErasureOps(userId),
+
+    // s07-15 bulk-durable
+    // Bulk clean-up operations (the cascade never fires for an anonymised account; a run in progress stops at its next chunk).
+    ...bulkErasureOps(userId),
+
+    // s07-18 reading-time
+    // Reading time rows and the two reading settings go (the cascade never fires for an anonymised account).
+    ...readingTimeErasureOps(userId),
+
+    // s07-20 erasure-coverage
+    // The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, ...); the
+    // registry in erasure-registry.ts classifies every other model.
+    ...coverageErasureOps(userId),
 
 
     // 3. Scrub PII from the profile.

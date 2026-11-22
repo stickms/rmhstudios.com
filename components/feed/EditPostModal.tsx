@@ -14,6 +14,7 @@ import {
 import { Button } from'@/components/ui/button';
 import { Textarea } from'@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { QUIZ_EXPLANATION_MAX } from '@/lib/feed/quiz-poll';
 import { MAX_CONTENT_WARNING_LENGTH, checkContentWarningInput } from '@/lib/feed/content-warning';
 import { toast } from '@/lib/toast';
 import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-limits';
@@ -34,11 +35,14 @@ interface EditPostModalProps {
  /** The reason for the content warning, if any (s06-16). */
  initialContentWarning?: string | null;
  initialSensitive?: boolean;
+ /** s07-19: the post's quiz, for its author: the options, the current answer and explanation, and whether votes have locked it. */
+ quiz?: { options: { id: string; text: string }[]; correctOptionId: string; explanation: string; locked: boolean };
  onSaved: (
  content: string,
  gifUrl: string | null,
  gifAlt: string | null,
  warning: { isSensitive: boolean; contentWarning: string | null },
+ quiz?: { correctOptionId: string; explanation: string },
  ) => void;
 }
 
@@ -52,9 +56,13 @@ export function EditPostModal({
  initialGifAlt,
  initialContentWarning,
  initialSensitive,
+ quiz,
  onSaved,
 }: EditPostModalProps) {
- const { t } = useTranslation(['feed', 'content-warnings']);
+ const { t } = useTranslation(['feed', 'content-warnings', 'quiz-polls']);
+ const quizName = useId();
+ const [quizAnswer, setQuizAnswer] = useState<string>(quiz?.correctOptionId ??'');
+ const [quizWhy, setQuizWhy] = useState<string>(quiz?.explanation ??'');
  const warningId = useId();
  const [content, setContent] = useState(initialContent);
  const [gifUrl, setGifUrl] = useState<string>(initialGifUrl ??'');
@@ -80,6 +88,8 @@ export function EditPostModal({
  const trimmed = content.trim();
  if ((!trimmed && !gifUrl.trim()) || trimmed.length > MAX_RMHARK_LENGTH || !warningCheck.ok) return;
  const next = nextWarning();
+ // The answer and explanation go only when they changed and the quiz is not locked by votes.
+ const quizChanged = !!quiz && !quiz.locked && (quizAnswer !== quiz.correctOptionId || quizWhy.trim() !== quiz.explanation);
  setSaving(true);
  try {
  await api(editPostApi, {
@@ -91,9 +101,16 @@ export function EditPostModal({
  gifAlt: gifUrl.trim() ? gifAlt.trim() || null : null,
  isSensitive: next.isSensitive,
  contentWarning: next.contentWarning,
+ ...(quizChanged ? { quizCorrectOptionId: quizAnswer, quizExplanation: quizWhy.trim() || null } : {}),
  },
  });
- onSaved(trimmed, gifUrl.trim() || null, gifUrl.trim() ? gifAlt.trim() || null : null, next);
+ onSaved(
+ trimmed,
+ gifUrl.trim() || null,
+ gifUrl.trim() ? gifAlt.trim() || null : null,
+ next,
+ quizChanged ? { correctOptionId: quizAnswer, explanation: quizWhy.trim() } : undefined,
+ );
  onOpenChange(false);
  toast.success(t('post-updated', { defaultValue:'Post updated'}));
  } catch (e) {
@@ -134,6 +151,32 @@ export function EditPostModal({
  {t('warning-field-hint', { ns: 'content-warnings', defaultValue:'A reason covers the post, text and media, until a reader chooses to show it.'})}
  </p>
  </div>
+ {quiz && (
+ <fieldset className="mt-3" disabled={quiz.locked}>
+ <legend className="t-label mb-1">{t('quiz-edit-heading', { ns: 'quiz-polls', defaultValue:'Quiz answer'})}</legend>
+ {quiz.locked && (
+ <p className="t-meta mb-1">
+ {t('quiz-locked', { ns: 'quiz-polls', defaultValue:'Somebody has answered, so the answer and explanation are locked.'})}
+ </p>
+ )}
+ {quiz.options.map((o) => (
+ <label key={o.id} className="t-body flex min-h-9 items-center gap-2">
+ <input
+ type="radio"
+ name={`${quizName}-answer`}
+ checked={quizAnswer === o.id}
+ onChange={() => setQuizAnswer(o.id)}
+ className="size-4 shrink-0 accent-[var(--site-text)]"
+ />
+ {o.text}
+ </label>
+ ))}
+ <label className="t-label mt-2 block" htmlFor={`${quizName}-why`}>
+ {t('quiz-explanation-label', { ns: 'quiz-polls', defaultValue:'Explanation'})}
+ </label>
+ <Input id={`${quizName}-why`} value={quizWhy} onChange={(e) => setQuizWhy(e.target.value)} maxLength={QUIZ_EXPLANATION_MAX} />
+ </fieldset>
+ )}
  {/* GIF section */}
  <div className="mt-3 relative rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">

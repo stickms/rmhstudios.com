@@ -15,13 +15,15 @@ export const CLAIM_WINDOW_MS =
   60_000;
 export const DISPUTE_NOTE_MAX = 300;
 
-/** The `resultSource` values a settled match can carry (`admin` is the host's or an admin's report). */
+/** The `resultSource` values a settled match can carry (`admin` is the host's or an admin's report; `walkover` an award). */
 export const RESULT_SOURCES =
   [
     'agreement',
     'admin',
     'authoritative',
     'unanswered',
+    // s07-06: the host awarded an overdue match.
+    'walkover',
   ] as const;
 export type ResultSource =
   (typeof RESULT_SOURCES)[number];

@@ -29,14 +29,13 @@ import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { recordLinkDomains } from '@/lib/safety/link-risk.server';
 import { lruL1 } from '@/lib/cached.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
-import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
+import { prepareCommunityPost } from '@/lib/communities/post-gate.server';
 import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
 import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
-import { derivePostKind } from '@/lib/communities/automod';
 import { listFlairs } from '@/lib/communities/flairs.server';
+import { normalizeExplanation, quizAnswerOptionId, quizRevealFor, stripQuizAnswer } from '@/lib/feed/quiz-poll';
 import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { normalizeContentWarning, previewTextFor } from '@/lib/feed/content-warning';
-import { challengeEntryError } from '@/lib/communities/challenge.server';
 import { enqueuePostDiscovery } from '@/lib/discovery/jobs.server';
 import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
 
@@ -220,81 +219,32 @@ export const route = apiRoute('/api/rmharks', {
         .slice(0, imageUrls?.length ?? 0)
         .map((a) => a.trim());
 
-      // Posting into a community requires membership.
-      if (communityId) {
-        const member = await prisma.communityMember.findUnique({
-          where: { communityId_userId: { communityId, userId: session.user.id } },
-          select: { id: true },
-        });
-        if (!member) {
-          return Response.json({ error: 'Join the community to post in it' }, { status: 403 });
-        }
-      }
-
-      // Community gate (N1 flair, S2 verification, N4 AutoMod). One call; the
-      // outcome decides below whether the post is refused, held, flagged, or
-      // goes straight through.
+      // Membership, ban/timeout, the community gate (N1 flair, S2 verification, N4 AutoMod, image
+      // descriptions) and the challenge window: one shared call, also used by POST /api/v1/posts. The
+      // outcome decides below whether the post is refused, held, flagged, or goes straight through.
       let held = false;
       let flagRule: string | null = null;
       let holdRule = 'AutoMod';
       if (communityId) {
-        const gate = await gateCommunityContent({
+        const prepared = await prepareCommunityPost({
           communityId,
           userId: session.user.id,
-          target: 'post',
           content,
-          postKind: derivePostKind({
-            content,
-            gifUrl,
-            imageUrls,
-            hasPoll: !!poll,
-            isQuote: !!originalId,
-          }),
+          imageUrls,
+          imageAlts: cleanImageAlts,
+          gifUrl,
+          gifAlt,
           flairId,
+          challengeId,
+          hasPoll: !!poll,
+          isQuote: !!originalId,
         });
-        if (gate.kind === 'deny') {
-          return Response.json(
-            { error: gate.error, code: gate.code, ...(gate.endsAt !== undefined ? { endsAt: gate.endsAt } : {}) },
-            { status: gate.status },
-          );
+        if (!prepared.ok) {
+          return Response.json(prepared.refusal.body, { status: prepared.refusal.status });
         }
-        if (gate.kind === 'remove') {
-          await logRemoved({
-            communityId,
-            entityType: 'rmhark',
-            postId: null,
-            authorId: session.user.id,
-            ruleName: gate.ruleName,
-            content,
-          });
-          return Response.json(
-            {
-              error: `Your post was removed by this community's AutoMod rule "${gate.ruleName}".`,
-              code: 'automod_removed',
-            },
-            { status: 422 },
-          );
-        }
-        if (challengeId) {
-          const challengeError = await challengeEntryError(
-            communityId,
-            challengeId,
-            session.user.id,
-          );
-          if (challengeError) {
-            return Response.json(
-              { error: challengeError, code: 'challenge_closed' },
-              { status: 409 },
-            );
-          }
-        }
-        // A challenge entry is never invisible: a hold becomes a flag so the
-        // mods still see it without the entry vanishing from the contest.
-        if (gate.kind === 'hold' && !challengeId) {
-          held = true;
-          holdRule = gate.ruleName;
-        } else if (gate.kind === 'hold') flagRule = gate.ruleName;
-        else if (gate.kind === 'allow' && gate.flag) flagRule = gate.flag.ruleName;
+        held = prepared.held;
+        holdRule = prepared.holdRule;
+        flagRule = prepared.flagRule;
       } else if (flairId || challengeId) {
         return Response.json(
           { error: 'Flair and challenges only apply to community posts' },
@@ -415,7 +365,7 @@ export const route = apiRoute('/api/rmharks', {
         await recordPostsPlusTx(tx, created.id, session.user.id, plusPlan);
 
         if (poll) {
-          await tx.rMHarkPoll.create({
+          const madePoll = await tx.rMHarkPoll.create({
             data: {
               rmheetId: created.id,
               question: poll.question.trim(),
@@ -433,6 +383,16 @@ export const route = apiRoute('/api/rmharks', {
             },
             include: { options: true },
           });
+          // s07-19: a quiz stores its correct option (an id, known only now) and its explanation.
+          if (poll.quiz) {
+            await tx.rMHarkPoll.update({
+              where: { id: madePoll.id },
+              data: {
+                correctOptionId: quizAnswerOptionId(madePoll.options, poll.correctIndex),
+                explanation: normalizeExplanation(poll.explanation),
+              },
+            });
+          }
         }
 
         return created;
@@ -494,6 +454,8 @@ export const route = apiRoute('/api/rmharks', {
             question: createdPoll.question,
             multiSelect: createdPoll.multiSelect,
             ...(createdPoll.ranked ? { ranked: true as const } : {}),
+            // The author just wrote the answer, so the reply to the author carries it (`quizRevealFor`).
+            ...quizRevealFor(createdPoll, { viewerId: session.user.id, authorId: session.user.id }, false),
             totalVotes: 0,
             options: createdPoll.options.map((o) => ({
               id: o.id,
@@ -598,7 +560,12 @@ export const route = apiRoute('/api/rmharks', {
       // audience reaches the author's own streams only. The stream endpoint
       // targets this to each viewer's follow graph using `authorId`.
       // Paid posts must broadcast a locked teaser — never the unlocked content.
-      const broadcastBase = { ...item, original: broadcastOriginal };
+      // A quiz's answer never rides a broadcast: every open stream is somebody who has not voted (s07-19).
+      const broadcastBase = {
+        ...item,
+        original: broadcastOriginal,
+        poll: item.poll ? stripQuizAnswer(item.poll) : undefined,
+      };
       const broadcastItem =
         unlockPrice && unlockPrice > 0
           ? {

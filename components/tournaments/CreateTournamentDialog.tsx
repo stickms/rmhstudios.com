@@ -23,6 +23,7 @@ import {
 import { isCheckInMinutes } from '@/lib/tournaments/checkin';
 import { CheckInCreateFields } from '@/components/tournaments/CheckInPanel';
 import { SeedingMethodField } from '@/components/tournaments/SeedingPanel';
+import { MatchDeadlineField, deadlineChoice } from '@/components/tournaments/MatchSchedule';
 import { ratingSeedingAvailable, type SeedingMethod } from '@/lib/tournaments/seeding';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -111,6 +112,7 @@ export function CreateTournamentDialog({
   // Local wall-clock `datetime-local` value; '' = no start time.
   const [startsAtLocal, setStartsAtLocal] = useState('');
   const [checkInValue, setCheckInValue] = useState('');
+  const [deadlineValue, setDeadlineValue] = useState('');
   const [seeding, setSeeding] = useState<SeedingMethod>('join');
   // Rating seeding needs a ranked game; fall back to sign-up order when the game changes.
   // (adjusted while rendering, so the form never shows a method the game cannot use)
@@ -143,6 +145,7 @@ export function CreateTournamentDialog({
                 maxPlayers,
                 startsAt: startsAtIso,
                 checkInMinutes: checkInChoice,
+                matchDeadlineHours: deadlineChoice(deadlineValue),
                 seeding,
               },
             },
@@ -521,6 +524,8 @@ export function CreateTournamentDialog({
             onCheckInChange={setCheckInValue}
             hasStart={!!startsAtIso}
           />
+
+          <MatchDeadlineField id="t-deadline" value={deadlineValue} onChange={setDeadlineValue} />
 
           <SeedingMethodField id="t-seeding" value={seeding} gameId={gameId} onChange={setSeeding} />
         </div>

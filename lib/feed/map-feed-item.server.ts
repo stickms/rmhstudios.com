@@ -12,6 +12,7 @@ import { mapQuotedOriginal } from '@/lib/feed/quoted-original';
 import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
+import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
 
 /** One per-emoji reaction summary entry, as it appears on a FeedItem. */
 type ReactionSummary = NonNullable<FeedItem['reactions']>[number];
@@ -179,9 +180,15 @@ export function rmharkInclude(viewerId: string | null) {
   };
 }
 
-function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
+function mapPoll(
+  poll: any,
+  countsHidden = false,
+  /** s07-19: who is reading and who wrote the post; a quiz's answer is theirs only when earned. */
+  reader: { viewerId: string | null; authorId: string } = { viewerId: null, authorId: '' },
+): FeedPoll | undefined {
   if (!poll) return undefined;
   const lifecycle = pollLifecycleView(poll);
+  const voted = viewerHasVoted(poll.options);
   const totalVotes = poll.options.reduce((s: number, o: any) => s + pollOptionCount(poll, o), 0);
   return {
     id: poll.id,
@@ -189,6 +196,7 @@ function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
     multiSelect: poll.multiSelect,
     ...lifecycle,
     ...rankedPollFields(poll, { ended: lifecycle.ended, countsHidden }),
+    ...quizRevealFor(poll, reader, voted),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -225,7 +233,10 @@ export function mapRmharkToFeedItem(
     original: r.original
       ? mapQuotedOriginal(r.original, resolveUser(r.original.user), viewerId, blockedAuthorIds)
       : undefined,
-    poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
+    poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId), {
+      viewerId,
+      authorId: r.userId,
+    }),
     gifUrl: r.gifUrl ?? undefined,
     gifAlt: r.gifAlt ?? undefined,
     imageUrls: r.imageUrls ?? undefined,

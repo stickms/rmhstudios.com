@@ -18,7 +18,7 @@ const db = vi.hoisted(() => ({
   nextId: 1,
 })) as unknown as FakeDb;
 const getSession = vi.hoisted(() => vi.fn());
-const saveReview = vi.hoisted(() => vi.fn(async () => undefined));
+const saveReview = vi.hoisted(() => vi.fn(async () => ({ leech: false })));
 const queryRaw = vi.hoisted(() => vi.fn(async () => [] as unknown[]));
 
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession } } }));

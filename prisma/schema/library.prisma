@@ -512,10 +512,31 @@ model ReadingPrefs {
   wantPublic    Boolean @default(false)
   readingPublic Boolean @default(false)
   readPublic    Boolean @default(false)
+  /// s07-18 — opt-in reading time; nothing is measured while this is false.
+  trackTime           Boolean @default(false)
+  /// s07-18 — weekly target in minutes (10-2000), shown on /reading only.
+  weeklyMinutesTarget Int?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("reading_prefs")
+}
+
+/// s07-18 — seconds a member spent reading one document on one day (the
+/// member's own time zone). Private: never in a public payload.
+model ReadingTimeDay {
+  userId    String
+  day       String         @db.VarChar(10)
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  seconds   Int
+  updatedAt DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day, docKind, docKey])
+  @@index([userId, day])
+  @@map("reading_time_day")
 }
 
 /// L5 — a news "story": a set of related articles shown as one timeline.

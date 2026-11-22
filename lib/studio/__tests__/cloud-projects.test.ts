@@ -99,8 +99,16 @@ vi.mock('@/lib/prisma.server', () => {
       return { count: 1 };
     },
   };
+  // Earlier versions are covered by studio-history.test.ts; here a replacing save only needs the table to exist.
+  const studioProjectRevision = {
+    findFirst: async () => null,
+    findMany: async () => [],
+    create: async () => ({}),
+    deleteMany: async () => ({ count: 0 }),
+  };
   const prisma = {
     studioProject,
+    studioProjectRevision,
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma),
   };
   return { prisma };

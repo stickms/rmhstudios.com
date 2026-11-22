@@ -213,6 +213,23 @@ export const NAMESPACES = [
   "away-message",
   "ranked-polls",
   "match-results",
+  // Sprint 07 (docs/autonomous/sprint-07): one namespace per feature.
+  "slice-it-clipboard",
+  "game-assists",
+  "device-data",
+  "group-admins",
+  "group-mentions",
+  "match-scheduling",
+  "jam-themes",
+  "study-queue",
+  "deck-folders",
+  "admin-batch-lookup",
+  "studio-history",
+  "bulk-durable",
+  "community-alt-text",
+  "build-screenshots",
+  "reading-time",
+  "quiz-polls",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

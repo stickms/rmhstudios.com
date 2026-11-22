@@ -37,6 +37,7 @@ import { quotedOriginalVisibleTo, withholdQuotedOriginal } from './quoted-origin
 import { getSignals } from './signals.server';
 import { getRepostMutedIds } from './repost-mutes.server';
 import { countsHiddenFrom, nullPostCounts } from './quiet-counts';
+import { restampQuizReveal } from './quiz-poll';
 
 type Surface = 'following' | 'foryou';
 
@@ -248,9 +249,12 @@ export async function reconcileCachedPage(
     const current = row
       ? { ...withAlts, isSensitive: row.isSensitive, contentWarning: row.contentWarning ?? undefined }
       : withAlts;
+    // s07-19: a quiz's answer is applied per viewer after the cache, never trusted from the cached card.
+    const stamped =
+      current.poll && row ? { ...current, poll: restampQuizReveal(current.poll, viewerId, row.userId) } : current;
     return countsHiddenFrom(row?.userId, row?.user?.profile?.hideCountsOnMine, viewerId)
-      ? nullPostCounts(current)
-      : current;
+      ? nullPostCounts(stamped)
+      : stamped;
   });
 
   return { items: reconciled, needsRefresh };

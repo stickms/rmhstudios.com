@@ -23,7 +23,6 @@
   "bulk-preview-count_other": "{{count}} {{unit}} match this filter",
   "bulk-preview-cta": "Preview matches",
   "bulk-preview-failed": "Could not build a preview.",
-  "bulk-progress-count": "{{processed}} of {{total}} done",
   "bulk-progress-label": "Cleanup progress",
   "bulk-replies-comments-label": "Replies to comments only",
   "bulk-replies-posts-label": "Thread follow-ups only",

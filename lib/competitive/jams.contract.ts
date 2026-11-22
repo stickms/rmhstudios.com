@@ -48,6 +48,10 @@ export const createJamApi =
       startsAt: Date;
       submitEndsAt: Date;
       ratingEndsAt: Date;
+      /** s07-07: opt-in theme vote (3 to 12 candidates; `theme` is then the first candidate until the start). */
+      themeVoting?: boolean;
+      themeCandidates?: string[];
+      themeVoteOpensAt?: Date;
     };
     res: {
       slug: string;

@@ -23,25 +23,44 @@
  *
  * ── Where this runs ───────────────────────────────────────────────────────
  *
- * `startBulkOperation` detaches the run from the request that created it, which
- * satisfies "must not run in a request" on a single web instance. It is not a
- * durable queue: a deploy mid-run leaves the row `RUNNING`, and
- * `reclaimStalledOperations` is the seam a pg-boss job in `lib/jobs/` should
- * call to pick those up — `runBulkOperation(id)` is idempotent for exactly that
- * reason (it resumes from the highest id it already processed).
+ * The POST route enqueues the operation id on the `bulk.run` pg-boss queue
+ * (`./queue.server`), worked by the `jobs` process; when the queue is unavailable
+ * it falls back to `startBulkOperation`, a detached run in the web process.
+ *
+ * **A lease, not a status, decides who runs.** A runner claims an operation with
+ * one conditional update (PENDING, or RUNNING whose `heartbeatAt` is older than
+ * `LEASE_MS`), renews `heartbeatAt` with every chunk, and persists `cursorId`
+ * (the last id it finished). Every chunk's progress write is a compare-and-set on
+ * the lease it holds, so a runner whose lease was taken (or whose operation was
+ * cancelled) stops at its next chunk. `reclaimStalledOperations` runs every minute
+ * in the jobs worker, re-queues operations whose lease expired and fails one that
+ * was re-queued `MAX_RECLAIMS` times. `runBulkOperation(id)` is idempotent: a
+ * resumed run continues after `cursorId`, and the predicate itself excludes work
+ * already done.
  *
  * `.server.ts`: never import from a component.
  */
 
 import { prisma } from '@/lib/prisma.server';
 import { unfollowUser } from '@/lib/social/engagement.server';
+import { adjustNotifUnread } from '@/lib/notifications.server';
 import { softDeleteCommentAsAuthor, softDeletePostAsAuthor } from '@/lib/trash/trash.server';
 import { excerptOf } from '@/lib/trash/types';
-import { BULK_CHUNK_SIZE, BULK_SAMPLE_SIZE, buildWhere, droppedFilters, isBulkKind, isTerminal, normalizeFilter, type BulkFilter, type BulkKind, type BulkOperationView, type BulkPreview, type BulkSample, type BulkStatus } from '@/lib/bulk/types';
+import { REPEATED_RESTARTS_ERROR, BULK_CHUNK_SIZE, BULK_SAMPLE_SIZE, buildWhere, droppedFilters, isBulkKind, normalizeFilter, type BulkFilter, type BulkKind, type BulkOperationView, type BulkPreview, type BulkSample, type BulkStatus } from '@/lib/bulk/types';
 import { bulkFilterSchema } from '@/lib/bulk/schema';
 
-/** How long a `RUNNING` row may go without progress before it is reclaimable. */
+/**
+ * How old a `RUNNING` row with no heartbeat at all may be before it is reclaimable. Only runs that started before
+ * the lease existed have no heartbeat; every newer run is judged by `LEASE_MS`.
+ */
 export const STALLED_AFTER_MS = 10 * 60 * 1000;
+
+/** A runner owns an operation while its `heartbeatAt` is newer than this. */
+export const LEASE_MS = 2 * 60 * 1000;
+
+/** The sweep re-queues an operation at most this many times; the next time it is stopped as FAILED. */
+export const MAX_RECLAIMS = 5;
+
 
 /* -------------------------------------------------------------------------- */
 /* Counting and sampling                                                      */
@@ -65,6 +84,10 @@ async function countMatches(kind: BulkKind, userId: string, filter: BulkFilter, 
       return prisma.historyEntry.count({ where });
     case 'clear-bookmarks':
       return prisma.savedItem.count({ where });
+    case 'unlike-posts':
+      return prisma.rMHarkLike.count({ where });
+    case 'delete-reposts':
+      return prisma.rMHarkRepost.count({ where });
   }
 }
 
@@ -133,6 +156,22 @@ async function sampleMatches(
       detail: r.updatedAt.toISOString().slice(0, 10),
     }));
   }
+  if (kind === 'unlike-posts' || kind === 'delete-reposts') {
+    const select = {
+      id: true,
+      createdAt: true,
+      rmhark: { select: { content: true } },
+    } as const;
+    const rows =
+      kind === 'unlike-posts'
+        ? await prisma.rMHarkLike.findMany({ where, take, orderBy: { createdAt: 'asc' }, select })
+        : await prisma.rMHarkRepost.findMany({ where, take, orderBy: { createdAt: 'asc' }, select });
+    return rows.map((r) => ({
+      id: r.id,
+      label: excerptOf(r.rmhark?.content ?? '') || '(post)',
+      detail: r.createdAt.toISOString().slice(0, 10),
+    }));
+  }
   // Bookmarks are `SavedItem` rows (entityType 'rmhark'). The table is
   // polymorphic, so there is no relation to the post: its text is fetched by id.
   const rows = await prisma.savedItem.findMany({
@@ -190,6 +229,8 @@ interface BulkRow {
   error: string | null;
   createdAt: Date;
   finishedAt: Date | null;
+  reclaims: number;
+  cursorId?: string | null;
 }
 
 /** Parse a persisted row back into the wire shape, failing closed on junk JSON. */
@@ -205,6 +246,7 @@ export function toBulkView(row: BulkRow): BulkOperationView {
     error: row.error,
     createdAt: row.createdAt.toISOString(),
     finishedAt: row.finishedAt?.toISOString() ?? null,
+    reclaims: row.reclaims,
   };
 }
 
@@ -219,6 +261,8 @@ const SELECT = {
   error: true,
   createdAt: true,
   finishedAt: true,
+  reclaims: true,
+  cursorId: true,
 } as const;
 
 export type CreateResult =
@@ -285,7 +329,7 @@ export async function cancelBulkOperation(userId: string, id: string): Promise<b
   return count > 0;
 }
 
-/** Detach the run from the request that created it. Never rejects. */
+/** Detach the run from the request that created it, for when the queue is unavailable. Never rejects. */
 export function startBulkOperation(id: string): void {
   void runBulkOperation(id).catch((error) => {
     console.error(`[bulk] operation ${id} crashed:`, error);
@@ -296,6 +340,13 @@ export function startBulkOperation(id: string): void {
 /* The runner                                                                 */
 /* -------------------------------------------------------------------------- */
 
+/** One row of the next chunk. `rmheetId` is set for the like and repost kinds, `followingId` for unfollow. */
+interface ChunkRow {
+  id: string;
+  followingId?: string;
+  rmheetId?: string;
+}
+
 /** Ids for the next chunk, strictly after `afterId`. Ordered so the walk advances. */
 async function nextChunk(
   kind: BulkKind,
@@ -303,7 +354,7 @@ async function nextChunk(
   filter: BulkFilter,
   now: Date,
   afterId: string | null,
-): Promise<{ id: string; followingId?: string }[]> {
+): Promise<ChunkRow[]> {
   const base = buildWhere(kind, userId, filter, now);
   const where = { ...base, ...(afterId ? { id: { gt: afterId } } : {}) } as never;
   const args = { where, orderBy: { id: 'asc' as const }, take: BULK_CHUNK_SIZE };
@@ -319,15 +370,15 @@ async function nextChunk(
       return prisma.historyEntry.findMany({ ...args, select: { id: true } });
     case 'clear-bookmarks':
       return prisma.savedItem.findMany({ ...args, select: { id: true } });
+    case 'unlike-posts':
+      return prisma.rMHarkLike.findMany({ ...args, select: { id: true, rmheetId: true } });
+    case 'delete-reposts':
+      return prisma.rMHarkRepost.findMany({ ...args, select: { id: true, rmheetId: true } });
   }
 }
 
-/** Apply the operation to one chunk. Returns how many rows it actually changed. */
-async function applyChunk(
-  kind: BulkKind,
-  userId: string,
-  rows: { id: string; followingId?: string }[],
-): Promise<number> {
+/** Apply the operation to one chunk of the kinds that go through another module. Returns how many rows it changed. */
+async function applyChunk(kind: BulkKind, userId: string, rows: ChunkRow[]): Promise<number> {
   switch (kind) {
     case 'delete-posts': {
       let done = 0;
@@ -370,11 +421,160 @@ async function applyChunk(
       });
       return count;
     }
+    case 'unlike-posts':
+    case 'delete-reposts':
+      // These run as one transaction with their progress write: `removeEngagementChunk`.
+      throw new Error(`[bulk] ${kind} is applied by removeEngagementChunk`);
   }
 }
 
+/** Thrown inside a chunk's transaction when the runner no longer holds the lease; rolls the chunk back. */
+class LeaseLost extends Error {}
+
+/** Roll a chunk back from inside its transaction. */
+function leaseLost(): never {
+  throw new LeaseLost('lease lost');
+}
+
+/** A chunk's outcome: `false` means this runner no longer owns the operation and must stop. */
+type ChunkOutcome = { held: true } | { held: false };
+
 /**
- * Walk the match set in chunks until it is exhausted or the run is cancelled.
+ * Remove one chunk of the member's likes or reposts, keep the post counters
+ * right, retract the notifications those likes or reposts created, and advance
+ * the cursor — all in ONE transaction, so a crash leaves either all of it or none.
+ *
+ * Idempotent: rows are deleted by id AND `userId`, and a post's counter goes down
+ * by the number of its rows this delete actually removed, so a chunk run again
+ * after a crash (or racing a single unlike) finds its rows gone and changes
+ * nothing. The progress write is last and is a compare-and-set on the lease: if
+ * another runner took the operation, or it was cancelled, it matches no row and
+ * the whole chunk is rolled back.
+ */
+async function removeEngagementChunk(
+  kind: 'unlike-posts' | 'delete-reposts',
+  userId: string,
+  id: string,
+  rows: ChunkRow[],
+  lease: Date,
+  beat: Date,
+): Promise<ChunkOutcome> {
+  const isLike = kind === 'unlike-posts';
+  const lastId = rows[rows.length - 1].id;
+  try {
+    const done = await prisma.$transaction(
+      async (tx) => {
+        const perPost = new Map<string, number>();
+        let changed = 0;
+        for (const row of rows) {
+          const { count } = isLike
+            ? await tx.rMHarkLike.deleteMany({ where: { id: row.id, userId } })
+            : await tx.rMHarkRepost.deleteMany({ where: { id: row.id, userId } });
+          if (count > 0 && row.rmheetId) {
+            changed += count;
+            perPost.set(row.rmheetId, (perPost.get(row.rmheetId) ?? 0) + count);
+          }
+        }
+        for (const [postId, n] of perPost) {
+          await tx.rMHark.updateMany({
+            where: { id: postId },
+            data: isLike ? { likeCount: { decrement: n } } : { repostCount: { decrement: n } },
+          });
+        }
+        // The single unlike / unrepost retracts the (unread) notification; so does a bulk one.
+        const notifications = perPost.size
+          ? await tx.notification.findMany({
+              where: {
+                actorId: userId,
+                type: isLike ? 'LIKE' : 'REPOST',
+                entityType: 'rmhark',
+                entityId: { in: [...perPost.keys()] },
+                read: false,
+              },
+              select: { id: true, userId: true },
+            })
+          : [];
+        if (notifications.length > 0) {
+          await tx.notification.deleteMany({ where: { id: { in: notifications.map((n) => n.id) } } });
+        }
+        const progress = await tx.bulkOperation.updateMany({
+          where: { id, status: 'RUNNING', heartbeatAt: lease },
+          data: { heartbeatAt: beat, processed: { increment: changed }, cursorId: lastId },
+        });
+        if (progress.count === 0) leaseLost();
+        return notifications;
+      },
+      { timeout: 30_000, maxWait: 5_000 },
+    );
+
+    // Recipients' denormalized unread counters (best effort, after commit, like `removeNotification`).
+    const perRecipient = new Map<string, number>();
+    for (const n of done) perRecipient.set(n.userId, (perRecipient.get(n.userId) ?? 0) + 1);
+    for (const [recipient, count] of perRecipient) {
+      await adjustNotifUnread(recipient, -count).catch(() => {});
+    }
+    return { held: true };
+  } catch (error) {
+    if (error instanceof LeaseLost) return { held: false };
+    throw error;
+  }
+}
+
+/** One chunk of any kind, plus the progress write. */
+async function processChunk(
+  kind: BulkKind,
+  userId: string,
+  id: string,
+  rows: ChunkRow[],
+  lease: Date,
+  beat: Date,
+): Promise<ChunkOutcome> {
+  if (kind === 'unlike-posts' || kind === 'delete-reposts') {
+    return removeEngagementChunk(kind, userId, id, rows, lease, beat);
+  }
+  const changed = await applyChunk(kind, userId, rows);
+  // The work is done and cannot be rolled back, so its count is recorded even when
+  // the operation was cancelled meanwhile: the CAS accepts RUNNING and CANCELLED, and
+  // refuses only a lease someone else holds.
+  const progress = await prisma.bulkOperation.updateMany({
+    where: { id, status: { in: ['RUNNING', 'CANCELLED'] }, heartbeatAt: lease },
+    data: { heartbeatAt: beat, processed: { increment: changed }, cursorId: rows[rows.length - 1].id },
+  });
+  if (progress.count === 0) return { held: false };
+  const current = await prisma.bulkOperation.findUnique({ where: { id }, select: { status: true } });
+  return { held: current?.status === 'RUNNING' };
+}
+
+/**
+ * Take the lease: one conditional update that succeeds for a PENDING operation, a
+ * RUNNING one whose lease expired, or a RUNNING one from before the lease existed
+ * (no heartbeat) that has made no progress for `STALLED_AFTER_MS`. Returns the
+ * heartbeat this runner now holds, or null when another runner owns the operation
+ * (or it is finished).
+ */
+async function claimLease(id: string, now: Date): Promise<Date | null> {
+  const beat = new Date();
+  const { count } = await prisma.bulkOperation.updateMany({
+    where: {
+      id,
+      OR: [
+        { status: 'PENDING' },
+        { status: 'RUNNING', heartbeatAt: { lt: new Date(now.getTime() - LEASE_MS) } },
+        {
+          status: 'RUNNING',
+          heartbeatAt: null,
+          createdAt: { lt: new Date(now.getTime() - STALLED_AFTER_MS) },
+        },
+      ],
+    },
+    data: { status: 'RUNNING', heartbeatAt: beat },
+  });
+  return count > 0 ? beat : null;
+}
+
+/**
+ * Walk the match set in chunks until it is exhausted, the run is cancelled, or
+ * another runner takes the lease.
  *
  * The walk is a keyset over `id`, not a "re-query the predicate until it comes
  * back empty" drain. A drain loop looks simpler and is a hang waiting to happen:
@@ -382,19 +582,18 @@ async function applyChunk(
  * already gone — stays in the predicate forever and the loop never terminates.
  * Advancing past the last id seen makes progress unconditional.
  *
- * Idempotent, so a reclaimed run resumes rather than double-counting. The keyset
- * restarts at the beginning, but the predicate itself excludes finished work —
- * `deletedAt: null` for the two soft deletes, and a deleted row for the three
- * hard ones — and `applyChunk` only counts rows it actually changed, so
- * `processed` accumulates on top of the previous attempt's total instead of
- * re-counting it.
+ * Resumable: `cursorId` is persisted with each chunk's progress, so a reclaimed
+ * run continues strictly after it. A run from before the cursor existed has none
+ * and starts again from the top; the predicate itself excludes finished work
+ * (`deletedAt: null`, or a deleted row) and `processed` only ever grows by the
+ * rows a chunk actually changed, so nothing is processed or counted twice.
+ *
+ * The time window of the filter is fixed at the operation's `createdAt`, so a
+ * resumed run selects exactly the rows the preview counted.
  */
 export async function runBulkOperation(id: string, now: Date = new Date()): Promise<void> {
-  const claimed = await prisma.bulkOperation.updateMany({
-    where: { id, status: { in: ['PENDING', 'RUNNING'] } },
-    data: { status: 'RUNNING' },
-  });
-  if (claimed.count === 0) return;
+  let lease = await claimLease(id, now);
+  if (!lease) return;
 
   const row = await prisma.bulkOperation.findUnique({ where: { id }, select: SELECT });
   if (!row) return;
@@ -403,38 +602,32 @@ export async function runBulkOperation(id: string, now: Date = new Date()): Prom
   const kind = view.kind;
   const userId = row.userId;
   const filter = view.filter;
+  const reference = row.createdAt;
 
-  let afterId: string | null = null;
-  let processed = row.processed;
+  let afterId: string | null = row.cursorId ?? null;
 
   try {
     for (;;) {
-      const chunk = await nextChunk(kind, userId, filter, now, afterId);
+      const chunk = await nextChunk(kind, userId, filter, reference, afterId);
       if (chunk.length === 0) break;
 
-      const changed = await applyChunk(kind, userId, chunk);
-      afterId = chunk[chunk.length - 1].id;
-      processed += changed;
-
-      // Write progress and re-read the status in the same round trip, so a
-      // cancel issued during the chunk is observed at its boundary.
-      const updated = await prisma.bulkOperation.update({
-        where: { id },
-        data: { processed },
-        select: { status: true },
-      });
-      if (isTerminal(updated.status)) {
+      const beat = new Date();
+      const outcome = await processChunk(kind, userId, id, chunk, lease, beat);
+      if (!outcome.held) {
+        // Cancelled, or another runner owns it now. Make sure a cancelled run has its end time.
         await prisma.bulkOperation.updateMany({
-          where: { id, finishedAt: null },
+          where: { id, status: { in: ['CANCELLED', 'DONE', 'FAILED'] }, finishedAt: null },
           data: { finishedAt: new Date() },
         });
         return;
       }
+      lease = beat;
+      afterId = chunk[chunk.length - 1].id;
     }
 
     await prisma.bulkOperation.updateMany({
-      where: { id, status: 'RUNNING' },
-      data: { status: 'DONE', processed, finishedAt: new Date() },
+      where: { id, status: 'RUNNING', heartbeatAt: lease },
+      data: { status: 'DONE', finishedAt: new Date() },
     });
   } catch (error) {
     // The message reaches the owner's own operations list, so it is truncated to
@@ -443,27 +636,62 @@ export async function runBulkOperation(id: string, now: Date = new Date()): Prom
     console.error(`[bulk] operation ${id} failed:`, error);
     await prisma.bulkOperation
       .updateMany({
-        where: { id, status: 'RUNNING' },
-        data: { status: 'FAILED', processed, error: message.slice(0, 300), finishedAt: new Date() },
+        where: { id, status: 'RUNNING', heartbeatAt: lease },
+        data: { status: 'FAILED', error: message.slice(0, 300), finishedAt: new Date() },
       })
       .catch(() => {});
   }
 }
 
+/** RUNNING rows whose lease expired: a stale heartbeat, or (before the lease existed) no heartbeat and an old start. */
+function expiredLeaseWhere(now: Date) {
+  return {
+    status: 'RUNNING',
+    OR: [
+      { heartbeatAt: { lt: new Date(now.getTime() - LEASE_MS) } },
+      { heartbeatAt: null, createdAt: { lt: new Date(now.getTime() - STALLED_AFTER_MS) } },
+    ],
+  };
+}
+
 /**
- * Ids of runs abandoned by a restarted process — `RUNNING` with no progress for
- * `STALLED_AFTER_MS`. Nothing calls this yet; it is the seam for a pg-boss job,
- * which would pass each id straight back to `runBulkOperation`.
+ * The reclaim sweep (every minute, in the jobs worker). Finds `RUNNING` operations
+ * whose lease expired — a restarted process stopped renewing it — and returns the
+ * ids to queue again, counting each in `reclaims`. An operation already re-queued
+ * `MAX_RECLAIMS` times is marked FAILED instead, so one that keeps dying never
+ * loops forever. Each change is a compare-and-set on the state it read, so two
+ * sweeps cannot count one operation twice.
  */
 export async function reclaimStalledOperations(
   now: Date = new Date(),
   take = 20,
 ): Promise<string[]> {
+  const expired = expiredLeaseWhere(now);
   const rows = await prisma.bulkOperation.findMany({
-    where: { status: 'RUNNING', createdAt: { lt: new Date(now.getTime() - STALLED_AFTER_MS) } },
+    where: expired,
     orderBy: { createdAt: 'asc' },
     take,
-    select: { id: true },
+    select: { id: true, reclaims: true },
   });
-  return rows.map((r) => r.id);
+  const requeue: string[] = [];
+  for (const r of rows) {
+    if (r.reclaims >= MAX_RECLAIMS) {
+      await prisma.bulkOperation.updateMany({
+        where: { id: r.id, reclaims: { gte: MAX_RECLAIMS }, ...expired },
+        data: { status: 'FAILED', error: REPEATED_RESTARTS_ERROR, finishedAt: now },
+      });
+      continue;
+    }
+    const { count } = await prisma.bulkOperation.updateMany({
+      where: { id: r.id, reclaims: r.reclaims, ...expired },
+      data: { reclaims: { increment: 1 } },
+    });
+    if (count > 0) requeue.push(r.id);
+  }
+  return requeue;
+}
+
+/** Account deletion: the member's operations go (anonymisation never fires the cascade). A live run stops at its next chunk. */
+export function bulkErasureOps(userId: string) {
+  return [prisma.bulkOperation.deleteMany({ where: { userId } })];
 }

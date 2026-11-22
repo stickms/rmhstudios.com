@@ -641,6 +641,19 @@ function InviteLinksBody({
                               },
                             )}
                       </p>
+                      {row.createdByName && (
+                        <p className="t-meta">
+                          {t(
+                            'created-by',
+                            {
+                              ns: 'group-admins',
+                              name: row.createdByName,
+                              defaultValue:
+                                'Made by {{name}}',
+                            },
+                          )}
+                        </p>
+                      )}
                     </div>
                     <CopyButton
                       value={`${origin}${invitePath(row.code)}`}

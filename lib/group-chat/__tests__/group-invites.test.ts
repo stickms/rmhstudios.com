@@ -246,6 +246,7 @@ function makeDb(
               m
                 ? {
                     id: m.id,
+                    role: m.role,
                     user: userSel(
                       k.userId,
                     ),
@@ -979,7 +980,7 @@ beforeEach(
 );
 
 describe('who manages links', () => {
-  it('only the owner creates, lists and revokes; a member is told no, a stranger that nothing exists', async () => {
+  it('only the owner or an admin creates, lists and revokes; a plain member is told no, a stranger that nothing exists', async () => {
     const link =
       await mk();
     for (const [
@@ -1062,6 +1063,30 @@ describe('who manages links', () => {
         .invites[0]!
         .revokedAt,
     ).toBeNull();
+  });
+
+  it('an admin creates, lists and revokes, any link including the owner’s; a demoted one is told no', async () => {
+    h.s.users.push(user('adm'));
+    h.s.members.push({
+      id: 'adm1',
+      chatId: CHAT,
+      userId: 'adm',
+      role: 'admin',
+      joinedAt: new Date(2026, 0, 9),
+    });
+    const owners = await mk();
+    const made = await createInvite('adm', CHAT, { expiresInDays: 7, maxUses: 5 });
+    expect(made).toMatchObject({ ok: true });
+    const listed = await listInvites('adm', CHAT);
+    expect(listed.ok && listed.value).toHaveLength(2);
+    expect(await revokeInvite('adm', CHAT, owners.id)).toMatchObject({ ok: true });
+    expect(h.s.invites.find((i) => i.id === owners.id)!.revokedAt).toBeTruthy();
+    h.s.members.find((m) => m.userId === 'adm')!.role = 'member';
+    expect(await createInvite('adm', CHAT, { expiresInDays: 7, maxUses: 5 })).toMatchObject({
+      ok: false,
+      status: 403,
+    });
+    expect(await listInvites('adm', CHAT)).toMatchObject({ ok: false, status: 403 });
   });
 
   it('holds a group to five live links, and a revoked one frees a place', async () => {

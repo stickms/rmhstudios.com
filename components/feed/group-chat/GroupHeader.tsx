@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { FindATimeLink } from '@/components/calendar/FindATimeLink';
 import { ChatHeaderPlus } from '@/components/chat-plus/ChatHeaderPlus';
 import { GroupInfoDialog } from './GroupInfoDialog';
+import { ViewerRoleMeta } from './GroupAdminControls';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import type { Group } from '@/lib/group-chat/types';
 
@@ -41,6 +42,7 @@ export function GroupHeader({
         </h1>
         <p className="t-meta truncate">
           {t('member-count', { count: group.members.length, defaultValue: '{{count}} members' })}
+          <ViewerRoleMeta role={group.members.find((m) => m.id === currentUserId)?.role ?? 'member'} />
         </p>
       </div>
       <FindATimeLink groupChatId={group.id} />

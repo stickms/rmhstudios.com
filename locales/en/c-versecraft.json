@@ -100,5 +100,7 @@
   "verse-the-page-remembers": "the page remembers",
   "words-selected-count": "{{selected}}/{{total}} selected",
   "your-journey": "Your Journey",
-  "quit": "Quit"
+  "quit": "Quit",
+  "move-line-down": "Move line down",
+  "move-line-up": "Move line up"
 }

@@ -22,6 +22,9 @@ import { Input } from '@/components/ui/input';
 import { SearchField } from '@/components/ui/search-field';
 import { Spinner } from '@/components/ui/spinner';
 import { InviteLinksDialog } from './InviteLinksDialog';
+import { GroupMentionsList } from './GroupMentionsList';
+import { GroupNotificationSetting } from './GroupNotificationSetting';
+import { AdminMarker, AdminToggle } from './GroupAdminControls';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
@@ -59,8 +62,8 @@ const label =
       : null);
 
 /**
- * "Group info": the name, who is in the group and Leave for everyone; for the owner also rename, Add people, Remove
- * and Make owner. Its trigger is the group's name in the header. The body mounts only while the dialog is open.
+ * "Group info": the name, who is in the group and Leave for everyone; for the owner and admins also rename, Add people, Invite links
+ * and Remove (admins remove ordinary members only); the owner alone has Make admin and Make owner. Its trigger is the group's name in the header. The body mounts only while the dialog is open.
  */
 export function GroupInfoDialog({
   group,
@@ -169,6 +172,16 @@ function GroupInfoBody({
     useConfirm();
   const isOwner =
     group.isOwner;
+  // s07-04: an admin (read from the member list) manages like the owner, short of roles and ownership.
+  const isAdmin =
+    !isOwner &&
+    group.members.some(
+      (m) =>
+        m.id === currentUserId &&
+        m.role === 'admin',
+    );
+  const canManage =
+    isOwner || isAdmin;
   const [
     name,
     setName,
@@ -364,7 +377,7 @@ function GroupInfoBody({
 
   return (
     <div className="flex flex-col gap-5">
-      {isOwner ? (
+      {canManage ? (
         <form
           className="flex items-end gap-2"
           onSubmit={(
@@ -506,6 +519,7 @@ function GroupInfoBody({
                         </span>
                       )}
                     </p>
+                    {!owner && m.role === 'admin' && <AdminMarker />}
                     {owner && (
                       <p className="t-meta">
                         {t(
@@ -518,9 +532,22 @@ function GroupInfoBody({
                       </p>
                     )}
                   </div>
-                  {isOwner &&
-                    !owner && (
+                  {canManage &&
+                    !owner &&
+                    m.id !== currentUserId &&
+                    (isOwner || m.role !== 'admin') && (
                       <div className="flex shrink-0 gap-1">
+                        {isOwner && (
+                          <AdminToggle
+                            groupId={group.id}
+                            member={m}
+                            who={who}
+                            disabled={busy === m.id}
+                            onBusy={setBusy}
+                            onChanged={onChanged}
+                          />
+                        )}
+                        {isOwner && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -554,6 +581,7 @@ function GroupInfoBody({
                             aria-hidden
                           />
                         </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -596,9 +624,13 @@ function GroupInfoBody({
         </ul>
       </section>
 
-      {isOwner && <InviteLinksDialog groupId={group.id} />}
+      <GroupNotificationSetting groupId={group.id} />
 
-      {isOwner && (
+      <GroupMentionsList groupId={group.id} />
+
+      {canManage && <InviteLinksDialog groupId={group.id} />}
+
+      {canManage && (
         <AddPeople
           group={
             group

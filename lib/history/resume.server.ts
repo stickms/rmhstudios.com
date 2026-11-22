@@ -38,7 +38,7 @@
  * the rail and the player end up disagreeing about whether you watched it.
  */
 
-import { REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { ACTIVE_REVIEW_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/catalog';
@@ -395,7 +395,7 @@ async function draftCards(userId: string, take: number): Promise<ResumeCard[]> {
 
 async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]> {
   const due = await prisma.flashcardReview.findMany({
-    where: { userId, dueAt: { lte: new Date() } },
+    where: { userId, ...ACTIVE_REVIEW_WHERE, dueAt: { lte: new Date() } },
     select: { updatedAt: true, card: { select: { deckId: true } } },
     orderBy: { updatedAt: 'desc' },
     take: DUE_SCAN_MAX,

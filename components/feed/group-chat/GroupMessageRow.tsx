@@ -15,6 +15,7 @@ import { canEditImageAlts } from '@/lib/messages/image-alts';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
 import { cn } from '@/lib/utils';
 import { memberDisplayName } from './group-chat-state';
+import { splitMentions } from '@/lib/group-chat/mentions';
 import type { Group, Msg } from '@/lib/group-chat/types';
 import { PollView } from './PollView';
 import { formatDate } from '@/lib/core/format';
@@ -97,7 +98,7 @@ export function GroupMessageRow({
   return (
     <>
       {station}
-      <SpineItem dot={!mine} className={cn('spine-item--tight group', className)}>
+      <SpineItem dot={!mine} id={`group-message-${m.id}`} className={cn('spine-item--tight group', className)}>
         <div className={`flex items-start gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
           <div className={mine ? 'conversation__mine' : 'min-w-0'} {...reactionTriggerFor(m.id)}>
             {!mine && <p className="t-meta">{name}</p>}
@@ -115,7 +116,21 @@ export function GroupMessageRow({
               <div
                 className={`t-body whitespace-pre-wrap break-words ${mine ? 'conversation__bubble' : 'conversation__theirs'}`}
               >
-                {m.content}
+                {splitMentions(m.content, group.members, currentUserId).map((seg, i) =>
+                  seg.kind === 'text' ? (
+                    seg.text
+                  ) : (
+                    // A member's mention links to their profile; the viewer's own is weight 600, never a fill (R1).
+                    <a
+                      key={i}
+                      href={`/u/${seg.handle}`}
+                      className={cn('underline-offset-2 hover:underline', seg.me ? 'font-semibold' : 'font-medium')}
+                      {...(seg.me ? { 'data-mention-me': '' } : {})}
+                    >
+                      {seg.text}
+                    </a>
+                  ),
+                )}
               </div>
             )}
             {m.imageUrls && m.imageUrls.length > 0 && (

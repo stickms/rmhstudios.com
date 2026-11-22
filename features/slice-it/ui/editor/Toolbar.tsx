@@ -36,13 +36,18 @@ import type {
 import { useEditorStore } from '@features/slice-it/engine/editor/store';
 import { formatTime } from './Timeline';
 import { PlaytestControls } from './PlaytestControls';
+import { EditMenu } from './EditMenu';
+import type { ClipboardOp } from './useClipboardActions';
 
 interface ToolbarProps {
   onSave: () => void;
+  /** Clipboard and time operations (the Edit menu). */
+  onClipboardOp: (op: ClipboardOp) => void;
 }
 
 export function Toolbar({
   onSave,
+  onClipboardOp,
 }: ToolbarProps) {
   const {
     t,
@@ -614,6 +619,8 @@ export function Toolbar({
           )}
         </span>
       </button>
+
+      <EditMenu onRun={onClipboardOp} />
 
       <PlaytestControls />
 

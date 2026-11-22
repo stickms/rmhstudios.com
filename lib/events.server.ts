@@ -27,6 +27,7 @@ import {
   type EventReminderJob,
 } from '@/lib/events/reminders.server';
 import { getRole, canModerate } from '@/lib/communities/access.server';
+import { activeSanction } from '@/lib/communities/sanction-read.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { isPrivateIp } from '@/lib/ssrf-guard.server';
@@ -895,6 +896,14 @@ export async function rsvp(
   // A booking is answered by booking it (lib/calendar/office-hours.server.ts).
   if (event.kind === 'office-hours') throw new EventError('FORBIDDEN');
   if (event.canceledAt) throw new EventError('CANCELED');
+  // A member banned or timed out of the community cannot answer its events (s06-01,
+  // BAN_ENFORCEMENT_PATHS); the site route and POST /api/v1/events/{id}/rsvp both come through here.
+  // Withdrawing (`unrsvp`) stays open, so a sanctioned member can still take an answer back.
+  if (event.communityId) {
+    const sanction = await activeSanction(event.communityId, userId);
+    if (sanction)
+      throw new EventError('COMMUNITY_SANCTIONED', { kind: sanction.kind, endsAt: sanction.endsAt });
+  }
 
   if (event.recurrence) {
     // Repeating events have no waitlist: attendance merges standing and per-date answers.

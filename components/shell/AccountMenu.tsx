@@ -13,6 +13,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 import {
   MenuItem,
   MenuSeparator,
@@ -48,6 +49,10 @@ export function AccountMenu({
     useRef(
       false,
     );
+  const deviceSignOut =
+    useDeviceSignOut();
+  const runDeviceSignOut =
+    deviceSignOut.run;
 
   const signOut =
     useCallback(async () => {
@@ -63,22 +68,26 @@ export function AccountMenu({
           authClient,
         } =
           await import('@/lib/auth-client');
-        await authClient.signOut(
-          {
-            fetchOptions:
+        // Clears this device first when the member asked for that (sprint 07, feature 03).
+        await runDeviceSignOut(
+          () =>
+            authClient.signOut(
               {
-                onSuccess:
-                  () => {
-                    onClose();
-                    void navigate(
-                      {
-                        to: '/',
+                fetchOptions:
+                  {
+                    onSuccess:
+                      () => {
+                        onClose();
+                        void navigate(
+                          {
+                            to: '/',
+                          },
+                        );
+                        window.location.reload();
                       },
-                    );
-                    window.location.reload();
                   },
               },
-          },
+            ),
         );
       } finally {
         // Also when the chunk could not be fetched: the next click tries again.
@@ -87,9 +96,12 @@ export function AccountMenu({
     }, [
       navigate,
       onClose,
+      runDeviceSignOut,
     ]);
 
   return (
+    <>
+    {deviceSignOut.dialog}
     <AnchoredMenu
       open={
         open
@@ -198,5 +210,6 @@ export function AccountMenu({
         )}
       </MenuItem>
     </AnchoredMenu>
+    </>
   );
 }

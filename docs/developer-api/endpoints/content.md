@@ -64,7 +64,7 @@ The public builds marketplace, newest first.
 
 ### `GET /api/v1/builds/{slug}`
 
-A single public build, including its readme and its latest releases (up to 20, newest first). `versions` is deprecated: it carries the same releases without `commitHash`; read `releases` instead.
+A single public build, including its readme, its cover description (`thumbnailAlt`), its described `screenshots` in order (up to 8) and its latest releases (up to 20, newest first). `versions` is deprecated: it carries the same releases without `commitHash`; read `releases` instead.
 
 **Scope:** `read:builds` · **Success:** `200` · **Operation id:** `getBuild`
 
@@ -82,6 +82,15 @@ A single public build, including its readme and its latest releases (up to 20, n
   "readme": "# My Build",
   "repoUrl": null,
   "demoUrl": null,
+  "thumbnailAlt": null,
+  "screenshots": [
+    {
+      "url": "https://rmhstudios.com/api/image/example.webp",
+      "width": 1280,
+      "height": 720,
+      "description": "The title screen with the level list open."
+    }
+  ],
   "author": {
     "id": "ck_user123",
     "name": "Ada",

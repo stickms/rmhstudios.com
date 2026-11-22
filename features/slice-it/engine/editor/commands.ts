@@ -21,10 +21,33 @@
  *     result. Everything an inverse needs is captured at construction.
  */
 
-import type { Charts, Difficulty, EditorNote, SliceType } from './types';
+import type { Charts, Difficulty, EditorNote, SliceType, SvPoint, TimingPoint } from './types';
 
 export type CommandKind =
-  'place' | 'delete' | 'move' | 'retype' | 'set-duration' | 'select' | 'composite' | 'generate';
+  | 'place'
+  | 'delete'
+  | 'move'
+  | 'retype'
+  | 'set-duration'
+  | 'select'
+  | 'composite'
+  | 'generate'
+  | 'paste'
+  | 'mirror'
+  | 'quantize'
+  | 'scale'
+  | 'shift-time';
+
+/**
+ * The song's timing map. It is not part of {@link Charts} (it is one list for the
+ * song, stored on every chart row), so a command that has to move it as well as
+ * the notes — insert / remove time — carries it separately through
+ * {@link Command.timing}, and the store applies both in the same step.
+ */
+export interface TimingMap {
+  timingPoints: TimingPoint[];
+  svPoints: SvPoint[];
+}
 
 export interface Command {
   readonly kind: CommandKind;
@@ -32,6 +55,15 @@ export interface Command {
   readonly label: string;
   apply(charts: Charts): Charts;
   invert(charts: Charts): Charts;
+  /**
+   * Optional: the command also edits the timing map. The store runs this beside
+   * `apply` / `invert` so the notes and the points they are snapped to move in
+   * ONE undo step.
+   */
+  readonly timing?: {
+    apply(map: TimingMap): TimingMap;
+    invert(map: TimingMap): TimingMap;
+  };
   /**
    * Optional: merge with the previous command so a 40-frame drag is ONE undo
    * step rather than forty. Returns null when the two are not the same gesture.
@@ -309,12 +341,23 @@ export function replaceChartNotes(
  */
 export function composite(label: string, commands: readonly Command[]): Command {
   const parts = commands.slice();
+  const timed = parts.filter((command) => command.timing);
   return {
     kind: 'composite',
     label,
     apply: (charts) => parts.reduce((acc, command) => command.apply(acc), charts),
     // Reverse order: the inverse of (a then b) is (b⁻¹ then a⁻¹).
     invert: (charts) => parts.reduceRight((acc, command) => command.invert(acc), charts),
+    ...(timed.length > 0
+      ? {
+          timing: {
+            apply: (map: TimingMap) =>
+              timed.reduce((acc, command) => command.timing!.apply(acc), map),
+            invert: (map: TimingMap) =>
+              timed.reduceRight((acc, command) => command.timing!.invert(acc), map),
+          },
+        }
+      : {}),
   };
 }
 
@@ -326,4 +369,133 @@ export function bundle(label: string, commands: readonly Command[]): Command | n
   if (commands.length === 0) return null;
   if (commands.length === 1) return commands[0];
   return composite(label, commands);
+}
+
+/* ─── clipboard and time edits (sprint 07 / 01) ───────────────────────────── */
+
+/** Merge two lists that are each in {@link compareNotes} order. O(n + m). */
+function mergeSorted(a: readonly EditorNote[], b: readonly EditorNote[]): EditorNote[] {
+  const out: EditorNote[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    out.push(compareNotes(a[i], b[j]) <= 0 ? a[i++] : b[j++]);
+  }
+  while (i < a.length) out.push(a[i++]);
+  while (j < b.length) out.push(b[j++]);
+  return out;
+}
+
+/**
+ * Add a set of notes in one step — paste and duplicate.
+ *
+ * One command per difficulty rather than one `placeNote` per note: a 1,000-note
+ * paste through `insertSorted` copies the whole list a thousand times.
+ */
+export function pasteNotes(
+  difficulty: Difficulty,
+  added: readonly EditorNote[],
+  label = 'Paste notes',
+): Command {
+  const fresh = sortNotes(added);
+  const ids = new Set(fresh.map((n) => n.id));
+  return {
+    kind: 'paste',
+    label,
+    apply: (charts) => withNotes(charts, difficulty, (notes) => mergeSorted(notes, fresh)),
+    invert: (charts) => withNotes(charts, difficulty, (notes) => notes.filter((n) => !ids.has(n.id))),
+  };
+}
+
+/**
+ * Rewrite a set of notes in place: every note in `before` is replaced by its
+ * entry in `after` (same id), or removed when it has none — the merge case of
+ * quantise and scale. `before` is the exact originals, so the inverse restores
+ * them field for field (rule 1 above), removed notes included.
+ */
+export function rewriteNotes(
+  kind: 'mirror' | 'quantize' | 'scale',
+  label: string,
+  difficulty: Difficulty,
+  before: readonly EditorNote[],
+  after: readonly EditorNote[],
+): Command {
+  const originals = before.slice();
+  const next = after.slice();
+  const touched = new Set(originals.map((n) => n.id));
+  const swap = (to: readonly EditorNote[]) => (notes: readonly EditorNote[]) =>
+    sortNotes([...notes.filter((n) => !touched.has(n.id)), ...to]);
+  return {
+    kind,
+    label,
+    apply: (charts) => withNotes(charts, difficulty, swap(next)),
+    invert: (charts) => withNotes(charts, difficulty, swap(originals)),
+  };
+}
+
+/** Notes within this of the cut are on it: note times are quantised to 1 µs. */
+export const TIME_EPSILON = 1e-6;
+
+/** Index of the first note at or after `time` (notes are in time order). */
+export function firstIndexAtOrAfter(notes: readonly EditorNote[], time: number): number {
+  let lo = 0;
+  let hi = notes.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (notes[mid].time < time) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/**
+ * Insert or remove time: everything from `at` on is replaced by `next[difficulty]`
+ * (shifted, and with the removed span's notes gone), on EVERY difficulty, and the
+ * timing map by `timingAfter`, as one command.
+ *
+ * Both directions are "keep the notes before the cut, swap in a captured tail",
+ * so each is one binary search and one copy per difficulty. That is exact because
+ * of the stack discipline (undo only ever runs on the state its apply produced)
+ * and because a shifted tail never lands before the cut.
+ */
+export function shiftTime(
+  label: string,
+  at: number,
+  tails: Record<Difficulty, { before: readonly EditorNote[]; after: readonly EditorNote[] }>,
+  timingBefore: TimingMap,
+  timingAfter: TimingMap,
+): Command {
+  const cut = at - TIME_EPSILON;
+  const swap =
+    (pick: 'before' | 'after') =>
+    (charts: Charts): Charts => {
+      const out = { ...charts };
+      for (const difficulty of Object.keys(tails) as Difficulty[]) {
+        const chart = charts[difficulty];
+        const head = chart.notes.slice(0, firstIndexAtOrAfter(chart.notes, cut));
+        out[difficulty] = {
+          ...chart,
+          notes: head.concat(tails[difficulty][pick]),
+          // The timing map is stored on every chart row, so every tier is dirty.
+          dirty: true,
+        };
+      }
+      return out;
+    };
+  return {
+    kind: 'shift-time',
+    label,
+    apply: swap('after'),
+    invert: swap('before'),
+    timing: {
+      apply: () => ({
+        timingPoints: timingAfter.timingPoints.slice(),
+        svPoints: timingAfter.svPoints.slice(),
+      }),
+      invert: () => ({
+        timingPoints: timingBefore.timingPoints.slice(),
+        svPoints: timingBefore.svPoints.slice(),
+      }),
+    },
+  };
 }

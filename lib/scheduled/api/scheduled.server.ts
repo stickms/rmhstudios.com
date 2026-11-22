@@ -6,6 +6,13 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
+import { getCommunitySettings } from '@/lib/communities/settings.server';
+import {
+  ALT_REQUIRED_CODE,
+  ALT_REQUIRED_MESSAGE,
+  communityAltMissing,
+  communityGifAltMissing,
+} from '@/lib/communities/alt-required';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { activeSanction } from '@/lib/communities/bans.server';
 import { denyCode, denyText } from '@/lib/communities/bans';
@@ -93,6 +100,23 @@ export const route = apiRoute('/api/scheduled', {
               endsAt: sanction.endsAt ? sanction.endsAt.toISOString() : null,
             },
             { status: 403 },
+          );
+        }
+      }
+
+      // s07-16: a requiring community refuses an undescribed image at scheduling time too.
+      if (d.communityId && (d.imageUrls?.length || d.gifUrl)) {
+        const community = await getCommunitySettings(d.communityId);
+        const missing = communityAltMissing(
+          community?.requireImageAlt === true,
+          d.imageUrls,
+          d.imageAlts,
+        );
+        const missingGif = communityGifAltMissing(community?.requireImageAlt === true, d.gifUrl, d.gifAlt);
+        if (missing.length > 0 || missingGif) {
+          return Response.json(
+            { error: ALT_REQUIRED_MESSAGE, code: ALT_REQUIRED_CODE, missing, ...(missingGif ? { missingGif } : {}) },
+            { status: 400 },
           );
         }
       }

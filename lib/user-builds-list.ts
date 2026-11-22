@@ -22,6 +22,7 @@ export function buildCardSelect(
     title: true,
     description: true,
     thumbnailUrl: true,
+    thumbnailAlt: true,
     repoUrl: true,
     demoUrl: true,
     visibility: true,

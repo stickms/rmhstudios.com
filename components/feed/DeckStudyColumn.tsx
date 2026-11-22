@@ -23,11 +23,13 @@ import { EditDeckLink } from '@/components/study/EditDeckLink';
 import { DeckUpdatesLine } from '@/components/study/DeckUpdatesLine';
 import type { UpdatesSummary } from '@/lib/study/deck-sync';
 import { ExportMenu } from '@/components/study/ExportMenu';
+import { DeckPageFolderMenu } from '@/components/study/MoveToFolderMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
 import { PracticeTestLink } from '@/components/study/PracticeTestLink';
 import { TestHistory } from '@/components/study/TestHistory';
 import { CardForm } from '@/components/study/CardForm';
 import { ClozeText } from '@/components/study/ClozeText';
+import { DeckCardList } from '@/components/study/DeckCardList';
 import { isReverseCard, type CardInput } from '@/lib/study/card-types';
 import type { DeckCard as Card } from '@/lib/study.server';
 interface Deck {
@@ -37,6 +39,8 @@ interface Deck {
  isPublic: boolean;
  isOwner: boolean;
  cardCount: number;
+ /** The owner's private folder (owner only). */
+ folderId?: string | null;
 }
 
 const GRADES: { grade: number; cls: string }[] = [
@@ -313,6 +317,7 @@ export function DeckStudyColumn({
  )}
  </div>
  {deck.isOwner && <EditDeckLink deckId={deckId} />}
+ {deck.isOwner && <DeckPageFolderMenu deckId={deckId} folderId={deck.folderId ?? null} onMoved={() => void load()} />}
  {/* Anyone may export a public deck; the owner exports from the editor. */}
  {!deck.isOwner && cards.length > 0 && (
  <ExportMenu deck={{ title: deck.title, description: deck.description ?? null, cards }} />
@@ -372,23 +377,7 @@ export function DeckStudyColumn({
  <p className="t-meta mb-2">
  {ts('review-count', { count: reviewCount, defaultValue:'{{count}} to review'})}
  </p>
- <div className="space-y-1">
- {cards.map((c) => (
- <div
- key={c.id}
- className={`rounded-site-sm relative p-3`}
- >
- {c.kind === 'cloze' ? (
- <ClozeText text={c.front} index={null} reveal className="text-sm text-site-text"/>
- ) : (
- <>
- <p className="text-sm font-medium text-site-text">{c.front}</p>
- <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>
- </>
- )}
- </div>
- ))}
- </div>
+ <DeckCardList deckId={deckId} cards={cards} isOwner={deck.isOwner} signedIn={signedIn} onChanged={() => void load()} />
  </section>
  </div>
  </div>

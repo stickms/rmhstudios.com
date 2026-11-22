@@ -24,6 +24,8 @@ import { PhaseBadge } from './JamsList';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { JamThemeVote } from './JamThemeVote';
+import { JamThemeResults } from './JamThemeResults';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
@@ -51,6 +53,8 @@ interface Jam {
   submitEndsAt: string;
   ratingEndsAt: string;
   phase: 'upcoming' | 'open' | 'rating' | 'done';
+  /** s07-07: members vote on this jam's theme. */
+  themeVoting: boolean;
   entries: Entry[];
   myEntryId: string | null;
   /** The entry the viewer is credited on as a teammate; they cannot submit their own. */
@@ -204,6 +208,9 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
           })}
         </p>
       </Card>
+
+      {jam.themeVoting && jam.phase === 'upcoming' && <JamThemeVote slug={slug} signedIn={signedIn} />}
+      {jam.themeVoting && jam.phase !== 'upcoming' && <JamThemeResults slug={slug} />}
 
       {jam.phase === 'open' && signedIn && !jam.teamEntryId && (
         <Card className="gap-3 px-4 py-4" pane>

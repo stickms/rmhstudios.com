@@ -121,6 +121,7 @@ export const GIF_ALT_READ_PATHS: readonly string[] = [
   'app/routes/api/v1/posts.ts',
   'app/routes/api/v1/posts/$id.ts',
   'app/routes/api/v1/feed.ts',
+  'lib/api/v1/communities.server.ts',
   'app/routes/api/v1/users/$handle/posts.ts',
   'app/routes/api/v1/me/bookmarks.ts',
   'lib/api/serializers.server.ts',

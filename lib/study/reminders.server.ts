@@ -7,7 +7,7 @@ import type { PgBoss } from 'pg-boss';
 import { dayOf } from '@/lib/calendar/tz';
 import { createNotification } from '@/lib/notifications.server';
 import { prisma } from '@/lib/prisma.server';
-import { REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { ACTIVE_REVIEW_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import type { ReminderSettings } from '@/lib/study/reminders.contract';
 import {
   PAUSE_AFTER_REMINDERS,
@@ -82,13 +82,14 @@ export async function markReviewed(userId: string): Promise<void> {
 
 /**
  * What the deck page calls "due today" (lib/study/stats.server.ts): scheduled cards whose `dueAt` has come,
- * plus reviewable cards the member has never reviewed, in decks they own (clones included). There is no
+ * plus reviewable cards the member has never reviewed, in decks they own (clones included); a suspended card
+ * (it has a review row) is in neither. There is no
  * daily new-card limit in the study code, so new cards are not capped here either.
  */
 async function dueCount(userId: string, now: Date): Promise<number> {
   const card = { ...REVIEWABLE_WHERE, deck: { userId } };
   const [scheduled, fresh] = await Promise.all([
-    prisma.flashcardReview.count({ where: { userId, dueAt: { lte: now }, card } }),
+    prisma.flashcardReview.count({ where: { userId, ...ACTIVE_REVIEW_WHERE, dueAt: { lte: now }, card } }),
     prisma.flashcard.count({ where: { ...card, reviews: { none: { userId } } } }),
   ]);
   return scheduled + fresh;

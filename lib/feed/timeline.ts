@@ -47,6 +47,7 @@ import { reconcileCachedPage } from './page-reconcile.server';
 import { getRepostMutedIds } from './repost-mutes.server';
 import { isExpired } from '../posts-plus/constants';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
 
 export { deduplicateReposts };
 
@@ -157,7 +158,11 @@ function pollInclude(userId: string | null) {
   };
 }
 
-function mapPoll(poll: any): FeedPoll | undefined {
+function mapPoll(
+  poll: any,
+  /** s07-19: who is reading and who wrote the post; a quiz's answer is theirs only when earned. */
+  reader: { viewerId: string | null; authorId: string },
+): FeedPoll | undefined {
   if (!poll) return undefined;
   const totalVotes = poll.options.reduce(
     (sum: number, o: { voteCount?: number }) => sum + (o.voteCount ?? 0),
@@ -168,6 +173,11 @@ function mapPoll(poll: any): FeedPoll | undefined {
     question: poll.question,
     multiSelect: poll.multiSelect,
     ...pollLifecycleView(poll),
+    ...quizRevealFor(
+      poll,
+      reader,
+      viewerHasVoted(poll.options),
+    ),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -359,7 +369,7 @@ function mapOwn(
     bookmarked: false, // filled in by attachBookmarks after the query
     edited: !!r.editedAt,
     original: mapOriginal(r.original, displayMap, qv),
-    poll: isDeleted ? undefined : mapPoll(r.poll),
+    poll: isDeleted ? undefined : mapPoll(r.poll, { viewerId: userId, authorId: r.userId }),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     gifAlt: isDeleted ? undefined : (r.gifAlt ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
@@ -405,7 +415,7 @@ function mapRepost(
     bookmarked: false, // filled in by attachBookmarks after the query
     repostedBy: displayUser(displayMap, rp.userId),
     original: mapOriginal(r.original, displayMap, qv),
-    poll: isDeleted ? undefined : mapPoll(r.poll),
+    poll: isDeleted ? undefined : mapPoll(r.poll, { viewerId: userId, authorId: r.userId }),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     gifAlt: isDeleted ? undefined : (r.gifAlt ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,

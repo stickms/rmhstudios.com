@@ -12,6 +12,7 @@ import {
 } from '@/components/Providers';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 import { viewerPathFor } from './sections';
 
 interface GlobeBarProps {
@@ -74,25 +75,32 @@ export function GlobeBar({
       user,
     );
 
+  const deviceSignOut =
+    useDeviceSignOut();
+
   const signOut =
     () => {
       onClose();
       // Loaded on the press: the auth client stays off every page that only reads who is signed in (audit RT1).
+      // Clears this device first when the member asked for that (sprint 07, feature 03).
       void import('@/lib/auth-client').then(
         ({
           authClient,
         }) =>
-          authClient.signOut(
-            {
-              fetchOptions:
+          deviceSignOut.run(
+            () =>
+              authClient.signOut(
                 {
-                  onSuccess:
-                    () =>
-                      window.location.assign(
-                        '/',
-                      ),
+                  fetchOptions:
+                    {
+                      onSuccess:
+                        () =>
+                          window.location.assign(
+                            '/',
+                          ),
+                    },
                 },
-            },
+              ),
           ),
       );
     };
@@ -116,6 +124,8 @@ export function GlobeBar({
     } as const;
 
   return (
+    <>
+    {deviceSignOut.dialog}
     <div
       className="globe-nav__bar"
       role="group"
@@ -297,5 +307,6 @@ export function GlobeBar({
         </button>
       ) : null}
     </div>
+    </>
   );
 }

@@ -15,6 +15,12 @@ export const REVIEWABLE_WHERE = {
   NOT: { kind: 'cloze', sourceId: null },
 } satisfies Prisma.FlashcardWhereInput;
 
+/**
+ * A review row that is in play: not suspended. Every due count and review queue applies it (the registry is
+ * `DUE_COUNT_READ_PATHS` in `lib/study/queue.ts`); a raw SQL count says `"suspendedAt" IS NULL` instead.
+ */
+export const ACTIVE_REVIEW_WHERE = { suspendedAt: null } satisfies Prisma.FlashcardReviewWhereInput;
+
 /** Deck order: by position, then the authored card before its siblings, then by cloze index. */
 export const CARD_ORDER = [
   { position: 'asc' },

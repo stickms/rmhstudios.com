@@ -70,6 +70,12 @@ import { LintPanel } from './LintPanel';
 import { NoteInspector } from './NoteInspector';
 import { TimingPanel } from './TimingPanel';
 import { ShortcutSheet } from './ShortcutSheet';
+import { ScaleTimingDialog } from './ScaleTimingDialog';
+import { useClipboardActions } from './useClipboardActions';
+import {
+  clipboardOpForEvent,
+  keyTargetIsOwned,
+} from './clipboard-keys';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
 import { useArrival } from '@/components/ui/arrive';
@@ -126,6 +132,29 @@ export function ChartEditor({
   const savingRef =
     useRef(
       false,
+    );
+  const [
+    scaleOpen,
+    setScaleOpen,
+  ] =
+    useState(
+      false,
+    );
+  const openScale =
+    useCallback(
+      () =>
+        setScaleOpen(
+          true,
+        ),
+      [],
+    );
+  const {
+    run: runClipboardOp,
+    describe: describeClipboard,
+  } =
+    useClipboardActions(
+      setAnnounce,
+      openScale,
     );
 
   const loadState =
@@ -560,6 +589,9 @@ export function ChartEditor({
         if (
           isEditableTarget(
             event.target,
+          ) ||
+          keyTargetIsOwned(
+            event.target,
           )
         )
           return;
@@ -871,6 +903,21 @@ export function ChartEditor({
             break;
         }
 
+        // Clipboard, mirror, quantise, scale, insert / remove time (§5.2).
+        const clipboardOp =
+          clipboardOpForEvent(
+            event,
+          );
+        if (
+          clipboardOp
+        ) {
+          event.preventDefault();
+          runClipboardOp(
+            clipboardOp,
+          );
+          return;
+        }
+
         if (
           mod
         ) {
@@ -915,10 +962,6 @@ export function ChartEditor({
             );
             return;
           }
-          // TODO(phase 2 extension — §5.2): Ctrl+C/X/V, Ctrl+Shift+V (paste
-          // mirrored), Ctrl+D (duplicate a measure on), Ctrl+I / Ctrl+Shift+I
-          // (insert / remove time). They are clipboard operations on a selection,
-          // which needs a clipboard model this shell does not have yet.
           return;
         }
 
@@ -992,6 +1035,7 @@ export function ChartEditor({
     loadState,
     save,
     t,
+    runClipboardOp,
   ]);
 
   const arrival =
@@ -1180,6 +1224,9 @@ export function ChartEditor({
             'manual',
           )
         }
+        onClipboardOp={
+          runClipboardOp
+        }
       />
 
       {/*
@@ -1202,6 +1249,28 @@ export function ChartEditor({
         }
         onOpenChange={
           setShowShortcuts
+        }
+      />
+
+      <ScaleTimingDialog
+        open={
+          scaleOpen
+        }
+        onOpenChange={
+          setScaleOpen
+        }
+        onApply={(
+          percent,
+        ) =>
+          setAnnounce(
+            describeClipboard(
+              useEditorStore
+                .getState()
+                .scaleTiming(
+                  percent,
+                ),
+            ),
+          )
         }
       />
     </div>

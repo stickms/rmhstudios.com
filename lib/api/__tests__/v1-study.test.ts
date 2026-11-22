@@ -1772,6 +1772,7 @@ describe('decks', () => {
         'dueCount',
         'id',
         'isPublic',
+        'suspended',
         'title',
         'updatedAt',
       ],

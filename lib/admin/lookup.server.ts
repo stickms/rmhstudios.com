@@ -5,7 +5,12 @@
  * session.
  */
 import { prisma } from '@/lib/prisma.server';
-import { logAdminAction } from '@/lib/admin-audit.server';
+import {
+  logAdminAction,
+  recordAdminActionIn,
+} from '@/lib/admin-audit.server';
+import { mapWithConcurrency } from '@/lib/async-pool';
+import { checkRateLimit } from '@/lib/rate-limit.server';
 import {
   resolveUser,
   userDisplaySelect,
@@ -14,12 +19,15 @@ import { isDeletedAccount } from '@/lib/account-lifecycle';
 import { REPORT_ENTITY_TYPES } from '@/lib/moderation/report-constants';
 import {
   auditDetail,
+  batchAuditDetail,
   classifyLookup,
   excerpt,
   idShapeOf,
   inputKindOf,
   planLookup,
+  type LookupBatchResponse,
   type LookupCandidate,
+  type LookupInputKind,
   type LookupKind,
   type LookupResponse,
   type LookupResult,
@@ -1145,14 +1153,14 @@ const RESOLVERS: Record<
     blog,
   };
 
-/**
- * Classify what was pasted, ask each candidate kind its one unique-key question in parallel, and
- * audit the lookup. A key that cannot be a kind's id never reaches the database for that kind.
- */
-export async function runAdminLookup(
-  adminId: string,
+/** Classify one pasted string and ask each candidate kind its one unique-key question in parallel. No audit row. */
+async function resolveLookup(
   raw: string,
-): Promise<LookupResponse> {
+): Promise<{
+  response: LookupResponse;
+  inputKind: LookupInputKind;
+  found: LookupResult[];
+}> {
   const input =
     classifyLookup(
       raw,
@@ -1194,7 +1202,56 @@ export async function runAdminLookup(
         r !==
         null,
     );
+  const outcome: LookupResponse['outcome'] =
+    found.length >
+    0
+      ? 'found'
+      : input.type ===
+          'foreign-link'
+        ? 'foreign-link'
+        : input.type ===
+            'unknown-path'
+          ? 'unknown-path'
+          : input.type ===
+              'junk'
+            ? 'unrecognised'
+            : 'not-found';
+  return {
+    response:
+      {
+        outcome,
+        inputKind,
+        results:
+          found,
+        tried:
+          candidates.map(
+            (
+              c,
+            ) =>
+              c.kind,
+          ),
+      },
+    inputKind,
+    found,
+  };
+}
 
+/**
+ * Classify what was pasted, ask each candidate kind its one unique-key question in parallel, and
+ * audit the lookup. A key that cannot be a kind's id never reaches the database for that kind.
+ */
+export async function runAdminLookup(
+  adminId: string,
+  raw: string,
+): Promise<LookupResponse> {
+  const {
+    response,
+    inputKind,
+    found,
+  } =
+    await resolveLookup(
+      raw,
+    );
   const only =
     found.length ===
     1
@@ -1219,32 +1276,140 @@ export async function runAdminLookup(
         ),
     },
   );
+  return response;
+}
 
-  const outcome: LookupResponse['outcome'] =
-    found.length >
-    0
-      ? 'found'
-      : input.type ===
-          'foreign-link'
-        ? 'foreign-link'
-        : input.type ===
-            'unknown-path'
-          ? 'unknown-path'
-          : input.type ===
-              'junk'
-            ? 'unrecognised'
-            : 'not-found';
+/** At most this many items are resolved at once, so a batch cannot fan out 50 resolver sets. */
+export const BATCH_CONCURRENCY = 5;
+
+/**
+ * Resolve a batch (the caller has already trimmed, de-duplicated and capped it), five items at a
+ * time, and write ONE audit row for the whole batch inside a transaction: the item count, the input
+ * kinds and how many matched, never an input (an e-mail address is personal data).
+ */
+export async function runAdminLookupBatch(
+  adminId: string,
+  items: readonly string[],
+): Promise<LookupBatchResponse> {
+  const resolved =
+    await mapWithConcurrency(
+      items,
+      BATCH_CONCURRENCY,
+      async (
+        item,
+      ) => {
+        try {
+          return await resolveLookup(
+            item,
+          );
+        } catch {
+          // One failing item must not fail the batch. The error is not logged: a database error can
+          // quote the query, and the query may hold an e-mail address.
+          const input =
+            classifyLookup(
+              item,
+            );
+          return {
+            response:
+              {
+                outcome:
+                  'error',
+                inputKind:
+                  inputKindOf(
+                    input,
+                  ),
+                results:
+                  [],
+                tried:
+                  [],
+              } satisfies LookupResponse,
+            inputKind:
+              inputKindOf(
+                input,
+              ),
+            found:
+              [] as LookupResult[],
+          };
+        }
+      },
+    );
+  await prisma.$transaction(
+    async (
+      tx,
+    ) => {
+      await recordAdminActionIn(
+        tx,
+        adminId,
+        'admin.lookup.batch',
+        {
+          detail:
+            batchAuditDetail(
+              resolved.map(
+                (
+                  r,
+                ) => ({
+                  inputKind:
+                    r.inputKind,
+                  found:
+                    r
+                      .found
+                      .length,
+                }),
+              ),
+            ),
+        },
+      );
+    },
+  );
   return {
-    outcome,
-    inputKind,
-    results:
-      found,
-    tried:
-      candidates.map(
+    groups:
+      resolved.map(
         (
-          c,
-        ) =>
-          c.kind,
+          r,
+          i,
+        ) => ({
+          input:
+            items[
+              i
+            ] ??
+            '',
+          ...r.response,
+        }),
       ),
   };
+}
+
+/**
+ * Charge a batch against the per-admin lookup budget (60 a minute) one unit per item, so a 50-item
+ * batch uses 50. The counter is a fixed window with no refund, so a batch the budget cannot cover
+ * takes what is left and is refused whole (no results, 429 with the seconds until the window
+ * resets); a retry inside the window would be refused anyway, so nothing is lost by the draw.
+ * Returns the seconds to wait, else null.
+ */
+export async function chargeLookupBudget(
+  adminId: string,
+  count: number,
+): Promise<number | null> {
+  for (
+    let i = 0;
+    i <
+    count;
+    i++
+  ) {
+    const r =
+      await checkRateLimit(
+        adminId,
+        {
+          limit: 60,
+          windowMs: 60_000,
+          prefix:
+            'admin-lookup-items',
+        },
+      );
+    if (
+      !r.allowed
+    )
+      return r.retryAfter;
+  }
+  return null;
 }

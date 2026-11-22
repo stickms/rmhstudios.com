@@ -7,6 +7,7 @@ import type { RsvpRequest, RsvpResult } from '@/lib/events.server';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { rsvpEventApi, withdrawRsvpApi } from '@/lib/events.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 
 interface RsvpButtonProps {
   eventId: string;
@@ -37,6 +38,8 @@ export function RsvpButton({
 }: RsvpButtonProps) {
   const { t } = useTranslation('site');
   const { t: tr } = useTranslation('event-waitlist');
+  // A community event refuses a banned or timed-out member with the community's own refusal (s06-01).
+  const sanctionRefusalText = useSanctionRefusal();
   const [busy, setBusy] = useState(false);
   const [leftWaitlist, setLeftWaitlist] = useState(false);
 
@@ -55,8 +58,11 @@ export function RsvpButton({
       setLeftWaitlist(withdrawing && next === 'waitlist');
       onChange?.(result);
     } catch (e) {
+      const refusal = sanctionRefusalText(e);
       if (e instanceof HttpError && e.status === 401) {
         toast.error(t('sign-in-to-rsvp', { defaultValue: 'Sign in to RSVP.' }));
+      } else if (refusal) {
+        toast.error(refusal);
       } else if (e instanceof HttpError && e.status === 409) {
         toast.error(serverError(e) || t('event-full', { defaultValue: 'This event is full.' }));
       } else {

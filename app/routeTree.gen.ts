@@ -318,7 +318,9 @@ import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/setti
 import { Route as SiteSettingsBlockedRouteImport } from './routes/_site/settings/blocked'
 import { Route as SiteSettingsCloudSavesRouteImport } from './routes/_site/settings/cloud-saves'
 import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
+import { Route as SiteSettingsDeviceRouteImport } from './routes/_site/settings/device'
 import { Route as SiteSettingsFeedbackRouteImport } from './routes/_site/settings/feedback'
+import { Route as SiteSettingsGameAssistsRouteImport } from './routes/_site/settings/game-assists'
 import { Route as SiteSettingsKeyboardRouteImport } from './routes/_site/settings/keyboard'
 import { Route as SiteSettingsLayoutRouteImport } from './routes/_site/settings/layout'
 import { Route as SiteSettingsNotificationsRouteImport } from './routes/_site/settings/notifications'
@@ -333,6 +335,7 @@ import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$useri
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
+import { Route as SiteStudyReviewRouteImport } from './routes/_site/study/review'
 import { Route as SiteStudyStatsRouteImport } from './routes/_site/study/stats'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
@@ -398,6 +401,7 @@ import { Route as ApiSohumtrackerStreamRouteImport } from './routes/api/sohumtra
 import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
 import { Route as ApiV1BlogRouteImport } from './routes/api/v1/blog'
 import { Route as ApiV1BuildsRouteImport } from './routes/api/v1/builds'
+import { Route as ApiV1EventsRouteImport } from './routes/api/v1/events'
 import { Route as ApiV1FeedRouteImport } from './routes/api/v1/feed'
 import { Route as ApiV1GamesRouteImport } from './routes/api/v1/games'
 import { Route as ApiV1ImagesRouteImport } from './routes/api/v1/images'
@@ -507,15 +511,22 @@ import { Route as ApiUserBuildsIdUnlockRouteImport } from './routes/api/user-bui
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
 import { Route as ApiV1BlogSlugRouteImport } from './routes/api/v1/blog/$slug'
 import { Route as ApiV1BuildsSlugRouteImport } from './routes/api/v1/builds/$slug'
+import { Route as ApiV1CommunitiesSlugRouteImport } from './routes/api/v1/communities/$slug'
+import { Route as ApiV1EventsIdRouteImport } from './routes/api/v1/events/$id'
 import { Route as ApiV1LeaderboardsGameRouteImport } from './routes/api/v1/leaderboards/$game'
 import { Route as ApiV1MeAchievementsRouteImport } from './routes/api/v1/me/achievements'
 import { Route as ApiV1MeBookmarksRouteImport } from './routes/api/v1/me/bookmarks'
+import { Route as ApiV1MeCommunitiesRouteImport } from './routes/api/v1/me/communities'
 import { Route as ApiV1MeDecksRouteImport } from './routes/api/v1/me/decks'
+import { Route as ApiV1MeEventsRouteImport } from './routes/api/v1/me/events'
 import { Route as ApiV1MeFollowersRouteImport } from './routes/api/v1/me/followers'
 import { Route as ApiV1MeFollowingRouteImport } from './routes/api/v1/me/following'
 import { Route as ApiV1MeGamesRouteImport } from './routes/api/v1/me/games'
+import { Route as ApiV1MeHighlightsRouteImport } from './routes/api/v1/me/highlights'
 import { Route as ApiV1MeNotificationsRouteImport } from './routes/api/v1/me/notifications'
 import { Route as ApiV1MePersonalBestsRouteImport } from './routes/api/v1/me/personal-bests'
+import { Route as ApiV1MeReadingGoalRouteImport } from './routes/api/v1/me/reading-goal'
+import { Route as ApiV1MeShelvesRouteImport } from './routes/api/v1/me/shelves'
 import { Route as ApiV1NewsSlugRouteImport } from './routes/api/v1/news/$slug'
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts/$id'
 import { Route as ApiV1SliceItChartsRouteImport } from './routes/api/v1/slice-it/charts'
@@ -543,7 +554,13 @@ import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rm
 import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rmhladder/resume/$id/confirm'
 import { Route as ApiRmhtubePartiesRoomIdIcsRouteImport } from './routes/api/rmhtube/parties/$roomId/ics'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
+import { Route as ApiV1CommunitiesSlugPostsRouteImport } from './routes/api/v1/communities/$slug/posts'
+import { Route as ApiV1CommunitiesSlugRulesRouteImport } from './routes/api/v1/communities/$slug/rules'
+import { Route as ApiV1EventsIdAttendeesRouteImport } from './routes/api/v1/events/$id/attendees'
+import { Route as ApiV1EventsIdRsvpRouteImport } from './routes/api/v1/events/$id/rsvp'
 import { Route as ApiV1MeDecksIdRouteImport } from './routes/api/v1/me/decks/$id'
+import { Route as ApiV1MeHighlightsIdRouteImport } from './routes/api/v1/me/highlights/$id'
+import { Route as ApiV1MeShelvesSlugRouteImport } from './routes/api/v1/me/shelves/$slug'
 import { Route as ApiV1PostsIdBookmarkRouteImport } from './routes/api/v1/posts/$id/bookmark'
 import { Route as ApiV1PostsIdCommentsRouteImport } from './routes/api/v1/posts/$id/comments'
 import { Route as ApiV1PostsIdLikeRouteImport } from './routes/api/v1/posts/$id/like'
@@ -2113,9 +2130,19 @@ const SiteSettingsContentRoute = SiteSettingsContentRouteImport.update({
   path: '/settings/content',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsDeviceRoute = SiteSettingsDeviceRouteImport.update({
+  id: '/settings/device',
+  path: '/settings/device',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSettingsFeedbackRoute = SiteSettingsFeedbackRouteImport.update({
   id: '/settings/feedback',
   path: '/settings/feedback',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsGameAssistsRoute = SiteSettingsGameAssistsRouteImport.update({
+  id: '/settings/game-assists',
+  path: '/settings/game-assists',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSettingsKeyboardRoute = SiteSettingsKeyboardRouteImport.update({
@@ -2187,6 +2214,11 @@ const SiteStudyDeckIdRoute = SiteStudyDeckIdRouteImport.update({
 const SiteStudyBrowseRoute = SiteStudyBrowseRouteImport.update({
   id: '/study/browse',
   path: '/study/browse',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteStudyReviewRoute = SiteStudyReviewRouteImport.update({
+  id: '/study/review',
+  path: '/study/review',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteStudyStatsRoute = SiteStudyStatsRouteImport.update({
@@ -2515,6 +2547,11 @@ const ApiV1BlogRoute = ApiV1BlogRouteImport.update({
 const ApiV1BuildsRoute = ApiV1BuildsRouteImport.update({
   id: '/api/v1/builds',
   path: '/api/v1/builds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1EventsRoute = ApiV1EventsRouteImport.update({
+  id: '/api/v1/events',
+  path: '/api/v1/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1FeedRoute = ApiV1FeedRouteImport.update({
@@ -3082,6 +3119,16 @@ const ApiV1BuildsSlugRoute = ApiV1BuildsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ApiV1BuildsRoute,
 } as any)
+const ApiV1CommunitiesSlugRoute = ApiV1CommunitiesSlugRouteImport.update({
+  id: '/api/v1/communities/$slug',
+  path: '/api/v1/communities/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1EventsIdRoute = ApiV1EventsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1EventsRoute,
+} as any)
 const ApiV1LeaderboardsGameRoute = ApiV1LeaderboardsGameRouteImport.update({
   id: '/api/v1/leaderboards/$game',
   path: '/api/v1/leaderboards/$game',
@@ -3097,9 +3144,19 @@ const ApiV1MeBookmarksRoute = ApiV1MeBookmarksRouteImport.update({
   path: '/bookmarks',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
+const ApiV1MeCommunitiesRoute = ApiV1MeCommunitiesRouteImport.update({
+  id: '/communities',
+  path: '/communities',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
 const ApiV1MeDecksRoute = ApiV1MeDecksRouteImport.update({
   id: '/decks',
   path: '/decks',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeEventsRoute = ApiV1MeEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
 const ApiV1MeFollowersRoute = ApiV1MeFollowersRouteImport.update({
@@ -3117,6 +3174,11 @@ const ApiV1MeGamesRoute = ApiV1MeGamesRouteImport.update({
   path: '/games',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
+const ApiV1MeHighlightsRoute = ApiV1MeHighlightsRouteImport.update({
+  id: '/highlights',
+  path: '/highlights',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
 const ApiV1MeNotificationsRoute = ApiV1MeNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -3125,6 +3187,16 @@ const ApiV1MeNotificationsRoute = ApiV1MeNotificationsRouteImport.update({
 const ApiV1MePersonalBestsRoute = ApiV1MePersonalBestsRouteImport.update({
   id: '/personal-bests',
   path: '/personal-bests',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeReadingGoalRoute = ApiV1MeReadingGoalRouteImport.update({
+  id: '/reading-goal',
+  path: '/reading-goal',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeShelvesRoute = ApiV1MeShelvesRouteImport.update({
+  id: '/shelves',
+  path: '/shelves',
   getParentRoute: () => ApiV1MeRoute,
 } as any)
 const ApiV1NewsSlugRoute = ApiV1NewsSlugRouteImport.update({
@@ -3269,10 +3341,42 @@ const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   path: '/api/slice-it/songs/stream/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1CommunitiesSlugPostsRoute =
+  ApiV1CommunitiesSlugPostsRouteImport.update({
+    id: '/posts',
+    path: '/posts',
+    getParentRoute: () => ApiV1CommunitiesSlugRoute,
+  } as any)
+const ApiV1CommunitiesSlugRulesRoute =
+  ApiV1CommunitiesSlugRulesRouteImport.update({
+    id: '/rules',
+    path: '/rules',
+    getParentRoute: () => ApiV1CommunitiesSlugRoute,
+  } as any)
+const ApiV1EventsIdAttendeesRoute = ApiV1EventsIdAttendeesRouteImport.update({
+  id: '/attendees',
+  path: '/attendees',
+  getParentRoute: () => ApiV1EventsIdRoute,
+} as any)
+const ApiV1EventsIdRsvpRoute = ApiV1EventsIdRsvpRouteImport.update({
+  id: '/rsvp',
+  path: '/rsvp',
+  getParentRoute: () => ApiV1EventsIdRoute,
+} as any)
 const ApiV1MeDecksIdRoute = ApiV1MeDecksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiV1MeDecksRoute,
+} as any)
+const ApiV1MeHighlightsIdRoute = ApiV1MeHighlightsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1MeHighlightsRoute,
+} as any)
+const ApiV1MeShelvesSlugRoute = ApiV1MeShelvesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ApiV1MeShelvesRoute,
 } as any)
 const ApiV1PostsIdBookmarkRoute = ApiV1PostsIdBookmarkRouteImport.update({
   id: '/bookmark',
@@ -3641,7 +3745,9 @@ export interface FileRoutesByFullPath {
   '/settings/blocked': typeof SiteSettingsBlockedRoute
   '/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/settings/content': typeof SiteSettingsContentRoute
+  '/settings/device': typeof SiteSettingsDeviceRoute
   '/settings/feedback': typeof SiteSettingsFeedbackRoute
+  '/settings/game-assists': typeof SiteSettingsGameAssistsRoute
   '/settings/keyboard': typeof SiteSettingsKeyboardRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
@@ -3654,6 +3760,7 @@ export interface FileRoutesByFullPath {
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
+  '/study/review': typeof SiteStudyReviewRoute
   '/study/stats': typeof SiteStudyStatsRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
@@ -3716,6 +3823,7 @@ export interface FileRoutesByFullPath {
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
   '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
+  '/api/v1/events': typeof ApiV1EventsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
   '/api/v1/games': typeof ApiV1GamesRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
@@ -3846,15 +3954,22 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
+  '/api/v1/communities/$slug': typeof ApiV1CommunitiesSlugRouteWithChildren
+  '/api/v1/events/$id': typeof ApiV1EventsIdRouteWithChildren
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
   '/api/v1/me/achievements': typeof ApiV1MeAchievementsRoute
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
+  '/api/v1/me/communities': typeof ApiV1MeCommunitiesRoute
   '/api/v1/me/decks': typeof ApiV1MeDecksRouteWithChildren
+  '/api/v1/me/events': typeof ApiV1MeEventsRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
   '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
+  '/api/v1/me/highlights': typeof ApiV1MeHighlightsRouteWithChildren
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/me/personal-bests': typeof ApiV1MePersonalBestsRoute
+  '/api/v1/me/reading-goal': typeof ApiV1MeReadingGoalRoute
+  '/api/v1/me/shelves': typeof ApiV1MeShelvesRouteWithChildren
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
   '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
@@ -3888,7 +4003,13 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhtube/parties/$roomId/ics': typeof ApiRmhtubePartiesRoomIdIcsRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
+  '/api/v1/communities/$slug/posts': typeof ApiV1CommunitiesSlugPostsRoute
+  '/api/v1/communities/$slug/rules': typeof ApiV1CommunitiesSlugRulesRoute
+  '/api/v1/events/$id/attendees': typeof ApiV1EventsIdAttendeesRoute
+  '/api/v1/events/$id/rsvp': typeof ApiV1EventsIdRsvpRoute
   '/api/v1/me/decks/$id': typeof ApiV1MeDecksIdRouteWithChildren
+  '/api/v1/me/highlights/$id': typeof ApiV1MeHighlightsIdRoute
+  '/api/v1/me/shelves/$slug': typeof ApiV1MeShelvesSlugRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -4165,7 +4286,9 @@ export interface FileRoutesByTo {
   '/settings/blocked': typeof SiteSettingsBlockedRoute
   '/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/settings/content': typeof SiteSettingsContentRoute
+  '/settings/device': typeof SiteSettingsDeviceRoute
   '/settings/feedback': typeof SiteSettingsFeedbackRoute
+  '/settings/game-assists': typeof SiteSettingsGameAssistsRoute
   '/settings/keyboard': typeof SiteSettingsKeyboardRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
@@ -4178,6 +4301,7 @@ export interface FileRoutesByTo {
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
+  '/study/review': typeof SiteStudyReviewRoute
   '/study/stats': typeof SiteStudyStatsRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
@@ -4240,6 +4364,7 @@ export interface FileRoutesByTo {
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
   '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
+  '/api/v1/events': typeof ApiV1EventsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
   '/api/v1/games': typeof ApiV1GamesRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
@@ -4369,15 +4494,22 @@ export interface FileRoutesByTo {
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
+  '/api/v1/communities/$slug': typeof ApiV1CommunitiesSlugRouteWithChildren
+  '/api/v1/events/$id': typeof ApiV1EventsIdRouteWithChildren
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
   '/api/v1/me/achievements': typeof ApiV1MeAchievementsRoute
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
+  '/api/v1/me/communities': typeof ApiV1MeCommunitiesRoute
   '/api/v1/me/decks': typeof ApiV1MeDecksRouteWithChildren
+  '/api/v1/me/events': typeof ApiV1MeEventsRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
   '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
+  '/api/v1/me/highlights': typeof ApiV1MeHighlightsRouteWithChildren
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/me/personal-bests': typeof ApiV1MePersonalBestsRoute
+  '/api/v1/me/reading-goal': typeof ApiV1MeReadingGoalRoute
+  '/api/v1/me/shelves': typeof ApiV1MeShelvesRouteWithChildren
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
   '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
@@ -4411,7 +4543,13 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhtube/parties/$roomId/ics': typeof ApiRmhtubePartiesRoomIdIcsRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
+  '/api/v1/communities/$slug/posts': typeof ApiV1CommunitiesSlugPostsRoute
+  '/api/v1/communities/$slug/rules': typeof ApiV1CommunitiesSlugRulesRoute
+  '/api/v1/events/$id/attendees': typeof ApiV1EventsIdAttendeesRoute
+  '/api/v1/events/$id/rsvp': typeof ApiV1EventsIdRsvpRoute
   '/api/v1/me/decks/$id': typeof ApiV1MeDecksIdRouteWithChildren
+  '/api/v1/me/highlights/$id': typeof ApiV1MeHighlightsIdRoute
+  '/api/v1/me/shelves/$slug': typeof ApiV1MeShelvesSlugRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -4717,7 +4855,9 @@ export interface FileRoutesById {
   '/_site/settings/blocked': typeof SiteSettingsBlockedRoute
   '/_site/settings/cloud-saves': typeof SiteSettingsCloudSavesRoute
   '/_site/settings/content': typeof SiteSettingsContentRoute
+  '/_site/settings/device': typeof SiteSettingsDeviceRoute
   '/_site/settings/feedback': typeof SiteSettingsFeedbackRoute
+  '/_site/settings/game-assists': typeof SiteSettingsGameAssistsRoute
   '/_site/settings/keyboard': typeof SiteSettingsKeyboardRoute
   '/_site/settings/layout': typeof SiteSettingsLayoutRoute
   '/_site/settings/notifications': typeof SiteSettingsNotificationsRoute
@@ -4730,6 +4870,7 @@ export interface FileRoutesById {
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/study/browse': typeof SiteStudyBrowseRoute
+  '/_site/study/review': typeof SiteStudyReviewRoute
   '/_site/study/stats': typeof SiteStudyStatsRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/thread/$rootId': typeof SiteThreadRootIdRoute
@@ -4792,6 +4933,7 @@ export interface FileRoutesById {
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
   '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
+  '/api/v1/events': typeof ApiV1EventsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
   '/api/v1/games': typeof ApiV1GamesRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
@@ -4922,15 +5064,22 @@ export interface FileRoutesById {
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
+  '/api/v1/communities/$slug': typeof ApiV1CommunitiesSlugRouteWithChildren
+  '/api/v1/events/$id': typeof ApiV1EventsIdRouteWithChildren
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
   '/api/v1/me/achievements': typeof ApiV1MeAchievementsRoute
   '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
+  '/api/v1/me/communities': typeof ApiV1MeCommunitiesRoute
   '/api/v1/me/decks': typeof ApiV1MeDecksRouteWithChildren
+  '/api/v1/me/events': typeof ApiV1MeEventsRoute
   '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
   '/api/v1/me/following': typeof ApiV1MeFollowingRoute
   '/api/v1/me/games': typeof ApiV1MeGamesRouteWithChildren
+  '/api/v1/me/highlights': typeof ApiV1MeHighlightsRouteWithChildren
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/me/personal-bests': typeof ApiV1MePersonalBestsRoute
+  '/api/v1/me/reading-goal': typeof ApiV1MeReadingGoalRoute
+  '/api/v1/me/shelves': typeof ApiV1MeShelvesRouteWithChildren
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
   '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
@@ -4964,7 +5113,13 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhtube/parties/$roomId/ics': typeof ApiRmhtubePartiesRoomIdIcsRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
+  '/api/v1/communities/$slug/posts': typeof ApiV1CommunitiesSlugPostsRoute
+  '/api/v1/communities/$slug/rules': typeof ApiV1CommunitiesSlugRulesRoute
+  '/api/v1/events/$id/attendees': typeof ApiV1EventsIdAttendeesRoute
+  '/api/v1/events/$id/rsvp': typeof ApiV1EventsIdRsvpRoute
   '/api/v1/me/decks/$id': typeof ApiV1MeDecksIdRouteWithChildren
+  '/api/v1/me/highlights/$id': typeof ApiV1MeHighlightsIdRoute
+  '/api/v1/me/shelves/$slug': typeof ApiV1MeShelvesSlugRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -5269,7 +5424,9 @@ export interface FileRouteTypes {
     | '/settings/blocked'
     | '/settings/cloud-saves'
     | '/settings/content'
+    | '/settings/device'
     | '/settings/feedback'
+    | '/settings/game-assists'
     | '/settings/keyboard'
     | '/settings/layout'
     | '/settings/notifications'
@@ -5282,6 +5439,7 @@ export interface FileRouteTypes {
     | '/store/$userid'
     | '/study/$deckId'
     | '/study/browse'
+    | '/study/review'
     | '/study/stats'
     | '/tag/$tag'
     | '/thread/$rootId'
@@ -5344,6 +5502,7 @@ export interface FileRouteTypes {
     | '/api/spaces/live'
     | '/api/v1/blog'
     | '/api/v1/builds'
+    | '/api/v1/events'
     | '/api/v1/feed'
     | '/api/v1/games'
     | '/api/v1/images'
@@ -5474,15 +5633,22 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/view'
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
+    | '/api/v1/communities/$slug'
+    | '/api/v1/events/$id'
     | '/api/v1/leaderboards/$game'
     | '/api/v1/me/achievements'
     | '/api/v1/me/bookmarks'
+    | '/api/v1/me/communities'
     | '/api/v1/me/decks'
+    | '/api/v1/me/events'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
     | '/api/v1/me/games'
+    | '/api/v1/me/highlights'
     | '/api/v1/me/notifications'
     | '/api/v1/me/personal-bests'
+    | '/api/v1/me/reading-goal'
+    | '/api/v1/me/shelves'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
     | '/api/v1/slice-it/charts'
@@ -5516,7 +5682,13 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhtube/parties/$roomId/ics'
     | '/api/slice-it/songs/stream/$id'
+    | '/api/v1/communities/$slug/posts'
+    | '/api/v1/communities/$slug/rules'
+    | '/api/v1/events/$id/attendees'
+    | '/api/v1/events/$id/rsvp'
     | '/api/v1/me/decks/$id'
+    | '/api/v1/me/highlights/$id'
+    | '/api/v1/me/shelves/$slug'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -5793,7 +5965,9 @@ export interface FileRouteTypes {
     | '/settings/blocked'
     | '/settings/cloud-saves'
     | '/settings/content'
+    | '/settings/device'
     | '/settings/feedback'
+    | '/settings/game-assists'
     | '/settings/keyboard'
     | '/settings/layout'
     | '/settings/notifications'
@@ -5806,6 +5980,7 @@ export interface FileRouteTypes {
     | '/store/$userid'
     | '/study/$deckId'
     | '/study/browse'
+    | '/study/review'
     | '/study/stats'
     | '/tag/$tag'
     | '/thread/$rootId'
@@ -5868,6 +6043,7 @@ export interface FileRouteTypes {
     | '/api/spaces/live'
     | '/api/v1/blog'
     | '/api/v1/builds'
+    | '/api/v1/events'
     | '/api/v1/feed'
     | '/api/v1/games'
     | '/api/v1/images'
@@ -5997,15 +6173,22 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/view'
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
+    | '/api/v1/communities/$slug'
+    | '/api/v1/events/$id'
     | '/api/v1/leaderboards/$game'
     | '/api/v1/me/achievements'
     | '/api/v1/me/bookmarks'
+    | '/api/v1/me/communities'
     | '/api/v1/me/decks'
+    | '/api/v1/me/events'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
     | '/api/v1/me/games'
+    | '/api/v1/me/highlights'
     | '/api/v1/me/notifications'
     | '/api/v1/me/personal-bests'
+    | '/api/v1/me/reading-goal'
+    | '/api/v1/me/shelves'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
     | '/api/v1/slice-it/charts'
@@ -6039,7 +6222,13 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhtube/parties/$roomId/ics'
     | '/api/slice-it/songs/stream/$id'
+    | '/api/v1/communities/$slug/posts'
+    | '/api/v1/communities/$slug/rules'
+    | '/api/v1/events/$id/attendees'
+    | '/api/v1/events/$id/rsvp'
     | '/api/v1/me/decks/$id'
+    | '/api/v1/me/highlights/$id'
+    | '/api/v1/me/shelves/$slug'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -6344,7 +6533,9 @@ export interface FileRouteTypes {
     | '/_site/settings/blocked'
     | '/_site/settings/cloud-saves'
     | '/_site/settings/content'
+    | '/_site/settings/device'
     | '/_site/settings/feedback'
+    | '/_site/settings/game-assists'
     | '/_site/settings/keyboard'
     | '/_site/settings/layout'
     | '/_site/settings/notifications'
@@ -6357,6 +6548,7 @@ export interface FileRouteTypes {
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
     | '/_site/study/browse'
+    | '/_site/study/review'
     | '/_site/study/stats'
     | '/_site/tag/$tag'
     | '/_site/thread/$rootId'
@@ -6419,6 +6611,7 @@ export interface FileRouteTypes {
     | '/api/spaces/live'
     | '/api/v1/blog'
     | '/api/v1/builds'
+    | '/api/v1/events'
     | '/api/v1/feed'
     | '/api/v1/games'
     | '/api/v1/images'
@@ -6549,15 +6742,22 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/view'
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
+    | '/api/v1/communities/$slug'
+    | '/api/v1/events/$id'
     | '/api/v1/leaderboards/$game'
     | '/api/v1/me/achievements'
     | '/api/v1/me/bookmarks'
+    | '/api/v1/me/communities'
     | '/api/v1/me/decks'
+    | '/api/v1/me/events'
     | '/api/v1/me/followers'
     | '/api/v1/me/following'
     | '/api/v1/me/games'
+    | '/api/v1/me/highlights'
     | '/api/v1/me/notifications'
     | '/api/v1/me/personal-bests'
+    | '/api/v1/me/reading-goal'
+    | '/api/v1/me/shelves'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
     | '/api/v1/slice-it/charts'
@@ -6591,7 +6791,13 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhtube/parties/$roomId/ics'
     | '/api/slice-it/songs/stream/$id'
+    | '/api/v1/communities/$slug/posts'
+    | '/api/v1/communities/$slug/rules'
+    | '/api/v1/events/$id/attendees'
+    | '/api/v1/events/$id/rsvp'
     | '/api/v1/me/decks/$id'
+    | '/api/v1/me/highlights/$id'
+    | '/api/v1/me/shelves/$slug'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -6725,6 +6931,7 @@ export interface RootRouteChildren {
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
   ApiV1BlogRoute: typeof ApiV1BlogRouteWithChildren
   ApiV1BuildsRoute: typeof ApiV1BuildsRouteWithChildren
+  ApiV1EventsRoute: typeof ApiV1EventsRouteWithChildren
   ApiV1FeedRoute: typeof ApiV1FeedRoute
   ApiV1GamesRoute: typeof ApiV1GamesRoute
   ApiV1ImagesRoute: typeof ApiV1ImagesRoute
@@ -6776,6 +6983,7 @@ export interface RootRouteChildren {
   ApiTournamentsIdWithdrawRoute: typeof ApiTournamentsIdWithdrawRoute
   ApiUserBuildsIdUnlockRoute: typeof ApiUserBuildsIdUnlockRoute
   ApiUserBuildsIdViewRoute: typeof ApiUserBuildsIdViewRoute
+  ApiV1CommunitiesSlugRoute: typeof ApiV1CommunitiesSlugRouteWithChildren
   ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
   ApiV1SliceItChartsRoute: typeof ApiV1SliceItChartsRoute
   ApiV1SliceItLeaderboardRoute: typeof ApiV1SliceItLeaderboardRoute
@@ -8957,11 +9165,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsContentRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/device': {
+      id: '/_site/settings/device'
+      path: '/settings/device'
+      fullPath: '/settings/device'
+      preLoaderRoute: typeof SiteSettingsDeviceRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/settings/feedback': {
       id: '/_site/settings/feedback'
       path: '/settings/feedback'
       fullPath: '/settings/feedback'
       preLoaderRoute: typeof SiteSettingsFeedbackRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/game-assists': {
+      id: '/_site/settings/game-assists'
+      path: '/settings/game-assists'
+      fullPath: '/settings/game-assists'
+      preLoaderRoute: typeof SiteSettingsGameAssistsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/settings/keyboard': {
@@ -9060,6 +9282,13 @@ declare module '@tanstack/react-router' {
       path: '/study/browse'
       fullPath: '/study/browse'
       preLoaderRoute: typeof SiteStudyBrowseRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/study/review': {
+      id: '/_site/study/review'
+      path: '/study/review'
+      fullPath: '/study/review'
+      preLoaderRoute: typeof SiteStudyReviewRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/study/stats': {
@@ -9515,6 +9744,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/builds'
       fullPath: '/api/v1/builds'
       preLoaderRoute: typeof ApiV1BuildsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events': {
+      id: '/api/v1/events'
+      path: '/api/v1/events'
+      fullPath: '/api/v1/events'
+      preLoaderRoute: typeof ApiV1EventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/feed': {
@@ -10280,6 +10516,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1BuildsSlugRouteImport
       parentRoute: typeof ApiV1BuildsRoute
     }
+    '/api/v1/communities/$slug': {
+      id: '/api/v1/communities/$slug'
+      path: '/api/v1/communities/$slug'
+      fullPath: '/api/v1/communities/$slug'
+      preLoaderRoute: typeof ApiV1CommunitiesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/events/$id': {
+      id: '/api/v1/events/$id'
+      path: '/$id'
+      fullPath: '/api/v1/events/$id'
+      preLoaderRoute: typeof ApiV1EventsIdRouteImport
+      parentRoute: typeof ApiV1EventsRoute
+    }
     '/api/v1/leaderboards/$game': {
       id: '/api/v1/leaderboards/$game'
       path: '/api/v1/leaderboards/$game'
@@ -10301,11 +10551,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeBookmarksRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
+    '/api/v1/me/communities': {
+      id: '/api/v1/me/communities'
+      path: '/communities'
+      fullPath: '/api/v1/me/communities'
+      preLoaderRoute: typeof ApiV1MeCommunitiesRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
     '/api/v1/me/decks': {
       id: '/api/v1/me/decks'
       path: '/decks'
       fullPath: '/api/v1/me/decks'
       preLoaderRoute: typeof ApiV1MeDecksRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/events': {
+      id: '/api/v1/me/events'
+      path: '/events'
+      fullPath: '/api/v1/me/events'
+      preLoaderRoute: typeof ApiV1MeEventsRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
     '/api/v1/me/followers': {
@@ -10329,6 +10593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeGamesRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
+    '/api/v1/me/highlights': {
+      id: '/api/v1/me/highlights'
+      path: '/highlights'
+      fullPath: '/api/v1/me/highlights'
+      preLoaderRoute: typeof ApiV1MeHighlightsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
     '/api/v1/me/notifications': {
       id: '/api/v1/me/notifications'
       path: '/notifications'
@@ -10341,6 +10612,20 @@ declare module '@tanstack/react-router' {
       path: '/personal-bests'
       fullPath: '/api/v1/me/personal-bests'
       preLoaderRoute: typeof ApiV1MePersonalBestsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/reading-goal': {
+      id: '/api/v1/me/reading-goal'
+      path: '/reading-goal'
+      fullPath: '/api/v1/me/reading-goal'
+      preLoaderRoute: typeof ApiV1MeReadingGoalRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/shelves': {
+      id: '/api/v1/me/shelves'
+      path: '/shelves'
+      fullPath: '/api/v1/me/shelves'
+      preLoaderRoute: typeof ApiV1MeShelvesRouteImport
       parentRoute: typeof ApiV1MeRoute
     }
     '/api/v1/news/$slug': {
@@ -10532,12 +10817,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItSongsStreamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/communities/$slug/posts': {
+      id: '/api/v1/communities/$slug/posts'
+      path: '/posts'
+      fullPath: '/api/v1/communities/$slug/posts'
+      preLoaderRoute: typeof ApiV1CommunitiesSlugPostsRouteImport
+      parentRoute: typeof ApiV1CommunitiesSlugRoute
+    }
+    '/api/v1/communities/$slug/rules': {
+      id: '/api/v1/communities/$slug/rules'
+      path: '/rules'
+      fullPath: '/api/v1/communities/$slug/rules'
+      preLoaderRoute: typeof ApiV1CommunitiesSlugRulesRouteImport
+      parentRoute: typeof ApiV1CommunitiesSlugRoute
+    }
+    '/api/v1/events/$id/attendees': {
+      id: '/api/v1/events/$id/attendees'
+      path: '/attendees'
+      fullPath: '/api/v1/events/$id/attendees'
+      preLoaderRoute: typeof ApiV1EventsIdAttendeesRouteImport
+      parentRoute: typeof ApiV1EventsIdRoute
+    }
+    '/api/v1/events/$id/rsvp': {
+      id: '/api/v1/events/$id/rsvp'
+      path: '/rsvp'
+      fullPath: '/api/v1/events/$id/rsvp'
+      preLoaderRoute: typeof ApiV1EventsIdRsvpRouteImport
+      parentRoute: typeof ApiV1EventsIdRoute
+    }
     '/api/v1/me/decks/$id': {
       id: '/api/v1/me/decks/$id'
       path: '/$id'
       fullPath: '/api/v1/me/decks/$id'
       preLoaderRoute: typeof ApiV1MeDecksIdRouteImport
       parentRoute: typeof ApiV1MeDecksRoute
+    }
+    '/api/v1/me/highlights/$id': {
+      id: '/api/v1/me/highlights/$id'
+      path: '/$id'
+      fullPath: '/api/v1/me/highlights/$id'
+      preLoaderRoute: typeof ApiV1MeHighlightsIdRouteImport
+      parentRoute: typeof ApiV1MeHighlightsRoute
+    }
+    '/api/v1/me/shelves/$slug': {
+      id: '/api/v1/me/shelves/$slug'
+      path: '/$slug'
+      fullPath: '/api/v1/me/shelves/$slug'
+      preLoaderRoute: typeof ApiV1MeShelvesSlugRouteImport
+      parentRoute: typeof ApiV1MeShelvesRoute
     }
     '/api/v1/posts/$id/bookmark': {
       id: '/api/v1/posts/$id/bookmark'
@@ -10914,7 +11241,9 @@ interface SiteRouteChildren {
   SiteSettingsBlockedRoute: typeof SiteSettingsBlockedRoute
   SiteSettingsCloudSavesRoute: typeof SiteSettingsCloudSavesRoute
   SiteSettingsContentRoute: typeof SiteSettingsContentRoute
+  SiteSettingsDeviceRoute: typeof SiteSettingsDeviceRoute
   SiteSettingsFeedbackRoute: typeof SiteSettingsFeedbackRoute
+  SiteSettingsGameAssistsRoute: typeof SiteSettingsGameAssistsRoute
   SiteSettingsKeyboardRoute: typeof SiteSettingsKeyboardRoute
   SiteSettingsLayoutRoute: typeof SiteSettingsLayoutRoute
   SiteSettingsNotificationsRoute: typeof SiteSettingsNotificationsRoute
@@ -10927,6 +11256,7 @@ interface SiteRouteChildren {
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
+  SiteStudyReviewRoute: typeof SiteStudyReviewRoute
   SiteStudyStatsRoute: typeof SiteStudyStatsRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteThreadRootIdRoute: typeof SiteThreadRootIdRoute
@@ -11065,7 +11395,9 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsBlockedRoute: SiteSettingsBlockedRoute,
   SiteSettingsCloudSavesRoute: SiteSettingsCloudSavesRoute,
   SiteSettingsContentRoute: SiteSettingsContentRoute,
+  SiteSettingsDeviceRoute: SiteSettingsDeviceRoute,
   SiteSettingsFeedbackRoute: SiteSettingsFeedbackRoute,
+  SiteSettingsGameAssistsRoute: SiteSettingsGameAssistsRoute,
   SiteSettingsKeyboardRoute: SiteSettingsKeyboardRoute,
   SiteSettingsLayoutRoute: SiteSettingsLayoutRoute,
   SiteSettingsNotificationsRoute: SiteSettingsNotificationsRoute,
@@ -11078,6 +11410,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
+  SiteStudyReviewRoute: SiteStudyReviewRoute,
   SiteStudyStatsRoute: SiteStudyStatsRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteThreadRootIdRoute: SiteThreadRootIdRoute,
@@ -11651,6 +11984,32 @@ const ApiV1BuildsRouteWithChildren = ApiV1BuildsRoute._addFileChildren(
   ApiV1BuildsRouteChildren,
 )
 
+interface ApiV1EventsIdRouteChildren {
+  ApiV1EventsIdAttendeesRoute: typeof ApiV1EventsIdAttendeesRoute
+  ApiV1EventsIdRsvpRoute: typeof ApiV1EventsIdRsvpRoute
+}
+
+const ApiV1EventsIdRouteChildren: ApiV1EventsIdRouteChildren = {
+  ApiV1EventsIdAttendeesRoute: ApiV1EventsIdAttendeesRoute,
+  ApiV1EventsIdRsvpRoute: ApiV1EventsIdRsvpRoute,
+}
+
+const ApiV1EventsIdRouteWithChildren = ApiV1EventsIdRoute._addFileChildren(
+  ApiV1EventsIdRouteChildren,
+)
+
+interface ApiV1EventsRouteChildren {
+  ApiV1EventsIdRoute: typeof ApiV1EventsIdRouteWithChildren
+}
+
+const ApiV1EventsRouteChildren: ApiV1EventsRouteChildren = {
+  ApiV1EventsIdRoute: ApiV1EventsIdRouteWithChildren,
+}
+
+const ApiV1EventsRouteWithChildren = ApiV1EventsRoute._addFileChildren(
+  ApiV1EventsRouteChildren,
+)
+
 interface ApiV1MeDecksIdCardsRouteChildren {
   ApiV1MeDecksIdCardsCardIdRoute: typeof ApiV1MeDecksIdCardsCardIdRoute
   ApiV1MeDecksIdCardsByExternalIdExternalIdRoute: typeof ApiV1MeDecksIdCardsByExternalIdExternalIdRoute
@@ -11703,26 +12062,59 @@ const ApiV1MeGamesRouteWithChildren = ApiV1MeGamesRoute._addFileChildren(
   ApiV1MeGamesRouteChildren,
 )
 
+interface ApiV1MeHighlightsRouteChildren {
+  ApiV1MeHighlightsIdRoute: typeof ApiV1MeHighlightsIdRoute
+}
+
+const ApiV1MeHighlightsRouteChildren: ApiV1MeHighlightsRouteChildren = {
+  ApiV1MeHighlightsIdRoute: ApiV1MeHighlightsIdRoute,
+}
+
+const ApiV1MeHighlightsRouteWithChildren =
+  ApiV1MeHighlightsRoute._addFileChildren(ApiV1MeHighlightsRouteChildren)
+
+interface ApiV1MeShelvesRouteChildren {
+  ApiV1MeShelvesSlugRoute: typeof ApiV1MeShelvesSlugRoute
+}
+
+const ApiV1MeShelvesRouteChildren: ApiV1MeShelvesRouteChildren = {
+  ApiV1MeShelvesSlugRoute: ApiV1MeShelvesSlugRoute,
+}
+
+const ApiV1MeShelvesRouteWithChildren = ApiV1MeShelvesRoute._addFileChildren(
+  ApiV1MeShelvesRouteChildren,
+)
+
 interface ApiV1MeRouteChildren {
   ApiV1MeAchievementsRoute: typeof ApiV1MeAchievementsRoute
   ApiV1MeBookmarksRoute: typeof ApiV1MeBookmarksRoute
+  ApiV1MeCommunitiesRoute: typeof ApiV1MeCommunitiesRoute
   ApiV1MeDecksRoute: typeof ApiV1MeDecksRouteWithChildren
+  ApiV1MeEventsRoute: typeof ApiV1MeEventsRoute
   ApiV1MeFollowersRoute: typeof ApiV1MeFollowersRoute
   ApiV1MeFollowingRoute: typeof ApiV1MeFollowingRoute
   ApiV1MeGamesRoute: typeof ApiV1MeGamesRouteWithChildren
+  ApiV1MeHighlightsRoute: typeof ApiV1MeHighlightsRouteWithChildren
   ApiV1MeNotificationsRoute: typeof ApiV1MeNotificationsRoute
   ApiV1MePersonalBestsRoute: typeof ApiV1MePersonalBestsRoute
+  ApiV1MeReadingGoalRoute: typeof ApiV1MeReadingGoalRoute
+  ApiV1MeShelvesRoute: typeof ApiV1MeShelvesRouteWithChildren
 }
 
 const ApiV1MeRouteChildren: ApiV1MeRouteChildren = {
   ApiV1MeAchievementsRoute: ApiV1MeAchievementsRoute,
   ApiV1MeBookmarksRoute: ApiV1MeBookmarksRoute,
+  ApiV1MeCommunitiesRoute: ApiV1MeCommunitiesRoute,
   ApiV1MeDecksRoute: ApiV1MeDecksRouteWithChildren,
+  ApiV1MeEventsRoute: ApiV1MeEventsRoute,
   ApiV1MeFollowersRoute: ApiV1MeFollowersRoute,
   ApiV1MeFollowingRoute: ApiV1MeFollowingRoute,
   ApiV1MeGamesRoute: ApiV1MeGamesRouteWithChildren,
+  ApiV1MeHighlightsRoute: ApiV1MeHighlightsRouteWithChildren,
   ApiV1MeNotificationsRoute: ApiV1MeNotificationsRoute,
   ApiV1MePersonalBestsRoute: ApiV1MePersonalBestsRoute,
+  ApiV1MeReadingGoalRoute: ApiV1MeReadingGoalRoute,
+  ApiV1MeShelvesRoute: ApiV1MeShelvesRouteWithChildren,
 }
 
 const ApiV1MeRouteWithChildren =
@@ -11792,6 +12184,19 @@ const ApiRmhladderResumeIdRouteChildren: ApiRmhladderResumeIdRouteChildren = {
 
 const ApiRmhladderResumeIdRouteWithChildren =
   ApiRmhladderResumeIdRoute._addFileChildren(ApiRmhladderResumeIdRouteChildren)
+
+interface ApiV1CommunitiesSlugRouteChildren {
+  ApiV1CommunitiesSlugPostsRoute: typeof ApiV1CommunitiesSlugPostsRoute
+  ApiV1CommunitiesSlugRulesRoute: typeof ApiV1CommunitiesSlugRulesRoute
+}
+
+const ApiV1CommunitiesSlugRouteChildren: ApiV1CommunitiesSlugRouteChildren = {
+  ApiV1CommunitiesSlugPostsRoute: ApiV1CommunitiesSlugPostsRoute,
+  ApiV1CommunitiesSlugRulesRoute: ApiV1CommunitiesSlugRulesRoute,
+}
+
+const ApiV1CommunitiesSlugRouteWithChildren =
+  ApiV1CommunitiesSlugRoute._addFileChildren(ApiV1CommunitiesSlugRouteChildren)
 
 interface ApiV1UsersHandleRouteChildren {
   ApiV1UsersHandleFollowRoute: typeof ApiV1UsersHandleFollowRoute
@@ -11929,6 +12334,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
   ApiV1BlogRoute: ApiV1BlogRouteWithChildren,
   ApiV1BuildsRoute: ApiV1BuildsRouteWithChildren,
+  ApiV1EventsRoute: ApiV1EventsRouteWithChildren,
   ApiV1FeedRoute: ApiV1FeedRoute,
   ApiV1GamesRoute: ApiV1GamesRoute,
   ApiV1ImagesRoute: ApiV1ImagesRoute,
@@ -11980,6 +12386,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTournamentsIdWithdrawRoute: ApiTournamentsIdWithdrawRoute,
   ApiUserBuildsIdUnlockRoute: ApiUserBuildsIdUnlockRoute,
   ApiUserBuildsIdViewRoute: ApiUserBuildsIdViewRoute,
+  ApiV1CommunitiesSlugRoute: ApiV1CommunitiesSlugRouteWithChildren,
   ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,
   ApiV1SliceItChartsRoute: ApiV1SliceItChartsRoute,
   ApiV1SliceItLeaderboardRoute: ApiV1SliceItLeaderboardRoute,

@@ -41,6 +41,7 @@ import {
   serializeGroupMessages,
 } from '@/lib/group-chat/serialize.server';
 import type { SentDirectMessage } from '@/lib/messages/messages.contract';
+import { afterGroupMessage } from '@/lib/group-chat/mentions.server';
 import { afterDirectMessage } from '@/lib/messages/away.server';
 import { clearStaleDraft, openRequest, requestGate } from '@/lib/messages/requests.server';
 import {
@@ -594,7 +595,7 @@ export interface SendGroupOptions {
 export type GroupMembership = NonNullable<Awaited<ReturnType<typeof loadGroupMembership>>>;
 
 function loadGroupMembership(groupId: string, userId: string) {
-  return findGroupMembership(groupId, userId, { id: true, chat: { select: { disappearAfterSec: true } } });
+  return findGroupMembership(groupId, userId, { id: true, chat: { select: { disappearAfterSec: true, name: true } } });
 }
 
 /** Ban and restriction: the endpoint runs these before its IP rate limit. */
@@ -818,6 +819,15 @@ export async function sendGroupMessage(
         : null,
     },
   );
+
+  // s07-05: store and announce the message's @mentions; after the commit, and never able to fail the send.
+  await afterGroupMessage({
+    messageId: payload.id,
+    chatId: groupId,
+    groupName: membership.chat.name ?? '',
+    content: text,
+    senderId: userId,
+  });
 
   return {
     ok: true,

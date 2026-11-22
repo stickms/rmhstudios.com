@@ -103,6 +103,19 @@ function getDB(): Promise<
         DB_NAME,
         DB_VERSION,
         {
+          // Clearing this device (/settings/device) deletes the database; let it go instead of holding the delete.
+          blocking() {
+            const open =
+              dbPromise;
+            dbPromise =
+              null;
+            void open?.then(
+              (
+                db,
+              ) =>
+                db.close(),
+            );
+          },
           upgrade(
             db,
           ) {

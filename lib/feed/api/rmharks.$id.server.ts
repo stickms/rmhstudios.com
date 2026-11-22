@@ -16,10 +16,66 @@ import { isExpired } from '@/lib/posts-plus/constants';
 import { deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { getCommunitySettings } from '@/lib/communities/settings.server';
+import {
+  ALT_REQUIRED_CODE,
+  ALT_REQUIRED_MESSAGE,
+  clearsDescription,
+  communityGifAltMissing,
+} from '@/lib/communities/alt-required';
 import { resolveEditedGifAlt } from '@/lib/feed/gif-alt';
 import { resolveEditedContentWarning } from '@/lib/feed/content-warning';
 import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
+import { normalizeExplanation, quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { pollLockKey } from '@/lib/feed/poll-lifecycle.server';
 import { resolveEndedResult } from '@/lib/feed/ranked-poll.server';
+
+/**
+ * Change a quiz's correct option and/or explanation (s07-19). Runs under the poll's advisory lock, the one a vote
+ * takes, so a vote cannot land between the check and the write. Returns a refusal Response, or null when applied.
+ */
+async function editQuizAnswer(
+  postId: string,
+  correctOptionId: string | undefined,
+  explanation: string | null | undefined,
+): Promise<Response | null> {
+  const found = await prisma.rMHarkPoll.findUnique({
+    where: { rmheetId: postId },
+    select: { id: true, correctOptionId: true },
+  });
+  if (!found || !found.correctOptionId) {
+    return Response.json({ error: 'This post is not a quiz', code: 'NOT_A_QUIZ' }, { status: 400 });
+  }
+  return prisma.$transaction(async (tx) => {
+    await lockKey(tx, pollLockKey(found.id));
+    const poll = await tx.rMHarkPoll.findUnique({
+      where: { id: found.id },
+      select: { options: { select: { id: true, voteCount: true } } },
+    });
+    if (!poll) return Response.json({ error: 'Not found' }, { status: 404 });
+    const voted =
+      poll.options.some((o) => o.voteCount > 0) ||
+      !!(await tx.rMHarkPollVote.findFirst({ where: { option: { pollId: found.id } }, select: { id: true } }));
+    if (voted) {
+      return Response.json(
+        { error: 'This quiz has votes, so its answer is locked', code: 'QUIZ_LOCKED' },
+        { status: 409 },
+      );
+    }
+    if (correctOptionId !== undefined && !poll.options.some((o) => o.id === correctOptionId)) {
+      return Response.json({ error: 'The answer must be one of the options', code: 'BAD_ANSWER' }, { status: 400 });
+    }
+    await tx.rMHarkPoll.update({
+      where: { id: found.id },
+      data: {
+        ...(correctOptionId !== undefined ? { correctOptionId } : {}),
+        ...(explanation !== undefined ? { explanation: normalizeExplanation(explanation) } : {}),
+      },
+    });
+    return null;
+  });
+}
 
 export const route = apiRoute('/api/rmharks/$id', {
   GET: defineHandler({ auth: 'optional' }, async ({ params, userId }) => {
@@ -100,6 +156,12 @@ export const route = apiRoute('/api/rmharks/$id', {
           ended: lifecycle.ended,
           countsHidden: countsHiddenFrom(rmhark.userId, rmhark.user?.profile?.hideCountsOnMine, userId),
         }),
+        // s07-19: the quiz answer only for its author, a voter, or anyone once it has ended.
+        ...quizRevealFor(
+          poll,
+          { viewerId: userId, authorId: rmhark.userId },
+          viewerHasVoted(poll.options),
+        ),
         totalVotes,
         options: poll.options.map((o: any) => ({
           id: o.id,
@@ -265,6 +327,8 @@ export const route = apiRoute('/api/rmharks/$id', {
         gifAlt: true,
         isSensitive: true,
         contentWarning: true,
+        communityId: true,
+        imageAlts: true,
       },
     });
     if (!existing || existing.deletedAt) {
@@ -272,6 +336,17 @@ export const route = apiRoute('/api/rmharks/$id', {
     }
     if (existing.userId !== session.user.id) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    // s07-16: an edit never takes an image description away in a community that requires them. The edit body carries
+    // no images today, so this only fires if one ever sends `imageAlts` (the stored ones are the baseline).
+    if (existing.communityId && Array.isArray((body as { imageAlts?: unknown }).imageAlts)) {
+      const community = await getCommunitySettings(existing.communityId);
+      const sent = ((body as { imageAlts: unknown[] }).imageAlts as unknown[]).map((a) =>
+        typeof a === 'string' ? a : '',
+      );
+      if (community?.requireImageAlt && clearsDescription(existing.imageAlts, sent)) {
+        return Response.json({ error: ALT_REQUIRED_MESSAGE, code: ALT_REQUIRED_CODE }, { status: 400 });
+      }
     }
     const existingHasGif = !!existing.gifUrl;
     if (!content && !(gifUrlProvided ? nextGifUrl : existingHasGif)) {
@@ -284,6 +359,22 @@ export const route = apiRoute('/api/rmharks/$id', {
       nextUrl: gifUrlProvided ? nextGifUrl : undefined,
       nextAlt: gifAltProvided ? (parsed.data.gifAlt ?? null) : undefined,
     });
+    // s07-16: a GIF in a requiring community keeps (or arrives with) a description.
+    // Only when the GIF or its description changed: an old undescribed GIF does not block editing the text.
+    if (existing.communityId && nextGif.gifUrl && (nextGif.gifUrl !== existing.gifUrl || nextGif.gifAlt !== existing.gifAlt)) {
+      const community = await getCommunitySettings(existing.communityId);
+      if (communityGifAltMissing(community?.requireImageAlt === true, nextGif.gifUrl, nextGif.gifAlt)) {
+        return Response.json({ error: ALT_REQUIRED_MESSAGE, code: ALT_REQUIRED_CODE, missingGif: true }, { status: 400 });
+      }
+    }
+    // s07-19: a quiz's answer or explanation can be fixed only while nobody has voted. It runs after every check
+    // above, so a refused edit (an empty post, a GIF missing its required description) writes no answer; its own
+    // refusals (not a quiz, locked by a vote, not an option) come before anything else is written.
+    const quizEdit = parsed.data.quizCorrectOptionId !== undefined || parsed.data.quizExplanation !== undefined;
+    if (quizEdit) {
+      const locked = await editQuizAnswer(id, parsed.data.quizCorrectOptionId, parsed.data.quizExplanation);
+      if (locked) return locked;
+    }
     const gifChanged = nextGif.gifUrl !== existing.gifUrl;
     const altChanged = nextGif.gifAlt !== existing.gifAlt;
     // The warning: a reason implies it, `isSensitive: false` clears both. Changing it is a content edit (history row,

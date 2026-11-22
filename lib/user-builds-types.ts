@@ -57,6 +57,17 @@ export interface Build {
   thumbnailUrl?:
     | string
     | null;
+  /** s07-17: describes the cover; the title stands in when it is empty. */
+  thumbnailAlt?:
+    | string
+    | null;
+  /** s07-17: the described screenshots in order; carried by the build page and the single-build read only. */
+  screenshots?: {
+    url: string;
+    width: number;
+    height: number;
+    description: string;
+  }[];
   repoUrl?:
     | string
     | null;

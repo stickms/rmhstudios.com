@@ -16,6 +16,8 @@ export interface CommunitySettings {
   verification: VerificationRule;
   flairRequired: boolean;
   starThreshold: number;
+  /** s07-16: every image posted here needs a description. */
+  requireImageAlt: boolean;
 }
 
 const TTL_MS = 30_000;
@@ -33,6 +35,7 @@ export async function getCommunitySettings(communityId: string): Promise<Communi
           verificationValue: true,
           flairRequired: true,
           starThreshold: true,
+          requireImageAlt: true,
         },
       });
       if (!row) return null;
@@ -41,6 +44,7 @@ export async function getCommunitySettings(communityId: string): Promise<Communi
         verification: normalizeVerificationRule(level, row.verificationValue),
         flairRequired: row.flairRequired,
         starThreshold: row.starThreshold,
+        requireImageAlt: row.requireImageAlt,
       };
       return settings;
     },
@@ -56,6 +60,7 @@ export async function updateCommunitySettings(
     flairRequired?: boolean;
     starThreshold?: number;
     publicModLog?: boolean;
+    requireImageAlt?: boolean;
   },
   actorId: string,
 ): Promise<CommunitySettings | null> {
@@ -68,6 +73,7 @@ export async function updateCommunitySettings(
         flairRequired: true,
         starThreshold: true,
         publicModLog: true,
+        requireImageAlt: true,
       },
     });
     if (!row) return false;
@@ -98,6 +104,10 @@ export async function updateCommunitySettings(
     if (patch.publicModLog !== undefined && patch.publicModLog !== row.publicModLog) {
       data.publicModLog = patch.publicModLog;
       changed.push('publicModLog');
+    }
+    if (patch.requireImageAlt !== undefined && patch.requireImageAlt !== row.requireImageAlt) {
+      data.requireImageAlt = patch.requireImageAlt;
+      changed.push('requireImageAlt');
     }
     if (changed.length > 0) {
       await tx.community.update({ where: { id: communityId }, data });

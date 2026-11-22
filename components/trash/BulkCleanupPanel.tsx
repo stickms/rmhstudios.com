@@ -33,6 +33,7 @@ import {
   BULK_KINDS,
   bulkProgress,
   isTerminal,
+  REPEATED_RESTARTS_ERROR,
   supportsFilter,
   type BulkFilter,
   type BulkKind,
@@ -100,9 +101,9 @@ export function BulkCleanupPanel() {
         throw e;
       }
     },
-    // Poll only while something is moving. An idle page makes no requests.
+    // Poll only while something is moving (queued or running). An idle page makes no requests.
     refetchInterval: (q) =>
-      (q.state.data?.operations ?? []).some((op) => !isTerminal(op.status)) ? 2000 : false,
+      (q.state.data?.operations ?? []).some((op) => !isTerminal(op.status)) ? 3000 : false,
     retry: false,
   });
 
@@ -460,12 +461,21 @@ export function BulkCleanupPanel() {
             />
           </div>
           <p className="text-xs text-site-text-muted">
-            {t('bulk-progress-count', {
+            {t('progress-count', {
+              ns: 'bulk-durable',
               processed: active.processed,
               total: active.total,
-              defaultValue: '{{processed}} of {{total}} done',
+              defaultValue: '{{processed}} of {{total}}',
             })}
           </p>
+          {active.reclaims > 0 ? (
+            <p className="text-xs text-site-text-muted">
+              {t('resuming-line', {
+                ns: 'bulk-durable',
+                defaultValue: 'Resuming after a restart',
+              })}
+            </p>
+          ) : null}
           <Button
             variant="default"
             className="self-start"
@@ -508,6 +518,14 @@ export function BulkCleanupPanel() {
                     {statuses[op.status] ?? op.status}
                   </Badge>
                 </span>
+                {op.status === 'FAILED' && op.error === REPEATED_RESTARTS_ERROR ? (
+                  <span className="basis-full text-xs text-site-text-muted">
+                    {t('failed-repeated-restarts', {
+                      ns: 'bulk-durable',
+                      defaultValue: 'Stopped after repeated restarts. Start it again to finish.',
+                    })}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>

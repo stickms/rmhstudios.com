@@ -55,12 +55,17 @@ export interface Msg {
     | null;
 }
 
+/** A member of a group: an author plus their role (s07-04). The owner is `Group.ownerId` and has role `member`. */
+export interface GroupMember extends Sender {
+  role: 'member' | 'admin';
+}
+
 export interface Group {
   id: string;
   name: string;
   isOwner: boolean;
   /** The owner's id, for the member list's Owner mark. */
   ownerId: string | null;
-  members: Sender[];
+  members: GroupMember[];
   messages: Msg[];
 }

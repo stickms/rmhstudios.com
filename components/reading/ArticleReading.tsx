@@ -9,6 +9,8 @@ import type { ReadingDocKind } from '@/lib/reading/schema';
 import { useDocBundle } from '@/lib/reading/client';
 import { ARRIVE } from '@/components/ui/arrive';
 import { HighlightsSection } from './HighlightsSection';
+import { useReadingClock } from './useReadingClock';
+import { ReadingTimeLine } from './ReadingTimeLine';
 import {
   NO_HIGHLIGHTS,
   NO_POPULAR,
@@ -53,8 +55,28 @@ export default function ArticleReading({
       },
     );
 
+  const clock =
+    useReadingClock(
+      {
+        kind,
+        docKey,
+        enabled:
+          data?.signedIn ===
+          true,
+      },
+    );
+
   return (
     <>
+      <ReadingTimeLine
+        tracking={
+          clock.tracking
+        }
+        seconds={
+          clock.docSeconds
+        }
+        className={`mb-4 ${ARRIVE}`}
+      />
       {
         kit.view
       }

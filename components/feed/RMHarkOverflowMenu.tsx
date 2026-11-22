@@ -656,7 +656,17 @@ export function RMHarkOverflowPanel({
  initialGifAlt={item.gifAlt ??''}
  initialContentWarning={item.contentWarning ??''}
  initialSensitive={item.isSensitive ?? false}
- onSaved={(content, gifUrl, gifAlt, warning) =>
+ quiz={
+ item.poll?.quiz && item.poll.correctOptionId
+ ? {
+ options: item.poll.options.map((o) => ({ id: o.id, text: o.text })),
+ correctOptionId: item.poll.correctOptionId,
+ explanation: item.poll.explanation ??'',
+ locked: item.poll.totalVotes > 0,
+ }
+ : undefined
+ }
+ onSaved={(content, gifUrl, gifAlt, warning, quizEdit) =>
  onUpdate?.({
  content,
  gifUrl: gifUrl ?? undefined,
@@ -664,6 +674,15 @@ export function RMHarkOverflowPanel({
  isSensitive: warning.isSensitive,
  contentWarning: warning.contentWarning ?? undefined,
  edited: true,
+ ...(quizEdit && item.poll
+ ? {
+ poll: {
+ ...item.poll,
+ correctOptionId: quizEdit.correctOptionId,
+ explanation: quizEdit.explanation || undefined,
+ },
+ }
+ : {}),
  })
  }
  />

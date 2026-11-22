@@ -30,6 +30,11 @@ const ShelvesPanel =
     () =>
       import('./ShelvesPanel'),
   );
+const ReadingTimeSection =
+  lazy(
+    () =>
+      import('./ReadingTimeSection'),
+  );
 const ChallengePanel =
   lazy(
     () =>
@@ -84,6 +89,13 @@ export function MyReadingView({
           )}
         </p>
       </div>
+      <ArrivalSuspense
+        fallback={
+          <Skeleton className="h-32 w-full" />
+        }
+      >
+        <ReadingTimeSection />
+      </ArrivalSuspense>
       <Tabs
         aria-label={t(
           'my-reading-tabs',

@@ -11,6 +11,7 @@ import {
 } from '@/lib/rmhark-schema';
 import { refineRankedPoll } from '@/lib/feed/ranked-poll-schema';
 import { RANKED_MAX_OPTIONS } from '@/lib/feed/ranked-poll';
+import { quizPollFields, refineQuizPoll } from '@/lib/feed/quiz-poll-schema';
 
 export const pollSchema =
   z.object(
@@ -62,9 +63,14 @@ export const pollSchema =
             720,
           )
           .optional(),
+      // s07-19: a quiz; `refineQuizPoll` holds it to single choice, 2-4 options and one correct answer.
+      ...quizPollFields,
     },
   )
-  .superRefine(refineRankedPoll);
+  .superRefine((poll, ctx) => {
+    refineRankedPoll(poll, ctx);
+    refineQuizPoll(poll, ctx);
+  });
 
 export const createScheduledSchema =
   z.object(

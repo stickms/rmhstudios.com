@@ -16,13 +16,16 @@ export const KEY_ENV_NAME = 'RMH_API_KEY';
 /** Groups that have a page in the external docs (`docs/developer-api/endpoints/<group>.md`). */
 const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'account',
+  'communities',
   'content',
   'engagement',
+  'events',
   'feed',
   'games',
   'media',
   'meta',
   'posts',
+  'reading',
   'study',
   'users',
   'webhooks',

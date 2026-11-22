@@ -24,6 +24,7 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
 import { toast } from '@/lib/toast';
+import { announceListening } from '@/lib/reading/time';
 import {
   createReader,
   type Reader,
@@ -446,6 +447,12 @@ export default function ListenControls({
       onClose,
     };
 
+  // Leaving the page (or another article) ends the listen span the reading clock is counting.
+  useEffect(
+    () => () => announceListening(false),
+    [],
+  );
+
   useEffect(() => {
     const root =
       rootRef.current;
@@ -508,6 +515,10 @@ export default function ListenControls({
                 ) => {
                   setState(
                     next,
+                  );
+                  announceListening(
+                    next ===
+                      'playing',
                   );
                   if (
                     next ===

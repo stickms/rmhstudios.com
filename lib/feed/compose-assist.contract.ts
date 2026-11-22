@@ -268,6 +268,11 @@ export const editPostApi =
       contentWarning?:
         | string
         | null;
+      /** s07-19: a quiz's correct option and explanation; refused with 409 `QUIZ_LOCKED` once anyone has voted. */
+      quizCorrectOptionId?: string;
+      quizExplanation?:
+        | string
+        | null;
     };
     res: {
       success: true;

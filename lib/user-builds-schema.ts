@@ -94,6 +94,15 @@ export const createBuildSchema =
         urlSchema,
       thumbnailUrl:
         imageUrlSchema,
+      // s07-17: what the cover shows, for a screen reader; '' clears it.
+      thumbnailAlt:
+        z
+          .string()
+          .max(
+            500,
+            'The cover description is at most 500 characters',
+          )
+          .optional(),
       categoryId:
         z
           .string()
