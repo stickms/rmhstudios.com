@@ -18,6 +18,7 @@
 import { memo } from 'react';
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { globesetColorLabels } from './color-labels';
 import { DOT_COLORS, dotsOf, type Card, type DotColor } from '@/lib/globeset/cards';
 import { APPLE_SPRING } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
@@ -128,6 +129,7 @@ function GlobeSetCardImpl({
   onFocus,
 }: GlobeSetCardProps) {
   const { t } = useTranslation('c-daily-puzzles');
+  const colorNames = globesetColorLabels(t);
 
   /**
    * The card names its own dots.
@@ -138,11 +140,7 @@ function GlobeSetCardImpl({
    * A card knows its own dots; nothing else should have to remember to say so.
    */
   const dots = dotsOf(card)
-    .map((dot) =>
-      t(`globeset-color-${dot.id}`, {
-        defaultValue: dot.id,
-      }),
-    )
+    .map((dot) => colorNames[dot.id])
     .join(', ');
   const label = t('globeset-card-label', {
     defaultValue: 'Card {{n}}: {{dots}}',

@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 /**
  * Gabriel's Horn record board.
@@ -45,8 +47,9 @@ export const route = apiRoute('/api/gabriels-horn/leaderboard', {
       },
     },
     async ({ query }) => {
+      const hidden = await leaderboardHiddenUserIds();
       const rows = await prisma.gabrielsHornPlayer.findMany({
-        where: { gamesPlayed: { gt: 0 } },
+        where: { gamesPlayed: { gt: 0 }, ...notHiddenWhere(hidden) },
         select: {
           username: true,
           wins: true,

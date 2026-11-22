@@ -1,6 +1,7 @@
 /** Client-safe view models for the calendar features (K1–K4, F5). */
 import type { PollParams } from './poll-slots';
 import type { RecurrenceRule } from './recurrence';
+import type { UpcomingDateDTO } from '@/lib/events/occurrences';
 
 export interface CalPerson {
   id: string;
@@ -141,4 +142,11 @@ export interface EventRecurrenceDTO {
   rotation: CalPerson[];
   /** The viewer's standing "every time" RSVP, if any. */
   viewerEveryTime: boolean;
+  /**
+   * s06-10 — the shown date's ORIGINAL start. `EventDTO.startsAt` is where it is shown now (a moved
+   * date differs), and an RSVP is keyed by this one.
+   */
+  occurrenceAt?: string;
+  /** s06-10 — the next dates after overrides, skipped and moved ones marked. */
+  upcoming?: UpcomingDateDTO[];
 }

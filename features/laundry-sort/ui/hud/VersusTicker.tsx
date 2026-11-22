@@ -9,8 +9,10 @@
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { useLaundryStore } from '@features/laundry-sort/engine/store';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function VersusTicker() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-laundry-sort');
   const liveScores = useLaundryStore((s) => s.liveScores);
   const start = useLaundryStore((s) => s.start);
@@ -54,7 +56,7 @@ export function VersusTicker() {
                     })}
                   />
                 ) : null}
-                <span className="ls-numeric shrink-0 tabular-nums">{entry.score.toLocaleString()}</span>
+                <span className="ls-numeric shrink-0 tabular-nums">{fmt.number(entry.score)}</span>
               </li>
             );
           })}

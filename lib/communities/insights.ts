@@ -32,9 +32,10 @@ export interface TopPostDTO {
   authorName: string | null;
   excerpt: string;
   createdAt: string;
-  likes: number;
-  reactions: number;
-  replies: number;
+  /** `null` when the author hides the counts on their posts (lib/feed/quiet-counts). */
+  likes: number | null;
+  reactions: number | null;
+  replies: number | null;
 }
 
 export interface CommunityInsightsDTO {

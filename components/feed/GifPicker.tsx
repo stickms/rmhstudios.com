@@ -5,9 +5,11 @@ import type { KlipyGif } from'@/lib/klipy.server';
 import { buildGifSearchPath } from'@/lib/gif-search';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { prefillGifAlt, type GifSelection } from '@/lib/feed/gif-alt';
 
 interface GifPickerProps {
- onSelect: (url: string) => void;
+ /** The GIF's URL and the provider's description of it (already cleaned and capped; '' when it sent none). */
+ onSelect: (selection: GifSelection) => void;
  onClose?: () => void;
  className?: string;
  /** Pre-filled search (the `/gif cats` slash command). */
@@ -112,7 +114,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', 
  <button
  key={g.id}
  type="button"
- onClick={() => { onSelect(g.url); onClose?.(); }}
+ onClick={() => { onSelect({ url: g.url, description: prefillGifAlt(g.description) }); onClose?.(); }}
  className={cn(
  'block rounded-site-sm overflow-hidden border border-site-border hover:border-site-accent transition-colors',
  isNew(g.id) && ARRIVE,

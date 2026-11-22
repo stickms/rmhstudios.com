@@ -35,6 +35,15 @@ export interface Build {
   description: string;
   readme?: string | null;
   thumbnailUrl?: string | null;
+  /** s07-17: describes the cover; the title stands in when it is empty. */
+  thumbnailAlt?: string | null;
+  /** s07-17: the described screenshots in order; carried by the build page and the single-build read only. */
+  screenshots?: {
+    url: string;
+    width: number;
+    height: number;
+    description: string;
+  }[];
   repoUrl?: string | null;
   demoUrl?: string | null;
   visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE';
@@ -69,6 +78,15 @@ export interface BuildComment {
   parentId?: string | null;
   replyCount?: number;
   replies?: BuildComment[];
+  /** s06-14: set once the author has edited it. */
+  edited?: boolean;
+  /** s06-14: how to draw it; absent means `visible`. A `deleted` comment has no text. */
+  state?: 'visible' | 'hidden' | 'hidden-own' | 'deleted';
+  /** s06-14: what the viewer may do, computed on the server. */
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canHide?: boolean;
+  canReport?: boolean;
 }
 
 export type BuildSortOption = 'recent' | 'popular' | 'views';

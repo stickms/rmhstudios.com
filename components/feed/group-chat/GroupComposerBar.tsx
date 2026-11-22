@@ -9,9 +9,12 @@ import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { ScheduledStrip } from '@/components/messages/ScheduledStrip';
 import { SendLaterMenu } from '@/components/messages/SendLaterMenu';
+import { useSavedReplies } from '@/components/messages/useSavedReplies';
+import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { MentionTextarea } from '../MentionTextarea';
+import { useMentionPicker } from './MentionPicker';
 import { MAX_IMAGES, memberSuggestions } from './group-chat-state';
 import type { Group, Msg } from '@/lib/group-chat/types';
 import type { GroupComposer } from './useGroupComposer';
@@ -22,11 +25,13 @@ export function GroupComposerBar({
   group,
   chatRef,
   appendMessages,
+  currentUserId,
 }: {
   composer: GroupComposer;
   group: Group;
   chatRef: ChatRef;
   appendMessages: (incoming: Msg[]) => void;
+  currentUserId: string;
 }) {
   const { t } = useTranslation('feed');
   const {
@@ -35,6 +40,7 @@ export function GroupComposerBar({
     sending,
     gifUrl,
     setGifUrl,
+    gifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,
@@ -53,7 +59,23 @@ export function GroupComposerBar({
     send,
     canSend,
   } = composer;
-  // Chat members get priority in @-mention autocomplete.
+  const savedReplies = useSavedReplies({
+    chatKind: 'group',
+    draft: input,
+    setDraft: setInput,
+    inputRef,
+    maxLength: MESSAGE_MAX_LENGTH,
+    buttonClassName: 'h-9',
+  });
+  // `@` offers the group's members (s07-05); `#` and `:` stay with the text field.
+  const mentionPicker = useMentionPicker({
+    members: group.members,
+    viewerId: currentUserId,
+    draft: input,
+    setDraft: setInput,
+    inputRef,
+    maxLength: MESSAGE_MAX_LENGTH,
+  });
   const suggestions = useMemo(() => memberSuggestions(group.members), [group.members]);
   // A poll is not schedulable; text, a GIF and images are.
   const canSchedule =
@@ -140,19 +162,25 @@ export function GroupComposerBar({
           onSelect={insertEmoji}
           className="flex h-9 items-center"
         />
+        {savedReplies.menu}
         <ChecklistComposer
           chat={chatRef}
           onPosted={(raw) => appendMessages([raw as Msg])}
           disabled={sending}
         />
-        <div className="order-first min-w-full flex-1 sm:order-none sm:min-w-0">
+        <div className="relative order-first min-w-full flex-1 sm:order-none sm:min-w-0">
           {slash.popover}
+          {mentionPicker.popover}
+          {savedReplies.popover}
           <MentionTextarea
             ref={inputRef}
             value={input}
             onChange={setInput}
             priorityUsers={suggestions}
+            skipAtTrigger
             onKeyDown={(e) => {
+              if (mentionPicker.onKeyDown(e)) return;
+              if (savedReplies.onKeyDown(e)) return;
               if (slash.onKeyDown(e)) return;
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -164,7 +192,9 @@ export function GroupComposerBar({
               defaultValue: 'Message {{name}}…',
             })}
             rows={1}
-            maxLength={2000}
+            maxLength={MESSAGE_MAX_LENGTH}
+            {...savedReplies.fieldProps}
+            {...(mentionPicker.open ? mentionPicker.fieldProps : {})}
             className="max-h-32 w-full resize-none rounded-site surface-field px-3 py-2 text-sm text-site-text"
           />
           <ComposerLengthCounter used={input.length} />
@@ -175,7 +205,7 @@ export function GroupComposerBar({
         <SendLaterMenu
           chatId={group.id}
           disabled={!canSchedule}
-          getDraft={() => ({ content: input, gifUrl, imageUrls, imageAlts: imageAlts.alts })}
+          getDraft={() => ({ content: input, gifUrl, gifAlt, imageUrls, imageAlts: imageAlts.alts })}
           onScheduled={() => {
             setInput('');
             setGifUrl(null);

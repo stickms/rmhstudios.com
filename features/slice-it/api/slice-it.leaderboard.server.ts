@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import type { Prisma } from '@prisma/client';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere, userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { LEADERBOARD_WINDOW_DAYS, LeaderboardQueryZ } from '@features/slice-it/engine/api-schemas';
 import type { LeaderboardQuery } from '@features/slice-it/engine/api-schemas';
@@ -68,12 +70,16 @@ export const route = apiRoute('/api/slice-it/leaderboard', {
           });
         }
 
+        // Members who left the leaderboards (switch off, or banned now) are not on the board. The
+        // viewer's own `self` row below is still theirs to see (sprint 05 #01).
+        const hidden = await leaderboardHiddenUserIds();
         const where: Prisma.SongLeaderboardWhereInput = {
           songId,
           ...(difficulty ? { difficulty } : {}),
           ...(modPool ? { modPool } : {}),
           ...windowFilter(query.window),
           ...audience.where,
+          AND: [userNotHiddenWhere(hidden)],
         };
 
         // A board that omits the tier or the pool merges them, and a player
@@ -131,7 +137,8 @@ export const route = apiRoute('/api/slice-it/leaderboard', {
       // with no flag day and no moment where it is empty. Filtering on
       // `skillRating > 0` instead would have shipped an empty global
       // leaderboard.
-      const globalWhere = { totalScore: { gt: 0 } };
+      const hidden = await leaderboardHiddenUserIds();
+      const globalWhere = { totalScore: { gt: 0 }, AND: [notHiddenWhere(hidden)] };
       const [rows, total] = await Promise.all([
         prisma.player.findMany({
           where: globalWhere,
@@ -305,8 +312,10 @@ async function selfSongRank(
   });
   if (!row) return null;
 
+  // Rank among listed players only, so a hidden member's "you would be 14th" matches the board.
+  const hidden = await leaderboardHiddenUserIds();
   const better = await prisma.songLeaderboard.count({
-    where: { ...scoped, score: { gt: row.score } },
+    where: { ...scoped, score: { gt: row.score }, AND: [userNotHiddenWhere(hidden)] },
   });
 
   return toEntry(row, better + 1, userId);
@@ -393,9 +402,11 @@ async function selfGlobalRank(userId: string): Promise<GlobalEntry | null> {
   const row = await prisma.player.findUnique({ where: { userId }, select: GLOBAL_SELECT });
   if (!row) return null;
 
+  const hidden = await leaderboardHiddenUserIds();
   const better = await prisma.player.count({
     where: {
       totalScore: { gt: 0 },
+      AND: [notHiddenWhere(hidden)],
       OR: [
         { skillRating: { gt: row.skillRating } },
         { skillRating: row.skillRating, totalScore: { gt: row.totalScore } },

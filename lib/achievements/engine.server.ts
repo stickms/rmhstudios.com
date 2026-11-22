@@ -16,8 +16,11 @@ import { getAchievement } from '@/lib/achievements/catalog';
 import { createNotification } from '@/lib/notifications.server';
 import { maybeRewardReferral } from '@/lib/referrals.server';
 import { onProgress } from '@/lib/achievements/tracking.server';
+import { emitAchievementUnlocked } from '@/lib/webhooks/game-emit.server';
 
 async function rewardUnlock(userId: string, achievementId: string, name: string, coinReward: number) {
+  // Both callers reach here only after winning the `unlockedAt: null` claim, so this fires once per unlock.
+  void emitAchievementUnlocked(userId, { achievementId, name, group: getAchievement(achievementId)?.group });
   if (coinReward > 0) {
     await creditCoins(userId, coinReward, {
       type: 'REWARD',

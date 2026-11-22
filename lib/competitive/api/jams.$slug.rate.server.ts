@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import { rateJamEntryApi } from '@/lib/competitive/jams.contract';
+import { feedbackFields } from '@/lib/competitive/jam-feedback-schema';
 import { rateEntry } from '@/lib/competitive/jams.server';
 
 const score = z.number().int().min(1).max(5);
@@ -11,6 +12,7 @@ const schema = z.object({
   creativity: score,
   theme: score,
   polish: score,
+  ...feedbackFields,
 });
 
 /** POST /api/jams/:slug/rate — 1–5 in four categories; one rating per member per entry, never your own. */
@@ -19,10 +21,10 @@ export const route = apiRoute('/api/jams/$slug/rate', {
     rateJamEntryApi,
     { rateLimit: 'write', body: schema },
     async ({ params, userId, body }) => {
-      const { entryId, ...scores } = body;
-      const res = await rateEntry(params.slug, userId, entryId, scores);
+      const { entryId, feedback, anonymous, ...scores } = body;
+      const res = await rateEntry(params.slug, userId, entryId, scores, { feedback, anonymous });
       if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
-      return Response.json({ ok: true });
+      return Response.json({ ok: true as const, feedback: res.feedback });
     },
   ),
 });

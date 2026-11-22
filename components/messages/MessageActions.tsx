@@ -1,9 +1,10 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Copy, EyeOff, MoreHorizontal, Pencil, Reply, Undo2 } from 'lucide-react';
+import { Copy, EyeOff, MoreHorizontal, Pencil, Reply, Save, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { EditDescriptionsMenuItem } from '@/components/feed/EditDescriptionsMenuItem';
+import { SavedRepliesDialog } from '@/components/messages/SavedRepliesDialog';
 import { cn } from '@/lib/utils';
 import { canEdit, editWindowRemainingMs, MESSAGE_EDIT_WINDOW_MS } from '@/lib/messages/edit-policy';
 
@@ -57,7 +58,10 @@ export function MessageActions({
   className?: string;
 }) {
   const { t } = useTranslation('feed');
+  const { t: tReplies } = useTranslation('saved-replies');
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  // s05-13: "Save as reply" opens the saved-replies editor on this message's text.
+  const [savingAsReply, setSavingAsReply] = useState(false);
   const [open, setOpen] = useState(false);
 
   const isSender = message.senderId === viewerId;
@@ -163,6 +167,20 @@ export function MessageActions({
           </MenuItem>
         )}
 
+        {isSender && copyable && (
+          <MenuItem
+            icon={Save}
+            onSelect={() => {
+              setOpen(false);
+              setSavingAsReply(true);
+            }}
+          >
+            {tReplies('save-as-reply', {
+              defaultValue: 'Save as reply',
+            })}
+          </MenuItem>
+        )}
+
         {extra?.(() => setOpen(false))}
 
         <MenuItem
@@ -192,6 +210,7 @@ export function MessageActions({
           </MenuItem>
         )}
       </AnchoredMenu>
+      {savingAsReply && <SavedRepliesDialog open onOpenChange={setSavingAsReply} prefill={message.content} />}
     </>
   );
 }

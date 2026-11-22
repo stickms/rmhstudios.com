@@ -29,6 +29,8 @@ model Community {
   rulesRequireAgreement Boolean @default(false)
   // s03-14: members may read the content part of the moderation log.
   publicModLog      Boolean  @default(false)
+  // s07-16: every image posted here needs a description.
+  requireImageAlt   Boolean  @default(false)
   createdById       String
   createdAt         DateTime @default(now())
   /// Catalog id of the game/app this community is the home of (shown on that
@@ -48,6 +50,9 @@ model Community {
   rules                CommunityRule[]
   modActions           CommunityModAction[]
   memberEvents         CommunityMemberEvent[]
+  handovers            CommunityHandover[]
+  bans                 CommunityBan[]
+  memberNotes          CommunityMemberNote[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -151,13 +156,26 @@ model CommunityMember {
   roleTags         String[]      @default([])
   // s03-13: when the member ticked the community's rules (set only on a join that agreed).
   rulesAcceptedAt  DateTime?
+  /// s05-17: "off" (default) or "all" — notify this member of every new visible post in the community.
+  postAlerts       String        @default("off") @db.VarChar(4)
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([communityId, userId])
   @@index([userId])
+  // The post-alert fan-out reads a community's opted-in members. Built CONCURRENTLY in its own migration.
+  @@index([communityId, postAlerts])
   @@map("community_member")
+}
+
+/// s05-17 — one row per post whose new-post alerts have been claimed by the fan-out job (insert-if-absent), so a
+/// retried or duplicated job never notifies twice. Not a member's data (no user column), so not exported or erased.
+model CommunityPostAlertRun {
+  postId    String   @id
+  claimedAt DateTime @default(now())
+
+  @@map("community_post_alert_run")
 }
 
 // ─── RMHEvents (§6) ────────────────────────────────────────────────────────
@@ -581,4 +599,74 @@ model CommunityMemberEvent {
 
   @@index([communityId, createdAt])
   @@map("community_member_event")
+}
+
+/// s04-17 — an offer of a community from its owner to one of its moderators. One pending offer per
+/// community (taken under an advisory lock in the offer transaction); it expires after 7 days (read as
+/// expired, no job). `status`: pending | accepted | declined | cancelled. A community record, not exported.
+model CommunityHandover {
+  id          String    @id @default(cuid())
+  communityId String
+  fromId      String
+  toId        String
+  status      String    @default("pending") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  decidedAt   DateTime?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  from      User      @relation("CommunityHandoverFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User      @relation("CommunityHandoverTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, status])
+  @@index([toId, status])
+  @@map("community_handover")
+}
+
+/// s06-01 — a ban or a timeout of one member of one community. At most one is active per member (a new one lifts the
+/// old in the same transaction); expiry is read-time (`endsAt <= now()`), no job. `reason` is the moderators' private
+/// note and is never sent to the member. `createdById` / `liftedById` are plain columns: erasure nulls them.
+model CommunityBan {
+  id          String    @id @default(cuid())
+  communityId String
+  userId      String
+  /// 'ban' | 'timeout'
+  kind        String    @db.VarChar(8)
+  /// Null = until a moderator lifts it (bans only).
+  endsAt      DateTime?
+  ruleId      String?
+  reason      String?   @db.VarChar(300)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  liftedAt    DateTime?
+  liftedById  String?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation("CommunityBanSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, userId, liftedAt])
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_ban")
+}
+
+/// s06-02 — a private moderator note on a member, scoped to one community. Ids are plain columns (no `User`
+/// relation, like `CommunityModAction`); account deletion removes the notes about a member and nulls the author.
+model CommunityMemberNote {
+  id          String    @id @default(cuid())
+  communityId String
+  subjectId   String
+  authorId    String?
+  body        String    @db.VarChar(500)
+  /// The sanction (`CommunityBan.id`) or mod-queue item it was written with.
+  banId       String?
+  modItemId   String?
+  createdAt   DateTime  @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  deletedById String?
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, subjectId, createdAt(sort: Desc)])
+  @@map("community_member_note")
 }

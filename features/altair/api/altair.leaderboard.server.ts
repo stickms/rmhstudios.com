@@ -3,6 +3,8 @@ import { implement } from '@/lib/api/implement.server';
 import * as C from '@features/altair/engine/altair.contract';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/altair/leaderboard', {
   GET: implement(
@@ -42,7 +44,9 @@ export const route = apiRoute('/api/altair/leaderboard', {
             break;
         }
 
+        const hidden = await leaderboardHiddenUserIds();
         const leaderboard = await prisma.altairPlayer.findMany({
+          where: notHiddenWhere(hidden),
           take: 10,
           orderBy: orderBy,
           select: {

@@ -11,6 +11,7 @@ import { HEALTH_MAX } from '@features/slice-it/engine/constants';
 import { gradeFor } from '@features/slice-it/engine/scoring';
 import type { BeatMap } from '@features/slice-it/engine/types';
 import type { Section } from '@features/slice-it/engine/beatmap/sections';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * H5 — a stored chart's `analysisData` is a `GeneratedBeatmap` (see
@@ -299,7 +300,7 @@ export function useHudReadout(
 export function HUD({
   engine,
   margins = false,
-}: HUDProps) {
+}: HUDProps) { const lfmt = useLocaleFormat(); 
   const {
     t,
   } =
@@ -448,7 +449,7 @@ export function HUD({
           <div>
             <div className="flex items-center gap-3 sm:gap-5">
               <span className="slice-hud-score">
-                {score.toLocaleString()}
+                {lfmt.number(score)}
               </span>
               {/* The grade rides with the score: it is the headline the player
                   glances at, stamped beside the number it summarises. */}

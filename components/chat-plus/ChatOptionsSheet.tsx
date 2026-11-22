@@ -22,6 +22,7 @@ import {
 } from '@/lib/chat-plus/themes';
 import type { ChatMeta } from '@/lib/chat-plus/settings.client';
 import { chatMetaKey, useChatMeta } from './hooks';
+import { AccountReceiptReason } from './AccountReceiptReason';
 import { SharedMediaPanel } from './SharedMediaPanel';
 import { ChatFoldersSection } from './ChatFoldersSection';
 
@@ -386,30 +387,40 @@ function SettingsPanel({ chat }: { chat: ChatRef }) {
             })}
           </p>
           <div className="flex flex-col divide-y divide-site-border">
-            <label className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text">
-              {t('privacy-receipts', {
-                defaultValue: 'Read receipts',
-              })}
-              <Switch
-                checked={!meta.prefs.hideReceipts}
-                onCheckedChange={(on) => setPref('hideReceipts', !on)}
-                aria-label={t('privacy-receipts', {
+            <div>
+              <label className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text">
+                {t('privacy-receipts', {
                   defaultValue: 'Read receipts',
                 })}
-              />
-            </label>
-            <label className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text">
-              {t('privacy-typing', {
-                defaultValue: 'Typing indicators',
-              })}
-              <Switch
-                checked={!meta.prefs.hideTyping}
-                onCheckedChange={(on) => setPref('hideTyping', !on)}
-                aria-label={t('privacy-typing', {
+                <Switch
+                  checked={meta.account.readReceipts && !meta.prefs.hideReceipts}
+                  disabled={!meta.account.readReceipts}
+                  aria-describedby={meta.account.readReceipts ? undefined : 'opt-receipts-reason'}
+                  onCheckedChange={(on) => setPref('hideReceipts', !on)}
+                  aria-label={t('privacy-receipts', {
+                    defaultValue: 'Read receipts',
+                  })}
+                />
+              </label>
+              {!meta.account.readReceipts && <AccountReceiptReason id="opt-receipts-reason" />}
+            </div>
+            <div>
+              <label className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-site-text">
+                {t('privacy-typing', {
                   defaultValue: 'Typing indicators',
                 })}
-              />
-            </label>
+                <Switch
+                  checked={meta.account.typingIndicators && !meta.prefs.hideTyping}
+                  disabled={!meta.account.typingIndicators}
+                  aria-describedby={meta.account.typingIndicators ? undefined : 'opt-typing-reason'}
+                  onCheckedChange={(on) => setPref('hideTyping', !on)}
+                  aria-label={t('privacy-typing', {
+                    defaultValue: 'Typing indicators',
+                  })}
+                />
+              </label>
+              {!meta.account.typingIndicators && <AccountReceiptReason id="opt-typing-reason" />}
+            </div>
           </div>
         </section>
       )}

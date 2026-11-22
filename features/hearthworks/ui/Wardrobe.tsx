@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { DEFAULT_SKIN, SKINS, SKIN_IDS, SKIN_TIERS, canAfford, type SkinId, type SkinTier } from '@features/hearthworks/engine/skins';
 import { hearthworksStore, useHearthworks } from '@features/hearthworks/engine/store';
 import { ArrivalSuspense } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 // The turntable brings a second WebGL canvas: fetched only when the wardrobe opens.
 const SkinPreview = lazy(() => import('./SkinPreview'));
@@ -29,7 +30,7 @@ function tierName(t: TFn, tier: SkinTier): string {
  * top shows the skin as it will move in the world (its model with real animation where it has one); choose a name to
  * preview it before buying.
  */
-export function Wardrobe() {
+export function Wardrobe() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-hearthworks');
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const worn = useHearthworks((s) => s.world.players[s.playerId]?.skin);
@@ -84,7 +85,7 @@ export function Wardrobe() {
                         disabled={!canAfford(money, id)}
                         onClick={() => dispatch({ type: 'buySkin', skin: id })}
                       >
-                        {t('skin-buy', { defaultValue: 'Buy' })} · {def.price.toLocaleString()}
+                        {t('skin-buy', { defaultValue: 'Buy' })} · {fmt.number(def.price)}
                       </button>
                     )}
                   </li>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { historyEntityTypeLabels } from '@/components/history/entity-type-labels';
 import { toast } from '@/lib/toast';
 import { History, Trash2, Play } from 'lucide-react';
 
@@ -27,6 +28,7 @@ interface HistoryData {
 
 export function HistoryList({ initial }: { initial: HistoryData }) {
   const { t } = useTranslation('c-history');
+  const typeLabels = historyEntityTypeLabels(t);
   const confirm = useConfirm();
   const [items, setItems] = useState<HistoryView[]>(initial.items);
   const [cursor, setCursor] = useState<string | null>(initial.nextCursor);
@@ -170,9 +172,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
           },
           ...HISTORY_ENTITY_TYPES.map((type) => ({
             id: type,
-            label: t(`type-${type}`, {
-              defaultValue: type,
-            }),
+            label: typeLabels[type],
           })),
         ]}
         value={filter}

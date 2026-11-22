@@ -46,8 +46,9 @@ export function useGroupComposer({
     setDraft: setInput,
     inputRef,
     onPosted: (raw) => appendMessages([raw as Msg]),
-    onPickGif: (url) => {
+    onPickGif: ({ url, description }) => {
       setGifUrl(url);
+      setGifAlt(description);
       setTimeout(() => inputRef.current?.focus(), 0);
     },
   });
@@ -55,6 +56,9 @@ export function useGroupComposer({
   // Descriptions for the pending images; with "Require image descriptions" on,
   // a missing one blocks sending (the server refuses the same message).
   const imageAlts = useMessageImageAlts(imageUrls);
+  // The pending GIF's description (sprint 06 #15), prefilled from the picker. Declared after the hook the
+  // characterization suite counts up to, so its ordinals do not move.
+  const [gifAlt, setGifAlt] = useState('');
 
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -87,17 +91,20 @@ export function useGroupComposer({
 
     setSending(true);
     const pendingGif = gifUrl;
+    const pendingGifAlt = gifAlt;
     const pendingImages = imageUrls;
     const pendingAlts = imageAlts.alts;
     const pendingPollDraft = pollDraft;
     const restore = () => {
       setInput(text);
       setGifUrl(pendingGif);
+      setGifAlt(pendingGifAlt);
       setImageUrls(pendingImages);
       setPollDraft(pendingPollDraft);
     };
     setInput('');
     setGifUrl(null);
+    setGifAlt('');
     setImageUrls([]);
     setPollDraft(null);
     try {
@@ -114,6 +121,11 @@ export function useGroupComposer({
           ...(pendingGif
             ? {
                 gifUrl: pendingGif,
+                ...(pendingGifAlt.trim()
+                  ? {
+                      gifAlt: pendingGifAlt.trim(),
+                    }
+                  : {}),
               }
             : {}),
           ...(pendingImages.length
@@ -156,6 +168,8 @@ export function useGroupComposer({
     sending,
     gifUrl,
     setGifUrl,
+    gifAlt,
+    setGifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,

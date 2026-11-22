@@ -206,9 +206,17 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     id: 'admin-grant',
     kind: 'faucet',
     surface: 'Admin adjustment',
-    source: 'lib/coins.server.ts',
+    source: 'lib/coins.server.ts, lib/economy/adjustments.server.ts',
     bounded: false,
-    note: 'Discretionary. The only faucet with no rule behind it, which is why it is typed ADMIN.',
+    note: 'Discretionary. The only faucet with no rule behind it, which is why it is typed ADMIN. Credits from the ledgered adjustment tool (s04-06) are the same flow; each writes a CoinAdjustment row and an audit entry.',
+  },
+  {
+    id: 'admin-debit',
+    kind: 'sink',
+    surface: 'Admin adjustment (a debit, or the reversal of a credit)',
+    source: 'lib/economy/adjustments.server.ts',
+    bounded: false,
+    note: 'Staff removing coins (a correction or the reversal of an earlier grant), typed ADMIN so it does not count as spending against the member budget (s04-07). The other half of admin-grant.',
   },
 
   {

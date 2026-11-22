@@ -453,21 +453,21 @@ Quality workflows live in `.github/workflows/`. The release graph and operator a
 that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from
 a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
-| Workflow                                   | Runs                                                                                                     | Gate?                                                                                                                                 |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`typecheck`)                 | `tsc -b` (`pnpm typecheck`) → `eslint` → docs freshness                                                  | **all block**                                                                                                                         |
-| `web-ci.yml` (`ratchets`)                  | `pnpm lint:ratchet` (import cycles, layer boundaries) → `pnpm a11y:ratchet`, beside `typecheck`          | **both block**                                                                                                                        |
-| `web-ci.yml` (`test (1/3)` … `test (3/3)`) | `pnpm test --shard=N/3` — the unit suite split across three parallel jobs                                | **blocks**, tests included (as of 2026-08-08)                                                                                         |
-| `web-ci.yml` (`integration` job)           | `build:frontend:sourcemap` → bundle budget → entry composition, then the integration suite on that build | build + both size gates block                                                                                                         |
-| `web-ci.yml` (`audit` job)                 | `pnpm audit --prod --audit-level=high`                                                                   | blocks on high-severity prod advisories                                                                                               |
-| `web-ci.yml` (`integration`)               | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`                     | **blocks**; see §8                                                                                                                    |
-| `epic-tests.yml`                           | `playwright install chromium` → `pnpm test:epic`                                                         | blocks; **path-filtered** to `scripts/epic/**`                                                                                        |
-| `deploy.yml` (`ci` job)                    | typecheck → lint → production dependency audit                                                           | all block the deployment                                                                                                              |
-| `deploy.yml` (`integration`)               | same as web-ci's `integration`, on the **merged** commit                                                 | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
-| `web-ci.yml` (`steel-rest`)                | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe)    | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                                                 |
-| `go-microservices.yml`                     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`                  | blocks                                                                                                                                |
-| `toolbox-tests.yml`                        | `pnpm test:toolbox` (vitest.toolbox.config.ts), path-filtered to `lib/toolbox/**`                        | blocks                                                                                                                                |
-| `product-tests.yml`                        | `pnpm test:product` (vitest.product.config.ts), on any TypeScript change                                 | blocks                                                                                                                                |
+| Workflow                                   | Runs                                                                                                     | Gate?                                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `web-ci.yml` (`typecheck`)                 | `tsc -b` (`pnpm typecheck`) → `eslint` → docs freshness                                                  | **all block**                                                                                          |
+| `web-ci.yml` (`ratchets`)                  | `pnpm lint:ratchet` (import cycles, layer boundaries) → `pnpm a11y:ratchet`, beside `typecheck`          | **both block**                                                                                         |
+| `web-ci.yml` (`test (1/3)` … `test (3/3)`) | `pnpm test --shard=N/3` — the unit suite split across three parallel jobs                                | **blocks**, tests included (as of 2026-08-08)                                                          |
+| `web-ci.yml` (`integration` job)           | `build:frontend:sourcemap` → bundle budget → entry composition, then the integration suite on that build | build + both size gates block                                                                          |
+| `web-ci.yml` (`audit` job)                 | `pnpm audit --prod --audit-level=high`                                                                   | blocks on high-severity prod advisories                                                                |
+| `web-ci.yml` (`integration`)               | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`                     | **blocks**; see §8                                                                                     |
+| `epic-tests.yml`                           | `playwright install chromium` → `pnpm test:epic`                                                         | blocks; **path-filtered** to `scripts/epic/**`                                                         |
+| `deploy.yml` (`ci` job)                    | typecheck → lint → production dependency audit                                                           | all block the deployment                                                                               |
+| `deploy.yml` (`integration`)               | same as web-ci's `integration`, on the **merged** commit                                                 | **blocks the deployment** (`deploy-gate` needs it); it ends inside the image build, so it adds no wait |
+| `web-ci.yml` (`steel-rest`)                | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe)    | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                  |
+| `go-microservices.yml`                     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`                  | blocks                                                                                                 |
+| `toolbox-tests.yml`                        | `pnpm test:toolbox` (vitest.toolbox.config.ts), path-filtered to `lib/toolbox/**`                        | blocks                                                                                                 |
+| `product-tests.yml`                        | `pnpm test:product` (vitest.product.config.ts), on any TypeScript change                                 | blocks                                                                                                 |
 
 The deploy `test` job runs three isolated unit-suite shards in parallel with `ci`. The ARM64 `build` job enforces
 critical JS/CSS budgets and smoke-tests both production image digests. `candidate-image.yml` checks production-shaped
@@ -514,10 +514,10 @@ Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml` (a
 ### Migration rollback-compatibility gate
 
 `web-ci.yml` job `migrations` runs `.github/scripts/check-migrations-additive.mjs` over migrations **added** in the PR.
-Production rollbacks (post-deploy guard, `post-deploy-verify`) redeploy the previous image on the already-migrated
-database, so a new migration must not drop, rename, retype or tighten (`SET NOT NULL`, `NOT NULL` without `DEFAULT`,
-`DROP DEFAULT`) anything the previous release uses. Do it as expand → ship → contract. A deliberate contract step opts
-in with `-- rmh:contract-ok <why it is safe>` in the migration file.
+Production rollbacks (the post-deploy guard) redeploy the previous image on the already-migrated database, so a new
+migration must not drop, rename, retype or tighten (`SET NOT NULL`, `NOT NULL` without `DEFAULT`, `DROP DEFAULT`)
+anything the previous release uses. Do it as expand → ship → contract. A deliberate contract step opts in with
+`-- rmh:contract-ok <why it is safe>` in the migration file.
 
 ### Merge queue and delivery metrics
 

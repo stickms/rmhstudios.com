@@ -26,6 +26,11 @@ export const MOD_ACTIONS_BY_GROUP = {
     'join_request_denied',
     'invite_created',
     'invite_revoked',
+    'ownership_transferred',
+    'member_banned',
+    'member_timed_out',
+    'ban_lifted',
+    'note_deleted',
   ],
   settings: [
     'settings_changed',

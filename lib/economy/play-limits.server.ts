@@ -18,6 +18,15 @@ import {
   type PlayLimits,
 } from '@/lib/economy/play-limits';
 import { readPlayLimits, stakedToday } from '@/lib/economy/play-limits-core';
+import {
+  hasSpendBudgetChange,
+  type SpendBudgetChange,
+} from '@/lib/economy/spend-budget';
+import {
+  applySpendBudgetChangeOn,
+  getSpendBudget,
+  type SpendBudgetView,
+} from '@/lib/economy/spend-budget.server';
 
 /** What the settings panel renders. Dates as ISO strings for the wire. */
 export interface PlayLimitsView {
@@ -31,9 +40,16 @@ export interface PlayLimitsView {
   stakedToday: number;
   /** True while the risk surfaces are hidden from nav and search. */
   surfacesHidden: boolean;
+  /** Monthly spending budget (s04-07). */
+  spendBudget: SpendBudgetView;
 }
 
-function toView(limits: PlayLimits, staked: number, now: Date): PlayLimitsView {
+function toView(
+  limits: PlayLimits,
+  staked: number,
+  spendBudget: SpendBudgetView,
+  now: Date,
+): PlayLimitsView {
   // A matured pending change is shown as the live cap with nothing pending,
   // matching what enforcement already does — otherwise the panel would tell a
   // member they are still capped at the old number while the ledger uses the new.
@@ -46,6 +62,7 @@ function toView(limits: PlayLimits, staked: number, now: Date): PlayLimitsView {
     pendingCapAt: matured ? null : (limits.pendingCapAt?.toISOString() ?? null),
     stakedToday: staked,
     surfacesHidden: hidesRiskSurfaces(limits, now),
+    spendBudget,
   };
 }
 
@@ -70,12 +87,13 @@ export async function getPlayLimits(userId: string, now: Date = new Date()): Pro
     return toView(
       { ...limits, dailyCoinCap: settled, pendingCap: null, pendingCapAt: null },
       staked,
+      await getSpendBudget(userId, now),
       now,
     );
   }
 
   const staked = await stakedToday(prisma, userId, now);
-  return toView(limits, staked, now);
+  return toView(limits, staked, await getSpendBudget(userId, now), now);
 }
 
 /**
@@ -88,7 +106,7 @@ export async function getPlayLimits(userId: string, now: Date = new Date()): Pro
  */
 export async function updatePlayLimits(
   userId: string,
-  change: LimitChange,
+  change: LimitChange & SpendBudgetChange,
   now: Date = new Date(),
 ): Promise<PlayLimitsView> {
   const view = await prisma.$transaction(async (tx) => {
@@ -100,10 +118,16 @@ export async function updatePlayLimits(
       create: { userId, ...next },
       update: next,
     });
+    if (hasSpendBudgetChange(change)) await applySpendBudgetChangeOn(tx, userId, change, now);
     return next;
   });
 
-  return toView(view, await stakedToday(prisma, userId, now), now);
+  return toView(
+    view,
+    await stakedToday(prisma, userId, now),
+    await getSpendBudget(userId, now),
+    now,
+  );
 }
 
 /**

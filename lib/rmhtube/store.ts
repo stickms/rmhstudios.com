@@ -23,6 +23,9 @@ import type {
   VideoState,
   RoomHistoryEntry,
 } from './types';
+import type { PlaylistQueueResult } from './playlist-queue';
+
+let playlistResultSeq = 0;
 
 /** Turn a broadcast queue into this viewer's queue (see `QueueBroadcastItem`). */
 function adoptQueue(items: QueueBroadcastItem[], myUserId: string): ClientQueueItem[] {
@@ -123,6 +126,9 @@ export interface RmhTubeStore {
   lastSeq: number;
   settings: RmhTubeUserSettings;
   systemMessages: SystemMessage[];
+  /** What the last playlist add did for this member; cleared by the notice that shows it. */
+  playlistResult: (PlaylistQueueResult & { id: number }) | null;
+  setPlaylistResult: (result: PlaylistQueueResult | null) => void;
 
   setConnectionStatus: (status: RmhTubeStore['connectionStatus']) => void;
   setPeersWaiting: (waiting: PeerWaitState | null) => void;
@@ -133,7 +139,11 @@ export interface RmhTubeStore {
   /** Apply a local optimistic anchor (the leader acting on its own player). */
   setVideoState: (videoState: VideoState) => void;
   updateSettings: (partial: Partial<RmhTubeUserSettings>) => void;
-  addSystemMessage: (event: SystemMessage['event'], content: string) => void;
+  addSystemMessage: (
+    event: SystemMessage['event'],
+    content: string,
+    data?: Pick<SystemMessage, 'playlistQueued'>,
+  ) => void;
   leaveRoom: () => void;
   reset: () => void;
   addRoomToHistory: (entry: RoomHistoryEntry) => void;
@@ -154,6 +164,8 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
         ...DEFAULT_SETTINGS,
       },
       systemMessages: [],
+      playlistResult: null,
+      setPlaylistResult: (result) => set({ playlistResult: result ? { ...result, id: ++playlistResultSeq } : null }),
 
       setConnectionStatus: (status) =>
         set({
@@ -229,13 +241,14 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
         }));
       },
 
-      addSystemMessage: (event, content) => {
+      addSystemMessage: (event, content, data) => {
         if (!get().settings.showSystemMessages) return;
         const msg: SystemMessage = {
           id: `sys-${nanoid(8)}`,
           type: 'system',
           event,
           content,
+          ...data,
           createdAt: Date.now(),
         };
         set((state) => ({
@@ -448,6 +461,21 @@ export function applyRoomAction(room: ClientRoomState, action: RoomAction, store
           },
         ],
       };
+
+    case 'QUEUE_PLAYLIST_ADDED': {
+      // One action for the whole batch: the queue changes once, and the chat
+      // line is worded by each viewer's own language from this typed data.
+      const count = data.count as number;
+      const playlistName = data.playlistName as string;
+      const userName = data.userName as string;
+      store?.addSystemMessage('playlist_queued', `${userName} queued ${count} videos from ${playlistName}`, {
+        playlistQueued: { userName, playlistName, count },
+      });
+      return {
+        ...room,
+        queue: [...room.queue, ...adoptQueue(data.items as QueueBroadcastItem[], room.myUserId)],
+      };
+    }
 
     case 'QUEUE_ITEM_ADDED':
       return {

@@ -17,6 +17,7 @@
 import { useCallback, useEffect } from 'react';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { globesetColorLabels } from './color-labels';
 import { colorParity, DOT_COLORS, type Card } from '@/lib/globeset/cards';
 import { X } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -94,10 +95,8 @@ export function GlobeSetBoard({
     return () => window.removeEventListener('keydown', onKey);
   }, [onKey]);
 
-  const colorName = (id: string, fallback: string) =>
-    t(`globeset-color-${id}`, {
-      defaultValue: fallback,
-    });
+  const colorNames = globesetColorLabels(t);
+  const colorName = (id: string) => colorNames[id] ?? id;
 
   return (
     <div>
@@ -186,17 +185,17 @@ export function GlobeSetBoard({
                   style={{
                     background: `var(${dot.token})`,
                   }}
-                  title={colorName(dot.id, dot.id)}
+                  title={colorName(dot.id)}
                 />
                 <span className="sr-only">
                   {odd
                     ? t('globeset-ledger-odd', {
                         defaultValue: '{{color}}: odd — still unpaired',
-                        color: colorName(dot.id, dot.id),
+                        color: colorName(dot.id),
                       })
                     : t('globeset-ledger-even', {
                         defaultValue: '{{color}}: even',
-                        color: colorName(dot.id, dot.id),
+                        color: colorName(dot.id),
                       })}
                 </span>
               </li>

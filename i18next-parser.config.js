@@ -36,7 +36,14 @@ export default {
   defaultNamespace: 'common',
   namespaceSeparator: ':',
   keySeparator: false,
-  input: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'features/medschools/**/*.{ts,tsx}'],
+  input: [
+    'app/**/*.{ts,tsx}',
+    'components/**/*.{ts,tsx}',
+    'features/**/*.{ts,tsx}',
+    // Tests are not UI, and `for (const [t, x] of …)` crashes the lexer.
+    '!features/**/*.test.{ts,tsx}',
+    '!features/**/__tests__/**',
+  ],
   output: 'locales/$LOCALE/$NAMESPACE.json',
   sort: true,
   // Additive only. Some keys are assembled at runtime and no static parser can

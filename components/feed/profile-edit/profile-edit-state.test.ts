@@ -64,6 +64,8 @@ const draft = (over: Partial<ProfileDraft> = {}): ProfileDraft => ({
   ],
   showLikes: true,
   dmPrivacy: 'EVERYONE',
+  followListVisibility: 'everyone',
+  dmRequests: false,
   tipGoal: '100',
   tipGoalLabel: '',
   membershipPrice: '',
@@ -252,6 +254,28 @@ describe('isDirty', () => {
         initial,
       ),
     ).toBe(true);
+  });
+});
+
+describe('follow-list visibility', () => {
+  it('a changed choice makes the draft dirty and is carried in the PATCH body', () => {
+    const changed = { ...draft(), followListVisibility: 'me' };
+    expect(isDirty(changed, INITIAL)).toBe(true);
+    expect(buildProfilePatch(changed, false).followListVisibility).toBe('me');
+  });
+  it('an initial without the field reads as everyone, so an untouched editor is clean', () => {
+    expect(isDirty(draft(), { ...INITIAL, followListVisibility: undefined })).toBe(false);
+  });
+});
+
+describe('message requests switch', () => {
+  it('a changed switch makes the draft dirty and is carried in the PATCH body', () => {
+    const changed = { ...draft(), dmRequests: true };
+    expect(isDirty(changed, INITIAL)).toBe(true);
+    expect(buildProfilePatch(changed, false).dmRequests).toBe(true);
+  });
+  it('an initial without the field reads as off, so an untouched editor is clean', () => {
+    expect(isDirty(draft(), { ...INITIAL, dmRequests: undefined })).toBe(false);
   });
 });
 

@@ -23,6 +23,10 @@ import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import { validateScore, rejectionMessage, type ScoreRejection } from '@/lib/game/registry';
 import { getGameAdapter } from '@/lib/game/adapters.server';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
+import { recordPersonalBest } from '@/lib/game/personal-bests.server';
+import { emitPersonalBestCreated } from '@/lib/webhooks/game-emit.server';
+import { prisma } from '@/lib/prisma.server';
 
 /** Submissions allowed per account per minute, across all games. */
 const SUBMIT_LIMIT = 10;
@@ -57,8 +61,12 @@ export interface ScoreMoment {
   rank: number | null;
 }
 
+/**
+ * `ranked` is decided here, by the server: false when the run was assisted (a
+ * run-start claim, or assisted settings right now), so it never reached the board.
+ */
 export type SubmitScoreResult =
-  | { ok: true; moment?: ScoreMoment }
+  | { ok: true; ranked: boolean; moment?: ScoreMoment }
   | { ok: false; status: number; error: string; reason?: ScoreRejection };
 
 /**
@@ -128,14 +136,20 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
     ? await adapter.personalBest(input.userId).catch(() => undefined)
     : undefined;
 
-  await adapter.submit({
-    userId: input.userId,
-    score,
-    progress,
-    username: sanitizeUsername(input.username),
-    durationMs,
-    meta: input.meta,
-  });
+  // An assisted run never reaches the board (P7). Progression and personal bests below still run:
+  // the player finished a run and keeps their quest progress, streak and coins.
+  const assisted = await consumeAssistRun(input.userId, input.gameId);
+  const ranked = !assisted;
+  if (ranked) {
+    await adapter.submit({
+      userId: input.userId,
+      score,
+      progress,
+      username: sanitizeUsername(input.username),
+      durationMs,
+      meta: input.meta,
+    });
+  }
 
   // Progression is best-effort and must never fail a recorded score: the run
   // happened whether or not a quest advanced.
@@ -146,19 +160,41 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
     cleared: progress,
   }).catch(() => {});
 
-  const moment = await momentFor(adapter, score, previous);
-  if (moment?.kind === 'pb') void emitPersonalBest(input.userId, input.gameId, score);
-  return { ok: true, moment };
+  const moment = await momentFor(adapter, score, previous, ranked);
+  // The history of how the best moved: one conditional insert, only on a first score or a new best.
+  // Best-effort like the progression hooks above: a failed history write never fails the submission.
+  if (moment) {
+    const recorded = await recordPersonalBest(prisma, {
+      userId: input.userId,
+      gameId: input.gameId,
+      score,
+      previous: moment.previous,
+      progress,
+    }).catch(() => false);
+    // The recorded row is the source of truth: a retried submission writes nothing and emits nothing.
+    // Outward events (webhooks, recipes) announce a board-comparable best, so only ranked runs send them.
+    if (recorded && ranked) {
+      void emitPersonalBestCreated(input.userId, {
+        gameId: input.gameId,
+        score,
+        previous: moment.previous,
+      });
+    }
+  }
+  if (ranked && moment?.kind === 'pb') void emitPersonalBest(input.userId, input.gameId, score);
+  return { ok: true, ranked, moment };
 }
 
 async function momentFor(
   adapter: NonNullable<ReturnType<typeof getGameAdapter>>,
   score: number,
   previous: number | null | undefined,
+  ranked: boolean,
 ): Promise<ScoreMoment | undefined> {
   const kind = classifyRun(score, previous, adapter.lowerIsBetter ?? false);
   if (!kind) return undefined;
-  const rank = adapter.rankOf ? await adapter.rankOf(score).catch(() => null) : null;
+  // An unranked run has no place on the board, so no rank.
+  const rank = ranked && adapter.rankOf ? await adapter.rankOf(score).catch(() => null) : null;
   return { kind, score, previous: previous ?? null, rank };
 }
 

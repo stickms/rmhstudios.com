@@ -25,6 +25,7 @@ export function ModSettings({
   const [value, setValue] = useState(String(extras.verification.value || 1));
   const [flairRequired, setFlairRequired] = useState(extras.flairRequired);
   const [publicLog, setPublicLog] = useState(extras.publicModLog);
+  const [imageAlt, setImageAlt] = useState(extras.requireImageAlt);
   const [threshold, setThreshold] = useState(String(extras.starThreshold));
   const [saving, setSaving] = useState(false);
 
@@ -35,6 +36,7 @@ export function ModSettings({
       verificationValue: level === 'account_age' || level === 'member_age' ? Number(value) || 1 : 0,
       flairRequired,
       publicModLog: publicLog,
+      requireImageAlt: imageAlt,
       starThreshold: Math.min(STAR_THRESHOLD_MAX, Math.max(STAR_THRESHOLD_MIN, Number(threshold) || 5)),
     });
     setSaving(false);
@@ -148,6 +150,25 @@ export function ModSettings({
           </span>
         </span>
         <Switch checked={publicLog} onCheckedChange={setPublicLog} aria-labelledby="public-modlog-label" />
+      </div>
+
+      <div className="flex items-center justify-between gap-3 text-sm text-site-text">
+        <span>
+          <span id="image-alt-label" className="block font-semibold">
+            {t('setting-title', {
+              ns: 'community-alt-text',
+              defaultValue: 'Images need a description',
+            })}
+          </span>
+          <span className="text-xs text-site-text-muted">
+            {t('setting-note', {
+              ns: 'community-alt-text',
+              defaultValue:
+                'A post with an image and no description is refused, moderators included. Posts made earlier are not changed.',
+            })}
+          </span>
+        </span>
+        <Switch checked={imageAlt} onCheckedChange={setImageAlt} aria-labelledby="image-alt-label" />
       </div>
       <label className="flex flex-col gap-1 text-sm font-semibold text-site-text">
         {t('star-title', {

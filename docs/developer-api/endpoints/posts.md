@@ -18,7 +18,7 @@
 
 ### `GET /api/v1/posts`
 
-Your recent posts, newest first.
+Your recent posts, newest first. `pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned.
 
 **Scope:** `read:posts` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyPosts`
 
@@ -36,13 +36,16 @@ Your recent posts, newest first.
       "id": "ck_post123",
       "content": "hello world",
       "audience": "PUBLIC",
+      "sensitive": false,
+      "contentWarning": null,
       "createdAt": "2026-06-30T10:00:00.000Z",
       "metrics": {
         "likes": 3,
         "comments": 1,
         "reposts": 0,
         "views": 42
-      }
+      },
+      "pinnedOrder": null
     }
   ],
   "nextCursor": "2026-06-20T10:00:00.000Z"
@@ -62,6 +65,10 @@ Create a post on your account. Awards XP and progresses quests exactly like the 
 | `content` | `string` | no | 1–280 characters. Optional if at least one `media_ids` entry is supplied. |
 | `media_ids` | `string[]` | no | Up to 4 media ids from POST /api/v1/images. |
 | `audience` | `string` | no | `PUBLIC` (default), `FOLLOWERS`, or `PRIVATE`. |
+| `communityId` | `string` | no | Post into this community instead of only your timeline. Needs the `write:communities` scope as well as `write:posts`, and you must be a member. The community's own rules apply (flair, verification, AutoMod, image descriptions, bans and timeouts): a held post answers `202` with `{ "status": "held", "id": … }`, an AutoMod removal `422` with the rule name, and a refusal the gate's `code` (a ban or timeout also carries `endsAt`). |
+| `flairId` | `string` | no | A flair of that community (needs `communityId`); required when the community requires one. |
+| `media_alts` | `string[]` | no | With `communityId`: a description for each `media_ids` image, in order. A community can require one on every image. |
+| `poll` | `object` | no | A poll on the post (not with `communityId`): `question`, 2 to 4 `options` (strings), optional `multiSelect` and `durationHours` (1 to 720). A quiz adds `quiz: true`, `correctIndex` (the zero-based position of the one correct option) and an optional `explanation` of at most 280 characters; a quiz is single choice, so it cannot also set `multiSelect`. A post may carry just a poll, with no `content`. |
 
 ```json
 {
@@ -83,7 +90,7 @@ Create a post on your account. Awards XP and progresses quests exactly like the 
 
 ### `GET /api/v1/posts/{id}`
 
-Fetch a single post by id. Returns public posts and your own posts; otherwise 404.
+Fetch a single post by id. Returns public posts and your own posts; otherwise 404. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema. `pinnedOrder` is the post’s place among its author’s pinned profile posts (1 is the top, at most 3), or `null` when it is not pinned. `poll` is `null` unless the post carries a poll. A ranked-choice poll has `ranked: true`; once it has ended, `poll.result` holds `winnerOptionId` (null when nobody ranked an option) and the instant-runoff `rounds` (each round's option tallies and the option eliminated at its end, null on the deciding round). When the author hides counts from you, tallies are whole percents and `percentOnly` is `true`. A quiz poll has `quiz: true`; its `correctOptionId` and `explanation` are `null` until you may know them: you wrote the post, you voted on the poll, or it has ended. A poll that is not a quiz has `quiz: false` and both `null`.
 
 **Scope:** `read:posts` · **Success:** `200` · **Operation id:** `getPost`
 
@@ -98,6 +105,8 @@ Fetch a single post by id. Returns public posts and your own posts; otherwise 40
   "id": "ck_post123",
   "content": "hello world",
   "audience": "PUBLIC",
+  "sensitive": false,
+  "contentWarning": null,
   "createdAt": "2026-06-30T10:00:00.000Z",
   "metrics": {
     "likes": 3,
@@ -105,6 +114,8 @@ Fetch a single post by id. Returns public posts and your own posts; otherwise 40
     "reposts": 0,
     "views": 42
   },
+  "pinnedOrder": null,
+  "poll": null,
   "author": {
     "id": "ck_user123",
     "name": "Ada",

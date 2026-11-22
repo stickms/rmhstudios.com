@@ -35,11 +35,13 @@ import {
 import { LOADOUT_MAX_PRESETS, type LoadoutView } from '@/lib/shop/loadouts';
 import { ApiError, apiJson, errorCode, newIdempotencyKey } from './api';
 import { ShopWishButton } from './ShopWishButton';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const DAILY_KEY = ['economy-plus', 'daily-shop'] as const;
 const LOADOUT_KEY = ['economy-plus', 'loadouts'] as const;
 
 export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-economy-plus');
   const qc = useQueryClient();
   const router = useRouter();
@@ -225,8 +227,8 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
               {full ? (
                 <>
                   {' · '}
-                  <s>{listPrice.toLocaleString()}</s>{' '}
-                  <span className="font-medium text-site-text">{discounted.toLocaleString()}</span>
+                  <s>{fmt.number(listPrice)}</s>{' '}
+                  <span className="font-medium text-site-text">{fmt.number(discounted)}</span>
                 </>
               ) : null}
             </p>
@@ -241,7 +243,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
               {full
                 ? t('bundle-buy-for', {
                     defaultValue: 'Buy bundle for {{price}} coins',
-                    price: discounted.toLocaleString(),
+                    price: fmt.number(discounted),
                   })
                 : t('bundle-buy', {
                     defaultValue: 'Buy bundle',

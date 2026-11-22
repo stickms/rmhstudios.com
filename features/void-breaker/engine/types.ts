@@ -254,6 +254,8 @@ export interface HUDState {
   detonateReady: boolean;
   /** Active narrative dialogue line */
   dialogue: DialogueSnapshot | null;
+  /** Assist (no timed input): the game is waiting for the player to continue. */
+  awaitContinue: boolean;
   /** Ally (Friend) HUD */
   allyActive: boolean;
   allyHp: number;

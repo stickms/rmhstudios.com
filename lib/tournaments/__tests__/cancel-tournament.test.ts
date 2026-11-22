@@ -98,8 +98,8 @@ const db: any = {
   },
 };
 
-const { cancelTournament, reportMatch, settleMatch, TournamentError } =
-  await import('@/lib/tournaments/tournament.server');
+const { reportMatch } = await import('@/lib/tournaments/report.server');
+const { cancelTournament, settleMatch, TournamentError } = await import('@/lib/tournaments/tournament.server');
 
 function match(id: string, state: MatchState, a: string | null, b: string | null): MatchRow {
   return {

@@ -23,6 +23,7 @@
 
 import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
 import type { FeedItem } from '@/lib/feed-types';
+import { redactCounts } from '@/lib/feed/quiet-counts';
 import { postCardShowsContent, type PostCardSubject } from '@/lib/og/post-visibility';
 
 /** What the rule reads from the quoted post (a Prisma row satisfies it). */
@@ -62,9 +63,13 @@ export interface QuotedOriginalRow extends QuotedOriginalSubject {
   repostCount: number;
   viewCount: number;
   gifUrl?: string | null;
+  gifAlt?: string | null;
   imageUrls?: string[];
   imageAlts?: string[];
   deletedByAdmin?: boolean;
+  /** The original's content warning (sprint 06 #16): the card is covered like the post itself. */
+  isSensitive?: boolean | null;
+  contentWarning?: string | null;
 }
 
 /** The FeedItem fields the three states of a quote card share. */
@@ -139,17 +144,24 @@ export function mapQuotedOriginal(
   // Visible: free originals show their media (the viewer's own priced post is
   // theirs; a priced post by someone else never reaches here).
   const showMedia = (o.unlockPrice ?? 0) === 0 && o.audience === 'PUBLIC';
-  return {
-    ...cardBase(o, user),
-    content: o.content,
-    likeCount: o.likeCount,
-    commentCount: o.commentCount,
-    repostCount: o.repostCount,
-    viewCount: o.viewCount,
-    gifUrl: showMedia ? (o.gifUrl ?? undefined) : undefined,
-    imageUrls: showMedia ? o.imageUrls : undefined,
-    imageAlts: showMedia ? o.imageAlts : undefined,
-  };
+  // The quoted author's "hide counts on my posts" switch applies to the card too.
+  return redactCounts(
+    {
+      ...cardBase(o, user),
+      content: o.content,
+      isSensitive: o.isSensitive ?? false,
+      contentWarning: o.contentWarning ?? undefined,
+      likeCount: o.likeCount,
+      commentCount: o.commentCount,
+      repostCount: o.repostCount,
+      viewCount: o.viewCount,
+      gifUrl: showMedia ? (o.gifUrl ?? undefined) : undefined,
+      gifAlt: showMedia ? (o.gifAlt ?? undefined) : undefined,
+      imageUrls: showMedia ? o.imageUrls : undefined,
+      imageAlts: showMedia ? o.imageAlts : undefined,
+    },
+    viewerId,
+  );
 }
 
 /**
@@ -169,6 +181,7 @@ export function withholdQuotedOriginal(card: FeedItem, deleted: boolean): FeedIt
     repostCount: 0,
     viewCount: 0,
     gifUrl: undefined,
+    gifAlt: undefined,
     imageUrls: undefined,
     imageAlts: undefined,
     deletedAt: deleted ? (card.deletedAt ?? new Date().toISOString()) : card.deletedAt,

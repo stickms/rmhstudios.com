@@ -20,8 +20,10 @@ import { formatShare, valueNow, type DebtStats } from '@/lib/kaikai-debt/stats';
 import { CATEGORY_ORDER } from '@/lib/kaikai-debt/stats';
 import { Swatch } from './chart-kit';
 import { categoryLabel } from './CompositionCharts';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function StatsTable({ stats, nowMs }: { stats: DebtStats; nowMs: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-kaikai-debt');
   const total = Math.max(1, valueNow(stats.totals, nowMs));
 
@@ -99,9 +101,7 @@ export function StatsTable({ stats, nowMs }: { stats: DebtStats; nowMs: number }
                   <td className="py-1.5 pr-3 text-right text-site-text-muted tabular-nums">
                     {formatDebt(stat.principalCents)}
                   </td>
-                  <td className="py-1.5 pr-3 text-right text-site-text-muted tabular-nums">
-                    {stat.count.toLocaleString('en-US')}
-                  </td>
+                  <td className="py-1.5 pr-3 text-right text-site-text-muted tabular-nums">{fmt.number(stat.count)}</td>
                   <td className="py-1.5 pr-3 text-right text-site-text-muted tabular-nums">
                     {formatDebt(stat.maxCents)}
                   </td>
@@ -119,7 +119,7 @@ export function StatsTable({ stats, nowMs }: { stats: DebtStats; nowMs: number }
               </th>
               <td className="py-1.5 pr-3 text-right tabular-nums">{formatDebt(total)}</td>
               <td className="py-1.5 pr-3 text-right tabular-nums">{formatDebt(stats.totals.principalCents)}</td>
-              <td className="py-1.5 pr-3 text-right tabular-nums">{stats.totals.count.toLocaleString('en-US')}</td>
+              <td className="py-1.5 pr-3 text-right tabular-nums">{fmt.number(stats.totals.count)}</td>
               <td className="py-1.5 pr-3 text-right tabular-nums">{formatDebt(stats.largest[0]?.amountCents ?? 0)}</td>
               <td className="py-1.5 text-right tabular-nums">100%</td>
             </tr>

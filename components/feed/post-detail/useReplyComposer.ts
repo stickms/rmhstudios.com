@@ -10,6 +10,7 @@ import { withCommentDelta } from './post-detail-state';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 export interface ReplyComposerState {
   commentContent: string;
   setCommentContent: Dispatch<SetStateAction<string>>;
@@ -28,6 +29,7 @@ export function useReplyComposer(
   const [commentContent, setCommentContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const reconsider = useReconsider();
+  const sanctionRefusalText = useSanctionRefusal();
 
   const handleSubmit = async () => {
     if (!commentContent.trim() || submitting) return;
@@ -54,7 +56,8 @@ export function useReplyComposer(
       // Surfaces the reply-control 403 ("The author limited who can reply…").
       if (error instanceof HttpError) {
         toast.error(
-          serverError(error) ||
+          sanctionRefusalText(error) ||
+            serverError(error) ||
             t('comment-failed', {
               defaultValue: 'Could not post your reply',
             }),

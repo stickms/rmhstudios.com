@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { useSession } from '@/components/Providers';
 import { SKILLS } from '@/lib/profile/skills';
+import { knownLabel } from '@/lib/i18n/known-label';
+import { skillLabels } from './skill-labels';
 import { useJson } from './useJson';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -34,16 +36,14 @@ export default function EndorsementsModule({
   isOwner: boolean;
 }) {
   const { t } = useTranslation('f-profile-plus');
+  const skillNames = skillLabels(t);
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user);
   const canEndorse = signedIn && !isOwner;
   const { data, setData } = useJson<EndorsementData>(`/api/profile/${encodeURIComponent(userId)}/endorsements`);
   const [pending, setPending] = useState<string | null>(null);
 
-  const skillName = (id: string) =>
-    t(`skill-${id}`, {
-      defaultValue: SKILLS.find((s) => s.id === id)?.label ?? id,
-    });
+  const skillName = (id: string) => knownLabel(skillNames, id) ?? id;
 
   async function set(skill: string, on: boolean) {
     if (!data) return;

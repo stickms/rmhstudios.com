@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Link } from '@tanstack/react-router';
 import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
@@ -24,6 +25,7 @@ import { REPLY_INPUT_ID } from './reply-input-id';
 import { formatFullDate, postLinkPreviewUrl } from './post-detail-state';
 import type { PostTranslation } from './usePostTranslation';
 import { ARRIVE } from '@/components/ui/arrive';
+import { ContentWarningCover } from '@/components/feed/ContentWarningCover';
 import { cn } from '@/lib/utils';
 
 interface PostArticleProps {
@@ -57,6 +59,7 @@ export function PostArticle({
   onRemove,
 }: PostArticleProps) {
   const { t } = useTranslation('feed');
+  const { locale } = useLocaleFormat();
   const linkPreviewUrl = useMemo(() => postLinkPreviewUrl(post), [post]);
   const { translatedText, showTranslated, translating, handleTranslate } = translation;
 
@@ -94,6 +97,10 @@ export function PostArticle({
         )}
       </div>
 
+      {/* A post with a content warning reason is covered whole (text, poll, media) until shown */}
+      <ContentWarningCover
+        post={{ isSensitive: post.isSensitive, contentWarning: post.contentWarning, userId: post.user?.id }}
+      >
       {/* The text, at 19px */}
       {post.content && (
         <RMHarkContent
@@ -157,7 +164,7 @@ export function PostArticle({
       {/* Image / GIF: hidden behind a content warning when marked sensitive. */}
       {(post.gifUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
         <SensitiveMedia sensitive={post.isSensitive} className="mt-3">
-          {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-1" />}
+          {post.gifUrl && <GifEmbed url={post.gifUrl} gifAlt={post.gifAlt ?? null} className="mb-1" />}
           {post.imageUrls && post.imageUrls.length > 0 && (
             <PostImageGrid
               urls={post.imageUrls}
@@ -174,6 +181,7 @@ export function PostArticle({
 
       {/* Link preview: only when no poll, gif, or image */}
       {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+      </ContentWarningCover>
 
       {/* Quoted original: set off by a rule, not a box */}
       {post.original && (
@@ -206,7 +214,7 @@ export function PostArticle({
 
       {/* The full time */}
       <p className="t-meta mt-3">
-        {formatFullDate(post.createdAt)}
+        {formatFullDate(post.createdAt, locale)}
         {post.edited && !post.deletedAt ? <EditHistoryButton postId={postId} /> : null}
       </p>
 

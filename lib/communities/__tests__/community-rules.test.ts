@@ -64,6 +64,10 @@ vi.mock('@/lib/prisma.server', () => {
     rMHark: h.post,
     communityModItem: h.item,
     contentReport: h.contentReport,
+    // s06-01: nobody is banned in these scenarios.
+    communityBan: {
+      findFirst: async () => null,
+    },
     $executeRaw: h.executeRaw,
   });
   return {

@@ -20,12 +20,16 @@ import type { EditorTool, SliceType, SnapDivision } from '@features/slice-it/eng
 import { useEditorStore } from '@features/slice-it/engine/editor/store';
 import { formatTime } from './Timeline';
 import { PlaytestControls } from './PlaytestControls';
+import { EditMenu } from './EditMenu';
+import type { ClipboardOp } from './useClipboardActions';
 
 interface ToolbarProps {
   onSave: () => void;
+  /** Clipboard and time operations (the Edit menu). */
+  onClipboardOp: (op: ClipboardOp) => void;
 }
 
-export function Toolbar({ onSave }: ToolbarProps) {
+export function Toolbar({ onSave, onClipboardOp }: ToolbarProps) {
   const { t } = useTranslation('r-slice-it');
   const tool = useEditorStore((s) => s.tool);
   const setTool = useEditorStore((s) => s.setTool);
@@ -259,6 +263,8 @@ export function Toolbar({ onSave }: ToolbarProps) {
           })}
         </span>
       </button>
+
+      <EditMenu onRun={onClipboardOp} />
 
       <PlaytestControls />
 

@@ -19,10 +19,12 @@ import { BasketPanel } from '@/components/arcade/BasketPanel';
 import { useArcadeRun } from '@/lib/arcade/run-client';
 import { useSession } from '@/components/Providers';
 import { laundryNet } from '@features/laundry-sort/engine/net/client';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const PLACE_COLOR = ['var(--ls-warn)', '#cbd5e1', '#d08a52'];
 
 export function ResultsPanel({ onPlayAgain, onMenu }: { onPlayAgain: () => void; onMenu: () => void }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-laundry-sort');
   const mode = useLaundryStore((s) => s.mode);
   const results = useLaundryStore((s) => s.results);
@@ -76,14 +78,14 @@ export function ResultsPanel({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
                         count: entry.sorted,
                       })}
                     </span>
-                    <span className="ls-accent ls-numeric shrink-0 font-black">{entry.score.toLocaleString()}</span>
+                    <span className="ls-accent ls-numeric shrink-0 font-black">{fmt.number(entry.score)}</span>
                   </li>
                 );
               })}
             </ol>
           ) : soloResult ? (
             <div className="space-y-3">
-              <p className="ls-numeric text-center text-5xl font-black">{soloResult.stats.score.toLocaleString()}</p>
+              <p className="ls-numeric text-center text-5xl font-black">{fmt.number(soloResult.stats.score)}</p>
 
               {soloResult.personalBest ? (
                 <p className="ls-accent flex items-center justify-center gap-1.5 text-sm font-bold">

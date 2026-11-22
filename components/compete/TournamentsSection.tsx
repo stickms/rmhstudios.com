@@ -91,6 +91,8 @@ export function TournamentsSection() {
                       {' · '}
                       {tourney.format === 'SWISS' ? (
                         <SwissLabel />
+                      ) : tourney.format === 'DOUBLE_ELIM' ? (
+                        t('double-elim-label', { ns: 'double-elimination', defaultValue: 'Double elim' })
                       ) : tourney.format === 'ROUND_ROBIN' ? (
                         t('round-robin', { defaultValue: 'Round robin' })
                       ) : (

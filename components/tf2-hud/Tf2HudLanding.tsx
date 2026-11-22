@@ -16,8 +16,9 @@ import Tf2Logo from './Tf2Logo';
 import { Btn, IconBtn } from './ui';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export default function Tf2HudLanding() {
+export default function Tf2HudLanding() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-tf2-hud');
   const navigate = useNavigate();
   const newProject = useEditor((s) => s.newProject);
@@ -176,7 +177,7 @@ export default function Tf2HudLanding() {
                   </Link>
                   <span className="shrink-0 text-xs text-app-text-dim">
                     {t('n-changed', { defaultValue: '{{count}} changed', count: d.fileCount })} ·{' '}
-                    {new Date(d.updatedAt).toLocaleDateString()}
+                    {fmt.date(new Date(d.updatedAt))}
                   </span>
                   <IconBtn
                     icon={Trash2}

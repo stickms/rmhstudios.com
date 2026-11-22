@@ -12,6 +12,7 @@ import { CALL_PRIVACY_VALUES, DEFAULT_CALL_PRIVACY, isCallPrivacy, type CallPriv
 import { api } from '@/lib/contract/client';
 import { setCallPrivacyApi, unmuteCallerApi } from '@/lib/call/calls.contract';
 import { callMutesQuery, callPrivacyQuery } from '@/lib/settings/prefs.queries';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * CallPrivacyControls — who may ring this account. Sits in Settings → Privacy
@@ -19,6 +20,7 @@ import { callMutesQuery, callPrivacyQuery } from '@/lib/settings/prefs.queries';
  * the socket hub (a block still beats every option here), never in this form.
  */
 export function CallPrivacyControls() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
   const queryClient = useQueryClient();
   const privacy = callPrivacyQuery();
@@ -150,7 +152,7 @@ export function CallPrivacyControls() {
                     <span className="block text-xs text-site-text-muted">
                       {t('call-mutes-until', {
                         defaultValue: 'Until {{time}}',
-                        time: new Date(m.until).toLocaleString(undefined, {
+                        time: fmt.dateTime(new Date(m.until), {
                           dateStyle: 'medium',
                           timeStyle: 'short',
                         }),

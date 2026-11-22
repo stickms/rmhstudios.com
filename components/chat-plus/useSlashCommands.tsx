@@ -4,12 +4,14 @@ import { toast } from '@/lib/toast';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { GifPicker } from '@/components/feed/GifPickerLazy';
+import type { GifSelection } from '@/lib/feed/gif-alt';
 import { parseRemind, resolveCommand, suggestCommands } from '@/lib/chat-plus/commands';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
 import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * M4 — slash commands for a chat composer.
@@ -35,7 +37,7 @@ export function useSlashCommands({
   setDraft: (v: string) => void;
   inputRef: RefObject<HTMLElement | null>;
   onPosted: (message: unknown) => void;
-  onPickGif: (url: string) => void;
+  onPickGif: (selection: GifSelection) => void;
 }): {
   /** Render next to the composer. */
   popover: ReactNode;
@@ -44,6 +46,7 @@ export function useSlashCommands({
   /** Returns true when `text` was a command and has been dealt with. */
   tryRun: (text: string) => Promise<boolean>;
 } {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-messaging');
   const [active, setActive] = useState(0);
   const [dismissedFor, setDismissedFor] = useState<string | null>(null);
@@ -125,7 +128,7 @@ export function useSlashCommands({
           setDraft('');
           toast.success(
             t('remind-set', {
-              when: parsed.value.remindAt.toLocaleString(undefined, {
+              when: fmt.dateTime(parsed.value.remindAt, {
                 dateStyle: 'medium',
                 timeStyle: 'short',
               }),
@@ -167,7 +170,7 @@ export function useSlashCommands({
       }
       return true;
     },
-    [chat.id, chat.kind, onPosted, setDraft, t],
+    [chat.id, chat.kind, onPosted, setDraft, t, fmt],
   );
 
   const popover = (
@@ -213,8 +216,8 @@ export function useSlashCommands({
           <GifPicker
             initialQuery={gifQuery}
             onClose={() => setGifQuery(null)}
-            onSelect={(url) => {
-              onPickGif(url);
+            onSelect={(selection) => {
+              onPickGif(selection);
               setGifQuery(null);
             }}
           />

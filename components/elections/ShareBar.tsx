@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import { Check, Link2, Send, Share2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
@@ -14,6 +15,7 @@ const enc = encodeURIComponent;
  */
 export function ShareBar({ url, text, disabled }: { url: string; text: string; disabled?: boolean }) {
   const { t } = useTranslation('c-elections');
+  const showCopy = useCopyFallback();
   const { data: session } = useSession();
   const [copied, setCopied] = useState(false);
   const [posted, setPosted] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
@@ -26,12 +28,12 @@ export function ShareBar({ url, text, disabled }: { url: string; text: string; d
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      window.prompt(
-        t('share.copyPrompt', {
+      showCopy({
+        title: t('share.copyPrompt', {
           defaultValue: 'Copy this link:',
         }),
-        url,
-      );
+        text: url,
+      });
     }
   };
 

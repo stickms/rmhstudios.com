@@ -202,6 +202,7 @@ async function removePost(id: string): Promise<void> {
         deletedAt: post.deletedAt ?? now,
         deletedByAdmin: true,
         deletedBy: 'moderator',
+        pinnedAt: null,
       },
     });
     if (firstDelete) {
@@ -277,6 +278,7 @@ async function removeCommunity(id: string): Promise<void> {
           deletedAt: now,
           deletedByAdmin: true,
           deletedBy: 'moderator',
+          pinnedAt: null,
         },
       });
       for (const p of posts) await unlinkPostHashtags(tx, p.id);

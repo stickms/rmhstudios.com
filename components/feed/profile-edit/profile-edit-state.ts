@@ -33,6 +33,8 @@ export interface SavedProfileData extends Partial<ProfileSongData> {
   membershipPriceCoins?: number | null;
   showLikes?: boolean;
   dmPrivacy?: string;
+  followListVisibility?: string;
+  dmRequests?: boolean;
 }
 
 export interface ProfileEditInitial extends ProfileSongData {
@@ -48,6 +50,8 @@ export interface ProfileEditInitial extends ProfileSongData {
   links?: ProfileLink[];
   showLikes: boolean;
   dmPrivacy: string;
+  followListVisibility?: string;
+  dmRequests?: boolean;
   tipGoal?: number | null;
   tipGoalLabel?: string | null;
   membershipPriceCoins?: number | null;
@@ -98,6 +102,8 @@ export interface ProfileDraft {
   links: ProfileLink[];
   showLikes: boolean;
   dmPrivacy: string;
+  followListVisibility: string;
+  dmRequests: boolean;
   tipGoal: string;
   tipGoalLabel: string;
   membershipPrice: string;
@@ -163,6 +169,8 @@ export function isDirty(draft: ProfileDraft, initial: ProfileEditInitial): boole
     linksChanged ||
     draft.showLikes !== initial.showLikes ||
     draft.dmPrivacy !== (initial.dmPrivacy ?? 'EVERYONE') ||
+    draft.followListVisibility !== (initial.followListVisibility ?? 'everyone') ||
+    draft.dmRequests !== (initial.dmRequests ?? false) ||
     draft.tipGoal !== coinsToField(initial.tipGoal) ||
     draft.tipGoalLabel !== (initial.tipGoalLabel ?? '') ||
     draft.membershipPrice !== coinsToField(initial.membershipPriceCoins) ||
@@ -214,6 +222,8 @@ export function buildProfilePatch(draft: ProfileDraft, handleChanged: boolean) {
     membershipPriceCoins: fieldToCoins(draft.membershipPrice),
     showLikes: draft.showLikes,
     dmPrivacy: draft.dmPrivacy,
+    followListVisibility: draft.followListVisibility,
+    dmRequests: draft.dmRequests,
     profileSongSpotifyId: draft.selectedSong?.id ?? null,
     profileSongTitle: draft.selectedSong?.title ?? null,
     profileSongArtist: draft.selectedSong?.artist ?? null,

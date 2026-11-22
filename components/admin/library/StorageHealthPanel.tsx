@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Health = {
   durable: boolean;
@@ -38,6 +39,7 @@ export function StorageHealthPanel({
   reloadToken?: number;
   onRefreshStateChange?: (loading: boolean) => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('admin');
   const [health, setHealth] = useState<Health | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,14 +119,14 @@ export function StorageHealthPanel({
           label={t('stat-books', {
             defaultValue: 'Books',
           })}
-          value={health.total.toLocaleString()}
+          value={fmt.number(health.total)}
         />
         <StatTile
           icon={FileWarning}
           label={t('stat-missing', {
             defaultValue: 'Missing files',
           })}
-          value={health.missing.length.toLocaleString()}
+          value={fmt.number(health.missing.length)}
           tone={health.missing.length > 0 ? 'bad' : 'good'}
         />
       </StatGrid>

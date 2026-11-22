@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { StudyTabs } from '@/components/feed/StudyTabs';
 import { useSession } from '@/components/Providers';
+import { ReminderSettings } from '@/components/study/ReminderSettings';
 import { BarChart } from '@/components/ui/bar-chart';
 import { Button } from '@/components/ui/button';
 import { DayHeatmap } from '@/components/ui/day-heatmap';
@@ -166,6 +167,7 @@ export function StatsPage({
   return (
     <div className={arrival}>
       {header}
+      <ReminderSettings />
       <div className="space-y-6 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="t-meta">

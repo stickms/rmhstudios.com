@@ -12,7 +12,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { formatDistanceToNow } from 'date-fns';
 import { ShieldCheck, ShieldAlert, ShieldX, ExternalLink } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
@@ -27,6 +26,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { RestrictionList } from '@/components/moderation/moderation-ui';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AppealStatus = 'NONE' | 'PENDING' | 'UPHELD' | 'OVERTURNED';
 
@@ -70,6 +70,7 @@ function entityHref(s: Strike): string | null {
 }
 
 export function AccountStandingPanel() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
   const { data: standing, isPending: loading, refetch } = useQuery(accountStandingQuery());
   const [openId, setOpenId] = useState<string | null>(null);
@@ -241,9 +242,7 @@ export function AccountStandingPanel() {
               <p className="mt-1 text-xs text-site-text-muted">
                 {t('standing-suspended-until', {
                   defaultValue: 'Ends {{when}}',
-                  when: formatDistanceToNow(new Date(standing.bannedUntil), {
-                    addSuffix: true,
-                  }),
+                  when: fmt.relative(new Date(standing.bannedUntil)),
                 })}
               </p>
             )}
@@ -323,11 +322,7 @@ export function AccountStandingPanel() {
                         })}
                       </Badge>
                     )}
-                    <span className="text-xs text-site-text-muted">
-                      {formatDistanceToNow(new Date(s.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </span>
+                    <span className="text-xs text-site-text-muted">{fmt.relative(new Date(s.createdAt))}</span>
                     {href && (
                       <Link
                         to={href}
@@ -354,15 +349,11 @@ export function AccountStandingPanel() {
                       {new Date(s.expiresAt).getTime() > Date.now()
                         ? t('strike-expires', {
                             defaultValue: 'Expires {{when}}',
-                            when: formatDistanceToNow(new Date(s.expiresAt), {
-                              addSuffix: true,
-                            }),
+                            when: fmt.relative(new Date(s.expiresAt)),
                           })
                         : t('strike-expired-when', {
                             defaultValue: 'Expired {{when}}',
-                            when: formatDistanceToNow(new Date(s.expiresAt), {
-                              addSuffix: true,
-                            }),
+                            when: fmt.relative(new Date(s.expiresAt)),
                           })}
                     </p>
                   )}

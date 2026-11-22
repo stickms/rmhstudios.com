@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface PrepSheetProps {
   applicationId: string;
@@ -46,6 +47,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
   const [sheet, setSheet] = useState<PrepSheetData | null>(initialSheet);
   const [loading, setLoading] = useState(false);
@@ -160,7 +162,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                 defaultValue: '{{count}} days until your interview',
                 count: sheet.daysUntilInterview,
               })}
-              <span className="text-site-text-muted">{new Date(sheet.nextInterviewAt).toLocaleDateString()}</span>
+              <span className="text-site-text-muted">{fmt.date(new Date(sheet.nextInterviewAt))}</span>
             </p>
           )}
 

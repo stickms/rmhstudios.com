@@ -19,8 +19,15 @@
 import { isIP } from 'node:net';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
-import { getBoss } from '@/lib/jobs/boss.server';
+import { EventError } from '@/lib/events/event-error';
+import {
+  EVENT_REMINDER_QUEUE,
+  cancelEventReminders,
+  scheduleEventReminders,
+  type EventReminderJob,
+} from '@/lib/events/reminders.server';
 import { getRole, canModerate } from '@/lib/communities/access.server';
+import { activeSanction } from '@/lib/communities/sanction-read.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { isPrivateIp } from '@/lib/ssrf-guard.server';
@@ -31,21 +38,38 @@ import {
   decorateRecurring,
   isGoingToOccurrence,
   notifyRotation,
-  occurrenceAfter,
+  nextLiveOccurrenceAfter,
   rsvpRecurring,
   unrsvpRecurring,
   upcomingOccurrenceEventIds,
   type RecurrenceInput,
 } from '@/lib/calendar/recurring-events.server';
+import { overridesFor } from '@/lib/events/occurrences.server';
+import { effectiveStart } from '@/lib/events/occurrences';
 import type { EventRecurrenceDTO } from '@/lib/calendar/types';
 import { EVENT_KIND, WHOLE_EVENT } from '@/lib/calendar/event-model';
 import { SITE_URL } from '@/lib/seo';
+import { canManageEvent } from '@/lib/events/cohosts.server';
+import { resolveRole, type CohostPersonDTO, type EventViewerRole } from '@/lib/events/cohosts';
+import {
+  canJoinWaitlist,
+  waitlistPosition,
+} from '@/lib/events/waitlist';
+import {
+  announcePromotions,
+  lockEventRsvps,
+  promoteFromWaitlist,
+  readSeatState,
+  readWaitlist,
+} from '@/lib/events/waitlist.server';
 import type { Prisma } from '@prisma/client';
 
 // ─── Types (client-safe: imported as `import type` by the UI) ────────────────
 
 export type EventVenueKindValue = 'SPACE' | 'TOURNAMENT' | 'GAME' | 'URL' | 'IRL';
 export type RsvpStatus = 'going' | 'maybe';
+/** What a member can ask for: going, maybe, or a place on the waitlist of a full one-off event. */
+export type RsvpRequest = RsvpStatus | 'waitlist';
 export type EventScope = 'upcoming' | 'community' | 'mine';
 
 export interface EventPersonDTO {
@@ -82,15 +106,26 @@ export interface EventDTO {
   goingCount: number;
   maybeCount: number;
   attendees: EventPersonDTO[];
-  viewerRsvp: RsvpStatus | null;
+  viewerRsvp: RsvpRequest | null;
+  /** Members waiting for a seat (one-off events with a capacity). */
+  waitlistCount: number;
+  /** 1-based place of the viewer in the waitlist, when they are on it. */
+  viewerWaitlistPosition: number | null;
   /** K4 — set on a repeating event; `startsAt`/`host`/counts then describe the shown occurrence. */
   recurrence?: EventRecurrenceDTO | null;
+  /** Accepted co-hosts, in the order they were invited ("Hosted by A with B and C"). */
+  cohosts: CohostPersonDTO[];
+  /** What the viewer is to this event: host, accepted co-host, invited co-host, or nothing. */
+  viewerRole: EventViewerRole;
 }
 
 export interface RsvpResult {
   goingCount: number;
   maybeCount: number;
-  viewerRsvp: RsvpStatus | null;
+  viewerRsvp: RsvpRequest | null;
+  /** Absent on a repeating event, which has no waitlist. */
+  waitlistCount?: number;
+  viewerWaitlistPosition?: number | null;
 }
 
 export interface CreateEventInput {
@@ -113,6 +148,7 @@ export interface CreateEventInput {
 
 export interface UpdateEventInput {
   id: string;
+  /** The member making the edit: the host, or an accepted co-host (s05-05). */
   hostId: string;
   title?: string;
   description?: string | null;
@@ -125,133 +161,8 @@ export interface UpdateEventInput {
   recurrence?: RecurrenceInput | null;
 }
 
-/** Domain error with a stable `code` the API layer maps to an HTTP status. */
-export class EventError extends Error {
-  constructor(
-    public readonly code:
-      | 'NOT_FOUND'
-      | 'FORBIDDEN'
-      | 'INVALID_DATES'
-      | 'INVALID_VENUE_URL'
-      | 'CAPACITY_FULL'
-      | 'CANCELED'
-      | 'INVALID_RECURRENCE',
-  ) {
-    super(code);
-    this.name = 'EventError';
-  }
-}
-
-// ─── Reminder queue (pg-boss) ────────────────────────────────────────────────
-
-/** Delayed reminder jobs for RSVPs. Owned here, NOT registered in boss.server. */
-export const EVENT_REMINDER_QUEUE = 'event.reminder';
-
-type ReminderOffset = '24h' | '15m';
-
-export interface EventReminderJob {
-  eventId: string;
-  userId: string;
-  offset: ReminderOffset;
-  /** K4 — the occurrence this reminder is for, on a repeating event. */
-  occurrenceAt?: string;
-}
-
-const REMINDER_OFFSETS: { offset: ReminderOffset; leadMs: number }[] = [
-  { offset: '24h', leadMs: 24 * 60 * 60 * 1000 },
-  { offset: '15m', leadMs: 15 * 60 * 1000 },
-];
-
-const reminderKey = (
-  eventId: string,
-  userId: string,
-  offset: ReminderOffset,
-  occurrenceAt?: Date,
-) =>
-  `event-reminder:${eventId}:${userId}:${offset}${occurrenceAt ? `:${occurrenceAt.getTime()}` : ''}`;
-
-// Idempotent per-process queue creation, memoised so we don't hit the DB on
-// every RSVP. `stately` policy + a per-(event,user,offset) singletonKey gives us
-// "one pending reminder per key" dedupe (a re-RSVP won't stack duplicates).
-let queueReady: Promise<void> | null = null;
-function ensureQueue(boss: PgBoss): Promise<void> {
-  if (!queueReady) {
-    queueReady = boss.createQueue(EVENT_REMINDER_QUEUE, { policy: 'stately' }).catch((e) => {
-      queueReady = null; // allow a later retry
-      throw e;
-    });
-  }
-  return queueReady;
-}
-
-/**
- * Schedule the two reminder jobs for a 'going' RSVP. No-op when the queue is
- * unavailable (best-effort). Skips any offset whose fire time is already past,
- * and sets a generous `retentionSeconds` so a far-future reminder isn't reaped
- * by pg-boss's default 14-day created-state retention before it fires.
- */
-async function scheduleEventReminders(
-  event: { id: string; startsAt: Date },
-  userId: string,
-  /** K4 — `event.startsAt` is one occurrence of a repeating event. */
-  recurring = false,
-): Promise<void> {
-  const boss = await getBoss();
-  if (!boss) return;
-  try {
-    await ensureQueue(boss);
-    const now = Date.now();
-    for (const { offset, leadMs } of REMINDER_OFFSETS) {
-      const fireAt = new Date(event.startsAt.getTime() - leadMs);
-      if (fireAt.getTime() <= now) continue;
-      const retentionSeconds = Math.ceil((fireAt.getTime() - now) / 1000) + 86_400;
-      await boss.send(
-        EVENT_REMINDER_QUEUE,
-        {
-          eventId: event.id,
-          userId,
-          offset,
-          ...(recurring ? { occurrenceAt: event.startsAt.toISOString() } : {}),
-        } satisfies EventReminderJob,
-        {
-          startAfter: fireAt,
-          singletonKey: reminderKey(event.id, userId, offset, recurring ? event.startsAt : undefined),
-          retentionSeconds,
-          retryLimit: 2,
-        },
-      );
-    }
-  } catch (e) {
-    console.error('[events] failed to schedule reminders:', (e as Error)?.message);
-  }
-}
-
-/**
- * Best-effort cancel of pending reminder jobs for an (event,user) pair — used on
- * un-RSVP and on switching to 'maybe'. If cancellation fails or the API can't
- * reach a job, the worker's re-check (RSVP must still be 'going') makes it a
- * no-op at fire time, so this is purely an optimisation.
- */
-async function cancelEventReminders(
-  eventId: string,
-  userId: string,
-  occurrenceAt?: Date,
-): Promise<void> {
-  const boss = await getBoss();
-  if (!boss) return;
-  try {
-    await ensureQueue(boss);
-    for (const { offset } of REMINDER_OFFSETS) {
-      const jobs = await boss.findJobs(EVENT_REMINDER_QUEUE, {
-        key: reminderKey(eventId, userId, offset, occurrenceAt),
-      });
-      const ids = jobs.filter((j) => j.state === 'created' || j.state === 'retry').map((j) => j.id);
-      if (ids.length) await boss.cancel(EVENT_REMINDER_QUEUE, ids);
-    }
-  } catch {
-    /* best-effort — worker re-checks the RSVP before notifying */
-  }
-}
+export { EventError, EVENT_REMINDER_QUEUE, scheduleEventReminders };
+export type { EventReminderJob };
 
 /**
  * The reminder job handler. Re-verifies the event exists / isn't canceled and
@@ -283,6 +194,12 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
     // "every time" RSVP chains the next occurrence's reminders once this one fires.
     if (!job.occurrenceAt) return;
     const at = new Date(job.occurrenceAt);
+    // s06-10 — a skipped date sends nothing, and a job scheduled for a time the date no longer has
+    // (it was moved after the job was queued) is stale: the move scheduled a fresh one.
+    const overrides = await overridesFor(event.id);
+    const shown = effectiveStart(at, overrides);
+    if (!shown) return;
+    if (new Date(job.startsAt ?? job.occurrenceAt).getTime() !== shown.getTime()) return;
     if (!(await isGoingToOccurrence(job.eventId, job.userId, at))) return;
     const whenRecurring = job.offset === '24h' ? 'tomorrow' : 'in 15 minutes';
     await createNotification({
@@ -298,8 +215,12 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
         where: { eventId: event.id, userId: job.userId, occurrenceAt: WHOLE_EVENT, everyTime: true },
         select: { id: true },
       });
-      const next = standing ? occurrenceAfter(event, at) : null;
-      if (next) await scheduleEventReminders({ id: event.id, startsAt: next }, job.userId, true);
+      const next = standing ? nextLiveOccurrenceAfter(event, at, overrides) : null;
+      if (next) {
+        await scheduleEventReminders({ id: event.id, startsAt: next.startsAt }, job.userId, true, {
+          occurrenceAt: next.occurrenceAt,
+        });
+      }
     }
     return;
   }
@@ -401,6 +322,8 @@ async function canViewPrivateEvent(
 ): Promise<boolean> {
   if (!viewerId) return false;
   if (row.hostId === viewerId) return true;
+  // A co-host (invited or accepted) sees the event they were asked to help run, and nobody else gains sight of it.
+  if ((await prisma.eventCohost.count({ where: { eventId: row.id, userId: viewerId } })) > 0) return true;
   const answered = await prisma.rsvp.count({ where: { eventId: row.id, userId: viewerId } });
   if (answered > 0) return true;
   if (!row.pollId) return false;
@@ -463,11 +386,12 @@ async function attachAndMap(
     where: { eventId: { in: ids }, occurrenceAt: WHOLE_EVENT },
     _count: { _all: true },
   });
-  const counts = new Map<string, { going: number; maybe: number }>();
+  const counts = new Map<string, { going: number; maybe: number; waiting: number }>();
   for (const g of grouped) {
-    const c = counts.get(g.eventId) ?? { going: 0, maybe: 0 };
+    const c = counts.get(g.eventId) ?? { going: 0, maybe: 0, waiting: 0 };
     if (g.status === 'going') c.going = g._count._all;
     else if (g.status === 'maybe') c.maybe = g._count._all;
+    else if (g.status === 'waitlist') c.waiting = g._count._all;
     counts.set(g.eventId, c);
   }
 
@@ -486,17 +410,37 @@ async function attachAndMap(
     attendees.set(row.eventId, list);
   }
 
-  const viewerRsvps = new Map<string, RsvpStatus>();
+  const viewerRsvps = new Map<string, RsvpRequest>();
+  const viewerPlaces = new Map<string, number>();
   if (viewerId) {
     const mine = await prisma.rsvp.findMany({
       where: { eventId: { in: ids }, userId: viewerId, occurrenceAt: WHOLE_EVENT },
       select: { eventId: true, status: true },
     });
-    for (const m of mine) viewerRsvps.set(m.eventId, m.status as RsvpStatus);
+    for (const m of mine) viewerRsvps.set(m.eventId, m.status as RsvpRequest);
+    // Where the viewer stands: one bounded read (at most MAX_WAITLIST rows) per event they wait on.
+    for (const m of mine.filter((r) => r.status === 'waitlist')) {
+      const place = waitlistPosition(await readWaitlist(prisma, m.eventId), viewerId);
+      if (place != null) viewerPlaces.set(m.eventId, place);
+    }
+  }
+
+  // Co-hosts: the accepted ones for the card, plus the viewer's own row (an invitation shows its Accept / Decline).
+  // At most MAX_COHOSTS rows exist per event, so the read is bounded.
+  const cohostRows = await prisma.eventCohost.findMany({
+    where: { eventId: { in: ids }, OR: [{ status: 'accepted' }, ...(viewerId ? [{ userId: viewerId }] : [])] },
+    orderBy: [{ invitedAt: 'asc' }, { userId: 'asc' }],
+    select: { eventId: true, userId: true, status: true, user: { select: userDisplaySelect } },
+  });
+  const cohostsOf = new Map<string, CohostPersonDTO[]>();
+  const myCohostStatus = new Map<string, string>();
+  for (const r of cohostRows) {
+    if (r.status === 'accepted') cohostsOf.set(r.eventId, [...(cohostsOf.get(r.eventId) ?? []), toPerson(r.user)]);
+    if (r.userId === viewerId) myCohostStatus.set(r.eventId, r.status);
   }
 
   const mapped: EventDTO[] = rows.map((row) => {
-    const c = counts.get(row.id) ?? { going: 0, maybe: 0 };
+    const c = counts.get(row.id) ?? { going: 0, maybe: 0, waiting: 0 };
     return {
       id: row.id,
       // memberEventWhere: a member's event always has a host.
@@ -526,6 +470,10 @@ async function attachAndMap(
       maybeCount: c.maybe,
       attendees: attendees.get(row.id) ?? [],
       viewerRsvp: viewerRsvps.get(row.id) ?? null,
+      waitlistCount: c.waiting,
+      viewerWaitlistPosition: viewerPlaces.get(row.id) ?? null,
+      cohosts: cohostsOf.get(row.id) ?? [],
+      viewerRole: resolveRole(row.hostId, viewerId, myCohostStatus.get(row.id)),
     };
   });
   // K4 — repeating events show their next occurrence (time, host, attendance).
@@ -540,15 +488,25 @@ async function summarize(eventId: string, userId: string): Promise<RsvpResult> {
   });
   let goingCount = 0;
   let maybeCount = 0;
+  let waitlistCount = 0;
   for (const g of grouped) {
     if (g.status === 'going') goingCount = g._count._all;
     else if (g.status === 'maybe') maybeCount = g._count._all;
+    else if (g.status === 'waitlist') waitlistCount = g._count._all;
   }
   const mine = await prisma.rsvp.findUnique({
     where: { eventId_userId_occurrenceAt: { eventId, userId, occurrenceAt: WHOLE_EVENT } },
     select: { status: true },
   });
-  return { goingCount, maybeCount, viewerRsvp: (mine?.status as RsvpStatus | undefined) ?? null };
+  const viewerRsvp = (mine?.status as RsvpRequest | undefined) ?? null;
+  return {
+    goingCount,
+    maybeCount,
+    viewerRsvp,
+    waitlistCount,
+    viewerWaitlistPosition:
+      viewerRsvp === 'waitlist' ? waitlistPosition(await readWaitlist(prisma, eventId), userId) : null,
+  };
 }
 
 // ─── Reads ───────────────────────────────────────────────────────────────────
@@ -782,10 +740,14 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
       startsAt: true,
       endsAt: true,
       communityId: true,
+      recurrence: true,
     },
   });
   if (!event) throw new EventError('NOT_FOUND');
-  if (event.hostId !== input.hostId) throw new EventError('FORBIDDEN');
+  const role = await canManageEvent(event, input.hostId);
+  if (!role) throw new EventError('FORBIDDEN');
+  // The repeat rule (and its host rotation) is the host's; a co-host edits the details.
+  if (role === 'cohost' && input.recurrence !== undefined) throw new EventError('FORBIDDEN');
 
   const data: {
     recurrence?: string | null;
@@ -837,14 +799,30 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
   } else if (input.recurrence) {
     const checked = await checkRecurrence(input.recurrence, {
       communityId: event.communityId,
-      hostId: input.hostId,
+      hostId: event.hostId ?? input.hostId,
       startsAt: effectiveStart,
     });
     if (!checked.ok) throw new EventError('INVALID_RECURRENCE');
     Object.assign(data, checked.data);
   }
 
-  await prisma.event.update({ where: { id: input.id }, data });
+  // A one-off event whose capacity or start moved may have free seats now: the waitlist fills them
+  // in the same locked transaction as the update (lowering the capacity never removes a guest).
+  const oneOff = input.recurrence ? false : input.recurrence === null ? true : !event.recurrence;
+  if (oneOff && (data.capacity !== undefined || data.startsAt !== undefined)) {
+    const done = await prisma.$transaction(async (tx) => {
+      await lockEventRsvps(tx, input.id);
+      const updated = await tx.event.update({
+        where: { id: input.id },
+        data,
+        select: { id: true, title: true, startsAt: true, capacity: true, canceledAt: true },
+      });
+      return { updated, promoted: await promoteFromWaitlist(tx, updated) };
+    });
+    await announcePromotions(done.updated, done.promoted);
+  } else {
+    await prisma.event.update({ where: { id: input.id }, data });
+  }
   return (await getEvent(input.id, input.hostId))!;
 }
 
@@ -857,7 +835,11 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
   if (event.hostId !== hostId) throw new EventError('FORBIDDEN');
 
   if (!event.canceledAt) {
-    await prisma.event.update({ where: { id }, data: { canceledAt: new Date() } });
+    // Under the RSVP lock, so a seat freed by a racing un-RSVP cannot promote into a canceled event.
+    await prisma.$transaction(async (tx) => {
+      await lockEventRsvps(tx, id);
+      await tx.event.update({ where: { id }, data: { canceledAt: new Date() } });
+    });
     // Notify everyone who RSVP'd (best-effort). Pending reminder jobs stay put;
     // the worker's canceled-check turns them into no-ops.
     const rsvps = await prisma.rsvp.findMany({
@@ -875,6 +857,9 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
         link: '/calendar',
       }).catch(() => {});
     }
+    await prisma.rsvp.deleteMany({
+      where: { eventId: id, occurrenceAt: WHOLE_EVENT, status: 'waitlist' },
+    });
   }
 
   return (await getEvent(id, hostId))!;
@@ -883,7 +868,7 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
 export async function rsvp(
   eventId: string,
   userId: string,
-  status: RsvpStatus,
+  status: RsvpRequest,
   /** K4 — only meaningful on a repeating event. */
   opts: { everyTime?: boolean; occurrenceAt?: Date } = {},
 ): Promise<RsvpResult & { occurrenceAt?: string; viewerEveryTime?: boolean }> {
@@ -911,41 +896,103 @@ export async function rsvp(
   // A booking is answered by booking it (lib/calendar/office-hours.server.ts).
   if (event.kind === 'office-hours') throw new EventError('FORBIDDEN');
   if (event.canceledAt) throw new EventError('CANCELED');
+  // A member banned or timed out of the community cannot answer its events (s06-01,
+  // BAN_ENFORCEMENT_PATHS); the site route and POST /api/v1/events/{id}/rsvp both come through here.
+  // Withdrawing (`unrsvp`) stays open, so a sanctioned member can still take an answer back.
+  if (event.communityId) {
+    const sanction = await activeSanction(event.communityId, userId);
+    if (sanction)
+      throw new EventError('COMMUNITY_SANCTIONED', { kind: sanction.kind, endsAt: sanction.endsAt });
+  }
 
   if (event.recurrence) {
+    // Repeating events have no waitlist: attendance merges standing and per-date answers.
+    if (status === 'waitlist') throw new EventError('FORBIDDEN');
     try {
       const done = await rsvpRecurring(event, userId, status, {
         everyTime: !!opts.everyTime,
         occurrenceAt: opts.occurrenceAt,
       });
-      if (status === 'going') await scheduleEventReminders({ id: event.id, startsAt: done.at }, userId, true);
-      else await cancelEventReminders(event.id, userId, done.at);
+      if (status === 'going') {
+        await scheduleEventReminders({ id: event.id, startsAt: done.effectiveAt }, userId, true, {
+          occurrenceAt: done.at,
+        });
+      } else await cancelEventReminders(event.id, userId, done.at, [done.effectiveAt]);
       return done.summary;
     } catch (e) {
       if (e instanceof OccurrenceError) {
-        throw new EventError(e.code === 'CAPACITY_FULL' ? 'CAPACITY_FULL' : e.code === 'CANCELED' ? 'CANCELED' : e.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'INVALID_DATES');
+        throw new EventError(
+          e.code === 'CAPACITY_FULL'
+            ? 'CAPACITY_FULL'
+            : e.code === 'CANCELED'
+              ? 'CANCELED'
+              : e.code === 'NOT_FOUND'
+                ? 'NOT_FOUND'
+                : e.code === 'SKIPPED'
+                  ? 'OCCURRENCE_SKIPPED'
+                  : 'INVALID_DATES',
+        );
       }
       throw e;
     }
   }
 
-  await prisma.$transaction(async (tx) => {
-    // Enforce capacity for 'going' (count other users already going). Best-effort
-    // under concurrency — v1 has no waitlist.
-    if (status === 'going' && event.capacity != null) {
-      const going = await tx.rsvp.count({
+  // One locked transaction: the lock is taken before anything is counted, so two members racing for
+  // the last seat are served one after the other (the second finds it taken), and a guest who leaves
+  // hands their seat to the waitlist in the same transaction.
+  const done = await prisma.$transaction(async (tx) => {
+    await lockEventRsvps(tx, eventId);
+    const seats = await readSeatState(tx, eventId);
+    if (!seats) throw new EventError('NOT_FOUND');
+    if (seats.canceledAt) throw new EventError('CANCELED');
+    const key = { eventId_userId_occurrenceAt: { eventId, userId, occurrenceAt: WHOLE_EVENT } };
+    const mine = await tx.rsvp.findUnique({ where: key, select: { status: true } });
+    let next = status;
+    if (status !== 'maybe' && seats.capacity != null) {
+      const others = await tx.rsvp.count({
         where: { eventId, occurrenceAt: WHOLE_EVENT, status: 'going', userId: { not: userId } },
       });
-      if (going >= event.capacity) throw new EventError('CAPACITY_FULL');
+      const full = others >= seats.capacity;
+      // A plain `going` on a full event keeps answering CAPACITY_FULL (older clients); only
+      // an explicit request joins the waitlist, and a free seat is simply taken.
+      if (status === 'going' && full) throw new EventError('CAPACITY_FULL');
+      if (status === 'waitlist') {
+        if (!full) next = 'going';
+        else if (mine?.status !== 'waitlist') {
+          const waiting = await tx.rsvp.count({
+            where: { eventId, occurrenceAt: WHOLE_EVENT, status: 'waitlist' },
+          });
+          const verdict = canJoinWaitlist({ startsAt: seats.startsAt, now: new Date(), waiting });
+          if (verdict === 'closed') throw new EventError('WAITLIST_CLOSED');
+          if (verdict === 'full') throw new EventError('WAITLIST_FULL');
+        }
+      }
+    } else if (status === 'waitlist') {
+      next = 'going'; // no capacity, so no queue
     }
-    await tx.rsvp.upsert({
-      where: { eventId_userId_occurrenceAt: { eventId, userId, occurrenceAt: WHOLE_EVENT } },
-      create: { eventId, userId, status, occurrenceAt: WHOLE_EVENT },
-      update: { status },
-    });
+    if (next === 'waitlist') {
+      // Re-joining keeps the original place in the queue.
+      if (mine?.status !== 'waitlist') {
+        await tx.rsvp.upsert({
+          where: key,
+          create: { eventId, userId, status: next, occurrenceAt: WHOLE_EVENT, waitlistedAt: new Date() },
+          update: { status: next, waitlistedAt: new Date() },
+        });
+      }
+    } else {
+      await tx.rsvp.upsert({
+        where: key,
+        create: { eventId, userId, status: next, occurrenceAt: WHOLE_EVENT },
+        update: { status: next, waitlistedAt: null },
+      });
+    }
+    const promoted =
+      mine?.status === 'going' && next !== 'going' ? await promoteFromWaitlist(tx, seats) : [];
+    return { next, seats, promoted };
   });
 
-  if (status === 'going') await scheduleEventReminders(event, userId);
+  await announcePromotions(done.seats, done.promoted);
+  if (done.next === 'going') await scheduleEventReminders(event, userId);
   else await cancelEventReminders(eventId, userId);
 
   return summarize(eventId, userId);
@@ -977,14 +1024,25 @@ export async function unrsvp(
   if (series?.recurrence) {
     try {
       const done = await unrsvpRecurring(series, userId, opts.scope ?? 'occurrence', opts.occurrenceAt);
-      await cancelEventReminders(eventId, userId, done.at);
+      await cancelEventReminders(eventId, userId, done.at, [done.effectiveAt]);
       return done.summary;
     } catch (e) {
       if (e instanceof OccurrenceError) throw new EventError(e.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'INVALID_DATES');
       throw e;
     }
   }
-  await prisma.rsvp.deleteMany({ where: { eventId, userId, occurrenceAt: WHOLE_EVENT } });
+  // A guest leaving frees a seat: the first waitlisted member takes it in the same transaction.
+  const done = await prisma.$transaction(async (tx) => {
+    await lockEventRsvps(tx, eventId);
+    const mine = await tx.rsvp.findUnique({
+      where: { eventId_userId_occurrenceAt: { eventId, userId, occurrenceAt: WHOLE_EVENT } },
+      select: { status: true },
+    });
+    await tx.rsvp.deleteMany({ where: { eventId, userId, occurrenceAt: WHOLE_EVENT } });
+    const seats = mine?.status === 'going' ? await readSeatState(tx, eventId) : null;
+    return { seats, promoted: seats ? await promoteFromWaitlist(tx, seats) : [] };
+  });
+  if (done.seats) await announcePromotions(done.seats, done.promoted);
   await cancelEventReminders(eventId, userId);
   return summarize(eventId, userId);
 }

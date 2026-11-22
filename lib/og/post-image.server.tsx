@@ -121,9 +121,10 @@ export interface PostOgData {
   authorVerified?: boolean;
   /** When the post was made. Rendered as a date beside the handle. */
   createdAt?: Date | string | null;
-  likeCount: number;
-  commentCount: number;
-  repostCount: number;
+  /** The counts, or `null` to draw the card without them (the author hides them; lib/feed/quiet-counts). */
+  likeCount: number | null;
+  commentCount: number | null;
+  repostCount: number | null;
   /** Attachment URLs in the author's order. Up to four are drawn. */
   images?: readonly string[];
   /** The post's GIF. Drawn (first frame) when the post has no photos. */
@@ -362,7 +363,7 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
   // only visibly changes when a count crosses a bucket boundary anyway. The
   // revision covers the half that DOES need to be immediate: an edit, or a
   // content warning that has just been applied.
-  const bucket = (n: number) => Math.floor((n ?? 0) / 10);
+  const bucket = (n: number | null) => (n === null ? 'q' : Math.floor(n / 10));
   const cacheKey = `${data.id}:${data.revision ?? ''}:${bucket(data.likeCount)}:${bucket(data.commentCount)}:${bucket(data.repostCount)}`;
   const cached = pngCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
@@ -428,21 +429,25 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
     steps: hasMedia ? [46, 40, 34, 28, 23] : [60, 50, 42, 34, 28],
   });
 
-  const stats: Stat[] = [
-    {
-      value: compact(data.likeCount ?? 0),
-      label: plural(data.likeCount, 'like', 'likes'),
-      lead: true,
-    },
-    {
-      value: compact(data.repostCount ?? 0),
-      label: plural(data.repostCount, 'repost', 'reposts'),
-    },
-    {
-      value: compact(data.commentCount ?? 0),
-      label: plural(data.commentCount, 'reply', 'replies'),
-    },
-  ];
+  // A null count is withheld, not zero: the card is drawn without that figure at all.
+  const stats: Stat[] =
+    data.likeCount === null || data.repostCount === null || data.commentCount === null
+      ? []
+      : [
+          {
+            value: compact(data.likeCount),
+            label: plural(data.likeCount, 'like', 'likes'),
+            lead: true,
+          },
+          {
+            value: compact(data.repostCount),
+            label: plural(data.repostCount, 'repost', 'reposts'),
+          },
+          {
+            value: compact(data.commentCount),
+            label: plural(data.commentCount, 'reply', 'replies'),
+          },
+        ];
 
   const date = formatDate(data.createdAt);
   const byline = [data.authorHandle ? `@${data.authorHandle}` : null, date].filter(Boolean).join('  ·  ');
@@ -645,7 +650,7 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
 // perf: in-flight dedupe - concurrent requests for one card share a single render.
 export function renderPostOgImage(data: PostOgData): Promise<Buffer> {
   return dedupeOgRender(
-    `post:${data.id}:${data.revision ?? ''}:${Math.floor((data.likeCount ?? 0) / 10)}:${Math.floor((data.commentCount ?? 0) / 10)}:${Math.floor((data.repostCount ?? 0) / 10)}`,
+    `post:${data.id}:${data.revision ?? ''}:${data.likeCount === null ? 'q' : Math.floor(data.likeCount / 10)}:${data.commentCount === null ? 'q' : Math.floor(data.commentCount / 10)}:${data.repostCount === null ? 'q' : Math.floor(data.repostCount / 10)}`,
     () => renderPostOgImageUncached(data),
   );
 }

@@ -89,6 +89,14 @@ import { preloadAll } from './SpriteLoader';
 import { getAllSpriteUrls } from './sprites';
 import { DialogueManager } from './dialogueManager';
 import {
+  NO_ASSIST_FLAGS,
+  abilityTriggers,
+  comboLapses,
+  hitFlashUntil,
+  scaledDt,
+  type VoidBreakerAssistFlags,
+} from './assist-profile';
+import {
   getScaledEnemyHp,
   getScaledProjSpeed,
   getScaledBossHp,
@@ -257,6 +265,8 @@ export class VoidBreakerEngine {
   /** Total player shots fired this run (for Overcharge cadence). */
   private shotCount = 0;
   private prevPause = false;
+  /** The assist profile of the current run (settings > Game assists); the plain game by default. */
+  assist: VoidBreakerAssistFlags = NO_ASSIST_FLAGS;
   private prevDet = false;
   private prevDash = false;
   private prevFocus = false;
@@ -552,8 +562,31 @@ export class VoidBreakerEngine {
 
   // ── Main Update ──
 
+  /**
+   * With no timed input, the countdown, the breather between waves and narrative
+   * lines wait for the player; the UI says so and calls {@link assistContinue}.
+   */
+  get awaitingContinue(): boolean {
+    return (
+      this.assist.untimed &&
+      (this.state === 'countdown' || this.state === 'waveBreak' || this.dialogue.active !== null)
+    );
+  }
+
+  /** The player's "continue": dismiss the line on screen, else end the wait. */
+  assistContinue(): void {
+    if (!this.assist.untimed) return;
+    if (this.dialogue.active) {
+      this.dialogue.dismiss();
+    } else if (this.state === 'countdown') {
+      this.countdownTimer = 0;
+    } else if (this.state === 'waveBreak') {
+      this.waveBreakTimer = 0;
+    }
+  }
+
   update(dt: number, input: InputState): void {
-    dt = Math.min(dt, 0.05);
+    dt = scaledDt(Math.min(dt, 0.05), this.assist);
 
     // Hit-stop: briefly freeze the simulation on big impacts for punch.
     // Time keeps ticking (so the freeze ends) but nothing else updates.
@@ -570,7 +603,7 @@ export class VoidBreakerEngine {
     this.arenaPhase += dt;
 
     if (this.state === 'countdown') {
-      this.countdownTimer -= dt;
+      if (!this.assist.untimed) this.countdownTimer -= dt;
       if (this.countdownTimer <= 0) {
         this.state = 'playing';
         this.startNextWave();
@@ -615,7 +648,7 @@ export class VoidBreakerEngine {
       this.updateShockwaves(dt);
       this.updateShake(dt);
       // Dialogue + narrative
-      this.dialogue.update(dt);
+      this.dialogue.update(dt, this.assist.untimed);
       this.dialogue.checkTriggers(
         this.wave,
         this.waveEnemiesKilledCount,
@@ -685,8 +718,7 @@ export class VoidBreakerEngine {
 
       // Detonation
       if (
-        input.detonate &&
-        !this.prevDet &&
+        abilityTriggers(input.detonate, this.prevDet, this.assist) &&
         this.player.shards >= DET_MIN_SHARDS &&
         this.player.detonateCooldown <= 0
       ) {
@@ -696,8 +728,7 @@ export class VoidBreakerEngine {
 
       // Dash
       if (
-        input.dash &&
-        !this.prevDash &&
+        abilityTriggers(input.dash, this.prevDash, this.assist) &&
         !this.player.dashActive &&
         this.player.dashCooldown <= 0
       ) {
@@ -707,8 +738,7 @@ export class VoidBreakerEngine {
 
       // Focus
       if (
-        input.focus &&
-        !this.prevFocus &&
+        abilityTriggers(input.focus, this.prevFocus, this.assist) &&
         !this.player.focusActive &&
         this.player.focusCooldown <= 0
       ) {
@@ -717,13 +747,13 @@ export class VoidBreakerEngine {
       this.prevFocus = input.focus;
 
       // New abilities — single-press guard via previous-state pattern
-      if (input.voidPulse && !this.prevVoidPulse) this.tryVoidPulse();
+      if (abilityTriggers(input.voidPulse, this.prevVoidPulse, this.assist)) this.tryVoidPulse();
       this.prevVoidPulse = input.voidPulse;
-      if (input.phaseShift && !this.prevPhaseShift) this.tryPhaseShift();
+      if (abilityTriggers(input.phaseShift, this.prevPhaseShift, this.assist)) this.tryPhaseShift();
       this.prevPhaseShift = input.phaseShift;
-      if (input.reflectShield && !this.prevReflectShield) this.tryReflectShield();
+      if (abilityTriggers(input.reflectShield, this.prevReflectShield, this.assist)) this.tryReflectShield();
       this.prevReflectShield = input.reflectShield;
-      if (input.allySynergy && !this.prevAllySynergy) this.tryAllySynergy();
+      if (abilityTriggers(input.allySynergy, this.prevAllySynergy, this.assist)) this.tryAllySynergy();
       this.prevAllySynergy = input.allySynergy;
 
       // Wing level
@@ -736,7 +766,7 @@ export class VoidBreakerEngine {
       }
 
       if (this.state === 'waveBreak') {
-        this.waveBreakTimer -= dt;
+        if (!this.assist.untimed) this.waveBreakTimer -= dt;
         if (this.waveBreakTimer <= 0) {
           this.startNextWave();
           this.state = 'playing';
@@ -954,7 +984,7 @@ export class VoidBreakerEngine {
 
   private updateCombo(dt: number): void {
     if (this.comboCount > 0) {
-      this.comboTimer += dt;
+      if (comboLapses(this.assist)) this.comboTimer += dt;
       if (this.comboTimer >= COMBO_WINDOW) {
         this.comboCount = 0;
         this.comboTimer = 0;
@@ -1576,7 +1606,7 @@ export class VoidBreakerEngine {
       if (e.isBoss && e.bossSpecialActive) continue;
       if (dist(e.x, e.y, x, y) < radius + e.radius) {
         e.hp -= damage;
-        e.hitFlashUntil = this.elapsedMs + 80;
+        e.hitFlashUntil = hitFlashUntil(this.elapsedMs, this.assist);
         if (e.hp <= 0) this.killEnemy(e);
       }
     }
@@ -1619,7 +1649,7 @@ export class VoidBreakerEngine {
     }
     if (!best) return;
     best.hp -= damage;
-    best.hitFlashUntil = this.elapsedMs + 80;
+    best.hitFlashUntil = hitFlashUntil(this.elapsedMs, this.assist);
     this.spawnParticles(best.x, best.y, '#cc88ff', 4, 90);
     this.emitSfx('hit', { pitch: 1.3 });
     if (best.hp <= 0) this.killEnemy(best);
@@ -2082,7 +2112,7 @@ export class VoidBreakerEngine {
           const isCrit = s.critChance > 0 && Math.random() < s.critChance;
           const dmg = isCrit ? Math.max(1, Math.round(p.damage * s.critMult)) : p.damage;
           e.hp -= dmg;
-          e.hitFlashUntil = this.elapsedMs + 80;
+          e.hitFlashUntil = hitFlashUntil(this.elapsedMs, this.assist);
           p.lastHitId = e.id;
           this.spawnParticles(
             p.x,
@@ -2179,7 +2209,7 @@ export class VoidBreakerEngine {
         // Void Thorns: contact reflects damage back to the attacker.
         if (this.stats.thornsDamage > 0 && !e.isBoss) {
           e.hp -= this.stats.thornsDamage;
-          e.hitFlashUntil = this.elapsedMs + 80;
+          e.hitFlashUntil = hitFlashUntil(this.elapsedMs, this.assist);
           if (e.hp <= 0) this.killEnemy(e);
         }
         break;
@@ -2190,7 +2220,7 @@ export class VoidBreakerEngine {
   private damagePlayer(dmg: number): void {
     const p = this.player;
     p.hp -= dmg;
-    p.hitFlashUntil = this.elapsedMs + 80;
+    p.hitFlashUntil = hitFlashUntil(this.elapsedMs, this.assist);
     p.invincibleUntil = this.elapsedMs + INVINCIBILITY_MS;
     this.triggerShake(8, 350);
     this.requestHitStop(70);
@@ -2222,7 +2252,7 @@ export class VoidBreakerEngine {
       this.emitSfx('slowmo');
       this.requestHitStop(220);
       this.triggerShake(16, 700);
-      if (!this.headless) this.slowMoTimer = 0.6; // cinematic boss-death slow-mo
+      if (!this.headless && !this.assist.calm) this.slowMoTimer = 0.6; // cinematic boss-death slow-mo
       this.spawnShockwave(e.x, e.y, 240, '#ffffff', 7);
       this.spawnShockwave(e.x, e.y, 160, e.color || '#ff3355', 5);
       // Clear any lingering boss-special state so it can't outlive the boss.
@@ -2522,11 +2552,13 @@ export class VoidBreakerEngine {
 
   /** Add screen-shake trauma (0–1 accumulator). Big events add more. */
   addTrauma(amount: number): void {
+    if (this.assist.calm) return;
     this.trauma = Math.max(0, Math.min(1, this.trauma + amount));
   }
 
   /** Legacy shake API — maps a magnitude/duration request onto the trauma model. */
   private triggerShake(mag: number, _ms: number): void {
+    if (this.assist.calm) return;
     // Old magnitudes ranged ~3–16; normalize to a 0–1 trauma add.
     this.addTrauma(Math.min(1, mag / 16));
   }
@@ -2555,7 +2587,7 @@ export class VoidBreakerEngine {
 
   /** Request a freeze-frame of `ms` milliseconds (takes the longest pending). */
   private requestHitStop(ms: number): void {
-    if (this.headless) return;
+    if (this.headless || this.assist.calm) return;
     const s = ms / 1000;
     if (s > this.hitStopTimer) this.hitStopTimer = Math.min(s, 0.25);
   }

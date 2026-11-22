@@ -14,8 +14,9 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { submitNightrailTrickApi } from '@/lib/trick-week/nightrail-tricks.contract';
 import type { RunStats } from '@features/nightrail/engine/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
-export function TrickSubmit({ runStats }: { runStats: RunStats }) {
+export function TrickSubmit({ runStats }: { runStats: RunStats }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-async-games');
   const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle');
   const chain = runStats.bestComboChain;
@@ -59,7 +60,7 @@ export function TrickSubmit({ runStats }: { runStats: RunStats }) {
         {t('trick-summary', {
           defaultValue: 'Best combo: {{chain}} for {{points}}',
           chain: chain.join(' → '),
-          points: Math.round(runStats.bestCombo).toLocaleString(),
+          points: fmt.number(Math.round(runStats.bestCombo)),
         })}
       </p>
       <Button

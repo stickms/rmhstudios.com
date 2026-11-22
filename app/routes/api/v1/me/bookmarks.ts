@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/v1/me/bookmarks')({
               where: { id: { in: rows.map((r) => r.entityId) }, ...(await viewerVisiblePostWhere(userId)) },
               select: {
                 id: true, userId: true, content: true, createdAt: true, deletedAt: true, likeCount: true,
-                commentCount: true, repostCount: true, viewCount: true, imageUrls: true, pinnedCommentId: true,
+                commentCount: true, repostCount: true, viewCount: true, imageUrls: true, imageAlts: true, gifUrl: true, gifAlt: true, isSensitive: true, contentWarning: true, pinnedCommentId: true,
                 unlockPrice: true, unlocks: { where: { userId }, select: { id: true } },
                 user: { select: apiAuthorSelect },
               },
@@ -45,7 +45,7 @@ export const Route = createFileRoute('/api/v1/me/bookmarks')({
             const byId = new Map(posts.filter((p) => !isLocked(p, userId)).map((p) => [p.id, p]));
             const data = rows
               .filter((r) => byId.has(r.entityId))
-              .map((r) => ({ ...serializePublicPost(byId.get(r.entityId)!), bookmarkedAt: r.createdAt }));
+              .map((r) => ({ ...serializePublicPost(byId.get(r.entityId)!, userId), bookmarkedAt: r.createdAt }));
             const nextCursor = rows.length === limit ? rows[rows.length - 1].createdAt.toISOString() : null;
             return json({ data, nextCursor });
           },

@@ -3,17 +3,23 @@ import { useTranslation } from 'react-i18next';
 import { GameState } from '../engine/types';
 import { HUD } from './HUD';
 import { PuzzleCard } from './PuzzleCard';
+import { useSynapseAssist } from './assist-context';
+import { EndRunButton, useCappedScreenColor } from './assist-ui';
 
 interface GameBoardProps {
   state: GameState;
   onSolve: (id: string, correct: boolean) => void;
   onSkipPhase?: (id: string) => void;
+  /** Assist: the run has no timers, so the player ends it. */
+  onEndRun?: () => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhase }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhase, onEndRun }) => {
   const { t } = useTranslation('c-synapse-storm');
+  const assist = useSynapseAssist();
+  const saturated = useCappedScreenColor(Boolean(state.isSaturated), assist);
   return (
-    <div className={`game-board ${state.isSaturated ? 'saturated' : ''}`}>
+    <div className={`game-board ${saturated ? 'saturated' : ''}`}>
       <HUD state={state} />
 
       <div className="playfield" data-jelly-zone="playfield">
@@ -33,6 +39,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhas
             <PuzzleCard key={puzzle.id} puzzle={puzzle} gameState={state} onSolve={onSolve} onSkipPhase={onSkipPhase} />
           ))}
         </div>
+
+        {assist.frozenTimers && onEndRun && <EndRunButton onEndRun={onEndRun} />}
 
         {state.combo >= 10 && (
           <div className="combo-overlay">

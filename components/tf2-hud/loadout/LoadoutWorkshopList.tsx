@@ -15,7 +15,7 @@ import type { LoadoutSummary } from '@/lib/tf2-loadout/api-types';
 import { TF_CLASSES, type TfClass } from '@/lib/tf2-loadout/catalog-types';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import LoadoutCard from './LoadoutCard';
-import { CLASS_DEFAULT } from './labels';
+import { tfClassLabels } from './labels';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +23,7 @@ type Sort = 'new' | 'top';
 
 export default function LoadoutWorkshopList() {
   const { t } = useTranslation('c-tf2-hud');
+  const classLabels = tfClassLabels(t);
   const cat = useCatalog();
   const [sort, setSort] = useState<Sort>('top');
   const [tfClass, setTfClass] = useState<TfClass | ''>('');
@@ -118,9 +119,7 @@ export default function LoadoutWorkshopList() {
           </option>
           {TF_CLASSES.map((c) => (
             <option key={c} value={c}>
-              {t(`class-${c}`, {
-                defaultValue: CLASS_DEFAULT[c],
-              })}
+              {classLabels[c]}
             </option>
           ))}
         </SelectField>

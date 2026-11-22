@@ -17,6 +17,7 @@ import {
 import { APPS } from './apps';
 import type { IconName } from './icons';
 import type { AppId } from './store';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 export function iconFor(node: VNode, vfs?: Vfs): IconName {
   switch (node.id) {
@@ -92,5 +93,5 @@ export function typeLabel(
 export function sizeLabel(node: VNode): string {
   if (node.kind !== 'file') return '';
   const bytes = node.content ? new Blob([node.content]).size : 0;
-  return `${Math.max(1, Math.ceil(bytes / 1024)).toLocaleString()} KB`;
+  return `${formatNumber(Math.max(1, Math.ceil(bytes / 1024)), currentDocumentLocale())} KB`;
 }

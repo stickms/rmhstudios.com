@@ -9,10 +9,10 @@ import { useId, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { AdminOwnedCommunities } from '@/components/communities/AdminOwnedCommunities';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
@@ -31,23 +31,29 @@ import {
 } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
 import { ModeratorNotes } from '@/components/admin/ModeratorNotes';
+import { SecureAccountSection } from '@/components/admin/SecureAccountSection';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Form = 'strike' | 'timeout' | 'ban' | null;
 
 export function UserModerationPanel({
   userId,
   isAdminUser,
+  displayName = '',
   revealNotes = false,
   onChanged,
 }: {
   userId: string;
   /** Admins cannot be timed out or banned; the forms are hidden for them. */
   isAdminUser: boolean;
+  /** Named in the secure-account confirmation. */
+  displayName?: string;
   /** Scroll to the Notes section once it has loaded (the reports queue links here). */
   revealNotes?: boolean;
   /** Tell the table the counts changed. */
   onChanged: (summary: { activeStrikes: number; activeRestrictions: number; banned: boolean }) => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('admin');
   const featureLabels = useFeatureLabels();
   const timeoutLabel = useTimeoutLabel();
@@ -241,9 +247,7 @@ export function UserModerationPanel({
                 defaultValue: 'Suspended',
               })}
             </span>{' '}
-            {formatDistanceToNow(new Date(data.bannedUntil), {
-              addSuffix: true,
-            })}
+            {fmt.relative(new Date(data.bannedUntil))}
           </>
         )}
       </p>
@@ -380,6 +384,8 @@ export function UserModerationPanel({
         </section>
       )}
 
+      <AdminOwnedCommunities userId={userId} />
+
       <section className="space-y-2">
         <h3 className="t-label">
           {t('mod-strikes-heading', {
@@ -400,9 +406,7 @@ export function UserModerationPanel({
                   {s.reason}
                 </p>
                 <p className="t-meta mt-1">
-                  {formatDistanceToNow(new Date(s.createdAt), {
-                    addSuffix: true,
-                  })}
+                  {fmt.relative(new Date(s.createdAt))}
                   {s.entityType && ` · ${s.entityType}`}
                   {s.appealStatus === 'PENDING' && ` · ${t('mod-appeal-pending', { defaultValue: 'Appeal pending' })}`}
                   {s.appealStatus === 'UPHELD' && ` · ${t('mod-appeal-upheld', { defaultValue: 'Appeal upheld' })}`}
@@ -417,6 +421,8 @@ export function UserModerationPanel({
           </ul>
         )}
       </section>
+
+      {!isAdminUser && <SecureAccountSection userId={userId} displayName={displayName} />}
 
       <ModeratorNotes userId={userId} reveal={revealNotes} />
     </div>

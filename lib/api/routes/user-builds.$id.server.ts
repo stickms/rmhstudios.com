@@ -19,6 +19,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { findBuild, projectBuildDetail } from '@/lib/user-builds-detail.server';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { buildImageUrls, claimCoverUpload, releaseUploadedImage } from '@/lib/builds/screenshots.server';
 
 export const route = apiRoute('/api/user-builds/$id', {
   GET: implement(C.getUserBuildApi, { auth: 'none' }, async ({ request, params }) => {
@@ -151,6 +152,7 @@ export const route = apiRoute('/api/user-builds/$id', {
     if (data.repoUrl === '') data.repoUrl = null;
     if (data.demoUrl === '') data.demoUrl = null;
     if (data.thumbnailUrl === '') data.thumbnailUrl = null;
+    if (data.thumbnailAlt !== undefined) data.thumbnailAlt = String(data.thumbnailAlt).trim() || null;
     // Normalize marketplace price: 0/undefined → free (null).
     if (data.price !== undefined) data.price = (data.price as number) > 0 ? data.price : null;
 
@@ -192,6 +194,12 @@ export const route = apiRoute('/api/user-builds/$id', {
       });
     }
 
+    // s07-17: an uploaded cover is kept by the media sweep once saved, and the one it replaces is deleted.
+    if (data.thumbnailUrl !== undefined && data.thumbnailUrl !== build.thumbnailUrl) {
+      await claimCoverUpload(updated.thumbnailUrl, build.userId).catch(() => {});
+      await releaseUploadedImage(build.thumbnailUrl, build.userId).catch(() => {});
+    }
+
     // Fetch updated tags
     const buildTags = await prisma.buildTag.findMany({
       where: { buildId: build.id },
@@ -204,6 +212,7 @@ export const route = apiRoute('/api/user-builds/$id', {
       title: updated.title,
       description: updated.description,
       thumbnailUrl: updated.thumbnailUrl,
+      thumbnailAlt: updated.thumbnailAlt,
       repoUrl: updated.repoUrl,
       demoUrl: updated.demoUrl,
       visibility: updated.visibility,
@@ -248,8 +257,12 @@ export const route = apiRoute('/api/user-builds/$id', {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Delete build (cascade deletes tags, likes, comments, views)
+    // s07-17: the cover and screenshots are uploads of the owner's; their objects go with the build.
+    const imageUrls = await buildImageUrls(build.id).catch(() => [] as string[]);
+
+    // Delete build (cascade deletes tags, likes, comments, views, screenshots)
     await prisma.userBuild.delete({ where: { id: build.id } });
+    await Promise.all(imageUrls.map((url) => releaseUploadedImage(url, build.userId).catch(() => {})));
 
     // Record admin moderation (deleting a build the admin doesn't own).
     if (isAdmin && build.userId !== userId) {

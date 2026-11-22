@@ -23,6 +23,8 @@ import {
  publishScheduledApi,
 } from'@/lib/scheduled/scheduled.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { formatDateTime } from '@/lib/core/format';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface ScheduledRow {
  id: string;
@@ -39,9 +41,9 @@ interface ScheduledRow {
 
 const AUDIENCE_ICON = { PUBLIC: Globe, FOLLOWERS: Users, PRIVATE: Lock } as const;
 
-function formatWhen(iso: string): string {
+function formatWhen(iso: string, locale: string): string {
  const d = new Date(iso);
- return d.toLocaleString(undefined, {
+ return formatDateTime(d, locale, {
  month:'short',
  day:'numeric',
  hour:'numeric',
@@ -181,6 +183,7 @@ function Section({
  onDiscard: (id: string) => void;
 }) {
  const { t } = useTranslation('feed');
+  const { locale } = useLocaleFormat();
  if (rows.length === 0) return null;
  return (
  <section>
@@ -205,7 +208,7 @@ function Section({
  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
  {r.scheduledAt && (
  <span className="inline-flex items-center gap-1 text-site-accent">
- <CalendarClock className="h-3 w-3"/> {formatWhen(r.scheduledAt)}
+ <CalendarClock className="h-3 w-3"/> {formatWhen(r.scheduledAt, locale)}
  </span>
  )}
  <span className="inline-flex items-center gap-1">

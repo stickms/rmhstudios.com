@@ -137,11 +137,67 @@ export const SCOPES: ScopeDetail[] = [
     group: 'Games',
     description: 'Read your game playtime and achievements, and the playtime other members share with you.',
   },
+  // Flashcards are the member's own study material; reviews are never writable through the API.
+  {
+    id: 'read:study',
+    action: 'read',
+    group: 'Study',
+    description: 'Read your flashcard decks, authored cards and due counts.',
+  },
+  {
+    id: 'write:study',
+    action: 'write',
+    group: 'Study',
+    description: 'Create, edit and delete your flashcard decks and cards. Reviews cannot be written.',
+  },
   {
     id: 'manage:webhooks',
     action: 'manage',
     group: 'Webhooks',
     description: 'Create and manage webhook subscriptions.',
+  },
+
+  // Sprint 07
+  // s07-10 api-events
+  {
+    id: 'read:events',
+    action: 'read',
+    group: 'Events',
+    description: 'Read events you can see and your RSVPs.',
+  },
+  {
+    id: 'write:events',
+    action: 'write',
+    group: 'Events',
+    description: 'RSVP to events and cancel your RSVP.',
+  },
+
+  // s07-11 api-communities
+  {
+    id: 'read:communities',
+    action: 'read',
+    group: 'Communities',
+    description: 'Read communities you can see, their rules and posts, and your memberships.',
+  },
+  {
+    id: 'write:communities',
+    action: 'write',
+    group: 'Communities',
+    description: 'Post into communities you are a member of.',
+  },
+
+  // s07-12 api-reading
+  {
+    id: 'read:reading',
+    action: 'read',
+    group: 'Reading',
+    description: 'Read your highlights, notes, shelves and reading goal.',
+  },
+  {
+    id: 'write:reading',
+    action: 'write',
+    group: 'Reading',
+    description: 'Edit, publish, unpublish and delete your highlights and notes, and edit your shelves.',
   },
 ];
 

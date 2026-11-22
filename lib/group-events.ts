@@ -33,6 +33,7 @@ export interface GroupMessagePayload {
     image: string | null;
   };
   gifUrl?: string | null;
+  gifAlt?: string | null;
   imageUrls?: string[];
   /** Image descriptions, index-aligned with `imageUrls`. */
   imageAlts?: string[];

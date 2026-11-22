@@ -35,6 +35,8 @@ model UserBuild {
   repoUrl      String?         @db.VarChar(500)
   demoUrl      String?         @db.VarChar(500)
   thumbnailUrl String?         @db.VarChar(500)
+  /// s07-17: what the cover shows, for a screen reader; optional.
+  thumbnailAlt String?         @db.VarChar(500)
   visibility   BuildVisibility @default(PUBLIC)
   featured     Boolean         @default(false)
   isCurated    Boolean         @default(false) // Added for "Official Build" status
@@ -60,14 +62,34 @@ model UserBuild {
   likes      BuildLike[]
   jamEntries GameJamEntry[]
   comments   BuildComment[]
+  /// s06-14: the creator closed comments; existing ones stay, new ones and replies are refused.
+  commentsLocked Boolean @default(false)
   views      BuildView[]
   unlocks    BuildUnlock[]
+  screenshots BuildScreenshot[]
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
   @@index([gameId, visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
+}
+
+/// s07-17: a described screenshot of a build, at most eight, shown in `position` order on the build page.
+model BuildScreenshot {
+  id          String   @id @default(cuid())
+  buildId     String
+  url         String   @db.VarChar(500)
+  width       Int
+  height      Int
+  description String   @db.VarChar(500)
+  position    Int
+  createdAt   DateTime @default(now())
+
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId, position])
+  @@map("build_screenshot")
 }
 
 /// A paid unlock of a build's gated content (#16). Mirrors PostUnlock.
@@ -83,6 +105,7 @@ model BuildUnlock {
 
   @@unique([userId, buildId])
   @@index([buildId])
+  @@index([buildId, createdAt])
   @@map("build_unlock")
 }
 
@@ -100,6 +123,7 @@ model BuildVersion {
   manifest BuildManifestRecord?
 
   @@unique([buildId, version])
+  @@index([buildId, createdAt(sort: Desc)])
   @@map("build_version")
 }
 
@@ -139,6 +163,7 @@ model BuildLike {
   user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([buildId, userId])
+  @@index([buildId, createdAt])
   @@map("build_like")
 }
 
@@ -150,11 +175,18 @@ model BuildComment {
   parentId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // s06-14: the author's edit (within 30 minutes), a soft delete ('author' | 'moderator') and the creator's hide.
+  editedAt   DateTime?
+  deletedAt  DateTime?
+  deletedBy  String?   @db.VarChar(12)
+  hiddenAt   DateTime?
+  hiddenById String?
 
   parent  BuildComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
   replies BuildComment[] @relation("CommentReplies")
   build   UserBuild      @relation(fields: [buildId], references: [id], onDelete: Cascade)
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hiddenBy User?         @relation("BuildCommentHider", fields: [hiddenById], references: [id], onDelete: SetNull)
 
   @@index([buildId, createdAt(sort: Desc)])
   @@map("build_comment")
@@ -172,6 +204,7 @@ model BuildView {
 
   @@unique([buildId, userId])
   @@unique([buildId, ipHash])
+  @@index([buildId, createdAt])
   @@map("build_view")
 }
 

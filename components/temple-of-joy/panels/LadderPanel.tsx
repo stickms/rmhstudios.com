@@ -9,6 +9,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
+import { ladderTierLabels } from '../temple-labels';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { fmt } from '@/lib/temple-of-joy/numbers';
@@ -23,18 +24,9 @@ import {
 import { useFlash, useTempleSnapshot } from '../hooks';
 import { TempleRow, TempleSection, Glyph } from '../ui';
 
-const TIER_NAMES: Record<number, string> = {
-  0: 'The First Rung',
-  1: 'Communion — turning Grace into rate',
-  2: 'What you carry with you',
-  3: 'What happens while you are gone',
-  4: 'The slow bread',
-  5: 'Providence',
-  6: 'Plain multipliers',
-};
-
 export function LadderPanel() {
   const { t } = useTranslation('c-temple-of-joy');
+  const tierLabels = ladderTierLabels(t);
   const [flashed, flash] = useFlash();
 
   const ladder = useTempleSnapshot((s) => {
@@ -124,7 +116,7 @@ export function LadderPanel() {
         return (
           <div key={tier}>
             <TempleSection>
-              {t(`ladder-tier-${tier}`, { defaultValue: TIER_NAMES[tier] ?? `Tier ${tier}` })}
+              {tierLabels[tier] ?? t('ladder-tier-unknown', { defaultValue: 'Tier {{tier}}', tier })}
             </TempleSection>
             {rungs.map((rung) => {
               const row = visible.get(rung.id)!;

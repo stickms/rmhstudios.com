@@ -11,6 +11,8 @@
  * exhausted, or for a different community — yields the same `invalid` result, so
  * codes cannot be probed for which state they are in.
  */
+import { activeSanction } from '@/lib/communities/bans.server';
+import type { SanctionKind } from '@/lib/communities/bans';
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import { logModAction } from '@/lib/communities/modlog.server';
@@ -168,7 +170,9 @@ export async function revokeInvite(
 export type AcceptInviteResult =
   | { ok: true; alreadyMember: boolean }
   /** Unknown, revoked, expired, exhausted or another community's code — deliberately indistinguishable. */
-  | { ok: false; reason: 'invalid' };
+  | { ok: false; reason: 'invalid' }
+  /** s06-01: the member has an active ban in this community. */
+  | { ok: false; reason: 'banned'; kind: SanctionKind; endsAt: Date | null };
 
 class RolledBack extends Error {}
 
@@ -186,6 +190,10 @@ export async function acceptInvite(
     select: { id: true },
   });
   if (existing) return { ok: true, alreadyMember: true };
+
+  // A banned member does not get in on a live link (s06-01, BAN_ENFORCEMENT_PATHS).
+  const banned = await activeSanction(communityId, userId);
+  if (banned) return { ok: false, reason: 'banned', kind: banned.kind, endsAt: banned.endsAt };
 
   // A member a moderator removed does not walk back in on a live link (a
   // multi-use code can outlive the removal by months); they ask again instead.

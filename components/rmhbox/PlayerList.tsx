@@ -13,8 +13,10 @@
  */
 
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import { Crown, Wifi, WifiOff, UserMinus, ArrowRightLeft } from 'lucide-react';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PlayerListProps {
   players: ClientPlayerInfo[];
@@ -26,6 +28,7 @@ interface PlayerListProps {
 }
 
 export default function PlayerList({ players, hostUserId, isHost, myUserId, onKick, onTransferHost }: PlayerListProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-rmhbox');
   return (
     <ul className="space-y-2">
@@ -68,7 +71,15 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
 
             {/* Name + host crown */}
             <div className="flex min-w-[6rem] flex-1 items-center gap-2">
-              <span className="truncate font-medium text-app-text">{player.userName}</span>
+              <Link
+                to="/rmhbox/players/$userId"
+                params={{
+                  userId: player.userId,
+                }}
+                className="truncate font-medium text-app-text hover:text-app-accent hover:underline"
+              >
+                {player.userName}
+              </Link>
               {isPlayerHost && (
                 <Crown
                   className="h-4 w-4 shrink-0 text-app-warning"
@@ -82,7 +93,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
             {/* Score */}
             {player.score > 0 && (
               <span className="shrink-0 rounded-full bg-app-accent/15 px-2 py-0.5 text-xs font-bold tabular-nums text-app-accent">
-                {player.score.toLocaleString()}
+                {fmt.number(player.score)}
               </span>
             )}
 

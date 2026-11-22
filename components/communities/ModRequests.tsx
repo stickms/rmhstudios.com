@@ -1,7 +1,6 @@
 /** Pending join requests for a private community: approve or deny. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { UserPlus } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -13,8 +12,10 @@ import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { JoinRequestDTO } from '@/lib/communities/join-requests.server';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function ModRequests({ slug }: { slug: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-communities-plus');
   const [requests, setRequests] = useState<JoinRequestDTO[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -87,11 +88,7 @@ export function ModRequests({ slug }: { slug: string }) {
               <UserAvatar src={r.user.image} alt="" size={36} fallbackName={name} />
               <div className="min-w-32 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{name}</p>
-                <p className="text-xs text-site-text-muted">
-                  {formatDistanceToNow(new Date(r.createdAt), {
-                    addSuffix: true,
-                  })}
-                </p>
+                <p className="text-xs text-site-text-muted">{fmt.relative(new Date(r.createdAt))}</p>
               </div>
               <div className="ml-auto flex gap-2">
                 <Button

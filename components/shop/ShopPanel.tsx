@@ -21,6 +21,7 @@ import { kindLabel } from './kind-label';
 import { SiteThemeApply } from './SiteThemeApply';
 import { PRODUCT_GRID, ProductTile } from './ProductTile';
 import { RarityMark, rarityLabel } from './RarityMark';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The Shop tab of /store: the cosmetics catalog as a grid of product tiles.
@@ -46,6 +47,7 @@ export function ShopPanel({
   /** The category to open on (`/store?kind=`), e.g. Settings' link to the site themes. */
   initialKind?: ShopItemKind;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
   const router = useRouter();
   const { coins, items, signedIn } = data;
@@ -330,7 +332,7 @@ export function ShopPanel({
               : short > 0
                 ? t('shop-note-short', {
                     count: short,
-                    formatted: short.toLocaleString(),
+                    formatted: fmt.number(short),
                     defaultValue_one: 'You need {{formatted}} more coin.',
                     defaultValue: 'You need {{formatted}} more coins.',
                   })
@@ -372,7 +374,7 @@ export function ShopPanel({
               )}
               <Button variant="primary" loading={busy} disabled={short > 0} onClick={() => buy(open)}>
                 {t('shop-buy-for', {
-                  price: open.price.toLocaleString(),
+                  price: fmt.number(open.price),
                   defaultValue: 'Buy for {{price}} coins',
                 })}
               </Button>

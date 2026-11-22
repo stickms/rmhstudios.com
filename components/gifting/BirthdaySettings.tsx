@@ -1,6 +1,7 @@
 /** Opt-in birthday (G1) for Settings → Profile. Month and day only. */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { isValidMonthDay } from '@/lib/gifting/birthday';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export default function BirthdaySettings() {
+  const lf = useLocaleFormat();
   const { t } = useTranslation('f-gifting');
   const [month, setMonth] = useState('');
   const [day, setDay] = useState('');
@@ -37,10 +39,10 @@ export default function BirthdaySettings() {
       length: 12,
     },
     (_, i) =>
-      new Intl.DateTimeFormat(undefined, {
+      lf.date(new Date(Date.UTC(2024, i, 1)), {
         month: 'long',
         timeZone: 'UTC',
-      }).format(new Date(Date.UTC(2024, i, 1))),
+      }),
   );
   const valid = month !== '' && day !== '' && isValidMonthDay(Number(month), Number(day));
 

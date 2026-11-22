@@ -1,0 +1,23 @@
+{
+  "all-description": "{{n}} records, newest first.",
+  "all-title": "All your records",
+  "chart-label": "Your best over time",
+  "chart-points": "Records",
+  "chart-series-summary": "{{label}}: from {{first}} to {{last}}, lowest {{min}}, highest {{max}}.",
+  "chart-show-chart": "Show as chart",
+  "chart-show-table": "Show as table",
+  "chart-table-date": "Date",
+  "clear-cancel": "Cancel",
+  "clear-confirm": "Clear history",
+  "clear-description": "Your record history here is deleted. Your best on the leaderboard is not affected.",
+  "clear-failed": "Could not clear your history",
+  "clear-history": "Clear history",
+  "clear-title": "Clear your history for this game?",
+  "cleared": "History cleared",
+  "current-best": "Current best",
+  "first-score": "First score",
+  "improvement-30": "{{change}} in 30 days",
+  "series-best": "Best",
+  "show-all": "Show all",
+  "title": "Your bests"
+}

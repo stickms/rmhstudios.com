@@ -1,5 +1,6 @@
 import type * as ToneNS from 'tone';
 import { MASTER_BUS_ID } from '../constants';
+import { buildMasterChain, buildTrackChannel } from './graph';
 
 type Tone = typeof ToneNS;
 
@@ -76,20 +77,14 @@ export class StudioEngine {
     this.tone = await import('tone');
     await this.tone.start();
 
-    // Build master chain: Channel → Limiter → Analyser → destination
-    this.masterChannel = new this.tone.Channel({
-      volume: 0,
-      channelCount: 2,
-    }).toDestination();
-    this.masterLimiter = new this.tone.Limiter(-1);
-    this.masterAnalyser = new this.tone.Analyser('fft', 2048);
-    this.masterMeter = new this.tone.Meter({
-      channelCount: 2,
+    // The same builder the offline export uses (engine/graph.ts); live adds the analyser and meter.
+    const chain = buildMasterChain(this.tone, {
+      monitoring: true,
     });
-
-    // Route: masterChannel → limiter → analyser → meter → destination
-    this.masterChannel.disconnect();
-    this.masterChannel.chain(this.masterLimiter, this.masterAnalyser, this.masterMeter, this.tone.getDestination());
+    this.masterChannel = chain.channel;
+    this.masterLimiter = chain.limiter;
+    this.masterAnalyser = chain.analyser;
+    this.masterMeter = chain.meter;
 
     this._initialized = true;
   }
@@ -99,10 +94,10 @@ export class StudioEngine {
   createTrackChannel(trackId: string, volume = 0, pan = 0): ToneNS.Channel {
     if (!this.tone || !this.masterChannel) throw new Error('Engine not initialized');
 
-    const channel = new this.tone.Channel({
-      volume,
+    const channel = buildTrackChannel(this.tone, this.masterChannel, {
+      volumeDb: volume,
       pan,
-    }).connect(this.masterChannel);
+    });
     this.trackChannels.set(trackId, channel);
     return channel;
   }

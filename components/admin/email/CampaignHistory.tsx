@@ -12,6 +12,7 @@ import { api } from '@/lib/contract/client';
 import { adminEmailCampaigns, adminEmailResume, type EmailCampaignRow } from '@/lib/admin/email.contract';
 import { cn } from '@/lib/utils';
 import { categoryName } from '@/components/admin/email/labels';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function statusBadge(t: TFunction, status: EmailCampaignRow['status']) {
   switch (status) {
@@ -44,6 +45,7 @@ function statusBadge(t: TFunction, status: EmailCampaignRow['status']) {
 
 /** Recent sends with their progress. Refreshes every few seconds while one is sending. */
 export function CampaignHistory({ refreshKey }: { refreshKey: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('admin');
   const [rows, setRows] = useState<EmailCampaignRow[] | null>(null);
   const arrival = useArrival(rows !== null);
@@ -140,7 +142,7 @@ export function CampaignHistory({ refreshKey }: { refreshKey: number }) {
                   })}
                 </p>
                 <p className="t-meta">
-                  {new Date(r.createdAt).toLocaleString()}
+                  {fmt.dateTime(new Date(r.createdAt))}
                   {r.author ? ` · ${r.author}` : ''}
                 </p>
               </div>

@@ -2,7 +2,19 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useStudioStore } from '../store';
 import { TYPING_KEYBOARD_MAP, eventToKeyString, findActionForKey, resolveKeybinds } from '../keybinds';
 import { MIDDLE_C } from '../constants';
+import { runEditAction } from '../edit-commands';
+import { useExportUi } from '../export/ui-store';
 import type { ViewMode, ToolMode } from '../types';
+
+/** True while a modal dialog is on screen: the Studio's shortcuts must not act behind it. */
+function dialogIsOpen(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    document.querySelector(
+      '[aria-modal="true"],[role="alertdialog"],[role="dialog"][data-state="open"],dialog[open]',
+    ) !== null
+  );
+}
 
 /**
  * useKeybinds — global keyboard handler for the DAW.
@@ -16,7 +28,14 @@ import type { ViewMode, ToolMode } from '../types';
 export function useKeybinds(
   onNoteOn?: (midiNote: number, velocity: number) => void,
   onNoteOff?: (midiNote: number) => void,
+  onProjectAction?: (action: 'save' | 'saveAs') => void,
 ) {
+  // The shell's save handlers change identity; the key listener below is attached once.
+  const projectActionRef = useRef(onProjectAction);
+  useEffect(() => {
+    projectActionRef.current = onProjectAction;
+  }, [onProjectAction]);
+
   const activeKeysRef = useRef(new Set<string>());
 
   const handleAction = useCallback((actionId: string) => {
@@ -97,12 +116,28 @@ export function useKeybinds(
         store.setTypingKeyboardOctave(store.typingKeyboardOctave - 1);
         break;
 
+      // Project
+      case 'project.save':
+        projectActionRef.current?.('save');
+        break;
+      case 'project.saveAs':
+        projectActionRef.current?.('saveAs');
+        break;
+      case 'project.export':
+        useExportUi.getState().openExport();
+        break;
+
       // Track
       case 'track.muteSelected':
         if (store.selectedTrackId) store.toggleTrackMute(store.selectedTrackId);
         break;
       case 'track.soloSelected':
         if (store.selectedTrackId) store.toggleTrackSolo(store.selectedTrackId);
+        break;
+
+      // Undo, redo, clipboard, selection and piano-roll note edits
+      default:
+        runEditAction(actionId);
         break;
     }
   }, []);
@@ -113,6 +148,8 @@ export function useKeybinds(
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = (e.target as HTMLElement)?.isContentEditable;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || isEditable) return;
+      // Never while a dialog is open.
+      if (dialogIsOpen()) return;
 
       const store = useStudioStore.getState();
       const keyString = eventToKeyString(e);

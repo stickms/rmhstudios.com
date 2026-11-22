@@ -103,6 +103,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of the build detail page.',
   },
+  '/create/builds/$slug/insights': {
+    path: '/create/builds/fouc-audit-no-such-build/insights',
+    fidelity: 'shell',
+    why: 'Owner-only insights for an unknown build: the page frame with its signed-out or not-found branch.',
+  },
   '/tf2/loadout/l/$slug': {
     path: '/tf2/loadout/l/fouc-audit-no-such-loadout',
     fidelity: 'shell',
@@ -188,6 +193,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A 301 to `/c/$slug`; the audited paint is the community page it lands on.',
   },
+  '/groups/join/$code': {
+    path: '/groups/join/fouc-audit-no-such-code',
+    fidelity: 'shell',
+    why: 'Invalid-link branch of the group invite page (the same generic state every bad code renders).',
+  },
   '/groups/$id': {
     path: '/groups/fouc-audit',
     fidelity: 'shell',
@@ -262,6 +272,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/rmhbox/FOUC',
     fidelity: 'shell',
     why: 'A non-existent room code renders the lobby-not-found state in RMHBox chrome.',
+  },
+  '/rmhbox/players/$userId': {
+    path: '/rmhbox/players/fouc-audit',
+    fidelity: 'shell',
+    why: 'An unknown player: the RMHBox shell with the not-found state.',
   },
   '/rmhbox/minigames/$minigameId/history': {
     path: '/rmhbox/minigames/fouc-audit/history',

@@ -15,10 +15,14 @@ import { X, Link as LinkIcon, Radio, ListPlus } from 'lucide-react';
 import { maybeRawMediaUrl, parseMedia, parseTimestamp, startOffset, withStart } from '@/lib/rmhtube/media';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { useTranslation } from 'react-i18next';
+import { Tabs } from '@/components/ui/tabs';
+import PlaylistPicker from './PlaylistPicker';
 
 interface AddMediaModalProps {
   onClose: () => void;
   onAdd: (items: Array<{ url: string; title: string }>) => void;
+  /** Given, the dialog gains the "From a playlist" tab; the caller sends the hub event. */
+  onAddPlaylist?: (playlistId: string) => void;
 }
 
 /** The hub allows 20 adds a minute; leave room for the next manual one. */
@@ -31,8 +35,9 @@ function linksIn(text: string): string[] {
     .filter((s) => /^https?:\/\//i.test(s) && (parseMedia(s) || maybeRawMediaUrl(s)));
 }
 
-export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
+export default function AddMediaModal({ onClose, onAdd, onAddPlaylist }: AddMediaModalProps) {
   const { t } = useTranslation("c-rmhtube");
+  const [tab, setTab] = useState<'link' | 'playlist'>('link');
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [start, setStart] = useState('');
@@ -103,6 +108,21 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
           </button>
         </div>
 
+        {onAddPlaylist && (
+          <Tabs
+            tabs={[
+              { id: 'link', label: t('tab-link', { ns: 'rmhtube-playlists', defaultValue: 'From a link' }) },
+              { id: 'playlist', label: t('tab-playlist', { ns: 'rmhtube-playlists', defaultValue: 'From a playlist' }) },
+            ]}
+            value={tab}
+            onChange={(id) => setTab(id === 'playlist' ? 'playlist' : 'link')}
+            className="mb-4"
+          />
+        )}
+
+        {onAddPlaylist && tab === 'playlist' ? (
+          <PlaylistPicker onPick={onAddPlaylist} />
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {batch ? (
             <div>
@@ -233,6 +253,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
               : t("add-to-queue", { defaultValue: "Add to Queue" })}
           </button>
         </form>
+        )}
       </div>
     </div>
   );

@@ -60,6 +60,13 @@ function matches(row: Row, where: Where): boolean {
   });
 }
 
+// s04-16: the message-request gate has its own tests; these files are about scheduling and alt text.
+vi.mock('@/lib/messages/requests.server', () => ({
+  requestGate: async () => ({
+    outcome: 'allowed',
+  }),
+}));
+
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     $transaction: async (cb: (tx: unknown) => unknown) => cb((await import('@/lib/prisma.server')).prisma),

@@ -6,6 +6,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { missingAltIndexes } from '@/lib/feed/alt-text';
+import { gifMissingAlt } from '@/lib/feed/gif-alt';
 
 export async function getRequireAltText(userId: string): Promise<boolean> {
   const row = await prisma.user.findUnique({
@@ -22,15 +23,21 @@ export async function setRequireAltText(userId: string, value: boolean): Promise
 
 /**
  * An error message when this post breaks the author's require-alt-text setting,
- * otherwise null. Call it with the images and alts of a post about to be saved.
+ * otherwise null. Call it with the images and alts of a post about to be saved. A GIF (sprint 06 #15) counts like an
+ * image: pass it as `gif` and an undescribed one breaks the setting too.
  */
 export async function altTextViolation(
   userId: string,
   imageUrls: readonly string[] | undefined,
   imageAlts: readonly string[] | undefined,
+  gif?: { url: string | null | undefined; alt: string | null | undefined },
 ): Promise<string | null> {
-  if (!imageUrls?.length) return null;
-  if (missingAltIndexes(imageUrls, imageAlts).length === 0) return null;
+  const imagesMissing =
+    !!imageUrls?.length && missingAltIndexes(imageUrls, imageAlts).length > 0;
+  const gifMissing = gifMissingAlt(gif?.url, gif?.alt);
+  if (!imagesMissing && !gifMissing) return null;
   if (!(await getRequireAltText(userId))) return null;
-  return 'Add a description to every image (you have "Require alt text" turned on)';
+  return imagesMissing
+    ? 'Add a description to every image (you have "Require alt text" turned on)'
+    : 'Add a description to the GIF (you have "Require alt text" turned on)';
 }

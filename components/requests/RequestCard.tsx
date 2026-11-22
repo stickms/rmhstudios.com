@@ -11,6 +11,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { voteRequestApi } from '@/lib/requests/requests.contract';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface RequestCardProps {
   request: FeatureRequestDTO;
@@ -30,6 +31,7 @@ interface RequestCardProps {
  * feature exists to avoid.
  */
 export function RequestCard({ request, signedIn, isAdmin, onChanged, onVoted, className }: RequestCardProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-roadmap');
   const [voting, setVoting] = useState(false);
   const votable = isVotable(request);
@@ -85,7 +87,7 @@ export function RequestCard({ request, signedIn, isAdmin, onChanged, onVoted, cl
           }
         >
           <ChevronUp aria-hidden />
-          <span className="font-mono text-xs">{request.voteCount.toLocaleString()}</span>
+          <span className="font-mono text-xs">{fmt.number(request.voteCount)}</span>
         </Button>
 
         <div className="min-w-0 flex-1">

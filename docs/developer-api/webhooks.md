@@ -24,6 +24,8 @@ Subscribe to `["*"]` to receive every event.
 | `like.created` | You liked a post. |
 | `comment.created` | You commented on a post. |
 | `bookmark.created` | You bookmarked a post. |
+| `personal_best.created` | You set a new personal best in a game. The payload carries the game, the new score and the previous one, never a rank. |
+| `achievement.unlocked` | You unlocked an achievement. |
 
 <!-- END GENERATED: events -->
 

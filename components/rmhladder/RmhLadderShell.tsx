@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { knownLabel } from '@/lib/i18n/known-label';
+import { ladderNavLabels } from '@/components/rmhladder/ladder-nav-labels';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
@@ -25,7 +27,7 @@ type NavItem = {
   icon: LucideIcon;
 };
 
-const PUBLIC_NAV: NavItem[] = [
+export const PUBLIC_NAV: NavItem[] = [
   {
     label: 'Overview',
     to: '/rmhladder',
@@ -38,7 +40,7 @@ const PUBLIC_NAV: NavItem[] = [
   },
 ];
 
-const PERSONAL_NAV: NavItem[] = [
+export const PERSONAL_NAV: NavItem[] = [
   {
     label: 'Resume',
     to: '/rmhladder/resume',
@@ -76,7 +78,7 @@ const PERSONAL_NAV: NavItem[] = [
   },
 ];
 
-const ADMIN_NAV: NavItem[] = [
+export const ADMIN_NAV: NavItem[] = [
   {
     label: 'Review',
     to: '/rmhladder/review',
@@ -112,6 +114,7 @@ export default function RmhLadderShell({
   isAdmin: boolean;
 }) {
   const { t } = useTranslation(['site', 'ladder-offers', 'ladder-insights']);
+  const navLabels = ladderNavLabels(t);
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -141,9 +144,7 @@ export default function RmhLadderShell({
               ns: 'ladder-insights',
               defaultValue: 'Insights',
             })
-          : t(`ladder.nav.${label.toLowerCase()}`, {
-              defaultValue: label,
-            }),
+          : (knownLabel(navLabels, label.toLowerCase()) ?? label),
     icon,
   }));
   const activeTo = navItems.find((i) => isActive(i.to))?.to ?? navItems[0]?.to ?? '';

@@ -21,10 +21,10 @@ import { api } from '@/lib/contract/client';
 import { getDeveloperKeyUsageApi, type DeveloperKeyUsage } from '@/lib/developer/keys.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-
-const nf = new Intl.NumberFormat('en-US');
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function KeyUsage({ keyId }: { keyId: string }) {
+  const nf = { format: useLocaleFormat().number };
   const { t } = useTranslation('f-devplatform');
   const [data, setData] = useState<DeveloperKeyUsage | null>(null);
   const [loading, setLoading] = useState(true);

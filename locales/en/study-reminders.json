@@ -1,0 +1,13 @@
+{
+  "load-failed": "Could not load your reminder",
+  "next": "Next reminder: {{when}}",
+  "off": "Turn on to get a reminder when cards are due.",
+  "paused": "Paused because you have not reviewed in two weeks",
+  "resume": "Resume",
+  "retry": "Try again",
+  "save-failed": "Could not save your reminder",
+  "time-label": "Reminder time",
+  "title": "Reminders",
+  "zone-change": "Change",
+  "zone-label": "Time zone"
+}

@@ -77,6 +77,7 @@ export async function getCommunityExtras(
     rules,
     rulesRequireAgreement: community.rulesRequireAgreement,
     publicModLog: community.publicModLog,
+    requireImageAlt: settings.requireImageAlt,
     member: member
       ? { joinedAt: member.joinedAt.toISOString(), followedFlairIds: member.followedFlairIds,
           roleTags: member.roleTags,

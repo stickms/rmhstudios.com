@@ -79,9 +79,27 @@ export interface ChatMessage {
 export interface SystemMessage {
   id: string;
   type: 'system';
-  event: 'join' | 'leave' | 'kick' | 'host_transfer' | 'leader_change' | 'skip' | 'settings_change' | 'now_playing';
+  event:
+    | 'join'
+    | 'leave'
+    | 'kick'
+    | 'host_transfer'
+    | 'leader_change'
+    | 'skip'
+    | 'settings_change'
+    | 'now_playing'
+    | 'playlist_queued';
   content: string;
   createdAt: number;
+  /**
+   * Typed data for lines the client words itself, so every viewer reads them in
+   * their own language. `content` stays the English fallback.
+   */
+  playlistQueued?: {
+    userName: string;
+    playlistName: string;
+    count: number;
+  };
 }
 
 export type ChatEntry = ChatMessage | SystemMessage;

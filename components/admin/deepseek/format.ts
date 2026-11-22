@@ -1,4 +1,4 @@
-// Formatting for the DeepSeek balance page. Locale-aware; currency codes are
+import { currentDocumentLocale, formatDateTime, formatNumber } from '@/lib/core/format'; // Formatting for the DeepSeek balance page. Locale-aware; currency codes are
 // ISO symbols from the API, so no translation is needed.
 
 const DASH = '—';
@@ -6,14 +6,14 @@ const DASH = '—';
 export function fmtMoney(n: number | null | undefined, currency: string, digits = 2): string {
   if (n === null || n === undefined || !Number.isFinite(n)) return DASH;
   try {
-    return n.toLocaleString(undefined, {
+    return formatNumber(n, currentDocumentLocale(), {
       style: 'currency',
       currency,
       minimumFractionDigits: Math.min(2, digits),
       maximumFractionDigits: digits,
     });
   } catch {
-    return `${n.toLocaleString(undefined, { maximumFractionDigits: digits })} ${currency}`;
+    return `${formatNumber(n, currentDocumentLocale(), { maximumFractionDigits: digits })} ${currency}`;
   }
 }
 
@@ -38,7 +38,7 @@ export function fmtHour(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? DASH
-    : d.toLocaleString(undefined, {
+    : formatDateTime(d, currentDocumentLocale(), {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
@@ -49,5 +49,5 @@ export function fmtHour(iso: string): string {
 export function fmtDateTime(iso: string | number | null | undefined): string {
   if (!iso) return DASH;
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? DASH : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? DASH : formatDateTime(d, currentDocumentLocale());
 }

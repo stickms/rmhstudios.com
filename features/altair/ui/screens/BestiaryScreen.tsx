@@ -7,6 +7,7 @@ import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store';
 import { asset } from '@/lib/storage/asset';
 import { loadCorsImage } from '@features/altair/engine/engine/sprites/cors-image';
 import CodexPanel, { CodexOpenButton } from '../CodexPanel';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 // Sprite paths (matching sprite-defs.ts)
 const ENEMY_SPRITE_PATH: Record<string, string> = {
@@ -372,6 +373,7 @@ function EnemyDetail({
     killedBy: number;
   };
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-altair');
   if (!discovered) {
     return (
@@ -413,7 +415,7 @@ function EnemyDetail({
           <span>
             {t('stat-encountered', {
               defaultValue: '{{count}} encountered',
-              count: s.encountered.toLocaleString(),
+              count: fmt.number(s.encountered),
             })}
           </span>
         </div>
@@ -422,7 +424,7 @@ function EnemyDetail({
           <span>
             {t('stat-killed', {
               defaultValue: '{{count}} killed',
-              count: s.killed.toLocaleString(),
+              count: fmt.number(s.killed),
             })}
           </span>
         </div>
@@ -581,6 +583,7 @@ function BossDetail({
     killedBy: number;
   };
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-altair');
   if (!discovered) {
     return (
@@ -617,7 +620,7 @@ function BossDetail({
           <span>
             {t('stat-encountered', {
               defaultValue: '{{count}} encountered',
-              count: s.encountered.toLocaleString(),
+              count: fmt.number(s.encountered),
             })}
           </span>
         </div>
@@ -626,7 +629,7 @@ function BossDetail({
           <span>
             {t('stat-boss-defeated', {
               defaultValue: '{{count}} defeated',
-              count: s.killed.toLocaleString(),
+              count: fmt.number(s.killed),
             })}
           </span>
         </div>

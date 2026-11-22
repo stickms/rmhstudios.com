@@ -1,8 +1,8 @@
-const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 /** A timestamp for the console. Only called after the data has loaded on the client, so it never runs during SSR. */
 export function formatWhen(iso: string): string {
-  return dateTime.format(new Date(iso));
+  return formatDateTime(iso, currentDocumentLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 /** The error text of the failed request, or the fallback. */

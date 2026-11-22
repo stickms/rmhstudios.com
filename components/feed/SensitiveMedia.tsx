@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useWarningRevealed } from '@/components/feed/ContentWarningCover';
+import { useShowContentWarnings } from '@/components/feed/use-show-content-warnings';
 
 /**
  * Wraps post media (images/GIF) flagged as sensitive. Until the viewer opts in,
@@ -18,13 +20,16 @@ export function SensitiveMedia({
 }) {
   const { t } = useTranslation('feed');
   const [revealed, setRevealed] = useState(false);
+  // Already revealed by the post's own cover (a reason covers text and media together), or the reader chose "Show them".
+  const opened = useWarningRevealed();
+  const showWarned = useShowContentWarnings();
 
   // The pass-through case still has to WEAR the caller's className. It used to
   // return a bare fragment, which silently dropped it — and since callers pass
   // the media block's gutter here (`mt-2`in the feed card,`mb-3`on the post
   // page), every non-sensitive post — i.e. nearly all of them — rendered its
   // image flush against the text below it.
-  if (!sensitive || revealed) {
+  if (!sensitive || revealed || opened || showWarned) {
     return className ? <div className={className}>{children}</div> : <>{children}</>;
   }
 

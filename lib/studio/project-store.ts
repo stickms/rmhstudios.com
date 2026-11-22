@@ -39,6 +39,11 @@ let dbInstance: IDBPDatabase | null = null;
 async function getDB(): Promise<IDBPDatabase> {
   if (dbInstance) return dbInstance;
   dbInstance = await openDB(DB_NAME, DB_VERSION, {
+    // Clearing this device (/settings/device) deletes the database; let it go instead of holding the delete.
+    blocking() {
+      dbInstance?.close();
+      dbInstance = null;
+    },
     upgrade(db) {
       if (!db.objectStoreNames.contains('projects')) {
         db.createObjectStore('projects', {

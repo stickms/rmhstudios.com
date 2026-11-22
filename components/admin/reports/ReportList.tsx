@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import { Flag, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
+import { BanDialog } from '@/components/admin/BanDialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { QueueError } from '@/components/admin/reports/QueueError';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -22,6 +23,7 @@ import {
 } from '@/lib/admin/admin-ops.contract';
 import { cn } from '@/lib/utils';
 import { REMOVABLE_REPORT_ENTITY_TYPES } from '@/lib/moderation/report-schema';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Status = 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
 
@@ -65,6 +67,7 @@ export function ReportList({
   status: Status;
   onCounts: (counts: Record<string, number>) => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('admin');
   const queryClient = useQueryClient();
   const queryKey = ['admin', 'reports', status] as const;
@@ -118,57 +121,62 @@ export function ReportList({
     }
   };
 
+  const prompt = usePrompt();
+  const [banTarget, setBanTarget] = useState<string | null>(null);
+
   const moderateUser = async (userId: string, kind: 'strike' | 'ban') => {
-    const reason = prompt(
-      kind === 'ban'
-        ? t('ban-reason-prompt', {
-            defaultValue: 'Ban reason:',
-          })
-        : t('strike-reason-prompt', {
-            defaultValue: 'Strike reason:',
-          }),
-    );
+    if (kind === 'ban') {
+      setBanTarget(userId);
+      return;
+    }
+    const reason = await prompt({
+      title: t('strike-reason-prompt', {
+        defaultValue: 'Strike reason:',
+      }),
+    });
     if (!reason) return;
     try {
-      if (kind === 'ban') {
-        const durationDays =
-          parseInt(
-            prompt(
-              t('ban-length-prompt', {
-                defaultValue: 'Ban length in days (blank = permanent):',
-              }),
-            ) || '',
-            10,
-          ) || null;
-        await api(banAdminUserApi, {
-          params: {
-            id: userId,
-          },
-          body: {
-            reason,
-            durationDays,
-          },
-        });
-        toast.success(
-          t('user-banned', {
-            defaultValue: 'User banned',
-          }),
-        );
-      } else {
-        await api(strikeAdminUserApi, {
-          params: {
-            id: userId,
-          },
-          body: {
-            reason,
-          },
-        });
-        toast.success(
-          t('strike-issued', {
-            defaultValue: 'Strike issued',
-          }),
-        );
-      }
+      await api(strikeAdminUserApi, {
+        params: {
+          id: userId,
+        },
+        body: {
+          reason,
+        },
+      });
+      toast.success(
+        t('strike-issued', {
+          defaultValue: 'Strike issued',
+        }),
+      );
+    } catch {
+      toast.error(
+        t('action-failed-appeals', {
+          defaultValue: 'Action failed',
+        }),
+      );
+    }
+  };
+
+  const banUser = async (reason: string, durationDays: number | null) => {
+    const userId = banTarget;
+    setBanTarget(null);
+    if (!userId) return;
+    try {
+      await api(banAdminUserApi, {
+        params: {
+          id: userId,
+        },
+        body: {
+          reason,
+          durationDays,
+        },
+      });
+      toast.success(
+        t('user-banned', {
+          defaultValue: 'User banned',
+        }),
+      );
     } catch {
       toast.error(
         t('action-failed-appeals', {
@@ -180,6 +188,13 @@ export function ReportList({
 
   return (
     <>
+      <BanDialog
+        open={banTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setBanTarget(null);
+        }}
+        onSubmit={banUser}
+      />
       {loading ? (
         <div className="flex justify-center py-16">
           <Spinner />
@@ -210,11 +225,7 @@ export function ReportList({
                       })}
                     </Badge>
                   )}
-                  <span className="t-meta">
-                    {formatDistanceToNow(new Date(r.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </span>
+                  <span className="t-meta">{fmt.relative(new Date(r.createdAt))}</span>
                   {link && (
                     <a
                       href={link}

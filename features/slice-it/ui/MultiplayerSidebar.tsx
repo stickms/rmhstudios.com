@@ -6,6 +6,7 @@ import { useSliceItStore } from '@features/slice-it/engine/store';
 import { transition } from '@/lib/app-motion';
 import type { LobbyPlayer, TeamId } from '@features/slice-it/engine/net/events';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * The live leaderboard — you and everyone you are racing, ranked, in one list.
@@ -102,7 +103,7 @@ export function MultiplayerSidebar({
 }: {
   /** The wide column, so the margin waves can stop where it starts. */
   asideRef?: React.RefObject<HTMLElement | null>;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-game');
   // The team badge's strings live in `r-slice-it` alongside the rest of the
   // multiplayer mode copy (`N2`), not in the shared game namespace.
@@ -249,7 +250,7 @@ export function MultiplayerSidebar({
             </span>
             <AnimatedCount
               value={row.score}
-              format={(n) => n.toLocaleString()}
+              format={(n) => fmt.number(n)}
               durationMs={SCORE_TWEEN_MS}
               className="slice-lb-chip__score"
             />
@@ -308,7 +309,7 @@ export function MultiplayerSidebar({
                 <span className="slice-lb__score">
                   <AnimatedCount
                     value={row.score}
-                    format={(n) => n.toLocaleString()}
+                    format={(n) => fmt.number(n)}
                     durationMs={SCORE_TWEEN_MS}
                   />
                 </span>

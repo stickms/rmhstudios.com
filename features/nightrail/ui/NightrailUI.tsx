@@ -50,6 +50,7 @@ import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
 import type { LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export type UIState =
   'menu' | 'levelSelect' | 'tricktionary' | 'playing' | 'crashed' | 'runComplete';
@@ -130,7 +131,7 @@ export function NightrailUI({
   onStartLevel,
   onSetUiState,
   onRestart,
-}: Props) {
+}: Props) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-nightrail');
   const navigate = useSiteNavigate();
   const quit = useQuitGame();
@@ -223,7 +224,7 @@ export function NightrailUI({
                 #{entry.rank} {entry.username}
               </span>
               <span className="font-bold text-cyan-300 tabular-nums">
-                {entry.score.toLocaleString()}
+                {fmt.number(entry.score)}
               </span>
             </li>
           ))}
@@ -443,7 +444,7 @@ export function NightrailUI({
                   </span>
                   <span className="truncate font-bold text-white">{trick.name}</span>
                   <span className="text-right font-bold text-fuchsia-300 tabular-nums">
-                    {trick.points.toLocaleString()}
+                    {fmt.number(trick.points)}
                   </span>
                   <span className="text-right text-slate-400 tabular-nums">
                     {trick.duration.toFixed(2)}s
@@ -473,7 +474,7 @@ export function NightrailUI({
           className="w-full max-w-md text-white"
           peak={
             runStats.bestCombo > 0
-              ? { label: t('best-combo', { defaultValue: 'Best combo' }), value: Math.round(runStats.bestCombo).toLocaleString() }
+              ? { label: t('best-combo', { defaultValue: 'Best combo' }), value: fmt.number(Math.round(runStats.bestCombo)) }
               : { label: t('best-multiplier', { defaultValue: 'Best multiplier' }), value: `×${runStats.bestMultiplier.toFixed(1)}` }
           }
           moment={scoreMoment}
@@ -492,14 +493,14 @@ export function NightrailUI({
             <div className="text-center">
               <div className={STAT_LABEL}>{t('score', { defaultValue: 'Score' })}</div>
               <div className="text-3xl font-black text-cyan-300 tabular-nums">
-                {Math.round(runStats.score).toLocaleString()}
+                {fmt.number(Math.round(runStats.score))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
                 <div className={STAT_LABEL}>{t('distance', { defaultValue: 'Distance' })}</div>
                 <div className="text-lg font-bold text-white tabular-nums">
-                  {Math.round(runStats.distance).toLocaleString()}m
+                  {fmt.number(Math.round(runStats.distance))}m
                 </div>
               </div>
               <div>
@@ -560,7 +561,7 @@ export function NightrailUI({
           className="w-full max-w-md text-white"
           peak={
             runStats.bestCombo > 0
-              ? { label: t('best-combo', { defaultValue: 'Best combo' }), value: Math.round(runStats.bestCombo).toLocaleString() }
+              ? { label: t('best-combo', { defaultValue: 'Best combo' }), value: fmt.number(Math.round(runStats.bestCombo)) }
               : { label: t('best-multiplier', { defaultValue: 'Best multiplier' }), value: `×${runStats.bestMultiplier.toFixed(1)}` }
           }
           moment={scoreMoment}
@@ -582,7 +583,7 @@ export function NightrailUI({
             <div className="text-center">
               <div className={STAT_LABEL}>{t('score', { defaultValue: 'Score' })}</div>
               <div className="text-3xl font-black text-cyan-300 tabular-nums">
-                {Math.round(runStats.score).toLocaleString()}
+                {fmt.number(Math.round(runStats.score))}
               </div>
             </div>
 
@@ -599,7 +600,7 @@ export function NightrailUI({
               <div>
                 <div className={STAT_LABEL}>{t('distance', { defaultValue: 'Distance' })}</div>
                 <div className="text-lg font-bold text-white tabular-nums">
-                  {Math.round(runStats.distance).toLocaleString()}m
+                  {fmt.number(Math.round(runStats.distance))}m
                 </div>
               </div>
               <div>
@@ -631,7 +632,7 @@ export function NightrailUI({
               <div>
                 <div className={STAT_LABEL}>{t('best-combo', { defaultValue: 'Best combo' })}</div>
                 <div className="text-lg font-bold text-white tabular-nums">
-                  {Math.round(runStats.bestCombo).toLocaleString()}
+                  {fmt.number(Math.round(runStats.bestCombo))}
                 </div>
               </div>
             </div>

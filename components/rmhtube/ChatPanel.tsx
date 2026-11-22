@@ -530,7 +530,16 @@ export default function ChatPanel() {
                   return (
                     <div key={entry.id} className="text-center py-1">
                       <span className="text-xs italic text-app-text-dim">
-                        {entry.content}
+                        {entry.playlistQueued
+                          ? t('chat-playlist-queued', {
+                              ns: 'rmhtube-playlists',
+                              defaultValue_one: '{{name}} queued {{count}} video from {{playlist}}',
+                              defaultValue: '{{name}} queued {{count}} videos from {{playlist}}',
+                              count: entry.playlistQueued.count,
+                              name: entry.playlistQueued.userName,
+                              playlist: entry.playlistQueued.playlistName,
+                            })
+                          : entry.content}
                         {showTimestamps && (
                           <span className="ml-2 opacity-60">{formatRelativeTime(entry.createdAt)}</span>
                         )}
@@ -628,7 +637,7 @@ export default function ChatPanel() {
         <div className="px-1.5 pb-2">
           <GifPicker
             onClose={() => setShowGifPicker(false)}
-            onSelect={(u) => {
+            onSelect={({ url: u }) => {
               setMessage((m) => (m ? `${m} ${u}` : u));
               setShowGifPicker(false);
               setTimeout(() => inputRef.current?.focus(), 0);

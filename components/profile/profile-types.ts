@@ -34,6 +34,12 @@ export interface ProfileData {
   /** G1 — true only on the owner's opted-in birthday. */
   birthdayToday?: boolean;
   dmPrivacy: string;
+  /** Whether this member takes message requests when DM privacy refuses a sender (owner only; older payloads omit it). */
+  dmRequests?: boolean;
+  /** Who may browse the followers and following lists: 'everyone' | 'mutuals' | 'me'. */
+  followListVisibility?: string;
+  /** Whether this viewer may open the lists; the counts are public regardless. Older payloads omit it. */
+  canSeeFollowLists?: boolean;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
   profileSongArtist: string | null;

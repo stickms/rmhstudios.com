@@ -5,7 +5,8 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { formatDurationLong } from '@/lib/core/format';
 import { ShieldAlert } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { ComposeBox } from '@/components/feed/ComposeBox';
@@ -23,10 +24,8 @@ function PostingNotice({
   className?: string | undefined;
 }) {
   const { t } = useTranslation('f-communities-plus');
-  const wait =
-    posting.remainingMs && posting.remainingMs > 0
-      ? formatDistanceToNowStrict(new Date(Date.now() + posting.remainingMs))
-      : '';
+  const lf = useLocaleFormat();
+  const wait = posting.remainingMs && posting.remainingMs > 0 ? formatDurationLong(posting.remainingMs, lf.locale) : '';
   let text: string;
   if (posting.reason === 'email') {
     text = t('posting-email', {
@@ -132,6 +131,7 @@ export function CommunityComposer({
       )}
       <ComposeBox
         communityId={communityId}
+        requireImageAlt={extras?.requireImageAlt ?? false}
         extraBody={{
           ...(flairId
             ? {

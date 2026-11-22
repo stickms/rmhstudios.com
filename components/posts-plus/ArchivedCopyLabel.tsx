@@ -1,12 +1,14 @@
 import { Archive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { waybackTimestampToIso } from '@/lib/posts-plus/wayback';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * X11 - shown on a link card whose page has gone and which now points at its
  * Wayback Machine snapshot. Says so plainly, with the capture date when known.
  */
 export function ArchivedCopyLabel({ archivedAt }: { archivedAt?: string | null }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-posts-plus');
   const iso = archivedAt ? waybackTimestampToIso(archivedAt) : null;
   return (
@@ -15,7 +17,7 @@ export function ArchivedCopyLabel({ archivedAt }: { archivedAt?: string | null }
       {iso
         ? t('archived-copy-dated', {
             defaultValue: 'Archived copy · saved {{date}}',
-            date: new Date(iso).toLocaleDateString(),
+            date: fmt.date(new Date(iso)),
           })
         : t('archived-copy', {
             defaultValue: 'Archived copy',

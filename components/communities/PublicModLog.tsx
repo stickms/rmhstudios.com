@@ -4,7 +4,6 @@
  * nothing else: no moderator, no member, no bans or role changes.
  */
 import { useCallback, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +14,7 @@ import { api } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
 import { getModLogApi } from '@/lib/communities/modlog.contract';
 import type { PublicModLogEntryDTO } from '@/lib/communities/modlog';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function PublicModLog({
   slug,
@@ -25,6 +25,7 @@ export function PublicModLog({
   communityName: string;
   className?: string | undefined;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('community-modlog');
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<PublicModLogEntryDTO[] | null>(null);
@@ -186,11 +187,7 @@ export function PublicModLog({
                       </p>
                     ) : null}
                     <p className="t-meta">
-                      <time dateTime={e.createdAt}>
-                        {formatDistanceToNow(new Date(e.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </time>
+                      <time dateTime={e.createdAt}>{fmt.relative(new Date(e.createdAt))}</time>
                     </p>
                   </li>
                 ))}

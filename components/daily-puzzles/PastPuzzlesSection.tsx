@@ -6,6 +6,7 @@ import { formatDateKey, getTodayEST } from '@/lib/daily-puzzles/seed';
 import { getCompletedDates, syncFromServer, type PuzzleResult } from '@/lib/daily-puzzles/persistence';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PastPuzzlesSectionProps {
   gameMode: string;
@@ -16,6 +17,7 @@ interface PastPuzzlesSectionProps {
 }
 
 export function PastPuzzlesSection({ gameMode, selectedDateKey, onSelectDate, renderScore }: PastPuzzlesSectionProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-daily-puzzles');
   const [showHistory, setShowHistory] = useState(false);
   const [completedMap, setCompletedMap] = useState<Record<string, PuzzleResult>>({});
@@ -45,7 +47,7 @@ export function PastPuzzlesSection({ gameMode, selectedDateKey, onSelectDate, re
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dk = formatDateKey(d);
-      const weekday = d.toLocaleDateString('en-US', {
+      const weekday = fmt.date(d, {
         weekday: 'short',
       });
       entries.push({
@@ -54,7 +56,7 @@ export function PastPuzzlesSection({ gameMode, selectedDateKey, onSelectDate, re
       });
     }
     return entries;
-  }, []);
+  }, [fmt]);
 
   return (
     <div className="mt-6 flex flex-col gap-3">

@@ -55,10 +55,12 @@ import { CreditScore } from './CreditScore';
 import { api } from '@/lib/contract/client';
 import { debtStatsApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type TabId = 'overview' | 'composition' | 'rhythm' | 'terrain' | 'hyper' | 'globe' | 'table';
 
 export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-kaikai-debt');
   const [tab, setTab] = useState<TabId>('overview');
   const [logScaleOn, setLogScaleOn] = useState(true);
@@ -105,9 +107,9 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
         id: stat.category,
         label: categoryLabel(stat.category, t),
         seriesIndex: CATEGORY_ORDER.indexOf(stat.category),
-        value: stat.count > 0 ? stat.count.toLocaleString('en-US') : undefined,
+        value: stat.count > 0 ? fmt.number(stat.count) : undefined,
       })),
-    [stats.categories, t],
+    [stats.categories, t, fmt],
   );
 
   /** The totals the tiles show, narrowed to the filter when one is on. */

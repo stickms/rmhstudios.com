@@ -1,12 +1,13 @@
 import { memo, useCallback, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { presenceContextLabels } from '@/components/site/presence-labels';
 import { ArrowRight } from 'lucide-react';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
-import { contextVerb, sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
+import { sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
 import { ActivityLine } from './ActivityLine';
 
 /**
@@ -113,6 +114,7 @@ export function FriendsSheet({
 const FriendSheetRow = memo(
   function FriendSheetRow({ friend, onNavigate }: { friend: ActiveFriend; onNavigate: () => void }) {
     const { t } = useTranslation('site');
+    const contextLabels = presenceContextLabels(t);
     const { user, activity, joinable } = friend;
     const name =
       user.name ||
@@ -147,9 +149,7 @@ const FriendSheetRow = memo(
               onClick={onNavigate}
               className="surface-press shrink-0 rounded-full bg-site-bg-subtle px-3 py-1.5 text-xs font-semibold text-site-accent"
             >
-              {t(`presence-context-${activity.kind}`, {
-                defaultValue: contextVerb(activity.kind),
-              })}
+              {contextLabels[activity.kind]}
             </Link>
           </SheetClose>
         ) : null}

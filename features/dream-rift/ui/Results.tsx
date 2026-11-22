@@ -14,6 +14,7 @@ import { formatClockSeconds } from '@/lib/core/format';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { submitDreamRiftCoopApi, submitDreamRiftScoreApi } from '@features/dream-rift/engine/dream-rift.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function ResultScreen({
   onRetry,
@@ -24,6 +25,7 @@ export function ResultScreen({
   onMenu: () => void;
   onLeaderboard: () => void;
 }) {
+  const fmt = useLocaleFormat();
   const result = useDreamRift((s) => s.result);
   const session = useSession();
   const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
@@ -118,10 +120,10 @@ export function ResultScreen({
         <Row label="Character" value={CHARACTERS[result.character].name} />
         <Row label="Difficulty" value={result.difficulty} />
         <Row label="Stage Reached" value={`${result.stageReached} / 3`} />
-        <Row label="Score" value={result.score.toLocaleString()} highlight />
-        {coop && <Row label="Combined Score" value={result.combinedScore.toLocaleString()} highlight />}
+        <Row label="Score" value={fmt.number(result.score)} highlight />
+        {coop && <Row label="Combined Score" value={fmt.number(result.combinedScore)} highlight />}
         <Row label="Time Survived" value={formatClockSeconds(result.timeSurvived)} />
-        <Row label="Graze" value={result.graze.toLocaleString()} />
+        <Row label="Graze" value={fmt.number(result.graze)} />
         <Row label="Spell Cards" value={String(result.spellsCaptured)} />
         <Row label="Deaths" value={String(result.deaths)} />
       </div>
@@ -144,7 +146,7 @@ export function ResultScreen({
                   {i === 0 ? '👑 ' : ''}
                   {p.name}
                 </span>
-                <span className="font-mono text-[color:var(--dr-cream)]">{p.score.toLocaleString()}</span>
+                <span className="font-mono text-[color:var(--dr-cream)]">{fmt.number(p.score)}</span>
               </div>
             ))}
         </div>

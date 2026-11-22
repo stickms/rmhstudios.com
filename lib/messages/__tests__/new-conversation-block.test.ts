@@ -71,6 +71,7 @@ vi.mock('@/lib/prisma.server', () => ({
 }));
 vi.mock('@/lib/chat/chat.server', () => ({
   upsertDm: h.upsertDm,
+  findDmByPair: async () => null,
 }));
 vi.mock('@/lib/moderation/restrictions.server', () => ({
   restrictionResponse: async () => null,

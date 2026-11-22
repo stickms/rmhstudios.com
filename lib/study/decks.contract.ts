@@ -93,6 +93,8 @@ export const reviewCardApi = endpoint<{
     success: true;
     dueAt: string;
     intervalDays: number;
+    /** True when this grade was the eighth lapse and the card was set aside. */
+    leech: boolean;
   };
 }>()({
   method: 'POST',

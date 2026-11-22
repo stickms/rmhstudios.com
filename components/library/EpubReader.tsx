@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { epubThemeLabels } from '@/components/library/epub-theme-labels';
 import { Link } from '@tanstack/react-router';
 import {
   ArrowLeft,
@@ -28,7 +29,9 @@ import {
 } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
 import { EpubRasterStore, type EpubTheme, type EpubToc } from '@/lib/library/epub-raster';
-import { useBookState } from '@/lib/library/reader-store';
+import { useSyncedBookState } from '@/lib/library/reader-store';
+import { useSession } from '@/components/Providers';
+import { ContinuedNotice } from './ContinuedNotice';
 import { isFindShortcut, shouldOpenFind } from '@/lib/library/reader-keys';
 import type { FindTarget } from '@/lib/library/find';
 import type { FindSource } from '@/lib/library/find-index';
@@ -78,7 +81,12 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   const [findFocus, setFindFocus] = useState(0);
   const [findJump, setFindJump] = useState<FindTarget | null>(null);
 
-  const marks = useBookState(book.slug);
+  // The reader's personal state for this book: on the device first, synced to their account when signed in.
+  const session = useSession();
+  const marks = useSyncedBookState(book.slug, {
+    signedIn: Boolean(session.data),
+    pages: numPages,
+  });
   const storeRef = useRef<EpubRasterStore | null>(null);
   const [, force] = useReducer((n: number) => n + 1, 0);
   const curPageRef = useRef(1);
@@ -417,6 +425,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
           </a>
         </div>
       </header>
+      <ContinuedNotice page={marks.continuedFrom} />
 
       <div className="lib-reader__stage">
         {status === 'loading' && (
@@ -487,6 +496,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
           returnFocus={detailsTriggerRef.current}
           onJump={goToPage}
           onClose={() => setDetailsOpen(false)}
+          sync={marks.sync}
         />
       )}
     </main>
@@ -496,6 +506,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
 /** Light / sepia / dark page-theme picker for the EPUB reader. */
 function ThemeMenu({ theme, onChange }: { theme: EpubTheme; onChange: (t: EpubTheme) => void }) {
   const { t } = useTranslation('c-library');
+  const themeLabels = epubThemeLabels(t);
   return (
     <Dropdown
       icon={<Palette size={16} />}
@@ -523,9 +534,7 @@ function ThemeMenu({ theme, onChange }: { theme: EpubTheme; onChange: (t: EpubTh
                     onChange(th);
                     close();
                   }}
-                  aria-label={t(`theme-${th}`, {
-                    defaultValue: th,
-                  })}
+                  aria-label={themeLabels[th]}
                 />
               ))}
             </div>

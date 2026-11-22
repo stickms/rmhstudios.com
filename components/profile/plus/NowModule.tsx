@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Link } from '@tanstack/react-router';
 import { Pencil, Sparkles } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
@@ -13,6 +14,7 @@ import { useProfilePlus } from './useProfilePlus';
  * greys out and says so, rather than pretending to be current.
  */
 export default function NowModule({ title, userId, isOwner }: { title: string; userId: string; isOwner: boolean }) {
+  const lf = useLocaleFormat();
   const { t } = useTranslation('f-profile-plus');
   const view = useProfilePlus(userId);
   const text = view?.nowText ?? null;
@@ -20,9 +22,9 @@ export default function NowModule({ title, userId, isOwner }: { title: string; u
 
   const stale = nowIsStale(view?.nowUpdatedAt);
   const updated = view?.nowUpdatedAt
-    ? new Intl.DateTimeFormat(undefined, {
+    ? lf.date(new Date(view.nowUpdatedAt), {
         dateStyle: 'medium',
-      }).format(new Date(view.nowUpdatedAt))
+      })
     : null;
 
   return (

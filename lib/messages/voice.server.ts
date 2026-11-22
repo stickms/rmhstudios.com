@@ -37,6 +37,9 @@ import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { toMessageView, type MessageView } from '@/lib/messages/message-view';
 import { loadParticipantConversation, otherParticipant } from '@/lib/messages/mutations.server';
 import { messageStamp } from '@/lib/chat-plus/post.server';
+import { clearStaleDraft, requestGate } from '@/lib/messages/requests.server';
+import { gateRefusalCopy } from '@/lib/messages/requests';
+import { afterDirectMessage } from '@/lib/messages/away.server';
 
 /** Human-readable refusal for each policy rejection, with the tier's ceiling. */
 export function voiceRejectionMessage(
@@ -97,33 +100,32 @@ export async function sendVoiceMessage(args: {
 
   const recipientId = otherParticipant(conversation, args.userId);
 
-  // Same privacy gate the text send path applies. Re-checked here rather than
-  // trusted from an earlier request: a recipient can close their DMs between
-  // opening a thread and receiving a recording.
-  // (Saved Messages — a conversation with yourself — has no recipient to gate.)
+  // Same gate the text send path applies: DM privacy, then message requests. Re-checked
+  // here rather than trusted from an earlier request: a recipient can close their DMs
+  // between opening a thread and receiving a recording. A voice note never opens or
+  // joins a message request (those are one text message). Saved Messages — a
+  // conversation with yourself — has no recipient to gate.
   const isSavedChat = recipientId === args.userId;
-  const recipient = isSavedChat
-    ? null
-    : await prisma.user.findUnique({
-        where: { id: recipientId },
-        select: { profile: { select: { dmPrivacy: true } } },
-      });
-  const dmPrivacy = recipient?.profile?.dmPrivacy ?? 'EVERYONE';
-  if (dmPrivacy === 'NONE') {
-    return { ok: false, status: 403, error: 'This user is no longer accepting messages.' };
+  const gate = isSavedChat
+    ? ({ outcome: 'allowed' } as const)
+    : await requestGate(args.userId, recipientId, { request: conversation.request ?? null });
+  if (gate.outcome === 'request') {
+    return { ok: false, status: 403, error: 'A message request can only contain text.' };
   }
-  if (dmPrivacy === 'FOLLOWERS') {
-    const follows = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: { followerId: recipientId, followingId: args.userId },
-      },
-    });
-    if (!follows) {
-      return {
-        ok: false,
-        status: 403,
-        error: 'This user only accepts messages from people they follow.',
-      };
+  if (gate.outcome === 'refused') {
+    switch (gate.reason) {
+      case 'NONE':
+        return { ok: false, status: 403, error: 'This user is no longer accepting messages.' };
+      case 'FOLLOWERS':
+        return {
+          ok: false,
+          status: 403,
+          error: 'This user only accepts messages from people they follow.',
+        };
+      case 'cap':
+        return { ok: false, status: 429, error: gateRefusalCopy('cap') };
+      default:
+        return { ok: false, status: 403, error: gateRefusalCopy(gate.reason) };
     }
   }
 
@@ -180,6 +182,7 @@ export async function sendVoiceMessage(args: {
         read: true,
         createdAt: true,
         gifUrl: true,
+        gifAlt: true,
         imageUrls: true,
         editedAt: true,
         deletedAt: true,
@@ -196,6 +199,8 @@ export async function sendVoiceMessage(args: {
     }),
   ]);
 
+  await clearStaleDraft(conversation.request, args.conversationId);
+
   const view = toMessageView(message);
 
   if (!isSavedChat)
@@ -209,6 +214,7 @@ export async function sendVoiceMessage(args: {
         read: view.read,
         createdAt: view.createdAt,
         gifUrl: view.gifUrl,
+        gifAlt: view.gifAlt,
         imageUrls: view.imageUrls,
         reactions: [],
         audioUrl: view.audioUrl,
@@ -217,6 +223,9 @@ export async function sendVoiceMessage(args: {
         editedAt: view.editedAt,
       },
     });
+
+  // s06-18: a voice note to an away member gets the same one automatic reply as a text (best-effort, never throws).
+  if (!isSavedChat) void afterDirectMessage({ senderId: args.userId, recipientId, chatId: args.conversationId, now });
 
   return { ok: true, message: { ...view, conversationId: args.conversationId } };
 }

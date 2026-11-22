@@ -1,7 +1,9 @@
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-limits';
+import { bumpCount } from '@/lib/feed/quiet-counts';
 import { extractFirstUrl } from '../RMHarkContent';
 import type { Comment } from '../CommentItem';
+import { currentDocumentLocale, formatDate } from '@/lib/core/format';
 
 /**
  * Pure state helpers for the single-post page: nested reply edits, the comment
@@ -42,7 +44,7 @@ export function withCommentDelta(post: FeedItem | null, delta: number): FeedItem
   return post
     ? {
         ...post,
-        commentCount: Math.max(0, (post.commentCount ?? 0) + delta),
+        commentCount: bumpCount(post.commentCount, delta),
       }
     : post;
 }
@@ -120,9 +122,9 @@ export function withResolvedIdentity<
   };
 }
 
-export function formatFullDate(dateStr: string): string {
+export function formatFullDate(dateStr: string, locale: string = currentDocumentLocale()): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', {
+  return formatDate(d, locale, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',

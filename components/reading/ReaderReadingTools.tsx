@@ -21,6 +21,8 @@ import { useReadingRuler } from '@/lib/reading/ruler';
 import type { FindTarget } from '@/lib/library/find';
 import { SHELVES, type ShelfId } from '@/lib/reading/schema';
 import { useShelfLabels } from './useShelfLabels';
+import { useReadingClock } from './useReadingClock';
+import { ReadingTimeLine } from './ReadingTimeLine';
 import './reading.css';
 
 const ReaderTextView = lazy(() => import('./ReaderTextView'));
@@ -75,6 +77,16 @@ export function ReaderReadingTools({
   const { t } = useTranslation('f-reading');
   const { data: session } = useSession();
   const labels = useShelfLabels();
+  // Reading time (opt-in): measured from activity events while the book is open; a page turn counts as activity.
+  const clock = useReadingClock({
+    kind: 'library',
+    docKey: book.slug,
+    enabled: !!session && ready,
+  });
+  const touchClock = clock.touch;
+  useEffect(() => {
+    touchClock();
+  }, [curPage, touchClock]);
   const { data: shelves } = useMyShelves(!!session && ready);
   const { set, remove } = useShelfMutations();
   const setShelfAsync = set.mutateAsync;
@@ -215,6 +227,7 @@ export function ReaderReadingTools({
                 </li>
               ) : null}
             </ul>
+            <ReadingTimeLine tracking={clock.tracking} seconds={clock.docSeconds} className="px-3 pb-2" />
           </div>
         )}
       </Dropdown>

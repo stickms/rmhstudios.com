@@ -43,6 +43,7 @@ export const listAuditLogApi = endpoint<{
   query: {
     action?: string | undefined;
     targetType?: string | undefined;
+    targetId?: string | undefined;
     from?: string | undefined;
     to?: string | undefined;
   };

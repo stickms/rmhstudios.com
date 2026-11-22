@@ -36,6 +36,7 @@ export const sendGroupMessageApi = endpoint<{
   body: {
     content?: string;
     gifUrl?: string;
+    gifAlt?: string;
     imageUrls?: string[];
     imageAlts?: string[];
     poll?: {
@@ -121,6 +122,8 @@ export const createGroupChatApi = endpoint<{
   res: {
     success: true;
     id: string;
+    /** People left out (a block, a ban, an unknown name); never says which or why. */
+    refused: number;
   };
 }>()({
   method: 'POST',

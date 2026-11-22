@@ -2,6 +2,7 @@
  * A3 · Today on RMH. A daily job freezes the last 24 hours into one
  * `daily_digest_snapshot` row; /today is a single primary-key read of it.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
@@ -33,6 +34,7 @@ export async function buildDigest(now = new Date()): Promise<DigestPayload> {
       select: {
         id: true,
         content: true,
+        contentWarning: true,
         likeCount: true,
         user: { select: userDisplaySelect },
       },
@@ -67,9 +69,10 @@ export async function buildDigest(now = new Date()): Promise<DigestPayload> {
     topPosts: posts.map((p) => {
       const u = resolveUser(p.user);
       return {
-        title: snip(p.content, 120),
+        title: snip(previewTextFor(p) ?? '', 120),
         href: `/u/${u.handle ?? u.id}/post/${p.id}`,
-        meta: `${u.name ?? u.handle ?? ''} · ${p.likeCount}`,
+        // The public digest has no viewer: an author who hides their counts is listed without the number.
+        meta: u.hideCounts ? (u.name ?? u.handle ?? '') : `${u.name ?? u.handle ?? ''} · ${p.likeCount}`,
       };
     }),
     newBuilds: builds.map((b) => ({

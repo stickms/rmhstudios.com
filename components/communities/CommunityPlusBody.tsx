@@ -22,9 +22,11 @@ import { FlairChip } from '@/components/communities/FlairChip';
 import { RelatedRail } from '@/components/communities/RelatedRail';
 import { OnboardingSheet } from '@/components/communities/OnboardingSheet';
 import { CommunityRulesRail } from '@/components/communities/CommunityRules';
+import { ImageAltRule } from '@/components/communities/ImageAltRule';
 import { PublicModLog } from '@/components/communities/PublicModLog';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
+import { HandoverBanner } from '@/components/communities/HandoverBanner';
 import type { FeedItem } from '@/lib/feed-types';
 
 const HallOfFamePanel = lazy(() => import('@/components/communities/HallOfFamePanel'));
@@ -50,7 +52,10 @@ export function CommunityPlusBody({
   community,
   items,
   setItems,
+  composerLocked = false,
 }: {
+  /** s06-01: a timed-out member reads but does not post; the page shows the notice instead of the composer. */
+  composerLocked?: boolean;
   community: {
     id: string;
     slug: string;
@@ -183,11 +188,13 @@ export function CommunityPlusBody({
 
   return (
     <div>
+      {community.role === 'MOD' && <HandoverBanner slug={slug} name={community.name} />}
       {extras && <CommunityRulesRail rules={extras.rules} communityName={community.name} className={extrasArrival} />}
+      {extras?.requireImageAlt && <ImageAltRule className={extrasArrival} />}
       {extras?.publicModLog && <PublicModLog slug={slug} communityName={community.name} className={extrasArrival} />}
       {extras && <RelatedRail sisters={extras.sisters} className={extrasArrival} />}
 
-      {community.joined && (
+      {community.joined && !composerLocked && (
         <CommunityComposer
           communityId={community.id}
           extras={extras}
@@ -297,6 +304,7 @@ export function CommunityPlusBody({
           <ModPanel
             slug={slug}
             isPrivate={community.isPrivate}
+            isOwner={community.role === 'ADMIN'}
             extras={extras}
             onExtrasChange={() => void loadExtras()}
           />

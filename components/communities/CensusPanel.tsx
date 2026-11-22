@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { CENSUS_MAX_QUESTIONS } from '@/lib/communities/census';
 import type { CensusDTO } from '@/lib/communities/plus';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface DraftQuestion {
   prompt: string;
@@ -259,7 +260,7 @@ export default function CensusPanel({
   slug: string;
   joined: boolean;
   isMod: boolean;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-communities-plus');
   const [census, setCensus] = useState<CensusDTO | null | undefined>(undefined);
 
@@ -323,7 +324,7 @@ export default function CensusPanel({
           })}
           {census.closesAt && !census.closed
             ? ` · ${t('census-closes-at', {
-                date: new Date(census.closesAt).toLocaleDateString(),
+                date: fmt.date(new Date(census.closesAt)),
                 defaultValue: 'closes {{date}}',
               })}`
             : ''}

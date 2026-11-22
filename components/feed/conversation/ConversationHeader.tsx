@@ -16,6 +16,11 @@ import type { OtherUser } from './conversation-state';
 // P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
 const DmLocalTime = lazy(() => import('@/components/profile/plus/LocalTime'));
 
+// s06-18: "Away until 3 Dec", a lazy chunk like the local time (it needs the query client, which a server render of the header does not have).
+const AwayLine = lazy(() =>
+  import('@/components/messages/AwayLine').then((m) => ({ default: m.AwayStatusLine })),
+);
+
 /** The sticky thread header (who, calls, per-chat extras) and the pinned-message bar. */
 export function ConversationHeader({
   conversationId,
@@ -64,6 +69,7 @@ export function ConversationHeader({
               {otherUser.username && <p className="t-meta">@{otherUser.username}</p>}
               <ArrivalSuspense>
                 <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
+                <AwayLine userId={otherUser.id} context="header" />
               </ArrivalSuspense>
             </div>
           </Link>

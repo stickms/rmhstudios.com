@@ -6,7 +6,12 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { createWebhookBody, deliveriesQuery, patchWebhookBody } from '@/lib/developer/webhooks-schema';
+import type {
+  createWebhookBody,
+  deliveriesQuery,
+  testEventQuery,
+  patchWebhookBody,
+} from '@/lib/developer/webhooks-schema';
 import type { WebhookHealth } from '@/lib/webhooks/health';
 
 export type WebhookDeliveryStatus = 'PENDING' | 'DELIVERED' | 'FAILED';
@@ -79,8 +84,9 @@ export const rotateWebhookSecretApi = endpoint<{
   res: { endpoint: WebhookEndpointRow; secret: string };
 }>()({ method: 'POST', path: '/api/developer/webhooks/$id/rotate' });
 
-/** Sends a `ping` to this endpoint only and returns the recorded delivery. */
+/** Sends a `ping` (or, with `?event=`, a sample game event) to this endpoint only and returns the recorded delivery. */
 export const testWebhookApi = endpoint<{
+  query: z.infer<typeof testEventQuery>;
   res: { delivery: WebhookDeliveryRow };
 }>()({ method: 'POST', path: '/api/developer/webhooks/$id/test' });
 

@@ -17,6 +17,11 @@ import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
 import { MAX_TOURNAMENT_PLAYERS, MIN_TOURNAMENT_PLAYERS } from '@/lib/wager/constants';
+import { isCheckInMinutes } from '@/lib/tournaments/checkin';
+import { CheckInCreateFields } from '@/components/tournaments/CheckInPanel';
+import { SeedingMethodField } from '@/components/tournaments/SeedingPanel';
+import { MatchDeadlineField, deadlineChoice } from '@/components/tournaments/MatchSchedule';
+import { ratingSeedingAvailable, type SeedingMethod } from '@/lib/tournaments/seeding';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createTournamentApi } from '@/lib/tournaments/tournaments.contract';
@@ -33,11 +38,23 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [gameId, setGameId] = useState(WAGER_ELIGIBLE_GAMES[0].id);
-  const [format, setFormat] = useState<'SINGLE_ELIM' | 'ROUND_ROBIN' | 'SWISS'>('SINGLE_ELIM');
+  const [format, setFormat] = useState<'SINGLE_ELIM' | 'DOUBLE_ELIM' | 'ROUND_ROBIN' | 'SWISS'>('SINGLE_ELIM');
   const [entryFee, setEntryFee] = useState(0);
   const [seedPool, setSeedPool] = useState(0);
   const [maxPlayers, setMaxPlayers] = useState(8);
   const [submitting, setSubmitting] = useState(false);
+  // Local wall-clock `datetime-local` value; '' = no start time.
+  const [startsAtLocal, setStartsAtLocal] = useState('');
+  const [checkInValue, setCheckInValue] = useState('');
+  const [deadlineValue, setDeadlineValue] = useState('');
+  const [seeding, setSeeding] = useState<SeedingMethod>('join');
+  // Rating seeding needs a ranked game; fall back to sign-up order when the game changes.
+  // (adjusted while rendering, so the form never shows a method the game cannot use)
+  if (seeding === 'rating' && !ratingSeedingAvailable(gameId)) setSeeding('join');
+  const startsAtDate = startsAtLocal ? new Date(startsAtLocal) : null;
+  const startsAtIso = startsAtDate && !Number.isNaN(startsAtDate.getTime()) ? startsAtDate.toISOString() : null;
+  const checkInMinutes = Number(checkInValue);
+  const checkInChoice = startsAtIso && isCheckInMinutes(checkInMinutes) ? checkInMinutes : null;
 
   const submit = async () => {
     setSubmitting(true);
@@ -50,6 +67,10 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
           entryFeeCoins: entryFee,
           seedPoolCoins: seedPool,
           maxPlayers,
+          startsAt: startsAtIso,
+          checkInMinutes: checkInChoice,
+          matchDeadlineHours: deadlineChoice(deadlineValue),
+          seeding,
         },
       });
       toast.success(
@@ -135,12 +156,15 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
               <Select
                 id="t-format"
                 value={format}
-                onChange={(e) => setFormat(e.target.value as 'SINGLE_ELIM' | 'ROUND_ROBIN' | 'SWISS')}
+                onChange={(e) => setFormat(e.target.value as 'SINGLE_ELIM' | 'DOUBLE_ELIM' | 'ROUND_ROBIN' | 'SWISS')}
               >
                 <option value="SINGLE_ELIM">
                   {t('single-elim', {
                     defaultValue: 'Single elimination',
                   })}
+                </option>
+                <option value="DOUBLE_ELIM">
+                  {t('double-elim', { ns: 'double-elimination', defaultValue: 'Double elimination' })}
                 </option>
                 <option value="ROUND_ROBIN">
                   {t('round-robin', {
@@ -149,6 +173,15 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
                 </option>
                 <SwissFormatOption />
               </Select>
+              {format === 'DOUBLE_ELIM' && (
+                <p className="t-meta">
+                  {t('double-elim-help', {
+                    ns: 'double-elimination',
+                    defaultValue:
+                      "A player is out after a second loss. Needs at least 4 players. Pick'em is for single elimination only.",
+                  })}
+                </p>
+              )}
             </div>
           </div>
 
@@ -200,6 +233,18 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
               ))}
             </Select>
           </div>
+
+          <CheckInCreateFields
+            startsAtLocal={startsAtLocal}
+            onStartsAtChange={setStartsAtLocal}
+            checkInValue={checkInValue}
+            onCheckInChange={setCheckInValue}
+            hasStart={!!startsAtIso}
+          />
+
+          <MatchDeadlineField id="t-deadline" value={deadlineValue} onChange={setDeadlineValue} />
+
+          <SeedingMethodField id="t-seeding" value={seeding} gameId={gameId} onChange={setSeeding} />
         </div>
 
         <DialogFooter>

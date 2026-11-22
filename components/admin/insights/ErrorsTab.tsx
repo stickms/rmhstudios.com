@@ -7,6 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { send, useInsight } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Group {
   id: string;
@@ -24,6 +25,7 @@ interface Group {
 }
 
 export function ErrorsTab() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-ops');
   const { data, loading, reload } = useInsight<{
     groups: Group[];
@@ -86,9 +88,9 @@ export function ErrorsTab() {
           <p className="t-body text-site-text-muted">
             {t('errors-seen', {
               defaultValue: 'First seen {{first}} in {{firstRelease}} - last seen {{last}} in {{lastRelease}}',
-              first: new Date(g.firstSeenAt).toLocaleDateString(),
+              first: fmt.date(new Date(g.firstSeenAt)),
               firstRelease: g.firstRelease,
-              last: new Date(g.lastSeenAt).toLocaleString(),
+              last: fmt.dateTime(new Date(g.lastSeenAt)),
               lastRelease: g.lastRelease,
             })}
           </p>

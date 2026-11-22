@@ -19,6 +19,8 @@ export function EventRecurrenceInfo({ event, onChange }: { event: EventDTO; onCh
   const [busy, setBusy] = useState(false);
   if (!rec) return null;
 
+  // s06-10: answers are keyed by the date's ORIGINAL start; a moved date shows another time.
+  const occurrenceAt = rec.occurrenceAt ?? event.startsAt;
   const base = `/api/events/${event.id}/rsvp`;
   const status = event.viewerRsvp;
 
@@ -39,12 +41,12 @@ export function EventRecurrenceInfo({ event, onChange }: { event: EventDTO; onCh
         body: {
           status,
           everyTime: true,
-          occurrenceAt: event.startsAt,
+          occurrenceAt: occurrenceAt,
         },
       });
     } else {
       // Drop the standing RSVP, but keep this date.
-      await api(`${base}?scope=all&occurrenceAt=${encodeURIComponent(event.startsAt)}`, {
+      await api(`${base}?scope=all&occurrenceAt=${encodeURIComponent(occurrenceAt)}`, {
         method: 'DELETE',
       });
       res = await api<RsvpResult>(base, {
@@ -52,7 +54,7 @@ export function EventRecurrenceInfo({ event, onChange }: { event: EventDTO; onCh
         body: {
           status,
           everyTime: false,
-          occurrenceAt: event.startsAt,
+          occurrenceAt: occurrenceAt,
         },
       });
     }
@@ -71,7 +73,7 @@ export function EventRecurrenceInfo({ event, onChange }: { event: EventDTO; onCh
 
   const sitOut = async () => {
     setBusy(true);
-    const res = await api<RsvpResult>(`${base}?scope=occurrence&occurrenceAt=${encodeURIComponent(event.startsAt)}`, {
+    const res = await api<RsvpResult>(`${base}?scope=occurrence&occurrenceAt=${encodeURIComponent(occurrenceAt)}`, {
       method: 'DELETE',
     });
     setBusy(false);

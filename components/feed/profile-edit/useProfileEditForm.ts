@@ -51,6 +51,9 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
   const [bannerCrop, setBannerCrop] = useState<BannerCropSession | null>(null);
   const [bannerPicture, setBannerPicture] = useState<BannerPicture | null>(null);
   const [bannerLoading, setBannerLoading] = useState(false);
+  // Appended last so the ordinals above stay put (see the note on this hook).
+  const [followListVisibility, setFollowListVisibility] = useState(initial.followListVisibility ?? 'everyone');
+  const [dmRequests, setDmRequests] = useState(initial.dmRequests ?? false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +70,8 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
     links,
     showLikes,
     dmPrivacy,
+    followListVisibility,
+    dmRequests,
     tipGoal,
     tipGoalLabel,
     membershipPrice,
@@ -103,6 +108,10 @@ export function useProfileEditForm(initial: ProfileEditInitial) {
     setShowLikes,
     dmPrivacy,
     setDmPrivacy,
+    followListVisibility,
+    setFollowListVisibility,
+    dmRequests,
+    setDmRequests,
     tipGoal,
     setTipGoal,
     tipGoalLabel,

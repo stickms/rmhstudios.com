@@ -25,6 +25,7 @@ export const SECURITY_EVENT_KINDS = [
   'handle_changed',
   'deletion_scheduled',
   'deletion_cancelled',
+  'account_secured_by_admin',
 ] as const;
 
 export type SecurityEventKind = (typeof SECURITY_EVENT_KINDS)[number];
@@ -39,7 +40,14 @@ export type SecurityFilter = (typeof SECURITY_FILTERS)[number];
 /** Kinds each filter shows. `all` is every kind. */
 export const FILTER_KINDS: Readonly<Record<SecurityFilter, readonly SecurityEventKind[]>> = {
   all: SECURITY_EVENT_KINDS,
-  'sign-ins': ['sign_in', 'sign_in_new_device', 'sign_out', 'session_revoked', 'other_sessions_revoked'],
+  'sign-ins': [
+    'sign_in',
+    'sign_in_new_device',
+    'sign_out',
+    'session_revoked',
+    'other_sessions_revoked',
+    'account_secured_by_admin',
+  ],
   methods: [
     'method_connected',
     'method_removed',

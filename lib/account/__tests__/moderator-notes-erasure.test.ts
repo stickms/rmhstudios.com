@@ -114,6 +114,10 @@ describe('moderator notes never reach a member', () => {
       'lib/moderation/triage.server.ts',
       'lib/admin/api/admin.reports.server.ts',
       'components/admin/UserModerationPanel.tsx',
+      // s05-10 admin lookup (`auth: 'admin'`): a pasted note id resolves to its subject; the text is never selected.
+      'lib/admin/lookup.server.ts',
+      // s07-20 erasure registry: names the model as a data entry (classification only, never a query).
+      'lib/account/erasure-registry.ts',
     ]);
     const found: string[] = [];
     const walk = (dir: string) => {

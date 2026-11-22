@@ -14,6 +14,7 @@ import { api } from '@/lib/contract/client';
 import { getBlogRevisionApi, listBlogRevisionsApi } from '@/lib/admin/blog-revisions.contract';
 import type { RevisionDetail } from '@/lib/blog/publication.server';
 import { diffLines, splitLines, summarise } from '@/lib/toolbox/diff';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Changed lines shown for one revision; the rest are counted, not drawn. */
 const MAX_DIFF_LINES = 300;
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function BlogRevisions({ slug, current, onRestore }: Props) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('log-drafts');
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -120,7 +122,7 @@ export function BlogRevisions({ slug, current, onRestore }: Props) {
                   className="flex min-h-9 w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2 text-start pointer-coarse:min-h-11"
                 >
                   <span className="t-body min-w-0 break-words text-site-text">
-                    {new Date(rev.createdAt).toLocaleString()}
+                    {fmt.dateTime(new Date(rev.createdAt))}
                     <span className="text-site-text-muted">
                       {' · '}
                       {rev.authorName ??

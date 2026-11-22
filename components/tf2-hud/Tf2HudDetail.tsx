@@ -26,8 +26,10 @@ import { countTf2HudDownloadApi } from '@/lib/tf2-hud/hud.contract';
 import { Btn, Pill } from './ui';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-tf2-hud');
   const navigate = useNavigate();
   const { data: session } = useSession();
@@ -380,7 +382,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
                       defaultValue: 'Updated',
                     })}
                   </dt>
-                  <dd>{detail ? new Date(detail.updatedAt).toLocaleDateString() : '–'}</dd>
+                  <dd>{detail ? fmt.date(new Date(detail.updatedAt)) : '–'}</dd>
                 </div>
               </dl>
             </div>

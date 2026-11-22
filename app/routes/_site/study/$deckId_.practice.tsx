@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { PracticeTest } from '@/components/study/PracticeTest';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { getDeck } from '@/lib/study.server';
+import { getDeck, getTestCards } from '@/lib/study.server';
 import { noindexHead } from '@/lib/seo';
 
 // The owner's deck, or a public one: anyone may take a test of a public deck, signed in or not (only a
@@ -18,7 +18,8 @@ const fetchTestDeck = createServerFn({ method: 'GET' })
       data: detail
         ? {
             deck: { id: detail.deck.id, title: detail.deck.title },
-            cards: detail.cards,
+            // Reviewable cards: reverse and cloze cards included, an authored cloze text left out.
+            cards: await getTestCards(deckId),
             signedIn: detail.signedIn,
           }
         : null,

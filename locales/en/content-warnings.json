@@ -1,0 +1,20 @@
+{
+  "covered-kicker": "Content warning",
+  "hide-post": "Hide",
+  "label": "Content warning: {{reason}}",
+  "load-failed": "Could not load this setting. Reload the page to try again.",
+  "option-cover": "Cover them",
+  "option-show": "Show them",
+  "pill-with-reason": "CW: {{reason}}",
+  "reason-label": "What is it for?",
+  "reason-placeholder": "What is it for? Optional",
+  "rss-description": "Content warning: {{reason}}",
+  "save-failed": "Could not save that setting",
+  "setting-hint": "Cover them to see the reason first and choose to show each post. Show them to see every post, with the reason as a label.",
+  "setting-label": "Content warnings",
+  "setting-title": "Posts with content warnings",
+  "show-post": "Show post",
+  "warning-field-hint": "A reason covers the post, text and media, until a reader chooses to show it.",
+  "warning-field-label": "Content warning",
+  "warning-field-placeholder": "What is it for? Optional"
+}

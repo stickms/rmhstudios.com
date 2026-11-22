@@ -5,6 +5,7 @@
  * A test never touches SM-2 scheduling; its result is stored apart (`lib/study/tests.server.ts`).
  */
 import { mulberry32, shuffle } from '@/lib/core/rng';
+import { maskClozeText } from '@/lib/study/card-types';
 
 export const TEST_KINDS = ['multiple-choice', 'written', 'true-false', 'matching'] as const;
 export type TestKind = (typeof TEST_KINDS)[number];
@@ -28,6 +29,10 @@ export interface TestCard {
   id: string;
   front: string;
   back: string;
+  /** Set on a cloze card: `front` is the whole text and this deletion is the one asked. */
+  clozeIndex?: number | null | undefined;
+  /** The authored card this one belongs to; cards of one note are one fact, asked about once. */
+  noteId?: string | undefined;
 }
 
 export interface TestOptions {
@@ -37,6 +42,8 @@ export interface TestOptions {
   direction: TestDirection;
   /** Ask only about these cards (the missed-cards test); distractors still come from the whole deck. */
   onlyCardIds?: readonly string[] | undefined;
+  /** The "[…]" a cloze prompt shows in place of its deletion (translated by the caller). */
+  blank?: string | undefined;
 }
 
 export interface MultipleChoiceQuestion {
@@ -167,17 +174,57 @@ export function gradeWritten(expected: string, given: string, locale?: string): 
 
 type Side = 'front' | 'back';
 
-function promptOf(card: TestCard, ask: Side): string {
+const DEFAULT_BLANK = '[…]';
+
+/** A cloze card is always asked front to back: its front is the text with the deletion masked. */
+function isCloze(card: TestCard): card is TestCard & { clozeIndex: number } {
+  return card.clozeIndex !== undefined && card.clozeIndex !== null;
+}
+/** The side a card is asked from: a cloze card ignores the test's direction. */
+function askSideOf(card: TestCard, ask: Side): Side {
+  return isCloze(card) ? 'front' : ask;
+}
+
+function promptOf(card: TestCard, ask: Side, blank: string): string {
+  if (isCloze(card)) return maskClozeText(card.front, card.clozeIndex, blank);
   return ask === 'front' ? card.front : card.back;
 }
 function answerOf(card: TestCard, ask: Side): string {
+  if (isCloze(card)) return card.back;
   return ask === 'front' ? card.back : card.front;
+}
+/** The text a card offers as an answer on `side`; a cloze card's front is its whole sentence, never an answer. */
+function sideText(card: TestCard, side: Side): string | null {
+  if (side === 'back') return card.back;
+  return isCloze(card) ? null : card.front;
 }
 
 function distinctCount(cards: readonly TestCard[], side: Side): number {
   const seen = new Set<string>();
-  for (const c of cards) seen.add(normalizeAnswer(side === 'back' ? c.back : c.front));
+  for (const c of cards) {
+    const text = sideText(c, side);
+    if (text !== null) seen.add(normalizeAnswer(text));
+  }
   return seen.size;
+}
+
+/** Cards of one note (a reversible card and its reverse, the cards of one cloze text) are one fact. */
+function noteKey(card: TestCard): string {
+  return card.noteId ?? card.id;
+}
+/** How many facts the cards hold: the most questions a test can have. */
+export function factCount(cards: readonly TestCard[]): number {
+  return new Set(cards.map(noteKey)).size;
+}
+/** The first card of each note, in the order given. */
+function onePerNote(cards: readonly TestCard[]): TestCard[] {
+  const seen = new Set<string>();
+  return cards.filter((c) => {
+    const key = noteKey(c);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**
@@ -187,7 +234,7 @@ function distinctCount(cards: readonly TestCard[], side: Side): number {
 export function availableKinds(
   cards: readonly TestCard[],
   direction: TestDirection,
-  focusCount: number = cards.length,
+  focusCount: number = factCount(cards),
 ): Record<TestKind, KindAvailability> {
   const answerSides: Side[] = direction === 'back' ? ['back'] : direction === 'front' ? ['front'] : ['back', 'front'];
   const enoughAnswers = answerSides.every((side) => distinctCount(cards, side) >= MC_OPTIONS);
@@ -214,7 +261,8 @@ function answerPool(cards: readonly TestCard[], side: Side): AnswerEntry[] {
   const seen = new Set<string>();
   const out: AnswerEntry[] = [];
   for (const c of cards) {
-    const text = side === 'back' ? c.back : c.front;
+    const text = sideText(c, side);
+    if (text === null) continue;
     const norm = normalizeAnswer(text);
     if (seen.has(norm)) continue;
     seen.add(norm);
@@ -253,11 +301,15 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
   const rand = mulberry32(seed);
   const only = options.onlyCardIds ? new Set(options.onlyCardIds) : null;
   const poolCards = only ? cards.filter((c) => only.has(c.id)) : cards;
-  const count = Math.max(0, Math.min(Math.floor(options.count), maxQuestions(poolCards.length)));
+  const facts = factCount(poolCards);
+  const count = Math.max(0, Math.min(Math.floor(options.count), maxQuestions(facts)));
   if (count === 0 || options.kinds.length === 0) return [];
+  const blank = options.blank ?? DEFAULT_BLANK;
 
-  const pool = shuffle(poolCards, rand);
-  const availability = availableKinds(cards, options.direction, poolCards.length);
+  // A fact is asked once: of a reversible card and its reverse, or the cards of one cloze text, the
+  // shuffle decides which one the test uses.
+  const pool = onePerNote(shuffle(poolCards, rand));
+  const availability = availableKinds(cards, options.direction, facts);
   const kinds = options.kinds.filter((k) => availability[k].available);
   const usable: readonly TestKind[] = kinds.length > 0 ? kinds : ['written'];
 
@@ -284,7 +336,6 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
       options.direction === 'mixed' ? (rand() < 0.5 ? 'back' : 'front') : options.direction;
     // Answering with the back means the front is the prompt.
     const ask: Side = direction === 'back' ? 'front' : 'back';
-    const answerSide: Side = ask === 'front' ? 'back' : 'front';
     // Leave at least one card for each question still to come.
     const spare = pool.length - next - (count - i - 1);
 
@@ -294,15 +345,17 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
       next += group.length;
       questions.push({
         kind: 'matching',
-        terms: group.map((c) => ({ cardId: c.id, text: promptOf(c, ask) })),
-        definitions: shuffle(group, rand).map((c) => ({ cardId: c.id, text: answerOf(c, ask) })),
+        terms: group.map((c) => ({ cardId: c.id, text: promptOf(c, askSideOf(c, ask), blank) })),
+        definitions: shuffle(group, rand).map((c) => ({ cardId: c.id, text: answerOf(c, askSideOf(c, ask)) })),
       });
       continue;
     }
 
     const card = pool[next++] as TestCard;
-    const prompt = promptOf(card, ask);
-    const answer = answerOf(card, ask);
+    const cardAsk = askSideOf(card, ask);
+    const answerSide: Side = cardAsk === 'front' ? 'back' : 'front';
+    const prompt = promptOf(card, cardAsk, blank);
+    const answer = answerOf(card, cardAsk);
     const answerNorm = normalizeAnswer(answer);
 
     if (kind === 'multiple-choice') {

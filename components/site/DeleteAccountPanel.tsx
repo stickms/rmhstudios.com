@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 
@@ -16,6 +17,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 
 export function DeleteAccountPanel() {
   const { t } = useTranslation('feed');
@@ -31,6 +33,8 @@ export function DeleteAccountPanel() {
   const [confirm, setConfirm] = useState('');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const deviceSignOut = useDeviceSignOut();
 
   const matches = expected.length > 0 && confirm.trim().replace(/^@/, '').toLowerCase() === expected.toLowerCase();
 
@@ -59,7 +63,13 @@ export function DeleteAccountPanel() {
         }),
       );
       try {
-        await authClient.signOut();
+        // The deletion is done, so this device's personal data goes with it (whatever the sign-out switch says).
+        // Studio work and unsent drafts get the keep-or-delete question first; Cancel there means keep, because the
+        // sign-out cannot be undone (sprint 07, feature 03).
+        await deviceSignOut.run(() => authClient.signOut(), {
+          force: true,
+          cancelMeans: 'keep',
+        });
       } catch {
         // session rows are already gone; ignore
       }
@@ -86,6 +96,22 @@ export function DeleteAccountPanel() {
           'Permanently remove your personal data and sign you out of every device. Your posts are kept but anonymized (shown as “Deleted user”). This cannot be undone.',
       })}
     >
+      {deviceSignOut.dialog}
+      <p className="t-body mb-3 text-site-text-muted">
+        {t('delete-other-devices', {
+          ns: 'device-data',
+          defaultValue:
+            'Other devices keep what this site stored in their own browsers, and we cannot reach them from here. Clear each one from its This device page.',
+        })}
+      </p>
+      <p className="t-body mb-3">
+        <Link to="/settings/device" className="underline">
+          {t('delete-other-devices-link', {
+            ns: 'device-data',
+            defaultValue: 'Open this device page',
+          })}
+        </Link>
+      </p>
       {!open ? (
         <Button variant="danger" onClick={() => setOpen(true)}>
           {t('delete-start', {

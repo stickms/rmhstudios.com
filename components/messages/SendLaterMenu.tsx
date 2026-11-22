@@ -18,6 +18,8 @@ import { sendLaterPresets, type SendLaterPresets } from '@/lib/messages/schedule
 export interface ScheduleDraft {
   content: string;
   gifUrl: string | null;
+  /** The GIF's description (sprint 06 #15); carried to the scheduled message. */
+  gifAlt?: string;
   imageUrls: string[];
   /** Index-aligned with `imageUrls`; '' = none. */
   imageAlts?: string[];
@@ -90,6 +92,11 @@ export function SendLaterMenu({
           ...(draft.gifUrl
             ? {
                 gifUrl: draft.gifUrl,
+                ...(draft.gifAlt?.trim()
+                  ? {
+                      gifAlt: draft.gifAlt.trim(),
+                    }
+                  : {}),
               }
             : {}),
           ...(draft.imageUrls.length

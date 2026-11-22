@@ -109,6 +109,24 @@ export function bulkKindCopy(t: TFunction): Record<BulkKind, BulkKindCopy> {
         defaultValue: 'bookmarks',
       }),
     },
+    'unlike-posts': {
+      label: t('kind-unlike-posts', { ns: 'bulk-durable', defaultValue: 'Remove likes' }),
+      blurb: t('kind-unlike-posts-blurb', {
+        ns: 'bulk-durable',
+        defaultValue:
+          'Permanent. There is no bin for likes, so this cannot be undone. Each post’s like count goes down by one.',
+      }),
+      unit: t('unit-likes', { ns: 'bulk-durable', defaultValue: 'likes' }),
+    },
+    'delete-reposts': {
+      label: t('kind-delete-reposts', { ns: 'bulk-durable', defaultValue: 'Remove reposts' }),
+      blurb: t('kind-delete-reposts-blurb', {
+        ns: 'bulk-durable',
+        defaultValue:
+          'Permanent. There is no bin for reposts, so this cannot be undone. Each post’s repost count goes down by one.',
+      }),
+      unit: t('unit-reposts', { ns: 'bulk-durable', defaultValue: 'reposts' }),
+    },
   };
 }
 

@@ -50,6 +50,7 @@ import { api } from '@/lib/contract/client';
 import { getReplayApi, getSliceSongApi, type ReplayResponse } from '@features/slice-it/engine/play.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 interface ReplayViewerProps {
   /** `GameReplay.id` — what the leaderboard row links to. */
   replayId: string;
@@ -60,7 +61,7 @@ interface ReplayViewerProps {
 /** How far ahead of the hit line a note becomes visible, in seconds of chart. */
 const APPROACH_SECONDS = 1.4;
 
-export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
+export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
 
   const [replay, setReplay] = useState<ReplayResponse | null>(null);
@@ -433,7 +434,7 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
 
       <div className="flex items-center justify-between gap-4 text-xs tabular-nums">
         <span className="font-mono text-base font-bold text-blue-500">
-          {tally.score.toLocaleString()}
+          {fmt.number(tally.score)}
         </span>
         <span>{t('replay-combo', { defaultValue: '{{combo}}x combo', combo: tally.combo })}</span>
         <span>

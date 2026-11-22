@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 import { ProviderIcon } from '@/components/ui/brand-icons';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
@@ -130,8 +131,13 @@ export function SignInMethodsPanel({ linkError }: { linkError?: string | undefin
     toast.error(error?.message || fallback);
   };
 
+  // Signing in again right away: this is a sign-out in name only, so the device is left alone (skipClear) and no
+  // question is ever asked. It still goes through the one helper (sprint 07, feature 03).
+  const deviceSignOut = useDeviceSignOut();
   const signInAgain = async () => {
-    await authClient.signOut();
+    await deviceSignOut.run(() => authClient.signOut(), {
+      skipClear: true,
+    });
     window.location.href = `/login?callbackURL=${encodeURIComponent(RETURN_TO)}`;
   };
 

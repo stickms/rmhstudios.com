@@ -14,6 +14,7 @@ import { CANVAS_PALETTE, type CanvasEventView } from '@/lib/canvas/shared';
 import type { Cell } from './CanvasBoard';
 import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const CanvasBoard = lazy(() => import('./CanvasBoard'));
 const CanvasReplay = lazy(() => import('./CanvasReplay'));
@@ -42,6 +43,7 @@ function fmt(sec: number): string {
 
 /** Z5 — /canvas: the community pixel canvas, live while an event runs and a timelapse after. */
 export function CanvasPage() {
+  const lfmt = useLocaleFormat();
   const { t } = useTranslation('f-canvas');
   const { data: session } = useSession();
   const qc = useQueryClient();
@@ -136,12 +138,12 @@ export function CanvasPage() {
                 {event.phase === 'upcoming'
                   ? t('opens', {
                       defaultValue: 'Opens {{date}}',
-                      date: new Date(event.startsAt).toLocaleString(),
+                      date: lfmt.dateTime(new Date(event.startsAt)),
                     })
                   : live
                     ? t('closes', {
                         defaultValue: 'Closes {{date}}',
-                        date: new Date(event.endsAt).toLocaleString(),
+                        date: lfmt.dateTime(new Date(event.endsAt)),
                       })
                     : t('closed', {
                         defaultValue: 'Closed',

@@ -62,6 +62,8 @@ import { useSession } from '@/components/Providers';
 import { VibePostComposer } from '@/components/rmhvibe/VibePostComposer';
 import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { VIBE_REMOVED_STATUS } from '@/lib/rmhvibe/vibe-status';
+import { formatDateTime } from '@/lib/core/format';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 // Background-build polling cadence + guards (see the generating-status effect).
 const MAX_COLLECTED_ERRORS = 3;
@@ -155,6 +157,7 @@ export const Route = createFileRoute('/v/$slug')({
 
 function VibeViewer() {
   const { t } = useTranslation('pages');
+  const { locale } = useLocaleFormat();
   const {
     id: pageId,
     slug,
@@ -898,7 +901,7 @@ function VibeViewer() {
                               </span>
                             )}
                           </span>
-                          <time className="vibe-history__time">{formatVersionDate(v.createdAt)}</time>
+                          <time className="vibe-history__time">{formatVersionDate(v.createdAt, locale)}</time>
                         </div>
                         <p className="vibe-history__prompt">{v.title || v.prompt}</p>
                       </button>
@@ -1016,10 +1019,10 @@ function VibeViewer() {
 }
 
 /** Compact, locale-aware "Jun 13, 2026, 2:41 PM" style stamp for a version. */
-function formatVersionDate(iso: string): string {
+function formatVersionDate(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString(undefined, {
+  return formatDateTime(d, locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

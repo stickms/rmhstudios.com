@@ -21,6 +21,8 @@ import { calendarFeedICS, type ICSEvent } from '@/lib/events-ics';
 import { WHOLE_EVENT, startsBetween } from './event-model';
 import { feedEntries } from './feed-entries';
 import { liveWhere, myEventInputs } from './my-events.server';
+import { applyOverrides } from '@/lib/events/occurrences';
+import { overridesForEvents } from '@/lib/events/occurrences.server';
 import type { CalendarFeedView } from './types';
 
 const PAST_DAYS = 7;
@@ -69,11 +71,17 @@ export async function getFeedView(userId: string): Promise<CalendarFeedView> {
       })
     : [];
   const chosen = new Set(optIns.map((o) => o.eventId));
+  const overridesBy = await overridesForEvents(candidates.filter((c) => c.recurrence).map((c) => c.id));
   return {
     enabled: feed?.enabled ?? false,
     url: feed ? feedUrl(feed.token) : null,
     slots: candidates.map((c) => {
-      const next = startsBetween(c, now, new Date(now.getTime() + 60 * DAY_MS), 1)[0];
+      // s06-10 — the next date that was not skipped, where it now is.
+      const overrides = overridesBy.get(c.id) ?? [];
+      const next = applyOverrides(
+        startsBetween(c, now, new Date(now.getTime() + 60 * DAY_MS), overrides.length + 1).map((startsAt) => ({ startsAt })),
+        overrides,
+      )[0]?.startsAt;
       return {
         id: c.id,
         title: c.title,

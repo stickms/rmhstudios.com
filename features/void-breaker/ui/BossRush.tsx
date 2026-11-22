@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/contract/client';
 import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { submitGameScoreApi } from '@/lib/game/score.contract';
+import { NotRankedNote } from '@/components/games/assist-run-island';
 import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@features/void-breaker/engine/bossRush';
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Row = { rank: number; username: string; score: number; progress: number | null };
 
@@ -24,7 +26,7 @@ async function fetchBoard(): Promise<Row[]> {
   }
 }
 
-function Board({ rows }: { rows: Row[] }) {
+function Board({ rows }: { rows: Row[] }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-action');
   // The board is fetched after the menu or the result shows: it fades in when it lands (M9).
   const arrival = useArrival(rows.length > 0);
@@ -39,7 +41,7 @@ function Board({ rows }: { rows: Row[] }) {
           <span className="text-zinc-500">
             #{r.rank} {r.username}
           </span>
-          <span className="font-bold tabular-nums text-[#d4af37]">{r.score.toLocaleString()}</span>
+          <span className="font-bold tabular-nums text-[#d4af37]">{fmt.number(r.score)}</span>
         </div>
       ))}
     </div>
@@ -85,13 +87,14 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
   const { t } = useTranslation('f-action');
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState<'idle' | 'sent' | 'failed'>('idle');
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const statusArrival = useArrival(status !== 'idle');
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (signedIn) {
         try {
-          await api(submitGameScoreApi, {
+          const saved = await api(submitGameScoreApi, {
             params: { id: BOSS_RUSH_GAME_ID },
             body: {
               score: runStats.score,
@@ -99,7 +102,10 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
               durationMs: runStats.timeSurvivedMs,
             },
           });
-          if (!cancelled) setStatus('sent');
+          if (!cancelled) {
+            setStatus('sent');
+            setRanked(saved.ranked);
+          }
         } catch {
           if (!cancelled) setStatus('failed');
         }
@@ -126,6 +132,7 @@ export function BossRushResult({ runStats, signedIn }: { runStats: RunStats; sig
             : t('vb-rush-failed', { defaultValue: 'Could not submit this score' })}
         </p>
       )}
+      <NotRankedNote ranked={ranked} className="text-center text-[10px] font-mono text-[#c9a227]/80" />
       <Board rows={rows} />
     </div>
   );

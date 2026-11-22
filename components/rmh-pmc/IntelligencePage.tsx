@@ -7,16 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Arrow, CtaBand, PageHead, SecHead } from './shared';
-
-const CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'threat', label: 'Threat' },
-  { id: 'geopolitics', label: 'Geopolitics' },
-  { id: 'maritime', label: 'Maritime' },
-  { id: 'cyber', label: 'Cyber & Signals' },
-  { id: 'stabilization', label: 'Stabilization' },
-  { id: 'protective', label: 'Protective' },
-] as const;
+import { INTELLIGENCE_CATEGORY_IDS, intelligenceCategoryLabels } from './intelligence-labels';
 
 type Dispatch = { cat: string; meta: string; serial: string; rd: string; title: string; blurb: string };
 
@@ -97,6 +88,7 @@ const DISPATCHES: Dispatch[] = [
 
 export default function IntelligencePage() {
   const { t } = useTranslation('c-rmh-pmc');
+  const categoryLabels = intelligenceCategoryLabels(t);
   const [active, setActive] = useState<string>('all');
   const visible = DISPATCHES.filter((d) => active === 'all' || d.cat === active);
 
@@ -155,9 +147,9 @@ export default function IntelligencePage() {
             title={t('manifest-heading', { defaultValue: 'Every cleared dispatch' })}
           />
           <div className="chips" role="group" aria-label={t('filters-aria-label', { defaultValue: 'Filter dispatches by category' })}>
-            {CATEGORIES.map((c) => (
-              <button key={c.id} type="button" className="chip" aria-pressed={active === c.id} onClick={() => setActive(c.id)}>
-                {t(`cat-${c.id}`, { defaultValue: c.label })}
+            {INTELLIGENCE_CATEGORY_IDS.map((id) => (
+              <button key={id} type="button" className="chip" aria-pressed={active === id} onClick={() => setActive(id)}>
+                {categoryLabels[id]}
               </button>
             ))}
           </div>

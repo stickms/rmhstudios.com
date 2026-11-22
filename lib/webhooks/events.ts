@@ -6,6 +6,8 @@
 export interface WebhookEventDef {
   name: string;
   description: string;
+  /** Picker group. Omitted means the original social events. */
+  group?: 'games';
 }
 
 export const WEBHOOK_EVENTS: WebhookEventDef[] = [
@@ -36,6 +38,17 @@ export const WEBHOOK_EVENTS: WebhookEventDef[] = [
   {
     name: 'bookmark.created',
     description: 'You bookmarked a post.',
+  },
+  {
+    name: 'personal_best.created',
+    description:
+      'You set a new personal best in a game. The payload carries the game, the new score and the previous one, never a rank.',
+    group: 'games',
+  },
+  {
+    name: 'achievement.unlocked',
+    description: 'You unlocked an achievement.',
+    group: 'games',
   },
 ];
 

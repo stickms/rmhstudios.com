@@ -115,6 +115,20 @@ describe('community surfaces honour the post audience', () => {
     expect(where.communityId).toBe('c1');
   });
 
+  it('community feed (the call the developer API makes): hidden and blocked authors and held posts are excluded', async () => {
+    await getCommunityFeed('s', 'viewer-1');
+    const where = h.rmharkFindMany.mock.calls[0][0].where;
+    expect(where.deletedAt).toBeNull();
+    expect(where.userId).toEqual({ notIn: ['hidden-1'] });
+  });
+
+  it('a private community is null for a non-member, as a missing one is', async () => {
+    h.communityFindUnique.mockResolvedValue({ id: 'c1', isPrivate: true });
+    h.memberFindUnique.mockResolvedValue(null);
+    expect(await getCommunityFeed('s', 'viewer-1')).toBeNull();
+    expect(h.rmharkFindMany).not.toHaveBeenCalled();
+  });
+
   it('hall of fame', async () => {
     await getHallOfFame('c1', 'viewer-1');
     expectAudienceRule(h.starFindMany.mock.calls[0][0].where.post);

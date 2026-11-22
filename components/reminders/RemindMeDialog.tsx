@@ -18,6 +18,7 @@ import { resolvePreset, type ReminderKind, type ReminderPreset } from '@/lib/rem
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export interface RemindTarget {
   kind: ReminderKind;
@@ -43,6 +44,7 @@ export default function RemindMeDialog({
   onOpenChange: (open: boolean) => void;
   target: RemindTarget;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-saves');
   const [custom, setCustom] = useState(() => toLocalInput(resolvePreset('tomorrow')));
   const [saving, setSaving] = useState(false);
@@ -57,7 +59,7 @@ export default function RemindMeDialog({
           remindAt: at.toISOString(),
         },
       });
-      const when = at.toLocaleString(undefined, {
+      const when = fmt.dateTime(at, {
         weekday: 'short',
         hour: 'numeric',
         minute: '2-digit',
@@ -142,7 +144,7 @@ export default function RemindMeDialog({
               className="rounded-site-sm"
               icon={p.icon}
               disabled={saving}
-              hint={resolvePreset(p.id).toLocaleString(undefined, {
+              hint={fmt.dateTime(resolvePreset(p.id), {
                 weekday: 'short',
                 hour: 'numeric',
                 minute: '2-digit',

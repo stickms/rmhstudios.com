@@ -5,8 +5,8 @@ import {
   cancelBulkOperation,
   createBulkOperation,
   listBulkOperations,
-  startBulkOperation,
 } from '@/lib/bulk/bulk.server';
+import { enqueueBulkRun } from '@/lib/bulk/queue.server';
 import { BULK_KINDS } from '@/lib/bulk/types';
 import { bulkFilterSchema } from '@/lib/bulk/schema';
 
@@ -27,9 +27,9 @@ const bodySchema = z.object({
  * GET  /api/bulk — the caller's recent bulk operations (progress lives here).
  * POST /api/bulk — record an operation and start it.
  *
- * The POST returns as soon as the row exists; the work runs detached and writes
- * progress back to `processed`, which is what keeps a 5,000-row delete off the
- * request. Poll the GET (or `/api/bulk/$id`) for progress.
+ * The POST returns as soon as the row exists; the work runs on the `bulk.run` queue
+ * (or detached when the queue is down) and writes progress back to `processed`,
+ * which is what keeps a 5,000-row delete off the request. Poll the GET (or `/api/bulk/$id`) for progress.
  */
 export const route = apiRoute('/api/bulk', {
   GET: defineHandler({ feature: 'bulk-content', rateLimit: 'read' }, async ({ userId }) =>
@@ -67,7 +67,8 @@ export const route = apiRoute('/api/bulk', {
           { status: 409 },
         );
       }
-      startBulkOperation(created.operation.id);
+      // Queued for the jobs worker, so a restart mid-run resumes it; runs detached here when the queue is down.
+      await enqueueBulkRun(created.operation.id);
       return Response.json({ operation: created.operation }, { status: 202 });
     },
   ),

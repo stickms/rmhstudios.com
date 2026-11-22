@@ -102,6 +102,22 @@ export class VoidBreakerRenderer {
   private reducedFx = false;
   setReducedFx(on: boolean): void { this.reducedFx = on; }
 
+  /** Assist: calm visuals. No pulsing, blinking, lightning or boss-death flash. */
+  private calm = false;
+  setCalm(on: boolean): void { this.calm = on; }
+
+  /** Where a world point lands on the canvas (for the colour-safe overlay). */
+  worldToCanvas(wx: number, wy: number, game: VoidBreakerEngine): { x: number; y: number } {
+    const p = game.player;
+    const viewW = ARENA_W * 0.4;
+    const viewH = ARENA_H * 0.4;
+    const scale = Math.min(CANVAS_WIDTH / viewW, CANVAS_HEIGHT / viewH);
+    return {
+      x: (wx - (p.x - viewW / 2)) * scale + (CANVAS_WIDTH - viewW * scale) / 2,
+      y: (wy - (p.y - viewH / 2)) * scale + (CANVAS_HEIGHT - viewH * scale) / 2,
+    };
+  }
+
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number } {
     const p = game.player;
     const viewW = ARENA_W * 0.4;
@@ -587,7 +603,7 @@ export class VoidBreakerRenderer {
         playerPos.x -= Math.cos(p.aimAngle) * recoilK;
         playerPos.y -= Math.sin(p.aimAngle) * recoilK;
         const pr = p.radius * scale;
-        const isInvincible = game.elapsedMs < p.invincibleUntil && Math.floor(game.elapsedMs / 80) % 2 === 0;
+        const isInvincible = !this.calm && game.elapsedMs < p.invincibleUntil && Math.floor(game.elapsedMs / 80) % 2 === 0;
         if (!isInvincible) {
           if (p.focusActive) {
             const fGlow = ctx.createRadialGradient(playerPos.x, playerPos.y, 0, playerPos.x, playerPos.y, pr * 5);
@@ -841,7 +857,7 @@ export class VoidBreakerRenderer {
       ctx.textAlign = 'left';
       const recentlyHit = game.elapsedMs < p.hitFlashUntil + 200;
       if (recentlyHit) {
-        const flashAlpha = 0.3 + Math.sin(game.elapsedMs * 0.02) * 0.3;
+        const flashAlpha = this.calm ? 0.3 : 0.3 + Math.sin(game.elapsedMs * 0.02) * 0.3;
         ctx.fillStyle = `rgba(255, 0, 50, ${flashAlpha})`;
         ctx.fillRect(hpBarX - 2, hpBarY - 1, hpBarWidth + 4, hpBarHeight + 2);
       }
@@ -931,7 +947,7 @@ export class VoidBreakerRenderer {
     const escal = Math.max(0, Math.min(1, (Math.max(combo, surge) - 1.4) / 1.6));
     if (escal <= 0.001) return;
     const surgeHot = Math.max(0, Math.min(1, (surge - 1.4) / 1.6));
-    const pulse = 0.6 + 0.4 * Math.sin(this.time * 8);
+    const pulse = this.calm ? 0.6 : 0.6 + 0.4 * Math.sin(this.time * 8);
     const cx = CANVAS_WIDTH / 2, cy = CANVAS_HEIGHT / 2;
     // Surge takeover dials up intensity and shifts the hue cyan → magenta.
     const col = surgeHot > 0.5 ? '255,90,210' : '0,230,255';
@@ -1180,7 +1196,7 @@ export class VoidBreakerRenderer {
     const bossActive = game.enemies.some((e) => e.active && e.isBoss);
     const period = bossActive ? 0.16 : 0.07; // cycles/sec
     const cycle = (t * period) % 1;
-    if (cycle < 0.045) {
+    if (!this.calm && cycle < 0.045) {
       const flash = 1 - cycle / 0.045;
       const intensity = bossActive ? 0.2 : 0.12;
       ctx.fillStyle = bossActive

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import { TEST_KINDS, type TestKind } from '@/lib/study/practice-test';
 import type { TestResultRow } from '@/lib/study/tests.contract';
 import { MAX_TEST_DURATION_MS, TEST_HISTORY_LIMIT, type recordTestBody } from '@/lib/study/tests-schema';
@@ -35,15 +36,15 @@ export async function recordTestResult(
 ): Promise<TestStoreResult<{ id: number }>> {
   if (!(await canTestDeck(userId, deckId))) return NOT_FOUND;
 
-  // A card is asked about at most once, so a test holds at most one point per card in the deck.
-  const deckSize = await prisma.flashcard.count({ where: { deckId } });
+  // A card is asked about at most once, so a test holds at most one point per reviewable card in the deck.
+  const deckSize = await prisma.flashcard.count({ where: { deckId, ...REVIEWABLE_WHERE } });
   if (input.total > deckSize) return { ok: false, status: 400, error: 'Total exceeds the deck' };
 
   const missed = [...new Set(input.missedCardIds)];
   // Every missed card is one lost point.
   if (missed.length > input.total - input.correct) return { ok: false, status: 400, error: 'Too many missed cards' };
   if (missed.length > 0) {
-    const owned = await prisma.flashcard.count({ where: { deckId, id: { in: missed } } });
+    const owned = await prisma.flashcard.count({ where: { deckId, id: { in: missed }, ...REVIEWABLE_WHERE } });
     if (owned !== missed.length) return { ok: false, status: 400, error: 'Unknown card' };
   }
 

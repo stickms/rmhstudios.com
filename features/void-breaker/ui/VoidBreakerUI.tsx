@@ -22,8 +22,10 @@ import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { BossRushMenu, BossRushResult } from './BossRush';
+import { AssistStartNotice, NotRankedNote, parseRanked } from '@/components/games/assist-run-island';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type LBEntry = { username: string; highScore: number };
 
@@ -65,11 +67,12 @@ export function VoidBreakerUI({
   saveInfo: { wave: number; savedAt: Date; score?: number } | null;
   onClearSave: () => void;
   onContinueGame?: () => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-void-breaker");
   const [lb, setLb] = useState<LBEntry[]>([]);
   const lbArrival = useArrival(lb.length > 0);
   const [submitted, setSubmitted] = useState(false);
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -112,6 +115,7 @@ export function VoidBreakerUI({
           if (e instanceof HttpError) return null;
           throw e;
         });
+        setRanked(parseRanked(body));
         void takeScoreMoment(body);
         fetchLb();
       } catch { /* ignore */ }
@@ -121,6 +125,7 @@ export function VoidBreakerUI({
   useEffect(() => {
     if (uiState === 'playing') {
       setSubmitted(false);
+      setRanked(null);
       clearScoreMoment();
     }
   }, [uiState, clearScoreMoment]);
@@ -231,7 +236,7 @@ export function VoidBreakerUI({
               <Hexagon className="w-5 h-5" /> {t("void-forge", { defaultValue: "Void Forge" })}
             </h2>
             <div className="text-[#d4af37] font-mono font-bold text-sm">
-              ◈ {meta.cores.toLocaleString()}
+              ◈ {fmt.number(meta.cores)}
             </div>
           </div>
           <p className="text-[11px] text-zinc-500 -mt-2">
@@ -571,11 +576,11 @@ export function VoidBreakerUI({
                     <span className="text-zinc-300 text-sm">{t("wave-number", { defaultValue: "Wave {{wave}}", wave: saveInfo.wave })}</span>
                     {saveInfo.score !== undefined && (
                       <span className="text-[#d4af37] text-[10px] ml-2 font-mono">
-                        {saveInfo.score.toLocaleString()} pts
+                        {fmt.number(saveInfo.score)} pts
                       </span>
                     )}
                     <span className="text-zinc-600 text-[10px] ml-2 font-mono">
-                      {saveInfo.savedAt.toLocaleDateString()}
+                      {fmt.date(saveInfo.savedAt)}
                     </span>
                   </div>
                   <button
@@ -597,6 +602,7 @@ export function VoidBreakerUI({
               </div>
             )}
 
+            <AssistStartNotice signedIn={!!session.data} className="text-center text-xs text-zinc-400" />
             {!session.data ? (
               <Button onClick={() => navigate('/login')}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
@@ -612,7 +618,7 @@ export function VoidBreakerUI({
             <Button onClick={() => setShowForge(true)} variant="default"
               className="w-full py-2 border-[#c9a227]/30 text-[#d4af37] hover:bg-[#d4af37]/10 hover:border-[#c9a227]/60 flex items-center justify-center gap-2">
               <Hexagon className="w-4 h-4" /> {t("void-forge", { defaultValue: "Void Forge" })}
-              <span className="font-mono text-xs opacity-80">◈ {meta.cores.toLocaleString()}</span>
+              <span className="font-mono text-xs opacity-80">◈ {fmt.number(meta.cores)}</span>
             </Button>
 
             <BossRushMenu onStart={onStartBossRush} />
@@ -641,7 +647,7 @@ export function VoidBreakerUI({
                   {lb.slice(0, 5).map((e, i) => (
                     <div key={`${e.username}-${i}`} className="flex justify-between text-xs">
                       <span className="text-zinc-500">#{i + 1} {e.username}</span>
-                      <span className="text-[#d4af37] font-bold tabular-nums">{e.highScore.toLocaleString()}</span>
+                      <span className="text-[#d4af37] font-bold tabular-nums">{fmt.number(e.highScore)}</span>
                     </div>
                   ))}
                 </div>
@@ -686,7 +692,7 @@ export function VoidBreakerUI({
           <div className="bg-[#1a1a24] border border-[#c9a227]/30 rounded-lg p-5 space-y-3">
             <div className="text-center">
               <div className="text-[10px] text-zinc-500 uppercase tracking-[0.2em]">{t("score", { defaultValue: "Score" })}</div>
-              <div className="text-3xl font-black text-[#d4af37] tabular-nums">{runStats.score.toLocaleString()}</div>
+              <div className="text-3xl font-black text-[#d4af37] tabular-nums">{fmt.number(runStats.score)}</div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
               {[
@@ -709,7 +715,7 @@ export function VoidBreakerUI({
             <button onClick={() => setShowForge(true)}
               className="w-full bg-[#d4af37]/10 border border-[#c9a227]/40 rounded-lg p-2.5 text-center hover:bg-[#d4af37]/20 transition-colors">
               <span className="text-[#d4af37] font-mono font-bold text-sm">
-                {t("cores-earned", { defaultValue: "+{{n}} ◈ Void Cores", n: earnedCores.toLocaleString() })}
+                {t("cores-earned", { defaultValue: "+{{n}} ◈ Void Cores", n: fmt.number(earnedCores) })}
               </span>
               <span className="block text-[9px] text-zinc-500 font-mono mt-0.5">
                 {t("spend-in-forge", { defaultValue: "Spend in the Void Forge →" })}
@@ -733,6 +739,8 @@ export function VoidBreakerUI({
               </div>
             </div>
           )}
+
+          {!runStats.bossRush && <NotRankedNote ranked={ranked} className="text-center text-[10px] font-mono text-[#c9a227]/80" />}
 
           {runStats.bossRush && <BossRushResult runStats={runStats} signedIn={!!session.data} />}
 
@@ -772,7 +780,7 @@ export function VoidBreakerUI({
                 {lb.slice(0, 10).map((e, i) => (
                   <div key={`${e.username}-${i}`} className="flex justify-between text-xs">
                     <span className="text-zinc-500">#{i + 1} {e.username}</span>
-                    <span className="text-[#d4af37] font-bold tabular-nums">{e.highScore.toLocaleString()}</span>
+                    <span className="text-[#d4af37] font-bold tabular-nums">{fmt.number(e.highScore)}</span>
                   </div>
                 ))}
               </div>

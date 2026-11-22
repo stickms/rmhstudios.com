@@ -12,5 +12,10 @@
   "pause": "Pause history",
   "remove": "Remove",
   "save-error": "Couldn't update the setting",
-  "title": "History"
+  "title": "History",
+  "type-game": "game",
+  "type-library_doc": "library_doc",
+  "type-news": "news",
+  "type-song": "song",
+  "type-tube_video": "tube_video"
 }

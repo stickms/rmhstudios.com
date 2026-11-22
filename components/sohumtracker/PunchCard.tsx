@@ -18,6 +18,7 @@
  * tab stops and no reader would thank us for it.
  */
 
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildPunchCard } from '@/lib/sohumtracker/analytics';
@@ -30,6 +31,7 @@ type PunchMetric = 'voice' | 'messages';
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 export function PunchCard({ days }: { days: WatchDayDTO[] }) {
+  const lfLocale = useLocaleFormat().locale;
   const { t } = useTranslation('r-sohumtracker');
   const [metric, setMetric] = useState<PunchMetric>('voice');
   const [active, setActive] = useState<number | null>(null);
@@ -47,14 +49,14 @@ export function PunchCard({ days }: { days: WatchDayDTO[] }) {
   // translated in every locale the browser ships, and a hand-maintained list of
   // seven strings × 16 locales is seven strings × 16 chances to be wrong.
   const weekdayNames = useMemo(() => {
-    const short = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
-    const long = new Intl.DateTimeFormat(undefined, { weekday: 'long', timeZone: 'UTC' });
+    const short = new Intl.DateTimeFormat(lfLocale, { weekday: 'short', timeZone: 'UTC' });
+    const long = new Intl.DateTimeFormat(lfLocale, { weekday: 'long', timeZone: 'UTC' });
     // 2024-01-01 was a Monday, which is index 0 in `mondayIndex` order.
     return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(Date.UTC(2024, 0, 1 + index));
       return { short: short.format(date), long: long.format(date) };
     });
-  }, []);
+  }, [lfLocale]);
 
   const max = metric === 'voice' ? card.maxVoiceSec : card.maxMessages;
   const valueOf = (index: number) =>

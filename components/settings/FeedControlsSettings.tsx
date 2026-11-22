@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { normalizeTag, type FeedSignalKind, type FeedSignalsView } from '@/lib/feed/signals';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { QuietCountsSection } from '@/components/settings/QuietCountsSection';
 
 async function mutate(method: 'POST' | 'DELETE', kind: FeedSignalKind, targetId: string) {
   await api(method === 'POST' ? addFeedSignalApi : removeFeedSignalApi, {
@@ -81,6 +82,7 @@ export function FeedControlsSettings() {
 
   return (
     <>
+      <QuietCountsSection />
       <TagSection
         title={t('muted-tags', {
           defaultValue: 'Muted hashtags',

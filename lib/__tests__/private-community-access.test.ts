@@ -35,6 +35,10 @@ vi.mock('@/lib/prisma.server', () => ({
     event: h.event,
     rsvp: h.rsvp,
     closeFriend: { findMany: async () => [] },
+    // s05-05: the event summary reads its accepted co-hosts.
+    eventCohost: { findMany: async () => [] },
+    // s06-01: join checks for an active community ban or timeout first.
+    communityBan: { findFirst: async () => null },
     $transaction: h.transaction,
   },
 }));

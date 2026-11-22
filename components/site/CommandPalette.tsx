@@ -89,6 +89,7 @@ import { useEffectiveKeys } from '@/hooks/useEffectiveShortcuts';
 import { eventMatchesKeystroke, isCharacterKeyBinding } from '@/lib/shortcuts/bindings';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { OverlaySignal } from '@/components/ui/overlay-signal';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 
 type Section = 'pages' | 'games' | 'apps' | 'actions' | 'themes' | 'people' | 'posts';
 
@@ -360,6 +361,9 @@ export function CommandPalette({
     }
   }, [open]);
 
+  const deviceSignOut = useDeviceSignOut();
+  const runDeviceSignOut = deviceSignOut.run;
+
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [];
 
@@ -444,8 +448,9 @@ export function CommandPalette({
           setOpen(false);
           // Loaded on the command, not with the palette (third-pass audit RT1).
           const { authClient } = await import('@/lib/auth-client');
-          await authClient.signOut();
-          window.location.href = '/';
+          // Clears this device first when the member asked for that (sprint 07, feature 03).
+          const outcome = await runDeviceSignOut(() => authClient.signOut());
+          if (outcome === 'signed-out') window.location.href = '/';
         },
       });
     } else {
@@ -512,7 +517,7 @@ export function CommandPalette({
     }
 
     return list;
-  }, [t, signedIn, userHandle, go, setStyle, surprise, whatsNewUnread]);
+  }, [t, signedIn, userHandle, go, setStyle, surprise, whatsNewUnread, runDeviceSignOut]);
 
   // Ranked by the SAME scorer the Explore page and the top-bar panel use
   // (`lib/search/score.ts`), not a matcher of its own. This used Fuse.js, so ⌘K,
@@ -605,6 +610,7 @@ export function CommandPalette({
 
   return (
     <>
+      {deviceSignOut.dialog}
       {composeOpen && (
         <Suspense fallback={null}>
           <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />

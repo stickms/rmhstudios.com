@@ -1,6 +1,5 @@
 /** N4 — the community mod queue: held and flagged content, plus the removal log. */
 import { useCallback, useEffect, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Inbox } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -14,6 +13,8 @@ import { MacroField } from '@/components/safety/MacroField';
 import { Select } from '@/components/ui/select';
 import type { ModItemDTO } from '@/lib/communities/plus';
 import type { CommunityRuleDTO } from '@/lib/communities/rules';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { MemberNotesPreview } from '@/components/communities/MemberNotesPreview';
 
 export function ModQueue({
   slug,
@@ -25,6 +26,7 @@ export function ModQueue({
   onOpenLog?: () => void;
   /** The community's rules, for citing one on a removal. */ rules?: CommunityRuleDTO[];
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-communities-plus');
   const { t: tr } = useTranslation('community-rules');
   const { t: tl } = useTranslation('community-modlog');
@@ -168,15 +170,17 @@ export function ModQueue({
                     </span>
                   </>
                 )}
-                <span> · </span>{' '}
-                <span>
-                  {' '}
-                  {formatDistanceToNow(new Date(i.createdAt), {
-                    addSuffix: true,
-                  })}
-                </span>
+                <span> · </span> <span> {fmt.relative(new Date(i.createdAt))}</span>
               </div>
               <p className="whitespace-pre-wrap break-words text-sm text-site-text">{i.snapshot}</p>
+              <MemberNotesPreview
+                slug={slug}
+                member={{
+                  id: i.author.id,
+                  name: i.author.name ?? null,
+                  handle: i.author.handle ?? null,
+                }}
+              />
               {i.status === 'PENDING' && (
                 <MacroField
                   scope={{

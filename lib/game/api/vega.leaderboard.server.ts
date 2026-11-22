@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getVegaLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/vega/leaderboard', {
   GET: implement(
@@ -15,7 +17,9 @@ export const route = apiRoute('/api/vega/leaderboard', {
     },
     async () => {
       try {
+        const hidden = await leaderboardHiddenUserIds();
         const leaderboard = await prisma.vegaPlayer.findMany({
+          where: notHiddenWhere(hidden),
           take: 10,
           orderBy: [{ highestLoop: 'desc' }, { highestLevel: 'desc' }],
           select: {

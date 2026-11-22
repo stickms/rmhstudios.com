@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import { m as motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -8,6 +10,8 @@ import { m as motion, AnimatePresence } from 'framer-motion';
  * clipboard API is unavailable.
  */
 export function ShareSeed({ seed, compact = false }: { seed: string; compact?: boolean }) {
+  const { t } = useTranslation('c-versecraft');
+  const showCopy = useCopyFallback();
   const [copied, setCopied] = useState(false);
 
   const copy = useCallback(
@@ -36,10 +40,15 @@ export function ShareSeed({ seed, compact = false }: { seed: string; compact?: b
         setCopied(true);
         setTimeout(() => setCopied(false), 1600);
       } catch {
-        window.prompt('Copy this seed to share your version:', text);
+        showCopy({
+          title: t('share-seed-copy-prompt', {
+            defaultValue: 'Copy this seed to share your version:',
+          }),
+          text,
+        });
       }
     },
-    [seed],
+    [seed, showCopy, t],
   );
 
   return (

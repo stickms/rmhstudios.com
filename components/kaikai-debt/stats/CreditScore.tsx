@@ -58,6 +58,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import { ChartToggle, Readout, ReadoutRow, makePlot, pointerInViewBox } from './chart-kit';
 import { BAND_SERIES, CreditDial, bandLabel } from './CreditDial';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /* -------------------------------------------------------------------------- */
 /* Geometry                                                                   */
@@ -128,7 +129,7 @@ interface CreditScoreProps {
   asOfMs: number;
 }
 
-export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
+export function CreditScore({ inputs, asOfMs }: CreditScoreProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
   const reduced = useReducedMotion();
 
@@ -447,7 +448,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
                 />
                 <ReadoutRow
                   label={t('credit.readoutAgo', { defaultValue: 'Seconds ago' })}
-                  value={Math.round((summary.atMs - scrub.atMs) / 1000).toLocaleString('en-US')}
+                  value={fmt.number(Math.round((summary.atMs - scrub.atMs) / 1000))}
                 />
               </Readout>
             )}

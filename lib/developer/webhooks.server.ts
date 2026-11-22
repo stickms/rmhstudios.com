@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import type { Prisma } from '@prisma/client';
 import { deliverToEndpoint, generateWebhookSecret, validateWebhookUrl } from '@/lib/webhooks/emit.server';
 import { normalizeWebhookEvents, WEBHOOK_PING_EVENT } from '@/lib/webhooks/events';
+import { ACHIEVEMENT_EVENT, PERSONAL_BEST_EVENT, buildGameEventSample } from '@/lib/webhooks/game-events';
 import { MAX_WEBHOOK_ENDPOINTS, SECRET_OVERLAP_MS } from '@/lib/webhooks/limits';
 import { HEALTH_WINDOW, webhookHealth, type HealthCounts } from '@/lib/webhooks/health';
 import type { WebhookDeliveryRow, WebhookEndpointRow } from '@/lib/developer/webhooks.contract';
@@ -304,14 +305,22 @@ async function readDelivery(userId: string, id: string): Promise<WebhookDelivery
 }
 
 /** Deliver a `ping` to this endpoint only, whatever it subscribes to, and return the recorded delivery. */
-export async function sendTestEvent(userId: string, id: string): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
+export async function sendTestEvent(
+  userId: string,
+  id: string,
+  event: string = WEBHOOK_PING_EVENT,
+): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
   const owned = await prisma.webhookEndpoint.findFirst({ where: { id, userId }, select: { id: true } });
   if (!owned) return notFound;
-  const sent = await deliverToEndpoint(id, WEBHOOK_PING_EVENT, {
-    event: WEBHOOK_PING_EVENT,
-    created: new Date().toISOString(),
-    data: { message: 'This is a test event from the RMH Studios webhook console.' },
-  });
+  const body =
+    event === PERSONAL_BEST_EVENT || event === ACHIEVEMENT_EVENT
+      ? buildGameEventSample(event)
+      : {
+          event: WEBHOOK_PING_EVENT,
+          created: new Date().toISOString(),
+          data: { message: 'This is a test event from the RMH Studios webhook console.' },
+        };
+  const sent = await deliverToEndpoint(id, body.event, body);
   const delivery = sent ? await readDelivery(userId, sent.id) : null;
   return delivery ? { ok: true, delivery } : notFound;
 }

@@ -9,6 +9,8 @@
  * gamification/notification side effects (those never block the core action).
  */
 
+import { normalizeExplanation, quizAnswerOptionId } from '@/lib/feed/quiz-poll';
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { feedEventBus } from '@/lib/feed-sse';
 import { createNotification, removeNotification } from '@/lib/notifications.server';
@@ -19,6 +21,7 @@ import { enqueueProgression } from '@/lib/social/engagement-effects.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
 import { canReadThread } from '@/lib/feed/audience.server';
+import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { invalidateAudience, recordFollowEvent } from '@/lib/social/follow-events.server';
 import type { RMHarkAudience } from '@prisma/client';
@@ -34,8 +37,11 @@ export interface LikeResult {
   /** False when the target post does not exist. */
   found: boolean;
   liked: boolean;
-  /** Absent when the caller can no longer read the post (an undo must not reveal its count). */
-  likeCount?: number;
+  /**
+   * Absent when the caller can no longer read the post (an undo must not reveal its count); `null` when the
+   * post's author hides their counts from this caller (lib/feed/quiet-counts).
+   */
+  likeCount?: number | null;
 }
 
 /**
@@ -61,23 +67,27 @@ async function applyPostLike(
         userId: true,
         threadRootId: true,
         content: true,
+        contentWarning: true,
         likeCount: true,
         audience: true,
         communityId: true,
         deletedAt: true,
-        user: { select: { handle: true } },
+        user: { select: { handle: true, profile: { select: { hideCountsOnMine: true } } } },
       },
     }),
     prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
   ]);
   if (!post) return { ok: false, found: false, liked: false, likeCount: 0 };
   const liked = desired === 'toggle' ? !existing : desired;
+  // The caller is liking someone else's post: a hidden author's number is not theirs to learn from this reply.
+  const quiet = countsHiddenFrom(post.userId, post.user?.profile?.hideCountsOnMine, userId);
+  const shownCount = (n: number | undefined) => (quiet ? null : n);
 
   // Already in the requested state — no-op.
   // The count is only returned for a post the caller can still read.
   if ((liked && existing) || (!liked && !existing)) {
     const readable = await canReadThread(post, userId);
-    return { ok: true, found: true, liked, likeCount: readable ? post.likeCount : undefined };
+    return { ok: true, found: true, liked, likeCount: readable ? shownCount(post.likeCount) : undefined };
   }
 
   if (liked) {
@@ -112,7 +122,7 @@ async function applyPostLike(
       type: 'LIKE',
       entityType: 'rmhark',
       entityId: postId,
-      preview: post.content ?? null,
+      preview: previewTextFor(post),
       link: postLink(post.user?.handle, post.userId, postId),
       dedupeUnread: true,
       conversationKey: postConversationKey({ id: postId, threadRootId: post.threadRootId }),
@@ -124,7 +134,7 @@ async function applyPostLike(
       questKey: 'like_given',
       webhook: { event: 'like.created', data: { postId } },
     });
-    return { ok: true, found: true, liked: true, likeCount: updated.likeCount };
+    return { ok: true, found: true, liked: true, likeCount: shownCount(updated.likeCount) };
   }
 
   const [, updated] = await prisma.$transaction([
@@ -151,7 +161,7 @@ async function applyPostLike(
   });
   // Removing your own like always works; the count only goes back for a readable post.
   const readable = await canReadThread(post, userId);
-  return { ok: true, found: true, liked: false, likeCount: readable ? updated.likeCount : undefined };
+  return { ok: true, found: true, liked: false, likeCount: readable ? shownCount(updated.likeCount) : undefined };
 }
 
 /** Toggle a like (used by the in-app web route). */
@@ -548,6 +558,16 @@ export async function createPost(args: {
   content: string;
   audience?: RMHarkAudience;
   mediaIds?: string[];
+  /** A poll on the post (developer API); a quiz names its answer by position (s07-19). */
+  poll?: {
+    question: string;
+    options: string[];
+    multiSelect?: boolean;
+    durationHours?: number;
+    quiz?: boolean;
+    correctIndex?: number;
+    explanation?: string;
+  };
 }): Promise<CreatePostResult> {
   const { userId } = args;
   const content = args.content.trim();
@@ -557,6 +577,31 @@ export async function createPost(args: {
     data: { userId, content, audience: args.audience ?? 'PUBLIC' },
     select: { id: true, content: true, createdAt: true, audience: true },
   });
+
+  if (args.poll) {
+    const poll = args.poll;
+    await prisma.$transaction(async (tx) => {
+      const made = await tx.rMHarkPoll.create({
+        data: {
+          rmheetId: post.id,
+          question: poll.question.trim(),
+          multiSelect: !!poll.multiSelect,
+          closesAt: poll.durationHours ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000) : null,
+          options: { create: poll.options.map((text, i) => ({ text: text.trim(), position: i })) },
+        },
+        include: { options: true },
+      });
+      if (poll.quiz) {
+        await tx.rMHarkPoll.update({
+          where: { id: made.id },
+          data: {
+            correctOptionId: quizAnswerOptionId(made.options, poll.correctIndex),
+            explanation: normalizeExplanation(poll.explanation),
+          },
+        });
+      }
+    });
+  }
 
   if (mediaIds.length > 0) {
     const attached = await resolveMediaForPost({ prisma }, { userId, mediaIds, postId: post.id });
@@ -592,7 +637,7 @@ export async function deleteOwnPost(userId: string, postId: string): Promise<Del
   if (!post) return { ok: false, found: false };
   if (post.userId !== userId) return { ok: false, found: true, forbidden: true };
   if (!post.deletedAt) {
-    await prisma.rMHark.update({ where: { id: postId }, data: { deletedAt: new Date() } });
+    await prisma.rMHark.update({ where: { id: postId }, data: { deletedAt: new Date(), pinnedAt: null } });
     void enqueueProgression({
       actorId: userId,
       webhook: { event: 'post.deleted', data: { postId } },

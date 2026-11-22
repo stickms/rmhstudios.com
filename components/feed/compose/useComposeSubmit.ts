@@ -8,6 +8,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { createScheduledApi } from '@/lib/scheduled/scheduled.contract';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 
 /**
  * Everything that sends the composer's contents somewhere: the optimistic home
@@ -40,6 +41,7 @@ export function useComposeSubmit<Draft>({
   setSavedMsg: (msg: string | null) => void;
 }) {
   const { t } = useTranslation('feed');
+  const sanctionRefusalText = useSanctionRefusal();
   const { prependItem, removeItem, reconcileItem } = useFeedStore();
 
   // Idempotency key -> the optimistic card that is waiting on it (B10). A write
@@ -74,7 +76,8 @@ export function useComposeSubmit<Draft>({
             } | null
           )?.error;
           toast.error(
-            message ||
+            sanctionRefusalText(data) ||
+              message ||
               t('post-error', {
                 defaultValue: 'Could not post',
               }),
@@ -148,7 +151,8 @@ export function useComposeSubmit<Draft>({
         removeItem(tempId);
         restoreFailedDraft(draft);
         toast.error(
-          message ||
+          sanctionRefusalText(data) ||
+            message ||
             t('post-error', {
               defaultValue: 'Could not post',
             }),
@@ -219,7 +223,8 @@ export function useComposeSubmit<Draft>({
       // A rejected save (HttpError) is a normal outcome; only transport failures are logged.
       if (!(error instanceof HttpError)) console.error('Save draft error:', error);
       setSavedMsg(
-        serverError(error) ??
+        sanctionRefusalText(error) ??
+          serverError(error) ??
           t('could-not-save', {
             defaultValue: 'Could not save',
           }),

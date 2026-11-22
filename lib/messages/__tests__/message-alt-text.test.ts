@@ -23,6 +23,14 @@ const h = vi.hoisted(() => ({
   forwardSource: null as null | Record<string, unknown>,
 }));
 
+// s04-16: the message-request gate has its own tests; these files are about scheduling and alt text.
+vi.mock('@/lib/messages/requests.server', () => ({
+  requestGate: async () => ({
+    outcome: 'allowed',
+  }),
+  clearStaleDraft: async () => {},
+}));
+
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     user: {

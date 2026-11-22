@@ -1,6 +1,7 @@
 /** Small helpers the cloud save manager's two components share (no strings: those are translated in the components). */
 import { games } from '@/lib/catalog';
 import { toBackupFile } from '@/lib/game-saves/backup';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 export function gameInfo(gameId: string) {
   return games.find((g) => g.id === gameId);
@@ -17,7 +18,7 @@ export function formatSize(bytes: number): string {
 }
 
 export function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  return formatDateTime(new Date(iso), currentDocumentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
   });

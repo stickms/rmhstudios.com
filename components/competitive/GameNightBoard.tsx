@@ -21,6 +21,7 @@ import {
 } from '@/lib/competitive/game-night.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Pick {
   gameId: string;
@@ -199,7 +200,7 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
   );
 }
 
-export function GameNightBoard() {
+export function GameNightBoard() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
@@ -221,7 +222,7 @@ export function GameNightBoard() {
   }, [load]);
 
   const time = (iso: string) =>
-    new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    fmt.time(new Date(iso), { hour: 'numeric', minute: '2-digit' });
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -243,7 +244,7 @@ export function GameNightBoard() {
                   ? t('gn-live-until', { defaultValue: 'Live until {{t}}', t: time(n.endsAt) })
                   : t('gn-next-at', {
                       defaultValue: 'Next: {{d}}',
-                      d: new Date(n.startsAt).toLocaleString(undefined, {
+                      d: fmt.dateTime(new Date(n.startsAt), {
                         weekday: 'long',
                         hour: 'numeric',
                         minute: '2-digit',

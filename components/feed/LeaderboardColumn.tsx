@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Scope = 'global' | 'friends';
 
@@ -31,8 +32,6 @@ interface LeaderboardData {
   nearby?: Entry[] | null;
 }
 
-const fmt = (n: number) => n.toLocaleString();
-
 /** Rank medal color for the top three, else muted. */
 function rankClass(rank: number): string {
   if (rank === 1) return 'text-site-podium-gold';
@@ -50,7 +49,7 @@ export function LeaderboardColumn({
   signedIn: boolean;
   /** Hide the built-in ColumnHeader (e.g. when hosted under the /arcade tab bar). */
   hideHeader?: boolean;
-}) {
+}) { const fmt = useLocaleFormat().number; 
   const { t } = useTranslation('feed');
   const [scope, setScope] = useState<Scope>('global');
   // The global board is seeded by the route loader; the Friends scope is fetched on demand.

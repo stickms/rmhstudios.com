@@ -15,6 +15,7 @@ import { validated } from './schemas';
 import { C2S, S2C } from '../../lib/rmhtube/events';
 import {
   QueueAddSchema,
+  QueueAddPlaylistSchema,
   QueueRemoveSchema,
   QueueReorderSchema,
   QueuePlayItemSchema,
@@ -25,6 +26,7 @@ import {
 import { parseMedia } from '../../lib/rmhtube/media';
 import { QueueSkipSchema } from '../../lib/rmhtube/schemas';
 import { probeMediaUrl } from '../../lib/rmhtube/probe.server';
+import { planPlaylistQueue, playlistFetchLimit, remainingCapacity, toResult } from '../../lib/rmhtube/playlist-queue';
 import type { RoomManager } from './room-manager';
 import type { SyncEngine } from './sync-engine';
 import type { QueueItem, RmhTubeRoom } from './types';
@@ -46,6 +48,10 @@ export class MediaQueue {
     socket.on(
       C2S.QUEUE_ADD,
       validated(socket, C2S.QUEUE_ADD, QueueAddSchema, (s, p) => this.addToQueue(s, p)),
+    );
+    socket.on(
+      C2S.QUEUE_ADD_PLAYLIST,
+      validated(socket, C2S.QUEUE_ADD_PLAYLIST, QueueAddPlaylistSchema, (s, p) => this.addPlaylistToQueue(s, p)),
     );
     socket.on(
       C2S.QUEUE_REMOVE,
@@ -224,6 +230,142 @@ export class MediaQueue {
       mediaType: item.mediaType,
       title: item.title,
     });
+  }
+
+  // ─── Add a playlist to the queue ──────────────────────────────
+
+  /**
+   * Queue a saved playlist in one step. The same rules as a single add (host,
+   * or anyone when `allowMemberQueue`; the room's capacity), with three
+   * differences: the hub reads the playlist itself and checks the socket's
+   * authenticated user against it (never a client claim), links are placed by
+   * `parseMedia` only (no probe — see `lib/rmhtube/playlist-queue.ts`), and the
+   * room gets one broadcast and one chat line for the whole batch.
+   */
+  private async addPlaylistToQueue(socket: Socket, payload: { playlistId: string }): Promise<void> {
+    const userId = socket.data.userId as string;
+    const userName = socket.data.userName as string;
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room) return;
+
+    if (room.hostUserId !== userId && !room.settings.allowMemberQueue) {
+      socket.emit(S2C.ERROR, {
+        code: 'NOT_HOST',
+        message: 'Only the host can add to the queue.',
+      });
+      return;
+    }
+    const remaining = remainingCapacity(room.queue.length, config.MAX_QUEUE_SIZE);
+    if (remaining === 0) {
+      socket.emit(S2C.ERROR, { code: 'QUEUE_FULL', message: 'Queue is full.' });
+      return;
+    }
+
+    const notFound = () => socket.emit(S2C.ERROR, { code: 'PLAYLIST_NOT_FOUND', message: 'Playlist not found.' });
+
+    const prisma = getPrismaClient();
+    let playlist;
+    try {
+      playlist = await prisma.playlist.findFirst({
+        where: {
+          id: payload.playlistId,
+          kind: 'video',
+          OR: [{ userId }, { collaborators: { some: { userId } } }],
+        },
+        select: {
+          name: true,
+          userId: true,
+          itemCount: true,
+          items: {
+            orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+            take: playlistFetchLimit(remaining),
+            select: { url: true, title: true, durationMs: true, thumbnail: true },
+          },
+        },
+      });
+      // A collaborator's view of an owner who has since blocked them (or the
+      // reverse) is a playlist that does not exist, same as a stranger's.
+      if (playlist && playlist.userId !== userId) {
+        const block = await prisma.userBlock.findFirst({
+          where: {
+            OR: [
+              { blockerId: playlist.userId, blockedId: userId },
+              { blockerId: userId, blockedId: playlist.userId },
+            ],
+          },
+          select: { id: true },
+        });
+        if (block) playlist = null;
+      }
+    } catch (err) {
+      logger.error({ event: 'playlist_queue_read_failed', roomId: room.id, error: String(err) });
+      socket.emit(S2C.ERROR, { code: 'INTERNAL_ERROR', message: 'An internal error occurred.' });
+      return;
+    }
+    if (!playlist) {
+      notFound();
+      return;
+    }
+
+    // The member may have left, or others may have filled the queue, while the
+    // read was out: plan against what is true now.
+    if (this.roomManager.getRoomForUser(userId) !== room) return;
+    if (room.hostUserId !== userId && !room.settings.allowMemberQueue) {
+      socket.emit(S2C.ERROR, {
+        code: 'NOT_HOST',
+        message: 'Only the host can add to the queue.',
+      });
+      return;
+    }
+    const plan = planPlaylistQueue(
+      playlist.items,
+      remainingCapacity(room.queue.length, config.MAX_QUEUE_SIZE),
+      playlist.itemCount,
+    );
+
+    if (plan.accepted.length > 0) {
+      const now = Date.now();
+      const firstIndex = room.queue.length;
+      const added: QueueItem[] = plan.accepted.map((p, i) => ({
+        id: nanoid(12),
+        url: p.media.url,
+        mediaType: p.media.mediaType,
+        title: (p.title || p.media.label || fallbackTitle(p.media.mediaType, p.media.id)).slice(0, 256),
+        duration: p.durationSec,
+        thumbnailUrl: p.thumbnailUrl,
+        addedBy: userId,
+        addedByName: userName,
+        addedAt: now,
+        position: firstIndex + i,
+        live: p.media.liveHint === 'live',
+      }));
+      room.queue.push(...added);
+      room.lastActivityAt = now;
+
+      // One broadcast carries every item and the typed data for the chat line;
+      // each client renders its own translated sentence from it.
+      this.roomManager.broadcastAction(room, 'QUEUE_PLAYLIST_ADDED', {
+        items: added.map((item) => this.roomManager.toBroadcastItem(room, item)),
+        userName,
+        playlistName: playlist.name,
+        count: added.length,
+      });
+      this.persistQueueItems(room.id, added).catch((err) => {
+        logger.error({ event: 'db_queue_add_failed', roomId: room.id, error: String(err) });
+      });
+
+      if (!room.currentItem && room.settings.autoPlay) this.playAtIndex(room, firstIndex);
+
+      logger.info({
+        event: 'queue_playlist_added',
+        roomId: room.id,
+        userId,
+        added: added.length,
+        skipped: plan.skipped,
+      });
+    }
+
+    socket.emit(S2C.QUEUE_PLAYLIST_RESULT, toResult(plan));
   }
 
   // ─── Item metadata (from the leader's player) ─────────────────
@@ -710,6 +852,24 @@ export class MediaQueue {
         addedByName: item.addedByName,
         position: item.position,
       },
+    });
+  }
+
+  /** The whole batch in one statement; position order is the array order. */
+  private async persistQueueItems(roomId: string, items: QueueItem[]): Promise<void> {
+    await getPrismaClient().rmhTubeQueueItem.createMany({
+      data: items.map((item) => ({
+        id: item.id,
+        roomId,
+        url: item.url,
+        mediaType: item.mediaType,
+        title: item.title,
+        duration: item.duration,
+        thumbnailUrl: item.thumbnailUrl,
+        addedById: item.addedBy,
+        addedByName: item.addedByName,
+        position: item.position,
+      })),
     });
   }
 

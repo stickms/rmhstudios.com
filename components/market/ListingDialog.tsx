@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CoinAmount } from '@/components/shop/CoinAmount';
 import { ItemDialog } from '@/components/shop/ItemDialog';
 import { rarityLabel } from '@/components/shop/RarityMark';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** How a listing names its seller: the handle, else the name. */
 export function sellerLabel(listing: MarketListingView, fallback: string): string {
@@ -35,6 +36,7 @@ export function ListingDialog({
   /** Called after a buy or a cancel, with the listing's id. */
   onDone: (id: string) => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
   const { t: tf } = useTranslation('feed');
   const [busy, setBusy] = useState(false);
@@ -186,7 +188,7 @@ export function ListingDialog({
             : short > 0
               ? t('market-note-short', {
                   count: short,
-                  formatted: short.toLocaleString(),
+                  formatted: fmt.number(short),
                   defaultValue_one: 'You need {{formatted}} more coin.',
                   defaultValue: 'You need {{formatted}} more coins.',
                 })
@@ -210,7 +212,7 @@ export function ListingDialog({
         ) : (
           <Button variant="primary" loading={busy} disabled={held || short > 0} onClick={buy}>
             {t('market-buy-for', {
-              price: shown.priceCoins.toLocaleString(),
+              price: fmt.number(shown.priceCoins),
               defaultValue: 'Buy for {{price}} coins',
             })}
           </Button>

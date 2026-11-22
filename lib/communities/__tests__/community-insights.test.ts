@@ -132,6 +132,7 @@ beforeEach(() => {
   mock('$queryRaw').mockResolvedValue([]);
   mock('communityMember.count').mockResolvedValue(10);
   mock('user.findMany').mockResolvedValue([]);
+  mock('userProfile.findMany').mockResolvedValue([]);
 });
 
 describe('GET /api/communities/$slug/insights', () => {
@@ -578,6 +579,19 @@ describe('the answer', () => {
         replies: 1,
       },
     ]);
+  });
+
+  it("withholds a top post's figures when its author hides their counts (quiet counts)", async () => {
+    mock('$queryRaw').mockImplementation(async (strings: TemplateStringsArray) =>
+      String(strings?.join?.('?') ?? '').includes('"likeCount"')
+        ? [{ id: 'p1', userId: 'u2', excerpt: 'hi', createdAt: new Date(now), likes: 3, reactions: 2, replies: 1 }]
+        : [],
+    );
+    mock('user.findMany').mockResolvedValue([{ id: 'u2', handle: 'sam', name: 'Sam', image: null }]);
+    mock('userProfile.findMany').mockResolvedValue([{ userId: 'u2' }]);
+    const out = await computeInsights('c1', 28, 'UTC', now);
+    expect(out.topPosts).toHaveLength(1);
+    expect(out.topPosts[0]).toMatchObject({ likes: null, reactions: null, replies: null });
   });
 
   it('is cached per community, range and zone', async () => {

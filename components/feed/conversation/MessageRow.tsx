@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { SwipeRow } from '@/components/ui/swipe-row';
 import { SpineItem, SpineStation } from '@/components/ui/spine';
 import { cn } from '@/lib/utils';
@@ -13,6 +15,8 @@ import ChatMediaEmbed, {
 } from '@/components/shared/ChatMediaEmbed';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { groupReactions } from '@/lib/social/reactions';
+import { AutomaticReplyLabel } from '@/components/messages/AwayLine';
+import { isAwayAutoReply } from '@/lib/messages/away';
 import { MessageActions } from '@/components/messages/MessageActions';
 import { MessageEditor } from '@/components/messages/MessageEditor';
 import { DeletedMessage } from '@/components/messages/DeletedMessage';
@@ -78,6 +82,8 @@ export function MessageRow({
   className?: string | undefined;
 }) {
   const { t } = useTranslation('feed');
+  const gifAltText = useGifAlt();
+  const { locale } = useLocaleFormat();
   // The sender's "Edit descriptions": the saved list shows at once, whether or not the realtime event arrives.
   const [altsEditing, setAltsEditing] = useState(false);
   const [savedAlts, setSavedAlts] = useState<string[] | null>(null);
@@ -151,6 +157,7 @@ export function MessageRow({
               className="mb-1"
             />
           )}
+          {isAwayAutoReply(msg.meta) && <AutomaticReplyLabel />}
           {stripEmbedUrls(msg.content).trim() && (
             <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
           )}
@@ -165,7 +172,7 @@ export function MessageRow({
           {msg.gifUrl && (
             <img
               src={msg.gifUrl}
-              alt=""
+              alt={gifAltText(msg.gifAlt)}
               className="mt-2 max-h-60 w-auto rounded-site"
               loading="lazy"
             />
@@ -253,7 +260,7 @@ export function MessageRow({
               </div>
               {!isEditing && !deleted && (
                 <p className="t-meta mt-1">
-                  {formatTime(msg.createdAt)}
+                  {formatTime(msg.createdAt, locale)}
                   {msg.editedAt && <> · {t('edited', { defaultValue: 'edited' })}</>}
                 </p>
               )}

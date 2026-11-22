@@ -28,6 +28,10 @@ export const createJamApi = endpoint<{
     startsAt: Date;
     submitEndsAt: Date;
     ratingEndsAt: Date;
+    /** s07-07: opt-in theme vote (3 to 12 candidates; `theme` is then the first candidate until the start). */
+    themeVoting?: boolean;
+    themeCandidates?: string[];
+    themeVoteOpensAt?: Date;
   };
   res: {
     slug: string;
@@ -77,9 +81,15 @@ export const rateJamEntryApi = endpoint<{
     creativity: number;
     theme: number;
     polish: number;
+    /** s06-07: optional written feedback for the team (20 to 1 000 characters; empty withdraws it). */
+    feedback?: string;
+    /** s06-07: "Leave my name off". */
+    anonymous?: boolean;
   };
   res: {
     ok: true;
+    /** s06-07: what became of the feedback ('blocked' and 'banned' mean the scores saved but the words did not). */
+    feedback?: 'unchanged' | 'created' | 'edited' | 'cleared' | 'blocked' | 'banned' | 'invalid';
   };
 }>()({
   method: 'POST',

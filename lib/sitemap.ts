@@ -553,6 +553,37 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/rmhladder/settings': 'personal',
   '/rmhladder/offers': 'personal', // s03-17 ladder-offers (a static path, so it is here and not under the dynamic-route anchor)
   '/rmhladder/insights': 'personal', // s03-18 ladder-insights (a static path, so it is here and not under the dynamic-route anchor)
+  // Sprint 04 static personal paths (docs/autonomous/sprint-04/plan.md §Anchors)
+  // s04-01 replay-library
+  '/settings/replays': 'personal',
+
+  // s04-11 achievement-compare
+  '/progress/compare': 'personal',
+
+  // s04-16 message-requests
+  '/messages/requests': 'personal',
+
+  // Sprint 05 static personal paths (docs/autonomous/sprint-05/plan.md §Anchors)
+  // s05-14 blocked-muted-accounts
+  '/settings/blocked': 'personal',
+
+  // Sprint 06 static personal paths (docs/autonomous/sprint-06/plan.md §Anchors)
+  // s06-05 feedback-inbox
+  '/settings/feedback': 'personal',
+
+  // Sprint 07 static personal paths (docs/autonomous/sprint-07/plan.md §Anchors)
+  // s07-02 game-assists
+  // (/settings/game-assists)
+  '/settings/game-assists': 'personal',
+
+  // s07-03 device-data
+  // (/settings/device)
+  '/settings/device': 'personal',
+
+  // s07-08 study-queue
+  // (/study/review)
+  '/study/review': 'personal',
+
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
   '/settings/appearance': 'personal',
@@ -626,6 +657,20 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/slice-it-content': 'admin',
   '/admin/user-builds': 'admin',
   '/admin/users': 'admin',
+
+  // Sprint 05 admin pages (docs/autonomous/sprint-05/plan.md §Anchors)
+  // s05-02 admin-jobs
+  '/admin/jobs': 'admin',
+
+  // s05-03 admin-outbox
+  '/admin/outbox': 'admin',
+
+  // s05-10 admin-lookup
+  '/admin/lookup': 'admin',
+
+  // Sprint 06 admin pages (docs/autonomous/sprint-06/plan.md §Anchors)
+  // s06-05 feedback-inbox
+  '/admin/feedback': 'admin',
 
   // ── redirects ──
   // A sitemap entry that redirects is an indexing error in Search Console, and
@@ -754,6 +799,10 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/u/$userid/post/$postid': 'posts',
   '/c/$slug': 'community',
   '/c/$slug/invite/$code': null, // private-community invite: a capability URL, never listed (the page sets noindex, nofollow)
+
+  // Sprint 06
+  // s06-09 group-invites
+  '/groups/join/$code': null, // a group-chat invite: a capability URL, never listed
   '/personas/$id': 'community',
   '/study/$deckId': 'community',
   '/study/$deckId/edit': null, // personal: the owner's editor
@@ -843,6 +892,13 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   // s03-17 ladder-offers
 
   // s03-18 ladder-insights
+
+  // Sprint 04 (docs/autonomous/sprint-04/plan.md §Anchors)
+  // s04-05 build-insights
+  '/create/builds/$slug/insights': null,
+
+  // s04-12 rmhbox-stats
+  '/rmhbox/players/$userId': null, // a member's record, shown per their game-activity privacy; only a public one is indexable
 };
 
 // ──────────────────────────── XML rendering ────────────────────────────

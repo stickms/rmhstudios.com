@@ -4,6 +4,10 @@ import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
+import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
+import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -14,26 +18,34 @@ function pollInclude(userId: string | null) {
         orderBy: { position: 'asc' as const },
         include: {
           _count: { select: { votes: true } },
-          ...(userId ? { votes: { where: { userId }, select: { id: true, optionId: true } } } : {}),
+          ...(userId ? { votes: { where: { userId }, select: { id: true, optionId: true, rank: true } } } : {}),
         },
       },
     },
   };
 }
 
-function mapPoll(poll: any): FeedPoll | undefined {
+function mapPoll(
+  poll: any,
+  countsHidden = false,
+  reader: { viewerId: string | null; authorId: string } = { viewerId: null, authorId: '' },
+): FeedPoll | undefined {
   if (!poll) return undefined;
-  const totalVotes = poll.options.reduce((s: number, o: any) => s + (o._count?.votes ?? 0), 0);
+  const lifecycle = pollLifecycleView(poll);
+  const voted = viewerHasVoted(poll.options);
+  const totalVotes = poll.options.reduce((s: number, o: any) => s + pollOptionCount(poll, o), 0);
   return {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
+    ...lifecycle,
+    ...rankedPollFields(poll, { ended: lifecycle.ended, countsHidden }),
+    ...quizRevealFor(poll, reader, voted),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
       text: o.text,
-      voteCount: o._count?.votes ?? 0,
+      voteCount: pollOptionCount(poll, o),
     })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
@@ -122,7 +134,7 @@ export async function listBookmarks(
 
   const items: FeedItem[] = page.map((bm) => {
     const r: any = bm.rmhark;
-    return applyLock(
+    return redactCounts(applyLock(
       {
         id: r.id,
         type: 'rmhark' as const,
@@ -136,14 +148,20 @@ export async function listBookmarks(
         liked: r.likes?.length > 0,
         reposted: r.reposts?.length > 0,
         bookmarked: true,
-        poll: mapPoll(r.poll),
+        poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId), {
+          viewerId,
+          authorId: r.userId,
+        }),
         gifUrl: r.gifUrl ?? undefined,
+        gifAlt: r.gifAlt ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
+        isSensitive: r.isSensitive ?? false,
+        contentWarning: r.contentWarning ?? undefined,
         reactions: reactionSummaries.get(r.id) ?? [],
       },
       r,
       viewerId,
-    );
+    ), viewerId);
   });
 
   return {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCopyFallback } from '@/components/ui/copy-fallback';
 import { toast } from '@/lib/toast';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CalendarCheck, Plus, Share2, Star, Trash2 } from 'lucide-react';
@@ -251,6 +252,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
   const signedIn = !!session.data?.user;
   const isAdmin = !!(session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
   const confirm = useConfirm();
+  const showCopy = useCopyFallback();
   const navigate = useNavigate();
   const [grid, setGrid] = useState<GridPlayView | null>(null);
   const [missing, setMissing] = useState(false);
@@ -362,7 +364,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
       await navigator.clipboard.writeText(text);
       toast.success(t('copied', { defaultValue: 'Result copied' }));
     } catch {
-      window.prompt(t('copy-result', { defaultValue: 'Copy your result:' }), text);
+      showCopy({ title: t('copy-result', { defaultValue: 'Copy your result:' }), text });
     }
   }
 

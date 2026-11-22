@@ -14,6 +14,7 @@ import { DAY_MS, MAX_SERIES_TITLE, POST_TTLS, capsuleDateError, type PostTtl } f
 import type { PostsPlusCompose } from './PostsPlusCompose';
 import { createSeriesApi, listSeriesApi } from '@/lib/posts-plus/series.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** The composer dialogs for posts-plus. Default export so the composer can lazy-load it. */
 export default function PostsPlusPanels({
@@ -302,6 +303,7 @@ function CapsuleDialog({
   onSealed: () => void;
   onClose: () => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-posts-plus');
   const [value, setValue] = useState('');
   const [min, setMin] = useState('');
@@ -370,7 +372,7 @@ function CapsuleDialog({
       toast.success(
         t('capsule-sealed', {
           defaultValue: 'Sealed. It opens on {{date}}.',
-          date: openAt.toLocaleDateString(),
+          date: fmt.date(openAt),
         }),
       );
       onSealed();

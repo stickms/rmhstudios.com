@@ -5,6 +5,9 @@ export interface ScheduledRow {
   id: string;
   content: string;
   gifUrl: string | null;
+  gifAlt: string | null;
+  /** The reason for the content warning, carried to the published post (sprint 06 #16). */
+  contentWarning: string | null;
   imageUrls: string[];
   imageAlts: string[];
   audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
@@ -34,6 +37,8 @@ export async function listScheduled(
     id: r.id,
     content: r.content,
     gifUrl: r.gifUrl,
+    gifAlt: r.gifAlt,
+    contentWarning: r.contentWarning ?? null,
     imageUrls: r.imageUrls,
     imageAlts: r.imageAlts,
     audience: r.audience as ScheduledRow['audience'],

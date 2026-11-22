@@ -11,6 +11,8 @@ import { useMessageImageAlts } from '@/components/feed/useMessageImageAlts';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
+import type { SenderRequestState } from '@/lib/messages/requests';
 import type { SentVoiceMessage } from '@/lib/messages/voice.contract';
 import {
   MAX_DM_IMAGES,
@@ -37,6 +39,8 @@ export function useDmComposer({
   chatRef,
   handleTyping,
   stopTyping,
+  requestState = null,
+  onRequestSent,
 }: {
   conversationId: string;
   session:
@@ -60,6 +64,9 @@ export function useDmComposer({
   };
   handleTyping: () => void;
   stopTyping: () => void;
+  /** s04-16: `compose` means the first message sent becomes a message request. */
+  requestState?: SenderRequestState | null;
+  onRequestSent?: () => void;
 }) {
   const { t } = useTranslation('feed');
   const [input, setInput] = useState('');
@@ -77,6 +84,9 @@ export function useDmComposer({
   // Descriptions for the pending images; with "Require image descriptions" on,
   // a missing one blocks sending (the server refuses the same message).
   const imageAlts = useMessageImageAlts(imageUrls);
+  // The pending GIF's description (sprint 06 #15), prefilled from the picker. Declared after the hook the
+  // characterization suite counts up to, so its ordinals do not move.
+  const [gifAlt, setGifAlt] = useState('');
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const attachBtnRef = useRef<HTMLButtonElement>(null);
@@ -119,8 +129,9 @@ export function useDmComposer({
     setDraft: setInput,
     inputRef,
     onPosted: appendPosted,
-    onPickGif: (url) => {
+    onPickGif: ({ url, description }) => {
       setGifUrl(url);
+      setGifAlt(description);
       setTimeout(() => inputRef.current?.focus(), 0);
     },
   });
@@ -167,6 +178,7 @@ export function useDmComposer({
   const handleSend = async () => {
     const content = input.trim();
     const pendingGif = gifUrl;
+    const pendingGifAlt = gifAlt;
     const pendingImages = imageUrls;
     const pendingAlts = imageAlts.alts;
     if ((!content && !pendingGif && pendingImages.length === 0) || sending || uploading || imageAlts.missing.length > 0)
@@ -190,6 +202,7 @@ export function useDmComposer({
       read: false,
       createdAt: new Date().toISOString(),
       gifUrl: pendingGif,
+      gifAlt: pendingGif ? normalizeGifAlt(pendingGif, pendingGifAlt) : null,
       imageUrls: pendingImages,
       imageAlts: pendingAlts,
     };
@@ -197,6 +210,7 @@ export function useDmComposer({
     setInput('');
     shortcodes.dismiss();
     setGifUrl(null);
+    setGifAlt('');
     setImageUrls([]);
     clearSuggestion();
     stopTyping();
@@ -223,6 +237,11 @@ export function useDmComposer({
           ...(pendingGif
             ? {
                 gifUrl: pendingGif,
+                ...(pendingGifAlt.trim()
+                  ? {
+                      gifAlt: pendingGifAlt.trim(),
+                    }
+                  : {}),
               }
             : {}),
           ...(pendingImages.length
@@ -236,6 +255,8 @@ export function useDmComposer({
       // The optimistic bubble already animated in; the temp→real id swap
       // remounts it, so mark the real id as history to avoid a second entrance.
       historyIds.current.add(data.message.id);
+      // The first message to someone who takes requests is now one; the composer reads "Request sent".
+      if (requestState === 'compose') onRequestSent?.();
       // Replace optimistic message with real one
       setMessages((prev) => prev.map((m) => (m.id === tempId ? data.message : m)));
     } catch (err) {
@@ -252,6 +273,7 @@ export function useDmComposer({
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(content);
       setGifUrl(pendingGif);
+      setGifAlt(pendingGifAlt);
       setImageUrls(pendingImages);
     } finally {
       setSending(false);
@@ -277,6 +299,8 @@ export function useDmComposer({
     setAttachOpen,
     gifUrl,
     setGifUrl,
+    gifAlt,
+    setGifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,

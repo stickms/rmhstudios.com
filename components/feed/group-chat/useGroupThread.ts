@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useChatUpdates } from '@/components/chat-plus/hooks';
+import { toast } from '@/lib/toast';
 import { applyChatUpdate } from '@/lib/chat-plus/apply-update';
 import { api } from '@/lib/contract/client';
 import { getGroupChatApi } from '@/lib/group-chat/group-chat.contract';
@@ -57,6 +59,38 @@ export function useGroupThread(id: string, currentUserId: string, chatRef: ChatR
     );
   }, []);
 
+  // s04-10: the owner renamed the group, changed its members or its owner (reload the header and member list), or
+  // removed this member (drop the chat, say so once). A client that predates these ops ignores them in
+  // `applyChatUpdate`'s default branch.
+  const { t } = useTranslation('group-chat-admin');
+  const groupRef = useRef<Group | null>(null);
+  groupRef.current = group;
+  const removedShown = useRef(false);
+  const reloadGroup = useCallback(async () => {
+    try {
+      const data = await api(getGroupChatApi, { params: { id }, retries: 0 });
+      setGroup(data.group);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) setNotFound(true);
+    }
+  }, [id]);
+  useChatUpdates(chatRef, (u) => {
+    if (u.op !== 'group') return;
+    if (u.change === 'removed') {
+      if (u.userId !== currentUserId || removedShown.current) return;
+      removedShown.current = true;
+      toast.info(
+        t('removed-from-group', {
+          name: groupRef.current?.name ?? '',
+          defaultValue: 'You were removed from {{name}}',
+        }),
+      );
+      setNotFound(true);
+      return;
+    }
+    void reloadGroup();
+  });
+
   // P04: checklist ticks and thread counts from other members.
   useChatUpdates(chatRef, (u) => setMessages((prev) => applyChatUpdate(prev, u, currentUserId)));
 
@@ -70,6 +104,7 @@ export function useGroupThread(id: string, currentUserId: string, chatRef: ChatR
     setGroup(null);
     setMessages([]);
     lastAtRef.current = null;
+    removedShown.current = false;
     historyIds.current = new Set();
     (async () => {
       try {
@@ -131,5 +166,6 @@ export function useGroupThread(id: string, currentUserId: string, chatRef: ChatR
     historyIds,
     appendMessages,
     patchMessage,
+    reloadGroup,
   };
 }

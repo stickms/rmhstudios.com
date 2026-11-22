@@ -1,7 +1,6 @@
 /** s03-14 — the Log tab: every moderation action of the community, newest first, with filters and a CSV export. */
 import { useCallback, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -16,10 +15,11 @@ import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { exportModLogApi, getModLogApi } from '@/lib/communities/modlog.contract';
 import type { ModLogEntryDTO, ModLogGroup, ModLogUserDTO } from '@/lib/communities/modlog';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type GroupFilter = 'all' | ModLogGroup;
 
-const SETTING_FIELDS = ['verification', 'flairRequired', 'starThreshold', 'publicModLog'] as const;
+const SETTING_FIELDS = ['verification', 'flairRequired', 'starThreshold', 'publicModLog', 'requireImageAlt'] as const;
 
 /** The label of one changed setting, for the sentence "changed the community settings: …". */
 function settingLabel(t: TFunction, field: string): string {
@@ -39,6 +39,10 @@ function settingLabel(t: TFunction, field: string): string {
     case 'publicModLog':
       return t('field-public-log', {
         defaultValue: 'public moderation log',
+      });
+    case 'requireImageAlt':
+      return t('field-require-image-alt', {
+        defaultValue: 'images need a description',
       });
     default:
       return field;
@@ -100,6 +104,30 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
         target,
         defaultValue: '{{actor}} removed {{target}} from the community',
       });
+    case 'member_banned':
+      return t('member-banned', {
+        actor,
+        target,
+        defaultValue: '{{actor}} banned {{target}}',
+      });
+    case 'note_deleted':
+      return t('note-deleted', {
+        actor,
+        target,
+        defaultValue: '{{actor}} deleted a note about {{target}}',
+      });
+    case 'member_timed_out':
+      return t('member-timed-out', {
+        actor,
+        target,
+        defaultValue: '{{actor}} timed out {{target}}',
+      });
+    case 'ban_lifted':
+      return t('ban-lifted', {
+        actor,
+        target,
+        defaultValue: '{{actor}} lifted the ban or timeout on {{target}}',
+      });
     case 'member_role_changed':
       return e.detail?.role === 'MOD'
         ? t('member-made-mod', {
@@ -111,6 +139,16 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
             actor,
             target,
             defaultValue: '{{actor}} removed {{target}} as a moderator',
+          });
+    case 'ownership_transferred':
+      return e.detail?.via === 'admin'
+        ? t('ownership-assigned', {
+            target,
+            defaultValue: 'A site admin gave ownership to {{target}}',
+          })
+        : t('ownership-passed', {
+            target,
+            defaultValue: 'Ownership passed to {{target}}',
           });
     case 'join_request_approved':
       return t('request-approved', {
@@ -211,6 +249,7 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
 const userLabel = (u: ModLogUserDTO) => u.name ?? u.handle ?? u.id;
 
 export function ModLog({ slug }: { slug: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('community-modlog');
   const [group, setGroup] = useState<GroupFilter>('all');
   const [actor, setActor] = useState('');
@@ -379,7 +418,12 @@ export function ModLog({ slug }: { slug: string }) {
                   {actionSentence(t, e)}
                   {e.targetUser?.handle &&
                   (e.action === 'member_removed' ||
+                    e.action === 'member_banned' ||
+                    e.action === 'member_timed_out' ||
+                    e.action === 'ban_lifted' ||
+                    e.action === 'note_deleted' ||
                     e.action === 'member_role_changed' ||
+                    e.action === 'ownership_transferred' ||
                     e.action === 'join_request_approved' ||
                     e.action === 'join_request_denied') ? (
                     <>
@@ -409,10 +453,8 @@ export function ModLog({ slug }: { slug: string }) {
                   </p>
                 ) : null}
                 <p className="t-meta">
-                  <time dateTime={e.createdAt} title={new Date(e.createdAt).toLocaleString()}>
-                    {formatDistanceToNow(new Date(e.createdAt), {
-                      addSuffix: true,
-                    })}
+                  <time dateTime={e.createdAt} title={fmt.dateTime(new Date(e.createdAt))}>
+                    {fmt.relative(new Date(e.createdAt))}
                   </time>
                 </p>
               </li>

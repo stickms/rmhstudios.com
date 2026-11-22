@@ -41,6 +41,8 @@ export const communitySettingsSchema = z
     flairRequired: z.boolean(),
     // s03-14: members may read the content part of the moderation log.
     publicModLog: z.boolean(),
+    // s07-16: every image posted in the community needs a description.
+    requireImageAlt: z.boolean(),
     starThreshold: z.number().int().min(STAR_THRESHOLD_MIN).max(STAR_THRESHOLD_MAX),
   })
   .partial();

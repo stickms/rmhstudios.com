@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from '@/components/ui/CoinIcon';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * A coin amount: the coin, then the number in the mono face (Steel type: counts and small data).
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils';
  * spoken to a screen reader.
  */
 export function CoinAmount({ amount, className }: { amount: number; className?: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
   return (
     <span
@@ -17,7 +19,7 @@ export function CoinAmount({ amount, className }: { amount: number; className?: 
       <span aria-hidden className="inline-flex">
         <CoinIcon className="size-[1.1em]" />
       </span>
-      {amount.toLocaleString()}
+      {fmt.number(amount)}
       <span className="sr-only">
         {t('coins-unit', {
           defaultValue: 'coins',

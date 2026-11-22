@@ -57,6 +57,7 @@ function canCheck(draft: TestResponse | undefined): boolean {
  */
 export function PracticeTest({ deckId, data }: { deckId: string; data: PracticeTestDeck | null }) {
   const { t, i18n } = useTranslation('study-tests');
+  const { t: ts } = useTranslation('flashcard-types');
   const locale = i18n.language;
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<Phase>({ name: 'setup' });
@@ -120,7 +121,8 @@ export function PracticeTest({ deckId, data }: { deckId: string; data: PracticeT
   }
 
   function begin(options: TestOptions, seed: number) {
-    const questions = buildTest(cards, options, seed);
+    // The "[…]" a cloze prompt shows is translated here; the pure builder only places it.
+    const questions = buildTest(cards, { ...options, blank: ts('mask', { defaultValue: '[…]' }) }, seed);
     if (questions.length === 0) {
       toast.error(t('build-failed', { defaultValue: 'Could not build a test from this deck' }));
       return;

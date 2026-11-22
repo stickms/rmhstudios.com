@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { blessingFilterLabels } from '../temple-labels';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { fmt, formatTimeTo } from '@/lib/temple-of-joy/numbers';
@@ -59,16 +60,10 @@ export function BlessingsPanel() {
     setLimit((current) => Math.min(rows.length, current + PAGE)),
   );
 
-  const options = useMemo(
-    () =>
-      BLESSING_KINDS.map((kind) => ({
-        value: kind.id,
-        label: t(`filter-${kind.id}`, {
-          defaultValue: kind.label,
-        }),
-      })),
-    [t],
-  );
+  const options = useMemo(() => {
+    const labels = blessingFilterLabels(t);
+    return BLESSING_KINDS.map((kind) => ({ value: kind.id, label: labels[kind.id] }));
+  }, [t]);
 
   return (
     <>

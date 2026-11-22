@@ -32,8 +32,12 @@ import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
 import { GAME_UPDATE_FANOUT_QUEUE, registerGameUpdateFanoutWorker } from '@/lib/arcade/updates-jobs.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { registerCommunityCrons } from '@/lib/communities/jobs.server';
+import { UPDATE_FANOUT_QUEUE } from '@/lib/events/updates';
+import { registerEventUpdateWorker } from '@/lib/events/updates.server';
+import { POST_ALERT_QUEUE, registerCommunityPostAlertWorker } from '@/lib/communities/post-alerts.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
+import { STUDY_REMINDER_QUEUE, registerStudyReminderCron } from '@/lib/study/reminders.server';
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@features/slice-it/engine/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@features/slice-it/engine/regen.server';
@@ -50,6 +54,12 @@ import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/messages/scheduled-jobs.server';
 import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
 import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
+import { MATCH_CLAIM_QUEUE, registerMatchClaimCron } from '@/lib/tournaments/match-results.server';
+import { MATCH_SCHEDULE_QUEUE, registerMatchScheduleCron } from '@/lib/tournaments/scheduling.server';
+import { CHECKIN_OPEN_QUEUE, registerCheckInOpenCron } from '@/lib/tournaments/checkin-jobs.server';
+import { POLL_ENDED_QUEUE, registerPollEndedCron } from '@/lib/feed/poll-lifecycle-jobs.server';
+import { JAM_THEME_QUEUE, registerJamThemeCron } from '@/lib/competitive/jam-themes.server';
+import { BULK_RECLAIM_QUEUE, BULK_RUN_QUEUE, registerBulkReclaimCron, registerBulkWorker } from '@/lib/bulk/queue.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
@@ -209,6 +219,48 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: PARTY_REMINDERS_QUEUE, register: registerPartyRemindersCron },
   // s03-10: a work queue (not a cron) fed by publishing a patch note or a guide; tells that game's followers.
   { queue: GAME_UPDATE_FANOUT_QUEUE, register: registerGameUpdateFanoutWorker },
+  // Sprint 04 (docs/autonomous/sprint-04/plan.md §Anchors)
+  // s04-03 tournament-checkin
+  // s04-03: every minute, tell the entrants of each tournament whose check-in window has just opened (once).
+  { queue: CHECKIN_OPEN_QUEUE, register: registerCheckInOpenCron },
+
+  // s04-08 poll-lifecycle
+  // s04-08: every minute, tell the author and the voters of each poll that has just ended (once).
+  { queue: POLL_ENDED_QUEUE, register: registerPollEndedCron },
+
+  // Sprint 05 (docs/autonomous/sprint-05/plan.md §Anchors)
+  // s05-17 community-post-alerts
+  // s05-17: a work queue (not a cron) fed by a community post becoming visible; tells members who turned alerts on.
+  { queue: POST_ALERT_QUEUE, register: registerCommunityPostAlertWorker },
+
+  // s05-20 flashcard-reminders
+  // s05-20: every minute, send the daily "flashcards are due" reminder to members whose chosen local time has come (once a day).
+  { queue: STUDY_REMINDER_QUEUE, register: registerStudyReminderCron },
+
+  // Sprint 06 (docs/autonomous/sprint-06/plan.md §Anchors)
+  // s06-11 event-updates
+  // s06-11: a work queue fed by an event update being posted; tells the people going, maybe or waitlisted (once).
+  { queue: UPDATE_FANOUT_QUEUE, register: registerEventUpdateWorker },
+
+  // s06-20 match-results
+  // s06-20: every minute, settle result claims the opponent left unanswered for 15 minutes (never one that would finish the tournament).
+  { queue: MATCH_CLAIM_QUEUE, register: registerMatchClaimCron },
+
+  // Sprint 07 (docs/autonomous/sprint-07/plan.md §Anchors)
+  // s07-06 match-scheduling
+  // s07-06: every minute, remind both players an hour before an agreed match time and 12 hours before a match deadline (once each).
+  { queue: MATCH_SCHEDULE_QUEUE, register: registerMatchScheduleCron },
+
+  // s07-07 jam-themes
+  // s07-07: every minute, reveal the theme of each voting jam that has started and tell the members who voted (once).
+  { queue: JAM_THEME_QUEUE, register: registerJamThemeCron },
+
+  // s07-15 bulk-durable
+  // s07-15: a work queue fed by confirming a bulk clean-up (one job per operation); a lease on the row decides who runs it.
+  { queue: BULK_RUN_QUEUE, register: registerBulkWorker },
+  // s07-15: every minute, queue the clean-ups whose lease expired (their process restarted); the fifth restart stops one as failed.
+  { queue: BULK_RECLAIM_QUEUE, register: registerBulkReclaimCron },
+
 ];
 
 /**

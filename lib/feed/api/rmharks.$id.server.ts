@@ -14,6 +14,68 @@ import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { isExpired } from '@/lib/posts-plus/constants';
 import { deletePostApi } from '@/lib/feed/rmhark-actions.contract';
+import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { getCommunitySettings } from '@/lib/communities/settings.server';
+import {
+  ALT_REQUIRED_CODE,
+  ALT_REQUIRED_MESSAGE,
+  clearsDescription,
+  communityGifAltMissing,
+} from '@/lib/communities/alt-required';
+import { resolveEditedGifAlt } from '@/lib/feed/gif-alt';
+import { resolveEditedContentWarning } from '@/lib/feed/content-warning';
+import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
+import { normalizeExplanation, quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
+import { lockKey } from '@/lib/db/advisory-lock.server';
+import { pollLockKey } from '@/lib/feed/poll-lifecycle.server';
+import { resolveEndedResult } from '@/lib/feed/ranked-poll.server';
+
+/**
+ * Change a quiz's correct option and/or explanation (s07-19). Runs under the poll's advisory lock, the one a vote
+ * takes, so a vote cannot land between the check and the write. Returns a refusal Response, or null when applied.
+ */
+async function editQuizAnswer(
+  postId: string,
+  correctOptionId: string | undefined,
+  explanation: string | null | undefined,
+): Promise<Response | null> {
+  const found = await prisma.rMHarkPoll.findUnique({
+    where: { rmheetId: postId },
+    select: { id: true, correctOptionId: true },
+  });
+  if (!found || !found.correctOptionId) {
+    return Response.json({ error: 'This post is not a quiz', code: 'NOT_A_QUIZ' }, { status: 400 });
+  }
+  return prisma.$transaction(async (tx) => {
+    await lockKey(tx, pollLockKey(found.id));
+    const poll = await tx.rMHarkPoll.findUnique({
+      where: { id: found.id },
+      select: { options: { select: { id: true, voteCount: true } } },
+    });
+    if (!poll) return Response.json({ error: 'Not found' }, { status: 404 });
+    const voted =
+      poll.options.some((o) => o.voteCount > 0) ||
+      !!(await tx.rMHarkPollVote.findFirst({ where: { option: { pollId: found.id } }, select: { id: true } }));
+    if (voted) {
+      return Response.json(
+        { error: 'This quiz has votes, so its answer is locked', code: 'QUIZ_LOCKED' },
+        { status: 409 },
+      );
+    }
+    if (correctOptionId !== undefined && !poll.options.some((o) => o.id === correctOptionId)) {
+      return Response.json({ error: 'The answer must be one of the options', code: 'BAD_ANSWER' }, { status: 400 });
+    }
+    await tx.rMHarkPoll.update({
+      where: { id: found.id },
+      data: {
+        ...(correctOptionId !== undefined ? { correctOptionId } : {}),
+        ...(explanation !== undefined ? { explanation: normalizeExplanation(explanation) } : {}),
+      },
+    });
+    return null;
+  });
+}
 
 export const route = apiRoute('/api/rmharks/$id', {
   GET: defineHandler({ auth: 'optional' }, async ({ params, userId }) => {
@@ -37,7 +99,7 @@ export const route = apiRoute('/api/rmharks/$id', {
               include: {
                 _count: { select: { votes: true } },
                 ...(userId
-                  ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
+                  ? { votes: { where: { userId }, select: { id: true, optionId: true, rank: true } } }
                   : {}),
               },
             },
@@ -77,19 +139,34 @@ export const route = apiRoute('/api/rmharks/$id', {
 
     let pollData;
     if (rmhark.poll && !rmhark.deletedAt) {
-      const totalVotes = rmhark.poll.options.reduce(
-        (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+      const poll = rmhark.poll;
+      const totalVotes = poll.options.reduce(
+        (sum: number, o: any) => sum + pollOptionCount(poll, o),
         0,
       );
+      const lifecycle = pollLifecycleView(poll);
+      // An ended ranked poll the job has not counted yet is counted now, once, so every reader sees one result.
+      const counted = lifecycle.ended ? await resolveEndedResult(poll) : null;
       pollData = {
-        id: rmhark.poll.id,
-        question: rmhark.poll.question,
-        multiSelect: rmhark.poll.multiSelect,
+        id: poll.id,
+        question: poll.question,
+        multiSelect: poll.multiSelect,
+        ...lifecycle,
+        ...rankedPollFields(counted ? { ...poll, resultJson: counted } : poll, {
+          ended: lifecycle.ended,
+          countsHidden: countsHiddenFrom(rmhark.userId, rmhark.user?.profile?.hideCountsOnMine, userId),
+        }),
+        // s07-19: the quiz answer only for its author, a voter, or anyone once it has ended.
+        ...quizRevealFor(
+          poll,
+          { viewerId: userId, authorId: rmhark.userId },
+          viewerHasVoted(poll.options),
+        ),
         totalVotes,
-        options: rmhark.poll.options.map((o: any) => ({
+        options: poll.options.map((o: any) => ({
           id: o.id,
           text: o.text,
-          voteCount: o._count?.votes ?? 0,
+          voteCount: pollOptionCount(poll, o),
         })),
         myVotes: rmhark.poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
       };
@@ -102,7 +179,8 @@ export const route = apiRoute('/api/rmharks/$id', {
 
     const locked = !isDeleted && isLocked(rmhark, userId);
 
-    return Response.json({
+    // An author who hides their counts shows them to nobody but themselves (lib/feed/quiet-counts).
+    return Response.json(redactCounts({
       id: rmhark.id,
       type: 'rmhark',
       createdAt: rmhark.createdAt.toISOString(),
@@ -120,6 +198,9 @@ export const route = apiRoute('/api/rmharks/$id', {
       reposted: userId ? rmhark.reposts.length > 0 : false,
       poll: isDeleted || locked ? undefined : pollData,
       gifUrl: isDeleted || locked ? undefined : (rmhark.gifUrl ?? undefined),
+      gifAlt: isDeleted || locked ? undefined : (rmhark.gifAlt ?? undefined),
+      isSensitive: isDeleted || locked ? undefined : (rmhark.isSensitive ?? false),
+      contentWarning: isDeleted || locked ? undefined : (rmhark.contentWarning ?? undefined),
       imageUrls: isDeleted || locked ? undefined : rmhark.imageUrls,
       imageAlts: isDeleted || locked ? undefined : rmhark.imageAlts,
       isTake: rmhark.isTake || undefined,
@@ -143,7 +224,7 @@ export const route = apiRoute('/api/rmharks/$id', {
             await getBlockedAuthorIds(userId),
           )
         : undefined,
-    });
+    }, userId));
   }),
   DELETE: implement(deletePostApi, {}, async ({ params, session }) => {
     const { id } = params;
@@ -173,7 +254,7 @@ export const route = apiRoute('/api/rmharks/$id', {
       await tx.rMHark.update({
         where: { id },
         // An admin's delete is moderation: not restorable by the author from the bin.
-        data: { deletedAt, deletedByAdmin, ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}) },
+        data: { deletedAt, deletedByAdmin, pinnedAt: null, ...(deletedByAdmin ? { deletedBy: 'moderator' } : {}) },
       });
       if (firstDelete) {
         // Drop the post's hashtag links (keeps trending counts accurate).
@@ -232,6 +313,7 @@ export const route = apiRoute('/api/rmharks/$id', {
     }
     const content = parsed.data.content.trim();
     const gifUrlProvided = Object.prototype.hasOwnProperty.call(body, 'gifUrl');
+    const gifAltProvided = Object.prototype.hasOwnProperty.call(body, 'gifAlt');
     const nextGifUrl = parsed.data.gifUrl ?? null;
 
     const existing = await prisma.rMHark.findUnique({
@@ -242,6 +324,11 @@ export const route = apiRoute('/api/rmharks/$id', {
         deletedAt: true,
         unlockPrice: true,
         gifUrl: true,
+        gifAlt: true,
+        isSensitive: true,
+        contentWarning: true,
+        communityId: true,
+        imageAlts: true,
       },
     });
     if (!existing || existing.deletedAt) {
@@ -250,15 +337,67 @@ export const route = apiRoute('/api/rmharks/$id', {
     if (existing.userId !== session.user.id) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
+    // s07-16: an edit never takes an image description away in a community that requires them. The edit body carries
+    // no images today, so this only fires if one ever sends `imageAlts` (the stored ones are the baseline).
+    if (existing.communityId && Array.isArray((body as { imageAlts?: unknown }).imageAlts)) {
+      const community = await getCommunitySettings(existing.communityId);
+      const sent = ((body as { imageAlts: unknown[] }).imageAlts as unknown[]).map((a) =>
+        typeof a === 'string' ? a : '',
+      );
+      if (community?.requireImageAlt && clearsDescription(existing.imageAlts, sent)) {
+        return Response.json({ error: ALT_REQUIRED_MESSAGE, code: ALT_REQUIRED_CODE }, { status: 400 });
+      }
+    }
     const existingHasGif = !!existing.gifUrl;
     if (!content && !(gifUrlProvided ? nextGifUrl : existingHasGif)) {
       return Response.json({ error: 'Post cannot be empty' }, { status: 400 });
     }
-    if (existing.content === content && (!gifUrlProvided || existing.gifUrl === nextGifUrl)) {
+    // The description follows the GIF: a new GIF starts from the description sent with it, never the old one's.
+    const nextGif = resolveEditedGifAlt({
+      existingUrl: existing.gifUrl,
+      existingAlt: existing.gifAlt,
+      nextUrl: gifUrlProvided ? nextGifUrl : undefined,
+      nextAlt: gifAltProvided ? (parsed.data.gifAlt ?? null) : undefined,
+    });
+    // s07-16: a GIF in a requiring community keeps (or arrives with) a description.
+    // Only when the GIF or its description changed: an old undescribed GIF does not block editing the text.
+    if (existing.communityId && nextGif.gifUrl && (nextGif.gifUrl !== existing.gifUrl || nextGif.gifAlt !== existing.gifAlt)) {
+      const community = await getCommunitySettings(existing.communityId);
+      if (communityGifAltMissing(community?.requireImageAlt === true, nextGif.gifUrl, nextGif.gifAlt)) {
+        return Response.json({ error: ALT_REQUIRED_MESSAGE, code: ALT_REQUIRED_CODE, missingGif: true }, { status: 400 });
+      }
+    }
+    // s07-19: a quiz's answer or explanation can be fixed only while nobody has voted. It runs after every check
+    // above, so a refused edit (an empty post, a GIF missing its required description) writes no answer; its own
+    // refusals (not a quiz, locked by a vote, not an option) come before anything else is written.
+    const quizEdit = parsed.data.quizCorrectOptionId !== undefined || parsed.data.quizExplanation !== undefined;
+    if (quizEdit) {
+      const locked = await editQuizAnswer(id, parsed.data.quizCorrectOptionId, parsed.data.quizExplanation);
+      if (locked) return locked;
+    }
+    const gifChanged = nextGif.gifUrl !== existing.gifUrl;
+    const altChanged = nextGif.gifAlt !== existing.gifAlt;
+    // The warning: a reason implies it, `isSensitive: false` clears both. Changing it is a content edit (history row,
+    // "edited" marker), because the reason is part of what readers see in the text's place.
+    const nextWarning = resolveEditedContentWarning({
+      existing: { isSensitive: existing.isSensitive, contentWarning: existing.contentWarning },
+      nextSensitive: parsed.data.isSensitive,
+      nextReason: parsed.data.contentWarning,
+    });
+    const warningChanged =
+      nextWarning.isSensitive !== existing.isSensitive || nextWarning.contentWarning !== existing.contentWarning;
+    if (existing.content === content && !gifChanged && !warningChanged) {
+      // A description alone is accessibility metadata, not a content edit: no history row, no "edited" marker.
+      if (altChanged) {
+        await prisma.rMHark.update({ where: { id }, data: { gifAlt: nextGif.gifAlt } });
+      }
       return Response.json({
         success: true,
         content,
         gifUrl: existing.gifUrl ?? undefined,
+        gifAlt: nextGif.gifAlt ?? undefined,
+        isSensitive: existing.isSensitive,
+        contentWarning: existing.contentWarning,
         editedAt: null,
       });
     }
@@ -269,7 +408,13 @@ export const route = apiRoute('/api/rmharks/$id', {
       prisma.rMHarkEdit.create({ data: { rmheetId: id, content: existing.content } }),
       prisma.rMHark.update({
         where: { id },
-        data: { content, editedAt, ...(gifUrlProvided ? { gifUrl: nextGifUrl } : {}) },
+        data: {
+          content,
+          editedAt,
+          ...(gifChanged ? { gifUrl: nextGif.gifUrl } : {}),
+          ...(gifChanged || altChanged ? { gifAlt: nextGif.gifAlt } : {}),
+          ...(warningChanged ? nextWarning : {}),
+        },
       }),
     ]);
 
@@ -280,14 +425,23 @@ export const route = apiRoute('/api/rmharks/$id', {
       payload:
         existing.unlockPrice && existing.unlockPrice > 0
           ? { id, content: '', locked: true, unlockPrice: existing.unlockPrice, edited: true }
-          : { id, content, edited: true },
+          : {
+              id,
+              content,
+              edited: true,
+              isSensitive: nextWarning.isSensitive,
+              contentWarning: nextWarning.contentWarning ?? undefined,
+            },
       timestamp: editedAt.toISOString(),
     });
 
     return Response.json({
       success: true,
       content,
-      gifUrl: gifUrlProvided ? (nextGifUrl ?? undefined) : (existing.gifUrl ?? undefined),
+      gifUrl: nextGif.gifUrl ?? undefined,
+      gifAlt: nextGif.gifAlt ?? undefined,
+      isSensitive: nextWarning.isSensitive,
+      contentWarning: nextWarning.contentWarning,
       editedAt: editedAt.toISOString(),
     });
   }),

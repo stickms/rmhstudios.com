@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Spine } from '@/components/ui/spine';
@@ -59,6 +59,21 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   // in. Your own sends do not (they are optimistic rows).
   const arrival = useArrival(!loading);
   const isNew = useArrivingKeys(loading ? [] : shownMessages.map((m) => m.id));
+  // s07-05: `/groups/<id>#group-message-<id>` (a mention notification, "Your mentions") scrolls to that message once the
+  // thread has loaded. The view holds one page and has no older page to fetch, so a message outside it gets a note.
+  const { t: tm } = useTranslation('group-mentions');
+  const [olderNote, setOlderNote] = useState(false);
+  useEffect(() => {
+    if (loading || typeof window === 'undefined') return;
+    const target = /^#(group-message-[\w-]+)$/.exec(window.location.hash)?.[1];
+    if (!target) return;
+    const el = document.getElementById(target);
+    if (el) {
+      el.scrollIntoView({ block: 'center' });
+      setOlderNote(false);
+    } else setOlderNote(true);
+    // Once per load of this group: later appends must not pull the viewer back.
+  }, [loading, id]);
 
   if (loading) {
     return (
@@ -85,7 +100,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   return (
     <div className={cn('conversation', arrival)} style={chatTheme.rootStyle}>
       <NoGlobe />
-      <GroupHeader group={group} chatRef={chatRef} onLeave={leave} />
+      <GroupHeader
+        group={group}
+        chatRef={chatRef}
+        currentUserId={currentUserId}
+        onLeave={leave}
+        onChanged={thread.reloadGroup}
+      />
       <ChatPinnedBar
         chat={chatRef}
         viewerId={currentUserId}
@@ -98,6 +119,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
         className="conversation__thread"
         style={chatTheme.wallpaper}
       >
+        {olderNote && (
+          <p role="status" className="t-meta border-b border-site-border px-4 py-2">
+            {tm('message-older', {
+              defaultValue: 'The message you opened is older than the messages shown here.',
+            })}
+          </p>
+        )}
         <Spine>
           {shownMessages.map((m, i) => (
             <GroupMessageRow
@@ -122,8 +150,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       {composer.showGifPicker && (
         <div className="border-t border-site-border p-2">
           <GifPicker
-            onSelect={(url) => {
+            onSelect={({ url, description }) => {
               composer.setGifUrl(url);
+              composer.setGifAlt(description);
               composer.setShowGifPicker(false);
             }}
             onClose={() => composer.setShowGifPicker(false)}
@@ -148,8 +177,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           missingAlts={composer.imageAlts.missing}
           onSetAlt={composer.imageAlts.setAlt}
           gifUrl={composer.gifUrl}
+          gifAlt={composer.gifAlt}
+          onGifAltChange={composer.setGifAlt}
           onRemoveImage={(url) => composer.setImageUrls((prev) => prev.filter((u) => u !== url))}
-          onRemoveGif={() => composer.setGifUrl(null)}
+          onRemoveGif={() => {
+            composer.setGifUrl(null);
+            composer.setGifAlt('');
+          }}
         />
       )}
 
@@ -158,6 +192,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
         group={group}
         chatRef={chatRef}
         appendMessages={appendMessages}
+        currentUserId={currentUserId}
       />
 
       <ChatPlusHost viewerId={currentUserId} />

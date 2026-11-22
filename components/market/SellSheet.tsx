@@ -22,6 +22,7 @@ import { serverError } from '@/lib/http';
 import { createListingApi } from '@/lib/market/market.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface OwnedItem {
   id: string;
@@ -47,6 +48,7 @@ export function SellSheet({
   /** Called after a successful listing so the parent can refresh the grid. */
   onListed?: () => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
   const [items, setItems] = useState<OwnedItem[] | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
@@ -84,7 +86,7 @@ export function SellSheet({
       toast.error(
         t('market-price-bounds', {
           min: floor,
-          max: MAX_PRICE.toLocaleString(),
+          max: fmt.number(MAX_PRICE),
           defaultValue: 'Enter a whole number between {{min}} and {{max}} coins',
         }),
       );
@@ -164,7 +166,7 @@ export function SellSheet({
                     <RarityMark rarity={item.rarity} />
                     <span>
                       {t('market-price-floor', {
-                        min: minPriceFor(item.id).toLocaleString(),
+                        min: fmt.number(minPriceFor(item.id)),
                         defaultValue: 'from {{min}}',
                       })}
                     </span>

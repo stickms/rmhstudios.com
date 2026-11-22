@@ -16,6 +16,8 @@ const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // silently drop week-old drafts
 export interface ComposeDraft {
   content: string;
   gifUrl: string;
+  /** The GIF's description (sprint 06 #15); absent in drafts saved before it existed. */
+  gifAlt?: string;
   savedAt: number;
 }
 
@@ -37,7 +39,7 @@ export function clearComposeDraft() {
  * Debounced autosave of the composer text. Disable for seeded modes (quotes,
  * share_target) so they don't overwrite a draft the user typed elsewhere.
  */
-export function useComposeDraftAutosave(content: string, gifUrl: string, enabled = true) {
+export function useComposeDraftAutosave(content: string, gifUrl: string, enabled = true, gifAlt = '') {
   const first = useRef(true);
   useEffect(() => {
     if (!enabled) return;
@@ -52,6 +54,7 @@ export function useComposeDraftAutosave(content: string, gifUrl: string, enabled
         const draft: ComposeDraft = {
           content,
           gifUrl,
+          ...(gifUrl && gifAlt ? { gifAlt } : {}),
           savedAt: Date.now(),
         };
         writeJson(KEY, draft);
@@ -60,5 +63,5 @@ export function useComposeDraftAutosave(content: string, gifUrl: string, enabled
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [content, gifUrl, enabled]);
+  }, [content, gifUrl, gifAlt, enabled]);
 }

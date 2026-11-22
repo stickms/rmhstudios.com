@@ -61,6 +61,11 @@ vi.mock('@/components/ui/confirm-dialog', () => ({ useConfirm: () => async () =>
 // scheduled; they are stubbed to nothing so the markup below stays the pre-feature composer.
 vi.mock('@/components/messages/SendLaterMenu', () => ({ SendLaterMenu: () => null }));
 vi.mock('@/components/messages/ScheduledStrip', () => ({ ScheduledStrip: () => null }));
+// s05-13: saved replies read a QueryClient and draw only a tool-row button and a `/` listbox; stubbed to nothing so the
+// markup below stays the pre-feature composer.
+vi.mock('@/components/messages/useSavedReplies', () => ({
+  useSavedReplies: () => ({ menu: null, popover: null, onKeyDown: () => false, fieldProps: {} }),
+}));
 vi.mock('@/components/ui/anchored-menu', () => ({
   AnchoredMenu: ({
     open,
@@ -138,18 +143,19 @@ const S = {
   loadingOlder: 5,
   otherUser: 6,
   notFound: 7,
-  reactionMenu: 8,
-  editingId: 9,
-  savingEdit: 10,
-  input: 11,
-  sending: 12,
-  error: 13,
-  showGifPicker: 14,
-  attachOpen: 15,
-  gifUrl: 16,
-  imageUrls: 17,
-  uploading: 18,
-  voiceActive: 19,
+  requestState: 8,
+  reactionMenu: 9,
+  editingId: 10,
+  savingEdit: 11,
+  input: 12,
+  sending: 13,
+  error: 14,
+  showGifPicker: 15,
+  attachOpen: 16,
+  gifUrl: 17,
+  imageUrls: 18,
+  uploading: 19,
+  voiceActive: 20,
 } as const;
 
 const OTHER = { id: 'ana', name: 'Ana', image: '/ana.png', username: 'ana_k' };

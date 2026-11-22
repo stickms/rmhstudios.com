@@ -8,7 +8,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { ChevronDown, Download, Gamepad2, History, Upload } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { api, apiQuery } from '@/lib/contract/client';
 import {
   deleteGameSaveApi,
@@ -29,6 +28,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function backupError(t: TFunction, error: BackupError): string {
   switch (error) {
@@ -74,6 +74,7 @@ function SaveRow({
   onToggle: () => void;
   onRestored: () => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('cloud-saves');
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -245,9 +246,7 @@ function SaveRow({
           {save.savedAt && save.sizeBytes !== null ? (
             <p className="t-meta text-site-text-muted">
               {t('saved-at', {
-                relative: formatDistanceToNow(new Date(save.savedAt), {
-                  addSuffix: true,
-                }),
+                relative: fmt.relative(new Date(save.savedAt)),
                 exact: formatWhen(save.savedAt),
                 size: formatSize(save.sizeBytes),
                 defaultValue: 'Saved {{relative}} ({{exact}}) · {{size}}',

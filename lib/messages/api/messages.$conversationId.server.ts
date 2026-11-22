@@ -12,6 +12,7 @@ import { guardDirect, sendDirectMessage } from '@/lib/messages/send.server';
 import { normalizeImageAlts } from '@/lib/messages/image-alts';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { getPairPrivacy, maskReceipts } from '@/lib/chat-plus/receipts.server';
+import { hiddenFromRecipient, requestOut } from '@/lib/messages/requests';
 
 /**
  * Denormalized DM unread counter (per recipient) in Redis. Keeps the polled
@@ -60,6 +61,11 @@ export const route = apiRoute('/api/messages/$conversationId', {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // A message request waiting for this viewer is read from the Requests folder only (s04-16).
+    if (hiddenFromRecipient(conversation.request, userId)) {
+      return Response.json({ error: 'Conversation not found' }, { status: 404 });
+    }
+
     const url = new URL(request.url);
     const cursor = url.searchParams.get('cursor');
     const limit = 50;
@@ -76,6 +82,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
         read: true,
         createdAt: true,
         gifUrl: true,
+        gifAlt: true,
         imageUrls: true,
         imageAlts: true,
         reactions: { select: { emoji: true, userId: true } },
@@ -118,7 +125,8 @@ export const route = apiRoute('/api/messages/$conversationId', {
     const masked = maskReceipts(
       items.reverse(),
       userId,
-      privacy.receiptsHidden && conversation.participantOneId !== conversation.participantTwoId,
+      (privacy.receiptsHidden && conversation.participantOneId !== conversation.participantTwoId) ||
+        requestOut(conversation.request, userId),
     );
 
     return Response.json({
@@ -129,6 +137,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
         read: m.read,
         createdAt: m.createdAt.toISOString(),
         gifUrl: m.gifUrl,
+        gifAlt: m.gifAlt,
         imageUrls: m.imageUrls,
         imageAlts: normalizeImageAlts(m.imageUrls, m.imageAlts),
         reactions: m.reactions,
@@ -202,6 +211,8 @@ export const route = apiRoute('/api/messages/$conversationId', {
       input: parsed.data,
       pairRateLimit: true,
       conversation: gate.value,
+      // A refused sender's first text message may become a message request (s04-16).
+      allowRequest: true,
     });
     return sent.ok ? sent.value : sent.response;
   }),

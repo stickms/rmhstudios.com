@@ -54,6 +54,10 @@ const FAST_FRAME_MS = 18;
 /** A renderer interface both the 2D and 3D renderers satisfy. */
 export interface VBRenderer {
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number };
+  /** Where a world point lands on the canvas (for the colour-safe overlay); null when behind the camera. */
+  worldToCanvas?(wx: number, wy: number, game: VoidBreakerEngine): { x: number; y: number } | null;
+  /** Assist: calm visuals. No muzzle or detonation flashes, no boss-death flash. */
+  setCalm?(on: boolean): void;
   draw(game: VoidBreakerEngine, dt: number): void;
   dispose(): void;
   /** Accessibility: dampen shake, disable CA/grain, soften flashes. */
@@ -540,10 +544,25 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.composer.addPass(this.filmPass);
   }
 
+  private calm = false;
+  setCalm(on: boolean): void {
+    this.calm = on;
+    // Grain and chromatic shimmer are off under calm visuals, as under reduced effects.
+    this.rgbShift.enabled = !on && !this.reducedFx;
+    this.filmPass.enabled = !on && !this.reducedFx;
+  }
+
+  worldToCanvas(wx: number, wy: number, _game: VoidBreakerEngine): { x: number; y: number } | null {
+    this.camera.updateMatrixWorld();
+    const v = new THREE.Vector3(wx, 0, wy).project(this.camera);
+    if (v.z > 1) return null;
+    return { x: ((v.x + 1) / 2) * CANVAS_WIDTH, y: ((1 - v.y) / 2) * CANVAS_HEIGHT };
+  }
+
   setReducedFx(on: boolean): void {
     this.reducedFx = on;
-    this.rgbShift.enabled = !on;   // no chromatic aberration
-    this.filmPass.enabled = !on;   // no film grain
+    this.rgbShift.enabled = !on && !this.calm;   // no chromatic aberration
+    this.filmPass.enabled = !on && !this.calm;   // no film grain
   }
 
   // ── Aim ──────────────────────────────────────────────────────────────────────
@@ -587,7 +606,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
 
     // Detonate flash light — a bright orange burst that decays over ~0.4s.
     this.flashIntensity = Math.max(0, this.flashIntensity - dt * 28);
-    this.flashLight.intensity = this.flashIntensity * (this.reducedFx ? 0.35 : 1);
+    this.flashLight.intensity = this.calm ? 0 : this.flashIntensity * (this.reducedFx ? 0.35 : 1);
     this.flashLight.position.set(p.x, 70, p.y);
 
     // Muzzle flash — pulse when the fire timer resets (a shot was fired).
@@ -595,7 +614,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.lastFireTimer = p.fireTimer;
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt * 22);
     // Task 5 — scale the muzzle flash by the recoil kick for a weightier shot.
-    this.muzzleLight.intensity = this.muzzleFlash * (this.reducedFx ? 0.4 : 1) * (0.7 + p.recoil * 0.6);
+    this.muzzleLight.intensity = this.calm ? 0 : this.muzzleFlash * (this.reducedFx ? 0.4 : 1) * (0.7 + p.recoil * 0.6);
     this.muzzleLight.position.set(p.x + Math.cos(p.aimAngle) * 16, 22, p.y + Math.sin(p.aimAngle) * 16);
 
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
@@ -644,6 +663,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     // exposure out to white and spikes bloom, decaying over ~0.3s.
     if (game.slowMoTimer > this.lastSlowMo + 1e-4) this.bossFlash = 1;
     this.lastSlowMo = game.slowMoTimer;
+    if (this.calm) this.bossFlash = 0;
     this.bossFlash = Math.max(0, this.bossFlash - dt * 3);
     this.renderer.toneMappingExposure = 1.1 + this.bossFlash * (this.reducedFx ? 0.6 : 1.8);
 

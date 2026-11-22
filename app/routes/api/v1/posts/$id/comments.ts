@@ -6,6 +6,8 @@ import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.serve
 import { apiAuthorSelect, serializeAuthor, parsePage, page } from '@/lib/api/serializers.server';
 import { createComment } from '@/lib/social/engagement.server';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
+import { activeSanction } from '@/lib/communities/bans.server';
+import { denyText } from '@/lib/communities/bans';
 
 const bodySchema = z.object({
   content: z.string().min(1).max(MAX_COMMENT_LENGTH),
@@ -59,6 +61,16 @@ export const Route = createFileRoute('/api/v1/posts/$id/comments')({
             const body = await request.json().catch(() => null);
             const parsed = bodySchema.safeParse(body);
             if (!parsed.success) return error('invalid_request', parsed.error.issues[0]?.message ?? 'Invalid request body', 400);
+
+            // s06-01: a banned or timed-out member cannot comment on a community post with an API key either.
+            const target = await prisma.rMHark.findUnique({
+              where: { id: params.id },
+              select: { communityId: true },
+            });
+            if (target?.communityId) {
+              const sanction = await activeSanction(target.communityId, userId);
+              if (sanction) return error('forbidden', denyText(sanction.kind, sanction.endsAt), 403);
+            }
 
             const result = await createComment({ userId, postId: params.id, content: parsed.data.content, parentId: parsed.data.parent_id ?? null });
             if (!result.found || !result.comment) return error('not_found', 'Post not found.', 404);

@@ -14,6 +14,7 @@ import {
 } from '@features/slice-it/engine/slice-it.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * L15 — the artist page.
@@ -44,7 +45,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ArtistPage() {
+function ArtistPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
   const { key } = Route.useParams();
   const [data, setData] = useState<ArtistPageResponse | null>(null);
@@ -127,7 +128,7 @@ function ArtistPage() {
                   />
                   <Stat
                     label={t('artist-plays', { defaultValue: 'Plays' })}
-                    value={data.artist.totalPlays.toLocaleString()}
+                    value={fmt.number(data.artist.totalPlays)}
                   />
                   {data.artist.avgBpm !== null && (
                     <Stat

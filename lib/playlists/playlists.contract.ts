@@ -9,6 +9,7 @@ import type { CollaboratorView, PlaylistDetail, PlaylistSummary } from '@/lib/pl
 import type {
   addCollaboratorBody,
   addPlaylistItemBody,
+  addPlaylistItemsBulkBody,
   createPlaylistBody,
   renamePlaylistBody,
 } from '@/lib/playlists/playlists-schema';
@@ -100,4 +101,17 @@ export const removePlaylistItemApi = endpoint<{
 }>()({
   method: 'DELETE',
   path: '/api/playlists/$id/items/$itemId',
+});
+
+/** Append up to 200 items in one call; the response says what was added, repeated or over the cap. */
+export const addPlaylistItemsBulkApi = endpoint<{
+  body: z.infer<typeof addPlaylistItemsBulkBody>;
+  res: Ok & {
+    added: number;
+    duplicates: number;
+    skipped: number;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/playlists/$id/items/bulk',
 });

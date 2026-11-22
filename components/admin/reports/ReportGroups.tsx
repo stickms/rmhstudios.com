@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
 import { Check, ChevronDown, ChevronRight, ExternalLink, Flag, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +24,7 @@ import {
 import { groupKey, isOpenQueueStatus, searchToQuery, type TriageSearch } from '@/lib/moderation/triage';
 import { MAX_DECIDE_GROUPS, type TriageStatus } from '@/lib/moderation/triage-schema';
 import { decideReportGroupsApi, listReportGroupsApi, type ReportGroupRow } from '@/lib/moderation/triage.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type Decision = 'resolve' | 'dismiss';
 
@@ -42,6 +42,7 @@ export function ReportGroups({
   search: TriageSearch;
   onCounts: (counts: Record<string, number>) => void;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('report-triage');
   const { t: tr } = useTranslation('c-moderation');
   const confirm = useConfirm();
@@ -313,12 +314,8 @@ export function ReportGroups({
                   {g.preview && <p className="t-body break-words text-site-text">{g.preview}</p>}
                   <p className="t-meta">
                     {t('group-times', {
-                      first: formatDistanceToNow(new Date(g.firstAt), {
-                        addSuffix: true,
-                      }),
-                      last: formatDistanceToNow(new Date(g.lastAt), {
-                        addSuffix: true,
-                      }),
+                      first: fmt.relative(new Date(g.firstAt)),
+                      last: fmt.relative(new Date(g.lastAt)),
                       defaultValue: 'First report {{first}}, latest {{last}}',
                     })}
                   </p>
@@ -389,11 +386,7 @@ export function ReportGroups({
                                   })}
                                 </Badge>
                               )}
-                              <span className="t-meta">
-                                {formatDistanceToNow(new Date(r.createdAt), {
-                                  addSuffix: true,
-                                })}
-                              </span>
+                              <span className="t-meta">{fmt.relative(new Date(r.createdAt))}</span>
                             </div>
                             {r.details && <p className="t-body break-words">{r.details}</p>}
                             <p className="t-body text-site-text-muted">
@@ -464,9 +457,13 @@ export function ReportGroups({
                                   })
                                 }
                               >
-                                {t('resolve-and-remove', {
-                                  defaultValue: 'Resolve and remove content',
-                                })}
+                                {g.entityType === 'build-comment'
+                                  ? t('delete-comment', {
+                                      defaultValue: 'Delete comment',
+                                    })
+                                  : t('resolve-and-remove', {
+                                      defaultValue: 'Resolve and remove content',
+                                    })}
                               </Button>
                             )}
                             <Button size="sm" disabled={busy} onClick={() => void decide([g], 'dismiss')}>

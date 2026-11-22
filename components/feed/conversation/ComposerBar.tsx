@@ -5,12 +5,18 @@ import { Button } from '@/components/ui/button';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { GifPicker } from '@/components/feed/GifPickerLazy';
+import { GifDescriptionField } from '@/components/feed/compose/GifDescriptionField';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { VoiceComposer } from '@/components/voice/VoiceComposer';
 import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
+import { RequestComposeLabel, RequestSentNotice } from '@/components/messages/RequestComposerNotices';
+import type { SenderRequestState } from '@/lib/messages/requests';
 import { ScheduledStrip } from '@/components/messages/ScheduledStrip';
 import { SendLaterMenu } from '@/components/messages/SendLaterMenu';
+import { useSavedReplies } from '@/components/messages/useSavedReplies';
+import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { PendingMessageImages } from '../PendingMessageImages';
 import { GhostTextArea } from '../GhostTextArea';
 import { SmartReplies } from '../SmartReplies';
@@ -26,14 +32,21 @@ export function ComposerBar({
   chatRef,
   composer: c,
   replyToMessageId,
+  requestState = null,
+  recipientName = null,
 }: {
   conversationId: string;
   chatRef: { kind: 'dm'; id: string };
   composer: ReturnType<typeof useDmComposer>;
   /** The message suggested replies would answer, if any. */
   replyToMessageId: string | null;
+  /** s04-16: `compose` while the other person takes message requests (text only, no extras), `sent` once one is out. */
+  requestState?: SenderRequestState | null;
+  /** The other person's display name: what `{{name}}` in a saved reply becomes. */
+  recipientName?: string | null;
 }) {
   const { t } = useTranslation('feed');
+  const gifAltText = useGifAlt();
   const {
     input,
     setInput,
@@ -45,6 +58,8 @@ export function ComposerBar({
     setAttachOpen,
     gifUrl,
     setGifUrl,
+    gifAlt,
+    setGifAlt,
     imageUrls,
     setImageUrls,
     imageAlts,
@@ -67,6 +82,19 @@ export function ComposerBar({
     handleTyping,
     stopTyping,
   } = c;
+  const composing = requestState === 'compose';
+  const savedReplies = useSavedReplies({
+    chatKind: 'dm',
+    recipientName,
+    draft: input,
+    setDraft: setInput,
+    inputRef,
+    maxLength: MESSAGE_MAX_LENGTH,
+    buttonClassName: 'h-[42px]',
+  });
+
+  // The request is out: nothing to write until they accept.
+  if (requestState === 'sent') return <RequestSentNotice />;
 
   return (
     <>
@@ -80,14 +108,19 @@ export function ComposerBar({
       {/* Input. `--safe-bottom` keeps the send row clear of the home indicator and
           iOS Safari's floating tab bar — this row is the bottom edge of the column
           now that the column stops at the viewport. */}
-      <ScheduledStrip chatId={conversationId} onDelivered={appendPosted} />
+      {composing ? (
+        <RequestComposeLabel />
+      ) : (
+        <ScheduledStrip chatId={conversationId} onDelivered={appendPosted} />
+      )}
       <div className="conversation__composer">
         {showGifPicker && !voiceActive && (
           <GifPicker
             className="mx-2 mb-2"
             onClose={() => setShowGifPicker(false)}
-            onSelect={(u) => {
-              setGifUrl(u);
+            onSelect={({ url, description }) => {
+              setGifUrl(url);
+              setGifAlt(description);
               setShowGifPicker(false);
               setTimeout(() => inputRef.current?.focus(), 0);
             }}
@@ -107,16 +140,20 @@ export function ComposerBar({
         {!voiceActive && gifUrl && (
           <div className="mb-2 flex flex-wrap gap-2">
             <div className="relative">
-              <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
+              <img src={gifUrl} alt={gifAltText(gifAlt)} className="h-20 w-auto rounded-site-sm" />
               <button
                 type="button"
                 aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
-                onClick={() => setGifUrl(null)}
+                onClick={() => {
+                  setGifUrl(null);
+                  setGifAlt('');
+                }}
                 className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
+            <GifDescriptionField value={gifAlt} onChange={setGifAlt} className="min-w-48 flex-1" />
           </div>
         )}
 
@@ -133,7 +170,7 @@ export function ComposerBar({
             media-only or unsent message has no text to answer. Hidden while the
             voice composer is open — these chips fill the text field, which is
             not on screen then. */}
-        {!voiceActive && (
+        {!voiceActive && !composing && (
           <SmartReplies
             conversationId={conversationId}
             replyToMessageId={replyToMessageId}
@@ -167,82 +204,92 @@ export function ComposerBar({
                   }}
                   onBlur={stopTyping}
                   onKeyDown={(e) => {
+                    if (savedReplies.onKeyDown(e)) return;
                     if (slash.onKeyDown(e)) return;
                     if (shortcodes.onKeyDown(e)) return;
                     handleKeyDown(e);
                   }}
                   placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
                   rows={1}
-                  maxLength={2000}
+                  maxLength={MESSAGE_MAX_LENGTH}
+                  {...savedReplies.fieldProps}
                   className="surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site px-3 py-2 resize-none max-h-32 overflow-y-auto"
                   style={{ minHeight: '42px' }}
                 />
                 {shortcodes.menu}
                 {slash.popover}
+                {savedReplies.popover}
                 <ComposerLengthCounter used={input.length} />
               </div>
-              <ChecklistComposer chat={chatRef} onPosted={appendPosted} disabled={sending} />
+              {!composing && (
+                <ChecklistComposer chat={chatRef} onPosted={appendPosted} disabled={sending} />
+              )}
               <EmojiPickerButton
                 direction="up"
                 onSelect={insertEmoji}
                 className="flex h-[42px] shrink-0 items-center"
               />
-              {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
-              <div className="relative shrink-0">
-                <button
-                  ref={attachBtnRef}
-                  type="button"
-                  aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
-                  aria-haspopup="menu"
-                  aria-expanded={attachOpen}
-                  onClick={() => setAttachOpen((v) => !v)}
-                  disabled={uploading}
-                  className="h-[42px] rounded-site px-3 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-5 w-5" />
-                  )}
-                </button>
-                <AnchoredMenu
-                  open={attachOpen}
-                  onClose={() => setAttachOpen(false)}
-                  anchorRef={attachBtnRef}
-                  label={t('add-to-message', { defaultValue: 'Add to message' })}
-                  side="top"
-                  className="w-40"
-                >
-                  <MenuItem
-                    icon={ImagePlus}
-                    disabled={imageUrls.length >= MAX_DM_IMAGES}
-                    onSelect={() => {
-                      setAttachOpen(false);
-                      imageInputRef.current?.click();
-                    }}
+              {savedReplies.menu}
+              {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer; a message request is text only. */}
+              {!composing && (
+                <div className="relative shrink-0">
+                  <button
+                    ref={attachBtnRef}
+                    type="button"
+                    aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
+                    aria-haspopup="menu"
+                    aria-expanded={attachOpen}
+                    onClick={() => setAttachOpen((v) => !v)}
+                    disabled={uploading}
+                    className="h-[42px] rounded-site px-3 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
                   >
-                    {t('menu-add-image', { defaultValue: 'Add Image' })}
-                  </MenuItem>
-                  <MenuItem
-                    icon={ImagePlay}
-                    onSelect={() => {
-                      setAttachOpen(false);
-                      setShowGifPicker((v) => !v);
-                    }}
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-5 w-5" />
+                    )}
+                  </button>
+                  <AnchoredMenu
+                    open={attachOpen}
+                    onClose={() => setAttachOpen(false)}
+                    anchorRef={attachBtnRef}
+                    label={t('add-to-message', { defaultValue: 'Add to message' })}
+                    side="top"
+                    className="w-40"
                   >
-                    {t('menu-add-gif', { defaultValue: 'Add GIF' })}
-                  </MenuItem>
-                </AnchoredMenu>
-              </div>
+                    <MenuItem
+                      icon={ImagePlus}
+                      disabled={imageUrls.length >= MAX_DM_IMAGES}
+                      onSelect={() => {
+                        setAttachOpen(false);
+                        imageInputRef.current?.click();
+                      }}
+                    >
+                      {t('menu-add-image', { defaultValue: 'Add Image' })}
+                    </MenuItem>
+                    <MenuItem
+                      icon={ImagePlay}
+                      onSelect={() => {
+                        setAttachOpen(false);
+                        setShowGifPicker((v) => !v);
+                      }}
+                    >
+                      {t('menu-add-gif', { defaultValue: 'Add GIF' })}
+                    </MenuItem>
+                  </AnchoredMenu>
+                </div>
+              )}
             </>
           )}
 
-          <VoiceComposer
-            conversationId={conversationId}
-            onSent={handleVoiceSent}
-            onActiveChange={setVoiceActive}
-            disabled={sending || uploading}
-          />
+          {!composing && (
+            <VoiceComposer
+              conversationId={conversationId}
+              onSent={handleVoiceSent}
+              onActiveChange={setVoiceActive}
+              disabled={sending || uploading}
+            />
+          )}
 
           {!voiceActive && (
             <>
@@ -258,23 +305,25 @@ export function ComposerBar({
               >
                 {t('conversation-send', { defaultValue: 'Send' })}
               </Button>
-              <SendLaterMenu
-                chatId={conversationId}
-                disabled={
-                  (!input.trim() && !gifUrl && imageUrls.length === 0) ||
-                  sending ||
-                  uploading ||
-                  imageAlts.missing.length > 0
-                }
-                getDraft={() => ({ content: input, gifUrl, imageUrls, imageAlts: imageAlts.alts })}
-                onScheduled={() => {
-                  setInput('');
-                  setGifUrl(null);
-                  setImageUrls([]);
-                  stopTyping();
-                }}
-                className="h-[42px]"
-              />
+              {!composing && (
+                <SendLaterMenu
+                  chatId={conversationId}
+                  disabled={
+                    (!input.trim() && !gifUrl && imageUrls.length === 0) ||
+                    sending ||
+                    uploading ||
+                    imageAlts.missing.length > 0
+                  }
+                  getDraft={() => ({ content: input, gifUrl, gifAlt, imageUrls, imageAlts: imageAlts.alts })}
+                  onScheduled={() => {
+                    setInput('');
+                    setGifUrl(null);
+                    setImageUrls([]);
+                    stopTyping();
+                  }}
+                  className="h-[42px]"
+                />
+              )}
             </>
           )}
         </div>

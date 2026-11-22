@@ -11,6 +11,7 @@ import { cancelReminderApi, listRemindersApi } from '@/lib/reminders/reminders.c
 import type { ReminderView } from '@/lib/reminders/shared';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * Pending reminders, soonest first (plan U7). Rendered by the Saves hub.
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
  * locale and zone cannot mismatch a server render.
  */
 export function RemindersList() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-saves');
   const [items, setItems] = useState<ReminderView[] | null>(null);
   const arrival = useArrival(items !== null);
@@ -88,7 +90,7 @@ export function RemindersList() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-site-text">{r.label}</span>
                 <span className="block truncate text-xs text-site-text-muted">
-                  {new Date(r.remindAt).toLocaleString(undefined, {
+                  {fmt.dateTime(new Date(r.remindAt), {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',

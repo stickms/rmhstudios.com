@@ -8,17 +8,25 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ColumnHeader } from './ColumnHeader';
 import { StudyTabs } from '@/components/feed/StudyTabs';
+import { ReminderSettings } from '@/components/study/ReminderSettings';
+import { DeckDue, ReviewAllLink } from '@/components/study/DueCount';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { DeckFolderList } from '@/components/study/DeckFolderList';
+import type { DeckFolderSummary } from '@/lib/study/folders';
 
 interface Deck {
   id: string;
   title: string;
   description: string | null;
   isPublic?: boolean;
+  /** The owner's private folder (own decks only). */
+  folderId?: string | null;
   cardCount: number;
+  /** Cards due today (own decks only; suspended cards are left out). */
+  dueCount?: number;
   user?: { name: string | null; handle: string | null };
 }
 
@@ -26,7 +34,13 @@ export function FlashcardsColumn({
   initialData,
 }: {
   /** Deck list prefetched by the route loader; `null`when signed out. */
-  initialData?: { mine: Deck[]; popular: Deck[]; signedIn: boolean } | null;
+  initialData?: {
+    mine: Deck[];
+    popular: Deck[];
+    folders?: DeckFolderSummary[];
+    signedIn: boolean;
+    reviewAllCount?: number;
+  } | null;
 } = {}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
@@ -34,7 +48,9 @@ export function FlashcardsColumn({
   const seeded = useRef(initialData != null);
   const [mine, setMine] = useState<Deck[]>(initialData?.mine ?? []);
   const [popular, setPopular] = useState<Deck[]>(initialData?.popular ?? []);
+  const [folders, setFolders] = useState<DeckFolderSummary[]>(initialData?.folders ?? []);
   const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
+  const [reviewAllCount, setReviewAllCount] = useState(initialData?.reviewAllCount ?? 0);
   const [loading, setLoading] = useState(!initialData);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -53,7 +69,9 @@ export function FlashcardsColumn({
       const data = await api(listDecksApi);
       setMine(data.mine ?? []);
       setPopular(data.popular ?? []);
+      setFolders(data.folders ?? []);
       setSignedIn(!!data.signedIn);
+      setReviewAllCount(data.reviewAllCount ?? 0);
     } catch {
       /* a failed load leaves the lists as they were */
     }
@@ -106,7 +124,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className={`flex items-center gap-3 rounded-site p-4`}
+      className={`flex min-w-0 items-center gap-3 rounded-site p-4`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
@@ -126,7 +144,8 @@ export function FlashcardsColumn({
                 defaultValue: '· by {{owner}}',
               })
             : ''}
-          {d.isPublic ? t('deck-public-suffix', { defaultValue: '· public' }) : ''}
+          {d.isPublic ? t('deck-public-suffix', { defaultValue: '· public' }) : ''}{' '}
+          <DeckDue count={d.dueCount ?? 0} />
         </p>
       </div>
     </Link>
@@ -158,6 +177,8 @@ export function FlashcardsColumn({
       />
 
       <StudyTabs active="/study" />
+      {signedIn && reviewAllCount > 0 && <ReviewAllLink count={reviewAllCount} />}
+      {signedIn && <ReminderSettings />}
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
@@ -238,12 +259,12 @@ export function FlashcardsColumn({
       )}
 
       <div className="space-y-6 py-4">
-        {mine.length > 0 && (
+        {(mine.length > 0 || folders.length > 0) && (
           <section>
             <h2 className="site-section-label mb-2">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
-            <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
+            <DeckFolderList decks={mine} folders={folders} renderDeck={(d) => DeckCard(d)} onChanged={() => void load()} />
           </section>
         )}
         <section>

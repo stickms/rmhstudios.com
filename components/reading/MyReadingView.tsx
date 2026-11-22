@@ -10,6 +10,7 @@ import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
 const MyHighlightsPanel = lazy(() => import('./MyHighlightsPanel'));
 const HighlightsNotebook = lazy(() => import('./HighlightsNotebook'));
 const ShelvesPanel = lazy(() => import('./ShelvesPanel'));
+const ReadingTimeSection = lazy(() => import('./ReadingTimeSection'));
 const ChallengePanel = lazy(() => import('./ChallengePanel'));
 
 /**
@@ -36,6 +37,9 @@ export function MyReadingView({ tab }: { tab: ReadingTab }) {
           })}
         </p>
       </div>
+      <ArrivalSuspense fallback={<Skeleton className="h-32 w-full" />}>
+        <ReadingTimeSection />
+      </ArrivalSuspense>
       <Tabs
         aria-label={t('my-reading-tabs', {
           defaultValue: 'My reading sections',

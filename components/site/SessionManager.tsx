@@ -9,7 +9,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Laptop, LogOut, Smartphone, Tablet } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface SessionRow {
   id: string;
@@ -71,6 +71,7 @@ function describeDevice(ua?: string | null): {
 }
 
 export function SessionManager() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
   const { data: session } = useSession();
@@ -227,9 +228,7 @@ export function SessionManager() {
                       {s.updatedAt
                         ? t('session-active', {
                             defaultValue: 'Active {{when}}',
-                            when: formatDistanceToNow(new Date(s.updatedAt), {
-                              addSuffix: true,
-                            }),
+                            when: fmt.relative(new Date(s.updatedAt)),
                           })
                         : null}
                     </p>

@@ -19,13 +19,25 @@ import type { EventDTO, EventPersonDTO, RsvpResult, RsvpStatus } from '@/lib/eve
 import {
   effectiveAttendance,
   hostFor,
-  nextOccurrence,
   occurrenceIndexOf,
+  occurrencesBetween,
   type RecurringSeries,
 } from './recurrence';
+import {
+  applyOverrides,
+  effectiveStart,
+  toUpcomingDTO,
+  upcomingOccurrences,
+  type OccurrenceOverride,
+} from '@/lib/events/occurrences';
+import { overridesFor, overridesForEvents } from '@/lib/events/occurrences.server';
 import { loadPeople } from './people.server';
 import { WHOLE_EVENT, seriesOf } from './event-model';
 import type { EventRecurrenceDTO } from './types';
+import type { UpcomingDateDTO } from '@/lib/events/occurrences';
+
+/** How many upcoming dates the event card lists. */
+const UPCOMING_SHOWN = 8;
 
 export interface SeriesRow {
   id: string;
@@ -161,20 +173,43 @@ export async function decorateRecurring(
     dto: EventDTO;
     row: SeriesRow;
     series: RecurringSeries;
+    /** The ORIGINAL start of the shown date: answers are keyed by it. */
     at: Date;
     index: number;
+    /** Where the date is shown now (a moved date differs from `at`). */
+    shownStart: Date;
+    shownEnd: Date | null;
+    upcoming: UpcomingDateDTO[];
   }[] = [];
   const dropped = new Set<string>();
+  const seriesIds = dtos.filter((d) => byId.has(d.id) && seriesFromRow(byId.get(d.id) as SeriesRow)).map((d) => d.id);
+  const overridesBy = await overridesForEvents(seriesIds);
   for (const dto of dtos) {
     const row = byId.get(dto.id);
     const series = row ? seriesFromRow(row) : null;
     if (!row || !series) continue;
-    const next = nextOccurrence(series, new Date(now.getTime() - Math.max(0, durationOf(row)) / 2));
-    if (!next) {
+    const overrides = overridesBy.get(dto.id) ?? [];
+    // Skipped dates are listed (struck through) but never the one shown: the card leads with the next live date.
+    const all = upcomingOccurrences(series, overrides, {
+      now,
+      spanMs: durationOf(row),
+      limit: overrides.length + UPCOMING_SHOWN,
+    });
+    const live = all.find((o) => o.state !== 'skipped');
+    if (!live) {
       dropped.add(dto.id);
       continue;
     }
-    planned.push({ dto, row, series, at: next.startsAt, index: next.index });
+    planned.push({
+      dto,
+      row,
+      series,
+      at: live.originalAt,
+      index: live.index,
+      shownStart: live.startsAt,
+      shownEnd: live.endsAt,
+      upcoming: all.slice(0, UPCOMING_SHOWN).map(toUpcomingDTO),
+    });
   }
   if (planned.length === 0 && dropped.size === 0) return dtos;
 
@@ -230,7 +265,6 @@ export async function decorateRecurring(
       if (s === 'going') going++;
       else maybe++;
     }
-    const durationMs = durationOf(p.row);
     const hostId = hostFor(p.row.hostId ?? '', p.row.rotatingHostIds, p.index);
     const hostPerson = people.get(hostId);
     const recurrence: EventRecurrenceDTO = {
@@ -245,11 +279,13 @@ export async function decorateRecurring(
       }),
       viewerEveryTime:
         !!viewerId && standing.some((s) => s.eventId === p.row.id && s.userId === viewerId),
+      occurrenceAt: p.at.toISOString(),
+      upcoming: p.upcoming,
     };
     decorated.set(p.row.id, {
       ...p.dto,
-      startsAt: p.at.toISOString(),
-      endsAt: durationMs > 0 ? new Date(p.at.getTime() + durationMs).toISOString() : null,
+      startsAt: p.shownStart.toISOString(),
+      endsAt: p.shownEnd ? p.shownEnd.toISOString() : null,
       host: hostPerson ? toPerson(hostPerson) : p.dto.host,
       goingCount: going,
       maybeCount: maybe,
@@ -289,31 +325,42 @@ export async function upcomingOccurrenceEventIds(userId: string, now: Date): Pro
 export class OccurrenceError extends Error {
   constructor(
     public readonly code:
-      'NOT_FOUND' | 'CANCELED' | 'CAPACITY_FULL' | 'NO_OCCURRENCE' | 'BAD_OCCURRENCE',
+      'NOT_FOUND' | 'CANCELED' | 'CAPACITY_FULL' | 'NO_OCCURRENCE' | 'BAD_OCCURRENCE' | 'SKIPPED',
   ) {
     super(code);
   }
 }
 
-/** The occurrence an RSVP applies to: the one asked for (validated) or the next. */
+/**
+ * The occurrence an RSVP applies to: the one asked for (validated; a skipped date is refused unless
+ * `allowSkipped`, which leaving a date uses) or the next live one. `effectiveAt` is where it is shown.
+ */
 async function resolveOccurrence(
   row: SeriesRow,
   requested: Date | undefined,
   now: Date,
-): Promise<{ at: Date; index: number }> {
+  opts: { allowSkipped?: boolean } = {},
+): Promise<{ at: Date; index: number; effectiveAt: Date }> {
   const series = seriesFromRow(row);
   if (!series) throw new OccurrenceError('NOT_FOUND');
+  const overrides = await overridesFor(row.id);
   if (requested) {
     const index = occurrenceIndexOf(series, requested);
     if (index === null) throw new OccurrenceError('BAD_OCCURRENCE');
-    return { at: requested, index };
+    const effectiveAt = effectiveStart(requested, overrides);
+    if (!effectiveAt && !opts.allowSkipped) throw new OccurrenceError('SKIPPED');
+    return { at: requested, index, effectiveAt: effectiveAt ?? requested };
   }
-  const next = nextOccurrence(series, new Date(now.getTime() - Math.max(0, durationOf(row)) / 2));
-  if (!next) throw new OccurrenceError('NO_OCCURRENCE');
-  return { at: next.startsAt, index: next.index };
+  const live = upcomingOccurrences(series, overrides, {
+    now,
+    spanMs: durationOf(row),
+    limit: overrides.length + 1,
+  }).find((o) => o.state !== 'skipped');
+  if (!live) throw new OccurrenceError('NO_OCCURRENCE');
+  return { at: live.originalAt, index: live.index, effectiveAt: live.startsAt };
 }
 
-async function summarizeOccurrence(
+export async function summarizeOccurrence(
   eventId: string,
   at: Date,
   userId: string,
@@ -355,11 +402,17 @@ export async function rsvpRecurring(
 ) {
   if (row.canceledAt) throw new OccurrenceError('CANCELED');
   const now = new Date();
-  const { at } = await resolveOccurrence(row, opts.occurrenceAt, now);
+  const { at, effectiveAt } = await resolveOccurrence(row, opts.occurrenceAt, now);
 
   await prisma.$transaction(async (tx) => {
     // Serialise per event so the capacity check cannot be raced.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'event-rsvp:' + row.id}))`;
+    // A skip that committed between the read above and this lock refuses the answer too (s06-10).
+    const skip = await tx.eventOccurrenceOverride.findUnique({
+      where: { eventId_occurrenceAt: { eventId: row.id, occurrenceAt: at } },
+      select: { kind: true },
+    });
+    if (skip?.kind === 'skip') throw new OccurrenceError('SKIPPED');
     if (status === 'going' && row.capacity != null) {
       const [standing, occurrence] = await Promise.all([
         tx.rsvp.findMany({
@@ -398,7 +451,7 @@ export async function rsvpRecurring(
       });
     }
   });
-  return { at, summary: await summarizeOccurrence(row.id, at, userId) };
+  return { at, effectiveAt, summary: await summarizeOccurrence(row.id, at, userId) };
 }
 
 /**
@@ -413,7 +466,7 @@ export async function unrsvpRecurring(
   occurrenceAt?: Date,
 ) {
   const now = new Date();
-  const { at } = await resolveOccurrence(row, occurrenceAt, now);
+  const { at, effectiveAt } = await resolveOccurrence(row, occurrenceAt, now, { allowSkipped: true });
   if (scope === 'all') {
     await prisma.$transaction([
       prisma.rsvp.deleteMany({ where: { eventId: row.id, userId, occurrenceAt: WHOLE_EVENT } }),
@@ -438,7 +491,7 @@ export async function unrsvpRecurring(
       });
     }
   }
-  return { at, summary: await summarizeOccurrence(row.id, at, userId) };
+  return { at, effectiveAt, summary: await summarizeOccurrence(row.id, at, userId) };
 }
 
 /** Is this member attending that occurrence? (the reminder worker re-checks with it) */
@@ -453,7 +506,23 @@ export async function isGoingToOccurrence(
 
 /** The occurrence right after `after`, for scheduling the next reminder of an every-time RSVP. */
 export function occurrenceAfter(row: SeriesRow, after: Date): Date | null {
+  return nextLiveOccurrenceAfter(row, after, [])?.occurrenceAt ?? null;
+}
+
+/**
+ * The next date after `after` that has not been skipped: its original start (the answer key) and where it
+ * is now (a moved date's new time). Skipped dates are passed over, so an "every time" chain never schedules
+ * a reminder for one.
+ */
+export function nextLiveOccurrenceAfter(
+  row: SeriesRow,
+  after: Date,
+  overrides: readonly OccurrenceOverride[],
+): { occurrenceAt: Date; startsAt: Date } | null {
   const series = seriesFromRow(row);
   if (!series) return null;
-  return nextOccurrence(series, new Date(after.getTime() + 60_000))?.startsAt ?? null;
+  const from = new Date(after.getTime() + 60_000);
+  const raw = occurrencesBetween(series, from, new Date(from.getTime() + 800 * 86_400_000), overrides.length + 2);
+  const live = applyOverrides(raw, overrides)[0];
+  return live ? { occurrenceAt: live.originalAt, startsAt: live.startsAt } : null;
 }

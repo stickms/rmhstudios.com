@@ -71,6 +71,12 @@ let dbPromise: Promise<IDBPDatabase<DraftDB>> | null = null;
 function getDB(): Promise<IDBPDatabase<DraftDB>> {
   if (!dbPromise) {
     dbPromise = openDB<DraftDB>(DB_NAME, DB_VERSION, {
+      // Clearing this device (/settings/device) deletes the database; let it go instead of holding the delete.
+      blocking() {
+        const open = dbPromise;
+        dbPromise = null;
+        void open?.then((db) => db.close());
+      },
       upgrade(db) {
         if (!db.objectStoreNames.contains(STORE)) {
           const store = db.createObjectStore(STORE, {

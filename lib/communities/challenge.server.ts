@@ -9,6 +9,7 @@
  * author. It runs from the worker (see jobs.server.ts) and, idempotently, from
  * the first read after the deadline so the result never waits for a cron tick.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { logModAction } from '@/lib/communities/modlog.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -237,6 +238,8 @@ export async function getCurrentChallenge(
             imageUrls: true,
             imageAlts: true,
             gifUrl: true,
+            gifAlt: true,
+            contentWarning: true,
             user: { select: userDisplaySelect },
           },
         },
@@ -264,10 +267,13 @@ export async function getCurrentChallenge(
       id: e.id,
       postId: e.postId,
       author: resolveUser(e.post.user),
-      content: e.post.content.slice(0, 280),
-      imageUrl: e.post.imageUrls[0] ?? null,
-      imageAlt: e.post.imageAlts[0] ?? null,
-      gifUrl: e.post.gifUrl,
+      // An entry with a content warning reason shows the reason in place of its text and media (sprint 06 #16): the
+      // panel has no reveal control, so what it cannot reveal it leaves out.
+      content: (previewTextFor(e.post) ?? '').slice(0, 280),
+      imageUrl: e.post.contentWarning ? null : (e.post.imageUrls[0] ?? null),
+      imageAlt: e.post.contentWarning ? null : (e.post.imageAlts[0] ?? null),
+      gifUrl: e.post.contentWarning ? null : e.post.gifUrl,
+      gifAlt: e.post.contentWarning ? null : e.post.gifAlt,
       voteCount: phase === 'closed' ? e.voteCount : null,
       mine: e.userId === viewerId,
       isWinner: e.id === challenge.winnerEntryId,

@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import type { ProfileData } from '@/components/profile/profile-types';
 import type { ProfileEditInitial, SavedProfileData } from '../profile-edit/profile-edit-state';
+import { currentDocumentLocale, formatDate } from '@/lib/core/format';
 
 /**
  * Pure state helpers for the profile column: tab ids, which tabs a viewer may
@@ -198,6 +199,16 @@ export function applySavedProfile(prev: ProfileData | null, data: SavedProfileDa
           dmPrivacy: data.dmPrivacy,
         }
       : {}),
+    ...(data.dmRequests !== undefined
+      ? {
+          dmRequests: data.dmRequests,
+        }
+      : {}),
+    ...(data.followListVisibility !== undefined
+      ? {
+          followListVisibility: data.followListVisibility,
+        }
+      : {}),
     ...(data.profileSongSpotifyId !== undefined
       ? {
           profileSongSpotifyId: data.profileSongSpotifyId,
@@ -257,6 +268,8 @@ export function buildEditInitial(
     bannerUrl: profile.bannerUrl,
     showLikes: profile.showLikes,
     dmPrivacy: profile.dmPrivacy,
+    followListVisibility: profile.followListVisibility,
+    dmRequests: profile.dmRequests,
     tipGoal: profile.tipGoal,
     tipGoalLabel: profile.tipGoalLabel,
     membershipPriceCoins: profile.membershipPriceCoins,
@@ -302,7 +315,7 @@ export function groupPostsByPeriod(items: FeedItem[], now: Date = new Date()): P
     } else {
       kind = 'month';
       key = `m-${at.getFullYear()}-${at.getMonth()}`;
-      text = at.toLocaleDateString('en-US', {
+      text = formatDate(at, currentDocumentLocale(), {
         month: 'long',
         year: 'numeric',
       });

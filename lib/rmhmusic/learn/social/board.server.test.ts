@@ -268,6 +268,11 @@ vi.mock('@/lib/communities/access.server', () => ({
   getRole: vi.fn(),
 }));
 
+// s05-01: game boards (scopeFilter) leave hidden and banned members off; none here.
+vi.mock('@/lib/game/leaderboard-privacy.server', () => ({
+  leaderboardHiddenUserIds: async () => new Set<string>(),
+}));
+
 import { loadBoard } from './board.server';
 import { setMusicSocial } from './prefs.server';
 

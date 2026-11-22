@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Heart, Eye, GitBranch, ExternalLink, Calendar, Edit, Trash2, Lock } from 'lucide-react';
+import { Heart, Eye, GitBranch, ExternalLink, Calendar, Edit, Trash2, Lock, ChartColumn } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { CoinIcon } from '@/components/ui/CoinIcon';
 import { BlurImage } from '@/components/ui/BlurImage';
@@ -16,6 +16,8 @@ import type { Build } from '@/lib/user-builds-types';
 import { liquidVTName } from '@/lib/view-transition';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
+import { BuildReleases } from './BuildReleases';
+import { ScreenshotStrip } from './ScreenshotStrip';
 import { PostAwards } from '@/components/awards/PostAwards';
 import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
@@ -31,13 +33,15 @@ import {
   viewUserBuildApi,
 } from '@/lib/user-builds.contract';
 import { useArrival } from '@/components/ui/arrive';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { formatDate as formatDateLocale } from '@/lib/core/format';
 
 interface BuildDetailProps {
   build: Build;
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
+function formatDate(dateStr: string, locale: string): string {
+  return formatDateLocale(new Date(dateStr), locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -49,6 +53,7 @@ function formatDate(dateStr: string): string {
  * route's `PageLayout` header — this renders everything below it.
  */
 export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-user-builds');
   const confirm = useConfirm();
   const navigate = useNavigate();
@@ -234,11 +239,25 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
 
           <span className="flex items-center gap-2 text-sm text-site-text-muted">
             <Calendar className="size-4" aria-hidden />
-            {formatDate(build.publishedAt || build.createdAt)}
+            {formatDate(build.publishedAt || build.createdAt, fmt.locale)}
           </span>
 
           {isOwner && (
             <div className="ml-auto flex items-center gap-2">
+              <Button asChild variant="ghost" size="sm">
+                <Link
+                  to="/create/builds/$slug/insights"
+                  params={{
+                    slug: build.slug,
+                  }}
+                >
+                  <ChartColumn aria-hidden />
+                  {t('link', {
+                    ns: 'build-insights',
+                    defaultValue: 'Insights',
+                  })}
+                </Link>
+              </Button>
               <Button asChild variant="default" size="sm">
                 <Link to={`/create/builds/submit?edit=${build.id}` as string}>
                   <Edit aria-hidden />
@@ -345,7 +364,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
               emit a matching preload from `head()`; keep these props in sync. */}
           <BlurImage
             src={build.thumbnailUrl}
-            alt={build.title}
+            alt={build.thumbnailAlt || build.title}
             fit="cover"
             width={1280}
             quality={85}
@@ -356,6 +375,9 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
           />
         </div>
       )}
+
+      {/* Screenshots (s07-17): the page's pictures, shown before an unlock; the viewer loads on first use. */}
+      {build.screenshots && build.screenshots.length > 0 && <ScreenshotStrip items={build.screenshots} />}
 
       {/* Paywall — paid build whose content the viewer hasn't unlocked */}
       {build.locked && (
@@ -379,7 +401,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
               {session
                 ? t('unlock-for', {
                     defaultValue: 'Unlock for {{price}}',
-                    price: (build.price ?? 0).toLocaleString(),
+                    price: fmt.number(build.price ?? 0),
                   })
                 : t('sign-in-to-unlock', {
                     defaultValue: 'Sign in to unlock',
@@ -405,32 +427,19 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
         </Card>
       )}
 
-      {/* Version History */}
-      {build.versions && build.versions.length > 0 && (
-        <Card>
-          <CardContent>
-            <h2 className="mb-4 text-lg font-semibold text-site-text">
-              {t('version-history', {
-                defaultValue: 'Version History',
-              })}
-            </h2>
-            <div className="space-y-3">
-              {build.versions.map((version) => (
-                <div key={version.id} className="flex items-start gap-3 rounded-site-sm p-3">
-                  <Badge className="font-mono">v{version.version}</Badge>
-                  <div className="min-w-0 flex-1">
-                    {version.changelog && <p className="text-sm text-site-text-muted">{version.changelog}</p>}
-                    <p className="mt-1 text-xs text-site-text-muted">
-                      {formatDate(version.createdAt)}
-                      {version.commitHash && <span className="ml-2 font-mono">{version.commitHash.slice(0, 7)}</span>}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Releases */}
+      <BuildReleases
+        buildId={build.id}
+        repoUrl={build.repoUrl}
+        isOwner={isOwner}
+        initialReleases={(build.versions ?? []).map((v) => ({
+          id: v.id,
+          version: v.version,
+          changelog: v.changelog ?? null,
+          commitHash: v.commitHash ?? null,
+          createdAt: v.createdAt,
+        }))}
+      />
 
       {/* Comments */}
       <Card>

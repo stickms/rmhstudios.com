@@ -1,0 +1,23 @@
+{
+  "announce-helpful-off": "Helpful flag removed.",
+  "announce-helpful-on": "Marked as helpful.",
+  "anonymous-author": "A rater",
+  "description": "Only your team can read this. Raters can leave their name off.",
+  "empty": "No feedback yet.",
+  "error-generic": "Something went wrong. Try again.",
+  "feedback-not-saved": "Your scores were saved, but your feedback could not be.",
+  "field-anonymous": "Leave my name off",
+  "field-count_one": "{{count}} of {{max}}",
+  "field-count_other": "{{count}} of {{max}}",
+  "field-label": "Feedback for the team (optional)",
+  "field-placeholder": "What worked, what broke",
+  "field-too-short": "At least {{min}} characters, or leave it empty.",
+  "helpful-off": "Helpful",
+  "helpful-on": "Marked helpful",
+  "load-error": "Could not load the feedback.",
+  "open_one": "Feedback ({{count}})",
+  "open_other": "Feedback ({{count}})",
+  "report": "Report",
+  "team-found-helpful": "The team found this helpful",
+  "title": "Feedback for your entry"
+}

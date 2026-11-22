@@ -36,6 +36,8 @@ export interface StoredMessage {
   read?: boolean;
   createdAt: Date | string;
   gifUrl?: string | null;
+  /** The GIF's description (sprint 06 #15). */
+  gifAlt?: string | null;
   imageUrls?: string[] | null;
   imageAlts?: string[] | null;
   editedAt?: Date | string | null;
@@ -64,6 +66,8 @@ export interface MessageView {
   read: boolean;
   createdAt: string;
   gifUrl: string | null;
+  /** The GIF's description; null = undescribed (rendered as "GIF"). */
+  gifAlt: string | null;
   imageUrls: string[];
   /** Descriptions, index-aligned with `imageUrls` ('' = none); same length. */
   imageAlts: string[];
@@ -123,6 +127,7 @@ export function toMessageView(row: StoredMessage, opts: ViewOptions = {}): Messa
     read: row.read ?? false,
     createdAt: iso(row.createdAt) ?? new Date(0).toISOString(),
     gifUrl: row.gifUrl ?? null,
+    gifAlt: row.gifUrl ? (row.gifAlt ?? null) : null,
     imageUrls: row.imageUrls ?? [],
     imageAlts: normalizeImageAlts(row.imageUrls, row.imageAlts),
     editedAt: iso(row.editedAt),
@@ -144,6 +149,7 @@ export function toMessageView(row: StoredMessage, opts: ViewOptions = {}): Messa
     ...base,
     content: '',
     gifUrl: null,
+    gifAlt: null,
     imageUrls: [],
     imageAlts: [],
     audioUrl: null,

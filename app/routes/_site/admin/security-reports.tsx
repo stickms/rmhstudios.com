@@ -4,7 +4,6 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { formatDistanceToNow } from 'date-fns';
 import { ShieldAlert, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,7 @@ import {
 } from '@/lib/security-report-schema';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/_site/admin/security-reports')({
   head: () => ({ meta: [{ title: 'Security Reports | RMH Studios' }] }),
@@ -189,7 +189,7 @@ function ReportCard({
   onStatus: (id: string, next: SecurityReportStatus) => void;
   onNotes: (id: string, notes: string) => void;
   onDelete: (id: string) => void;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
   const [notes, setNotes] = useState(report.adminNotes ?? '');
 
@@ -206,7 +206,7 @@ function ReportCard({
           <h3 className="t-heading text-site-text break-words">{report.title}</h3>
         </div>
         <span className="t-meta whitespace-nowrap">
-          {formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}
+          {fmt.relative(new Date(report.createdAt))}
         </span>
       </div>
 

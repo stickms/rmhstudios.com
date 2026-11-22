@@ -12,10 +12,12 @@
  * Server-only: touches Prisma and reads server helpers.
  */
 
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { publishedLogWhere } from '@/lib/blog/publication';
 import { WHOLE_EVENT } from '@/lib/calendar/event-model';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
+import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
 import { SITE_URL } from '@/lib/seo';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
 import { getStreak } from '@/lib/streak.server';
@@ -56,8 +58,9 @@ interface DigestPost {
   href: string;
   author: string;
   content: string;
-  likeCount: number;
-  commentCount: number;
+  /** `null` when the author hides the counts on their posts (lib/feed/quiet-counts): the email omits the line. */
+  likeCount: number | null;
+  commentCount: number | null;
 }
 
 interface Editorial {
@@ -106,12 +109,14 @@ export async function topPostsFromFollows(userId: string, since: Date): Promise<
     take: 60,
     select: {
       id: true,
+      userId: true,
       content: true,
+      contentWarning: true,
       likeCount: true,
       commentCount: true,
       repostCount: true,
       viewCount: true,
-      user: { select: { name: true, handle: true, username: true } },
+      user: { select: { name: true, handle: true, username: true, profile: { select: { hideCountsOnMine: true } } } },
     },
   });
 
@@ -122,13 +127,15 @@ export async function topPostsFromFollows(userId: string, since: Date): Promise<
       // The post permalink resolves by postId; the `$userid` segment is the
       // author's handle (decorative — any value loads the post).
       const seg = p.user.handle || p.user.username || 'u';
+      const hidden = countsHiddenFrom(p.userId, p.user.profile?.hideCountsOnMine, userId);
       return {
         id: p.id,
         href: `/u/${encodeURIComponent(seg)}/post/${p.id}`,
         author: p.user.name || (p.user.handle ? `@${p.user.handle}` : p.user.username) || 'Someone',
-        content: truncate(p.content || '', 200),
-        likeCount: p.likeCount,
-        commentCount: p.commentCount,
+        content: truncate(previewTextFor(p) || '', 200),
+        // Ranked above on the real numbers; the email shows them only for authors who have not hidden them.
+        likeCount: hidden ? null : p.likeCount,
+        commentCount: hidden ? null : p.commentCount,
       };
     });
 }
@@ -310,7 +317,7 @@ function renderDigest(input: RenderInput): { html: string; text: string; subject
           <a href="${esc(abs(p.href))}" style="display:block;text-decoration:none;color:${textCol};background:${card};border:1px solid ${border};border-radius:12px;padding:16px;">
             <div style="font-size:13px;color:${muted};margin-bottom:6px;">${esc(p.author)}</div>
             <div style="font-size:15px;line-height:1.45;color:${textCol};">${esc(p.content) || '<em style="color:' + muted + '">[media post]</em>'}</div>
-            <div style="font-size:12px;color:${muted};margin-top:10px;">♥ ${p.likeCount} · 💬 ${p.commentCount}</div>
+            ${p.likeCount === null ? '' : `<div style="font-size:12px;color:${muted};margin-top:10px;">♥ ${p.likeCount} · 💬 ${p.commentCount}</div>`}
           </a>
         </td></tr>`,
       )

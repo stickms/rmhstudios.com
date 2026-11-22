@@ -19,6 +19,7 @@ import {
 import { api } from '@/lib/contract/client';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function formatMinutes(m: number): string {
   return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
@@ -29,6 +30,7 @@ function formatMinutes(m: number): string {
  * into a reserved-height card so nothing shifts when it fills in.
  */
 export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: boolean }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-arcade');
   const [data, setData] = useState<BacklogData | null>(null);
   const [rival, setRival] = useState<RivalData | null>(null);
@@ -201,7 +203,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
                 defaultValue: 'Your rival: {{name}} (#{{rank}}) is {{gap}} points ahead.',
                 name: rival.rival.name,
                 rank: rival.rival.rank,
-                gap: Math.abs(rival.rival.score - (rival.myScore ?? 0)).toLocaleString(),
+                gap: fmt.number(Math.abs(rival.rival.score - (rival.myScore ?? 0))),
               })}
         </p>
       ) : null}

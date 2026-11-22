@@ -58,7 +58,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               <div className="aspect-video w-full overflow-hidden bg-site-bg">
                 <BlurImage
                   src={build.thumbnailUrl}
-                  alt={build.title}
+                  alt={build.thumbnailAlt || build.title}
                   fit="cover"
                   width={640}
                   quality={75}

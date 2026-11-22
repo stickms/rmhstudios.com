@@ -31,6 +31,12 @@ import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@features/void-breaker/engine/saveSystem';
 import { ABILITY_COOLDOWNS } from '@features/void-breaker/engine/abilityProgression';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { useSession } from '@/components/session/session-context';
+import { useAssistRun } from '@/components/games/assist-run-island';
+import { NO_ASSIST_FLAGS, voidBreakerAssistFlags, type VoidBreakerAssistFlags } from '@features/void-breaker/engine/assist-profile';
+import { drawColorSafeMarkers } from '@features/void-breaker/engine/assist-markers';
+import { AssistContinueHint } from './assist-ui';
 
 /** localStorage that never throws (Safari private mode / blocked site data). */
 const safeStore = {
@@ -62,7 +68,7 @@ const EMPTY_HUD: HUDState = {
   bossActive: false, bossPhase: 1, bossName: '', dashReady: true, dashCooldownFraction: 0,
   waveBreak: false, paused: false, countdown: 3, wingLevel: 0,
   focusReady: true, focusActive: false, focusCooldownFraction: 0,
-  detonateReady: false, dialogue: null,
+  detonateReady: false, dialogue: null, awaitContinue: false,
   allyActive: false, allyHp: 0, allyMaxHp: 6, allyDowned: false,
   mapName: 'Kowloon Void Zone',
   controlsInverted: false, arenaShrinkFraction: 0,
@@ -75,7 +81,7 @@ const EMPTY_HUD: HUDState = {
   pendingUpgrades: [], upgradeIsBossReward: false,
 };
 
-export function VoidBreakerGame() {
+export function VoidBreakerGame() { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('c-void-breaker');
   const cloud = useCloudSave(voidBreakerSave, {
     gameName: 'Void Breaker',
@@ -84,6 +90,12 @@ export function VoidBreakerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<VoidBreakerEngine | null>(null);
   const rendererRef = useRef<VBRenderer | null>(null);
+  // Assists (settings > Game assists): the flags of the run in progress, and the canvas the colour-safe marks go on.
+  const assistRef = useRef<VoidBreakerAssistFlags>(NO_ASSIST_FLAGS);
+  const markerCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const markersDrawnRef = useRef(false);
+  const session = useSession();
+  const startAssistRun = useAssistRun('void-breaker', !!session.data);
   /** Set once if renderer.draw throws, to avoid spamming the console each frame. */
   const renderDrawFailedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -235,6 +247,7 @@ export function VoidBreakerGame() {
         case 'KeyE': inp.phaseShift = down; break;
         case 'KeyR': inp.reflectShield = down; break;
         case 'KeyT': inp.allySynergy = down; break;
+        case 'Enter': if (down && !e.repeat) gameRef.current?.assistContinue(); break;
       }
       if (down && (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'Space')) {
         e.preventDefault();
@@ -374,6 +387,20 @@ export function VoidBreakerGame() {
           }
         }
 
+        // Colour-safe: outline patterns and letters over either renderer, only while the assist is on.
+        const markerCanvas = markerCanvasRef.current;
+        const markerCtx = markerCanvas?.getContext('2d');
+        if (markerCanvas && markerCtx) {
+          if (assistRef.current.colorSafe && renderer.worldToCanvas) {
+            const toCanvas = renderer.worldToCanvas.bind(renderer);
+            drawColorSafeMarkers(markerCtx, game, toCanvas, markerCanvas.width, markerCanvas.height);
+            markersDrawnRef.current = true;
+          } else if (markersDrawnRef.current) {
+            markerCtx.clearRect(0, 0, markerCanvas.width, markerCanvas.height);
+            markersDrawnRef.current = false;
+          }
+        }
+
         // Watch for pause state change via ESC key to open pause menu
         if (game.state === 'paused' && !showPauseMenuRef.current) {
           showPauseMenuRef.current = true;
@@ -413,6 +440,7 @@ export function VoidBreakerGame() {
             dashReady: game.player.dashCooldown <= 0 && !game.player.dashActive,
             dashCooldownFraction: Math.max(0, game.player.dashCooldown / DASH_COOLDOWN),
             waveBreak: game.state === 'waveBreak',
+            awaitContinue: game.awaitingContinue,
             paused: game.state === 'paused',
             countdown: game.countdownTimer,
             wingLevel: game.wingLevel,
@@ -503,9 +531,14 @@ export function VoidBreakerGame() {
   }, [hud.waveBreak, hud.wave]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  const startRun = useCallback((rush: boolean) => {
-    sfxRef.current?.unlock();
-    sfxRef.current?.play('uiClick');
+  /** Hand this run's assist flags to the engine and the renderer. */
+  const applyAssist = useCallback((flags: VoidBreakerAssistFlags) => {
+    assistRef.current = flags;
+    if (gameRef.current) gameRef.current.assist = flags;
+    rendererRef.current?.setCalm?.(flags.calm);
+  }, []);
+
+  const launchRun = useCallback((rush: boolean) => {
     if (gameRef.current) {
       gameRef.current.metaBonuses = metaBonuses(meta);
       gameRef.current.character = getCharacter(characterId);
@@ -527,6 +560,16 @@ export function VoidBreakerGame() {
     showPauseMenuRef.current = false;
     playMusic();
   }, [playMusic, meta, characterId, activeMods]);
+  // The server hands out the assist profile (and records that the run is assisted) before the run begins;
+  // a failed call is the plain game.
+  const startRun = useCallback((rush: boolean) => {
+    sfxRef.current?.unlock();
+    sfxRef.current?.play('uiClick');
+    void startAssistRun().then((profile) => {
+      applyAssist(voidBreakerAssistFlags(profile));
+      launchRun(rush);
+    });
+  }, [startAssistRun, applyAssist, launchRun]);
   const handleStart = useCallback(() => startRun(false), [startRun]);
   const handleStartBossRush = useCallback(() => startRun(true), [startRun]);
 
@@ -701,11 +744,8 @@ export function VoidBreakerGame() {
     sfxRef.current?.play('uiClick');
   }, []);
 
-  /** Load saved game and resume play. */
-  const handleContinue = useCallback(() => {
-    sfxRef.current?.unlock();
-    const save = loadGame();
-    if (!save || !save.stateJson) return;
+  /** Load a saved run into the engine and resume play. */
+  const resumeSaved = useCallback((stateJson: Record<string, unknown>) => {
     const game = gameRef.current;
     if (!game) return;
     game.bossRush = false;
@@ -718,7 +758,7 @@ export function VoidBreakerGame() {
       ? { ...mods.effects, maxHpDelta: mods.effects.maxHpDelta + hc.amount }
       : mods.effects;
     runCoreMultRef.current = hc ? 0 : mods.coreMult;
-    const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
+    const ok = game.hydrateGameState(stateJson);
     if (ok) {
       setRunStats(null);
       setUiState('playing');
@@ -727,6 +767,17 @@ export function VoidBreakerGame() {
       playMusic();
     }
   }, [playMusic, meta, characterId, activeMods]);
+
+  /** Load saved game and resume play (after the server hands out this run's assist profile). */
+  const handleContinue = useCallback(() => {
+    sfxRef.current?.unlock();
+    const save = loadGame();
+    if (!save || !save.stateJson) return;
+    void startAssistRun().then((profile) => {
+      applyAssist(voidBreakerAssistFlags(profile));
+      resumeSaved(save.stateJson as Record<string, unknown>);
+    });
+  }, [startAssistRun, applyAssist, resumeSaved]);
 
   const showGame = uiState === 'playing';
 
@@ -801,6 +852,14 @@ export function VoidBreakerGame() {
             onTouchEnd={handleCanvasTouch}
             style={{ touchAction: 'none' }}
           />
+          {/* Colour-safe marks (assist) are drawn here, over either renderer. */}
+          <canvas
+            ref={markerCanvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full"
+          />
         </div>
       </div>
 
@@ -815,7 +874,7 @@ export function VoidBreakerGame() {
             {/* Score + multiplier */}
             <div className="mt-12 pointer-coarse:mt-14 bg-black/70 rounded px-2 py-1 sm:px-3 sm:py-1.5 border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[#00f5ff] font-mono text-xs sm:text-sm font-bold tracking-wider drop-shadow-[0_0_8px_rgba(0,245,255,0.8)]">
-                {hud.score.toLocaleString().padStart(7, '0')}
+                {fmt.number(hud.score).padStart(7, '0')}
               </div>
               <div className={`font-mono text-[10px] sm:text-xs font-bold ${hud.multiplier > 4 ? 'text-[#ff00cc]' :
                 hud.multiplier > 2 ? 'text-[#d4af37]' : 'text-zinc-400'
@@ -1103,6 +1162,8 @@ export function VoidBreakerGame() {
           </div>
         </div>
       )}
+
+      {showGame && hud.awaitContinue && <AssistContinueHint onContinue={() => gameRef.current?.assistContinue()} />}
 
       {/* Narrative Dialogue Overlay */}
 

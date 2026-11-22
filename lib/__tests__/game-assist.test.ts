@@ -136,12 +136,11 @@ describe('normalizeAssists', () => {
 });
 
 describe('the honesty rule', () => {
-  it('ships inert, which is the correct state until a game reads a profile', () => {
-    // Not a placeholder assertion: a game added here without client support
-    // trades its players' leaderboard eligibility for nothing at all. When the
-    // first game adopts, this expectation changes in the same commit that
+  it('lists exactly the games whose client reads a profile', () => {
+    // A game added here without client support trades its players' leaderboard
+    // eligibility for nothing at all. Each entry changes in the same commit that
     // teaches its client to honour the settings.
-    expect([...ASSIST_CAPABLE]).toEqual([]);
+    expect([...ASSIST_CAPABLE].sort()).toEqual(['synapse-storm', 'void-breaker']);
   });
 
   it('every adopting game is a real game in the catalog', () => {

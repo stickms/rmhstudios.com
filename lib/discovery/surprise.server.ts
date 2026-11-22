@@ -6,6 +6,7 @@
  * instant between the oldest and newest row (bounds cached) and read forward
  * from it over the existing time index.
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
@@ -148,6 +149,7 @@ async function postItem(viewerId: string | null, not?: string): Promise<Surprise
   const sel = {
     id: true,
     content: true,
+    contentWarning: true,
     likeCount: true,
     user: { select: { handle: true, id: true } },
   } as const;
@@ -169,7 +171,7 @@ async function postItem(viewerId: string | null, not?: string): Promise<Surprise
   const liked = rows.filter((r) => (r.likeCount ?? 0) >= 1);
   const row = pick(liked.length ? liked : rows);
   if (!row) return null;
-  const title = row.content.replace(/\s+/g, ' ').trim().slice(0, 90);
+  const title = (previewTextFor(row) ?? '').replace(/\s+/g, ' ').trim().slice(0, 90);
   return {
     kind: 'post',
     id: row.id,

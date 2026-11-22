@@ -105,6 +105,8 @@ export function useProfileSave(
           ...buildProfilePatch(draft, handleChanged),
           // The draft keeps the radio value as a string; the server validates the enum.
           dmPrivacy: draft.dmPrivacy as UpdateProfileInput['dmPrivacy'],
+          followListVisibility: draft.followListVisibility as UpdateProfileInput['followListVisibility'],
+          dmRequests: draft.dmRequests,
         },
       }).catch((e: unknown) => {
         throw new Error(

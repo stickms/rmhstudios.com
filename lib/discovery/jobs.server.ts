@@ -44,6 +44,7 @@ async function handlePostCreated(postId: string): Promise<void> {
       id: true,
       userId: true,
       content: true,
+      contentWarning: true,
       audience: true,
       deletedAt: true,
       communityId: true,
@@ -54,7 +55,7 @@ async function handlePostCreated(postId: string): Promise<void> {
   if (!post || post.deletedAt || post.audience !== 'PUBLIC') return;
   const handle = post.user.handle;
   if (post.content.trim() && !post.community?.isPrivate) {
-    await fanOutKeywordAlerts({ id: post.id, userId: post.userId, content: post.content, handle });
+    await fanOutKeywordAlerts({ id: post.id, userId: post.userId, content: post.content, contentWarning: post.contentWarning, handle });
   }
   if (post.communityId) {
     await watchCommunityPost({
@@ -62,6 +63,7 @@ async function handlePostCreated(postId: string): Promise<void> {
       userId: post.userId,
       communityId: post.communityId,
       content: post.content,
+      contentWarning: post.contentWarning,
       handle,
     });
   }

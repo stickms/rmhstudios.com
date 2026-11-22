@@ -120,6 +120,11 @@ export const QueueAddSchema = z.object({
   title: z.string().max(256).optional(),
 });
 
+/** Queue one of the caller's own or shared playlists; the hub loads it itself. */
+export const QueueAddPlaylistSchema = z.object({
+  playlistId: z.string().cuid(),
+});
+
 /**
  * Metadata the leader's player learned about the item it is playing. The URL
  * cannot tell us a video's duration, and it cannot reliably tell us whether a

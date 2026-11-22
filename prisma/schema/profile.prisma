@@ -137,12 +137,35 @@ model UserProfile {
   bannerSizeBytes       Int?
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
+  // Sprint 04 #16: with dmPrivacy FOLLOWERS or NONE, let a refused sender leave
+  // one text message that waits in the Requests folder. Off by default.
+  dmRequests            Boolean   @default(false)
+  // Sprint 06 #17: account-wide defaults for direct-message "Seen" and typing. Off here means off in
+  // every conversation (computed, never copied onto ConversationPref); see lib/chat-plus/receipts.
+  readReceipts          Boolean   @default(true)
+  typingIndicators      Boolean   @default(true)
   // Rich presence & Friends rail (§9). Who may see this user in the rail /
   // activity line: 'mutuals' (default, Discord-like), 'followers', or 'nobody'.
   // presenceDetail=false → online/offline only, activity hidden. Presence
   // activity itself is ephemeral (expires with the heartbeat) — no column.
   presenceVisibility    String    @default("mutuals") @db.VarChar(12)
   presenceDetail        Boolean   @default(true)
+  // Who may browse the followers and following lists (sprint 04 #18):
+  // 'everyone' (default), 'mutuals' (people this user follows back) or 'me'.
+  // Counts stay public; only the lists are gated (lib/social/follow-list-privacy).
+  followListVisibility  String    @default("everyone") @db.VarChar(10)
+  // Quiet counts (sprint 04 #14): `hideCountsOnMine` withholds the like, repost,
+  // reply and view numbers of this member's posts from everyone else (enforced in
+  // every server read path, lib/feed/quiet-counts); `hideCountsInFeed` is the
+  // member's own browsing preference (applied on the client).
+  hideCountsOnMine      Boolean   @default(false)
+  hideCountsInFeed      Boolean   @default(false)
+  // Reader preference (sprint 06 #16): show posts with a content warning instead of covering them. The reason still
+  // shows as a label. Applied on the client; the server always sends the text to a viewer who can reveal it.
+  showContentWarnings   Boolean   @default(false)
+  // Sprint 05 #01: leave this member off every public game board (their own best and rank keep working).
+  // Read through leaderboardHiddenUserIds (lib/game/leaderboard-privacy.server).
+  hideFromLeaderboards  Boolean   @default(false)
   // Profile guestbook (plan U15): who may sign — 'off' (default), 'following'
   // (people this user follows) or 'everyone'. Opt-in by design.
   guestbookMode         String    @default("off") @db.VarChar(12)

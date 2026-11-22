@@ -41,6 +41,13 @@ import {
 import { recordPriorRevision } from '@/lib/messages/edit-history.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { getPairPrivacy, maskReceipts } from '@/lib/chat-plus/receipts.server';
+import { requestGate } from '@/lib/messages/requests.server';
+import {
+  requestOut,
+  senderRequestState,
+  type RequestFacts,
+  type SenderRequestState,
+} from '@/lib/messages/requests';
 import { loadDmPolls } from '@/lib/chat-plus/polls.server';
 
 /** Columns every read path needs. One list so no route forgets `deletedAt`. */
@@ -51,6 +58,7 @@ const messageSelect = {
   read: true,
   createdAt: true,
   gifUrl: true,
+  gifAlt: true,
   imageUrls: true,
   imageAlts: true,
   editedAt: true,
@@ -70,6 +78,8 @@ export interface Participants {
   participantTwoId: string;
   /** M3 — the conversation's disappearing-messages timer, in seconds. */
   disappearAfterSec?: number | null;
+  /** The message request on this chat, if it has one (s04-16). */
+  request?: RequestFacts | null;
 }
 
 export type MutationFailure = {
@@ -130,6 +140,12 @@ export interface ThreadPage {
   messages: MessageView[];
   nextCursor: string | null;
   hasMore: boolean;
+  /**
+   * The sender's composer state on the first page, present only while it applies:
+   * `compose` (their first message becomes a request) or `sent` (it is out; they
+   * can write again if accepted). Never says whether a request was declined.
+   */
+  request?: SenderRequestState;
 }
 
 /**
@@ -188,13 +204,25 @@ export async function loadThreadPage(args: {
   const views = maskReceipts(
     visible.reverse().map((row) => ({ ...toMessageView(row), poll: polls.get(row.id) ?? null })),
     args.userId,
-    privacy.receiptsHidden && conversation.participantOneId !== conversation.participantTwoId,
+    (privacy.receiptsHidden && conversation.participantOneId !== conversation.participantTwoId) ||
+      requestOut(conversation.request, args.userId),
   );
+
+  // Only the first page carries the composer state, and Saved Messages has no recipient to ask.
+  let request: SenderRequestState | null = null;
+  const otherId = otherParticipant(conversation, args.userId);
+  if (!args.cursor && otherId !== args.userId) {
+    const decision = await requestGate(args.userId, otherId, {
+      request: conversation.request ?? null,
+    });
+    request = senderRequestState(decision, conversation.request, args.userId);
+  }
 
   return {
     messages: views,
     nextCursor: hasMore ? page[page.length - 1].id : null,
     hasMore,
+    ...(request ? { request } : {}),
   };
 }
 
@@ -270,6 +298,7 @@ export async function publishMutation(
       deletedAt: Date | null;
       deletedBy: string | null;
       gifUrl: string | null;
+      gifAlt?: string | null;
       imageUrls: string[];
       imageAlts?: string[];
       audioUrl: string | null;
@@ -294,9 +323,13 @@ export async function publishMutation(
   // Both participants, not just the other one: the actor may have the thread
   // open in a second tab, and an edit that lands in one tab only is the same
   // bug from the other direction.
-  notifyUser(args.conversation.participantOneId, { type, mutation });
-  if (args.conversation.participantTwoId !== args.conversation.participantOneId) {
-    notifyUser(args.conversation.participantTwoId, { type, mutation });
+  // s04-16: a chat that is still (or was declined as) a message request does not exist for its recipient, so an
+  // edit or unsend must not reach them; only the actor's own tabs hear it.
+  const req = args.conversation.request;
+  const withheld = !!req && req.status !== 'accepted';
+  for (const id of new Set([args.conversation.participantOneId, args.conversation.participantTwoId])) {
+    if (withheld && id !== args.actorId) continue;
+    notifyUser(id, { type, mutation });
   }
   return mutation;
 }

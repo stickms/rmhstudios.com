@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { fetchJson } from '@/lib/http';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Era {
   id: string;
@@ -18,6 +19,7 @@ interface Era {
 
 /** Z3 — /museum: the site's eras, newest first. */
 export function MuseumPage() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-delight');
   const q = useQuery({
     queryKey: ['delight', 'museum'],
@@ -53,7 +55,7 @@ export function MuseumPage() {
             {q.data.eras.map((e) => (
               <li key={e.id} className="space-y-3 rounded-site px-4 py-3">
                 <time className="site-section-label" dateTime={e.eraDate}>
-                  {new Date(`${e.eraDate}T00:00:00Z`).toLocaleDateString(undefined, {
+                  {fmt.date(new Date(`${e.eraDate}T00:00:00Z`), {
                     year: 'numeric',
                     month: 'long',
                     timeZone: 'UTC',

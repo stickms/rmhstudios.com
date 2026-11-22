@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import type { RunState } from '@features/nightrail/engine/game';
 import { runProgress } from '@features/nightrail/engine/game';
 import { MAX_MULTIPLIER } from '@features/nightrail/engine/constants';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Pips rendered for cargo. Levels carry fewer; the surplus is hidden. */
 const CARGO_PIPS = 8;
@@ -42,7 +43,7 @@ interface Props {
   visible: boolean;
 }
 
-export const NightrailHud = function NightrailHud({ visible, ref }: Props & { ref?: React.Ref<HudHandle> }) {
+export const NightrailHud = function NightrailHud({ visible, ref }: Props & { ref?: React.Ref<HudHandle> }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-nightrail');
   const rootRef = useRef<HTMLDivElement>(null);
   const cache = useRef(new Map<string, HTMLElement[]>());
@@ -100,7 +101,7 @@ export const NightrailHud = function NightrailHud({ visible, ref }: Props & { re
         show('run', live);
         if (!live) return;
 
-        write('score', Math.round(state.score).toLocaleString());
+        write('score', fmt.number(Math.round(state.score)));
         write('speed', String(Math.round(train.speed * 3.6)));
         // Boost is the only thing that pushes past the level cap, so it is
         // worth calling out in the one readout the player already watches.
@@ -152,7 +153,7 @@ export const NightrailHud = function NightrailHud({ visible, ref }: Props & { re
         show('combo', comboAlive);
         if (comboAlive) {
           write('combo-mult', `×${combo.multiplier.toFixed(1)}`);
-          write('combo-pending', Math.round(combo.pending).toLocaleString());
+          write('combo-pending', fmt.number(Math.round(combo.pending)));
           fill('combo-fill', combo.multiplier / MAX_MULTIPLIER);
           tint('combo-mult', combo.multiplier >= MAX_MULTIPLIER ? '#fde047' : '#e9d5ff');
 
@@ -200,7 +201,7 @@ export const NightrailHud = function NightrailHud({ visible, ref }: Props & { re
         }
       },
     };
-  }, [t]);
+  }, [t, fmt]);
 
   return (
     <div

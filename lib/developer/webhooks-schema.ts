@@ -31,3 +31,8 @@ export const deliveriesQuery = z.object({
   event: z.string().max(64).optional(),
   cursor: z.string().regex(DELIVERY_CURSOR).optional(),
 });
+
+/** `?event=` on a test send: `ping` (the default) or one of the game events. */
+export const testEventQuery = z.object({
+  event: z.enum(['ping', 'personal_best.created', 'achievement.unlocked']).optional(),
+});

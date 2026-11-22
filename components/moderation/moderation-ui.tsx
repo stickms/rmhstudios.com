@@ -11,7 +11,6 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldAlert } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import {
@@ -44,6 +43,7 @@ import {
   type RestrictableFeature,
 } from '@/lib/moderation/restrictions';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export { RESTRICTABLE_FEATURES, TIMEOUT_PRESETS };
 export {
@@ -112,6 +112,7 @@ export function RestrictionList({
   onLift?: (id: string) => void;
   liftingId?: string | null;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-moderation');
   const labels = useFeatureLabels();
 
@@ -136,9 +137,7 @@ export function RestrictionList({
                   {t('restriction-until', {
                     defaultValue: 'Ends',
                   })}{' '}
-                  {formatDistanceToNow(new Date(r.expiresAt), {
-                    addSuffix: true,
-                  })}
+                  {fmt.relative(new Date(r.expiresAt))}
                 </>
               ) : (
                 t('restriction-permanent', {

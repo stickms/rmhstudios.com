@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { itemId, planMarathon, type MarathonItem } from '@/lib/dunesday/marathon';
 import { formatMinutes, localToday } from '@/lib/dunesday/schedule';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Day-by-day output of the marathon planner for a custom list. */
 export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; deadline: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-tools');
   const today = localToday();
   if (items.length === 0 || !deadline) return null;
@@ -44,7 +46,7 @@ export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; d
             <li key={d.date} className="rounded-site px-4 py-3">
               <h3 className="mb-2 flex justify-between text-sm font-semibold">
                 <span>
-                  {new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, {
+                  {fmt.date(new Date(`${d.date}T00:00:00`), {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',

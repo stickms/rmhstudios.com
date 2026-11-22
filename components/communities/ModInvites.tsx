@@ -1,7 +1,7 @@
 /** Invite links for a private community: create, copy, see usage, revoke. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -17,6 +17,7 @@ import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { InviteDTO } from '@/lib/communities/invites.server';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Expiry choices, in days; `''` = never. Mirrors INVITE_LIMITS.maxExpiryDays (90). */
 const EXPIRY_OPTIONS = ['1', '7', '30', '90'] as const;
@@ -25,6 +26,7 @@ const EXPIRY_OPTIONS = ['1', '7', '30', '90'] as const;
 const MAX_USES_CAP = 1000;
 
 export function ModInvites({ slug }: { slug: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-communities-plus');
   const confirm = useConfirm();
   const [invites, setInvites] = useState<InviteDTO[] | null>(null);
@@ -245,9 +247,7 @@ export function ModInvites({ slug }: { slug: string }) {
                         t('someone', {
                           defaultValue: 'Someone',
                         }),
-                      when: formatDistanceToNow(new Date(i.createdAt), {
-                        addSuffix: true,
-                      }),
+                      when: fmt.relative(new Date(i.createdAt)),
                       defaultValue: 'Created by {{name}} {{when}}',
                     })}
                   </span>

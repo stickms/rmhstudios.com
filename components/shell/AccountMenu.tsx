@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LayoutGrid, LogOut, Settings, User, Wallet } from 'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 
 interface AccountMenuProps {
@@ -21,6 +22,8 @@ export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMe
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const signingOut = useRef(false);
+  const deviceSignOut = useDeviceSignOut();
+  const runDeviceSignOut = deviceSignOut.run;
 
   const signOut = useCallback(async () => {
     if (signingOut.current) return;
@@ -29,60 +32,66 @@ export function AccountMenu({ open, onClose, anchorRef, profileHref }: AccountMe
     // who is signed in (third-pass audit RT1).
     try {
       const { authClient } = await import('@/lib/auth-client');
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            onClose();
-            void navigate({
-              to: '/',
-            });
-            window.location.reload();
+      // Clears this device first when the member asked for that (sprint 07, feature 03).
+      await runDeviceSignOut(() =>
+        authClient.signOut({
+          fetchOptions: {
+            onSuccess: () => {
+              onClose();
+              void navigate({
+                to: '/',
+              });
+              window.location.reload();
+            },
           },
-        },
-      });
+        }),
+      );
     } finally {
       // Also when the chunk could not be fetched: the next click tries again.
       signingOut.current = false;
     }
-  }, [navigate, onClose]);
+  }, [navigate, onClose, runDeviceSignOut]);
 
   return (
-    <AnchoredMenu
-      open={open}
-      onClose={onClose}
-      anchorRef={anchorRef}
-      label={t('shell-account-menu-label', {
-        defaultValue: 'Account',
-      })}
-      side="top"
-      align="start"
-    >
-      <MenuItem icon={User} href={profileHref} onClick={onClose}>
-        {t('profile', {
-          defaultValue: 'Profile',
+    <>
+      {deviceSignOut.dialog}
+      <AnchoredMenu
+        open={open}
+        onClose={onClose}
+        anchorRef={anchorRef}
+        label={t('shell-account-menu-label', {
+          defaultValue: 'Account',
         })}
-      </MenuItem>
-      <MenuItem icon={Wallet} href="/predictions" onClick={onClose}>
-        {t('nav-wallet', {
-          defaultValue: 'Wallet',
-        })}
-      </MenuItem>
-      <MenuItem icon={Settings} href="/settings" onClick={onClose}>
-        {t('settings', {
-          defaultValue: 'Settings',
-        })}
-      </MenuItem>
-      <MenuItem icon={LayoutGrid} href="/sections" onClick={onClose}>
-        {t('shell-all-sections', {
-          defaultValue: 'All sections',
-        })}
-      </MenuItem>
-      <MenuSeparator />
-      <MenuItem icon={LogOut} onClick={signOut}>
-        {t('sign-out', {
-          defaultValue: 'Sign out',
-        })}
-      </MenuItem>
-    </AnchoredMenu>
+        side="top"
+        align="start"
+      >
+        <MenuItem icon={User} href={profileHref} onClick={onClose}>
+          {t('profile', {
+            defaultValue: 'Profile',
+          })}
+        </MenuItem>
+        <MenuItem icon={Wallet} href="/predictions" onClick={onClose}>
+          {t('nav-wallet', {
+            defaultValue: 'Wallet',
+          })}
+        </MenuItem>
+        <MenuItem icon={Settings} href="/settings" onClick={onClose}>
+          {t('settings', {
+            defaultValue: 'Settings',
+          })}
+        </MenuItem>
+        <MenuItem icon={LayoutGrid} href="/sections" onClick={onClose}>
+          {t('shell-all-sections', {
+            defaultValue: 'All sections',
+          })}
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={LogOut} onClick={signOut}>
+          {t('sign-out', {
+            defaultValue: 'Sign out',
+          })}
+        </MenuItem>
+      </AnchoredMenu>
+    </>
   );
 }

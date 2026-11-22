@@ -142,6 +142,8 @@ export interface CommunityExtrasDTO {
   rulesRequireAgreement: boolean;
   /** s03-14: members may read the content part of the moderation log. */
   publicModLog: boolean;
+  /** s07-16: every image posted here needs a description. */
+  requireImageAlt: boolean;
   /** Present for members only. */
   member: {
     /** When the viewer joined (ISO); the rules sheet is for people who just did. */ joinedAt: string;
@@ -169,6 +171,7 @@ export interface ChallengeEntryDTO {
   imageUrl: string | null;
   imageAlt: string | null;
   gifUrl: string | null;
+  gifAlt?: string | null;
   /** Only revealed once voting has ended, so the tally doesn't steer the vote. */
   voteCount: number | null;
   mine: boolean;

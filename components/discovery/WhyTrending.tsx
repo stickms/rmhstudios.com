@@ -10,9 +10,11 @@ import type { TrendingWhy } from '@/lib/discovery/schema';
 import { api } from '@/lib/contract/client';
 import { whyTrendingApi } from '@/lib/discovery/discovery.contract';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** A2 · "Why is this trending?" on a tag chip; the data loads only when opened. */
 export function WhyTrending({ tag }: { tag: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-discovery');
   const [open, setOpen] = useState(false);
   const [why, setWhy] = useState<TrendingWhy | null>(null);
@@ -83,9 +85,7 @@ export function WhyTrending({ tag }: { tag: string }) {
                       defaultValue: 'First seen',
                     })}
                   </dt>
-                  <dd className="text-sm font-semibold text-site-text">
-                    {new Date(why.firstSeen).toLocaleDateString()}
-                  </dd>
+                  <dd className="text-sm font-semibold text-site-text">{fmt.date(new Date(why.firstSeen))}</dd>
                 </div>
                 <div className="rounded-site p-2">
                   <dt className="text-xs text-site-text-muted">

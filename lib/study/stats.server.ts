@@ -87,7 +87,7 @@ export async function getStudyStats(
              count(*)::int AS n
       FROM flashcard_review r
       JOIN flashcard c ON c.id = r."cardId"
-      WHERE r."userId" = ${userId} AND r."dueAt" < ${forecastEnd} ${cardDeck}
+      WHERE r."userId" = ${userId} AND r."suspendedAt" IS NULL AND r."dueAt" < ${forecastEnd} ${cardDeck}
       GROUP BY 1`,
     // Decks the member owns or has studied (and may still see), with each card's state.
     prisma.$queryRaw<DeckRow[]>`
@@ -97,9 +97,9 @@ export async function getStudyStats(
              (count(*) FILTER (WHERE r.id IS NOT NULL AND r."intervalDays" < 1))::int AS learning,
              (count(*) FILTER (WHERE r.id IS NOT NULL AND r."intervalDays" BETWEEN 1 AND 20))::int AS young,
              (count(*) FILTER (WHERE r.id IS NOT NULL AND r."intervalDays" >= 21))::int AS mature,
-             (count(*) FILTER (WHERE r.id IS NULL OR r."dueAt" <= now()))::int AS due_today
+             (count(*) FILTER (WHERE r.id IS NULL OR (r."suspendedAt" IS NULL AND r."dueAt" <= now())))::int AS due_today
       FROM flashcard_deck d
-      JOIN flashcard c ON c."deckId" = d.id
+      JOIN flashcard c ON c."deckId" = d.id AND NOT (c.kind = 'cloze' AND c."sourceId" IS NULL)
       LEFT JOIN flashcard_review r ON r."cardId" = c.id AND r."userId" = ${userId}
       WHERE (d."isPublic" OR d."userId" = ${userId})
         AND (d."userId" = ${userId}

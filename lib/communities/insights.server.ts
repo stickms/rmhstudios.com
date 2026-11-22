@@ -305,6 +305,18 @@ export async function computeInsights(
         select: userChipSelect,
       })
     : [];
+  // Quiet counts (sprint 04 #14): an author who hides the counts on their posts hides them from managers too.
+  // The figures are withheld here, before the shared cache, so no manager receives them.
+  const hidingAuthors = new Set(
+    topRows.length
+      ? (
+          await prisma.userProfile.findMany({
+            where: { userId: { in: [...new Set(topRows.map((r) => r.userId))] }, hideCountsOnMine: true },
+            select: { userId: true },
+          })
+        ).map((p) => p.userId)
+      : [],
+  );
   const authorById = new Map(authors.map((a) => [a.id, a]));
   const topPosts: TopPostDTO[] = topRows.map((r) => {
     const author = authorById.get(r.userId);
@@ -314,9 +326,9 @@ export async function computeInsights(
       authorName: author?.name ?? null,
       excerpt: r.excerpt,
       createdAt: r.createdAt.toISOString(),
-      likes: r.likes,
-      reactions: r.reactions,
-      replies: r.replies,
+      ...(hidingAuthors.has(r.userId)
+        ? { likes: null, reactions: null, replies: null }
+        : { likes: r.likes, reactions: r.reactions, replies: r.replies }),
     };
   });
 

@@ -16,7 +16,7 @@ import {
 import type { EventDTO, EventVenueKindValue } from '@/lib/events.server';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createEventApi } from '@/lib/events.contract';
+import { createEventApi, updateEventApi } from '@/lib/events.contract';
 import {
   NO_RECURRENCE,
   RecurrenceFields,
@@ -30,6 +30,21 @@ interface EventComposerProps {
   /** When set, the event is scoped to this community (host must be a mod/owner). */
   communityId?: string | null;
   onCreated?: (event: EventDTO) => void;
+  /**
+   * Edit mode (the host, or an accepted co-host): the composer opens on this event, saves it with a PATCH and
+   * answers `onUpdated`. Mount it only while editing, so its fields start from the event as it is then.
+   * The repeat rule is not editable here, and a repeating event's time is not either (it is the series').
+   */
+  event?: EventDTO | null;
+  onUpdated?: (event: EventDTO) => void;
+}
+
+/** An ISO instant as the wall-clock string a `datetime-local` field takes. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 const VENUE_KINDS: {
@@ -76,15 +91,18 @@ const VENUE_KINDS: {
   },
 ];
 
-export function EventComposer({ open, onOpenChange, communityId, onCreated }: EventComposerProps) {
+export function EventComposer({ open, onOpenChange, communityId, onCreated, event, onUpdated }: EventComposerProps) {
   const { t } = useTranslation('site');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
-  const [venueKind, setVenueKind] = useState<EventVenueKindValue>('IRL');
-  const [venueRef, setVenueRef] = useState('');
-  const [capacity, setCapacity] = useState('');
+  const { t: te } = useTranslation('event-cohosts');
+  const editing = !!event;
+  const seriesTime = !!event?.recurrence;
+  const [title, setTitle] = useState(event?.title ?? '');
+  const [description, setDescription] = useState(event?.description ?? '');
+  const [startsAt, setStartsAt] = useState(toLocalInput(event?.startsAt ?? null));
+  const [endsAt, setEndsAt] = useState(toLocalInput(event?.endsAt ?? null));
+  const [venueKind, setVenueKind] = useState<EventVenueKindValue>(event?.venueKind ?? 'IRL');
+  const [venueRef, setVenueRef] = useState(event?.venueRef ?? '');
+  const [capacity, setCapacity] = useState(event?.capacity != null ? String(event.capacity) : '');
   const [recurrence, setRecurrence] = useState<RecurrenceDraft>(NO_RECURRENCE);
   const [submitting, setSubmitting] = useState(false);
 
@@ -110,6 +128,24 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
     const endIso = endsAt ? new Date(endsAt).toISOString() : undefined;
     setSubmitting(true);
     try {
+      if (event) {
+        const saved = await api(updateEventApi, {
+          params: { id: event.id },
+          body: {
+            title: title.trim(),
+            description: description.trim(),
+            // A repeating event's time is the series', which this form does not move.
+            ...(seriesTime ? {} : { startsAt: startIso, endsAt: endIso ?? null }),
+            venueKind,
+            venueRef: venueRef.trim() || null,
+            capacity: capacity ? Number(capacity) : null,
+          },
+        });
+        toast.success(te('event-saved', { defaultValue: 'Event saved.' }));
+        onUpdated?.(saved.event);
+        onOpenChange(false);
+        return;
+      }
       const data = await api(createEventApi, {
         body: {
           title: title.trim(),
@@ -134,9 +170,11 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
     } catch (e) {
       toast.error(
         serverError(e) ||
-          t('event-create-error', {
-            defaultValue: 'Could not create event',
-          }),
+          (editing
+            ? te('event-save-error', { defaultValue: 'Could not save the event.' })
+            : t('event-create-error', {
+                defaultValue: 'Could not create event',
+              })),
       );
     } finally {
       setSubmitting(false);
@@ -148,14 +186,18 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
       <DialogContent mobileFullscreen className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {t('create-event-title', {
-              defaultValue: 'Create an event',
-            })}
+            {editing
+              ? te('edit-event-title', { defaultValue: 'Edit event' })
+              : t('create-event-title', {
+                  defaultValue: 'Create an event',
+                })}
           </DialogTitle>
           <DialogDescription>
-            {t('create-event-desc', {
-              defaultValue: 'Schedule something and let people RSVP.',
-            })}
+            {editing
+              ? te('edit-event-desc', { defaultValue: 'Change the details. Guests see them straight away.' })
+              : t('create-event-desc', {
+                  defaultValue: 'Schedule something and let people RSVP.',
+                })}
           </DialogDescription>
         </DialogHeader>
 
@@ -184,25 +226,27 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
-              {t('event-starts', {
-                defaultValue: 'Starts',
-              })}
-              <Input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-            </label>
-            <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
-              {t('event-ends', {
-                defaultValue: 'Ends (optional)',
-              })}
-              <Input
-                type="datetime-local"
-                value={endsAt}
-                min={startsAt || undefined}
-                onChange={(e) => setEndsAt(e.target.value)}
-              />
-            </label>
-          </div>
+          {!seriesTime && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
+                {t('event-starts', {
+                  defaultValue: 'Starts',
+                })}
+                <Input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+              </label>
+              <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
+                {t('event-ends', {
+                  defaultValue: 'Ends (optional)',
+                })}
+                <Input
+                  type="datetime-local"
+                  value={endsAt}
+                  min={startsAt || undefined}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
@@ -241,9 +285,15 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           </div>
 
           <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
-            {t(venue.refLabel === 'URL' ? 'event-venue-url' : 'event-venue-ref', {
-              defaultValue: venue.refLabel,
-            })}
+            {
+              {
+                IRL: t('event-venue-ref-irl', { defaultValue: 'Location' }),
+                URL: t('event-venue-url', { defaultValue: 'URL' }),
+                SPACE: t('event-venue-ref-space', { defaultValue: 'Space ID' }),
+                TOURNAMENT: t('event-venue-ref-tournament', { defaultValue: 'Tournament ID' }),
+                GAME: t('event-venue-ref-game', { defaultValue: 'Game' }),
+              }[venue.value]
+            }
             <Input
               type={venueKind === 'URL' ? 'url' : 'text'}
               placeholder={venue.refPlaceholder}
@@ -253,7 +303,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
             />
           </label>
 
-          <RecurrenceFields value={recurrence} onChange={setRecurrence} />
+          {!editing && <RecurrenceFields value={recurrence} onChange={setRecurrence} />}
         </div>
 
         <DialogFooter>
@@ -263,9 +313,11 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
             })}
           </Button>
           <Button variant="default" onClick={submit} disabled={!valid} loading={submitting}>
-            {t('create-button', {
-              defaultValue: 'Create',
-            })}
+            {editing
+              ? te('save-event', { defaultValue: 'Save' })
+              : t('create-button', {
+                  defaultValue: 'Create',
+                })}
           </Button>
         </DialogFooter>
       </DialogContent>

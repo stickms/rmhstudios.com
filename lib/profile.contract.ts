@@ -19,6 +19,8 @@ export interface UpdatedProfile {
   membershipPriceCoins: number | null;
   showLikes: boolean;
   dmPrivacy: NonNullable<UpdateProfileInput['dmPrivacy']>;
+  followListVisibility: NonNullable<UpdateProfileInput['followListVisibility']>;
+  dmRequests: boolean;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
   profileSongArtist: string | null;

@@ -30,6 +30,7 @@ import { getDailyApi, submitDailyApi } from '@features/slice-it/engine/slice-it.
 import { armRunFinish } from './runTracker';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface DailyPanelProps {
   engine: GameEngine | null;
@@ -46,7 +47,7 @@ function formatCountdown(ms: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
+export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('r-slice-it');
   const [state, setState] = React.useState<DailyState | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -212,7 +213,7 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
             {t('daily-your-run', { defaultValue: 'Your run' })}
           </div>
           <div className="mt-1 flex flex-wrap items-baseline gap-4 font-black text-slice-text">
-            <span className="text-2xl tabular-nums">{state.entry.score.toLocaleString()}</span>
+            <span className="text-2xl tabular-nums">{fmt.number(state.entry.score)}</span>
             <span className="text-sm tabular-nums text-slice-text-muted">
               {state.entry.accuracy.toFixed(2)}%
             </span>
@@ -261,7 +262,7 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
                   </span>
                 )}
                 <span className="text-sm font-black tabular-nums text-slice-text">
-                  {row.score.toLocaleString()}
+                  {fmt.number(row.score)}
                 </span>
               </li>
             ))}

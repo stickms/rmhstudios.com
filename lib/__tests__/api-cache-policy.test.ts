@@ -131,7 +131,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
   '/api/rmhladder/interview-reports': 'user-submitted reports behind a visibility flag; removal must not be stale',
   '/api/slice-it/replay': 'replays have a visibility flag; a flip to private must not be stale',
   '/api/slice-it/replay/$id': 'replays have a visibility flag; a flip to private must not be stale',
-  '/api/user-builds/$id/comments': 'user comments; deletion and moderation must not be stale',
   '/api/handles/history': 'impersonation signal that changes at a rename; low traffic',
 };
 

@@ -1,4 +1,10 @@
+import { refineRankedPoll } from '@/lib/feed/ranked-poll-schema';
+import { RANKED_MAX_OPTIONS } from '@/lib/feed/ranked-poll';
+import { quizPollFields, refineQuizPoll } from '@/lib/feed/quiz-poll-schema';
+import { QUIZ_EXPLANATION_MAX } from '@/lib/feed/quiz-poll';
 import { z } from 'zod';
+import { MAX_GIF_ALT_LENGTH } from '@/lib/feed/gif-alt';
+import { contentWarningFieldSchema } from '@/lib/feed/content-warning-schema';
 import { isFeedImageUrl } from '@/lib/storage/keys';
 
 import {
@@ -31,6 +37,11 @@ export const feedImageUrlSchema = z.string().refine(isFeedImageUrl, 'Invalid ima
 
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 
+/** A GIF's description: plain text, capped like an image description; refused (not truncated) when too long. */
+export const gifAltSchema = z
+  .string()
+  .max(MAX_GIF_ALT_LENGTH, `GIF description must be at most ${MAX_GIF_ALT_LENGTH} characters`);
+
 export const gifUrlSchema = z
   .string()
   .url('Must be a valid URL')
@@ -51,24 +62,34 @@ export const gifUrlSchema = z
     },
   );
 
-const pollSchema = z.object({
-  question: z
-    .string()
-    .min(1, 'Poll question cannot be empty')
-    .max(MAX_POLL_QUESTION_LENGTH, `Poll question must be at most ${MAX_POLL_QUESTION_LENGTH} characters`),
-  options: z
-    .array(
-      z
-        .string()
-        .min(1, 'Option cannot be empty')
-        .max(MAX_POLL_OPTION_LENGTH, `Option must be at most ${MAX_POLL_OPTION_LENGTH} characters`),
-    )
-    .min(MIN_POLL_OPTIONS, `Poll must have at least ${MIN_POLL_OPTIONS} options`)
-    .max(MAX_POLL_OPTIONS, `Poll can have at most ${MAX_POLL_OPTIONS} options`),
-  multiSelect: z.boolean().default(false),
-  // Optional scheduled close, in hours from now (max 30 days).
-  durationHours: z.number().int().min(1).max(720).optional(),
-});
+const pollSchema = z
+  .object({
+    question: z
+      .string()
+      .min(1, 'Poll question cannot be empty')
+      .max(MAX_POLL_QUESTION_LENGTH, `Poll question must be at most ${MAX_POLL_QUESTION_LENGTH} characters`),
+    options: z
+      .array(
+        z
+          .string()
+          .min(1, 'Option cannot be empty')
+          .max(MAX_POLL_OPTION_LENGTH, `Option must be at most ${MAX_POLL_OPTION_LENGTH} characters`),
+      )
+      .min(MIN_POLL_OPTIONS, `Poll must have at least ${MIN_POLL_OPTIONS} options`)
+      // A ranked poll takes up to RANKED_MAX_OPTIONS; `refineRankedPoll` holds a plain poll to MAX_POLL_OPTIONS.
+      .max(RANKED_MAX_OPTIONS, `Poll can have at most ${RANKED_MAX_OPTIONS} options`),
+    multiSelect: z.boolean().default(false),
+    // s06-19: a ranked-choice poll (3-6 options, a required end, never multi-select; refined below).
+    ranked: z.boolean().default(false),
+    // Optional scheduled close, in hours from now (max 30 days).
+    durationHours: z.number().int().min(1).max(720).optional(),
+    // s07-19: a quiz (single choice, 2-4 options, one correct answer by position, an optional explanation).
+    ...quizPollFields,
+  })
+  .superRefine((poll, ctx) => {
+    refineRankedPoll(poll, ctx);
+    refineQuizPoll(poll, ctx);
+  });
 
 export const createRMHarkSchema = z
   .object({
@@ -79,6 +100,8 @@ export const createRMHarkSchema = z
       .default(''),
     poll: pollSchema.optional(),
     gifUrl: gifUrlSchema.optional(),
+    // Description of the GIF (sprint 06 #15); cleaned and capped server-side by `normalizeGifAlt`.
+    gifAlt: gifAltSchema.optional(),
     imageUrls: z
       .array(feedImageUrlSchema)
       .max(MAX_RMHARK_IMAGES, `At most ${MAX_RMHARK_IMAGES} images allowed`)
@@ -95,6 +118,8 @@ export const createRMHarkSchema = z
     audience: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE', 'CIRCLE']).optional(),
     // Content warning: hide media/text behind a click-to-reveal overlay.
     isSensitive: z.boolean().optional(),
+    // Why the post is warned (sprint 06 #16): implies `isSensitive` and also covers the text.
+    contentWarning: contentWarningFieldSchema,
     // Who is allowed to reply.
     replyControl: z.enum(['EVERYONE', 'FOLLOWING', 'MENTIONED']).optional(),
     // Paid post: coins required to unlock (0/undefined = free).
@@ -145,6 +170,15 @@ export const editRMHarkSchema = z.object({
     .default(''),
   // null clears an existing GIF; undefined leaves it unchanged.
   gifUrl: gifUrlSchema.nullish(),
+  // null clears the description; undefined leaves it (or, with a new gifUrl, starts it empty).
+  gifAlt: gifAltSchema.nullish(),
+  // The content warning (sprint 06 #16): a reason implies the warning, `isSensitive: false` clears both,
+  // undefined leaves it unchanged.
+  isSensitive: z.boolean().optional(),
+  contentWarning: contentWarningFieldSchema,
+  // s07-19: a quiz author fixes the answer or the explanation until somebody has voted (409 QUIZ_LOCKED after).
+  quizCorrectOptionId: z.string().min(1).max(64).optional(),
+  quizExplanation: z.string().max(QUIZ_EXPLANATION_MAX).nullish(),
 });
 
 export const createCommentSchema = z.object({

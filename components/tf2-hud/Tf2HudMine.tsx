@@ -19,8 +19,10 @@ import HudCard from './HudCard';
 import { EmptyNote, IconBtn } from './ui';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export default function Tf2HudMine() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-tf2-hud');
   const { data: session, isPending } = useSession();
   const [huds, setHuds] = useState<HudSummary[] | null>(null);
@@ -199,7 +201,7 @@ export default function Tf2HudMine() {
                   >
                     {d.meta.name}
                   </Link>
-                  <span className="shrink-0 text-xs text-app-text-dim">{new Date(d.updatedAt).toLocaleString()}</span>
+                  <span className="shrink-0 text-xs text-app-text-dim">{fmt.dateTime(new Date(d.updatedAt))}</span>
                   <IconBtn
                     icon={Trash2}
                     size="xs"

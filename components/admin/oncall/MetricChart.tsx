@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatValue } from '@/lib/ops/alarm-rules';
 import type { ChartSeries, DeployMarker } from '@/lib/ops/series';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 // The SVG draws only lines and is stretched to the plot box
 // (preserveAspectRatio="none" + non-scaling strokes); every label and the
@@ -18,7 +19,7 @@ function niceCeil(v: number): number {
 }
 
 const fmtTime = (t: number, withDate: boolean) =>
-  new Date(t).toLocaleString(undefined, {
+  formatDateTime(new Date(t), currentDocumentLocale(), {
     ...(withDate
       ? {
           month: 'short',

@@ -6,7 +6,9 @@ import { AdminReleaseNotesLink } from '@/components/devplatform/AdminReleaseNote
 import { AdminSafetyLink } from '@/components/safety/AdminSafetyLink';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
+import { AdminFeedbackCard } from '@/components/feedback/AdminFeedbackCard';
 import { AdminHubCard } from '@/components/admin/AdminHubCard';
+import { LookupField } from '@/components/admin/LookupField';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { Badge } from '@/components/ui/badge';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -47,6 +49,7 @@ function AdminDashboardPage() {
       backTo="/"
     >
       <AdminBody>
+        <LookupField />
         <div className="grid grid-cols-1 border-t border-site-border md:grid-cols-2 md:gap-x-8">
           <AdminHubCard
             to="/admin/users"
@@ -299,6 +302,44 @@ function AdminDashboardPage() {
           <AdminChallengeLink />
           <AdminReadingLink />
           <AdminMedSchoolsLink />
+          {/* Sprint 05 admin tools (docs/autonomous/sprint-05/plan.md §Anchors) */}
+          {/* s05-02 admin-jobs */}
+          <AdminHubCard
+            to="/admin/jobs"
+            title={t('card-title', { ns: 'admin-jobs', defaultValue: 'Background jobs' })}
+            description={t('card-description', {
+              ns: 'admin-jobs',
+              defaultValue: 'Queue health, failed jobs and their errors, with retry and cancel.',
+            })}
+          />
+
+          {/* s05-03 admin-outbox */}
+          <AdminHubCard
+            to="/admin/outbox"
+            title={t('card-title', { ns: 'admin-outbox', defaultValue: 'Outbox' })}
+            description={t('card-description', {
+              ns: 'admin-outbox',
+              defaultValue: 'Events that gave up delivering: read the error, requeue or discard.',
+            })}
+          />
+
+          {/* s05-10 admin-lookup */}
+          <AdminHubCard
+            to="/admin/lookup"
+            title={t('card-title', { ns: 'admin-lookup', defaultValue: 'Lookup' })}
+            description={t('card-description', {
+              ns: 'admin-lookup',
+              defaultValue: 'Paste an id, handle, e-mail address or link to find what it is.',
+            })}
+          />
+
+          {/* Sprint 06 admin tools */}
+          {/* s06-05 feedback-inbox */}
+          <AdminFeedbackCard />
+
+          {/* Sprint 07 admin tools */}
+          {/* s07-13 admin-batch-lookup */}
+
         </div>
       </AdminBody>
     </PageLayout>

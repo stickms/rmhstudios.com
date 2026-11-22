@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   availableKinds,
+  factCount,
   MAX_QUESTIONS,
   MIN_QUESTIONS,
   TEST_DIRECTIONS,
@@ -27,7 +28,8 @@ export function PracticeTestSetup({
   const { t } = useTranslation('study-tests');
   const countId = useId();
   const directionName = useId();
-  const max = Math.min(MAX_QUESTIONS, cards.length);
+  // A fact is asked once: a reversible card and its reverse, or the cards of one cloze text, count as one.
+  const max = Math.min(MAX_QUESTIONS, factCount(cards));
   const min = Math.min(MIN_QUESTIONS, max);
   const [countText, setCountText] = useState(String(initial?.count ?? Math.min(20, max)));
   const [kinds, setKinds] = useState<readonly TestKind[]>(initial?.kinds ?? TEST_KINDS);

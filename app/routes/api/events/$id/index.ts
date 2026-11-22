@@ -39,7 +39,7 @@ function mapEventError(err: EventError): [string, number] {
     case 'NOT_FOUND':
       return ['Not found', 404];
     case 'FORBIDDEN':
-      return ['You can only manage events you host', 403];
+      return ["You can't change this event", 403];
     case 'INVALID_DATES':
       return ['Invalid start/end time', 400];
     case 'INVALID_VENUE_URL':
@@ -53,7 +53,7 @@ function mapEventError(err: EventError): [string, number] {
 
 /**
  * GET    /api/events/$id — event details (counts + attendee sample + viewer RSVP).
- * PATCH  /api/events/$id — update (host only).
+ * PATCH  /api/events/$id — update (the host, or an accepted co-host).
  * DELETE /api/events/$id — cancel (host only).
  */
 export const Route = createFileRoute('/api/events/$id/')({

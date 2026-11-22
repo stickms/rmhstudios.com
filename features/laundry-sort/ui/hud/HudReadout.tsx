@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Timer, Trophy, Flame } from 'lucide-react';
 import type { LaundryMatch } from '@features/laundry-sort/engine/match';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Props {
   matchRef: React.RefObject<LaundryMatch | null>;
@@ -30,6 +31,7 @@ function formatClock(seconds: number): string {
 }
 
 export function HudReadout({ matchRef, running }: Props) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-laundry-sort');
   const scoreRef = useRef<HTMLSpanElement>(null);
   const clockRef = useRef<HTMLSpanElement>(null);
@@ -54,7 +56,7 @@ export function HudReadout({ matchRef, running }: Props) {
       const { score, combo } = match.stats;
       if (score !== lastScore && scoreRef.current) {
         lastScore = score;
-        scoreRef.current.textContent = score.toLocaleString();
+        scoreRef.current.textContent = fmt.number(score);
       }
 
       const clock = formatClock(match.remaining);
@@ -75,7 +77,7 @@ export function HudReadout({ matchRef, running }: Props) {
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [matchRef, running]);
+  }, [matchRef, running, fmt]);
 
   // One announcement a second, not sixty.
   useEffect(() => {

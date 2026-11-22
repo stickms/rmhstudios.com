@@ -18,12 +18,13 @@ import type { LoadoutSummary } from '@/lib/tf2-loadout/api-types';
 import { TF_CLASSES, type TfClass } from '@/lib/tf2-loadout/catalog-types';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import LoadoutCard from './LoadoutCard';
-import { CLASS_DEFAULT } from './labels';
+import { tfClassLabels } from './labels';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 export default function Tf2LoadoutMine() {
   const { t } = useTranslation('c-tf2-hud');
+  const classLabels = tfClassLabels(t);
   const { data: session, isPending } = useSession();
   const cat = useCatalog();
   const [tfClass, setTfClass] = useState<TfClass | ''>('');
@@ -137,9 +138,7 @@ export default function Tf2LoadoutMine() {
             </option>
             {TF_CLASSES.map((c) => (
               <option key={c} value={c}>
-                {t(`class-${c}`, {
-                  defaultValue: CLASS_DEFAULT[c],
-                })}
+                {classLabels[c]}
               </option>
             ))}
           </SelectField>

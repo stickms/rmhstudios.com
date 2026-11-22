@@ -18,6 +18,8 @@
  * when the page actually contains an item that depends on one. What stays
  * cached is the expensive part: ranking, hydration, reactions, display objects.
  *
+ * Image descriptions are re-read too, since the author can change them after posting.
+ *
  * What is NOT reconciled (staleness stays a stated product decision, <= 60s):
  * counts, liked/reposted/bookmarked bits, new posts, and rank order.
  *
@@ -33,6 +35,9 @@ import type { FeedItem } from '../feed-types';
 import { getHiddenAuthorIds, getBlockedAuthorIds } from '../moderation.server';
 import { quotedOriginalVisibleTo, withholdQuotedOriginal } from './quoted-original';
 import { getSignals } from './signals.server';
+import { getRepostMutedIds } from './repost-mutes.server';
+import { countsHiddenFrom, nullPostCounts } from './quiet-counts';
+import { restampQuizReveal } from './quiz-poll';
 
 type Surface = 'following' | 'foryou';
 
@@ -42,8 +47,17 @@ interface PostRow {
   audience: string;
   deletedAt: Date | null;
   communityId: string | null;
+  /** Image descriptions as they are NOW: the author can change them after posting (sprint 05 #16). */
+  imageAlts: string[];
+  /** The GIF's description as it is NOW (the author can describe it after posting). */
+  gifAlt: string | null;
+  /** The content warning as it is NOW: a cached card must not show text that has since been covered (sprint 06 #16). */
+  isSensitive: boolean;
+  contentWarning: string | null;
   hashtags: { hashtag: { tag: string } }[];
   unlocks: { id: string }[];
+  /** The author's quiet-counts switch as it is NOW (the cached card may predate a change). */
+  user?: { profile?: { hideCountsOnMine?: boolean } | null } | null;
 }
 
 export interface ReconcileResult {
@@ -52,6 +66,22 @@ export interface ReconcileResult {
    *  copy still shows it locked, so the caller should drop the cache entry and
    *  re-assemble rather than keep serving a paid-for post as locked. */
   needsRefresh: boolean;
+}
+
+/**
+ * A cached card with the post's image descriptions as they are now. A card whose images are withheld (locked,
+ * unavailable) has none to update, and the images themselves never change after posting.
+ */
+function withCurrentAlts(
+  card: FeedItem,
+  imageAlts: readonly string[],
+  gifAlt: string | null,
+): FeedItem {
+  const withImages = card.imageUrls?.length
+    ? { ...card, imageAlts: card.imageUrls.map((_, i) => imageAlts[i] ?? '') }
+    : card;
+  // The GIF's description too (sprint 06 #15); a card whose GIF is withheld has none to update.
+  return withImages.gifUrl ? { ...withImages, gifAlt: gifAlt ?? undefined } : withImages;
 }
 
 export async function reconcileCachedPage(
@@ -68,7 +98,7 @@ export async function reconcileCachedPage(
   const quotedIds = [
     ...new Set(posts.flatMap((i) => (i.original?.id ? [i.original.id] : []))),
   ];
-  const [hidden, blocked, quotedRows, rows, signals] = await Promise.all([
+  const [hidden, blocked, quotedRows, rows, signals, repostMuted] = await Promise.all([
     getHiddenAuthorIds(viewerId),
     // Always the throwing block set: getHiddenAuthorIds fails open, and blocks must not.
     getBlockedAuthorIds(viewerId),
@@ -82,8 +112,12 @@ export async function reconcileCachedPage(
             deletedAt: true,
             unlockPrice: true,
             isSensitive: true,
+            contentWarning: true,
             communityId: true,
+            imageAlts: true,
+            gifAlt: true,
             community: { select: { isPrivate: true } },
+            user: { select: { profile: { select: { hideCountsOnMine: true } } } },
           },
           take: quotedIds.length,
         })
@@ -96,16 +130,23 @@ export async function reconcileCachedPage(
         audience: true,
         deletedAt: true,
         communityId: true,
+        imageAlts: true,
+        gifAlt: true,
+        isSensitive: true,
+        contentWarning: true,
         hashtags: { select: { hashtag: { select: { tag: true } } } },
         unlocks: { where: { userId: viewerId }, select: { id: true } },
+        user: { select: { profile: { select: { hideCountsOnMine: true } } } },
       },
       take: postIds.length,
     }) as Promise<PostRow[]>,
     getSignals(viewerId),
+    getRepostMutedIds(viewerId),
   ]);
   const quotedById = new Map(quotedRows.map((q) => [q.id, q]));
   const hiddenSet = new Set([...hidden, ...blocked]);
   const mutedTags = new Set(signals.mutedTags);
+  const repostMutedSet = new Set(repostMuted);
   const byId = new Map(rows.map((r) => [r.id, r]));
 
   // Fresh follow / circle membership, only for the ids an item's visibility hangs on.
@@ -149,6 +190,8 @@ export async function reconcileCachedPage(
     if (hiddenSet.has(row.userId) || (item.repostedBy && hiddenSet.has(item.repostedBy.id))) {
       return false;
     }
+    // "Turn off reposts": a cached card of a repost by someone the viewer has since turned off goes at once.
+    if (item.repostedBy && repostMutedSet.has(item.repostedBy.id)) return false;
     if (mutedTags.size && row.hashtags.some((h) => mutedTags.has(h.hashtag.tag))) return false;
 
     const own = row.userId === viewerId;
@@ -170,17 +213,48 @@ export async function reconcileCachedPage(
         if (!own) return false;
     }
     if (item.locked && row.unlocks.length > 0) needsRefresh = true;
+    // A card whose numbers were withheld for an author who has since shown them again is stale.
+    if (item.likeCount === null && row.user?.profile?.hideCountsOnMine === false) needsRefresh = true;
     return true;
   });
 
   // A quoted original that has since gone private, been deleted or removed, or
   // whose author was blocked: keep the quote, withhold the original's content.
-  const reconciled = kept.map((item) => {
+  const quoteChecked = kept.map((item) => {
     if (item.type !== 'rmhark' || !item.original) return item;
     const q = quotedById.get(item.original.id);
     if (!q || q.deletedAt) return { ...item, original: withholdQuotedOriginal(item.original, true) };
-    if (quotedOriginalVisibleTo(q, viewerId, blocked)) return item;
+    if (quotedOriginalVisibleTo(q, viewerId, blocked)) {
+      // The quoted author's switch, as it is now, applies to the cached card too, and so do their
+      // image descriptions.
+      // The warning as it is now, so a quote of a post warned after it was cached is covered at once.
+      const original = {
+        ...withCurrentAlts(item.original, q.imageAlts, q.gifAlt),
+        isSensitive: q.isSensitive,
+        contentWarning: q.contentWarning ?? undefined,
+      };
+      return countsHiddenFrom(q.userId, q.user?.profile?.hideCountsOnMine, viewerId)
+        ? { ...item, original: nullPostCounts(original) }
+        : { ...item, original };
+    }
     return { ...item, original: withholdQuotedOriginal(item.original, false) };
+  });
+
+  // Counts are cached with the page (up to 60s), but an author's "hide counts" choice is a privacy setting:
+  // re-apply it from the row's current value so turning it on takes effect for every cached page at once.
+  const reconciled = quoteChecked.map((item) => {
+    if (item.type !== 'rmhark') return item;
+    const row = byId.get(item.actualId ?? item.id);
+    const withAlts = row ? withCurrentAlts(item, row.imageAlts, row.gifAlt) : item;
+    const current = row
+      ? { ...withAlts, isSensitive: row.isSensitive, contentWarning: row.contentWarning ?? undefined }
+      : withAlts;
+    // s07-19: a quiz's answer is applied per viewer after the cache, never trusted from the cached card.
+    const stamped =
+      current.poll && row ? { ...current, poll: restampQuizReveal(current.poll, viewerId, row.userId) } : current;
+    return countsHiddenFrom(row?.userId, row?.user?.profile?.hideCountsOnMine, viewerId)
+      ? nullPostCounts(stamped)
+      : stamped;
   });
 
   return { items: reconciled, needsRefresh };

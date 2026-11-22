@@ -57,6 +57,8 @@ export function ConversationView({
     loadingOlder,
     otherUser,
     notFound,
+    requestState,
+    setRequestState,
     historyIds,
     applyMutation,
     handleLoadOlder,
@@ -118,6 +120,8 @@ export function ConversationView({
     chatRef,
     handleTyping,
     stopTyping,
+    requestState,
+    onRequestSent: () => setRequestState('sent'),
   });
 
   const shownMessages = useExpiring(messages);
@@ -235,6 +239,8 @@ export function ConversationView({
         chatRef={chatRef}
         composer={composer}
         replyToMessageId={replyToMessageId}
+        requestState={requestState}
+        recipientName={otherUser?.name ?? null}
       />
 
       <ChatPlusHost viewerId={session.user.id} />

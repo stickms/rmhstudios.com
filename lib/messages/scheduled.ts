@@ -110,6 +110,7 @@ export interface ScheduledMessageRow {
   chatId: string;
   content: string;
   gifUrl: string | null;
+  gifAlt?: string | null;
   imageUrls: string[];
   /** One description per image ('' = none); the same length as `imageUrls`. */
   imageAlts: string[];

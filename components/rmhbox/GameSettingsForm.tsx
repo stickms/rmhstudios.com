@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 import { RotateCcw, Minus, Plus } from 'lucide-react';
+import PresetBar from './PresetBar';
 import type { GameSettingDef, GameSettingsSchema, GameSettingValues } from '@/lib/rmhbox/types';
 
 // ─── Props ───────────────────────────────────────────────────────
@@ -32,6 +33,9 @@ export interface GameSettingsFormProps {
   onSettingChange?: (key: string, value: boolean | number | string) => void;
   /** Called when the host resets all settings to defaults. */
   onReset?: () => void;
+  /** With `minigameId`, shows the host's presets above the form (host only). */
+  lobbyId?: string;
+  minigameId?: string;
 }
 
 // ─── Individual setting renderers ────────────────────────────────
@@ -321,34 +325,39 @@ export default function GameSettingsForm({
   editable,
   onSettingChange,
   onReset,
+  lobbyId,
+  minigameId,
 }: GameSettingsFormProps) {
   const { t } = useTranslation('c-rmhbox');
   return (
-    <div className="space-y-1 divide-y divide-app-border">
-      {schema.map((def) => (
-        <SettingRow
-          key={def.key}
-          def={def}
-          value={values[def.key] ?? def.default}
-          editable={editable}
-          onChange={(k, v) => onSettingChange?.(k, v)}
-        />
-      ))}
+    <>
+      {editable && lobbyId && minigameId && <PresetBar lobbyId={lobbyId} minigameId={minigameId} values={values} />}
+      <div className="space-y-1 divide-y divide-app-border">
+        {schema.map((def) => (
+          <SettingRow
+            key={def.key}
+            def={def}
+            value={values[def.key] ?? def.default}
+            editable={editable}
+            onChange={(k, v) => onSettingChange?.(k, v)}
+          />
+        ))}
 
-      {/* Reset button — host only */}
-      {editable && onReset && (
-        <div className="pt-3">
-          <button
-            onClick={onReset}
-            className="flex items-center gap-1.5 text-xs font-medium text-app-text-muted hover:text-app-text transition-colors"
-          >
-            <RotateCcw className="h-3 w-3" />
-            {t('reset-to-defaults', {
-              defaultValue: 'Reset to Defaults',
-            })}
-          </button>
-        </div>
-      )}
-    </div>
+        {/* Reset button — host only */}
+        {editable && onReset && (
+          <div className="pt-3">
+            <button
+              onClick={onReset}
+              className="flex items-center gap-1.5 text-xs font-medium text-app-text-muted hover:text-app-text transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t('reset-to-defaults', {
+                defaultValue: 'Reset to Defaults',
+              })}
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

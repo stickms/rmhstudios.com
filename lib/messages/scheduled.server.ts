@@ -10,6 +10,7 @@
  * is invisible to everyone but its sender.
  */
 
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { prisma } from '@/lib/prisma.server';
 import { findDm, findGroupMembership } from '@/lib/chat/chat.server';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
@@ -18,6 +19,8 @@ import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { imageAltsAligned, normalizeImageAlts } from '@/lib/messages/image-alts';
 import { isBlockedPair, sendDirectMessage, sendGroupMessage, type SendFailCode } from '@/lib/messages/send.server';
 import type { SentMessage } from '@/lib/messages/scheduled';
+import { requestGate } from '@/lib/messages/requests.server';
+import { gateRefusalCopy } from '@/lib/messages/requests';
 import {
   MAX_ATTEMPTS,
   MAX_PENDING,
@@ -38,6 +41,7 @@ type Row = {
   senderId: string;
   content: string;
   gifUrl: string | null;
+  gifAlt?: string | null;
   imageUrls: string[];
   imageAlts?: string[];
   sendAt: Date;
@@ -51,6 +55,7 @@ export function toScheduledRow(r: Row): ScheduledMessageRow {
     chatId: r.chatId,
     content: r.content,
     gifUrl: r.gifUrl,
+    gifAlt: r.gifUrl ? (r.gifAlt ?? null) : null,
     imageUrls: r.imageUrls,
     imageAlts: normalizeImageAlts(r.imageUrls, r.imageAlts),
     sendAt: r.sendAt.toISOString(),
@@ -134,6 +139,8 @@ export interface ScheduleInput {
   chatId: string;
   content: string;
   gifUrl?: string | undefined;
+  /** The GIF's description (sprint 06 #15); carried to the message when it sends. */
+  gifAlt?: string | undefined;
   imageUrls?: string[] | undefined;
   /** One description per image, same length as `imageUrls`. */
   imageAlts?: string[] | undefined;
@@ -158,6 +165,17 @@ export async function scheduleMessage(
   if (!target) return refuse(404, 'Not found');
   if (target.kind === 'dm' && (await isBlockedPair(userId, target.otherId))) {
     return refuse(403, 'You can no longer message this person');
+  }
+  // s04-16: a message request is one text message sent now. Nothing is scheduled into one, or into a
+  // conversation that would only become one; every other privacy answer is still left to delivery.
+  if (target.kind === 'dm') {
+    const gate = await requestGate(userId, target.otherId);
+    if (gate.outcome === 'request') {
+      return refuse(403, 'A message request cannot be scheduled. Send it now.');
+    }
+    if (gate.outcome === 'refused' && (gate.reason === 'pending' || gate.reason === 'incoming')) {
+      return refuse(403, gateRefusalCopy(gate.reason));
+    }
   }
   if (input.imageUrls?.some((u) => !ownsFeedImageUrl(u, userId))) {
     return refuse(400, 'Invalid image reference');
@@ -189,6 +207,7 @@ export async function scheduleMessage(
         senderId: userId,
         content: input.content,
         gifUrl: input.gifUrl ?? null,
+        gifAlt: normalizeGifAlt(input.gifUrl, input.gifAlt),
         imageUrls: input.imageUrls ?? [],
         imageAlts: normalizeImageAlts(input.imageUrls, input.imageAlts),
         sendAt,
@@ -326,6 +345,7 @@ export function failCodeFor(code: SendFailCode): ScheduledFailCode {
     case 'invalid-image':
       return 'invalid-image';
     case 'empty':
+    case 'request-text-only':
     case 'alt-mismatch':
     case 'alt-required':
       return 'invalid';
@@ -371,6 +391,7 @@ async function deliver(row: Row): Promise<DeliveryOutcome> {
   if (!target) return finishFailed('not-member');
   const media = {
     gifUrl: row.gifUrl ?? undefined,
+    gifAlt: normalizeGifAlt(row.gifUrl, row.gifAlt) ?? undefined,
     imageUrls: row.imageUrls,
     imageAlts: normalizeImageAlts(row.imageUrls, row.imageAlts),
   };
@@ -593,6 +614,7 @@ export async function exportScheduledMessages(userId: string) {
     chatId: r.chatId,
     content: r.content,
     gifUrl: r.gifUrl,
+    gifAlt: r.gifUrl ? (r.gifAlt ?? null) : null,
     imageUrls: r.imageUrls,
     imageAlts: normalizeImageAlts(r.imageUrls, r.imageAlts),
     sendAt: r.sendAt.toISOString(),

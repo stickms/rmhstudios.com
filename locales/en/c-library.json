@@ -74,6 +74,9 @@
   "publish-n_one": "Publish {{count}} book",
   "publish-n_other": "Publish {{count}} books",
   "published": "Published",
+  "quality-high": "High",
+  "quality-low": "Low",
+  "quality-medium": "Medium",
   "quota-help": "Delete an upload to make room, or request a higher limit.",
   "quota-pending": "Your request for more uploads is awaiting admin review.",
   "quota-reached": "You've used all {{quota}} of your upload slots ({{used}}/{{quota}}).",
@@ -99,5 +102,8 @@
   "status-uploading": "Publishing…",
   "storage-not-durable": "Object storage is not configured on the server, so uploads will not persist (they 404 after a while). Set the S3_* / R2 environment variables.",
   "table-of-contents": "Table of contents",
-  "theme": "Theme"
+  "theme": "Theme",
+  "theme-dark": "dark",
+  "theme-light": "light",
+  "theme-sepia": "sepia"
 }

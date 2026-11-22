@@ -44,6 +44,8 @@ function makeWallet(balance: number, primary = 'u') {
   const balances = new Map<string, number>();
   const get = (id: string) => (balances.has(id) ? (balances.get(id) as number) : balance);
   const tx = {
+    // No play-limits row, so the ledger's spending-budget check finds no budget.
+    userPlayLimits: { findUnique: vi.fn(async () => null) },
     userProfile: {
       upsert: vi.fn(async () => ({})),
       // Atomic conditional decrement: check + write in one indivisible step.

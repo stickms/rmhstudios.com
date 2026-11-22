@@ -4,6 +4,7 @@ import { fetchGlobalLeaderboard, type LeaderboardEntry } from '../engine/persist
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface GlobalLeaderboardProps {
   currentUserId?: string;
@@ -21,6 +22,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
   autoRefresh = false,
   refreshKey = 0,
 }) => {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-synapse-storm');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +131,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                   )}
                 </div>
                 <span className={`ss-glb-score ${isNewBest ? 'ss-glb-score-new' : ''}`}>
-                  {entry.highScore.toLocaleString()}
+                  {fmt.number(entry.highScore)}
                 </span>
               </div>
             );

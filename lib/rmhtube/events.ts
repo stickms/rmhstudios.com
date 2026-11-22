@@ -31,6 +31,8 @@ export const C2S = {
 
   // Media queue
   QUEUE_ADD: 'rmhtube:queue:add',
+  /** Queue a whole playlist the caller owns or collaborates on, in one event. */
+  QUEUE_ADD_PLAYLIST: 'rmhtube:queue:add_playlist',
   /** Leader-observed metadata for the playing item (duration, liveness, title). */
   QUEUE_META: 'rmhtube:queue:meta',
   QUEUE_REMOVE: 'rmhtube:queue:remove',
@@ -104,6 +106,8 @@ export const S2C = {
 
   // Queue updates
   QUEUE_UPDATED: 'rmhtube:queue:updated',
+  /** To the adder only: what a playlist add did (added, total, skipped, full). */
+  QUEUE_PLAYLIST_RESULT: 'rmhtube:queue:playlist_result',
 
   // Reactions
   REACTION_BROADCAST: 'rmhtube:reaction:broadcast',

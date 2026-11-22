@@ -7,7 +7,6 @@
 import { Fragment, useCallback, useId, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
 import { Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,7 @@ import {
   type ModeratorNotesPage,
 } from '@/lib/moderation/notes.contract';
 import { MAX_NOTE_LENGTH, MAX_PINNED_NOTES, splitNoteText } from '@/lib/moderation/notes';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const NO_LINK = '';
 
@@ -57,6 +57,7 @@ export function ModeratorNotes({
   userId: string;
   /** Scroll the section into view once it has loaded. */ reveal?: boolean;
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('mod-notes');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
@@ -249,12 +250,9 @@ export function ModeratorNotes({
       : t('unknown-user', {
           defaultValue: 'Deleted user',
         });
-  const ago = (iso: string) =>
-    formatDistanceToNow(new Date(iso), {
-      addSuffix: true,
-    });
+  const ago = (iso: string) => fmt.relative(new Date(iso));
   const day = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
+    fmt.date(new Date(iso), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -418,7 +416,7 @@ export function ModeratorNotes({
                     </span>
                   )}
                   <span className="text-site-text">{who(n.author)}</span>
-                  <time dateTime={n.createdAt} title={new Date(n.createdAt).toLocaleString()}>
+                  <time dateTime={n.createdAt} title={fmt.dateTime(new Date(n.createdAt))}>
                     {ago(n.createdAt)}
                   </time>
                   {n.editedFrom.length > 0 && (

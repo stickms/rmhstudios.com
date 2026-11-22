@@ -26,6 +26,8 @@ export const listBlockedUsersApi = endpoint<{
 export const toggleBlockApi = endpoint<{
   body: {
     targetUserId: string;
+    /** Explicit intent (s05-14): true blocks, false unblocks, absent flips the current state. */
+    block?: boolean | undefined;
   };
   res: {
     success: true;
@@ -39,6 +41,8 @@ export const toggleBlockApi = endpoint<{
 export const toggleMuteApi = endpoint<{
   body: {
     targetUserId: string;
+    /** Explicit intent (s05-14): true mutes, false unmutes, absent flips the current state. */
+    mute?: boolean | undefined;
   };
   res: {
     success: true;

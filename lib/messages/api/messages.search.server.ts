@@ -3,9 +3,11 @@ import { implement } from '@/lib/api/implement.server';
 import { searchConversationsApi } from '@/lib/messages/messages.contract';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { dmChatSelect, dmKeyOf, dmsOf, toDmRow } from '@/lib/chat/chat.server';
+import { requestOut } from '@/lib/messages/requests';
+import { dmChatSelect, dmKeyOf, dmsOf, inboxVisibleTo, toDmRow } from '@/lib/chat/chat.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { resolveUserDisplay } from '@/lib/user-display';
+import { receiptsHiddenFor } from '@/lib/chat-plus/receipts.server';
 
 /**
  * GET /api/messages/search?q= — search the viewer's conversations by the other
@@ -43,6 +45,7 @@ export const route = apiRoute('/api/messages/search', {
         where: {
           AND: [
             dmsOf(userId),
+            inboxVisibleTo(userId),
             {
               OR: [
                 // The other participant's name, or your own in Saved Messages
@@ -114,6 +117,12 @@ export const route = apiRoute('/api/messages/search', {
         : [];
       const snippetMap = new Map(matches.map((m) => [m.chatId, m.content]));
 
+      // Sprint 06 #17: the sender never learns "read" where receipts are hidden for the pair.
+      const needsMask = conversations.some(
+        (c) => c.messages[0]?.senderId === userId && c.messages[0]?.read,
+      );
+      const receiptsHidden = needsMask ? await receiptsHiddenFor(conversations) : new Set<string>();
+
       const result = conversations.map((conv) => {
         const otherUser =
           conv.participantOneId === userId ? conv.participantTwo : conv.participantOne;
@@ -133,7 +142,12 @@ export const route = apiRoute('/api/messages/search', {
                 id: lastMessage.id,
                 content: lastMessage.content,
                 senderId: lastMessage.senderId,
-                read: lastMessage.read,
+                read:
+                  lastMessage.read &&
+                  !(
+                    lastMessage.senderId === userId &&
+                    (requestOut(conv.request, userId) || receiptsHidden.has(conv.id))
+                  ),
                 createdAt: lastMessage.createdAt.toISOString(),
                 gifUrl: lastMessage.gifUrl,
                 imageUrls: lastMessage.imageUrls,

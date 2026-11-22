@@ -30,6 +30,7 @@ import { formatDebt } from '@/lib/kaikai-debt/debt';
 import { densifyRhythm, valueNow, type RhythmCell } from '@/lib/kaikai-debt/stats';
 import { cn } from '@/lib/utils';
 import { ChartCard, ChartFrame, Readout, ReadoutRow, makePlot, pointerInViewBox, useHoverIndex } from './chart-kit';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const PLOT = makePlot(720, 260, {
   left: 40,
@@ -76,6 +77,7 @@ function weekdayLabel(day: number, t: TFunction): string {
 const STEPS = 5;
 
 export function RhythmHeatmap({ rhythm, nowMs }: { rhythm: readonly RhythmCell[]; nowMs: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-kaikai-debt');
   const [hover, setHover] = useHoverIndex();
 
@@ -235,7 +237,7 @@ export function RhythmHeatmap({ rhythm, nowMs }: { rhythm: readonly RhythmCell[]
             label={t('stats.readout.lines', {
               defaultValue: 'Lines',
             })}
-            value={active.count.toLocaleString('en-US')}
+            value={fmt.number(active.count)}
           />
           <ReadoutRow
             label={t('stats.readout.worthNow', {

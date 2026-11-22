@@ -1212,6 +1212,7 @@ lib/prepaint/generated.ts
 /docker-compose.yml
 /docs/_generated/db-census.md
 /docs/_generated/db-drop-candidates.md
+/docs/account-deletion.md
 /docs/_static/custom.css
 /docs/altair-multiplayer.md
 /docs/altair/multiplayer.md
@@ -1818,7 +1819,6 @@ lib/prepaint/generated.ts
 /lib/admin/api/admin.review-counts.server.ts
 /lib/admin/api/admin.users.$id.ban.server.ts
 /lib/admin/api/admin.users.$id.grant-membership.server.ts
-/lib/admin/api/admin.users.$id.set-coins.server.ts
 /lib/admin/api/admin.users.$id.strike.server.ts
 /lib/admin/api/admin.users.server.ts
 /lib/admin/api/admin.view-as.server.ts
@@ -3750,3 +3750,19 @@ docs/announcements/
 # Sprint 03 planning docs are wrapped at 80 columns, not one word per line, so their
 # line count reports the writing rather than the wrap (docs/autonomous/sprint-03/plan.md §Reporting).
 /docs/autonomous/sprint-03/
+
+# Sprint 04 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-04/plan.md §Reporting).
+/docs/autonomous/sprint-04/
+
+# Sprint 05 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-05/plan.md §Reporting).
+/docs/autonomous/sprint-05/
+
+# Sprint 06 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-06/plan.md §Reporting).
+/docs/autonomous/sprint-06/
+
+# Sprint 07 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-07/plan.md §Reporting).
+/docs/autonomous/sprint-07/

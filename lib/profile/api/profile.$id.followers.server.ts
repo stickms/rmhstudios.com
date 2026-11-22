@@ -9,6 +9,8 @@ import {
   FOLLOW_ORDER_BY,
 } from '@/lib/api/follow-cursor';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { canSeeFollowLists, filterBlocked } from '@/lib/social/follow-list-privacy.server';
+import { LIST_PRIVATE } from '@/lib/social/follow-list-privacy';
 
 export const route = apiRoute('/api/profile/$id/followers', {
   GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId: viewerId }) => {
@@ -22,7 +24,9 @@ export const route = apiRoute('/api/profile/$id/followers', {
     const cursor = searchParams.get('cursor');
     const limit = pageSize(searchParams.get('limit'), 20, 50);
 
-    // Get current viewer session for isFollowing status
+    if (!(await canSeeFollowLists(viewerId, id))) {
+      return Response.json({ error: 'This list is private', code: LIST_PRIVATE }, { status: 403 });
+    }
 
     const followRecords = await prisma.follow.findMany({
       where: {
@@ -36,10 +40,19 @@ export const route = apiRoute('/api/profile/$id/followers', {
       },
     });
 
+    // The cursor and `hasMore` come from the raw page, so dropping a blocked account never ends paging early.
+    const visibleIds = new Set(
+      await filterBlocked(
+        viewerId,
+        followRecords.map((r) => r.follower.id),
+      ),
+    );
+    const visibleRecords = followRecords.filter((r) => visibleIds.has(r.follower.id));
+
     // Check which of these users the viewer follows
     let viewerFollowingSet = new Set<string>();
-    if (viewerId && followRecords.length > 0) {
-      const followerIds = followRecords.map((r) => r.follower.id);
+    if (viewerId && visibleRecords.length > 0) {
+      const followerIds = visibleRecords.map((r) => r.follower.id);
       const viewerFollows = await prisma.follow.findMany({
         where: { followerId: viewerId, followingId: { in: followerIds } },
         select: { followingId: true },
@@ -47,7 +60,7 @@ export const route = apiRoute('/api/profile/$id/followers', {
       viewerFollowingSet = new Set(viewerFollows.map((f) => f.followingId));
     }
 
-    const users = followRecords.map((r) => {
+    const users = visibleRecords.map((r) => {
       const resolved = resolveUser(r.follower);
       return {
         ...resolved,

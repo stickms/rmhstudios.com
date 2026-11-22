@@ -16,6 +16,8 @@ const ROOT = resolve(__dirname, '../..');
 /** The only files that may read a Log without the filter: they exist to see drafts. */
 const ALLOWED = new Set([
   'lib/admin/api/admin.blog.server.ts',
+  // s05-10 admin lookup: `auth: 'admin'`, resolves a pasted /blog/<slug> to the Log and says when it is a draft.
+  'lib/admin/lookup.server.ts',
   'lib/blog/publication.ts',
   'lib/blog/publication.server.ts',
 ]);
@@ -34,6 +36,8 @@ const READERS = [
   'lib/og/api/og.blog.$slug.server.ts',
   'lib/ai/api/ai.takeaways.server.ts',
   'lib/reading/highlights.server.ts',
+  // s07-18: the titles in a member's reading-time summary.
+  'lib/reading/time-record.server.ts',
   'lib/blog/blog-comments.server.ts',
   'lib/reading/subscriptions.server.ts',
 ];

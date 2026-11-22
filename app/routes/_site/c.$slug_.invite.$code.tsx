@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LockedCommunityPreview } from '@/components/communities/LockedCommunity';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 import { useSession } from '@/components/Providers';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getInvitePreview, type InvitePreview } from '@/lib/communities/invite-preview.server';
@@ -42,6 +43,7 @@ function InvitePage() {
   const { data: session } = useSession();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const sanctionRefusalText = useSanctionRefusal();
 
   if (preview.state === 'invalid') {
     // One generic state for every reason a link can be unusable.
@@ -89,7 +91,10 @@ function InvitePage() {
     const res = await plusFetch(communityApi(slug, '/join'), 'POST', { invite: code });
     setBusy(false);
     if (!res.ok) {
-      toast.error(t('invite-join-error', { defaultValue: "This invite isn't valid" }));
+      toast.error(
+        sanctionRefusalText(res.errorBody) ??
+          t('invite-join-error', { defaultValue: "This invite isn't valid" }),
+      );
       return;
     }
     toast.success(t('invite-joined', { defaultValue: 'Welcome in!' }));

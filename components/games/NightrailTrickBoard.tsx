@@ -14,8 +14,10 @@ import { getNightrailTricksApi, voteNightrailTrickApi } from '@/lib/trick-week/n
 import type { TrickView, TricksPayload } from '@/lib/trick-week/trick-week';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function TrickLine({ trick }: { trick: TrickView }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-async-games');
   return (
     <div className="min-w-0">
@@ -28,7 +30,7 @@ function TrickLine({ trick }: { trick: TrickView }) {
             t('trick-anon', {
               defaultValue: 'A courier',
             }),
-          points: trick.score.toLocaleString(),
+          points: fmt.number(trick.score),
           mult: trick.multiplier,
           level: trick.level,
         })}

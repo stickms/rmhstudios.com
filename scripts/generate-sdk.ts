@@ -24,8 +24,47 @@ const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const key = (k: string) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k));
 
 /** Structural TS type of an example value. */
+// Example values that are `null` say nothing about the type, so the nullable
+// fields of the API are named here.
+const NULLABLE: Record<string, string> = {
+  nextCursor: 'string | null',
+  pinnedOrder: 'number | null',
+  contentWarning: 'string | null',
+  previousScore: 'number | null',
+  description: 'string | null',
+  externalId: 'string | null',
+  poll: '{ id: string; question: string; multiSelect: boolean; ranked: boolean; quiz: boolean; correctOptionId: string | null; explanation: string | null; ended: boolean; closesAt: string | null; options: { id: string; text: string }[]; result: { winnerOptionId: string | null; percentOnly: boolean; rounds: { tally: Record<string, number>; eliminatedOptionId: string | null }[] } | null } | null',
+
+  // Sprint 07
+  // s07-10 api-events
+  endsAt: 'string | null',
+  timeZone: 'string | null',
+  occurrence: 'string | null',
+  note: 'string | null',
+  venue: 'string | null',
+  capacity: 'number | null',
+  communityId: 'string | null',
+  yourRsvp: "'going' | 'maybe' | 'waitlisted' | null",
+  waitlistPosition: 'number | null',
+
+  // s07-11 api-communities
+  gifUrl: 'string | null',
+  gifAlt: 'string | null',
+  pinnedReplyId: 'string | null',
+  flair: '{ id: string; name: string; color: string } | null',
+
+  // s07-12 api-reading
+  document: '{ title: string; url: string } | null',
+  goal: "{ unit: 'books' | 'pages'; target: number; books: number; pages: number; done: number } | null",
+  finishedAt: 'string | null',
+
+  // s07-17 build-screenshots
+  thumbnailAlt: 'string | null',
+
+};
+
 function tsOf(v: unknown, k = ''): string {
-  if (v === null) return k === 'nextCursor' ? 'string | null' : 'unknown';
+  if (v === null) return NULLABLE[k] ?? 'unknown';
   if (Array.isArray(v)) return v.length ? `${tsOf(v[0])}[]` : 'unknown[]';
   if (typeof v === 'object') {
     const entries = Object.entries(v as Json).map(([k, x]) => `${key(k)}: ${tsOf(x, k)}`);
@@ -36,11 +75,17 @@ function tsOf(v: unknown, k = ''): string {
     : 'unknown';
 }
 
-function propType(p: Json): string {
+// Request-body fields whose value is an object: spelled out so the SDK never types them loosely.
+const OBJECT_BODY_FIELDS: Record<string, string> = {
+  // s07-19 quiz polls
+  poll: '{ question: string; options: string[]; multiSelect?: boolean; durationHours?: number; quiz?: boolean; correctIndex?: number; explanation?: string }',
+};
+
+function propType(p: Json, name = ''): string {
   if (p.type === 'array') return 'string[]';
   if (p.type === 'integer' || p.type === 'number') return 'number';
   if (p.type === 'boolean') return 'boolean';
-  if (p.type === 'object') return 'Record<string, unknown>';
+  if (p.type === 'object') return OBJECT_BODY_FIELDS[name] ?? 'Record<string, unknown>';
   return 'string';
 }
 
@@ -67,7 +112,7 @@ function generate(): string {
       } else if (bodyType) {
         const props = Object.entries<Json>(bodyContent[bodyType].schema.properties ?? {}).map(
           ([k, p]) =>
-            `  /** ${String(p.description).replace(/\*\//g, '')} */\n  ${key(k)}?: ${propType(p)};`,
+            `  /** ${String(p.description).replace(/\*\//g, '')} */\n  ${key(k)}?: ${propType(p, k)};`,
         );
         types.push(`export interface ${T}Body {\n${props.join('\n')}\n}`);
         bodyField = `  body: ${T}Body;`;

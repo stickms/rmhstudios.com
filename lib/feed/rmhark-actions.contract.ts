@@ -46,16 +46,6 @@ export const bookmarkPostApi = endpoint<{
   path: '/api/rmharks/$id/bookmark',
 });
 
-export const pinPostApi = endpoint<{
-  res: {
-    success: true;
-    pinned: boolean;
-  };
-}>()({
-  method: 'POST',
-  path: '/api/rmharks/$id/pin',
-});
-
 export const deletePostApi = endpoint<{
   res: {
     success: true;

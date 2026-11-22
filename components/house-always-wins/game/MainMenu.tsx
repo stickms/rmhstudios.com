@@ -20,6 +20,7 @@ import { MusicManager } from '@/lib/house-always-wins/music';
 import { SfxManager } from '@/lib/house-always-wins/sfx';
 import { useHouseAlwaysWinsStore } from '@/lib/store/houseAlwaysWinsStore';
 import './haw-menu.css';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type ItemId = 'play' | 'continue' | 'new' | 'help' | 'quit';
 
@@ -339,6 +340,7 @@ const FLOATERS: Floater[] = [
 const BASE_BALANCE = 1_000_000;
 
 function DebtMarker({ extra }: { extra: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-house-always-wins');
   const [accrued, setAccrued] = useState(0);
   useEffect(() => {
@@ -370,7 +372,7 @@ function DebtMarker({ extra }: { extra: number }) {
         })}
       </p>
       <p className="haw-marker__amt">
-        <span key={balance}>${balance.toLocaleString('en-US')}</span>
+        <span key={balance}>${fmt.number(balance)}</span>
       </p>
       <p className="haw-marker__fine">
         {t('main-marker-interest', {

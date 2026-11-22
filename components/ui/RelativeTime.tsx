@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * Hydration-safe relative timestamps ("3h", "15 minutes ago").
@@ -77,8 +78,8 @@ export interface RelativeTimeProps {
   className?: string;
 }
 
-function defaultFallback(ms: number): string {
-  return new Date(ms).toLocaleDateString(undefined, {
+function defaultFallback(ms: number, formatDay: (ms: number, opts: Intl.DateTimeFormatOptions) => string): string {
+  return formatDay(ms, {
     month: 'short',
     day: 'numeric',
   });
@@ -87,10 +88,11 @@ function defaultFallback(ms: number): string {
 export function RelativeTime({ date, format, fallback, className }: RelativeTimeProps) {
   const ms = date instanceof Date ? date.getTime() : new Date(date).getTime();
   const now = useLiveNow();
+  const lf = useLocaleFormat();
 
   if (Number.isNaN(ms)) return null;
 
-  const text = now === null ? (fallback ?? defaultFallback)(ms) : format(ms, now);
+  const text = now === null ? (fallback ? fallback(ms) : defaultFallback(ms, lf.date)) : format(ms, now);
 
   return (
     <time dateTime={new Date(ms).toISOString()} className={className}>

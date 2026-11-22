@@ -8,6 +8,7 @@ import {
   messageThreadApi,
 } from '@/lib/messages/message-actions.contract';
 import { subscribeMessageStream } from '@/hooks/useUnreadCount';
+import type { SenderRequestState } from '@/lib/messages/requests';
 import type { ReactionRow } from '@/lib/social/reactions';
 import {
   MUTATION_SYNC_INTERVAL_MS,
@@ -55,6 +56,8 @@ export function useConversationThread({
   const [otherUser, setOtherUser] = useState<OtherUser | null>(initialOtherUser ?? null);
   const [notFound, setNotFound] = useState(false);
 
+  // s04-16: what the sender's composer shows while they can only ask ('compose') or have asked ('sent').
+  const [requestState, setRequestState] = useState<SenderRequestState | null>(null);
   const initialFetched = useRef(false);
   // IDs of messages that should NOT animate in: the initial page and any
   // "load older" pages are history — only genuinely new (sent / received)
@@ -106,6 +109,7 @@ export function useConversationThread({
 
         if (isInitial) {
           setMessages(data.messages);
+          setRequestState(data.request ?? null);
           setHasOlder(data.hasMore);
           setOlderCursor(data.nextCursor);
           lastSyncRef.current = new Date().toISOString();
@@ -319,6 +323,8 @@ export function useConversationThread({
     loadingOlder,
     otherUser,
     notFound,
+    requestState,
+    setRequestState,
     historyIds,
     applyMutation,
     handleLoadOlder,

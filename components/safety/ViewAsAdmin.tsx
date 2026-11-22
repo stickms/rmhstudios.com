@@ -8,6 +8,7 @@ import { serverError } from '@/lib/http';
 import { adminViewAsApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Brief {
   id: string;
@@ -32,7 +33,7 @@ interface ViewAs {
 const label = (u: Brief) => u.handle || u.name || u.id;
 
 /** S5: read-only render of what a member sees. Every lookup is audit-logged server-side. */
-export function ViewAsAdmin() {
+export function ViewAsAdmin() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-safety');
   const [query, setQuery] = useState('');
   const [data, setData] = useState<ViewAs | null>(null);
@@ -106,10 +107,10 @@ export function ViewAsAdmin() {
               {t('viewas-meta', {
                 defaultValue: 'Plan: {{tier}} · joined {{date}}',
                 tier: data.entitlements.tier,
-                date: new Date(data.member.createdAt).toLocaleDateString(),
+                date: fmt.date(new Date(data.member.createdAt)),
               })}
               {data.member.bannedUntil &&
-                ` · ${t('viewas-banned', { defaultValue: 'suspended until {{date}}', date: new Date(data.member.bannedUntil).toLocaleDateString() })}`}
+                ` · ${t('viewas-banned', { defaultValue: 'suspended until {{date}}', date: fmt.date(new Date(data.member.bannedUntil)) })}`}
             </p>
           </section>
           {list(t('viewas-mutes', { defaultValue: 'Muted accounts' }), data.mutes)}

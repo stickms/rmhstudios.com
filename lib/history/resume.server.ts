@@ -38,16 +38,18 @@
  * the rail and the player end up disagreeing about whether you watched it.
  */
 
+import { ACTIVE_REVIEW_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/catalog';
 import { shouldResume, progressRatio, RESUME_MAX_RATIO } from '@/lib/history/constants';
+import { listContinueReading } from '@/lib/library/reader-sync.server';
 
 /* -------------------------------------------------------------------------- */
 /* Contract                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export type ResumeKind = 'game' | 'watch' | 'draft' | 'deck';
+export type ResumeKind = 'game' | 'watch' | 'draft' | 'deck' | 'book';
 
 /**
  * One fact about where the user stopped, in a form the rail can translate.
@@ -393,7 +395,7 @@ async function draftCards(userId: string, take: number): Promise<ResumeCard[]> {
 
 async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]> {
   const due = await prisma.flashcardReview.findMany({
-    where: { userId, dueAt: { lte: new Date() } },
+    where: { userId, ...ACTIVE_REVIEW_WHERE, dueAt: { lte: new Date() } },
     select: { updatedAt: true, card: { select: { deckId: true } } },
     orderBy: { updatedAt: 'desc' },
     take: DUE_SCAN_MAX,
@@ -414,8 +416,16 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
 
   const decks = await prisma.flashcardDeck.findMany({
     where: { id: { in: [...tally.keys()] } },
-    select: { id: true, title: true, cardCount: true },
+    select: { id: true, title: true },
   });
+  // The deck's size is what a member studies (generated cards included), the same rows `tally`
+  // counts; `cardCount` is authored cards only and would understate progress.
+  const sizes = await prisma.flashcard.groupBy({
+    by: ['deckId'],
+    where: { deckId: { in: decks.map((d) => d.id) }, ...REVIEWABLE_WHERE },
+    _count: { _all: true },
+  });
+  const size = new Map(sizes.map((r) => [r.deckId, r._count._all]));
 
   return decks
     .flatMap((deck) => {
@@ -424,10 +434,8 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
       // Progress is how much of the deck is currently in good standing, so a
       // deck you have kept up with reads as nearly full and a lapsed one as
       // nearly empty — which is the shape of the work left, not of the work done.
-      const progress =
-        deck.cardCount > 0
-          ? Math.min(1, Math.max(0, (deck.cardCount - entry.count) / deck.cardCount))
-          : undefined;
+      const total = size.get(deck.id) ?? 0;
+      const progress = total > 0 ? Math.min(1, Math.max(0, (total - entry.count) / total)) : undefined;
       return [
         card('deck', {
           title: deck.title,
@@ -439,6 +447,27 @@ async function dueDeckCards(userId: string, take: number): Promise<ResumeCard[]>
       ];
     })
     .slice(0, take);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Source: library books with a synced place                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The reader restores the newest synced place when the book opens, so the card links at
+ * the book itself. The percent is the state; the rail words it "Continue reading {title}".
+ */
+async function libraryCards(userId: string, take: number): Promise<ResumeCard[]> {
+  const books = await listContinueReading(userId, take);
+  return books.map((b) =>
+    card('book', {
+      title: b.title,
+      href: `/library/${encodeURIComponent(b.slug)}`,
+      state: [{ at: 'percent', value: b.percent }],
+      progress: b.percent / 100,
+      updatedAt: new Date(b.updatedAt),
+    }),
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -475,6 +504,7 @@ export async function resumeCards(
     source('watch-history', () => watchHistoryCards(userId, take)),
     source('drafts', () => draftCards(userId, take)),
     source('due-decks', () => dueDeckCards(userId, take)),
+    source('library', () => libraryCards(userId, take)),
   ]);
 
   return rankResumeCards(groups.flat(), take);

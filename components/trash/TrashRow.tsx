@@ -7,6 +7,7 @@ import type { TrashItem } from '@/lib/trash/types';
 import { DELETED_POST_GRACE_MS } from '@/lib/media/sweep-policy';
 import { refusalCopy } from '@/components/trash/copy';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface TrashRowProps {
   item: TrashItem;
@@ -26,6 +27,7 @@ interface TrashRowProps {
  * most likely to have happened in the first place.
  */
 export function TrashRow({ item, busy, onRestore, onPurge, className }: TrashRowProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('settings-content');
   const reasons = refusalCopy(t);
   const Icon = item.kind === 'post' ? StickyNote : MessageSquare;
@@ -65,7 +67,7 @@ export function TrashRow({ item, busy, onRestore, onPurge, className }: TrashRow
               <Badge variant={item.daysRemaining > 3 ? 'default' : 'warning'}>{daysLeft}</Badge>
               <span className="text-xs text-site-text-muted">
                 {t('trash-deleted-on', {
-                  date: new Date(item.deletedAt).toLocaleDateString(),
+                  date: fmt.date(new Date(item.deletedAt)),
                   defaultValue: 'Deleted {{date}}',
                 })}
               </span>

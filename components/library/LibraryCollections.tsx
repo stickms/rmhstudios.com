@@ -22,6 +22,8 @@ import { useReveal } from './LibraryReveal';
 import { LibraryContextMenu, useContextMenu, type MenuItem } from './LibraryContextMenu';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
+import { toast } from '@/lib/toast';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
 import { api } from '@/lib/contract/client';
@@ -34,6 +36,7 @@ import {
   removeLibraryCollectionBookApi,
   updateLibraryCollectionApi,
 } from '@/lib/library/collections.contract';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
 const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';
@@ -58,6 +61,7 @@ export function LibraryCollections({
 }) {
   const { t } = useTranslation('library');
   const confirm = useConfirm();
+  const prompt = usePrompt();
   const [creating, setCreating] = useState(false);
   const [addingTo, setAddingTo] = useState<CollectionView | null>(null);
   const [opened, setOpened] = useState<CollectionView | null>(null);
@@ -104,10 +108,10 @@ export function LibraryCollections({
   }
 
   async function renameCollection(c: CollectionView) {
-    const title = window.prompt(
-      t('collection-rename-prompt', { defaultValue: 'Collection name' }),
-      c.title,
-    );
+    const title = await prompt({
+      title: t('collection-rename-prompt', { defaultValue: 'Collection name' }),
+      initialValue: c.title,
+    });
     if (title === null) return;
     const ok = await api(updateLibraryCollectionApi, { params: { id: c.id }, body: { title } }).then(
       () => true,
@@ -152,7 +156,7 @@ export function LibraryCollections({
     if (ok) {
       await onChanged();
     } else {
-      window.alert(
+      toast.error(
         serverError(failure) ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
       );
     }
@@ -430,7 +434,7 @@ function ViewModal({
 }
 
 /** A compact, non-editable book card (link to the reader). */
-function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => void }) {
+function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => void }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('library');
   const style = { '--book-hue': String(book.hue) } as React.CSSProperties;
   return (
@@ -460,7 +464,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
             <span className="lib-book__title">{book.title}</span>
           )}
           {book.pages > 0 && (
-            <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>
+            <span className="lib-book__pages-badge">{fmt.number(book.pages)} pp</span>
           )}
           {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
         </div>

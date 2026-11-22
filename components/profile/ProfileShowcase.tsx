@@ -25,6 +25,7 @@ import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
 import { SliceItModule } from '@/components/profile/modules/SliceItModule';
 import { api } from '@/lib/contract/client';
+import { profileModuleLabels } from '@/components/profile/module-labels';
 import { setProfileLayoutApi } from '@/lib/profile/profile-extras.contract';
 
 import { getPublicWishlistApi } from '@/lib/wishlist/wishlist.contract';
@@ -69,6 +70,7 @@ export function ProfileShowcase({
   isOwner: boolean;
 }) {
   const { t } = useTranslation('c-profile-modules');
+  const moduleLabels = profileModuleLabels(t);
   const [modules, setModules] = useState(initial);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -186,9 +188,7 @@ export function ProfileShowcase({
                 onReorder={(next) => setModules(next.map((n) => n.module))}
                 itemLabel={(it) => MODULE_LABELS[it.module.kind]}
                 renderItem={(it) => {
-                  const label = t(`module-${it.module.kind}`, {
-                    defaultValue: MODULE_LABELS[it.module.kind],
-                  });
+                  const label = moduleLabels[it.module.kind];
                   const picked = selection.isSelected(it.id);
                   return (
                     <div className="flex items-center justify-between gap-2">
@@ -271,9 +271,7 @@ export function ProfileShowcase({
               {addable.map((k) => (
                 <Button key={k} variant="default" size="sm" onClick={() => addModule(k)}>
                   <Plus className="h-4 w-4" aria-hidden />
-                  {t(`module-${k}`, {
-                    defaultValue: MODULE_LABELS[k],
-                  })}
+                  {moduleLabels[k]}
                 </Button>
               ))}
             </div>
@@ -302,9 +300,8 @@ function ModuleBlock({
   isOwner: boolean;
 }) {
   const { t } = useTranslation('c-profile-modules');
-  const title = t(`module-${module.kind}`, {
-    defaultValue: MODULE_LABELS[module.kind],
-  });
+  const moduleLabels = profileModuleLabels(t);
+  const title = moduleLabels[module.kind];
 
   if (module.kind === 'about') {
     if (!module.config.text) return null;

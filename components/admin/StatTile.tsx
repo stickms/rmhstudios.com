@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /**
  * A ledger of headline numbers: two columns on a phone, four from `sm`. Each
@@ -35,12 +36,13 @@ export function StatTile({
   tone?: 'good' | 'bad';
   className?: string;
 }) {
+  const fmt = useLocaleFormat();
   const toneClass = tone === 'good' ? 'text-site-success' : tone === 'bad' ? 'text-site-danger' : 'text-site-text';
   return (
     <div className={cn('min-w-0 border-t border-site-border py-3', className)}>
       <p className="t-label">{label}</p>
       <p className={cn('t-heading mt-1 break-words tabular-nums', toneClass)}>
-        {typeof value === 'number' ? value.toLocaleString() : value}
+        {typeof value === 'number' ? fmt.number(value) : value}
       </p>
       {hint ? <p className="t-meta mt-1">{hint}</p> : null}
     </div>

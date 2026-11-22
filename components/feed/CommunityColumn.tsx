@@ -12,8 +12,14 @@ import {
  Send,
  Gamepad2,
 } from'lucide-react';
-import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
+import { MemberSanctionMenu } from'@/components/communities/SanctionDialog';
+import { CommunityStandingNotice, useMyStanding } from'@/components/communities/CommunityStandingNotice';
+import { listSanctionsApi } from'@/lib/communities/bans.contract';
+import { MemberNotesDialog, NotesButton } from'@/components/communities/MemberNotesDialog';
+import { noteCountsApi } from'@/lib/communities/member-notes.contract';
+import { NOTE_COUNTS_MAX_IDS } from'@/lib/communities/member-notes';
+import { PostAlertsControl } from'@/components/communities/PostAlertsControl';
 import { RulesAgreementDialog } from'@/components/communities/CommunityRules';
 import { getRulesApi } from'@/lib/communities/rules.contract';
 import type { CommunityRuleDTO } from'@/lib/communities/rules';
@@ -46,6 +52,8 @@ import {
 import { useArrival } from '@/components/ui/arrive';
 import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 
 interface Announcement {
  id: string;
@@ -94,14 +102,17 @@ export function CommunityColumn({
  initialCommunity?: CommunityData | null;
  /** First page of posts prefetched by the route loader. */
  initialItems?: FeedItem[] | null;
-}) {
+}) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
  const { data: session } = useSession();
+ // s06-01: the caller's own ban or timeout, for the notice and the locked composer / Join button.
+ const standing = useMyStanding(slug, !!session);
  const seeded = useRef(initialCommunity !== undefined);
  const [community, setCommunity] = useState<CommunityData | null>(initialCommunity ?? null);
  const [items, setItems] = useState<FeedItem[]>(initialItems ?? []);
  const [loading, setLoading] = useState(initialCommunity === undefined);
  const { run: runJoin, pending: joining } = useOptimisticAction();
+ const sanctionRefusalText = useSanctionRefusal();
  const [announceOpen, setAnnounceOpen] = useState(false);
  const [membersOpen, setMembersOpen] = useState(false);
  // s03-13: the rules a joiner must tick first, when the community requires agreement.
@@ -170,6 +181,7 @@ export function CommunityColumn({
  },
  onError: (err) => {
  toast.error(
+ sanctionRefusalText(err) ??
  serverError(err) ??
  t('could-not-update-membership', { defaultValue:'Could not update membership'}),
  );
@@ -268,12 +280,13 @@ export function CommunityColumn({
  <FindATimeLink communityId={community.id} variant="button"/>
  )}
  {session && community.joined && <WatchControl kind="community"targetId={community.id}/>}
+ {session && community.joined && <PostAlertsControl slug={slug} />}
  {session && (
  <Button size="sm"variant="default"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}
  </Button>
  )}
- {session && (
+ {session && standing?.kind !=='ban'&& (
  <Button
  size="sm"
  variant={community.joined ?'default':'default'}
@@ -352,7 +365,7 @@ export function CommunityColumn({
  </span>
  <span>·</span>
  <span>
- {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}
+ {fmt.relative(new Date(a.createdAt))}
  </span>
  </div>
  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text">
@@ -378,7 +391,13 @@ export function CommunityColumn({
  )}
 
  {/* Composer, tabs (posts · hall of fame · challenge · census · top · mod tools) */}
- <CommunityPlusBody community={community} items={items} setItems={setItems} />
+ <CommunityStandingNotice standing={standing} />
+ <CommunityPlusBody
+ community={community}
+ items={items}
+ setItems={setItems}
+ composerLocked={standing?.kind ==='timeout'}
+ />
 
  {announceOpen && (
  <AnnounceDialog slug={slug} onClose={() => setAnnounceOpen(false)} onPosted={onAnnounced} />
@@ -485,9 +504,15 @@ function MembersDialog({
  viewerId: string | null;
  onClose: () => void;
 }) {
- const { t } = useTranslation('feed');
+ const { t } = useTranslation(['feed', 'community-bans']);
+ const fmt = useLocaleFormat();
  const confirm = useConfirm();
+ // s06-01: who is timed out until when (moderators only).
+ const [timedOut, setTimedOut] = useState<Record<string, string>>({});
  const [members, setMembers] = useState<Member[]>([]);
+ // s06-02: moderator notes. One grouped counts request per page of the roster, never one per row.
+ const [noteCounts, setNoteCounts] = useState<Record<string, number>>({});
+ const [notesFor, setNotesFor] = useState<Member | null>(null);
  const [viewerRole, setViewerRole] = useState<string | null>(null);
  const [createdById, setCreatedById] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);
@@ -510,6 +535,46 @@ function MembersDialog({
  useEffect(() => {
  void load();
  }, [load]);
+
+ const loadTimeouts = useCallback(async () => {
+ try {
+ const data = await api(listSanctionsApi, { params: { slug }, query: { status:'active'} });
+ const next: Record<string, string> = {};
+ for (const s of data.sanctions) {
+ if (s.kind ==='timeout'&& s.endsAt && s.member) next[s.member.id] = s.endsAt;
+ }
+ setTimedOut(next);
+ } catch {
+ // The marker is a convenience; the Bans tab has the full list.
+ }
+ }, [slug]);
+
+ useEffect(() => {
+ if (viewerRole ==='ADMIN'|| viewerRole ==='MOD') void loadTimeouts();
+ }, [viewerRole, loadTimeouts]);
+
+ useEffect(() => {
+ if ((viewerRole !=='ADMIN'&& viewerRole !=='MOD') || members.length === 0) return;
+ let live = true;
+ const chunks: string[][] = [];
+ for (let i = 0; i < members.length; i += NOTE_COUNTS_MAX_IDS) {
+ chunks.push(members.slice(i, i + NOTE_COUNTS_MAX_IDS).map((x) => x.id));
+ }
+ void Promise.all(
+ chunks.map((ids) =>
+ api(noteCountsApi, { params: { slug }, query: { userIds: ids.join(',') } }).then((r) => r.counts),
+ ),
+ )
+ .then((all) => {
+ if (live) setNoteCounts(Object.assign({}, ...all));
+ })
+ .catch(() => {
+ // The count is a convenience; the roster works without it.
+ });
+ return () => {
+ live = false;
+ };
+ }, [viewerRole, members, slug]);
 
  const setRole = async (m: Member, role:'MEMBER'|'MOD') => {
  setBusy(m.id);
@@ -596,7 +661,33 @@ function MembersDialog({
  (m.handle ? `@${m.handle}`: t('someone', { defaultValue:'Someone'}))}
  </p>
  <p className="text-xs text-site-text-muted">{roleLabel(m.role)}</p>
+ {isMod && timedOut[m.id] && (
+ <p className="t-meta">
+ {t('timed-out-until', {
+ ns: 'community-bans',
+ date: fmt.dateTime(timedOut[m.id]!),
+ defaultValue:'Timed out until {{date}}',
+ })}
+ </p>
+ )}
  </div>
+ {isMod && (
+ <NotesButton
+ member={{ id: m.id, name: m.name, handle: m.handle }}
+ count={noteCounts[m.id] ?? 0}
+ onClick={() => setNotesFor(m)}
+ />
+ )}
+ {canAlterMod && (
+ <MemberSanctionMenu
+ slug={slug}
+ member={{ id: m.id, name: m.name, handle: m.handle }}
+ onDone={(member, kind) => {
+ if (kind ==='ban') setMembers((prev) => prev.filter((x) => x.id !== member.id));
+ else void loadTimeouts();
+ }}
+ />
+ )}
  {canAlterMod && (
  <button
  type="button"
@@ -631,6 +722,14 @@ function MembersDialog({
  );
  })}
  </ul>
+ )}
+ {notesFor && (
+ <MemberNotesDialog
+ slug={slug}
+ member={{ id: notesFor.id, name: notesFor.name, handle: notesFor.handle }}
+ onClose={() => setNotesFor(null)}
+ onCount={(count) => setNoteCounts((prev) => ({ ...prev, [notesFor.id]: count }))}
+ />
  )}
  </DialogContent>
  </Dialog>

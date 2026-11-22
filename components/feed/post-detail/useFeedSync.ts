@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { FeedItem } from '@/lib/feed-types';
 import { useFeedStore } from '@/stores/feedStore';
+import { bumpCount } from '@/lib/feed/quiet-counts';
 
 export interface FeedSync {
   syncToFeed: (updates: Partial<FeedItem>) => void;
@@ -29,7 +30,7 @@ export function useFeedSync(postId: string): FeedSync {
       const current = store.items.find((i) => i.id === postId);
       if (current) {
         store.updateItem(postId, {
-          commentCount: Math.max(0, (current.commentCount ?? 0) + delta),
+          commentCount: bumpCount(current.commentCount, delta),
         });
       }
     },

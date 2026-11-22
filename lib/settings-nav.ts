@@ -18,11 +18,16 @@
  */
 
 import {
+  Accessibility,
+  HardDrive,
   Bell,
+  UserX,
   CloudUpload,
+  Clapperboard,
   Keyboard,
   KeyRound,
   LayoutDashboard,
+  MessageSquareText,
   Palette,
   Paintbrush,
   ShieldUser,
@@ -167,6 +172,63 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     keywords: 'game save backup restore download snapshot history progress void breaker neon driftway balatro',
     requiresAuth: true,
   },
+  {
+    id: 'replays',
+    to: '/settings/replays',
+    group: 'account',
+    icon: Clapperboard,
+    label: 'Replays',
+    hint: 'Your saved game replays: make one public or unlisted, or delete it',
+    keywords: 'replay run recording ghost speedrun proof lights out slice it visibility public unlisted delete',
+    requiresAuth: true,
+  },
+  {
+    id: 'blocked',
+    to: '/settings/blocked',
+    group: 'account',
+    icon: UserX,
+    label: 'Blocked and muted',
+    hint: 'Everyone you blocked or muted, with the date, and unblock or unmute them',
+    keywords: 'block unblock mute unmute blocked muted people accounts safety hide',
+    requiresAuth: true,
+  },
+  // Sprint 06
+  // s06-05 feedback-inbox
+  {
+    id: 'feedback',
+    to: '/settings/feedback',
+    group: 'account',
+    icon: MessageSquareText,
+    label: 'Your feedback',
+    hint: 'What you sent us, where it stands, and any reply',
+    keywords: 'feedback report bug problem accessibility send reply',
+    requiresAuth: true,
+  },
+  // Sprint 07
+  // s07-02 game-assists
+  {
+    id: 'game-assists',
+    to: '/settings/game-assists',
+    group: 'account',
+    icon: Accessibility,
+    label: 'Game assists',
+    hint: 'Calmer visuals, a slower clock and no timed input for the games that support them',
+    keywords:
+      'game assists accessibility epilepsy flashing photosensitive slow speed colorblind color blind hold motor timer unranked',
+    requiresAuth: true,
+  },
+
+  // s07-03 device-data
+  {
+    id: 'device',
+    to: '/settings/device',
+    group: 'account',
+    icon: HardDrive,
+    label: 'This device',
+    hint: 'What this site keeps in this browser, and clearing it',
+    keywords: 'device storage browser cache indexeddb local clear sign out shared computer samples drafts offline',
+  },
+
   {
     id: 'privacy',
     to: '/settings/privacy',

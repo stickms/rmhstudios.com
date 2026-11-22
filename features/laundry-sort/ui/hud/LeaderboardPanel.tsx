@@ -17,6 +17,7 @@ import { api } from '@/lib/contract/client';
 import { laundryLeaderboardApi } from '@features/laundry-sort/engine/laundry.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Row {
   username: string;
@@ -32,6 +33,7 @@ interface Row {
 type Mode = 'solo' | 'versus';
 
 export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-laundry-sort');
   const [mode, setMode] = useState<Mode>('solo');
   const [rows, setRows] = useState<Row[]>([]);
@@ -138,7 +140,7 @@ export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
                     </span>
                   </>
                 ) : (
-                  <span className="ls-accent ls-numeric shrink-0 font-bold">{row.highScore.toLocaleString()}</span>
+                  <span className="ls-accent ls-numeric shrink-0 font-bold">{fmt.number(row.highScore)}</span>
                 )}
               </li>
             ))}

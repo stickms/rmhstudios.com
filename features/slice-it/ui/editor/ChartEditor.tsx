@@ -38,10 +38,14 @@ import { LintPanel } from './LintPanel';
 import { NoteInspector } from './NoteInspector';
 import { TimingPanel } from './TimingPanel';
 import { ShortcutSheet } from './ShortcutSheet';
+import { ScaleTimingDialog } from './ScaleTimingDialog';
+import { useClipboardActions } from './useClipboardActions';
+import { clipboardOpForEvent, keyTargetIsOwned } from './clipboard-keys';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Autosave cadence. See the note on the effect below. */
 const AUTOSAVE_MS = 20_000;
@@ -53,10 +57,14 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function ChartEditor({ songId }: { songId: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('r-slice-it');
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [announcement, setAnnounce] = useState('');
   const savingRef = useRef(false);
+  const [scaleOpen, setScaleOpen] = useState(false);
+  const openScale = useCallback(() => setScaleOpen(true), []);
+  const { run: runClipboardOp, describe: describeClipboard } = useClipboardActions(setAnnounce, openScale);
 
   const loadState = useEditorStore((s) => s.loadState);
   const error = useEditorStore((s) => s.error);
@@ -238,7 +246,7 @@ export function ChartEditor({ songId }: { songId: string }) {
     const announce = (message: string) => setAnnounce(message);
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target)) return;
+      if (isEditableTarget(event.target) || keyTargetIsOwned(event.target)) return;
       const state = editorState();
       const chart = state.charts[state.active];
       const selection = chart.notes.filter((note) => note.selected);
@@ -373,6 +381,14 @@ export function ChartEditor({ songId }: { songId: string }) {
           break;
       }
 
+      // Clipboard, mirror, quantise, scale, insert / remove time (§5.2).
+      const clipboardOp = clipboardOpForEvent(event);
+      if (clipboardOp) {
+        event.preventDefault();
+        runClipboardOp(clipboardOp);
+        return;
+      }
+
       if (mod) {
         const key = event.key.toLowerCase();
         if (key === 'z') {
@@ -396,10 +412,6 @@ export function ChartEditor({ songId }: { songId: string }) {
           void save('manual');
           return;
         }
-        // TODO(phase 2 extension — §5.2): Ctrl+C/X/V, Ctrl+Shift+V (paste
-        // mirrored), Ctrl+D (duplicate a measure on), Ctrl+I / Ctrl+Shift+I
-        // (insert / remove time). They are clipboard operations on a selection,
-        // which needs a clipboard model this shell does not have yet.
         return;
       }
 
@@ -419,7 +431,7 @@ export function ChartEditor({ songId }: { songId: string }) {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [loadState, save, t]);
+  }, [loadState, save, t, runClipboardOp]);
 
   const arrival = useArrival(loadState === 'error' || (loadState === 'ready' && !!song));
 
@@ -476,7 +488,7 @@ export function ChartEditor({ songId }: { songId: string }) {
             {lastSavedAt
               ? t('editor-last-saved', {
                   defaultValue: 'Saved {{time}}',
-                  time: new Date(lastSavedAt).toLocaleTimeString(),
+                  time: fmt.time(new Date(lastSavedAt)),
                 })
               : t('editor-not-saved', {
                   defaultValue: 'Not saved yet',
@@ -514,7 +526,7 @@ export function ChartEditor({ songId }: { songId: string }) {
         </aside>
       </div>
 
-      <Toolbar onSave={() => void save('manual')} />
+      <Toolbar onSave={() => void save('manual')} onClipboardOp={runClipboardOp} />
 
       {/*
         TODO(phase 2 extension — §12.4): the whole-song density minimap strip
@@ -526,6 +538,12 @@ export function ChartEditor({ songId }: { songId: string }) {
       </p>
 
       <ShortcutSheet open={showShortcuts} onOpenChange={setShowShortcuts} />
+
+      <ScaleTimingDialog
+        open={scaleOpen}
+        onOpenChange={setScaleOpen}
+        onApply={(percent) => setAnnounce(describeClipboard(useEditorStore.getState().scaleTiming(percent)))}
+      />
     </div>
   );
 }

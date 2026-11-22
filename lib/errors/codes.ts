@@ -100,6 +100,13 @@ export const ERROR_CODES = {
     i18n: 'errors:coolOff',
     text: "You're taking a break from staking coins",
   },
+  /// Monthly spending budget (s04-07). The detail carries `remaining`, which
+  /// the catalog string interpolates; `text` is the fallback without it.
+  SPEND_BUDGET_REACHED: {
+    http: 403,
+    i18n: 'spending-budget:overBudget',
+    text: 'This would go over your monthly budget',
+  },
 
   // --- AI ------------------------------------------------------------------
   AI_UNAVAILABLE: {

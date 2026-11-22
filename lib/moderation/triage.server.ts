@@ -8,6 +8,7 @@
  *   audit row cannot drift apart.
  */
 
+import { moderatorDeleteComment } from '@/lib/builds/comments.server';
 import type { Prisma, ReportStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
@@ -75,6 +76,7 @@ export async function takedownReportedContent(entityType: string, entityId: stri
         },
         data: {
           deletedAt: now,
+          pinnedAt: null,
         },
       }),
       prisma.rMHark.updateMany({
@@ -126,6 +128,20 @@ export async function takedownReportedContent(entityType: string, entityId: stri
     // RMH Music: a Daily score leaves every board (kept as the learner's result); a shared
     // result link and its card go dark.
     await hideMusicContent(entityType, entityId, now);
+  } else if (entityType === 'jam-feedback') {
+    // s06-07: the piece disappears from the team's list and the author's own form (soft delete).
+    await prisma.gameJamFeedback.updateMany({
+      where: {
+        id: entityId,
+        removedAt: null,
+      },
+      data: {
+        removedAt: now,
+      },
+    });
+  } else if (entityType === 'build-comment') {
+    // s06-14: a soft delete by a moderator; the build's comment count drops with it.
+    await moderatorDeleteComment(entityId);
   }
 }
 
@@ -380,9 +396,11 @@ const orderFor = (sort: TriageFilters['sort']): GroupOrder[] => {
 async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   const idsOf = (type: string) => targets.filter((t) => t.entityType === type).map((t) => t.entityId);
+  const feedbackIds = idsOf('jam-feedback');
   const postIds = idsOf('rmhark');
   const commentIds = idsOf('comment');
-  const [posts, comments] = await Promise.all([
+  const buildCommentIds = idsOf('build-comment');
+  const [posts, comments, feedback, buildComments] = await Promise.all([
     postIds.length
       ? prisma.rMHark.findMany({
           where: {
@@ -409,7 +427,43 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
           },
         })
       : [],
+    // s06-07: an admin reading a jam-feedback report sees the reported text (moderation read path).
+    feedbackIds.length
+      ? prisma.gameJamFeedback.findMany({
+          where: {
+            id: {
+              in: feedbackIds,
+            },
+          },
+          select: {
+            id: true,
+            body: true,
+          },
+        })
+      : [],
+    // s06-14: an admin reading a build-comment report sees the reported text and its build (whatever its state).
+    buildCommentIds.length
+      ? prisma.buildComment.findMany({
+          where: {
+            id: {
+              in: buildCommentIds,
+            },
+          },
+          select: {
+            id: true,
+            content: true,
+            build: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        })
+      : [],
   ]);
+  for (const bc of buildComments)
+    out.set(groupKey('build-comment', bc.id), snippet(`${bc.build.title}: ${bc.content}`, 160));
+  for (const f of feedback) out.set(groupKey('jam-feedback', f.id), snippet(f.body, 160));
   for (const p of posts) out.set(groupKey('rmhark', p.id), snippet(p.content, 160));
   for (const c of comments) out.set(groupKey('comment', c.id), snippet(c.content, 160));
   return out;

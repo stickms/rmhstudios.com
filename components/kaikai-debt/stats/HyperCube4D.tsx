@@ -72,6 +72,7 @@ import { ChartCard, ChartToggle, Readout, ReadoutRow, Swatch } from './chart-kit
 import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanvasStage';
 import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const DEG = Math.PI / 180;
 
@@ -116,7 +117,7 @@ export function HyperCube4D({
   grid: readonly GridCell[];
   nowMs: number;
   selected: ReadonlySet<string>;
-}) {
+}) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('c-kaikai-debt');
 
   const [rotation, setRotation] = useState<Rotation4>(() => identityRotation());
@@ -454,7 +455,7 @@ export function HyperCube4D({
             />
             <ReadoutRow
               label={t('stats.readout.lines', { defaultValue: 'Lines' })}
-              value={hovered.label.count.toLocaleString('en-US')}
+              value={fmt.number(hovered.label.count)}
             />
             <ReadoutRow
               label={t('stats.hyper.wDepth', { defaultValue: 'Depth in W' })}

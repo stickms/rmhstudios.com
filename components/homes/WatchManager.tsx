@@ -17,6 +17,7 @@ import {
   listHomeWatchesApi,
   setHomeWatchActiveApi,
 } from '@/lib/homes/homes.contract';
+import { currentDocumentLocale, formatNumber } from '@/lib/core/format';
 
 /** One-line summary of a watch's criteria. */
 function summarize(w: Watch): string {
@@ -24,7 +25,7 @@ function summarize(w: Watch): string {
   parts.push(w.listingType === 'RENT' ? 'For rent' : w.listingType === 'SALE' ? 'For sale' : 'Any');
   if (w.propertyTypes.length) parts.push(w.propertyTypes.map(propertyTypeLabel).join(', '));
   if (w.minPrice != null || w.maxPrice != null) {
-    parts.push(`$${w.minPrice?.toLocaleString() ?? '0'}–${w.maxPrice?.toLocaleString() ?? '∞'}`);
+    parts.push(`$${(w.minPrice != null ? formatNumber(w.minPrice, currentDocumentLocale()) : undefined) ?? '0'}–${(w.maxPrice != null ? formatNumber(w.maxPrice, currentDocumentLocale()) : undefined) ?? '∞'}`);
   }
   if (w.minBeds != null) parts.push(`${w.minBeds}+ bd`);
   if (w.petsRequired) parts.push('Pets');

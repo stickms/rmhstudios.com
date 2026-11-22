@@ -1,7 +1,12 @@
 /** Request schemas for /api/messages/scheduled (client-safe types come by `import type`). */
 import { z } from 'zod';
 import { feedImageUrlSchema, gifUrlSchema } from '@/lib/rmhark-schema';
-import { ALTS_MISMATCH_ISSUE, altsMatchImages, messageImageAltsField } from '@/lib/messages/image-alts-schema';
+import {
+  ALTS_MISMATCH_ISSUE,
+  altsMatchImages,
+  messageImageAltsField,
+  messageGifAltField,
+} from '@/lib/messages/image-alts-schema';
 
 const isoInstant = z.string().datetime();
 
@@ -15,6 +20,7 @@ export const createScheduledMessageBody = z
     chatId: z.string().min(1).max(64),
     content: z.string().max(2000).optional().default(''),
     gifUrl: gifUrlSchema.optional(),
+    gifAlt: messageGifAltField,
     imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
     imageAlts: messageImageAltsField,
     sendAt: isoInstant,

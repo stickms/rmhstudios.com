@@ -3,6 +3,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useInsight } from './api';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface RouteViews {
   trackingSince: string | null;
@@ -64,6 +65,7 @@ function RouteTable({
     views: number;
   }[];
 }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-ops');
   if (rows.length === 0)
     return (
@@ -78,7 +80,7 @@ function RouteTable({
       {rows.map((r) => (
         <li key={r.route} className="flex items-center justify-between py-3 t-body">
           <span className="font-mono text-site-text">{r.route}</span>
-          <span className="text-site-text-muted">{r.views.toLocaleString()}</span>
+          <span className="text-site-text-muted">{fmt.number(r.views)}</span>
         </li>
       ))}
     </ul>

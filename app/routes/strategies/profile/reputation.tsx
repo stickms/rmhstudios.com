@@ -6,13 +6,14 @@ import { Trophy } from 'lucide-react';
 import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export const Route = createFileRoute('/strategies/profile/reputation')({
   head: () => noindexHead('Strategies Reputation'),
   component: ReputationPage,
 });
 
-function ReputationPage() {
+function ReputationPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("r-strategies");
   const { data, isLoading } = useDoctrineReputationLeaderboard(50);
   const arrival = useArrival(!isLoading);
@@ -49,7 +50,7 @@ function ReputationPage() {
                     <span className="text-xs">{entry.level?.badge} {entry.level?.name}</span>
                   </td>
                   <td className="px-4 py-2 text-right font-mono" style={{ color: 'var(--doctrine-accent)' }}>
-                    {entry.totalXp.toLocaleString()}
+                    {fmt.number(entry.totalXp)}
                   </td>
                   <td className="px-4 py-2 text-right font-mono text-white/60">{entry.currentStreak}d</td>
                 </tr>

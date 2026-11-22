@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { evaluateFlag, type FlagRecord } from './evaluate';
+import { evaluateFlag, type FlagRecord, type FlagTargeting } from './evaluate';
 
 /**
  * Flag lookup for server code.
@@ -11,19 +11,46 @@ import { evaluateFlag, type FlagRecord } from './evaluate';
  * immediately and in the others within `TTL_MS`. If the database is unreachable
  * the last known values are kept; with none, every flag is off (fail closed:
  * unreleased code stays dark).
+ *
+ * The per-member allow and deny lists are loaded here too and turned into `Set`s once per load; they are read
+ * by `evaluateFlag` on the server and are never part of anything returned to a client.
  */
 const TTL_MS = 15_000;
 
-let cache: { at: number; flags: Map<string, FlagRecord> } | null = null;
-let inflight: Promise<Map<string, FlagRecord>> | null = null;
+interface CachedFlag {
+  record: FlagRecord;
+  targeting: FlagTargeting;
+}
 
-async function load(): Promise<Map<string, FlagRecord>> {
+let cache: { at: number; flags: Map<string, CachedFlag> } | null = null;
+let inflight: Promise<Map<string, CachedFlag>> | null = null;
+
+async function load(): Promise<Map<string, CachedFlag>> {
   const now = Date.now();
   if (cache && now - cache.at < TTL_MS) return cache.flags;
   inflight ??= prisma.featureFlag
-    .findMany({ select: { key: true, enabled: true, rolloutPercent: true } })
+    .findMany({
+      select: {
+        key: true,
+        enabled: true,
+        rolloutPercent: true,
+        allowUserIds: true,
+        denyUserIds: true,
+      },
+    })
     .then((rows) => {
-      const flags = new Map(rows.map((row) => [row.key, row]));
+      const flags = new Map<string, CachedFlag>(
+        rows.map((row) => [
+          row.key,
+          {
+            record: { key: row.key, enabled: row.enabled, rolloutPercent: row.rolloutPercent },
+            targeting: {
+              allow: new Set(row.allowUserIds ?? []),
+              deny: new Set(row.denyUserIds ?? []),
+            },
+          },
+        ]),
+      );
       cache = { at: Date.now(), flags };
       return flags;
     })
@@ -39,13 +66,14 @@ async function load(): Promise<Map<string, FlagRecord>> {
 }
 
 export async function isFeatureEnabled(key: string, userId?: string | null): Promise<boolean> {
-  return evaluateFlag((await load()).get(key), userId);
+  const flag = (await load()).get(key);
+  return evaluateFlag(flag?.record, userId, flag?.targeting);
 }
 
 /** Every flag evaluated for one caller — what `/api/flags` hands the client. */
 export async function evaluateAllFlags(userId?: string | null): Promise<Record<string, boolean>> {
   const flags = await load();
-  return Object.fromEntries([...flags].map(([key, flag]) => [key, evaluateFlag(flag, userId)]));
+  return Object.fromEntries([...flags].map(([key, flag]) => [key, evaluateFlag(flag.record, userId, flag.targeting)]));
 }
 
 /** Drop the cache after a write so this process sees it at once. */

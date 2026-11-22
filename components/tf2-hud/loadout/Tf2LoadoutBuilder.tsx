@@ -79,7 +79,7 @@ import ItemTile from './ItemTile';
 import ItemPreviewModal from './ItemPreviewModal';
 import { IconButton } from '@/components/ui/icon-button';
 import WarningList from './WarningList';
-import { CLASS_DEFAULT } from './labels';
+import { CLASS_DEFAULT, tfClassLabels } from './labels';
 import { useArrival } from '@/components/ui/arrive';
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
@@ -154,6 +154,7 @@ export default function Tf2LoadoutBuilder({ initialClass, loadoutId }: { initial
 
 function Builder({ idx, initialClass, loadoutId }: { idx: CatalogIndex; initialClass?: TfClass; loadoutId?: string }) {
   const { t } = useTranslation('c-tf2-hud');
+  const classLabels = tfClassLabels(t);
   const navigate = useNavigate();
   const { data: session } = useSession();
   const { copy } = useClipboard();
@@ -510,9 +511,7 @@ function Builder({ idx, initialClass, loadoutId }: { idx: CatalogIndex; initialC
 
   const classTabs: TfTab[] = TF_CLASSES.map((c) => ({
     id: c,
-    label: t(`class-${c}`, {
-      defaultValue: CLASS_DEFAULT[c],
-    }),
+    label: classLabels[c],
     disabled: Boolean(remote) && c !== cls,
   }));
 

@@ -3,7 +3,16 @@ import { useTranslation } from'react-i18next';
 import { Check } from'lucide-react';
 import { useSession } from'@/components/Providers';
 import { yieldToMain } from'@/lib/scheduler';
+import { RelativeTime } from'@/components/ui/RelativeTime';
+import { formatRelativeTime } from'@/lib/i18n/relative-time';
+import { toast } from'@/lib/toast';
+import { pollWinners } from'@/lib/feed/poll-lifecycle';
 import type { FeedPoll } from'@/lib/feed-types';
+import { RankedPoll } from'@/components/feed/RankedPoll';
+import { QuizPollView } from'@/components/feed/QuizPollView';
+
+/** A poll further than this from its end names the date ("Ends on 4 Dec"); nearer, how long is left. */
+const NEAR_END_MS = 2 * 86_400_000;
 
 interface PollDisplayProps {
  poll: FeedPoll;
@@ -14,19 +23,46 @@ interface PollDisplayProps {
 }
 
 export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProps) {
- const { t } = useTranslation("feed");
+ const { t, i18n } = useTranslation("feed");
  const { data: session } = useSession();
  const [localPoll, setLocalPoll] = useState(poll);
  const [voting, setVoting] = useState(false);
 
+ // The author ending or extending the poll (from the post menu) arrives as a new `poll` prop with a new end; take
+ // it, and keep the votes cast here meanwhile.
+ const [seenEnd, setSeenEnd] = useState({ closesAt: poll.closesAt, ended: poll.ended });
+ if (seenEnd.closesAt !== poll.closesAt || seenEnd.ended !== poll.ended) {
+ setSeenEnd({ closesAt: poll.closesAt, ended: poll.ended });
+ setLocalPoll((prev) => ({ ...prev, closesAt: poll.closesAt, ended: poll.ended, extended: poll.extended, extendDays: poll.extendDays }));
+ }
+
  const hasVoted = (localPoll.myVotes?.length ?? 0) > 0;
- const isClosed = !!localPoll.closesAt && new Date(localPoll.closesAt).getTime() <= Date.now();
+ const isClosed = !!localPoll.ended || (!!localPoll.closesAt && new Date(localPoll.closesAt).getTime() <= Date.now());
  const showResults = hasVoted || isClosed;
+ const winnerIds = isClosed ? new Set(pollWinners(localPoll.options).map((o) => o.id)) : null;
+
+ if (localPoll.ranked) {
+ return (
+ <RankedPoll
+ poll={localPoll}
+ postId={postId}
+ closed={isClosed}
+ signedIn={!!session}
+ onChange={(next) => {
+ setLocalPoll(next);
+ onUpdate?.(next);
+ }}
+ />
+ );
+ }
 
  const handleVote = async (optionId: string) => {
  if (!session || voting || isClosed) return;
 
  setVoting(true);
+
+ // A quiz answer is final and its verdict comes from the server, so nothing is guessed here: the row waits for the reply.
+ const isQuiz = !!localPoll.quiz;
 
  // Optimistic update
  const wasVoted = localPoll.myVotes?.includes(optionId);
@@ -60,9 +96,11 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  if (!prevVoteId) newTotal += 1;
  }
 
- const optimistic = { ...localPoll, myVotes: newMyVotes, options: newOptions, totalVotes: newTotal };
+ const optimistic = isQuiz ? localPoll : { ...localPoll, myVotes: newMyVotes, options: newOptions, totalVotes: newTotal };
+ if (!isQuiz) {
  setLocalPoll(optimistic);
  onUpdate?.(optimistic);
+ }
 
  // OPT-34. Casting a vote flips the poll from choices to results: every bar
  // grows, the percentages appear, the check mark lands. That is two renders
@@ -87,6 +125,9 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  ? {
  ...localPoll,
  myVotes: data.myVotes,
+ // A quiz voter's reply carries the answer (s07-19); any other poll's reply has none.
+ ...(data.correctOptionId ? { correctOptionId: data.correctOptionId } : {}),
+ ...(data.explanation ? { explanation: data.explanation } : {}),
  totalVotes: data.totalVotes,
  options: localPoll.options.map((o) => {
  const updated = data.options.find((so: any) => so.id === o.id);
@@ -97,9 +138,21 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  setLocalPoll(serverPoll);
  onUpdate?.(serverPoll);
  } else {
- // Rollback on error
- setLocalPoll(poll);
- onUpdate?.(poll);
+ // Rollback on error. A vote on a poll that ended meanwhile (the author closed it) turns the poll into its
+ // final results.
+ let rolledBack = isQuiz ? localPoll : poll;
+ if (res.status === 409) {
+ const refusal = await res.json().catch(() => null);
+ if (refusal?.code === 'ALREADY_ANSWERED') {
+ toast.error(t("quiz-already-answered", { ns: 'quiz-polls', defaultValue:"You already answered this quiz"}));
+ }
+ if (refusal?.code === 'POLL_CLOSED') {
+ rolledBack = { ...poll, ended: true };
+ toast.error(t("poll-ended-error", { ns: 'poll-lifecycle', defaultValue:"This poll has ended"}));
+ }
+ }
+ setLocalPoll(rolledBack);
+ onUpdate?.(rolledBack);
  }
  } catch {
  setLocalPoll(poll);
@@ -109,11 +162,19 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  }
  };
 
+ if (localPoll.quiz) {
+ return <QuizPollView poll={localPoll} closed={isClosed} voting={voting} signedIn={!!session} onAnswer={handleVote} />;
+ }
+
  const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 
  return (
  <div className="relative mt-3 rounded-site px-4 py-3">
  <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
+
+ {isClosed && (
+ <p className="t-label mb-2">{t("final-results", { ns: 'poll-lifecycle', defaultValue:"Final results"})}</p>
+ )}
 
  {localPoll.multiSelect && !showResults && (
  <p className="text-xs text-site-text-muted mb-2">{t("select-all-that-apply", { defaultValue:"Select all that apply"})}</p>
@@ -153,6 +214,9 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  <span className="flex items-center gap-2 text-sm text-site-text">
  {isSelected && <Check className="w-3.5 h-3.5 text-site-accent shrink-0"/>}
  {option.text}
+ {winnerIds?.has(option.id) && (
+ <span className="t-label">{t("winner", { ns: 'poll-lifecycle', defaultValue:"Winner"})}</span>
+ )}
  </span>
  <span className={`text-xs font-mono shrink-0 ${
  isSelected ?'text-site-accent font-semibold':'text-site-text-muted'
@@ -181,9 +245,32 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  {t("vote-count", { count: localPoll.totalVotes, defaultValue:"{{count}} vote", defaultValue_one:"{{count}} vote", defaultValue_other:"{{count}} votes"})}
  {localPoll.multiSelect && `· ${t("multiple-choice", { defaultValue:"Multiple choice"})}`}
  {localPoll.closesAt && (
- <> · {isClosed ? t("final-results", { defaultValue:"Final results"}) : t("closes-at", { date: new Date(localPoll.closesAt).toLocaleString(), defaultValue:"Closes {{date}}"})}</>
+ <>
+ {' '}·{' '}
+ <RelativeTime
+ date={localPoll.closesAt}
+ format={(at, now) =>
+ isClosed
+ ? t("ended-relative", { ns: 'poll-lifecycle', when: formatRelativeTime(at, i18n.language, now), defaultValue:"Ended {{when}}"})
+ : at - now > NEAR_END_MS
+ ? t("ends-on", { ns: 'poll-lifecycle', date: dayLabel(at, i18n.language), defaultValue:"Ends on {{date}}"})
+ : t("ends-relative", { ns: 'poll-lifecycle', when: formatRelativeTime(at, i18n.language, now), defaultValue:"Ends {{when}}"})
+ }
+ fallback={(at) =>
+ isClosed
+ ? t("ended-on", { ns: 'poll-lifecycle', date: dayLabel(at, i18n.language), defaultValue:"Ended on {{date}}"})
+ : t("ends-on", { ns: 'poll-lifecycle', date: dayLabel(at, i18n.language), defaultValue:"Ends on {{date}}"})
+ }
+ />
+ </>
  )}
+ {localPoll.extended && !isClosed && ` · ${t("extended", { ns: 'poll-lifecycle', defaultValue:"Extended"})}`}
  </p>
  </div>
  );
+}
+
+/** "4 Dec", in the viewer's language. */
+function dayLabel(ms: number, locale: string): string {
+ return new Intl.DateTimeFormat(locale || 'en', { month: 'short', day: 'numeric' }).format(new Date(ms));
 }

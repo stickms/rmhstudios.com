@@ -179,11 +179,22 @@ export const editPostApi = endpoint<{
   body: {
     content: string;
     gifUrl: string | null;
+    /** The GIF's description (sprint 06 #15); null clears it, omitted leaves it. */
+    gifAlt?: string | null;
+    /** The warning (sprint 06 #16): a reason implies it, `isSensitive: false` clears both, omitted leaves it. */
+    isSensitive?: boolean;
+    contentWarning?: string | null;
+    /** s07-19: a quiz's correct option and explanation; refused with 409 `QUIZ_LOCKED` once anyone has voted. */
+    quizCorrectOptionId?: string;
+    quizExplanation?: string | null;
   };
   res: {
     success: true;
     content: string;
     gifUrl?: string;
+    gifAlt?: string;
+    isSensitive?: boolean;
+    contentWarning?: string | null;
     editedAt: string | null;
   };
 }>()({

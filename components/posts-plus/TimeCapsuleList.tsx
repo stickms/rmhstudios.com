@@ -10,6 +10,7 @@ import { api } from '@/lib/contract/client';
 import { discardScheduledApi, listCapsulesApi } from '@/lib/scheduled/scheduled.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Capsule {
   id: string;
@@ -31,6 +32,7 @@ interface Capsule {
  * not this page is ever visited.
  */
 export function TimeCapsuleList() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-posts-plus');
   const confirm = useConfirm();
   const [data, setData] = useState<{
@@ -138,7 +140,7 @@ export function TimeCapsuleList() {
               <p className="mt-1 text-xs text-site-text-muted">
                 {t('capsule-opens', {
                   defaultValue: 'Opens {{date}} · in {{countdown}}',
-                  date: new Date(c.openAt).toLocaleString(),
+                  date: fmt.dateTime(new Date(c.openAt)),
                   countdown: formatCountdown(c.openAt, now ?? Date.parse(c.sealedAt)),
                 })}
               </p>
@@ -162,7 +164,7 @@ export function TimeCapsuleList() {
               <p className="mt-1 text-xs text-site-text-muted">
                 {t('capsule-opened', {
                   defaultValue: 'Opened {{date}}',
-                  date: new Date(c.openAt).toLocaleDateString(),
+                  date: fmt.date(new Date(c.openAt)),
                 })}
                 {c.postId && (
                   <>

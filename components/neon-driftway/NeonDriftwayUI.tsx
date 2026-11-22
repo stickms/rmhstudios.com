@@ -20,6 +20,7 @@ import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
 import { saveGhostApi } from '@/lib/game/replay.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type LeaderboardEntry = {
   username: string;
@@ -69,7 +70,7 @@ export function NeonDriftwayUI({
   onGhostModeChange: (mode: GhostMode) => void;
   /** The run just finished, as a ghost trace (null if too short). */
   getGhostTrace: () => GhostTrace | null;
-} & VrProps) {
+} & VrProps) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const lbArrival = useArrival(leaderboard.length > 0);
@@ -284,7 +285,7 @@ export function NeonDriftwayUI({
                 {leaderboard.slice(0, 5).map((e, i) => (
                   <div key={`${e.username}-${i}`} className="flex justify-between text-xs">
                     <span className="text-zinc-400">#{i + 1} {e.username}</span>
-                    <span className="text-cyan-300 font-bold tabular-nums">{e.highScore.toLocaleString()}</span>
+                    <span className="text-cyan-300 font-bold tabular-nums">{fmt.number(e.highScore)}</span>
                   </div>
                 ))}
               </div>
@@ -397,14 +398,14 @@ export function NeonDriftwayUI({
             <div className="text-center">
               <div className="text-xs text-zinc-400 uppercase tracking-wider">{t("score", { defaultValue: "Score" })}</div>
               <div className="text-3xl font-black text-cyan-400 tabular-nums">
-                {runStats.score.toLocaleString()}
+                {fmt.number(runStats.score)}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
                 <div className="text-xs text-zinc-500">{t("distance", { defaultValue: "Distance" })}</div>
-                <div className="text-lg font-bold text-white">{runStats.distance.toLocaleString()}m</div>
+                <div className="text-lg font-bold text-white">{fmt.number(runStats.distance)}m</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">{t("time", { defaultValue: "Time" })}</div>
@@ -465,7 +466,7 @@ export function NeonDriftwayUI({
                 {leaderboard.slice(0, 10).map((e, i) => (
                   <div key={`${e.username}-${i}`} className="flex justify-between text-xs">
                     <span className="text-zinc-400">#{i + 1} {e.username}</span>
-                    <span className="text-cyan-300 font-bold tabular-nums">{e.highScore.toLocaleString()}</span>
+                    <span className="text-cyan-300 font-bold tabular-nums">{fmt.number(e.highScore)}</span>
                   </div>
                 ))}
               </div>
@@ -491,14 +492,14 @@ export function NeonDriftwayUI({
             <div className="text-center">
               <div className="text-xs text-zinc-400 uppercase tracking-wider">{t("score", { defaultValue: "Score" })}</div>
               <div className="text-3xl font-black text-cyan-400 tabular-nums">
-                {runStats.score.toLocaleString()}
+                {fmt.number(runStats.score)}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
                 <div className="text-xs text-zinc-500">{t("distance", { defaultValue: "Distance" })}</div>
-                <div className="text-lg font-bold text-white">{runStats.distance.toLocaleString()}m</div>
+                <div className="text-lg font-bold text-white">{fmt.number(runStats.distance)}m</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">{t("time", { defaultValue: "Time" })}</div>

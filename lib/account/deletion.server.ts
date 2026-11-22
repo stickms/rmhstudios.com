@@ -26,7 +26,19 @@
  * tries unprompted. See {@link cancelDeletion} for the call site.
  */
 
+import { deckFolderErasureOps } from '@/lib/study/folders.server';
+import { groupMentionErasureOps } from '@/lib/group-chat/mentions.server';
+import { awayErasureOps } from '@/lib/messages/away.server';
+import { buildCommentErasureOps } from '@/lib/builds/comments.server';
+import { communityBanErasureOps } from '@/lib/communities/bans.server';
+import { communityNoteErasureOps } from '@/lib/communities/member-notes.server';
+import { feedbackErasureOps } from '@/lib/feedback/inbox.server';
+import { jamThemeErasureOps } from '@/lib/competitive/jam-themes.server';
+import { eventOverrideErasureOps } from '@/lib/events/occurrences.server';
+import { eventUpdateErasureOps } from '@/lib/events/updates.server';
+import { groupInviteErasureOps } from '@/lib/group-chat/invites.server';
 import { prisma } from '@/lib/prisma.server';
+import { removeMemberFromFlagLists } from '@/lib/flags/targeting.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
 import { partyErasureOps } from '@/lib/rmhtube/parties.server';
 import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
@@ -39,6 +51,24 @@ import { DELETED_USER_ID } from '@/lib/account/deleted-user';
 import { deleteActiveCardListingsOf } from '@/lib/listings/listings.server';
 import { recordSecurityEvent } from '@/lib/auth/security-log.server';
 import { deleteFollowEventsFor } from '@/lib/social/follow-events.server';
+import { adjustmentErasureOps } from '@/lib/economy/adjustments.server';
+import { releaseSeatsOf } from '@/lib/events/waitlist.server';
+import { cohostErasureOps } from '@/lib/events/cohosts.server';
+import { jamTeamErasureOps } from '@/lib/competitive/jam-teams.server';
+import { jamFeedbackErasureOps } from '@/lib/competitive/jam-feedback.server';
+import { replayErasureOps } from '@/lib/replays.server';
+import { leaveAllGroups } from '@/lib/group-chat/manage.server';
+import { repostMuteErasureOps } from '@/lib/feed/repost-mutes.server';
+import { blockMuteErasureOps } from '@/lib/moderation/blocked-muted.server';
+import { savedReplyErasureOps } from '@/lib/messages/saved-replies.server';
+import { leaderboardErasureOps } from '@/lib/game/leaderboard-privacy.server';
+import { assistErasureOps } from '@/lib/game/assist-run.server';
+import { matchResultErasureOps } from '@/lib/tournaments/match-results.server';
+import { matchScheduleErasureOps } from '@/lib/tournaments/scheduling.server';
+import { studioHistoryErasureOps } from '@/lib/studio/project-history.server';
+import { readingTimeErasureOps } from '@/lib/reading/time.server';
+import { bulkErasureOps } from '@/lib/bulk/bulk.server';
+import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
 
 /**
  * How long a scheduled deletion can be undone. 30 days is the window the major
@@ -211,6 +241,18 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   // The shared "Deleted user" owner of orphaned vibes is itself a tombstone and must never be
   // scrubbed, scheduled or re-pointed at itself.
   if (userId === DELETED_USER_ID) return;
+  // Sprint 04 pre-erasure steps: logic that must read before it writes (each idempotent, so a re-run
+  // of a failed sweep is safe). docs/autonomous/sprint-04/plan.md §Anchors.
+  // s04-02 event-waitlist
+  await releaseSeatsOf(userId);
+
+  // s04-10 group-chat-admin
+  await leaveAllGroups(userId);
+
+  // s04-20 flag-targeting
+  // Flag allow and deny lists hold member ids in arrays, so no cascade reaches them; read, then rewrite.
+  await removeMemberFromFlagLists(userId);
+
   await prisma.$transaction([
     // 1. Destroy every way to authenticate as this account. Re-run safe: by the
     //    time the sweep fires these are usually already gone (the schedule step
@@ -368,6 +410,170 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // s03-03 conversation-controls: per-conversation notification choices (muted posts, muted chats). The cascade never
     // fires here, and a leftover row would keep naming the posts the erased account had muted.
     prisma.conversationPref.deleteMany({ where: { userId } }),
+
+    // Sprint 04 erasures (docs/autonomous/sprint-04/plan.md §Anchors): each feature adds its
+    // operations under its own line.
+    // s04-01 replay-library: saved replays, except the proofs behind speedrun entries (those stay as board history
+    // under the tombstone, like the entry). The cascade never fires here.
+    ...(await replayErasureOps(userId)),
+
+    // s04-05 build-insights
+    // A first view is a count on the creator's insights, not the viewer's data: the row stays, without its viewer, so
+    // totals do not change. Its `ipHash` is already the one-way hash the view recorder stores.
+    prisma.buildView.updateMany({ where: { userId }, data: { userId: null } }),
+
+    // s04-06 coin-adjustments
+    // Adjustments are financial records and stay with the ledger rows they explain; the admin's free-text note about
+    // the member goes.
+    ...adjustmentErasureOps(userId),
+
+    // s04-07 spending-budget
+    // The whole play-limits row: staking caps, cool-off and exclusion dates, the monthly budget and its notice month.
+    prisma.userPlayLimits.deleteMany({ where: { userId } }),
+
+    // s04-09 reading-sync: synced places, bookmarks and notes (and their tombstones). The cascade never fires here.
+    prisma.libraryReaderMark.deleteMany({ where: { userId } }),
+
+    // s04-13 rmhbox-presets
+    // Saved game settings; the cascade never fires for an anonymised member.
+    prisma.rmhboxSettingsPreset.deleteMany({ where: { userId } }),
+
+    // s04-16 message-requests
+    // Requests the member sent or received: the cascade never fires here. A request of theirs still waiting has its
+    // chat deleted with it, so the one message it held cannot surface in the recipient's inbox as "Deleted user".
+    prisma.chat.deleteMany({
+      where: { messageRequest: { is: { senderId: userId, status: { in: ['draft', 'pending'] } } } },
+    }),
+    prisma.messageRequest.deleteMany({ where: { OR: [{ senderId: userId }, { recipientId: userId }] } }),
+
+    // s04-17 community-handover
+    // Open ownership offers to or from the member. The cascade never fires here; a decided offer only names the tombstone.
+    prisma.communityHandover.deleteMany({
+      where: { status: 'pending', OR: [{ fromId: userId }, { toId: userId }] },
+    }),
+
+    // Sprint 05 erasures (docs/autonomous/sprint-05/plan.md §Anchors): each feature adds its
+    // operations under its own line.
+    // s05-01 leaderboard-privacy
+    // Every game player table and the shared GameStat go with the account, and a co-op run loses its host.
+    // The cascade never fires on an anonymised account, so a chosen username would stay on every board.
+    ...leaderboardErasureOps(userId),
+
+    // s05-04 personal-bests
+    // The record history is the member's own; the cascade never fires on an anonymised account.
+    prisma.gamePersonalBest.deleteMany({ where: { userId } }),
+
+    // s05-05 event-cohosts
+    // The member's co-host rows, and every row on the events they host (the cascade never fires on an anonymised account).
+    ...cohostErasureOps(userId),
+
+    // s05-06 studio-projects
+    // Cloud copies of Studio projects (the cascade never fires for an anonymised member).
+    prisma.studioProject.deleteMany({ where: { userId } }),
+
+    // s05-07 repost-mutes
+    // Rows where the member is either side: the cascade never fires for an anonymised account.
+    ...repostMuteErasureOps(userId),
+
+    // s05-13 saved-replies
+    // Private saved replies (the cascade never fires for an anonymised account).
+    ...savedReplyErasureOps(userId),
+
+    // s05-14 blocked-muted-accounts
+    // The member's own block and mute lists only; rows where others blocked or muted them stay (their safety decisions).
+    ...blockMuteErasureOps(userId),
+
+    // s05-15 jam-teams
+    // The member's team rows and pending invitations on their entries (the cascade never fires on an anonymised account); entries stay.
+    ...jamTeamErasureOps(userId),
+
+    // s05-17 community-post-alerts
+    // Memberships survive an anonymised account, so the alert choice is reset: a deleted account never receives one.
+    prisma.communityMember.updateMany({ where: { userId }, data: { postAlerts: 'off' } }),
+
+    // s05-19 profile-pins
+    // The member's pinned posts stay (posts are not erased here) but stop being pinned: the cascade never fires on an
+    // anonymised account, and a pin is a choice made on a profile that no longer exists.
+    prisma.rMHark.updateMany({ where: { userId, pinnedAt: { not: null } }, data: { pinnedAt: null } }),
+
+    // s05-20 flashcard-reminders
+    prisma.flashcardReminder.deleteMany({ where: { userId } }),
+
+    // Sprint 06 erasures (docs/autonomous/sprint-06/plan.md §Anchors): each feature adds its operations under its own line.
+    // s06-01 community-bans
+    // Sanctions about the member are deleted; where they were the moderator the reference is nulled.
+    ...communityBanErasureOps(userId),
+
+    // s06-02 community-notes
+    ...communityNoteErasureOps(userId),
+
+    // s06-05 feedback-inbox
+    // The member's feedback is deleted (the cascade never fires on an anonymised account); rows they handled as an admin are unlinked.
+    ...feedbackErasureOps(userId),
+
+    // s06-07 jam-feedback
+    ...jamFeedbackErasureOps(userId),
+
+    // s06-09 group-invites
+    ...groupInviteErasureOps(userId),
+
+    // s06-10 event-occurrences
+    // Overrides are event data and stay; where the member made one the reference is nulled.
+    ...eventOverrideErasureOps(userId),
+
+    // s06-11 event-updates
+    // An update is event content and stays; where the member wrote it the author is nulled.
+    ...eventUpdateErasureOps(userId),
+
+    // s06-14 build-comments
+    // Published build comments stay under "Deleted user" (as post comments do); only where the member hid comments is the reference unlinked.
+    ...buildCommentErasureOps(userId),
+
+    // s06-18 away-message
+    // The away message and its reply markers are the member's own; no reference worth keeping.
+    ...awayErasureOps(userId),
+
+    // s06-20 match-results
+    // Match rows are tournament records and stay; where the member was the claimant or disputer the reference is nulled.
+    ...matchResultErasureOps(userId),
+
+    // Sprint 07 erasures (docs/autonomous/sprint-07/plan.md §Anchors): each feature adds its operations under its own line.
+    // s07-02 game-assists
+    // The cross-game assist preference is deleted with the member; a run-start claim in Redis expires on its own.
+    ...assistErasureOps(userId),
+
+    // s07-05 group-mentions
+    // Mentions that name the member go; the member's own messages keep theirs.
+    ...groupMentionErasureOps(userId),
+
+    // s07-06 match-scheduling
+    // A live time proposal the member made is withdrawn (the cascade never fires for an anonymised account).
+    ...matchScheduleErasureOps(userId),
+
+    // s07-07 jam-themes
+    ...jamThemeErasureOps(userId),
+
+    // s07-09 deck-folders
+    // Private deck folders (the cascade never fires for an anonymised account); decks keep, folderless.
+    ...deckFolderErasureOps(userId),
+
+    // s07-14 studio-history
+    // Earlier Studio project versions (the cascade never fires for an anonymised account).
+    ...studioHistoryErasureOps(userId),
+
+    // s07-15 bulk-durable
+    // Bulk clean-up operations (the cascade never fires for an anonymised account; a run in progress stops at its next chunk).
+    ...bulkErasureOps(userId),
+
+    // s07-18 reading-time
+    // Reading time rows and the two reading settings go (the cascade never fires for an anonymised account).
+    ...readingTimeErasureOps(userId),
+
+    // s07-20 erasure-coverage
+    // The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, ...); the
+    // registry in erasure-registry.ts classifies every other model.
+    ...coverageErasureOps(userId),
+
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({

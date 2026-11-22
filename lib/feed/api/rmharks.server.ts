@@ -29,11 +29,13 @@ import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { recordLinkDomains } from '@/lib/safety/link-risk.server';
 import { lruL1 } from '@/lib/cached.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
-import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
+import { prepareCommunityPost } from '@/lib/communities/post-gate.server';
 import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
-import { derivePostKind } from '@/lib/communities/automod';
+import { enqueuePostAlert } from '@/lib/communities/post-alerts.server';
 import { listFlairs } from '@/lib/communities/flairs.server';
-import { challengeEntryError } from '@/lib/communities/challenge.server';
+import { normalizeExplanation, quizAnswerOptionId, quizRevealFor, stripQuizAnswer } from '@/lib/feed/quiz-poll';
+import { normalizeGifAlt } from '@/lib/feed/gif-alt';
+import { normalizeContentWarning, previewTextFor } from '@/lib/feed/content-warning';
 import { enqueuePostDiscovery } from '@/lib/discovery/jobs.server';
 import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
 
@@ -144,11 +146,13 @@ export const route = apiRoute('/api/rmharks', {
         content,
         poll,
         gifUrl,
+        gifAlt,
         imageUrls,
         imageAlts,
         originalId,
         audience,
         isSensitive,
+        contentWarning,
         replyControl,
         unlockPrice,
         communityId,
@@ -188,7 +192,10 @@ export const route = apiRoute('/api/rmharks', {
 
       // Require-alt-text mode (X12): the author's own setting, enforced here
       // as well as in the composer. Only looked up when the post has images.
-      const altError = await altTextViolation(session.user.id, imageUrls, imageAlts);
+      const altError = await altTextViolation(session.user.id, imageUrls, imageAlts, {
+        url: gifUrl,
+        alt: gifAlt,
+      });
       if (altError) {
         return Response.json({ error: altError }, { status: 400 });
       }
@@ -212,78 +219,32 @@ export const route = apiRoute('/api/rmharks', {
         .slice(0, imageUrls?.length ?? 0)
         .map((a) => a.trim());
 
-      // Posting into a community requires membership.
-      if (communityId) {
-        const member = await prisma.communityMember.findUnique({
-          where: { communityId_userId: { communityId, userId: session.user.id } },
-          select: { id: true },
-        });
-        if (!member) {
-          return Response.json({ error: 'Join the community to post in it' }, { status: 403 });
-        }
-      }
-
-      // Community gate (N1 flair, S2 verification, N4 AutoMod). One call; the
-      // outcome decides below whether the post is refused, held, flagged, or
-      // goes straight through.
+      // Membership, ban/timeout, the community gate (N1 flair, S2 verification, N4 AutoMod, image
+      // descriptions) and the challenge window: one shared call, also used by POST /api/v1/posts. The
+      // outcome decides below whether the post is refused, held, flagged, or goes straight through.
       let held = false;
       let flagRule: string | null = null;
       let holdRule = 'AutoMod';
       if (communityId) {
-        const gate = await gateCommunityContent({
+        const prepared = await prepareCommunityPost({
           communityId,
           userId: session.user.id,
-          target: 'post',
           content,
-          postKind: derivePostKind({
-            content,
-            gifUrl,
-            imageUrls,
-            hasPoll: !!poll,
-            isQuote: !!originalId,
-          }),
+          imageUrls,
+          imageAlts: cleanImageAlts,
+          gifUrl,
+          gifAlt,
           flairId,
+          challengeId,
+          hasPoll: !!poll,
+          isQuote: !!originalId,
         });
-        if (gate.kind === 'deny') {
-          return Response.json({ error: gate.error, code: gate.code }, { status: gate.status });
+        if (!prepared.ok) {
+          return Response.json(prepared.refusal.body, { status: prepared.refusal.status });
         }
-        if (gate.kind === 'remove') {
-          await logRemoved({
-            communityId,
-            entityType: 'rmhark',
-            postId: null,
-            authorId: session.user.id,
-            ruleName: gate.ruleName,
-            content,
-          });
-          return Response.json(
-            {
-              error: `Your post was removed by this community's AutoMod rule "${gate.ruleName}".`,
-              code: 'automod_removed',
-            },
-            { status: 422 },
-          );
-        }
-        if (challengeId) {
-          const challengeError = await challengeEntryError(
-            communityId,
-            challengeId,
-            session.user.id,
-          );
-          if (challengeError) {
-            return Response.json(
-              { error: challengeError, code: 'challenge_closed' },
-              { status: 409 },
-            );
-          }
-        }
-        // A challenge entry is never invisible: a hold becomes a flag so the
-        // mods still see it without the entry vanishing from the contest.
-        if (gate.kind === 'hold' && !challengeId) {
-          held = true;
-          holdRule = gate.ruleName;
-        } else if (gate.kind === 'hold') flagRule = gate.ruleName;
-        else if (gate.kind === 'allow' && gate.flag) flagRule = gate.flag.ruleName;
+        held = prepared.held;
+        holdRule = prepared.holdRule;
+        flagRule = prepared.flagRule;
       } else if (flairId || challengeId) {
         return Response.json(
           { error: 'Flair and challenges only apply to community posts' },
@@ -333,12 +294,13 @@ export const route = apiRoute('/api/rmharks', {
           data: {
             content: content.trim(),
             gifUrl: gifUrl ?? null,
+            gifAlt: normalizeGifAlt(gifUrl, gifAlt),
             imageUrls: imageUrls ?? [],
             imageAlts: cleanImageAlts,
             userId: session.user.id,
             originalId: quotedOriginalId,
             audience: audience ?? 'PUBLIC',
-            isSensitive: isSensitive ?? false,
+            ...normalizeContentWarning({ isSensitive, contentWarning }),
             replyControl: replyControl ?? 'EVERYONE',
             unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
             communityId: communityId ?? null,
@@ -403,11 +365,12 @@ export const route = apiRoute('/api/rmharks', {
         await recordPostsPlusTx(tx, created.id, session.user.id, plusPlan);
 
         if (poll) {
-          await tx.rMHarkPoll.create({
+          const madePoll = await tx.rMHarkPoll.create({
             data: {
               rmheetId: created.id,
               question: poll.question.trim(),
               multiSelect: poll.multiSelect,
+              ranked: poll.ranked,
               closesAt: poll.durationHours
                 ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
                 : null,
@@ -420,6 +383,16 @@ export const route = apiRoute('/api/rmharks', {
             },
             include: { options: true },
           });
+          // s07-19: a quiz stores its correct option (an id, known only now) and its explanation.
+          if (poll.quiz) {
+            await tx.rMHarkPoll.update({
+              where: { id: madePoll.id },
+              data: {
+                correctOptionId: quizAnswerOptionId(madePoll.options, poll.correctIndex),
+                explanation: normalizeExplanation(poll.explanation),
+              },
+            });
+          }
         }
 
         return created;
@@ -451,6 +424,9 @@ export const route = apiRoute('/api/rmharks', {
         );
       }
 
+      // A visible community post: queue the opted-in members' alerts (the fan-out runs in the jobs worker).
+      if (communityId) void enqueuePostAlert(rmhark.id);
+
       // Fire-and-forget AI pre-screen for policy violations. Never blocks or
       // delays the post; only files a report for human review if clearly abusive.
       await recordLinkDomains(rmhark.content);
@@ -477,6 +453,9 @@ export const route = apiRoute('/api/rmharks', {
             id: createdPoll.id,
             question: createdPoll.question,
             multiSelect: createdPoll.multiSelect,
+            ...(createdPoll.ranked ? { ranked: true as const } : {}),
+            // The author just wrote the answer, so the reply to the author carries it (`quizRevealFor`).
+            ...quizRevealFor(createdPoll, { viewerId: session.user.id, authorId: session.user.id }, false),
             totalVotes: 0,
             options: createdPoll.options.map((o) => ({
               id: o.id,
@@ -502,9 +481,11 @@ export const route = apiRoute('/api/rmharks', {
         reposted: false,
         poll: pollData,
         gifUrl: rmhark.gifUrl ?? undefined,
+        gifAlt: rmhark.gifAlt ?? undefined,
         imageUrls: rmhark.imageUrls,
         imageAlts: rmhark.imageAlts,
         isSensitive: rmhark.isSensitive,
+        contentWarning: rmhark.contentWarning ?? undefined,
         replyControl: rmhark.replyControl,
         isTake: rmhark.isTake || undefined,
         hasEmbed: rmhark.hasEmbed || undefined,
@@ -533,11 +514,13 @@ export const route = apiRoute('/api/rmharks', {
             repostCount: true,
             viewCount: true,
             gifUrl: true,
+            gifAlt: true,
             imageUrls: true,
             imageAlts: true,
             unlockPrice: true,
             audience: true,
             isSensitive: true,
+            contentWarning: true,
             deletedAt: true,
             deletedByAdmin: true,
             userId: true,
@@ -565,7 +548,7 @@ export const route = apiRoute('/api/rmharks', {
             type: 'REPOST',
             entityType: 'rmhark',
             entityId: item.id,
-            preview: content.trim().slice(0, 140) || null,
+            preview: previewTextFor({ content: content.trim(), contentWarning: rmhark.contentWarning })?.slice(0, 140) || null,
             link: `/u/${item.user?.handle ?? '_'}/post/${item.id}`,
             conversationKey: postConversationKey(orig),
           });
@@ -577,7 +560,12 @@ export const route = apiRoute('/api/rmharks', {
       // audience reaches the author's own streams only. The stream endpoint
       // targets this to each viewer's follow graph using `authorId`.
       // Paid posts must broadcast a locked teaser — never the unlocked content.
-      const broadcastBase = { ...item, original: broadcastOriginal };
+      // A quiz's answer never rides a broadcast: every open stream is somebody who has not voted (s07-19).
+      const broadcastBase = {
+        ...item,
+        original: broadcastOriginal,
+        poll: item.poll ? stripQuizAnswer(item.poll) : undefined,
+      };
       const broadcastItem =
         unlockPrice && unlockPrice > 0
           ? {
@@ -586,6 +574,7 @@ export const route = apiRoute('/api/rmharks', {
               imageUrls: undefined,
               imageAlts: undefined,
               gifUrl: undefined,
+              gifAlt: undefined,
               poll: undefined,
               locked: true,
               unlockPrice,
@@ -609,6 +598,7 @@ export const route = apiRoute('/api/rmharks', {
       if (mentionAuthor) {
         void notifyMentions({
           content: rmhark.content,
+          contentWarning: rmhark.contentWarning,
           author: {
             id: mentionAuthor.id,
             name: mentionAuthor.name ?? null,

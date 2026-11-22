@@ -1,17 +1,19 @@
-// Number formatting for the Performance page. Locale-aware (`toLocaleString`) so
+import { currentDocumentLocale, formatNumber, formatTime } from '@/lib/core/format'; // Number formatting for the Performance page. Locale-aware (`toLocaleString`) so
 // separators follow the viewer; units are symbols, not words, so they need no
 // translation.
 
 const DASH = '—';
 
 export function fmtInt(n: number | null | undefined): string {
-  return n === null || n === undefined || !Number.isFinite(n) ? DASH : Math.round(n).toLocaleString();
+  return n === null || n === undefined || !Number.isFinite(n)
+    ? DASH
+    : formatNumber(Math.round(n), currentDocumentLocale());
 }
 
 export function fmtNum(n: number | null | undefined, digits = 1): string {
   return n === null || n === undefined || !Number.isFinite(n)
     ? DASH
-    : n.toLocaleString(undefined, {
+    : formatNumber(n, currentDocumentLocale(), {
         maximumFractionDigits: digits,
       });
 }
@@ -51,5 +53,5 @@ export function fmtUptime(sec: number | null | undefined): string {
 }
 
 export function fmtClock(ts: number | null | undefined): string {
-  return ts ? new Date(ts).toLocaleTimeString() : DASH;
+  return ts ? formatTime(new Date(ts), currentDocumentLocale()) : DASH;
 }

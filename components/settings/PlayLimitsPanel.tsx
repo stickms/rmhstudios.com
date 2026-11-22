@@ -14,6 +14,7 @@ import type { PlayLimitsView } from '@/lib/economy/play-limits.server';
 import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
+import { SpendBudgetSection } from '@/components/settings/SpendBudgetSection';
 
 /**
  * Responsible play (W8) — the member's own guard rails, in Settings → Privacy.
@@ -222,6 +223,8 @@ export function PlayLimitsPanel() {
           </p>
         )}
       </div>
+
+      <SpendBudgetSection budget={view.spendBudget} onSaved={setSaved} />
 
       <div className="space-y-2 border-t border-site-border pt-4">
         <p className="text-sm font-medium text-site-text">

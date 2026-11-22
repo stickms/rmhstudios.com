@@ -578,35 +578,29 @@ export function RouletteTable({ coins }: Props) {
             {[
               {
                 type: 'low' as BetType,
-                label: '1-18',
-                key: 'low',
+                label: t('outside-low', { defaultValue: '1-18' }),
               },
               {
                 type: 'even' as BetType,
-                label: 'Even',
-                key: 'even',
+                label: t('outside-even', { defaultValue: 'Even' }),
               },
               {
                 type: 'red' as BetType,
-                label: 'Red',
-                key: 'red',
+                label: t('outside-red', { defaultValue: 'Red' }),
               },
               {
                 type: 'black' as BetType,
-                label: 'Black',
-                key: 'black',
+                label: t('outside-black', { defaultValue: 'Black' }),
               },
               {
                 type: 'odd' as BetType,
-                label: 'Odd',
-                key: 'odd',
+                label: t('outside-odd', { defaultValue: 'Odd' }),
               },
               {
                 type: 'high' as BetType,
-                label: '19-36',
-                key: 'high',
+                label: t('outside-high', { defaultValue: '19-36' }),
               },
-            ].map(({ type, label, key }) => (
+            ].map(({ type, label }) => (
               <button
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
@@ -621,9 +615,7 @@ export function RouletteTable({ coins }: Props) {
                       : 'bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover'
                 }`}
               >
-                {t(`outside-${key}`, {
-                  defaultValue: label,
-                })}
+                {label}
                 <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
               </button>
             ))}

@@ -5,6 +5,7 @@ import { toast } from '@/lib/toast';
 import { ArrowLeft, Trophy, Upload, Vote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ExportForChallenge } from '@/components/studio/ExportForChallenge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/contract/client';
 import { fetchJson, serverError } from '@/lib/http';
@@ -12,6 +13,7 @@ import { uploadChallengeAudioApi } from '@/lib/creator/challenge-upload.contract
 import type { ChallengeDetail, ChallengeView } from '@/lib/studio/challenge/shared';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const post = (body: unknown) => ({
   method: 'POST',
@@ -105,6 +107,7 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
 }
 
 function Detail({ id, onBack }: { id: string; onBack: () => void }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-creative');
   const qc = useQueryClient();
   const [title, setTitle] = useState('');
@@ -199,8 +202,8 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
         <p className="mt-2 text-xs text-app-text-dim">
           {t('challenge-dates', {
             defaultValue: 'Submissions close {{close}}. Voting ends {{vote}}.',
-            close: new Date(c.endsAt).toLocaleString(),
-            vote: new Date(c.votingEndsAt).toLocaleString(),
+            close: fmt.dateTime(new Date(c.endsAt)),
+            vote: fmt.dateTime(new Date(c.votingEndsAt)),
           })}
         </p>
       </div>
@@ -245,6 +248,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
               })}
             />
           </label>
+          <ExportForChallenge onFile={setFile} />
           <Button
             variant="default"
             size="sm"

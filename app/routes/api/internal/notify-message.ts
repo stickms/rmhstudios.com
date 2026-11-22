@@ -13,6 +13,7 @@ const bodySchema = z.object({
     read: z.boolean(),
     createdAt: z.string(),
     gifUrl: z.string().nullish(),
+    gifAlt: z.string().nullish(),
     imageUrls: z.array(z.string()).optional(),
   }),
 });

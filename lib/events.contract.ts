@@ -6,7 +6,7 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { z } from 'zod';
 import type { eventRecurrenceSchema } from '@/lib/calendar/schema';
-import type { EventDTO, EventVenueKindValue, RsvpResult, RsvpStatus } from '@/lib/events.server';
+import type { EventDTO, EventVenueKindValue, RsvpRequest, RsvpResult } from '@/lib/events.server';
 
 /** Wire shape of the create body: dates are ISO strings, parsed with `z.coerce.date()` server-side. */
 export interface CreateEventBody {
@@ -21,6 +21,17 @@ export interface CreateEventBody {
   recurrence?: z.input<typeof eventRecurrenceSchema> | undefined;
 }
 
+/** Wire shape of the update body: only what changes is sent; `null` clears the end, venue reference or capacity. */
+export interface UpdateEventBody {
+  title?: string | undefined;
+  description?: string | undefined;
+  startsAt?: string | undefined;
+  endsAt?: string | null | undefined;
+  venueKind?: EventVenueKindValue | undefined;
+  venueRef?: string | null | undefined;
+  capacity?: number | null | undefined;
+}
+
 /** Host an event (community events need a mod/owner role). 201 with the new event. */
 export const createEventApi = endpoint<{
   body: CreateEventBody;
@@ -32,10 +43,10 @@ export const createEventApi = endpoint<{
   path: '/api/events',
 });
 
-/** RSVP going / maybe. 409 when the event is full or canceled. */
+/** RSVP going / maybe, or `waitlist` on a full one-off event. 409 when the event is full, canceled or its waitlist is closed. */
 export const rsvpEventApi = endpoint<{
   body: {
-    status: RsvpStatus;
+    status: RsvpRequest;
     everyTime?: boolean | undefined;
     occurrenceAt?: string | undefined;
   };
@@ -55,4 +66,13 @@ export const withdrawRsvpApi = endpoint<{
 }>()({
   method: 'DELETE',
   path: '/api/events/$id/rsvp',
+});
+
+/** Edit an event: the host, or an accepted co-host (403 otherwise; a co-host may not change the repeat rule). */
+export const updateEventApi = endpoint<{
+  body: UpdateEventBody;
+  res: { event: EventDTO };
+}>()({
+  method: 'PATCH',
+  path: '/api/events/$id',
 });

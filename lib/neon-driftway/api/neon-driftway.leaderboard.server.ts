@@ -1,6 +1,8 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { notHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/neon-driftway/leaderboard', {
   GET: defineHandler(
@@ -13,7 +15,9 @@ export const route = apiRoute('/api/neon-driftway/leaderboard', {
     },
     async () => {
       try {
+        const hidden = await leaderboardHiddenUserIds();
         const leaderboard = await prisma.neonDriftwayPlayer.findMany({
+          where: notHiddenWhere(hidden),
           take: 10,
           orderBy: { highScore: 'desc' },
           select: {

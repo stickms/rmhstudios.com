@@ -6,6 +6,7 @@
  * same model `/feeds/$id` reads. Matching itself is
  * `lib/search/keyword-alerts.ts` (no member input ever becomes regex syntax).
  */
+import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
@@ -65,6 +66,8 @@ export async function fanOutKeywordAlerts(post: {
   id: string;
   userId: string;
   content: string;
+  /** The post's content warning reason (sprint 06 #16): the preview shows it instead of the text. */
+  contentWarning?: string | null;
   handle: string | null;
 }): Promise<number> {
   const tokens = [...new Set(fold(post.content).match(/[\p{L}\p{N}]+/gu) ?? [])].slice(0, 400);
@@ -99,7 +102,7 @@ export async function fanOutKeywordAlerts(post: {
     select: { userId: true },
   });
   const link = `/u/${post.handle ?? post.userId}/post/${post.id}`;
-  const preview = post.content.replace(/\s+/g, ' ').trim().slice(0, 140);
+  const preview = (previewTextFor(post) ?? '').replace(/\s+/g, ' ').trim().slice(0, 140);
   for (const { userId } of created) {
     await createNotification({
       userId,

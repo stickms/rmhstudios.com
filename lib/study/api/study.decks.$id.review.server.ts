@@ -2,6 +2,8 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { deckReviewQueueApi } from '@/lib/study/decks.contract';
 import { prisma } from '@/lib/prisma.server';
+import { isCardKind } from '@/lib/study/card-types';
+import { ACTIVE_REVIEW_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
 export const route = apiRoute('/api/study/decks/$id/review', {
@@ -17,13 +19,18 @@ export const route = apiRoute('/api/study/decks/$id/review', {
       return Response.json({ error: 'Not found' }, { status: 404 });
 
     const cards = await prisma.flashcard.findMany({
-      where: { deckId: params.id },
-      orderBy: { position: 'asc' },
+      // Reviewable cards only: an authored cloze card is the text its generated cards are made from.
+      where: { deckId: params.id, ...REVIEWABLE_WHERE },
+      orderBy: CARD_ORDER,
       select: {
         id: true,
         front: true,
         back: true,
-        reviews: { where: { userId }, select: { dueAt: true } },
+        kind: true,
+        sourceId: true,
+        clozeIndex: true,
+        // Every review row is read: a suspended card is not new, and is not due.
+        reviews: { where: { userId }, select: { dueAt: true, suspendedAt: true } },
       },
     });
 
@@ -31,10 +38,19 @@ export const route = apiRoute('/api/study/decks/$id/review', {
     const due = cards
       .filter((c) => {
         const r = c.reviews[0];
-        return !r || r.dueAt.getTime() <= now;
+        if (!r) return true;
+        // Same rule as ACTIVE_REVIEW_WHERE: a suspended row is out.
+        return r.suspendedAt === ACTIVE_REVIEW_WHERE.suspendedAt && r.dueAt.getTime() <= now;
       })
       .slice(0, 50)
-      .map((c) => ({ id: c.id, front: c.front, back: c.back }));
+      .map((c) => ({
+        id: c.id,
+        front: c.front,
+        back: c.back,
+        kind: isCardKind(c.kind) ? c.kind : ('basic' as const),
+        clozeIndex: c.clozeIndex,
+        sourceId: c.sourceId,
+      }));
 
     return { due };
   }),

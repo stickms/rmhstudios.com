@@ -393,13 +393,15 @@ export function ModInsights({ slug }: { slug: string }) {
                     })}
                 </Link>
                 <p className="t-meta">
-                  {t('top-counts', {
-                    defaultValue: '{{likes}} likes, {{reactions}} reactions, {{replies}} replies',
-                    likes: number.format(p.likes),
-                    reactions: number.format(p.reactions),
-                    replies: number.format(p.replies),
-                  })}
-                  {' · '}
+                  {p.likes !== null && p.reactions !== null && p.replies !== null
+                    ? t('top-counts', {
+                        defaultValue: '{{likes}} likes, {{reactions}} reactions, {{replies}} replies',
+                        likes: number.format(p.likes),
+                        reactions: number.format(p.reactions),
+                        replies: number.format(p.replies),
+                      })
+                    : null}
+                  {p.likes !== null && ' · '}
                   {p.authorName ?? p.author}
                 </p>
               </li>

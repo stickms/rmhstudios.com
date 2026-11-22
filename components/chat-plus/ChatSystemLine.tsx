@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Clock, Coins, Palette, Pin } from 'lucide-react';
+import { GroupManageLine } from '@/components/feed/group-chat/GroupManageLine';
 import type { SystemAction } from '@/lib/chat-plus/types';
 
 /**
@@ -31,6 +32,21 @@ export function ChatSystemLine({
         t('someone', {
           defaultValue: 'Someone',
         }));
+
+  // s04-10: a group's rename, add, remove, owner and (s07-04) admin lines read from their own namespace.
+  if (
+    action &&
+    typeof action === 'object' &&
+    'action' in action &&
+    (action.action === 'rename' ||
+      action.action === 'add' ||
+      action.action === 'remove' ||
+      action.action === 'owner' ||
+      action.action === 'admin-added' ||
+      action.action === 'admin-removed')
+  ) {
+    return <GroupManageLine action={action} viewerId={viewerId} nameOf={nameOf} />;
+  }
 
   let text = fallback;
   let Icon = Clock;

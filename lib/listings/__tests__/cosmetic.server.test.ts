@@ -204,6 +204,8 @@ const db: any = {
       return clone(inv);
     },
   },
+  // No play-limits row, so the ledger's spending-budget check finds no budget.
+  userPlayLimits: { findUnique: async () => null },
   userProfile: {
     findUnique: async ({ where }: any) => clone(store.state.profiles.get(where.userId)) ?? null,
     upsert: async ({ where, create, update }: any) => {

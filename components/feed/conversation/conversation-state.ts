@@ -6,6 +6,7 @@
 import type { ReactionRow } from '@/lib/social/reactions';
 import type { PollView } from '@/lib/chat-plus/types';
 import type { SentVoiceMessage } from '@/lib/messages/voice.contract';
+import { currentDocumentLocale, formatDate, formatTime as formatTimeLocale } from '@/lib/core/format';
 
 export interface Message {
   id: string;
@@ -14,6 +15,8 @@ export interface Message {
   read: boolean;
   createdAt: string;
   gifUrl?: string | null;
+  /** The GIF's description (sprint 06 #15); absent or null = undescribed. */
+  gifAlt?: string | null;
   imageUrls?: string[];
   /** Descriptions, index-aligned with `imageUrls` ('' = none). */
   imageAlts?: string[];
@@ -94,6 +97,7 @@ export function applyMutationTo(prev: Message[], mutation: MessageMutation): Mes
       ...(tombstoned
         ? {
             gifUrl: null,
+            gifAlt: null,
             imageUrls: [],
             imageAlts: [],
             audioUrl: null,
@@ -114,6 +118,7 @@ export interface SyncPatch {
   deletedAt?: string | null;
   deletedBy?: string | null;
   gifUrl?: string | null;
+  gifAlt?: string | null;
   imageUrls?: string[] | null;
   imageAlts?: string[] | null;
   audioUrl?: string | null;
@@ -135,6 +140,7 @@ export function applySyncPatches(prev: Message[], hidden: Set<string>, patches: 
         deletedAt: patch.deletedAt ?? null,
         deletedBy: patch.deletedBy ?? null,
         gifUrl: patch.gifUrl ?? null,
+        gifAlt: patch.gifAlt ?? null,
         imageUrls: patch.imageUrls ?? [],
         imageAlts: patch.imageAlts ?? [],
         audioUrl: patch.audioUrl ?? null,
@@ -233,6 +239,7 @@ export function fromStreamMessage(msg: Message): Message {
     read: msg.read,
     createdAt: msg.createdAt,
     gifUrl: msg.gifUrl,
+    gifAlt: msg.gifAlt,
     imageUrls: msg.imageUrls,
     imageAlts: msg.imageAlts,
     editedAt: msg.editedAt ?? null,
@@ -272,9 +279,9 @@ export function shouldShowDateSeparator(msg: Message, prevMsg: Message | null): 
   return d1 !== d2;
 }
 
-export function formatTime(dateStr: string): string {
+export function formatTime(dateStr: string, locale: string = currentDocumentLocale()): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString('en-US', {
+  return formatTimeLocale(d, locale, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -309,7 +316,7 @@ export function dateSeparatorKind(
     };
   return {
     kind: 'date',
-    text: d.toLocaleDateString('en-US', {
+    text: formatDate(d, currentDocumentLocale(), {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

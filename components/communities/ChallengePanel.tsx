@@ -14,11 +14,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CommunityComposer } from '@/components/communities/CommunityComposer';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
+import { useGifAlt } from '@/components/feed/use-gif-alt';
 import type { ChallengeDTO } from '@/lib/communities/plus';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
+import { currentDocumentLocale, formatDateTime } from '@/lib/core/format';
 
 const fmt = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, {
+  formatDateTime(new Date(iso), currentDocumentLocale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
@@ -143,6 +145,7 @@ export default function ChallengePanel({
   extras: CommunityExtrasDTO | null;
 }) {
   const { t } = useTranslation('f-communities-plus');
+  const gifAltText = useGifAlt();
   const [challenge, setChallenge] = useState<ChallengeDTO | null | undefined>(undefined);
   const [entering, setEntering] = useState(false);
   const [voting, setVoting] = useState<string | null>(null);
@@ -338,7 +341,7 @@ export default function ChallengePanel({
                 {(e.imageUrl || e.gifUrl) && (
                   <img
                     src={e.imageUrl ?? e.gifUrl ?? ''}
-                    alt={e.imageAlt ?? ''}
+                    alt={e.imageUrl ? (e.imageAlt ?? '') : gifAltText(e.gifAlt)}
                     loading="lazy"
                     className="max-h-64 w-full rounded-site-sm object-cover"
                   />

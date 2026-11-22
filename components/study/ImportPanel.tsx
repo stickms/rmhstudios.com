@@ -7,7 +7,8 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/toast';
-import { parseCards, SEPARATORS, type RejectReason, type Separator } from '@/lib/study/import';
+import { rowsFor } from '@/lib/study/card-types';
+import { parseCards, SEPARATORS, type ParsedCard, type RejectReason, type Separator } from '@/lib/study/import';
 import { MAX_DECK_CARDS, MAX_IMPORT_CARDS, MAX_IMPORT_FILE_BYTES } from '@/lib/study/limits';
 
 const PREVIEW_ROWS = 50;
@@ -22,9 +23,10 @@ export function ImportPanel({
   existingFronts: string[];
   cardCount: number;
   /** Resolves true when the cards were added. */
-  onImport: (cards: { front: string; back: string }[]) => Promise<boolean>;
+  onImport: (cards: ParsedCard[]) => Promise<boolean>;
 }) {
   const { t } = useTranslation('study-editor');
+  const { t: ts } = useTranslation('flashcard-types');
   const uid = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState('');
@@ -53,7 +55,10 @@ export function ImportPanel({
   }, [parsed.cards, known, skipDuplicates]);
 
   const tooMany = cards.length > MAX_IMPORT_CARDS;
-  const deckFull = cardCount + cards.length > MAX_DECK_CARDS;
+  // The cap counts every row: a reversible card adds two, a cloze card one per deletion index and itself.
+  const newRows = cards.reduce((sum, c) => sum + rowsFor({ kind: c.kind ?? 'basic', front: c.front, back: c.back }), 0);
+  const deckFull = cardCount + newRows > MAX_DECK_CARDS;
+  const typed = cards.some((c) => c.kind !== undefined);
   const hasText = text.trim() !== '';
   const canImport = cards.length > 0 && !tooMany && !deckFull && !busy;
 
@@ -70,6 +75,14 @@ export function ImportPanel({
     'missing-back': t('reason-missing-back', { defaultValue: 'No back' }),
     'front-too-long': t('reason-front-too-long', { defaultValue: 'Front is over 500 characters' }),
     'back-too-long': t('reason-back-too-long', { defaultValue: 'Back is over 500 characters' }),
+    'invalid-cloze': ts('reason-invalid-cloze', {
+      defaultValue: 'The cloze text has a broken, nested or missing deletion',
+    }),
+  };
+  const typeLabel = {
+    basic: ts('type-basic', { defaultValue: 'Basic' }),
+    reversible: ts('type-reversible', { defaultValue: 'Reversible' }),
+    cloze: ts('type-cloze', { defaultValue: 'Cloze' }),
   };
 
   async function pickFile(file: File | undefined) {
@@ -126,6 +139,14 @@ export function ImportPanel({
           </Button>
           <p className="t-meta">{t('file-hint', { defaultValue: '.txt, .tsv or .csv, up to 1 MB' })}</p>
         </div>
+        <p className="t-meta">
+          {ts('import-types-hint', {
+            defaultValue:
+              'A third column reading reverse makes a reversible card. A front with {{syntax}} makes a cloze card.',
+            syntax: '{{c1::answer}}',
+            interpolation: { escapeValue: false },
+          })}
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -223,9 +244,14 @@ export function ImportPanel({
                   <th scope="col" className="t-label py-2 pe-3 text-start">
                     {swap ? t('back', { defaultValue: 'Back' }) : t('front', { defaultValue: 'Front' })}
                   </th>
-                  <th scope="col" className="t-label py-2 text-start">
+                  <th scope="col" className="t-label py-2 pe-3 text-start">
                     {swap ? t('front', { defaultValue: 'Front' }) : t('back', { defaultValue: 'Back' })}
                   </th>
+                  {typed && (
+                    <th scope="col" className="t-label py-2 text-start">
+                      {ts('type', { defaultValue: 'Type' })}
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -234,9 +260,10 @@ export function ImportPanel({
                     <td dir="auto" className="t-body py-2 pe-3 break-words">
                       {c.front}
                     </td>
-                    <td dir="auto" className="t-body py-2 break-words whitespace-pre-wrap text-site-text-muted">
+                    <td dir="auto" className="t-body py-2 pe-3 break-words whitespace-pre-wrap text-site-text-muted">
                       {c.back}
                     </td>
+                    {typed && <td className="t-meta py-2">{typeLabel[c.kind ?? 'basic']}</td>}
                   </tr>
                 ))}
               </tbody>

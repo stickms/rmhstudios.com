@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { updateProfileSchema, type ProfileLink } from '@/lib/profile-schema';
 import { canChangeHandle } from '@/lib/handle';
 import { handleSchema } from '@/lib/handle-schema';
+import { normalizeFollowListVisibility } from '@/lib/social/follow-list-privacy';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
 
 export const route = apiRoute('/api/profile', {
@@ -26,6 +27,8 @@ export const route = apiRoute('/api/profile', {
         links,
         showLikes,
         dmPrivacy,
+        followListVisibility,
+        dmRequests,
         profileSongSpotifyId,
         profileSongTitle,
         profileSongArtist,
@@ -110,6 +113,8 @@ export const route = apiRoute('/api/profile', {
           showLikes: showLikes ?? false,
           ...linksField,
           ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
+          ...(followListVisibility !== undefined ? { followListVisibility } : {}),
+          ...(dmRequests !== undefined ? { dmRequests } : {}),
           ...(tipGoal !== undefined ? { tipGoal } : {}),
           ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
           ...(membershipPriceCoins !== undefined
@@ -125,6 +130,8 @@ export const route = apiRoute('/api/profile', {
           ...linksField,
           ...(showLikes !== undefined ? { showLikes } : {}),
           ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
+          ...(followListVisibility !== undefined ? { followListVisibility } : {}),
+          ...(dmRequests !== undefined ? { dmRequests } : {}),
           ...(tipGoal !== undefined ? { tipGoal } : {}),
           ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
           ...(membershipPriceCoins !== undefined
@@ -150,6 +157,8 @@ export const route = apiRoute('/api/profile', {
         membershipPriceCoins: profile.membershipPriceCoins,
         showLikes: profile.showLikes,
         dmPrivacy: profile.dmPrivacy,
+        followListVisibility: normalizeFollowListVisibility(profile.followListVisibility),
+        dmRequests: profile.dmRequests,
         profileSongSpotifyId: profile.profileSongSpotifyId,
         profileSongTitle: profile.profileSongTitle,
         profileSongArtist: profile.profileSongArtist,

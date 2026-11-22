@@ -29,6 +29,7 @@ import { getHiddenAuthorIds, getBlockedAuthorIds } from '../moderation.server';
 import { getFollowingIds } from '../social/follow-graph.server';
 import { audienceWhere, circleOwnerIds } from './audience.server';
 import { mapQuotedOriginal } from './quoted-original';
+import { redactCounts } from './quiet-counts';
 import { getSignals } from './signals.server';
 import { mutedTagWhere } from './signals';
 import { applyLock, loadBookmarkedPostIds } from './map-feed-item.server';
@@ -43,7 +44,10 @@ import {
   VIEWER_FEED_PREFIX,
 } from '../cached.server';
 import { reconcileCachedPage } from './page-reconcile.server';
+import { getRepostMutedIds } from './repost-mutes.server';
 import { isExpired } from '../posts-plus/constants';
+import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
+import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
 
 export { deduplicateReposts };
 
@@ -154,7 +158,11 @@ function pollInclude(userId: string | null) {
   };
 }
 
-function mapPoll(poll: any): FeedPoll | undefined {
+function mapPoll(
+  poll: any,
+  /** s07-19: who is reading and who wrote the post; a quiz's answer is theirs only when earned. */
+  reader: { viewerId: string | null; authorId: string },
+): FeedPoll | undefined {
   if (!poll) return undefined;
   const totalVotes = poll.options.reduce(
     (sum: number, o: { voteCount?: number }) => sum + (o.voteCount ?? 0),
@@ -164,7 +172,12 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
-    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
+    ...pollLifecycleView(poll),
+    ...quizRevealFor(
+      poll,
+      reader,
+      viewerHasVoted(poll.options),
+    ),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -356,11 +369,13 @@ function mapOwn(
     bookmarked: false, // filled in by attachBookmarks after the query
     edited: !!r.editedAt,
     original: mapOriginal(r.original, displayMap, qv),
-    poll: isDeleted ? undefined : mapPoll(r.poll),
+    poll: isDeleted ? undefined : mapPoll(r.poll, { viewerId: userId, authorId: r.userId }),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+    gifAlt: isDeleted ? undefined : (r.gifAlt ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
+    contentWarning: isDeleted ? undefined : (r.contentWarning ?? undefined),
     replyControl: r.replyControl ?? 'EVERYONE',
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
@@ -400,11 +415,13 @@ function mapRepost(
     bookmarked: false, // filled in by attachBookmarks after the query
     repostedBy: displayUser(displayMap, rp.userId),
     original: mapOriginal(r.original, displayMap, qv),
-    poll: isDeleted ? undefined : mapPoll(r.poll),
+    poll: isDeleted ? undefined : mapPoll(r.poll, { viewerId: userId, authorId: r.userId }),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+    gifAlt: isDeleted ? undefined : (r.gifAlt ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
+    contentWarning: isDeleted ? undefined : (r.contentWarning ?? undefined),
     replyControl: r.replyControl ?? 'EVERYONE',
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
@@ -524,11 +541,12 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const [followingAll, hiddenIds, viewerCircleOwnerIds, blockedIds] = await Promise.all([
+  const [followingAll, hiddenIds, viewerCircleOwnerIds, blockedIds, repostMutedIds] = await Promise.all([
     getFollowingIds(userId),
     getHiddenAuthorIds(userId),
     circleOwnerIds(userId),
     getBlockedAuthorIds(userId),
+    getRepostMutedIds(userId),
   ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
   // Exclude muted/blocked authors even if still followed.
@@ -576,7 +594,7 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     }),
     prisma.rMHarkRepost.findMany({
       where: {
-        userId: { in: followingIds },
+        userId: { in: followingIds, ...(repostMutedIds.length ? { notIn: repostMutedIds } : {}) },
         // The reposted post's author is not necessarily followed, so its
         // audience is checked in full (same fragment the For-You repost query
         // uses). Previously only `deletedAt` was checked, so a repost of a
@@ -609,7 +627,10 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap, qv)),
   ]);
 
-  const items = deduplicateReposts(merged).slice(0, limit);
+  // Quiet counts: an author who hides their numbers shows them to nobody else (after any ordering).
+  const items = deduplicateReposts(merged)
+    .slice(0, limit)
+    .map((i) => redactCounts(i, userId));
 
   const pagePostIds = items.map((i) => i.actualId ?? i.id);
   const [summaries, bookmarked] = await Promise.all([
@@ -654,13 +675,14 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   // start. Everything else is NOT an input to the query — the interest profile
   // only reorders the returned page, and announcements are interleaved afterward
   // — so those stay off this batch and run alongside the query instead.
-  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] =
+  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds, repostMutedIds] =
     await Promise.all([
       getHiddenAuthorIds(userId),
       userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
       circleOwnerIds(userId),
       getSignals(userId),
       getBlockedAuthorIds(userId),
+      getRepostMutedIds(userId),
     ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
 
@@ -711,7 +733,10 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
             ...audWhere,
             ...tagWhere,
           },
-          ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
+          // Reposts by someone the viewer turned reposts off for go too; their own posts stay (the query above).
+          ...(hiddenIds.length || repostMutedIds.length
+            ? { userId: { notIn: [...hiddenIds, ...repostMutedIds] } }
+            : {}),
           ...keyset,
         },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -748,6 +773,8 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     };
     // Ranking seam (Phase 5) — personalized For-You ordering (#11).
     dbItems = rankCandidates(dbItems, rankCtx);
+    // Ranked on the real numbers; only then are an author's hidden counts withheld (lib/feed/quiet-counts).
+    dbItems = dbItems.map((i) => redactCounts(i, userId));
 
     attachReactions(dbItems, await reactionsPromise);
     attachBookmarks(dbItems, await bookmarksPromise);

@@ -20,6 +20,7 @@ import { Activity, CalendarClock, Coins, Gauge, Layers, Ruler, Scale, Sigma, Tre
 import { ANNUAL_INTEREST_RATE, formatDebt } from '@/lib/kaikai-debt/debt';
 import { formatCompactDebt, formatShare, timeToReachMs, valueNow, type DebtStats } from '@/lib/kaikai-debt/stats';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** A round number worth naming a date for — the next power of ten past the total. */
 function nextMilestoneCents(currentCents: number): number {
@@ -27,14 +28,8 @@ function nextMilestoneCents(currentCents: number): number {
   return 10 ** Math.ceil(Math.log10(dollars) + 0.0001) * 100;
 }
 
-const DATE_LABEL = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-
 export function StatTiles({ stats, nowMs }: { stats: DebtStats; nowMs: number }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-kaikai-debt');
 
   const derived = useMemo(() => {
@@ -84,7 +79,7 @@ export function StatTiles({ stats, nowMs }: { stats: DebtStats; nowMs: number })
         label={t('stats.tile.lines', {
           defaultValue: 'Lines on the books',
         })}
-        value={stats.totals.count.toLocaleString('en-US')}
+        value={fmt.number(stats.totals.count)}
         detail={t('stats.tile.linesDetail', {
           defaultValue: '{{rate}} a day across the whole archive',
           rate: derived.perDay.toFixed(1),
@@ -95,7 +90,7 @@ export function StatTiles({ stats, nowMs }: { stats: DebtStats; nowMs: number })
         label={t('stats.tile.people', {
           defaultValue: 'People involved',
         })}
-        value={stats.totals.creditorCount.toLocaleString('en-US')}
+        value={fmt.number(stats.totals.creditorCount)}
         detail={t('stats.tile.peopleDetail', {
           defaultValue: '{{authors}} of them logged something themselves',
           authors: stats.totals.contributorCount,
@@ -162,7 +157,12 @@ export function StatTiles({ stats, nowMs }: { stats: DebtStats; nowMs: number })
         })}
         value={
           derived.milestoneAtMs
-            ? DATE_LABEL.format(new Date(derived.milestoneAtMs))
+            ? fmt.date(new Date(derived.milestoneAtMs), {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                timeZone: 'UTC',
+              })
             : t('stats.tile.milestoneNever', {
                 defaultValue: 'never',
               })

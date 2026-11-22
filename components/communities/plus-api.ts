@@ -4,6 +4,8 @@ export interface ApiResult<T> {
   status: number;
   data: T | null;
   error: string | null;
+  /** The parsed JSON body of a failed call (its `code` and other fields), `null` on success. */
+  errorBody?: unknown;
 }
 
 export async function plusFetch<T = unknown>(
@@ -34,6 +36,7 @@ export async function plusFetch<T = unknown>(
       status: res.status,
       data: res.ok ? data : null,
       error: res.ok ? null : (data?.error ?? null),
+      errorBody: res.ok ? null : data,
     };
   } catch {
     return {

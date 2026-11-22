@@ -10,6 +10,7 @@ import { api } from '@/lib/contract/client';
 import { pileOnActApi, pileOnGetApi, type PileOnState } from '@/lib/safety/safety.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type State = PileOnState;
 
@@ -23,6 +24,7 @@ const pileOnAct = (postId: string, action: 'accept' | 'dismiss' | 'undo') =>
 
 /** S7: the one-tap page behind the "burst of replies" notification. */
 export default function PileOnPage({ postId }: { postId: string }) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('f-safety');
   const [state, setState] = useState<State | null | 'missing'>(null);
   const [busy, setBusy] = useState(false);
@@ -109,7 +111,7 @@ export default function PileOnPage({ postId }: { postId: string }) {
                 : state.status === 'ACTIVE'
                   ? t('pileon-active-body', {
                       defaultValue: 'Only people you follow can reply until {{time}}.',
-                      time: state.expiresAt ? new Date(state.expiresAt).toLocaleString() : '',
+                      time: state.expiresAt ? fmt.dateTime(new Date(state.expiresAt)) : '',
                     })
                   : state.status === 'REVERTED'
                     ? t('pileon-reverted-body', {

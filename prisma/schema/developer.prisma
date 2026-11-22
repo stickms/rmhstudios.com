@@ -185,6 +185,7 @@ model AdminAuditLog {
 
   @@index([createdAt(sort: Desc)])
   @@index([targetType, targetId])
+  @@index([targetId])
   @@map("admin_audit_log")
 }
 
@@ -197,7 +198,7 @@ model AdminAuditLog {
 model BulkOperation {
   id         String    @id @default(cuid())
   userId     String
-  /// 'delete-posts' | 'delete-comments' | 'unfollow' | 'clear-history' | 'clear-bookmarks'
+  /// 'delete-posts' | 'delete-comments' | 'unfollow' | 'clear-history' | 'clear-bookmarks' | 'unlike-posts' | 'delete-reposts'
   kind       String    @db.VarChar(24)
   /// { olderThanDays?, before?, maxLikes?, onlyReplies?, tag? }
   filter     Json
@@ -208,6 +209,12 @@ model BulkOperation {
   error      String?   @db.VarChar(300)
   createdAt  DateTime  @default(now())
   finishedAt DateTime?
+  /// The lease (s07-15): a runner owns the operation while this is newer than two minutes; every chunk renews it.
+  heartbeatAt DateTime?
+  /// Id of the last row the run finished; a resumed run continues strictly after it.
+  cursorId    String?   @db.VarChar(40)
+  /// How many times the reclaim sweep re-queued the run; the fifth stops it as FAILED.
+  reclaims    Int       @default(0)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -642,6 +649,10 @@ model FeatureFlag {
   rolloutPercent Int      @default(100)
   description    String   @default("") @db.VarChar(280)
   updatedBy      String?
+  /// Member ids the flag is always on for while enabled (s04-20). At most 200; never sent to a client.
+  allowUserIds   String[] @default([])
+  /// Member ids the flag is always off for (beats the allow list). At most 200; never sent to a client.
+  denyUserIds    String[] @default([])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

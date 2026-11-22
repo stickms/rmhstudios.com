@@ -8,15 +8,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { usePrompt } from '@/components/ui/prompt-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface PasskeyRow {
   id: string;
@@ -27,8 +28,10 @@ interface PasskeyRow {
 }
 
 export function PasskeyManager() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
+  const prompt = usePrompt();
   const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   // Steel M9: the passkeys replace the spinner.
@@ -97,12 +100,12 @@ export function PasskeyManager() {
   };
 
   const renamePasskey = async (pk: PasskeyRow) => {
-    const name = window.prompt(
-      t('passkey-rename-prompt', {
+    const name = await prompt({
+      title: t('passkey-rename-prompt', {
         defaultValue: 'New name for this passkey:',
       }),
-      pk.name ?? '',
-    );
+      initialValue: pk.name ?? '',
+    });
     if (!name || name === pk.name) return;
     setBusy(true);
     try {
@@ -214,9 +217,7 @@ export function PasskeyManager() {
                   {pk.createdAt
                     ? t('passkey-created', {
                         defaultValue: 'Added {{when}}',
-                        when: formatDistanceToNow(new Date(pk.createdAt), {
-                          addSuffix: true,
-                        }),
+                        when: fmt.relative(new Date(pk.createdAt)),
                       })
                     : null}
                   {pk.backedUp ? ` · ${t('passkey-synced', { defaultValue: 'Synced' })}` : ''}

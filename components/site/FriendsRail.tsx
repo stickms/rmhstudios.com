@@ -1,12 +1,13 @@
 import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { presenceContextLabels } from '@/components/site/presence-labels';
 import { Users, UserPlus, Check } from 'lucide-react';
 
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
 import { useClipboard } from '@/hooks/useClipboard';
-import { contextVerb, sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
+import { sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
 import { api } from '@/lib/contract/client';
 import { getMyReferralApi } from '@/lib/referrals.contract';
 import { ActivityLine } from './ActivityLine';
@@ -93,6 +94,7 @@ export function FriendsRail() {
 const FriendRailRow = memo(
   function FriendRailRow({ friend }: { friend: ActiveFriend }) {
     const { t } = useTranslation('site');
+    const contextLabels = presenceContextLabels(t);
     const { user, activity, joinable } = friend;
     const name =
       user.name ||
@@ -122,9 +124,7 @@ const FriendRailRow = memo(
             to={joinable.href}
             className="surface-press shrink-0 rounded-full bg-site-bg-subtle px-2.5 py-1 text-caption font-semibold text-site-accent"
           >
-            {t(`presence-context-${activity.kind}`, {
-              defaultValue: contextVerb(activity.kind),
-            })}
+            {contextLabels[activity.kind]}
           </Link>
         ) : null}
       </li>

@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { cn } from '@/lib/utils';
+import { useSanctionRefusal } from './useSanctionRefusal';
 
 export interface LockedCommunityMeta {
   slug: string;
@@ -156,6 +157,7 @@ export function RequestToJoin({
   // state, which would drop focus to <body>; hand it to the control that replaced it.
   const cancelRef = useRef<HTMLButtonElement>(null);
   const sentHere = useRef(false);
+  const sanctionRefusalText = useSanctionRefusal();
   useEffect(() => {
     if (state === 'PENDING' && sentHere.current) {
       sentHere.current = false;
@@ -194,7 +196,8 @@ export function RequestToJoin({
           ? t('request-cooldown', {
               defaultValue: 'You can ask again in a few days.',
             })
-          : res.error ||
+          : sanctionRefusalText(res.errorBody) ||
+              res.error ||
               t('request-error', {
                 defaultValue: "Couldn't send your request",
               }),

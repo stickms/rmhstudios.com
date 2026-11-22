@@ -14,6 +14,7 @@ import { api } from '@/lib/contract/client';
 import { createSongCommentApi, listSongCommentsApi } from '@features/slice-it/engine/slice-it.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 interface Comment {
   id: string;
@@ -31,6 +32,7 @@ interface SongCommentsProps {
 }
 
 export function SongComments({ songId }: SongCommentsProps) {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-game');
   const session = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -144,9 +146,7 @@ export function SongComments({ songId }: SongCommentsProps) {
               <div className="bg-slice-card-bg/60 p-2 rounded-xl rounded-tl-none flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-bold text-slice-text text-[10px]">{comment.user.name}</span>
-                  <span className="text-[10px] text-slice-text-light">
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
+                  <span className="text-[10px] text-slice-text-light">{fmt.date(new Date(comment.createdAt))}</span>
                 </div>
                 <p className="text-slice-text-darker text-xs leading-relaxed">{comment.content}</p>
               </div>

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { daysBetween, formatMinutes } from '@/lib/dunesday/schedule';
 import { DUNESDAY } from '@/lib/dunesday/titles';
 import { sfx } from './sound';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 function useNow(): Date | null {
   const [now, setNow] = useState<Date | null>(null);
@@ -27,6 +28,7 @@ function useNow(): Date | null {
 }
 
 export function Clock() {
+  const fmt = useLocaleFormat();
   const { t } = useTranslation('c-dunesday');
   const now = useNow();
   const h = now ? (now.getHours() % 12) * 30 + now.getMinutes() * 0.5 : 0;
@@ -39,7 +41,7 @@ export function Clock() {
         role="img"
         aria-label={
           now
-            ? now.toLocaleTimeString()
+            ? fmt.time(now)
             : t('clock', {
                 defaultValue: 'Clock',
               })

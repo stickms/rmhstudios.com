@@ -21,7 +21,11 @@ import type { PatchNoteItem } from '@/lib/arcade/updates';
 import type { FollowState } from '@/lib/arcade/updates.contract';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
 import { SteamReviews } from './SteamReviews';
+import { ReplayBoard } from '@/components/replays/ReplayBoard';
+import type { BoardReplay } from '@/lib/game/replay-library';
 import { TitleArt } from './TitleArt';
+import { PersonalBests } from './PersonalBests';
+import { scoredGameIds } from '@/lib/game/registry';
 
 export type GamePageData = {
   gameId: string;
@@ -44,6 +48,8 @@ export type GamePageData = {
   extras: LibraryExtras;
   alsoPlayed: AlsoPlayed[];
   updates: { notes: PatchNoteItem[]; follow: FollowState } | null;
+  /** Top public replays; null when the title records none. */
+  replays: BoardReplay[] | null;
 };
 
 /**
@@ -158,6 +164,9 @@ export function GamePage({ data }: { data: GamePageData }) {
           {extras.cards ? (
             <SteamCards gameId={data.gameId} title={data.title} hue={data.hue} cards={extras.cards} />
           ) : null}
+          {isGame && data.signedIn && scoredGameIds().includes(data.gameId) ? (
+            <PersonalBests gameId={data.gameId} />
+          ) : null}
           {data.gameId === 'nightrail' ? (
             <div className="stm-legacy">
               <NightrailTrickBoard winner={data.trickOfTheWeek ?? null} signedIn={data.signedIn} />
@@ -176,6 +185,7 @@ export function GamePage({ data }: { data: GamePageData }) {
                 initialAgg={data.agg}
               />
               <SteamGuides gameId={data.gameId} guides={data.guides} signedIn={data.signedIn} />
+              {data.replays ? <ReplayBoard gameId={data.gameId} initial={data.replays} /> : null}
               {data.aiEnabled ? (
                 <div className="stm-legacy">
                   <HowToPlay gameId={data.gameId} />

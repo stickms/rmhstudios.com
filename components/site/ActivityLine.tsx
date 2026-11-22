@@ -36,11 +36,7 @@ export function ActivityLine({ activity, className }: { activity: PresenceActivi
   return (
     <span className={cn('flex items-center gap-1.5 text-xs text-site-accent', className)}>
       <Icon className="h-3 w-3 shrink-0" aria-hidden />
-      <span className="truncate">
-        {t(`presence-activity-${activity.kind}`, {
-          defaultValue: activity.label,
-        })}
-      </span>
+      <span className="truncate">{activity.label}</span>
     </span>
   );
 }

@@ -12,6 +12,7 @@ import { LibraryDialogShell } from './LibraryDialogShell';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, Pencil, Star, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { toast } from '@/lib/toast';
 import { api, errorField } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { adminLibraryDeleteApi, adminLibraryPatchApi } from '@/lib/library/admin-library.contract';
@@ -64,7 +65,7 @@ export function BookContextMenu({
   const act = async (fn: () => Promise<string | null>) => {
     const err = await fn().catch(() => 'Action failed.');
     if (err) {
-      window.alert(err);
+      toast.error(err);
       return;
     }
     onChanged();

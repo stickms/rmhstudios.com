@@ -50,6 +50,13 @@ export interface ICSEvent {
    * `VALARM`). Omitted means no alarm, which is right for a bulk feed.
    */
   alarmMinutes?: number;
+  /**
+   * `RECURRENCE-ID` (RFC 5545 §3.8.4.4) — this entry stands in for the occurrence of a repeating event
+   * that started at this instant: a date the host moved (s06-10), published under the UID it always had.
+   */
+  recurrenceId?: Date | string;
+  /** `EXDATE` (§3.8.5.1) — occurrence starts that do not happen: a date the host skipped (s06-10). */
+  exdates?: (Date | string)[];
 }
 
 /** Calendar-level properties, for a feed clients subscribe to rather than import once. */
@@ -125,6 +132,8 @@ function veventLines(event: ICSEvent, dtstamp: string): string[] {
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${toUtcStamp(event.startsAt)}`,
   ];
+  if (event.recurrenceId) lines.push(`RECURRENCE-ID:${toUtcStamp(event.recurrenceId)}`);
+  if (event.exdates?.length) lines.push(`EXDATE:${event.exdates.map(toUtcStamp).join(',')}`);
   if (event.endsAt) lines.push(`DTEND:${toUtcStamp(event.endsAt)}`);
   lines.push(`SUMMARY:${escapeText(event.title)}`);
   if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`);
