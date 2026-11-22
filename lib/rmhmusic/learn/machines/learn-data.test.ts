@@ -21,6 +21,9 @@ const PROFILE: Profile = {
   voiceRange: null,
   practiceMode: 'learning',
   micGain: 1,
+  micAuto: true,
+  micGate: 0.01,
+  micHum: 'off',
 };
 const ROW: LessonProgressRow = {
   lessonId: 'staff-what-is-a-staff',

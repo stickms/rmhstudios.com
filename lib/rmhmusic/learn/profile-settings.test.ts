@@ -21,4 +21,16 @@ describe('profile practiceMode and micGain', () => {
     }
     expect(profileSchema.safeParse({ ...base, practiceMode: 'exam' }).success).toBe(false);
   });
+
+  it('take the automatic setting, a cutoff from 0.002 to 0.2 and the three hum choices', () => {
+    expect(profileSchema.safeParse({ ...base, micAuto: false, micGate: 0.02, micHum: '60' }).success).toBe(true);
+    for (const micHum of ['off', '50', '60'] as const) {
+      expect(profileSchema.safeParse({ ...base, micHum }).success).toBe(true);
+    }
+    for (const micGate of [0.001, 0.3, 0, Number.NaN]) {
+      expect(profileSchema.safeParse({ ...base, micGate }).success, String(micGate)).toBe(false);
+    }
+    expect(profileSchema.safeParse({ ...base, micHum: '55' }).success).toBe(false);
+    expect(profileSchema.safeParse({ ...base, micAuto: 'yes' }).success).toBe(false);
+  });
 });
