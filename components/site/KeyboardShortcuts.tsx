@@ -12,6 +12,7 @@
  *   /          open the command palette
  *   c          compose a post (signed in)
  *   g then <x> go somewhere (h home, e explore, n notifications, …)
+ *   j / k, o, l, r, t, s, x, Escape  move through posts and act on the focused one (components/feed/feed-nav.tsx)
  *
  * Shortcuts are suppressed while typing in inputs/textareas/contenteditables.
  * The palette's own key (mod+k) is handled by CommandPalette from the same
@@ -25,6 +26,9 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { useSession } from '@/components/Providers';
+import { runFeedNav } from '@/components/feed/feed-nav';
+import { useFeedNavCopy, useFeedNavLabel } from '@/components/feed/feed-nav-labels';
+import { isFeedNavId } from '@/lib/shortcuts/feed-nav';
 import { useEffectiveShortcuts } from '@/hooks/useEffectiveShortcuts';
 import { SEQUENCE_TIMEOUT_MS, isTypingTarget, type Shortcut } from '@/lib/shortcuts/registry';
 import { eventMatchesKeystroke, isModifierKey, keyLabel, type KeyPlatform } from '@/lib/shortcuts/bindings';
@@ -129,6 +133,8 @@ export function KeyboardShortcuts() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [platform, setPlatform] = useState<KeyPlatform>('other');
   const effective = useEffectiveShortcuts();
+  const feedNavLabel = useFeedNavLabel();
+  const feedNavCopy = useFeedNavCopy();
 
   useEffect(() => {
     useKeyboardPrefsStore.getState().hydrate({
@@ -171,7 +177,10 @@ export function KeyboardShortcuts() {
   // its own `run`, except games (each full-screen game owns its controls) and
   // `site.palette` (CommandPalette binds it from the same effective keys).
   const dispatchable = useMemo(
-    () => effective.filter((s) => !s.scope.startsWith('game:') && (s.run !== undefined || SITE_ACTION_IDS.has(s.id))),
+    () =>
+      effective.filter(
+        (s) => !s.scope.startsWith('game:') && (s.run !== undefined || SITE_ACTION_IDS.has(s.id) || isFeedNavId(s.id)),
+      ),
     [effective],
   );
 
@@ -186,6 +195,12 @@ export function KeyboardShortcuts() {
 
     const fire = (s: Shortcut, e: KeyboardEvent) => {
       if (s.when && !s.when()) return false;
+      // The post keys act only when there is a post to act on, and leave the key alone when there is not.
+      if (isFeedNavId(s.id)) {
+        if (!runFeedNav(s.id, e)) return false;
+        e.preventDefault();
+        return true;
+      }
       e.preventDefault();
       if (s.run) s.run(e);
       else actions.current[s.id]?.();
@@ -234,17 +249,21 @@ export function KeyboardShortcuts() {
   const listed = effective.filter(
     (s) => !s.scope.startsWith('game:') && (s.id === 'site.compose' ? signedIn : s.when ? s.when() : true),
   );
-  const general = listed.filter((s) => !s.id.startsWith('site.go.'));
+  const general = listed.filter((s) => !s.id.startsWith('site.go.') && !isFeedNavId(s.id));
+  const posts = listed.filter((s) => isFeedNavId(s.id));
   const goTo = listed.filter((s) => s.id.startsWith('site.go.'));
   const row = (s: Shortcut) => (
     <ShortcutRow
       key={s.id}
       keys={s.keys}
       platform={platform}
-      label={t(s.labelKey, {
-        ns: s.ns ?? 'feed',
-        defaultValue: s.label ?? s.id,
-      })}
+      label={
+        feedNavLabel(s.id) ??
+        t(s.labelKey, {
+          ns: s.ns ?? 'feed',
+          defaultValue: s.label ?? s.id,
+        })
+      }
     />
   );
 
@@ -275,6 +294,14 @@ export function KeyboardShortcuts() {
               })}
             </h3>
             <ul className="mt-1 divide-y divide-site-border/50">{general.map(row)}</ul>
+
+            {posts.length > 0 && (
+              <>
+                <h3 className="site-section-label mt-4">{feedNavCopy.heading}</h3>
+                <ul className="mt-1 divide-y divide-site-border/50">{posts.map(row)}</ul>
+                <p className="t-meta mt-2">{feedNavCopy.hint}</p>
+              </>
+            )}
 
             {goTo.length > 0 && (
               <>

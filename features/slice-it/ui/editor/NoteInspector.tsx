@@ -27,6 +27,7 @@ import {
   useEditorStore,
 } from '@features/slice-it/engine/editor/store';
 import type { SliceType } from '@features/slice-it/engine/editor/types';
+import { NoteIssues } from './NoteIssues';
 import { QUANT_LABELS } from './theme';
 
 export function NoteInspector() {
@@ -354,9 +355,13 @@ export function NoteInspector() {
         </div>
       )}
 
+      {selection.length === 1 && first && (
+        <div className="mt-3">
+          <NoteIssues note={first} />
+        </div>
+      )}
+
       {/*
-        TODO(phase 7 — §9): the lint panel lists this note's issues here and
-        clicking one seeks the playhead to it.
         TODO(phase 8 — §4.4b): the note's aggregate miss rate, once O1 exists.
       */}
     </section>

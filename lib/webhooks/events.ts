@@ -2,12 +2,13 @@
  * Webhook event catalog. Pure module shared by the emitter, the webhook
  * endpoints, the dashboard, and the wiki/OpenAPI docs.
  */
+import { ACTIVITY_EVENTS } from '@/lib/webhooks/activity-events';
 
 export interface WebhookEventDef {
   name: string;
   description: string;
   /** Picker group. Omitted means the original social events. */
-  group?: 'games';
+  group?: 'games' | 'builds' | 'events' | 'reading' | 'tournaments';
 }
 
 export const WEBHOOK_EVENTS: WebhookEventDef[] = [
@@ -50,6 +51,8 @@ export const WEBHOOK_EVENTS: WebhookEventDef[] = [
     description: 'You unlocked an achievement.',
     group: 'games',
   },
+  // Sprint 08 12: activity events. Anyone subscribed to `*` receives these too.
+  ...ACTIVITY_EVENTS,
 ];
 
 /**

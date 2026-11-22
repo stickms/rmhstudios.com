@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, memo } from'react';
 import { useWindowVirtualizer } from'@tanstack/react-virtual';
 import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkCard } from'./RMHarkCard';
+import { focusPost, registerWindowedList } from'./feed-nav';
 import { useStableListMotion } from'@/hooks/useStableListMotion';
 
 // useLayoutEffect warns during SSR; use useEffect on the server so the render
@@ -88,6 +89,32 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
  };
  }, [virtualized]);
 
+ // Keyboard (feed-nav.tsx): `focusIndex(i)` focuses the post at row i, or scrolls the row into the window and records
+ // `pendingFocusId`, which the row's ref callback consumes when it mounts. No timer and no requestAnimationFrame.
+ const pendingFocusId = useRef<string | null>(null);
+ const live = useRef({ items, virtualized, scrollToIndex: virtualizer.scrollToIndex });
+ useEffect(() => {
+ live.current = { items, virtualized, scrollToIndex: virtualizer.scrollToIndex };
+ });
+ useEffect(
+ () =>
+ registerWindowedList({
+ contains: (el) => !!parentRef.current?.contains(el),
+ indexOf: (el) => Number(el.closest<HTMLElement>('[data-index]')?.dataset.index ?? -1),
+ count: () => live.current.items.length,
+ focusIndex: (i) => {
+ const id = live.current.items[i]?.id;
+ if (!id) return;
+ const mounted = parentRef.current?.querySelector<HTMLElement>(`[data-index="${i}"] [data-feed-post]`);
+ if (mounted) return focusPost(mounted);
+ if (!live.current.virtualized) return;
+ pendingFocusId.current = id;
+ live.current.scrollToIndex(i, { align:'auto'});
+ },
+ }),
+ [],
+ );
+
  const virtualRows = virtualizer.getVirtualItems();
  const windowed = virtualized && virtualRows.length > 0;
  const rows = windowed
@@ -111,7 +138,20 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
  <div
  key={row.key}
  data-index={row.index}
- ref={windowed ? virtualizer.measureElement : undefined}
+ ref={
+ windowed
+ ? pendingFocusId.current === item.id
+ ? (el: HTMLDivElement | null) => {
+ virtualizer.measureElement(el);
+ const post = el?.querySelector<HTMLElement>('[data-feed-post]');
+ if (post && pendingFocusId.current === item.id) {
+ pendingFocusId.current = null;
+ focusPost(post);
+ }
+ }
+ : virtualizer.measureElement
+ : undefined
+ }
  style={
  windowed
  ? {

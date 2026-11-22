@@ -23,7 +23,7 @@ describe('COMMUNITY_ALT_WRITE_PATHS', () => {
         'lib/feed/alt-text-edit.server.ts',
         'lib/feed/api/rmharks.$id.server.ts',
         'lib/feed/api/rmharks.server.ts',
-        'lib/scheduled/api/scheduled.server.ts',
+        'lib/scheduled/create.server.ts',
         'lib/scheduled/publish.server.ts',
       ].sort(),
     );

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ClozeText } from '@/components/study/ClozeText';
+import { CardPicture } from '@/components/study/CardPicture';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { clozePlainText } from '@/lib/study/card-types';
@@ -134,12 +135,17 @@ export function DeckCardList({
         )}
         {shown.map((c) => (
           <div key={c.id} className="flex items-start gap-2 border-b border-site-border py-3">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              {c.frontImage && <CardPicture image={c.frontImage} compact />}
               {c.kind === 'cloze' ? (
-                <ClozeText text={c.front} index={null} reveal className="t-body text-site-text" />
+                <>
+                  <ClozeText text={c.front} index={null} reveal className="t-body text-site-text" />
+                  {c.backImage && <CardPicture image={c.backImage} compact />}
+                </>
               ) : (
                 <>
                   <p className="t-body font-medium">{c.front}</p>
+                  {c.backImage && <CardPicture image={c.backImage} compact />}
                   <p className="t-body text-site-text-muted">{c.back}</p>
                 </>
               )}

@@ -213,6 +213,7 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'better-auth.message',
       'community-onboarding-dismissed:',
       'qotd-dismissed:',
+      'rmh.bracket.view',
       'rmh-reading-ruler',
       'rmh-reader-sync-off',
       'rmh-epub-theme',

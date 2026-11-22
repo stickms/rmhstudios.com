@@ -19,6 +19,9 @@ import { prisma } from '@/lib/prisma.server';
  */
 const CLAIM_TTL_MS = 2 * 60 * 60 * 1000;
 
+/** How long a settled claim lingers for the second submit path to read it. */
+const SETTLE_GRACE_MS = 5 * 60 * 1000;
+
 /**
  * Boards that belong to an adopting game but have an id of their own. Void
  * Breaker's Boss Rush board is separate from the main board, and a run on it is
@@ -74,14 +77,35 @@ export async function startAssistRun(userId: string, requestedGameId: string): P
  * assisted and pays nothing. A Redis read failure falls back to the settings
  * check alone.
  */
-export async function consumeAssistRun(userId: string, requestedGameId: string): Promise<boolean> {
+export async function consumeAssistRun(
+  userId: string,
+  requestedGameId: string,
+  options: {
+    /** Read the claim without clearing it, for a second path that must agree with the first. */
+    keepClaim?: boolean;
+    /**
+     * With `keepClaim`: shorten the claim to a short grace window instead of leaving it for
+     * the full TTL, so the second path still agrees but the claim cannot linger onto a later
+     * run that starts no claim of its own (co-op).
+     */
+    settleClaim?: boolean;
+  } = {},
+): Promise<boolean> {
   const gameId = assistGameFor(requestedGameId);
   if (!ASSIST_CAPABLE.has(gameId)) return false;
   const key = assistRunKey(gameId, userId);
   let claimed = false;
   try {
     claimed = (await redisGetJSON<AssistClaim>(key)) != null;
-    if (claimed) await redisDel(key).catch(() => {});
+    if (claimed && options.keepClaim && options.settleClaim)
+      await redisSetJSON(
+        key,
+        {
+          at: Date.now(),
+        } satisfies AssistClaim,
+        SETTLE_GRACE_MS,
+      ).catch(() => {});
+    if (claimed && !options.keepClaim) await redisDel(key).catch(() => {});
   } catch (err) {
     console.warn('[assist-run] claim read failed:', (err as Error)?.message);
   }

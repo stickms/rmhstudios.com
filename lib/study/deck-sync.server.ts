@@ -28,6 +28,8 @@ import {
 } from '@/lib/study/deck-sync';
 import { insertCards, updateCardIn } from '@/lib/study/deck-editor.server';
 import { MAX_DECK_CARDS } from '@/lib/study/limits';
+import { CARD_IMAGE_SELECT, pictureUrls, toColumns, type CardPictures } from '@/lib/study/card-images';
+import { deleteCardImageObjects, lockPictureUrls, releaseCardImages } from '@/lib/study/card-images.server';
 
 type Db = Prisma.TransactionClient | PrismaClient;
 
@@ -128,6 +130,7 @@ async function sourceCards(db: Db, deckId: string): Promise<SourceCard[]> {
       kind: true,
       front: true,
       back: true,
+      ...CARD_IMAGE_SELECT,
     },
   });
 }
@@ -140,6 +143,7 @@ async function copyCards(db: Db, deckId: string): Promise<CopyCard[]> {
       kind: true,
       front: true,
       back: true,
+      ...CARD_IMAGE_SELECT,
       originCardId: true,
       originHash: true,
     },
@@ -259,7 +263,9 @@ export async function applyUpdates(
   deckId: string,
   items: readonly ApplyItem[],
 ): Promise<SyncResult<ApplyResult>> {
-  return prisma.$transaction(
+  // Declared outside the transaction so the objects can be deleted after the commit, never on a rollback.
+  const deleteAfterCommit: { keys: string[] } = { keys: [] };
+  const outcome = await prisma.$transaction(
     async (tx) => {
       await lockKey(tx, `deck-sync:${deckId}`);
       const copy = await ownCopy(tx, userId, deckId);
@@ -286,10 +292,13 @@ export async function applyUpdates(
           reason,
         });
       const seen = new Set<string>();
-      const fresh: (CardInput & {
-        originCardId: string;
-        originHash: string;
-      })[] = [];
+      // Objects of pictures this apply left unreferenced, deleted once it has committed.
+      const droppedKeys: string[] = [];
+      const fresh: (CardInput &
+        CardPictures & {
+          originCardId: string;
+          originHash: string;
+        })[] = [];
       let removedCount = 0;
 
       for (const item of items) {
@@ -345,6 +354,7 @@ export async function applyUpdates(
           if (count > 0) {
             removedCount++;
             result.applied++;
+            droppedKeys.push(...(await releaseCardImages(tx, pictureUrls(card))));
           }
           continue;
         }
@@ -368,11 +378,27 @@ export async function applyUpdates(
         }
         const next = diffDecks([src], []).added[0]?.card;
         if (!next) continue;
-        const edited = await updateCardIn(tx, userId, card.id, next);
+        // The author's pictures are shared, not copied: same URLs, no claim on the member's uploads.
+        const theirPictures = toColumns(next);
+        await lockPictureUrls(tx, pictureUrls(theirPictures));
+        const edited = await updateCardIn(
+          tx,
+          userId,
+          card.id,
+          {
+            ...next,
+            frontImage: next.frontImage ?? null,
+            backImage: next.backImage ?? null,
+          },
+          {
+            sharedPictures: true,
+          },
+        );
         if (!edited.ok) {
           skip(item.cardId, 'full');
           continue;
         }
+        droppedKeys.push(...edited.released);
         await tx.flashcard.update({
           where: {
             id: card.id,
@@ -385,6 +411,10 @@ export async function applyUpdates(
       }
 
       if (fresh.length > 0) {
+        await lockPictureUrls(
+          tx,
+          fresh.flatMap((c) => pictureUrls(toColumns(c))),
+        );
         await insertCards(tx, deckId, fresh);
         result.applied += fresh.length;
       }
@@ -402,6 +432,7 @@ export async function applyUpdates(
         });
       }
       await settle(tx, deckId, source.id);
+      deleteAfterCommit.keys = droppedKeys;
       return {
         ok: true,
         ...result,
@@ -411,6 +442,8 @@ export async function applyUpdates(
       timeout: 30_000,
     },
   );
+  await deleteCardImageObjects(deleteAfterCommit.keys);
+  return outcome;
 }
 
 /**

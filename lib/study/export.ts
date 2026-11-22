@@ -6,6 +6,9 @@
 export interface ExportCard {
   front: string;
   back: string;
+  /** Pictures with their descriptions. Only the JSON file carries them (TSV and CSV are plain text for Anki and sheets). */
+  frontImage?: { url: string; alt: string } | null | undefined;
+  backImage?: { url: string; alt: string } | null | undefined;
   /** Basic when absent. A cloze card's text is its front, unchanged, and its back is empty. */
   kind?: string | undefined;
 }
@@ -64,9 +67,13 @@ export function toJson(deck: ExportDeck): string {
     {
       title: deck.title,
       description: deck.description ?? '',
-      cards: deck.cards.map((c) =>
-        typed(deck.cards) ? { front: c.front, back: c.back, type: typeOf(c) } : { front: c.front, back: c.back },
-      ),
+      cards: deck.cards.map((c) => ({
+        front: c.front,
+        back: c.back,
+        ...(typed(deck.cards) ? { type: typeOf(c) } : {}),
+        ...(c.frontImage ? { frontImage: { url: c.frontImage.url, alt: c.frontImage.alt } } : {}),
+        ...(c.backImage ? { backImage: { url: c.backImage.url, alt: c.backImage.alt } } : {}),
+      })),
     },
     null,
     2,

@@ -36,6 +36,8 @@ export interface PostSearchOptions extends PostSearchFilters {
   limit?: number;
   hiddenAuthorIds?: string[];
   floor?: number;
+  /** Skip the semantic retriever (it spends embedding compute per call); the developer API sets this. */
+  lexicalOnly?: boolean;
 }
 
 export interface ScoredPost {
@@ -115,7 +117,7 @@ export async function searchPostsScored(
   // about the thing with the spheres" and worse at a name; the failure people
   // actually notice is an exact match that stopped coming first, so the tie is
   // broken toward the retriever that does not make that mistake.
-  const semantic = hasText && isEmbeddingAvailable()
+  const semantic = hasText && !opts.lexicalOnly && isEmbeddingAvailable()
     ? await nearest('rmhark', terms.q, CANDIDATE_POOL).catch(() => [])
     : [];
 

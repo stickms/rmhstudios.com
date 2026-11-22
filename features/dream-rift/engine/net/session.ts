@@ -36,6 +36,15 @@ import type { Transport } from './transport';
 import type { BossState, BulletColorName, Difficulty, PlayerShip, PlayerId } from '../types';
 import type { RelayMsg } from './events';
 import { recordReached, type PracticeOutcome, type PracticeTarget } from '../practice';
+import {
+  NO_ASSIST_FLAGS,
+  advanceClock,
+  applyHoldToggle,
+  deathbombFramesFor,
+  grazeRadiusFor,
+  type DreamRiftAssistFlags,
+  type HoldState,
+} from '@features/dream-rift/engine/assist-profile';
 
 type DirectorPhase =
   'intro' | 'waves' | 'midboss' | 'bridge' | 'preDialogue' | 'boss' | 'postDialogue' | 'stageClear' | 'done';
@@ -90,6 +99,13 @@ export class GameSession {
   private dialogueBeat: 'pre' | 'post' = 'pre';
   private advanceLatch = false;
 
+  /** Assists for this run (settings > Game assists); the plain game until `setAssist`. */
+  private assist: DreamRiftAssistFlags = NO_ASSIST_FLAGS;
+  private hold: HoldState = {
+    focusOn: false,
+    focusWasDown: false,
+  };
+
   private raf = 0;
   private last = 0;
   private acc = 0;
@@ -130,6 +146,18 @@ export class GameSession {
     this.transport.start((msg) => this.onRelay(msg));
   }
 
+  /**
+   * Hand the run its assist flags, before `start()`. Co-op passes the local-only
+   * flags (calm visuals, colour-safe), so the shared sim keeps its normal pace.
+   */
+  setAssist(flags: DreamRiftAssistFlags): void {
+    this.assist = flags;
+    this.world.assistGrazeRadius = grazeRadiusFor(flags);
+    this.world.assistDeathbombFrames = deathbombFramesFor(flags);
+    this.renderer.calmVisuals = flags.calm;
+    this.renderer.colorSafe = flags.colorSafe;
+  }
+
   // ── lifecycle ──
 
   start(): void {
@@ -152,7 +180,7 @@ export class GameSession {
     let dt = now - this.last;
     this.last = now;
     if (dt > 250) dt = 250;
-    this.acc += dt;
+    this.acc = advanceClock(this.acc, dt, this.assist);
     const step = 1000 / FPS;
     let frames = 0;
     // The sim always advances in whole fixed 60Hz steps (deterministic, MP-safe).
@@ -226,7 +254,7 @@ export class GameSession {
     }
 
     // feed local input to sim
-    this.world.setLocalInput(this.localSlot, poll.frame);
+    this.world.setLocalInput(this.localSlot, applyHoldToggle(poll.frame, this.hold, this.assist));
 
     const result = this.world.step(this.isHost);
     this.phaseFrame++;

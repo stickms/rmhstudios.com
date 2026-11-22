@@ -338,7 +338,7 @@ describe('a scheduled post carries the reason to the published post', () => {
   });
 
   it('scheduling stores the normalized pair and the list returns it', () => {
-    const create = read('lib/scheduled/api/scheduled.server.ts');
+    const create = read('lib/scheduled/create.server.ts');
     expect(create).toContain(
       'normalizeContentWarning({ isSensitive: d.isSensitive, contentWarning: d.contentWarning })',
     );

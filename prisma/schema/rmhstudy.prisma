@@ -117,6 +117,13 @@ model Flashcard {
   /// The member's own key for an authored card, set through the developer API so a script can upsert by it.
   /// Unique per deck; null (the default) never collides.
   externalId   String? @db.VarChar(100)
+  /// One optional picture per side of an authored card, each with the description a screen reader reads (s08-15).
+  /// Generated siblings carry none: they read their source card's. A copy shares the object (same URL); the
+  /// object is deleted only when no card references its URL any more.
+  frontImageUrl String? @db.VarChar(500)
+  frontImageAlt String? @db.VarChar(1000)
+  backImageUrl  String? @db.VarChar(500)
+  backImageAlt  String? @db.VarChar(1000)
 
   deck       FlashcardDeck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
   source     Flashcard?           @relation("FlashcardSiblings", fields: [sourceId], references: [id], onDelete: Cascade)
@@ -126,6 +133,8 @@ model Flashcard {
 
   @@index([deckId])
   @@index([sourceId])
+  @@index([frontImageUrl])
+  @@index([backImageUrl])
   @@unique([deckId, externalId])
   @@map("flashcard")
 }

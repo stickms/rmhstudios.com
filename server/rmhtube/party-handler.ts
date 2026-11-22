@@ -10,6 +10,7 @@ import type { Server, Socket } from 'socket.io';
 import { nanoid } from 'nanoid';
 import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
+import { statsRecorder } from './stats-recorder';
 import { validated, SeekSchema } from './schemas';
 import { C2S, S2C } from '../../lib/rmhtube/events';
 import { extrapolate } from '../../lib/rmhtube/sync-math';
@@ -299,7 +300,10 @@ export class PartyHandler {
 
   private onReaction(socket: Socket): void {
     const c = this.ctx(socket);
-    if (c) this.tally(c.room, extrapolate(c.room.videoState, Date.now()));
+    if (c) {
+      this.tally(c.room, extrapolate(c.room.videoState, Date.now()));
+      statsRecorder.reactionUsed(c.userId);
+    }
   }
 
   private onSeek(socket: Socket, raw: unknown): void {

@@ -60,6 +60,13 @@ import { CHECKIN_OPEN_QUEUE, registerCheckInOpenCron } from '@/lib/tournaments/c
 import { POLL_ENDED_QUEUE, registerPollEndedCron } from '@/lib/feed/poll-lifecycle-jobs.server';
 import { JAM_THEME_QUEUE, registerJamThemeCron } from '@/lib/competitive/jam-themes.server';
 import { BULK_RECLAIM_QUEUE, BULK_RUN_QUEUE, registerBulkReclaimCron, registerBulkWorker } from '@/lib/bulk/queue.server';
+import {
+  SWEEP_QUEUE,
+  SWEEP_RECLAIM_QUEUE,
+  registerSweepReclaimCron,
+  registerSweepWorker,
+} from '@/lib/admin/sweeps-jobs.server';
+import { FANOUT_RECLAIM_QUEUE, registerFanoutReclaimCron } from '@/lib/fanout/queue.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
@@ -83,6 +90,7 @@ import {
   registerProfileVisitSweepCron,
 } from '@/lib/profile/visit-sweep.server';
 import { registerDiscordBot, stopDiscordBot } from '../discord-bot/jobs';
+import { RECURRING_QUEUE, registerRecurringThreadCron } from '@/lib/communities/recurring-jobs.server';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'jobs' });
@@ -260,6 +268,21 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: BULK_RUN_QUEUE, register: registerBulkWorker },
   // s07-15: every minute, queue the clean-ups whose lease expired (their process restarted); the fifth restart stops one as failed.
   { queue: BULK_RECLAIM_QUEUE, register: registerBulkReclaimCron },
+
+  // Sprint 08 (docs/autonomous/sprint-08/plan.md §Anchors)
+  // s08-05 durable-fanouts
+  // s08-05: every minute, queue the post-alert and event-update fan-outs whose lease expired; the fifth reclaim stops one as failed.
+  { queue: FANOUT_RECLAIM_QUEUE, register: registerFanoutReclaimCron },
+
+  // s08-09 recurring-threads
+  // s08-09: every minute, post each due recurring community thread once (the occurrence is claimed before it posts).
+  { queue: RECURRING_QUEUE, register: registerRecurringThreadCron },
+
+  // s08-18 admin-spam-sweep
+  // s08-18: a work queue fed by confirming or undoing a spam sweep (one job per sweep); a lease on the row decides who runs it.
+  { queue: SWEEP_QUEUE, register: registerSweepWorker },
+  // s08-18: every minute, re-queue the sweeps whose lease expired.
+  { queue: SWEEP_RECLAIM_QUEUE, register: registerSweepReclaimCron },
 
 ];
 

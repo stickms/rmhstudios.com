@@ -5,6 +5,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { emitBuildReleased } from '@/lib/webhooks/activity-emit.server';
 import { watchBuildRelease } from '@/lib/discovery/watch.server';
 import { RELEASES_PAGE, releasePreview, type ReleaseView } from '@/lib/builds/releases';
 import type { CreateReleaseInput } from '@/lib/builds/releases-schema';
@@ -29,11 +30,17 @@ function view(row: Row): ReleaseView {
   };
 }
 
-export type ReleaseBuild = { id: string; userId: string; title: string; visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE' };
+export type ReleaseBuild = {
+  id: string;
+  userId: string;
+  slug: string;
+  title: string;
+  visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE';
+};
 
 /** The build a request names, by id or slug (the way the other build endpoints resolve it), or null. */
 export async function findReleaseBuild(idOrSlug: string): Promise<ReleaseBuild | null> {
-  const select = { id: true, userId: true, title: true, visibility: true } as const;
+  const select = { id: true, userId: true, slug: true, title: true, visibility: true } as const;
   return (
     (await prisma.userBuild.findUnique({ where: { id: idOrSlug }, select })) ??
     (await prisma.userBuild.findUnique({ where: { slug: idOrSlug }, select }))
@@ -80,6 +87,8 @@ export async function createRelease(
       ? { ok: false, status: 404, error: 'Build not found' }
       : { ok: false, status: 403, error: 'Only the build’s owner can publish a release' };
   }
+  let release: ReleaseView;
+  let released: Date;
   try {
     const row = await prisma.buildVersion.create({
       data: {
@@ -90,13 +99,22 @@ export async function createRelease(
       },
       select: releaseSelect,
     });
-    return { ok: true, release: view(row) };
+    release = view(row);
+    released = row.createdAt;
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
       return { ok: false, status: 409, error: 'This build already has that version' };
     }
     throw e;
   }
+  // After the row exists; a failed webhook never fails the release.
+  await emitBuildReleased(userId, {
+    buildSlug: build.slug,
+    version: release.version,
+    title: build.title,
+    releasedAt: released,
+  });
+  return { ok: true, release };
 }
 
 export type DeleteReleaseResult = { ok: true } | { ok: false; status: 403 | 404; error: string };

@@ -26,6 +26,8 @@ export interface RmhTypeUserSettings {
   // Solo preferences
   soloDifficulty: Difficulty;
   soloPassageLength: PassageLength;
+  /** Draw a second caret at the pace of the member's best run on the passage (default on). */
+  raceGhost: boolean;
 }
 
 const DEFAULT_SETTINGS: RmhTypeUserSettings = {
@@ -34,6 +36,7 @@ const DEFAULT_SETTINGS: RmhTypeUserSettings = {
   soundEffects: true,
   soloDifficulty: 'medium',
   soloPassageLength: 'medium',
+  raceGhost: true,
 };
 
 // ─── Store Interface ─────────────────────────────────────────────

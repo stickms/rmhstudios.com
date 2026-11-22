@@ -136,6 +136,9 @@ vi.mock('../glossary.server', () => ({
   listGlossary: async () => [],
 }));
 
+const emitted = vi.hoisted(() => ({ highlight: vi.fn(async () => {}) }));
+vi.mock('@/lib/webhooks/activity-emit.server', () => ({ emitHighlightCreated: emitted.highlight }));
+
 import { createHighlight, deleteHighlight, getDocBundle, updateHighlight } from '../highlights.server';
 
 const passage = {
@@ -245,5 +248,25 @@ describe('privacy', () => {
     ).toBeNull();
     expect(await deleteHighlight('someone-else', r.highlight.id)).toBe(false);
     expect((await getDocBundle('blog', 'post', 'owner')).mine).toHaveLength(2);
+  });
+});
+
+describe('highlight webhook emit (s08-12)', () => {
+  it('emits once after a save, naming the document and highlight but not the text', async () => {
+    emitted.highlight.mockClear();
+    const r = await createHighlight('u1', { ...base, exact: 'private words', isPublic: false });
+    expect(r.ok).toBe(true);
+    expect(emitted.highlight).toHaveBeenCalledTimes(1);
+    const [uid, payload] = emitted.highlight.mock.calls[0] as unknown as [string, Record<string, unknown>];
+    expect(uid).toBe('u1');
+    expect(Object.keys(payload).sort()).toEqual(['createdAt', 'docKey', 'docKind', 'highlightId']);
+    expect(JSON.stringify(payload)).not.toContain('private words');
+  });
+
+  it('emits nothing when the document is missing', async () => {
+    emitted.highlight.mockClear();
+    const r = await createHighlight('u1', { ...base, kind: 'library', key: 'no-such-book' });
+    expect(r.ok).toBe(false);
+    expect(emitted.highlight).not.toHaveBeenCalled();
   });
 });

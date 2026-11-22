@@ -108,7 +108,7 @@ function operationFor(ep: ApiEndpoint) {
     };
     responses['403'] = {
       description:
-        'Insufficient scope or entitlement, the key is not allowed from this address (`ip_not_allowed`), or the member keeps the followers or following list private (`list_private`)',
+        'Insufficient scope or entitlement, the key is not allowed from this address (`ip_not_allowed`), the key was suspended by RMH Studios (`key_suspended`), or the member keeps the followers or following list private (`list_private`)',
       content: {
         'application/json': {
           schema: errRef,

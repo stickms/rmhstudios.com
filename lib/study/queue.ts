@@ -2,6 +2,7 @@
  * Study queue rules, pure: the lapse and leech thresholds, the session caps and the registry of every server
  * path that counts or queues due cards. Suspension is per member, on the member's `FlashcardReview` row.
  */
+import type { CardImage } from '@/lib/study/card-images';
 
 /** Grades of "Again" on a learned card that set it aside as a leech. */
 export const LEECH_THRESHOLD = 8;
@@ -44,6 +45,9 @@ export interface QueueCard {
   sourceId: string | null;
   deckId: string;
   deckTitle: string;
+  /** The pictures the card shows, a generated card's read from its source; absent when it has none (s08-15). */
+  frontImage?: CardImage;
+  backImage?: CardImage;
 }
 
 /**

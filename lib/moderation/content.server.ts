@@ -177,7 +177,7 @@ async function loadTarget(type: ModeratableType, id: string): Promise<Target | n
 
 // ── remove ────────────────────────────────────────────────────────────────
 
-async function removePost(id: string): Promise<void> {
+async function removePost(id: string, quietFeed = false): Promise<void> {
   const post = await prisma.rMHark.findUnique({
     where: {
       id,
@@ -237,17 +237,19 @@ async function removePost(id: string): Promise<void> {
       }
     }
   });
-  feedEventBus.publishPostEngagement(id, {
-    type: 'rmhark.deleted',
-    rmharkId: id,
-    payload: {
-      id,
-      deletedAt: (post.deletedAt ?? now).toISOString(),
-      deletedByAdmin: true,
-      content: REMOVED_POST_TEXT,
-    },
-    timestamp: now.toISOString(),
-  });
+  // A sweep publishes one feed event per batch itself (lib/admin/sweeps.server.ts), not one per post.
+  if (!quietFeed)
+    feedEventBus.publishPostEngagement(id, {
+      type: 'rmhark.deleted',
+      rmharkId: id,
+      payload: {
+        id,
+        deletedAt: (post.deletedAt ?? now).toISOString(),
+        deletedByAdmin: true,
+        content: REMOVED_POST_TEXT,
+      },
+      timestamp: now.toISOString(),
+    });
 }
 
 async function removeCommunity(id: string): Promise<void> {
@@ -309,10 +311,10 @@ async function removeCommunity(id: string): Promise<void> {
   );
 }
 
-async function removeContent(type: ModeratableType, id: string): Promise<void> {
+async function removeContent(type: ModeratableType, id: string, quietFeed = false): Promise<void> {
   switch (type) {
     case 'rmhark':
-      return removePost(id);
+      return removePost(id, quietFeed);
     case 'comment':
       await prisma.rMHarkComment.updateMany({
         where: {
@@ -647,6 +649,17 @@ export interface ModerateContentInput {
         durationDays: number | null;
       }
     | undefined;
+  /**
+   * Set only by a spam sweep (`lib/admin/sweeps.server.ts`), which sends the member one notice and writes one
+   * audit row for the whole run. With it, the per-item notice, the per-item audit row and the per-post feed
+   * event are skipped; nothing else changes. It names a sweep on purpose: there is no bare "skip the audit"
+   * switch another caller could pass.
+   */
+  sweep?:
+    | {
+        id: string;
+      }
+    | undefined;
 }
 
 export async function moderateContent(input: ModerateContentInput): Promise<ModerateContentResult> {
@@ -660,18 +673,19 @@ export async function moderateContent(input: ModerateContentInput): Promise<Mode
     throw new ModerationError(409, 'This has already been removed');
   }
 
-  if (action === 'remove') await removeContent(type, id);
+  if (action === 'remove') await removeContent(type, id, !!input.sweep);
   else if (action === 'edit') await editContent(type, id, input.fields ?? {});
   else await restoreContent(type, id);
 
-  await logAdminAction(input.adminId, `content.${action}`, {
-    targetType: type,
-    targetId: id,
-    detail: `${target.ownerId ? `owner:${target.ownerId} — ` : ''}${input.reason}`,
-  });
+  if (!input.sweep)
+    await logAdminAction(input.adminId, `content.${action}`, {
+      targetType: type,
+      targetId: id,
+      detail: `${target.ownerId ? `owner:${target.ownerId} — ` : ''}${input.reason}`,
+    });
 
   const ownerId = target.ownerId;
-  const notifyOwner = !!ownerId && ownerId !== input.adminId;
+  const notifyOwner = !!ownerId && !input.sweep && ownerId !== input.adminId;
   let strike: ModerateContentResult['strike'];
   let restrictionId: string | undefined;
 

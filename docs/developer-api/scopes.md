@@ -48,6 +48,11 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `write:communities` | Communities | Post into communities you are a member of. |
 | `read:reading` | Reading | Read your highlights, notes, shelves and reading goal. |
 | `write:reading` | Reading | Edit, publish, unpublish and delete your highlights and notes, and edit your shelves. |
+| `read:tournaments` | Tournaments | Read public tournaments and brackets, and your own entries and matches. |
+| `write:tournaments` | Tournaments | Check yourself in and report, confirm or withdraw your match results. Never registers or moves coins. |
+| `read:scheduled` | Scheduled | Read your drafts, scheduled posts and time capsules. |
+| `write:scheduled` | Scheduled | Save, change, discard and publish your drafts and scheduled posts. Community posts also need write:communities; time capsules are never changed. |
+| `read:search` | Search | Search public posts and people by keyword. Each search counts as 3 requests against the daily quota. |
 
 <!-- END GENERATED: scopes -->
 
@@ -56,3 +61,16 @@ This table is generated from `lib/api/scopes.ts` by `pnpm docs:api` — the same
 module the API and the key-creation UI read. If a scope exists in the product it
 is in this table.
 ```
+
+## Scheduled posts
+
+`write:scheduled` saves, changes, discards and publishes your drafts and scheduled posts. A post that goes into a
+community needs `write:communities` as well, exactly as `POST /api/v1/posts` does; a key with only
+`write:scheduled` gets `403 insufficient_scope` for those. Time capsules can be read with `read:scheduled` and are
+never changed through the API.
+
+## Search
+
+`read:search` covers `GET /api/v1/search/posts` and `GET /api/v1/search/people`. Each search counts as 3 requests
+against the key's daily quota. Search is keyword search only; results depend on your blocks, so they are never shared
+between keys.

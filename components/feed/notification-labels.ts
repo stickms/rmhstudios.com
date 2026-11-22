@@ -110,6 +110,33 @@ export function systemLabels(t: TFunction): Record<string, string> {
       defaultValue: 'Scheduled post held',
     }),
 
+    // Sprint 08 system labels (docs/autonomous/sprint-08/plan.md §Anchors)
+    // s08-08 admin-api-oversight
+    'api-key-suspended': t('system-label-api-key-suspended', {
+      ns: 'feed',
+      defaultValue: 'API key suspended',
+    }),
+    'api-key-restored': t('system-label-api-key-restored', {
+      ns: 'feed',
+      defaultValue: 'API key restored',
+    }),
+
+    // s08-09 recurring-threads
+    'community-recurring-paused': t('system-label-community-recurring-paused', {
+      ns: 'feed',
+      defaultValue: 'Recurring thread paused',
+    }),
+
+    // s08-18 admin-spam-sweep
+    'moderation-sweep': t('system-label-moderation-sweep', {
+      ns: 'feed',
+      defaultValue: 'Content removed',
+    }),
+    'moderation-sweep-undone': t('system-label-moderation-sweep-undone', {
+      ns: 'feed',
+      defaultValue: 'Content restored',
+    }),
+
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };
 }

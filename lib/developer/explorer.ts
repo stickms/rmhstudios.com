@@ -26,7 +26,10 @@ const DOCUMENTED_GROUPS: ReadonlySet<string> = new Set([
   'meta',
   'posts',
   'reading',
+  'scheduled',
+  'search',
   'study',
+  'tournaments',
   'users',
   'webhooks',
 ]);

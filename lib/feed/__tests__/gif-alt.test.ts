@@ -162,6 +162,7 @@ vi.mock('@/lib/communities/challenge.server', () => ({
 }));
 vi.mock('@/lib/prisma.server', () => {
   const tx = {
+    $executeRaw: async () => 0,
     $queryRaw: async () => [
       {
         id: 'sp1',
@@ -204,6 +205,14 @@ vi.mock('@/lib/prisma.server', () => {
     },
     scheduledPost: {
       update: async () => ({}),
+      count: async () => 0,
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        h.scheduledCreated.push(data);
+        return {
+          id: 'sp1',
+          ...data,
+        };
+      },
     },
   };
   const run = async (arg: unknown) =>

@@ -36,7 +36,7 @@ describe('keyboardPrefsSchema', () => {
   it('accepts a mode and a valid remap', () => {
     expect(parse({}).success).toBe(true);
     expect(parse({ 'site.compose': ['n'] }, 'alt').success).toBe(true);
-    expect(parse({ 'site.go.home': ['x', 'y'] }, 'off').success).toBe(true);
+    expect(parse({ 'site.go.home': ['q', 'y'] }, 'off').success).toBe(true);
   });
 
   it('rejects an unknown mode', () => {

@@ -43,6 +43,18 @@ describe('voice path', () => {
       expect(['play-chord', 'ear-chord', 'keyboard-map', 'fretboard']).not.toContain(l.mode);
   });
 
+  it('gets the two key-signature lessons and no scale lesson', () => {
+    const modes = voiceLessons.map((l) => l.mode);
+    expect(modes).not.toContain('play-scale');
+    const keys = voiceLessons.filter((l) => l.mode === 'key-signature');
+    expect(keys.map((l) => l.id)).toEqual(['key-signatures-major', 'key-signatures-minor']);
+    // Shared with the piano path: one lesson object, one progress row.
+    for (const l of keys) {
+      expect(PATH.flatMap((u) => u.lessons)).toContain(l);
+      expect(needsVoiceRange(l), l.id).toBe(false);
+    }
+  });
+
   it('gives interval singing a pool of interval names', () => {
     const sing = voiceLessons.filter((l) => l.mode === 'sing-interval');
     expect(sing.length).toBe(2);
@@ -115,7 +127,9 @@ describe('needsVoiceRange', () => {
   it('is every singer lesson that reads or sings in the range, and not rhythm or the piano path', () => {
     const voiceLessons = VOICE_PATH.flatMap((u) => u.lessons);
     for (const l of voiceLessons)
-      expect(needsVoiceRange(l), l.id).toBe(!l.unit.startsWith('rhythm') && l.mode !== 'rhythm-basics');
+      expect(needsVoiceRange(l), l.id).toBe(
+        !l.unit.startsWith('rhythm') && l.mode !== 'rhythm-basics' && l.mode !== 'key-signature',
+      );
     expect(needsVoiceRange(getLesson('voice-interval-steps'))).toBe(true);
     expect(needsVoiceRange(getLesson('staff-what-is-a-staff'))).toBe(false);
     expect(needsVoiceRange(undefined)).toBe(false);

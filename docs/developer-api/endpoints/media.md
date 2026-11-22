@@ -15,7 +15,7 @@
 
 ### `POST /api/v1/images`
 
-Upload one image (multipart/form-data, field `image`, max 5 MB) and receive an opaque `media_id` to attach to a post via `media_ids`. Unattached media expires ~24h after upload.
+Upload one image (multipart/form-data, field `image`, max 5 MB) and receive an opaque `media_id` to attach to a post via `media_ids`, or, with `surface=flashcard`, to set on a flashcard side as `{ media_id, alt }`. Unattached media expires ~24h after upload.
 
 **Scope:** `write:media` · **Success:** `201` · **Operation id:** `uploadImage`
 
@@ -23,7 +23,8 @@ Upload one image (multipart/form-data, field `image`, max 5 MB) and receive an o
 
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
-| `image` | `file` | yes | png/jpg/webp/gif, max 5 MB. |
+| `image` | `file` | yes | png/jpg/webp/gif, max 5 MB (png/jpg/webp only with `surface=flashcard`). |
+| `surface` | `string` | no | Optional. `flashcard` stores the picture for a flashcard side: still images only, metadata stripped. Omit it for a post image. |
 
 **Example response** (`201`)
 

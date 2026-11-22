@@ -27,6 +27,14 @@ model DeveloperApiKey {
   allowedCidrs       String[] @default([])
   /// Optional per-minute request limit below the tier's. Null = the tier limit.
   rateLimitPerMinute Int?
+  /// An admin suspended the key (the 403 `key_suspended` refusal). Lifting clears both
+  /// columns; the key and its secret are untouched. Revoked and expired still win.
+  suspendedAt        DateTime?
+  /// Why, for the key's owner only: never in an API error body (other people's apps see those).
+  suspendReason      String?  @db.VarChar(500)
+  /// An admin's per-minute cap (1-600). The limiter applies the lowest of the tier, the owner's
+  /// limit and this.
+  adminRateLimitPerMinute Int?
 
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   idempotencyKeys ApiIdempotencyKey[]

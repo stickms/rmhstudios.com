@@ -414,6 +414,9 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     why: 'A tag with no posts still renders the populated tag shell plus its empty state.',
   },
   '/tag/$tag/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/c/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/builds/$slug/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
+  '/games/$gameId/updates/rss.xml': { path: null, fidelity: 'shell', why: 'RSS feed — not an HTML document.' },
   '/thread/$rootId': {
     path: '/thread/fouc-audit',
     fidelity: 'shell',

@@ -4,6 +4,8 @@ import { deckReviewQueueApi } from '@/lib/study/decks.contract';
 import { prisma } from '@/lib/prisma.server';
 import { isCardKind } from '@/lib/study/card-types';
 import { ACTIVE_REVIEW_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { CARD_IMAGE_SELECT, picturesOfRow } from '@/lib/study/card-images';
+import { pictureFields } from '@/lib/study.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
 export const route = apiRoute('/api/study/decks/$id/review', {
@@ -29,6 +31,9 @@ export const route = apiRoute('/api/study/decks/$id/review', {
         kind: true,
         sourceId: true,
         clozeIndex: true,
+        ...CARD_IMAGE_SELECT,
+        // A generated card shows its source's pictures; the siblings hold none of their own.
+        source: { select: CARD_IMAGE_SELECT },
         // Every review row is read: a suspended card is not new, and is not due.
         reviews: { where: { userId }, select: { dueAt: true, suspendedAt: true } },
       },
@@ -50,6 +55,7 @@ export const route = apiRoute('/api/study/decks/$id/review', {
         kind: isCardKind(c.kind) ? c.kind : ('basic' as const),
         clozeIndex: c.clozeIndex,
         sourceId: c.sourceId,
+        ...pictureFields(picturesOfRow(c, c.source)),
       }));
 
     return { due };

@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { config } from './config';
 import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
+import { statsRecorder } from './stats-recorder';
 import { validated } from './schemas';
 import { C2S, S2C } from '../../lib/rmhtube/events';
 import {
@@ -377,6 +378,7 @@ export class RoomManager {
     this.userRoomIndex.set(userId, roomId);
 
     socket.join(roomId);
+    statsRecorder.roomCreated(userId);
 
     // Persist to DB
     this.persistRoomCreate(room).catch((err) => {
@@ -533,6 +535,7 @@ export class RoomManager {
     room.lastActivityAt = now;
 
     socket.join(roomId);
+    statsRecorder.memberJoined(roomId, userId);
 
     // Persist member join
     this.persistMemberJoin(roomId, userId).catch((err) => {
@@ -1244,6 +1247,7 @@ export class RoomManager {
     }
 
     this.rooms.delete(roomId);
+    statsRecorder.roomClosed(roomId);
 
     // Mark as closed in DB
     this.persistRoomClose(roomId).catch((err) => {

@@ -243,6 +243,8 @@ export const Route = createFileRoute('/api/rmhbox/leaderboard')({
 
           const [profiles, total] = await Promise.all([
             prisma.rMHboxProfile.findMany({
+              // A profile reset by account deletion (zero games) is never listed.
+              where: { totalGamesPlayed: { gt: 0 } },
               orderBy,
               skip: offset,
               take: limit,
@@ -256,7 +258,7 @@ export const Route = createFileRoute('/api/rmhbox/leaderboard')({
                 },
               },
             }),
-            prisma.rMHboxProfile.count(),
+            prisma.rMHboxProfile.count({ where: { totalGamesPlayed: { gt: 0 } } }),
           ]);
 
           const entries = profiles.map((p, idx) => {

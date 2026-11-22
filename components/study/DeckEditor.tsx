@@ -9,13 +9,13 @@ import { SortableList } from '@/components/ui/sortable-list';
 import { Switch } from '@/components/ui/switch';
 import { Tabs } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { CardForm } from '@/components/study/CardForm';
+import { CardForm, type CardFormValue } from '@/components/study/CardForm';
 import { CardRow, type EditorCard } from '@/components/study/CardRow';
 import { ExportMenu } from '@/components/study/ExportMenu';
 import { ImportPanel } from '@/components/study/ImportPanel';
 import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
-import { clozePlainText, type CardInput } from '@/lib/study/card-types';
+import { clozePlainText } from '@/lib/study/card-types';
 import type { ParsedCard } from '@/lib/study/import';
 import { MAX_DECK_CARDS } from '@/lib/study/limits';
 import {
@@ -101,7 +101,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
     }
   }
 
-  async function saveCard(id: string, next: CardInput): Promise<boolean> {
+  async function saveCard(id: string, next: CardFormValue): Promise<boolean> {
     try {
       await api(updateCardApi, { params: { id }, body: next });
     } catch {
@@ -113,7 +113,7 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
     return true;
   }
 
-  async function addCard(card: CardInput): Promise<boolean> {
+  async function addCard(card: CardFormValue): Promise<boolean> {
     try {
       const res = await api(addDeckCardApi, { params: { id: deckId }, body: card });
       setCards((prev) => [...prev, res.card]);

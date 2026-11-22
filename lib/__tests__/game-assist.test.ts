@@ -140,7 +140,7 @@ describe('the honesty rule', () => {
     // A game added here without client support trades its players' leaderboard
     // eligibility for nothing at all. Each entry changes in the same commit that
     // teaches its client to honour the settings.
-    expect([...ASSIST_CAPABLE].sort()).toEqual(['synapse-storm', 'void-breaker']);
+    expect([...ASSIST_CAPABLE].sort()).toEqual(['dream-rift', 'nightrail', 'synapse-storm', 'void-breaker']);
   });
 
   it('every adopting game is a real game in the catalog', () => {

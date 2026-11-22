@@ -14,6 +14,7 @@ import {
 } from '@/lib/rmhtype/daily.contract';
 import { getLessonProgressApi, recordLessonRunApi } from '@/lib/rmhtype/lessons.contract';
 import { getRmhTypeProgressApi, getRmhTypeRunsApi } from '@/lib/rmhtype/progress.contract';
+import { clearRmhTypeGhostsApi, getRmhTypeGhostApi } from '@/lib/rmhtype/ghost.contract';
 import { buildRmhTypePracticeTestApi, recordRmhTypeKeyStatsApi } from '@/lib/rmhtype/keystats.contract';
 import type { ProgressMode, ProgressRange } from '@/lib/rmhtype/progress';
 import type { DailyScope } from '@/lib/rmhtype/daily';
@@ -72,3 +73,18 @@ export const rmhTypeRunsQuery = (mode: ProgressMode, start: string | null) =>
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     staleTime: 30_000,
   });
+
+/* Ghosts (race your own best) */
+
+export const RMHTYPE_GHOST_KEY = ['rmhtype', 'ghost'] as const;
+
+/** The member's own best-run ghost for a passage. Read once per passage start, never cached across runs. */
+export const rmhTypeGhostQuery = (passageId: string, enabled: boolean) =>
+  contractQuery(
+    [...RMHTYPE_GHOST_KEY, passageId],
+    getRmhTypeGhostApi,
+    { params: { passageId }, retries: 0 },
+    { staleTime: 0, enabled: enabled && passageId !== '' },
+  );
+
+export const clearRmhTypeGhosts = () => api(clearRmhTypeGhostsApi);

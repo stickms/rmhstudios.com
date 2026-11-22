@@ -30,7 +30,14 @@ describe('finishedUnits', () => {
   });
 
   it('reads a singer’s path for a singer: piano lessons finish nothing there', () => {
-    const allPiano = new Set(lessonIds(PATH).filter((id) => !id.startsWith('rhythm-')));
+    const allPiano = new Set(
+      lessonIds(PATH).filter(
+        (id) =>
+          !id.startsWith('rhythm-') &&
+          // the key-signature lessons are on both paths, like rhythm
+          !id.startsWith('key-signatures-'),
+      ),
+    );
     expect(finishedUnits(VOICE_PATH, allPiano).finished).toBe(0);
     expect(finishedUnits(VOICE_PATH, new Set(lessonIds(VOICE_PATH))).finished).toBe(VOICE_PATH.length);
   });

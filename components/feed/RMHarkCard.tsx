@@ -1,5 +1,6 @@
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
+import { usePostAction } from './feed-nav';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { BadgeCheck, Pin, ShieldCheck } from 'lucide-react';
@@ -237,6 +238,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   // could not open a thread from the feed at all. Same `role="link"` + Enter/Space
   // contract the quoted-original block below already uses.
   const openable = !item.pending && !item.deletedAt;
+  // `o` on the focused post (feed-nav.tsx): the card click, minus the selection and link checks.
+  usePostAction(
+    item.id,
+    'open',
+    () => navigate({ to: postHref(item.user, actualId), resetScroll: false }),
+    openable,
+  );
   const handleCardKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     // Let a focused link/button inside the card handle its own activation.
@@ -253,7 +261,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       ref={cardRef}
       {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
       role={openable ? 'link' : undefined}
-      tabIndex={openable ? 0 : undefined}
+      // The current post of the feed keys (j / k): a real focus target, in the Tab order when the card opens.
+      data-feed-post={item.id}
+      tabIndex={openable ? 0 : -1}
       className={item.pending ? 'pointer-events-none opacity-60 select-none' : 'cursor-pointer'}
       onClick={item.pending ? undefined : handleCardClick}
       onKeyDown={openable ? handleCardKeyDown : undefined}
@@ -393,6 +403,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-2" />}
               {/* Content: a post with a content warning reason is covered whole (text, poll, media) until shown */}
               <ContentWarningCover
+                postId={item.id}
                 post={{ isSensitive: item.isSensitive, contentWarning: item.contentWarning, userId: item.user?.id }}
               >
               {item.content && (

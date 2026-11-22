@@ -168,7 +168,7 @@ export function StaffCard({
  * The ruled staff, its bar lines and its clef (with the octave clef's 8): the part every sheet
  * shares, card or sprint.
  */
-function StaffRuling({ clef, octaveClef = false }: { clef: Card['clef']; octaveClef?: boolean }) {
+export function StaffRuling({ clef, octaveClef = false }: { clef: Card['clef']; octaveClef?: boolean }) {
   const glyph = CLEF_GLYPHS[clef];
   const right = CARD_W - 4;
   return (

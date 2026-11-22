@@ -537,6 +537,8 @@ const EXEMPT: Record<string, string> = {
   'lib/bulk/types.ts': "bulk-action filters on one's own posts",
   'lib/trash/trash.server.ts': "the member's own bin",
   // Writes, ranking and zeros: no number leaves for another viewer.
+  'lib/admin/sweeps.ts': 'a sweep’s own tally of the replies it removes, not a count on any post',
+  'lib/admin/sweeps.server.ts': 'a sweep’s own tally of the replies it removes, not a count on any post',
   'lib/feed/api/rmharks.server.ts': 'creating a post: zeros, and the quote card goes through mapQuotedOriginal',
   'lib/feed/api/rmharks.thread.server.ts': 'creating a thread: zeros',
   'lib/feed/api/rmharks.$id.repost.server.ts': 'counter update and a per-post bus payload nobody subscribes to',

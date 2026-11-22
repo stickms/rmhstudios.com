@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { cn } from '@/lib/utils';
+import { SweepDialog } from '@/components/admin/sweeps/SweepDialog';
 import type { LookupResult, LookupState } from '@/lib/admin/lookup';
 
 const DANGER_STATES: ReadonlySet<LookupState> = new Set(['banned', 'deleted', 'dead']);
@@ -92,6 +94,7 @@ function AdminToolLink({ tool }: { tool: NonNullable<LookupResult['adminTool']> 
 
 export function ResultRow({ r }: { r: LookupResult }) {
   const { t, i18n } = useTranslation('admin-lookup');
+  const [sweepOpen, setSweepOpen] = useState(false);
   const kinds: Record<LookupResult['kind'], string> = {
     user: t('kind-user', {
       defaultValue: 'User',
@@ -220,6 +223,17 @@ export function ResultRow({ r }: { r: LookupResult }) {
           </Link>
         ) : null}
         {r.adminTool ? <AdminToolLink tool={r.adminTool} /> : null}
+        {r.kind === 'user' ? (
+          <>
+            <button type="button" className={cn(linkClass, 'cursor-pointer')} onClick={() => setSweepOpen(true)}>
+              {t('link-sweep', {
+                ns: 'admin-spam-sweep',
+                defaultValue: 'Sweep content',
+              })}
+            </button>
+            <SweepDialog open={sweepOpen} onOpenChange={setSweepOpen} subjectId={r.id} subjectLabel={r.label} />
+          </>
+        ) : null}
         <Link
           to="/admin/audit"
           search={{
