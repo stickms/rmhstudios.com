@@ -20,11 +20,19 @@
  * four-bar phrase the cursor is in through the learner's sound; notes are not taken while it
  * sounds (and its echo tail, for the microphone). "Slower" plays at two thirds of the tempo.
  *
+ * **Spot practice** (`songs/spot.ts`): a finished run's result offers "Practice these bars", the weakest bars
+ * (up to three segments, each with a lead-in bar) drilled on their own. A segment is played as a song of
+ * its own through the same machine, so everything above applies; it loops (after each pass the next starts
+ * by itself after a short pause while "Keep looping" is on) at 60% of the song's tempo in Play along,
+ * 10 points faster after each clean pass and a step slower after a bad one, with "Next bars" and "Play the
+ * whole song" in the bar over it. It is never scored or saved: its run is given the saver that keeps
+ * nothing, sees no best, and starts no practice-log clock (`spot-integrity.test.ts` guards that).
+ *
  * Every box keeps one height through loading, every state and the result: the score window
  * (`.rmm-score`), the two text lines under it, the controls row, and the input region. A polite live
  * region says the note to play (Wait for me) or the bar (Play along), once per change.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { History, SlidersHorizontal } from 'lucide-react';
@@ -55,7 +63,12 @@ import {
   type SongEffect,
   type SongState,
 } from '@/lib/rmhmusic/learn/songs/machine';
-import { createApiSongSaver, type SongBest, type SongSaver } from '@/lib/rmhmusic/learn/songs/saver';
+import {
+  createApiSongSaver,
+  createMemorySongSaver,
+  type SongBest,
+  type SongSaver,
+} from '@/lib/rmhmusic/learn/songs/saver';
 import {
   notesOf,
   phraseAt,
@@ -65,7 +78,16 @@ import {
   type Song,
   type SongVersion,
 } from '@/lib/rmhmusic/learn/songs/score';
-import type { SongMode } from '@/lib/rmhmusic/learn/songs/scoring';
+import type { SongMode, SongRunRecord } from '@/lib/rmhmusic/learn/songs/scoring';
+import {
+  autoLoops,
+  segmentSong,
+  spotBpm,
+  spotReducer,
+  spotSegments,
+  type SpotSegment,
+  type SpotState,
+} from '@/lib/rmhmusic/learn/songs/spot';
 import { getAudioContext } from '@/lib/shared/platform';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, TEXT_BUTTON } from '../buttons';
 import { ShareButton } from '../social/ShareDialog';
@@ -79,6 +101,7 @@ import { useMachine } from '../useMachine';
 import { useInputPhases, useInputRelease, useLessonInputStart, useNoteEvents, useNoteSound } from '../useLearnInput';
 import { ScoreView } from './ScoreView';
 import { composerName } from './song-text';
+import { segmentName, spotHeading, spotIntro, spotResultLine, spotTempoLine } from './spot-text';
 import { beginActivity } from '@/lib/rmhmusic/learn/activity-clock';
 
 const TABS_ID = 'rmm-song';
@@ -87,6 +110,32 @@ const LOCKED_ID = 'rmm-song-locked';
 export const SKIP_AFTER_MS = 6000;
 /** Slower plays at this share of the song's tempo. */
 export const SLOW_TEMPO = 2 / 3;
+/** Spot practice: after a finished pass the next one starts by itself this long after (ms), while looping. */
+export const SPOT_LOOP_PAUSE_MS = 2000;
+
+/**
+ * Spot practice, as the run sees it (`SongScreen` builds it from the reducer's state). The run it is
+ * given is of the segment's own bars; it is never saved (the screen gives it the saver that keeps
+ * nothing) and starts no practice-log timer.
+ */
+export interface SpotRunProps {
+  /** The tempo of the next pass (percent of the song's); null in Wait for me. */
+  tempoPct: number | null;
+  /** The line before a pass is started. */
+  intro: string;
+  /** The line under the score: tempo and pass number. */
+  tempoLine: string;
+  /** What the last finished pass said; null before the first. */
+  result: string | null;
+  /** The next pass starts by itself after a short pause. */
+  autoLoop: boolean;
+  /** The number of the segment's first bar as the score numbers bars (0 is an opening pickup). */
+  fromNumber: number;
+  /** The song's bars, for "Bar 5 of 12". */
+  totalBars: number;
+  /** A pass finished: its record, to follow the tempo. Called once per run. */
+  onPass: (record: SongRunRecord) => void;
+}
 
 type T = ReturnType<typeof useTranslation>['t'];
 
@@ -112,6 +161,12 @@ export function SongScreen({ songId }: { songId: string }) {
   const setupButton = useRef<HTMLButtonElement>(null);
   const [bests, setBests] = useState<SongBest[] | null>(null);
   const saver = useMemo<SongSaver>(() => createApiSongSaver(), []);
+  // Spot practice: a few bars of the song, looped. Its runs get the saver that keeps nothing (`spotSaver`)
+  // and never see a best, so nothing about them reaches the server or the learner's bests.
+  const [spot, dispatchSpot] = useReducer(spotReducer, null);
+  const spotSaver = useMemo<SongSaver>(() => createMemorySongSaver(), []);
+  const spotSegment = spot?.segments[spot.index];
+  const spotSong = useMemo(() => (song && spotSegment ? segmentSong(song, spotSegment) : null), [song, spotSegment]);
 
   useInputRelease();
   useLessonInputStart({
@@ -243,67 +298,105 @@ export function SongScreen({ songId }: { songId: string }) {
               })
             : ''}
         </p>
-        <Tabs
-          idBase={TABS_ID}
-          tabs={[
-            {
-              id: 'wait',
-              label: t('song-mode-wait', {
-                defaultValue: 'Wait for me',
-              }),
-              disabled: running || loading,
-            },
-            {
-              id: 'play',
-              label: t('song-mode-play', {
-                defaultValue: 'Play along',
-              }),
-              disabled: running || loading,
-            },
-          ]}
-          value={mode}
-          onChange={(id) => setMode(id === 'play' ? 'play' : 'wait')}
-          aria-label={t('song-modes', {
-            defaultValue: 'How to play',
-          })}
-        />
-        <div
-          role="tabpanel"
-          id={`${TABS_ID}-panel-${mode}`}
-          aria-labelledby={`${TABS_ID}-tab-${mode}`}
-          className={arrival}
-        >
-          {ready && profile && sound ? (
-            <SongRun
-              key={`${mode}:${version}`}
-              song={song}
-              version={version}
-              mode={mode}
-              input={profile.input}
-              latencyMs={effectiveLatencyMs(profile.latencyMs)}
-              calibrated={Number.isFinite(profile.latencyMs) && profile.latencyMs !== 0}
-              sound={sound}
-              slow={slow}
-              onSlow={setSlow}
-              paused={setupOpen}
-              onRunning={setRunning}
-              best={best}
-              saver={saver}
-              onBest={(score) =>
-                setBests((prev) => [
-                  ...(prev ?? []).filter((b) => !(b.songId === song.id && b.mode === mode)),
-                  {
-                    songId: song.id,
-                    mode,
-                    bestScore: score,
-                  },
-                ])
-              }
+        {spot && spotSong && spotSegment && ready && profile && sound ? (
+          <>
+            <SpotBar spot={spot} dispatch={dispatchSpot} />
+            <div className={arrival}>
+              <SongRun
+                key={`spot:${spot.index}:${version}`}
+                song={spotSong}
+                version={version}
+                mode={spot.mode}
+                input={profile.input}
+                latencyMs={effectiveLatencyMs(profile.latencyMs)}
+                calibrated={Number.isFinite(profile.latencyMs) && profile.latencyMs !== 0}
+                sound={sound}
+                slow={false}
+                onSlow={() => undefined}
+                paused={setupOpen}
+                onRunning={setRunning}
+                best={undefined}
+                saver={spotSaver}
+                onBest={() => undefined}
+                spot={{
+                  tempoPct: spot.tempoPct,
+                  intro: spotIntro(t, spot.mode, segmentName(t, spotSegment)),
+                  tempoLine: spotTempoLine(t, spot),
+                  result: spot.last ? spotResultLine(t, spot.last) : null,
+                  autoLoop: autoLoops(spot),
+                  fromNumber: spotSegment.fromNumber,
+                  totalBars: song.bars.length - (song.pickup > 0 ? 1 : 0),
+                  onPass: (record) => dispatchSpot({ type: 'pass', record }),
+                }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <Tabs
+              idBase={TABS_ID}
+              tabs={[
+                {
+                  id: 'wait',
+                  label: t('song-mode-wait', {
+                    defaultValue: 'Wait for me',
+                  }),
+                  disabled: running || loading,
+                },
+                {
+                  id: 'play',
+                  label: t('song-mode-play', {
+                    defaultValue: 'Play along',
+                  }),
+                  disabled: running || loading,
+                },
+              ]}
+              value={mode}
+              onChange={(id) => setMode(id === 'play' ? 'play' : 'wait')}
+              aria-label={t('song-modes', {
+                defaultValue: 'How to play',
+              })}
             />
-          ) : (
-            <RunSkeleton song={song} />
-          )}
-        </div>
+            <div
+              role="tabpanel"
+              id={`${TABS_ID}-panel-${mode}`}
+              aria-labelledby={`${TABS_ID}-tab-${mode}`}
+              className={arrival}
+            >
+              {ready && profile && sound ? (
+                <SongRun
+                  key={`${mode}:${version}`}
+                  song={song}
+                  version={version}
+                  mode={mode}
+                  input={profile.input}
+                  latencyMs={effectiveLatencyMs(profile.latencyMs)}
+                  calibrated={Number.isFinite(profile.latencyMs) && profile.latencyMs !== 0}
+                  sound={sound}
+                  slow={slow}
+                  onSlow={setSlow}
+                  paused={setupOpen}
+                  onRunning={setRunning}
+                  best={best}
+                  saver={saver}
+                  onSpot={(segments) => dispatchSpot({ type: 'open', segments, mode })}
+                  onBest={(score) =>
+                    setBests((prev) => [
+                      ...(prev ?? []).filter((b) => !(b.songId === song.id && b.mode === mode)),
+                      {
+                        songId: song.id,
+                        mode,
+                        bestScore: score,
+                      },
+                    ])
+                  }
+                />
+              ) : (
+                <RunSkeleton song={song} />
+              )}
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -358,6 +451,51 @@ export function SongScreen({ songId }: { songId: string }) {
       {body}
       <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
     </Shell>
+  );
+}
+
+/**
+ * The bar over a spot-practice run: which bars, the loop switch, and the way on (the next segment, or
+ * back to the whole song). One row at every width (it wraps, never scrolls), native buttons, so every
+ * control is reachable and operable by keyboard. Next bars and the whole song work mid-run: leaving the
+ * run stops its metronome.
+ */
+function SpotBar({
+  spot,
+  dispatch,
+}: {
+  spot: SpotState;
+  dispatch: (action: { type: 'next' } | { type: 'toggle-loop' } | { type: 'exit' }) => void;
+}) {
+  const { t } = useTranslation('c-rmhmusic');
+  return (
+    <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <p className="text-base leading-6 text-app-text">{spotHeading(t, spot)}</p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'toggle-loop' })}
+          aria-pressed={spot.looping}
+          className={TEXT_BUTTON}
+        >
+          {t('spot-loop', {
+            defaultValue: 'Keep looping',
+          })}
+        </button>
+        {spot.segments.length > 1 ? (
+          <button type="button" onClick={() => dispatch({ type: 'next' })} className={SECONDARY_BUTTON}>
+            {t('spot-next', {
+              defaultValue: 'Next bars',
+            })}
+          </button>
+        ) : null}
+        <button type="button" onClick={() => dispatch({ type: 'exit' })} className={TEXT_BUTTON}>
+          {t('spot-whole', {
+            defaultValue: 'Play the whole song',
+          })}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -437,6 +575,8 @@ function SongRun({
   best,
   saver,
   onBest,
+  onSpot,
+  spot,
 }: {
   song: Song;
   version: SongVersion;
@@ -454,6 +594,10 @@ function SongRun({
   best: number | null | undefined;
   saver: SongSaver;
   onBest: (score: number) => void;
+  /** A finished run's weakest bars can be drilled: open spot practice on them (not in a spot run). */
+  onSpot?: (segments: SpotSegment[]) => void;
+  /** This is a spot-practice run: the segment's bars, looped, never saved. */
+  spot?: SpotRunProps;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const [state, send, getState] = useMachine(
@@ -466,7 +610,9 @@ function SongRun({
   const phases = useInputPhases();
   const notes = useMemo(() => notesOf(song), [song]);
   const needsBlackKeys = notes.some((n) => n.alter !== 0);
-  const bpm = Math.round(song.bpm * (slow ? SLOW_TEMPO : 1));
+  // A spot run plays at the tempo the passes have earned; otherwise the song's, or two thirds of it.
+  const bpm =
+    spot && spot.tempoPct !== null ? spotBpm(song, spot.tempoPct) : Math.round(song.bpm * (slow ? SLOW_TEMPO : 1));
   const beatMs = 60_000 / bpm;
   const metronome = useRef<Metronome | null>(null);
   const hearing = useRef<{
@@ -748,6 +894,46 @@ function SongRun({
       });
   }, [settled]);
 
+  /** Start a run (again, if one is over): the Start / Play again button, and a spot run's loop. */
+  function startRun() {
+    if (state.kind !== 'ready')
+      carry(
+        send({
+          type: 'again',
+        }),
+      );
+    // The run's length, for the practice log, counts from Start. A spot run is not logged, so it neither
+    // starts the clock nor, when it ends, stops one a whole-song run started.
+    if (!spot) beginActivity();
+    carry(
+      send({
+        type: 'start',
+        at: performance.now(),
+      }),
+    );
+  }
+  const startLatest = useRef(startRun);
+  useEffect(() => {
+    startLatest.current = startRun;
+  });
+
+  // Spot practice: tell the screen each pass's record once (before paint, so the line it earns is the
+  // one drawn), which follows the tempo.
+  const reportedRun = useRef(0);
+  useLayoutEffect(() => {
+    if (!spot || !('record' in state) || reportedRun.current === state.runs) return;
+    reportedRun.current = state.runs;
+    spot.onPass(state.record);
+  });
+  // ... and, while looping, start the next pass after a pause the learner can read the result in. Any
+  // press of Stop, Hear it, or the settings dialog cancels it (the state is no longer a settled result).
+  const autoLoop = spot?.autoLoop === true;
+  useEffect(() => {
+    if (!autoLoop || !settled || paused || hearingNow || startHeld) return;
+    const id = setTimeout(() => startLatest.current(), SPOT_LOOP_PAUSE_MS);
+    return () => clearTimeout(id);
+  }, [autoLoop, settled, paused, hearingNow, startHeld, state.runs]);
+
   const cursor = cursorOf(state);
   const marks = marksOf(state);
   // "Skip this note" after a while on one note (Wait for me).
@@ -760,23 +946,36 @@ function SongRun({
   }, [waitingOn]);
   const canSkip = waitingOn >= 0 && skipFor === waitingOn;
   const current = cursor >= 0 ? notes[cursor] : undefined;
-  // Bar numbers count full bars; the opening partial bar of a song with a pickup is "Pickup" (0).
-  const barOf = (i: number) => (notes[i]?.bar ?? 0) + (song.pickup > 0 ? 0 : 1);
+  // Bar numbers count full bars; the opening partial bar of a song with a pickup is "Pickup" (0). A spot
+  // run plays a few bars of the song, and says the numbers they have in the whole score.
+  const barOf = (i: number) => (notes[i]?.bar ?? 0) + (spot ? spot.fromNumber : song.pickup > 0 ? 0 : 1);
   const bars = song.bars.length - (song.pickup > 0 ? 1 : 0);
   const want = state.kind === 'waiting' ? (state.pitches[state.index] ?? -1) : -1;
   const lastWrong = state.kind === 'waiting' ? state.lastWrong : null;
 
-  const { line, said } = describe(t, state, {
+  const described = describe(t, state, {
     current: current ? spelledName(current) : '',
     index: cursor,
     total: notes.length,
     bar: cursor >= 0 ? barOf(cursor) : 0,
-    bars,
+    bars: spot ? spot.totalBars : bars,
     wrongName: lastWrong !== null ? pitchName(lastWrong) : '',
     octaveOff: lastWrong !== null && pitchName(lastWrong) === pitchName(want),
     // Guitar sounds an octave under its staff: a MIDI learner who plays the written pitch is told so.
     guitarWritten: version === 'guitar' && lastWrong !== null && lastWrong === want + 12,
   });
+  // A spot run's own lines: what to expect before it starts, and what each pass earned (which the live
+  // region says too, so a tempo change is announced).
+  let { line, said } = described;
+  if (spot) {
+    if (state.kind === 'ready' && state.stopped === null) {
+      line = spot.intro;
+      said = '';
+    } else if (finished && spot.result !== null) {
+      line = spot.result;
+      said = spot.result;
+    }
+  }
   // The microphone hears a repeated pitch only once it stops or is struck clearly again.
   const micRepeat =
     input === 'mic' &&
@@ -791,7 +990,9 @@ function SongRun({
       ? t('song-mic-repeat', {
           defaultValue: 'Stop the string or take a breath between repeated notes.',
         })
-      : saveLine(t, state, best);
+      : spot
+        ? spot.tempoLine
+        : saveLine(t, state, best);
 
   const label = t('song-score-label', {
     title: song.title,
@@ -824,27 +1025,16 @@ function SongRun({
           ref={againButton}
           type="button"
           disabled={hearingNow || startHeld || state.kind === 'saving'}
-          onClick={() => {
-            if (state.kind !== 'ready')
-              carry(
-                send({
-                  type: 'again',
-                }),
-              );
-            // The run's length, for the practice log, counts from Start.
-            beginActivity();
-            carry(
-              send({
-                type: 'start',
-                at: performance.now(),
-              }),
-            );
-          }}
+          onClick={startRun}
           className={`${PRIMARY_BUTTON} min-w-24`}
         >
-          {t('sprint-start', {
-            defaultValue: 'Start',
-          })}
+          {spot && finished
+            ? t('spot-again', {
+                defaultValue: 'Play again',
+              })
+            : t('sprint-start', {
+                defaultValue: 'Start',
+              })}
         </button>
       )}
       <button
@@ -858,16 +1048,26 @@ function SongRun({
           defaultValue: 'Hear it',
         })}
       </button>
-      <button type="button" disabled={live} onClick={() => onSlow(!slow)} aria-pressed={slow} className={TEXT_BUTTON}>
-        {t('song-slower', {
-          defaultValue: 'Slower',
-        })}
-      </button>
+      {spot ? null : (
+        <button type="button" disabled={live} onClick={() => onSlow(!slow)} aria-pressed={slow} className={TEXT_BUTTON}>
+          {t('song-slower', {
+            defaultValue: 'Slower',
+          })}
+        </button>
+      )}
     </>
   );
 
+  // The weakest bars of a finished run, to drill on their own (not offered inside a spot run, which keeps
+  // the input in front of the learner between passes).
+  const segments = useMemo(
+    () => (finished && !spot && onSpot ? spotSegments(song, state.record) : []),
+    [finished, spot, onSpot, song, state],
+  );
+  const firstSegment = segments[0];
+
   let answers: ReactNode;
-  if (finished) {
+  if (finished && !spot) {
     answers = (
       <div className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-3 overflow-y-auto p-4 text-center">
         <p
@@ -913,6 +1113,21 @@ function SongRun({
           </Link>
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            {firstSegment && onSpot && state.kind !== 'saving' ? (
+              <div className="flex w-full flex-col items-center gap-1">
+                <p className="text-sm leading-6 text-app-text-muted">
+                  {t('spot-weakest', {
+                    bars: segmentName(t, firstSegment),
+                    defaultValue: 'Worth another go: {{bars}}.',
+                  })}
+                </p>
+                <button type="button" onClick={() => onSpot(segments)} className={SECONDARY_BUTTON}>
+                  {t('spot-practice', {
+                    defaultValue: 'Practice these bars',
+                  })}
+                </button>
+              </div>
+            ) : null}
             <Link to="/rmhmusic/songs" className={TEXT_BUTTON}>
               {t('song-choose', {
                 defaultValue: 'Choose another song',
