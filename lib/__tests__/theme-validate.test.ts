@@ -35,7 +35,7 @@ describe('validateTheme — the derived stylesheet', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     // Steel T3 and Appendix A cut the derivation from ~30 variables to the section-2 names (13), plus the two R1
-    // amendment gradients a bought theme carries (`--site-theme-wash`, `--site-theme-wash-top`, `--site-theme-wash-bottom`, `--site-accent-fill`).
+    // amendment gradients a bought theme carries (`--site-theme-wash`, `--site-theme-edge`, `--site-theme-ground`, `--site-accent-fill`).
     expect(Object.keys(r.vars).length).toBe(17);
     expect(r.vars['--site-bg']).toBe(DEFAULT_THEME_TOKENS.canvasBase);
   });
