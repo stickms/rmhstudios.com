@@ -22,7 +22,7 @@ const m = vi.hoisted(() => {
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: m }));
 
-import { getActivity, getHistory, getLive, getSchool, getToday, listSchools } from './read.server';
+import { getActivity, getCardData, getHistory, getLive, getSchool, getToday, listSchools } from './read.server';
 
 const NOW = new Date('2027-11-21T00:30:00Z');
 const school = {
@@ -426,5 +426,44 @@ describe('the k floor reaches every count read', () => {
     const pick = m.medCycleCount.findMany.mock.calls[0]![0] as { where: unknown; take: number; distinct: unknown };
     expect(pick.where).toMatchObject(FLOOR);
     expect([pick.take, pick.distinct]).toEqual([4, ['cycleYear']]);
+  });
+});
+
+describe('getCardData', () => {
+  it('is null for an unknown, inactive or malformed slug without reading counts', async () => {
+    expect(await getCardData('nope', NOW)).toBeNull();
+    expect(await getCardData('Duke%00', NOW)).toBeNull();
+    expect(m.medCycleCount.groupBy).not.toHaveBeenCalled();
+  });
+
+  it('returns the primary source count of floored interview rows for the school, both programs summed', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    m.medCycleCount.groupBy.mockResolvedValue([
+      { source: 'ADMIT', _sum: { count: 5 } },
+      { source: 'CYCLETRACK', _sum: { count: 9 } },
+    ]);
+    expect(await getCardData('duke', NOW)).toEqual({
+      name: 'Duke',
+      degree: 'MD',
+      city: 'Durham',
+      state: 'NC',
+      cycleYear: 2027,
+      reported: { source: 'CYCLETRACK', count: 9 },
+    });
+    const arg = m.medCycleCount.groupBy.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+    expect(arg.where).toMatchObject({
+      schoolId: 's1',
+      cycleYear: 2027,
+      eventType: 'INTERVIEW',
+      program: { in: ['REG', 'PHD'] },
+      ...FLOOR,
+    });
+  });
+
+  it('has no figure when nothing is reported', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    const card = await getCardData('duke', NOW);
+    expect(card?.reported).toBeNull();
   });
 });

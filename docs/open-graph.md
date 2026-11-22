@@ -96,7 +96,8 @@ Dynamic cards are `GET /api/og/<kind>/<id>`, all `auth: 'none'`, all returning `
 `post` · `post/$id/story` · `profile` · `replay` · `moment` · `game` · `app` · `blog` · `job` · `section` · `build` ·
 `story` · `album` · `music` (a shared RMH Music result: ten minutes, not immutable, and a 404 once the link is stopped,
 expired or hidden, so stopping a link takes its card down; every answer is `X-Robots-Tag: noindex`, so a capability
-link's card never lands in image search)
+link's card never lands in image search) · `med-school` (an RMH Med Schools page: the school's name, degree and place,
+plus one interview figure only when the k floor lets the public page show it; a 404 for an unknown or inactive slug)
 
 Reference them through **`ogCardPath(kind, id)`** rather than by writing the path — that keeps the set of pages with a
 real card greppable, and stops a route pointing at an endpoint that no longer exists.

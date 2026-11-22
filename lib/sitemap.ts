@@ -793,6 +793,7 @@ export const SITEMAP_SECTION_NAMES = [
   'community',
   'homes',
   'jobs',
+  'medschools',
 ] as const;
 
 export type SitemapSectionName = (typeof SITEMAP_SECTION_NAMES)[number];
@@ -840,6 +841,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/jams/$slug': 'community',
   '/homes/listing/$id': 'homes',
   '/rmhladder/jobs/$jobId': 'jobs',
+  '/rmh-medschool/$slug': 'medschools',
 
   // Slice It's two public per-entity pages (L15, X12). Dynamic and deliberately
   // unlisted rather than sectioned: both are unbounded in the library's own

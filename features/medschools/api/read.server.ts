@@ -21,7 +21,9 @@ import type {
   HistoryCycleDto,
   ListMedSchoolsRes,
   MedChartedTypeId,
+  MedDegreeId,
   MedLiveRes,
+  MedSourceId,
   MedProgramFilter,
   MedSchoolActivityRes,
   MedSchoolDetailDto,
@@ -145,6 +147,44 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
         reported: hit ? { source: hit.source, count: hit.count } : null,
       };
     }),
+  };
+}
+
+/** What the link-preview card draws (Task 8): the school and one floored figure, never a program-less or suppressed one. */
+export interface MedSchoolCardData {
+  name: string;
+  degree: MedDegreeId;
+  city: string;
+  state: string;
+  cycleYear: number;
+  reported: { source: MedSourceId; count: number } | null;
+}
+
+/** Null for an unknown or inactive slug. The count is the primary source's interview total, REG + PHD, after the floor. */
+export async function getCardData(slug: string, now: Date = new Date()): Promise<MedSchoolCardData | null> {
+  const school = await findSchool(slug);
+  if (!school) return null;
+  const cycleYear = resolveCycleYear({ latestWithData: await latestCycleWith({ schoolId: school.id }), now });
+  const sums = await prisma.medCycleCount.groupBy({
+    by: ['source'],
+    where: {
+      schoolId: school.id,
+      cycleYear,
+      eventType: 'INTERVIEW',
+      program: { in: programsOf('ALL') },
+      ...FLOOR_WHERE,
+    },
+    _sum: { count: true },
+  });
+  const primary = pickPrimary(sums.map((x) => x.source));
+  const hit = sums.find((x) => x.source === primary);
+  return {
+    name: school.name,
+    degree: school.degree,
+    city: school.city,
+    state: school.state,
+    cycleYear,
+    reported: hit ? { source: hit.source, count: hit._sum.count ?? 0 } : null,
   };
 }
 
