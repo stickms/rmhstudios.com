@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseThreadTitle } from '../engine/sdn-title';
-import { NEEDLES, assertNoLeak, createFakeHost, createFakePrisma } from './test-support';
+import { NEEDLES, assertNoLeak, createFakeHost, createFakePrisma, httpStatusRoute } from './test-support';
 import { runSdnLive, sdnBackfillOwed, type SdnForumsFile, type SdnLiveDeps } from './run-sdn-live';
 import type { SdnAi } from './sdn/extract';
 
@@ -333,6 +333,20 @@ describe('runSdnLive', () => {
     expect(s.requested.filter((p) => p.startsWith('/threads/'))).toEqual([]);
     expect(s.writes.length).toBe(2);
     expect(s.tables.medSdnThread ?? []).toEqual([]);
+  });
+
+  it('three 403s with no challenge text halt the run (a WAF block counts), a 404 does not', async () => {
+    const blocked = httpStatusRoute(403);
+    const s = setup({
+      '/forums/1198/': blocked,
+      '/forums/1199/': blocked,
+      '/forums/1198/index.rss': blocked,
+      '/forums/1199/index.rss': blocked,
+    });
+    const r = await s.run();
+    expect(r.status).toBe('FAILED');
+    expect(s.requested.length).toBeLessThanOrEqual(3);
+    expect(s.requested.filter((p) => p.startsWith('/threads/'))).toEqual([]);
   });
 
   it('AI not configured: PARTIAL, no model call, cursors untouched, counts updated; a later run processes the backlog', async () => {

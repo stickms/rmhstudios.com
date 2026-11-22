@@ -4,7 +4,7 @@ import { normalizeQuestion } from '../engine/sdn-rules';
 import { readFixture } from './adapters/sdn/test-fixtures';
 import { summaryPageUrl } from './adapters/sdn';
 import { runSdnInterviews, type SdnInterviewsDeps } from './run-sdn-interviews';
-import { NEEDLES, assertNoLeak, createFakeHost, createFakePrisma } from './test-support';
+import { NEEDLES, assertNoLeak, createFakeHost, createFakePrisma, httpStatusRoute } from './test-support';
 
 const SECRET = 'test-secret-0123456789abcdef';
 const NOW = new Date('2026-11-20T18:00:00.000Z');
@@ -359,6 +359,19 @@ describe('runSdnInterviews', () => {
     expect(t.table('medSourceRun')[0]).toMatchObject({
       status: 'FAILED',
     });
+  });
+
+  it('three 403s with no challenge text halt the run FAILED; a 404 does not count', async () => {
+    const t = setup({});
+    for (const n of [1, 2, 3, 4]) {
+      t.table('medSchool').push({ id: `x${n}`, slug: `x${n}`, active: true });
+      t.alias(`ax${n}`, `x${n}`, `summary:X${n}/x${n}`);
+      t.live.routes[url(`summary:X${n}/x${n}`)] = httpStatusRoute(403);
+    }
+    const s = await t.run();
+    expect(s.status).toBe('FAILED');
+    // Columbia's own alias answers 404 first (uncounted); the three 403s that follow halt the run.
+    expect(t.requested.filter((p) => p !== COL_URL)).toHaveLength(3);
   });
 
   it('a failed question write leaves no profile, so it retries next run', async () => {

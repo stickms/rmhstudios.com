@@ -114,4 +114,32 @@ describe('SDN guard', () => {
     }
     expect(s.noteFailure).not.toHaveBeenCalled();
   });
+  it('a 403 with no challenge in it counts once; 404, 429, 5xx and transport failures are not counted here', () => {
+    const s = session();
+    expect(() => assertPage({ ok: false, status: 403, body: 'Forbidden' }, s, 'x')).toThrow(SdnPageError);
+    expect(s.noteFailure).toHaveBeenCalledTimes(1);
+    expect(() => assertPage({ ok: false, status: 410, body: '' }, s, 'x')).toThrow(SdnPageError);
+    expect(s.noteFailure).toHaveBeenCalledTimes(2);
+    for (const status of [404, 429, 503, 0]) {
+      const t = session();
+      expect(() => assertPage({ ok: false, status, body: '' }, t, 'x')).toThrow(SdnPageError);
+      expect(t.noteFailure).not.toHaveBeenCalled();
+    }
+  });
+  it('a challenge on a status the host already counted is not counted twice', () => {
+    const s = session();
+    expect(() => assertPage({ ok: false, status: 503, body: readFixture('thread-challenge.html') }, s, 'x')).toThrow(
+      SdnPageError,
+    );
+    expect(s.noteFailure).not.toHaveBeenCalled();
+  });
+  it('a Cloudflare Access denied / Error 1020 page is a challenge', () => {
+    const page =
+      '<html><head><title>Access denied | forums.studentdoctor.net used Cloudflare to restrict access</title>';
+    expect(isCloudflareChallenge({ status: 403, body: page })).toBe(true);
+    expect(isCloudflareChallenge({ status: 403, body: '<body><h1>Error 1020</h1> Access denied</body>' })).toBe(true);
+    const s = session();
+    expect(() => assertPage({ ok: false, status: 403, body: page }, s, 'x')).toThrow(SdnPageError);
+    expect(s.noteFailure).toHaveBeenCalledTimes(1);
+  });
 });

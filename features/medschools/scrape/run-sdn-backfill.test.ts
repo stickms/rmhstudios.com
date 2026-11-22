@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseThreadTitle } from '../engine/sdn-title';
-import { NEEDLES, assertNoLeak, createFakeHost, createFakePrisma } from './test-support';
+import { NEEDLES, assertNoLeak, createFakeHost, createFakePrisma, httpStatusRoute } from './test-support';
 import { runSdnBackfill, type SdnBackfillDeps } from './run-sdn-backfill';
 import { sdnBackfillOwed, type SdnForumsFile } from './run-sdn-live';
 import type { SdnAi } from './sdn/extract';
@@ -413,6 +413,14 @@ describe('runSdnBackfill', () => {
     expect(r.status).toBe('FAILED');
     expect(r.halted).toBe(true);
     expect(r.cursor.stage).toBe('threads');
+  });
+
+  it('three 403s with no challenge text halt the backfill too', async () => {
+    const t = setup(archiveRoutes());
+    for (const x of [Y25, Y24, Y26, Y23]) t.live.routes[`/threads/${x.slug}.${x.id}/`] = httpStatusRoute(403);
+    const r = await t.run();
+    expect(r.status).toBe('FAILED');
+    expect(r.halted).toBe(true);
   });
 
   it('a completed backfill is a no-op next call; rediscover resets the stage', async () => {

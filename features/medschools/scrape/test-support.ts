@@ -330,6 +330,15 @@ export function gqlKey(path: string, operationName: string, variables: unknown):
   return `POST ${path} ${operationName} ${JSON.stringify(sortKeys(variables ?? {}))}`;
 }
 
+const STATUS_PREFIX = '\u0000status:';
+/** A fake-host route value that answers with this HTTP status and an empty body (a WAF's 403, say). */
+export const httpStatusRoute = (status: number): string => `${STATUS_PREFIX}${status}`;
+const answerFor = (body: string | null): { ok: boolean; status: number; body: string } => {
+  if (body === null) return { ok: false, status: 404, body: '' };
+  if (body.startsWith(STATUS_PREFIX)) return { ok: false, status: Number(body.slice(STATUS_PREFIX.length)), body: '' };
+  return { ok: true, status: 200, body };
+};
+
 /**
  * Fake PoliteHost serving canned bodies by path (GET) or by `gqlKey` (POST). A key mapped to `null` is a
  * 404. Mirrors the real gate: the session halts after three noted failures
@@ -358,15 +367,13 @@ export function createFakeHost(
         async get(path) {
           if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
           requested.push(path);
-          const body = lookup(path);
-          return body === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body };
+          return answerFor(lookup(path));
         },
         async post(path, body) {
           if (failures >= maxFailures) throw new SourceHaltedError(last ?? undefined);
           const parsed = JSON.parse(body) as { operationName: string; variables?: unknown };
           requestedPosts.push({ op: parsed.operationName, variables: parsed.variables ?? {} });
-          const out = lookup(gqlKey(path, parsed.operationName, parsed.variables));
-          return out === null ? { ok: false, status: 404, body: '' } : { ok: true, status: 200, body: out };
+          return answerFor(lookup(gqlKey(path, parsed.operationName, parsed.variables)));
         },
         noteSuccess() {
           failures = 0;
