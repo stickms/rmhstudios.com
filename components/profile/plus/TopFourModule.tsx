@@ -57,7 +57,7 @@ export default function TopFourModule({
   isOwner: boolean;
 }) {
   const { t } = useTranslation('f-profile-plus');
-  const entries = resolveTopFour(items);
+  const entries = resolveTopFour(items ?? []);
   if (entries.length === 0 && !isOwner) return null;
 
   return (
@@ -72,7 +72,7 @@ export default function TopFourModule({
       })}
       emptyAction={
         <Button asChild variant="default" size="sm">
-          <Link to="/settings/profile">
+          <Link to="/settings/profile" hash="plus-top-four">
             <Pencil aria-hidden />
             {t('top-four-choose', {
               defaultValue: 'Choose',
@@ -83,7 +83,7 @@ export default function TopFourModule({
       action={
         isOwner && entries.length > 0 ? (
           <Button asChild variant="ghost" size="xs">
-            <Link to="/settings/profile">
+            <Link to="/settings/profile" hash="plus-top-four">
               <Pencil aria-hidden />
               {t('top-four-edit', {
                 defaultValue: 'Edit',

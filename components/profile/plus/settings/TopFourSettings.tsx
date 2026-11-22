@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +19,7 @@ export default function TopFourSettings() {
   const { t } = useTranslation('f-profile-plus');
   const [items, setItems] = useState<TopFourItem[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const choices = useMemo(() => topFourChoices(), []);
   const arrival = useArrival(items !== null);
 
@@ -48,23 +48,18 @@ export default function TopFourSettings() {
     const next = [...items];
     const [x] = next.splice(from, 1);
     if (x) next.splice(to, 0, x);
-    setItems(next);
+    void commit(next);
   };
 
-  async function save() {
+  // Each pick, removal or reorder is one deliberate click, so it saves at once: no Save button, and the list is what
+  // the server stored.
+  async function commit(next: TopFourItem[]) {
+    setItems(next);
     setSaving(true);
     try {
-      const json = await api(setTopFourApi, {
-        body: {
-          items: items ?? [],
-        },
-      });
+      const json = await api(setTopFourApi, { body: { items: next } });
       setItems(json.items);
-      toast.success(
-        t('top-four-saved', {
-          defaultValue: 'Top four saved',
-        }),
-      );
+      setSaved(true);
     } catch {
       toast.error(
         t('top-four-failed', {
@@ -113,7 +108,7 @@ export default function TopFourSettings() {
               label={t('top-four-remove', {
                 defaultValue: 'Remove',
               })}
-              onClick={() => setItems(items.filter((x) => keyOf(x) !== keyOf(entry)))}
+              onClick={() => void commit(items.filter((x) => keyOf(x) !== keyOf(entry)))}
             />
           </li>
         ))}
@@ -133,7 +128,7 @@ export default function TopFourSettings() {
             const sep = value.indexOf(':');
             if (sep > 0) {
               const kind = value.slice(0, sep) as TopFourItem['kind'];
-              setItems([
+              void commit([
                 ...items,
                 {
                   kind,
@@ -161,11 +156,13 @@ export default function TopFourSettings() {
         </Select>
       ) : null}
 
-      <Button variant="default" loading={saving} onClick={() => void save()}>
-        {t('top-four-save', {
-          defaultValue: 'Save top four',
-        })}
-      </Button>
+      <p className="t-meta" role="status" aria-live="polite">
+        {saving
+          ? t('top-four-saving', { defaultValue: 'Saving…' })
+          : saved
+            ? t('top-four-saved-auto', { defaultValue: 'Saved' })
+            : t('top-four-autosave-hint', { defaultValue: 'Changes save automatically.' })}
+      </p>
     </div>
   );
 }

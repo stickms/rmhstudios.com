@@ -14,9 +14,12 @@
   "endorse-switch": "Let members endorse my skills",
   "endorse-switch-hint": "Adds a Skills block to your profile.",
   "endorse-withdraw": "Withdraw your endorsement",
+  "identity-autosave-hint": "Changes save automatically.",
   "identity-failed": "Couldn't save your changes",
   "identity-save": "Save",
   "identity-saved": "Saved",
+  "identity-saved-auto": "Saved",
+  "identity-saving": "Saving…",
   "kind-app": "App",
   "kind-game": "Game",
   "local-time": "It's {{time}} for {{name}}",
@@ -164,6 +167,7 @@
   "timezone-none": "Don't share",
   "timezone-preview": "People will see \"It's {{time}} for you\" on your profile and in DMs.",
   "top-four-add": "Add a game or app…",
+  "top-four-autosave-hint": "Changes save automatically.",
   "top-four-choose": "Choose",
   "top-four-down": "Move down",
   "top-four-edit": "Edit",
@@ -174,5 +178,7 @@
   "top-four-remove": "Remove",
   "top-four-save": "Save top four",
   "top-four-saved": "Top four saved",
+  "top-four-saved-auto": "Saved",
+  "top-four-saving": "Saving…",
   "top-four-up": "Move up"
 }
