@@ -20,6 +20,12 @@ import {
   type MicHum,
 } from './input/mic-gain';
 import { DEFAULT_PRACTICE_MODE, isPracticeMode, type PracticeMode } from './practice-mode';
+import {
+  DEFAULT_NEW_PER_DAY,
+  DEFAULT_RETENTION,
+  clampNewPerDay,
+  clampRetention,
+} from './srs/practice-settings';
 import { isInstrumentId } from './audio/instruments/catalog';
 import type { InstrumentId } from './audio/instruments/types';
 import { mergeLessonResult } from './xp';
@@ -44,6 +50,10 @@ export interface Profile {
   micGate: number;
   /** The mains-hum filter: off, 50 Hz or 60 Hz. */
   micHum: MicHum;
+  /** The recall chance a card may fall to before it comes back, 0.80 to 0.95 (`srs/practice-settings.ts`). */
+  retention: number;
+  /** How many never-asked cards Practice may introduce a day, 0 to 50; due cards are never capped. */
+  newPerDay: number;
 }
 
 export interface LessonProgressRow {
@@ -65,6 +75,8 @@ export const DEFAULT_PROFILE: Profile = {
   micAuto: DEFAULT_MIC_SETTINGS.auto,
   micGate: DEFAULT_MIC_SETTINGS.gate,
   micHum: DEFAULT_MIC_SETTINGS.hum,
+  retention: DEFAULT_RETENTION,
+  newPerDay: DEFAULT_NEW_PER_DAY,
 };
 
 /** Thrown by `completeLesson` for an id that is not in the catalogue. */
@@ -87,6 +99,8 @@ function toProfile(row: {
   micAuto?: boolean;
   micGate?: number;
   micHum?: string;
+  retention?: number;
+  newPerDay?: number;
 }): Profile {
   // Columns are plain strings; narrow them so a stale value never reaches the UI.
   return {
@@ -105,6 +119,8 @@ function toProfile(row: {
       const mic = normalizeMicSettings({ auto: row.micAuto, gain: row.micGain, gate: row.micGate, hum: row.micHum });
       return { micAuto: mic.auto, micGain: mic.gain, micGate: mic.gate, micHum: mic.hum };
     })(),
+    retention: clampRetention(row.retention),
+    newPerDay: clampNewPerDay(row.newPerDay),
   };
 }
 
@@ -140,6 +156,8 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     ...(input.micAuto !== undefined ? { micAuto: input.micAuto } : {}),
     ...(input.micGate !== undefined ? { micGate: clampMicGate(input.micGate) } : {}),
     ...(input.micHum !== undefined ? { micHum: input.micHum } : {}),
+    ...(input.retention !== undefined ? { retention: clampRetention(input.retention) } : {}),
+    ...(input.newPerDay !== undefined ? { newPerDay: clampNewPerDay(input.newPerDay) } : {}),
   };
   const row = await prisma.musicLearnProfile.upsert({
     where: { userId },

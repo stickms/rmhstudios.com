@@ -530,6 +530,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/rmhmusic/tuner': 'auth-gated', // the tuner and note reader, inside the signed-in app
   '/rmhmusic/songs': 'personal', // the songbook with the learner's own best scores, behind sign-in
   '/rmhmusic/history': 'personal', // the learner's own practice log and song attempts, behind sign-in
+  '/rmhmusic/insights': 'personal', // the learner's own due counts, weak and strong spots and practice settings, behind sign-in
+  '/rmhmusic/today': 'personal', // what the learner's own cards have due across the drills, behind sign-in
   '/messages': 'personal',
   '/progress': 'personal',
   '/reading': 'redirect', // → /library?view=reading (My reading became a library view; ?tab= carried across)

@@ -6,6 +6,7 @@
  */
 
 import { rhythmActivity } from '../machines/rhythm';
+import { staffIntervalLesson } from '../theory/staff-intervals';
 import { DECKS } from './decks';
 import { VOICE_RANGE_DECK, type Lesson, type LessonMode } from './path';
 
@@ -22,6 +23,7 @@ const ROUTED: Record<LessonMode, true> = {
   'sing-interval': true,
   'play-scale': true,
   'key-signature': true,
+  'staff-intervals': true,
 };
 
 /** The modes `LessonScreen` has an activity for. */
@@ -31,6 +33,7 @@ export const ROUTED_MODES: ReadonlySet<LessonMode> = new Set(Object.keys(ROUTED)
 export function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (!lesson?.available || !ROUTED_MODES.has(lesson.mode)) return false;
   if (lesson.mode === 'rhythm-basics') return rhythmActivity(lesson.id) !== null;
+  if (lesson.mode === 'staff-intervals') return staffIntervalLesson(lesson.id) !== null;
   if (lesson.mode === 'staff-flashcards')
     return !!lesson.deck && (lesson.deck in DECKS || lesson.deck === VOICE_RANGE_DECK);
   return true;

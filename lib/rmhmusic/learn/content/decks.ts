@@ -1,27 +1,41 @@
 /**
  * The flashcard decks and how a practice session is dealt from one — pure.
  *
- * Phase 2 drills use natural notes only (no sharps or flats), so a card is named by its letter
- * alone and no enharmonic spelling is needed. A deck lists MIDI numbers and one clef; a card is
- * one of them on that clef, and its id (`treble:64`) is stable, so a remembered card (SRS) can be
- * found again.
+ * Most decks are natural notes only, so a card is named by its letter alone. A deck lists MIDI
+ * numbers and one clef; a card is one of them on that clef, and its id (`treble:64`) is stable, so a
+ * remembered card (SRS) can be found again. The sharps, flats and key-signature decks list their
+ * cards outright (`Deck.cards`, built in `spelling.ts`) because a card there carries its spelling:
+ * `treble:66:sharp`, `key:G:treble:66`.
  */
 import type { Clef } from '../theory/clef';
 import type { VoiceRange } from '../schemas';
 import { rangeNaturals, staffCardRange, voiceReading } from '../voice/range';
+import { SPELLED_DECKS, type Alteration, type KeyCardKey } from './spelling';
 
 export interface Card {
-  /** `<clef>:<midi>`, e.g. `treble:64`. Stored forever with the card's schedule. */
+  /**
+   * `<clef>:<midi>` (`treble:64`), `<clef>:<midi>:sharp|flat` (`treble:66:sharp`) or
+   * `key:<key>:<clef>:<midi>` (`key:G:treble:66`). Stored forever with the card's schedule.
+   */
   id: string;
   clef: Clef;
+  /** The SOUNDING pitch. */
   midi: number;
+  /** The natural the note is drawn on, when that is not `midi` (a sharp or flat, or a note its key alters). */
+  written?: number;
+  /** The sign printed before the notehead (an accidental card): −1 flat, +1 sharp. */
+  accidental?: Alteration;
+  /** A key card: the major key whose signature is drawn after the clef. */
+  key?: KeyCardKey;
 }
 
 export interface Deck {
   id: string;
   clef: Clef;
-  /** Natural notes only, lowest first. */
+  /** Natural notes only, lowest first. Empty for a deck that lists its `cards` outright. */
   midis: number[];
+  /** The cards of a deck whose notes carry a spelling (sharps, flats, keys); else derived from `midis`. */
+  cards?: readonly Card[];
   /** Read with the treble clef's small 8 (tenor voice): the cards are written an octave up. */
   octaveClef?: boolean;
   /** Drawn on the low card (`range="low"`): an alto's G3 is below the deck card's floor. */
@@ -91,6 +105,7 @@ export const DECKS: Record<string, Deck> = {
     clef: 'bass',
     midis: naturals(40, 60),
   },
+  ...SPELLED_DECKS,
   /** The natural notes of each voice range, as that range reads them (`voice/range.ts`). */
   'voice-soprano': voiceRangeDeck('soprano'),
   'voice-alto': voiceRangeDeck('alto'),
@@ -116,11 +131,14 @@ function toCard(deck: Deck, midi: number): Card {
   };
 }
 
+/** Every card of a deck, in the order it lists them: its explicit `cards`, else one natural card per MIDI number. */
+export function deckCards(deck: Deck): Card[] {
+  return deck.cards ? deck.cards.map((c) => ({ ...c })) : deck.midis.map((midi) => toCard(deck, midi));
+}
+
 /** Every card some deck deals, by id: the only ids a remembered card may have. */
 const KNOWN_CARDS: ReadonlyMap<string, Card> = new Map(
-  Object.values(DECKS).flatMap((deck) =>
-    deck.midis.map((midi) => [cardId(deck.clef, midi), toCard(deck, midi)] as const),
-  ),
+  Object.values(DECKS).flatMap((deck) => deckCards(deck).map((card) => [card.id, card] as const)),
 );
 
 /** Whether `id` names a card of one of the decks (`treble:64`), exactly as `cardId` spells it. */
@@ -177,5 +195,13 @@ export function dealRounds(values: readonly number[], count: number, rand: () =>
 
 /** Deal `count` cards from `deck` by {@link dealRounds}: no card twice in a row. */
 export function buildSession(deck: Deck, count: number, rand: () => number): Card[] {
+  if (deck.cards) {
+    const cards = deck.cards;
+    return dealRounds(
+      cards.map((_, i) => i),
+      count,
+      rand,
+    ).flatMap((i) => (cards[i] ? [{ ...cards[i] }] : []));
+  }
   return dealRounds(deck.midis, count, rand).map((midi) => toCard(deck, midi));
 }

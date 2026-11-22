@@ -24,6 +24,8 @@ const PROFILE: Profile = {
   micAuto: true,
   micGate: 0.01,
   micHum: 'off',
+  retention: 0.9,
+  newPerDay: 10,
 };
 const ROW: LessonProgressRow = {
   lessonId: 'staff-what-is-a-staff',

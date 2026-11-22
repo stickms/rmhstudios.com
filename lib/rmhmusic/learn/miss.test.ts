@@ -40,3 +40,50 @@ describe('describeMiss', () => {
     expect(describeMiss(60, { kind: 'midi', midi: 61 })).toMatchObject({ steps: 0, direction: 'level' });
   });
 });
+
+describe('spelled answers and targets', () => {
+  it('puts a letter with an accidental at the octave nearest the right note', () => {
+    expect(playedMidi(66, { kind: 'letter', letter: 'G', accidental: -1 })).toBe(66); // G♭ for an F♯4 card
+    expect(playedMidi(66, { kind: 'letter', letter: 'F', accidental: 1 })).toBe(66);
+    expect(playedMidi(66, { kind: 'letter', letter: 'F' })).toBe(65);
+    expect(playedMidi(72, { kind: 'letter', letter: 'B', accidental: -1 })).toBe(70); // B♭4, not B♭5
+    expect(playedMidi(66, { kind: 'letter', letter: 'F', accidental: Number.NaN })).toBe(65);
+  });
+
+  it('puts a pitch class at the nearest octave', () => {
+    expect(playedMidi(64, { kind: 'pitch-class', pc: 2 })).toBe(62);
+    expect(playedMidi(64, { kind: 'pitch-class', pc: 9 })).toBe(69);
+    expect(playedMidi(64, { kind: 'pitch-class', pc: Number.NaN })).toBeNull();
+  });
+
+  it('draws a wrong G♭ on the G line with a flat, one step above the F♯ it should be', () => {
+    const miss = describeMiss(66, { kind: 'letter', letter: 'G', accidental: -1 }, { written: 65 });
+    expect(miss).toMatchObject({ midi: 66, written: 67, accidental: -1, name: 'G♭4', steps: 1, direction: 'above' });
+    expect(miss?.letterOnly).toBe(true);
+  });
+
+  it('counts the distance between written notes when the target is spelled', () => {
+    // B♭4 (sounds 70, written B4 = 71) against an answer of A4: the written steps are 1 apart.
+    expect(describeMiss(70, { kind: 'midi', midi: 69 }, { written: 71 })).toMatchObject({
+      steps: 1,
+      direction: 'below',
+      accidental: 0,
+      name: 'A4',
+    });
+  });
+
+  it('spells a black key played where no spelling was given as a sharp, or a flat when asked', () => {
+    expect(describeMiss(64, { kind: 'midi', midi: 66 })).toMatchObject({ written: 65, accidental: 1, name: 'F♯4' });
+    expect(describeMiss(64, { kind: 'midi', midi: 66 }, { spell: -1 })).toMatchObject({
+      written: 67,
+      accidental: -1,
+      name: 'G♭4',
+    });
+    expect(describeMiss(64, { kind: 'pitch-class', pc: 6 })).toMatchObject({ written: 65, letterOnly: true });
+  });
+
+  it('keeps the plain-note names it always had', () => {
+    expect(describeMiss(64, { kind: 'midi', midi: 62 })?.name).toBe('D4');
+    expect(describeMiss(64, { kind: 'letter', letter: 'C' })?.name).toBe('C4');
+  });
+});

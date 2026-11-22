@@ -38,7 +38,6 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   autoPlay,
@@ -79,7 +78,7 @@ import { cn } from '@/lib/utils';
 import { EarSoundRow, soundProblem } from './EarSoundRow';
 import { fallbackLine, useFallbackNotice } from './useSoundNotice';
 import { LessonResult } from './LessonParts';
-import { qualityName } from './PlayChordLesson';
+import { intervalName, qualityName } from './ear-names';
 import { PracticeModeToggle, usePracticeMode } from './PracticeModeToggle';
 import { SaidParts, SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
 
@@ -548,44 +547,4 @@ export function EarListenBox({ children, skeleton = false }: { children?: ReactN
       </div>
     </div>
   );
-}
-
-type T = TFunction<'c-rmhmusic'>;
-
-/** An interval's word, one key each (never joined to other words). */
-function intervalName(t: T, name: IntervalName): string {
-  switch (name) {
-    case 'unison':
-      return t('ear-interval-unison', {
-        defaultValue: 'unison',
-      });
-    case 'second':
-      return t('ear-interval-second', {
-        defaultValue: 'second',
-      });
-    case 'third':
-      return t('ear-interval-third', {
-        defaultValue: 'third',
-      });
-    case 'fourth':
-      return t('ear-interval-fourth', {
-        defaultValue: 'fourth',
-      });
-    case 'fifth':
-      return t('ear-interval-fifth', {
-        defaultValue: 'fifth',
-      });
-    case 'sixth':
-      return t('ear-interval-sixth', {
-        defaultValue: 'sixth',
-      });
-    case 'seventh':
-      return t('ear-interval-seventh', {
-        defaultValue: 'seventh',
-      });
-    case 'octave':
-      return t('ear-interval-octave', {
-        defaultValue: 'octave',
-      });
-  }
 }

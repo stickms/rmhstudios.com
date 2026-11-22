@@ -17,7 +17,11 @@
  * `useQuestionSession`, as in the flashcards, and so are the sheet, the focus moves and the
  * held-Enter guard (`QuestionSession.tsx`).
  *
- * Boxes: the sheet (title line, the staff card in its low range, the sentence line) and below it
+ * Learning or Test mode (`PracticeModeToggle`): after a wrong answer the sentence says what was found
+ * and where the target is, and in Learning mode the same target comes back (Next reads "Try again")
+ * until it is found; only a first-try answer scores. The mode is read at every answer.
+ *
+ * Boxes: the toggle, the sheet (title line, the staff card in its low range, the sentence line) and below it
  * the board (`.rmm-find__board`, one height on both instruments) and one input line, all fixed and
  * the same as LessonScreen's FindNoteSkeleton, so nothing moves from loading to the result. The
  * lesson needs no instrument: tapping always answers.
@@ -40,6 +44,7 @@ import {
   type Target,
 } from '@/lib/rmhmusic/learn/machines/find-note';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
+import { getPracticeMode } from '@/lib/rmhmusic/learn/practice-mode';
 import { starsFor, scoreFrom } from '@/lib/rmhmusic/learn/scoring/stars';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
@@ -51,6 +56,7 @@ import { TEXT_BUTTON } from './buttons';
 import { FretboardView } from './FretboardView';
 import { LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
+import { PracticeModeToggle, usePracticeMode } from './PracticeModeToggle';
 import { SessionFrame, SessionSheet, cardStateOf, sessionTitle, useQuestionSession } from './QuestionSession';
 import { STAFF_BOX, STAFF_LOW_ASPECT, StaffCard } from './StaffCard';
 import { chooseInput, useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
@@ -80,9 +86,14 @@ export function FindNoteLesson({
   const mode: FindNoteMode = getLesson(lessonId)?.mode === 'fretboard' ? 'fretboard' : 'keyboard-map';
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const guitar = instrument === 'guitar';
+  const practiceMode = usePracticeMode();
 
   const session = useQuestionSession<Target, Answer>({
-    machine: () => createFindNoteMachine(dealTargets(findNotePool(mode, instrument), FIND_NOTE_TARGETS, Math.random)),
+    machine: () =>
+      createFindNoteMachine(
+        dealTargets(findNotePool(mode, instrument), FIND_NOTE_TARGETS, Math.random),
+        () => getPracticeMode() === 'learning',
+      ),
     save: (fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score),
     paused,
     focusFirst: FOCUS_FIRST[instrument],
@@ -345,6 +356,7 @@ export function FindNoteLesson({
 
   return (
     <SessionFrame className="rmm-find space-y-4">
+      <PracticeModeToggle />
       <SessionSheet
         session={session}
         title={title}
@@ -352,6 +364,7 @@ export function FindNoteLesson({
         line={line}
         lineKey={lineKey}
         said={said}
+        retry={practiceMode === 'learning' && lesson.kind === 'feedback' && !lesson.right}
       />
       <div ref={session.answersBox} className="rmm-find__answers">
         {answers}

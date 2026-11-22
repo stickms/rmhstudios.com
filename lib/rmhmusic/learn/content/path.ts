@@ -28,7 +28,8 @@ export type LessonMode =
   | 'play-chord'
   | 'sing-interval'
   | 'play-scale'
-  | 'key-signature';
+  | 'key-signature'
+  | 'staff-intervals';
 
 export interface Lesson {
   id: string;
@@ -41,6 +42,11 @@ export interface Lesson {
   available: boolean;
   /** A `staff-flashcards` lesson's deck: a key of `DECKS` in `decks.ts` (path.test.ts checks it). */
   deck?: string;
+  /**
+   * A `staff-flashcards` lesson whose deck joins Practice only once the lesson is completed
+   * (`practiceDecks`): the sharps, flats and key cards, which a beginner must meet in their lesson first.
+   */
+  practiceWhenDone?: boolean;
   /**
    * An `ear-interval` / `ear-chord` / `sing-interval` lesson's answer names, narrowest first: its questions are
    * drawn from them and its buttons offer them. Interval names for `ear-interval`, chord
@@ -82,6 +88,119 @@ const RHYTHM_UNIT: Unit = {
       title: 'Tap the beat',
       summary: 'Keep a steady beat by tapping along.',
       mode: 'rhythm-basics',
+      available: true,
+    },
+  ],
+};
+
+/**
+ * Read sharps, flats and keys: the staff-flashcard lessons whose notes carry a spelling
+ * (`content/spelling.ts` holds the cards): a sign printed before the note, and notes read in a key
+ * whose signature has already changed them. Piano and guitar path only (a singer's range deck is
+ * naturals), at the end of the path: after Scales and keys has taught what a signature means. Each deck joins Practice only
+ * once its lesson is completed (`practiceWhenDone`), so a beginner is never dealt a card they have not
+ * met. Ids are stored with progress: add new ones, never rename.
+ */
+const SPELLED_UNIT_ID = 'read-sharps-flats-keys';
+
+const READ_SPELLED_UNIT: Unit = {
+  id: SPELLED_UNIT_ID,
+  title: 'Sharps, flats and keys on the staff',
+  lessons: [
+    {
+      id: 'staff-sharps-flats',
+      unit: SPELLED_UNIT_ID,
+      title: 'Sharps and flats: treble',
+      summary: 'Name the notes with a sharp or a flat before them on the treble staff: letter and sign.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'accidentals-treble',
+      practiceWhenDone: true,
+    },
+    {
+      id: 'staff-sharps-flats-bass',
+      unit: SPELLED_UNIT_ID,
+      title: 'Sharps and flats: bass',
+      summary: 'The same on the bass staff: a sign before the note changes its name.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'accidentals-bass',
+      practiceWhenDone: true,
+    },
+    {
+      id: 'staff-keys-sharps',
+      unit: SPELLED_UNIT_ID,
+      title: 'Notes in G, D and A major',
+      summary: 'The key signature has already sharpened some notes: name each note the way the key plays it.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'keys-sharps',
+      practiceWhenDone: true,
+    },
+    {
+      id: 'staff-keys-flats',
+      unit: SPELLED_UNIT_ID,
+      title: 'Notes in F, B♭ and E♭ major',
+      summary: 'The key signature has already flattened some notes: name each note the way the key plays it.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'keys-flats',
+      practiceWhenDone: true,
+    },
+  ],
+};
+
+/**
+ * Read intervals: two notes written one after the other, named by size first and then by quality
+ * (`theory/staff-intervals.ts` holds what each lesson asks: its names, directions and staves, so none
+ * of these lessons has a `pool`). Read from the page: no instrument, no sound. On the piano and
+ * guitar path only: a singer's own interval lessons sing them (`voice-intervals`). Ids are stored
+ * with progress: add new ones, never rename.
+ */
+const INTERVALS_UNIT_ID = 'read-intervals';
+
+const READ_INTERVALS_UNIT: Unit = {
+  id: INTERVALS_UNIT_ID,
+  title: 'Read intervals',
+  lessons: [
+    {
+      id: 'intervals-read-second-third',
+      unit: INTERVALS_UNIT_ID,
+      title: 'Steps and skips',
+      summary: 'Two notes on the staff: a step to the next line or space is a second, a skip is a third.',
+      mode: 'staff-intervals',
+      available: true,
+    },
+    {
+      id: 'intervals-read-fourth-fifth-octave',
+      unit: INTERVALS_UNIT_ID,
+      title: 'Fourths, fifths and octaves',
+      summary: 'Count lines and spaces to tell a third, a fourth, a fifth and an octave apart.',
+      mode: 'staff-intervals',
+      available: true,
+    },
+    {
+      id: 'intervals-read-all-sizes',
+      unit: INTERVALS_UNIT_ID,
+      title: 'Every size, up and down',
+      summary: 'Name any size from a second to an octave, on both staves, going up or down.',
+      mode: 'staff-intervals',
+      available: true,
+    },
+    {
+      id: 'intervals-read-seconds-thirds-quality',
+      unit: INTERVALS_UNIT_ID,
+      title: 'Minor and major seconds and thirds',
+      summary: 'Tell a half step from a whole step, and a minor third from a major third.',
+      mode: 'staff-intervals',
+      available: true,
+    },
+    {
+      id: 'intervals-read-quality-wider',
+      unit: INTERVALS_UNIT_ID,
+      title: 'Perfect, minor, major and the tritone',
+      summary: 'Name fourths to octaves by quality, with sharps and flats written in.',
+      mode: 'staff-intervals',
       available: true,
     },
   ],
@@ -265,7 +384,9 @@ export const PATH: Unit[] = [
       },
     ],
   },
+  READ_INTERVALS_UNIT,
   RHYTHM_UNIT,
+  READ_SPELLED_UNIT,
 ];
 
 /** The singer's path: read the staff of your range, sing notes back, sing intervals, rhythm. */

@@ -124,3 +124,27 @@ describe('scheduler on FSRS', () => {
     expect(recallChance(s, T0 - DAY_MS)).toBe(1);
   });
 });
+
+describe('scheduler retention target', () => {
+  const T0 = Date.UTC(2026, 10, 22);
+  const mature = { due: T0, stability: 20, difficulty: 5, reps: 6, lapses: 0, last: T0 - 20 * DAY_MS };
+
+  it('is 90% by default, so existing behaviour is unchanged', () => {
+    expect(review(mature, 'good', T0).due).toBe(review(mature, 'good', T0, 0.9).due);
+  });
+
+  it('a higher target brings a card back sooner, a lower one later', () => {
+    const at = (r: number) => review(mature, 'good', T0, r).due - T0;
+    expect(at(0.95)).toBeLessThan(at(0.9));
+    expect(at(0.9)).toBeLessThan(at(0.8));
+  });
+
+  it('repairs a target out of range or not a number', () => {
+    expect(review(mature, 'good', T0, 0.2).due).toBe(review(mature, 'good', T0, 0.8).due);
+    expect(review(mature, 'good', T0, Number.NaN).due).toBe(review(mature, 'good', T0, 0.9).due);
+  });
+
+  it('never changes a miss: it still comes back in minutes', () => {
+    expect(review(mature, 'again', T0, 0.95).due).toBe(review(mature, 'again', T0, 0.8).due);
+  });
+});

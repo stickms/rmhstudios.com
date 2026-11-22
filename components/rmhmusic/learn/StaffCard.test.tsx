@@ -101,3 +101,85 @@ describe('StaffCard played note', () => {
     expect(html).toMatch(/data-played-note[^>]*>\s*<path/);
   });
 });
+
+describe('StaffCard spelled cards', () => {
+  const title = (html: string) => html.match(/<title[^>]*>([^<]*)<\/title>/)?.[1] ?? '';
+  const caption = (html: string) => html.match(/<figcaption[^>]*>(?:<span[^>]*>)?([^<]*)/)?.[1] ?? '';
+  const fSharp = { id: 'treble:66:sharp', clef: 'treble', midi: 66, written: 65, accidental: 1 } as const;
+  const bFlat = { id: 'treble:70:flat', clef: 'treble', midi: 70, written: 71, accidental: -1 } as const;
+  const fInG = { id: 'key:G:treble:66', clef: 'treble', midi: 66, written: 65, key: 'G' } as const;
+  const gInG = { id: 'key:G:treble:67', clef: 'treble', midi: 67, key: 'G' } as const;
+  const bInEb = { id: 'key:Eb:bass:46', clef: 'bass', midi: 46, written: 47, key: 'Eb' } as const;
+
+  it('prints the sign before the notehead of an accidental card, a sharp or a flat', () => {
+    expect(render({ card: fSharp, state: 'ask', range: 'deck' })).toContain('data-accidental="sharp"');
+    expect(render({ card: bFlat, state: 'ask', range: 'deck' })).toContain('data-accidental="flat"');
+  });
+
+  it('draws a natural card with no sign and no key signature', () => {
+    const html = render({ card: { id: 'treble:64', clef: 'treble', midi: 64 }, state: 'ask', range: 'deck' });
+    expect(html).not.toContain('data-accidental');
+    expect(html).not.toContain('data-key-signature');
+  });
+
+  it('puts the note on the natural it is written on: B♭ sits on the B line, not the A', () => {
+    // The head's y is cardY(clefStep(treble, 71)): B4 is step 4 (the middle line), y = 52.
+    const y = (html: string) => Number(html.match(/<ellipse cx="122" cy="([\d.]+)"/)?.[1]);
+    expect(y(render({ card: bFlat, state: 'ask', range: 'deck' }))).toBe(52);
+    expect(y(render({ card: { id: 'treble:71', clef: 'treble', midi: 71 }, state: 'ask', range: 'deck' }))).toBe(52);
+  });
+
+  it('draws a key card’s signature after the clef, one sign per accidental, with no sign on the note', () => {
+    const sigs = (html: string) => (html.match(/data-key-signature="[^"]+"/g) ?? []).length;
+    const g = render({ card: fInG, state: 'ask', range: 'deck' });
+    expect(sigs(g)).toBe(1);
+    expect(g).not.toContain('data-accidental');
+    // One sign for G (F♯), three for E♭ (B♭ E♭ A♭): one path each inside the key-signature group.
+    const paths = (html: string) => {
+      const m = html.match(/<g[^>]*data-key-signature[^>]*>(.*?)<\/g>/);
+      return (m?.[1].match(/<path/g) ?? []).length;
+    };
+    expect(paths(g)).toBe(1);
+    expect(paths(render({ card: bInEb, state: 'ask', range: 'deck' }))).toBe(3);
+  });
+
+  it('names a spelled card by letter and sign under the card once answered', () => {
+    expect(caption(render({ card: fSharp, state: 'right', range: 'deck' }))).toBe('F♯');
+    expect(caption(render({ card: bFlat, state: 'wrong', range: 'deck' }))).toBe('B♭');
+    expect(caption(render({ card: fInG, state: 'right', range: 'deck' }))).toBe('F♯');
+    expect(caption(render({ card: gInG, state: 'right', range: 'deck' }))).toBe('G');
+    expect(caption(render({ card: fSharp, state: 'ask', range: 'deck' }))).toBe('');
+  });
+
+  it('says a sign in words in the image’s title, and never gives the answer away while asking', () => {
+    expect(title(render({ card: fSharp, state: 'right', range: 'deck' }))).toBe('F sharp 4 on the treble staff');
+    expect(title(render({ card: bFlat, state: 'right', range: 'deck' }))).toBe('B flat 4 on the treble staff');
+    expect(title(render({ card: fSharp, state: 'ask', range: 'deck' }))).toBe(
+      'A sharp or flat note on the treble staff',
+    );
+    expect(title(render({ card: fInG, state: 'ask', range: 'deck' }))).toBe('A note on the treble staff, in G major');
+    expect(title(render({ card: bInEb, state: 'right', range: 'deck' }))).toBe(
+      'B flat 2 on the bass staff, in E♭ major',
+    );
+  });
+
+  it('draws a wrong answer’s own sign beside its head, on the natural it is written on', () => {
+    // G♭ for an F♯: drawn on the G line (y = 62 for G4) with a flat before it.
+    const html = render({
+      card: fSharp,
+      state: 'wrong',
+      range: 'deck',
+      played: { midi: 66, written: 67, accidental: -1 },
+    });
+    const played = html.match(/<g[^>]*data-played-note[^>]*>(.*?)<\/g>/)?.[1] ?? '';
+    expect(played).toContain('<ellipse cx="94" cy="62"');
+    expect(played).toContain('<path d="M'); // the flat
+    expect(title(html)).toBe('F sharp 4 on the treble staff; you played G flat 4');
+  });
+
+  it('keeps a bare-number played note working, a natural with no sign', () => {
+    const html = render({ card: fSharp, state: 'wrong', range: 'deck', played: 62 });
+    expect(html).toContain('data-played-note');
+    expect(title(html)).toBe('F sharp 4 on the treble staff; you played D4');
+  });
+});

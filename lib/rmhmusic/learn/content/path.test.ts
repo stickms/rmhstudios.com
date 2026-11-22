@@ -53,9 +53,18 @@ describe('learning path', () => {
       'scales-major-all',
       'key-signatures-minor',
       'scales-minor-natural',
+      'intervals-read-second-third',
+      'intervals-read-fourth-fifth-octave',
+      'intervals-read-all-sizes',
+      'intervals-read-seconds-thirds-quality',
+      'intervals-read-quality-wider',
       'rhythm-note-values',
       'rhythm-44-vs-34',
       'rhythm-tap-the-beat',
+      'staff-sharps-flats',
+      'staff-sharps-flats-bass',
+      'staff-keys-sharps',
+      'staff-keys-flats',
     ]);
     expect(getLesson('keys-layout-and-strings')?.mode).toBe('keyboard-map');
     expect(getLesson('fretboard-first-frets')?.mode).toBe('fretboard');

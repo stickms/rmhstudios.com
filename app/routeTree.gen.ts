@@ -168,8 +168,10 @@ import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
 import { Route as RmhmusicDailyRouteImport } from './routes/rmhmusic/daily'
 import { Route as RmhmusicFriendsRouteImport } from './routes/rmhmusic/friends'
 import { Route as RmhmusicHistoryRouteImport } from './routes/rmhmusic/history'
+import { Route as RmhmusicInsightsRouteImport } from './routes/rmhmusic/insights'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
 import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
+import { Route as RmhmusicTodayRouteImport } from './routes/rmhmusic/today'
 import { Route as RmhmusicTunerRouteImport } from './routes/rmhmusic/tuner'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
@@ -1390,6 +1392,11 @@ const RmhmusicHistoryRoute = RmhmusicHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => RmhmusicRoute,
 } as any)
+const RmhmusicInsightsRoute = RmhmusicInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
@@ -1398,6 +1405,11 @@ const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
 const RmhmusicSprintRoute = RmhmusicSprintRouteImport.update({
   id: '/sprint',
   path: '/sprint',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicTodayRoute = RmhmusicTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhmusicTunerRoute = RmhmusicTunerRouteImport.update({
@@ -3722,8 +3734,10 @@ export interface FileRoutesByFullPath {
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/friends': typeof RmhmusicFriendsRoute
   '/rmhmusic/history': typeof RmhmusicHistoryRoute
+  '/rmhmusic/insights': typeof RmhmusicInsightsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
+  '/rmhmusic/today': typeof RmhmusicTodayRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/history': typeof RmhstudyHistoryRoute
@@ -4281,8 +4295,10 @@ export interface FileRoutesByTo {
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/friends': typeof RmhmusicFriendsRoute
   '/rmhmusic/history': typeof RmhmusicHistoryRoute
+  '/rmhmusic/insights': typeof RmhmusicInsightsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
+  '/rmhmusic/today': typeof RmhmusicTodayRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/history': typeof RmhstudyHistoryRoute
@@ -4867,8 +4883,10 @@ export interface FileRoutesById {
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/friends': typeof RmhmusicFriendsRoute
   '/rmhmusic/history': typeof RmhmusicHistoryRoute
+  '/rmhmusic/insights': typeof RmhmusicInsightsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
+  '/rmhmusic/today': typeof RmhmusicTodayRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/history': typeof RmhstudyHistoryRoute
@@ -5455,8 +5473,10 @@ export interface FileRouteTypes {
     | '/rmhmusic/daily'
     | '/rmhmusic/friends'
     | '/rmhmusic/history'
+    | '/rmhmusic/insights'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
+    | '/rmhmusic/today'
     | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/history'
@@ -6014,8 +6034,10 @@ export interface FileRouteTypes {
     | '/rmhmusic/daily'
     | '/rmhmusic/friends'
     | '/rmhmusic/history'
+    | '/rmhmusic/insights'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
+    | '/rmhmusic/today'
     | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/history'
@@ -6599,8 +6621,10 @@ export interface FileRouteTypes {
     | '/rmhmusic/daily'
     | '/rmhmusic/friends'
     | '/rmhmusic/history'
+    | '/rmhmusic/insights'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
+    | '/rmhmusic/today'
     | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/history'
@@ -8344,6 +8368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicHistoryRouteImport
       parentRoute: typeof RmhmusicRoute
     }
+    '/rmhmusic/insights': {
+      id: '/rmhmusic/insights'
+      path: '/insights'
+      fullPath: '/rmhmusic/insights'
+      preLoaderRoute: typeof RmhmusicInsightsRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
     '/rmhmusic/practice': {
       id: '/rmhmusic/practice'
       path: '/practice'
@@ -8356,6 +8387,13 @@ declare module '@tanstack/react-router' {
       path: '/sprint'
       fullPath: '/rmhmusic/sprint'
       preLoaderRoute: typeof RmhmusicSprintRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/today': {
+      id: '/rmhmusic/today'
+      path: '/today'
+      fullPath: '/rmhmusic/today'
+      preLoaderRoute: typeof RmhmusicTodayRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhmusic/tuner': {
@@ -12088,8 +12126,10 @@ interface RmhmusicRouteChildren {
   RmhmusicDailyRoute: typeof RmhmusicDailyRoute
   RmhmusicFriendsRoute: typeof RmhmusicFriendsRoute
   RmhmusicHistoryRoute: typeof RmhmusicHistoryRoute
+  RmhmusicInsightsRoute: typeof RmhmusicInsightsRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
   RmhmusicSprintRoute: typeof RmhmusicSprintRoute
+  RmhmusicTodayRoute: typeof RmhmusicTodayRoute
   RmhmusicTunerRoute: typeof RmhmusicTunerRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
@@ -12102,8 +12142,10 @@ const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicDailyRoute: RmhmusicDailyRoute,
   RmhmusicFriendsRoute: RmhmusicFriendsRoute,
   RmhmusicHistoryRoute: RmhmusicHistoryRoute,
+  RmhmusicInsightsRoute: RmhmusicInsightsRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
   RmhmusicSprintRoute: RmhmusicSprintRoute,
+  RmhmusicTodayRoute: RmhmusicTodayRoute,
   RmhmusicTunerRoute: RmhmusicTunerRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
@@ -12853,12 +12895,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
