@@ -42,7 +42,13 @@ def row($label; $job; $step; $timing):
      elif $j.status == "completed" then {status: "completed", conclusion: $j.conclusion}
      else {status: "queued"} end) as $r
   | (if $timing == "job" then $j else $r end) as $t
-  | {label: $label, status: $r.status, conclusion: $r.conclusion,
+  # A check step its own job skipped on purpose (go-test skips Bazel when a push
+  # touches no Go) is done, not pending: once the job passed, the row is a pass,
+  # labelled as such, rather than a ⏭️ that reads as "never ran".
+  | (($r.status == "completed" and $r.conclusion == "skipped"
+      and $j.status == "completed" and $j.conclusion == "success")) as $unneeded
+  | {label: (if $unneeded then $label + " (no changes)" else $label end),
+     status: $r.status, conclusion: (if $unneeded then "success" else $r.conclusion end),
      secs: (if $r.status == "completed" and $t.started_at and $t.completed_at
             then (($t.completed_at | fromdate) - ($t.started_at | fromdate)) else null end)};
 def icon:
