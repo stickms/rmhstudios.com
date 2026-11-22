@@ -5,10 +5,7 @@
  * environment so a test can hand it a fake IndexedDB, and each one swallows its own failures (a blocked storage API, a
  * private window): a store that cannot be read is reported as absent, never as an error that hides the others.
  */
-import {
-  DEVICE_STORES,
-  type DeviceStore,
-} from './registry';
+import { DEVICE_STORES, type DeviceStore } from './registry';
 
 export interface DeviceEnv {
   indexedDB?: IDBFactory | undefined;
@@ -24,9 +21,7 @@ export function browserEnv(): DeviceEnv {
     caches?: CacheStorage;
     navigator?: Navigator;
   };
-  const web = (
-    name: 'localStorage' | 'sessionStorage',
-  ): Storage | undefined => {
+  const web = (name: 'localStorage' | 'sessionStorage'): Storage | undefined => {
     try {
       return (globalThis as unknown as Record<string, Storage | undefined>)[name];
     } catch {
@@ -39,9 +34,7 @@ export function browserEnv(): DeviceEnv {
     localStorage: web('localStorage'),
     sessionStorage: web('sessionStorage'),
     caches: g.caches,
-    estimate: nav?.storage?.estimate
-      ? () => nav.storage.estimate()
-      : undefined,
+    estimate: nav?.storage?.estimate ? () => nav.storage.estimate() : undefined,
   };
 }
 
@@ -71,41 +64,27 @@ export interface DeviceReport {
 }
 
 /** The stores whose byte size is worth the walk: the bytes are the point. */
-const SIZED_IDS: ReadonlySet<string> =
-  new Set(['studio', 'library-reader']);
+const SIZED_IDS: ReadonlySet<string> = new Set(['studio', 'library-reader']);
 
-function requestResult<T>(
-  req: IDBRequest<T>,
-): Promise<T> {
-  return new Promise(
-    (resolve, reject) => {
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    },
-  );
+function requestResult<T>(req: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-async function existingDatabaseNames(
-  idb: IDBFactory | undefined,
-): Promise<Set<string>> {
+async function existingDatabaseNames(idb: IDBFactory | undefined): Promise<Set<string>> {
   if (!idb || typeof idb.databases !== 'function') return new Set();
   try {
     const list = await idb.databases();
-    return new Set(
-      list
-        .map((d) => d.name)
-        .filter((n): n is string => typeof n === 'string'),
-    );
+    return new Set(list.map((d) => d.name).filter((n): n is string => typeof n === 'string'));
   } catch {
     return new Set();
   }
 }
 
 /** A rough byte size of a stored value: binary payloads exactly, text by length, objects by their fields. */
-export function approxBytes(
-  value: unknown,
-  depth = 0,
-): number {
+export function approxBytes(value: unknown, depth = 0): number {
   if (value == null || depth > 4) return 0;
   if (typeof value === 'string') return value.length;
   if (typeof value === 'number') return 8;
@@ -113,16 +92,9 @@ export function approxBytes(
   if (value instanceof ArrayBuffer) return value.byteLength;
   if (ArrayBuffer.isView(value)) return value.byteLength;
   if (typeof Blob !== 'undefined' && value instanceof Blob) return value.size;
-  if (Array.isArray(value))
-    return value.reduce<number>(
-      (n, v) => n + approxBytes(v, depth + 1),
-      0,
-    );
+  if (Array.isArray(value)) return value.reduce<number>((n, v) => n + approxBytes(v, depth + 1), 0);
   if (typeof value === 'object')
-    return Object.values(value as Record<string, unknown>).reduce<number>(
-      (n, v) => n + approxBytes(v, depth + 1),
-      0,
-    );
+    return Object.values(value as Record<string, unknown>).reduce<number>((n, v) => n + approxBytes(v, depth + 1), 0);
   return 0;
 }
 
@@ -166,14 +138,10 @@ function keysWithPrefix(
       if (key === null) continue;
       if (!prefixes.some((p) => key.startsWith(p))) continue;
       // A longer name on another line owns the key (`vb-meta` is a save, `vb-` is a preference).
-      const mine = Math.max(
-        ...prefixes.filter((p) => key.startsWith(p)).map((p) => p.length),
-      );
+      const mine = Math.max(...prefixes.filter((p) => key.startsWith(p)).map((p) => p.length));
       const owned = all.some(
         (o) =>
-          o !== self &&
-          o.kind === 'localstorage-prefix' &&
-          o.names.some((n) => key.startsWith(n) && n.length > mine),
+          o !== self && o.kind === 'localstorage-prefix' && o.names.some((n) => key.startsWith(n) && n.length > mine),
       );
       if (!owned) out.push(key);
     }
@@ -184,10 +152,7 @@ function keysWithPrefix(
 }
 
 /** The keys of one Web Storage registry line that exist in this browser (localStorage and sessionStorage). */
-export function presentKeys(
-  store: DeviceStore,
-  env: DeviceEnv,
-): { area: 'local' | 'session'; key: string }[] {
+export function presentKeys(store: DeviceStore, env: DeviceEnv): { area: 'local' | 'session'; key: string }[] {
   const found: { area: 'local' | 'session'; key: string }[] = [];
   for (const key of keysWithPrefix(env.localStorage, store.names, DEVICE_STORES, store))
     found.push({ area: 'local', key });
@@ -196,11 +161,7 @@ export function presentKeys(
   return found;
 }
 
-async function inspectStore(
-  store: DeviceStore,
-  env: DeviceEnv,
-  dbNames: Set<string>,
-): Promise<StoreReport> {
+async function inspectStore(store: DeviceStore, env: DeviceEnv, dbNames: Set<string>): Promise<StoreReport> {
   const empty: StoreReport = {
     id: store.id,
     present: false,
@@ -240,9 +201,7 @@ async function inspectStore(
       return { ...empty, present: keys.length > 0, count: keys.length };
     }
     if (!env.caches) return empty;
-    const names = (await env.caches.keys()).filter((n) =>
-      store.names.some((p) => n.startsWith(p)),
-    );
+    const names = (await env.caches.keys()).filter((n) => store.names.some((p) => n.startsWith(p)));
     let entries = 0;
     for (const n of names) {
       try {
@@ -258,14 +217,12 @@ async function inspectStore(
 }
 
 /** Local Studio projects and samples and unsent drafts: the work that may exist only on this device. */
-export function unsentFromReports(
-  reports: readonly StoreReport[],
-  env: DeviceEnv,
-): UnsentCounts {
+export function unsentFromReports(reports: readonly StoreReport[], env: DeviceEnv): UnsentCounts {
   const by = new Map(reports.map((r) => [r.id, r]));
-  const draftKeys = DEVICE_STORES.filter(
-    (s) => s.kind === 'localstorage-prefix' && s.unsent === 'drafts',
-  ).reduce((n, s) => n + presentKeys(s, env).length, 0);
+  const draftKeys = DEVICE_STORES.filter((s) => s.kind === 'localstorage-prefix' && s.unsent === 'drafts').reduce(
+    (n, s) => n + presentKeys(s, env).length,
+    0,
+  );
   return {
     projects: by.get('studio')?.parts.projects ?? 0,
     samples: by.get('studio')?.parts.samples ?? 0,
@@ -273,18 +230,13 @@ export function unsentFromReports(
   };
 }
 
-export async function inspectDevice(
-  env: DeviceEnv = browserEnv(),
-): Promise<DeviceReport> {
+export async function inspectDevice(env: DeviceEnv = browserEnv()): Promise<DeviceReport> {
   const dbNames = await existingDatabaseNames(env.indexedDB);
-  const all = await Promise.all(
-    DEVICE_STORES.map((s) => inspectStore(s, env, dbNames)),
-  );
+  const all = await Promise.all(DEVICE_STORES.map((s) => inspectStore(s, env, dbNames)));
   let estimate: DeviceReport['estimate'] = null;
   try {
     const e = await env.estimate?.();
-    if (e && typeof e.usage === 'number' && typeof e.quota === 'number')
-      estimate = { usage: e.usage, quota: e.quota };
+    if (e && typeof e.usage === 'number' && typeof e.quota === 'number') estimate = { usage: e.usage, quota: e.quota };
   } catch {
     estimate = null;
   }
@@ -296,35 +248,23 @@ export async function inspectDevice(
 }
 
 /** Just the unsent-work counts, for the sign-out and deletion questions. */
-export async function countUnsentWork(
-  env: DeviceEnv = browserEnv(),
-): Promise<UnsentCounts> {
+export async function countUnsentWork(env: DeviceEnv = browserEnv()): Promise<UnsentCounts> {
   const dbNames = await existingDatabaseNames(env.indexedDB);
   const stores = DEVICE_STORES.filter((s) => s.unsent === 'studio' || s.unsent === 'drafts');
   const reports = await Promise.all(
-    stores
-      .filter((s) => s.kind === 'indexeddb')
-      .map((s) => inspectStore(s, env, dbNames)),
+    stores.filter((s) => s.kind === 'indexeddb').map((s) => inspectStore(s, env, dbNames)),
   );
   return unsentFromReports(reports, env);
 }
 
-export function hasUnsentWork(
-  counts: UnsentCounts,
-): boolean {
+export function hasUnsentWork(counts: UnsentCounts): boolean {
   return counts.projects + counts.samples + counts.drafts > 0;
 }
 
 /** A byte count scaled to the unit a reader wants (`Intl` unit names), for `Intl.NumberFormat`'s `unit` style. */
-export function scaleBytes(
-  bytes: number,
-): {
+export function scaleBytes(bytes: number): {
   value: number;
-  unit:
-    | 'byte'
-    | 'kilobyte'
-    | 'megabyte'
-    | 'gigabyte';
+  unit: 'byte' | 'kilobyte' | 'megabyte' | 'gigabyte';
 } {
   if (bytes < 1000) return { value: bytes, unit: 'byte' };
   if (bytes < 1_000_000) return { value: bytes / 1000, unit: 'kilobyte' };

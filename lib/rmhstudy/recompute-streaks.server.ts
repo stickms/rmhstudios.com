@@ -1,8 +1,4 @@
-import {
-  deriveStreak,
-  longestRun,
-  studyDayKey,
-} from '@/lib/rmhstudy/streak';
+import { deriveStreak, longestRun, studyDayKey } from '@/lib/rmhstudy/streak';
 
 /** Profiles read per batch. */
 export const RECOMPUTE_BATCH_SIZE = 500;
@@ -10,9 +6,7 @@ export const RECOMPUTE_BATCH_SIZE = 500;
 export interface ProfileRow {
   id: string;
   userId: string;
-  timeZone:
-    | string
-    | null;
+  timeZone: string | null;
   currentStreak: number;
   longestStreak: number;
 }
@@ -30,13 +24,8 @@ export interface RecomputeDb {
         id: 'asc';
       };
       take: number;
-      select: Record<
-        keyof ProfileRow,
-        true
-      >;
-    }): Promise<
-      ProfileRow[]
-    >;
+      select: Record<keyof ProfileRow, true>;
+    }): Promise<ProfileRow[]>;
     update(args: {
       where: {
         id: string;
@@ -99,181 +88,82 @@ export async function recomputeStreaks(
     ) => void;
   },
 ): Promise<RecomputeResult> {
-  const now =
-    options.now ??
-    new Date();
-  const result: RecomputeResult =
-    {
-      scanned: 0,
-      skipped: 0,
-      changed: 0,
-      unchanged: 0,
-    };
-  let after:
-    | string
-    | undefined;
+  const now = options.now ?? new Date();
+  const result: RecomputeResult = {
+    scanned: 0,
+    skipped: 0,
+    changed: 0,
+    unchanged: 0,
+  };
+  let after: string | undefined;
   for (;;) {
-    const profiles =
-      await db.rmhStudyProfile.findMany(
-        {
-          where:
-            after ===
-            undefined
-              ? {}
-              : {
-                  id: {
-                    gt: after,
-                  },
-                },
-          orderBy:
-            {
-              id: 'asc',
+    const profiles = await db.rmhStudyProfile.findMany({
+      where:
+        after === undefined
+          ? {}
+          : {
+              id: {
+                gt: after,
+              },
             },
-          take: RECOMPUTE_BATCH_SIZE,
-          select:
-            {
-              id: true,
-              userId: true,
-              timeZone: true,
-              currentStreak: true,
-              longestStreak: true,
-            },
+      orderBy: {
+        id: 'asc',
+      },
+      take: RECOMPUTE_BATCH_SIZE,
+      select: {
+        id: true,
+        userId: true,
+        timeZone: true,
+        currentStreak: true,
+        longestStreak: true,
+      },
+    });
+    if (profiles.length === 0) break;
+    after = profiles[profiles.length - 1]?.id;
+    const sessions = await db.rmhStudySession.findMany({
+      where: {
+        profileId: {
+          in: profiles.map((p) => p.id),
         },
-      );
-    if (
-      profiles.length ===
-      0
-    )
-      break;
-    after =
-      profiles[
-        profiles.length -
-          1
-      ]
-        ?.id;
-    const sessions =
-      await db.rmhStudySession.findMany(
-        {
-          where:
-            {
-              profileId:
-                {
-                  in: profiles.map(
-                    (
-                      p,
-                    ) =>
-                      p.id,
-                  ),
-                },
-            },
-          select:
-            {
-              profileId: true,
-              startedAt: true,
-            },
-        },
-      );
-    const byProfile =
-      new Map<
-        string,
-        Date[]
-      >();
+      },
+      select: {
+        profileId: true,
+        startedAt: true,
+      },
+    });
+    const byProfile = new Map<string, Date[]>();
     for (const s of sessions) {
-      const list =
-        byProfile.get(
-          s.profileId,
-        );
-      if (
-        list
-      )
-        list.push(
-          s.startedAt,
-        );
-      else
-        byProfile.set(
-          s.profileId,
-          [
-            s.startedAt,
-          ],
-        );
+      const list = byProfile.get(s.profileId);
+      if (list) list.push(s.startedAt);
+      else byProfile.set(s.profileId, [s.startedAt]);
     }
     for (const profile of profiles) {
       result.scanned++;
-      const rows =
-        byProfile.get(
-          profile.id,
-        );
-      if (
-        !rows
-      ) {
+      const rows = byProfile.get(profile.id);
+      if (!rows) {
         result.skipped++;
         continue;
       }
-      const keys =
-        [
-          ...new Set(
-            rows.map(
-              (
-                d,
-              ) =>
-                studyDayKey(
-                  d,
-                  profile.timeZone,
-                ),
-            ),
-          ),
-        ];
-      const next =
-        {
-          currentStreak:
-            deriveStreak(
-              keys,
-              studyDayKey(
-                now,
-                profile.timeZone,
-              ),
-            )
-              .current,
-          longestStreak:
-            Math.max(
-              longestRun(
-                keys,
-              ),
-              profile.longestStreak,
-            ),
-        };
-      if (
-        next.currentStreak ===
-          profile.currentStreak &&
-        next.longestStreak ===
-          profile.longestStreak
-      ) {
+      const keys = [...new Set(rows.map((d) => studyDayKey(d, profile.timeZone)))];
+      const next = {
+        currentStreak: deriveStreak(keys, studyDayKey(now, profile.timeZone)).current,
+        longestStreak: Math.max(longestRun(keys), profile.longestStreak),
+      };
+      if (next.currentStreak === profile.currentStreak && next.longestStreak === profile.longestStreak) {
         result.unchanged++;
         continue;
       }
       result.changed++;
-      options.onChange?.(
-        profile,
-        next,
-      );
-      if (
-        !options.dryRun
-      )
-        await db.rmhStudyProfile.update(
-          {
-            where:
-              {
-                id: profile.id,
-              },
-            data: next,
+      options.onChange?.(profile, next);
+      if (!options.dryRun)
+        await db.rmhStudyProfile.update({
+          where: {
+            id: profile.id,
           },
-        );
+          data: next,
+        });
     }
-    if (
-      profiles.length <
-      RECOMPUTE_BATCH_SIZE
-    )
-      break;
+    if (profiles.length < RECOMPUTE_BATCH_SIZE) break;
   }
   return result;
 }

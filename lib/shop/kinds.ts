@@ -6,24 +6,16 @@
  */
 
 export type ShopItemKind =
-  | 'THEME'
-  | 'SITE_THEME'
-  | 'PET'
-  | 'NAME_COLOR'
-  | 'BADGE'
-  | 'BANNER'
-  | 'POST_FLAIR'
-  | 'AVATAR_FRAME';
+  'THEME' | 'SITE_THEME' | 'PET' | 'NAME_COLOR' | 'BADGE' | 'BANNER' | 'POST_FLAIR' | 'AVATAR_FRAME';
 
 /** The store's category tabs, in order. */
-export const KIND_ORDER: ShopItemKind[] =
-  [
-    'NAME_COLOR',
-    'AVATAR_FRAME',
-    'BADGE',
-    'POST_FLAIR',
-    'BANNER',
-    'PET',
-    'THEME',
-    'SITE_THEME',
-  ];
+export const KIND_ORDER: ShopItemKind[] = [
+  'NAME_COLOR',
+  'AVATAR_FRAME',
+  'BADGE',
+  'POST_FLAIR',
+  'BANNER',
+  'PET',
+  'THEME',
+  'SITE_THEME',
+];

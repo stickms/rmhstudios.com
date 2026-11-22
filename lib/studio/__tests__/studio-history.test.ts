@@ -55,7 +55,8 @@ vi.mock('@/lib/prisma.server', () => {
   };
   const matches = (row: VersionRow, where: Record<string, unknown>) =>
     Object.entries(where).every(([k, v]) => {
-      if (v && typeof v === 'object' && 'in' in v) return (v as { in: string[] }).in.includes(row[k as keyof VersionRow] as string);
+      if (v && typeof v === 'object' && 'in' in v)
+        return (v as { in: string[] }).in.includes(row[k as keyof VersionRow] as string);
       return row[k as keyof VersionRow] === v;
     });
   const order = (rows: VersionRow[], orderBy: unknown) => {
@@ -82,7 +83,10 @@ vi.mock('@/lib/prisma.server', () => {
     },
     count: async (args: { where: { userId: string } }) =>
       [...projects.values()].filter((r) => r.userId === args.where.userId).length,
-    create: async (args: { data: Omit<ProjectRow, 'revision' | 'createdAt' | 'updatedAt'>; select?: Record<string, boolean> }) => {
+    create: async (args: {
+      data: Omit<ProjectRow, 'revision' | 'createdAt' | 'updatedAt'>;
+      select?: Record<string, boolean>;
+    }) => {
       const now = new Date();
       const row: ProjectRow = { ...args.data, revision: 1, createdAt: now, updatedAt: now };
       projects.set(row.id, row);
@@ -110,14 +114,22 @@ vi.mock('@/lib/prisma.server', () => {
     },
   };
   const studioProjectRevision = {
-    findFirst: async (args: { where: Record<string, unknown>; orderBy?: unknown; select?: Record<string, boolean> }) => {
-      const rows = order(versions().filter((v) => matches(v, args.where)), args.orderBy ?? { revision: 'desc' });
+    findFirst: async (args: {
+      where: Record<string, unknown>;
+      orderBy?: unknown;
+      select?: Record<string, boolean>;
+    }) => {
+      const rows = order(
+        versions().filter((v) => matches(v, args.where)),
+        args.orderBy ?? { revision: 'desc' },
+      );
       return rows[0] ? pick(rows[0], args.select) : null;
     },
     findMany: async (args: { where: Record<string, unknown>; orderBy?: unknown; select?: Record<string, boolean> }) =>
-      order(versions().filter((v) => matches(v, args.where)), args.orderBy ?? { revision: 'desc' }).map((v) =>
-        pick(v, args.select),
-      ),
+      order(
+        versions().filter((v) => matches(v, args.where)),
+        args.orderBy ?? { revision: 'desc' },
+      ).map((v) => pick(v, args.select)),
     create: async (args: { data: Omit<VersionRow, 'id'> }) => {
       if (versions().some((v) => v.projectId === args.data.projectId && v.revision === args.data.revision)) {
         throw Object.assign(new Error('unique'), { code: 'P2002' });
@@ -146,11 +158,7 @@ import { route as listRoute } from '@/lib/studio/api/studio.projects.$id.version
 import { route as oneRoute } from '@/lib/studio/api/studio.projects.$id.versions.$versionId.server';
 import { route as restoreRoute } from '@/lib/studio/api/studio.projects.$id.versions.$versionId.restore.server';
 import { deleteCloudProject, restoreVersion, saveCloudProject } from '@/lib/studio/cloud-projects.server';
-import {
-  getVersion,
-  listVersions,
-  studioHistoryErasureOps,
-} from '@/lib/studio/project-history.server';
+import { getVersion, listVersions, studioHistoryErasureOps } from '@/lib/studio/project-history.server';
 import { MAX_VERSIONS_PER_PROJECT, MAX_VERSION_BYTES_PER_MEMBER } from '@/lib/studio/project-history';
 import type { StudioProjectData } from '@/lib/studio/projects.contract';
 
@@ -195,7 +203,12 @@ async function create(id = 'p1', userId = 'u1') {
 async function saveAt(minute: number, tracks: number, id = 'p1', userId = 'u1') {
   at(minute);
   const current = db.projects.get(id) as unknown as ProjectRow;
-  const res = await saveCloudProject(userId, { id, name: 'Demo', data: project(id, tracks), baseRevision: current.revision });
+  const res = await saveCloudProject(userId, {
+    id,
+    name: 'Demo',
+    data: project(id, tracks),
+    baseRevision: current.revision,
+  });
   expect(res.ok).toBe(true);
 }
 const versionsOf = (id = 'p1') => (db.versions as unknown as VersionRow[]).filter((v) => v.projectId === id);
@@ -282,9 +295,7 @@ describe('studio history: restore', () => {
     expect(row.revision).toBe(4);
     expect((row.data as StudioProjectData).tracks).toHaveLength(1);
     // The 3-track state, saved a minute earlier, is kept despite the window, so the restore can be undone.
-    expect(versionsOf().map((v) => [v.revision, v.trackCount])).toEqual(
-      expect.arrayContaining([[3, 3]]),
-    );
+    expect(versionsOf().map((v) => [v.revision, v.trackCount])).toEqual(expect.arrayContaining([[3, 3]]));
   });
 
   it('a stale restore is refused with the current revision and changes nothing', async () => {
@@ -321,7 +332,9 @@ describe('studio history: trimming', () => {
   it('the 21st version removes the oldest', async () => {
     await create();
     for (let i = 1; i <= MAX_VERSIONS_PER_PROJECT + 1; i++) await saveAt(i * 15, 1 + (i % 3));
-    const revisions = versionsOf().map((v) => v.revision).sort((a, b) => a - b);
+    const revisions = versionsOf()
+      .map((v) => v.revision)
+      .sort((a, b) => a - b);
     expect(revisions).toHaveLength(MAX_VERSIONS_PER_PROJECT);
     expect(revisions[0]).toBe(2); // revision 1 was the oldest and is gone
   });
@@ -378,7 +391,9 @@ describe('studio history: ownership and deletion', () => {
     const version = versionsOf()[0]!;
     expect((await call(listRoute, 'GET', { id: 'p1' })).status).toBe(404);
     expect((await call(oneRoute, 'GET', { id: 'p1', versionId: version.id })).status).toBe(404);
-    expect((await call(restoreRoute, 'POST', { id: 'p1', versionId: version.id }, { baseRevision: 2 })).status).toBe(404);
+    expect((await call(restoreRoute, 'POST', { id: 'p1', versionId: version.id }, { baseRevision: 2 })).status).toBe(
+      404,
+    );
     expect(await getVersion('u1', 'p1', version.id)).toBeNull();
     expect(await listVersions('u1', 'p1')).toBeNull();
     expect((db.projects.get('p1') as unknown as ProjectRow).revision).toBe(2);

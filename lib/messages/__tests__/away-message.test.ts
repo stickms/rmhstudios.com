@@ -249,7 +249,11 @@ describe('awayStatusFor', () => {
 
   it('returns nothing to someone who cannot message the member', async () => {
     h.canDm = false;
-    expect(await awayStatusFor('viewer', 'away-user', 'header', NOW)).toEqual({ active: false, endsAt: null, tz: null });
+    expect(await awayStatusFor('viewer', 'away-user', 'header', NOW)).toEqual({
+      active: false,
+      endsAt: null,
+      tz: null,
+    });
   });
 
   it('returns nothing across a block or a mute', async () => {

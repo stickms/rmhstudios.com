@@ -8,51 +8,22 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
-import {
-  musicFriendsQuery,
-  musicSharesQuery,
-  musicSocialQuery,
-} from '@/lib/rmhmusic/social/social.queries';
+import { musicFriendsQuery, musicSharesQuery, musicSocialQuery } from '@/lib/rmhmusic/social/social.queries';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { FriendsPage } from '@/components/rmhmusic/learn/social/FriendsPage';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/friends',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'RMHMusic Friends and sharing',
-        ),
-      loader:
-        async ({
-          context,
-        }) => {
-          await Promise.all(
-            [
-              prefetchRouteQuery(
-                context.queryClient,
-                musicSocialQuery(),
-              ),
-              prefetchRouteQuery(
-                context.queryClient,
-                musicFriendsQuery(
-                  100,
-                ),
-              ),
-              prefetchRouteQuery(
-                context.queryClient,
-                musicSharesQuery(),
-              ),
-            ],
-          );
-          return undefined;
-        },
-      component:
-        FriendsRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/friends')({
+  head: () => noindexHead('RMHMusic Friends and sharing'),
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, musicSocialQuery()),
+      prefetchRouteQuery(context.queryClient, musicFriendsQuery(100)),
+      prefetchRouteQuery(context.queryClient, musicSharesQuery()),
+    ]);
+    return undefined;
+  },
+  component: FriendsRoute,
+});
 
 function FriendsRoute() {
   return (

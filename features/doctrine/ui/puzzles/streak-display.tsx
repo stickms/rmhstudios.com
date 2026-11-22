@@ -7,22 +7,10 @@ interface StreakDisplayProps {
   longestStreak: number;
 }
 
-export function StreakDisplay({
-  streak,
-  longestStreak,
-}: StreakDisplayProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-doctrine',
-    );
-  const isHot =
-    streak >=
-    7;
-  const isOnFire =
-    streak >=
-    14;
+export function StreakDisplay({ streak, longestStreak }: StreakDisplayProps) {
+  const { t } = useTranslation('c-doctrine');
+  const isHot = streak >= 7;
+  const isOnFire = streak >= 14;
 
   return (
     <div className="flex items-center gap-3">
@@ -30,79 +18,43 @@ export function StreakDisplay({
         animate={
           isOnFire
             ? {
-                rotate:
-                  [
-                    0,
-                    -5,
-                    5,
-                    0,
-                  ],
+                rotate: [0, -5, 5, 0],
               }
             : {}
         }
         transition={{
-          repeat:
-            Infinity,
+          repeat: Infinity,
           duration: 0.5,
         }}
         className="flex items-center gap-1.5"
       >
         <Flame
-          size={
-            20
-          }
+          size={20}
           style={{
-            color:
-              isOnFire
-                ? '#EF4444'
-                : isHot
-                  ? '#F97316'
-                  : streak >
-                      0
-                    ? '#F59E0B'
-                    : '#52525B',
+            color: isOnFire ? '#EF4444' : isHot ? '#F97316' : streak > 0 ? '#F59E0B' : '#52525B',
           }}
-          fill={
-            streak >
-            0
-              ? 'currentColor'
-              : 'none'
-          }
+          fill={streak > 0 ? 'currentColor' : 'none'}
         />
         <span
           className="text-lg font-bold tabular-nums"
           style={{
-            color:
-              streak >
-              0
-                ? '#F5F5F5'
-                : '#52525B',
+            color: streak > 0 ? '#F5F5F5' : '#52525B',
           }}
         >
-          {
-            streak
-          }
+          {streak}
         </span>
       </motion.div>
       <div className="text-xs text-white/50 leading-tight">
         <p>
-          {t(
-            'day-streak',
-            {
-              defaultValue:
-                'day streak',
-            },
-          )}
+          {t('day-streak', {
+            defaultValue: 'day streak',
+          })}
         </p>
         <p>
-          {t(
-            'best-streak',
-            {
-              defaultValue:
-                'best: {{longestStreak}}',
-              longestStreak,
-            },
-          )}
+          {t('best-streak', {
+            defaultValue: 'best: {{longestStreak}}',
+            longestStreak,
+          })}
         </p>
       </div>
     </div>

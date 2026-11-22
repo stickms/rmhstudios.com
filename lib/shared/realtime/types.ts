@@ -21,27 +21,13 @@ export type RealtimeStatus =
   | 'error';
 
 /** True while the app should treat its cached session state as still valid. */
-export function isRecoverable(
-  status: RealtimeStatus,
-): boolean {
-  return (
-    status ===
-      'connecting' ||
-    status ===
-      'reconnecting' ||
-    status ===
-      'connected'
-  );
+export function isRecoverable(status: RealtimeStatus): boolean {
+  return status === 'connecting' || status === 'reconnecting' || status === 'connected';
 }
 
 /** True while the app cannot send anything to the server. */
-export function isOffline(
-  status: RealtimeStatus,
-): boolean {
-  return (
-    status !==
-    'connected'
-  );
+export function isOffline(status: RealtimeStatus): boolean {
+  return status !== 'connected';
 }
 
 /**

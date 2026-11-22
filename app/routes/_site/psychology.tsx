@@ -10,23 +10,12 @@
  * never drift apart or assert canonicity against each other.
  */
 
-import {
-  createFileRoute,
-  redirect,
-} from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
-export const Route =
-  createFileRoute(
-    '/_site/psychology',
-  )(
-    {
-      beforeLoad:
-        () => {
-          throw redirect(
-            {
-              to: '/rmh-research/psychology',
-            },
-          );
-        },
-    },
-  );
+export const Route = createFileRoute('/_site/psychology')({
+  beforeLoad: () => {
+    throw redirect({
+      to: '/rmh-research/psychology',
+    });
+  },
+});

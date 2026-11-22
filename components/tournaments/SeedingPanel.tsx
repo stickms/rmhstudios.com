@@ -18,7 +18,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { serverError } from '@/lib/http';
-import { SEEDING_METHODS, isSeedingMethod, ratingSeedingAvailable, type SeedingMethod, type SeedingView } from '@/lib/tournaments/seeding';
+import {
+  SEEDING_METHODS,
+  isSeedingMethod,
+  ratingSeedingAvailable,
+  type SeedingMethod,
+  type SeedingView,
+} from '@/lib/tournaments/seeding';
 import { fetchSeeding, saveSeeding } from '@/lib/tournaments/seeding.queries';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 
@@ -44,8 +50,7 @@ function useSeedingCopy() {
           return t('help-join', { defaultValue: 'Players are seeded in the order they joined.' });
         case 'rating':
           return t('help-rating', {
-            defaultValue:
-              'The highest rating for this game is seed 1. Players without a rating count as 1000.',
+            defaultValue: 'The highest rating for this game is seed 1. Players without a rating count as 1000.',
           });
         case 'random':
           return t('help-random', {
@@ -53,8 +58,7 @@ function useSeedingCopy() {
           });
         case 'manual':
           return t('help-manual', {
-            defaultValue:
-              'The host orders the players before the start. Anyone left out follows in sign-up order.',
+            defaultValue: 'The host orders the players before the start. Anyone left out follows in sign-up order.',
           });
       }
     },
@@ -158,8 +162,7 @@ export function SeedingPanel({ tourney, canManage, onChanged }: PanelProps) {
     const target = pendingFocus.current;
     if (!target) return;
     pendingFocus.current = null;
-    const pick = (dir: string) =>
-      document.querySelector<HTMLButtonElement>(`[data-seed-move="${target.id}:${dir}"]`);
+    const pick = (dir: string) => document.querySelector<HTMLButtonElement>(`[data-seed-move="${target.id}:${dir}"]`);
     const first = pick(target.dir);
     (first && !first.disabled ? first : pick(target.dir === 'up' ? 'down' : 'up'))?.focus();
   }, [order]);
@@ -167,8 +170,7 @@ export function SeedingPanel({ tourney, canManage, onChanged }: PanelProps) {
   if (tourney.status !== 'REGISTRATION') return null;
 
   const nameOf = (id: string) =>
-    tourney.entrants?.find((e) => e.id === id)?.user?.name ??
-    t('unknown-player', { defaultValue: 'Player' });
+    tourney.entrants?.find((e) => e.id === id)?.user?.name ?? t('unknown-player', { defaultValue: 'Player' });
   const ratingOf = new Map((view?.entrants ?? []).map((e) => [e.id, e.rating] as const));
 
   const run = async (work: () => Promise<unknown>, okMsg: string) => {
@@ -185,10 +187,7 @@ export function SeedingPanel({ tourney, canManage, onChanged }: PanelProps) {
   };
 
   const changeMethod = (next: SeedingMethod) =>
-    run(
-      () => saveSeeding(tourney.id, { method: next }),
-      t('method-saved', { defaultValue: 'Seeding saved' }),
-    );
+    run(() => saveSeeding(tourney.id, { method: next }), t('method-saved', { defaultValue: 'Seeding saved' }));
 
   const move = (index: number, dir: 'up' | 'down') => {
     const to = dir === 'up' ? index - 1 : index + 1;
@@ -209,10 +208,7 @@ export function SeedingPanel({ tourney, canManage, onChanged }: PanelProps) {
   };
 
   const saveOrder = () =>
-    run(
-      () => saveSeeding(tourney.id, { order }),
-      t('order-saved', { defaultValue: 'Seed order saved' }),
-    );
+    run(() => saveSeeding(tourney.id, { order }), t('order-saved', { defaultValue: 'Seed order saved' }));
 
   return (
     <section aria-labelledby="seeding-heading" className="space-y-3 border-b border-site-border pb-4">

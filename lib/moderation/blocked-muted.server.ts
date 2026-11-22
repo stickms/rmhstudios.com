@@ -78,9 +78,7 @@ async function counts(userId: string): Promise<BlockedMutedPage['counts']> {
   return { blocked, muted };
 }
 
-function pageOf<T extends { id: string; createdAt: Date }>(
-  rows: T[],
-): { page: T[]; nextCursor: string | null } {
+function pageOf<T extends { id: string; createdAt: Date }>(rows: T[]): { page: T[]; nextCursor: string | null } {
   const hasMore = rows.length > BLOCKED_MUTED_PAGE_SIZE;
   const page = hasMore ? rows.slice(0, BLOCKED_MUTED_PAGE_SIZE) : rows;
   const last = page[page.length - 1];
@@ -128,7 +126,11 @@ export async function listMuted(userId: string, opts: ListOptions = {}): Promise
   };
 }
 
-export function listBlockedMuted(userId: string, tab: BlockedMutedTab, opts: ListOptions = {}): Promise<BlockedMutedPage> {
+export function listBlockedMuted(
+  userId: string,
+  tab: BlockedMutedTab,
+  opts: ListOptions = {},
+): Promise<BlockedMutedPage> {
   return tab === 'muted' ? listMuted(userId, opts) : listBlocked(userId, opts);
 }
 

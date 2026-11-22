@@ -27,15 +27,7 @@ export function ToolFrame({ slug, children }: { slug: string; children: ReactNod
 }
 
 /** A labelled group of controls or results inside a tool, separated from the next by a rule. */
-export function ToolSection({
-  title,
-  children,
-  action,
-}: {
-  title: string;
-  children: ReactNode;
-  action?: ReactNode;
-}) {
+export function ToolSection({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
     <section className="flex flex-col gap-3 border-t border-site-border pt-4">
       <div className="flex min-h-9 items-center justify-between gap-3">

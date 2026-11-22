@@ -12,7 +12,11 @@ export const route = apiRoute('/api/events/$id/updates/recipients', {
     async ({ params, userId, isAdmin, query }) => {
       try {
         const requested =
-          query.occurrenceAt === undefined ? undefined : query.occurrenceAt === 'series' ? null : new Date(query.occurrenceAt);
+          query.occurrenceAt === undefined
+            ? undefined
+            : query.occurrenceAt === 'series'
+              ? null
+              : new Date(query.occurrenceAt);
         return { count: await recipientCount(params.id, userId, isAdmin, requested) };
       } catch (error) {
         return refused(error);

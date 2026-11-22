@@ -84,27 +84,14 @@ export function SignedOutPrompt({
   actionLabel,
   className,
 }: SignedOutPromptProps) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'common',
-    );
+  const { t } = useTranslation('common');
 
   return (
     <EmptyState
-      className={
-        className
-      }
-      icon={
-        icon
-      }
-      title={
-        title
-      }
-      description={
-        description
-      }
+      className={className}
+      icon={icon}
+      title={title}
+      description={description}
       action={
         <Link
           to="/login"
@@ -114,13 +101,9 @@ export function SignedOutPrompt({
         >
           <Button variant="default">
             {actionLabel ??
-              t(
-                'sign-in',
-                {
-                  defaultValue:
-                    'Sign in',
-                },
-              )}
+              t('sign-in', {
+                defaultValue: 'Sign in',
+              })}
           </Button>
         </Link>
       }

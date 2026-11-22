@@ -1,8 +1,4 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-} from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 
 /**
  * Focus return for a dialog opened without a `DialogTrigger`.
@@ -14,44 +10,21 @@ import {
  * runs when the dialog unmounts with its parent, because Radix's focus scope fires the same event
  * on unmount.
  */
-export function useFocusReturn(
-  open = true,
-) {
-  const returnTo =
-    useRef<HTMLElement | null>(
-      null,
-    );
+export function useFocusReturn(open = true) {
+  const returnTo = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
-    if (
-      open &&
-      document.activeElement instanceof
-        HTMLElement &&
-      document.activeElement !==
-        document.body
-    ) {
-      returnTo.current =
-        document.activeElement;
+    if (open && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+      returnTo.current = document.activeElement;
     }
-  }, [
-    open,
-  ]);
+  }, [open]);
 
-  return useCallback(
-    (
-      event: Event,
-    ) => {
-      const el =
-        returnTo.current;
-      returnTo.current =
-        null;
-      if (
-        el?.isConnected
-      ) {
-        event.preventDefault();
-        el.focus();
-      }
-    },
-    [],
-  );
+  return useCallback((event: Event) => {
+    const el = returnTo.current;
+    returnTo.current = null;
+    if (el?.isConnected) {
+      event.preventDefault();
+      el.focus();
+    }
+  }, []);
 }

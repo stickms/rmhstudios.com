@@ -12,32 +12,19 @@
 
 export type { ChatRef } from './types-schema';
 
-export const CHAT_KINDS =
-  [
-    'dm',
-    'group',
-  ] as const;
-export type ChatKind =
-  (typeof CHAT_KINDS)[number];
+export const CHAT_KINDS = ['dm', 'group'] as const;
+export type ChatKind = (typeof CHAT_KINDS)[number];
 
 /** `dm:<id>` | `group:<id>` — the same namespace `ConversationPref` uses. */
-export function scopeKeyOf(
-  kind: ChatKind,
-  id: string,
-): string {
+export function scopeKeyOf(kind: ChatKind, id: string): string {
   return `${kind}:${id}`;
 }
 
-export function parseScopeKey(
-  key: string,
-): {
+export function parseScopeKey(key: string): {
   kind: ChatKind;
   id: string;
 } | null {
-  const m =
-    /^(dm|group):([A-Za-z0-9_-]{1,60})$/.exec(
-      key,
-    );
+  const m = /^(dm|group):([A-Za-z0-9_-]{1,60})$/.exec(key);
   return m
     ? {
         kind: m[1] as ChatKind,
@@ -51,65 +38,22 @@ export function parseScopeKey(
  * everything else carries a readable fallback in `content` (so previews, search
  * and notifications never see an empty string) plus its structured `meta`.
  */
-export const MESSAGE_KINDS =
-  [
-    'text',
-    'system',
-    'tip',
-    'dice',
-    'coin',
-    'checklist',
-    'poll',
-  ] as const;
-export type MessageKind =
-  (typeof MESSAGE_KINDS)[number];
+export const MESSAGE_KINDS = ['text', 'system', 'tip', 'dice', 'coin', 'checklist', 'poll'] as const;
+export type MessageKind = (typeof MESSAGE_KINDS)[number];
 
 /** Kinds that render as a centred line rather than a bubble. */
-export function isLineKind(
-  kind:
-    | string
-    | null
-    | undefined,
-): boolean {
-  return (
-    kind ===
-      'system' ||
-    kind ===
-      'tip'
-  );
+export function isLineKind(kind: string | null | undefined): boolean {
+  return kind === 'system' || kind === 'tip';
 }
 
 /** Kinds that render as a card (not a coloured bubble). */
-export function isCardKind(
-  kind:
-    | string
-    | null
-    | undefined,
-): boolean {
-  return (
-    kind ===
-      'dice' ||
-    kind ===
-      'coin' ||
-    kind ===
-      'checklist' ||
-    kind ===
-      'poll'
-  );
+export function isCardKind(kind: string | null | undefined): boolean {
+  return kind === 'dice' || kind === 'coin' || kind === 'checklist' || kind === 'poll';
 }
 
 /** Kinds that can be edited, forwarded and quoted like ordinary text. */
-export function isPlainKind(
-  kind:
-    | string
-    | null
-    | undefined,
-): boolean {
-  return (
-    !kind ||
-    kind ===
-      'text'
-  );
+export function isPlainKind(kind: string | null | undefined): boolean {
+  return !kind || kind === 'text';
 }
 
 /* -------------------------------------------------------------------------- */
@@ -119,12 +63,8 @@ export function isPlainKind(
 export interface ChecklistItem {
   text: string;
   /** User who ticked it, or null. */
-  doneBy:
-    | string
-    | null;
-  doneAt:
-    | string
-    | null;
+  doneBy: string | null;
+  doneAt: string | null;
 }
 export interface ChecklistMeta {
   title: string;
@@ -137,9 +77,7 @@ export interface DiceMeta {
   total: number;
 }
 export interface CoinMeta {
-  result:
-    | 'heads'
-    | 'tails';
+  result: 'heads' | 'tails';
 }
 export interface PollMeta {
   question: string;
@@ -152,23 +90,17 @@ export interface PollView {
     votes: number;
   }[];
   totalVotes: number;
-  myVote:
-    | number
-    | null;
+  myVote: number | null;
 }
 export type SystemAction =
   | {
       action: 'timer';
-      seconds:
-        | number
-        | null;
+      seconds: number | null;
       actorId: string;
     }
   | {
       action: 'theme';
-      themeKey:
-        | string
-        | null;
+      themeKey: string | null;
       actorId: string;
     }
   | {
@@ -234,15 +166,9 @@ export interface ThreadReply {
   createdAt: string;
   sender: {
     id: string;
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
-    image:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
+    image: string | null;
   };
 }
 
@@ -251,59 +177,54 @@ export interface ThreadReply {
  * channels (the per-user DM bus and the per-group bus) — no new connection.
  * Clients patch what they hold; anything they cannot patch they refetch.
  */
-export type ChatUpdate =
-  {
-    kind: ChatKind;
-    chatId: string;
-  } & (
-    | {
-        op: 'settings';
-        disappearAfterSec:
-          | number
-          | null;
-        themeKey:
-          | string
-          | null;
-      }
-    | {
-        op: 'pins';
-      }
-    | {
-        op: 'checklist';
-        messageId: string;
-        items: ChecklistItem[];
-      }
-    | {
-        op: 'poll';
-        messageId: string;
-        options: {
-          text: string;
-          votes: number;
-        }[];
-        totalVotes: number;
-      }
-    | {
-        op: 'thread';
-        parentId: string;
-        replyCount: number;
-        reply?: ThreadReply;
-      }
-    | {
-        op: 'read';
-      }
-    | {
-        /** A sender changed the descriptions of a message's images. */
-        op: 'alts';
-        messageId: string;
-        imageAlts: string[];
-      }
-    | {
-        /**
-         * A group's name, member list or owner changed (s04-10). `removed` also names the member who lost access: their
-         * client drops the chat and the server closes their stream. Clients that predate it fall through `default`.
-         */
-        op: 'group';
-        change: 'rename' | 'members' | 'owner' | 'removed';
-        userId?: string;
-      }
-  );
+export type ChatUpdate = {
+  kind: ChatKind;
+  chatId: string;
+} & (
+  | {
+      op: 'settings';
+      disappearAfterSec: number | null;
+      themeKey: string | null;
+    }
+  | {
+      op: 'pins';
+    }
+  | {
+      op: 'checklist';
+      messageId: string;
+      items: ChecklistItem[];
+    }
+  | {
+      op: 'poll';
+      messageId: string;
+      options: {
+        text: string;
+        votes: number;
+      }[];
+      totalVotes: number;
+    }
+  | {
+      op: 'thread';
+      parentId: string;
+      replyCount: number;
+      reply?: ThreadReply;
+    }
+  | {
+      op: 'read';
+    }
+  | {
+      /** A sender changed the descriptions of a message's images. */
+      op: 'alts';
+      messageId: string;
+      imageAlts: string[];
+    }
+  | {
+      /**
+       * A group's name, member list or owner changed (s04-10). `removed` also names the member who lost access: their
+       * client drops the chat and the server closes their stream. Clients that predate it fall through `default`.
+       */
+      op: 'group';
+      change: 'rename' | 'members' | 'owner' | 'removed';
+      userId?: string;
+    }
+);

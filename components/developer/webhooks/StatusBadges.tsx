@@ -27,8 +27,6 @@ export function DeliveryStatusBadge({ status }: { status: WebhookDeliveryStatus 
     case 'FAILED':
       return <Badge variant="danger">{t('status-failed', { defaultValue: 'Failed' })}</Badge>;
     default:
-      return (
-        <Badge icon={<Clock aria-hidden />}>{t('status-pending', { defaultValue: 'Retrying' })}</Badge>
-      );
+      return <Badge icon={<Clock aria-hidden />}>{t('status-pending', { defaultValue: 'Retrying' })}</Badge>;
   }
 }

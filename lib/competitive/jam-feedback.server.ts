@@ -118,7 +118,11 @@ async function notifySafely(input: Parameters<typeof createNotification>[0]): Pr
  * marker as it was read (null, or a full window old), so two raters finishing together claim once. The count is
  * the pieces written since the previous notice.
  */
-export async function notifyTeamOfFeedback(entryId: string, authorId: string, now: Date = new Date()): Promise<boolean> {
+export async function notifyTeamOfFeedback(
+  entryId: string,
+  authorId: string,
+  now: Date = new Date(),
+): Promise<boolean> {
   const entry = await prisma.gameJamEntry.findUnique({
     where: { id: entryId },
     select: {
@@ -146,7 +150,10 @@ export async function notifyTeamOfFeedback(entryId: string, authorId: string, no
     prisma.gameJamTeamMember.findMany({ where: { entryId: entry.id, status: 'accepted' }, select: { userId: true } }),
   ]);
   const n = Math.max(1, count);
-  const preview = n === 1 ? `New feedback on your entry in ${entry.jam.title}` : `${n} new pieces of feedback on your entry in ${entry.jam.title}`;
+  const preview =
+    n === 1
+      ? `New feedback on your entry in ${entry.jam.title}`
+      : `${n} new pieces of feedback on your entry in ${entry.jam.title}`;
   for (const userId of new Set([entry.userId, ...team.map((m) => m.userId)])) {
     // The author is not told about their own words (and is never named: feedback can be anonymous).
     if (userId === authorId) continue;
@@ -256,7 +263,10 @@ export async function markHelpful(input: {
 }
 
 /** The rater's own feedback on the entries of one jam, keyed by entry (what the rating form re-opens with). */
-export async function myFeedbackFor(raterId: string, entryIds: readonly string[]): Promise<Record<string, MyFeedbackDTO>> {
+export async function myFeedbackFor(
+  raterId: string,
+  entryIds: readonly string[],
+): Promise<Record<string, MyFeedbackDTO>> {
   if (entryIds.length === 0) return {};
   const rows = await prisma.gameJamFeedback.findMany({
     where: { authorId: raterId, entryId: { in: [...entryIds] }, removedAt: null },

@@ -134,7 +134,8 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
         last = { ok: false, status: 0, body: '' };
       }
       if (res) {
-        if (res.status === 304) return { result: { ok: true, status: 304, body: '', notModified: true }, transportFailure: false };
+        if (res.status === 304)
+          return { result: { ok: true, status: 304, body: '', notModified: true }, transportFailure: false };
         const text = await res.text().catch(() => '');
         last = { ok: res.ok, status: res.status, body: text };
         const retryable = res.status === 429 || res.status >= 500;

@@ -62,10 +62,7 @@ export function OpenProjectDialog({ session, tab }: { session: ProjectSession; t
     <DialogPrimitive.Root open onOpenChange={(next) => !next && close()}>
       {/* Into the app root, where the --app-* tokens are defined (a body-level portal would lose them). */}
       <DialogPrimitive.Portal container={appRoot()}>
-        <DialogOverlay
-          className="app-overlay"
-          style={{ background: 'var(--app-scrim)' }}
-        />
+        <DialogOverlay className="app-overlay" style={{ background: 'var(--app-scrim)' }} />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="app-modal border border-app-border bg-app-surface text-app-text fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-1.5rem)] w-[calc(100dvw-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden outline-none"
@@ -100,7 +97,10 @@ export function OpenProjectDialog({ session, tab }: { session: ProjectSession; t
               !localReady ? (
                 <p className="px-4 py-6 text-sm text-app-text-muted">{t('loading', { defaultValue: 'Loading…' })}</p>
               ) : localFailed ? (
-                <Retry message={t('device-failed', { defaultValue: 'Could not read the projects on this device.' })} onRetry={loadLocal} />
+                <Retry
+                  message={t('device-failed', { defaultValue: 'Could not read the projects on this device.' })}
+                  onRetry={loadLocal}
+                />
               ) : local.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-app-text-muted">
                   {t('device-empty', { defaultValue: 'No projects are saved on this device yet.' })}
@@ -118,7 +118,10 @@ export function OpenProjectDialog({ session, tab }: { session: ProjectSession; t
                         </span>
                       </button>
                       <RowDelete
-                        label={t('delete-row', { name: project.name, defaultValue: 'Delete {{name}} from this device' })}
+                        label={t('delete-row', {
+                          name: project.name,
+                          defaultValue: 'Delete {{name}} from this device',
+                        })}
                         onDelete={async () => {
                           if (await session.deleteLocalById(project.id, project.name)) await loadLocal();
                         }}
@@ -154,7 +157,10 @@ export function OpenProjectDialog({ session, tab }: { session: ProjectSession; t
                     defaultValue: '{{count}} of {{max}} projects',
                   })}
                 </p>
-                <ul aria-label={t('account-list', { defaultValue: 'Projects on your account' })} className={cloudArrival}>
+                <ul
+                  aria-label={t('account-list', { defaultValue: 'Projects on your account' })}
+                  className={cloudArrival}
+                >
                   {cloud.data.projects.map((project) => (
                     <li key={project.id} className="flex items-stretch">
                       <button type="button" className={ROW} onClick={() => open(() => session.openCloud(project.id))}>

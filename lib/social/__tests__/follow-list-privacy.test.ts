@@ -36,7 +36,9 @@ const person = (id: string) => ({
 });
 
 const inSet = (v: unknown, id: string) =>
-  typeof v === 'string' ? v === id : Array.isArray((v as { in?: string[] })?.in) && (v as { in: string[] }).in.includes(id);
+  typeof v === 'string'
+    ? v === id
+    : Array.isArray((v as { in?: string[] })?.in) && (v as { in: string[] }).in.includes(id);
 
 vi.mock('@/lib/auth', () => ({
   auth: {
@@ -102,24 +104,18 @@ vi.mock('@/lib/prisma.server', () => ({
     },
     userBlock: {
       findMany: async ({ where }: { where: { OR: { blockerId: unknown; blockedId: unknown }[] } }) =>
-        db.blocks.filter((b) => where.OR.some((c) => inSet(c.blockerId, b.blockerId) && inSet(c.blockedId, b.blockedId))),
+        db.blocks.filter((b) =>
+          where.OR.some((c) => inSet(c.blockerId, b.blockerId) && inSet(c.blockedId, b.blockedId)),
+        ),
     },
   },
 }));
 
 const { canSeeFollowLists, filterBlocked } = await import('@/lib/social/follow-list-privacy.server');
-const siteFollowers = handlersOf(
-  (await import('@/lib/profile/api/profile.$id.followers.server')).route,
-).GET!;
-const siteFollowing = handlersOf(
-  (await import('@/lib/profile/api/profile.$id.following.server')).route,
-).GET!;
-const apiFollowers = handlersOf(
-  (await import('@/app/routes/api/v1/users/$handle/followers')).Route,
-).GET!;
-const apiFollowing = handlersOf(
-  (await import('@/app/routes/api/v1/users/$handle/following')).Route,
-).GET!;
+const siteFollowers = handlersOf((await import('@/lib/profile/api/profile.$id.followers.server')).route).GET!;
+const siteFollowing = handlersOf((await import('@/lib/profile/api/profile.$id.following.server')).route).GET!;
+const apiFollowers = handlersOf((await import('@/app/routes/api/v1/users/$handle/followers')).Route).GET!;
+const apiFollowing = handlersOf((await import('@/app/routes/api/v1/users/$handle/following')).Route).GET!;
 
 const follow = (a: string, b: string) => db.edges.push({ followerId: a, followingId: b });
 
@@ -196,15 +192,40 @@ describe('filterBlocked', () => {
 
 type Json = { users?: { id: string }[]; data?: { id: string }[]; error?: unknown; code?: string };
 const call = async (h: (a: { request: Request; params: Record<string, string> }) => Promise<Response>, id: string) => {
-  const res = await h({ request: new Request('http://t/x?limit=20', { headers: db.viewer ? { cookie: 'better-auth.session_token=t' } : {} }), params: { id, handle: id } });
+  const res = await h({
+    request: new Request('http://t/x?limit=20', {
+      headers: db.viewer ? { cookie: 'better-auth.session_token=t' } : {},
+    }),
+    params: { id, handle: id },
+  });
   return { status: res.status, body: (await res.json()) as Json };
 };
 
 const endpoints = [
-  { name: 'site followers', run: () => call(siteFollowers, 'owner'), rows: (b: Json) => b.users!, seed: (v: string) => follow(v, 'owner-id') },
-  { name: 'site following', run: () => call(siteFollowing, 'owner'), rows: (b: Json) => b.users!, seed: (v: string) => follow('owner-id', v) },
-  { name: 'developer API followers', run: () => call(apiFollowers, 'owner'), rows: (b: Json) => b.data!, seed: (v: string) => follow(v, 'owner-id') },
-  { name: 'developer API following', run: () => call(apiFollowing, 'owner'), rows: (b: Json) => b.data!, seed: (v: string) => follow('owner-id', v) },
+  {
+    name: 'site followers',
+    run: () => call(siteFollowers, 'owner'),
+    rows: (b: Json) => b.users!,
+    seed: (v: string) => follow(v, 'owner-id'),
+  },
+  {
+    name: 'site following',
+    run: () => call(siteFollowing, 'owner'),
+    rows: (b: Json) => b.users!,
+    seed: (v: string) => follow('owner-id', v),
+  },
+  {
+    name: 'developer API followers',
+    run: () => call(apiFollowers, 'owner'),
+    rows: (b: Json) => b.data!,
+    seed: (v: string) => follow(v, 'owner-id'),
+  },
+  {
+    name: 'developer API following',
+    run: () => call(apiFollowing, 'owner'),
+    rows: (b: Json) => b.data!,
+    seed: (v: string) => follow('owner-id', v),
+  },
 ];
 
 describe.each(endpoints)('$name', ({ run, rows, seed }) => {
@@ -314,7 +335,10 @@ describe('every path that reveals who follows whom is gated', () => {
       .split('\n')
       .filter((f) => f && !/__tests__|\.test\./.test(f));
     const unknown = files.filter((f) => !known.has(f));
-    expect(unknown, 'a new reader of follow edges must be added to FOLLOW_LIST_READ_PATHS (gated) or the own-data list').toEqual([]);
+    expect(
+      unknown,
+      'a new reader of follow edges must be added to FOLLOW_LIST_READ_PATHS (gated) or the own-data list',
+    ).toEqual([]);
   });
 
   it('the Steam-style profile shows friends only to a viewer who may see the list', () => {
@@ -340,7 +364,9 @@ describe('"Followed by" suggestion lines', () => {
 
   it('use the real table and column names', () => {
     expect(text).toContain('LEFT JOIN user_profile p ON p."userId" = u.id');
-    expect(schema).toMatch(/model UserProfile \{[\s\S]*?followListVisibility\s+String\s+@default\("everyone"\) @db\.VarChar\(10\)[\s\S]*?@@map\("user_profile"\)/);
+    expect(schema).toMatch(
+      /model UserProfile \{[\s\S]*?followListVisibility\s+String\s+@default\("everyone"\) @db\.VarChar\(10\)[\s\S]*?@@map\("user_profile"\)/,
+    );
     expect(src('prisma/schema/social.prisma')).toMatch(/model Follow \{[\s\S]*?@@map\("follow"\)/);
   });
 });

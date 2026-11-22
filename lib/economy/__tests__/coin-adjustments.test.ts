@@ -244,7 +244,11 @@ describe('reverseAdjustment', () => {
   it('reversing a debit credits the coins back', async () => {
     await credit(500);
     await debit(200);
-    const out = await reverseAdjustment({ adminId: ADMIN, userId: MEMBER, adjustmentId: String(adjustments.rows[1]!.id) });
+    const out = await reverseAdjustment({
+      adminId: ADMIN,
+      userId: MEMBER,
+      adjustmentId: String(adjustments.rows[1]!.id),
+    });
     expect(out).toMatchObject({ status: 'ok', balance: 510 });
     expect(await reconcileUser(MEMBER)).toMatchObject({ ok: true });
   });
@@ -262,7 +266,11 @@ describe('reverseAdjustment', () => {
   it('does not reverse a reversal', async () => {
     await credit(500);
     await reverseAdjustment({ adminId: ADMIN, userId: MEMBER, adjustmentId: adjustmentId() });
-    const out = await reverseAdjustment({ adminId: ADMIN, userId: MEMBER, adjustmentId: String(adjustments.rows[1]!.id) });
+    const out = await reverseAdjustment({
+      adminId: ADMIN,
+      userId: MEMBER,
+      adjustmentId: String(adjustments.rows[1]!.id),
+    });
     expect(out).toEqual({ status: 'is_reversal' });
   });
 

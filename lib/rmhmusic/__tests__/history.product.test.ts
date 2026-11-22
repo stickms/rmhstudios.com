@@ -105,7 +105,12 @@ describe('toPracticeDay and weekMinutes', () => {
     expect(toPracticeDay({ date: '2026-11-23', count: 1, ms: 0 })).toEqual(day('2026-11-23', 0, 1));
   });
   it('sums only the days inside the week', () => {
-    const days = [day('2026-11-15', 99, 1), day('2026-11-16', 10, 1), day('2026-11-22', 5, 2), day('2026-11-23', 99, 1)];
+    const days = [
+      day('2026-11-15', 99, 1),
+      day('2026-11-16', 10, 1),
+      day('2026-11-22', 5, 2),
+      day('2026-11-23', 99, 1),
+    ];
     expect(weekMinutes(days, weekFrom('2026-11-16'))).toBe(15);
   });
 });
@@ -143,11 +148,7 @@ describe('heatDays', () => {
     expect(out[0]?.date).toBe('2025-11-24');
   });
   it('shows minutes where a day has them and the activity count where it has none', () => {
-    const out = heatDays(
-      [day('2026-11-21', 25, 2), day('2026-11-22', 0, 3), day('2026-11-23', 0, 0)],
-      '2026-11-23',
-      4,
-    );
+    const out = heatDays([day('2026-11-21', 25, 2), day('2026-11-22', 0, 3), day('2026-11-23', 0, 0)], '2026-11-23', 4);
     expect(out).toEqual([
       { date: '2026-11-20', count: 0 },
       { date: '2026-11-21', count: 25 },

@@ -10,10 +10,7 @@
 import type { TFunction } from 'i18next';
 
 /** Translated line for a friend's activity (namespace `feed`). */
-export function friendActivityLabel(
-  t: TFunction,
-  activity: { kind: string; label: string },
-): string {
+export function friendActivityLabel(t: TFunction, activity: { kind: string; label: string }): string {
   if (activity.kind === 'rmhtube') {
     return t('activity-rmhtube', { ns: 'feed', defaultValue: 'Watching together' });
   }

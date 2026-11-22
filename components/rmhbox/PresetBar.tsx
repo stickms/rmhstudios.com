@@ -11,11 +11,7 @@ import { Select } from '@/components/ui/select';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { errorField } from '@/lib/http';
-import {
-  createRmhboxPresetApi,
-  deleteRmhboxPresetApi,
-  updateRmhboxPresetApi,
-} from '@/lib/rmhbox/presets.contract';
+import { createRmhboxPresetApi, deleteRmhboxPresetApi, updateRmhboxPresetApi } from '@/lib/rmhbox/presets.contract';
 import { PRESET_NAME_MAX, PRESETS_PER_GAME, type PresetErrorCode } from '@/lib/rmhbox/presets';
 import { PRESETS_KEY, presetsQuery } from '@/lib/rmhbox/presets.queries';
 import type { GameSettingValues } from '@/lib/rmhbox/types';
@@ -75,8 +71,13 @@ export default function PresetBar({ lobbyId, minigameId, values }: PresetBarProp
   });
 
   const patch = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { name?: string; values?: GameSettingValues; isDefault?: boolean } }) =>
-      api(updateRmhboxPresetApi, { params: { id }, body }),
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id: string;
+      body: { name?: string; values?: GameSettingValues; isDefault?: boolean };
+    }) => api(updateRmhboxPresetApi, { params: { id }, body }),
     onSuccess: () => {
       close();
       void refresh();
@@ -198,7 +199,9 @@ export default function PresetBar({ lobbyId, minigameId, values }: PresetBarProp
         </div>
       )}
       {mode === null && full && (
-        <p className="text-xs text-app-text-muted">{t('game-limit', { defaultValue: 'You can keep 10 presets per game' })}</p>
+        <p className="text-xs text-app-text-muted">
+          {t('game-limit', { defaultValue: 'You can keep 10 presets per game' })}
+        </p>
       )}
 
       {(mode === 'save' || mode === 'rename') && (

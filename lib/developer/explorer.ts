@@ -217,9 +217,7 @@ export function toPython(request: ExplorerRequest, opts: SnippetOptions = {}): s
   return lines.join('\n');
 }
 
-export type JsonParse =
-  | { ok: true; value: unknown }
-  | { ok: false; line: number; column: number; message: string };
+export type JsonParse = { ok: true; value: unknown } | { ok: false; line: number; column: number; message: string };
 
 /** Line and column (both 1-based) of a character offset. */
 function lineColumn(text: string, position: number): { line: number; column: number } {

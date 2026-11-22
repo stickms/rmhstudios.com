@@ -6,26 +6,18 @@
 import { contractQuery } from '@/lib/route/route-query';
 import { getStorefrontApi } from '@/lib/storefront/storefront.contract';
 
-export const storefrontQuery =
-  (
-    userid: string,
-  ) =>
-    contractQuery(
-      [
-        'storefront',
-        'creator',
+export const storefrontQuery = (userid: string) =>
+  contractQuery(
+    ['storefront', 'creator', userid],
+    getStorefrontApi,
+    {
+      params: {
         userid,
-      ],
-      getStorefrontApi,
-      {
-        params:
-          {
-            userid,
-          },
-        retries: 0,
       },
-      {
-        staleTime: 60_000,
-        retry: false,
-      },
-    );
+      retries: 0,
+    },
+    {
+      staleTime: 60_000,
+      retry: false,
+    },
+  );

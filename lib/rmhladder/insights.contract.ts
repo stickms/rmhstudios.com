@@ -8,16 +8,10 @@ import type { Insights } from '@/lib/rmhladder/insights';
 import type { insightsQuery } from '@/lib/rmhladder/insights-schema';
 
 /** The caller's search insights over a range, with quiet applications at a chosen window. */
-export const getInsightsApi =
-  endpoint<{
-    query: z.infer<
-      typeof insightsQuery
-    >;
-    res: Insights;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhladder/insights',
-    },
-  );
+export const getInsightsApi = endpoint<{
+  query: z.infer<typeof insightsQuery>;
+  res: Insights;
+}>()({
+  method: 'GET',
+  path: '/api/rmhladder/insights',
+});

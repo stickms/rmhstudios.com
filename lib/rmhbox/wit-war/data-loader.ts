@@ -8,31 +8,12 @@
 import fs from 'fs';
 import path from 'path';
 
-let cachedPrompts:
-  | string[]
-  | null =
-  null;
+let cachedPrompts: string[] | null = null;
 
 export function loadPrompts(): string[] {
-  if (
-    cachedPrompts
-  )
-    return cachedPrompts;
-  const raw =
-    fs.readFileSync(
-      path.join(
-        process.cwd(),
-        'data',
-        'rmhbox',
-        'wit-war',
-        'prompts.json',
-      ),
-      'utf-8',
-    );
-  cachedPrompts =
-    JSON.parse(
-      raw,
-    ) as string[];
+  if (cachedPrompts) return cachedPrompts;
+  const raw = fs.readFileSync(path.join(process.cwd(), 'data', 'rmhbox', 'wit-war', 'prompts.json'), 'utf-8');
+  cachedPrompts = JSON.parse(raw) as string[];
   return cachedPrompts;
 }
 
@@ -48,66 +29,21 @@ export function selectRoundPrompts(
   index: number;
   text: string;
 }> {
-  const all =
-    pool ??
-    loadPrompts();
-  const available =
-    all
-      .map(
-        (
-          text,
-          index,
-        ) => ({
-          index,
-          text,
-        }),
-      )
-      .filter(
-        ({
-          index,
-        }) =>
-          !usedIndices.has(
-            index,
-          ),
-      );
+  const all = pool ?? loadPrompts();
+  const available = all
+    .map((text, index) => ({
+      index,
+      text,
+    }))
+    .filter(({ index }) => !usedIndices.has(index));
 
   // Fisher-Yates shuffle
-  for (
-    let i =
-      available.length -
-      1;
-    i >
-    0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        Math.random() *
-          (i +
-            1),
-      );
-    [
-      available[
-        i
-      ],
-      available[
-        j
-      ],
-    ] =
-      [
-        available[
-          j
-        ],
-        available[
-          i
-        ],
-      ];
+  for (let i = available.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [available[i], available[j]] = [available[j], available[i]];
   }
 
-  return available.slice(
-    0,
-    count,
-  );
+  return available.slice(0, count);
 }
 
 /**
@@ -135,102 +71,42 @@ export function assignPromptsToPlayers(
   playerA: string;
   playerB: string;
 }> {
-  const n =
-    playerIds.length;
-  if (
-    n <
-    2
-  )
-    throw new Error(
-      'Wit-War requires at least 2 players',
-    );
+  const n = playerIds.length;
+  if (n < 2) throw new Error('Wit-War requires at least 2 players');
 
   const matchups: Array<{
     promptIndex: number;
     promptText: string;
     playerA: string;
     playerB: string;
-  }> =
-    [];
+  }> = [];
 
   // Shuffle player order for variety
-  const shuffled =
-    [
-      ...playerIds,
-    ];
-  for (
-    let i =
-      shuffled.length -
-      1;
-    i >
-    0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        Math.random() *
-          (i +
-            1),
-      );
-    [
-      shuffled[
-        i
-      ],
-      shuffled[
-        j
-      ],
-    ] =
-      [
-        shuffled[
-          j
-        ],
-        shuffled[
-          i
-        ],
-      ];
+  const shuffled = [...playerIds];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
   // Each player gets exactly WW_PROMPTS_PER_PLAYER (2) prompts.
   // Total prompt slots = N * 2 = 2N, and each prompt fills 2 slots,
   // so we need exactly N prompts for N matchups.
-  for (
-    let i = 0;
-    i <
-    n;
-    i++
-  ) {
-    const playerA =
-      shuffled[
-        i
-      ];
-    const playerB =
-      shuffled[
-        (i +
-          1) %
-          n
-      ];
-    const prompt =
-      prompts[
-        i %
-          prompts.length
-      ];
+  for (let i = 0; i < n; i++) {
+    const playerA = shuffled[i];
+    const playerB = shuffled[(i + 1) % n];
+    const prompt = prompts[i % prompts.length];
 
-    matchups.push(
-      {
-        promptIndex:
-          prompt.index,
-        promptText:
-          prompt.text,
-        playerA,
-        playerB,
-      },
-    );
+    matchups.push({
+      promptIndex: prompt.index,
+      promptText: prompt.text,
+      playerA,
+      playerB,
+    });
   }
 
   return matchups;
 }
 
 export function _resetCache(): void {
-  cachedPrompts =
-    null;
+  cachedPrompts = null;
 }

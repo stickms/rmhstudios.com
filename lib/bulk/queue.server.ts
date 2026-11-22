@@ -40,10 +40,7 @@ export function bulkRunSendOptions(operationId: string) {
  * Queue the operation for the jobs worker. Falls back to a detached run in this process when the queue is
  * unavailable or refuses the job. Never rejects.
  */
-export async function enqueueBulkRun(
-  operationId: string,
-  bossOverride?: PgBoss | null,
-): Promise<'queued' | 'inline'> {
+export async function enqueueBulkRun(operationId: string, bossOverride?: PgBoss | null): Promise<'queued' | 'inline'> {
   try {
     const boss = bossOverride === undefined ? await getBoss() : bossOverride;
     if (!boss) throw new Error('queue unavailable');

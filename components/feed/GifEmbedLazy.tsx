@@ -1,7 +1,4 @@
-import {
-  lazy,
-  type ComponentProps,
-} from 'react';
+import { lazy, type ComponentProps } from 'react';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
@@ -14,37 +11,22 @@ import { ArrivalSuspense } from '@/components/ui/arrive';
  * before the chunk has loaded sees the fallback: the same block GifEmbed itself
  * draws while a Tenor GIF resolves, after which the GIF fades in (M9).
  */
-const GifEmbedInner =
-  lazy(
-    () =>
-      import('./GifEmbed').then(
-        (
-          m,
-        ) => ({
-          default:
-            m.GifEmbed,
-        }),
-      ),
-  );
+const GifEmbedInner = lazy(() =>
+  import('./GifEmbed').then((m) => ({
+    default: m.GifEmbed,
+  })),
+);
 
-export function GifEmbed(
-  props: ComponentProps<
-    typeof GifEmbedInner
-  >,
-) {
+export function GifEmbed(props: ComponentProps<typeof GifEmbedInner>) {
   return (
     <ArrivalSuspense
       fallback={
-        <div
-          className={`rounded-site overflow-hidden ${props.className ?? ''}`}
-        >
+        <div className={`rounded-site overflow-hidden ${props.className ?? ''}`}>
           <div className="w-full h-48 bg-site-bg-subtle" />
         </div>
       }
     >
-      <GifEmbedInner
-        {...props}
-      />
+      <GifEmbedInner {...props} />
     </ArrivalSuspense>
   );
 }

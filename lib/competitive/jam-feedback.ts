@@ -122,14 +122,7 @@ export function shapeFeedback(
   };
 }
 
-export type FeedbackRefusal =
-  | 'not-found'
-  | 'forbidden'
-  | 'closed'
-  | 'own-entry'
-  | 'blocked'
-  | 'banned'
-  | 'invalid';
+export type FeedbackRefusal = 'not-found' | 'forbidden' | 'closed' | 'own-entry' | 'blocked' | 'banned' | 'invalid';
 
 export function feedbackRefusalStatus(code: FeedbackRefusal): number {
   switch (code) {

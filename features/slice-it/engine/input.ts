@@ -19,39 +19,15 @@ import type { Keybinds } from './store';
  * The feature it exists for: alternating two keys on ONE lane is how a fast
  * jack is played, and one-binding-per-lane makes that physically impossible.
  */
-export type ExtraBinds =
-  string[][];
+export type ExtraBinds = string[][];
 
 /** Every key bound to a lane, primary first. */
-export function bindsForLane(
-  keybinds: Keybinds,
-  extra:
-    | ExtraBinds
-    | undefined,
-  lane: number,
-): string[] {
-  const primary =
-    lane ===
-    0
-      ? keybinds.lane1
-      : keybinds.lane2;
-  const additional =
-    extra?.[
-      lane
-    ] ??
-    [];
+export function bindsForLane(keybinds: Keybinds, extra: ExtraBinds | undefined, lane: number): string[] {
+  const primary = lane === 0 ? keybinds.lane1 : keybinds.lane2;
+  const additional = extra?.[lane] ?? [];
   // De-duplicated: binding the primary key again as an "extra" must not make
   // the lane resolve twice or show a duplicate chip in settings.
-  return [
-    ...new Set(
-      [
-        primary,
-        ...additional,
-      ].filter(
-        Boolean,
-      ),
-    ),
-  ];
+  return [...new Set([primary, ...additional].filter(Boolean))];
 }
 
 /**
@@ -61,35 +37,9 @@ export function bindsForLane(
  * not forbid it — and resolving it deterministically here beats letting the
  * order of two `if`s at a call site decide.
  */
-export function laneForKey(
-  keybinds: Keybinds,
-  extra:
-    | ExtraBinds
-    | undefined,
-  key: string,
-):
-  | number
-  | null {
-  if (
-    bindsForLane(
-      keybinds,
-      extra,
-      0,
-    ).includes(
-      key,
-    )
-  )
-    return 0;
-  if (
-    bindsForLane(
-      keybinds,
-      extra,
-      1,
-    ).includes(
-      key,
-    )
-  )
-    return 1;
+export function laneForKey(keybinds: Keybinds, extra: ExtraBinds | undefined, key: string): number | null {
+  if (bindsForLane(keybinds, extra, 0).includes(key)) return 0;
+  if (bindsForLane(keybinds, extra, 1).includes(key)) return 1;
   return null;
 }
 
@@ -100,30 +50,9 @@ export function laneForKey(
  * transiently hold a conflict, and refusing the keystroke is more confusing
  * than showing them the clash.
  */
-export function conflictingBinds(
-  keybinds: Keybinds,
-  extra?: ExtraBinds,
-): string[] {
-  const zero =
-    new Set(
-      bindsForLane(
-        keybinds,
-        extra,
-        0,
-      ),
-    );
-  return bindsForLane(
-    keybinds,
-    extra,
-    1,
-  ).filter(
-    (
-      key,
-    ) =>
-      zero.has(
-        key,
-      ),
-  );
+export function conflictingBinds(keybinds: Keybinds, extra?: ExtraBinds): string[] {
+  const zero = new Set(bindsForLane(keybinds, extra, 0));
+  return bindsForLane(keybinds, extra, 1).filter((key) => zero.has(key));
 }
 
 /* ─── I9 — keyboard ghosting ─────────────────────────────────────────────── */
@@ -147,28 +76,12 @@ export interface GhostingResult {
   ok: boolean;
 }
 
-export function evaluateGhosting(
-  requested: string[],
-  seen: Iterable<string>,
-): GhostingResult {
-  const arrived =
-    new Set(
-      seen,
-    );
-  const missing =
-    requested.filter(
-      (
-        key,
-      ) =>
-        !arrived.has(
-          key,
-        ),
-    );
+export function evaluateGhosting(requested: string[], seen: Iterable<string>): GhostingResult {
+  const arrived = new Set(seen);
+  const missing = requested.filter((key) => !arrived.has(key));
   return {
     missing,
-    ok:
-      missing.length ===
-      0,
+    ok: missing.length === 0,
   };
 }
 
@@ -179,30 +92,17 @@ export function evaluateGhosting(
  * every matrix, which is exactly why they rarely ghost — so the suggestion is
  * "move one hand to a key that is electrically elsewhere", not "try again".
  */
-export const GHOST_SAFE_KEYS =
-  [
-    'ShiftLeft',
-    'ShiftRight',
-    'ControlLeft',
-    'ControlRight',
-    'Space',
-    'ArrowLeft',
-    'ArrowRight',
-  ] as const;
+export const GHOST_SAFE_KEYS = [
+  'ShiftLeft',
+  'ShiftRight',
+  'ControlLeft',
+  'ControlRight',
+  'Space',
+  'ArrowLeft',
+  'ArrowRight',
+] as const;
 
-export function suggestGhostSafe(
-  taken: string[],
-): string[] {
-  const used =
-    new Set(
-      taken,
-    );
-  return GHOST_SAFE_KEYS.filter(
-    (
-      key,
-    ) =>
-      !used.has(
-        key,
-      ),
-  );
+export function suggestGhostSafe(taken: string[]): string[] {
+  const used = new Set(taken);
+  return GHOST_SAFE_KEYS.filter((key) => !used.has(key));
 }

@@ -4,10 +4,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  leaderboardPrivacySchema,
-  setLeaderboardPrivacyBody,
-} from '@/lib/game/leaderboard-privacy-schema';
+import type { leaderboardPrivacySchema, setLeaderboardPrivacyBody } from '@/lib/game/leaderboard-privacy-schema';
 
 type LeaderboardPrivacy = z.infer<typeof leaderboardPrivacySchema>;
 

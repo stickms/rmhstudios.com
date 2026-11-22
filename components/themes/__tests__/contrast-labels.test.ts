@@ -35,7 +35,11 @@ describe('contrast pair labels', () => {
     const { t, calls } = recordingT();
     const labels = contrastPairLabels(t);
     expect(Object.keys(labels).sort()).toEqual(reportablePairs().sort());
-    expect(Object.keys(englishByKey(calls)).sort()).toEqual(Object.keys(labels).map((p) => `contrast-${p}`).sort());
+    expect(Object.keys(englishByKey(calls)).sort()).toEqual(
+      Object.keys(labels)
+        .map((p) => `contrast-${p}`)
+        .sort(),
+    );
     expect(new Set(calls.map((c) => c.ns))).toEqual(new Set(['theme-studio']));
   });
 

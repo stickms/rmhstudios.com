@@ -9,10 +9,7 @@ export function MobileBrandPrefix() {
       <span className="shrink-0 font-display text-xl font-semibold tracking-[-0.022em] text-site-accent max-[419px]:hidden md:hidden">
         RMH
       </span>
-      <span
-        className="h-5 w-px shrink-0 bg-site-border max-[419px]:hidden md:hidden"
-        aria-hidden="true"
-      />
+      <span className="h-5 w-px shrink-0 bg-site-border max-[419px]:hidden md:hidden" aria-hidden="true" />
     </>
   );
 }

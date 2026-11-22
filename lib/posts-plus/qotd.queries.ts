@@ -2,18 +2,14 @@
 import { getQotdArchiveApi } from '@/lib/posts-plus/qotd.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const qotdArchiveQuery =
-  () =>
-    contractQuery(
-      [
-        'qotd',
-        'archive',
-      ],
-      getQotdArchiveApi,
-      {
-        retries: 0,
-      },
-      {
-        staleTime: 60_000,
-      },
-    );
+export const qotdArchiveQuery = () =>
+  contractQuery(
+    ['qotd', 'archive'],
+    getQotdArchiveApi,
+    {
+      retries: 0,
+    },
+    {
+      staleTime: 60_000,
+    },
+  );

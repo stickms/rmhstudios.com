@@ -104,7 +104,10 @@ describe('insertReplyText', () => {
   });
 
   it('replaces the whole draft when the selection is all of it (the slash trigger)', () => {
-    expect(insertReplyText('/where', 0, 6, 'Download it here.', 2000)).toEqual({ value: 'Download it here.', caret: 17 });
+    expect(insertReplyText('/where', 0, 6, 'Download it here.', 2000)).toEqual({
+      value: 'Download it here.',
+      caret: 17,
+    });
   });
 
   it('clamps a caret outside the text', () => {

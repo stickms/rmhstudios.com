@@ -6,34 +6,8 @@
 import { z } from 'zod';
 import { MAX_WPM } from '@/lib/rmhtype/typing-run';
 
-export const lessonRunBody =
-  z.object(
-    {
-      lessonId:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            32,
-          ),
-      wpm: z
-        .number()
-        .min(
-          0,
-        )
-        .max(
-          MAX_WPM,
-        ),
-      accuracy:
-        z
-          .number()
-          .min(
-            0,
-          )
-          .max(
-            100,
-          ),
-    },
-  );
+export const lessonRunBody = z.object({
+  lessonId: z.string().min(1).max(32),
+  wpm: z.number().min(0).max(MAX_WPM),
+  accuracy: z.number().min(0).max(100),
+});

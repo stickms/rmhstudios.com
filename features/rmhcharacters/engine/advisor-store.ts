@@ -46,16 +46,30 @@ export const useAdvisor = create<AdvisorState>((set, get) => {
       // The model sees its earlier recommendations by name, so "tell me more about the second one" works.
       const history = thread.turns.slice(-ADVISOR_LIMITS.turns).map((x) => ({
         role: x.role,
-        content: (x.recommendations?.length ? `${x.content}\n\nRecommended: ${x.recommendations.map((r) => `${r.name} (${r.kind})`).join(', ')}` : x.content).slice(0, ADVISOR_LIMITS.turn),
+        content: (x.recommendations?.length
+          ? `${x.content}\n\nRecommended: ${x.recommendations.map((r) => `${r.name} (${r.kind})`).join(', ')}`
+          : x.content
+        ).slice(0, ADVISOR_LIMITS.turn),
       }));
       patch(c.id, { busy: true, error: null, turns: [...thread.turns, { role: 'user', content: q }] });
       try {
         const sheet = await advisorSheet(c);
-        const res = await api(askAdvisorApi, { body: { system: c.system, question: q, sheet, history }, timeoutMs: AI_TIMEOUT_MS });
+        const res = await api(askAdvisorApi, {
+          body: { system: c.system, question: q, sheet, history },
+          timeoutMs: AI_TIMEOUT_MS,
+        });
         const now = get().threads[c.id] ?? EMPTY;
-        patch(c.id, { busy: false, turns: [...now.turns, { role: 'assistant', content: res.answer, recommendations: res.recommendations }] });
+        patch(c.id, {
+          busy: false,
+          turns: [...now.turns, { role: 'assistant', content: res.answer, recommendations: res.recommendations }],
+        });
       } catch (err) {
-        const error: AdvisorFailure = err instanceof HttpError && err.status === 429 ? 'limited' : err instanceof HttpError && err.status === 503 ? 'unavailable' : 'failed';
+        const error: AdvisorFailure =
+          err instanceof HttpError && err.status === 429
+            ? 'limited'
+            : err instanceof HttpError && err.status === 503
+              ? 'unavailable'
+              : 'failed';
         patch(c.id, { busy: false, error });
       }
     },

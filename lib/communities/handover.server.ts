@@ -92,11 +92,7 @@ async function notifySafely(input: Parameters<typeof createNotification>[0]): Pr
 }
 
 /** True when either member blocks the other. Read inside the transaction that acts on the answer. */
-async function blockedEitherWay(
-  tx: Prisma.TransactionClient,
-  a: string,
-  b: string,
-): Promise<boolean> {
+async function blockedEitherWay(tx: Prisma.TransactionClient, a: string, b: string): Promise<boolean> {
   const hit = await tx.userBlock.findFirst({
     where: {
       OR: [
@@ -109,11 +105,7 @@ async function blockedEitherWay(
   return !!hit;
 }
 
-async function roleOf(
-  tx: Prisma.TransactionClient,
-  communityId: string,
-  userId: string,
-): Promise<HandoverRole | null> {
+async function roleOf(tx: Prisma.TransactionClient, communityId: string, userId: string): Promise<HandoverRole | null> {
   const m = await tx.communityMember.findUnique({
     where: { communityId_userId: { communityId, userId } },
     select: { role: true },
@@ -250,30 +242,28 @@ export async function cancelHandover(input: {
 }): Promise<HandoverResult<null>> {
   const now = input.now ?? new Date();
   const { community } = input;
-  const result = await prisma.$transaction(
-    async (tx): Promise<HandoverResult<{ toId: string; ownerName: string }>> => {
-      await lockKey(tx, lockName(community.id));
-      const current = await tx.community.findUnique({
-        where: { id: community.id },
-        select: { createdById: true },
-      });
-      if (!current) return refuse('not-owner');
-      const notOwner = checkOwner(input.ownerId, current.createdById);
-      if (notOwner) return refuse(notOwner);
-      const offer = await tx.communityHandover.findFirst({
-        where: { communityId: community.id, fromId: input.ownerId, status: 'pending' },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true, toId: true, from: { select: userChipSelect } },
-      });
-      if (!offer) return refuse('no-offer');
-      const claimed = await tx.communityHandover.updateMany({
-        where: { id: offer.id, status: 'pending' },
-        data: { status: 'cancelled', decidedAt: now },
-      });
-      if (claimed.count === 0) return refuse('no-offer');
-      return { ok: true, value: { toId: offer.toId, ownerName: displayName(offer.from) } };
-    },
-  );
+  const result = await prisma.$transaction(async (tx): Promise<HandoverResult<{ toId: string; ownerName: string }>> => {
+    await lockKey(tx, lockName(community.id));
+    const current = await tx.community.findUnique({
+      where: { id: community.id },
+      select: { createdById: true },
+    });
+    if (!current) return refuse('not-owner');
+    const notOwner = checkOwner(input.ownerId, current.createdById);
+    if (notOwner) return refuse(notOwner);
+    const offer = await tx.communityHandover.findFirst({
+      where: { communityId: community.id, fromId: input.ownerId, status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, toId: true, from: { select: userChipSelect } },
+    });
+    if (!offer) return refuse('no-offer');
+    const claimed = await tx.communityHandover.updateMany({
+      where: { id: offer.id, status: 'pending' },
+      data: { status: 'cancelled', decidedAt: now },
+    });
+    if (claimed.count === 0) return refuse('no-offer');
+    return { ok: true, value: { toId: offer.toId, ownerName: displayName(offer.from) } };
+  });
   if (!result.ok) return result;
   await notifySafely({
     userId: result.value.toId,
@@ -298,72 +288,70 @@ export async function respondHandover(input: {
 }): Promise<HandoverResult<null>> {
   const now = input.now ?? new Date();
   const { community, userId } = input;
-  const result = await prisma.$transaction(
-    async (tx): Promise<HandoverResult<{ fromId: string; toName: string }>> => {
-      await lockKey(tx, lockName(community.id));
-      const current = await tx.community.findUnique({
-        where: { id: community.id },
-        select: { createdById: true },
-      });
-      if (!current) return refuse('no-offer');
-      const offer = await tx.communityHandover.findFirst({
-        where: { communityId: community.id, toId: userId, status: 'pending' },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true, fromId: true, toId: true, status: true, expiresAt: true, to: { select: userChipSelect } },
-      });
-      const refusal = checkResponder({ userId, offer, createdById: current.createdById, now });
-      if (refusal || !offer) return refuse(refusal ?? 'no-offer');
-      const toName = displayName(offer.to);
+  const result = await prisma.$transaction(async (tx): Promise<HandoverResult<{ fromId: string; toName: string }>> => {
+    await lockKey(tx, lockName(community.id));
+    const current = await tx.community.findUnique({
+      where: { id: community.id },
+      select: { createdById: true },
+    });
+    if (!current) return refuse('no-offer');
+    const offer = await tx.communityHandover.findFirst({
+      where: { communityId: community.id, toId: userId, status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, fromId: true, toId: true, status: true, expiresAt: true, to: { select: userChipSelect } },
+    });
+    const refusal = checkResponder({ userId, offer, createdById: current.createdById, now });
+    if (refusal || !offer) return refuse(refusal ?? 'no-offer');
+    const toName = displayName(offer.to);
 
-      if (input.action === 'accept') {
-        // The moderator may have been demoted, removed or banned, or blocked the owner, since the offer.
-        const [role, facts, blocked] = await Promise.all([
-          roleOf(tx, community.id, userId),
-          banFacts(tx, userId),
-          blockedEitherWay(tx, offer.fromId, userId),
-        ]);
-        const unfit = checkRecipient({
-          ownerId: offer.fromId,
-          toId: userId,
-          toRole: role,
-          toBanned: !facts || isBanned(facts, now),
-          blocked,
-        });
-        if (unfit) return refuse(unfit);
-      }
-
-      const claimed = await tx.communityHandover.updateMany({
-        where: { id: offer.id, status: 'pending', expiresAt: { gt: now } },
-        data: { status: input.action === 'accept' ? 'accepted' : 'declined', decidedAt: now },
+    if (input.action === 'accept') {
+      // The moderator may have been demoted, removed or banned, or blocked the owner, since the offer.
+      const [role, facts, blocked] = await Promise.all([
+        roleOf(tx, community.id, userId),
+        banFacts(tx, userId),
+        blockedEitherWay(tx, offer.fromId, userId),
+      ]);
+      const unfit = checkRecipient({
+        ownerId: offer.fromId,
+        toId: userId,
+        toRole: role,
+        toBanned: !facts || isBanned(facts, now),
+        blocked,
       });
-      if (claimed.count === 0) return refuse('no-offer');
+      if (unfit) return refuse(unfit);
+    }
 
-      if (input.action === 'accept') {
-        const moved = await tx.community.updateMany({
-          where: { id: community.id, createdById: offer.fromId },
-          data: { createdById: userId },
-        });
-        if (moved.count === 0) return refuse('owner-changed');
-        await tx.communityMember.updateMany({
-          where: { communityId: community.id, userId, role: 'MOD' },
-          data: { role: 'ADMIN' },
-        });
-        await tx.communityMember.updateMany({
-          where: { communityId: community.id, userId: offer.fromId, role: 'ADMIN' },
-          data: { role: 'MOD' },
-        });
-        await logModAction(tx, {
-          communityId: community.id,
-          actorId: offer.fromId,
-          action: 'ownership_transferred',
-          targetUserId: userId,
-          targetType: 'member',
-          detail: { via: 'offer' },
-        });
-      }
-      return { ok: true, value: { fromId: offer.fromId, toName } };
-    },
-  );
+    const claimed = await tx.communityHandover.updateMany({
+      where: { id: offer.id, status: 'pending', expiresAt: { gt: now } },
+      data: { status: input.action === 'accept' ? 'accepted' : 'declined', decidedAt: now },
+    });
+    if (claimed.count === 0) return refuse('no-offer');
+
+    if (input.action === 'accept') {
+      const moved = await tx.community.updateMany({
+        where: { id: community.id, createdById: offer.fromId },
+        data: { createdById: userId },
+      });
+      if (moved.count === 0) return refuse('owner-changed');
+      await tx.communityMember.updateMany({
+        where: { communityId: community.id, userId, role: 'MOD' },
+        data: { role: 'ADMIN' },
+      });
+      await tx.communityMember.updateMany({
+        where: { communityId: community.id, userId: offer.fromId, role: 'ADMIN' },
+        data: { role: 'MOD' },
+      });
+      await logModAction(tx, {
+        communityId: community.id,
+        actorId: offer.fromId,
+        action: 'ownership_transferred',
+        targetUserId: userId,
+        targetType: 'member',
+        detail: { via: 'offer' },
+      });
+    }
+    return { ok: true, value: { fromId: offer.fromId, toName } };
+  });
   if (!result.ok) return result;
   await notifySafely({
     userId: result.value.fromId,
@@ -399,10 +387,7 @@ export async function assignOwnerAsAdmin(input: {
       select: { createdById: true, createdBy: { select: { id: true, bannedUntil: true, banReason: true } } },
     });
     if (!current) return refuse('no-offer');
-    const [toRole, to] = await Promise.all([
-      roleOf(tx, community.id, input.toId),
-      banFacts(tx, input.toId),
-    ]);
+    const [toRole, to] = await Promise.all([roleOf(tx, community.id, input.toId), banFacts(tx, input.toId)]);
     const refusal = checkAdminAssign({
       ownerOrphan: orphanReason(current.createdBy, now),
       toId: input.toId,
@@ -458,10 +443,7 @@ export async function assignOwnerAsAdmin(input: {
 }
 
 /** The communities a user created, each with whether its owner is gone and the moderators who could take over. */
-export async function listOwnedCommunities(
-  userId: string,
-  now = new Date(),
-): Promise<OwnedCommunityDTO[]> {
+export async function listOwnedCommunities(userId: string, now = new Date()): Promise<OwnedCommunityDTO[]> {
   const owner = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, bannedUntil: true, banReason: true },

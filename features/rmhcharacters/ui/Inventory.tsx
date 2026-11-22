@@ -65,11 +65,21 @@ export function Inventory<C extends Character>({
   return (
     <div className="rmhc-columns">
       <div>
-        <Section title={t('inv.carried', { defaultValue: 'Carried' })} action={<span className="font-mono text-xs text-app-text-muted">{load}</span>}>
-          {c.inventory.length === 0 ? <Muted>{t('inv.empty', { defaultValue: 'Nothing carried yet. Add gear from the list or write an item in.' })}</Muted> : null}
+        <Section
+          title={t('inv.carried', { defaultValue: 'Carried' })}
+          action={<span className="font-mono text-xs text-app-text-muted">{load}</span>}
+        >
+          {c.inventory.length === 0 ? (
+            <Muted>
+              {t('inv.empty', { defaultValue: 'Nothing carried yet. Add gear from the list or write an item in.' })}
+            </Muted>
+          ) : null}
           <ul className="flex flex-col">
             {c.inventory.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-center gap-2 border-b border-app-border py-2 last:border-b-0">
+              <li
+                key={i.id}
+                className="flex flex-wrap items-center gap-2 border-b border-app-border py-2 last:border-b-0"
+              >
                 <Input
                   value={i.name}
                   onChange={(e) => patchItem(i.id, { name: e.target.value.slice(0, 200) })}
@@ -85,10 +95,20 @@ export function Inventory<C extends Character>({
                   className="w-20"
                 />
                 <label className="inline-flex items-center gap-1.5 text-sm text-app-text-muted">
-                  <input type="checkbox" checked={i.equipped} onChange={(e) => patchItem(i.id, { equipped: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    checked={i.equipped}
+                    onChange={(e) => patchItem(i.id, { equipped: e.target.checked })}
+                  />
                   {t('inv.equipped', { defaultValue: 'Equipped' })}
                 </label>
-                <Button type="button" variant="ghost" size="icon" aria-label={t('inv.remove', { defaultValue: 'Remove {{name}}', name: i.name })} onClick={() => set((x) => ({ ...x, inventory: x.inventory.filter((y) => y.id !== i.id) }))}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t('inv.remove', { defaultValue: 'Remove {{name}}', name: i.name })}
+                  onClick={() => set((x) => ({ ...x, inventory: x.inventory.filter((y) => y.id !== i.id) }))}
+                >
                   <Trash2 aria-hidden />
                 </Button>
               </li>
@@ -100,11 +120,19 @@ export function Inventory<C extends Character>({
               e.preventDefault();
               const name = custom.trim();
               if (!name) return;
-              set((x) => ({ ...x, inventory: [...x.inventory, { id: newId(), name: name.slice(0, 200), quantity: 1, equipped: false }] }));
+              set((x) => ({
+                ...x,
+                inventory: [...x.inventory, { id: newId(), name: name.slice(0, 200), quantity: 1, equipped: false }],
+              }));
               setCustom('');
             }}
           >
-            <Input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={t('inv.customPlaceholder', { defaultValue: 'Write in an item' })} aria-label={t('inv.customPlaceholder', { defaultValue: 'Write in an item' })} />
+            <Input
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              placeholder={t('inv.customPlaceholder', { defaultValue: 'Write in an item' })}
+              aria-label={t('inv.customPlaceholder', { defaultValue: 'Write in an item' })}
+            />
             <Button type="submit">{t('inv.add', { defaultValue: 'Add' })}</Button>
           </form>
         </Section>

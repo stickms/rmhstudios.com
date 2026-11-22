@@ -37,7 +37,11 @@ describe('planPlaylistQueue', () => {
   });
 
   it('takes only what fits and flags the overflow', () => {
-    const plan = planPlaylistQueue(Array.from({ length: 30 }, (_, i) => row(i)), 12, 30);
+    const plan = planPlaylistQueue(
+      Array.from({ length: 30 }, (_, i) => row(i)),
+      12,
+      30,
+    );
     expect(plan.accepted).toHaveLength(12);
     expect(plan.full).toBe(true);
     expect(toResult(plan)).toEqual({ added: 12, total: 30, skipped: 0, full: true });
@@ -59,7 +63,7 @@ describe('planPlaylistQueue', () => {
     expect(plan.accepted.map((a) => a.title)).toEqual(['T3', 'T4']);
   });
 
-  it('converts stored milliseconds to the queue\'s seconds', () => {
+  it("converts stored milliseconds to the queue's seconds", () => {
     const plan = planPlaylistQueue([row(1, { durationMs: 90_500 }), row(2, { durationMs: 0 })], 5, 2);
     expect(plan.accepted.map((a) => a.durationSec)).toEqual([91, null]);
   });
@@ -102,7 +106,7 @@ describe('queueToPlaylistRows', () => {
 });
 
 describe('durationSecToMs', () => {
-  it('converts the queue\'s seconds to the playlist\'s milliseconds', () => {
+  it("converts the queue's seconds to the playlist's milliseconds", () => {
     expect(durationSecToMs(212)).toBe(212_000);
     expect(durationSecToMs(null)).toBeNull();
     expect(durationSecToMs(0)).toBeNull();

@@ -19,12 +19,8 @@ import { createSingleFlight } from '../../lib/single-flight';
 /** The linked-account lookup's row. */
 export interface LinkedAccountRow {
   userId: string;
-  name:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  image: string | null;
 }
 
 /** What the hub provides: the application id, the auth pool for the linked-account lookup, a logger. */
@@ -39,12 +35,7 @@ export interface DiscordActivityDeps {
     }>;
   } | null;
   logger: {
-    warn(
-      entry: Record<
-        string,
-        unknown
-      >,
-    ): void;
+    warn(entry: Record<string, unknown>): void;
   };
 }
 
@@ -54,103 +45,40 @@ interface CachedAuth {
   discordId: string;
   userId: string;
   userName: string;
-  avatarUrl:
-    | string
-    | null;
+  avatarUrl: string | null;
 }
-const discordAuthCache =
-  createAuthCache<CachedAuth>();
+const discordAuthCache = createAuthCache<CachedAuth>();
 // Tokens Discord refused, remembered for the cache TTL (60 s) so spraying random tokens costs one
 // outbound call each at most. Keys are sha256(token): no raw bearer token is ever a key.
-const discordDeniedCache =
-  createAuthCache<true>();
+const discordDeniedCache = createAuthCache<true>();
 // Throttles the over-limit log line to once per IP per cache TTL.
-const discordLimitLogged =
-  createAuthCache<true>();
+const discordLimitLogged = createAuthCache<true>();
 // Unseen-token verifications (one outbound Discord call each) per handshake IP.
-const discordVerifyLimiter =
-  createRateLimiter(
-    {
-      'discord:verify':
-        {
-          max: 30,
-          windowMs: 60_000,
-        },
-    },
-  );
-const discordVerifyFlight =
-  createSingleFlight<DiscordIdentity | null>();
+const discordVerifyLimiter = createRateLimiter({
+  'discord:verify': {
+    max: 30,
+    windowMs: 60_000,
+  },
+});
+const discordVerifyFlight = createSingleFlight<DiscordIdentity | null>();
 
-const discordTokenKey =
-  (
-    token: string,
-  ) =>
-    `d:${createHash('sha256').update(token).digest('hex')}`;
+const discordTokenKey = (token: string) => `d:${createHash('sha256').update(token).digest('hex')}`;
 
 /**
  * The client address of a handshake: Cloudflare's header when present, else the entry the proxy
  * appended to X-Forwarded-For (the rightmost, never the client-controlled leftmost), else the
  * socket peer.
  */
-function handshakeIp(
-  socket: import('socket.io').Socket,
-): string {
-  const h =
-    socket
-      .handshake
-      .headers;
-  const one =
-    (
-      v:
-        | string
-        | string[]
-        | undefined,
-    ) =>
-      (Array.isArray(
-        v,
-      )
-        ? v[0]
-        : v
-      )?.trim() ??
-      '';
-  const cf =
-    one(
-      h[
-        'cf-connecting-ip'
-      ],
-    );
-  if (
-    cf
-  )
-    return cf;
-  const xff =
-    one(
-      h[
-        'x-forwarded-for'
-      ],
-    )
-      .split(
-        ',',
-      )
-      .map(
-        (
-          p,
-        ) =>
-          p.trim(),
-      )
-      .filter(
-        Boolean,
-      );
-  return (
-    xff[
-      xff.length -
-        1
-    ] ??
-    socket
-      .handshake
-      .address ??
-    'unknown'
-  );
+function handshakeIp(socket: import('socket.io').Socket): string {
+  const h = socket.handshake.headers;
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim() ?? '';
+  const cf = one(h['cf-connecting-ip']);
+  if (cf) return cf;
+  const xff = one(h['x-forwarded-for'])
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return xff[xff.length - 1] ?? socket.handshake.address ?? 'unknown';
 }
 
 // ─── Discord Activity identity (X10) ─────────────────────────────
@@ -165,8 +93,7 @@ function handshakeIp(
 // client-supplied Discord user id is never read from anywhere: the id used
 // below is the one Discord itself returns for the bearer token.
 
-const DISCORD_API =
-  'https://discord.com/api/v10';
+const DISCORD_API = 'https://discord.com/api/v10';
 const DISCORD_VERIFY_TIMEOUT_MS = 5_000;
 
 /**
@@ -182,44 +109,17 @@ const DISCORD_VERIFY_TIMEOUT_MS = 5_000;
 interface DiscordIdentity {
   /** The Discord user id Discord returned for the token. */
   discordId: string;
-  userId:
-    | string
-    | null;
+  userId: string | null;
   name: string;
-  avatarUrl:
-    | string
-    | null;
+  avatarUrl: string | null;
   /** Absolute epoch-ms at which the Discord token itself stops being valid. */
   expiresAt: number;
 }
 
 /** Discord's own default-avatar formula, mirrored from `lib/discord-sdk.ts`. */
-function discordAvatarUrl(
-  id: string,
-  avatar:
-    | string
-    | null,
-  discriminator: string,
-): string {
-  if (
-    avatar
-  )
-    return `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`;
-  const index =
-    discriminator ===
-      '0' ||
-    !discriminator
-      ? Number(
-          BigInt(
-            id,
-          ) >>
-            22n,
-        ) %
-        6
-      : Number(
-          discriminator,
-        ) %
-        5;
+function discordAvatarUrl(id: string, avatar: string | null, discriminator: string): string {
+  if (avatar) return `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`;
+  const index = discriminator === '0' || !discriminator ? Number(BigInt(id) >> 22n) % 6 : Number(discriminator) % 5;
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
 }
 
@@ -239,149 +139,66 @@ function discordAvatarUrl(
  * that needs one) stays in `lib/api/routes/discord.token.server.ts` on the web tier.
  * This is the verify half, and verification is Bearer-only.
  */
-async function verifyDiscordActivityToken(
-  token: string,
-  deps: DiscordActivityDeps,
-): Promise<DiscordIdentity | null> {
-  const appId =
-    deps.appId;
+async function verifyDiscordActivityToken(token: string, deps: DiscordActivityDeps): Promise<DiscordIdentity | null> {
+  const appId = deps.appId;
   // Fail closed: with no application id there is nothing to bind the token to,
   // and accepting it would mean trusting any Discord app's token.
-  if (
-    !appId
-  )
-    return null;
+  if (!appId) return null;
 
-  const res =
-    await fetch(
-      `${DISCORD_API}/oauth2/@me`,
-      {
-        headers:
-          {
-            Authorization: `Bearer ${token}`,
-          },
-        signal:
-          AbortSignal.timeout(
-            DISCORD_VERIFY_TIMEOUT_MS,
-          ),
-      },
-    );
+  const res = await fetch(`${DISCORD_API}/oauth2/@me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    signal: AbortSignal.timeout(DISCORD_VERIFY_TIMEOUT_MS),
+  });
   // Transient (rate limited / Discord down): throw so the caller does NOT remember it as a bad token.
-  if (
-    res.status ===
-      429 ||
-    res.status >=
-      500
-  )
-    throw new Error(
-      `discord_verify_${res.status}`,
-    );
-  if (
-    !res.ok
-  )
-    return null;
+  if (res.status === 429 || res.status >= 500) throw new Error(`discord_verify_${res.status}`);
+  if (!res.ok) return null;
 
-  const info =
-    (await res.json()) as {
-      application?: {
-        id?: string;
-      };
-      expires?: string;
-      user?: {
-        id?: string;
-        username?: string;
-        global_name?:
-          | string
-          | null;
-        avatar?:
-          | string
-          | null;
-        discriminator?: string;
-      };
+  const info = (await res.json()) as {
+    application?: {
+      id?: string;
     };
+    expires?: string;
+    user?: {
+      id?: string;
+      username?: string;
+      global_name?: string | null;
+      avatar?: string | null;
+      discriminator?: string;
+    };
+  };
 
-  if (
-    info
-      ?.application
-      ?.id !==
-    appId
-  )
-    return null;
+  if (info?.application?.id !== appId) return null;
 
-  const expiresAt =
-    Date.parse(
-      info?.expires ??
-        '',
-    );
-  if (
-    !Number.isFinite(
-      expiresAt,
-    ) ||
-    expiresAt <=
-      Date.now()
-  )
-    return null;
+  const expiresAt = Date.parse(info?.expires ?? '');
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
 
-  const user =
-    info?.user;
-  if (
-    !user?.id ||
-    typeof user.id !==
-      'string'
-  )
-    return null;
+  const user = info?.user;
+  if (!user?.id || typeof user.id !== 'string') return null;
 
-  const name =
-    user.global_name ||
-    user.username ||
-    'Guest';
-  const avatarUrl =
-    discordAvatarUrl(
-      user.id,
-      user.avatar ??
-        null,
-      user.discriminator ??
-        '0',
-    );
+  const name = user.global_name || user.username || 'Guest';
+  const avatarUrl = discordAvatarUrl(user.id, user.avatar ?? null, user.discriminator ?? '0');
 
   // Linked account → a real site identity, indistinguishable downstream from a
   // session login: their scores count and their seat gets the reconnect grace.
-  const pool =
-    deps.getPool();
-  if (
-    pool
-  ) {
-    const result =
-      await pool.query(
-        `SELECT a."userId", u."name", u."image"
+  const pool = deps.getPool();
+  if (pool) {
+    const result = await pool.query(
+      `SELECT a."userId", u."name", u."image"
        FROM "account" a
        JOIN "user" u ON u."id" = a."userId"
        WHERE a."providerId" = 'discord' AND a."accountId" = $1
        LIMIT 1`,
-        [
-          user.id,
-        ],
-      );
-    if (
-      result
-        .rows
-        .length >
-      0
-    ) {
-      const row =
-        result
-          .rows[0];
+      [user.id],
+    );
+    if (result.rows.length > 0) {
+      const row = result.rows[0];
       return {
-        discordId:
-          user.id,
-        userId:
-          row.userId,
-        name:
-          row.name ||
-          name,
-        avatarUrl:
-          row.image ||
-          avatarUrl,
+        discordId: user.id,
+        userId: row.userId,
+        name: row.name || name,
+        avatarUrl: row.image || avatarUrl,
         expiresAt,
       };
     }
@@ -391,10 +208,8 @@ async function verifyDiscordActivityToken(
   // is the thing every persistence path keys on, and minting one here is how a
   // "we store nothing about guests" rule quietly becomes untrue.
   return {
-    discordId:
-      user.id,
-    userId:
-      null,
+    discordId: user.id,
+    userId: null,
     name,
     avatarUrl,
     expiresAt,
@@ -407,109 +222,49 @@ export async function applyDiscordActivityToken(
   token: string,
   deps: DiscordActivityDeps,
 ): Promise<boolean> {
-  const key =
-    discordTokenKey(
-      token,
-    );
-  const cached =
-    discordAuthCache.get(
-      key,
-    );
-  if (
-    cached
-  ) {
-    attachDiscordIdentity(
-      socket,
-      {
-        discordId:
-          cached.discordId,
-        userId:
-          cached.userId ||
-          null,
-        name: cached.userName,
-        avatarUrl:
-          cached.avatarUrl,
-      },
-    );
+  const key = discordTokenKey(token);
+  const cached = discordAuthCache.get(key);
+  if (cached) {
+    attachDiscordIdentity(socket, {
+      discordId: cached.discordId,
+      userId: cached.userId || null,
+      name: cached.userName,
+      avatarUrl: cached.avatarUrl,
+    });
     return true;
   }
-  if (
-    discordDeniedCache.get(
-      key,
-    )
-  )
-    return false;
+  if (discordDeniedCache.get(key)) return false;
 
   // Per-IP budget BEFORE the outbound call; over it, the socket is simply anonymous.
-  const ip =
-    handshakeIp(
-      socket,
-    );
-  if (
-    !discordVerifyLimiter.check(
-      ip,
-      'discord:verify',
-    )
-  ) {
-    if (
-      !discordLimitLogged.get(
+  const ip = handshakeIp(socket);
+  if (!discordVerifyLimiter.check(ip, 'discord:verify')) {
+    if (!discordLimitLogged.get(ip)) {
+      discordLimitLogged.set(ip, true, Number.POSITIVE_INFINITY);
+      deps.logger.warn({
+        event: 'discord_verify_rate_limited',
         ip,
-      )
-    ) {
-      discordLimitLogged.set(
-        ip,
-        true,
-        Number.POSITIVE_INFINITY,
-      );
-      deps.logger.warn(
-        {
-          event:
-            'discord_verify_rate_limited',
-          ip,
-        },
-      );
+      });
     }
     return false;
   }
 
   // Throws on a transient failure (not remembered); null means Discord refused the token.
-  const identity =
-    await discordVerifyFlight(
-      key,
-      () =>
-        verifyDiscordActivityToken(
-          token,
-          deps,
-        ),
-    );
-  if (
-    !identity
-  ) {
-    discordDeniedCache.set(
-      key,
-      true,
-      Number.POSITIVE_INFINITY,
-    );
+  const identity = await discordVerifyFlight(key, () => verifyDiscordActivityToken(token, deps));
+  if (!identity) {
+    discordDeniedCache.set(key, true, Number.POSITIVE_INFINITY);
     return false;
   }
-  attachDiscordIdentity(
-    socket,
-    identity,
-  );
+  attachDiscordIdentity(socket, identity);
 
   // A guest carries a null userId; the cache replays it as a guest rather than
   // as an account. The cache never outlives the Discord token's own expiry.
   discordAuthCache.set(
     key,
     {
-      discordId:
-        identity.discordId,
-      userId:
-        identity.userId as string,
-      userName:
-        identity.name,
-      avatarUrl:
-        identity.avatarUrl,
+      discordId: identity.discordId,
+      userId: identity.userId as string,
+      userName: identity.name,
+      avatarUrl: identity.avatarUrl,
     },
     identity.expiresAt,
   );
@@ -520,37 +275,25 @@ function attachDiscordIdentity(
   socket: import('socket.io').Socket,
   identity: {
     discordId: string;
-    userId:
-      | string
-      | null;
+    userId: string | null;
     name: string;
-    avatarUrl:
-      | string
-      | null;
+    avatarUrl: string | null;
   },
 ): void {
   // Verified by Discord, never client-supplied: the vibe room checks it against the Activity instance.
-  socket.data.discordId =
-    identity.discordId;
-  if (
-    identity.userId
-  ) {
-    socket.data.userId =
-      identity.userId;
-    socket.data.userName =
-      identity.name;
-    socket.data.avatarUrl =
-      identity.avatarUrl;
+  socket.data.discordId = identity.discordId;
+  if (identity.userId) {
+    socket.data.userId = identity.userId;
+    socket.data.userName = identity.name;
+    socket.data.avatarUrl = identity.avatarUrl;
   } else {
     // The ONLY place a guest identity exists. `socket.data.userId` stays unset,
     // which is what keeps every persistence path (leaderboards, runs, the
     // `User` table) from having anything to write.
-    socket.data.discordGuest =
-      {
-        name: identity.name,
-        avatarUrl:
-          identity.avatarUrl,
-      };
+    socket.data.discordGuest = {
+      name: identity.name,
+      avatarUrl: identity.avatarUrl,
+    };
   }
 }
 

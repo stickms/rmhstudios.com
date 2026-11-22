@@ -34,92 +34,24 @@ export const allowedCidrsField = z
 /** Requests per minute for one key; the tier's maximum is checked where the tier is known. */
 export const rateLimitPerMinuteField = z.number().int().min(1).max(100_000);
 
-export const createKeyBody =
-  z.object(
-    {
-      name: z
-        .string()
-        .min(
-          1,
-        )
-        .max(
-          100,
-        ),
-      scopes:
-        z
-          .array(
-            z.string(),
-          )
-          .optional(),
-      expiresInDays:
-        z
-          .number()
-          .int()
-          .min(
-            1,
-          )
-          .max(
-            365,
-          )
-          .optional(),
-      /** `rmh_test_` sandbox key (fixtures for reads, no-op writes). */
-      testMode:
-        z
-          .boolean()
-          .optional(),
-      allowedCidrs:
-        allowedCidrsField
-          .optional(),
-      /** Omit for the tier's limit. */
-      rateLimitPerMinute:
-        rateLimitPerMinuteField
-          .nullable()
-          .optional(),
-    },
-  );
+export const createKeyBody = z.object({
+  name: z.string().min(1).max(100),
+  scopes: z.array(z.string()).optional(),
+  expiresInDays: z.number().int().min(1).max(365).optional(),
+  /** `rmh_test_` sandbox key (fixtures for reads, no-op writes). */
+  testMode: z.boolean().optional(),
+  allowedCidrs: allowedCidrsField.optional(),
+  /** Omit for the tier's limit. */
+  rateLimitPerMinute: rateLimitPerMinuteField.nullable().optional(),
+});
 
-export const patchKeyBody =
-  z.object(
-    {
-      name: z
-        .string()
-        .min(
-          1,
-        )
-        .max(
-          100,
-        )
-        .optional(),
-      scopes:
-        z
-          .array(
-            z.string(),
-          )
-          .optional(),
-      expiresInDays:
-        z
-          .number()
-          .int()
-          .min(
-            1,
-          )
-          .max(
-            365,
-          )
-          .nullable()
-          .optional(),
-      rotate:
-        z
-          .boolean()
-          .optional(),
-      /** `[]` lifts the restriction. */
-      allowedCidrs:
-        allowedCidrsField
-          .optional(),
-      /** `null` returns to the tier's limit. */
-      rateLimitPerMinute:
-        rateLimitPerMinuteField
-          .nullable()
-          .optional(),
-    },
-  );
+export const patchKeyBody = z.object({
+  name: z.string().min(1).max(100).optional(),
+  scopes: z.array(z.string()).optional(),
+  expiresInDays: z.number().int().min(1).max(365).nullable().optional(),
+  rotate: z.boolean().optional(),
+  /** `[]` lifts the restriction. */
+  allowedCidrs: allowedCidrsField.optional(),
+  /** `null` returns to the tier's limit. */
+  rateLimitPerMinute: rateLimitPerMinuteField.nullable().optional(),
+});

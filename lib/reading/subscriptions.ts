@@ -7,15 +7,8 @@
  */
 import { ALL_CATEGORIES } from '@/lib/news-categories';
 
-export const SUBSCRIPTION_KINDS =
-  [
-    'blog',
-    'blog_tag',
-    'news_category',
-    'news_story',
-  ] as const;
-export type SubscriptionKind =
-  (typeof SUBSCRIPTION_KINDS)[number];
+export const SUBSCRIPTION_KINDS = ['blog', 'blog_tag', 'news_category', 'news_story'] as const;
+export type SubscriptionKind = (typeof SUBSCRIPTION_KINDS)[number];
 
 /** A member keeps at most this many subscriptions. */
 export const MAX_SUBSCRIPTIONS = 100;
@@ -24,18 +17,8 @@ export const TARGET_MAX = 80;
 /** One email carries at most this many items. */
 export const EMAIL_MAX_ITEMS = 20;
 
-export function isSubscriptionKind(
-  value: unknown,
-): value is SubscriptionKind {
-  return (
-    typeof value ===
-      'string' &&
-    (
-      SUBSCRIPTION_KINDS as readonly string[]
-    ).includes(
-      value,
-    )
-  );
+export function isSubscriptionKind(value: unknown): value is SubscriptionKind {
+  return typeof value === 'string' && (SUBSCRIPTION_KINDS as readonly string[]).includes(value);
 }
 
 export type TargetCheck =
@@ -45,91 +28,58 @@ export type TargetCheck =
     }
   | {
       ok: false;
-      reason:
-        | 'invalid-target'
-        | 'target-not-allowed'
-        | 'target-required'
-        | 'target-too-long'
-        | 'unknown-category';
+      reason: 'invalid-target' | 'target-not-allowed' | 'target-required' | 'target-too-long' | 'unknown-category';
     };
 
-const STORY_SLUG =
-  /^[a-z0-9][a-z0-9-]*$/;
+const STORY_SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
  * Whether `target` is well formed for `kind`, and its normal form. The checks that need a database (the tag has a
  * post, the story exists) are the server's; the shape and the category list are decided here.
  */
-export function validateTarget(
-  kind: SubscriptionKind,
-  target: string,
-): TargetCheck {
-  const value =
-    target.trim();
-  switch (
-    kind
-  ) {
+export function validateTarget(kind: SubscriptionKind, target: string): TargetCheck {
+  const value = target.trim();
+  switch (kind) {
     case 'blog':
-      return value ===
-        ''
+      return value === ''
         ? {
             ok: true,
-            target:
-              '',
+            target: '',
           }
         : {
             ok: false,
-            reason:
-              'target-not-allowed',
+            reason: 'target-not-allowed',
           };
     case 'news_category':
-      return ALL_CATEGORIES.includes(
-        value,
-      )
+      return ALL_CATEGORIES.includes(value)
         ? {
             ok: true,
-            target:
-              value,
+            target: value,
           }
         : {
             ok: false,
-            reason:
-              'unknown-category',
+            reason: 'unknown-category',
           };
     case 'blog_tag':
     case 'news_story':
-      if (
-        value ===
-        ''
-      )
+      if (value === '')
         return {
           ok: false,
-          reason:
-            'target-required',
+          reason: 'target-required',
         };
-      if (
-        value.length >
-        TARGET_MAX
-      )
+      if (value.length > TARGET_MAX)
         return {
           ok: false,
-          reason:
-            'target-too-long',
+          reason: 'target-too-long',
         };
-      return kind ===
-        'news_story' &&
-        !STORY_SLUG.test(
-          value,
-        )
+      return kind === 'news_story' && !STORY_SLUG.test(value)
         ? {
             ok: false,
-            reason:
-              'invalid-target',
+            reason: 'invalid-target',
           }
         : {
             ok: true,
-            target:
-              value,
+            target: value,
           };
   }
 }
@@ -143,9 +93,7 @@ export interface SubscriptionKey {
 
 /** A new Log or published News article, as the matcher and the email see it. */
 export interface ReadingItem {
-  source:
-    | 'blog'
-    | 'news';
+  source: 'blog' | 'news';
   id: string;
   slug: string;
   title: string;
@@ -155,50 +103,19 @@ export interface ReadingItem {
   /** News only. */
   category?: string;
   /** News only: the slug of the story the article belongs to, when it belongs to one. */
-  storySlug?:
-    | string
-    | null;
+  storySlug?: string | null;
 }
 
-export function matchesSubscription(
-  item: ReadingItem,
-  sub: Pick<
-    SubscriptionKey,
-    | 'kind'
-    | 'target'
-  >,
-): boolean {
-  switch (
-    sub.kind
-  ) {
+export function matchesSubscription(item: ReadingItem, sub: Pick<SubscriptionKey, 'kind' | 'target'>): boolean {
+  switch (sub.kind) {
     case 'blog':
-      return (
-        item.source ===
-        'blog'
-      );
+      return item.source === 'blog';
     case 'blog_tag':
-      return (
-        item.source ===
-          'blog' &&
-        item.tags.includes(
-          sub.target,
-        )
-      );
+      return item.source === 'blog' && item.tags.includes(sub.target);
     case 'news_category':
-      return (
-        item.source ===
-          'news' &&
-        item.category ===
-          sub.target
-      );
+      return item.source === 'news' && item.category === sub.target;
     case 'news_story':
-      return (
-        item.source ===
-          'news' &&
-        !!item.storySlug &&
-        item.storySlug ===
-          sub.target
-      );
+      return item.source === 'news' && !!item.storySlug && item.storySlug === sub.target;
   }
 }
 
@@ -206,50 +123,19 @@ export function matchesSubscription(
  * The members to notify about `item`: each once, however many of their subscriptions match it (the Logs and one
  * of its tags; a category and a story that contain the same article).
  */
-export function matchingSubscribers(
-  item: ReadingItem,
-  subs: readonly SubscriptionKey[],
-): string[] {
-  const users =
-    new Set<string>();
-  for (const sub of subs)
-    if (
-      matchesSubscription(
-        item,
-        sub,
-      )
-    )
-      users.add(
-        sub.userId,
-      );
-  return [
-    ...users,
-  ];
+export function matchingSubscribers(item: ReadingItem, subs: readonly SubscriptionKey[]): string[] {
+  const users = new Set<string>();
+  for (const sub of subs) if (matchesSubscription(item, sub)) users.add(sub.userId);
+  return [...users];
 }
 
-export function itemPath(
-  item: Pick<
-    ReadingItem,
-    | 'source'
-    | 'slug'
-  >,
-): string {
+export function itemPath(item: Pick<ReadingItem, 'source' | 'slug'>): string {
   return `/${item.source === 'blog' ? 'blog' : 'news'}/${item.slug}`;
 }
 
 /** The `Notification.entityType` an item's notification carries. */
-export function itemEntityType(
-  item: Pick<
-    ReadingItem,
-    'source'
-  >,
-):
-  | 'blog_post'
-  | 'news_article' {
-  return item.source ===
-    'blog'
-    ? 'blog_post'
-    : 'news_article';
+export function itemEntityType(item: Pick<ReadingItem, 'source'>): 'blog_post' | 'news_article' {
+  return item.source === 'blog' ? 'blog_post' : 'news_article';
 }
 
 /** A subscription with the moment its member was last emailed (or followed), for the daily batch. */
@@ -263,80 +149,30 @@ export interface EmailSubscription extends SubscriptionKey {
  * items newer than the `since` of a subscription that matches them (so following a tag today never mails last
  * week's posts under the tag).
  */
-export function itemsForEmail(
-  items: readonly ReadingItem[],
-  subs: readonly EmailSubscription[],
-): ReadingItem[] {
+export function itemsForEmail(items: readonly ReadingItem[], subs: readonly EmailSubscription[]): ReadingItem[] {
   return items
-    .filter(
-      (
-        item,
-      ) =>
-        subs.some(
-          (
-            s,
-          ) =>
-            item.createdAt >
-              s.since &&
-            matchesSubscription(
-              item,
-              s,
-            ),
-        ),
-    )
-    .sort(
-      (
-        a,
-        b,
-      ) =>
-        b.createdAt.getTime() -
-          a.createdAt.getTime() ||
-        a.id.localeCompare(
-          b.id,
-        ),
-    )
-    .slice(
-      0,
-      EMAIL_MAX_ITEMS,
-    );
+    .filter((item) => subs.some((s) => item.createdAt > s.since && matchesSubscription(item, s)))
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || a.id.localeCompare(b.id))
+    .slice(0, EMAIL_MAX_ITEMS);
 }
 
-function esc(
-  value: string,
-): string {
+function esc(value: string): string {
   return value.replace(
     /[&<>"']/g,
-    (
-      c,
-    ) =>
+    (c) =>
       ({
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#39;',
-      })[
-        c
-      ] ??
-      c,
+      })[c] ?? c,
   );
 }
 
-function clip(
-  value: string,
-  max: number,
-): string {
-  const clean =
-    value
-      .replace(
-        /\s+/g,
-        ' ',
-      )
-      .trim();
-  return clean.length >
-    max
-    ? `${clean.slice(0, max - 1)}…`
-    : clean;
+function clip(value: string, max: number): string {
+  const clean = value.replace(/\s+/g, ' ').trim();
+  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }
 
 export interface SubscriptionEmail {
@@ -357,33 +193,22 @@ export function renderSubscriptionEmail(
     settingsUrl: string;
   },
 ): SubscriptionEmail {
-  const abs =
-    (
-      item: ReadingItem,
-    ) =>
-      `${opts.siteUrl}${itemPath(item)}`;
+  const abs = (item: ReadingItem) => `${opts.siteUrl}${itemPath(item)}`;
   const subject =
-    items.length ===
-      1 &&
-    items[0]
+    items.length === 1 && items[0]
       ? `New on RMH Studios: ${clip(items[0].title, 80)}`
       : `${items.length} new items from the Logs and News you follow`;
 
-  const rows =
-    items
-      .map(
-        (
-          item,
-        ) =>
-          `<tr><td style="padding:14px 0;border-bottom:1px solid #e5e5e5">` +
-          `<a href="${esc(abs(item))}" style="font-size:16px;font-weight:600;color:#111;text-decoration:none">${esc(item.title)}</a>` +
-          `<div style="font-size:12px;color:#666;margin-top:2px">${item.source === 'blog' ? 'Logs' : 'News'}</div>` +
-          `<p style="font-size:14px;line-height:1.5;color:#333;margin:6px 0 0">${esc(clip(item.description, 200))}</p>` +
-          `</td></tr>`,
-      )
-      .join(
-        '',
-      );
+  const rows = items
+    .map(
+      (item) =>
+        `<tr><td style="padding:14px 0;border-bottom:1px solid #e5e5e5">` +
+        `<a href="${esc(abs(item))}" style="font-size:16px;font-weight:600;color:#111;text-decoration:none">${esc(item.title)}</a>` +
+        `<div style="font-size:12px;color:#666;margin-top:2px">${item.source === 'blog' ? 'Logs' : 'News'}</div>` +
+        `<p style="font-size:14px;line-height:1.5;color:#333;margin:6px 0 0">${esc(clip(item.description, 200))}</p>` +
+        `</td></tr>`,
+    )
+    .join('');
 
   const html =
     `<!doctype html><html lang="en"><body style="margin:0;background:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif">` +
@@ -399,16 +224,7 @@ export function renderSubscriptionEmail(
 
   const text =
     `New from the Logs and News you follow\n\n` +
-    items
-      .map(
-        (
-          item,
-        ) =>
-          `${item.title}\n${clip(item.description, 200)}\n${abs(item)}`,
-      )
-      .join(
-        '\n\n',
-      ) +
+    items.map((item) => `${item.title}\n${clip(item.description, 200)}\n${abs(item)}`).join('\n\n') +
     `\n\nChange what you follow: ${opts.settingsUrl}\nTurn these emails off: ${opts.unsubscribeUrl}\n`;
 
   return {

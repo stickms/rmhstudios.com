@@ -9,7 +9,12 @@ import {
   quizRevealFor,
   quizVerdict,
 } from '@/lib/feed/quiz-poll';
-import { emptyPoll, isPollPostable, quizCorrectAmongFilled, type PollDraft } from '@/components/feed/compose/compose-state';
+import {
+  emptyPoll,
+  isPollPostable,
+  quizCorrectAmongFilled,
+  type PollDraft,
+} from '@/components/feed/compose/compose-state';
 
 const NOW = new Date('2026-11-27T12:00:00Z');
 const open = { correctOptionId: 'o1', explanation: 'Because.', closesAt: null, closedAt: null };
@@ -64,7 +69,14 @@ describe('quizRevealFor', () => {
     expect(quizRevealFor(open, { viewerId: 'author', authorId: 'author' }, false, NOW)).toEqual(answer);
     expect(quizRevealFor(open, stranger, true, NOW)).toEqual(answer);
     expect(quizRevealFor({ ...open, closesAt: new Date(NOW.getTime() - 1) }, stranger, false, NOW)).toEqual(answer);
-    expect(quizRevealFor({ ...open, closedAt: new Date(NOW.getTime() - 1) }, { viewerId: null, authorId: 'author' }, false, NOW)).toEqual(answer);
+    expect(
+      quizRevealFor(
+        { ...open, closedAt: new Date(NOW.getTime() - 1) },
+        { viewerId: null, authorId: 'author' },
+        false,
+        NOW,
+      ),
+    ).toEqual(answer);
   });
 
   it('keeps it hidden until the effective end: an author closing early wins over a later close time', () => {
@@ -76,7 +88,9 @@ describe('quizRevealFor', () => {
   });
 
   it('omits an empty explanation and never treats an anonymous viewer as the author', () => {
-    expect(quizRevealFor({ ...open, explanation: null }, { viewerId: 'author', authorId: 'author' }, false, NOW)).toEqual({
+    expect(
+      quizRevealFor({ ...open, explanation: null }, { viewerId: 'author', authorId: 'author' }, false, NOW),
+    ).toEqual({
       quiz: true,
       correctOptionId: 'o1',
     });
@@ -133,7 +147,9 @@ describe('the composer draft', () => {
     expect(isPollPostable('poll', draft({ quiz: true, options: ['a', 'b'], correctIndex: 0 }))).toBe(true);
     expect(isPollPostable('poll', draft({ quiz: true, options: ['a', 'b'] }))).toBe(false);
     expect(isPollPostable('poll', draft({ quiz: true, options: ['a', ''], correctIndex: 1 }))).toBe(false);
-    expect(isPollPostable('poll', draft({ quiz: true, multiSelect: true, options: ['a', 'b'], correctIndex: 0 }))).toBe(false);
+    expect(isPollPostable('poll', draft({ quiz: true, multiSelect: true, options: ['a', 'b'], correctIndex: 0 }))).toBe(
+      false,
+    );
     expect(isPollPostable('poll', draft({ options: ['a', 'b'] }))).toBe(true);
   });
 });

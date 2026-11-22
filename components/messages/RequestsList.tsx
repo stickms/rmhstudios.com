@@ -81,9 +81,7 @@ export function RequestsList() {
       <EmptyState
         title={t('load-failed-title', { defaultValue: 'Could not load message requests' })}
         description={t('load-failed-description', { defaultValue: 'Check your connection and try again.' })}
-        action={
-          <Button onClick={() => void list.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>
-        }
+        action={<Button onClick={() => void list.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
       />
     );
   }
@@ -94,8 +92,7 @@ export function RequestsList() {
       const ok = await confirm({
         title: t('block-confirm-title', { name, defaultValue: 'Block {{name}}?' }),
         description: t('block-confirm-description', {
-          defaultValue:
-            'They will not be able to message you or see your posts, and this request is declined.',
+          defaultValue: 'They will not be able to message you or see your posts, and this request is declined.',
         }),
         confirmLabel: t('block', { defaultValue: 'Block' }),
         cancelLabel: t('cancel', { defaultValue: 'Cancel' }),

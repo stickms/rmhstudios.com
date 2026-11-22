@@ -12,13 +12,7 @@
  * Client-safe: the settings panel says "rises on 22 Nov" before it sends, and
  * the ledger decides the same thing when the spend lands.
  */
-import {
-  LOOSENING_DELAY_MS,
-  NO_LIMITS,
-  effectiveCap,
-  hasMaturedPending,
-  isLoosening,
-} from './play-limits';
+import { LOOSENING_DELAY_MS, NO_LIMITS, effectiveCap, hasMaturedPending, isLoosening } from './play-limits';
 
 /** Smallest and largest budget a member can set. */
 export const MIN_SPEND_CAP = 100;

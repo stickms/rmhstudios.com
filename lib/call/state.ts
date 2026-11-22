@@ -31,54 +31,37 @@ export type CallPhase =
 
 export interface CallState {
   phase: CallPhase;
-  callId:
-    | string
-    | null;
+  callId: string | null;
   /** The other participant. */
-  peerId:
-    | string
-    | null;
-  conversationId:
-    | string
-    | null;
+  peerId: string | null;
+  conversationId: string | null;
   /** Set only in the `ended` phase. */
   endReason: CallEndReason | null;
   /** Epoch ms when media connected, for the duration readout. */
-  connectedAt:
-    | number
-    | null;
+  connectedAt: number | null;
   /** Our own mic state. */
   muted: boolean;
   /** Their mic state, as last reported. */
   peerMuted: boolean;
 }
 
-export const IDLE: CallState =
-  {
-    phase:
-      'idle',
-    callId:
-      null,
-    peerId:
-      null,
-    conversationId:
-      null,
-    endReason:
-      null,
-    connectedAt:
-      null,
-    muted: false,
-    peerMuted: false,
-  };
+export const IDLE: CallState = {
+  phase: 'idle',
+  callId: null,
+  peerId: null,
+  conversationId: null,
+  endReason: null,
+  connectedAt: null,
+  muted: false,
+  peerMuted: false,
+};
 
 export type CallEvent =
   /** We pressed call. The server has not answered yet, so there is no id. */
   | {
       type: 'dial';
       peerId: string;
-      conversationId:
-        | string
-        | null;
+      conversationId: string | null;
     }
   /** The server placed the invite and named it; it is ringing on their side. */
   | {
@@ -89,9 +72,7 @@ export type CallEvent =
       type: 'incoming';
       callId: string;
       peerId: string;
-      conversationId:
-        | string
-        | null;
+      conversationId: string | null;
     }
   /** The callee pressed accept (either side observes this). */
   | {
@@ -120,29 +101,13 @@ export type CallEvent =
     };
 
 /** Phases in which a new call cannot be started or received. */
-export function isBusy(
-  state: CallState,
-): boolean {
-  return (
-    state.phase !==
-      'idle' &&
-    state.phase !==
-      'ended'
-  );
+export function isBusy(state: CallState): boolean {
+  return state.phase !== 'idle' && state.phase !== 'ended';
 }
 
 /** Whether audio should be captured and flowing in this phase. */
-export function wantsMicrophone(
-  phase: CallPhase,
-): boolean {
-  return (
-    phase ===
-      'connecting' ||
-    phase ===
-      'connected' ||
-    phase ===
-      'outgoing'
-  );
+export function wantsMicrophone(phase: CallPhase): boolean {
+  return phase === 'connecting' || phase === 'connected' || phase === 'outgoing';
 }
 
 /**
@@ -154,146 +119,83 @@ export function wantsMicrophone(
  * crashed tab mid-call. Every ignored transition is a no-op that leaves the
  * previous state intact.
  */
-export function reduce(
-  state: CallState,
-  event: CallEvent,
-): CallState {
-  switch (
-    event.type
-  ) {
+export function reduce(state: CallState, event: CallEvent): CallState {
+  switch (event.type) {
     case 'dial':
       // A second dial while busy is dropped; the caller's UI already reflects
       // the call in progress.
-      if (
-        isBusy(
-          state,
-        )
-      )
-        return state;
+      if (isBusy(state)) return state;
       // `outgoing` starts here rather than when the server confirms, because
       // every way an invite can be refused — offline, busy, privacy, a block —
       // arrives as an `end`, and `end` is a no-op from `idle`. Without a state
       // to end, a call that could never be placed showed the caller nothing.
       return {
         ...IDLE,
-        phase:
-          'outgoing',
-        callId:
-          null,
-        peerId:
-          event.peerId,
-        conversationId:
-          event.conversationId,
+        phase: 'outgoing',
+        callId: null,
+        peerId: event.peerId,
+        conversationId: event.conversationId,
       };
 
     case 'ringing':
       // Fills in the id we were dialling without one. It never starts a call,
       // so a stray `ringing` cannot resurrect an ended one or rename a live one.
-      if (
-        state.phase !==
-          'outgoing' ||
-        state.callId !==
-          null
-      )
-        return state;
+      if (state.phase !== 'outgoing' || state.callId !== null) return state;
       return {
         ...state,
-        callId:
-          event.callId,
+        callId: event.callId,
       };
 
     case 'incoming':
-      if (
-        isBusy(
-          state,
-        )
-      )
-        return state;
+      if (isBusy(state)) return state;
       return {
         ...IDLE,
-        phase:
-          'incoming',
-        callId:
-          event.callId,
-        peerId:
-          event.peerId,
-        conversationId:
-          event.conversationId,
+        phase: 'incoming',
+        callId: event.callId,
+        peerId: event.peerId,
+        conversationId: event.conversationId,
       };
 
     case 'accepted':
       // Only meaningful while ringing. An accept that arrives after the call
       // already ended (a race with the ring timeout) is dropped.
-      if (
-        state.phase !==
-          'outgoing' &&
-        state.phase !==
-          'incoming'
-      )
-        return state;
+      if (state.phase !== 'outgoing' && state.phase !== 'incoming') return state;
       return {
         ...state,
-        phase:
-          'connecting',
+        phase: 'connecting',
       };
 
     case 'media-connected':
-      if (
-        state.phase !==
-        'connecting'
-      )
-        return state;
+      if (state.phase !== 'connecting') return state;
       return {
         ...state,
-        phase:
-          'connected',
-        connectedAt:
-          event.at,
+        phase: 'connected',
+        connectedAt: event.at,
       };
 
     case 'end':
       // Terminal from anywhere except idle. Ending an already-ended call keeps
       // the FIRST reason: if we hung up and they declined simultaneously, the
       // reason we already showed the user is the one that stays on screen.
-      if (
-        state.phase ===
-          'idle' ||
-        state.phase ===
-          'ended'
-      )
-        return state;
+      if (state.phase === 'idle' || state.phase === 'ended') return state;
       return {
         ...state,
-        phase:
-          'ended',
-        endReason:
-          event.reason,
+        phase: 'ended',
+        endReason: event.reason,
       };
 
     case 'set-muted':
-      if (
-        !isBusy(
-          state,
-        )
-      )
-        return state;
+      if (!isBusy(state)) return state;
       return {
         ...state,
-        muted:
-          event.muted,
+        muted: event.muted,
       };
 
     case 'peer-muted':
-      if (
-        !isBusy(
-          state,
-        )
-      )
-        return state;
+      if (!isBusy(state)) return state;
       return {
         ...state,
-        peerMuted:
-          event.muted,
+        peerMuted: event.muted,
       };
 
     case 'reset':
@@ -313,20 +215,9 @@ export function reduce(
 export function persistedStatus(
   reason: CallEndReason,
   connected: boolean,
-):
-  | 'ENDED'
-  | 'MISSED'
-  | 'DECLINED'
-  | 'CANCELLED'
-  | 'BUSY'
-  | 'FAILED' {
-  if (
-    connected
-  )
-    return 'ENDED';
-  switch (
-    reason
-  ) {
+): 'ENDED' | 'MISSED' | 'DECLINED' | 'CANCELLED' | 'BUSY' | 'FAILED' {
+  if (connected) return 'ENDED';
+  switch (reason) {
     case 'declined':
       return 'DECLINED';
     case 'cancelled':
@@ -350,70 +241,30 @@ export function persistedStatus(
 }
 
 /** Talk time in whole seconds. Zero unless the call actually connected. */
-export function durationSeconds(
-  connectedAt:
-    | number
-    | null,
-  endedAt: number,
-): number {
-  if (
-    !connectedAt
-  )
-    return 0;
-  return Math.max(
-    0,
-    Math.round(
-      (endedAt -
-        connectedAt) /
-        1000,
-    ),
-  );
+export function durationSeconds(connectedAt: number | null, endedAt: number): number {
+  if (!connectedAt) return 0;
+  return Math.max(0, Math.round((endedAt - connectedAt) / 1000));
 }
 
 /** `m:ss` / `h:mm:ss` for the in-call timer. */
-export const formatDuration =
-  (
-    totalSeconds: number,
-  ): string =>
-    formatClockSeconds(
-      totalSeconds,
-      {
-        hours: true,
-      },
-    );
+export const formatDuration = (totalSeconds: number): string =>
+  formatClockSeconds(totalSeconds, {
+    hours: true,
+  });
 
 /* -------------------------------------------------------------------------- */
 /* Who may call whom                                                          */
 /* -------------------------------------------------------------------------- */
 
-export type CallPrivacy =
-  | 'everyone'
-  | 'mutuals'
-  | 'nobody';
+export type CallPrivacy = 'everyone' | 'mutuals' | 'nobody';
 
-export const CALL_PRIVACY_VALUES: readonly CallPrivacy[] =
-  [
-    'everyone',
-    'mutuals',
-    'nobody',
-  ];
+export const CALL_PRIVACY_VALUES: readonly CallPrivacy[] = ['everyone', 'mutuals', 'nobody'];
 
 /** What a person who never chose gets. Mutuals: the feature is safe to leave on. */
-export const DEFAULT_CALL_PRIVACY: CallPrivacy =
-  'mutuals';
+export const DEFAULT_CALL_PRIVACY: CallPrivacy = 'mutuals';
 
-export function isCallPrivacy(
-  v: unknown,
-): v is CallPrivacy {
-  return (
-    typeof v ===
-      'string' &&
-    (
-      CALL_PRIVACY_VALUES as readonly string[]
-    ).includes(
-      v,
-    )
-  );
+export function isCallPrivacy(v: unknown): v is CallPrivacy {
+  return typeof v === 'string' && (CALL_PRIVACY_VALUES as readonly string[]).includes(v);
 }
 
 /**
@@ -446,47 +297,27 @@ export function canCall(args: {
     }
   | {
       allowed: false;
-      reason:
-        | 'blocked'
-        | 'privacy';
+      reason: 'blocked' | 'privacy';
     } {
-  if (
-    args.blocked
-  )
+  if (args.blocked)
     return {
       allowed: false,
-      reason:
-        'blocked',
+      reason: 'blocked',
     };
-  if (
-    args.muted
-  )
+  if (args.muted)
     return {
       allowed: false,
-      reason:
-        'privacy',
+      reason: 'privacy',
     };
-  if (
-    args.privacy ===
-    'nobody'
-  )
+  if (args.privacy === 'nobody')
     return {
       allowed: false,
-      reason:
-        'privacy',
+      reason: 'privacy',
     };
-  if (
-    args.privacy ===
-      'mutuals' &&
-    !(
-      args.calleeFollowsCaller &&
-      args.callerFollowsCallee
-    )
-  ) {
+  if (args.privacy === 'mutuals' && !(args.calleeFollowsCaller && args.callerFollowsCallee)) {
     return {
       allowed: false,
-      reason:
-        'privacy',
+      reason: 'privacy',
     };
   }
   return {

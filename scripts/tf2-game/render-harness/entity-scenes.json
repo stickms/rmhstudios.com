@@ -3,16 +3,8 @@
     {
       "name": "classes-red",
       "view": {
-        "origin": [
-          1440,
-          1450,
-          320
-        ],
-        "angles": [
-          6,
-          180,
-          0
-        ],
+        "origin": [1440, 1450, 320],
+        "angles": [6, 180, 0],
         "fov": 80
       },
       "entities": [
@@ -260,16 +252,8 @@
     {
       "name": "classes-blu",
       "view": {
-        "origin": [
-          1440,
-          1450,
-          320
-        ],
-        "angles": [
-          6,
-          180,
-          0
-        ],
+        "origin": [1440, 1450, 320],
+        "angles": [6, 180, 0],
         "fov": 80
       },
       "entities": [
@@ -517,16 +501,8 @@
     {
       "name": "scout-single",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          330
-        ],
-        "angles": [
-          10,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 330],
+        "angles": [10, 180, 0],
         "fov": 90
       },
       "entities": [
@@ -566,16 +542,8 @@
     {
       "name": "scout-run",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          330
-        ],
-        "angles": [
-          10,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 330],
+        "angles": [10, 180, 0],
         "fov": 70
       },
       "entities": [
@@ -615,16 +583,8 @@
     {
       "name": "soldier-rocket",
       "view": {
-        "origin": [
-          1450,
-          1480,
-          350
-        ],
-        "angles": [
-          8,
-          180,
-          0
-        ],
+        "origin": [1450, 1480, 350],
+        "angles": [8, 180, 0],
         "fov": 80
       },
       "entities": [
@@ -826,16 +786,8 @@
     {
       "name": "buildings",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          350
-        ],
-        "angles": [
-          12,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 350],
+        "angles": [12, 180, 0],
         "fov": 80
       },
       "entities": [
@@ -914,16 +866,8 @@
     {
       "name": "conditions",
       "view": {
-        "origin": [
-          1420,
-          1460,
-          330
-        ],
-        "angles": [
-          8,
-          180,
-          0
-        ],
+        "origin": [1420, 1460, 330],
+        "angles": [8, 180, 0],
         "fov": 75
       },
       "entities": [
@@ -1074,16 +1018,8 @@
     {
       "name": "deaths",
       "view": {
-        "origin": [
-          1420,
-          1450,
-          330
-        ],
-        "angles": [
-          12,
-          180,
-          0
-        ],
+        "origin": [1420, 1450, 330],
+        "angles": [12, 180, 0],
         "fov": 75
       },
       "entities": [
@@ -1204,16 +1140,8 @@
     {
       "name": "effects",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          330
-        ],
-        "angles": [
-          10,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 330],
+        "angles": [10, 180, 0],
         "fov": 80
       },
       "entities": [],
@@ -1315,16 +1243,8 @@
     {
       "name": "vm-scout-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1359,16 +1279,8 @@
     {
       "name": "vm-scout-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1412,16 +1324,8 @@
     {
       "name": "vm-soldier-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1456,16 +1360,8 @@
     {
       "name": "vm-soldier-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1509,16 +1405,8 @@
     {
       "name": "vm-pyro-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1553,16 +1441,8 @@
     {
       "name": "vm-pyro-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1606,16 +1486,8 @@
     {
       "name": "vm-demo-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1650,16 +1522,8 @@
     {
       "name": "vm-demo-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1703,16 +1567,8 @@
     {
       "name": "vm-heavy-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1747,16 +1603,8 @@
     {
       "name": "vm-heavy-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1800,16 +1648,8 @@
     {
       "name": "vm-engineer-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1844,16 +1684,8 @@
     {
       "name": "vm-engineer-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1897,16 +1729,8 @@
     {
       "name": "vm-medic-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1941,16 +1765,8 @@
     {
       "name": "vm-medic-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -1994,16 +1810,8 @@
     {
       "name": "vm-sniper-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -2038,16 +1846,8 @@
     {
       "name": "vm-sniper-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -2091,16 +1891,8 @@
     {
       "name": "vm-spy-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -2135,16 +1927,8 @@
     {
       "name": "vm-spy-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -2188,16 +1972,8 @@
     {
       "name": "loadout-players",
       "view": {
-        "origin": [
-          1330,
-          1465,
-          345
-        ],
-        "angles": [
-          10,
-          180,
-          0
-        ],
+        "origin": [1330, 1465, 345],
+        "angles": [10, 180, 0],
         "fov": 75
       },
       "entities": [
@@ -2373,16 +2149,8 @@
     {
       "name": "loadout-closeup",
       "view": {
-        "origin": [
-          1290,
-          1325,
-          335
-        ],
-        "angles": [
-          6,
-          180,
-          0
-        ],
+        "origin": [1290, 1325, 335],
+        "angles": [6, 180, 0],
         "fov": 45
       },
       "entities": [
@@ -2450,16 +2218,8 @@
     {
       "name": "loadout-vm-directhit-idle",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -2494,16 +2254,8 @@
     {
       "name": "loadout-vm-directhit-fire",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -2547,16 +2299,8 @@
     {
       "name": "loadout-teams",
       "view": {
-        "origin": [
-          1430,
-          1400,
-          350
-        ],
-        "angles": [
-          8,
-          180,
-          0
-        ],
+        "origin": [1430, 1400, 350],
+        "angles": [8, 180, 0],
         "fov": 50
       },
       "entities": [
@@ -2678,16 +2422,8 @@
     {
       "name": "loadout-killstreak",
       "view": {
-        "origin": [
-          1290,
-          1335,
-          322
-        ],
-        "angles": [
-          2,
-          180,
-          0
-        ],
+        "origin": [1290, 1335, 322],
+        "angles": [2, 180, 0],
         "fov": 50
       },
       "entities": [
@@ -2944,16 +2680,8 @@
     {
       "name": "loadout-killstreak-sheen",
       "view": {
-        "origin": [
-          1225,
-          1290,
-          318
-        ],
-        "angles": [
-          4,
-          180,
-          0
-        ],
+        "origin": [1225, 1290, 318],
+        "angles": [4, 180, 0],
         "fov": 45
       },
       "entities": [
@@ -3183,16 +2911,8 @@
     {
       "name": "loadout-vm-blackbox-unusual",
       "view": {
-        "origin": [
-          1420,
-          1440,
-          340
-        ],
-        "angles": [
-          0,
-          180,
-          0
-        ],
+        "origin": [1420, 1440, 340],
+        "angles": [0, 180, 0],
         "fov": 90
       },
       "vm": {
@@ -3233,16 +2953,8 @@
     {
       "name": "loadout-boots",
       "view": {
-        "origin": [
-          1300,
-          1340,
-          300
-        ],
-        "angles": [
-          16,
-          180,
-          0
-        ],
+        "origin": [1300, 1340, 300],
+        "angles": [16, 180, 0],
         "fov": 55
       },
       "entities": [
@@ -3310,16 +3022,8 @@
     {
       "name": "loadout-crowd",
       "view": {
-        "origin": [
-          1420,
-          1450,
-          380
-        ],
-        "angles": [
-          12,
-          180,
-          0
-        ],
+        "origin": [1420, 1450, 380],
+        "angles": [12, 180, 0],
         "fov": 75
       },
       "entities": [
@@ -3983,16 +3687,8 @@
     {
       "name": "npcs",
       "view": {
-        "origin": [
-          -2500,
-          -2500,
-          60
-        ],
-        "angles": [
-          5,
-          90,
-          0
-        ],
+        "origin": [-2500, -2500, 60],
+        "angles": [5, 90, 0],
         "fov": 75
       },
       "entities": [
@@ -4068,16 +3764,8 @@
     {
       "name": "cube",
       "view": {
-        "origin": [
-          -607,
-          -346,
-          225
-        ],
-        "angles": [
-          25,
-          0,
-          0
-        ],
+        "origin": [-607, -346, 225],
+        "angles": [25, 0, 0],
         "fov": 75
       },
       "entities": [

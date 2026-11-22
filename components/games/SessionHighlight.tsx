@@ -37,116 +37,42 @@ export function SessionHighlight({
   moment: ScoreMomentView | null;
   className?: string;
 }) {
-  const {
-    t,
-    i18n,
-  } =
-    useTranslation(
-      'c-game',
-    );
-  const fmt =
-    (
-      n: number,
-    ) =>
-      n.toLocaleString(
-        i18n.language,
-      );
+  const { t, i18n } = useTranslation('c-game');
+  const fmt = (n: number) => n.toLocaleString(i18n.language);
 
-  let record:
-    | string
-    | null =
-    null;
-  if (
-    moment?.kind ===
-    'first-score'
-  ) {
-    record =
-      t(
-        'session-first-score',
-        {
-          defaultValue:
-            'Your first score on the board.',
-        },
-      );
-  } else if (
-    moment?.kind ===
-      'pb' &&
-    moment.previous !=
-      null
-  ) {
-    record =
-      t(
-        'session-new-best',
-        {
-          defaultValue:
-            'A new personal best, {{delta}} past your last one.',
-          delta:
-            fmt(
-              Math.abs(
-                moment.score -
-                  moment.previous,
-              ),
-            ),
-        },
-      );
-  } else if (
-    moment?.kind ===
-    'pb'
-  ) {
-    record =
-      t(
-        'session-new-best-plain',
-        {
-          defaultValue:
-            'A new personal best.',
-        },
-      );
+  let record: string | null = null;
+  if (moment?.kind === 'first-score') {
+    record = t('session-first-score', {
+      defaultValue: 'Your first score on the board.',
+    });
+  } else if (moment?.kind === 'pb' && moment.previous != null) {
+    record = t('session-new-best', {
+      defaultValue: 'A new personal best, {{delta}} past your last one.',
+      delta: fmt(Math.abs(moment.score - moment.previous)),
+    });
+  } else if (moment?.kind === 'pb') {
+    record = t('session-new-best-plain', {
+      defaultValue: 'A new personal best.',
+    });
   }
 
-  if (
-    !peak &&
-    !record
-  )
-    return null;
+  if (!peak && !record) return null;
 
   return (
-    <div
-      data-slot="session-highlight"
-      className={cn(
-        'space-y-1 text-center',
-        className,
-      )}
-    >
+    <div data-slot="session-highlight" className={cn('space-y-1 text-center', className)}>
       {peak ? (
         <p>
           <span className="block text-xs opacity-70">
-            {t(
-              'session-best-moment',
-              {
-                defaultValue:
-                  'Best moment',
-              },
-            )}
+            {t('session-best-moment', {
+              defaultValue: 'Best moment',
+            })}
           </span>
           <span className="block text-lg font-semibold tabular-nums">
-            {
-              peak.label
-            }
-
-            :{' '}
-            {
-              peak.value
-            }
+            {peak.label}: {peak.value}
           </span>
         </p>
       ) : null}
-      {record ? (
-        <p className="text-sm opacity-80">
-          {
-            record
-          }
-        </p>
-      ) : null}
+      {record ? <p className="text-sm opacity-80">{record}</p> : null}
     </div>
   );
 }

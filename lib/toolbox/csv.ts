@@ -89,7 +89,12 @@ export function parseCsv(input: string, delimiter = ','): CsvParseResult {
  * consistent number of columns (more than one). Comma when nothing fits.
  */
 export function detectDelimiter(input: string): string {
-  const sample = input.replace(/^\uFEFF/, '').split(/\r?\n/).filter(Boolean).slice(0, 10).join('\n');
+  const sample = input
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .slice(0, 10)
+    .join('\n');
   let best: { delimiter: string; score: number } = { delimiter: ',', score: 0 };
   for (const delimiter of DELIMITER_CANDIDATES) {
     const counts = parseCsv(sample, delimiter).rows.map((r) => r.length);
@@ -110,9 +115,7 @@ function needsQuotes(field: string, delimiter: string): boolean {
 /** Write rows as CSV, quoting only what needs it, with CRLF line ends (RFC 4180). */
 export function writeCsv(rows: readonly (readonly string[])[], delimiter = ',', lineEnd = '\r\n'): string {
   return rows
-    .map((row) =>
-      row.map((f) => (needsQuotes(f, delimiter) ? `"${f.replace(/"/g, '""')}"` : f)).join(delimiter),
-    )
+    .map((row) => row.map((f) => (needsQuotes(f, delimiter) ? `"${f.replace(/"/g, '""')}"` : f)).join(delimiter))
     .join(lineEnd);
 }
 

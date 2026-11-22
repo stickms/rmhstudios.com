@@ -38,12 +38,7 @@ export const FollowRow = memo(function FollowRow({
   const href = `/u/${row.handle || row.id}`;
 
   return (
-    <li
-      className={cn(
-        'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3',
-        className,
-      )}
-    >
+    <li className={cn('flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3', className)}>
       <input
         type="checkbox"
         checked={selected}
@@ -51,16 +46,8 @@ export const FollowRow = memo(function FollowRow({
         aria-label={t('select-member', { name, defaultValue: 'Select {{name}}' })}
         className="size-4 shrink-0 accent-site-text pointer-coarse:size-5"
       />
-      <Link
-        to={href as string}
-        className="flex min-w-0 flex-1 basis-48 items-center gap-3"
-      >
-        <UserAvatar
-          src={row.image ?? undefined}
-          alt=""
-          size={40}
-          fallbackName={name}
-        />
+      <Link to={href as string} className="flex min-w-0 flex-1 basis-48 items-center gap-3">
+        <UserAvatar src={row.image ?? undefined} alt="" size={40} fallbackName={name} />
         <span className="min-w-0">
           <span className="t-body block truncate font-semibold text-site-text">{name}</span>
           <span className="t-meta flex flex-wrap items-center gap-x-2">
@@ -74,10 +61,7 @@ export const FollowRow = memo(function FollowRow({
         {row.lastActive ? (
           <>
             {t('last-active', { defaultValue: 'Active' })}{' '}
-            <RelativeTime
-              date={row.lastActive}
-              format={(at, now) => formatRelativeTime(at, i18n.language, now)}
-            />
+            <RelativeTime date={row.lastActive} format={(at, now) => formatRelativeTime(at, i18n.language, now)} />
           </>
         ) : (
           t('no-activity', { defaultValue: 'No activity yet' })

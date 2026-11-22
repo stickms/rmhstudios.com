@@ -15,7 +15,10 @@ const h = vi.hoisted(() => ({
   startRecoveryHold: vi.fn(async (..._a: unknown[]) => undefined),
   options: null as null | {
     emailAndPassword: {
-      sendResetPassword: (d: { user: { id: string; email: string }; url: string; token: string }, r: Request) => Promise<void>;
+      sendResetPassword: (
+        d: { user: { id: string; email: string }; url: string; token: string },
+        r: Request,
+      ) => Promise<void>;
       onPasswordReset: (d: { user: { id: string; email: string } }, r: Request) => Promise<void>;
     };
   },
@@ -45,22 +48,36 @@ describe('password reset security log', () => {
     let finish: () => void = () => {};
     h.recordSecurityEvent.mockImplementationOnce(() => new Promise<undefined>((r) => (finish = () => r(undefined))));
     await expect(
-      h.options!.emailAndPassword.sendResetPassword({ user, url: 'https://x.test/reset?token=SECRET', token: 'SECRET' }, request),
+      h.options!.emailAndPassword.sendResetPassword(
+        { user, url: 'https://x.test/reset?token=SECRET', token: 'SECRET' },
+        request,
+      ),
     ).resolves.toBeUndefined();
     expect(h.recordSecurityEvent).toHaveBeenCalledTimes(1);
-    expect(h.recordSecurityEvent.mock.calls[0]![0]).toMatchObject({ userId: 'user-1', kind: 'password_reset_requested', request });
+    expect(h.recordSecurityEvent.mock.calls[0]![0]).toMatchObject({
+      userId: 'user-1',
+      kind: 'password_reset_requested',
+      request,
+    });
     finish();
   });
 
   it('a completed reset writes one row and still starts the recovery hold', async () => {
     await h.options!.emailAndPassword.onPasswordReset({ user }, request);
     expect(h.recordSecurityEvent).toHaveBeenCalledTimes(1);
-    expect(h.recordSecurityEvent.mock.calls[0]![0]).toMatchObject({ userId: 'user-1', kind: 'password_reset_completed', request });
+    expect(h.recordSecurityEvent.mock.calls[0]![0]).toMatchObject({
+      userId: 'user-1',
+      kind: 'password_reset_completed',
+      request,
+    });
     expect(h.startRecoveryHold).toHaveBeenCalledWith('user-1', 'password reset by email');
   });
 
   it('neither row carries the reset URL or token', async () => {
-    await h.options!.emailAndPassword.sendResetPassword({ user, url: 'https://x.test/reset?token=SECRET', token: 'SECRET' }, request);
+    await h.options!.emailAndPassword.sendResetPassword(
+      { user, url: 'https://x.test/reset?token=SECRET', token: 'SECRET' },
+      request,
+    );
     await h.options!.emailAndPassword.onPasswordReset({ user }, request);
     for (const [input] of h.recordSecurityEvent.mock.calls) {
       expect(JSON.stringify(input, (_k, v) => (v instanceof Request ? v.method : v))).not.toContain('SECRET');

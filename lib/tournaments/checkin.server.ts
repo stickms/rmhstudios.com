@@ -11,12 +11,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { createNotification } from '@/lib/notifications.server';
-import {
-  CHECK_IN_MINUTES,
-  checkInOpensAt,
-  isCheckInMinutes,
-  isCheckInOpen,
-} from '@/lib/tournaments/checkin';
+import { CHECK_IN_MINUTES, checkInOpensAt, isCheckInMinutes, isCheckInOpen } from '@/lib/tournaments/checkin';
 import { TournamentError } from '@/lib/tournaments/tournament.server';
 
 type Db = PrismaClient;
@@ -124,11 +119,7 @@ export async function updateCheckInSettings(
   now: Date = new Date(),
 ): Promise<void> {
   if (opts.checkInMinutes != null && !isCheckInMinutes(opts.checkInMinutes)) {
-    throw new TournamentError(
-      `Check-in is one of ${CHECK_IN_MINUTES.join(', ')} minutes`,
-      'BAD_WINDOW',
-      400,
-    );
+    throw new TournamentError(`Check-in is one of ${CHECK_IN_MINUTES.join(', ')} minutes`, 'BAD_WINDOW', 400);
   }
   await db.$transaction(async (tx) => {
     const t = await claimRegistration(tx, opts.tournamentId);

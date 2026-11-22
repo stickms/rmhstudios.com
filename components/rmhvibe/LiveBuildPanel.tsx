@@ -11,11 +11,7 @@
  * survives the move.
  */
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useStickToBottom } from '@/hooks/useStickToBottom';
@@ -24,44 +20,19 @@ import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
 import '@/components/rmhvibe/vibe.css';
 
-type PanelTab =
-  | 'progress'
-  | 'code';
+type PanelTab = 'progress' | 'code';
 
 export interface LiveBuildView {
   tab: PanelTab;
-  setTab: (
-    tab: PanelTab,
-  ) => void;
+  setTab: (tab: PanelTab) => void;
   /** A file the reader chose; null follows the file being written. */
-  picked:
-    | string
-    | null;
-  setPicked: (
-    name:
-      | string
-      | null,
-  ) => void;
+  picked: string | null;
+  setPicked: (name: string | null) => void;
 }
 
 export function useLiveBuildView(): LiveBuildView {
-  const [
-    tab,
-    setTab,
-  ] =
-    useState<PanelTab>(
-      'progress',
-    );
-  const [
-    picked,
-    setPicked,
-  ] =
-    useState<
-      | string
-      | null
-    >(
-      null,
-    );
+  const [tab, setTab] = useState<PanelTab>('progress');
+  const [picked, setPicked] = useState<string | null>(null);
   return {
     tab,
     setTab,
@@ -79,143 +50,56 @@ export function LiveBuildPanel({
 }: {
   thinking: string;
   content: string;
-  phase:
-    | 'thinking'
-    | 'writing'
-    | 'done';
+  phase: 'thinking' | 'writing' | 'done';
   className?: string;
   /** Lifted view state; omitted, the panel keeps its own. */
   view?: LiveBuildView;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'pages',
-    );
-  const own =
-    useLiveBuildView();
-  const {
-    tab,
-    setTab,
-    picked,
-    setPicked,
-  } =
-    view ??
-    own;
+  const { t } = useTranslation('pages');
+  const own = useLiveBuildView();
+  const { tab, setTab, picked, setPicked } = view ?? own;
 
-  const project =
-    useMemo(
-      () =>
-        parsePartialProject(
-          content,
-        ),
-      [
-        content,
-      ],
-    );
-  const names =
-    useMemo(
-      () =>
-        Object.keys(
-          project.files,
-        ),
-      [
-        project.files,
-      ],
-    );
+  const project = useMemo(() => parsePartialProject(content), [content]);
+  const names = useMemo(() => Object.keys(project.files), [project.files]);
   // A pick that no longer exists (a new build began) is dropped, so following resumes.
   useEffect(() => {
-    if (
-      picked &&
-      !(
-        picked in
-        project.files
-      )
-    )
-      setPicked(
-        null,
-      );
-  }, [
-    picked,
-    project.files,
-    setPicked,
-  ]);
+    if (picked && !(picked in project.files)) setPicked(null);
+  }, [picked, project.files, setPicked]);
   // A pick wins only while that file still exists; otherwise follow the writer.
   const selected =
-    picked &&
-    picked in
-      project.files
+    picked && picked in project.files
       ? picked
-      : phase ===
-            'writing' &&
-          project.writing
+      : phase === 'writing' && project.writing
         ? project.writing
-        : (names[
-            names.length -
-              1
-          ] ??
-          null);
-  const source =
-    selected
-      ? (project
-          .files[
-          selected
-        ] ??
-        '')
-      : '';
+        : (names[names.length - 1] ?? null);
+  const source = selected ? (project.files[selected] ?? '') : '';
 
   return (
-    <div
-      className={`vibe-build ${className}`.trim()}
-    >
+    <div className={`vibe-build ${className}`.trim()}>
       <Tabs
         size="sm"
-        aria-label={t(
-          'live-tabs-label',
-          {
-            defaultValue:
-              'Build details',
-          },
-        )}
+        aria-label={t('live-tabs-label', {
+          defaultValue: 'Build details',
+        })}
         idBase="vibe-build"
-        value={
-          tab
-        }
-        onChange={(
-          id,
-        ) =>
-          setTab(
-            id as PanelTab,
-          )
-        }
+        value={tab}
+        onChange={(id) => setTab(id as PanelTab)}
         tabs={[
           {
             id: 'progress',
-            label:
-              t(
-                'live-tab-progress',
-                {
-                  defaultValue:
-                    'Progress',
-                },
-              ),
+            label: t('live-tab-progress', {
+              defaultValue: 'Progress',
+            }),
           },
           {
             id: 'code',
-            label:
-              t(
-                'live-tab-code',
-                {
-                  defaultValue:
-                    'Code',
-                },
-              ),
+            label: t('live-tab-code', {
+              defaultValue: 'Code',
+            }),
           },
         ]}
       />
-      {tab ===
-      'progress' ? (
+      {tab === 'progress' ? (
         <div
           role="tabpanel"
           id="vibe-build-panel-progress"
@@ -223,19 +107,9 @@ export function LiveBuildPanel({
           className="vibe-build__pane"
         >
           {content ? (
-            <VibeProgress
-              content={
-                content
-              }
-              className="vibe-progress--sm"
-            />
+            <VibeProgress content={content} className="vibe-progress--sm" />
           ) : (
-            <ThinkingStream
-              text={
-                thinking
-              }
-              className="vibe-think--sm"
-            />
+            <ThinkingStream text={thinking} className="vibe-think--sm" />
           )}
         </div>
       ) : (
@@ -245,63 +119,31 @@ export function LiveBuildPanel({
           aria-labelledby="vibe-build-tab-code"
           className="vibe-build__pane"
         >
-          {names.length ===
-          0 ? (
+          {names.length === 0 ? (
             <p className="vibe-build__empty">
-              {t(
-                'live-no-files',
-                {
-                  defaultValue:
-                    'No files yet.',
-                },
-              )}
+              {t('live-no-files', {
+                defaultValue: 'No files yet.',
+              })}
             </p>
           ) : (
             <>
               <div className="vibe-build__files">
-                {names.map(
-                  (
-                    name,
-                  ) => (
-                    <button
-                      key={
-                        name
-                      }
-                      type="button"
-                      aria-pressed={
-                        name ===
-                        selected
-                      }
-                      className="vibe-build__file"
-                      onClick={() =>
-                        // Returning to the newest file hands the view back to the writer.
-                        setPicked(
-                          name ===
-                            names[
-                              names.length -
-                                1
-                            ]
-                            ? null
-                            : name,
-                        )
-                      }
-                    >
-                      {
-                        name
-                      }
-                    </button>
-                  ),
-                )}
+                {names.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    aria-pressed={name === selected}
+                    className="vibe-build__file"
+                    onClick={() =>
+                      // Returning to the newest file hands the view back to the writer.
+                      setPicked(name === names[names.length - 1] ? null : name)
+                    }
+                  >
+                    {name}
+                  </button>
+                ))}
               </div>
-              <CodeView
-                key={
-                  selected ??
-                  ''
-                }
-                source={
-                  source
-                }
-              />
+              <CodeView key={selected ?? ''} source={source} />
             </>
           )}
         </div>
@@ -321,36 +163,12 @@ export function LiveBuildPanel({
  * when the scroll container actually exists (the Code tab mounts late), and
  * keyed by file so switching files resets the scroll and the pin.
  */
-function CodeView({
-  source,
-}: {
-  source: string;
-}) {
-  const {
-    containerRef,
-    contentRef,
-  } =
-    useStickToBottom<
-      HTMLDivElement,
-      HTMLPreElement
-    >();
+function CodeView({ source }: { source: string }) {
+  const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLPreElement>();
   return (
-    <div
-      ref={
-        containerRef
-      }
-      className="vibe-build__code"
-    >
-      <pre
-        ref={
-          contentRef
-        }
-      >
-        <code>
-          {
-            source
-          }
-        </code>
+    <div ref={containerRef} className="vibe-build__code">
+      <pre ref={contentRef}>
+        <code>{source}</code>
       </pre>
     </div>
   );

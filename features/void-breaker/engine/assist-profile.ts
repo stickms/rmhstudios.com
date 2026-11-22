@@ -29,90 +29,48 @@ export interface VoidBreakerAssistFlags {
   untimed: boolean;
 }
 
-export const NO_ASSIST_FLAGS: VoidBreakerAssistFlags =
-  {
-    active: false,
-    clockScale: 1,
-    calm: false,
-    colorSafe: false,
-    holdRepeat: false,
-    untimed: false,
-  };
+export const NO_ASSIST_FLAGS: VoidBreakerAssistFlags = {
+  active: false,
+  clockScale: 1,
+  calm: false,
+  colorSafe: false,
+  holdRepeat: false,
+  untimed: false,
+};
 
 /** A ranked profile (or none) is the plain game. */
-export function voidBreakerAssistFlags(
-  profile:
-    | AssistProfile
-    | null
-    | undefined,
-): VoidBreakerAssistFlags {
-  if (
-    !profile ||
-    profile.ranked
-  )
-    return NO_ASSIST_FLAGS;
+export function voidBreakerAssistFlags(profile: AssistProfile | null | undefined): VoidBreakerAssistFlags {
+  if (!profile || profile.ranked) return NO_ASSIST_FLAGS;
   return {
     active: true,
-    clockScale:
-      Math.min(
-        1,
-        Math.max(
-          0.5,
-          profile.speedFloor,
-        ),
-      ),
+    clockScale: Math.min(1, Math.max(0.5, profile.speedFloor)),
     calm: profile.calmVisuals,
-    colorSafe:
-      profile.colorSafe,
-    holdRepeat:
-      profile.holdToPress,
-    untimed:
-      profile.noTimedInput,
+    colorSafe: profile.colorSafe,
+    holdRepeat: profile.holdToPress,
+    untimed: profile.noTimedInput,
   };
 }
 
 /** Simulation seconds for a frame of `dt` real seconds. */
-export function scaledDt(
-  dt: number,
-  flags: VoidBreakerAssistFlags,
-): number {
-  return (
-    dt *
-    flags.clockScale
-  );
+export function scaledDt(dt: number, flags: VoidBreakerAssistFlags): number {
+  return dt * flags.clockScale;
 }
 
 /**
  * Whether an ability key triggers this frame: a fresh press always does; a held
  * key does too under hold-to-press (cooldowns still gate the ability itself).
  */
-export function abilityTriggers(
-  pressed: boolean,
-  wasPressed: boolean,
-  flags: VoidBreakerAssistFlags,
-): boolean {
-  return (
-    pressed &&
-    (flags.holdRepeat ||
-      !wasPressed)
-  );
+export function abilityTriggers(pressed: boolean, wasPressed: boolean, flags: VoidBreakerAssistFlags): boolean {
+  return pressed && (flags.holdRepeat || !wasPressed);
 }
 
 /** The time stamp a hit flash lasts until, or 0 (no flash) under calm visuals. */
-export function hitFlashUntil(
-  elapsedMs: number,
-  flags: VoidBreakerAssistFlags,
-): number {
-  return flags.calm
-    ? 0
-    : elapsedMs +
-        80;
+export function hitFlashUntil(elapsedMs: number, flags: VoidBreakerAssistFlags): number {
+  return flags.calm ? 0 : elapsedMs + 80;
 }
 
 /** Whether the combo window lapses with time. */
-export function comboLapses(
-  flags: VoidBreakerAssistFlags,
-): boolean {
+export function comboLapses(flags: VoidBreakerAssistFlags): boolean {
   return !flags.untimed;
 }
 
@@ -123,146 +81,66 @@ export interface TypeMark {
   dash: readonly number[];
 }
 
-export const ENEMY_MARKS: Readonly<
-  Record<
-    EnemyType,
-    TypeMark
-  >
-> =
-  {
-    drifter:
-      {
-        letter:
-          'D',
-        dash: [],
-      },
-    dasher:
-      {
-        letter:
-          'A',
-        dash: [
-          6,
-          3,
-        ],
-      },
-    orbiter:
-      {
-        letter:
-          'O',
-        dash: [
-          2,
-          3,
-        ],
-      },
-    tank: {
-      letter:
-        'T',
-      dash: [
-        10,
-        4,
-      ],
-    },
-    splitter:
-      {
-        letter:
-          'S',
-        dash: [
-          6,
-          3,
-          2,
-          3,
-        ],
-      },
-    mini_drifter:
-      {
-        letter:
-          'm',
-        dash: [
-          3,
-          6,
-        ],
-      },
-    sniper:
-      {
-        letter:
-          'N',
-        dash: [
-          12,
-          3,
-          2,
-          3,
-        ],
-      },
-    healer:
-      {
-        letter:
-          'H',
-        dash: [
-          2,
-          8,
-        ],
-      },
-    shielded:
-      {
-        letter:
-          'L',
-        dash: [
-          14,
-          5,
-        ],
-      },
-    hive: {
-      letter:
-        'V',
-      dash: [
-        4,
-        2,
-        4,
-        6,
-      ],
-    },
-    bomber:
-      {
-        letter:
-          'B',
-        dash: [
-          8,
-          2,
-          2,
-          2,
-        ],
-      },
-  };
-
-export const BOSS_MARK: TypeMark =
-  {
-    letter:
-      '!',
+export const ENEMY_MARKS: Readonly<Record<EnemyType, TypeMark>> = {
+  drifter: {
+    letter: 'D',
     dash: [],
-  };
-export const SHARD_MARK: TypeMark =
-  {
-    letter:
-      '◆',
-    dash: [
-      3,
-      3,
-    ],
-  };
-export const HEART_MARK: TypeMark =
-  {
-    letter:
-      '+',
-    dash: [],
-  };
+  },
+  dasher: {
+    letter: 'A',
+    dash: [6, 3],
+  },
+  orbiter: {
+    letter: 'O',
+    dash: [2, 3],
+  },
+  tank: {
+    letter: 'T',
+    dash: [10, 4],
+  },
+  splitter: {
+    letter: 'S',
+    dash: [6, 3, 2, 3],
+  },
+  mini_drifter: {
+    letter: 'm',
+    dash: [3, 6],
+  },
+  sniper: {
+    letter: 'N',
+    dash: [12, 3, 2, 3],
+  },
+  healer: {
+    letter: 'H',
+    dash: [2, 8],
+  },
+  shielded: {
+    letter: 'L',
+    dash: [14, 5],
+  },
+  hive: {
+    letter: 'V',
+    dash: [4, 2, 4, 6],
+  },
+  bomber: {
+    letter: 'B',
+    dash: [8, 2, 2, 2],
+  },
+};
 
-export function enemyMark(
-  type: EnemyType,
-  isBoss: boolean,
-): TypeMark {
-  return isBoss
-    ? BOSS_MARK
-    : ENEMY_MARKS[
-        type
-      ];
+export const BOSS_MARK: TypeMark = {
+  letter: '!',
+  dash: [],
+};
+export const SHARD_MARK: TypeMark = {
+  letter: '◆',
+  dash: [3, 3],
+};
+export const HEART_MARK: TypeMark = {
+  letter: '+',
+  dash: [],
+};
+
+export function enemyMark(type: EnemyType, isBoss: boolean): TypeMark {
+  return isBoss ? BOSS_MARK : ENEMY_MARKS[type];
 }

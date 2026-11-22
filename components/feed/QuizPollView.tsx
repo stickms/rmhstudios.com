@@ -121,10 +121,18 @@ export function QuizPollView({
               date={poll.closesAt}
               format={(at, now) =>
                 closed
-                  ? t('quiz-ended-relative', { when: formatRelativeTime(at, i18n.language, now), defaultValue: 'Ended {{when}}' })
-                  : t('quiz-ends-relative', { when: formatRelativeTime(at, i18n.language, now), defaultValue: 'Ends {{when}}' })
+                  ? t('quiz-ended-relative', {
+                      when: formatRelativeTime(at, i18n.language, now),
+                      defaultValue: 'Ended {{when}}',
+                    })
+                  : t('quiz-ends-relative', {
+                      when: formatRelativeTime(at, i18n.language, now),
+                      defaultValue: 'Ends {{when}}',
+                    })
               }
-              fallback={() => (closed ? t('quiz-ended', { defaultValue: 'Ended' }) : t('quiz-open', { defaultValue: 'Open' }))}
+              fallback={() =>
+                closed ? t('quiz-ended', { defaultValue: 'Ended' }) : t('quiz-open', { defaultValue: 'Open' })
+              }
             />
           </>
         )}

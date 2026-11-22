@@ -16,13 +16,9 @@ export const route = apiRoute('/api/study/decks/$id/tests', {
     return { results: result.value };
   }),
 
-  POST: implement(
-    recordDeckTestApi,
-    { rateLimit: 'write', body: recordTestBody },
-    async ({ userId, params, body }) => {
-      const result = await recordTestResult(userId, params.id, body);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-      return Response.json({ success: true as const, id: result.value.id }, { status: 201 });
-    },
-  ),
+  POST: implement(recordDeckTestApi, { rateLimit: 'write', body: recordTestBody }, async ({ userId, params, body }) => {
+    const result = await recordTestResult(userId, params.id, body);
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    return Response.json({ success: true as const, id: result.value.id }, { status: 201 });
+  }),
 });

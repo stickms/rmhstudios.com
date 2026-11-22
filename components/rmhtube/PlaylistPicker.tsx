@@ -150,9 +150,7 @@ export function PlaylistResultNotice() {
 
   return (
     <div role="status" aria-live="polite">
-      {text && (
-        <p className="border-b border-app-border px-3 py-2 text-xs text-app-text-muted">{text}</p>
-      )}
+      {text && <p className="border-b border-app-border px-3 py-2 text-xs text-app-text-muted">{text}</p>}
     </div>
   );
 }

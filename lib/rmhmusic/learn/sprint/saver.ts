@@ -26,16 +26,10 @@
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import type { DailyBoardMe } from '@/lib/rmhmusic/social/social.contract';
-import {
-  activityDurationMs,
-  endActivity,
-} from '../activity-clock';
+import { activityDurationMs, endActivity } from '../activity-clock';
 import type { SprintSaveOutcome } from './machine';
 import type { SprintLevelId } from './levels';
-import type {
-  PromptResult,
-  RunSummary,
-} from './scoring';
+import type { PromptResult, RunSummary } from './scoring';
 import {
   sprintDailyApi,
   sprintDailyStartApi,
@@ -67,225 +61,111 @@ export interface SprintSaver {
     input: SprintSaveInput & {
       date: string;
       /** Where the saved run stands on the Daily board, when the server says (Phase 6). */
-      onBoard?: (
-        board: DailyBoardMe,
-      ) => void;
+      onBoard?: (board: DailyBoardMe) => void;
     },
   ): Promise<SprintSaveOutcome>;
   /** The scored daily run of `date` has started (best effort; never rejects). */
-  startDaily(
-    date: string,
-  ): Promise<void>;
+  startDaily(date: string): Promise<void>;
   /**
    * Whether the date already has its scored run, finished or started (later runs that day are
    * practice). Rejects when it cannot tell; the caller must catch.
    */
-  dailyDone(
-    date: string,
-  ): Promise<boolean>;
+  dailyDone(date: string): Promise<boolean>;
   /** The learner's bests per level, `date`'s challenge state and the daily streak. May reject. */
-  overview(
-    date: string,
-  ): Promise<SprintOverview>;
+  overview(date: string): Promise<SprintOverview>;
 }
 
 /** A failed call as a save outcome. */
-function failure(
-  err: unknown,
-): SprintSaveOutcome {
-  if (
-    err instanceof
-    HttpError
-  ) {
-    if (
-      err.status ===
-      401
-    )
-      return 'unauthorized';
-    if (
-      err.status ===
-      400
-    )
-      return 'invalid';
+function failure(err: unknown): SprintSaveOutcome {
+  if (err instanceof HttpError) {
+    if (err.status === 401) return 'unauthorized';
+    if (err.status === 400) return 'invalid';
   }
   return 'failed';
 }
 
 export function createApiSaver(): SprintSaver {
-  const overview =
-    (
-      date: string,
-    ) =>
-      api(
-        sprintOverviewApi,
-        {
-          query:
-            {
-              date,
-            },
-        },
-      );
+  const overview = (date: string) =>
+    api(sprintOverviewApi, {
+      query: {
+        date,
+      },
+    });
   return {
-    saveFreeplay:
-      async ({
-        level,
-        results,
-      }) => {
-        try {
-          const durationMs =
-            activityDurationMs();
-          await api(
-            sprintFreeplayApi,
-            {
-              body: {
-                level,
-                results,
-                ...(durationMs ===
-                undefined
-                  ? {}
-                  : {
-                      durationMs,
-                    }),
-              },
-            },
-          );
-          endActivity();
-          return 'saved';
-        } catch (err) {
-          return failure(
-            err,
-          );
-        }
-      },
-    saveDaily:
-      async ({
-        date,
-        results,
-        onBoard,
-      }) => {
-        try {
-          const durationMs =
-            activityDurationMs();
-          const res =
-            await api(
-              sprintDailyApi,
-              {
-                body: {
-                  date,
-                  results,
-                  ...(durationMs ===
-                  undefined
-                    ? {}
-                    : {
-                        durationMs,
-                      }),
-                },
-              },
-            );
-          endActivity();
-          if (
-            res.board &&
-            onBoard
-          )
-            onBoard(
-              res.board,
-            );
-          return res.outcome;
-        } catch (err) {
-          return failure(
-            err,
-          );
-        }
-      },
-    startDaily:
-      async (
-        date,
-      ) => {
-        try {
-          await api(
-            sprintDailyStartApi,
-            {
-              body: {
-                date,
-              },
-            },
-          );
-        } catch {
-          // Best effort: the save creates the row itself.
-        }
-      },
-    dailyDone:
-      async (
-        date,
-      ) =>
-        (
-          await overview(
+    saveFreeplay: async ({ level, results }) => {
+      try {
+        const durationMs = activityDurationMs();
+        await api(sprintFreeplayApi, {
+          body: {
+            level,
+            results,
+            ...(durationMs === undefined
+              ? {}
+              : {
+                  durationMs,
+                }),
+          },
+        });
+        endActivity();
+        return 'saved';
+      } catch (err) {
+        return failure(err);
+      }
+    },
+    saveDaily: async ({ date, results, onBoard }) => {
+      try {
+        const durationMs = activityDurationMs();
+        const res = await api(sprintDailyApi, {
+          body: {
             date,
-          )
-        )
-          .daily !==
-        'open',
+            results,
+            ...(durationMs === undefined
+              ? {}
+              : {
+                  durationMs,
+                }),
+          },
+        });
+        endActivity();
+        if (res.board && onBoard) onBoard(res.board);
+        return res.outcome;
+      } catch (err) {
+        return failure(err);
+      }
+    },
+    startDaily: async (date) => {
+      try {
+        await api(sprintDailyStartApi, {
+          body: {
+            date,
+          },
+        });
+      } catch {
+        // Best effort: the save creates the row itself.
+      }
+    },
+    dailyDone: async (date) => (await overview(date)).daily !== 'open',
     overview,
   };
 }
 
 /** Keeps nothing (tests and previews): every save answers `unsaved`; only this visit's daily runs are remembered. */
 export function createMemorySaver(): SprintSaver {
-  const daily =
-    new Set<string>();
+  const daily = new Set<string>();
   return {
-    saveFreeplay:
-      () =>
-        Promise.resolve(
-          'unsaved',
-        ),
-    saveDaily:
-      ({
-        date,
-      }) => {
-        if (
-          daily.has(
-            date,
-          )
-        )
-          return Promise.resolve(
-            'already-scored',
-          );
-        daily.add(
-          date,
-        );
-        return Promise.resolve(
-          'unsaved',
-        );
-      },
-    startDaily:
-      () =>
-        Promise.resolve(),
-    dailyDone:
-      (
-        date,
-      ) =>
-        Promise.resolve(
-          daily.has(
-            date,
-          ),
-        ),
-    overview:
-      (
-        date,
-      ) =>
-        Promise.resolve(
-          {
-            bests:
-              [],
-            daily:
-              daily.has(
-                date,
-              )
-                ? 'scored'
-                : 'open',
-            streak: 0,
-          },
-        ),
+    saveFreeplay: () => Promise.resolve('unsaved'),
+    saveDaily: ({ date }) => {
+      if (daily.has(date)) return Promise.resolve('already-scored');
+      daily.add(date);
+      return Promise.resolve('unsaved');
+    },
+    startDaily: () => Promise.resolve(),
+    dailyDone: (date) => Promise.resolve(daily.has(date)),
+    overview: (date) =>
+      Promise.resolve({
+        bests: [],
+        daily: daily.has(date) ? 'scored' : 'open',
+        streak: 0,
+      }),
   };
 }

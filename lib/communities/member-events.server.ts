@@ -8,21 +8,16 @@ import type { Prisma } from '@prisma/client';
 import type { MemberEventKind } from '@/lib/communities/insights';
 
 export function recordMemberEvent(
-  tx: Pick<
-    Prisma.TransactionClient,
-    'communityMemberEvent'
-  >,
+  tx: Pick<Prisma.TransactionClient, 'communityMemberEvent'>,
   communityId: string,
   userId: string,
   kind: MemberEventKind,
 ) {
-  return tx.communityMemberEvent.create(
-    {
-      data: {
-        communityId,
-        userId,
-        kind,
-      },
+  return tx.communityMemberEvent.create({
+    data: {
+      communityId,
+      userId,
+      kind,
     },
-  );
+  });
 }

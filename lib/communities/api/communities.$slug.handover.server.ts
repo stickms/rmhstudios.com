@@ -4,11 +4,7 @@ import * as C from '@/lib/communities/handover.contract';
 import { offerHandoverBody } from '@/lib/communities/handover-schema';
 import { refusalMessage, refusalStatus } from '@/lib/communities/handover';
 import { getCommunityBySlug } from '@/lib/communities/access.server';
-import {
-  cancelHandover,
-  getHandoverStatus,
-  offerHandover,
-} from '@/lib/communities/handover.server';
+import { cancelHandover, getHandoverStatus, offerHandover } from '@/lib/communities/handover.server';
 import { prisma } from '@/lib/prisma.server';
 
 /**

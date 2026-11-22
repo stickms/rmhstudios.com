@@ -210,9 +210,8 @@ vi.mock('@/lib/prisma.server', () => {
             }[];
           };
         }) =>
-          h.blocks.find((b) =>
-            where.OR.some((o) => o.blockerId === b.blockerId && o.blockedId === b.blockedId),
-          ) ?? null,
+          h.blocks.find((b) => where.OR.some((o) => o.blockerId === b.blockerId && o.blockedId === b.blockedId)) ??
+          null,
       ),
       findUnique: vi.fn(async () => null),
       create: vi.fn(
@@ -257,8 +256,7 @@ vi.mock('@/lib/prisma.server', () => {
       findMany: vi.fn(async () => []),
     },
     $queryRaw: vi.fn(async () => []),
-    $transaction: async (arg: unknown) =>
-      typeof arg === 'function' ? (arg as (t: unknown) => unknown)(prisma) : arg,
+    $transaction: async (arg: unknown) => (typeof arg === 'function' ? (arg as (t: unknown) => unknown)(prisma) : arg),
   };
   return {
     prisma,
@@ -524,11 +522,7 @@ describe('cached-page reconcile', () => {
       },
     }));
     (prisma.rMHark.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(rows);
-    const out = await reconcileCachedPage(
-      [card('own'), card('rp-a', 'a'), card('rp-b', 'b')],
-      'viewer',
-      'foryou',
-    );
+    const out = await reconcileCachedPage([card('own'), card('rp-a', 'a'), card('rp-b', 'b')], 'viewer', 'foryou');
     expect(out.items.map((i) => i.id)).toEqual(['own', 'rp-b']);
   });
 });

@@ -58,7 +58,9 @@ function BanForm({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: Props
         ) : null}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${ids}-days`}>{t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })}</Label>
+        <Label htmlFor={`${ids}-days`}>
+          {t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })}
+        </Label>
         <Input
           id={`${ids}-days`}
           value={days}

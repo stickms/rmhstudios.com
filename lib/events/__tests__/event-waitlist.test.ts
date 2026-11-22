@@ -41,7 +41,16 @@ const FUTURE = new Date(Date.now() + 7 * 86_400_000);
 const PAST = new Date(Date.now() - 3_600_000);
 
 function event(over: Partial<FakeEvent> = {}): FakeEvent {
-  return { id: 'e1', hostId: 'host', title: 'Game night', startsAt: FUTURE, capacity: 2, canceledAt: null, recurrence: null, ...over };
+  return {
+    id: 'e1',
+    hostId: 'host',
+    title: 'Game night',
+    startsAt: FUTURE,
+    capacity: 2,
+    canceledAt: null,
+    recurrence: null,
+    ...over,
+  };
 }
 
 function setup(events: FakeEvent[], rsvps: Partial<FakeRsvp>[] = []) {
@@ -78,9 +87,15 @@ function setup(events: FakeEvent[], rsvps: Partial<FakeRsvp>[] = []) {
 }
 
 const guestsOf = (f: NonNullable<typeof h.fake>) =>
-  f.rows.filter((r) => r.status === 'going').map((r) => r.userId).sort();
+  f.rows
+    .filter((r) => r.status === 'going')
+    .map((r) => r.userId)
+    .sort();
 const queueOf = (f: NonNullable<typeof h.fake>) =>
-  f.rows.filter((r) => r.status === 'waitlist').sort((a, b) => a.waitlistedAt!.getTime() - b.waitlistedAt!.getTime()).map((r) => r.userId);
+  f.rows
+    .filter((r) => r.status === 'waitlist')
+    .sort((a, b) => a.waitlistedAt!.getTime() - b.waitlistedAt!.getTime())
+    .map((r) => r.userId);
 
 const at = (n: number) => new Date(10_000 + n);
 
@@ -93,7 +108,12 @@ describe('joining a full event', () => {
     const f = setup([event()], [{ userId: 'a' }, { userId: 'b' }]);
     await expect(rsvp('e1', 'c', 'going')).rejects.toMatchObject({ code: 'CAPACITY_FULL' });
     const result = await rsvp('e1', 'c', 'waitlist');
-    expect(result).toMatchObject({ viewerRsvp: 'waitlist', viewerWaitlistPosition: 1, waitlistCount: 1, goingCount: 2 });
+    expect(result).toMatchObject({
+      viewerRsvp: 'waitlist',
+      viewerWaitlistPosition: 1,
+      waitlistCount: 1,
+      goingCount: 2,
+    });
     expect(queueOf(f)).toEqual(['c']);
   });
 
@@ -106,7 +126,12 @@ describe('joining a full event', () => {
   it('keeps the first place when a waitlisted member asks again', async () => {
     const f = setup(
       [event()],
-      [{ userId: 'a' }, { userId: 'b' }, { userId: 'c', status: 'waitlist', waitlistedAt: at(1) }, { userId: 'd', status: 'waitlist', waitlistedAt: at(2) }],
+      [
+        { userId: 'a' },
+        { userId: 'b' },
+        { userId: 'c', status: 'waitlist', waitlistedAt: at(1) },
+        { userId: 'd', status: 'waitlist', waitlistedAt: at(2) },
+      ],
     );
     await rsvp('e1', 'c', 'waitlist');
     expect(queueOf(f)).toEqual(['c', 'd']);
@@ -184,7 +209,12 @@ describe('promotion', () => {
   it('switching from going to maybe frees the seat; leaving the waitlist frees none', async () => {
     const f = setup(
       [event()],
-      [{ userId: 'a' }, { userId: 'b' }, { userId: 'w', status: 'waitlist', waitlistedAt: at(1) }, { userId: 'z', status: 'waitlist', waitlistedAt: at(2) }],
+      [
+        { userId: 'a' },
+        { userId: 'b' },
+        { userId: 'w', status: 'waitlist', waitlistedAt: at(1) },
+        { userId: 'z', status: 'waitlist', waitlistedAt: at(2) },
+      ],
     );
     await unrsvp('e1', 'z');
     expect(guestsOf(f)).toEqual(['a', 'b']);
@@ -197,7 +227,13 @@ describe('promotion', () => {
   it('two guests leaving at once promote two different members, each notified once', async () => {
     const f = setup(
       [event()],
-      [{ userId: 'a' }, { userId: 'b' }, { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) }, { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) }, { userId: 'w3', status: 'waitlist', waitlistedAt: at(3) }],
+      [
+        { userId: 'a' },
+        { userId: 'b' },
+        { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) },
+        { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) },
+        { userId: 'w3', status: 'waitlist', waitlistedAt: at(3) },
+      ],
     );
     await Promise.all([unrsvp('e1', 'a'), unrsvp('e1', 'b')]);
     expect(guestsOf(f)).toEqual(['w1', 'w2']);
@@ -208,7 +244,13 @@ describe('promotion', () => {
   it('raising the capacity by 2 promotes two; lowering it removes nobody', async () => {
     const f = setup(
       [event()],
-      [{ userId: 'a' }, { userId: 'b' }, { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) }, { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) }, { userId: 'w3', status: 'waitlist', waitlistedAt: at(3) }],
+      [
+        { userId: 'a' },
+        { userId: 'b' },
+        { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) },
+        { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) },
+        { userId: 'w3', status: 'waitlist', waitlistedAt: at(3) },
+      ],
     );
     await updateEvent({ id: 'e1', hostId: 'host', capacity: 4 });
     expect(guestsOf(f)).toEqual(['a', 'b', 'w1', 'w2']);
@@ -220,14 +262,25 @@ describe('promotion', () => {
   });
 
   it('removing the capacity promotes everyone waiting', async () => {
-    const f = setup([event()], [{ userId: 'a' }, { userId: 'b' }, { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) }, { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) }]);
+    const f = setup(
+      [event()],
+      [
+        { userId: 'a' },
+        { userId: 'b' },
+        { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) },
+        { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) },
+      ],
+    );
     await updateEvent({ id: 'e1', hostId: 'host', capacity: null });
     expect(queueOf(f)).toEqual([]);
     expect(guestsOf(f)).toHaveLength(4);
   });
 
   it('promotes nobody after the start', async () => {
-    const f = setup([event({ startsAt: PAST })], [{ userId: 'a' }, { userId: 'b' }, { userId: 'w', status: 'waitlist', waitlistedAt: at(1) }]);
+    const f = setup(
+      [event({ startsAt: PAST })],
+      [{ userId: 'a' }, { userId: 'b' }, { userId: 'w', status: 'waitlist', waitlistedAt: at(1) }],
+    );
     await unrsvp('e1', 'a');
     expect(guestsOf(f)).toEqual(['b']);
     expect(queueOf(f)).toEqual(['w']);
@@ -237,7 +290,10 @@ describe('promotion', () => {
   });
 
   it('promotes nobody into a canceled event', async () => {
-    const f = setup([event({ canceledAt: new Date() })], [{ userId: 'a' }, { userId: 'w', status: 'waitlist', waitlistedAt: at(1) }]);
+    const f = setup(
+      [event({ canceledAt: new Date() })],
+      [{ userId: 'a' }, { userId: 'w', status: 'waitlist', waitlistedAt: at(1) }],
+    );
     await unrsvp('e1', 'a');
     expect(queueOf(f)).toEqual(['w']);
   });
@@ -245,12 +301,23 @@ describe('promotion', () => {
 
 describe('the host’s waitlist', () => {
   const seed = () =>
-    setup([event()], [{ userId: 'a' }, { userId: 'b' }, { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) }, { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) }]);
+    setup(
+      [event()],
+      [
+        { userId: 'a' },
+        { userId: 'b' },
+        { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) },
+        { userId: 'w2', status: 'waitlist', waitlistedAt: at(2) },
+      ],
+    );
 
   it('lists the queue in order for the host and for a site admin', async () => {
     seed();
     const view = await listWaitlist('e1', 'host', false);
-    expect(view.waitlist.map((w) => [w.userId, w.position])).toEqual([['w1', 1], ['w2', 2]]);
+    expect(view.waitlist.map((w) => [w.userId, w.position])).toEqual([
+      ['w1', 1],
+      ['w2', 2],
+    ]);
     expect(view.closed).toBe(false);
     expect((await listWaitlist('e1', 'someone-else', true)).waitlist).toHaveLength(2);
   });
@@ -282,13 +349,20 @@ describe('summaries', () => {
   it('reports the waitlist count and the viewer’s place after a change', async () => {
     setup([event()], [{ userId: 'a' }, { userId: 'b' }, { userId: 'w1', status: 'waitlist', waitlistedAt: at(1) }]);
     expect(await rsvp('e1', 'me', 'waitlist')).toMatchObject({ waitlistCount: 2, viewerWaitlistPosition: 2 });
-    expect(await rsvp('e1', 'me', 'maybe')).toMatchObject({ waitlistCount: 1, viewerWaitlistPosition: null, viewerRsvp: 'maybe' });
+    expect(await rsvp('e1', 'me', 'maybe')).toMatchObject({
+      waitlistCount: 1,
+      viewerWaitlistPosition: null,
+      viewerRsvp: 'maybe',
+    });
   });
 });
 
 describe('WHOLE_EVENT rows only', () => {
   it('ignores answers about a single date of a series', async () => {
-    const f = setup([event()], [{ userId: 'a' }, { userId: 'b' }, { userId: 'a', occurrenceAt: new Date(5_000_000), status: 'going' }]);
+    const f = setup(
+      [event()],
+      [{ userId: 'a' }, { userId: 'b' }, { userId: 'a', occurrenceAt: new Date(5_000_000), status: 'going' }],
+    );
     expect(f.rows.filter((r) => r.occurrenceAt.getTime() === WHOLE_EVENT.getTime())).toHaveLength(2);
     await expect(rsvp('e1', 'c', 'going')).rejects.toMatchObject({ code: 'CAPACITY_FULL' });
   });

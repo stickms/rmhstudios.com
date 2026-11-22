@@ -1,17 +1,13 @@
 import type { MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type {
-  GameSession,
-  RenderFighter,
-} from '@/lib/kowloon-knockout/net/session';
+import type { GameSession, RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import type { ImpactBus } from '@/lib/kowloon-knockout/render/impact';
 import { toImpactEvent } from '@/lib/kowloon-knockout/render/impactEvents';
 import { stepBus } from '@/lib/kowloon-knockout/render/impactStep';
 import { motionStill } from '@/lib/appearance/prefs';
 
 /** Runs before the fighters and the camera read the bus (see the priority). */
-export const DIRECTOR_PRIORITY =
-  -100;
+export const DIRECTOR_PRIORITY = -100;
 
 /**
  * The one consumer of the session's event queue. Each frame it advances the ImpactBus, then drains
@@ -30,56 +26,21 @@ export default function ImpactDirector({
   bus,
 }: {
   session: GameSession;
-  framesRef: MutableRefObject<
-    RenderFighter[]
-  >;
+  framesRef: MutableRefObject<RenderFighter[]>;
   bus: ImpactBus;
 }) {
-  useFrame(
-    (
-      _,
-      delta,
-    ) => {
-      const now =
-        performance.now();
-      stepBus(
-        bus,
-        delta,
-        now,
-      );
-      const events =
-        session.drainFx();
-      if (
-        events.length ===
-        0
-      )
-        return;
-      const calm =
-        motionStill();
-      for (const e of events) {
-        const impact =
-          toImpactEvent(
-            e,
-            framesRef.current,
-          );
-        if (
-          !impact
-        )
-          continue;
-        if (
-          calm
-        )
-          bus.emitCalm(
-            impact,
-          );
-        else
-          bus.emit(
-            impact,
-            now,
-          );
-      }
-    },
-    DIRECTOR_PRIORITY,
-  );
+  useFrame((_, delta) => {
+    const now = performance.now();
+    stepBus(bus, delta, now);
+    const events = session.drainFx();
+    if (events.length === 0) return;
+    const calm = motionStill();
+    for (const e of events) {
+      const impact = toImpactEvent(e, framesRef.current);
+      if (!impact) continue;
+      if (calm) bus.emitCalm(impact);
+      else bus.emit(impact, now);
+    }
+  }, DIRECTOR_PRIORITY);
   return null;
 }

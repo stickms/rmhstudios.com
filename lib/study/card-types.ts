@@ -43,9 +43,7 @@ export interface ClozeDeletionSegment {
 }
 export type ClozeSegment = ClozeTextSegment | ClozeDeletionSegment;
 
-export type ClozeParse =
-  | { ok: true; segments: ClozeSegment[]; indices: number[] }
-  | { ok: false; error: ClozeError };
+export type ClozeParse = { ok: true; segments: ClozeSegment[]; indices: number[] } | { ok: false; error: ClozeError };
 
 const OPEN = /\{\{c(\d+)::/y;
 const CLOZE_START = /\{\{c\d+::/;
@@ -102,9 +100,7 @@ export function parseCloze(text: string): ClozeParse {
 
 /** One part of a cloze side as drawn: plain text, a mask, or an answer shown in full. */
 export type MaskedPart =
-  | { type: 'text'; text: string }
-  | { type: 'mask'; hint: string | null }
-  | { type: 'answer'; text: string };
+  { type: 'text'; text: string } | { type: 'mask'; hint: string | null } | { type: 'answer'; text: string };
 
 /**
  * The parts of a cloze card for deletion `activeIndex` (null: every deletion is active, as in
@@ -194,12 +190,7 @@ export interface CardInput {
 }
 
 export type CardError =
-  | 'front-required'
-  | 'back-required'
-  | 'front-too-long'
-  | 'back-too-long'
-  | 'cloze-too-long'
-  | `cloze-${ClozeError}`;
+  'front-required' | 'back-required' | 'front-too-long' | 'back-too-long' | 'cloze-too-long' | `cloze-${ClozeError}`;
 
 /**
  * Check an authored card and return it normalised (trimmed; a cloze card keeps no back, its

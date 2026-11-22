@@ -1,162 +1,23 @@
 # Jelly group audit (main site and shared UI)
 
-Companion
-to
-`docs/superpowers/specs/2026-10-27-jelly-groups-design.md`.
-Scope:
-main
-site +
-shared
-UI;
-the
-full-screen
-games/apps
-keep
-their
-own
-design
-scheme
-and
-are
-not
-audited.
+Companion to `docs/superpowers/specs/2026-10-27-jelly-groups-design.md`. Scope: main site + shared UI; the full-screen
+games/apps keep their own design scheme and are not audited.
 
 ## Rule
 
-A
-cluster
-of
-related
-controls
-is
-**one
-jelly
-body
-with
-flat
-members**
-(`JellyGroup`);
-the
-selected
-member
-is
-a
-feathered
-glow
-lying
-on
-it.
-Convert
-only
-when
-members
-sit
-on
-one
-row
-(or
-scroll
-in
-one
-row),
-are
-the
-same
-kind
-of
-control
-and
-are
-mutually
-related.
-Wrapping
-or
-user-built
-chips,
-lone
-primary
-actions,
-avatars,
-badges,
-dots
-and
-row
-checkboxes
-stay
+A cluster of related controls is **one jelly body with flat members** (`JellyGroup`); the selected member is a feathered
+glow lying on it. Convert only when members sit on one row (or scroll in one row), are the same kind of control and are
+mutually related. Wrapping or user-built chips, lone primary actions, avatars, badges, dots and row checkboxes stay
 standalone.
 
 ## Already covered without per-site edits
 
-- **Top
-  bar**
-  (`components/radial/RadialShell.tsx`):
-  every
-  control
-  is
-  a
-  `JellyGroup.Item`
-  on
-  the
-  `glass-chrome`
-  bar.
-- **`Tabs`**
-  (about
-  100
-  call
-  sites
-  incl.
-  `PageTabs`/`CatalogTabs`):
-  the
-  selected
-  tab
-  is
-  a
-  flat
-  glow
-  on
-  the
-  main
-  site;
-  games
-  and
-  apps
-  keep
-  the
-  raised
-  thumb
-  through
-  `AppTierContext`.
-- **Menus,
-  selects,
-  dropdown
-  rows**:
-  already
-  one
-  slab
-  with
-  plain
-  rows
-  and
-  a
-  hover
-  glow
-  (`anchored-menu`,
-  `select`,
-  `menu`);
-  verified,
-  no
-  change.
-- **Tabs,
-  search
-  and
-  sort
-  on
-  phones**
-  now
-  share
-  one
-  width
-  (`--page-controls-inset`).
+- **Top bar** (`components/radial/RadialShell.tsx`): every control is a `JellyGroup.Item` on the `glass-chrome` bar.
+- **`Tabs`** (about 100 call sites incl. `PageTabs`/`CatalogTabs`): the selected tab is a flat glow on the main site;
+  games and apps keep the raised thumb through `AppTierContext`.
+- **Menus, selects, dropdown rows**: already one slab with plain rows and a hover glow (`anchored-menu`, `select`,
+  `menu`); verified, no change.
+- **Tabs, search and sort on phones** now share one width (`--page-controls-inset`).
 
 ## How the inventory was made
 
@@ -166,52 +27,9 @@ looking for two or more button/link/Button elements within 30 lines that carry r
 variant outline|secondary|ghost or data-evert.
 ```
 
-The
-scan
-is
-a
-heuristic
-with
-many
-false
-positives
-(Cancel +
-Save
-pairs,
-primary +
-secondary
-actions).
-**Rows
-with
-a
-reason
-were
-read
-by
-eye;
-rows
-marked
-"unreviewed"
-were
-only
-flagged
-by
-the
-scan
-and
-default
-to
-standalone.**
-Re-run
-the
-scan
-after
-changes
-to
-see
-what
-is
-left.
+The scan is a heuristic with many false positives (Cancel + Save pairs, primary + secondary actions). **Rows with a
+reason were read by eye; rows marked "unreviewed" were only flagged by the scan and default to standalone.** Re-run the
+scan after changes to see what is left.
 
 ## Converted in this change
 
@@ -358,48 +176,6 @@ left.
 
 ## Known leftovers
 
-- `/create`
-  search
-  shares
-  a
-  row
-  with
-  a
-  button,
-  `/homes`
-  filter
-  selects
-  keep
-  their
-  own
-  layout
-  (not
-  converted).
-- The
-  117
-  scan-only
-  rows
-  have
-  not
-  been
-  read
-  by
-  eye;
-  most
-  are
-  action
-  pairs
-  in
-  admin
-  and
-  settings
-  pages.
-- RMHTube/RMHMusic/etc.
-  (full-screen
-  apps)
-  are
-  out
-  of
-  scope
-  by
-  design.
+- `/create` search shares a row with a button, `/homes` filter selects keep their own layout (not converted).
+- The 117 scan-only rows have not been read by eye; most are action pairs in admin and settings pages.
+- RMHTube/RMHMusic/etc. (full-screen apps) are out of scope by design.

@@ -1,19 +1,9 @@
 import type { UpgradeChoice } from './upgrades';
 
-export type GameState =
-  | 'menu'
-  | 'countdown'
-  | 'playing'
-  | 'waveBreak'
-  | 'paused'
-  | 'gameOver'
-  | 'upgrade';
+export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'upgrade';
 
 /** Boss multi-phase: phase 1 = standard, 2 = arena shift (50% HP), 3 = tentacle rage (25% HP) */
-export type BossPhase =
-  | 1
-  | 2
-  | 3;
+export type BossPhase = 1 | 2 | 3;
 
 export type EnemyType =
   | 'drifter'
@@ -71,11 +61,7 @@ export interface Enemy {
   value: number;
   color: string;
   dashTimer: number;
-  dashState:
-    | 'idle'
-    | 'charging'
-    | 'dashing'
-    | 'cooldown';
+  dashState: 'idle' | 'charging' | 'dashing' | 'cooldown';
   dashTargetX: number;
   dashTargetY: number;
   orbitAngle: number;
@@ -101,10 +87,7 @@ export interface Enemy {
   /** Timestamp — draw hit flash until this time */
   hitFlashUntil: number;
   /** Animation lifecycle: warping in, alive (tangible), or dissolving on death. */
-  anim:
-    | 'spawning'
-    | 'alive'
-    | 'dying';
+  anim: 'spawning' | 'alive' | 'dying';
   /** Seconds remaining in the current spawning/dying phase (0 while alive). */
   animTimer: number;
 }

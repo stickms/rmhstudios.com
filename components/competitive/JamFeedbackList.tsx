@@ -52,13 +52,7 @@ function FeedbackRow({
       </div>
       <p className="t-body whitespace-pre-wrap break-words">{item.body}</p>
       <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-pressed={item.helpful}
-          disabled={busy}
-          onClick={() => onHelpful(item)}
-        >
+        <Button size="sm" variant="ghost" aria-pressed={item.helpful} disabled={busy} onClick={() => onHelpful(item)}>
           {item.helpful
             ? t('helpful-on', { defaultValue: 'Marked helpful' })
             : t('helpful-off', { defaultValue: 'Helpful' })}
@@ -130,7 +124,13 @@ export function JamFeedbackList({ slug, entryId, count }: JamFeedbackListProps) 
               {t('empty', { defaultValue: 'No feedback yet.' })}
             </p>
           ) : (
-            <ul className={arrival ? `max-h-[60vh] overflow-y-auto border-t border-site-border ${arrival}` : 'max-h-[60vh] overflow-y-auto border-t border-site-border'}>
+            <ul
+              className={
+                arrival
+                  ? `max-h-[60vh] overflow-y-auto border-t border-site-border ${arrival}`
+                  : 'max-h-[60vh] overflow-y-auto border-t border-site-border'
+              }
+            >
               {items.map((item) => (
                 <FeedbackRow
                   key={item.id}

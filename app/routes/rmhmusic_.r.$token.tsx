@@ -11,10 +11,7 @@
  * `lib/rmhmusic/learn/social/share-route.test.ts` holds all of that.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  buildMeta,
-  ogCardPath,
-} from '@/lib/seo';
+import { buildMeta, ogCardPath } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { preloadFont } from '@/lib/fonts/self-hosted';
 import { musicSharedResultQuery } from '@/lib/rmhmusic/social/social.queries';
@@ -26,123 +23,66 @@ import { SharedResultPage } from '@/components/rmhmusic/learn/social/SharedResul
 // The headings' face (rmhmusic.css), preloaded as the app's layout does.
 import fellFont from '@/components/shared/game-fonts/IMFellEnglish/IMFellEnglish-Regular.woff2?url';
 
-const NOINDEX =
-  {
-    name: 'robots',
-    content:
-      'noindex, nofollow',
-  };
+const NOINDEX = {
+  name: 'robots',
+  content: 'noindex, nofollow',
+};
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic_/r/$token',
-  )(
-    {
-      loader:
-        async ({
-          context,
-          params,
-        }) => {
-          const query =
-            musicSharedResultQuery(
-              params.token,
-            );
-          await prefetchRouteQuery(
-            context.queryClient,
-            query,
-          );
-          // The head needs the result on the server; the page reads the same cached query.
-          const view: SharedResultView | null =
-            context.queryClient.getQueryData(
-              query.queryKey,
-            ) ??
-            null;
-          return {
-            view,
-          };
-        },
-      head: ({
-        params,
-        loaderData,
-      }) => {
-        const view =
-          loaderData?.view;
-        const links =
-          [
-            preloadFont(
-              fellFont,
-            ),
-          ];
-        if (
-          !view ||
-          view.state !==
-            'live'
-        ) {
-          return {
-            meta: [
-              ...buildMeta(
-                {
-                  title:
-                    'A shared result | RMH Music',
-                  description:
-                    'This result is no longer shared. RMH Music teaches reading music and playing it.',
-                  path: '/rmhmusic',
-                  image:
-                    '/images/og/rmhmusic.png',
-                  imageAlt:
-                    'The RMH Music wordmark on hand-ruled manuscript paper.',
-                },
-              ),
-              NOINDEX,
-            ],
-            links,
-          };
-        }
-        const lines =
-          view.lines;
-        const who =
-          view.name ??
-          'A learner';
-        return {
-          meta: [
-            ...buildMeta(
-              {
-                title: `${lines.title}: ${lines.lead} | RMH Music`,
-                description: `${who} shared a result from RMH Music. ${[lines.subtitle, lines.stars].filter(Boolean).join(' · ')}.`,
-                path: `/rmhmusic/r/${params.token}`,
-                image:
-                  ogCardPath(
-                    'music',
-                    params.token,
-                  ),
-                imageAlt: `RMH Music: ${lines.lead}, ${lines.title}.`,
-              },
-            ),
-            NOINDEX,
-          ],
-          links,
-        };
-      },
-      component:
-        SharedResultRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic_/r/$token')({
+  loader: async ({ context, params }) => {
+    const query = musicSharedResultQuery(params.token);
+    await prefetchRouteQuery(context.queryClient, query);
+    // The head needs the result on the server; the page reads the same cached query.
+    const view: SharedResultView | null = context.queryClient.getQueryData(query.queryKey) ?? null;
+    return {
+      view,
+    };
+  },
+  head: ({ params, loaderData }) => {
+    const view = loaderData?.view;
+    const links = [preloadFont(fellFont)];
+    if (!view || view.state !== 'live') {
+      return {
+        meta: [
+          ...buildMeta({
+            title: 'A shared result | RMH Music',
+            description: 'This result is no longer shared. RMH Music teaches reading music and playing it.',
+            path: '/rmhmusic',
+            image: '/images/og/rmhmusic.png',
+            imageAlt: 'The RMH Music wordmark on hand-ruled manuscript paper.',
+          }),
+          NOINDEX,
+        ],
+        links,
+      };
+    }
+    const lines = view.lines;
+    const who = view.name ?? 'A learner';
+    return {
+      meta: [
+        ...buildMeta({
+          title: `${lines.title}: ${lines.lead} | RMH Music`,
+          description: `${who} shared a result from RMH Music. ${[lines.subtitle, lines.stars].filter(Boolean).join(' · ')}.`,
+          path: `/rmhmusic/r/${params.token}`,
+          image: ogCardPath('music', params.token),
+          imageAlt: `RMH Music: ${lines.lead}, ${lines.title}.`,
+        }),
+        NOINDEX,
+      ],
+      links,
+    };
+  },
+  component: SharedResultRoute,
+});
 
 function SharedResultRoute() {
-  const {
-    token,
-  } =
-    Route.useParams();
+  const { token } = Route.useParams();
   useRmhMusicModeRoot();
   return (
     <div className="app-theme rmhmusic-theme">
       <RmhMusicStyles />
       <GameErrorBoundary gameName="RMH Music">
-        <SharedResultPage
-          token={
-            token
-          }
-        />
+        <SharedResultPage token={token} />
       </GameErrorBoundary>
     </div>
   );

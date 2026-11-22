@@ -13,16 +13,8 @@ export {
   updateStreak,
   calculateCoalitionScore,
 } from './reputation';
-export {
-  isSahurActive,
-  getSahurStatus,
-  getSahurConfig,
-  getTimezonesInSahurWindow,
-} from './temporal';
-export {
-  calculateDivisiveness,
-  aggregateReactions,
-} from './divisiveness';
+export { isSahurActive, getSahurStatus, getSahurConfig, getTimezonesInSahurWindow } from './temporal';
+export { calculateDivisiveness, aggregateReactions } from './divisiveness';
 export {
   createIncident,
   addIncidentEvent,
@@ -31,22 +23,7 @@ export {
   getIncident,
   reportIncident,
 } from './incidents';
-export {
-  isFeatureDisclosed,
-  getDisclosuresForTier,
-  transitionDisclosure,
-  createDisclosure,
-} from './narrative';
-export {
-  generatePuzzle,
-  validateAnswer,
-  calculateScore,
-  getSeedForDate,
-} from './puzzle-engine';
+export { isFeatureDisclosed, getDisclosuresForTier, transitionDisclosure, createDisclosure } from './narrative';
+export { generatePuzzle, validateAnswer, calculateScore, getSeedForDate } from './puzzle-engine';
 export { getSortedFeed } from './feed';
-export {
-  checkTierAccess,
-  getUserTier,
-  setUserTier,
-  getTierDefinition,
-} from './tiers';
+export { checkTierAccess, getUserTier, setUserTier, getTierDefinition } from './tiers';

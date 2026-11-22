@@ -95,30 +95,48 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
 
       {migrated ? (
         <p role="status" className="border-l-2 border-app-accent pl-3 text-sm text-app-text">
-          {t('roster.migrated', { defaultValue: 'Moved {{count}} character(s) from this browser to your account.', count: migrated })}
+          {t('roster.migrated', {
+            defaultValue: 'Moved {{count}} character(s) from this browser to your account.',
+            count: migrated,
+          })}
         </p>
       ) : null}
       {characters.length === 0 ? (
         <div className="flex flex-col items-start gap-2 py-8">
-          <p className="text-base font-medium text-app-text">{t('roster.emptyTitle', { defaultValue: 'No characters yet' })}</p>
+          <p className="text-base font-medium text-app-text">
+            {t('roster.emptyTitle', { defaultValue: 'No characters yet' })}
+          </p>
           <p className="text-sm text-app-text-muted">
-            {t('roster.emptyAccount', { defaultValue: 'Start one above, or import a file from another tool. Characters are saved to your account and open on any device.' })}
+            {t('roster.emptyAccount', {
+              defaultValue:
+                'Start one above, or import a file from another tool. Characters are saved to your account and open on any device.',
+            })}
           </p>
         </div>
       ) : (
         <ul className="flex flex-col">
           {characters.map((c) => (
             <li key={c.id} className="flex items-center gap-3 border-b border-app-border py-3">
-              <button type="button" onClick={() => onOpen(c.id)} className="-my-1 -ml-2 flex min-w-0 flex-1 items-center gap-3 rounded-app py-1 pl-2 pr-3 text-left transition-[background-color] duration-100 hover:bg-app-surface-hover">
+              <button
+                type="button"
+                onClick={() => onOpen(c.id)}
+                className="-my-1 -ml-2 flex min-w-0 flex-1 items-center gap-3 rounded-app py-1 pl-2 pr-3 text-left transition-[background-color] duration-100 hover:bg-app-surface-hover"
+              >
                 {c.portrait ? (
-                  <img src={c.portrait} alt="" className="size-12 shrink-0 rounded-app-sm border border-app-border object-cover" />
+                  <img
+                    src={c.portrait}
+                    alt=""
+                    className="size-12 shrink-0 rounded-app-sm border border-app-border object-cover"
+                  />
                 ) : (
                   <span className="flex size-12 shrink-0 items-center justify-center rounded-app-sm border border-app-border bg-app-bg-subtle">
                     <UserRound className="size-5 text-app-text-muted" aria-hidden />
                   </span>
                 )}
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-base font-medium text-app-text">{c.name || t('roster.unnamed', { defaultValue: 'Unnamed character' })}</span>
+                  <span className="truncate text-base font-medium text-app-text">
+                    {c.name || t('roster.unnamed', { defaultValue: 'Unnamed character' })}
+                  </span>
                   <span className="truncate text-sm capitalize text-app-text-muted">{summary(c)}</span>
                   <span className="flex flex-wrap items-center gap-x-2 font-mono text-xs text-app-text-muted">
                     {SYSTEM_LABEL[c.system]}
@@ -131,7 +149,13 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
                   </span>
                 </span>
               </button>
-              <Button type="button" variant="ghost" size="icon" aria-label={t('roster.duplicate', { defaultValue: 'Duplicate {{name}}', name: c.name || '' })} onClick={() => duplicate(c.id)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('roster.duplicate', { defaultValue: 'Duplicate {{name}}', name: c.name || '' })}
+                onClick={() => duplicate(c.id)}
+              >
                 <Copy aria-hidden />
               </Button>
               <Button
@@ -142,11 +166,16 @@ export function Roster({ onOpen }: { onOpen: (id: string) => void }) {
                 onClick={async () => {
                   const ok = await confirm({
                     title: t('roster.deleteTitle', { defaultValue: 'Delete this character?' }),
-                    description: t('roster.deleteBody', { defaultValue: 'It is removed from this browser. Export it first if you want a copy.' }),
+                    description: t('roster.deleteBody', {
+                      defaultValue: 'It is removed from this browser. Export it first if you want a copy.',
+                    }),
                     confirmLabel: t('roster.deleteConfirm', { defaultValue: 'Delete' }),
                     danger: true,
                   });
-                  if (ok && !(await remove(c.id))) toast.error(t('roster.deleteFailed', { defaultValue: 'That character could not be deleted. Try again.' }));
+                  if (ok && !(await remove(c.id)))
+                    toast.error(
+                      t('roster.deleteFailed', { defaultValue: 'That character could not be deleted. Try again.' }),
+                    );
                 }}
               >
                 <Trash2 aria-hidden />

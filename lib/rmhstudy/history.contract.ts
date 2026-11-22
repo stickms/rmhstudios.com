@@ -4,11 +4,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  goalBody,
-  historyQuery,
-  sessionsQuery,
-} from '@/lib/rmhstudy/history-schema';
+import type { goalBody, historyQuery, sessionsQuery } from '@/lib/rmhstudy/history-schema';
 
 export interface FocusHistory {
   /** Today in the viewer's time zone, `YYYY-MM-DD`. */
@@ -19,9 +15,7 @@ export interface FocusHistory {
   thisWeekMinutes: number;
   lastWeekMinutes: number;
   /** Weekly goal in minutes, or null when none is set. */
-  goalMinutes:
-    | number
-    | null;
+  goalMinutes: number | null;
   /**
    * Derived from the member's session days in their zone, so it is right where the stored
    * profile value is stale. `days` are the days of the current streak, oldest first.
@@ -37,9 +31,7 @@ export interface FocusHistory {
   thisWeekBreaks: {
     breakMinutes: number;
     /** Minutes of focus for each minute of break; null when there was no break time. */
-    focusPerBreak:
-      | number
-      | null;
+    focusPerBreak: number | null;
   } | null;
   /** The selected week: seven days, first day first. */
   week: {
@@ -78,61 +70,37 @@ export interface FocusSession {
   /** Pomodoros in the run. */
   pomodoros: number;
   /** The room's code, when the run was in a room. */
-  roomCode:
-    | string
-    | null;
+  roomCode: string | null;
 }
 
 export interface FocusSessionsPage {
   sessions: FocusSession[];
   /** Pass as `cursor` for the next page; null at the end. */
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
 }
 
-export const getFocusHistoryApi =
-  endpoint<{
-    query: z.infer<
-      typeof historyQuery
-    >;
-    res: FocusHistory;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhstudy/history',
-    },
-  );
+export const getFocusHistoryApi = endpoint<{
+  query: z.infer<typeof historyQuery>;
+  res: FocusHistory;
+}>()({
+  method: 'GET',
+  path: '/api/rmhstudy/history',
+});
 
-export const getFocusSessionsApi =
-  endpoint<{
-    query: z.infer<
-      typeof sessionsQuery
-    >;
-    res: FocusSessionsPage;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/rmhstudy/history/sessions',
-    },
-  );
+export const getFocusSessionsApi = endpoint<{
+  query: z.infer<typeof sessionsQuery>;
+  res: FocusSessionsPage;
+}>()({
+  method: 'GET',
+  path: '/api/rmhstudy/history/sessions',
+});
 
-export const setWeeklyGoalApi =
-  endpoint<{
-    body: z.infer<
-      typeof goalBody
-    >;
-    res: {
-      goalMinutes:
-        | number
-        | null;
-    };
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/rmhstudy/goal',
-    },
-  );
+export const setWeeklyGoalApi = endpoint<{
+  body: z.infer<typeof goalBody>;
+  res: {
+    goalMinutes: number | null;
+  };
+}>()({
+  method: 'PUT',
+  path: '/api/rmhstudy/goal',
+});

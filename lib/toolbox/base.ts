@@ -11,14 +11,16 @@
 export const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
 
 export type BaseParseResult =
-  | { ok: true; value: bigint }
-  | { ok: false; reason: 'empty' | 'bad-base' | 'bad-digit'; digit?: string };
+  { ok: true; value: bigint } | { ok: false; reason: 'empty' | 'bad-base' | 'bad-digit'; digit?: string };
 
 const PREFIXES: Record<string, number> = { '0x': 16, '0o': 8, '0b': 2 };
 
 export function parseInBase(input: string, base: number): BaseParseResult {
   if (!Number.isInteger(base) || base < 2 || base > 36) return { ok: false, reason: 'bad-base' };
-  let s = input.trim().toLowerCase().replace(/[\s_,]/g, '');
+  let s = input
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_,]/g, '');
   let negative = false;
   if (s.startsWith('-') || s.startsWith('+')) {
     negative = s.startsWith('-');

@@ -68,34 +68,25 @@ export function CheckInPanel({ tourney, viewerId, canManage, onChanged }: PanelP
       if (okMsg) toast.success(okMsg);
       await onChanged();
     } catch (e) {
-      toast.error(
-        serverError(e) ?? t('failed', { defaultValue: 'Check-in could not be saved' }),
-      );
+      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Check-in could not be saved' }));
     } finally {
       setBusy(false);
     }
   };
 
   const checkInSelf = () =>
-    run(
-      () => checkInSelfApi(tourney.id),
-      t('checked-in-toast', { defaultValue: 'You are checked in' }),
-    );
+    run(() => checkInSelfApi(tourney.id), t('checked-in-toast', { defaultValue: 'You are checked in' }));
 
   const setWindow = (value: string) => {
     const minutes = value === '' ? null : Number(value);
     return run(
-      () =>
-        setCheckInWindow(tourney.id, minutes === null || !isCheckInMinutes(minutes) ? null : minutes),
+      () => setCheckInWindow(tourney.id, minutes === null || !isCheckInMinutes(minutes) ? null : minutes),
       t('settings-saved', { defaultValue: 'Check-in setting saved' }),
     );
   };
 
   return (
-    <section
-      aria-labelledby="checkin-heading"
-      className="space-y-3 border-b border-site-border pb-4"
-    >
+    <section aria-labelledby="checkin-heading" className="space-y-3 border-b border-site-border pb-4">
       <h2 id="checkin-heading" className="t-heading">
         {t('heading', { defaultValue: 'Check-in' })}
       </h2>
@@ -104,7 +95,10 @@ export function CheckInPanel({ tourney, viewerId, canManage, onChanged }: PanelP
         <div className="space-y-2">
           <p className="t-body">
             {phase === 'open'
-              ? t('is-open', { defaultValue: 'Check-in is open. Players who have not checked in are removed and refunded when the host starts.' })
+              ? t('is-open', {
+                  defaultValue:
+                    'Check-in is open. Players who have not checked in are removed and refunded when the host starts.',
+                })
               : t('opens-at', {
                   defaultValue: 'Check-in opens {{when}} ({{relative}}).',
                   when: opensAt ? formatWhen(opensAt, locale) : '',
@@ -158,14 +152,7 @@ interface WindowFieldProps {
 }
 
 /** The "Check-in: Off / 10 / 15 / 30 / 60 minutes before the start" setting, shared by the create dialog and the host's settings. */
-export function CheckInWindowField({
-  id,
-  value,
-  hasStart,
-  disabled,
-  onChange,
-  className,
-}: WindowFieldProps) {
+export function CheckInWindowField({ id, value, hasStart, disabled, onChange, className }: WindowFieldProps) {
   const { t } = useTranslation('tournament-checkin');
   return (
     <div className={cn('space-y-1.5', className)}>
@@ -186,11 +173,7 @@ export function CheckInWindowField({
           </option>
         ))}
       </Select>
-      {!hasStart && (
-        <p className="t-meta">
-          {t('needs-start', { defaultValue: 'Set a start time to use check-in.' })}
-        </p>
-      )}
+      {!hasStart && <p className="t-meta">{t('needs-start', { defaultValue: 'Set a start time to use check-in.' })}</p>}
     </div>
   );
 }
@@ -225,12 +208,7 @@ export function CheckInCreateFields({
           onChange={(e) => onStartsAtChange(e.target.value)}
         />
       </div>
-      <CheckInWindowField
-        id="t-checkin"
-        value={checkInValue}
-        hasStart={hasStart}
-        onChange={onCheckInChange}
-      />
+      <CheckInWindowField id="t-checkin" value={checkInValue} hasStart={hasStart} onChange={onCheckInChange} />
     </div>
   );
 }
@@ -307,9 +285,7 @@ export function EntrantCheckIn({ tourney, entrant, canManage, onChanged }: Entra
               : t('check-in-for', { defaultValue: 'Check in {{name}}', name })
           }
         >
-          {entrant.checkedIn
-            ? t('undo', { defaultValue: 'Undo' })
-            : t('check-in', { defaultValue: 'Check in' })}
+          {entrant.checkedIn ? t('undo', { defaultValue: 'Undo' }) : t('check-in', { defaultValue: 'Check in' })}
         </Button>
       )}
     </span>
@@ -329,7 +305,11 @@ function formatRelative(d: Date, locale: string): string {
   const minutes = Math.round((d.getTime() - Date.now()) / 60_000);
   const abs = Math.abs(minutes);
   const [value, unit]: [number, Intl.RelativeTimeFormatUnit] =
-    abs < 60 ? [minutes, 'minute'] : abs < 60 * 24 ? [Math.round(minutes / 60), 'hour'] : [Math.round(minutes / 1440), 'day'];
+    abs < 60
+      ? [minutes, 'minute']
+      : abs < 60 * 24
+        ? [Math.round(minutes / 60), 'hour']
+        : [Math.round(minutes / 1440), 'day'];
   try {
     return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(value, unit);
   } catch {

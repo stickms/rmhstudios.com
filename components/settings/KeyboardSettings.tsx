@@ -45,14 +45,12 @@ export function KeyboardSettings() {
   const ready = hydrated && !isPending && (!signedIn || remote === 'ready' || remote === 'error');
   const arrive = useArrival(ready);
 
-  const nameOf = (s: Shortcut) =>
-    t(s.labelKey, { ns: s.ns ?? 'feed', defaultValue: s.label ?? s.id });
+  const nameOf = (s: Shortcut) => t(s.labelKey, { ns: s.ns ?? 'feed', defaultValue: s.label ?? s.id });
   const saved = (ok: boolean) => {
     if (!ok) {
       toast.error(
         t('save-failed', {
-          defaultValue:
-            'Could not save your shortcuts to your account. They still apply on this device.',
+          defaultValue: 'Could not save your shortcuts to your account. They still apply on this device.',
         }),
       );
     }
@@ -77,8 +75,7 @@ export function KeyboardSettings() {
       value: 'off',
       label: t('mode-off', { defaultValue: 'Off' }),
       hint: t('mode-off-hint', {
-        defaultValue:
-          'Shortcuts made of plain keys are turned off. Shortcuts with Ctrl or Command still work.',
+        defaultValue: 'Shortcuts made of plain keys are turned off. Shortcuts with Ctrl or Command still work.',
       }),
     },
     {
@@ -114,11 +111,7 @@ export function KeyboardSettings() {
   if (!ready) {
     return (
       <SettingsSection title={t('title', { defaultValue: 'Keyboard' })}>
-        <div
-          className="flex flex-col gap-3 py-3"
-          role="status"
-          aria-label={t('loading', { defaultValue: 'Loading' })}
-        >
+        <div className="flex flex-col gap-3 py-3" role="status" aria-label={t('loading', { defaultValue: 'Loading' })}>
           <Skeleton className="h-9 w-full" />
           <Skeleton className="h-9 w-full" />
           <Skeleton className="h-9 w-full" />
@@ -158,8 +151,7 @@ export function KeyboardSettings() {
             <span className="settings-row__text">
               <span className="settings-row__hint block">
                 {t('load-failed', {
-                  defaultValue:
-                    'Could not load the shortcuts saved to your account. Showing this device.',
+                  defaultValue: 'Could not load the shortcuts saved to your account. Showing this device.',
                 })}
               </span>
             </span>
@@ -176,10 +168,7 @@ export function KeyboardSettings() {
           defaultValue: 'Change any shortcut to a key or two-key sequence of your own.',
         })}
         action={
-          <Button
-            disabled={!changed}
-            onClick={() => void store().resetAll().then(saved)}
-          >
+          <Button disabled={!changed} onClick={() => void store().resetAll().then(saved)}>
             {t('reset-all', { defaultValue: 'Reset all' })}
           </Button>
         }
@@ -190,10 +179,7 @@ export function KeyboardSettings() {
           const custom = prefs.overrides[shortcut.id];
           if (editing === shortcut.id) {
             return (
-              <div
-                key={shortcut.id}
-                className="settings-row"
-              >
+              <div key={shortcut.id} className="settings-row">
                 <ShortcutCapture
                   name={name}
                   platform={platform}
@@ -208,29 +194,19 @@ export function KeyboardSettings() {
             );
           }
           return (
-            <div
-              key={shortcut.id}
-              className="settings-row flex-wrap"
-            >
+            <div key={shortcut.id} className="settings-row flex-wrap">
               <span className="settings-row__text">
                 <span className="settings-row__name block">{name}</span>
                 <span className="settings-row__hint block">
                   {t('default-keys', {
                     defaultValue: 'Default: {{keys}}',
-                    keys: sequenceText(
-                      shortcut.keys,
-                      platform,
-                      t('then', { defaultValue: 'then' }),
-                    ),
+                    keys: sequenceText(shortcut.keys, platform, t('then', { defaultValue: 'then' })),
                   })}
                 </span>
               </span>
               <span className="flex flex-wrap items-center justify-end gap-2">
                 {current ? (
-                  <KeyCaps
-                    keys={current.keys}
-                    platform={platform}
-                  />
+                  <KeyCaps keys={current.keys} platform={platform} />
                 ) : (
                   <span className="t-meta">{t('turned-off', { defaultValue: 'Off' })}</span>
                 )}
@@ -258,20 +234,13 @@ export function KeyboardSettings() {
         <SettingsSection
           title={t('games-title', { defaultValue: 'Game controls' })}
           description={t('games-description', {
-            defaultValue:
-              'Each game sets its own controls. They are listed here and cannot be changed.',
+            defaultValue: 'Each game sets its own controls. They are listed here and cannot be changed.',
           })}
         >
           {games.map((shortcut) => (
-            <div
-              key={shortcut.id}
-              className="settings-row"
-            >
+            <div key={shortcut.id} className="settings-row">
               <span className="settings-row__name">{nameOf(shortcut)}</span>
-              <KeyCaps
-                keys={shortcut.keys}
-                platform={platform}
-              />
+              <KeyCaps keys={shortcut.keys} platform={platform} />
             </div>
           ))}
         </SettingsSection>

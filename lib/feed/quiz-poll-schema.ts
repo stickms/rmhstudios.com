@@ -4,12 +4,7 @@
  * Options have no ids until the poll is created, so the answer is sent as `correctIndex`, the zero-based position.
  */
 import { z } from 'zod';
-import {
-  QUIZ_EXPLANATION_MAX,
-  QUIZ_MAX_OPTIONS,
-  quizPollIssues,
-  type QuizPollIssue,
-} from '@/lib/feed/quiz-poll';
+import { QUIZ_EXPLANATION_MAX, QUIZ_MAX_OPTIONS, quizPollIssues, type QuizPollIssue } from '@/lib/feed/quiz-poll';
 
 export const quizPollFields = {
   quiz: z.boolean().optional(),

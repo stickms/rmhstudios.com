@@ -29,8 +29,10 @@ vi.mock('@/lib/prisma.server', () => ({
     },
     achievementRarity: { findMany: vi.fn(async () => [{ achievementId: 'social.first_post', pct: 0.04 }]) },
     userBlock: {
-      findFirst: vi.fn(async ({ where }: { where: { OR: Array<{ blockerId: string; blockedId: string }> } }) =>
-        h.blocks.find((b) => where.OR.some((c) => c.blockerId === b.blockerId && c.blockedId === b.blockedId)) ?? null,
+      findFirst: vi.fn(
+        async ({ where }: { where: { OR: Array<{ blockerId: string; blockedId: string }> } }) =>
+          h.blocks.find((b) => where.OR.some((c) => c.blockerId === b.blockerId && c.blockedId === b.blockedId)) ??
+          null,
       ),
     },
   },

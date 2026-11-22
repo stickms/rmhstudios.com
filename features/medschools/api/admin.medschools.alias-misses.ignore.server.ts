@@ -7,58 +7,31 @@ import type { MedPrisma } from '../scrape/types';
 import { ignoreAliasMiss } from './alias-admin.server';
 
 /** POST /api/admin/medschools/alias-misses/ignore — dismiss a source name that is not a US MD/DO school. */
-export const route =
-  apiRoute(
-    '/api/admin/medschools/alias-misses/ignore',
+export const route = apiRoute('/api/admin/medschools/alias-misses/ignore', {
+  POST: implement(
+    ignoreAliasMissApi,
     {
-      POST: implement(
-        ignoreAliasMissApi,
-        {
-          auth: 'admin',
-          rateLimit:
-            'write',
-          body: z.object(
-            {
-              missId:
-                z
-                  .string()
-                  .min(
-                    1,
-                  )
-                  .max(
-                    64,
-                  ),
-            },
-          ),
-        },
-        async ({
-          body,
-        }) => {
-          const r =
-            await ignoreAliasMiss(
-              prisma as unknown as MedPrisma,
-              body.missId,
-            );
-          if (
-            !r.ok
-          )
-            return Response.json(
-              {
-                error:
-                  r.message,
-                code: r.code,
-              },
-              {
-                status:
-                  r.status,
-              },
-            );
-          return Response.json(
-            {
-              ok: true,
-            },
-          );
-        },
-      ),
+      auth: 'admin',
+      rateLimit: 'write',
+      body: z.object({
+        missId: z.string().min(1).max(64),
+      }),
     },
-  );
+    async ({ body }) => {
+      const r = await ignoreAliasMiss(prisma as unknown as MedPrisma, body.missId);
+      if (!r.ok)
+        return Response.json(
+          {
+            error: r.message,
+            code: r.code,
+          },
+          {
+            status: r.status,
+          },
+        );
+      return Response.json({
+        ok: true,
+      });
+    },
+  ),
+});

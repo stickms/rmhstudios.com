@@ -89,7 +89,14 @@ export function newPf2e(): Pf2eCharacter {
     backgroundId: '',
     classId: '',
     choices: {},
-    boosts: { ancestry: [], ancestryFlaws: [], ancestryAltFree: false, background: [], class: null, levels: { '1': [] } },
+    boosts: {
+      ancestry: [],
+      ancestryFlaws: [],
+      ancestryAltFree: false,
+      background: [],
+      class: null,
+      levels: { '1': [] },
+    },
     trainedSkills: [],
     skillIncreases: {},
     lores: [],
@@ -118,12 +125,18 @@ const num = (v: unknown, fallback = 0, min = -1e9, max = 1e9) => {
 };
 const bool = (v: unknown, fallback = false) => (typeof v === 'boolean' ? v : fallback);
 const strArr = (v: unknown, max = 500) =>
-  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, max).map((s) => s.slice(0, 200)) : [];
+  Array.isArray(v)
+    ? v
+        .filter((x): x is string => typeof x === 'string')
+        .slice(0, max)
+        .map((s) => s.slice(0, 200))
+    : [];
 const isAbility = (v: unknown): v is Ability => typeof v === 'string' && (ABILITIES as readonly string[]).includes(v);
 const abilArr = (v: unknown) => (Array.isArray(v) ? v.filter(isAbility).slice(0, 12) : []);
 const strRecord = (v: unknown): Record<string, string> => {
   const out: Record<string, string> = {};
-  if (isObj(v)) for (const [k, x] of Object.entries(v)) if (typeof x === 'string') out[k.slice(0, 100)] = x.slice(0, 200);
+  if (isObj(v))
+    for (const [k, x] of Object.entries(v)) if (typeof x === 'string') out[k.slice(0, 100)] = x.slice(0, 200);
   return out;
 };
 
@@ -136,19 +149,22 @@ function portrait(v: unknown): string | undefined {
 
 function inventory(v: unknown): InventoryItem[] {
   if (!Array.isArray(v)) return [];
-  return v.filter(isObj).slice(0, 500).map((i) => {
-    const item: InventoryItem = {
-      id: str(i.id) || newId(),
-      name: str(i.name, 'Item', 200),
-      quantity: num(i.quantity, 1, 0, 100_000),
-      equipped: bool(i.equipped),
-    };
-    if (i.weight !== undefined) item.weight = num(i.weight, 0, 0, 100_000);
-    if (i.bulk !== undefined) item.bulk = num(i.bulk, 0, 0, 1000);
-    if (typeof i.refId === 'string') item.refId = i.refId.slice(0, 100);
-    if (typeof i.notes === 'string') item.notes = i.notes.slice(0, 2000);
-    return item;
-  });
+  return v
+    .filter(isObj)
+    .slice(0, 500)
+    .map((i) => {
+      const item: InventoryItem = {
+        id: str(i.id) || newId(),
+        name: str(i.name, 'Item', 200),
+        quantity: num(i.quantity, 1, 0, 100_000),
+        equipped: bool(i.equipped),
+      };
+      if (i.weight !== undefined) item.weight = num(i.weight, 0, 0, 100_000);
+      if (i.bulk !== undefined) item.bulk = num(i.bulk, 0, 0, 1000);
+      if (typeof i.refId === 'string') item.refId = i.refId.slice(0, 100);
+      if (typeof i.notes === 'string') item.notes = i.notes.slice(0, 2000);
+      return item;
+    });
 }
 
 function normalizeBase(raw: Obj, fresh: CharacterBase): CharacterBase {
@@ -175,12 +191,15 @@ function normalizeBase(raw: Obj, fresh: CharacterBase): CharacterBase {
     hp: { current: num(hp.current, 0, -1000, 100_000), temp: num(hp.temp, 0, 0, 100_000) },
     conditions: strArr(raw.conditions, 50),
     custom: Array.isArray(raw.custom)
-      ? raw.custom.filter(isObj).slice(0, 200).map((e) => ({
-          id: str(e.id) || newId(),
-          name: str(e.name, 'Entry', 200),
-          text: str(e.text, '', 10_000),
-          ...(typeof e.kind === 'string' ? { kind: e.kind.slice(0, 60) } : {}),
-        }))
+      ? raw.custom
+          .filter(isObj)
+          .slice(0, 200)
+          .map((e) => ({
+            id: str(e.id) || newId(),
+            name: str(e.name, 'Entry', 200),
+            text: str(e.text, '', 10_000),
+            ...(typeof e.kind === 'string' ? { kind: e.kind.slice(0, 60) } : {}),
+          }))
       : [],
     createdAt: num(raw.createdAt, fresh.createdAt, 0, 1e15),
     updatedAt: num(raw.updatedAt, fresh.updatedAt, 0, 1e15),
@@ -201,29 +220,40 @@ function normalizeDnd5e(raw: Obj): Dnd5eCharacter {
     ...fresh,
     ...b,
     system: 'dnd5e',
-    abilityMethod: method === 'pointbuy' || method === 'roll' || method === 'manual' || method === 'standard' ? method : 'manual',
+    abilityMethod:
+      method === 'pointbuy' || method === 'roll' || method === 'manual' || method === 'standard' ? method : 'manual',
     baseAbilities: Object.fromEntries(ABILITIES.map((a) => [a, num(abil[a], 10, 1, 30)])) as Record<Ability, number>,
     speciesId: str(raw.speciesId, '', 100),
     backgroundId: str(raw.backgroundId, '', 100),
     backgroundIncreases: abilArr(raw.backgroundIncreases).slice(0, 3),
     originFeats: strArr(raw.originFeats, 10),
     classes: Array.isArray(raw.classes)
-      ? raw.classes.filter(isObj).slice(0, 12).map((k) => ({
-          classId: str(k.classId, '', 100),
-          level: num(k.level, 1, 1, 20),
-          hpRolls: Array.isArray(k.hpRolls) ? k.hpRolls.slice(0, 19).map((r) => (r === null ? null : num(r, 1, 1, 12))) : [],
-          ...(typeof k.subclassId === 'string' && k.subclassId ? { subclassId: k.subclassId.slice(0, 100) } : {}),
-          ...(typeof k.customSubclass === 'string' && k.customSubclass ? { customSubclass: k.customSubclass.slice(0, 120) } : {}),
-        }))
+      ? raw.classes
+          .filter(isObj)
+          .slice(0, 12)
+          .map((k) => ({
+            classId: str(k.classId, '', 100),
+            level: num(k.level, 1, 1, 20),
+            hpRolls: Array.isArray(k.hpRolls)
+              ? k.hpRolls.slice(0, 19).map((r) => (r === null ? null : num(r, 1, 1, 12)))
+              : [],
+            ...(typeof k.subclassId === 'string' && k.subclassId ? { subclassId: k.subclassId.slice(0, 100) } : {}),
+            ...(typeof k.customSubclass === 'string' && k.customSubclass
+              ? { customSubclass: k.customSubclass.slice(0, 120) }
+              : {}),
+          }))
       : [],
     asi: Array.isArray(raw.asi)
-      ? raw.asi.filter(isObj).slice(0, 40).map((a) => ({
-          slot: str(a.slot, '', 100),
-          kind: a.kind === 'feat' ? ('feat' as const) : ('asi' as const),
-          ...(a.abilities !== undefined ? { abilities: abilArr(a.abilities).slice(0, 2) } : {}),
-          ...(typeof a.featId === 'string' ? { featId: a.featId.slice(0, 100) } : {}),
-          ...(a.featAbilities !== undefined ? { featAbilities: abilArr(a.featAbilities).slice(0, 2) } : {}),
-        }))
+      ? raw.asi
+          .filter(isObj)
+          .slice(0, 40)
+          .map((a) => ({
+            slot: str(a.slot, '', 100),
+            kind: a.kind === 'feat' ? ('feat' as const) : ('asi' as const),
+            ...(a.abilities !== undefined ? { abilities: abilArr(a.abilities).slice(0, 2) } : {}),
+            ...(typeof a.featId === 'string' ? { featId: a.featId.slice(0, 100) } : {}),
+            ...(a.featAbilities !== undefined ? { featAbilities: abilArr(a.featAbilities).slice(0, 2) } : {}),
+          }))
       : [],
     skills: strArr(raw.skills, 30),
     expertise: strArr(raw.expertise, 30),
@@ -233,7 +263,9 @@ function normalizeDnd5e(raw: Obj): Dnd5eCharacter {
     spells: {
       known: strArr(spells.known, 600),
       prepared: strArr(spells.prepared, 600),
-      slotsUsed: Array.from({ length: 9 }, (_, i) => num(Array.isArray(spells.slotsUsed) ? spells.slotsUsed[i] : 0, 0, 0, 20)),
+      slotsUsed: Array.from({ length: 9 }, (_, i) =>
+        num(Array.isArray(spells.slotsUsed) ? spells.slotsUsed[i] : 0, 0, 0, 20),
+      ),
       pactSlotsUsed: num(spells.pactSlotsUsed, 0, 0, 10),
     },
     shield: bool(raw.shield),
@@ -254,12 +286,16 @@ function normalizePf2e(raw: Obj): Pf2eCharacter {
   const b = normalizeBase(raw, fresh);
   const boosts = isObj(raw.boosts) ? raw.boosts : {};
   const levels: Record<string, Ability[]> = {};
-  if (isObj(boosts.levels)) for (const lvl of ['1', '5', '10', '15', '20']) if (boosts.levels[lvl] !== undefined) levels[lvl] = abilArr(boosts.levels[lvl]).slice(0, 4);
+  if (isObj(boosts.levels))
+    for (const lvl of ['1', '5', '10', '15', '20'])
+      if (boosts.levels[lvl] !== undefined) levels[lvl] = abilArr(boosts.levels[lvl]).slice(0, 4);
   const spells = isObj(raw.spells) ? raw.spells : {};
   const prepared: Record<string, string[]> = {};
-  if (isObj(spells.prepared)) for (const [k, v] of Object.entries(spells.prepared)) prepared[k.slice(0, 4)] = strArr(v, 40);
+  if (isObj(spells.prepared))
+    for (const [k, v] of Object.entries(spells.prepared)) prepared[k.slice(0, 4)] = strArr(v, 40);
   const slotsUsed: Record<string, number> = {};
-  if (isObj(spells.slotsUsed)) for (const [k, v] of Object.entries(spells.slotsUsed)) slotsUsed[k.slice(0, 4)] = num(v, 0, 0, 20);
+  if (isObj(spells.slotsUsed))
+    for (const [k, v] of Object.entries(spells.slotsUsed)) slotsUsed[k.slice(0, 4)] = num(v, 0, 0, 20);
   const tradition = spells.tradition;
   const out: Pf2eCharacter = {
     ...fresh,
@@ -284,18 +320,23 @@ function normalizePf2e(raw: Obj): Pf2eCharacter {
     skillIncreases: strRecord(raw.skillIncreases),
     lores: strArr(raw.lores, 20),
     feats: Array.isArray(raw.feats)
-      ? raw.feats.filter(isObj).slice(0, 120).map((f) => ({
-          slot: str(f.slot, '', 60),
-          ...(typeof f.featId === 'string' && f.featId ? { featId: f.featId.slice(0, 100) } : {}),
-          ...(typeof f.customName === 'string' && f.customName ? { customName: f.customName.slice(0, 120) } : {}),
-        }))
+      ? raw.feats
+          .filter(isObj)
+          .slice(0, 120)
+          .map((f) => ({
+            slot: str(f.slot, '', 60),
+            ...(typeof f.featId === 'string' && f.featId ? { featId: f.featId.slice(0, 100) } : {}),
+            ...(typeof f.customName === 'string' && f.customName ? { customName: f.customName.slice(0, 120) } : {}),
+          }))
       : [],
     spells: {
       known: strArr(spells.known, 600),
       prepared,
       slotsUsed,
       focusSpells: strArr(spells.focusSpells, 20),
-      ...(tradition === 'arcane' || tradition === 'divine' || tradition === 'occult' || tradition === 'primal' ? { tradition } : {}),
+      ...(tradition === 'arcane' || tradition === 'divine' || tradition === 'occult' || tradition === 'primal'
+        ? { tradition }
+        : {}),
     },
     focusPoints: num(raw.focusPoints, 0, 0, 3),
     heroPoints: num(raw.heroPoints, 1, 0, 3),

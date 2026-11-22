@@ -63,14 +63,16 @@ export function SavedRepliesDialog({
   const reorder = useMutation({
     mutationFn: (ids: string[]) => api(reorderSavedRepliesApi, { body: { ids: ids.join(',') } }),
     onSettled: () => void invalidate(),
-    onError: (error) => toast.error(serverError(error) || t('reorder-failed', { defaultValue: 'Could not move that reply' })),
+    onError: (error) =>
+      toast.error(serverError(error) || t('reorder-failed', { defaultValue: 'Could not move that reply' })),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => api(deleteSavedReplyApi, { params: { id } }),
     onSuccess: () => toast.success(t('deleted', { defaultValue: 'Reply deleted' })),
     onSettled: () => void invalidate(),
-    onError: (error) => toast.error(serverError(error) || t('delete-failed', { defaultValue: 'Could not delete that reply' })),
+    onError: (error) =>
+      toast.error(serverError(error) || t('delete-failed', { defaultValue: 'Could not delete that reply' })),
   });
 
   const save = useMutation({
@@ -106,7 +108,10 @@ export function SavedRepliesDialog({
   const askDelete = async (reply: SavedReplyRow) => {
     const ok = await confirm({
       title: t('delete-title', { defaultValue: 'Delete this reply?' }),
-      description: t('delete-description', { title: reply.title, defaultValue: '“{{title}}” will be removed. Messages already sent are not changed.' }),
+      description: t('delete-description', {
+        title: reply.title,
+        defaultValue: '“{{title}}” will be removed. Messages already sent are not changed.',
+      }),
       confirmLabel: t('delete', { defaultValue: 'Delete' }),
       cancelLabel: t('cancel', { defaultValue: 'Cancel' }),
       danger: true,
@@ -118,7 +123,13 @@ export function SavedRepliesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg" {...(onCloseAutoFocus ? { onCloseAutoFocus } : {})}>
         <DialogHeader>
-          <DialogTitle>{editing ? (editing.id ? t('edit-title', { defaultValue: 'Edit reply' }) : t('new-title', { defaultValue: 'New reply' })) : t('manage-title', { defaultValue: 'Saved replies' })}</DialogTitle>
+          <DialogTitle>
+            {editing
+              ? editing.id
+                ? t('edit-title', { defaultValue: 'Edit reply' })
+                : t('new-title', { defaultValue: 'New reply' })
+              : t('manage-title', { defaultValue: 'Saved replies' })}
+          </DialogTitle>
           <DialogDescription>
             {t('limits', {
               max: MAX_SAVED_REPLIES,
@@ -143,9 +154,16 @@ export function SavedRepliesDialog({
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <p className="t-meta" aria-live="polite">
-                {t('count', { used: replies.length, max: MAX_SAVED_REPLIES, defaultValue: '{{used}} of {{max}} replies' })}
+                {t('count', {
+                  used: replies.length,
+                  max: MAX_SAVED_REPLIES,
+                  defaultValue: '{{used}} of {{max}} replies',
+                })}
               </p>
-              <Button disabled={atLimit || !list.isSuccess} onClick={() => setEditing({ id: null, title: '', body: '' })}>
+              <Button
+                disabled={atLimit || !list.isSuccess}
+                onClick={() => setEditing({ id: null, title: '', body: '' })}
+              >
                 <Plus aria-hidden />
                 {t('new', { defaultValue: 'New reply' })}
               </Button>
@@ -273,7 +291,8 @@ function ReplyEditor({
         <p id="saved-reply-body-help" className="t-meta">
           {`${draft.body.length} / ${BODY_MAX}`}
           {' · '}
-          <code>{'{{name}}'}</code> {t('name-hint', { defaultValue: 'becomes the other person’s name in a direct message.' })}
+          <code>{'{{name}}'}</code>{' '}
+          {t('name-hint', { defaultValue: 'becomes the other person’s name in a direct message.' })}
         </p>
       </div>
       {!canSave && (

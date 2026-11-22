@@ -8,18 +8,9 @@
  *
  * This module imports nothing and is a few bytes, so a component may import it statically.
  */
-export const CHROME_CONTENT_EVENT =
-  'chrome:content';
+export const CHROME_CONTENT_EVENT = 'chrome:content';
 
 export function chromeContentChanged(): void {
-  if (
-    typeof document ===
-    'undefined'
-  )
-    return;
-  document.dispatchEvent(
-    new Event(
-      CHROME_CONTENT_EVENT,
-    ),
-  );
+  if (typeof document === 'undefined') return;
+  document.dispatchEvent(new Event(CHROME_CONTENT_EVENT));
 }

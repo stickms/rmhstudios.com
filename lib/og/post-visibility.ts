@@ -25,28 +25,15 @@
 
 /** The fields the decision reads. Deliberately loose so any select satisfies it. */
 export interface PostCardSubject {
-  deletedAt?:
-    | Date
-    | string
-    | null;
-  audience?:
-    | string
-    | null;
-  unlockPrice?:
-    | number
-    | null;
-  isSensitive?:
-    | boolean
-    | null;
+  deletedAt?: Date | string | null;
+  audience?: string | null;
+  unlockPrice?: number | null;
+  isSensitive?: boolean | null;
   /** Why the post is warned (sprint 06 #16): when set, the card names the reason instead of drawing the text. */
-  contentWarning?:
-    | string
-    | null;
+  contentWarning?: string | null;
   /** The post's community, when it has one (select `isPrivate`). */
   community?: {
-    isPrivate?:
-      | boolean
-      | null;
+    isPrivate?: boolean | null;
   } | null;
 }
 
@@ -58,41 +45,13 @@ export interface PostCardSubject {
  * for an id that does not resolve, and "no post" must not be the one input that
  * opens the gate.
  */
-export function postCardShowsContent(
-  post:
-    | PostCardSubject
-    | null
-    | undefined,
-): boolean {
-  if (
-    !post
-  )
-    return false;
-  if (
-    post.deletedAt
-  )
-    return false;
-  if (
-    post.audience !==
-    'PUBLIC'
-  )
-    return false;
-  if (
-    (post.unlockPrice ??
-      0) >
-    0
-  )
-    return false;
-  if (
-    post
-      .community
-      ?.isPrivate
-  )
-    return false;
-  if (
-    post.isSensitive
-  )
-    return false;
+export function postCardShowsContent(post: PostCardSubject | null | undefined): boolean {
+  if (!post) return false;
+  if (post.deletedAt) return false;
+  if (post.audience !== 'PUBLIC') return false;
+  if ((post.unlockPrice ?? 0) > 0) return false;
+  if (post.community?.isPrivate) return false;
+  if (post.isSensitive) return false;
   return true;
 }
 
@@ -108,30 +67,16 @@ export function postCardCommunityName(
   post:
     | {
         community?: {
-          name?:
-            | string
-            | null;
-          isPrivate?:
-            | boolean
-            | null;
+          name?: string | null;
+          isPrivate?: boolean | null;
         } | null;
       }
     | null
     | undefined,
-):
-  | string
-  | null {
-  const community =
-    post?.community;
-  if (
-    !community ||
-    community.isPrivate
-  )
-    return null;
-  return (
-    community.name ??
-    null
-  );
+): string | null {
+  const community = post?.community;
+  if (!community || community.isPrivate) return null;
+  return community.name ?? null;
 }
 
 /**
@@ -141,12 +86,7 @@ export function postCardCommunityName(
  * revealed: it names the reason and draws nothing else (no text, poll, or media), through the same gate as the rest. A
  * warning with no reason has nothing to print and stays a generic card, as it always was.
  */
-export function postCardContentWarning(
-  post:
-    | PostCardSubject
-    | null
-    | undefined,
-): string | null {
+export function postCardContentWarning(post: PostCardSubject | null | undefined): string | null {
   if (!post) return null;
   const reason = typeof post.contentWarning === 'string' ? post.contentWarning.trim() : '';
   if (!reason) return null;

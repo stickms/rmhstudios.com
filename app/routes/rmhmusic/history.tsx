@@ -11,55 +11,26 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { PracticeHistory } from '@/components/rmhmusic/learn/history/PracticeHistory';
 import { SongProgress } from '@/components/rmhmusic/learn/history/SongProgress';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/history',
-  )(
-    {
-      validateSearch:
-        (
-          search: Record<
-            string,
-            unknown
-          >,
-        ): {
-          song?: string;
-        } =>
-          typeof search.song ===
-            'string' &&
-          search
-            .song
-            .length <=
-            64
-            ? {
-                song: search.song,
-              }
-            : {},
-      head: () =>
-        noindexHead(
-          'RMHMusic Practice history',
-        ),
-      component:
-        HistoryRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/history')({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    song?: string;
+  } =>
+    typeof search.song === 'string' && search.song.length <= 64
+      ? {
+          song: search.song,
+        }
+      : {},
+  head: () => noindexHead('RMHMusic Practice history'),
+  component: HistoryRoute,
+});
 
 function HistoryRoute() {
-  const {
-    song,
-  } =
-    Route.useSearch();
+  const { song } = Route.useSearch();
   return (
     <GameErrorBoundary gameName="RMH Music">
-      {song ? (
-        <SongProgress
-          songId={
-            song
-          }
-        />
-      ) : (
-        <PracticeHistory />
-      )}
+      {song ? <SongProgress songId={song} /> : <PracticeHistory />}
     </GameErrorBoundary>
   );
 }

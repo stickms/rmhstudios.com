@@ -36,6 +36,5 @@ export async function exportSprint07(userId: string): Promise<Record<string, unk
 
     // s07-18 reading-time
     readingTime: await exportReadingTime(userId),
-
   };
 }

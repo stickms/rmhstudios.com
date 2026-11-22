@@ -5,45 +5,25 @@
  */
 import type { useTranslation } from 'react-i18next';
 
-type T =
-  ReturnType<
-    typeof useTranslation
-  >['t'];
+type T = ReturnType<typeof useTranslation>['t'];
 
-export function composerName(
-  t: T,
-  composer: string,
-): string {
-  switch (
-    composer
-  ) {
+export function composerName(t: T, composer: string): string {
+  switch (composer) {
     case 'Traditional':
-      return t(
-        'song-composer-traditional',
-        {
-          ns: 'c-rmhmusic',
-          defaultValue:
-            'Traditional',
-        },
-      );
+      return t('song-composer-traditional', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'Traditional',
+      });
     case 'Traditional (French)':
-      return t(
-        'song-composer-traditional-french',
-        {
-          ns: 'c-rmhmusic',
-          defaultValue:
-            'Traditional (French)',
-        },
-      );
+      return t('song-composer-traditional-french', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'Traditional (French)',
+      });
     case 'Traditional (German)':
-      return t(
-        'song-composer-traditional-german',
-        {
-          ns: 'c-rmhmusic',
-          defaultValue:
-            'Traditional (German)',
-        },
-      );
+      return t('song-composer-traditional-german', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'Traditional (German)',
+      });
     default:
       return composer;
   }

@@ -26,16 +26,12 @@ const findMany = vi.hoisted(() =>
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 
 vi.mock('@/lib/prisma.server', () => ({
-  prisma: new Proxy(
-    {},
-    { get: (_t, model: string) => (model === 'gameJamTeamMember' ? { findMany } : emptyModel) },
-  ),
+  prisma: new Proxy({}, { get: (_t, model: string) => (model === 'gameJamTeamMember' ? { findMany } : emptyModel) }),
 }));
 vi.mock('@/lib/auth', () => ({
   auth: { api: { getSession: vi.fn(async () => ({ user: { id: 'u1' }, session: { id: 's1', userId: 'u1' } })) } },

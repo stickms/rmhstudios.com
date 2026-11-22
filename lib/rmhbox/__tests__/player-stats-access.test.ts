@@ -35,9 +35,7 @@ vi.mock('@/lib/auth', () => ({
   auth: {
     api: {
       getSession: async () =>
-        db.viewer
-          ? { user: { id: db.viewer, isAdmin: db.admins.has(db.viewer) }, session: { id: 's' } }
-          : null,
+        db.viewer ? { user: { id: db.viewer, isAdmin: db.admins.has(db.viewer) }, session: { id: 's' } } : null,
     },
   },
 }));
@@ -113,10 +111,7 @@ interface Json {
 const addUser = (id: string, privacy = 'public', extra: Partial<UserRow> = {}) =>
   db.users.set(id, { id, name: `Name ${id}`, privacy, bannedUntil: null, ...extra });
 
-const call = async (
-  h: typeof statsGET,
-  qs: string,
-): Promise<{ status: number; body: Json }> => {
+const call = async (h: typeof statsGET, qs: string): Promise<{ status: number; body: Json }> => {
   const res = await h({
     request: new Request(`http://t/api/rmhbox/x?${qs}`, {
       headers: db.viewer ? { cookie: 'better-auth.session_token=t' } : {},
@@ -132,7 +127,13 @@ const matchRow = {
   rank: 2,
   score: 150,
   wasWinner: false,
-  match: { id: 'm1', minigameId: 'rhyme-time', startedAt: new Date('2026-11-01T10:00:00Z'), durationMs: 90_000, playerCount: 6 },
+  match: {
+    id: 'm1',
+    minigameId: 'rhyme-time',
+    startedAt: new Date('2026-11-01T10:00:00Z'),
+    durationMs: 90_000,
+    playerCount: 6,
+  },
 };
 
 beforeEach(() => {
@@ -155,7 +156,9 @@ beforeEach(() => {
     totalPlayTimeMs: 3_600_000,
     currentWinStreak: 2,
     bestWinStreak: 5,
-    minigameStats: { 'rhyme-time': { gamesPlayed: 10, wins: 4, bestScore: 200, totalScore: 1500, totalRank: 25, averageRank: 2.5 } },
+    minigameStats: {
+      'rhyme-time': { gamesPlayed: 10, wins: 4, bestScore: 200, totalScore: 1500, totalRank: 25, averageRank: 2.5 },
+    },
   });
 });
 
@@ -289,7 +292,7 @@ describe('GET /api/rmhbox/history', () => {
     players: [{ userId: 'owner', userName: 'Name owner', rank: 1, score: 5, wasWinner: true }],
   });
 
-  it("the list for a minigame stays public, signed out too", async () => {
+  it('the list for a minigame stays public, signed out too', async () => {
     addUser('owner', 'private');
     db.matches = [matchOf('m1')];
     const r = await history('minigame=rhyme-time');

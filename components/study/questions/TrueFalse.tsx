@@ -23,7 +23,9 @@ export function TrueFalse({
   ];
   return (
     <fieldset className="space-y-3">
-      <legend className="t-label">{t('true-false-legend', { defaultValue: 'Is this answer right for this card?' })}</legend>
+      <legend className="t-label">
+        {t('true-false-legend', { defaultValue: 'Is this answer right for this card?' })}
+      </legend>
       <div className="space-y-1 border-y border-site-border py-3">
         <p className="t-prose whitespace-pre-wrap text-site-text" dir="auto">
           {question.prompt}
@@ -51,7 +53,10 @@ export function TrueFalse({
         <Verdict right={answer === question.isTrue}>
           {question.isTrue
             ? t('tf-was-true', { defaultValue: 'That answer is right.' })
-            : t('tf-was-false', { defaultValue: 'That answer is wrong. The right one is: {{answer}}', answer: question.answer })}
+            : t('tf-was-false', {
+                defaultValue: 'That answer is wrong. The right one is: {{answer}}',
+                answer: question.answer,
+              })}
         </Verdict>
       )}
     </fieldset>

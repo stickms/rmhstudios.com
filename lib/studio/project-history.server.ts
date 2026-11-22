@@ -12,12 +12,7 @@
  */
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import {
-  overflowByBytes,
-  MAX_VERSIONS_PER_PROJECT,
-  shouldCapture,
-  trackCountOf,
-} from '@/lib/studio/project-history';
+import { overflowByBytes, MAX_VERSIONS_PER_PROJECT, shouldCapture, trackCountOf } from '@/lib/studio/project-history';
 import type { ProjectVersion, ProjectVersionSummary } from '@/lib/studio/project-history.contract';
 import type { StudioProjectData } from '@/lib/studio/projects.contract';
 
@@ -143,11 +138,7 @@ export async function listVersions(userId: string, projectId: string): Promise<P
 }
 
 /** One version with its JSON, or null (also for another member's version or project). */
-export async function getVersion(
-  userId: string,
-  projectId: string,
-  versionId: string,
-): Promise<ProjectVersion | null> {
+export async function getVersion(userId: string, projectId: string, versionId: string): Promise<ProjectVersion | null> {
   const row = await prisma.studioProjectRevision.findFirst({
     where: { id: versionId, projectId, userId },
     select: { ...SUMMARY_SELECT, data: true },

@@ -4,13 +4,7 @@
  * and a full simulation proving nobody leaves before a second loss.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  generateBracket,
-  generateDoubleElim,
-  rankDoubleElim,
-  resolveBracketRows,
-  type BracketMatch,
-} from '../bracket';
+import { generateBracket, generateDoubleElim, rankDoubleElim, resolveBracketRows, type BracketMatch } from '../bracket';
 
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `e${i + 1}`);
 const keyOf = (m: Pick<BracketMatch, 'round' | 'slot'>) => `${m.round}:${m.slot}`;
@@ -258,12 +252,7 @@ describe('rankDoubleElim', () => {
         { id: 'd', wins: 2, seed: 4 },
         { id: 'e', wins: 2, seed: 5 },
       ],
-      [
-        row(4, 'L', 'c', 'a', 'a'),
-        row(4, 'L', 'd', 'a', 'a'),
-        row(4, 'L', 'e', 'a', 'a'),
-        row(8, 'GF', 'a', 'b', 'a'),
-      ],
+      [row(4, 'L', 'c', 'a', 'a'), row(4, 'L', 'd', 'a', 'a'), row(4, 'L', 'e', 'a', 'a'), row(8, 'GF', 'a', 'b', 'a')],
     );
     expect(order.slice(2)).toEqual(['d', 'e', 'c']);
   });

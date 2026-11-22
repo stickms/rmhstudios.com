@@ -5,7 +5,6 @@
 import { z } from 'zod';
 import { HANDLE_OR_ID } from '@/lib/achievements/compare';
 
-
 export const compareQuery = z.object({
   with: z.string().trim().regex(HANDLE_OR_ID),
 });

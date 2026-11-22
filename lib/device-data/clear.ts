@@ -7,20 +7,10 @@
  * left believing it is gone. Web Storage is cleared by prefix in both localStorage and sessionStorage, and the service
  * worker's caches by name prefix.
  */
-import {
-  browserEnv,
-  presentKeys,
-  type DeviceEnv,
-} from './inspect';
-import {
-  DEVICE_STORES,
-  type DeviceStore,
-} from './registry';
+import { browserEnv, presentKeys, type DeviceEnv } from './inspect';
+import { DEVICE_STORES, type DeviceStore } from './registry';
 
-export type ClearStatus =
-  | 'cleared'
-  | 'blocked'
-  | 'failed';
+export type ClearStatus = 'cleared' | 'blocked' | 'failed';
 
 export interface ClearRow {
   storeId: string;
@@ -36,9 +26,7 @@ export interface ClearResult {
   failed: number;
 }
 
-function summarise(
-  rows: ClearRow[],
-): ClearResult {
+function summarise(rows: ClearRow[]): ClearResult {
   return {
     rows,
     cleared: rows.filter((r) => r.status === 'cleared').length,
@@ -47,40 +35,30 @@ function summarise(
   };
 }
 
-function deleteDatabase(
-  idb: IDBFactory,
-  name: string,
-): Promise<ClearStatus> {
-  return new Promise(
-    (resolve) => {
-      let req: IDBOpenDBRequest;
-      try {
-        req = idb.deleteDatabase(name);
-      } catch {
-        resolve('failed');
-        return;
-      }
-      req.onsuccess = () => resolve('cleared');
-      req.onerror = () => resolve('failed');
-      req.onblocked = () => resolve('blocked');
-    },
-  );
+function deleteDatabase(idb: IDBFactory, name: string): Promise<ClearStatus> {
+  return new Promise((resolve) => {
+    let req: IDBOpenDBRequest;
+    try {
+      req = idb.deleteDatabase(name);
+    } catch {
+      resolve('failed');
+      return;
+    }
+    req.onsuccess = () => resolve('cleared');
+    req.onerror = () => resolve('failed');
+    req.onblocked = () => resolve('blocked');
+  });
 }
 
-async function clearOne(
-  store: DeviceStore,
-  env: DeviceEnv,
-): Promise<ClearRow[]> {
+async function clearOne(store: DeviceStore, env: DeviceEnv): Promise<ClearRow[]> {
   if (store.kind === 'indexeddb') {
     const idb = env.indexedDB;
     return Promise.all(
-      store.names.map(
-        async (name): Promise<ClearRow> => ({
-          storeId: store.id,
-          name,
-          status: idb ? await deleteDatabase(idb, name) : 'cleared',
-        }),
-      ),
+      store.names.map(async (name): Promise<ClearRow> => ({
+        storeId: store.id,
+        name,
+        status: idb ? await deleteDatabase(idb, name) : 'cleared',
+      })),
     );
   }
   if (store.kind === 'localstorage-prefix') {
@@ -97,9 +75,7 @@ async function clearOne(
   const caches = env.caches;
   if (!caches) return [{ storeId: store.id, name: store.names.join(', '), status: 'cleared' }];
   try {
-    const names = (await caches.keys()).filter((n) =>
-      store.names.some((p) => n.startsWith(p)),
-    );
+    const names = (await caches.keys()).filter((n) => store.names.some((p) => n.startsWith(p)));
     const rows: ClearRow[] = [];
     for (const name of names) {
       let ok = false;
@@ -110,28 +86,20 @@ async function clearOne(
       }
       rows.push({ storeId: store.id, name, status: ok ? 'cleared' : 'failed' });
     }
-    return rows.length > 0
-      ? rows
-      : [{ storeId: store.id, name: store.names.join(', '), status: 'cleared' }];
+    return rows.length > 0 ? rows : [{ storeId: store.id, name: store.names.join(', '), status: 'cleared' }];
   } catch {
     return [{ storeId: store.id, name: store.names.join(', '), status: 'failed' }];
   }
 }
 
 /** Clear the given registry lines. A line that is not in the registry is never touched. */
-export async function clearStores(
-  stores: readonly DeviceStore[],
-  env: DeviceEnv = browserEnv(),
-): Promise<ClearResult> {
+export async function clearStores(stores: readonly DeviceStore[], env: DeviceEnv = browserEnv()): Promise<ClearResult> {
   const known = stores.filter((s) => DEVICE_STORES.includes(s));
   const rows = (await Promise.all(known.map((s) => clearOne(s, env)))).flat();
   return summarise(rows);
 }
 
-export function clearStoreById(
-  id: string,
-  env: DeviceEnv = browserEnv(),
-): Promise<ClearResult> {
+export function clearStoreById(id: string, env: DeviceEnv = browserEnv()): Promise<ClearResult> {
   return clearStores(
     DEVICE_STORES.filter((s) => s.id === id),
     env,
@@ -150,16 +118,12 @@ export function clearPersonalDeviceData(
   env: DeviceEnv = browserEnv(),
 ): Promise<ClearResult> {
   return clearStores(
-    DEVICE_STORES.filter(
-      (s) => s.personal && (options.includeUnsent === true || !s.unsent),
-    ),
+    DEVICE_STORES.filter((s) => s.personal && (options.includeUnsent === true || !s.unsent)),
     env,
   );
 }
 
 /** Every registered store, personal or not, unsent work included. The page confirms this one by name. */
-export function clearEverything(
-  env: DeviceEnv = browserEnv(),
-): Promise<ClearResult> {
+export function clearEverything(env: DeviceEnv = browserEnv()): Promise<ClearResult> {
   return clearStores(DEVICE_STORES, env);
 }

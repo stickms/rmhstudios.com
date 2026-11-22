@@ -29,45 +29,16 @@ export {
   type ReportEntityType,
   type ReportReason,
 } from '@/lib/moderation/report-constants';
-import {
-  REPORT_ENTITY_TYPES,
-  REPORT_REASONS,
-} from '@/lib/moderation/report-constants';
+import { REPORT_ENTITY_TYPES, REPORT_REASONS } from '@/lib/moderation/report-constants';
 
 /** Free-text detail cap. The textarea's `maxLength` reads this, not a literal. */
 export const REPORT_DETAILS_MAX = 1000;
 
-export const reportSchema =
-  z.object(
-    {
-      entityType:
-        z.enum(
-          REPORT_ENTITY_TYPES,
-        ),
-      entityId:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            64,
-          ),
-      reason:
-        z.enum(
-          REPORT_REASONS,
-        ),
-      details:
-        z
-          .string()
-          .max(
-            REPORT_DETAILS_MAX,
-          )
-          .optional(),
-    },
-  );
+export const reportSchema = z.object({
+  entityType: z.enum(REPORT_ENTITY_TYPES),
+  entityId: z.string().min(1).max(64),
+  reason: z.enum(REPORT_REASONS),
+  details: z.string().max(REPORT_DETAILS_MAX).optional(),
+});
 
-export type ReportInput =
-  z.infer<
-    typeof reportSchema
-  >;
+export type ReportInput = z.infer<typeof reportSchema>;

@@ -38,57 +38,32 @@ import {
 } from '@/lib/communities/post-alerts';
 import type { PostAlertsDTO } from '@/lib/communities/post-alerts.contract';
 
-export const POST_ALERT_QUEUE =
-  'communities.post-alerts';
+export const POST_ALERT_QUEUE = 'communities.post-alerts';
 
 /* ── The setting ────────────────────────────────────────────────────────── */
 
 /** The member's setting, or null when they are not a member of the community. */
-export async function getPostAlerts(
-  communityId: string,
-  userId: string,
-): Promise<PostAlertsDTO | null> {
-  const member =
-    await prisma.communityMember.findUnique(
-      {
-        where:
-          {
-            communityId_userId:
-              {
-                communityId,
-                userId,
-              },
-          },
-        select:
-          {
-            postAlerts: true,
-            community:
-              {
-                select:
-                  {
-                    memberCount: true,
-                  },
-              },
-          },
+export async function getPostAlerts(communityId: string, userId: string): Promise<PostAlertsDTO | null> {
+  const member = await prisma.communityMember.findUnique({
+    where: {
+      communityId_userId: {
+        communityId,
+        userId,
       },
-    );
-  if (
-    !member
-  )
-    return null;
+    },
+    select: {
+      postAlerts: true,
+      community: {
+        select: {
+          memberCount: true,
+        },
+      },
+    },
+  });
+  if (!member) return null;
   return {
-    level:
-      isPostAlertLevel(
-        member.postAlerts,
-      )
-        ? member.postAlerts
-        : 'off',
-    tooLarge:
-      isTooLargeForAlerts(
-        member
-          .community
-          .memberCount,
-      ),
+    level: isPostAlertLevel(member.postAlerts) ? member.postAlerts : 'off',
+    tooLarge: isTooLargeForAlerts(member.community.memberCount),
   };
 }
 
@@ -98,82 +73,49 @@ export async function setPostAlerts(
   userId: string,
   level: PostAlertLevel,
 ): Promise<PostAlertsDTO | null> {
-  const updated =
-    await prisma.communityMember.updateMany(
-      {
-        where:
-          {
-            communityId,
-            userId,
-          },
-        data: {
-          postAlerts:
-            level,
-        },
-      },
-    );
-  if (
-    updated.count ===
-    0
-  )
-    return null;
-  return getPostAlerts(
-    communityId,
-    userId,
-  );
+  const updated = await prisma.communityMember.updateMany({
+    where: {
+      communityId,
+      userId,
+    },
+    data: {
+      postAlerts: level,
+    },
+  });
+  if (updated.count === 0) return null;
+  return getPostAlerts(communityId, userId);
 }
 
 /** The member's own data for the account export: the communities they asked to be alerted for. */
-export async function exportPostAlerts(
-  userId: string,
-): Promise<
+export async function exportPostAlerts(userId: string): Promise<
   {
     communityId: string;
     communityName: string;
     level: PostAlertLevel;
   }[]
 > {
-  const rows =
-    await prisma.communityMember.findMany(
-      {
-        where:
-          {
-            userId,
-            postAlerts:
-              'all',
-          },
-        select:
-          {
-            communityId: true,
-            community:
-              {
-                select:
-                  {
-                    name: true,
-                  },
-              },
-          },
-        orderBy:
-          {
-            joinedAt:
-              'asc',
-          },
+  const rows = await prisma.communityMember.findMany({
+    where: {
+      userId,
+      postAlerts: 'all',
+    },
+    select: {
+      communityId: true,
+      community: {
+        select: {
+          name: true,
+        },
       },
-    );
-  return rows.map(
-    (
-      r,
-    ) => ({
-      communityId:
-        r.communityId,
-      communityName:
-        r
-          .community
-          .name,
-      level:
-        'all',
-    }),
-  );
+    },
+    orderBy: {
+      joinedAt: 'asc',
+    },
+  });
+  return rows.map((r) => ({
+    communityId: r.communityId,
+    communityName: r.community.name,
+    level: 'all',
+  }));
 }
 
 /* ── Enqueue (the web tier) ─────────────────────────────────────────────── */
@@ -182,39 +124,20 @@ export async function exportPostAlerts(
  * Queue the fan-out for a post that has just become visible in a community. Keyed by post id, so enqueueing twice is
  * one job. A queue that is down is logged, never thrown: the post is already published.
  */
-export async function enqueuePostAlert(
-  postId: string,
-): Promise<void> {
+export async function enqueuePostAlert(postId: string): Promise<void> {
   try {
-    const boss =
-      await getBoss();
-    if (
-      !boss
-    )
-      throw new Error(
-        'queue unavailable',
-      );
-    const job: PostAlertJob =
-      {
-        postId,
-      };
-    await boss.send(
-      POST_ALERT_QUEUE,
-      job,
-      {
-        singletonKey:
-          postAlertJobKey(
-            postId,
-          ),
-        retryLimit: 3,
-        retryDelay: 60,
-      },
-    );
+    const boss = await getBoss();
+    if (!boss) throw new Error('queue unavailable');
+    const job: PostAlertJob = {
+      postId,
+    };
+    await boss.send(POST_ALERT_QUEUE, job, {
+      singletonKey: postAlertJobKey(postId),
+      retryLimit: 3,
+      retryDelay: 60,
+    });
   } catch (error) {
-    console.error(
-      '[communities] could not queue the post alert fan-out:',
-      error,
-    );
+    console.error('[communities] could not queue the post alert fan-out:', error);
   }
 }
 
@@ -227,424 +150,211 @@ export interface FanoutResult {
   collapsed: number;
 }
 
-const NONE: FanoutResult =
-  {
+const NONE: FanoutResult = {
+  notified: 0,
+  collapsed: 0,
+};
+
+export async function runPostAlertFanout(postId: string, now: Date = new Date()): Promise<FanoutResult> {
+  const post = await prisma.rMHark.findFirst({
+    where: {
+      id: postId,
+      deletedAt: null,
+      communityId: {
+        not: null,
+      },
+    },
+    select: {
+      id: true,
+      userId: true,
+      communityId: true,
+      user: {
+        select: {
+          ...userDisplaySelect,
+          bannedUntil: true,
+        },
+      },
+      community: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+  if (!post?.communityId || !post.community) return NONE;
+  if (isBannedNow(post.user.bannedUntil, now)) return NONE;
+  const communityId = post.communityId;
+
+  // Claim the post: insert-if-absent, and only the run that inserted it goes on.
+  const claim = await prisma.communityPostAlertRun.createMany({
+    data: [
+      {
+        postId,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  if (claim.count !== 1) return NONE;
+
+  const authorName = post.user.profile?.displayName ?? post.user.name ?? post.user.handle ?? 'Someone';
+  const preview = alertPreview(authorName, post.community.name);
+  const link = alertLink(post.user, postId);
+  const total: FanoutResult = {
     notified: 0,
     collapsed: 0,
   };
 
-export async function runPostAlertFanout(
-  postId: string,
-  now: Date = new Date(),
-): Promise<FanoutResult> {
-  const post =
-    await prisma.rMHark.findFirst(
-      {
-        where:
-          {
-            id: postId,
-            deletedAt:
-              null,
-            communityId:
-              {
-                not: null,
-              },
+  try {
+    let after: string | undefined;
+    let scanned = 0;
+    while (scanned < MAX_ALERT_RECIPIENTS) {
+      const members = await prisma.communityMember.findMany({
+        where: {
+          communityId,
+          postAlerts: 'all',
+          userId: {
+            not: post.userId,
+            ...(after
+              ? {
+                  gt: after,
+                }
+              : {}),
           },
-        select:
-          {
+        },
+        orderBy: {
+          userId: 'asc',
+        },
+        take: Math.min(ALERT_BATCH_SIZE, MAX_ALERT_RECIPIENTS - scanned),
+        select: {
+          userId: true,
+          user: {
+            select: {
+              bannedUntil: true,
+            },
+          },
+        },
+      });
+      if (members.length === 0) break;
+      scanned += members.length;
+      after = members[members.length - 1]!.userId;
+
+      const ids = members.map((m) => m.userId);
+      const [blocks, mutes, recent] = await Promise.all([
+        prisma.userBlock.findMany({
+          where: {
+            OR: [
+              {
+                blockerId: post.userId,
+                blockedId: {
+                  in: ids,
+                },
+              },
+              {
+                blockedId: post.userId,
+                blockerId: {
+                  in: ids,
+                },
+              },
+            ],
+          },
+          select: {
+            blockerId: true,
+            blockedId: true,
+          },
+        }),
+        prisma.userMute.findMany({
+          where: {
+            mutedId: post.userId,
+            muterId: {
+              in: ids,
+            },
+          },
+          select: {
+            muterId: true,
+          },
+        }),
+        prisma.notification.findMany({
+          where: {
+            userId: {
+              in: ids,
+            },
+            type: 'SYSTEM',
+            entityType: COMMUNITY_POST_ENTITY,
+            entityId: communityId,
+            read: false,
+            createdAt: {
+              gte: collapseSince(now),
+            },
+          },
+          select: {
             id: true,
             userId: true,
-            communityId: true,
-            user: {
-              select:
-                {
-                  ...userDisplaySelect,
-                  bannedUntil: true,
-                },
-            },
-            community:
-              {
-                select:
-                  {
-                    name: true,
-                  },
-              },
           },
-      },
-    );
-  if (
-    !post?.communityId ||
-    !post.community
-  )
-    return NONE;
-  if (
-    isBannedNow(
-      post
-        .user
-        .bannedUntil,
-      now,
-    )
-  )
-    return NONE;
-  const communityId =
-    post.communityId;
+        }),
+      ]);
 
-  // Claim the post: insert-if-absent, and only the run that inserted it goes on.
-  const claim =
-    await prisma.communityPostAlertRun.createMany(
-      {
-        data: [
-          {
-            postId,
-          },
-        ],
-        skipDuplicates: true,
-      },
-    );
-  if (
-    claim.count !==
-    1
-  )
-    return NONE;
-
-  const authorName =
-    post
-      .user
-      .profile
-      ?.displayName ??
-    post
-      .user
-      .name ??
-    post
-      .user
-      .handle ??
-    'Someone';
-  const preview =
-    alertPreview(
-      authorName,
-      post
-        .community
-        .name,
-    );
-  const link =
-    alertLink(
-      post.user,
-      postId,
-    );
-  const total: FanoutResult =
-    {
-      notified: 0,
-      collapsed: 0,
-    };
-
-  try {
-    let after:
-      | string
-      | undefined;
-    let scanned = 0;
-    while (
-      scanned <
-      MAX_ALERT_RECIPIENTS
-    ) {
-      const members =
-        await prisma.communityMember.findMany(
-          {
-            where:
-              {
-                communityId,
-                postAlerts:
-                  'all',
-                userId:
-                  {
-                    not: post.userId,
-                    ...(after
-                      ? {
-                          gt: after,
-                        }
-                      : {}),
-                  },
-              },
-            orderBy:
-              {
-                userId:
-                  'asc',
-              },
-            take: Math.min(
-              ALERT_BATCH_SIZE,
-              MAX_ALERT_RECIPIENTS -
-                scanned,
-            ),
-            select:
-              {
-                userId: true,
-                user: {
-                  select:
-                    {
-                      bannedUntil: true,
-                    },
-                },
-              },
-          },
-        );
-      if (
-        members.length ===
-        0
-      )
-        break;
-      scanned +=
-        members.length;
-      after =
-        members[
-          members.length -
-            1
-        ]!
-          .userId;
-
-      const ids =
-        members.map(
-          (
-            m,
-          ) =>
-            m.userId,
-        );
-      const [
-        blocks,
-        mutes,
-        recent,
-      ] =
-        await Promise.all(
-          [
-            prisma.userBlock.findMany(
-              {
-                where:
-                  {
-                    OR: [
-                      {
-                        blockerId:
-                          post.userId,
-                        blockedId:
-                          {
-                            in: ids,
-                          },
-                      },
-                      {
-                        blockedId:
-                          post.userId,
-                        blockerId:
-                          {
-                            in: ids,
-                          },
-                      },
-                    ],
-                  },
-                select:
-                  {
-                    blockerId: true,
-                    blockedId: true,
-                  },
-              },
-            ),
-            prisma.userMute.findMany(
-              {
-                where:
-                  {
-                    mutedId:
-                      post.userId,
-                    muterId:
-                      {
-                        in: ids,
-                      },
-                  },
-                select:
-                  {
-                    muterId: true,
-                  },
-              },
-            ),
-            prisma.notification.findMany(
-              {
-                where:
-                  {
-                    userId:
-                      {
-                        in: ids,
-                      },
-                    type: 'SYSTEM',
-                    entityType:
-                      COMMUNITY_POST_ENTITY,
-                    entityId:
-                      communityId,
-                    read: false,
-                    createdAt:
-                      {
-                        gte: collapseSince(
-                          now,
-                        ),
-                      },
-                  },
-                select:
-                  {
-                    id: true,
-                    userId: true,
-                  },
-              },
-            ),
-          ],
-        );
-
-      const recipients =
-        filterRecipients(
-          members.map(
-            (
-              m,
-            ) => ({
-              userId:
-                m.userId,
-              bannedUntil:
-                m
-                  .user
-                  .bannedUntil,
-            }),
-          ),
-          {
-            authorId:
-              post.userId,
-            blockedWithAuthor:
-              new Set(
-                blocks.map(
-                  (
-                    b,
-                  ) =>
-                    b.blockerId ===
-                    post.userId
-                      ? b.blockedId
-                      : b.blockerId,
-                ),
-              ),
-            mutedAuthor:
-              new Set(
-                mutes.map(
-                  (
-                    m,
-                  ) =>
-                    m.muterId,
-                ),
-              ),
-            now,
-          },
-        );
-      const unreadByUser =
-        new Map(
-          recent.map(
-            (
-              n,
-            ) => [
-              n.userId,
-              n.id,
-            ],
-          ),
-        );
-      const {
-        fresh,
-        collapsed,
-      } =
-        splitByCollapse(
-          recipients,
-          new Set(
-            unreadByUser.keys(),
-          ),
-        );
+      const recipients = filterRecipients(
+        members.map((m) => ({
+          userId: m.userId,
+          bannedUntil: m.user.bannedUntil,
+        })),
+        {
+          authorId: post.userId,
+          blockedWithAuthor: new Set(blocks.map((b) => (b.blockerId === post.userId ? b.blockedId : b.blockerId))),
+          mutedAuthor: new Set(mutes.map((m) => m.muterId)),
+          now,
+        },
+      );
+      const unreadByUser = new Map(recent.map((n) => [n.userId, n.id]));
+      const { fresh, collapsed } = splitByCollapse(recipients, new Set(unreadByUser.keys()));
 
       // A burst: the member's unread alert now says "New posts in …"; no second notification, no second push.
-      if (
-        collapsed.length >
-        0
-      ) {
-        await prisma.notification.updateMany(
-          {
-            where:
-              {
-                id: {
-                  in: collapsed.map(
-                    (
-                      id,
-                    ) =>
-                      unreadByUser.get(
-                        id,
-                      )!,
-                  ),
-                },
-              },
-            data: {
-              preview:
-                collapsedPreview(
-                  post
-                    .community
-                    .name,
-                ),
+      if (collapsed.length > 0) {
+        await prisma.notification.updateMany({
+          where: {
+            id: {
+              in: collapsed.map((id) => unreadByUser.get(id)!),
             },
           },
-        );
-        total.collapsed +=
-          collapsed.length;
+          data: {
+            preview: collapsedPreview(post.community.name),
+          },
+        });
+        total.collapsed += collapsed.length;
       }
 
       // createNotification applies each member's preferences, quiet hours and push, one recipient at a time.
       for (const userId of fresh) {
-        await createNotification(
-          {
-            userId,
-            type: 'SYSTEM',
-            entityType:
-              COMMUNITY_POST_ENTITY,
-            entityId:
-              communityId,
-            preview,
-            link,
-          },
-        );
+        await createNotification({
+          userId,
+          type: 'SYSTEM',
+          entityType: COMMUNITY_POST_ENTITY,
+          entityId: communityId,
+          preview,
+          link,
+        });
       }
-      total.notified +=
-        fresh.length;
+      total.notified += fresh.length;
     }
   } catch (error) {
     // Give the claim back so the retry can finish the job; members already notified have an unread alert, which the
     // collapse rule turns into a reword rather than a second notification.
     await prisma.communityPostAlertRun
-      .deleteMany(
-        {
-          where:
-            {
-              postId,
-            },
+      .deleteMany({
+        where: {
+          postId,
         },
-      )
-      .catch(
-        () => {},
-      );
+      })
+      .catch(() => {});
     throw error;
   }
   return total;
 }
 
-export async function registerCommunityPostAlertWorker(
-  boss: PgBoss,
-): Promise<void> {
-  await boss.createQueue(
-    POST_ALERT_QUEUE,
-  );
-  await boss.work<PostAlertJob>(
-    POST_ALERT_QUEUE,
-    async (
-      jobs,
-    ) => {
-      // A throw makes pg-boss retry per the send options; the claim row makes the retry safe.
-      for (const job of jobs)
-        await runPostAlertFanout(
-          job
-            .data
-            .postId,
-        );
-    },
-  );
+export async function registerCommunityPostAlertWorker(boss: PgBoss): Promise<void> {
+  await boss.createQueue(POST_ALERT_QUEUE);
+  await boss.work<PostAlertJob>(POST_ALERT_QUEUE, async (jobs) => {
+    // A throw makes pg-boss retry per the send options; the claim row makes the retry safe.
+    for (const job of jobs) await runPostAlertFanout(job.data.postId);
+  });
 }

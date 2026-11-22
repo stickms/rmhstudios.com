@@ -16,7 +16,13 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { api, apiQuery, errorField } from '@/lib/contract/client';
 import { listCohostsApi, removeCohostApi, respondCohostApi } from '@/lib/events/cohosts.contract';
-import { MAX_COHOSTS, personLabel, type CohostEntryDTO, type CohostRefusal, type EventViewerRole } from '@/lib/events/cohosts';
+import {
+  MAX_COHOSTS,
+  personLabel,
+  type CohostEntryDTO,
+  type CohostRefusal,
+  type EventViewerRole,
+} from '@/lib/events/cohosts';
 import { CohostInvite } from './CohostInvite';
 
 interface CohostsPanelProps {
@@ -77,7 +83,8 @@ export function CohostsPanel({ eventId, viewerId, hostId, role, onRole, onEntrie
     const ok = await confirm({
       title: t('step-down-title', { defaultValue: 'Step down as co-host?' }),
       description: t('step-down-body', {
-        defaultValue: 'You will no longer be able to edit this event or manage its guests. The host can invite you again.',
+        defaultValue:
+          'You will no longer be able to edit this event or manage its guests. The host can invite you again.',
       }),
       confirmLabel: t('step-down', { defaultValue: 'Step down' }),
       cancelLabel: t('keep-role', { defaultValue: 'Stay co-host' }),
@@ -132,7 +139,10 @@ export function CohostsPanel({ eventId, viewerId, hostId, role, onRole, onEntrie
 
   if (role === 'invited') {
     return (
-      <section aria-label={t('heading', { defaultValue: 'Co-hosts' })} className="flex flex-col gap-2 border-t border-site-border pt-3">
+      <section
+        aria-label={t('heading', { defaultValue: 'Co-hosts' })}
+        className="flex flex-col gap-2 border-t border-site-border pt-3"
+      >
         <p className="t-body">{t('invited-body', { defaultValue: 'You were invited to co-host this event.' })}</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" disabled={busy} onClick={() => void respond(true)}>
@@ -149,7 +159,10 @@ export function CohostsPanel({ eventId, viewerId, hostId, role, onRole, onEntrie
 
   if (role === 'cohost') {
     return (
-      <section aria-label={t('heading', { defaultValue: 'Co-hosts' })} className="flex flex-wrap items-center justify-between gap-2 border-t border-site-border pt-3">
+      <section
+        aria-label={t('heading', { defaultValue: 'Co-hosts' })}
+        className="flex flex-wrap items-center justify-between gap-2 border-t border-site-border pt-3"
+      >
         <p className="t-body text-site-text-muted">{t('cohost-body', { defaultValue: 'You co-host this event.' })}</p>
         <Button variant="default" disabled={busy} onClick={() => void stepDown()}>
           {t('step-down', { defaultValue: 'Step down' })}
@@ -167,7 +180,10 @@ export function CohostsPanel({ eventId, viewerId, hostId, role, onRole, onEntrie
       : t('status-invited', { defaultValue: 'Invited' });
 
   return (
-    <section aria-label={t('heading', { defaultValue: 'Co-hosts' })} className="flex flex-col gap-3 border-t border-site-border pt-3">
+    <section
+      aria-label={t('heading', { defaultValue: 'Co-hosts' })}
+      className="flex flex-col gap-3 border-t border-site-border pt-3"
+    >
       <div className="flex items-baseline justify-between gap-3">
         <h4 className="t-heading">{t('heading', { defaultValue: 'Co-hosts' })}</h4>
         {entries && (
@@ -225,7 +241,9 @@ export function CohostsPanel({ eventId, viewerId, hostId, role, onRole, onEntrie
               />
             </div>
           ) : (
-            <p className="t-meta pt-3">{t('full', { max: MAX_COHOSTS, defaultValue: 'That is the most co-hosts an event can have ({{max}}).' })}</p>
+            <p className="t-meta pt-3">
+              {t('full', { max: MAX_COHOSTS, defaultValue: 'That is the most co-hosts an event can have ({{max}}).' })}
+            </p>
           )}
         </div>
       )}

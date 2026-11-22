@@ -17,10 +17,5 @@ declare module 'framer-motion-internal/lazy-context' {
 declare module 'framer-motion-internal/load-features' {
   import type { FeatureBundle } from 'framer-motion';
 
-  export function loadFeatures(
-    features: Omit<
-      FeatureBundle,
-      'renderer'
-    >,
-  ): void;
+  export function loadFeatures(features: Omit<FeatureBundle, 'renderer'>): void;
 }

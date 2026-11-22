@@ -105,7 +105,11 @@ describe('cross-domain reads see only their kind', () => {
   it('narrows kind columns and refuses a row of another kind', () => {
     expect(core.cosmeticFields({ itemId: 'a', inventoryId: 'i' })).toEqual({ itemId: 'a', inventoryId: 'i' });
     expect(() => core.cosmeticFields({ itemId: null, inventoryId: null })).toThrow();
-    expect(core.cardFields({ gameId: 'g', cardIndex: 0, foil: true })).toEqual({ gameId: 'g', cardIndex: 0, foil: true });
+    expect(core.cardFields({ gameId: 'g', cardIndex: 0, foil: true })).toEqual({
+      gameId: 'g',
+      cardIndex: 0,
+      foil: true,
+    });
     expect(() => core.cardFields({ gameId: null, cardIndex: null, foil: false })).toThrow();
   });
 });

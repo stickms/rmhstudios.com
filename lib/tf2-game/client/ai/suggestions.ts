@@ -47,254 +47,92 @@ export interface HudSuggestionInput {
   /** ETFClass (0 before a class is picked). */
   cls: number;
   /** The active weapon's name, any case ("Huntsman"). */
-  weapon?:
-    | string
-    | null;
+  weapon?: string | null;
   /** Touch controls are on screen. */
   touch: boolean;
   /** Screen width / height. */
   aspect: number;
 }
 
-const CATALOG: Readonly<
-  Record<
-    HudSuggestionId,
-    HudSuggestion
-  >
-> =
-  {
-    'medic-uber':
-      {
-        id: 'medic-uber',
-        preset:
-          'bigger-uber',
-        files:
-          [
-            HUDLAYOUT,
-            MEDIC_FILE,
-          ],
-      },
-    'sniper-charge':
-      {
-        id: 'sniper-charge',
-        preset:
-          'meters-centre',
-        files:
-          [
-            HUDLAYOUT,
-          ],
-      },
-    'bow-charge':
-      {
-        id: 'bow-charge',
-        preset:
-          'meters-centre',
-        files:
-          [
-            HUDLAYOUT,
-          ],
-      },
-    'demo-stickies':
-      {
-        id: 'demo-stickies',
-        preset:
-          'meters-centre',
-        files:
-          [
-            HUDLAYOUT,
-          ],
-      },
-    'spy-cloak':
-      {
-        id: 'spy-cloak',
-        preset:
-          'meters-centre',
-        files:
-          [
-            HUDLAYOUT,
-          ],
-      },
-    'engineer-metal':
-      {
-        id: 'engineer-metal',
-        files:
-          [
-            HUDLAYOUT,
-            'resource/ui/hudaccountpanel.res',
-          ],
-      },
-    'touch-clear':
-      {
-        id: 'touch-clear',
-        preset:
-          'clear-touch',
-        files:
-          [
-            HUDLAYOUT,
-          ],
-      },
-    ultrawide:
-      {
-        id: 'ultrawide',
-        files:
-          [
-            HUDLAYOUT,
-            HEALTH_FILE,
-          ],
-      },
-    'bigger-health':
-      {
-        id: 'bigger-health',
-        preset:
-          'bigger-health',
-        files:
-          [
-            HEALTH_FILE,
-            SCHEME_FILE,
-          ],
-      },
-    'bigger-ammo':
-      {
-        id: 'bigger-ammo',
-        preset:
-          'bigger-ammo',
-        files:
-          [
-            HUDLAYOUT,
-            AMMO_FILE,
-          ],
-      },
-    'ammo-crosshair':
-      {
-        id: 'ammo-crosshair',
-        preset:
-          'ammo-centre',
-        files:
-          [
-            HUDLAYOUT,
-          ],
-      },
-    minimal:
-      {
-        id: 'minimal',
-        preset:
-          'minimal',
-        files:
-          [
-            CLASS_FILE,
-            HEALTH_FILE,
-            AMMO_FILE,
-          ],
-      },
-  };
+const CATALOG: Readonly<Record<HudSuggestionId, HudSuggestion>> = {
+  'medic-uber': {
+    id: 'medic-uber',
+    preset: 'bigger-uber',
+    files: [HUDLAYOUT, MEDIC_FILE],
+  },
+  'sniper-charge': {
+    id: 'sniper-charge',
+    preset: 'meters-centre',
+    files: [HUDLAYOUT],
+  },
+  'bow-charge': {
+    id: 'bow-charge',
+    preset: 'meters-centre',
+    files: [HUDLAYOUT],
+  },
+  'demo-stickies': {
+    id: 'demo-stickies',
+    preset: 'meters-centre',
+    files: [HUDLAYOUT],
+  },
+  'spy-cloak': {
+    id: 'spy-cloak',
+    preset: 'meters-centre',
+    files: [HUDLAYOUT],
+  },
+  'engineer-metal': {
+    id: 'engineer-metal',
+    files: [HUDLAYOUT, 'resource/ui/hudaccountpanel.res'],
+  },
+  'touch-clear': {
+    id: 'touch-clear',
+    preset: 'clear-touch',
+    files: [HUDLAYOUT],
+  },
+  ultrawide: {
+    id: 'ultrawide',
+    files: [HUDLAYOUT, HEALTH_FILE],
+  },
+  'bigger-health': {
+    id: 'bigger-health',
+    preset: 'bigger-health',
+    files: [HEALTH_FILE, SCHEME_FILE],
+  },
+  'bigger-ammo': {
+    id: 'bigger-ammo',
+    preset: 'bigger-ammo',
+    files: [HUDLAYOUT, AMMO_FILE],
+  },
+  'ammo-crosshair': {
+    id: 'ammo-crosshair',
+    preset: 'ammo-centre',
+    files: [HUDLAYOUT],
+  },
+  minimal: {
+    id: 'minimal',
+    preset: 'minimal',
+    files: [CLASS_FILE, HEALTH_FILE, AMMO_FILE],
+  },
+};
 
-export const hudSuggestion =
-  (
-    id: HudSuggestionId,
-  ): HudSuggestion =>
-    CATALOG[
-      id
-    ];
+export const hudSuggestion = (id: HudSuggestionId): HudSuggestion => CATALOG[id];
 
-const isBow =
-  (
-    w: string,
-  ): boolean =>
-    /huntsman|compound|bow\b|crossbow/i.test(
-      w,
-    );
+const isBow = (w: string): boolean => /huntsman|compound|bow\b|crossbow/i.test(w);
 
 /** The chips for this player and screen, most specific first, at most `max`. */
-export function hudSuggestions(
-  input: HudSuggestionInput,
-  max = 5,
-): HudSuggestion[] {
-  const ids: HudSuggestionId[] =
-    [];
-  const cls =
-    CLASS_NAMES[
-      input
-        .cls
-    ] ??
-    '';
-  const weapon =
-    input.weapon ??
-    '';
-  if (
-    cls ===
-    'medic'
-  )
-    ids.push(
-      'medic-uber',
-    );
-  if (
-    cls ===
-    'sniper'
-  )
-    ids.push(
-      isBow(
-        weapon,
-      )
-        ? 'bow-charge'
-        : 'sniper-charge',
-    );
-  if (
-    cls ===
-    'demoman'
-  )
-    ids.push(
-      'demo-stickies',
-    );
-  if (
-    cls ===
-    'spy'
-  )
-    ids.push(
-      'spy-cloak',
-    );
-  if (
-    cls ===
-    'engineer'
-  )
-    ids.push(
-      'engineer-metal',
-    );
-  if (
-    input.touch
-  )
-    ids.push(
-      'touch-clear',
-    );
-  if (
-    input.aspect >=
-    2.2
-  )
-    ids.push(
-      'ultrawide',
-    );
-  ids.push(
-    'bigger-health',
-    'ammo-crosshair',
-    'minimal',
-    'bigger-ammo',
-  );
-  return [
-    ...new Set(
-      ids,
-    ),
-  ]
-    .slice(
-      0,
-      max,
-    )
-    .map(
-      (
-        id,
-      ) =>
-        CATALOG[
-          id
-        ],
-    );
+export function hudSuggestions(input: HudSuggestionInput, max = 5): HudSuggestion[] {
+  const ids: HudSuggestionId[] = [];
+  const cls = CLASS_NAMES[input.cls] ?? '';
+  const weapon = input.weapon ?? '';
+  if (cls === 'medic') ids.push('medic-uber');
+  if (cls === 'sniper') ids.push(isBow(weapon) ? 'bow-charge' : 'sniper-charge');
+  if (cls === 'demoman') ids.push('demo-stickies');
+  if (cls === 'spy') ids.push('spy-cloak');
+  if (cls === 'engineer') ids.push('engineer-metal');
+  if (input.touch) ids.push('touch-clear');
+  if (input.aspect >= 2.2) ids.push('ultrawide');
+  ids.push('bigger-health', 'ammo-crosshair', 'minimal', 'bigger-ammo');
+  return [...new Set(ids)].slice(0, max).map((id) => CATALOG[id]);
 }
 
 /**
@@ -302,50 +140,14 @@ export function hudSuggestions(
  * in the same order, one chip per preset (a Sniper's "charge by the crosshair" and a Demoman's stickies
  * are the same edit).
  */
-export function localPresetSuggestions(
-  input: HudSuggestionInput,
-  max = 5,
-): HudSuggestion[] {
-  const withPreset =
-    hudSuggestions(
-      input,
-      99,
-    ).filter(
-      (
-        s,
-      ) =>
-        s.preset,
-    );
-  return withPreset
-    .filter(
-      (
-        s,
-        i,
-      ) =>
-        withPreset.findIndex(
-          (
-            x,
-          ) =>
-            x.preset ===
-            s.preset,
-        ) ===
-        i,
-    )
-    .slice(
-      0,
-      max,
-    );
+export function localPresetSuggestions(input: HudSuggestionInput, max = 5): HudSuggestion[] {
+  const withPreset = hudSuggestions(input, 99).filter((s) => s.preset);
+  return withPreset.filter((s, i) => withPreset.findIndex((x) => x.preset === s.preset) === i).slice(0, max);
 }
 
 // ─── Loadout ───────────────────────────────────────────────────────────────
 
-export type LoadoutSuggestionId =
-  | 'counter-class'
-  | 'counter-weapon'
-  | 'jump-set'
-  | 'map'
-  | 'festive'
-  | 'spooky';
+export type LoadoutSuggestionId = 'counter-class' | 'counter-weapon' | 'jump-set' | 'map' | 'festive' | 'spooky';
 
 export interface LoadoutSuggestion {
   id: LoadoutSuggestionId;
@@ -363,148 +165,71 @@ export interface LoadoutSuggestion {
 }
 
 /** Item-name words that tend to answer a class, for the no-AI matcher (only items your class can use match). */
-const COUNTER_WORDS: Readonly<
-  Partial<
-    Record<
-      TfClass,
-      string
-    >
-  >
-> =
-  {
-    sniper:
-      'razorback darwin danger shield',
-    spy: 'razorback spy-cicle',
-    pyro: 'reserve shooter detonator',
-    soldier:
-      'battalion gunboats',
-    demoman:
-      'battalion splendid screen',
-    heavy:
-      'natascha tomislav',
-    scout:
-      'shortstop natascha',
-    medic:
-      'crusader crossbow',
-    engineer:
-      'loose cannon',
-  };
+const COUNTER_WORDS: Readonly<Partial<Record<TfClass, string>>> = {
+  sniper: 'razorback darwin danger shield',
+  spy: 'razorback spy-cicle',
+  pyro: 'reserve shooter detonator',
+  soldier: 'battalion gunboats',
+  demoman: 'battalion splendid screen',
+  heavy: 'natascha tomislav',
+  scout: 'shortstop natascha',
+  medic: 'crusader crossbow',
+  engineer: 'loose cannon',
+};
 
-const JUMP_WORDS: Readonly<
-  Partial<
-    Record<
-      TfClass,
-      string
-    >
-  >
-> =
-  {
-    soldier:
-      'rocket jumper gunboats mantreads market gardener',
-    demoman:
-      'sticky jumper chargin targe',
-  };
+const JUMP_WORDS: Readonly<Partial<Record<TfClass, string>>> = {
+  soldier: 'rocket jumper gunboats mantreads market gardener',
+  demoman: 'sticky jumper chargin targe',
+};
 
 /**
  * The chips for the loadout tab `cls` in this match, most useful first, at most `max`. Counters come
  * from the match (the enemy's most common class, a weapon that killed you twice or more).
  */
-export function loadoutSuggestions(
-  cls: TfClass,
-  ctx: LoadoutMatchContext,
-  max = 4,
-): LoadoutSuggestion[] {
-  const out: LoadoutSuggestion[] =
-    [];
-  const top =
-    ctx
-      .deaths?.[0];
-  if (
-    top &&
-    top.n >=
-      2
-  )
-    out.push(
-      {
-        id: 'counter-weapon',
-        params:
-          {
-            weapon:
-              top.weapon,
-          },
-        localWords:
-          '',
+export function loadoutSuggestions(cls: TfClass, ctx: LoadoutMatchContext, max = 4): LoadoutSuggestion[] {
+  const out: LoadoutSuggestion[] = [];
+  const top = ctx.deaths?.[0];
+  if (top && top.n >= 2)
+    out.push({
+      id: 'counter-weapon',
+      params: {
+        weapon: top.weapon,
       },
-    );
-  const enemy =
-    ctx
-      .enemies?.[0];
-  if (
-    enemy
-  )
-    out.push(
-      {
-        id: 'counter-class',
-        params:
-          {
-            cls: enemy.cls,
-          },
-        localWords:
-          COUNTER_WORDS[
-            enemy
-              .cls
-          ] ??
-          '',
+      localWords: '',
+    });
+  const enemy = ctx.enemies?.[0];
+  if (enemy)
+    out.push({
+      id: 'counter-class',
+      params: {
+        cls: enemy.cls,
       },
-    );
-  const jump =
-    JUMP_WORDS[
-      cls
-    ];
-  if (
-    jump
-  )
-    out.push(
-      {
-        id: 'jump-set',
-        params:
-          {
-            cls,
-          },
-        localWords:
-          jump,
+      localWords: COUNTER_WORDS[enemy.cls] ?? '',
+    });
+  const jump = JUMP_WORDS[cls];
+  if (jump)
+    out.push({
+      id: 'jump-set',
+      params: {
+        cls,
       },
-    );
-  if (
-    ctx.map
-  )
-    out.push(
-      {
-        id: 'map',
-        params:
-          {
-            map: ctx.map,
-          },
-        localWords:
-          '',
+      localWords: jump,
+    });
+  if (ctx.map)
+    out.push({
+      id: 'map',
+      params: {
+        map: ctx.map,
       },
-    );
-  out.push(
-    {
-      id: 'festive',
-      localWords:
-        'festive',
-    },
-  );
-  out.push(
-    {
-      id: 'spooky',
-      localWords:
-        'spooky ghost pumpkin skull',
-    },
-  );
-  return out.slice(
-    0,
-    max,
-  );
+      localWords: '',
+    });
+  out.push({
+    id: 'festive',
+    localWords: 'festive',
+  });
+  out.push({
+    id: 'spooky',
+    localWords: 'spooky ghost pumpkin skull',
+  });
+  return out.slice(0, max);
 }

@@ -187,9 +187,7 @@ export function feedEntries(input: FeedInput, from: Date, to: Date, site: string
 
   const repeating = !!seriesOf(e);
   return dates.map((d) => ({
-    id: e.pollId
-      ? `poll-${e.pollId}`
-      : `event-${e.id}${repeating ? `-${d.originalAt.getTime()}` : ''}`,
+    id: e.pollId ? `poll-${e.pollId}` : `event-${e.id}${repeating ? `-${d.originalAt.getTime()}` : ''}`,
     title: d.status === 'maybe' ? `${e.title} (maybe)` : e.title,
     description: describeWithUpdates(noteOf(d, e.description || undefined), input.updates ?? []),
     startsAt: d.startsAt,

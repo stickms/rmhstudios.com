@@ -5,84 +5,31 @@
    that keeps moving. It replays on every new hover; leaving the book simply lets the cover
    settle (the pages are already back on the stack by then). */
 .lib-book__leaf {
-  --fan: calc(
-    -34deg -
-      var(
-        --leaf
-      ) *
-      6deg
-  );
+  --fan: calc(-34deg - var(--leaf) * 6deg);
   position: absolute;
   top: 2px;
   bottom: 2px;
   left: 0;
-  width: calc(
-    100% -
-      4px
-  );
-  border: 1px
-    solid
-    var(
-      --site-border
-    );
-  border-radius: 0
-    var(
-      --site-radius-sm
-    )
-    var(
-      --site-radius-sm
-    )
-    0;
-  background: var(
-    --site-surface
-  );
+  width: calc(100% - 4px);
+  border: 1px solid var(--site-border);
+  border-radius: 0 var(--site-radius-sm) var(--site-radius-sm) 0;
+  background: var(--site-surface);
   pointer-events: none;
-  transform-origin: left
-    center;
-  transform: translateZ(
-      -1px
-    )
-    rotateY(
-      0deg
-    );
+  transform-origin: left center;
+  transform: translateZ(-1px) rotateY(0deg);
 }
 
-.lib-book:hover
-  .lib-book__leaf,
-.lib-book:focus-visible
-  .lib-book__leaf {
-  animation: lib-riffle
-    180ms
-    var(
-      --ease-smooth
-    )
-    calc(
-      var(
-          --leaf
-        ) *
-        45ms
-    )
-    both;
+.lib-book:hover .lib-book__leaf,
+.lib-book:focus-visible .lib-book__leaf {
+  animation: lib-riffle 180ms var(--ease-smooth) calc(var(--leaf) * 45ms) both;
 }
 
 @keyframes lib-riffle {
   0%,
   100% {
-    transform: translateZ(
-        -1px
-      )
-      rotateY(
-        0deg
-      );
+    transform: translateZ(-1px) rotateY(0deg);
   }
   45% {
-    transform: translateZ(
-        -1px
-      )
-      rotateY(
-        var(
-          --fan
-        )
-      );
+    transform: translateZ(-1px) rotateY(var(--fan));
   }
 }

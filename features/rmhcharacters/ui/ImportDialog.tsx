@@ -6,7 +6,14 @@ import { useRef, useState, type DragEvent } from 'react';
 import { Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/shared/app-toast';
 import { dedupeIds, ImportError, importText } from '@features/rmhcharacters/engine/formats';
@@ -38,12 +45,20 @@ export function ImportDialog({
       const result = await importText(text);
       const list = dedupeIds(result.characters, useRoster.getState().characters);
       useRoster.getState().add(list);
-      toast.success(t('import.done', { defaultValue: 'Imported {{count}} character(s) from {{source}}.', count: list.length, source: result.source }));
+      toast.success(
+        t('import.done', {
+          defaultValue: 'Imported {{count}} character(s) from {{source}}.',
+          count: list.length,
+          source: result.source,
+        }),
+      );
       setPaste('');
       onImported(list);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof ImportError ? err.message : t('import.failed', { defaultValue: 'That file could not be read.' }));
+      setError(
+        err instanceof ImportError ? err.message : t('import.failed', { defaultValue: 'That file could not be read.' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -70,7 +85,9 @@ export function ImportDialog({
         <DialogHeader>
           <DialogTitle>{t('import.title', { defaultValue: 'Import characters' })}</DialogTitle>
           <DialogDescription>
-            {t('import.formats', { defaultValue: 'Reads RMHCharacters, Foundry VTT (dnd5e and pf2e), Pathbuilder 2e and D&D Beyond JSON.' })}
+            {t('import.formats', {
+              defaultValue: 'Reads RMHCharacters, Foundry VTT (dnd5e and pf2e), Pathbuilder 2e and D&D Beyond JSON.',
+            })}
           </DialogDescription>
         </DialogHeader>
         <div

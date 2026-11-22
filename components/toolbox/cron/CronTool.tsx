@@ -141,11 +141,7 @@ export function CronTool({
           <ToolSection title={t('cron-fields', { defaultValue: 'Field by field' })}>
             <div>
               {CRON_FIELDS.map((field) => (
-                <ResultRow
-                  key={field}
-                  label={fieldName(t, field)}
-                  value={fieldValues(t, result.cron, field, locale)}
-                />
+                <ResultRow key={field} label={fieldName(t, field)} value={fieldValues(t, result.cron, field, locale)} />
               ))}
             </div>
             {!result.cron.wildcard.dayOfMonth && !result.cron.wildcard.dayOfWeek && (

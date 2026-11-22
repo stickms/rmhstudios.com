@@ -115,20 +115,12 @@ describe('leaderboard discount', () => {
   });
 
   it('keeps a teammate’s rating of someone else’s entry', () => {
-    const out = discountTeamRatings(
-      [{ entryId: 'e2', count: 1, sum: sum(5) }],
-      [row('e2', 'a', 5)],
-      new Set(['e1:a']),
-    );
+    const out = discountTeamRatings([{ entryId: 'e2', count: 1, sum: sum(5) }], [row('e2', 'a', 5)], new Set(['e1:a']));
     expect(out.get('e2')).toEqual({ avg: sum(5), count: 1 });
   });
 
   it('an entry whose only ratings were the team’s has no average', () => {
-    const out = discountTeamRatings(
-      [{ entryId: 'e1', count: 1, sum: sum(5) }],
-      [row('e1', 'a', 5)],
-      new Set(['e1:a']),
-    );
+    const out = discountTeamRatings([{ entryId: 'e1', count: 1, sum: sum(5) }], [row('e1', 'a', 5)], new Set(['e1:a']));
     expect(out.has('e1')).toBe(false);
   });
 });

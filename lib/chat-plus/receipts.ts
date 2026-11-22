@@ -17,28 +17,21 @@ export interface ParticipantReceiptPrefs {
   hideTyping: boolean;
 }
 
-export const DEFAULT_RECEIPT_PREFS: ParticipantReceiptPrefs =
-  {
-    accountReceipts: true,
-    accountTyping: true,
-    hideReceipts: false,
-    hideTyping: false,
-  };
+export const DEFAULT_RECEIPT_PREFS: ParticipantReceiptPrefs = {
+  accountReceipts: true,
+  accountTyping: true,
+  hideReceipts: false,
+  hideTyping: false,
+};
 
 /** Whether one participant has receipts / typing off, from the account switch or the conversation's. */
-export function hiddenBy(
-  p: ParticipantReceiptPrefs,
-): {
+export function hiddenBy(p: ParticipantReceiptPrefs): {
   receipts: boolean;
   typing: boolean;
 } {
   return {
-    receipts:
-      !p.accountReceipts ||
-      p.hideReceipts,
-    typing:
-      !p.accountTyping ||
-      p.hideTyping,
+    receipts: !p.accountReceipts || p.hideReceipts,
+    typing: !p.accountTyping || p.hideTyping,
   };
 }
 
@@ -50,21 +43,11 @@ export function effectiveHidden(
   receipts: boolean;
   typing: boolean;
 } {
-  const x =
-    hiddenBy(
-      a,
-    );
-  const y =
-    hiddenBy(
-      b,
-    );
+  const x = hiddenBy(a);
+  const y = hiddenBy(b);
   return {
-    receipts:
-      x.receipts ||
-      y.receipts,
-    typing:
-      x.typing ||
-      y.typing,
+    receipts: x.receipts || y.receipts,
+    typing: x.typing || y.typing,
   };
 }
 
@@ -74,12 +57,11 @@ export function effectiveHidden(
  * files, and fails any other file under `lib/` or `app/routes/` that selects `read` on `chatMessage` for a
  * conversation list or message page without being named here.
  */
-export const READ_RECEIPT_READ_PATHS =
-  [
-    'lib/messages/api/messages.$conversationId.server.ts',
-    'lib/messages/api/messages.$conversationId.read.server.ts',
-    'lib/messages/api/messages.$conversationId.typing.server.ts',
-    'lib/messages/api/messages.search.server.ts',
-    'lib/messages/mutations.server.ts',
-    'lib/messages.server.ts',
-  ] as const;
+export const READ_RECEIPT_READ_PATHS = [
+  'lib/messages/api/messages.$conversationId.server.ts',
+  'lib/messages/api/messages.$conversationId.read.server.ts',
+  'lib/messages/api/messages.$conversationId.typing.server.ts',
+  'lib/messages/api/messages.search.server.ts',
+  'lib/messages/mutations.server.ts',
+  'lib/messages.server.ts',
+] as const;

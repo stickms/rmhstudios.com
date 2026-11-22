@@ -8,11 +8,7 @@
  * Pure and dependency-free of storage so the publisher and the tests share it.
  */
 
-import {
-  brotliCompressSync,
-  brotliDecompressSync,
-  constants as zc,
-} from 'node:zlib';
+import { brotliCompressSync, brotliDecompressSync, constants as zc } from 'node:zlib';
 
 export interface EncodedAsset {
   body: Buffer;
@@ -20,37 +16,20 @@ export interface EncodedAsset {
   contentEncoding?: 'br';
 }
 
-const TEXT =
-  /^(text\/|application\/json)/;
+const TEXT = /^(text\/|application\/json)/;
 
-export function encodeAsset(
-  raw: Buffer,
-  contentType: string,
-): EncodedAsset {
-  const br =
-    brotliCompressSync(
-      raw,
-      {
-        params:
-          {
-            // Text is small and compresses a lot: spend the time. Binary (DXT textures, GLB) is large.
-            [zc.BROTLI_PARAM_QUALITY]:
-              TEXT.test(
-                contentType,
-              )
-                ? 11
-                : 9,
-            [zc.BROTLI_PARAM_SIZE_HINT]:
-              raw.length,
-          },
-      },
-    );
-  return br.length <
-    raw.length
+export function encodeAsset(raw: Buffer, contentType: string): EncodedAsset {
+  const br = brotliCompressSync(raw, {
+    params: {
+      // Text is small and compresses a lot: spend the time. Binary (DXT textures, GLB) is large.
+      [zc.BROTLI_PARAM_QUALITY]: TEXT.test(contentType) ? 11 : 9,
+      [zc.BROTLI_PARAM_SIZE_HINT]: raw.length,
+    },
+  });
+  return br.length < raw.length
     ? {
         body: br,
-        contentEncoding:
-          'br',
+        contentEncoding: 'br',
       }
     : {
         body: raw,
@@ -58,14 +37,6 @@ export function encodeAsset(
 }
 
 /** The original bytes of a stored asset. */
-export function decodeAsset(
-  stored: Buffer,
-  contentEncoding?: string,
-): Buffer {
-  return contentEncoding ===
-    'br'
-    ? brotliDecompressSync(
-        stored,
-      )
-    : stored;
+export function decodeAsset(stored: Buffer, contentEncoding?: string): Buffer {
+  return contentEncoding === 'br' ? brotliDecompressSync(stored) : stored;
 }

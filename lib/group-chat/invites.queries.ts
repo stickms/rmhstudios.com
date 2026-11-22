@@ -8,70 +8,40 @@ import {
   listGroupInvitesApi,
   revokeGroupInviteApi,
 } from '@/lib/group-chat/invites.contract';
-import type {
-  InviteExpiryDays,
-  InviteMaxUses,
-} from '@/lib/group-chat/invites';
+import type { InviteExpiryDays, InviteMaxUses } from '@/lib/group-chat/invites';
 
-export const listGroupInvites =
-  (
-    groupId: string,
-  ) =>
-    api(
-      listGroupInvitesApi,
-      {
-        params:
-          {
-            id: groupId,
-          },
-      },
-    );
-
-export const createGroupInvite =
-  (
-    groupId: string,
-    input: {
-      expiresInDays: InviteExpiryDays;
-      maxUses: InviteMaxUses;
+export const listGroupInvites = (groupId: string) =>
+  api(listGroupInvitesApi, {
+    params: {
+      id: groupId,
     },
-  ) =>
-    api(
-      createGroupInviteApi,
-      {
-        params:
-          {
-            id: groupId,
-          },
-        body: input,
-      },
-    );
+  });
 
-export const revokeGroupInvite =
-  (
-    groupId: string,
-    inviteId: string,
-  ) =>
-    api(
-      revokeGroupInviteApi,
-      {
-        params:
-          {
-            id: groupId,
-            inviteId,
-          },
-      },
-    );
+export const createGroupInvite = (
+  groupId: string,
+  input: {
+    expiresInDays: InviteExpiryDays;
+    maxUses: InviteMaxUses;
+  },
+) =>
+  api(createGroupInviteApi, {
+    params: {
+      id: groupId,
+    },
+    body: input,
+  });
 
-export const joinGroupInvite =
-  (
-    code: string,
-  ) =>
-    api(
-      joinGroupInviteApi,
-      {
-        params:
-          {
-            code,
-          },
-      },
-    );
+export const revokeGroupInvite = (groupId: string, inviteId: string) =>
+  api(revokeGroupInviteApi, {
+    params: {
+      id: groupId,
+      inviteId,
+    },
+  });
+
+export const joinGroupInvite = (code: string) =>
+  api(joinGroupInviteApi, {
+    params: {
+      code,
+    },
+  });

@@ -1,18 +1,8 @@
 /** Player and Protocol actions. Protocol has no Probe. */
-export type PlayerAction =
-  | 'Strike'
-  | 'Block'
-  | 'Prepare'
-  | 'Probe';
-export type ProtocolAction =
-  | 'Strike'
-  | 'Block'
-  | 'Idle'
-  | 'Prepare';
+export type PlayerAction = 'Strike' | 'Block' | 'Prepare' | 'Probe';
+export type ProtocolAction = 'Strike' | 'Block' | 'Idle' | 'Prepare';
 
-export type Action =
-  | PlayerAction
-  | ProtocolAction;
+export type Action = PlayerAction | ProtocolAction;
 
 /** Modifier applied for one round only (next round). */
 export type RoundModifier =
@@ -22,20 +12,10 @@ export type RoundModifier =
   | 'ChargeDrain' // Player gains 0 Charge this round
   | 'Reveal'; // Protocol intent shown at start (free Probe)
 
-export type GamePhase =
-  | 'stance'
-  | 'commit'
-  | 'reveal'
-  | 'minigame'
-  | 'resolved'
-  | 'milestone'
-  | 'gameover';
+export type GamePhase = 'stance' | 'commit' | 'reveal' | 'minigame' | 'resolved' | 'milestone' | 'gameover';
 
 /** Minigame input primitive. */
-export type MinigameKind =
-  | 'timed_press'
-  | 'hold_zone'
-  | 'rapid_choice';
+export type MinigameKind = 'timed_press' | 'hold_zone' | 'rapid_choice';
 
 /** Stance chosen before modifier; each has a unique mechanical effect. */
 export type Stance =
@@ -86,280 +66,154 @@ export interface StanceDef {
   effect: StanceEffect;
 }
 
-export const STANCE_POOL: StanceDef[] =
-  [
-    {
-      id: 'Commit',
-      label:
-        'Commit',
-      hint: 'Strike +1 damage this round',
-      effect:
-        'strike_plus_one',
-    },
-    {
-      id: 'Guard',
-      label:
-        'Guard',
-      hint: 'Block negates chip damage this round',
-      effect:
-        'block_no_chip',
-    },
-    {
-      id: 'Read',
-      label:
-        'Read',
-      hint: 'Prepare cannot fail this round',
-      effect:
-        'prepare_immune',
-    },
-    {
-      id: 'Pressure',
-      label:
-        'Pressure',
-      hint: 'Strike vs Block: deal 2 chip instead of 1',
-      effect:
-        'strike_chip_two',
-    },
-    {
-      id: 'Counter',
-      label:
-        'Counter',
-      hint: 'Block their Strike: they take 1 damage',
-      effect:
-        'block_reflect_one',
-    },
-    {
-      id: 'Recover',
-      label:
-        'Recover',
-      hint: 'If Prepare succeeds, heal 1 Integrity',
-      effect:
-        'prepare_heal_one',
-    },
-    {
-      id: 'Scan',
-      label:
-        'Scan',
-      hint: 'Probe reveals this round and next',
-      effect:
-        'probe_two_rounds',
-    },
-    {
-      id: 'Harvest',
-      label:
-        'Harvest',
-      hint: 'When you deal damage, +1 Charge',
-      effect:
-        'charge_on_damage',
-    },
-    {
-      id: 'Steady',
-      label:
-        'Steady',
-      hint: 'No overdraw penalty this round',
-      effect:
-        'no_overdraw_penalty',
-    },
-    {
-      id: 'Resist',
-      label:
-        'Resist',
-      hint: 'First damage to you reduced by 1',
-      effect:
-        'damage_reduce_one',
-    },
-    {
-      id: 'Deflect',
-      label:
-        'Deflect',
-      hint: 'Chip damage you take reduced by 1',
-      effect:
-        'chip_reduce_one',
-    },
-    {
-      id: 'Break',
-      label:
-        'Break',
-      hint: 'Strike vs Block: deal 2 chip',
-      effect:
-        'strike_double_chip',
-    },
-    {
-      id: 'Endure',
-      label:
-        'Endure',
-      hint: 'Take 1 less from Protocol Strike (full hit)',
-      effect:
-        'protocol_strike_weaker',
-    },
-    {
-      id: 'Reckless',
-      label:
-        'Reckless',
-      hint: 'Strike +1 damage but take +1 when hit',
-      effect:
-        'reckless',
-    },
-    {
-      id: 'Bulk',
-      label:
-        'Bulk',
-      hint: 'Block their Strike: heal 1 Integrity',
-      effect:
-        'block_heal_one',
-    },
-    {
-      id: 'Focus',
-      label:
-        'Focus',
-      hint: 'Block this round: +1 Charge',
-      effect:
-        'second_wind',
-    },
-    {
-      id: 'Surge',
-      label:
-        'Surge',
-      hint: 'When you deal damage, heal 1',
-      effect:
-        'rally',
-    },
-    {
-      id: 'Bastion',
-      label:
-        'Bastion',
-      hint: 'When you take damage, Protocol takes 1',
-      effect:
-        'vengeance',
-    },
-  ];
+export const STANCE_POOL: StanceDef[] = [
+  {
+    id: 'Commit',
+    label: 'Commit',
+    hint: 'Strike +1 damage this round',
+    effect: 'strike_plus_one',
+  },
+  {
+    id: 'Guard',
+    label: 'Guard',
+    hint: 'Block negates chip damage this round',
+    effect: 'block_no_chip',
+  },
+  {
+    id: 'Read',
+    label: 'Read',
+    hint: 'Prepare cannot fail this round',
+    effect: 'prepare_immune',
+  },
+  {
+    id: 'Pressure',
+    label: 'Pressure',
+    hint: 'Strike vs Block: deal 2 chip instead of 1',
+    effect: 'strike_chip_two',
+  },
+  {
+    id: 'Counter',
+    label: 'Counter',
+    hint: 'Block their Strike: they take 1 damage',
+    effect: 'block_reflect_one',
+  },
+  {
+    id: 'Recover',
+    label: 'Recover',
+    hint: 'If Prepare succeeds, heal 1 Integrity',
+    effect: 'prepare_heal_one',
+  },
+  {
+    id: 'Scan',
+    label: 'Scan',
+    hint: 'Probe reveals this round and next',
+    effect: 'probe_two_rounds',
+  },
+  {
+    id: 'Harvest',
+    label: 'Harvest',
+    hint: 'When you deal damage, +1 Charge',
+    effect: 'charge_on_damage',
+  },
+  {
+    id: 'Steady',
+    label: 'Steady',
+    hint: 'No overdraw penalty this round',
+    effect: 'no_overdraw_penalty',
+  },
+  {
+    id: 'Resist',
+    label: 'Resist',
+    hint: 'First damage to you reduced by 1',
+    effect: 'damage_reduce_one',
+  },
+  {
+    id: 'Deflect',
+    label: 'Deflect',
+    hint: 'Chip damage you take reduced by 1',
+    effect: 'chip_reduce_one',
+  },
+  {
+    id: 'Break',
+    label: 'Break',
+    hint: 'Strike vs Block: deal 2 chip',
+    effect: 'strike_double_chip',
+  },
+  {
+    id: 'Endure',
+    label: 'Endure',
+    hint: 'Take 1 less from Protocol Strike (full hit)',
+    effect: 'protocol_strike_weaker',
+  },
+  {
+    id: 'Reckless',
+    label: 'Reckless',
+    hint: 'Strike +1 damage but take +1 when hit',
+    effect: 'reckless',
+  },
+  {
+    id: 'Bulk',
+    label: 'Bulk',
+    hint: 'Block their Strike: heal 1 Integrity',
+    effect: 'block_heal_one',
+  },
+  {
+    id: 'Focus',
+    label: 'Focus',
+    hint: 'Block this round: +1 Charge',
+    effect: 'second_wind',
+  },
+  {
+    id: 'Surge',
+    label: 'Surge',
+    hint: 'When you deal damage, heal 1',
+    effect: 'rally',
+  },
+  {
+    id: 'Bastion',
+    label: 'Bastion',
+    hint: 'When you take damage, Protocol takes 1',
+    effect: 'vengeance',
+  },
+];
 
-const STANCE_BY_ID =
-  new Map<
-    Stance,
-    StanceDef
-  >(
-    STANCE_POOL.map(
-      (
-        s,
-      ) => [
-        s.id,
-        s,
-      ],
-    ),
-  );
+const STANCE_BY_ID = new Map<Stance, StanceDef>(STANCE_POOL.map((s) => [s.id, s]));
 
-export function getStanceEffect(
-  stance: Stance | null,
-): StanceEffect | null {
-  if (
-    !stance
-  )
-    return null;
-  return (
-    STANCE_BY_ID.get(
-      stance,
-    )
-      ?.effect ??
-    null
-  );
+export function getStanceEffect(stance: Stance | null): StanceEffect | null {
+  if (!stance) return null;
+  return STANCE_BY_ID.get(stance)?.effect ?? null;
 }
 
-export function getStanceLabel(
-  stance: Stance,
-): string {
-  return (
-    STANCE_BY_ID.get(
-      stance,
-    )
-      ?.label ??
-    stance
-  );
+export function getStanceLabel(stance: Stance): string {
+  return STANCE_BY_ID.get(stance)?.label ?? stance;
 }
 
-export function getStanceHint(
-  stance: Stance,
-): string {
-  return (
-    STANCE_BY_ID.get(
-      stance,
-    )
-      ?.hint ??
-    ''
-  );
+export function getStanceHint(stance: Stance): string {
+  return STANCE_BY_ID.get(stance)?.hint ?? '';
 }
 
 /** Deterministic initial stance choices (avoids hydration mismatch from Math.random). */
-export const INITIAL_STANCE_CHOICES: [
-  Stance,
-  Stance,
-  Stance,
-] =
-  [
-    STANCE_POOL[0]!
-      .id,
-    STANCE_POOL[1]!
-      .id,
-    STANCE_POOL[2]!
-      .id,
-  ];
+export const INITIAL_STANCE_CHOICES: [Stance, Stance, Stance] = [
+  STANCE_POOL[0]!.id,
+  STANCE_POOL[1]!.id,
+  STANCE_POOL[2]!.id,
+];
 
-export function pickRandomStances(
-  count: 3,
-): [
-  Stance,
-  Stance,
-  Stance,
-] {
-  const shuffled =
-    [
-      ...STANCE_POOL,
-    ].sort(
-      () =>
-        Math.random() -
-        0.5,
-    );
-  const ids =
-    shuffled
-      .slice(
-        0,
-        count,
-      )
-      .map(
-        (
-          s,
-        ) =>
-          s.id,
-      );
-  return [
-    ids[0]!,
-    ids[1]!,
-    ids[2]!,
-  ];
+export function pickRandomStances(count: 3): [Stance, Stance, Stance] {
+  const shuffled = [...STANCE_POOL].sort(() => Math.random() - 0.5);
+  const ids = shuffled.slice(0, count).map((s) => s.id);
+  return [ids[0]!, ids[1]!, ids[2]!];
 }
 
 /** Protocol's visible behavioral mode this round (shifts over time). */
-export type ProtocolMode =
-  | 'pressuring'
-  | 'defensive'
-  | 'recovering';
+export type ProtocolMode = 'pressuring' | 'defensive' | 'recovering';
 
 /** One-round condition affecting next round only. */
-export type PlayerCondition =
-  | 'Overextended'
-  | 'Exposed'
-  | null;
-export type ProtocolCondition =
-  | 'Shaken'
-  | 'LockedIn'
-  | null;
+export type PlayerCondition = 'Overextended' | 'Exposed' | null;
+export type ProtocolCondition = 'Shaken' | 'LockedIn' | null;
 
 /** Protocol behavior variant for this run */
-export type ProtocolVariant =
-  | 'default'
-  | 'aggressor'
-  | 'defender'
-  | 'chaotic';
+export type ProtocolVariant = 'default' | 'aggressor' | 'defender' | 'chaotic';
 
 /** Run upgrade from milestone (rounds 3, 6, 9) */
 export type RunUpgradeId =
@@ -369,22 +223,13 @@ export type RunUpgradeId =
   | 'prepareHeal' // Prepare heals 1 Integrity
   | 'chargeOnKill'; // When you deal damage this round, +1 Charge (capped)
 
-export const RUN_UPGRADE_LABELS: Record<
-  RunUpgradeId,
-  string
-> =
-  {
-    strikePlus1:
-      'Strike +1',
-    blockReflect:
-      'Block reflects 1',
-    probeReveals2:
-      'Probe reveals 2 rounds',
-    prepareHeal:
-      'Prepare heals 1',
-    chargeOnKill:
-      '+1 Charge on deal damage',
-  };
+export const RUN_UPGRADE_LABELS: Record<RunUpgradeId, string> = {
+  strikePlus1: 'Strike +1',
+  blockReflect: 'Block reflects 1',
+  probeReveals2: 'Probe reveals 2 rounds',
+  prepareHeal: 'Prepare heals 1',
+  chargeOnKill: '+1 Charge on deal damage',
+};
 
 export interface LastRound {
   playerAction: PlayerAction;
@@ -412,33 +257,18 @@ export interface RoundState {
   doubleDown?: boolean;
 }
 
-export const PROTOCOL_MODE_LABELS: Record<
-  ProtocolMode,
-  string
-> =
-  {
-    pressuring:
-      'Pressuring',
-    defensive:
-      'Defensive',
-    recovering:
-      'Recovering',
-  };
+export const PROTOCOL_MODE_LABELS: Record<ProtocolMode, string> = {
+  pressuring: 'Pressuring',
+  defensive: 'Defensive',
+  recovering: 'Recovering',
+};
 
-export const PROTOCOL_VARIANT_NAMES: Record<
-  ProtocolVariant,
-  string
-> =
-  {
-    default:
-      'Standard',
-    aggressor:
-      'Aggressor',
-    defender:
-      'Defender',
-    chaotic:
-      'Chaotic',
-  };
+export const PROTOCOL_VARIANT_NAMES: Record<ProtocolVariant, string> = {
+  default: 'Standard',
+  aggressor: 'Aggressor',
+  defender: 'Defender',
+  chaotic: 'Chaotic',
+};
 
 export interface GameState {
   phase: GamePhase;
@@ -458,10 +288,7 @@ export interface GameState {
   /** Probe reveal: protocol intent shown early */
   probeRevealedIntent: ProtocolAction | null;
   /** Win/loss result */
-  result:
-    | 'win'
-    | 'lose'
-    | null;
+  result: 'win' | 'lose' | null;
   /** When Reveal modifier is active, Protocol intent for this round (set at round start). */
   revealedProtocolIntent: ProtocolAction | null;
   /** When player used Probe last round: Protocol's intent for this round (reveal next, not current). */
@@ -473,26 +300,13 @@ export interface GameState {
   /** Run upgrades from milestones (rounds 3, 6, 9) */
   runUpgrades: RunUpgradeId[];
   /** When phase is 'milestone', the two choices to pick from */
-  milestoneChoices:
-    | [
-        RunUpgradeId,
-        RunUpgradeId,
-      ]
-    | null;
+  milestoneChoices: [RunUpgradeId, RunUpgradeId] | null;
   /** From shop: one-time run modifier (chaosRun, glassCannon, etc.) */
-  runModifier:
-    | string
-    | null;
+  runModifier: string | null;
   /** Stance chosen this round (before modifier). */
   currentStance: Stance | null;
   /** Three stances offered this round (set when entering stance phase). */
-  stanceChoices:
-    | [
-        Stance,
-        Stance,
-        Stance,
-      ]
-    | null;
+  stanceChoices: [Stance, Stance, Stance] | null;
   /** Reinforced allocation this round (+1 Charge for amplified effect). */
   reinforced: boolean;
   /** Protocol's visible mode this round. */

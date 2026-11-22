@@ -13,53 +13,16 @@
  */
 
 /** [startHour, endHour) in UTC, Monday to Friday. */
-const PEAK_WINDOWS_UTC: readonly (readonly [
-  number,
-  number,
-])[] =
-  [
-    [
-      1,
-      4,
-    ],
-    [
-      6,
-      10,
-    ],
-  ];
+const PEAK_WINDOWS_UTC: readonly (readonly [number, number])[] = [
+  [1, 4],
+  [6, 10],
+];
 
 /** True during DeepSeek's peak-price hours. */
-export function isDeepseekPeak(
-  at:
-    | Date
-    | number,
-): boolean {
-  const d =
-    typeof at ===
-    'number'
-      ? new Date(
-          at,
-        )
-      : at;
-  const day =
-    d.getUTCDay();
-  if (
-    day ===
-      0 ||
-    day ===
-      6
-  )
-    return false;
-  const hour =
-    d.getUTCHours();
-  return PEAK_WINDOWS_UTC.some(
-    ([
-      start,
-      end,
-    ]) =>
-      hour >=
-        start &&
-      hour <
-        end,
-  );
+export function isDeepseekPeak(at: Date | number): boolean {
+  const d = typeof at === 'number' ? new Date(at) : at;
+  const day = d.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  const hour = d.getUTCHours();
+  return PEAK_WINDOWS_UTC.some(([start, end]) => hour >= start && hour < end);
 }

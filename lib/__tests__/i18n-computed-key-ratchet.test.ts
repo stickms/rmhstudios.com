@@ -71,7 +71,13 @@ function calleeName(expr: ts.Expression): string | null {
 }
 
 function scan(file: string, source: string): Computed[] {
-  const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const sf = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
   const found: Computed[] = [];
   const report = (node: ts.Node) =>
     found.push({
@@ -121,9 +127,7 @@ describe('computed translation keys', () => {
     const perFile = new Map<string, Computed[]>();
     for (const c of found) perFile.set(c.file, [...(perFile.get(c.file) ?? []), c]);
     const over = [...perFile].filter(([file, list]) => list.length > (ALLOWED[file] ?? 0));
-    const message = over
-      .flatMap(([, list]) => list.map((c) => `${c.file}:${c.line}  ${c.text}`))
-      .join('\n');
+    const message = over.flatMap(([, list]) => list.map((c) => `${c.file}:${c.line}  ${c.text}`)).join('\n');
     expect(
       message,
       'A translation key must be a string literal, or `pnpm i18n:extract` never sees it and every locale but English shows the default. ' +
@@ -135,7 +139,9 @@ describe('computed translation keys', () => {
   it('keeps the allowlist honest: every entry still matches a call', () => {
     for (const [file, count] of Object.entries(ALLOWED)) {
       const now = found.filter((c) => c.file === file).length;
-      expect(now, `${file} is allowlisted for ${count} computed key(s) but has ${now}; lower or remove the entry`).toBe(count);
+      expect(now, `${file} is allowlisted for ${count} computed key(s) but has ${now}; lower or remove the entry`).toBe(
+        count,
+      );
     }
   });
 

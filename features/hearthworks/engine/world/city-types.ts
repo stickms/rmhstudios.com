@@ -1,8 +1,4 @@
-import type {
-  CityEventId,
-  UtilityId,
-  ZoneId,
-} from '../content/city';
+import type { CityEventId, UtilityId, ZoneId } from '../content/city';
 
 /**
  * The city layer's state: plain, JSON-serialisable data that lives inside `World` and travels with every save and
@@ -195,9 +191,7 @@ export type CityEvent =
       playerId: string;
       id: string;
       reward: number;
-      skin:
-        | string
-        | null;
+      skin: string | null;
     }
   | {
       type: 'cityDay';
@@ -223,10 +217,4 @@ export type CityEvent =
       day: number;
     };
 
-export type CityReject =
-  | 'bad-shape'
-  | 'locked'
-  | 'no-shore'
-  | 'unknown-milestone'
-  | 'not-reached'
-  | 'already-claimed';
+export type CityReject = 'bad-shape' | 'locked' | 'no-shore' | 'unknown-milestone' | 'not-reached' | 'already-claimed';

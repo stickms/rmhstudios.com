@@ -1,25 +1,9 @@
 /** Small helpers shared by the CycleTrack and Admit jobs. */
-import type {
-  Logger,
-  MedPrisma,
-} from './types';
+import type { Logger, MedPrisma } from './types';
 import type { MedSource } from '../engine/types';
 
 /** One-line error text for logs and `MedSourceRun.error`; never carries a page body. */
-export const brief =
-  (
-    e: unknown,
-  ): string =>
-    (e instanceof
-    Error
-      ? e.message
-      : String(
-          e,
-        )
-    ).slice(
-      0,
-      150,
-    );
+export const brief = (e: unknown): string => (e instanceof Error ? e.message : String(e)).slice(0, 150);
 
 /**
  * The aliases a CycleTrack walk fetches: active schools only, sorted by key,
@@ -28,11 +12,10 @@ export const brief =
  * `duplicates` so the run can report them.
  */
 export function pickWalkTargets<
-  T extends
-    {
-      schoolId: string;
-      sourceKey: string;
-    },
+  T extends {
+    schoolId: string;
+    sourceKey: string;
+  },
 >(
   aliases: T[],
   activeIds: Set<string>,
@@ -40,51 +23,17 @@ export function pickWalkTargets<
   targets: T[];
   duplicates: string[];
 } {
-  const sorted =
-    aliases
-      .filter(
-        (
-          a,
-        ) =>
-          activeIds.has(
-            a.schoolId,
-          ),
-      )
-      .sort(
-        (
-          a,
-          b,
-        ) =>
-          a.sourceKey <
-          b.sourceKey
-            ? -1
-            : a.sourceKey >
-                b.sourceKey
-              ? 1
-              : 0,
-      );
-  const seen =
-    new Set<string>();
-  const targets: T[] =
-    [];
-  const duplicates: string[] =
-    [];
+  const sorted = aliases
+    .filter((a) => activeIds.has(a.schoolId))
+    .sort((a, b) => (a.sourceKey < b.sourceKey ? -1 : a.sourceKey > b.sourceKey ? 1 : 0));
+  const seen = new Set<string>();
+  const targets: T[] = [];
+  const duplicates: string[] = [];
   for (const a of sorted) {
-    if (
-      seen.has(
-        a.schoolId,
-      )
-    )
-      duplicates.push(
-        a.sourceKey,
-      );
+    if (seen.has(a.schoolId)) duplicates.push(a.sourceKey);
     else {
-      seen.add(
-        a.schoolId,
-      );
-      targets.push(
-        a,
-      );
+      seen.add(a.schoolId);
+      targets.push(a);
     }
   }
   return {

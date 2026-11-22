@@ -19,8 +19,4 @@ export * from './actions';
 export * from './input-state';
 export * from './gamepad';
 export * from './touch';
-export {
-  KeyboardMouseInput,
-  keyLabel,
-  type KeyboardMouseOptions,
-} from './keyboard-mouse';
+export { KeyboardMouseInput, keyLabel, type KeyboardMouseOptions } from './keyboard-mouse';

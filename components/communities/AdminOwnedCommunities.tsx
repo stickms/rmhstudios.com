@@ -6,10 +6,7 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { api, apiQuery } from '@/lib/contract/client';
-import {
-  assignCommunityOwnerApi,
-  listOwnedCommunitiesApi,
-} from '@/lib/communities/handover.contract';
+import { assignCommunityOwnerApi, listOwnedCommunitiesApi } from '@/lib/communities/handover.contract';
 import type { OwnedCommunityDTO } from '@/lib/communities/handover';
 
 function AssignRow({ community, onDone }: { community: OwnedCommunityDTO; onDone: () => void }) {
@@ -33,9 +30,7 @@ function AssignRow({ community, onDone }: { community: OwnedCommunityDTO; onDone
     <li className="flex flex-col gap-2 border-b border-site-border py-3">
       <p className="t-body">{community.name}</p>
       {community.moderators.length === 0 ? (
-        <p className="t-meta">
-          {t('admin-no-moderators', { defaultValue: 'No moderators to hand it to.' })}
-        </p>
+        <p className="t-meta">{t('admin-no-moderators', { defaultValue: 'No moderators to hand it to.' })}</p>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">

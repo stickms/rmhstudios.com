@@ -27,40 +27,24 @@
  * locales, which silently serve the English `defaultValue` instead. Running it
  * is safe now; that backlog is the insertions you will see on the first run.
  */
-const T_FUNCTIONS =
-  [
-    't',
-    'ts',
-    'tFeed',
-    'tl',
-    'tr',
-    'tSlice',
-    'tn',
-  ];
+const T_FUNCTIONS = ['t', 'ts', 'tFeed', 'tl', 'tr', 'tSlice', 'tn'];
 
 export default {
   // English only: the other locales live on the i18n/catalogs branch and are
   // filled by the i18n-translate workflow, never by the extractor.
-  locales:
-    [
-      'en',
-    ],
-  defaultNamespace:
-    'common',
-  namespaceSeparator:
-    ':',
+  locales: ['en'],
+  defaultNamespace: 'common',
+  namespaceSeparator: ':',
   keySeparator: false,
-  input:
-    [
-      'app/**/*.{ts,tsx}',
-      'components/**/*.{ts,tsx}',
-      'features/**/*.{ts,tsx}',
-      // Tests are not UI, and `for (const [t, x] of …)` crashes the lexer.
-      '!features/**/*.test.{ts,tsx}',
-      '!features/**/__tests__/**',
-    ],
-  output:
-    'locales/$LOCALE/$NAMESPACE.json',
+  input: [
+    'app/**/*.{ts,tsx}',
+    'components/**/*.{ts,tsx}',
+    'features/**/*.{ts,tsx}',
+    // Tests are not UI, and `for (const [t, x] of …)` crashes the lexer.
+    '!features/**/*.test.{ts,tsx}',
+    '!features/**/__tests__/**',
+  ],
+  output: 'locales/$LOCALE/$NAMESPACE.json',
   sort: true,
   // Additive only. Some keys are assembled at runtime and no static parser can
   // ever see them — Bum's Rush stores `bums.world.w1.name` in its level
@@ -77,45 +61,35 @@ export default {
   keepRemoved: true,
   createOldCatalogs: false,
   // Do not overwrite existing translated values with the key/default.
-  resetDefaultValueLocale:
-    'en',
+  resetDefaultValueLocale: 'en',
   // The aliases real call sites use. A component holding two namespaces
   // destructures at least one of them under another name, and the lexer matches
   // `t` only — so each of these was a set of keys the extractor deleted on
   // sight. Add the alias here in the same commit that introduces one.
-  lexers:
-    {
-      ts: [
-        {
-          lexer:
-            'JavascriptLexer',
-          functions:
-            T_FUNCTIONS,
-        },
-      ],
-      js: [
-        {
-          lexer:
-            'JavascriptLexer',
-          functions:
-            T_FUNCTIONS,
-        },
-      ],
-      tsx: [
-        {
-          lexer:
-            'JsxLexer',
-          functions:
-            T_FUNCTIONS,
-        },
-      ],
-      jsx: [
-        {
-          lexer:
-            'JsxLexer',
-          functions:
-            T_FUNCTIONS,
-        },
-      ],
-    },
+  lexers: {
+    ts: [
+      {
+        lexer: 'JavascriptLexer',
+        functions: T_FUNCTIONS,
+      },
+    ],
+    js: [
+      {
+        lexer: 'JavascriptLexer',
+        functions: T_FUNCTIONS,
+      },
+    ],
+    tsx: [
+      {
+        lexer: 'JsxLexer',
+        functions: T_FUNCTIONS,
+      },
+    ],
+    jsx: [
+      {
+        lexer: 'JsxLexer',
+        functions: T_FUNCTIONS,
+      },
+    ],
+  },
 };

@@ -8,57 +8,42 @@
  * store in the repo names itself today; a store that builds its name some other way is the thing to add a line for by
  * hand, and the "no dead lines" half of the test is what notices a name that stopped being used.
  */
-import {
-  globSync,
-  readFileSync,
-} from 'node:fs';
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { globSync, readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
 
 import { deviceStoreText } from '@/components/settings/device-data-labels';
-import {
-  DEVICE_STORES,
-  storeForKey,
-} from '@/lib/device-data/registry';
+import { DEVICE_STORES, storeForKey } from '@/lib/device-data/registry';
 
 const ROOTS = ['lib', 'features', 'components', 'hooks', 'stores'];
 const STORAGE_MARKER = /\.setItem\(|openDB\(|indexedDB\.open\(/;
 const KEY_SHAPE = /^[a-z][a-z0-9]*[-:._][\w:.-]+$/;
 
 /** Not Web Storage keys: constants of the same shape that live in the server tier or name something else. */
-const NOT_BROWSER_STORAGE: ReadonlySet<string> =
-  new Set([
-    // Header and query names, test-mode switches and the feedback report kind are named like keys but never stored.
-    'rmh_test_',
-    'jam-feedback',
-    'allow-scripts',
-    // Redis keys in the casino hub (`features/casino/server/`), skipped by path below as well.
-    'casino:table:',
-    'casino:tables:',
-  ]);
+const NOT_BROWSER_STORAGE: ReadonlySet<string> = new Set([
+  // Header and query names, test-mode switches and the feedback report kind are named like keys but never stored.
+  'rmh_test_',
+  'jam-feedback',
+  'allow-scripts',
+  // Redis keys in the casino hub (`features/casino/server/`), skipped by path below as well.
+  'casino:table:',
+  'casino:tables:',
+]);
 
 /** Template prefixes in storage-writing files that are values, URLs or markup rather than keys. */
-const NOT_A_KEY_TEMPLATE: ReadonlySet<string> =
-  new Set([
-    '',
-    'c',
-    'p_',
-    'share:',
-    'draft:',
-    'cloud:',
-    '/tf2/play?',
-    '/rmh/mp/packs/',
-    'matrix3d(',
-  ]);
+const NOT_A_KEY_TEMPLATE: ReadonlySet<string> = new Set([
+  '',
+  'c',
+  'p_',
+  'share:',
+  'draft:',
+  'cloud:',
+  '/tf2/play?',
+  '/rmh/mp/packs/',
+  'matrix3d(',
+]);
 
 function sourceFiles(): string[] {
-  return ROOTS.flatMap(
-    (root) =>
-      globSync(`${root}/**/*.{ts,tsx}`),
-  ).filter(
+  return ROOTS.flatMap((root) => globSync(`${root}/**/*.{ts,tsx}`)).filter(
     (f) =>
       !/\.(test|server)\.|\.d\.ts$|__tests__|\/server\/|generated|node_modules/.test(f) &&
       // Test-only copies of the Source engine are excluded the same way.
@@ -106,17 +91,13 @@ const found = scan();
 
 describe('device registry', () => {
   it('covers every IndexedDB database the site opens', () => {
-    const known = new Set(
-      DEVICE_STORES.filter((s) => s.kind === 'indexeddb').flatMap((s) => [...s.names]),
-    );
+    const known = new Set(DEVICE_STORES.filter((s) => s.kind === 'indexeddb').flatMap((s) => [...s.names]));
     const missing = [...found.idb].filter(([name]) => !known.has(name)).map(([n, f]) => `${n} (${f})`);
     expect(missing, 'add a line to lib/device-data/registry.ts').toEqual([]);
   });
 
   it('covers every Web Storage key or prefix the site names', () => {
-    const missing = [...found.keys]
-      .filter(([key]) => !storeForKey(key))
-      .map(([k, f]) => `${k} (${f})`);
+    const missing = [...found.keys].filter(([key]) => !storeForKey(key)).map(([k, f]) => `${k} (${f})`);
     expect(missing, 'add a line to lib/device-data/registry.ts').toEqual([]);
   });
 
@@ -127,8 +108,7 @@ describe('device registry', () => {
         for (const n of s.names) if (!found.idb.has(n)) dead.push(`${s.id}: ${n}`);
       } else if (s.kind === 'localstorage-prefix') {
         for (const n of s.names)
-          if (![...found.keys.keys()].some((k) => k.startsWith(n) || n.startsWith(k)))
-            dead.push(`${s.id}: ${n}`);
+          if (![...found.keys.keys()].some((k) => k.startsWith(n) || n.startsWith(k))) dead.push(`${s.id}: ${n}`);
       }
     }
     expect(dead).toEqual([]);

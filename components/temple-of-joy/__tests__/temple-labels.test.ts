@@ -59,7 +59,11 @@ describe('temple labels', () => {
     const { t, calls } = recordingT();
     const labels = ladderTierLabels(t);
     const tiers = [...new Set(LEGACY.map((l) => l.tier))].sort((a, b) => a - b);
-    expect(Object.keys(labels).map(Number).sort((a, b) => a - b)).toEqual(tiers);
+    expect(
+      Object.keys(labels)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual(tiers);
     expect(Object.keys(englishByKey(calls)).sort()).toEqual(tiers.map((n) => `ladder-tier-${n}`).sort());
   });
 });

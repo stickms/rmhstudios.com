@@ -13,41 +13,31 @@ export interface ParticleBudget {
  *  points — bump during browser sign-off until dense without dropping frames.
  *  rain/fog>0 only matters on compute tiers (ultra/high) except medium, which
  *  runs `rain` on the CPU path. */
-const BUDGETS: Record<
-  RenderTier,
-  ParticleBudget
-> =
-  {
-    ultra:
-      {
-        rain: 1800,
-        fog: 2400,
-        burstCap: 1500,
-      },
-    high: {
-      rain: 1200,
-      fog: 1500,
-      burstCap: 1000,
-    },
-    medium:
-      {
-        rain: 600,
-        fog: 0,
-        burstCap: 600,
-      },
-    low: {
-      rain: 0,
-      fog: 0,
-      burstCap: 300,
-    },
-  };
+const BUDGETS: Record<RenderTier, ParticleBudget> = {
+  ultra: {
+    rain: 1800,
+    fog: 2400,
+    burstCap: 1500,
+  },
+  high: {
+    rain: 1200,
+    fog: 1500,
+    burstCap: 1000,
+  },
+  medium: {
+    rain: 600,
+    fog: 0,
+    burstCap: 600,
+  },
+  low: {
+    rain: 0,
+    fog: 0,
+    burstCap: 300,
+  },
+};
 
-export function particleBudget(
-  tier: RenderTier,
-): ParticleBudget {
+export function particleBudget(tier: RenderTier): ParticleBudget {
   return {
-    ...BUDGETS[
-      tier
-    ],
+    ...BUDGETS[tier],
   };
 }

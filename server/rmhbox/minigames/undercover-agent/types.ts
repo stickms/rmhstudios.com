@@ -35,9 +35,7 @@ export interface GridTile {
 }
 
 export interface TeamState {
-  teamId:
-    | 'red'
-    | 'blue';
+  teamId: 'red' | 'blue';
   spymasterId: string;
   operativeIds: string[];
   agentsTotal: number;
@@ -47,12 +45,8 @@ export interface TeamState {
 
 export interface CurrentClue {
   word: string;
-  number:
-    | number
-    | 'unlimited';
-  teamId:
-    | 'red'
-    | 'blue';
+  number: number | 'unlimited';
+  teamId: 'red' | 'blue';
   guessesUsed: number;
 }
 
@@ -60,35 +54,20 @@ export interface ActionLogEntry {
   seq: number;
   type: string;
   timestamp: number;
-  payload: Record<
-    string,
-    unknown
-  >;
+  payload: Record<string, unknown>;
 }
 
 export interface UndercoverAgentState {
   grid: GridTile[];
   keyCard: TileType[];
-  teams: Record<
-    | 'red'
-    | 'blue',
-    TeamState
-  >;
-  currentTeam:
-    | 'red'
-    | 'blue';
+  teams: Record<'red' | 'blue', TeamState>;
+  currentTeam: 'red' | 'blue';
   phase: UndercoverAgentPhase;
   currentClue: CurrentClue | null;
   guessesRemaining: number;
   turnNumber: number;
   consecutivePasses: number;
-  winner:
-    | 'red'
-    | 'blue'
-    | 'draw'
-    | null;
-  winReason:
-    | string
-    | null;
+  winner: 'red' | 'blue' | 'draw' | null;
+  winReason: string | null;
   actionLog: ActionLogEntry[];
 }

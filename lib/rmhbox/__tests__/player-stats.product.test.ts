@@ -135,7 +135,17 @@ describe('toRecentMatch', () => {
 describe('ordinalCategory', () => {
   it('follows the English ordinal rules', () => {
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101].map((n) => ordinalCategory(n, 'en'))).toEqual([
-      'one', 'two', 'few', 'other', 'other', 'other', 'other', 'one', 'two', 'few', 'one',
+      'one',
+      'two',
+      'few',
+      'other',
+      'other',
+      'other',
+      'other',
+      'one',
+      'two',
+      'few',
+      'one',
     ]);
   });
   it('folds categories English has no words for into other', () => {

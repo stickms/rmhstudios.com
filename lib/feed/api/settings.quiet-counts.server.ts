@@ -12,9 +12,7 @@ export const route = apiRoute('/api/settings/quiet-counts', {
   GET: implement(getQuietCountsApi, { rateLimit: 'read' }, async ({ userId }) =>
     Response.json(await getQuietCounts(userId), { headers: { 'Cache-Control': 'private, no-store' } }),
   ),
-  PUT: implement(
-    setQuietCountsApi,
-    { rateLimit: 'write', body: quietCountsUpdateSchema },
-    async ({ userId, body }) => Response.json(await setQuietCounts(userId, body)),
+  PUT: implement(setQuietCountsApi, { rateLimit: 'write', body: quietCountsUpdateSchema }, async ({ userId, body }) =>
+    Response.json(await setQuietCounts(userId, body)),
   ),
 });

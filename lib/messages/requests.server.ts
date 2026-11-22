@@ -149,8 +149,7 @@ export async function requestWriteRefusal(
 }
 
 export type OpenRequestResult<T> =
-  | { ok: true; value: T | null }
-  | { ok: false; reason: 'NONE' | 'FOLLOWERS' | 'pending' | 'cap' };
+  { ok: true; value: T | null } | { ok: false; reason: 'NONE' | 'FOLLOWERS' | 'pending' | 'cap' };
 
 /**
  * Open (or reuse) the request on a chat, and with `message` write its one text
@@ -226,11 +225,7 @@ export async function openRequest<T>(args: {
   });
 }
 
-async function otherMemberOf(
-  tx: Prisma.TransactionClient,
-  chatId: string,
-  senderId: string,
-): Promise<string | null> {
+async function otherMemberOf(tx: Prisma.TransactionClient, chatId: string, senderId: string): Promise<string | null> {
   const member = await tx.chatMember.findFirst({
     where: { chatId, userId: { not: senderId } },
     select: { userId: true },
@@ -314,9 +309,7 @@ export async function listRequests(
   };
 }
 
-export type DecideResult =
-  | { ok: true; conversationId: string; senderId: string }
-  | { ok: false; status: 404 };
+export type DecideResult = { ok: true; conversationId: string; senderId: string } | { ok: false; status: 404 };
 
 /**
  * The recipient answers a request. Only the recipient's own pending request is

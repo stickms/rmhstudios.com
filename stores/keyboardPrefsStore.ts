@@ -40,10 +40,7 @@ interface KeyboardPrefsStore {
 let edits = 0;
 let remoteEnabled = false;
 
-async function commit(
-  set: (partial: Partial<KeyboardPrefsStore>) => void,
-  next: KeyboardPrefs,
-): Promise<boolean> {
+async function commit(set: (partial: Partial<KeyboardPrefsStore>) => void, next: KeyboardPrefs): Promise<boolean> {
   edits += 1;
   set({
     prefs: next,

@@ -4,17 +4,10 @@ import ChallengePanel from './ChallengePanel';
 
 /** The library page's reading strip: the yearly challenge, plus a way into My reading (L3/L7/L1). */
 export default function LibraryReadingStrip() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'f-reading',
-    );
+  const { t } = useTranslation('f-reading');
   return (
     <div className="mx-auto mb-4 w-full max-w-3xl space-y-2 px-4">
-      <ChallengePanel
-        compact
-      />
+      <ChallengePanel compact />
       <p className="text-sm text-site-text-muted">
         <Link
           to="/library"
@@ -24,17 +17,11 @@ export default function LibraryReadingStrip() {
           }}
           className="text-site-accent underline-offset-4 hover:underline"
         >
-          {t(
-            'library-shelves-link',
-            {
-              defaultValue:
-                'Your shelves',
-            },
-          )}
+          {t('library-shelves-link', {
+            defaultValue: 'Your shelves',
+          })}
         </Link>
-        {
-          ' · '
-        }
+        {' · '}
         <Link
           to="/library"
           search={{
@@ -43,13 +30,9 @@ export default function LibraryReadingStrip() {
           }}
           className="text-site-accent underline-offset-4 hover:underline"
         >
-          {t(
-            'library-highlights-link',
-            {
-              defaultValue:
-                'Your highlights',
-            },
-          )}
+          {t('library-highlights-link', {
+            defaultValue: 'Your highlights',
+          })}
         </Link>
       </p>
     </div>

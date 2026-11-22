@@ -43,13 +43,20 @@ export function Matching({
     if (locked) return;
     if (pairs[cardId]) {
       onPairs(without(pairs, cardId));
-      setAnnouncement(t('unpaired', { defaultValue: 'Removed the pair for {{term}}', term: termOf(cardId)?.text ?? '' }));
+      setAnnouncement(
+        t('unpaired', { defaultValue: 'Removed the pair for {{term}}', term: termOf(cardId)?.text ?? '' }),
+      );
       setSelected(null);
       return;
     }
     setSelected(cardId === selected ? null : cardId);
     if (cardId !== selected)
-      setAnnouncement(t('term-selected', { defaultValue: 'Selected {{term}}. Choose its definition.', term: termOf(cardId)?.text ?? '' }));
+      setAnnouncement(
+        t('term-selected', {
+          defaultValue: 'Selected {{term}}. Choose its definition.',
+          term: termOf(cardId)?.text ?? '',
+        }),
+      );
   }
 
   function pickDefinition(defId: string) {
@@ -57,7 +64,9 @@ export function Matching({
     const owner = pairedTermFor(defId);
     if (owner) {
       onPairs(without(pairs, owner));
-      setAnnouncement(t('unpaired', { defaultValue: 'Removed the pair for {{term}}', term: termOf(owner)?.text ?? '' }));
+      setAnnouncement(
+        t('unpaired', { defaultValue: 'Removed the pair for {{term}}', term: termOf(owner)?.text ?? '' }),
+      );
       return;
     }
     if (!selected) {
@@ -106,8 +115,7 @@ export function Matching({
     return (
       <div role="group" aria-label={label} className="min-w-0 flex-1 border-t border-site-border">
         {items.map((item, i) => {
-          const partner =
-            kind === 'term' ? pairs[item.cardId] : pairedTermFor(item.cardId);
+          const partner = kind === 'term' ? pairs[item.cardId] : pairedTermFor(item.cardId);
           const isSelected = kind === 'term' && selected === item.cardId;
           const right = locked && kind === 'term' ? isRight(item.cardId) : null;
           return (
@@ -159,7 +167,9 @@ export function Matching({
   return (
     <div className="space-y-3">
       <p className="t-label">
-        {t('matching-instructions', { defaultValue: 'Match each term with its definition. Select a term, then a definition.' })}
+        {t('matching-instructions', {
+          defaultValue: 'Match each term with its definition. Select a term, then a definition.',
+        })}
       </p>
       <div className="flex flex-col gap-4 sm:flex-row">
         {column(t('terms', { defaultValue: 'Terms' }), question.terms, 'term')}

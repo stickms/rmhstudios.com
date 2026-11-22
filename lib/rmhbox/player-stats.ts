@@ -155,12 +155,8 @@ export function toRecentMatch(row: MatchPlayerRow): RecentMatch {
 }
 
 /** Minigame rows for the table: most played first, then the id for a stable order. */
-export function sortMinigameRows(
-  stats: Record<string, MinigameStats>,
-): Array<[string, MinigameStats]> {
-  return Object.entries(stats).sort(
-    (a, b) => b[1].gamesPlayed - a[1].gamesPlayed || a[0].localeCompare(b[0]),
-  );
+export function sortMinigameRows(stats: Record<string, MinigameStats>): Array<[string, MinigameStats]> {
+  return Object.entries(stats).sort((a, b) => b[1].gamesPlayed - a[1].gamesPlayed || a[0].localeCompare(b[0]));
 }
 
 export type OrdinalCategory = 'one' | 'two' | 'few' | 'other';

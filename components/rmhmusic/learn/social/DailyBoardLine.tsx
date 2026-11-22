@@ -10,18 +10,12 @@
  * beside it what the switch does (every Daily board, not only this one) and where it lives (the
  * board page and the Privacy page), so turning it on is never a surprise.
  */
-import {
-  useId,
-  useState,
-} from 'react';
+import { useId, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ARRIVE } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
-import {
-  setMusicSocialApi,
-  type DailyBoardMe,
-} from '@/lib/rmhmusic/social/social.contract';
+import { setMusicSocialApi, type DailyBoardMe } from '@/lib/rmhmusic/social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
 import type { SharePayload } from '@/lib/rmhmusic/learn/social/share';
 import { boardStatusSentence } from './board-text';
@@ -40,177 +34,67 @@ export function DailyBoardLine({
   /** The saved run's lines for the Share dialog; null hides Share. */
   preview?: SharePayload | null;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const [
-    me,
-    setMe,
-  ] =
-    useState<DailyBoardMe>(
-      initial,
-    );
-  const [
-    busy,
-    setBusy,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    failed,
-    setFailed,
-  ] =
-    useState(
-      false,
-    );
-  const helpId =
-    useId();
-  const isToday =
-    date ===
-    today;
+  const { t } = useTranslation('c-rmhmusic');
+  const [me, setMe] = useState<DailyBoardMe>(initial);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const helpId = useId();
+  const isToday = date === today;
 
   function showOnBoard() {
-    setBusy(
-      true,
-    );
-    setFailed(
-      false,
-    );
-    api(
-      setMusicSocialApi,
-      {
-        body: {
-          board: true,
-        },
+    setBusy(true);
+    setFailed(false);
+    api(setMusicSocialApi, {
+      body: {
+        board: true,
       },
-    )
-      .then(
-        (
-          social,
-        ) => {
-          // A private line already carries where the run places with the learner counted: turning
-          // the switch on puts it there.
-          if (
-            social.board &&
-            me.state ===
-              'private'
-          )
-            setMe(
-              {
-                state:
-                  'ranked',
-                rank: me.rank,
-                total:
-                  me.total,
-                score:
-                  me.score,
-              },
-            );
-        },
-      )
-      .catch(
-        () =>
-          setFailed(
-            true,
-          ),
-      )
-      .finally(
-        () =>
-          setBusy(
-            false,
-          ),
-      );
+    })
+      .then((social) => {
+        // A private line already carries where the run places with the learner counted: turning
+        // the switch on puts it there.
+        if (social.board && me.state === 'private')
+          setMe({
+            state: 'ranked',
+            rank: me.rank,
+            total: me.total,
+            score: me.score,
+          });
+      })
+      .catch(() => setFailed(true))
+      .finally(() => setBusy(false));
   }
 
   return (
     // Mounted once the save has answered, after the result painted: it arrives (M9).
-    <div
-      className={`space-y-1 ${ARRIVE}`}
-    >
-      <p
-        role="status"
-        className="text-base leading-6 text-app-text"
-      >
-        {boardStatusSentence(
-          t,
-          me,
-          {
-            day: isToday
-              ? 'today'
-              : 'yesterday',
-            scope:
-              'everyone',
-          },
-        )}
+    <div className={`space-y-1 ${ARRIVE}`}>
+      <p role="status" className="text-base leading-6 text-app-text">
+        {boardStatusSentence(t, me, {
+          day: isToday ? 'today' : 'yesterday',
+          scope: 'everyone',
+        })}
       </p>
-      {me.state ===
-      'private' ? (
+      {me.state === 'private' ? (
         <div className="space-y-1">
-          <button
-            type="button"
-            disabled={
-              busy
-            }
-            aria-describedby={
-              helpId
-            }
-            onClick={
-              showOnBoard
-            }
-            className={
-              TEXT_BUTTON
-            }
-          >
-            {t(
-              'board-show-mine',
-              {
-                defaultValue:
-                  'Show it on the board',
-              },
-            )}
+          <button type="button" disabled={busy} aria-describedby={helpId} onClick={showOnBoard} className={TEXT_BUTTON}>
+            {t('board-show-mine', {
+              defaultValue: 'Show it on the board',
+            })}
           </button>
-          <p
-            id={
-              helpId
-            }
-            className="text-sm leading-5 text-app-text-muted"
-          >
-            {t(
-              'board-show-mine-help',
-              {
-                defaultValue:
-                  'Shows your name, picture and score on every Daily board. Turn it off any time.',
-              },
-            )}{' '}
-            <Link
-              to="/settings/privacy"
-              className="underline"
-            >
-              {t(
-                'board-show-mine-where',
-                {
-                  defaultValue:
-                    'Privacy settings',
-                },
-              )}
+          <p id={helpId} className="text-sm leading-5 text-app-text-muted">
+            {t('board-show-mine-help', {
+              defaultValue: 'Shows your name, picture and score on every Daily board. Turn it off any time.',
+            })}{' '}
+            <Link to="/settings/privacy" className="underline">
+              {t('board-show-mine-where', {
+                defaultValue: 'Privacy settings',
+              })}
             </Link>
           </p>
           {failed ? (
-            <p
-              role="status"
-              className="text-sm leading-5 text-app-danger"
-            >
-              {t(
-                'board-switch-failed',
-                {
-                  defaultValue:
-                    "Couldn't save. Try again.",
-                },
-              )}
+            <p role="status" className="text-sm leading-5 text-app-danger">
+              {t('board-switch-failed', {
+                defaultValue: "Couldn't save. Try again.",
+              })}
             </p>
           ) : null}
         </div>
@@ -225,38 +109,24 @@ export function DailyBoardLine({
                   day: 'yesterday',
                 }
           }
-          className={
-            TEXT_BUTTON
-          }
+          className={TEXT_BUTTON}
         >
           {isToday
-            ? t(
-                'board-see-today',
-                {
-                  defaultValue:
-                    "See today's board",
-                },
-              )
-            : t(
-                'board-see-yesterday',
-                {
-                  defaultValue:
-                    "See yesterday's board",
-                },
-              )}
+            ? t('board-see-today', {
+                defaultValue: "See today's board",
+              })
+            : t('board-see-yesterday', {
+                defaultValue: "See yesterday's board",
+              })}
         </Link>
         {/* A run a moderator took off the board is not shared either. */}
-        {preview &&
-        me.state !==
-          'hidden' ? (
+        {preview && me.state !== 'hidden' ? (
           <ShareButton
             target={{
               kind: 'daily',
               date,
             }}
-            preview={
-              preview
-            }
+            preview={preview}
           />
         ) : null}
       </div>

@@ -25,10 +25,7 @@ export function sanitizeGifAlt(raw: string): string {
  * The value to store beside a GIF: null when there is no GIF (a description never outlives its picture), when the
  * description is absent, or when it is blank once cleaned.
  */
-export function normalizeGifAlt(
-  gifUrl: string | null | undefined,
-  gifAlt: string | null | undefined,
-): string | null {
+export function normalizeGifAlt(gifUrl: string | null | undefined, gifAlt: string | null | undefined): string | null {
   if (!gifUrl || typeof gifAlt !== 'string') return null;
   const clean = sanitizeGifAlt(gifAlt);
   return clean === '' ? null : clean;
@@ -46,10 +43,7 @@ export function gifAltOrNull(gifAlt: string | null | undefined): string | null {
 }
 
 /** True when a GIF is attached without a description (the alt-text reminder treats it like an undescribed image). */
-export function gifMissingAlt(
-  gifUrl: string | null | undefined,
-  gifAlt: string | null | undefined,
-): boolean {
+export function gifMissingAlt(gifUrl: string | null | undefined, gifAlt: string | null | undefined): boolean {
   return !!gifUrl && gifAltOrNull(gifAlt) === null;
 }
 
@@ -145,9 +139,11 @@ export const GIF_ALT_EXEMPT_PATHS: Readonly<Record<string, string>> = {
   'lib/messages/api/messages.search.server.ts': 'the inbox search row shows the "GIF" preview label, never the GIF',
   'lib/messages/requests.ts': 'decides whether a request message may carry media; reads no GIF',
   'lib/messages/edit-policy.ts': 'edit eligibility: whether a message still has a body; reads no GIF',
-  'lib/messages/alt-edit.server.ts': 'describe-after-sending for messages covers images only; a GIF is described when sent',
+  'lib/messages/alt-edit.server.ts':
+    'describe-after-sending for messages covers images only; a GIF is described when sent',
   'lib/chat-plus/flags.ts': 'attachment flags for the shared-media tabs; reads no GIF',
-  'lib/chat-plus/media.server.ts': 'the shared-media grid lists thumbnails by type; images have no description there either',
+  'lib/chat-plus/media.server.ts':
+    'the shared-media grid lists thumbnails by type; images have no description there either',
   'lib/chat-plus/pins.server.ts': 'a pinned-message row says it has media (hasMedia); the media is not shown',
   'lib/chat-plus/saved.server.ts': 'a saved-message row checks for media to build its label; the media is not shown',
 };

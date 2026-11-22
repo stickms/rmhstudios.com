@@ -23,7 +23,8 @@ type Row = {
   lastUsedAt: Date | null;
 };
 
-export type SavedReplyResult<T> = { ok: true; value: T } | { ok: false; status: 404 | 409 | 400; error: string; code?: string };
+export type SavedReplyResult<T> =
+  { ok: true; value: T } | { ok: false; status: 404 | 409 | 400; error: string; code?: string };
 
 const NOT_FOUND = { ok: false, status: 404, error: 'Saved reply not found' } as const;
 
@@ -66,7 +67,11 @@ export async function createSavedReply(
         error: `You can keep up to ${MAX_SAVED_REPLIES} saved replies`,
       } as const;
     }
-    const last = await tx.savedReply.findFirst({ where: { userId }, orderBy: { position: 'desc' }, select: { position: true } });
+    const last = await tx.savedReply.findFirst({
+      where: { userId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
     const row = await tx.savedReply.create({
       data: { userId, title: input.title, body: input.body, position: (last?.position ?? -1) + 1 },
       select: SELECT,
@@ -99,7 +104,10 @@ export async function removeSavedReply(userId: string, id: string): Promise<Save
  * One transaction under the same lock as `create`. An id that is not the caller's refuses the whole call with 404 and
  * nothing is written.
  */
-export async function reorderSavedReplies(userId: string, ids: readonly string[]): Promise<SavedReplyResult<SavedReplyRow[]>> {
+export async function reorderSavedReplies(
+  userId: string,
+  ids: readonly string[],
+): Promise<SavedReplyResult<SavedReplyRow[]>> {
   return prisma.$transaction(async (tx) => {
     await lockKey(tx, 'saved-replies:' + userId);
     const owned = await tx.savedReply.findMany({

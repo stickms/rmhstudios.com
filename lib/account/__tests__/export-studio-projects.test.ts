@@ -21,8 +21,7 @@ const findMany = vi.hoisted(() =>
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 

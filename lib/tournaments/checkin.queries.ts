@@ -14,8 +14,7 @@ export const checkInSelf = (tournamentId: string) => api(checkInApi, { params: {
 export const setCheckInWindow = (
   tournamentId: string,
   checkInMinutes: BodyOf<typeof checkInSettingsApi>['checkInMinutes'],
-) =>
-  api(checkInSettingsApi, { params: { id: tournamentId }, body: { checkInMinutes } });
+) => api(checkInSettingsApi, { params: { id: tournamentId }, body: { checkInMinutes } });
 
 /** The host checks an entrant in by hand, or undoes it. */
 export const setEntrantCheckIn = (tournamentId: string, userId: string, checkedIn: boolean) =>

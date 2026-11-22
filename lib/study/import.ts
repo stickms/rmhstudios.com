@@ -15,14 +15,7 @@ import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
 export type Separator = 'tab' | 'comma' | 'semicolon' | 'dash' | 'equals' | 'colon';
 
 /** Detection order: also the tie-break when two separators fit equally well. */
-export const SEPARATORS: readonly Separator[] = [
-  'tab',
-  'semicolon',
-  'dash',
-  'equals',
-  'colon',
-  'comma',
-];
+export const SEPARATORS: readonly Separator[] = ['tab', 'semicolon', 'dash', 'equals', 'colon', 'comma'];
 
 export type RejectReason =
   | 'missing-front'
@@ -337,7 +330,9 @@ export function parseCards(text: string, options: ParseOptions = {}): ParseResul
     const typeField =
       csvChar === undefined || r.fields.length < 3
         ? undefined
-        : (separator === 'tab' ? r.fields[2] : r.fields[r.fields.length - 1]);
+        : separator === 'tab'
+          ? r.fields[2]
+          : r.fields[r.fields.length - 1];
     const typed = typeField === undefined ? undefined : TYPE_WORDS[typeField.trim().toLowerCase()];
     const rest =
       csvChar === undefined || separator === 'tab'

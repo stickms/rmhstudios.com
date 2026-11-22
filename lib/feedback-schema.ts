@@ -1,24 +1,11 @@
 import { z } from 'zod';
 import { scrubErrorMessage } from '@/lib/feedback-scrub';
 
-export const FEEDBACK_CATEGORIES = [
-  'bug',
-  'accessibility',
-  'feature',
-  'general',
-  'other',
-] as const;
+export const FEEDBACK_CATEGORIES = ['bug', 'accessibility', 'feature', 'general', 'other'] as const;
 export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
 
 /** What an accessibility report says the member was using. Ids only; the form translates them. */
-export const ASSISTIVE_TECH = [
-  'screen_reader',
-  'magnifier',
-  'voice_control',
-  'keyboard',
-  'switch',
-  'other',
-] as const;
+export const ASSISTIVE_TECH = ['screen_reader', 'magnifier', 'voice_control', 'keyboard', 'switch', 'other'] as const;
 export type AssistiveTech = (typeof ASSISTIVE_TECH)[number];
 
 /** Length caps for the context items (FR-2): each value is refused, not trimmed, when over its cap. */
@@ -45,12 +32,7 @@ export { scrubErrorMessage } from '@/lib/feedback-scrub';
  * dropped. The path must start with `/` and loses any query string or fragment here, whatever the client did.
  */
 export const feedbackContextSchema = z.object({
-  path: z
-    .string()
-    .max(CONTEXT_CAPS.path)
-    .regex(/^\//, 'The path must start with /')
-    .transform(stripQuery)
-    .optional(),
+  path: z.string().max(CONTEXT_CAPS.path).regex(/^\//, 'The path must start with /').transform(stripQuery).optional(),
   viewport: z
     .string()
     .regex(/^\d{2,5}x\d{2,5}$/)

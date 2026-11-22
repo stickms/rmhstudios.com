@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  busiestSlots,
-  emptyGrid,
-  gridFromRows,
-  reconstructDaily,
-  weeklyNet,
-} from '@/lib/social/audience';
+import { busiestSlots, emptyGrid, gridFromRows, reconstructDaily, weeklyNet } from '@/lib/social/audience';
 
 // Noon UTC on 2026-11-20, a Friday.
 const NOW = new Date('2026-11-20T12:00:00Z');
@@ -31,12 +25,7 @@ describe('reconstructDaily', () => {
       '2026-11-01',
       NOW,
     );
-    expect(days.map((d) => d.date)).toEqual([
-      '2026-11-17',
-      '2026-11-18',
-      '2026-11-19',
-      '2026-11-20',
-    ]);
+    expect(days.map((d) => d.date)).toEqual(['2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20']);
     expect(days.map((d) => d.followers)).toEqual([6, 8, 8, 10]);
     expect(days.map((d) => d.net)).toEqual([0, 2, 0, 2]);
     expect(days[3]).toMatchObject({
@@ -141,12 +130,7 @@ describe('weeklyNet', () => {
 describe('busiestSlots', () => {
   it('buckets engagement in a non-UTC zone and ranks the busiest slots', () => {
     // 2026-11-17 23:30 UTC is Wednesday 2026-11-18 at 08:30 in Tokyo (UTC+9).
-    const stamps = [
-      '2026-11-17T23:30:00Z',
-      '2026-11-17T23:45:00Z',
-      '2026-11-17T23:50:00Z',
-      '2026-11-19T09:00:00Z',
-    ];
+    const stamps = ['2026-11-17T23:30:00Z', '2026-11-17T23:45:00Z', '2026-11-17T23:50:00Z', '2026-11-19T09:00:00Z'];
     const zone = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Tokyo',
       weekday: 'short',

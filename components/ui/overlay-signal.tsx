@@ -10,19 +10,12 @@ import { chromeContentChanged } from '@/lib/chrome/signal';
  * this folder use it; an overlay built on one of them needs nothing more. Lives here, not in lib/chrome, because
  * components never import the renderer (V4): this only dispatches a DOM event, which the renderer listens for.
  */
-export function useOverlaySignal(
-  present: boolean,
-): void {
+export function useOverlaySignal(present: boolean): void {
   useEffect(() => {
-    if (
-      !present
-    )
-      return;
+    if (!present) return;
     chromeContentChanged();
     return chromeContentChanged;
-  }, [
-    present,
-  ]);
+  }, [present]);
 }
 
 /**
@@ -30,8 +23,6 @@ export function useOverlaySignal(
  * content, it mounts when the overlay opens and unmounts once its exit fade has ended and Presence removes the node.
  */
 export function OverlaySignal(): null {
-  useOverlaySignal(
-    true,
-  );
+  useOverlaySignal(true);
   return null;
 }

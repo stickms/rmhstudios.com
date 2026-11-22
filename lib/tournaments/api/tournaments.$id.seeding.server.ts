@@ -14,19 +14,15 @@ function failure(error: unknown): Response {
 
 export const route = apiRoute('/api/tournaments/$id/seeding', {
   // Readable signed out; a manual order is only ever in the host's copy.
-  GET: implement(
-    getSeedingApi,
-    { auth: 'optional', rateLimit: 'read' },
-    async ({ params, session, isAdmin }) => {
-      const view = await projectedSeeds({
-        tournamentId: params.id,
-        viewerId: session?.user?.id ?? null,
-        isAdmin,
-      });
-      if (!view) return Response.json({ error: 'Tournament not found' }, { status: 404 });
-      return view;
-    },
-  ),
+  GET: implement(getSeedingApi, { auth: 'optional', rateLimit: 'read' }, async ({ params, session, isAdmin }) => {
+    const view = await projectedSeeds({
+      tournamentId: params.id,
+      viewerId: session?.user?.id ?? null,
+      isAdmin,
+    });
+    if (!view) return Response.json({ error: 'Tournament not found' }, { status: 404 });
+    return view;
+  }),
   // Host: the method and/or the hand order.
   PUT: implement(
     updateSeedingApi,

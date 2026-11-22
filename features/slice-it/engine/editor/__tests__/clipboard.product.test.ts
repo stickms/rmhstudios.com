@@ -25,12 +25,13 @@ import {
 import { emptyCharts, useEditorStore } from '../store';
 import type { Charts, Difficulty, EditorNote, SvPoint, TimingPoint } from '../types';
 
-const note = (
-  id: string,
-  time: number,
-  lane: number,
-  extra: Partial<EditorNote> = {},
-): EditorNote => ({ id, time, lane, type: 'STANDARD', ...extra });
+const note = (id: string, time: number, lane: number, extra: Partial<EditorNote> = {}): EditorNote => ({
+  id,
+  time,
+  lane,
+  type: 'STANDARD',
+  ...extra,
+});
 
 function chartsWith(notes: Partial<Record<Difficulty, EditorNote[]>>, keys = 4): Charts {
   const charts = emptyCharts(keys);
@@ -241,11 +242,7 @@ describe('duplicate', () => {
 describe('quantize', () => {
   it('snaps a hand-placed run to the grid and a hold’s tail', () => {
     const charts = chartsWith({
-      expert: select([
-        note('a', 1.02, 0),
-        note('b', 1.27, 1),
-        note('c', 1.49, 2, { type: 'LONG', duration: 0.41 }),
-      ]),
+      expert: select([note('a', 1.02, 0), note('b', 1.27, 1), note('c', 1.49, 2, { type: 'LONG', duration: 0.41 })]),
     });
     const out = quantizeSelection(ctx(charts, { snap: 2 })); // half beats: every 0.25 s
     const after = run(out, charts);
@@ -450,7 +447,14 @@ describe('store actions', () => {
   it('says to select notes first and adds nothing to history', () => {
     load(chartsWith({ expert: [note('a', 1, 0)] }));
     const store = useEditorStore.getState();
-    for (const result of [store.copy(), store.cut(), store.mirror(), store.quantize(), store.duplicate(), store.scaleTiming(150)]) {
+    for (const result of [
+      store.copy(),
+      store.cut(),
+      store.mirror(),
+      store.quantize(),
+      store.duplicate(),
+      store.scaleTiming(150),
+    ]) {
       expect(result).toEqual({ code: 'nothing-selected' });
     }
     expect(useEditorStore.getState().undoStack).toHaveLength(0);

@@ -13,28 +13,15 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { SongList } from '@/components/rmhmusic/learn/songs/SongList';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/songs/',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'RMHMusic Songs',
-        ),
-      component:
-        SongsRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/songs/')({
+  head: () => noindexHead('RMHMusic Songs'),
+  component: SongsRoute,
+});
 
 function SongsRoute() {
   return (
     <GameErrorBoundary gameName="RMH Music">
-      <ArrivalSuspense
-        fallback={
-          <GameLoadingFallback />
-        }
-      >
+      <ArrivalSuspense fallback={<GameLoadingFallback />}>
         <SongList />
       </ArrivalSuspense>
     </GameErrorBoundary>

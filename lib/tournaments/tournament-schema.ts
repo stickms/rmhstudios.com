@@ -26,83 +26,28 @@ export type HostCheckInInput = z.infer<typeof hostCheckInSchema>;
 /** A double-elimination bracket needs at least four players to have a losers bracket worth playing. */
 export const MIN_DOUBLE_ELIM_PLAYERS = 4;
 
-export const createTournamentSchema =
-  z.object(
-    {
-      name: z
-        .string()
-        .min(
-          3,
-        )
-        .max(
-          120,
-        ),
-      gameId:
-        z.enum(
-          WAGER_ELIGIBLE_GAME_IDS,
-        ),
-      format:
-        z.enum(
-          [
-            'SINGLE_ELIM',
-            'DOUBLE_ELIM',
-            'ROUND_ROBIN',
-            'SWISS',
-          ],
-        ),
-      entryFeeCoins:
-        z
-          .number()
-          .int()
-          .min(
-            0,
-          )
-          .max(
-            MAX_TOURNAMENT_ENTRY_FEE,
-          ),
-      seedPoolCoins:
-        z
-          .number()
-          .int()
-          .min(
-            0,
-          )
-          .max(
-            MAX_TOURNAMENT_SEED,
-          )
-          .optional(),
-      maxPlayers:
-        z
-          .number()
-          .int()
-          .min(
-            MIN_TOURNAMENT_PLAYERS,
-          )
-          .max(
-            MAX_TOURNAMENT_PLAYERS,
-          ),
-      startsAt:
-        z
-          .string()
-          .datetime()
-          .nullable()
-          .optional(),
-      checkInMinutes:
-        checkInMinutesSchema
-          .nullable()
-          .optional(),
-      seeding: seedingMethodSchema.optional(),
-      matchDeadlineHours:
-        deadlineHoursSchema
-          .optional(),
-    },
-  ).refine((v) => v.format !== 'DOUBLE_ELIM' || v.maxPlayers >= MIN_DOUBLE_ELIM_PLAYERS, {
+export const createTournamentSchema = z
+  .object({
+    name: z.string().min(3).max(120),
+    gameId: z.enum(WAGER_ELIGIBLE_GAME_IDS),
+    format: z.enum(['SINGLE_ELIM', 'DOUBLE_ELIM', 'ROUND_ROBIN', 'SWISS']),
+    entryFeeCoins: z.number().int().min(0).max(MAX_TOURNAMENT_ENTRY_FEE),
+    seedPoolCoins: z.number().int().min(0).max(MAX_TOURNAMENT_SEED).optional(),
+    maxPlayers: z.number().int().min(MIN_TOURNAMENT_PLAYERS).max(MAX_TOURNAMENT_PLAYERS),
+    startsAt: z.string().datetime().nullable().optional(),
+    checkInMinutes: checkInMinutesSchema.nullable().optional(),
+    seeding: seedingMethodSchema.optional(),
+    matchDeadlineHours: deadlineHoursSchema.optional(),
+  })
+  .refine((v) => v.format !== 'DOUBLE_ELIM' || v.maxPlayers >= MIN_DOUBLE_ELIM_PLAYERS, {
     message: 'Double elimination needs at least 4 players',
     path: ['maxPlayers'],
-  }).refine(
-    (v) => v.checkInMinutes == null || !!v.startsAt,
-    { message: 'Check-in needs a start time', path: ['checkInMinutes'] },
-  ).refine(
+  })
+  .refine((v) => v.checkInMinutes == null || !!v.startsAt, {
+    message: 'Check-in needs a start time',
+    path: ['checkInMinutes'],
+  })
+  .refine(
     // A start time must be ahead (a minute of clock skew allowed) and within a year:
     // a past one would open check-in the moment the tournament is created.
     (v) => {
@@ -113,26 +58,9 @@ export const createTournamentSchema =
     },
     { message: 'Start time must be within the next year', path: ['startsAt'] },
   );
-export type CreateTournamentInput =
-  z.infer<
-    typeof createTournamentSchema
-  >;
+export type CreateTournamentInput = z.infer<typeof createTournamentSchema>;
 
-export const reportMatchSchema =
-  z.object(
-    {
-      winnerEntrantId:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            64,
-          ),
-    },
-  );
-export type ReportMatchInput =
-  z.infer<
-    typeof reportMatchSchema
-  >;
+export const reportMatchSchema = z.object({
+  winnerEntrantId: z.string().min(1).max(64),
+});
+export type ReportMatchInput = z.infer<typeof reportMatchSchema>;

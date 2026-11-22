@@ -9,99 +9,55 @@ import { SettingsPageBody } from '@/components/settings/SettingsSection';
 import { useSession } from '@/components/Providers';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
-export const Route =
-  createFileRoute(
-    '/_site/settings/cloud-saves',
-  )(
-    {
-      head: () => ({
-        meta: [
-          {
-            title:
-              'Cloud saves | RMH Studios',
-          },
-        ],
-      }),
-      component:
-        CloudSavesPage,
-    },
-  );
+export const Route = createFileRoute('/_site/settings/cloud-saves')({
+  head: () => ({
+    meta: [
+      {
+        title: 'Cloud saves | RMH Studios',
+      },
+    ],
+  }),
+  component: CloudSavesPage,
+});
 
 function CloudSavesPage() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'cloud-saves',
-    );
-  const {
-    data: session,
-    isPending,
-  } =
-    useSession();
-  const settingsLabel =
-    t(
-      'settings',
-      {
-        defaultValue:
-          'Settings',
-      },
-    );
-  const title =
-    t(
-      'page-title',
-      {
-        defaultValue:
-          'Cloud saves',
-      },
-    );
+  const { t } = useTranslation('cloud-saves');
+  const { data: session, isPending } = useSession();
+  const settingsLabel = t('settings', {
+    defaultValue: 'Settings',
+  });
+  const title = t('page-title', {
+    defaultValue: 'Cloud saves',
+  });
 
-  const signedOut =
-    !isPending &&
-    !session?.user;
+  const signedOut = !isPending && !session?.user;
 
   return (
     <PageLayout
-      title={
-        title
-      }
-      description={t(
-        'page-description',
-        {
-          defaultValue:
-            'Back up, restore and delete the saves your games keep on your account.',
-        },
-      )}
+      title={title}
+      description={t('page-description', {
+        defaultValue: 'Back up, restore and delete the saves your games keep on your account.',
+      })}
       wide
       backTo="/settings"
-      backLabel={
-        settingsLabel
-      }
+      backLabel={settingsLabel}
       breadcrumbs={[
         {
-          label:
-            settingsLabel,
+          label: settingsLabel,
           to: '/settings',
         },
         {
-          label:
-            title,
+          label: title,
         },
       ]}
     >
       <SettingsPageBody>
         {signedOut ? (
           <SignedOutPrompt
-            icon={
-              CloudUpload
-            }
-            title={t(
-              'signed-out',
-              {
-                defaultValue:
-                  'Sign in to manage your cloud saves.',
-              },
-            )}
+            icon={CloudUpload}
+            title={t('signed-out', {
+              defaultValue: 'Sign in to manage your cloud saves.',
+            })}
             callbackURL="/settings/cloud-saves"
           />
         ) : (

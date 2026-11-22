@@ -29,10 +29,9 @@ const prismaMock = vi.hoisted(() => {
         },
       },
     );
-  return new Proxy(
-    { $transaction: vi.fn(async (ops: unknown[]) => ops) } as Record<string, unknown>,
-    { get: (t, key: string) => (key in t ? t[key] : model(key)) },
-  );
+  return new Proxy({ $transaction: vi.fn(async (ops: unknown[]) => ops) } as Record<string, unknown>, {
+    get: (t, key: string) => (key in t ? t[key] : model(key)),
+  });
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
 

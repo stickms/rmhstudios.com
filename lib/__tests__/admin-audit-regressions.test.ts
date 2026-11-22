@@ -1,438 +1,211 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 import { Prisma } from '@prisma/client';
 
-const mocks =
-  vi.hoisted(
-    () => ({
-      session:
-        vi.fn(),
-      users:
-        vi.fn(),
-      create:
-        vi.fn(),
-      update:
-        vi.fn(),
-      audit:
-        vi.fn(),
-      find: vi.fn(),
-      tx: vi.fn(),
-    }),
-  );
-vi.mock(
-  '@/lib/sitewide-announcement.server',
-  async (
-    orig,
-  ) => ({
-    ...(await orig<
-      typeof import('@/lib/sitewide-announcement.server')
-    >()),
-    invalidateCurrentAnnouncement:
-      vi.fn(
-        async () => {},
-      ),
-  }),
-);
-vi.mock(
-  '@/lib/auth',
-  () => ({
-    auth: {
-      api: {
-        getSession:
-          mocks.session,
-      },
+const mocks = vi.hoisted(() => ({
+  session: vi.fn(),
+  users: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  audit: vi.fn(),
+  find: vi.fn(),
+  tx: vi.fn(),
+}));
+vi.mock('@/lib/sitewide-announcement.server', async (orig) => ({
+  ...(await orig<typeof import('@/lib/sitewide-announcement.server')>()),
+  invalidateCurrentAnnouncement: vi.fn(async () => {}),
+}));
+vi.mock('@/lib/auth', () => ({
+  auth: {
+    api: {
+      getSession: mocks.session,
     },
-  }),
-);
-vi.mock(
-  '@/lib/prisma.server',
-  () => ({
-    prisma:
-      {
-        // `findUnique` is the edit path's read of the announcement state; a missing post reads as null.
-        blogPost:
-          {
-            create:
-              mocks.create,
-            update:
-              mocks.update,
-            findUnique:
-              mocks.find,
-          },
-        blogAnnouncementSeen:
-          {
-            deleteMany:
-              vi.fn(),
-          },
-        $transaction:
-          mocks.tx,
-        user: {
-          findMany:
-            mocks.users,
-        },
-      },
-  }),
-);
-vi.mock(
-  '@/lib/admin-audit.server',
-  () => ({
-    logAdminAction:
-      mocks.audit,
-  }),
-);
-vi.mock(
-  '@/lib/seo/indexnow.server',
-  () => ({
-    pingIndexNow:
-      vi.fn(),
-  }),
-);
-vi.mock(
-  '@/lib/rate-limit.server',
-  () => ({
-    withRateLimitAsync:
-      async () =>
-        null,
-  }),
-);
+  },
+}));
+vi.mock('@/lib/prisma.server', () => ({
+  prisma: {
+    // `findUnique` is the edit path's read of the announcement state; a missing post reads as null.
+    blogPost: {
+      create: mocks.create,
+      update: mocks.update,
+      findUnique: mocks.find,
+    },
+    blogAnnouncementSeen: {
+      deleteMany: vi.fn(),
+    },
+    $transaction: mocks.tx,
+    user: {
+      findMany: mocks.users,
+    },
+  },
+}));
+vi.mock('@/lib/admin-audit.server', () => ({
+  logAdminAction: mocks.audit,
+}));
+vi.mock('@/lib/seo/indexnow.server', () => ({
+  pingIndexNow: vi.fn(),
+}));
+vi.mock('@/lib/rate-limit.server', () => ({
+  withRateLimitAsync: async () => null,
+}));
 
 import { route as blogRoute } from '@/lib/admin/api/admin.blog.server';
 import { route as usersRoute } from '@/lib/admin/api/admin.users.server';
 
-type Handler =
-  (ctx: {
-    request: Request;
-    params: Record<
-      string,
-      string
-    >;
-  }) => Promise<Response>;
-const handler =
-  (
-    route: unknown,
-    method: string,
-  ): Handler =>
-    handlersOf<Handler>(
-      route,
-    )[
-      method
-    ];
-const post =
-  handler(
-    blogRoute,
-    'POST',
-  );
-const patchUser =
-  handler(
-    usersRoute,
-    'PATCH',
-  );
-const listUsers =
-  handler(
-    usersRoute,
-    'GET',
-  );
-const validPost =
-  {
-    title:
-      'A post',
-    slug: 'a-post',
-    description:
-      'Description',
-    date: '2026-10-24',
-    content:
-      '# Draft',
-  };
-const request =
-  (
-    method: string,
-    body?: unknown,
-    url = 'https://rmhstudios.com/api/admin/blog',
-  ) =>
-    new Request(
-      url,
-      {
-        method,
-        headers:
-          {
-            cookie:
-              'better-auth.session_token=abc',
-            'content-type':
-              'application/json',
-          },
-        ...(body ===
-        undefined
-          ? {}
-          : {
-              body:
-                typeof body ===
-                'string'
-                  ? body
-                  : JSON.stringify(
-                      body,
-                    ),
-            }),
-      },
-    );
+type Handler = (ctx: { request: Request; params: Record<string, string> }) => Promise<Response>;
+const handler = (route: unknown, method: string): Handler => handlersOf<Handler>(route)[method];
+const post = handler(blogRoute, 'POST');
+const patchUser = handler(usersRoute, 'PATCH');
+const listUsers = handler(usersRoute, 'GET');
+const validPost = {
+  title: 'A post',
+  slug: 'a-post',
+  description: 'Description',
+  date: '2026-10-24',
+  content: '# Draft',
+};
+const request = (method: string, body?: unknown, url = 'https://rmhstudios.com/api/admin/blog') =>
+  new Request(url, {
+    method,
+    headers: {
+      cookie: 'better-auth.session_token=abc',
+      'content-type': 'application/json',
+    },
+    ...(body === undefined
+      ? {}
+      : {
+          body: typeof body === 'string' ? body : JSON.stringify(body),
+        }),
+  });
 
-beforeEach(
-  () => {
-    vi.clearAllMocks();
-    mocks.session.mockResolvedValue(
-      {
-        user: {
-          id: 'admin',
-          isAdmin: true,
-        },
-      },
-    );
-    mocks.create.mockResolvedValue(
-      {},
-    );
-    mocks.update.mockResolvedValue(
-      {},
-    );
-    mocks.find.mockResolvedValue(
-      null,
-    );
-    // The save runs in an interactive transaction: hand its callback the same client.
-    mocks.tx.mockImplementation(
-      async (
-        run: unknown,
-      ) =>
-        typeof run ===
-        'function'
-          ? run(
-              {
-                blogPost:
-                  {
-                    create:
-                      mocks.create,
-                    update:
-                      mocks.update,
-                  },
-                blogAnnouncementSeen:
-                  {
-                    deleteMany:
-                      vi.fn(),
-                  },
-                blogPostRevision:
-                  {
-                    create:
-                      vi.fn(),
-                    findMany:
-                      async () => [],
-                    deleteMany:
-                      vi.fn(),
-                  },
-              },
-            )
-          : [],
-    );
-  },
-);
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.session.mockResolvedValue({
+    user: {
+      id: 'admin',
+      isAdmin: true,
+    },
+  });
+  mocks.create.mockResolvedValue({});
+  mocks.update.mockResolvedValue({});
+  mocks.find.mockResolvedValue(null);
+  // The save runs in an interactive transaction: hand its callback the same client.
+  mocks.tx.mockImplementation(async (run: unknown) =>
+    typeof run === 'function'
+      ? run({
+          blogPost: {
+            create: mocks.create,
+            update: mocks.update,
+          },
+          blogAnnouncementSeen: {
+            deleteMany: vi.fn(),
+          },
+          blogPostRevision: {
+            create: vi.fn(),
+            findMany: async () => [],
+            deleteMany: vi.fn(),
+          },
+        })
+      : [],
+  );
+});
 
 describe('announcing a blog post on save', () => {
   it('writes only the blog post: no feed post is created and no discussion link is stored', async () => {
-    mocks.find.mockResolvedValue(
-      {
-        id: 'bp2',
-        announcement: false,
-        announcedAt:
-          new Date(),
-      },
-    );
-    const response =
-      await post(
-        {
-          request:
-            request(
-              'POST',
-              {
-                ...validPost,
-                isEdit: true,
-                announcement: true,
-              },
-            ),
-          params:
-            {},
-        },
-      );
-    expect(
-      response.status,
-    ).toBe(
-      200,
-    );
-    const written =
-      mocks
-        .update
-        .mock
-        .calls[0]?.[0] as {
-        data: Record<
-          string,
-          unknown
-        >;
-      };
-    expect(
-      written
-        .data
-        .announcement,
-    ).toBe(
-      true,
-    );
-    expect(
-      written.data,
-    ).not.toHaveProperty(
-      'announcementPostId',
-    );
+    mocks.find.mockResolvedValue({
+      id: 'bp2',
+      announcement: false,
+      announcedAt: new Date(),
+    });
+    const response = await post({
+      request: request('POST', {
+        ...validPost,
+        isEdit: true,
+        announcement: true,
+      }),
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    const written = mocks.update.mock.calls[0]?.[0] as {
+      data: Record<string, unknown>;
+    };
+    expect(written.data.announcement).toBe(true);
+    expect(written.data).not.toHaveProperty('announcementPostId');
   });
 });
 
 describe('admin mutation boundaries', () => {
   it('checks admin access before parsing malformed JSON', async () => {
-    mocks.session.mockResolvedValue(
-      {
-        user: {
-          id: 'member',
-          isAdmin: false,
-        },
+    mocks.session.mockResolvedValue({
+      user: {
+        id: 'member',
+        isAdmin: false,
       },
-    );
-    const response =
-      await post(
-        {
-          request:
-            request(
-              'POST',
-              '{',
-            ),
-          params:
-            {},
-        },
-      );
-    expect(
-      response.status,
-    ).toBe(
-      403,
-    );
-    expect(
-      mocks.create,
-    ).not.toHaveBeenCalled();
+    });
+    const response = await post({
+      request: request('POST', '{'),
+      params: {},
+    });
+    expect(response.status).toBe(403);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
   it('returns 400 for malformed JSON and wrong field types', async () => {
     for (const body of [
       '{',
       {
         ...validPost,
-        tags: [
-          123,
-        ],
+        tags: [123],
       },
       {
         ...validPost,
-        isEdit:
-          'false',
+        isEdit: 'false',
       },
     ]) {
       expect(
         (
-          await post(
-            {
-              request:
-                request(
-                  'POST',
-                  body,
-                ),
-              params:
-                {},
-            },
-          )
-        )
-          .status,
-      ).toBe(
-        400,
-      );
+          await post({
+            request: request('POST', body),
+            params: {},
+          })
+        ).status,
+      ).toBe(400);
     }
-    expect(
-      mocks.create,
-    ).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
   });
   it('creates atomically and treats a concurrent slug conflict as 409', async () => {
     mocks.create.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError(
-        'duplicate',
-        {
-          code: 'P2002',
-          clientVersion:
-            'test',
-        },
-      ),
+      new Prisma.PrismaClientKnownRequestError('duplicate', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
     );
-    const response =
-      await post(
-        {
-          request:
-            request(
-              'POST',
-              validPost,
-            ),
-          params:
-            {},
-        },
-      );
-    expect(
-      response.status,
-    ).toBe(
-      409,
-    );
-    expect(
-      mocks.update,
-    ).not.toHaveBeenCalled();
-    expect(
-      mocks.audit,
-    ).not.toHaveBeenCalled();
+    const response = await post({
+      request: request('POST', validPost),
+      params: {},
+    });
+    expect(response.status).toBe(409);
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.audit).not.toHaveBeenCalled();
   });
   it('does not recreate a deleted post when editing it', async () => {
     mocks.update.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError(
-        'gone',
-        {
-          code: 'P2025',
-          clientVersion:
-            'test',
-        },
-      ),
+      new Prisma.PrismaClientKnownRequestError('gone', {
+        code: 'P2025',
+        clientVersion: 'test',
+      }),
     );
     expect(
       (
-        await post(
-          {
-            request:
-              request(
-                'POST',
-                {
-                  ...validPost,
-                  isEdit: true,
-                },
-              ),
-            params:
-              {},
-          },
-        )
-      )
-        .status,
-    ).toBe(
-      404,
-    );
-    expect(
-      mocks.create,
-    ).not.toHaveBeenCalled();
+        await post({
+          request: request('POST', {
+            ...validPost,
+            isEdit: true,
+          }),
+          params: {},
+        })
+      ).status,
+    ).toBe(404);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
   it('rejects invalid user ids, flag types and empty updates before any user query', async () => {
     for (const body of [
@@ -441,69 +214,40 @@ describe('admin mutation boundaries', () => {
         isAdmin: true,
       },
       {
-        userId:
-          'u',
-        isAdmin:
-          'false',
+        userId: 'u',
+        isAdmin: 'false',
       },
       {
-        userId:
-          'u',
+        userId: 'u',
       },
     ]) {
       expect(
         (
-          await patchUser(
-            {
-              request:
-                request(
-                  'PATCH',
-                  body,
-                ),
-              params:
-                {},
-            },
-          )
-        )
-          .status,
-      ).toBe(
-        400,
-      );
+          await patchUser({
+            request: request('PATCH', body),
+            params: {},
+          })
+        ).status,
+      ).toBe(400);
     }
   });
   it('keeps a deterministic id tie-breaker for admin user pagination', async () => {
-    mocks.users.mockResolvedValue(
-      [],
-    );
-    await listUsers(
-      {
-        request:
-          request(
-            'GET',
-            undefined,
-            'https://rmhstudios.com/api/admin/users',
-          ),
-        params:
-          {},
-      },
-    );
-    expect(
-      mocks.users,
-    ).toHaveBeenCalledWith(
-      expect.objectContaining(
-        {
-          orderBy:
-            [
-              {
-                createdAt:
-                  'desc',
-              },
-              {
-                id: 'desc',
-              },
-            ],
-        },
-      ),
+    mocks.users.mockResolvedValue([]);
+    await listUsers({
+      request: request('GET', undefined, 'https://rmhstudios.com/api/admin/users'),
+      params: {},
+    });
+    expect(mocks.users).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          {
+            createdAt: 'desc',
+          },
+          {
+            id: 'desc',
+          },
+        ],
+      }),
     );
   });
 });

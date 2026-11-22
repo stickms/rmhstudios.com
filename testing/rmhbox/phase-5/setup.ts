@@ -12,146 +12,83 @@
 import { vi } from 'vitest';
 import type { RMHboxPlayer } from '../../../server/rmhbox/types';
 import type { LobbySettings } from '../../../lib/rmhbox/types';
-import type {
-  MinigameContext,
-  MinigameResults,
-} from '../../../server/rmhbox/minigames/base-minigame';
+import type { MinigameContext, MinigameResults } from '../../../server/rmhbox/minigames/base-minigame';
 
 // ─── Mock User Data ──────────────────────────────────────────────
 
 export interface MockUser {
   userId: string;
   userName: string;
-  avatarUrl:
-    | string
-    | null;
+  avatarUrl: string | null;
   sessionToken: string;
   expiresAt: Date;
 }
 
-export const MOCK_USERS: Record<
-  string,
-  MockUser
-> =
-  {
-    alice:
-      {
-        userId:
-          'user-alice-001',
-        userName:
-          'Alice',
-        avatarUrl:
-          'https://example.com/alice.png',
-        sessionToken:
-          'valid-token-alice',
-        expiresAt:
-          new Date(
-            Date.now() +
-              86400_000,
-          ),
-      },
-    bob: {
-      userId:
-        'user-bob-002',
-      userName:
-        'Bob',
-      avatarUrl:
-        'https://example.com/bob.png',
-      sessionToken:
-        'valid-token-bob',
-      expiresAt:
-        new Date(
-          Date.now() +
-            86400_000,
-        ),
-    },
-    charlie:
-      {
-        userId:
-          'user-charlie-003',
-        userName:
-          'Charlie',
-        avatarUrl:
-          null,
-        sessionToken:
-          'valid-token-charlie',
-        expiresAt:
-          new Date(
-            Date.now() +
-              86400_000,
-          ),
-      },
-    diana:
-      {
-        userId:
-          'user-diana-004',
-        userName:
-          'Diana',
-        avatarUrl:
-          'https://example.com/diana.png',
-        sessionToken:
-          'valid-token-diana',
-        expiresAt:
-          new Date(
-            Date.now() +
-              86400_000,
-          ),
-      },
-    eve: {
-      userId:
-        'user-eve-005',
-      userName:
-        'Eve',
-      avatarUrl:
-        null,
-      sessionToken:
-        'valid-token-eve',
-      expiresAt:
-        new Date(
-          Date.now() +
-            86400_000,
-        ),
-    },
-  };
+export const MOCK_USERS: Record<string, MockUser> = {
+  alice: {
+    userId: 'user-alice-001',
+    userName: 'Alice',
+    avatarUrl: 'https://example.com/alice.png',
+    sessionToken: 'valid-token-alice',
+    expiresAt: new Date(Date.now() + 86400_000),
+  },
+  bob: {
+    userId: 'user-bob-002',
+    userName: 'Bob',
+    avatarUrl: 'https://example.com/bob.png',
+    sessionToken: 'valid-token-bob',
+    expiresAt: new Date(Date.now() + 86400_000),
+  },
+  charlie: {
+    userId: 'user-charlie-003',
+    userName: 'Charlie',
+    avatarUrl: null,
+    sessionToken: 'valid-token-charlie',
+    expiresAt: new Date(Date.now() + 86400_000),
+  },
+  diana: {
+    userId: 'user-diana-004',
+    userName: 'Diana',
+    avatarUrl: 'https://example.com/diana.png',
+    sessionToken: 'valid-token-diana',
+    expiresAt: new Date(Date.now() + 86400_000),
+  },
+  eve: {
+    userId: 'user-eve-005',
+    userName: 'Eve',
+    avatarUrl: null,
+    sessionToken: 'valid-token-eve',
+    expiresAt: new Date(Date.now() + 86400_000),
+  },
+};
 
 // ─── Default Lobby Settings ─────────────────────────────────────
 
-export const DEFAULT_SETTINGS: LobbySettings =
-  {
-    isPublic: false,
-    maxPlayers: 8,
-    maxSpectators: 20,
-    allowMidGameJoin: true,
-    allowSpectatorPromotion: true,
-    autoStartThreshold:
-      null,
-    gameDurationOverride:
-      null,
-  };
+export const DEFAULT_SETTINGS: LobbySettings = {
+  isPublic: false,
+  maxPlayers: 8,
+  maxSpectators: 20,
+  allowMidGameJoin: true,
+  allowSpectatorPromotion: true,
+  autoStartThreshold: null,
+  gameDurationOverride: null,
+};
 
 // ─── Mock Player Factory ─────────────────────────────────────────
 
-export function createPlayer(
-  user: MockUser,
-  overrides: Partial<RMHboxPlayer> = {},
-): RMHboxPlayer {
+export function createPlayer(user: MockUser, overrides: Partial<RMHboxPlayer> = {}): RMHboxPlayer {
   return {
-    userId:
-      user.userId,
-    userName:
-      user.userName,
-    avatarUrl:
-      user.avatarUrl,
+    userId: user.userId,
+    userName: user.userName,
+    avatarUrl: user.avatarUrl,
     socketId: `socket-${user.userId}`,
     isConnected: true,
     isReady: false,
     isAway: false,
     score: 0,
     roundScore: 0,
-    joinedAt:
-      Date.now(),
-    lastSeenAt:
-      Date.now(),
+    joinedAt: Date.now(),
+    lastSeenAt: Date.now(),
     role: 'player',
     ...overrides,
   };
@@ -183,175 +120,83 @@ export interface MockContextData {
  * All broadcasts/sends are captured into arrays for assertions.
  */
 export function createMockContext(
-  playerUsers: MockUser[] = [
-    MOCK_USERS.alice,
-    MOCK_USERS.bob,
-    MOCK_USERS.charlie,
-    MOCK_USERS.diana,
-  ],
+  playerUsers: MockUser[] = [MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana],
   overrides: Partial<MinigameContext> = {},
 ): MockContextData {
   const broadcastLog: Array<{
     event: string;
     data: unknown;
-  }> =
-    [];
+  }> = [];
   const playerLog: Array<{
     userId: string;
     event: string;
     data: unknown;
-  }> =
-    [];
+  }> = [];
   const spectatorLog: Array<{
     event: string;
     data: unknown;
-  }> =
-    [];
-  const completedResults: MinigameResults[] =
-    [];
-  const errors: Error[] =
-    [];
+  }> = [];
+  const completedResults: MinigameResults[] = [];
+  const errors: Error[] = [];
 
-  const players =
-    new Map<
-      string,
-      RMHboxPlayer
-    >();
+  const players = new Map<string, RMHboxPlayer>();
   for (const user of playerUsers) {
-    players.set(
-      user.userId,
-      createPlayer(
-        user,
-      ),
-    );
+    players.set(user.userId, createPlayer(user));
   }
 
-  const context: MinigameContext =
-    {
-      lobbyId:
-        'TEST01',
-      players,
-      settings:
-        {
-          ...DEFAULT_SETTINGS,
-        },
-      gameSettings:
-        {},
-      getHostId:
-        () =>
-          playerUsers[0]
-            ?.userId ??
-          'host-user',
-      broadcastToLobby:
-        vi.fn(
-          (
-            event: string,
-            data: unknown,
-          ) => {
-            broadcastLog.push(
-              {
-                event,
-                data,
-              },
-            );
-          },
-        ),
-      broadcastToPlayers:
-        vi.fn(
-          (
-            event: string,
-            data: unknown,
-          ) => {
-            broadcastLog.push(
-              {
-                event,
-                data,
-              },
-            );
-          },
-        ),
-      broadcastAction:
-        vi.fn(
-          (action: {
-            type: string;
-            payload?: unknown;
-          }) => {
-            broadcastLog.push(
-              {
-                event:
-                  'action',
-                data: action,
-              },
-            );
-          },
-        ),
-      sendToPlayer:
-        vi.fn(
-          (
-            userId: string,
-            event: string,
-            data: unknown,
-          ) => {
-            playerLog.push(
-              {
-                userId,
-                event,
-                data,
-              },
-            );
-          },
-        ),
-      sendToSpectators:
-        vi.fn(
-          (
-            event: string,
-            data: unknown,
-          ) => {
-            spectatorLog.push(
-              {
-                event,
-                data,
-              },
-            );
-          },
-        ),
-      sendToSpectatorFollowers:
-        vi.fn(
-          (
-            _targetPlayerId: string,
-            event: string,
-            data: unknown,
-          ) => {
-            spectatorLog.push(
-              {
-                event,
-                data,
-              },
-            );
-          },
-        ),
-      onComplete:
-        vi.fn(
-          (
-            results: MinigameResults,
-          ) => {
-            completedResults.push(
-              results,
-            );
-          },
-        ),
-      onError:
-        vi.fn(
-          (
-            error: Error,
-          ) => {
-            errors.push(
-              error,
-            );
-          },
-        ),
-      ...overrides,
-    };
+  const context: MinigameContext = {
+    lobbyId: 'TEST01',
+    players,
+    settings: {
+      ...DEFAULT_SETTINGS,
+    },
+    gameSettings: {},
+    getHostId: () => playerUsers[0]?.userId ?? 'host-user',
+    broadcastToLobby: vi.fn((event: string, data: unknown) => {
+      broadcastLog.push({
+        event,
+        data,
+      });
+    }),
+    broadcastToPlayers: vi.fn((event: string, data: unknown) => {
+      broadcastLog.push({
+        event,
+        data,
+      });
+    }),
+    broadcastAction: vi.fn((action: { type: string; payload?: unknown }) => {
+      broadcastLog.push({
+        event: 'action',
+        data: action,
+      });
+    }),
+    sendToPlayer: vi.fn((userId: string, event: string, data: unknown) => {
+      playerLog.push({
+        userId,
+        event,
+        data,
+      });
+    }),
+    sendToSpectators: vi.fn((event: string, data: unknown) => {
+      spectatorLog.push({
+        event,
+        data,
+      });
+    }),
+    sendToSpectatorFollowers: vi.fn((_targetPlayerId: string, event: string, data: unknown) => {
+      spectatorLog.push({
+        event,
+        data,
+      });
+    }),
+    onComplete: vi.fn((results: MinigameResults) => {
+      completedResults.push(results);
+    }),
+    onError: vi.fn((error: Error) => {
+      errors.push(error);
+    }),
+    ...overrides,
+  };
 
   return {
     context,
@@ -378,13 +223,7 @@ export function findBroadcasts(
   event: string;
   data: unknown;
 }> {
-  return log.filter(
-    (
-      e,
-    ) =>
-      e.event ===
-      eventName,
-  );
+  return log.filter((e) => e.event === eventName);
 }
 
 /**
@@ -402,15 +241,8 @@ export function findLastBroadcast(
       data: unknown;
     }
   | undefined {
-  const matches =
-    findBroadcasts(
-      log,
-      eventName,
-    );
-  return matches[
-    matches.length -
-      1
-  ];
+  const matches = findBroadcasts(log, eventName);
+  return matches[matches.length - 1];
 }
 
 /**
@@ -429,16 +261,7 @@ export function findPlayerEvents(
   event: string;
   data: unknown;
 }> {
-  return log.filter(
-    (
-      e,
-    ) =>
-      e.userId ===
-        userId &&
-      (!eventName ||
-        e.event ===
-          eventName),
-  );
+  return log.filter((e) => e.userId === userId && (!eventName || e.event === eventName));
 }
 
 /**
@@ -459,16 +282,8 @@ export function findLastPlayerEvent(
       data: unknown;
     }
   | undefined {
-  const matches =
-    findPlayerEvents(
-      log,
-      userId,
-      eventName,
-    );
-  return matches[
-    matches.length -
-      1
-  ];
+  const matches = findPlayerEvents(log, userId, eventName);
+  return matches[matches.length - 1];
 }
 
 /**
@@ -482,31 +297,14 @@ export function findActionBroadcasts(
   actionType: string,
 ): Array<{
   event: string;
-  data: Record<
-    string,
-    unknown
-  >;
+  data: Record<string, unknown>;
 }> {
-  return log.filter(
-    (
-      e,
-    ) => {
-      const d =
-        e.data as Record<
-          string,
-          unknown
-        >;
-      return (
-        d.type ===
-        actionType
-      );
-    },
-  ) as Array<{
+  return log.filter((e) => {
+    const d = e.data as Record<string, unknown>;
+    return d.type === actionType;
+  }) as Array<{
     event: string;
-    data: Record<
-      string,
-      unknown
-    >;
+    data: Record<string, unknown>;
   }>;
 }
 
@@ -522,21 +320,11 @@ export function findLastActionBroadcast(
 ):
   | {
       event: string;
-      data: Record<
-        string,
-        unknown
-      >;
+      data: Record<string, unknown>;
     }
   | undefined {
-  const matches =
-    findActionBroadcasts(
-      log,
-      actionType,
-    );
-  return matches[
-    matches.length -
-      1
-  ];
+  const matches = findActionBroadcasts(log, actionType);
+  return matches[matches.length - 1];
 }
 
 /**
@@ -553,34 +341,15 @@ export function findPlayerActions(
 ): Array<{
   userId: string;
   event: string;
-  data: Record<
-    string,
-    unknown
-  >;
+  data: Record<string, unknown>;
 }> {
-  return log.filter(
-    (
-      e,
-    ) => {
-      const d =
-        e.data as Record<
-          string,
-          unknown
-        >;
-      return (
-        e.userId ===
-          userId &&
-        d.type ===
-          actionType
-      );
-    },
-  ) as Array<{
+  return log.filter((e) => {
+    const d = e.data as Record<string, unknown>;
+    return e.userId === userId && d.type === actionType;
+  }) as Array<{
     userId: string;
     event: string;
-    data: Record<
-      string,
-      unknown
-    >;
+    data: Record<string, unknown>;
   }>;
 }
 
@@ -599,20 +368,9 @@ export function findLastPlayerAction(
   | {
       userId: string;
       event: string;
-      data: Record<
-        string,
-        unknown
-      >;
+      data: Record<string, unknown>;
     }
   | undefined {
-  const matches =
-    findPlayerActions(
-      log,
-      userId,
-      actionType,
-    );
-  return matches[
-    matches.length -
-      1
-  ];
+  const matches = findPlayerActions(log, userId, actionType);
+  return matches[matches.length - 1];
 }

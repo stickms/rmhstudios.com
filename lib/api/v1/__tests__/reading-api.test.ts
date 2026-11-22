@@ -6,10 +6,7 @@
  * 404s and `document: null`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  handlersOf,
-  type TestHandler,
-} from '@/lib/__tests__/api-handlers-of';
+import { handlersOf, type TestHandler } from '@/lib/__tests__/api-handlers-of';
 
 type Row = Record<string, unknown>;
 
@@ -63,8 +60,7 @@ vi.mock('@/lib/library/library.server', () => ({
         : undefined,
 }));
 vi.mock('@/lib/library/library', () => ({
-  getLibraryBook: (slug: string) =>
-    slug === 'static-book' ? { slug, title: 'Static Book' } : undefined,
+  getLibraryBook: (slug: string) => (slug === 'static-book' ? { slug, title: 'Static Book' } : undefined),
 }));
 vi.mock('@/lib/reading/glossary.server', () => ({
   listGlossary: async () => [],
@@ -115,10 +111,10 @@ vi.mock('@/lib/prisma.server', () => {
     $transaction: async (fn: (tx: unknown) => unknown) => fn(db),
     readingHighlight: {
       findMany: async (a: { where?: Row; orderBy?: Row[]; take?: number }) =>
-        sorted(h.highlights.filter((r) => matches(r, a.where)), a.orderBy).slice(
-          0,
-          a.take,
-        ),
+        sorted(
+          h.highlights.filter((r) => matches(r, a.where)),
+          a.orderBy,
+        ).slice(0, a.take),
       // A copy, as a real query returns: the site reads the old visibility before it writes the new one.
       findFirst: async (a: { where: Row }) => {
         const r = h.highlights.find((x) => matches(x, a.where));
@@ -134,10 +130,8 @@ vi.mock('@/lib/prisma.server', () => {
       },
     },
     readingHighlightPassage: {
-      findMany: async (a: { where: Row }) =>
-        h.links.filter((r) => matches(r, a.where)),
-      count: async (a: { where: Row }) =>
-        h.links.filter((r) => matches(r, a.where)).length,
+      findMany: async (a: { where: Row }) => h.links.filter((r) => matches(r, a.where)),
+      count: async (a: { where: Row }) => h.links.filter((r) => matches(r, a.where)).length,
       create: async (a: { data: Row }) => {
         h.links.push(a.data);
       },
@@ -149,13 +143,11 @@ vi.mock('@/lib/prisma.server', () => {
       upsert: async () => ({ id: 'stat_new' }),
       update: async (a: { where: { id: string }; data: { readers: { increment: number } } }) => {
         h.stats.find((s) => s.id === a.where.id)!.readers =
-          (h.stats.find((s) => s.id === a.where.id)!.readers as number) +
-          a.data.readers.increment;
+          (h.stats.find((s) => s.id === a.where.id)!.readers as number) + a.data.readers.increment;
       },
       updateMany: async (a: { where: { id: string }; data: { readers: { decrement: number } } }) => {
         const s = h.stats.find((x) => x.id === a.where.id);
-        if (s && (s.readers as number) > 0)
-          s.readers = (s.readers as number) - a.data.readers.decrement;
+        if (s && (s.readers as number) > 0) s.readers = (s.readers as number) - a.data.readers.decrement;
       },
     },
     blogPost: {
@@ -208,8 +200,7 @@ vi.mock('@/lib/prisma.server', () => {
   return { prisma: db };
 });
 
-const load = async (p: string) =>
-  handlersOf<TestHandler>((await import(p)).Route);
+const load = async (p: string) => handlersOf<TestHandler>((await import(p)).Route);
 const routes = {
   list: await load('../../../../app/routes/api/v1/me/highlights'),
   one: await load('../../../../app/routes/api/v1/me/highlights/$id'),
@@ -274,8 +265,15 @@ describe('scopes', () => {
       call(routes.goal.GET, '/api/v1/me/reading-goal'),
       call(routes.one.PATCH, '/api/v1/me/highlights/a', { method: 'PATCH', body: { note: 'x' }, params: { id: 'a' } }),
       call(routes.one.DELETE, '/api/v1/me/highlights/a', { method: 'DELETE', params: { id: 'a' } }),
-      call(routes.shelf.PUT, '/api/v1/me/shelves/meditations', { method: 'PUT', body: { shelf: 'want' }, params: { slug: 'meditations' } }),
-      call(routes.shelf.DELETE, '/api/v1/me/shelves/meditations', { method: 'DELETE', params: { slug: 'meditations' } }),
+      call(routes.shelf.PUT, '/api/v1/me/shelves/meditations', {
+        method: 'PUT',
+        body: { shelf: 'want' },
+        params: { slug: 'meditations' },
+      }),
+      call(routes.shelf.DELETE, '/api/v1/me/shelves/meditations', {
+        method: 'DELETE',
+        params: { slug: 'meditations' },
+      }),
     ])
       expect((await r).status).toBe(403);
     h.scopes = ['read:reading'];
@@ -287,9 +285,7 @@ describe('scopes', () => {
 
   it('is registered as two scopes, and a wildcard key satisfies them', async () => {
     const { SCOPES, hasScope } = await import('@/lib/api/scopes');
-    expect(SCOPES.map((s) => s.id)).toEqual(
-      expect.arrayContaining(['read:reading', 'write:reading']),
-    );
+    expect(SCOPES.map((s) => s.id)).toEqual(expect.arrayContaining(['read:reading', 'write:reading']));
     expect(hasScope(['read:*'], 'read:reading')).toBe(true);
     expect(hasScope(['write:*'], 'write:reading')).toBe(true);
     expect(hasScope(['write:reading'], 'read:reading')).toBe(false);
@@ -307,8 +303,15 @@ describe('only the key owner’s rows', () => {
 
   it('answers 404 to edit or delete another member’s highlight and leaves it alone', async () => {
     h.highlights = [hl('theirs', { userId: 'other_1', note: 'keep' })];
-    const patch = await call(routes.one.PATCH, '/api/v1/me/highlights/theirs', { method: 'PATCH', body: { note: 'x' }, params: { id: 'theirs' } });
-    const del = await call(routes.one.DELETE, '/api/v1/me/highlights/theirs', { method: 'DELETE', params: { id: 'theirs' } });
+    const patch = await call(routes.one.PATCH, '/api/v1/me/highlights/theirs', {
+      method: 'PATCH',
+      body: { note: 'x' },
+      params: { id: 'theirs' },
+    });
+    const del = await call(routes.one.DELETE, '/api/v1/me/highlights/theirs', {
+      method: 'DELETE',
+      params: { id: 'theirs' },
+    });
     expect(patch.status).toBe(404);
     expect(del.status).toBe(404);
     expect(h.highlights[0]!.note).toBe('keep');
@@ -316,8 +319,24 @@ describe('only the key owner’s rows', () => {
 
   it('lists only the owner’s shelf entries', async () => {
     h.shelves = [
-      { userId: 'owner_1', docSlug: 'meditations', title: 'Meditations', shelf: 'want', pages: 254, finishedAt: null, updatedAt: new Date() },
-      { userId: 'other_1', docSlug: 'odyssey', title: 'The Odyssey', shelf: 'read', pages: 1, finishedAt: null, updatedAt: new Date() },
+      {
+        userId: 'owner_1',
+        docSlug: 'meditations',
+        title: 'Meditations',
+        shelf: 'want',
+        pages: 254,
+        finishedAt: null,
+        updatedAt: new Date(),
+      },
+      {
+        userId: 'other_1',
+        docSlug: 'odyssey',
+        title: 'The Odyssey',
+        shelf: 'read',
+        pages: 1,
+        finishedAt: null,
+        updatedAt: new Date(),
+      },
     ];
     // The site's getMyShelves filters by userId in the query; the stand-in applies it.
     const res = await call(routes.shelves.GET, '/api/v1/me/shelves');
@@ -341,14 +360,10 @@ describe('listing and since sync', () => {
   });
 
   it('pages newest first with a cursor', async () => {
-    h.highlights = ['a', 'b', 'c'].map((id, i) =>
-      hl(id, { createdAt: new Date(Date.UTC(2026, 10, 1 + i)) }),
-    );
+    h.highlights = ['a', 'b', 'c'].map((id, i) => hl(id, { createdAt: new Date(Date.UTC(2026, 10, 1 + i)) }));
     const p1 = await (await call(routes.list.GET, '/api/v1/me/highlights?limit=2')).json();
     expect(p1.data.map((x: Row) => x.id)).toEqual(['c', 'b']);
-    const p2 = await (
-      await call(routes.list.GET, `/api/v1/me/highlights?limit=2&cursor=${p1.nextCursor}`)
-    ).json();
+    const p2 = await (await call(routes.list.GET, `/api/v1/me/highlights?limit=2&cursor=${p1.nextCursor}`)).json();
     expect(p2.data.map((x: Row) => x.id)).toEqual(['a']);
     expect(p2.nextCursor).toBeNull();
   });
@@ -368,10 +383,7 @@ describe('listing and since sync', () => {
     const seen: string[] = [];
     let cursor = '';
     for (let i = 0; i < 6; i++) {
-      const res = await call(
-        routes.list.GET,
-        `/api/v1/me/highlights?since=${T1.toISOString()}&limit=2${cursor}`,
-      );
+      const res = await call(routes.list.GET, `/api/v1/me/highlights?since=${T1.toISOString()}&limit=2${cursor}`);
       const page = await res.json();
       seen.push(...page.data.map((x: Row) => x.id));
       if (!page.nextCursor) break;
@@ -411,19 +423,35 @@ describe('listing and since sync', () => {
     expect(by.live.document).toEqual({ title: 'Live post', url: expect.stringMatching(/\/blog\/live-post$/) });
     expect(by.lib.document.title).toBe('Meditations');
     expect(by.static.document.title).toBe('Static Book');
-    expect(Object.keys(by.lib).sort()).toEqual(
-      ['createdAt', 'document', 'id', 'isPublic', 'key', 'kind', 'note', 'quote', 'updatedAt'],
-    );
+    expect(Object.keys(by.lib).sort()).toEqual([
+      'createdAt',
+      'document',
+      'id',
+      'isPublic',
+      'key',
+      'kind',
+      'note',
+      'quote',
+      'updatedAt',
+    ]);
   });
 });
 
 describe('edits go through the site functions', () => {
   it('patches the note and clears it with null', async () => {
     h.highlights = [hl('a')];
-    const res = await call(routes.one.PATCH, '/api/v1/me/highlights/a', { method: 'PATCH', body: { note: 'new' }, params: { id: 'a' } });
+    const res = await call(routes.one.PATCH, '/api/v1/me/highlights/a', {
+      method: 'PATCH',
+      body: { note: 'new' },
+      params: { id: 'a' },
+    });
     expect(res.status).toBe(200);
     expect((await res.json()).note).toBe('new');
-    const cleared = await call(routes.one.PATCH, '/api/v1/me/highlights/a', { method: 'PATCH', body: { note: null }, params: { id: 'a' } });
+    const cleared = await call(routes.one.PATCH, '/api/v1/me/highlights/a', {
+      method: 'PATCH',
+      body: { note: null },
+      params: { id: 'a' },
+    });
     expect((await cleared.json()).note).toBeNull();
   });
 
@@ -431,11 +459,19 @@ describe('edits go through the site functions', () => {
     h.highlights = [hl('pub', { isPublic: true }), hl('priv')];
     h.stats = [{ id: 's1', readers: 1 }];
     h.links = [{ highlightId: 'pub', statId: 's1', userId: 'owner_1' }];
-    const off = await call(routes.one.PATCH, '/api/v1/me/highlights/pub', { method: 'PATCH', body: { isPublic: false }, params: { id: 'pub' } });
+    const off = await call(routes.one.PATCH, '/api/v1/me/highlights/pub', {
+      method: 'PATCH',
+      body: { isPublic: false },
+      params: { id: 'pub' },
+    });
     expect((await off.json()).isPublic).toBe(false);
     expect(h.stats[0]!.readers).toBe(0);
     expect(h.links).toHaveLength(0);
-    const on = await call(routes.one.PATCH, '/api/v1/me/highlights/priv', { method: 'PATCH', body: { isPublic: true }, params: { id: 'priv' } });
+    const on = await call(routes.one.PATCH, '/api/v1/me/highlights/priv', {
+      method: 'PATCH',
+      body: { isPublic: true },
+      params: { id: 'priv' },
+    });
     expect((await on.json()).isPublic).toBe(true);
     expect(h.stats[0]!.readers).toBe(0);
   });
@@ -448,14 +484,21 @@ describe('edits go through the site functions', () => {
     expect(res.status).toBe(204);
     expect(h.highlights).toHaveLength(0);
     expect(h.stats[0]!.readers).toBe(0);
-    const again = await call(routes.one.DELETE, '/api/v1/me/highlights/pub', { method: 'DELETE', params: { id: 'pub' } });
+    const again = await call(routes.one.DELETE, '/api/v1/me/highlights/pub', {
+      method: 'DELETE',
+      params: { id: 'pub' },
+    });
     expect(again.status).toBe(404);
   });
 
   it('validates bodies: empty, unknown fields, over-long notes', async () => {
     h.highlights = [hl('a')];
     for (const body of [{}, { note: 'x'.repeat(2001) }, { isPublic: 'yes' }, { exact: 'rewrite' }]) {
-      const res = await call(routes.one.PATCH, '/api/v1/me/highlights/a', { method: 'PATCH', body, params: { id: 'a' } });
+      const res = await call(routes.one.PATCH, '/api/v1/me/highlights/a', {
+        method: 'PATCH',
+        body,
+        params: { id: 'a' },
+      });
       expect(res.status).toBe(400);
     }
     expect(h.highlights[0]!.note).toBeNull();
@@ -473,7 +516,12 @@ describe('shelves and the goal', () => {
       params: { slug: 'meditations' },
     });
     expect(put.status).toBe(200);
-    expect(await put.json()).toMatchObject({ slug: 'meditations', shelf: 'read', pages: 254, finishedAt: '2026-03-01T00:00:00.000Z' });
+    expect(await put.json()).toMatchObject({
+      slug: 'meditations',
+      shelf: 'read',
+      pages: 254,
+      finishedAt: '2026-03-01T00:00:00.000Z',
+    });
     await call(routes.shelf.PUT, '/api/v1/me/shelves/odyssey', {
       method: 'PUT',
       body: { shelf: 'read', finishedAt: '2025-12-31T00:00:00.000Z' },
@@ -490,18 +538,36 @@ describe('shelves and the goal', () => {
   });
 
   it('filters the list by shelf and removes an entry', async () => {
-    await call(routes.shelf.PUT, '/api/v1/me/shelves/meditations', { method: 'PUT', body: { shelf: 'want' }, params: { slug: 'meditations' } });
-    await call(routes.shelf.PUT, '/api/v1/me/shelves/odyssey', { method: 'PUT', body: { shelf: 'reading' }, params: { slug: 'odyssey' } });
+    await call(routes.shelf.PUT, '/api/v1/me/shelves/meditations', {
+      method: 'PUT',
+      body: { shelf: 'want' },
+      params: { slug: 'meditations' },
+    });
+    await call(routes.shelf.PUT, '/api/v1/me/shelves/odyssey', {
+      method: 'PUT',
+      body: { shelf: 'reading' },
+      params: { slug: 'odyssey' },
+    });
     const reading = await (await call(routes.shelves.GET, '/api/v1/me/shelves?shelf=reading')).json();
     expect(reading.data.map((e: Row) => e.slug)).toEqual(['odyssey']);
     expect((await call(routes.shelves.GET, '/api/v1/me/shelves?shelf=nope')).status).toBe(400);
-    const del = await call(routes.shelf.DELETE, '/api/v1/me/shelves/odyssey', { method: 'DELETE', params: { slug: 'odyssey' } });
+    const del = await call(routes.shelf.DELETE, '/api/v1/me/shelves/odyssey', {
+      method: 'DELETE',
+      params: { slug: 'odyssey' },
+    });
     expect(del.status).toBe(204);
-    expect((await call(routes.shelf.DELETE, '/api/v1/me/shelves/odyssey', { method: 'DELETE', params: { slug: 'odyssey' } })).status).toBe(404);
+    expect(
+      (await call(routes.shelf.DELETE, '/api/v1/me/shelves/odyssey', { method: 'DELETE', params: { slug: 'odyssey' } }))
+        .status,
+    ).toBe(404);
   });
 
   it('answers 404 for an unknown library slug and 400 for a bad body', async () => {
-    const unknown = await call(routes.shelf.PUT, '/api/v1/me/shelves/no-such-book', { method: 'PUT', body: { shelf: 'want' }, params: { slug: 'no-such-book' } });
+    const unknown = await call(routes.shelf.PUT, '/api/v1/me/shelves/no-such-book', {
+      method: 'PUT',
+      body: { shelf: 'want' },
+      params: { slug: 'no-such-book' },
+    });
     expect(unknown.status).toBe(404);
     expect(h.shelves).toHaveLength(0);
     const cases = [
@@ -511,7 +577,11 @@ describe('shelves and the goal', () => {
       { shelf: 'read', finishedAt: 'not a date' },
     ];
     for (const body of cases) {
-      const res = await call(routes.shelf.PUT, '/api/v1/me/shelves/meditations', { method: 'PUT', body, params: { slug: 'meditations' } });
+      const res = await call(routes.shelf.PUT, '/api/v1/me/shelves/meditations', {
+        method: 'PUT',
+        body,
+        params: { slug: 'meditations' },
+      });
       expect(res.status).toBe(400);
     }
   });
@@ -522,8 +592,7 @@ describe('write budget', () => {
     const { writeBudgetExceeded } = await import('@/lib/api/v1/reading.server');
     expect(writeBudgetExceeded('budget_user')).toBe(false);
     let refusedAt = 0;
-    for (let i = 2; i <= 1000 && !refusedAt; i++)
-      if (writeBudgetExceeded('budget_user')) refusedAt = i;
+    for (let i = 2; i <= 1000 && !refusedAt; i++) if (writeBudgetExceeded('budget_user')) refusedAt = i;
     expect(refusedAt).toBeGreaterThan(1);
     expect(refusedAt).toBeLessThan(1000);
     expect(writeBudgetExceeded('another_member')).toBe(false);

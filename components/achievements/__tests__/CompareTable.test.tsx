@@ -75,9 +75,7 @@ describe('CompareTable', () => {
   });
 
   it('shows a masked secret without its name and without Track', () => {
-    const html = render([
-      row('s', 'them', { masked: true, name: '', description: '', trackable: false }),
-    ]);
+    const html = render([row('s', 'them', { masked: true, name: '', description: '', trackable: false })]);
     expect(html).toContain('A secret achievement');
     expect(html).not.toContain('Track');
     expect(html).toContain('Unlocked');

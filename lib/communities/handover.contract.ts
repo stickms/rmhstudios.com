@@ -1,16 +1,8 @@
 /** Contracts for the community ownership handover (client-safe; types by `import type`). */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  HandoverOfferDTO,
-  HandoverStatusDTO,
-  OwnedCommunityDTO,
-} from '@/lib/communities/handover';
-import type {
-  assignOwnerBody,
-  offerHandoverBody,
-  respondHandoverBody,
-} from './handover-schema';
+import type { HandoverOfferDTO, HandoverStatusDTO, OwnedCommunityDTO } from '@/lib/communities/handover';
+import type { assignOwnerBody, offerHandoverBody, respondHandoverBody } from './handover-schema';
 
 /** The viewer's side of the community's handover: the offer, and for the owner the moderators to choose from. */
 export const getHandoverApi = endpoint<{ res: HandoverStatusDTO }>()({

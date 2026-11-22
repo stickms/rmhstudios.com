@@ -11,106 +11,37 @@
  */
 import { useEffect } from 'react';
 
-export function useChromePointer(
-  root: React.RefObject<HTMLDivElement | null>,
-  prop: `--${string}` = '--rc-mx',
-) {
+export function useChromePointer(root: React.RefObject<HTMLDivElement | null>, prop: `--${string}` = '--rc-mx') {
   useEffect(() => {
-    const el =
-      root.current;
-    if (
-      !el
-    )
-      return;
-    if (
-      !window.matchMedia(
-        '(hover: hover) and (pointer: fine)',
-      )
-        .matches
-    )
-      return;
+    const el = root.current;
+    if (!el) return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-    let last: HTMLElement | null =
-      null;
-    const settle =
-      () => {
-        last?.style.setProperty(
-          prop,
-          '0',
-        );
-        last =
-          null;
-      };
-    const onMove =
-      (
-        e: PointerEvent,
-      ) => {
-        const target =
-          e.target instanceof
-          Element
-            ? e.target
-            : null;
-        const surface =
-          target?.closest<HTMLElement>(
-            '[data-chrome-live]',
-          ) ??
-          null;
-        if (
-          surface !==
-          last
-        )
-          settle();
-        if (
-          !surface
-        )
-          return;
-        last =
-          surface;
-        const box =
-          surface.getBoundingClientRect();
-        if (
-          box.width ===
-          0
-        )
-          return;
-        const x =
-          ((e.clientX -
-            box.left) /
-            box.width) *
-            2 -
-          1;
-        surface.style.setProperty(
-          prop,
-          x.toFixed(
-            3,
-          ),
-        );
-      };
+    let last: HTMLElement | null = null;
+    const settle = () => {
+      last?.style.setProperty(prop, '0');
+      last = null;
+    };
+    const onMove = (e: PointerEvent) => {
+      const target = e.target instanceof Element ? e.target : null;
+      const surface = target?.closest<HTMLElement>('[data-chrome-live]') ?? null;
+      if (surface !== last) settle();
+      if (!surface) return;
+      last = surface;
+      const box = surface.getBoundingClientRect();
+      if (box.width === 0) return;
+      const x = ((e.clientX - box.left) / box.width) * 2 - 1;
+      surface.style.setProperty(prop, x.toFixed(3));
+    };
 
-    el.addEventListener(
-      'pointermove',
-      onMove,
-      {
-        passive: true,
-      },
-    );
-    el.addEventListener(
-      'pointerleave',
-      settle,
-    );
+    el.addEventListener('pointermove', onMove, {
+      passive: true,
+    });
+    el.addEventListener('pointerleave', settle);
     return () => {
-      el.removeEventListener(
-        'pointermove',
-        onMove,
-      );
-      el.removeEventListener(
-        'pointerleave',
-        settle,
-      );
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', settle);
       settle();
     };
-  }, [
-    root,
-    prop,
-  ]);
+  }, [root, prop]);
 }

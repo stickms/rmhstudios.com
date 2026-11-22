@@ -36,10 +36,7 @@ export type SanctionResult =
     }
   | {
       ok: false;
-      status:
-        | 400
-        | 403
-        | 404;
+      status: 400 | 403 | 404;
       error: string;
     };
 
@@ -54,12 +51,8 @@ export interface SanctionInput {
   targetUserId: string;
   kind: SanctionKind;
   duration: SanctionDuration;
-  ruleId?:
-    | string
-    | undefined;
-  reason?:
-    | string
-    | undefined;
+  ruleId?: string | undefined;
+  reason?: string | undefined;
 }
 
 /**
@@ -67,312 +60,168 @@ export interface SanctionInput {
  * creator and yourself are off limits. The previous active sanction is marked lifted
  * before the new row is inserted, all under one advisory lock per member.
  */
-export async function sanction(
-  input: SanctionInput,
-): Promise<SanctionResult> {
-  const {
-    community,
-    actorId,
-    targetUserId,
-  } =
-    input;
-  if (
-    input.actorRole !==
-      'MOD' &&
-    input.actorRole !==
-      'ADMIN'
-  ) {
+export async function sanction(input: SanctionInput): Promise<SanctionResult> {
+  const { community, actorId, targetUserId } = input;
+  if (input.actorRole !== 'MOD' && input.actorRole !== 'ADMIN') {
     return {
       ok: false,
       status: 403,
-      error:
-        'Only community mods can do that',
+      error: 'Only community mods can do that',
     };
   }
-  if (
-    targetUserId ===
-    actorId
-  ) {
+  if (targetUserId === actorId) {
     return {
       ok: false,
       status: 400,
-      error:
-        "You can't sanction yourself",
+      error: "You can't sanction yourself",
     };
   }
-  if (
-    targetUserId ===
-    community.createdById
-  ) {
+  if (targetUserId === community.createdById) {
     return {
       ok: false,
       status: 400,
-      error:
-        "The owner can't be banned or timed out",
+      error: "The owner can't be banned or timed out",
     };
   }
-  const target =
-    await prisma.communityMember.findUnique(
-      {
-        where:
-          {
-            communityId_userId:
-              {
-                communityId:
-                  community.id,
-                userId:
-                  targetUserId,
-              },
-          },
-        select:
-          {
-            id: true,
-            role: true,
-          },
+  const target = await prisma.communityMember.findUnique({
+    where: {
+      communityId_userId: {
+        communityId: community.id,
+        userId: targetUserId,
       },
-    );
-  if (
-    target?.role ===
-    'ADMIN'
-  ) {
+    },
+    select: {
+      id: true,
+      role: true,
+    },
+  });
+  if (target?.role === 'ADMIN') {
     return {
       ok: false,
       status: 400,
-      error:
-        "The owner can't be banned or timed out",
+      error: "The owner can't be banned or timed out",
     };
   }
-  if (
-    target?.role ===
-      'MOD' &&
-    input.actorRole !==
-      'ADMIN'
-  ) {
+  if (target?.role === 'MOD' && input.actorRole !== 'ADMIN') {
     return {
       ok: false,
       status: 403,
-      error:
-        'Only the owner can sanction a mod',
+      error: 'Only the owner can sanction a mod',
     };
   }
-  if (
-    !target &&
-    input.kind ===
-      'timeout'
-  ) {
+  if (!target && input.kind === 'timeout') {
     return {
       ok: false,
       status: 404,
-      error:
-        'Not a member',
+      error: 'Not a member',
     };
   }
-  if (
-    !target
-  ) {
-    const exists =
-      await prisma.user.findUnique(
-        {
-          where:
-            {
-              id: targetUserId,
-            },
-          select:
-            {
-              id: true,
-            },
-        },
-      );
-    if (
-      !exists
-    )
+  if (!target) {
+    const exists = await prisma.user.findUnique({
+      where: {
+        id: targetUserId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!exists)
       return {
         ok: false,
         status: 404,
-        error:
-          'Member not found',
+        error: 'Member not found',
       };
   }
-  const rule =
-    input.ruleId
-      ? await getRule(
-          community.id,
-          input.ruleId,
-        )
-      : null;
-  if (
-    input.ruleId &&
-    !rule
-  )
+  const rule = input.ruleId ? await getRule(community.id, input.ruleId) : null;
+  if (input.ruleId && !rule)
     return {
       ok: false,
       status: 400,
-      error:
-        'Rule not found',
+      error: 'Rule not found',
     };
 
-  const now =
-    new Date();
-  const endsAt =
-    endsAtFor(
-      input.duration,
-      now,
-    );
-  const reason =
-    input.reason?.trim() ||
-    null;
+  const now = new Date();
+  const endsAt = endsAtFor(input.duration, now);
+  const reason = input.reason?.trim() || null;
 
-  const id =
-    await prisma.$transaction(
-      async (
-        tx,
-      ) => {
-        await lockKey(
-          tx,
-          `community-ban:${community.id}:${targetUserId}`,
-        );
-        // At most one active sanction per member: the old one is lifted first.
-        await tx.communityBan.updateMany(
-          {
-            where:
-              {
-                communityId:
-                  community.id,
-                userId:
-                  targetUserId,
-                liftedAt:
-                  null,
-              },
-            data: {
-              liftedAt:
-                now,
-              liftedById:
-                actorId,
-            },
-          },
-        );
-        const row =
-          await tx.communityBan.create(
-            {
-              data: {
-                communityId:
-                  community.id,
-                userId:
-                  targetUserId,
-                kind: input.kind,
-                endsAt,
-                ruleId:
-                  rule?.id ??
-                  null,
-                reason,
-                createdById:
-                  actorId,
-              },
-              select:
-                {
-                  id: true,
-                },
-            },
-          );
-        if (
-          input.kind ===
-            'ban' &&
-          target
-        ) {
-          // The removal path's bookkeeping, in the same transaction.
-          await tx.communityMember.delete(
-            {
-              where:
-                {
-                  id: target.id,
-                },
-            },
-          );
-          await tx.community.update(
-            {
-              where:
-                {
-                  id: community.id,
-                },
-              data: {
-                memberCount:
-                  {
-                    decrement: 1,
-                  },
-              },
-            },
-          );
-          await markRemoved(
-            tx,
-            community.id,
-            targetUserId,
-            actorId,
-          );
-          await recordMemberEvent(
-            tx,
-            community.id,
-            targetUserId,
-            'removed',
-          );
-        }
-        await logModAction(
-          tx,
-          {
-            communityId:
-              community.id,
-            actorId,
-            action:
-              input.kind ===
-              'ban'
-                ? 'member_banned'
-                : 'member_timed_out',
-            targetUserId,
-            targetType:
-              'member',
-            targetId:
-              row.id,
-            ruleId:
-              rule?.id ??
-              null,
-            ruleTitle:
-              rule?.title ??
-              null,
-            reason,
-            detail:
-              {
-                duration:
-                  input.duration,
-              },
-          },
-        );
-        return row.id;
+  const id = await prisma.$transaction(async (tx) => {
+    await lockKey(tx, `community-ban:${community.id}:${targetUserId}`);
+    // At most one active sanction per member: the old one is lifted first.
+    await tx.communityBan.updateMany({
+      where: {
+        communityId: community.id,
+        userId: targetUserId,
+        liftedAt: null,
       },
-    );
+      data: {
+        liftedAt: now,
+        liftedById: actorId,
+      },
+    });
+    const row = await tx.communityBan.create({
+      data: {
+        communityId: community.id,
+        userId: targetUserId,
+        kind: input.kind,
+        endsAt,
+        ruleId: rule?.id ?? null,
+        reason,
+        createdById: actorId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (input.kind === 'ban' && target) {
+      // The removal path's bookkeeping, in the same transaction.
+      await tx.communityMember.delete({
+        where: {
+          id: target.id,
+        },
+      });
+      await tx.community.update({
+        where: {
+          id: community.id,
+        },
+        data: {
+          memberCount: {
+            decrement: 1,
+          },
+        },
+      });
+      await markRemoved(tx, community.id, targetUserId, actorId);
+      await recordMemberEvent(tx, community.id, targetUserId, 'removed');
+    }
+    await logModAction(tx, {
+      communityId: community.id,
+      actorId,
+      action: input.kind === 'ban' ? 'member_banned' : 'member_timed_out',
+      targetUserId,
+      targetType: 'member',
+      targetId: row.id,
+      ruleId: rule?.id ?? null,
+      ruleTitle: rule?.title ?? null,
+      reason,
+      detail: {
+        duration: input.duration,
+      },
+    });
+    return row.id;
+  });
 
   // The member is told the kind, the end and the rule's title; never the private reason.
-  await createNotification(
-    {
-      userId:
-        targetUserId,
-      type: 'SYSTEM',
-      entityType:
-        'community_ban',
-      entityId:
-        community.id,
-      preview:
-        sanctionNoticeText(
-          {
-            communityName:
-              community.name,
-            kind: input.kind,
-            endsAt,
-            ruleTitle:
-              rule?.title ??
-              null,
-          },
-        ),
-    },
-  );
+  await createNotification({
+    userId: targetUserId,
+    type: 'SYSTEM',
+    entityType: 'community_ban',
+    entityId: community.id,
+    preview: sanctionNoticeText({
+      communityName: community.name,
+      kind: input.kind,
+      endsAt,
+      ruleTitle: rule?.title ?? null,
+    }),
+  });
   return {
     ok: true,
     id,
@@ -399,131 +248,68 @@ export async function lift(args: {
   banId: string;
   actorId: string;
 }): Promise<LiftResult> {
-  const now =
-    new Date();
-  const row =
-    await prisma.communityBan.findFirst(
-      {
-        where:
-          {
-            id: args.banId,
-            communityId:
-              args
-                .community
-                .id,
-            ...activeWhere(
-              now,
-            ),
-          },
-        select:
-          {
-            id: true,
-            userId: true,
-            kind: true,
-          },
-      },
-    );
-  if (
-    !row
-  )
-    return {
-      ok: false,
-      status: 404,
-      error:
-        'Not found',
-    };
-  const done =
-    await prisma.$transaction(
-      async (
-        tx,
-      ) => {
-        await lockKey(
-          tx,
-          `community-ban:${args.community.id}:${row.userId}`,
-        );
-        // Compare-and-set: a concurrent lift or replace already closed it.
-        const res =
-          await tx.communityBan.updateMany(
-            {
-              where:
-                {
-                  id: row.id,
-                  liftedAt:
-                    null,
-                },
-              data: {
-                liftedAt:
-                  now,
-                liftedById:
-                  args.actorId,
-              },
-            },
-          );
-        if (
-          res.count ===
-          0
-        )
-          return false;
-        await logModAction(
-          tx,
-          {
-            communityId:
-              args
-                .community
-                .id,
-            actorId:
-              args.actorId,
-            action:
-              'ban_lifted',
-            targetUserId:
-              row.userId,
-            targetType:
-              'member',
-            targetId:
-              row.id,
-            detail:
-              {
-                kind: row.kind,
-              },
-          },
-        );
-        return true;
-      },
-    );
-  if (
-    !done
-  )
-    return {
-      ok: false,
-      status: 404,
-      error:
-        'Not found',
-    };
-  await createNotification(
-    {
-      userId:
-        row.userId,
-      type: 'SYSTEM',
-      entityType:
-        'community_ban',
-      entityId:
-        args
-          .community
-          .id,
-      preview:
-        liftedNoticeText(
-          {
-            communityName:
-              args
-                .community
-                .name,
-            kind: asKind(
-              row.kind,
-            ),
-          },
-        ),
+  const now = new Date();
+  const row = await prisma.communityBan.findFirst({
+    where: {
+      id: args.banId,
+      communityId: args.community.id,
+      ...activeWhere(now),
     },
-  );
+    select: {
+      id: true,
+      userId: true,
+      kind: true,
+    },
+  });
+  if (!row)
+    return {
+      ok: false,
+      status: 404,
+      error: 'Not found',
+    };
+  const done = await prisma.$transaction(async (tx) => {
+    await lockKey(tx, `community-ban:${args.community.id}:${row.userId}`);
+    // Compare-and-set: a concurrent lift or replace already closed it.
+    const res = await tx.communityBan.updateMany({
+      where: {
+        id: row.id,
+        liftedAt: null,
+      },
+      data: {
+        liftedAt: now,
+        liftedById: args.actorId,
+      },
+    });
+    if (res.count === 0) return false;
+    await logModAction(tx, {
+      communityId: args.community.id,
+      actorId: args.actorId,
+      action: 'ban_lifted',
+      targetUserId: row.userId,
+      targetType: 'member',
+      targetId: row.id,
+      detail: {
+        kind: row.kind,
+      },
+    });
+    return true;
+  });
+  if (!done)
+    return {
+      ok: false,
+      status: 404,
+      error: 'Not found',
+    };
+  await createNotification({
+    userId: row.userId,
+    type: 'SYSTEM',
+    entityType: 'community_ban',
+    entityId: args.community.id,
+    preview: liftedNoticeText({
+      communityName: args.community.name,
+      kind: asKind(row.kind),
+    }),
+  });
   return {
     ok: true,
   };
@@ -532,232 +318,107 @@ export async function lift(args: {
 /** Active sanctions, or (`past`) the last 100 lifted or expired. Moderators only; carries the private reason. */
 export async function listSanctions(
   communityId: string,
-  status:
-    | 'active'
-    | 'past',
+  status: 'active' | 'past',
   now: Date = new Date(),
-): Promise<
-  SanctionDTO[]
-> {
-  const rows =
-    await prisma.communityBan.findMany(
-      {
-        where:
-          status ===
-          'active'
-            ? {
-                communityId,
-                ...activeWhere(
-                  now,
-                ),
-              }
-            : {
-                communityId,
-                OR: [
-                  {
-                    liftedAt:
-                      {
-                        not: null,
-                      },
-                  },
-                  {
-                    endsAt:
-                      {
-                        lte: now,
-                      },
-                  },
-                ],
+): Promise<SanctionDTO[]> {
+  const rows = await prisma.communityBan.findMany({
+    where:
+      status === 'active'
+        ? {
+            communityId,
+            ...activeWhere(now),
+          }
+        : {
+            communityId,
+            OR: [
+              {
+                liftedAt: {
+                  not: null,
+                },
               },
-        orderBy:
-          {
-            createdAt:
-              'desc',
+              {
+                endsAt: {
+                  lte: now,
+                },
+              },
+            ],
           },
-        take:
-          status ===
-          'active'
-            ? 200
-            : PAST_SANCTIONS_LIMIT,
-        select:
-          {
-            id: true,
-            kind: true,
-            endsAt: true,
-            createdAt: true,
-            liftedAt: true,
-            reason: true,
-            ruleId: true,
-            createdById: true,
-            user: {
-              select:
-                userChipSelect,
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: status === 'active' ? 200 : PAST_SANCTIONS_LIMIT,
+    select: {
+      id: true,
+      kind: true,
+      endsAt: true,
+      createdAt: true,
+      liftedAt: true,
+      reason: true,
+      ruleId: true,
+      createdById: true,
+      user: {
+        select: userChipSelect,
+      },
+    },
+  });
+  const ruleIds = [...new Set(rows.map((r) => r.ruleId).filter((v): v is string => !!v))];
+  const modIds = [...new Set(rows.map((r) => r.createdById).filter((v): v is string => !!v))];
+  const [rules, mods] = await Promise.all([
+    ruleIds.length
+      ? prisma.communityRule.findMany({
+          where: {
+            communityId,
+            id: {
+              in: ruleIds,
             },
           },
-      },
-    );
-  const ruleIds =
-    [
-      ...new Set(
-        rows
-          .map(
-            (
-              r,
-            ) =>
-              r.ruleId,
-          )
-          .filter(
-            (
-              v,
-            ): v is string =>
-              !!v,
-          ),
-      ),
-    ];
-  const modIds =
-    [
-      ...new Set(
-        rows
-          .map(
-            (
-              r,
-            ) =>
-              r.createdById,
-          )
-          .filter(
-            (
-              v,
-            ): v is string =>
-              !!v,
-          ),
-      ),
-    ];
-  const [
-    rules,
-    mods,
-  ] =
-    await Promise.all(
-      [
-        ruleIds.length
-          ? prisma.communityRule.findMany(
-              {
-                where:
-                  {
-                    communityId,
-                    id: {
-                      in: ruleIds,
-                    },
-                  },
-                select:
-                  {
-                    id: true,
-                    title: true,
-                  },
-              },
-            )
-          : Promise.resolve(
-              [],
-            ),
-        modIds.length
-          ? prisma.user.findMany(
-              {
-                where:
-                  {
-                    id: {
-                      in: modIds,
-                    },
-                  },
-                select:
-                  userChipSelect,
-              },
-            )
-          : Promise.resolve(
-              [],
-            ),
-      ],
-    );
-  const ruleTitle =
-    new Map(
-      rules.map(
-        (
-          r,
-        ) => [
-          r.id,
-          r.title,
-        ],
-      ),
-    );
-  const modById =
-    new Map(
-      mods.map(
-        (
-          m,
-        ) => [
-          m.id,
-          m,
-        ],
-      ),
-    );
-  return rows.map(
-    (
-      r,
-    ) => ({
-      id: r.id,
-      kind: asKind(
-        r.kind,
-      ),
-      endsAt:
-        r.endsAt
-          ? r.endsAt.toISOString()
-          : null,
-      createdAt:
-        r.createdAt.toISOString(),
-      liftedAt:
-        r.liftedAt
-          ? r.liftedAt.toISOString()
-          : null,
-      reason:
-        r.reason,
-      ruleTitle:
-        r.ruleId
-          ? (ruleTitle.get(
-              r.ruleId,
-            ) ??
-            null)
-          : null,
-      member:
-        r.user
-          ? {
-              id: r
-                .user
-                .id,
-              name: r
-                .user
-                .name,
-              handle:
-                r
-                  .user
-                  .handle,
-            }
-          : null,
-      moderator:
-        r.createdById
-          ? (() => {
-              const m =
-                modById.get(
-                  r.createdById,
-                );
-              return m
-                ? {
-                    id: m.id,
-                    name: m.name,
-                    handle:
-                      m.handle,
-                  }
-                : null;
-            })()
-          : null,
-    }),
-  );
+          select: {
+            id: true,
+            title: true,
+          },
+        })
+      : Promise.resolve([]),
+    modIds.length
+      ? prisma.user.findMany({
+          where: {
+            id: {
+              in: modIds,
+            },
+          },
+          select: userChipSelect,
+        })
+      : Promise.resolve([]),
+  ]);
+  const ruleTitle = new Map(rules.map((r) => [r.id, r.title]));
+  const modById = new Map(mods.map((m) => [m.id, m]));
+  return rows.map((r) => ({
+    id: r.id,
+    kind: asKind(r.kind),
+    endsAt: r.endsAt ? r.endsAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    liftedAt: r.liftedAt ? r.liftedAt.toISOString() : null,
+    reason: r.reason,
+    ruleTitle: r.ruleId ? (ruleTitle.get(r.ruleId) ?? null) : null,
+    member: r.user
+      ? {
+          id: r.user.id,
+          name: r.user.name,
+          handle: r.user.handle,
+        }
+      : null,
+    moderator: r.createdById
+      ? (() => {
+          const m = modById.get(r.createdById);
+          return m
+            ? {
+                id: m.id,
+                name: m.name,
+                handle: m.handle,
+              }
+            : null;
+        })()
+      : null,
+  }));
 }
 
 /**
@@ -765,105 +426,62 @@ export async function listSanctions(
  * moderator, the reference is nulled. Prisma operations only, for the erasure
  * `$transaction([...])`.
  */
-export function communityBanErasureOps(
-  userId: string,
-) {
+export function communityBanErasureOps(userId: string) {
   return [
-    prisma.communityBan.deleteMany(
-      {
-        where:
-          {
-            userId,
-          },
+    prisma.communityBan.deleteMany({
+      where: {
+        userId,
       },
-    ),
-    prisma.communityBan.updateMany(
-      {
-        where:
-          {
-            createdById:
-              userId,
-          },
-        data: {
-          createdById:
-            null,
-        },
+    }),
+    prisma.communityBan.updateMany({
+      where: {
+        createdById: userId,
       },
-    ),
-    prisma.communityBan.updateMany(
-      {
-        where:
-          {
-            liftedById:
-              userId,
-          },
-        data: {
-          liftedById:
-            null,
-        },
+      data: {
+        createdById: null,
       },
-    ),
+    }),
+    prisma.communityBan.updateMany({
+      where: {
+        liftedById: userId,
+      },
+      data: {
+        liftedById: null,
+      },
+    }),
   ];
 }
 
 /** The member's own export: sanctions about them, without the private reason or who set it. */
-export async function exportCommunitySanctions(
-  userId: string,
-) {
-  const rows =
-    await prisma.communityBan.findMany(
-      {
-        where:
-          {
-            userId,
-          },
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        select:
-          {
-            id: true,
-            kind: true,
-            endsAt: true,
-            createdAt: true,
-            liftedAt: true,
-            community:
-              {
-                select:
-                  {
-                    slug: true,
-                    name: true,
-                  },
-              },
-          },
+export async function exportCommunitySanctions(userId: string) {
+  const rows = await prisma.communityBan.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: {
+      id: true,
+      kind: true,
+      endsAt: true,
+      createdAt: true,
+      liftedAt: true,
+      community: {
+        select: {
+          slug: true,
+          name: true,
+        },
       },
-    );
-  return rows.map(
-    (
-      r,
-    ) => ({
-      id: r.id,
-      community:
-        r
-          .community
-          .slug,
-      communityName:
-        r
-          .community
-          .name,
-      kind: r.kind,
-      endsAt:
-        r.endsAt
-          ? r.endsAt.toISOString()
-          : null,
-      createdAt:
-        r.createdAt.toISOString(),
-      liftedAt:
-        r.liftedAt
-          ? r.liftedAt.toISOString()
-          : null,
-    }),
-  );
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    community: r.community.slug,
+    communityName: r.community.name,
+    kind: r.kind,
+    endsAt: r.endsAt ? r.endsAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    liftedAt: r.liftedAt ? r.liftedAt.toISOString() : null,
+  }));
 }

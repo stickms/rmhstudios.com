@@ -1,62 +1,12 @@
 # On-call guide
 
-Alerts
-come
-from
-the
-**on-call
-watchdog**
-(`deploy/oncall-watchdog/`),
-a
-Cloudflare
-Worker
-that
-runs
-**off
-the
-VPS**,
-and
-post
-to
-Discord
-`#rmh-oncall`.
+Alerts come from the **on-call watchdog** (`deploy/oncall-watchdog/`), a Cloudflare Worker that runs **off the VPS**,
+and post to Discord `#rmh-oncall`.
 
 ## Who is on call
 
-Whoever
-holds
-the
-`@oncall`
-Discord
-role.
-Rotate
-by
-moving
-the
-role;
-no
-code
-or
-config
-changes.
-Set
-`#rmh-oncall`
-to
-**All
-Messages**
-notifications
-and
-allow
-notifications
-from
-the
-server,
-or
-a
-page
-can
-arrive
-silently.
+Whoever holds the `@oncall` Discord role. Rotate by moving the role; no code or config changes. Set `#rmh-oncall` to
+**All Messages** notifications and allow notifications from the server, or a page can arrive silently.
 
 ## Severity
 
@@ -70,155 +20,23 @@ silently.
 
 ## Cutting a ticket yourself
 
-Seen
-something
-on-call
-should
-handle?
-Type
-`/page`
-anywhere
-in
-the
-Discord
-server:
-severity,
-title,
-and
-what
-you
-saw.
-SEV2
-pages
-`@oncall`
-immediately;
-SEV1
-also
-pages
-the
-escalation
-role.
-It
-shows
-in
-`#rmh-oncall`
-and
-on
-`/admin/alarms`,
-and
-`@oncall`
-closes
-it
-with
-**Resolve**.
+Seen something on-call should handle? Type `/page` anywhere in the Discord server: severity, title, and what you saw.
+SEV2 pages `@oncall` immediately; SEV1 also pages the escalation role. It shows in `#rmh-oncall` and on `/admin/alarms`,
+and `@oncall` closes it with **Resolve**.
 
 ## When you are paged
 
-1. **Acknowledge**
-   (✅).
-   Only
-   `@oncall`
-   members
-   can,
-   and
-   it
-   stops
-   the
-   re-pings.
-2. Open
-   the
-   **📖
-   Runbook**
-   button
-   on
-   the
-   alert
-   and
-   follow
-   the
-   first
-   step.
-3. Bigger
-   than
-   you,
-   or
-   more
-   than
-   one
-   person
-   needed?
-   **🔺
-   Escalate
-   to
-   Sev1**.
-   That
-   pages
-   everyone
-   and
-   clears
-   your
-   ack
-   so
-   it
-   keeps
-   paging
-   until
-   someone
-   takes
-   it.
-4. Mitigate
-   first
-   (roll
-   back,
-   restart),
-   investigate
-   after.
-5. The
-   alert
-   resolves
-   itself
-   when
-   its
-   check
-   recovers;
-   the
-   reply
-   under
-   it
-   says
-   how
-   long
-   it
-   lasted.
+1. **Acknowledge** (✅). Only `@oncall` members can, and it stops the re-pings.
+2. Open the **📖 Runbook** button on the alert and follow the first step.
+3. Bigger than you, or more than one person needed? **🔺 Escalate to Sev1**. That pages everyone and clears your ack so
+   it keeps paging until someone takes it.
+4. Mitigate first (roll back, restart), investigate after.
+5. The alert resolves itself when its check recovers; the reply under it says how long it lasted.
 
 ## Alarms
 
-Threshold
-alarms
-over
-the
-metrics
-history
-(A08,
-A09,
-M01–M03,
-B02,
-B03)
-are
-declared
-in
-`lib/ops/alarm-rules.ts`
-and
-can
-be
-overridden
-or
-muted
-on
-`/admin/alarms`
-→
-Alarm
-rules.
+Threshold alarms over the metrics history (A08, A09, M01–M03, B02, B03) are declared in `lib/ops/alarm-rules.ts` and can
+be overridden or muted on `/admin/alarms` → Alarm rules.
 
 | ID                           | Sev   | What                                                          |
 | ---------------------------- | ----- | ------------------------------------------------------------- |

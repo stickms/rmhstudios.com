@@ -12,16 +12,10 @@
  * Without Redis there is no generation and no cross-process invalidation: the list is cached in
  * the process only, for `BOARD_LOCAL_TTL_MS`, and a local write drops it at once.
  */
-import {
-  cached,
-  invalidateCached,
-} from '@/lib/cached.server';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { redisIncrBy } from '@/lib/redis.server';
 import { utcDate } from '../sprint/generate';
-import {
-  boardCacheKey,
-  friendsCacheKey,
-} from './cache-keys';
+import { boardCacheKey, friendsCacheKey } from './cache-keys';
 
 const DAY_MS = 86_400_000;
 
@@ -32,96 +26,36 @@ export const BOARD_TTL_MS = 30_000;
 export const BOARD_LOCAL_TTL_MS = 5_000;
 
 /** A generation outlives every board that can read it (today and yesterday). */
-const GENERATION_TTL_MS =
-  3 *
-  DAY_MS;
+const GENERATION_TTL_MS = 3 * DAY_MS;
 
-function generationKey(
-  date: string,
-): string {
+function generationKey(date: string): string {
   return `${boardCacheKey(date)}:gen`;
 }
 
 /** A date's list, cached under the generation read before the load. */
-export async function cachedBoard<
-  T,
->(
-  date: string,
-  loader: () => Promise<T>,
-): Promise<T> {
-  const generation =
-    await redisIncrBy(
-      generationKey(
-        date,
-      ),
-      0,
-      GENERATION_TTL_MS,
-    );
-  if (
-    generation ===
-    null
-  )
-    return cached(
-      boardCacheKey(
-        date,
-      ),
-      BOARD_LOCAL_TTL_MS,
-      loader,
-      {
-        l2: false,
-      },
-    );
-  return cached(
-    `${boardCacheKey(date)}:g${generation}`,
-    BOARD_TTL_MS,
-    loader,
-  );
+export async function cachedBoard<T>(date: string, loader: () => Promise<T>): Promise<T> {
+  const generation = await redisIncrBy(generationKey(date), 0, GENERATION_TTL_MS);
+  if (generation === null)
+    return cached(boardCacheKey(date), BOARD_LOCAL_TTL_MS, loader, {
+      l2: false,
+    });
+  return cached(`${boardCacheKey(date)}:g${generation}`, BOARD_TTL_MS, loader);
 }
 
 /** Drop a date's list everywhere: bump its generation, and drop the local copy. */
-export async function invalidateBoard(
-  date: string,
-): Promise<void> {
-  await redisIncrBy(
-    generationKey(
-      date,
-    ),
-    1,
-    GENERATION_TTL_MS,
-  );
-  await invalidateCached(
-    boardCacheKey(
-      date,
-    ),
-  );
+export async function invalidateBoard(date: string): Promise<void> {
+  await redisIncrBy(generationKey(date), 1, GENERATION_TTL_MS);
+  await invalidateCached(boardCacheKey(date));
 }
 
 /**
  * Drop what a change to one learner makes stale: the boards of today and yesterday (the only dates
  * a board shows) and their own friends list. Other viewers' friends lists expire within 30 s.
  */
-export async function dropLearnerBoardCaches(
-  userId: string,
-  now: number,
-): Promise<void> {
-  await Promise.all(
-    [
-      invalidateBoard(
-        utcDate(
-          now,
-        ),
-      ),
-      invalidateBoard(
-        utcDate(
-          now -
-            DAY_MS,
-        ),
-      ),
-      invalidateCached(
-        friendsCacheKey(
-          userId,
-        ),
-      ),
-    ],
-  );
+export async function dropLearnerBoardCaches(userId: string, now: number): Promise<void> {
+  await Promise.all([
+    invalidateBoard(utcDate(now)),
+    invalidateBoard(utcDate(now - DAY_MS)),
+    invalidateCached(friendsCacheKey(userId)),
+  ]);
 }

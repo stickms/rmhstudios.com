@@ -1,25 +1,8 @@
-import {
-  describe,
-  expect,
-  it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-  clearEverything,
-  clearPersonalDeviceData,
-  clearStoreById,
-} from '../clear';
-import {
-  countUnsentWork,
-  inspectDevice,
-} from '../inspect';
-import {
-  databaseNames,
-  fakeCaches,
-  freshEnv,
-  makeDatabase,
-  openConnection,
-} from './fakes';
+import { clearEverything, clearPersonalDeviceData, clearStoreById } from '../clear';
+import { countUnsentWork, inspectDevice } from '../inspect';
+import { databaseNames, fakeCaches, freshEnv, makeDatabase, openConnection } from './fakes';
 
 async function populate() {
   const env = freshEnv();

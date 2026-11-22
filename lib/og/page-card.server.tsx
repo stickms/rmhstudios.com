@@ -27,10 +27,7 @@
 
 import React from 'react';
 import satori from '@/lib/og/satori.server';
-import {
-  dedupeOgRender,
-  svgToPng,
-} from './render.server';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
   HAIRLINE_W,
@@ -61,41 +58,28 @@ import {
 } from '@/lib/og/chrome.server';
 import { loadOgImage } from '@/lib/og/media.server';
 
-const pngCache =
-  new Map<
-    string,
-    {
-      png: Buffer;
-      ts: number;
-    }
-  >();
+const pngCache = new Map<
+  string,
+  {
+    png: Buffer;
+    ts: number;
+  }
+>();
 const PNG_MAX = 160;
 
-const PANE_PAD =
-  30 *
-  SCALE;
-const PANE_PAD_STORY =
-  44 *
-  SCALE;
+const PANE_PAD = 30 * SCALE;
+const PANE_PAD_STORY = 44 * SCALE;
 /** Share of the pane the page's own picture takes, when it has one. */
 const ART_SHARE = 0.42;
 /** Between the text block and that picture. */
-const ART_GAP =
-  24 *
-  SCALE;
+const ART_GAP = 24 * SCALE;
 
-export type PageCardVariant =
-  | 'landscape'
-  | 'story';
+export type PageCardVariant = 'landscape' | 'story';
 
 export interface PageCardByline {
   name: string;
-  handle?:
-    | string
-    | null;
-  image?:
-    | string
-    | null;
+  handle?: string | null;
+  image?: string | null;
 }
 
 export interface PageCardData {
@@ -110,13 +94,9 @@ export interface PageCardData {
   /** The hero line. Sized to fit; long titles step down rather than overflow. */
   title: string;
   /** The supporting line under the title. */
-  subtitle?:
-    | string
-    | null;
+  subtitle?: string | null;
   /** A short label above the title — the company, the game, the series. */
-  lead?:
-    | string
-    | null;
+  lead?: string | null;
   /** Figures off the page. The first `lead` chip is the one that survives being shrunk. */
   stats?: Stat[];
   /** Whose page this is, when that's part of the answer. */
@@ -127,13 +107,9 @@ export interface PageCardData {
    * three. Ignored on the story variant, and silently dropped when it can't be
    * read: a card without the art is the same card, a card with a hole is not.
    */
-  art?:
-    | string
-    | null;
+  art?: string | null;
   /** Footer path, without the origin. Defaults to no path. */
-  path?:
-    | string
-    | null;
+  path?: string | null;
   /**
    * The footer's host, for a card about a page on a sibling site (the wiki:
    * `wiki.rmhstudios.com`). Defaults to `rmhstudios.com`.
@@ -144,130 +120,46 @@ export interface PageCardData {
   ttlMs?: number;
 }
 
-function clean(
-  s:
-    | string
-    | null
-    | undefined,
-  n: number,
-): string {
-  return truncate(
-    stripEmoji(
-      s ??
-        '',
-    ),
-    n,
-  );
+function clean(s: string | null | undefined, n: number): string {
+  return truncate(stripEmoji(s ?? ''), n);
 }
 
-async function renderPageCardUncached(
-  data: PageCardData,
-): Promise<Buffer> {
-  const variant: PageCardVariant =
-    data.variant ===
-    'story'
-      ? 'story'
-      : 'landscape';
-  const size =
-    variant ===
-    'story'
-      ? STORY
-      : LANDSCAPE;
-  const ttl =
-    data.ttlMs ??
-    30 *
-      60 *
-      1000;
+async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
+  const variant: PageCardVariant = data.variant === 'story' ? 'story' : 'landscape';
+  const size = variant === 'story' ? STORY : LANDSCAPE;
+  const ttl = data.ttlMs ?? 30 * 60 * 1000;
 
   // The art is part of the key rather than trusted to the caller's: it is drawn,
   // and the rule for this cache is that everything drawn is in the key.
   const cacheKey = `${variant}:${data.cacheKey}:${data.art ?? ''}`;
-  const cached =
-    pngCache.get(
-      cacheKey,
-    );
-  if (
-    cached &&
-    Date.now() -
-      cached.ts <
-      ttl
-  )
-    return cached.png;
+  const cached = pngCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < ttl) return cached.png;
 
   await loadFonts();
 
-  const centred =
-    variant ===
-    'story';
-  const pad =
-    centred
-      ? PANE_PAD_STORY
-      : PANE_PAD;
-  const title =
-    clean(
-      data.title,
-      110,
-    ) ||
-    'RMH Studios';
-  const subtitle =
-    clean(
-      data.subtitle,
-      200,
-    );
-  const lead =
-    clean(
-      data.lead,
-      60,
-    );
-  const stats =
-    data.stats ??
-    [];
+  const centred = variant === 'story';
+  const pad = centred ? PANE_PAD_STORY : PANE_PAD;
+  const title = clean(data.title, 110) || 'RMH Studios';
+  const subtitle = clean(data.subtitle, 200);
+  const lead = clean(data.lead, 60);
+  const stats = data.stats ?? [];
 
   // The pane's content box. The rim comes off as well as the padding: satori
   // lays out border-box, and the art column is drawn at an exact width rather
   // than estimated, so 4px of overflow would be a picture hanging off the pane.
-  const frame =
-    frameMetrics(
-      size.width,
-      size.height,
-      centred,
-    );
-  const paneWidth =
-    frame.width -
-    pad *
-      2 -
-    HAIRLINE_W *
-      2;
-  const paneHeight =
-    frame.height -
-    pad *
-      2 -
-    HAIRLINE_W *
-      2;
+  const frame = frameMetrics(size.width, size.height, centred);
+  const paneWidth = frame.width - pad * 2 - HAIRLINE_W * 2;
+  const paneHeight = frame.height - pad * 2 - HAIRLINE_W * 2;
 
   // The picture first — what is left of the pane is what the text gets.
-  const art =
-    centred
-      ? null
-      : await loadOgImage(
-          data.art,
-          {
-            width:
-              Math.round(
-                paneWidth *
-                  ART_SHARE,
-              ),
-            height:
-              paneHeight,
-            fit: 'cover',
-          },
-        );
-  const inner =
-    art
-      ? paneWidth -
-        art.width -
-        ART_GAP
-      : paneWidth;
+  const art = centred
+    ? null
+    : await loadOgImage(data.art, {
+        width: Math.round(paneWidth * ART_SHARE),
+        height: paneHeight,
+        fit: 'cover',
+      });
+  const inner = art ? paneWidth - art.width - ART_GAP : paneWidth;
 
   // Height the pane's own rows claim before the title gets any: the lead line,
   // the subtitle, and the byline each reserve their band only when present.
@@ -278,522 +170,257 @@ async function renderPageCardUncached(
   // card with art has barely half the width to spend it in. Reserving one band
   // for a lead that wraps to two is how the title below it gets sized for room
   // it does not have.
-  const kickerSize =
-    11 *
-    SCALE *
-    (centred
-      ? 1.3
-      : 1);
-  const leadLines =
-    lead
-      ? Math.min(
-          2,
-          Math.max(
-            1,
-            Math.ceil(
-              (lead.length *
-                kickerSize *
-                0.82) /
-                inner,
-            ),
-          ),
-        )
-      : 0;
-  const leadBand =
-    leadLines *
-    26 *
-    SCALE;
-  const subtitleSize =
-    centred
-      ? 32 *
-        SCALE
-      : 19 *
-        SCALE;
-  const subtitleBand =
-    subtitle
-      ? subtitleSize *
-        2.9
-      : 0;
-  const bylineBand =
-    data.byline
-      ? 34 *
-        SCALE
-      : 0;
-  const titleBox =
-    paneHeight -
-    leadBand -
-    subtitleBand -
-    bylineBand;
+  const kickerSize = 11 * SCALE * (centred ? 1.3 : 1);
+  const leadLines = lead ? Math.min(2, Math.max(1, Math.ceil((lead.length * kickerSize * 0.82) / inner))) : 0;
+  const leadBand = leadLines * 26 * SCALE;
+  const subtitleSize = centred ? 32 * SCALE : 19 * SCALE;
+  const subtitleBand = subtitle ? subtitleSize * 2.9 : 0;
+  const bylineBand = data.byline ? 34 * SCALE : 0;
+  const titleBox = paneHeight - leadBand - subtitleBand - bylineBand;
 
-  const titleSize =
-    fitText(
-      title,
-      {
-        width:
-          inner,
-        height:
-          titleBox,
-        steps:
-          centred
-            ? [
-                120,
-                100,
-                84,
-                68,
-                56,
-                46,
-              ]
-            : [
-                104,
-                88,
-                72,
-                60,
-                50,
-                40,
-              ],
-        lineHeight: 1.06,
-      },
-    );
+  const titleSize = fitText(title, {
+    width: inner,
+    height: titleBox,
+    steps: centred ? [120, 100, 84, 68, 56, 46] : [104, 88, 72, 60, 50, 40],
+    lineHeight: 1.06,
+  });
 
-  const avatar =
-    data.byline
-      ? await fetchAvatarDataUri(
-          data
-            .byline
-            .image,
-        )
-      : null;
-  const bylineName =
-    data.byline
-      ? clean(
-          data
-            .byline
-            .name,
-          30,
-        )
-      : '';
-  const align =
-    centred
-      ? 'center'
-      : 'flex-start';
+  const avatar = data.byline ? await fetchAvatarDataUri(data.byline.image) : null;
+  const bylineName = data.byline ? clean(data.byline.name, 30) : '';
+  const align = centred ? 'center' : 'flex-start';
 
-  const textChildren =
-    [
-      lead ? (
-        <div
-          key="lead"
-          style={{
-            display:
-              'flex',
-            marginBottom:
-              10 *
-              SCALE,
-            alignSelf:
-              align,
-          }}
-        >
-          {kicker(
-            lead,
-            INK,
-            centred
-              ? 1.3
-              : 1,
-          )}
-        </div>
-      ) : null,
-
+  const textChildren = [
+    lead ? (
       <div
-        key="title"
+        key="lead"
         style={{
-          display:
-            'flex',
-          justifyContent:
-            centred
-              ? 'center'
-              : 'flex-start',
-          textAlign:
-            centred
-              ? 'center'
-              : 'left',
+          display: 'flex',
+          marginBottom: 10 * SCALE,
+          alignSelf: align,
+        }}
+      >
+        {kicker(lead, INK, centred ? 1.3 : 1)}
+      </div>
+    ) : null,
+
+    <div
+      key="title"
+      style={{
+        display: 'flex',
+        justifyContent: centred ? 'center' : 'flex-start',
+        textAlign: centred ? 'center' : 'left',
+      }}
+    >
+      <span
+        style={{
+          fontSize: titleSize,
+          fontWeight: 600,
+          lineHeight: 1.06,
+          letterSpacing: displayTracking(titleSize),
+          color: INK,
+        }}
+      >
+        {title}
+      </span>
+    </div>,
+
+    subtitle ? (
+      <div
+        key="subtitle"
+        style={{
+          display: 'flex',
+          marginTop: 14 * SCALE,
+          justifyContent: centred ? 'center' : 'flex-start',
+          textAlign: centred ? 'center' : 'left',
         }}
       >
         <span
           style={{
-            fontSize:
-              titleSize,
-            fontWeight: 600,
-            lineHeight: 1.06,
-            letterSpacing:
-              displayTracking(
-                titleSize,
-              ),
-            color:
-              INK,
+            fontSize: subtitleSize,
+            lineHeight: 1.45,
+            color: MUTED,
           }}
         >
-          {
-            title
-          }
+          {subtitle}
         </span>
-      </div>,
+      </div>
+    ) : null,
 
-      subtitle ? (
-        <div
-          key="subtitle"
+    data.byline ? (
+      <div
+        key="byline"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10 * SCALE,
+          marginTop: 18 * SCALE,
+          alignSelf: align,
+        }}
+      >
+        {avatarDisc(avatar, (bylineName || 'R')[0]?.toUpperCase() ?? 'R', 22 * SCALE)}
+        <span
           style={{
-            display:
-              'flex',
-            marginTop:
-              14 *
-              SCALE,
-            justifyContent:
-              centred
-                ? 'center'
-                : 'flex-start',
-            textAlign:
-              centred
-                ? 'center'
-                : 'left',
+            fontSize: 15 * SCALE,
+            fontWeight: 600,
+            color: INK,
           }}
         >
+          {bylineName}
+        </span>
+        {data.byline.handle ? (
           <span
             style={{
-              fontSize:
-                subtitleSize,
-              lineHeight: 1.45,
-              color:
-                MUTED,
+              fontSize: 15 * SCALE,
+              color: MUTED,
             }}
           >
-            {
-              subtitle
-            }
+            @{data.byline.handle}
           </span>
-        </div>
-      ) : null,
+        ) : null}
+      </div>
+    ) : null,
+  ];
 
-      data.byline ? (
-        <div
-          key="byline"
-          style={{
-            display:
-              'flex',
-            alignItems:
-              'center',
-            gap:
-              10 *
-              SCALE,
-            marginTop:
-              18 *
-              SCALE,
-            alignSelf:
-              align,
-          }}
-        >
-          {avatarDisc(
-            avatar,
-            (bylineName ||
-              'R')[0]?.toUpperCase() ??
-              'R',
-            22 *
-              SCALE,
-          )}
-          <span
+  const body = pane({
+    style: {
+      // Landscape fills the body slot; the story card stacks pane → chips →
+      // globe down the middle, so there the pane has to hug its own content.
+      ...(centred
+        ? {}
+        : {
+            flex: 1,
+          }),
+      ...(art
+        ? {
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+          }
+        : {
+            justifyContent: 'center' as const,
+            alignItems: centred ? ('center' as const) : ('stretch' as const),
+          }),
+      padding: pad,
+    },
+    children: art
+      ? [
+          <div
+            key="text"
             style={{
-              fontSize:
-                15 *
-                SCALE,
-              fontWeight: 600,
-              color:
-                INK,
+              display: 'flex',
+              flexDirection: 'column',
+              flexShrink: 0,
+              width: inner,
+              justifyContent: 'center',
             }}
           >
-            {
-              bylineName
-            }
-          </span>
-          {data
-            .byline
-            .handle ? (
-            <span
-              style={{
-                fontSize:
-                  15 *
-                  SCALE,
-                color:
-                  MUTED,
-              }}
-            >
-              @
-              {
-                data
-                  .byline
-                  .handle
-              }
-            </span>
-          ) : null}
-        </div>
-      ) : null,
-    ];
-
-  const body =
-    pane(
-      {
-        style:
-          {
-            // Landscape fills the body slot; the story card stacks pane → chips →
-            // globe down the middle, so there the pane has to hug its own content.
-            ...(centred
-              ? {}
-              : {
-                  flex: 1,
-                }),
-            ...(art
-              ? {
-                  flexDirection:
-                    'row' as const,
-                  alignItems:
-                    'center' as const,
-                }
-              : {
-                  justifyContent:
-                    'center' as const,
-                  alignItems:
-                    centred
-                      ? ('center' as const)
-                      : ('stretch' as const),
-                }),
-            padding:
-              pad,
-          },
-        children:
-          art
-            ? [
-                <div
-                  key="text"
-                  style={{
-                    display:
-                      'flex',
-                    flexDirection:
-                      'column',
-                    flexShrink: 0,
-                    width:
-                      inner,
-                    justifyContent:
-                      'center',
-                  }}
-                >
-                  {
-                    textChildren
-                  }
-                </div>,
-                <div
-                  key="art"
-                  style={{
-                    display:
-                      'flex',
-                    flexShrink: 0,
-                    marginLeft:
-                      ART_GAP,
-                  }}
-                >
-                  {framedImage(
-                    art,
-                    RADIUS_SM,
-                  )}
-                </div>,
-              ]
-            : textChildren,
-      },
-    );
+            {textChildren}
+          </div>,
+          <div
+            key="art"
+            style={{
+              display: 'flex',
+              flexShrink: 0,
+              marginLeft: ART_GAP,
+            }}
+          >
+            {framedImage(art, RADIUS_SM)}
+          </div>,
+        ]
+      : textChildren,
+  });
 
   // The footer URL shares its row with the chips, and satori will happily run it
   // off the edge of the card. Measure the chips first (same rough advance the
   // text fitter uses) and drop the path when the two together won't fit — the
   // origin alone always does.
-  const chipsWidth =
-    stats.reduce(
-      (
-        sum,
-        s,
-      ) =>
-        sum +
-        22 *
-          SCALE +
-        s
-          .value
-          .length *
-          17 +
-        s
-          .label
-          .length *
-          11 +
-        10 *
-          SCALE,
-      0,
-    );
-  const host =
-    data.host ??
-    'rmhstudios.com';
+  const chipsWidth = stats.reduce(
+    (sum, s) => sum + 22 * SCALE + s.value.length * 17 + s.label.length * 11 + 10 * SCALE,
+    0,
+  );
+  const host = data.host ?? 'rmhstudios.com';
   const withPath = `${host}${data.path ?? ''}`;
-  const shown =
-    chipsWidth +
-      withPath.length *
-        13 <=
-    frame.width
-      ? withPath
-      : host;
-  const url =
-    (
-      <div
+  const shown = chipsWidth + withPath.length * 13 <= frame.width ? withPath : host;
+  const url = (
+    <div
+      style={{
+        display: 'flex',
+        flexShrink: 0,
+      }}
+    >
+      <span
         style={{
-          display:
-            'flex',
-          flexShrink: 0,
+          fontSize: (centred ? 20 : 13) * SCALE,
+          fontWeight: 500,
+          color: DIM,
         }}
       >
-        <span
-          style={{
-            fontSize:
-              (centred
-                ? 20
-                : 13) *
-              SCALE,
-            fontWeight: 500,
-            color:
-              DIM,
-          }}
-        >
-          {centred
-            ? 'rmhstudios.com'
-            : shown}
-        </span>
-      </div>
-    );
-
-  const element =
-    cardFrame(
-      {
-        ...size,
-        eyebrow:
-          data.eyebrow,
-        centred,
-        children:
-          centred
-            ? // The story card has room for the globe under the pane — the mark at the
-              // size the navigator actually reads at, rather than a favicon in a corner.
-              [
-                React.cloneElement(
-                  body,
-                  {
-                    key: 'pane',
-                  },
-                ),
-                stats.length ? (
-                  <div
-                    key="stats"
-                    style={{
-                      display:
-                        'flex',
-                      justifyContent:
-                        'center',
-                      marginTop:
-                        40 *
-                        SCALE,
-                    }}
-                  >
-                    {statChips(
-                      stats,
-                      1.6,
-                    )}
-                  </div>
-                ) : null,
-                <div
-                  key="mark"
-                  style={{
-                    display:
-                      'flex',
-                    justifyContent:
-                      'center',
-                    marginTop:
-                      56 *
-                      SCALE,
-                  }}
-                >
-                  {brandMark(
-                    110 *
-                      SCALE,
-                  )}
-                </div>,
-              ]
-            : body,
-        // On the story card the chips already have their own row under the pane, so
-        // the footer is just the URL.
-        footerLeft:
-          !centred &&
-          stats.length
-            ? statChips(
-                stats,
-              )
-            : url,
-        footerRight:
-          !centred &&
-          stats.length
-            ? url
-            : null,
-      },
-    );
-
-  const svg =
-    await satori(
-      element,
-      {
-        ...size,
-        fonts:
-          satoriFonts(),
-      },
-    );
-  const png =
-    await svgToPng(
-      svg,
-      size.width,
-    );
-
-  if (
-    pngCache.size >=
-    PNG_MAX
-  ) {
-    const oldest =
-      pngCache
-        .keys()
-        .next().value;
-    if (
-      oldest !==
-      undefined
-    )
-      pngCache.delete(
-        oldest,
-      );
-  }
-  pngCache.set(
-    cacheKey,
-    {
-      png,
-      ts: Date.now(),
-    },
+        {centred ? 'rmhstudios.com' : shown}
+      </span>
+    </div>
   );
+
+  const element = cardFrame({
+    ...size,
+    eyebrow: data.eyebrow,
+    centred,
+    children: centred
+      ? // The story card has room for the globe under the pane — the mark at the
+        // size the navigator actually reads at, rather than a favicon in a corner.
+        [
+          React.cloneElement(body, {
+            key: 'pane',
+          }),
+          stats.length ? (
+            <div
+              key="stats"
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginTop: 40 * SCALE,
+              }}
+            >
+              {statChips(stats, 1.6)}
+            </div>
+          ) : null,
+          <div
+            key="mark"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: 56 * SCALE,
+            }}
+          >
+            {brandMark(110 * SCALE)}
+          </div>,
+        ]
+      : body,
+    // On the story card the chips already have their own row under the pane, so
+    // the footer is just the URL.
+    footerLeft: !centred && stats.length ? statChips(stats) : url,
+    footerRight: !centred && stats.length ? url : null,
+  });
+
+  const svg = await satori(element, {
+    ...size,
+    fonts: satoriFonts(),
+  });
+  const png = await svgToPng(svg, size.width);
+
+  if (pngCache.size >= PNG_MAX) {
+    const oldest = pngCache.keys().next().value;
+    if (oldest !== undefined) pngCache.delete(oldest);
+  }
+  pngCache.set(cacheKey, {
+    png,
+    ts: Date.now(),
+  });
   return png;
 }
 
 // perf: in-flight dedupe - concurrent requests for one card share a single render.
-export function renderPageCard(
-  data: PageCardData,
-): Promise<Buffer> {
+export function renderPageCard(data: PageCardData): Promise<Buffer> {
   return dedupeOgRender(
     `page:${data.variant === 'story' ? 'story' : 'landscape'}:${data.cacheKey}:${data.art ?? ''}`,
-    () =>
-      renderPageCardUncached(
-        data,
-      ),
+    () => renderPageCardUncached(data),
   );
 }

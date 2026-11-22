@@ -9,16 +9,10 @@ import type { insightsQuery } from './insights-schema';
  * minutes per community, range and time zone. Counts only; nobody is named except the authors of
  * public top posts.
  */
-export const getCommunityInsightsApi =
-  endpoint<{
-    query: z.infer<
-      typeof insightsQuery
-    >;
-    res: CommunityInsightsDTO;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/communities/$slug/insights',
-    },
-  );
+export const getCommunityInsightsApi = endpoint<{
+  query: z.infer<typeof insightsQuery>;
+  res: CommunityInsightsDTO;
+}>()({
+  method: 'GET',
+  path: '/api/communities/$slug/insights',
+});

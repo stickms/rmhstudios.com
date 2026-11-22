@@ -5,38 +5,20 @@
  */
 
 import { Box } from 'lucide-react';
-import {
-  lazy,
-  useMemo,
-  type ReactNode,
-} from 'react';
+import { lazy, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
-import {
-  modelUrl,
-  pickModel,
-  useModelIds,
-} from '@/lib/tf2-loadout/use-models';
+import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
 import type { WarPaint } from './model-utils';
 import PlayerViewer from './PlayerViewer';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-const Viewer3D =
-  lazy(
-    () =>
-      import('./Viewer3D'),
-  );
+const Viewer3D = lazy(() => import('./Viewer3D'));
 
-function Note({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+function Note({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
@@ -44,15 +26,8 @@ function Note({
         className,
       )}
     >
-      <Box
-        className="size-6"
-        aria-hidden
-      />
-      <p className="max-w-56">
-        {
-          children
-        }
-      </p>
+      <Box className="size-6" aria-hidden />
+      <p className="max-w-56">{children}</p>
     </div>
   );
 }
@@ -84,158 +59,67 @@ export default function ItemModelViewer({
   taunt?: boolean;
   className?: string;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-tf2-hud',
-    );
-  const ids =
-    useModelIds();
-  const model =
-    ids
-      ? pickModel(
-          ids,
-          itemId,
-          cls,
-          style,
-        )
-      : null;
-  const webgl =
-    useMemo(
-      () =>
-        typeof window ===
-        'undefined'
-          ? true
-          : supportsWebGL(),
-      [],
-    );
+  const { t } = useTranslation('c-tf2-hud');
+  const ids = useModelIds();
+  const model = ids ? pickModel(ids, itemId, cls, style) : null;
+  const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
 
-  if (
-    taunt &&
-    cls
-  ) {
-    return (
-      <PlayerViewer
-        cls={
-          cls
-        }
-        worn={[]}
-        taunt={
-          itemId
-        }
-        tauntEffect={
-          effect
-        }
-        className={
-          className
-        }
-      />
-    );
+  if (taunt && cls) {
+    return <PlayerViewer cls={cls} worn={[]} taunt={itemId} tauntEffect={effect} className={className} />;
   }
 
-  const body =
-    !webgl ? (
-      <Note>
-        {t(
-          'model-no-webgl',
-          {
-            defaultValue:
-              'Your browser cannot show 3D models.',
-          },
-        )}
-      </Note>
-    ) : ids ===
-      null ? (
-      <Note>
-        {t(
-          'model-checking',
-          {
-            defaultValue:
-              'Checking for a 3D model…',
-          },
-        )}
-      </Note>
-    ) : !model ? (
-      <Note>
-        {t(
-          'model-none',
-          {
-            defaultValue:
-              'No 3D model for this item yet.',
-          },
-        )}
-      </Note>
-    ) : (
-      <SilentErrorBoundary
-        label="tf2-model"
+  const body = !webgl ? (
+    <Note>
+      {t('model-no-webgl', {
+        defaultValue: 'Your browser cannot show 3D models.',
+      })}
+    </Note>
+  ) : ids === null ? (
+    <Note>
+      {t('model-checking', {
+        defaultValue: 'Checking for a 3D model…',
+      })}
+    </Note>
+  ) : !model ? (
+    <Note>
+      {t('model-none', {
+        defaultValue: 'No 3D model for this item yet.',
+      })}
+    </Note>
+  ) : (
+    <SilentErrorBoundary
+      label="tf2-model"
+      fallback={
+        <Note>
+          {t('model-failed', {
+            defaultValue: 'This model could not be loaded.',
+          })}
+        </Note>
+      }
+    >
+      <ArrivalSuspense
         fallback={
           <Note>
-            {t(
-              'model-failed',
-              {
-                defaultValue:
-                  'This model could not be loaded.',
-              },
-            )}
+            {t('model-loading', {
+              defaultValue: 'Loading 3D model…',
+            })}
           </Note>
         }
       >
-        <ArrivalSuspense
-          fallback={
-            <Note>
-              {t(
-                'model-loading',
-                {
-                  defaultValue:
-                    'Loading 3D model…',
-                },
-              )}
-            </Note>
-          }
-        >
-          <Viewer3D
-            url={modelUrl(
-              model,
-            )}
-            cls={
-              cls
-            }
-            tint={
-              tint
-            }
-            paint={
-              paint
-            }
-            effect={
-              effect
-            }
-            festive={
-              festive
-            }
-          />
-        </ArrivalSuspense>
-      </SilentErrorBoundary>
-    );
+        <Viewer3D url={modelUrl(model)} cls={cls} tint={tint} paint={paint} effect={effect} festive={festive} />
+      </ArrivalSuspense>
+    </SilentErrorBoundary>
+  );
 
   return (
     <div
       role="img"
-      aria-label={t(
-        'model-view',
-        {
-          defaultValue:
-            '3D model viewer',
-        },
-      )}
-      className={cn(
-        'h-56 overflow-hidden rounded-app-sm border border-app-border bg-app-bg',
-        className,
-      )}
+      aria-label={t('model-view', {
+        defaultValue: '3D model viewer',
+      })}
+      className={cn('h-56 overflow-hidden rounded-app-sm border border-app-border bg-app-bg', className)}
     >
-      {
-        body
-      }
+      {body}
     </div>
   );
 }

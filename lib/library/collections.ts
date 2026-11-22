@@ -15,33 +15,24 @@ const TITLE_MAX = 120;
 const DESCRIPTION_MAX = 500;
 
 /** A collection resolved for display: metadata + its ordered member books. */
-export type CollectionView =
-  {
-    id: string;
-    slug: string;
-    title: string;
-    description: string;
-    official: boolean;
-    ownerUserId:
-      | string
-      | null;
-    owner: {
-      handle:
-        | string
-        | null;
-      name:
-        | string
-        | null;
-    } | null;
-    /** Same-origin URL of the (AI-generated) collection cover, or null if none. */
-    coverUrl:
-      | string
-      | null;
-    /** Ordered, resolved member books (unresolvable slugs are dropped). */
-    books: LibraryBook[];
-    /** Whether the current viewer may rename/delete/add to this collection. */
-    canEdit: boolean;
-  };
+export type CollectionView = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  official: boolean;
+  ownerUserId: string | null;
+  owner: {
+    handle: string | null;
+    name: string | null;
+  } | null;
+  /** Same-origin URL of the (AI-generated) collection cover, or null if none. */
+  coverUrl: string | null;
+  /** Ordered, resolved member books (unresolvable slugs are dropped). */
+  books: LibraryBook[];
+  /** Whether the current viewer may rename/delete/add to this collection. */
+  canEdit: boolean;
+};
 
 export type CollectionFieldResult =
   | {
@@ -55,37 +46,20 @@ export type CollectionFieldResult =
     };
 
 /** Validate + normalise a collection's title/description. */
-export function validateCollectionFields(input: {
-  title: string;
-  description?: string;
-}): CollectionFieldResult {
-  const title =
-    input.title.trim();
-  if (
-    !title
-  )
+export function validateCollectionFields(input: { title: string; description?: string }): CollectionFieldResult {
+  const title = input.title.trim();
+  if (!title)
     return {
       ok: false,
-      error:
-        'A title is required.',
+      error: 'A title is required.',
     };
-  if (
-    title.length >
-    TITLE_MAX
-  )
+  if (title.length > TITLE_MAX)
     return {
       ok: false,
       error: `Title must be ${TITLE_MAX} characters or fewer.`,
     };
-  const description =
-    (
-      input.description ??
-      ''
-    ).trim();
-  if (
-    description.length >
-    DESCRIPTION_MAX
-  ) {
+  const description = (input.description ?? '').trim();
+  if (description.length > DESCRIPTION_MAX) {
     return {
       ok: false,
       error: `Description must be ${DESCRIPTION_MAX} characters or fewer.`,

@@ -35,34 +35,21 @@ import { previousEntryHref } from '@/lib/router/history-trail';
  * re-rendering.
  */
 export function useBackOrFallback() {
-  const router =
-    useRouter();
+  const router = useRouter();
 
   return useCallback(
-    (event?: {
-      preventDefault: () => void;
-    }) => {
+    (event?: { preventDefault: () => void }) => {
       const index =
         (
-          window
-            .history
-            .state as {
+          window.history.state as {
             __TSR_index?: number;
           } | null
-        )
-          ?.__TSR_index ??
-        0;
-      if (
-        index <=
-        0
-      )
-        return; // first entry — let the <Link> navigate normally
+        )?.__TSR_index ?? 0;
+      if (index <= 0) return; // first entry — let the <Link> navigate normally
       event?.preventDefault();
       router.history.back();
     },
-    [
-      router,
-    ],
+    [router],
   );
 }
 
@@ -80,27 +67,15 @@ export function useBackOrFallback() {
  * Usage: `<Link to={href} onClick={useBackTo(href)}>`. `href` is compared as path +
  * search, so pass it the same way the link does.
  */
-export function useBackTo(
-  href: string,
-) {
-  const router =
-    useRouter();
+export function useBackTo(href: string) {
+  const router = useRouter();
 
   return useCallback(
-    (event?: {
-      preventDefault: () => void;
-    }) => {
-      if (
-        previousEntryHref() !==
-        href
-      )
-        return; // not the named page — let the <Link> navigate
+    (event?: { preventDefault: () => void }) => {
+      if (previousEntryHref() !== href) return; // not the named page — let the <Link> navigate
       event?.preventDefault();
       router.history.back();
     },
-    [
-      router,
-      href,
-    ],
+    [router, href],
   );
 }

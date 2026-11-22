@@ -2,22 +2,13 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { AdminQueueUser } from '@/lib/admin/admin-ops.contract';
-import type {
-  GroupReliability,
-  ReasonCount,
-  ReporterTally,
-} from '@/lib/moderation/triage';
-import type {
-  decideGroupsBody,
-  triageQuery,
-} from '@/lib/moderation/triage-schema';
+import type { GroupReliability, ReasonCount, ReporterTally } from '@/lib/moderation/triage';
+import type { decideGroupsBody, triageQuery } from '@/lib/moderation/triage-schema';
 
 export interface GroupReportRow {
   id: string;
   reason: string;
-  details:
-    | string
-    | null;
+  details: string | null;
   status: string;
   /** The reporter took it back before anyone picked it up. */
   withdrawn: boolean;
@@ -35,9 +26,7 @@ export interface ReportGroupRow {
   firstAt: string;
   lastAt: string;
   /** A snippet of the reported post or reply; null for kinds with nothing safe to show. */
-  preview:
-    | string
-    | null;
+  preview: string | null;
   targetUser: AdminQueueUser | null;
   /** s03-04: moderator notes on the reported member (0 when there is no member). */
   targetNoteCount: number;
@@ -48,32 +37,21 @@ export interface ReportGroupRow {
 
 export interface ReportGroupsPage {
   groups: ReportGroupRow[];
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
   /** Groups matching the filters, across every page. */
   totalGroups: number;
   /** Reports per status, unfiltered (the tabs). */
-  counts: Record<
-    string,
-    number
-  >;
+  counts: Record<string, number>;
 }
 
 /** Open reports grouped by target, filtered and ordered as asked. */
-export const listReportGroupsApi =
-  endpoint<{
-    query: z.infer<
-      typeof triageQuery
-    >;
-    res: ReportGroupsPage;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/admin/reports/groups',
-    },
-  );
+export const listReportGroupsApi = endpoint<{
+  query: z.infer<typeof triageQuery>;
+  res: ReportGroupsPage;
+}>()({
+  method: 'GET',
+  path: '/api/admin/reports/groups',
+});
 
 export interface DecideGroupsResult {
   success: true;
@@ -86,16 +64,10 @@ export interface DecideGroupsResult {
 }
 
 /** Resolve or dismiss every open report of the listed targets (takedown and message: one target only). */
-export const decideReportGroupsApi =
-  endpoint<{
-    body: z.infer<
-      typeof decideGroupsBody
-    >;
-    res: DecideGroupsResult;
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/admin/reports/groups/decide',
-    },
-  );
+export const decideReportGroupsApi = endpoint<{
+  body: z.infer<typeof decideGroupsBody>;
+  res: DecideGroupsResult;
+}>()({
+  method: 'POST',
+  path: '/api/admin/reports/groups/decide',
+});

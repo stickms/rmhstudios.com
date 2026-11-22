@@ -9,12 +9,7 @@ import type { DrawingPrompt } from '@/lib/rmhbox/minimalist-masterpiece/data-loa
 
 // ─── Phase ───────────────────────────────────────────────────────
 
-export type MMPhase =
-  | 'PROMPT_REVEAL'
-  | 'DRAWING'
-  | 'GALLERY'
-  | 'AUCTION'
-  | 'RESULTS';
+export type MMPhase = 'PROMPT_REVEAL' | 'DRAWING' | 'GALLERY' | 'AUCTION' | 'RESULTS';
 
 // ─── Stroke Types (mirrored from schemas for server use) ─────────
 
@@ -38,9 +33,7 @@ export interface PlayerDrawing {
   drawingId: string;
   strokes: MMStroke[];
   backgroundColor: string;
-  submittedAt:
-    | number
-    | null;
+  submittedAt: number | null;
   strokeCount: number;
 }
 
@@ -49,10 +42,7 @@ export interface PlayerDrawing {
 export interface DrawingBids {
   drawingId: string;
   totalValue: number;
-  bidders: Map<
-    string,
-    number
-  >;
+  bidders: Map<string, number>;
 }
 
 // ─── Rankings ────────────────────────────────────────────────────
@@ -122,47 +112,21 @@ export interface MinimalistMasterpieceState {
   phase: MMPhase;
   currentRound: number;
   totalRounds: number;
-  drawings: Map<
-    string,
-    PlayerDrawing
-  >;
-  drawingIdToUserId: Map<
-    string,
-    string
-  >;
-  userIdToDrawingId: Map<
-    string,
-    string
-  >;
-  playerCurrencies: Map<
-    string,
-    number
-  >;
-  bids: Map<
-    string,
-    DrawingBids
-  >;
-  marketValues: Map<
-    string,
-    number
-  >;
+  drawings: Map<string, PlayerDrawing>;
+  drawingIdToUserId: Map<string, string>;
+  userIdToDrawingId: Map<string, string>;
+  playerCurrencies: Map<string, number>;
+  bids: Map<string, DrawingBids>;
+  marketValues: Map<string, number>;
   /** Winner of each painting in the auction (highest bidder). */
-  auctionWinners: Map<
-    string,
-    AuctionWinner
-  >;
-  rankings:
-    | MMRanking[]
-    | null;
+  auctionWinners: Map<string, AuctionWinner>;
+  rankings: MMRanking[] | null;
   /** Players who have submitted (finalized) their bids in the auction phase. */
   bidSubmissions: Set<string>;
   /** Players who have explicitly submitted (locked in) their drawing. */
   drawingSubmissions: Set<string>;
   /** Cumulative player scores across all rounds. */
-  cumulativeScores: Map<
-    string,
-    number
-  >;
+  cumulativeScores: Map<string, number>;
   /** This round's drawing ids in their shuffled, anonymous gallery order. */
   galleryOrder: string[];
   /** When this round's DRAWING phase began (for the Speed Painter award). */
@@ -173,9 +137,6 @@ export interface MinimalistMasterpieceState {
     seq: number;
     type: string;
     timestamp: number;
-    payload: Record<
-      string,
-      unknown
-    >;
+    payload: Record<string, unknown>;
   }>;
 }

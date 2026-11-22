@@ -5,23 +5,11 @@
  * unit-testable without a canvas.
  */
 
-import type {
-  Rect,
-  Screen,
-} from '../layout/geometry';
-import type {
-  BorderDef,
-  Rgba,
-} from '../scheme/scheme';
+import type { Rect, Screen } from '../layout/geometry';
+import type { BorderDef, Rgba } from '../scheme/scheme';
 
-export type HAlign =
-  | 'left'
-  | 'center'
-  | 'right';
-export type VAlign =
-  | 'top'
-  | 'middle'
-  | 'bottom';
+export type HAlign = 'left' | 'center' | 'right';
+export type VAlign = 'top' | 'middle' | 'bottom';
 
 export interface TextOp {
   t: 'text';
@@ -84,14 +72,8 @@ export interface ImageOp {
    * the corners keep their size, the edges and the centre stretch.
    */
   nine?: {
-    src: [
-      number,
-      number,
-    ];
-    draw: [
-      number,
-      number,
-    ];
+    src: [number, number];
+    draw: [number, number];
   };
 }
 
@@ -109,13 +91,7 @@ export interface OutlineOp {
   dashed: boolean;
 }
 
-export type DrawOp =
-  | TextOp
-  | RectOp
-  | BorderOp
-  | ImageOp
-  | DynamicOp
-  | OutlineOp;
+export type DrawOp = TextOp | RectOp | BorderOp | ImageOp | DynamicOp | OutlineOp;
 
 export interface PanelNode {
   /** Stable within a scene: `<file>#<key>` (+ `~n` for repeated keys). */
@@ -134,9 +110,7 @@ export interface PanelNode {
   isFrame: boolean;
   /** Opacity (0–1) from the panel's `alpha` and its ancestors'; absent when fully opaque. */
   alpha?: number;
-  parentId:
-    | string
-    | null;
+  parentId: string | null;
   /** Bounds of the ancestor panels this one is clipped to (absent when only the screen clips it). */
   clip?: Rect;
   /** Source range of the entry in the file text. */

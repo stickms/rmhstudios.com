@@ -35,8 +35,7 @@ export const Route = createFileRoute('/_site/calendar')({
   head: () => ({
     meta: buildMeta({
       title: 'Calendar | RMH Studios',
-      description:
-        'Puzzle drops, game nights, tournaments, premieres and community events: everything on this week.',
+      description: 'Puzzle drops, game nights, tournaments, premieres and community events: everything on this week.',
       path: '/calendar',
     }),
     links: [buildCanonical('/calendar')],
@@ -51,8 +50,7 @@ export const Route = createFileRoute('/_site/calendar')({
 /** One week as rows on rules, a day per section. */
 function Week({ grid }: { grid: ScheduleGrid }) {
   const { t, i18n } = useTranslation('site');
-  const time = (iso: string) =>
-    new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+  const time = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
   const dayLabel = (iso: string) =>
     new Date(iso).toLocaleDateString(i18n.language, {
       weekday: 'long',
@@ -144,9 +142,7 @@ function WhatsOn() {
         </div>
       )}
       <section id="game-night" className="space-y-3">
-        <h2 className="t-heading text-site-text">
-          {t('calendar-game-night', { defaultValue: 'Game night' })}
-        </h2>
+        <h2 className="t-heading text-site-text">{t('calendar-game-night', { defaultValue: 'Game night' })}</h2>
         <GameNightBoard />
       </section>
     </>

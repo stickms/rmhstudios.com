@@ -53,11 +53,7 @@ describe('daily recurrence (D)', () => {
       at('2026-11-01T00:00:00Z'),
       at('2026-11-03T12:00:00Z'),
     ).map((o) => o.startsAt.toISOString());
-    expect(got).toEqual([
-      '2026-11-01T00:00:00.000Z',
-      '2026-11-02T00:00:00.000Z',
-      '2026-11-03T00:00:00.000Z',
-    ]);
+    expect(got).toEqual(['2026-11-01T00:00:00.000Z', '2026-11-02T00:00:00.000Z', '2026-11-03T00:00:00.000Z']);
   });
 
   it('still expands a series started years ago (the safety rail counts from the window)', () => {
@@ -147,7 +143,13 @@ describe('game nights copied from game_night', () => {
     expect(data.startsAt.toISOString()).toBe('2024-01-12T20:00:00.000Z');
     expect(data.startsAt.getTime()).toBe(gridAnchor({ weekday: 5, startMinute: 1200 }).getTime());
     const def = gameNightDef({ id: 'g', title: 'Party', ...data });
-    expect(def).toMatchObject({ weekday: 5, startMinute: 1200, durationMinutes: 120, minutesPerGame: 20, games: ['rmhbox'] });
+    expect(def).toMatchObject({
+      weekday: 5,
+      startMinute: 1200,
+      durationMinutes: 120,
+      minutesPerGame: 20,
+      games: ['rmhbox'],
+    });
     // And the rotation maths reads it as before: Friday 20:30 UTC is live.
     expect(rotation(def, at('2026-11-20T20:30:00Z')).state).toBe('live');
   });
@@ -204,7 +206,11 @@ describe('the calendar feed keeps its UIDs', () => {
   it('office hours: office-hours-<id>, titled with the other person, for the host too', () => {
     const oh = row({ id: 'ob1', kind: 'office-hours', description: 'jam' });
     const [e] = feedEntries({ event: oh, answers: [], implicit: 'host', otherName: 'Ada' }, from, to, 'https://s');
-    expect(e).toMatchObject({ id: 'office-hours-ob1', title: 'Office hours with Ada', url: 'https://s/office-hours/h' });
+    expect(e).toMatchObject({
+      id: 'office-hours-ob1',
+      title: 'Office hours with Ada',
+      url: 'https://s/office-hours/h',
+    });
   });
 
   it("a poll's event: poll-<pollId>, also for a respondent without an RSVP", () => {
@@ -238,6 +244,12 @@ describe('the calendar feed keeps its UIDs', () => {
   });
 
   it('an answer outside the window is not on the calendar', () => {
-    expect(attendanceBetween({ event: row(), answers: [whole('going')] }, at('2027-02-01T00:00:00Z'), at('2027-03-01T00:00:00Z'))).toEqual([]);
+    expect(
+      attendanceBetween(
+        { event: row(), answers: [whole('going')] },
+        at('2027-02-01T00:00:00Z'),
+        at('2027-03-01T00:00:00Z'),
+      ),
+    ).toEqual([]);
   });
 });

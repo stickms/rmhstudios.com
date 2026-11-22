@@ -27,20 +27,10 @@ export type ClipboardOp =
   | 'remove-time';
 
 /** Operations that need notes selected first. */
-const NEEDS_SELECTION: readonly ClipboardOp[] = [
-  'copy',
-  'cut',
-  'duplicate',
-  'mirror',
-  'quantize',
-  'scale',
-];
+const NEEDS_SELECTION: readonly ClipboardOp[] = ['copy', 'cut', 'duplicate', 'mirror', 'quantize', 'scale'];
 
 /** Whether an operation can run now — the menu disables what cannot. */
-export function canRunOp(
-  op: ClipboardOp,
-  state: { hasSelection: boolean; hasClipboard: boolean },
-): boolean {
+export function canRunOp(op: ClipboardOp, state: { hasSelection: boolean; hasClipboard: boolean }): boolean {
   if (NEEDS_SELECTION.includes(op)) return state.hasSelection;
   if (op === 'paste' || op === 'paste-mirrored') return state.hasClipboard;
   return true;
@@ -164,8 +154,7 @@ export function useClipboardActions(announce: (message: string) => void, openSca
           });
         case 'removed':
           return t('announce-removed', {
-            defaultValue:
-              'Removed {{unit}} beat at {{time}}; {{deleted}} notes deleted, {{moved}} moved.',
+            defaultValue: 'Removed {{unit}} beat at {{time}}; {{deleted}} notes deleted, {{moved}} moved.',
             unit: unit(result.division),
             time: formatTime(result.at),
             deleted: result.deleted,

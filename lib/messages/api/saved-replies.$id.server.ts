@@ -10,14 +10,26 @@ import { removeSavedReply, updateSavedReply } from '@/lib/messages/saved-replies
  * Another member's row answers 404, the same as a missing one.
  */
 export const route = apiRoute('/api/saved-replies/$id', {
-  PATCH: implement(updateSavedReplyApi, { rateLimit: 'write', body: patchSavedReplyBody }, async ({ userId, params, body }) => {
-    const result = await updateSavedReply(userId, params.id, body);
-    if (!result.ok) return Response.json({ error: result.error, ...(result.code ? { code: result.code } : {}) }, { status: result.status });
-    return { reply: result.value };
-  }),
+  PATCH: implement(
+    updateSavedReplyApi,
+    { rateLimit: 'write', body: patchSavedReplyBody },
+    async ({ userId, params, body }) => {
+      const result = await updateSavedReply(userId, params.id, body);
+      if (!result.ok)
+        return Response.json(
+          { error: result.error, ...(result.code ? { code: result.code } : {}) },
+          { status: result.status },
+        );
+      return { reply: result.value };
+    },
+  ),
   DELETE: implement(deleteSavedReplyApi, { rateLimit: 'write' }, async ({ userId, params }) => {
     const result = await removeSavedReply(userId, params.id);
-    if (!result.ok) return Response.json({ error: result.error, ...(result.code ? { code: result.code } : {}) }, { status: result.status });
+    if (!result.ok)
+      return Response.json(
+        { error: result.error, ...(result.code ? { code: result.code } : {}) },
+        { status: result.status },
+      );
     return { success: true as const };
   }),
 });

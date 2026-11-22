@@ -8,20 +8,9 @@ import { z } from 'zod';
 
 export const LOADOUT_MAX_PRESETS = 10;
 
-export const saveLoadoutSchema =
-  z.object(
-    {
-      name: z
-        .string()
-        .trim()
-        .min(
-          1,
-        )
-        .max(
-          40,
-        ),
-    },
-  );
+export const saveLoadoutSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+});
 
 export interface LoadoutItemView {
   id: string;

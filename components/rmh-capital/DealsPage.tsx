@@ -10,41 +10,21 @@
 
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  Amount,
-  ArrowIcon,
-  DealTombstones,
-  PageHead,
-  Plate,
-  SatireNotice,
-  cssVars,
-} from './shared';
+import { Amount, ArrowIcon, DealTombstones, PageHead, Plate, SatireNotice, cssVars } from './shared';
 
 export default function DealsPage() {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmh-capital',
-    );
+  const { t } = useTranslation('c-rmh-capital');
 
   return (
     <>
       <PageHead
-        title={t(
-          'deals-title',
-          {
-            defaultValue:
-              'Transactions',
-          },
-        )}
-        lede={t(
-          'deals-lede',
-          {
-            defaultValue:
-              'The transactions RMH Capital has announced, and the part each of its businesses played in them.',
-          },
-        )}
+        title={t('deals-title', {
+          defaultValue: 'Transactions',
+        })}
+        lede={t('deals-lede', {
+          defaultValue:
+            'The transactions RMH Capital has announced, and the part each of its businesses played in them.',
+        })}
       />
 
       <section className="sec">
@@ -53,144 +33,89 @@ export default function DealsPage() {
         </div>
       </section>
 
-      <section
-        className="sec"
-        id="rmh-studios"
-        aria-labelledby="deals-rmhs-heading"
-      >
+      <section className="sec" id="rmh-studios" aria-labelledby="deals-rmhs-heading">
         <div className="wrap">
           <div className="offset">
             <div className="o-lead">
               <div className="rv-wipe deal-plate">
-                <Plate
-                  kind="disc"
-                  className="plate--sq"
-                />
+                <Plate kind="disc" className="plate--sq" />
               </div>
             </div>
             <div className="o-wide stack">
               <p className="meta rv">
-                {t(
-                  'deals-rmhs-byline',
-                  {
-                    defaultValue:
-                      'Announced November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator',
-                  },
-                )}
+                {t('deals-rmhs-byline', {
+                  defaultValue: 'Announced November 19, 2026 · Mahmoud Said, General Managing Partner, RMHCombinator',
+                })}
               </p>
-              <h2
-                className="h2 rv"
-                id="deals-rmhs-heading"
-              >
-                {t(
-                  'deals-rmhs-heading',
-                  {
-                    defaultValue:
-                      'Investing in RMH Studios',
-                  },
-                )}
+              <h2 className="h2 rv" id="deals-rmhs-heading">
+                {t('deals-rmhs-heading', {
+                  defaultValue: 'Investing in RMH Studios',
+                })}
               </h2>
               <p className="lede rv d1">
-                {t(
-                  'deals-rmhs-lede-pipe',
-                  {
-                    defaultValue:
-                      "Today we're excited to announce that RMHCombinator is leading a $50 private investment in public equity (PIPE) in RMH Studios. We're thrilled to partner with the team as they build the consumer internet platform of the next decade.",
-                  },
-                )}
+                {t('deals-rmhs-lede-pipe', {
+                  defaultValue:
+                    "Today we're excited to announce that RMHCombinator is leading a $50 private investment in public equity (PIPE) in RMH Studios. We're thrilled to partner with the team as they build the consumer internet platform of the next decade.",
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-rmhs-body-1-pipe',
-                  {
-                    defaultValue:
-                      'When we first met the RMH Studios team, they had already shipped a social feed, eighteen browser games, thirteen full apps, a coin economy and a developer API, and taken the company public, all on no venture capital. We usually meet founders at the very beginning. This time we were a little late, so we did what any disciplined early-stage investor would do and wrote a check anyway.',
-                  },
-                )}
+                {t('deals-rmhs-body-1-pipe', {
+                  defaultValue:
+                    'When we first met the RMH Studios team, they had already shipped a social feed, eighteen browser games, thirteen full apps, a coin economy and a developer API, and taken the company public, all on no venture capital. We usually meet founders at the very beginning. This time we were a little late, so we did what any disciplined early-stage investor would do and wrote a check anyway.',
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-rmhs-body-2-pipe',
-                  {
-                    defaultValue:
-                      'We believe the next great consumer company will not be one app. It will be a place: somewhere people post, play, watch, listen, study and build, signed in once. RMH Studios is building that place, with a capital efficiency we have rarely seen. It reached the public markets without raising a venture round, and until today no venture firm owned a single share.',
-                  },
-                )}
+                {t('deals-rmhs-body-2-pipe', {
+                  defaultValue:
+                    'We believe the next great consumer company will not be one app. It will be a place: somewhere people post, play, watch, listen, study and build, signed in once. RMH Studios is building that place, with a capital efficiency we have rarely seen. It reached the public markets without raising a venture round, and until today no venture firm owned a single share.',
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-rmhs-body-3-pipe',
-                  {
-                    defaultValue:
-                      'The investment extends the company’s runway by about one month of hosting. RMH Studios becomes the first public company in the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it. We could not be more excited to be on this journey with them.',
-                  },
-                )}
+                {t('deals-rmhs-body-3-pipe', {
+                  defaultValue:
+                    'The investment extends the company’s runway by about one month of hosting. RMH Studios becomes the first public company in the RMHCombinator Fall 2026 batch, and with it gets the whole firm behind it. We could not be more excited to be on this journey with them.',
+                })}
               </p>
             </div>
 
             <div
               className="o-full figs"
-              style={cssVars(
-                {
-                  '--n': 3,
-                },
-              )}
+              style={cssVars({
+                '--n': 3,
+              })}
             >
               <div className="fig rv">
-                <Amount
-                  className="fig-n ink"
-                  value="$50"
-                />
+                <Amount className="fig-n ink" value="$50" />
                 <span className="fig-k">
-                  {t(
-                    'deals-rmhs-fig-pipe',
-                    {
-                      defaultValue:
-                        'Private investment in public equity, led by RMHCombinator',
-                    },
-                  )}
+                  {t('deals-rmhs-fig-pipe', {
+                    defaultValue: 'Private investment in public equity, led by RMHCombinator',
+                  })}
                 </span>
               </div>
               <div className="fig rv d1">
                 <Amount
                   className="fig-n ink"
                   value="$5"
-                  unit={t(
-                    'tomb-unit-billion',
-                    {
-                      defaultValue:
-                        'billion',
-                    },
-                  )}
+                  unit={t('tomb-unit-billion', {
+                    defaultValue: 'billion',
+                  })}
                 />
                 <span className="fig-k">
-                  {t(
-                    'deals-rmhs-fig-market-cap',
-                    {
-                      defaultValue:
-                        'Market capitalization at pricing',
-                    },
-                  )}
+                  {t('deals-rmhs-fig-market-cap', {
+                    defaultValue: 'Market capitalization at pricing',
+                  })}
                 </span>
               </div>
               <div className="fig rv d2">
                 <span className="fig-n deal-fig-term ink">
-                  {t(
-                    'deals-rmhs-fig-stake',
-                    {
-                      defaultValue:
-                        '0.000001%',
-                    },
-                  )}
+                  {t('deals-rmhs-fig-stake', {
+                    defaultValue: '0.000001%',
+                  })}
                 </span>
                 <span className="fig-k">
-                  {t(
-                    'deals-rmhs-fig-stake-k',
-                    {
-                      defaultValue:
-                        'Of RMH Studios owned by RMHCombinator',
-                    },
-                  )}
+                  {t('deals-rmhs-fig-stake-k', {
+                    defaultValue: 'Of RMH Studios owned by RMHCombinator',
+                  })}
                 </span>
               </div>
             </div>
@@ -198,164 +123,102 @@ export default function DealsPage() {
             <dl className="o-full deal-terms">
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-rmhs-term-company',
-                    {
-                      defaultValue:
-                        'Company',
-                    },
-                  )}
+                  {t('deals-rmhs-term-company', {
+                    defaultValue: 'Company',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-rmhs-term-company-v',
-                    {
-                      defaultValue:
-                        'RMH Studios',
-                    },
-                  )}
+                  {t('deals-rmhs-term-company-v', {
+                    defaultValue: 'RMH Studios',
+                  })}
                 </dd>
               </div>
               <div className="rv d1">
                 <dt>
-                  {t(
-                    'deals-rmhs-term-transaction',
-                    {
-                      defaultValue:
-                        'Transaction',
-                    },
-                  )}
+                  {t('deals-rmhs-term-transaction', {
+                    defaultValue: 'Transaction',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-rmhs-term-transaction-v',
-                    {
-                      defaultValue:
-                        'PIPE, $50, settled in full at signing',
-                    },
-                  )}
+                  {t('deals-rmhs-term-transaction-v', {
+                    defaultValue: 'PIPE, $50, settled in full at signing',
+                  })}
                 </dd>
               </div>
               <div className="rv d2">
                 <dt>
-                  {t(
-                    'deals-rmhs-term-instrument',
-                    {
-                      defaultValue:
-                        'Instrument',
-                    },
-                  )}
+                  {t('deals-rmhs-term-instrument', {
+                    defaultValue: 'Instrument',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-rmhs-term-instrument-common',
-                    {
-                      defaultValue:
-                        'Common stock, bought from the company at the market price with no discount',
-                    },
-                  )}
+                  {t('deals-rmhs-term-instrument-common', {
+                    defaultValue: 'Common stock, bought from the company at the market price with no discount',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-rmhs-term-lead',
-                    {
-                      defaultValue:
-                        'Lead investor',
-                    },
-                  )}
+                  {t('deals-rmhs-term-lead', {
+                    defaultValue: 'Lead investor',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-rmhs-term-lead-v',
-                    {
-                      defaultValue:
-                        'RMHCombinator, the venture capital business of RMH Capital',
-                    },
-                  )}
+                  {t('deals-rmhs-term-lead-v', {
+                    defaultValue: 'RMHCombinator, the venture capital business of RMH Capital',
+                  })}
                 </dd>
               </div>
               <div className="rv d1">
                 <dt>
-                  {t(
-                    'deals-rmhs-term-use',
-                    {
-                      defaultValue:
-                        'Use of proceeds',
-                    },
-                  )}
+                  {t('deals-rmhs-term-use', {
+                    defaultValue: 'Use of proceeds',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-rmhs-term-use-v',
-                    {
-                      defaultValue:
-                        'About one month of servers, and the domain renewal',
-                    },
-                  )}
+                  {t('deals-rmhs-term-use-v', {
+                    defaultValue: 'About one month of servers, and the domain renewal',
+                  })}
                 </dd>
               </div>
               <div className="rv d2">
                 <dt>
-                  {t(
-                    'deals-rmhs-term-board',
-                    {
-                      defaultValue:
-                        'Board',
-                    },
-                  )}
+                  {t('deals-rmhs-term-board', {
+                    defaultValue: 'Board',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-rmhs-term-board-observer',
-                    {
-                      defaultValue:
-                        'No board seat. Mahmoud Said joins as an observer',
-                    },
-                  )}
+                  {t('deals-rmhs-term-board-observer', {
+                    defaultValue: 'No board seat. Mahmoud Said joins as an observer',
+                  })}
                 </dd>
               </div>
             </dl>
 
             <figure className="o-wide">
               <blockquote className="quote rv">
-                {t(
-                  'deals-rmhs-quote-public',
-                  {
-                    defaultValue:
-                      'We back founders who build first and raise later. RMH Studios built everything first, then went public.',
-                  },
-                )}
+                {t('deals-rmhs-quote-public', {
+                  defaultValue:
+                    'We back founders who build first and raise later. RMH Studios built everything first, then went public.',
+                })}
               </blockquote>
               <figcaption className="quote-by rv d1">
-                {t(
-                  'deals-rmhs-quote-attribution',
-                  {
-                    defaultValue:
-                      'Mahmoud Said, General Managing Partner, RMHCombinator',
-                  },
-                )}
+                {t('deals-rmhs-quote-attribution', {
+                  defaultValue: 'Mahmoud Said, General Managing Partner, RMHCombinator',
+                })}
               </figcaption>
             </figure>
 
             <p className="o-wide meta rv">
-              {t(
-                'deals-rmhs-record',
-                {
-                  defaultValue:
-                    'RMHCombinator. Back and build.',
-                },
-              )}
+              {t('deals-rmhs-record', {
+                defaultValue: 'RMHCombinator. Back and build.',
+              })}
             </p>
             <p className="o-wide notice rv">
-              {t(
-                'deals-rmhs-disclosure',
-                {
-                  defaultValue:
-                    'The views expressed here are those of the RMHCombinator personnel quoted and are not the views of RMH Capital or its affiliates. This post is not an offer to sell, or a solicitation of an offer to buy, any security. Past performance is not indicative of future results. A $50 check is indicative of very little.',
-                },
-              )}
+              {t('deals-rmhs-disclosure', {
+                defaultValue:
+                  'The views expressed here are those of the RMHCombinator personnel quoted and are not the views of RMH Capital or its affiliates. This post is not an offer to sell, or a solicitation of an offer to buy, any security. Past performance is not indicative of future results. A $50 check is indicative of very little.',
+              })}
             </p>
           </div>
         </div>
@@ -365,653 +228,411 @@ export default function DealsPage() {
         <hr className="rule rv-rule" />
       </div>
 
-      <section
-        className="sec"
-        id="nvidiamd"
-        aria-labelledby="deals-nv-heading"
-      >
+      <section className="sec" id="nvidiamd" aria-labelledby="deals-nv-heading">
         <div className="wrap">
           <div className="offset">
             <div className="o-head stack rv">
               <p className="meta">
-                {t(
-                  'deals-nv-date',
-                  {
-                    defaultValue:
-                      'Announced November 13, 2026',
-                  },
-                )}
+                {t('deals-nv-date', {
+                  defaultValue: 'Announced November 13, 2026',
+                })}
               </p>
-              <h2
-                className="h2"
-                id="deals-nv-heading"
-              >
-                {t(
-                  'deals-nv-heading',
-                  {
-                    defaultValue:
-                      'AMD and Nvidia agree to combine as NvidiAMD',
-                  },
-                )}
+              <h2 className="h2" id="deals-nv-heading">
+                {t('deals-nv-heading', {
+                  defaultValue: 'AMD and Nvidia agree to combine as NvidiAMD',
+                })}
               </h2>
             </div>
             <div className="o-wide stack">
               <p className="lede rv">
-                {t(
-                  'deals-nv-lede',
-                  {
-                    defaultValue:
-                      'An all-stock transaction that values the combined company at approximately $6.4 trillion. AMD shareholders will receive consideration valued at approximately $955 billion, a premium of 20%.',
-                  },
-                )}
+                {t('deals-nv-lede', {
+                  defaultValue:
+                    'An all-stock transaction that values the combined company at approximately $6.4 trillion. AMD shareholders will receive consideration valued at approximately $955 billion, a premium of 20%.',
+                })}
               </p>
               <p className="body rv d1">
-                {t(
-                  'deals-nv-body-1',
-                  {
-                    defaultValue:
-                      'RMHan Stanley, the investment banking business of RMH Capital, is acting as lead financial advisor on the agreement by Advanced Micro Devices, Inc. (Nasdaq: AMD) and NVIDIA Corporation (Nasdaq: NVDA) to combine.',
-                  },
-                )}
+                {t('deals-nv-body-1', {
+                  defaultValue:
+                    'RMHan Stanley, the investment banking business of RMH Capital, is acting as lead financial advisor on the agreement by Advanced Micro Devices, Inc. (Nasdaq: AMD) and NVIDIA Corporation (Nasdaq: NVDA) to combine.',
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-nv-body-2',
-                  {
-                    defaultValue:
-                      'The agreement follows the departure of Jensen Huang as Chief Executive Officer of Nvidia. Lisa Su, Chair and Chief Executive Officer of AMD, will serve as Chair and Chief Executive Officer of the combined company.',
-                  },
-                )}
+                {t('deals-nv-body-2', {
+                  defaultValue:
+                    'The agreement follows the departure of Jensen Huang as Chief Executive Officer of Nvidia. Lisa Su, Chair and Chief Executive Officer of AMD, will serve as Chair and Chief Executive Officer of the combined company.',
+                })}
               </p>
             </div>
 
             <div
               className="o-full figs"
-              style={cssVars(
-                {
-                  '--n': 3,
-                },
-              )}
+              style={cssVars({
+                '--n': 3,
+              })}
             >
               <div className="fig rv">
                 <Amount
                   className="fig-n steel"
                   value="$955"
-                  unit={t(
-                    'tomb-unit-billion',
-                    {
-                      defaultValue:
-                        'billion',
-                    },
-                  )}
+                  unit={t('tomb-unit-billion', {
+                    defaultValue: 'billion',
+                  })}
                 />
                 <span className="fig-k">
-                  {t(
-                    'deals-nv-fig-consideration',
-                    {
-                      defaultValue:
-                        'Consideration to AMD shareholders, approximately',
-                    },
-                  )}
+                  {t('deals-nv-fig-consideration', {
+                    defaultValue: 'Consideration to AMD shareholders, approximately',
+                  })}
                 </span>
               </div>
               <div className="fig rv d1">
                 <Amount
                   className="fig-n steel"
                   value="$6.4"
-                  unit={t(
-                    'amount-unit-trillion',
-                    {
-                      defaultValue:
-                        'trillion',
-                    },
-                  )}
+                  unit={t('amount-unit-trillion', {
+                    defaultValue: 'trillion',
+                  })}
                 />
                 <span className="fig-k">
-                  {t(
-                    'deals-nv-fig-value',
-                    {
-                      defaultValue:
-                        'Equity value of the combined company, approximately',
-                    },
-                  )}
+                  {t('deals-nv-fig-value', {
+                    defaultValue: 'Equity value of the combined company, approximately',
+                  })}
                 </span>
               </div>
               <div className="fig rv d2">
-                <Amount
-                  className="fig-n steel"
-                  value="20%"
-                />
+                <Amount className="fig-n steel" value="20%" />
                 <span className="fig-k">
-                  {t(
-                    'deals-nv-fig-premium',
-                    {
-                      defaultValue:
-                        "Premium to AMD's market value before the announcement",
-                    },
-                  )}
+                  {t('deals-nv-fig-premium', {
+                    defaultValue: "Premium to AMD's market value before the announcement",
+                  })}
                 </span>
               </div>
             </div>
 
             <div className="o-lead stack rv">
               <h3 className="h3">
-                {t(
-                  'deals-nv-own-heading',
-                  {
-                    defaultValue:
-                      'Ownership on completion',
-                  },
-                )}
+                {t('deals-nv-own-heading', {
+                  defaultValue: 'Ownership on completion',
+                })}
               </h3>
               <p className="body">
-                {t(
-                  'deals-nv-own-text',
-                  {
-                    defaultValue:
-                      'Nvidia shareholders will own approximately 85% of NvidiAMD and AMD shareholders approximately 15%.',
-                  },
-                )}
+                {t('deals-nv-own-text', {
+                  defaultValue:
+                    'Nvidia shareholders will own approximately 85% of NvidiAMD and AMD shareholders approximately 15%.',
+                })}
               </p>
             </div>
             <div className="o-wide">
               <div className="rv-wipe">
-                <div
-                  className="deal-own"
-                  aria-hidden="true"
-                >
-                  <span
-                    className="deal-own-a chrome chrome-ingot"
-                    data-chrome-live=""
-                  />
+                <div className="deal-own" aria-hidden="true">
+                  <span className="deal-own-a chrome chrome-ingot" data-chrome-live="" />
                   <span className="deal-own-b" />
                 </div>
               </div>
               <div className="deal-own-key rv d1">
                 <p>
-                  <span className="deal-own-pct">
-                    85%
-                  </span>
+                  <span className="deal-own-pct">85%</span>
                   <span className="deal-own-who">
-                    {t(
-                      'deals-nv-own-nvidia',
-                      {
-                        defaultValue:
-                          'Nvidia shareholders',
-                      },
-                    )}
+                    {t('deals-nv-own-nvidia', {
+                      defaultValue: 'Nvidia shareholders',
+                    })}
                   </span>
                 </p>
                 <p>
-                  <span className="deal-own-pct">
-                    15%
-                  </span>
+                  <span className="deal-own-pct">15%</span>
                   <span className="deal-own-who">
-                    {t(
-                      'deals-nv-own-amd',
-                      {
-                        defaultValue:
-                          'AMD shareholders',
-                      },
-                    )}
+                    {t('deals-nv-own-amd', {
+                      defaultValue: 'AMD shareholders',
+                    })}
                   </span>
                 </p>
               </div>
             </div>
 
             <h3 className="o-lead h3 rv">
-              {t(
-                'deals-nv-terms-heading',
-                {
-                  defaultValue:
-                    'Transaction details',
-                },
-              )}
+              {t('deals-nv-terms-heading', {
+                defaultValue: 'Transaction details',
+              })}
             </h3>
             <dl className="o-wide deal-dl">
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-nv-term-consideration',
-                    {
-                      defaultValue:
-                        'Consideration',
-                    },
-                  )}
+                  {t('deals-nv-term-consideration', {
+                    defaultValue: 'Consideration',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-nv-term-consideration-v',
-                    {
-                      defaultValue:
-                        "AMD shareholders will receive consideration valued at approximately $955 billion, a premium of 20% to AMD's market value prior to the announcement.",
-                    },
-                  )}
+                  {t('deals-nv-term-consideration-v', {
+                    defaultValue:
+                      "AMD shareholders will receive consideration valued at approximately $955 billion, a premium of 20% to AMD's market value prior to the announcement.",
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-nv-term-ownership',
-                    {
-                      defaultValue:
-                        'Ownership',
-                    },
-                  )}
+                  {t('deals-nv-term-ownership', {
+                    defaultValue: 'Ownership',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-nv-term-ownership-v',
-                    {
-                      defaultValue:
-                        'Nvidia shareholders approximately 85%, AMD shareholders approximately 15%.',
-                    },
-                  )}
+                  {t('deals-nv-term-ownership-v', {
+                    defaultValue: 'Nvidia shareholders approximately 85%, AMD shareholders approximately 15%.',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-nv-term-valuation',
-                    {
-                      defaultValue:
-                        'Valuation',
-                    },
-                  )}
+                  {t('deals-nv-term-valuation', {
+                    defaultValue: 'Valuation',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-nv-term-valuation-v',
-                    {
-                      defaultValue:
-                        'An equity value of approximately $6.4 trillion. The transaction is the largest corporate transaction on record.',
-                    },
-                  )}
+                  {t('deals-nv-term-valuation-v', {
+                    defaultValue:
+                      'An equity value of approximately $6.4 trillion. The transaction is the largest corporate transaction on record.',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-nv-term-listing',
-                    {
-                      defaultValue:
-                        'Listing and headquarters',
-                    },
-                  )}
+                  {t('deals-nv-term-listing', {
+                    defaultValue: 'Listing and headquarters',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-nv-term-listing-v',
-                    {
-                      defaultValue:
-                        'Nasdaq, under the ticker symbol NVMD. Headquartered in Santa Clara, California.',
-                    },
-                  )}
+                  {t('deals-nv-term-listing-v', {
+                    defaultValue: 'Nasdaq, under the ticker symbol NVMD. Headquartered in Santa Clara, California.',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-nv-term-regulatory',
-                    {
-                      defaultValue:
-                        'Regulatory',
-                    },
-                  )}
+                  {t('deals-nv-term-regulatory', {
+                    defaultValue: 'Regulatory',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-nv-term-regulatory-v',
-                    {
-                      defaultValue:
-                        'The companies have agreed in advance to divest a discrete graphics business to address anticipated competition concerns.',
-                    },
-                  )}
+                  {t('deals-nv-term-regulatory-v', {
+                    defaultValue:
+                      'The companies have agreed in advance to divest a discrete graphics business to address anticipated competition concerns.',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-nv-term-timing',
-                    {
-                      defaultValue:
-                        'Timing',
-                    },
-                  )}
+                  {t('deals-nv-term-timing', {
+                    defaultValue: 'Timing',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-nv-term-timing-v',
-                    {
-                      defaultValue:
-                        'Shareholder votes in the first quarter of 2027; closing in the second half of 2027. Until closing, AMD and Nvidia will continue to operate as separate, independent companies.',
-                    },
-                  )}
+                  {t('deals-nv-term-timing-v', {
+                    defaultValue:
+                      'Shareholder votes in the first quarter of 2027; closing in the second half of 2027. Until closing, AMD and Nvidia will continue to operate as separate, independent companies.',
+                  })}
                 </dd>
               </div>
             </dl>
 
             <h3 className="o-full h3 rv">
-              {t(
-                'deals-nv-steps-heading',
-                {
-                  defaultValue:
-                    'From announcement to closing',
-                },
-              )}
+              {t('deals-nv-steps-heading', {
+                defaultValue: 'From announcement to closing',
+              })}
             </h3>
             <ol className="o-full deal-steps">
               <li className="deal-step rv">
-                <span
-                  className="deal-step-n meta"
-                  aria-hidden="true"
-                />
+                <span className="deal-step-n meta" aria-hidden="true" />
                 <p className="meta">
-                  {t(
-                    'deals-nv-step-1-when',
-                    {
-                      defaultValue:
-                        'November 13, 2026',
-                    },
-                  )}
+                  {t('deals-nv-step-1-when', {
+                    defaultValue: 'November 13, 2026',
+                  })}
                 </p>
                 <p className="deal-step-what">
-                  {t(
-                    'deals-nv-step-1-what',
-                    {
-                      defaultValue:
-                        'Agreement announced',
-                    },
-                  )}
+                  {t('deals-nv-step-1-what', {
+                    defaultValue: 'Agreement announced',
+                  })}
                 </p>
                 <p className="deal-step-text">
-                  {t(
-                    'deals-nv-step-1-text',
-                    {
-                      defaultValue:
-                        'The two companies agree to combine in an all-stock transaction, with RMHan Stanley as lead financial advisor.',
-                    },
-                  )}
+                  {t('deals-nv-step-1-text', {
+                    defaultValue:
+                      'The two companies agree to combine in an all-stock transaction, with RMHan Stanley as lead financial advisor.',
+                  })}
                 </p>
               </li>
               <li className="deal-step deal-step--due rv d1">
-                <span
-                  className="deal-step-n meta"
-                  aria-hidden="true"
-                />
+                <span className="deal-step-n meta" aria-hidden="true" />
                 <p className="meta">
-                  {t(
-                    'deals-nv-step-2-when',
-                    {
-                      defaultValue:
-                        'First quarter of 2027',
-                    },
-                  )}
+                  {t('deals-nv-step-2-when', {
+                    defaultValue: 'First quarter of 2027',
+                  })}
                 </p>
                 <p className="deal-step-what">
-                  {t(
-                    'deals-nv-step-2-what',
-                    {
-                      defaultValue:
-                        'Shareholder votes',
-                    },
-                  )}
+                  {t('deals-nv-step-2-what', {
+                    defaultValue: 'Shareholder votes',
+                  })}
                 </p>
                 <p className="deal-step-text">
-                  {t(
-                    'deals-nv-step-2-text',
-                    {
-                      defaultValue:
-                        'Shareholders of both companies are expected to vote.',
-                    },
-                  )}
+                  {t('deals-nv-step-2-text', {
+                    defaultValue: 'Shareholders of both companies are expected to vote.',
+                  })}
                 </p>
               </li>
               <li className="deal-step deal-step--due rv d2">
-                <span
-                  className="deal-step-n meta"
-                  aria-hidden="true"
-                />
+                <span className="deal-step-n meta" aria-hidden="true" />
                 <p className="meta">
-                  {t(
-                    'deals-nv-step-3-when',
-                    {
-                      defaultValue:
-                        'Second half of 2027',
-                    },
-                  )}
+                  {t('deals-nv-step-3-when', {
+                    defaultValue: 'Second half of 2027',
+                  })}
                 </p>
                 <p className="deal-step-what">
-                  {t(
-                    'deals-nv-step-3-what',
-                    {
-                      defaultValue:
-                        'Expected closing',
-                    },
-                  )}
+                  {t('deals-nv-step-3-what', {
+                    defaultValue: 'Expected closing',
+                  })}
                 </p>
                 <p className="deal-step-text">
-                  {t(
-                    'deals-nv-step-3-text',
-                    {
-                      defaultValue:
-                        'Subject to shareholder approvals, regulatory approvals and other customary closing conditions.',
-                    },
-                  )}
+                  {t('deals-nv-step-3-text', {
+                    defaultValue:
+                      'Subject to shareholder approvals, regulatory approvals and other customary closing conditions.',
+                  })}
                 </p>
               </li>
             </ol>
 
             <div className="o-lead stack rv">
               <h3 className="h3">
-                {t(
-                  'deals-nv-role-heading',
-                  {
-                    defaultValue:
-                      "RMH Capital's role",
-                  },
-                )}
+                {t('deals-nv-role-heading', {
+                  defaultValue: "RMH Capital's role",
+                })}
               </h3>
               <p className="body">
-                {t(
-                  'deals-nv-role-intro',
-                  {
-                    defaultValue:
-                      'The first transaction on which RMHan Stanley, RMH Street, RMHcKinsey and RMHstone have each acted on a single mandate, from advice and execution through integration to ownership.',
-                  },
-                )}
+                {t('deals-nv-role-intro', {
+                  defaultValue:
+                    'The first transaction on which RMHan Stanley, RMH Street, RMHcKinsey and RMHstone have each acted on a single mandate, from advice and execution through integration to ownership.',
+                })}
               </p>
             </div>
             <div className="o-wide rows">
               <div className="row rv">
                 <p className="row-title">
-                  RMHan
-                  Stanley
+                  RMHan Stanley
                   <span className="deal-alias meta">
-                    {t(
-                      'deals-nv-role-ib',
-                      {
-                        defaultValue:
-                          'Investment Banking',
-                      },
-                    )}
+                    {t('deals-nv-role-ib', {
+                      defaultValue: 'Investment Banking',
+                    })}
                   </span>
                 </p>
                 <div className="row-text">
                   <p>
-                    {t(
-                      'deals-nv-role-ib-text',
-                      {
-                        defaultValue:
-                          'Lead financial advisor to the joint transaction committee of the two boards. Delivered a fairness opinion to each board.',
-                      },
-                    )}
+                    {t('deals-nv-role-ib-text', {
+                      defaultValue:
+                        'Lead financial advisor to the joint transaction committee of the two boards. Delivered a fairness opinion to each board.',
+                    })}
                   </p>
                   <ul className="deal-desks">
                     <li>
                       <b>
-                        {t(
-                          'deals-nv-desk-ma',
-                          {
-                            defaultValue:
-                              'Mergers & Acquisitions',
-                          },
-                        )}
+                        {t('deals-nv-desk-ma', {
+                          defaultValue: 'Mergers & Acquisitions',
+                        })}
                       </b>
-                      {t(
-                        'deals-nv-desk-ma-text',
-                        {
-                          defaultValue:
-                            'Structured the transaction, the exchange ratio and the governance of the combined board.',
-                        },
-                      )}
+                      {t('deals-nv-desk-ma-text', {
+                        defaultValue:
+                          'Structured the transaction, the exchange ratio and the governance of the combined board.',
+                      })}
                     </li>
                     <li>
                       <b>
-                        {t(
-                          'deals-nv-desk-ecm',
-                          {
-                            defaultValue:
-                              'Equity Capital Markets',
-                          },
-                        )}
+                        {t('deals-nv-desk-ecm', {
+                          defaultValue: 'Equity Capital Markets',
+                        })}
                       </b>
-                      {t(
-                        'deals-nv-desk-ecm-text',
-                        {
-                          defaultValue:
-                            'Designed the share exchange and the new listing.',
-                        },
-                      )}
+                      {t('deals-nv-desk-ecm-text', {
+                        defaultValue: 'Designed the share exchange and the new listing.',
+                      })}
                     </li>
                     <li>
                       <b>
-                        {t(
-                          'deals-nv-desk-lf',
-                          {
-                            defaultValue:
-                              'Leveraged Finance',
-                          },
-                        )}
+                        {t('deals-nv-desk-lf', {
+                          defaultValue: 'Leveraged Finance',
+                        })}
                       </b>
-                      {t(
-                        'deals-nv-desk-lf-text',
-                        {
-                          defaultValue:
-                            'Arranged a 364-day bridge facility to refinance debt that becomes callable on a change of control.',
-                        },
-                      )}
+                      {t('deals-nv-desk-lf-text', {
+                        defaultValue:
+                          'Arranged a 364-day bridge facility to refinance debt that becomes callable on a change of control.',
+                      })}
                     </li>
                     <li>
                       <b>
-                        {t(
-                          'deals-nv-desk-dcm',
-                          {
-                            defaultValue:
-                              'Debt Capital Markets',
-                          },
-                        )}
+                        {t('deals-nv-desk-dcm', {
+                          defaultValue: 'Debt Capital Markets',
+                        })}
                       </b>
-                      {t(
-                        'deals-nv-desk-dcm-text',
-                        {
-                          defaultValue:
-                            'Will lead the investment-grade bond offering that refinances the bridge facility after closing.',
-                        },
-                      )}
+                      {t('deals-nv-desk-dcm-text', {
+                        defaultValue:
+                          'Will lead the investment-grade bond offering that refinances the bridge facility after closing.',
+                      })}
                     </li>
                   </ul>
                 </div>
               </div>
               <div className="row rv">
                 <p className="row-title">
-                  RMH
-                  Street
+                  RMH Street
                   <span className="deal-alias meta">
-                    {t(
-                      'deals-nv-role-markets',
-                      {
-                        defaultValue:
-                          'Markets',
-                      },
-                    )}
+                    {t('deals-nv-role-markets', {
+                      defaultValue: 'Markets',
+                    })}
                   </span>
                 </p>
                 <p className="row-text">
-                  {t(
-                    'deals-nv-role-markets-text',
-                    {
-                      defaultValue:
-                        'Providing liquidity to index funds that are required to rebalance as a result of the transaction. Has hedged the interest-rate exposure on the planned bond offering and the currency exposure of the combined company. RMH Street Research has been restricted on both companies since the mandate was signed.',
-                    },
-                  )}
+                  {t('deals-nv-role-markets-text', {
+                    defaultValue:
+                      'Providing liquidity to index funds that are required to rebalance as a result of the transaction. Has hedged the interest-rate exposure on the planned bond offering and the currency exposure of the combined company. RMH Street Research has been restricted on both companies since the mandate was signed.',
+                  })}
                 </p>
               </div>
               <div className="row rv">
                 <p className="row-title">
                   RMHcKinsey
                   <span className="deal-alias meta">
-                    {t(
-                      'deals-nv-role-consulting',
-                      {
-                        defaultValue:
-                          'Management Consulting',
-                      },
-                    )}
+                    {t('deals-nv-role-consulting', {
+                      defaultValue: 'Management Consulting',
+                    })}
                   </span>
                 </p>
                 <p className="row-text">
-                  {t(
-                    'deals-nv-role-consulting-text',
-                    {
-                      defaultValue:
-                        'Has led integration planning since the first board discussion and will remain engaged through the first year after closing: a single product roadmap, a single software stack, the leadership structure reporting to Lisa Su and the naming of the combined company.',
-                    },
-                  )}
+                  {t('deals-nv-role-consulting-text', {
+                    defaultValue:
+                      'Has led integration planning since the first board discussion and will remain engaged through the first year after closing: a single product roadmap, a single software stack, the leadership structure reporting to Lisa Su and the naming of the combined company.',
+                  })}
                 </p>
               </div>
               <div className="row rv">
                 <p className="row-title">
                   RMHstone
                   <span className="deal-alias meta">
-                    {t(
-                      'deals-nv-role-pe',
-                      {
-                        defaultValue:
-                          'Private Equity',
-                      },
-                    )}
+                    {t('deals-nv-role-pe', {
+                      defaultValue: 'Private Equity',
+                    })}
                   </span>
                 </p>
                 <p className="row-text">
-                  {t(
-                    'deals-nv-role-pe-text',
-                    {
-                      defaultValue:
-                        "Has agreed to acquire a majority interest in the divested graphics business, alongside that business's management team, through its growth-equity strategy.",
-                    },
-                  )}
+                  {t('deals-nv-role-pe-text', {
+                    defaultValue:
+                      "Has agreed to acquire a majority interest in the divested graphics business, alongside that business's management team, through its growth-equity strategy.",
+                  })}
                 </p>
               </div>
             </div>
 
             <p className="o-wide meta rv">
               <span className="ink">
-                {t(
-                  'deals-nv-fls-heading',
-                  {
-                    defaultValue:
-                      'Forward-looking statements.',
-                  },
-                )}
+                {t('deals-nv-fls-heading', {
+                  defaultValue: 'Forward-looking statements.',
+                })}
               </span>{' '}
-              {t(
-                'deals-nv-fls-text',
-                {
-                  defaultValue:
-                    'This page contains forward-looking statements, including statements about the expected timing, completion and effects of the transaction. These statements are subject to risks and uncertainties, including the receipt of shareholder and regulatory approvals. Actual results may differ materially. RMH Capital undertakes no obligation to update these statements.',
-                },
-              )}
+              {t('deals-nv-fls-text', {
+                defaultValue:
+                  'This page contains forward-looking statements, including statements about the expected timing, completion and effects of the transaction. These statements are subject to risks and uncertainties, including the receipt of shareholder and regulatory approvals. Actual results may differ materially. RMH Capital undertakes no obligation to update these statements.',
+              })}
             </p>
           </div>
         </div>
@@ -1021,131 +642,81 @@ export default function DealsPage() {
         <hr className="rule rv-rule" />
       </div>
 
-      <section
-        className="sec"
-        id="tibetan-buddhism"
-        aria-labelledby="deals-tb-heading"
-      >
+      <section className="sec" id="tibetan-buddhism" aria-labelledby="deals-tb-heading">
         <div className="wrap">
           <div className="offset">
             <div className="o-lead">
               <div className="rv-wipe deal-plate">
-                <Plate
-                  kind="disc"
-                  className="plate--sq"
-                />
+                <Plate kind="disc" className="plate--sq" />
               </div>
             </div>
             <div className="o-wide stack">
               <p className="meta rv">
-                {t(
-                  'deals-tb-date',
-                  {
-                    defaultValue:
-                      'Announced November 7, 2026',
-                  },
-                )}
+                {t('deals-tb-date', {
+                  defaultValue: 'Announced November 7, 2026',
+                })}
               </p>
-              <h2
-                className="h2 rv"
-                id="deals-tb-heading"
-              >
-                {t(
-                  'deals-tb-heading-acquisition',
-                  {
-                    defaultValue:
-                      'Bain Capital acquires Tibetan Buddhism',
-                  },
-                )}
+              <h2 className="h2 rv" id="deals-tb-heading">
+                {t('deals-tb-heading-acquisition', {
+                  defaultValue: 'Bain Capital acquires Tibetan Buddhism',
+                })}
               </h2>
               <p className="lede rv d1">
-                {t(
-                  'deals-tb-lede',
-                  {
-                    defaultValue:
-                      "The transaction brings together one of the world's most established contemplative traditions and a sponsor with a long record of finding growth in mature assets.",
-                  },
-                )}
+                {t('deals-tb-lede', {
+                  defaultValue:
+                    "The transaction brings together one of the world's most established contemplative traditions and a sponsor with a long record of finding growth in mature assets.",
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-tb-body',
-                  {
-                    defaultValue:
-                      'RMH Capital served as Lead Left Bookrunner on the facility. It was oversubscribed within one kalpa, which let us tighten pricing to the Middle Way and remove all attachment covenants.',
-                  },
-                )}
+                {t('deals-tb-body', {
+                  defaultValue:
+                    'RMH Capital served as Lead Left Bookrunner on the facility. It was oversubscribed within one kalpa, which let us tighten pricing to the Middle Way and remove all attachment covenants.',
+                })}
               </p>
             </div>
 
             <div
               className="o-full figs"
-              style={cssVars(
-                {
-                  '--n': 3,
-                },
-              )}
+              style={cssVars({
+                '--n': 3,
+              })}
             >
               <div className="fig rv">
                 <Amount
                   className="fig-n ink"
                   value="$35"
-                  unit={t(
-                    'tomb-unit-million',
-                    {
-                      defaultValue:
-                        'million',
-                    },
-                  )}
+                  unit={t('tomb-unit-million', {
+                    defaultValue: 'million',
+                  })}
                 />
                 <span className="fig-k">
-                  {t(
-                    'deals-tb-fig-facility',
-                    {
-                      defaultValue:
-                        'Senior Secured Enlightenment Facility supporting the acquisition',
-                    },
-                  )}
+                  {t('deals-tb-fig-facility', {
+                    defaultValue: 'Senior Secured Enlightenment Facility supporting the acquisition',
+                  })}
                 </span>
               </div>
               <div className="fig rv d1">
                 <span className="fig-n deal-fig-term ink">
-                  {t(
-                    'deals-tb-fig-role',
-                    {
-                      defaultValue:
-                        'Lead left',
-                    },
-                  )}
+                  {t('deals-tb-fig-role', {
+                    defaultValue: 'Lead left',
+                  })}
                 </span>
                 <span className="fig-k">
-                  {t(
-                    'deals-tb-fig-role-k',
-                    {
-                      defaultValue:
-                        'Bookrunner: RMH Capital',
-                    },
-                  )}
+                  {t('deals-tb-fig-role-k', {
+                    defaultValue: 'Bookrunner: RMH Capital',
+                  })}
                 </span>
               </div>
               <div className="fig rv d2">
                 <span className="fig-n deal-fig-term ink">
-                  {t(
-                    'deals-tb-fig-kalpa',
-                    {
-                      defaultValue:
-                        'One kalpa',
-                    },
-                  )}
+                  {t('deals-tb-fig-kalpa', {
+                    defaultValue: 'One kalpa',
+                  })}
                 </span>
                 <span className="fig-k">
-                  {t(
-                    'deals-tb-fig-kalpa-k',
-                    {
-                      defaultValue:
-                        'Time to oversubscription',
-                    },
-                  )}
+                  {t('deals-tb-fig-kalpa-k', {
+                    defaultValue: 'Time to oversubscription',
+                  })}
                 </span>
               </div>
             </div>
@@ -1153,175 +724,108 @@ export default function DealsPage() {
             <dl className="o-full deal-terms">
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-tb-term-facility',
-                    {
-                      defaultValue:
-                        'Facility',
-                    },
-                  )}
+                  {t('deals-tb-term-facility', {
+                    defaultValue: 'Facility',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-facility-v',
-                    {
-                      defaultValue:
-                        '$35 million Senior Secured Enlightenment Facility',
-                    },
-                  )}
+                  {t('deals-tb-term-facility-v', {
+                    defaultValue: '$35 million Senior Secured Enlightenment Facility',
+                  })}
                 </dd>
               </div>
               <div className="rv d1">
                 <dt>
-                  {t(
-                    'deals-tb-term-sponsor',
-                    {
-                      defaultValue:
-                        'Sponsor',
-                    },
-                  )}
+                  {t('deals-tb-term-sponsor', {
+                    defaultValue: 'Sponsor',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-sponsor-v',
-                    {
-                      defaultValue:
-                        'Bain Capital, for its acquisition of Tibetan Buddhism',
-                    },
-                  )}
+                  {t('deals-tb-term-sponsor-v', {
+                    defaultValue: 'Bain Capital, for its acquisition of Tibetan Buddhism',
+                  })}
                 </dd>
               </div>
               <div className="rv d2">
                 <dt>
-                  {t(
-                    'deals-tb-term-pricing',
-                    {
-                      defaultValue:
-                        'Pricing',
-                    },
-                  )}
+                  {t('deals-tb-term-pricing', {
+                    defaultValue: 'Pricing',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-pricing-v',
-                    {
-                      defaultValue:
-                        'Tightened to the Middle Way',
-                    },
-                  )}
+                  {t('deals-tb-term-pricing-v', {
+                    defaultValue: 'Tightened to the Middle Way',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-tb-term-covenants',
-                    {
-                      defaultValue:
-                        'Covenants',
-                    },
-                  )}
+                  {t('deals-tb-term-covenants', {
+                    defaultValue: 'Covenants',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-covenants-v',
-                    {
-                      defaultValue:
-                        'All attachment covenants removed',
-                    },
-                  )}
+                  {t('deals-tb-term-covenants-v', {
+                    defaultValue: 'All attachment covenants removed',
+                  })}
                 </dd>
               </div>
               <div className="rv d1">
                 <dt>
-                  {t(
-                    'deals-tb-term-governance',
-                    {
-                      defaultValue:
-                        'Governance',
-                    },
-                  )}
+                  {t('deals-tb-term-governance', {
+                    defaultValue: 'Governance',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-governance-v',
-                    {
-                      defaultValue:
-                        'John P. Connaughton appointed Chairman and Dalai Lama',
-                    },
-                  )}
+                  {t('deals-tb-term-governance-v', {
+                    defaultValue: 'John P. Connaughton appointed Chairman and Dalai Lama',
+                  })}
                 </dd>
               </div>
               <div className="rv d2">
                 <dt>
-                  {t(
-                    'deals-tb-term-proceeds',
-                    {
-                      defaultValue:
-                        'Use of proceeds',
-                    },
-                  )}
+                  {t('deals-tb-term-proceeds', {
+                    defaultValue: 'Use of proceeds',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-proceeds-v',
-                    {
-                      defaultValue:
-                        'Targeted investment across the monastery portfolio',
-                    },
-                  )}
+                  {t('deals-tb-term-proceeds-v', {
+                    defaultValue: 'Targeted investment across the monastery portfolio',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-tb-term-teams',
-                    {
-                      defaultValue:
-                        'Teams',
-                    },
-                  )}
+                  {t('deals-tb-term-teams', {
+                    defaultValue: 'Teams',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-tb-term-teams-v',
-                    {
-                      defaultValue:
-                        'RMH Capital Leveraged Finance and Sacred Assets',
-                    },
-                  )}
+                  {t('deals-tb-term-teams-v', {
+                    defaultValue: 'RMH Capital Leveraged Finance and Sacred Assets',
+                  })}
                 </dd>
               </div>
             </dl>
 
             <figure className="o-wide">
               <blockquote className="quote rv">
-                {t(
-                  'deals-tb-quote',
-                  {
-                    defaultValue:
-                      'Impermanence is the only constant. Fees are not.',
-                  },
-                )}
+                {t('deals-tb-quote', {
+                  defaultValue: 'Impermanence is the only constant. Fees are not.',
+                })}
               </blockquote>
               <figcaption className="quote-by rv d1">
-                {t(
-                  'deals-tb-quote-by',
-                  {
-                    defaultValue:
-                      'RMH Capital, thanking its clients for their trust and its Leveraged Finance and Sacred Assets teams for their tireless work',
-                  },
-                )}
+                {t('deals-tb-quote-by', {
+                  defaultValue:
+                    'RMH Capital, thanking its clients for their trust and its Leveraged Finance and Sacred Assets teams for their tireless work',
+                })}
               </figcaption>
             </figure>
 
             <p className="o-wide meta rv">
-              {t(
-                'deals-tb-record',
-                {
-                  defaultValue:
-                    'This announcement appears as a matter of karma only.',
-                },
-              )}
+              {t('deals-tb-record', {
+                defaultValue: 'This announcement appears as a matter of karma only.',
+              })}
             </p>
           </div>
         </div>
@@ -1331,140 +835,87 @@ export default function DealsPage() {
         <hr className="rule rv-rule" />
       </div>
 
-      <section
-        className="sec"
-        id="university-of-minnesota"
-        aria-labelledby="deals-umn-heading"
-      >
+      <section className="sec" id="university-of-minnesota" aria-labelledby="deals-umn-heading">
         <div className="wrap">
           <div className="offset">
             <div className="o-lead">
               <div className="rv-wipe deal-plate">
-                <Plate
-                  kind="orb"
-                  className="plate--sq"
-                />
+                <Plate kind="orb" className="plate--sq" />
               </div>
             </div>
             <div className="o-wide stack">
               <p className="meta rv">
-                {t(
-                  'deals-umn-date',
-                  {
-                    defaultValue:
-                      'Announced September 24, 2026',
-                  },
-                )}
+                {t('deals-umn-date', {
+                  defaultValue: 'Announced September 24, 2026',
+                })}
               </p>
-              <h2
-                className="h2 rv"
-                id="deals-umn-heading"
-              >
-                {t(
-                  'deals-umn-heading',
-                  {
-                    defaultValue:
-                      'The University of Minnesota cuts $225 million from its budget',
-                  },
-                )}
+              <h2 className="h2 rv" id="deals-umn-heading">
+                {t('deals-umn-heading', {
+                  defaultValue: 'The University of Minnesota cuts $225 million from its budget',
+                })}
               </h2>
               <p className="lede rv d1">
-                {t(
-                  'deals-umn-lede',
-                  {
-                    defaultValue:
-                      'A two-year reduction of 12 to 15 percent of allocated operating revenue, in response to shifting enrollment, unpredictable state and federal funding, and rising costs.',
-                  },
-                )}
+                {t('deals-umn-lede', {
+                  defaultValue:
+                    'A two-year reduction of 12 to 15 percent of allocated operating revenue, in response to shifting enrollment, unpredictable state and federal funding, and rising costs.',
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-umn-body-1',
-                  {
-                    defaultValue:
-                      'RMHcKinsey, the management consulting business of RMH Capital, acted as strategic advisor to the University of Minnesota. President Rebecca Cunningham described the decision as an "institutional inflection point."',
-                  },
-                )}
+                {t('deals-umn-body-1', {
+                  defaultValue:
+                    'RMHcKinsey, the management consulting business of RMH Capital, acted as strategic advisor to the University of Minnesota. President Rebecca Cunningham described the decision as an "institutional inflection point."',
+                })}
               </p>
               <p className="body rv d2">
-                {t(
-                  'deals-umn-body-2',
-                  {
-                    defaultValue:
-                      'Later estimates put the final figure between $230 million and $262 million, against an annual budget gap of about $100 million.',
-                  },
-                )}
+                {t('deals-umn-body-2', {
+                  defaultValue:
+                    'Later estimates put the final figure between $230 million and $262 million, against an annual budget gap of about $100 million.',
+                })}
               </p>
             </div>
 
             <div
               className="o-full figs"
-              style={cssVars(
-                {
-                  '--n': 3,
-                },
-              )}
+              style={cssVars({
+                '--n': 3,
+              })}
             >
               <div className="fig rv">
                 <Amount
                   className="fig-n ink"
                   value="$225"
-                  unit={t(
-                    'tomb-unit-million',
-                    {
-                      defaultValue:
-                        'million',
-                    },
-                  )}
+                  unit={t('tomb-unit-million', {
+                    defaultValue: 'million',
+                  })}
                 />
                 <span className="fig-k">
-                  {t(
-                    'deals-umn-fig-reduction',
-                    {
-                      defaultValue:
-                        'Operating budget reduction over two years',
-                    },
-                  )}
+                  {t('deals-umn-fig-reduction', {
+                    defaultValue: 'Operating budget reduction over two years',
+                  })}
                 </span>
               </div>
               <div className="fig rv d1">
                 <span className="fig-n deal-fig-term ink">
-                  {t(
-                    'deals-umn-fig-share',
-                    {
-                      defaultValue:
-                        '12–15%',
-                    },
-                  )}
+                  {t('deals-umn-fig-share', {
+                    defaultValue: '12–15%',
+                  })}
                 </span>
                 <span className="fig-k">
-                  {t(
-                    'deals-umn-fig-share-k',
-                    {
-                      defaultValue:
-                        'Of allocated operating revenue',
-                    },
-                  )}
+                  {t('deals-umn-fig-share-k', {
+                    defaultValue: 'Of allocated operating revenue',
+                  })}
                 </span>
               </div>
               <div className="fig rv d2">
                 <span className="fig-n deal-fig-term ink">
-                  {t(
-                    'deals-umn-fig-role',
-                    {
-                      defaultValue:
-                        'Strategic advisor',
-                    },
-                  )}
+                  {t('deals-umn-fig-role', {
+                    defaultValue: 'Strategic advisor',
+                  })}
                 </span>
                 <span className="fig-k">
-                  {t(
-                    'deals-umn-fig-role-k',
-                    {
-                      defaultValue:
-                        'RMHcKinsey',
-                    },
-                  )}
+                  {t('deals-umn-fig-role-k', {
+                    defaultValue: 'RMHcKinsey',
+                  })}
                 </span>
               </div>
             </div>
@@ -1472,155 +923,99 @@ export default function DealsPage() {
             <dl className="o-full deal-terms">
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-umn-term-client',
-                    {
-                      defaultValue:
-                        'Client',
-                    },
-                  )}
+                  {t('deals-umn-term-client', {
+                    defaultValue: 'Client',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-umn-term-client-v',
-                    {
-                      defaultValue:
-                        'University of Minnesota',
-                    },
-                  )}
+                  {t('deals-umn-term-client-v', {
+                    defaultValue: 'University of Minnesota',
+                  })}
                 </dd>
               </div>
               <div className="rv d1">
                 <dt>
-                  {t(
-                    'deals-umn-term-mandate',
-                    {
-                      defaultValue:
-                        'Mandate',
-                    },
-                  )}
+                  {t('deals-umn-term-mandate', {
+                    defaultValue: 'Mandate',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-umn-term-mandate-v',
-                    {
-                      defaultValue:
-                        '$225 million operating budget reduction over two years',
-                    },
-                  )}
+                  {t('deals-umn-term-mandate-v', {
+                    defaultValue: '$225 million operating budget reduction over two years',
+                  })}
                 </dd>
               </div>
               <div className="rv d2">
                 <dt>
-                  {t(
-                    'deals-umn-term-diagnostic',
-                    {
-                      defaultValue:
-                        'Cost diagnostic',
-                    },
-                  )}
+                  {t('deals-umn-term-diagnostic', {
+                    defaultValue: 'Cost diagnostic',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-umn-term-diagnostic-v',
-                    {
-                      defaultValue:
-                        'A baseline of every allocated unit, its revenue and its cost to serve',
-                    },
-                  )}
+                  {t('deals-umn-term-diagnostic-v', {
+                    defaultValue: 'A baseline of every allocated unit, its revenue and its cost to serve',
+                  })}
                 </dd>
               </div>
               <div className="rv">
                 <dt>
-                  {t(
-                    'deals-umn-term-priorities',
-                    {
-                      defaultValue:
-                        'Prioritization',
-                    },
-                  )}
+                  {t('deals-umn-term-priorities', {
+                    defaultValue: 'Prioritization',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-umn-term-priorities-v',
-                    {
-                      defaultValue:
-                        "Academic and administrative units ranked against the University's mission and funding outlook",
-                    },
-                  )}
+                  {t('deals-umn-term-priorities-v', {
+                    defaultValue:
+                      "Academic and administrative units ranked against the University's mission and funding outlook",
+                  })}
                 </dd>
               </div>
               <div className="rv d1">
                 <dt>
-                  {t(
-                    'deals-umn-term-path',
-                    {
-                      defaultValue:
-                        'Implementation',
-                    },
-                  )}
+                  {t('deals-umn-term-path', {
+                    defaultValue: 'Implementation',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-umn-term-path-v',
-                    {
-                      defaultValue:
-                        'A two-year sequence of reductions, with the decisions that depend on state and federal funding set apart',
-                    },
-                  )}
+                  {t('deals-umn-term-path-v', {
+                    defaultValue:
+                      'A two-year sequence of reductions, with the decisions that depend on state and federal funding set apart',
+                  })}
                 </dd>
               </div>
               <div className="rv d2">
                 <dt>
-                  {t(
-                    'deals-umn-term-team',
-                    {
-                      defaultValue:
-                        'Team',
-                    },
-                  )}
+                  {t('deals-umn-term-team', {
+                    defaultValue: 'Team',
+                  })}
                 </dt>
                 <dd>
-                  {t(
-                    'deals-umn-term-team-v',
-                    {
-                      defaultValue:
-                        'RMHcKinsey Public Sector and Higher Education, led by Anouk Achterberg, Managing Partner',
-                    },
-                  )}
+                  {t('deals-umn-term-team-v', {
+                    defaultValue:
+                      'RMHcKinsey Public Sector and Higher Education, led by Anouk Achterberg, Managing Partner',
+                  })}
                 </dd>
               </div>
             </dl>
 
             <figure className="o-wide">
               <blockquote className="quote rv">
-                {t(
-                  'deals-umn-quote',
-                  {
-                    defaultValue:
-                      'We helped the University make its decisions on its own timeline, before they were made for it.',
-                  },
-                )}
+                {t('deals-umn-quote', {
+                  defaultValue:
+                    'We helped the University make its decisions on its own timeline, before they were made for it.',
+                })}
               </blockquote>
               <figcaption className="quote-by rv d1">
-                {t(
-                  'deals-umn-quote-by',
-                  {
-                    defaultValue:
-                      'Anouk Achterberg, Managing Partner, RMHcKinsey',
-                  },
-                )}
+                {t('deals-umn-quote-by', {
+                  defaultValue: 'Anouk Achterberg, Managing Partner, RMHcKinsey',
+                })}
               </figcaption>
             </figure>
 
             <p className="o-wide meta rv">
-              {t(
-                'deals-umn-record',
-                {
-                  defaultValue:
-                    'RMHcKinsey. Strategize and transform.',
-                },
-              )}
+              {t('deals-umn-record', {
+                defaultValue: 'RMHcKinsey. Strategize and transform.',
+              })}
             </p>
           </div>
         </div>
@@ -1630,17 +1025,10 @@ export default function DealsPage() {
         <div className="wrap stack">
           <SatireNotice />
           <div className="actions">
-            <Link
-              className="cta"
-              to="/rmh-capital/contact"
-            >
-              {t(
-                'deals-cta',
-                {
-                  defaultValue:
-                    'Discuss a transaction',
-                },
-              )}
+            <Link className="cta" to="/rmh-capital/contact">
+              {t('deals-cta', {
+                defaultValue: 'Discuss a transaction',
+              })}
               <ArrowIcon />
             </Link>
           </div>

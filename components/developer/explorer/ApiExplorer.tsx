@@ -68,8 +68,7 @@ function Workbench({ endpoint, apiKey, includeKey, onIncludeKey, focusOnMount }:
     return buildRequest(endpoint, { params, body, key: trimmedKey });
   }, [endpoint, params, body, trimmedKey, missing.length]);
 
-  const canSend =
-    request !== null && !bodyInvalid && response.phase !== 'sending' && (!needsConfirm || confirmed);
+  const canSend = request !== null && !bodyInvalid && response.phase !== 'sending' && (!needsConfirm || confirmed);
   const docs = docsPathForGroup(endpoint.group);
 
   async function send() {
@@ -171,12 +170,7 @@ function Workbench({ endpoint, apiKey, includeKey, onIncludeKey, focusOnMount }:
       </div>
 
       <ResponseView state={response} />
-      <SnippetTabs
-        request={request}
-        hasKey={trimmedKey !== ''}
-        includeKey={includeKey}
-        onIncludeKey={onIncludeKey}
-      />
+      <SnippetTabs request={request} hasKey={trimmedKey !== ''} includeKey={includeKey} onIncludeKey={onIncludeKey} />
     </div>
   );
 }
@@ -227,13 +221,7 @@ export function ApiExplorer({ op, onSelect }: ApiExplorerProps) {
         />
       </div>
       <div className="space-y-6 lg:border-s lg:border-site-border lg:ps-6">
-        <KeyPanel
-          value={apiKey}
-          onChange={changeKey}
-          isTest={isTestKey(apiKey)}
-          keep={keep}
-          onKeep={changeKeep}
-        />
+        <KeyPanel value={apiKey} onChange={changeKey} isTest={isTestKey(apiKey)} keep={keep} onKeep={changeKeep} />
         {endpoint ? (
           <Workbench
             key={endpoint.operationId}

@@ -8,50 +8,28 @@ export function NoteCount({
 }: {
   user: {
     id: string;
-    name:
-      | string
-      | null;
-    handle:
-      | string
-      | null;
+    name: string | null;
+    handle: string | null;
   };
   count: number;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'mod-notes',
-    );
-  if (
-    count <=
-    0
-  )
-    return null;
+  const { t } = useTranslation('mod-notes');
+  if (count <= 0) return null;
   return (
     <Link
       to="/admin/users"
       search={{
-        q:
-          user.handle ||
-          user.name ||
-          '',
+        q: user.handle || user.name || '',
         open: user.id,
       }}
       className="t-meta underline"
     >
-      {t(
-        'queue-count',
-        {
-          count,
-          defaultValue_one:
-            '{{count}} note',
-          defaultValue_other:
-            '{{count}} notes',
-          defaultValue:
-            '{{count}} notes',
-        },
-      )}
+      {t('queue-count', {
+        count,
+        defaultValue_one: '{{count}} note',
+        defaultValue_other: '{{count}} notes',
+        defaultValue: '{{count}} notes',
+      })}
     </Link>
   );
 }

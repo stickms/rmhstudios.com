@@ -61,7 +61,9 @@ const h = vi.hoisted(() => ({
   builds: new Map<string, { userId: string; visibility: string; createdAt: Date }>(),
   log: [] as string[],
   locks: new Map<string, Promise<void>>(),
-  notify: vi.fn(async (_n: { userId: string; entityType?: string; entityId?: string; preview?: string; link?: string }) => {}),
+  notify: vi.fn(
+    async (_n: { userId: string; entityType?: string; entityId?: string; preview?: string; link?: string }) => {},
+  ),
 }));
 
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -103,7 +105,10 @@ vi.mock('@/lib/prisma.server', () => {
       await tick();
       return h.members
         .filter((m) => match(m as unknown as Record<string, unknown>, w))
-        .map((m) => ({ ...withUser(m), entry: { build: { title: h.entries.find((e) => e.id === m.entryId)?.title } } }));
+        .map((m) => ({
+          ...withUser(m),
+          entry: { build: { title: h.entries.find((e) => e.id === m.entryId)?.title } },
+        }));
     },
     async count({ where: w }: { where: Record<string, unknown> }) {
       h.log.push('count');
@@ -169,7 +174,9 @@ vi.mock('@/lib/prisma.server', () => {
       update: Partial<Rating>;
     }) {
       await tick();
-      const r = h.ratings.find((x) => x.entryId === w.entryId_raterId.entryId && x.raterId === w.entryId_raterId.raterId);
+      const r = h.ratings.find(
+        (x) => x.entryId === w.entryId_raterId.entryId && x.raterId === w.entryId_raterId.raterId,
+      );
       if (r) Object.assign(r, update);
       else h.ratings.push({ ...create });
     },
@@ -234,7 +241,16 @@ vi.mock('@/lib/prisma.server', () => {
       return [];
     },
   };
-  const models = { gameJamTeamMember, gameJamEntry, gameJamRating, gameJam, user, userBlock, userBuild, gameJamFeedback };
+  const models = {
+    gameJamTeamMember,
+    gameJamEntry,
+    gameJamRating,
+    gameJam,
+    user,
+    userBlock,
+    userBuild,
+    gameJamFeedback,
+  };
   const db = {
     ...models,
     async $transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {

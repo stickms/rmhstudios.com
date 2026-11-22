@@ -2,9 +2,7 @@
  * Event updates (s06-11) — the rules, pure and client-safe. A host, co-host or admin posts a short plain-text
  * note on an event (or one date of a repeating one); the people coming are told once, through a work queue.
  */
-import {
-  effectiveAttendance,
-} from '@/lib/calendar/recurrence';
+import { effectiveAttendance } from '@/lib/calendar/recurrence';
 
 export const UPDATE_MAX = 500;
 /** At most this many updates per event inside {@link UPDATE_WINDOW_MS} (rolling), deleted ones included. */
@@ -28,13 +26,7 @@ export interface UpdateFanoutJob {
   updateId: string;
 }
 
-export type UpdateRefusal =
-  | 'NOT_FOUND'
-  | 'FORBIDDEN'
-  | 'CANCELED'
-  | 'RATE_LIMITED'
-  | 'BAD_OCCURRENCE'
-  | 'TOO_LATE';
+export type UpdateRefusal = 'NOT_FOUND' | 'FORBIDDEN' | 'CANCELED' | 'RATE_LIMITED' | 'BAD_OCCURRENCE' | 'TOO_LATE';
 
 export interface EventUpdateDTO {
   id: string;
@@ -101,11 +93,19 @@ export function audienceOf(rows: readonly AudienceRow[], target: Date | null, re
     const date = rows.filter((r) => r.occurrenceAt.getTime() === target.getTime());
     return [...new Set([...effectiveAttendance(standing, date).keys(), ...waiting])];
   }
-  return [...new Set(rows.filter((r) => r.status === 'going' || r.status === 'maybe' || r.status === 'waitlist').map((r) => r.userId))];
+  return [
+    ...new Set(
+      rows.filter((r) => r.status === 'going' || r.status === 'maybe' || r.status === 'waitlist').map((r) => r.userId),
+    ),
+  ];
 }
 
 /** Drop the author and anyone blocked with the author, in either direction. */
-export function withoutAuthorAndBlocked(userIds: readonly string[], authorId: string, blocked: ReadonlySet<string>): string[] {
+export function withoutAuthorAndBlocked(
+  userIds: readonly string[],
+  authorId: string,
+  blocked: ReadonlySet<string>,
+): string[] {
   return userIds.filter((id) => id !== authorId && !blocked.has(id));
 }
 
@@ -120,7 +120,10 @@ export function describeWithUpdates(
   const lines = [...updates]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, ICS_UPDATES_MAX)
-    .map((u) => `Update ${u.createdAt.toISOString().slice(0, 16).replace('T', ' ')} UTC: ${u.body.trim().slice(0, UPDATE_MAX)}`);
+    .map(
+      (u) =>
+        `Update ${u.createdAt.toISOString().slice(0, 16).replace('T', ' ')} UTC: ${u.body.trim().slice(0, UPDATE_MAX)}`,
+    );
   if (lines.length === 0) return base;
   return [base, lines.join('\n')].filter(Boolean).join('\n\n');
 }

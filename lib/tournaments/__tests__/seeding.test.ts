@@ -14,9 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn(async () => {}) }));
 
-const { startTournament, createTournament, TournamentError } = await import(
-  '@/lib/tournaments/tournament.server'
-);
+const { startTournament, createTournament, TournamentError } = await import('@/lib/tournaments/tournament.server');
 const { updateSeeding, projectedSeeds } = await import('@/lib/tournaments/seeding.server');
 const { generateBracket } = await import('@/lib/tournaments/bracket');
 const { WAGER_ELIGIBLE_GAME_IDS } = await import('@/lib/wager/eligible-games');
@@ -74,10 +72,12 @@ function makeDb() {
       },
     },
     tournamentEntrant: {
-      findMany: async ({ where }: any) =>
-        state.entrants.filter((e) => matches(e, where)).map((e) => ({ ...e })),
+      findMany: async ({ where }: any) => state.entrants.filter((e) => matches(e, where)).map((e) => ({ ...e })),
       update: async ({ where, data }: any) => {
-        apply(state.entrants.find((e) => e.id === where.id), data);
+        apply(
+          state.entrants.find((e) => e.id === where.id),
+          data,
+        );
       },
       updateMany: async ({ where, data }: any) => {
         const rows = state.entrants.filter((e) => matches(e, where));
@@ -111,7 +111,10 @@ function makeDb() {
         return m ? { ...m } : null;
       },
       update: async ({ where, data }: any) => {
-        apply(state.matches.find((m) => m.id === where.id), data);
+        apply(
+          state.matches.find((m) => m.id === where.id),
+          data,
+        );
       },
       updateMany: async ({ where, data }: any) => {
         const rows = state.matches.filter((m) => matches(m, where));
@@ -225,9 +228,11 @@ describe('who may change seeding', () => {
 
   it('is 404 for an unknown tournament', async () => {
     seed(4);
-    await expect(updateSeeding({ tournamentId: 'nope', byUserId: 'host', method: 'rating' }, db)).rejects.toMatchObject({
-      status: 404,
-    });
+    await expect(updateSeeding({ tournamentId: 'nope', byUserId: 'host', method: 'rating' }, db)).rejects.toMatchObject(
+      {
+        status: 404,
+      },
+    );
   });
 });
 
@@ -282,7 +287,14 @@ describe('the hand order', () => {
 describe('creating a tournament', () => {
   it('stores the chosen method, and sign-up order when none is chosen', async () => {
     seed(0);
-    const base = { createdById: 'host', name: 'Cup', gameId: 'void-breaker', format: 'SINGLE_ELIM' as const, entryFeeCoins: 0, maxPlayers: 8 };
+    const base = {
+      createdById: 'host',
+      name: 'Cup',
+      gameId: 'void-breaker',
+      format: 'SINGLE_ELIM' as const,
+      entryFeeCoins: 0,
+      maxPlayers: 8,
+    };
     await createTournament({ ...base, seeding: 'rating' }, db);
     await createTournament(base, db);
     expect(state.created.map((c) => c.seeding)).toEqual(['rating', 'join']);
@@ -292,16 +304,24 @@ describe('creating a tournament', () => {
 describe('rating seeding needs a ranked game', () => {
   it('is refused at create and on update for an unranked game (400), and writes nothing', async () => {
     seed(4);
-    const base = { createdById: 'host', name: 'Cup', gameId: 'slice-it', format: 'SINGLE_ELIM' as const, entryFeeCoins: 0, maxPlayers: 8 };
+    const base = {
+      createdById: 'host',
+      name: 'Cup',
+      gameId: 'slice-it',
+      format: 'SINGLE_ELIM' as const,
+      entryFeeCoins: 0,
+      maxPlayers: 8,
+    };
     await expect(createTournament({ ...base, seeding: 'rating' }, db)).rejects.toMatchObject({
       code: 'RATING_UNAVAILABLE',
       status: 400,
     });
     expect(state.created).toHaveLength(0);
     state.tournament.gameId = 'slice-it';
-    await expect(
-      updateSeeding({ tournamentId: 't1', byUserId: 'host', method: 'rating' }, db),
-    ).rejects.toMatchObject({ code: 'RATING_UNAVAILABLE', status: 400 });
+    await expect(updateSeeding({ tournamentId: 't1', byUserId: 'host', method: 'rating' }, db)).rejects.toMatchObject({
+      code: 'RATING_UNAVAILABLE',
+      status: 400,
+    });
     await createTournament({ ...base, seeding: 'random' }, db);
   });
 });

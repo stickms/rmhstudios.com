@@ -47,11 +47,15 @@ describe('audience', () => {
     everyTime,
   });
   it('a one-off event: going, maybe and waitlist, never no', () => {
-    expect(audienceOf([row('a', 'going'), row('b', 'maybe'), row('c', 'waitlist'), row('d', 'no')], null, false).sort()).toEqual(['a', 'b', 'c']);
+    expect(
+      audienceOf([row('a', 'going'), row('b', 'maybe'), row('c', 'waitlist'), row('d', 'no')], null, false).sort(),
+    ).toEqual(['a', 'b', 'c']);
   });
   it('a whole series: anyone with a yes on any date', () => {
     const d = Date.UTC(2026, 11, 8);
-    expect(audienceOf([row('a', 'going', d), row('b', 'no', d), row('c', 'going', 0, true)], null, true).sort()).toEqual(['a', 'c']);
+    expect(
+      audienceOf([row('a', 'going', d), row('b', 'no', d), row('c', 'going', 0, true)], null, true).sort(),
+    ).toEqual(['a', 'c']);
   });
 });
 

@@ -5,19 +5,10 @@ import { Connect } from '../../Connect';
 import { useDunesday } from '../../DunesdayProvider';
 
 export default function SyncApp() {
-  const {
-    sync,
-  } =
-    useDunesday();
+  const { sync } = useDunesday();
   return (
-    <BareChrome
-      value
-    >
-      <Connect
-        sync={
-          sync
-        }
-      />
+    <BareChrome value>
+      <Connect sync={sync} />
     </BareChrome>
   );
 }

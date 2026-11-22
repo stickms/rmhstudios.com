@@ -76,9 +76,7 @@ describe('decideGate: privacy x follow x switch', () => {
   ];
   for (const c of cases) {
     it(`${c.privacy}, follows ${c.follows}, switch ${c.on ? 'on' : 'off'} -> ${c.expected}`, () => {
-      const d = decideGate(
-        facts({ privacy: c.privacy, recipientFollowsSender: c.follows, requestsOn: c.on }),
-      );
+      const d = decideGate(facts({ privacy: c.privacy, recipientFollowsSender: c.follows, requestsOn: c.on }));
       const label = d.outcome === 'refused' ? `refused:${d.reason}` : d.outcome;
       expect(label).toBe(c.expected);
     });
@@ -93,9 +91,9 @@ describe('decideGate: privacy x follow x switch', () => {
   });
 
   it('always allows a note to yourself', () => {
-    expect(
-      decideGate(facts({ senderId: 'a', recipientId: 'a', privacy: 'NONE', requestsOn: false })),
-    ).toEqual({ outcome: 'allowed' });
+    expect(decideGate(facts({ senderId: 'a', recipientId: 'a', privacy: 'NONE', requestsOn: false }))).toEqual({
+      outcome: 'allowed',
+    });
   });
 });
 
@@ -106,9 +104,10 @@ describe('decideGate: request state', () => {
       outcome: 'refused',
       reason: 'pending',
     });
-    expect(
-      decideGate(facts({ senderId: 'recipient', recipientId: 'sender', request: row() })),
-    ).toEqual({ outcome: 'refused', reason: 'incoming' });
+    expect(decideGate(facts({ senderId: 'recipient', recipientId: 'sender', request: row() }))).toEqual({
+      outcome: 'refused',
+      reason: 'incoming',
+    });
   });
 
   it('lifts the privacy rule for an accepted pair, both ways', () => {
@@ -130,8 +129,7 @@ describe('decideGate: request state', () => {
   });
 
   it('keeps a declined sender out for 30 days with the privacy refusal, then lets them ask again', () => {
-    const declined = (ago: number) =>
-      row({ status: 'declined', decidedAt: new Date(NOW.getTime() - ago) });
+    const declined = (ago: number) => row({ status: 'declined', decidedAt: new Date(NOW.getTime() - ago) });
     expect(decideGate(facts({ request: declined(DAY) }))).toEqual({
       outcome: 'refused',
       reason: 'FOLLOWERS',
@@ -146,9 +144,7 @@ describe('decideGate: request state', () => {
 
   it('a decline only matters while the privacy rule still refuses', () => {
     const declined = row({ status: 'declined', decidedAt: new Date(NOW.getTime() - DAY) });
-    expect(decideGate(facts({ request: declined, recipientFollowsSender: true })).outcome).toBe(
-      'allowed',
-    );
+    expect(decideGate(facts({ request: declined, recipientFollowsSender: true })).outcome).toBe('allowed');
   });
 
   it('turning the switch off turns a would-be request into the plain refusal', () => {
@@ -208,15 +204,11 @@ describe('what each side sees', () => {
     expect(senderRequestState(refused, row({ status: 'declined' }), 'sender')).toBe('sent');
     expect(senderRequestState(refused, row({ status: 'accepted' }), 'sender')).toBeNull();
     expect(senderRequestState({ outcome: 'allowed' }, null, 'sender')).toBeNull();
-    expect(senderRequestState({ outcome: 'request', privacy: 'NONE' }, null, 'sender')).toBe(
-      'compose',
-    );
+    expect(senderRequestState({ outcome: 'request', privacy: 'NONE' }, null, 'sender')).toBe('compose');
   });
 
   it('shows the recipient no composer state at all', () => {
-    expect(
-      senderRequestState({ outcome: 'refused', reason: 'incoming' }, row(), 'recipient'),
-    ).toBeNull();
+    expect(senderRequestState({ outcome: 'refused', reason: 'incoming' }, row(), 'recipient')).toBeNull();
     expect(requestOut(row({ status: 'pending' }), 'recipient')).toBe(false);
   });
 });

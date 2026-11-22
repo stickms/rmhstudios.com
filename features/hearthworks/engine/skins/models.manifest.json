@@ -19,10 +19,7 @@
         "hurt": "Fear_Reaction",
         "death": {
           "clip": "cit_door",
-          "trim": [
-            12,
-            52
-          ]
+          "trim": [12, 52]
         },
         "interact": "Open_door_away"
       },
@@ -45,10 +42,7 @@
         "hurt": "Fear_Reaction",
         "death": {
           "clip": "cit_door",
-          "trim": [
-            12,
-            52
-          ]
+          "trim": [12, 52]
         },
         "interact": "Open_door_away"
       },
@@ -90,10 +84,7 @@
         "hurt": "Fear_Reaction",
         "death": {
           "clip": "cit_door",
-          "trim": [
-            12,
-            52
-          ]
+          "trim": [12, 52]
         },
         "interact": "Open_door_away"
       },
@@ -135,10 +126,7 @@
         "hurt": "Fear_Reaction",
         "death": {
           "clip": "cit_door",
-          "trim": [
-            12,
-            52
-          ]
+          "trim": [12, 52]
         },
         "interact": "tiefidget"
       },

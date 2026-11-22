@@ -8,29 +8,14 @@
  */
 
 import { probeGpu } from './probe';
-import {
-  detectTier,
-  resolveDpr,
-  TIER_QUALITY,
-  type QualityFlags,
-  type RenderTier,
-} from './tier';
+import { detectTier, resolveDpr, TIER_QUALITY, type QualityFlags, type RenderTier } from './tier';
 
 const MOBILE_BREAKPOINT = 768;
 
 function isMobileViewport(): boolean {
-  if (
-    typeof window ===
-    'undefined'
-  )
-    return false;
+  if (typeof window === 'undefined') return false;
   return (
-    window.matchMedia?.(
-      `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
-    )
-      .matches ??
-    window.innerWidth <
-      MOBILE_BREAKPOINT
+    window.matchMedia?.(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches ?? window.innerWidth < MOBILE_BREAKPOINT
   );
 }
 
@@ -43,41 +28,18 @@ export interface RuntimeQuality {
 
 /** Resolve render quality for the current device, outside React. */
 export function detectRuntimeQuality(): RuntimeQuality {
-  const devicePixelRatio =
-    typeof window ===
-    'undefined'
-      ? 1
-      : window.devicePixelRatio ||
-        1;
-  const {
+  const devicePixelRatio = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+  const { gpuTier } = probeGpu();
+  const tier = detectTier({
     gpuTier,
-  } =
-    probeGpu();
-  const tier =
-    detectTier(
-      {
-        gpuTier,
-        isMobile:
-          isMobileViewport(),
-        devicePixelRatio,
-        reducedMotion: false,
-      },
-    );
-  const [
-    ,
-    max,
-  ] =
-    resolveDpr(
-      tier,
-      devicePixelRatio,
-    );
+    isMobile: isMobileViewport(),
+    devicePixelRatio,
+    reducedMotion: false,
+  });
+  const [, max] = resolveDpr(tier, devicePixelRatio);
   return {
     tier,
-    quality:
-      TIER_QUALITY[
-        tier
-      ],
-    pixelRatio:
-      max,
+    quality: TIER_QUALITY[tier],
+    pixelRatio: max,
   };
 }

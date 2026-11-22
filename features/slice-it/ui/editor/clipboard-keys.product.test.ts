@@ -11,8 +11,7 @@ const el = (tagName: string, role?: string) => {
   const self = {
     tagName,
     isContentEditable: false,
-    closest: (selector: string) =>
-      role && selector.includes(`[role="${role}"]`) ? self : null,
+    closest: (selector: string) => (role && selector.includes(`[role="${role}"]`) ? self : null),
   };
   return self as unknown as EventTarget;
 };

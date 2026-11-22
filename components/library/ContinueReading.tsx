@@ -30,219 +30,93 @@ type Load =
  * offers a retry.
  */
 export function ContinueReading() {
-  const {
-    t,
-    i18n,
-  } =
-    useTranslation(
-      'reading-sync',
-    );
-  const {
-    data: session,
-  } =
-    useSession();
-  const signedIn =
-    Boolean(
-      session,
-    );
-  const query =
-    useQuery({
-      ...continueReadingQuery(),
-      enabled:
-        signedIn,
-    });
-  const load: Load =
-    query.data
+  const { t, i18n } = useTranslation('reading-sync');
+  const { data: session } = useSession();
+  const signedIn = Boolean(session);
+  const query = useQuery({
+    ...continueReadingQuery(),
+    enabled: signedIn,
+  });
+  const load: Load = query.data
+    ? {
+        status: 'ready',
+        books: query.data.books,
+      }
+    : query.isError
       ? {
-          status:
-            'ready',
-          books:
-            query.data.books,
+          status: 'error',
         }
-      : query.isError
-        ? {
-            status:
-              'error',
-          }
-        : {
-            status:
-              'loading',
-          };
-  const arrival =
-    useArrival(
-      load.status !==
-        'loading',
-    );
-  const fetchBooks =
-    () => {
-      void query.refetch();
-    };
+      : {
+          status: 'loading',
+        };
+  const arrival = useArrival(load.status !== 'loading');
+  const fetchBooks = () => {
+    void query.refetch();
+  };
 
-  if (
-    !signedIn
-  )
-    return null;
-  if (
-    load.status ===
-      'ready' &&
-    load
-      .books
-      .length ===
-      0
-  )
-    return null;
+  if (!signedIn) return null;
+  if (load.status === 'ready' && load.books.length === 0) return null;
 
-  const percent =
-    new Intl.NumberFormat(
-      i18n.language,
-      {
-        style:
-          'percent',
-      },
-    );
+  const percent = new Intl.NumberFormat(i18n.language, {
+    style: 'percent',
+  });
 
   return (
-    <section
-      aria-labelledby="continue-reading-heading"
-      className="mx-auto mb-6 w-full max-w-3xl px-4"
-    >
-      <h2
-        id="continue-reading-heading"
-        className="t-heading"
-      >
-        {t(
-          'continue-heading',
-          {
-            defaultValue:
-              'Continue reading',
-          },
-        )}
+    <section aria-labelledby="continue-reading-heading" className="mx-auto mb-6 w-full max-w-3xl px-4">
+      <h2 id="continue-reading-heading" className="t-heading">
+        {t('continue-heading', {
+          defaultValue: 'Continue reading',
+        })}
       </h2>
-      {load.status ===
-      'loading' ? (
-        <ul
-          className="mt-3 flex gap-4"
-          aria-hidden="true"
-        >
-          {[
-            0,
-            1,
-            2,
-          ].map(
-            (
-              i,
-            ) => (
-              <li
-                key={
-                  i
-                }
-                className="w-28 shrink-0"
-              >
-                <Skeleton className="aspect-[3/4] w-full rounded-site" />
-              </li>
-            ),
-          )}
+      {load.status === 'loading' ? (
+        <ul className="mt-3 flex gap-4" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="w-28 shrink-0">
+              <Skeleton className="aspect-[3/4] w-full rounded-site" />
+            </li>
+          ))}
         </ul>
-      ) : load.status ===
-        'error' ? (
-        <div
-          className={cn(
-            'mt-3 flex items-center gap-3',
-            arrival,
-          )}
-        >
-          <p
-            role="alert"
-            className="t-meta"
-          >
-            {t(
-              'continue-error',
-              {
-                defaultValue:
-                  'Could not load your books.',
-              },
-            )}
+      ) : load.status === 'error' ? (
+        <div className={cn('mt-3 flex items-center gap-3', arrival)}>
+          <p role="alert" className="t-meta">
+            {t('continue-error', {
+              defaultValue: 'Could not load your books.',
+            })}
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={
-              fetchBooks
-            }
-          >
-            {t(
-              'continue-retry',
-              {
-                defaultValue:
-                  'Try again',
-              },
-            )}
+          <Button variant="ghost" size="sm" onClick={fetchBooks}>
+            {t('continue-retry', {
+              defaultValue: 'Try again',
+            })}
           </Button>
         </div>
       ) : (
-        <ul
-          className={cn(
-            'mt-3 flex gap-4 overflow-x-auto pb-1',
-            arrival,
-          )}
-        >
-          {load.books.map(
-            (
-              b,
-            ) => (
-              <li
-                key={
-                  b.slug
-                }
-                className="w-28 shrink-0"
+        <ul className={cn('mt-3 flex gap-4 overflow-x-auto pb-1', arrival)}>
+          {load.books.map((b) => (
+            <li key={b.slug} className="w-28 shrink-0">
+              <Link
+                to="/library/$slug"
+                params={{
+                  slug: b.slug,
+                }}
+                className="block"
               >
-                <Link
-                  to="/library/$slug"
-                  params={{
-                    slug: b.slug,
-                  }}
-                  className="block"
-                >
-                  <span className="block aspect-[3/4] overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
-                    {b.coverUrl ? (
-                      <img
-                        src={
-                          b.coverUrl
-                        }
-                        alt=""
-                        loading="lazy"
-                        className="size-full object-cover"
-                      />
-                    ) : null}
-                  </span>
-                  <span
-                    className="t-label mt-2 block truncate text-site-text"
-                    title={
-                      b.title
-                    }
-                  >
-                    {
-                      b.title
-                    }
-                  </span>
-                  <span className="t-meta block">
-                    {t(
-                      'continue-progress',
-                      {
-                        defaultValue:
-                          '{{percent}} read',
-                        percent:
-                          percent.format(
-                            b.percent /
-                              100,
-                          ),
-                      },
-                    )}
-                  </span>
-                </Link>
-              </li>
-            ),
-          )}
+                <span className="block aspect-[3/4] overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
+                  {b.coverUrl ? (
+                    <img src={b.coverUrl} alt="" loading="lazy" className="size-full object-cover" />
+                  ) : null}
+                </span>
+                <span className="t-label mt-2 block truncate text-site-text" title={b.title}>
+                  {b.title}
+                </span>
+                <span className="t-meta block">
+                  {t('continue-progress', {
+                    defaultValue: '{{percent}} read',
+                    percent: percent.format(b.percent / 100),
+                  })}
+                </span>
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </section>

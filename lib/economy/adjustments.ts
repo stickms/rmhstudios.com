@@ -5,12 +5,7 @@
  */
 
 /** Reasons an admin can pick. `reversal` is written only by reversing an adjustment. */
-export const ADJUSTMENT_REASONS = [
-  'correction',
-  'goodwill',
-  'compensation',
-  'exploit_clawback',
-] as const;
+export const ADJUSTMENT_REASONS = ['correction', 'goodwill', 'compensation', 'exploit_clawback'] as const;
 
 export type AdjustmentReason = (typeof ADJUSTMENT_REASONS)[number] | 'reversal';
 

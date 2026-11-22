@@ -7,7 +7,5 @@ export function formatWhen(iso: string): string {
 
 /** The error text of the failed request, or the fallback. */
 export function failureText(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message && !/^HTTP \d+$/.test(error.message)
-    ? error.message
-    : fallback;
+  return error instanceof Error && error.message && !/^HTTP \d+$/.test(error.message) ? error.message : fallback;
 }

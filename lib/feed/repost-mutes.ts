@@ -57,9 +57,6 @@ export function repostMuteTarget(
 }
 
 /** The list with every repost by `userId` taken out; their own posts, quotes and other people's reposts stay. */
-export function withoutRepostsBy<T extends Pick<FeedItem, 'repostedBy'>>(
-  items: readonly T[],
-  userId: string,
-): T[] {
+export function withoutRepostsBy<T extends Pick<FeedItem, 'repostedBy'>>(items: readonly T[], userId: string): T[] {
   return items.filter((item) => item.repostedBy?.id !== userId);
 }

@@ -10,20 +10,9 @@
  * to the server, which is the reason none of them has an API route.
  */
 
-export type ToolCategory =
-  | 'text'
-  | 'developer'
-  | 'numbers'
-  | 'time'
-  | 'everyday';
+export type ToolCategory = 'text' | 'developer' | 'numbers' | 'time' | 'everyday';
 
-export const TOOL_CATEGORIES: readonly ToolCategory[] = [
-  'text',
-  'developer',
-  'numbers',
-  'time',
-  'everyday',
-];
+export const TOOL_CATEGORIES: readonly ToolCategory[] = ['text', 'developer', 'numbers', 'time', 'everyday'];
 
 export interface ToolEntry {
   /** The path segment under `/tools/`. Stable: it is a public URL. */

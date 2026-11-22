@@ -69,7 +69,11 @@ export default function ManagePresets() {
         {t('manage-title', { defaultValue: 'Manage presets' })}
       </h4>
       {isPending && <p className="text-xs text-app-text-muted">{t('loading', { defaultValue: 'Loading presets' })}</p>}
-      {isError && <p className="text-xs text-app-text-muted">{t('load-failed', { defaultValue: 'Presets could not be loaded' })}</p>}
+      {isError && (
+        <p className="text-xs text-app-text-muted">
+          {t('load-failed', { defaultValue: 'Presets could not be loaded' })}
+        </p>
+      )}
       {data && groups.size === 0 && (
         <p className="text-xs text-app-text-muted">
           {t('manage-empty', { defaultValue: 'No presets yet. Save one from a game’s settings.' })}
@@ -77,7 +81,9 @@ export default function ManagePresets() {
       )}
       {[...groups].map(([minigameId, presets]) => (
         <div key={minigameId}>
-          <p className="text-xs font-semibold text-app-text">{MINIGAME_REGISTRY[minigameId]?.displayName ?? minigameId}</p>
+          <p className="text-xs font-semibold text-app-text">
+            {MINIGAME_REGISTRY[minigameId]?.displayName ?? minigameId}
+          </p>
           <ul>
             {presets.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-2 border-b border-app-border py-1.5">
@@ -101,23 +107,34 @@ export default function ManagePresets() {
                     <button type="submit" className={button} disabled={busy || !renaming.name.trim()}>
                       {t('save', { defaultValue: 'Save' })}
                     </button>
-                    <button type="button" className={button} onClick={() => {
+                    <button
+                      type="button"
+                      className={button}
+                      onClick={() => {
                         setRenaming(null);
                         focusHeading();
-                      }}>
+                      }}
+                    >
                       {t('cancel', { defaultValue: 'Cancel' })}
                     </button>
                   </form>
                 ) : deleting === p.id ? (
                   <>
-                    <span className="flex-1 text-xs text-app-text">{t('delete-title', { defaultValue: 'Delete this preset?' })}</span>
+                    <span className="flex-1 text-xs text-app-text">
+                      {t('delete-title', { defaultValue: 'Delete this preset?' })}
+                    </span>
                     <button type="button" className={button} disabled={busy} onClick={() => remove.mutate(p.id)}>
                       {t('delete', { defaultValue: 'Delete' })}
                     </button>
-                    <button type="button" className={button} autoFocus onClick={() => {
-                      setDeleting(null);
-                      focusHeading();
-                    }}>
+                    <button
+                      type="button"
+                      className={button}
+                      autoFocus
+                      onClick={() => {
+                        setDeleting(null);
+                        focusHeading();
+                      }}
+                    >
                       {t('cancel', { defaultValue: 'Cancel' })}
                     </button>
                   </>
@@ -126,10 +143,17 @@ export default function ManagePresets() {
                     <span className="min-w-0 flex-1 truncate text-sm text-app-text">
                       {p.name}
                       {p.isDefault && (
-                        <span className="ml-2 text-xs text-app-text-muted">{t('default-badge', { defaultValue: 'Default' })}</span>
+                        <span className="ml-2 text-xs text-app-text-muted">
+                          {t('default-badge', { defaultValue: 'Default' })}
+                        </span>
                       )}
                     </span>
-                    <button type="button" className={button} disabled={busy} onClick={() => setRenaming({ id: p.id, name: p.name })}>
+                    <button
+                      type="button"
+                      className={button}
+                      disabled={busy}
+                      onClick={() => setRenaming({ id: p.id, name: p.name })}
+                    >
                       {t('rename', { defaultValue: 'Rename' })}
                     </button>
                     <button type="button" className={button} disabled={busy} onClick={() => setDeleting(p.id)}>

@@ -1,7 +1,4 @@
-import {
-  readJson,
-  writeJson,
-} from '@/lib/core/persist';
+import { readJson, writeJson } from '@/lib/core/persist';
 import { BPM } from './machines/tap-beat';
 
 /**
@@ -34,82 +31,32 @@ export const FLOW_UP_AT = 90;
 /** A score below this slows the next run down. */
 export const FLOW_DOWN_BELOW = 60;
 
-const KEY =
-  'rmh-music-tap-beat-bpm';
+const KEY = 'rmh-music-tap-beat-bpm';
 
 /** The tempo for the run after one that scored `score` (0-100) at `bpm`. */
-export function nextTempo(
-  bpm: number,
-  score: number,
-): number {
-  let next =
-    bpm;
-  if (
-    score >=
-    FLOW_UP_AT
-  )
-    next =
-      bpm +
-      FLOW_STEP_BPM;
-  else if (
-    score <
-    FLOW_DOWN_BELOW
-  )
-    next =
-      bpm -
-      FLOW_STEP_BPM;
-  return Math.min(
-    FLOW_MAX_BPM,
-    Math.max(
-      FLOW_MIN_BPM,
-      next,
-    ),
-  );
+export function nextTempo(bpm: number, score: number): number {
+  let next = bpm;
+  if (score >= FLOW_UP_AT) next = bpm + FLOW_STEP_BPM;
+  else if (score < FLOW_DOWN_BELOW) next = bpm - FLOW_STEP_BPM;
+  return Math.min(FLOW_MAX_BPM, Math.max(FLOW_MIN_BPM, next));
 }
 
-function validTempo(
-  value: unknown,
-):
-  | number
-  | undefined {
-  return typeof value ===
-    'number' &&
-    Number.isFinite(
-      value,
-    ) &&
-    value >=
-      FLOW_MIN_BPM &&
-    value <=
-      FLOW_MAX_BPM
+function validTempo(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= FLOW_MIN_BPM && value <= FLOW_MAX_BPM
     ? value
     : undefined;
 }
 
 /** The tempo the next tap-the-beat run plays at. */
 export function readTempo(): number {
-  return readJson(
-    KEY,
-    BPM,
-    {
-      validate:
-        validTempo,
-    },
-  );
+  return readJson(KEY, BPM, {
+    validate: validTempo,
+  });
 }
 
 /** Record a finished run and return the tempo the next one will use. */
-export function recordTempoRun(
-  bpm: number,
-  score: number,
-): number {
-  const next =
-    nextTempo(
-      bpm,
-      score,
-    );
-  writeJson(
-    KEY,
-    next,
-  );
+export function recordTempoRun(bpm: number, score: number): number {
+  const next = nextTempo(bpm, score);
+  writeJson(KEY, next);
   return next;
 }

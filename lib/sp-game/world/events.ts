@@ -37,12 +37,7 @@ export type SpEvent =
     }
   | {
       type: 'fade';
-      color: [
-        number,
-        number,
-        number,
-        number,
-      ];
+      color: [number, number, number, number];
       duration: number;
       hold: number;
       fadeIn: boolean;
@@ -69,18 +64,8 @@ export type SpEvent =
       text: string;
       x: number;
       y: number;
-      color: [
-        number,
-        number,
-        number,
-        number,
-      ];
-      color2: [
-        number,
-        number,
-        number,
-        number,
-      ];
+      color: [number, number, number, number];
+      color2: [number, number, number, number];
       effect: number;
       fadeIn: number;
       fadeOut: number;
@@ -117,10 +102,7 @@ export type SpEvent =
     }
   | {
       type: 'credits';
-      mode:
-        | 'logo'
-        | 'roll'
-        | 'outro';
+      mode: 'logo' | 'roll' | 'outro';
     }
   | {
       type: 'clientcommand';

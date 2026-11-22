@@ -2,13 +2,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { CopyFallbackOptions } from '@/components/ui/copy-fallback';
 import { useClipboard } from '@/hooks/useClipboard';
@@ -17,13 +11,7 @@ import { useClipboard } from '@/hooks/useClipboard';
  * The body of the dialog. Its own component so the "Copied" state starts clear for every call and
  * so it renders without the dialog portal.
  */
-export function CopyFallbackBody({
-  options,
-  close,
-}: {
-  options: CopyFallbackOptions;
-  close: () => void;
-}) {
+export function CopyFallbackBody({ options, close }: { options: CopyFallbackOptions; close: () => void }) {
   const { t } = useTranslation('c-ui');
   const { copied, copy } = useClipboard();
 
@@ -55,13 +43,7 @@ export function CopyFallbackBody({
 }
 
 /** The dialog `useCopyFallback()` opens, loaded by the first call. Focus returns through `DialogContent`. */
-export function CopyFallbackView({
-  pending,
-  close,
-}: {
-  pending: CopyFallbackOptions | null;
-  close: () => void;
-}) {
+export function CopyFallbackView({ pending, close }: { pending: CopyFallbackOptions | null; close: () => void }) {
   return (
     <Dialog
       open={pending !== null}

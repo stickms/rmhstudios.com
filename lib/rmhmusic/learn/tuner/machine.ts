@@ -66,17 +66,13 @@ export const FAR_CENTS = 100;
 /** Guitar: once far, it is near a string again only this close. */
 export const FAR_EXIT_CENTS = 90;
 
-export type TunerPreset =
-  | 'chromatic'
-  | 'guitar';
+export type TunerPreset = 'chromatic' | 'guitar';
 
 export interface TunerFrame {
   /** `performance.now()` of the frame. */
   time: number;
   /** The fundamental YIN heard, Hz; null for none. */
-  freq:
-    | number
-    | null;
+  freq: number | null;
   /** YIN's confidence, 0..1. */
   clarity: number;
   /** The frame's level (RMS, 0..1). */
@@ -84,12 +80,7 @@ export interface TunerFrame {
 }
 
 /** What to tell the player: tune up, tune down, hold (in the band, not yet held), in tune, or far. */
-export type TunerAdvice =
-  | 'up'
-  | 'down'
-  | 'hold'
-  | 'in-tune'
-  | 'far';
+export type TunerAdvice = 'up' | 'down' | 'hold' | 'in-tune' | 'far';
 
 export type TunerState =
   | {
@@ -121,13 +112,9 @@ export type TunerState =
       heard: number;
       inTune: boolean;
       /** When the reading entered the in-tune band (null while outside it). */
-      bandSince:
-        | number
-        | null;
+      bandSince: number | null;
       advice: TunerAdvice;
-      challenger:
-        | number
-        | null;
+      challenger: number | null;
       challengerStreak: number;
       lastVoiced: number;
     };
@@ -150,9 +137,7 @@ export type TunerEvent =
       type: 'reset';
     };
 
-export function tunerInitial(
-  preset: TunerPreset,
-): TunerState {
+export function tunerInitial(preset: TunerPreset): TunerState {
   return {
     kind: 'silent',
     preset,
@@ -160,236 +145,77 @@ export function tunerInitial(
 }
 
 /** The preset's fixed targets (MIDI), or null when every semitone is one. */
-export function tunerTargets(
-  preset: TunerPreset,
-):
-  | readonly number[]
-  | null {
-  return preset ===
-    'guitar'
-    ? STANDARD_TUNING
-    : null;
+export function tunerTargets(preset: TunerPreset): readonly number[] | null {
+  return preset === 'guitar' ? STANDARD_TUNING : null;
 }
 
 /** `reading` − `target` in semitones, folded by octaves into −6…6 for a string. */
-function offset(
-  preset: TunerPreset,
-  reading: number,
-  target: number,
-): number {
-  const d =
-    reading -
-    target;
-  return preset ===
-    'guitar'
-    ? d -
-        12 *
-          Math.round(
-            d /
-              12,
-          )
-    : d;
+function offset(preset: TunerPreset, reading: number, target: number): number {
+  const d = reading - target;
+  return preset === 'guitar' ? d - 12 * Math.round(d / 12) : d;
 }
 
-function nearestTarget(
-  preset: TunerPreset,
-  reading: number,
-): number {
-  const targets =
-    tunerTargets(
-      preset,
-    );
-  if (
-    !targets
-  )
-    return Math.round(
-      reading,
-    );
-  let best =
-    targets[0] ??
-    Math.round(
-      reading,
-    );
+function nearestTarget(preset: TunerPreset, reading: number): number {
+  const targets = tunerTargets(preset);
+  if (!targets) return Math.round(reading);
+  let best = targets[0] ?? Math.round(reading);
   for (const t of targets) {
-    const a =
-      Math.abs(
-        offset(
-          preset,
-          reading,
-          t,
-        ),
-      );
-    const b =
-      Math.abs(
-        offset(
-          preset,
-          reading,
-          best,
-        ),
-      );
-    if (
-      a <
-        b -
-          1e-9 ||
-      (Math.abs(
-        a -
-          b,
-      ) <=
-        1e-9 &&
-        Math.abs(
-          reading -
-            t,
-        ) <
-          Math.abs(
-            reading -
-              best,
-          ))
-    )
-      best =
-        t;
+    const a = Math.abs(offset(preset, reading, t));
+    const b = Math.abs(offset(preset, reading, best));
+    if (a < b - 1e-9 || (Math.abs(a - b) <= 1e-9 && Math.abs(reading - t) < Math.abs(reading - best))) best = t;
   }
   return best;
 }
 
 /** The lower median: always one of the values (never the mean of two). */
-function lowerMedian(
-  values: readonly number[],
-): number {
-  const sorted =
-    [
-      ...values,
-    ].sort(
-      (
-        a,
-        b,
-      ) =>
-        a -
-        b,
-    );
-  return (
-    sorted[
-      (sorted.length -
-        1) >>
-        1
-    ] ??
-    0
-  );
+function lowerMedian(values: readonly number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[(sorted.length - 1) >> 1] ?? 0;
 }
 
-function isVoiced(
-  f: TunerFrame,
-): f is TunerFrame & {
+function isVoiced(f: TunerFrame): f is TunerFrame & {
   freq: number;
 } {
-  return (
-    f.freq !==
-      null &&
-    Number.isFinite(
-      f.freq,
-    ) &&
-    f.freq >
-      0 &&
-    f.clarity >=
-      MIN_CLARITY &&
-    f.rms >=
-      MIN_RMS
-  );
+  return f.freq !== null && Number.isFinite(f.freq) && f.freq > 0 && f.clarity >= MIN_CLARITY && f.rms >= MIN_RMS;
 }
 
 interface Judged {
   inTune: boolean;
-  bandSince:
-    | number
-    | null;
+  bandSince: number | null;
   advice: TunerAdvice;
 }
 
 /** In tune, the band and the advice after a reading of `cents` at `time`, with hysteresis. */
-function judge(
-  preset: TunerPreset,
-  prev: Judged | null,
-  cents: number,
-  time: number,
-): Judged {
-  const size =
-    Math.abs(
-      cents,
-    );
-  const wasFar =
-    prev?.advice ===
-    'far';
-  if (
-    preset ===
-      'guitar' &&
-    (wasFar
-      ? size >
-        FAR_EXIT_CENTS
-      : size >
-        FAR_CENTS)
-  )
+function judge(preset: TunerPreset, prev: Judged | null, cents: number, time: number): Judged {
+  const size = Math.abs(cents);
+  const wasFar = prev?.advice === 'far';
+  if (preset === 'guitar' && (wasFar ? size > FAR_EXIT_CENTS : size > FAR_CENTS))
     return {
       inTune: false,
-      bandSince:
-        null,
-      advice:
-        'far',
+      bandSince: null,
+      advice: 'far',
     };
-  const wasInBand =
-    prev?.advice ===
-      'hold' ||
-    prev?.advice ===
-      'in-tune';
-  const inBand =
-    wasInBand
-      ? size <=
-        IN_TUNE_EXIT_CENTS
-      : size <=
-        IN_TUNE_CENTS;
-  if (
-    !inBand
-  )
+  const wasInBand = prev?.advice === 'hold' || prev?.advice === 'in-tune';
+  const inBand = wasInBand ? size <= IN_TUNE_EXIT_CENTS : size <= IN_TUNE_CENTS;
+  if (!inBand)
     return {
       inTune: false,
-      bandSince:
-        null,
-      advice:
-        cents <
-        0
-          ? 'up'
-          : 'down',
+      bandSince: null,
+      advice: cents < 0 ? 'up' : 'down',
     };
-  if (
-    prev?.inTune
-  )
+  if (prev?.inTune)
     return {
       inTune: true,
-      bandSince:
-        prev.bandSince,
-      advice:
-        'in-tune',
+      bandSince: prev.bandSince,
+      advice: 'in-tune',
     };
   // Held long enough only counts time spent inside the narrow band.
-  const since =
-    size <=
-    IN_TUNE_CENTS
-      ? (prev?.bandSince ??
-        time)
-      : (prev?.bandSince ??
-        null);
-  const inTune =
-    since !==
-      null &&
-    time -
-      since >=
-      IN_TUNE_HOLD_MS;
+  const since = size <= IN_TUNE_CENTS ? (prev?.bandSince ?? time) : (prev?.bandSince ?? null);
+  const inTune = since !== null && time - since >= IN_TUNE_HOLD_MS;
   return {
     inTune,
-    bandSince:
-      since,
-    advice:
-      inTune
-        ? 'in-tune'
-        : 'hold',
+    bandSince: since,
+    advice: inTune ? 'in-tune' : 'hold',
   };
 }
 
@@ -400,335 +226,118 @@ function lockOn(
   reading: number,
   time: number,
 ): TunerState {
-  const cents =
-    offset(
-      preset,
-      reading,
-      target,
-    ) *
-    100;
+  const cents = offset(preset, reading, target) * 100;
   return {
     kind: 'locked',
     preset,
     recent,
     target,
     cents,
-    heard:
-      Math.round(
-        reading,
-      ),
-    ...judge(
-      preset,
-      null,
-      cents,
-      time,
-    ),
-    challenger:
-      null,
+    heard: Math.round(reading),
+    ...judge(preset, null, cents, time),
+    challenger: null,
     challengerStreak: 0,
-    lastVoiced:
-      time,
+    lastVoiced: time,
   };
 }
 
-function onFrame(
-  s: TunerState,
-  f: TunerFrame,
-): TunerState {
-  if (
-    !Number.isFinite(
-      f.time,
-    )
-  )
-    return s;
-  if (
-    s.kind ===
-    'muted'
-  ) {
-    if (
-      f.time <
-      s.until
-    )
-      return s;
-    return onFrame(
-      tunerInitial(
-        s.preset,
-      ),
-      f,
-    );
+function onFrame(s: TunerState, f: TunerFrame): TunerState {
+  if (!Number.isFinite(f.time)) return s;
+  if (s.kind === 'muted') {
+    if (f.time < s.until) return s;
+    return onFrame(tunerInitial(s.preset), f);
   }
-  if (
-    !isVoiced(
-      f,
-    )
-  ) {
-    if (
-      s.kind ===
-      'silent'
-    )
-      return s;
-    return f.time -
-      s.lastVoiced >=
-      HOLD_MS
-      ? tunerInitial(
-          s.preset,
-        )
-      : s;
+  if (!isVoiced(f)) {
+    if (s.kind === 'silent') return s;
+    return f.time - s.lastVoiced >= HOLD_MS ? tunerInitial(s.preset) : s;
   }
-  const exact =
-    freqToMidi(
-      f.freq,
-    );
-  const recent =
-    s.kind ===
-    'silent'
-      ? [
-          exact,
-        ]
-      : [
-          ...s.recent,
-          exact,
-        ].slice(
-          -WINDOW,
-        );
-  const reading =
-    lowerMedian(
-      recent,
-    );
-  const nearest =
-    nearestTarget(
-      s.preset,
-      reading,
-    );
-  const dist =
-    (
-      t: number,
-    ) =>
-      Math.abs(
-        offset(
-          s.preset,
-          reading,
-          t,
-        ),
-      );
+  const exact = freqToMidi(f.freq);
+  const recent = s.kind === 'silent' ? [exact] : [...s.recent, exact].slice(-WINDOW);
+  const reading = lowerMedian(recent);
+  const nearest = nearestTarget(s.preset, reading);
+  const dist = (t: number) => Math.abs(offset(s.preset, reading, t));
 
-  if (
-    s.kind ===
-      'silent' ||
-    s.kind ===
-      'listening'
-  ) {
+  if (s.kind === 'silent' || s.kind === 'listening') {
     // The candidate keeps its place unless another target is clearly nearer (the same margin as
     // a locked target), so a reading on a boundary still locks instead of trading places.
-    const keep =
-      s.kind ===
-        'listening' &&
-      dist(
-        s.candidate,
-      ) -
-        dist(
-          nearest,
-        ) <
-        HYSTERESIS_ST;
-    const candidate =
-      keep
-        ? s.candidate
-        : nearest;
-    const streak =
-      keep
-        ? s.streak +
-          1
-        : 1;
-    if (
-      streak >=
-      LOCK_FRAMES
-    )
-      return lockOn(
-        s.preset,
-        recent,
-        candidate,
-        reading,
-        f.time,
-      );
+    const keep = s.kind === 'listening' && dist(s.candidate) - dist(nearest) < HYSTERESIS_ST;
+    const candidate = keep ? s.candidate : nearest;
+    const streak = keep ? s.streak + 1 : 1;
+    if (streak >= LOCK_FRAMES) return lockOn(s.preset, recent, candidate, reading, f.time);
     return {
       kind: 'listening',
-      preset:
-        s.preset,
+      preset: s.preset,
       recent,
       candidate,
       streak,
-      lastVoiced:
-        f.time,
+      lastVoiced: f.time,
     };
   }
 
   // Locked: another target wins only by a margin, for several frames running.
-  let challenger:
-    | number
-    | null =
-    null;
+  let challenger: number | null = null;
   let challengerStreak = 0;
-  if (
-    nearest !==
-      s.target &&
-    dist(
-      s.target,
-    ) -
-      dist(
-        nearest,
-      ) >=
-      HYSTERESIS_ST
-  ) {
-    challenger =
-      nearest;
-    challengerStreak =
-      s.challenger ===
-      nearest
-        ? s.challengerStreak +
-          1
-        : 1;
-    if (
-      challengerStreak >=
-      SWITCH_FRAMES
-    )
-      return lockOn(
-        s.preset,
-        recent,
-        nearest,
-        reading,
-        f.time,
-      );
+  if (nearest !== s.target && dist(s.target) - dist(nearest) >= HYSTERESIS_ST) {
+    challenger = nearest;
+    challengerStreak = s.challenger === nearest ? s.challengerStreak + 1 : 1;
+    if (challengerStreak >= SWITCH_FRAMES) return lockOn(s.preset, recent, nearest, reading, f.time);
   }
-  const cents =
-    offset(
-      s.preset,
-      reading,
-      s.target,
-    ) *
-    100;
+  const cents = offset(s.preset, reading, s.target) * 100;
   return {
     ...s,
     recent,
     cents,
-    heard:
-      Math.round(
-        reading,
-      ),
-    ...judge(
-      s.preset,
-      s,
-      cents,
-      f.time,
-    ),
+    heard: Math.round(reading),
+    ...judge(s.preset, s, cents, f.time),
     challenger,
     challengerStreak,
-    lastVoiced:
-      f.time,
+    lastVoiced: f.time,
   };
 }
 
-export function tunerStep(
-  s: TunerState,
-  e: TunerEvent,
-): TunerState {
-  switch (
-    e.type
-  ) {
+export function tunerStep(s: TunerState, e: TunerEvent): TunerState {
+  switch (e.type) {
     case 'frame':
-      return onFrame(
-        s,
-        e.frame,
-      );
+      return onFrame(s, e.frame);
     case 'preset':
-      return s.kind ===
-        'muted'
+      return s.kind === 'muted'
         ? {
             ...s,
-            preset:
-              e.preset,
+            preset: e.preset,
           }
-        : tunerInitial(
-            e.preset,
-          );
+        : tunerInitial(e.preset);
     case 'reference': {
-      const until =
-        e.end +
-        ECHO_TAIL_MS;
-      if (
-        s.kind ===
-          'muted' &&
-        s.until >=
-          until
-      )
-        return s;
+      const until = e.end + ECHO_TAIL_MS;
+      if (s.kind === 'muted' && s.until >= until) return s;
       return {
         kind: 'muted',
-        preset:
-          s.preset,
+        preset: s.preset,
         until,
       };
     }
     case 'reset':
-      return s.kind ===
-        'silent'
-        ? s
-        : tunerInitial(
-            s.preset,
-          );
+      return s.kind === 'silent' ? s : tunerInitial(s.preset);
   }
 }
 
 /** The advice for a locked reading (null otherwise). */
-export function adviceOf(
-  s: TunerState,
-): TunerAdvice | null {
-  return s.kind ===
-    'locked'
-    ? s.advice
-    : null;
+export function adviceOf(s: TunerState): TunerAdvice | null {
+  return s.kind === 'locked' ? s.advice : null;
 }
 
 /** The note to name on screen: the target, or what was heard when it is far from every string. */
-export function shownNote(
-  s: TunerState,
-):
-  | number
-  | null {
-  if (
-    s.kind !==
-    'locked'
-  )
-    return null;
-  return s.advice ===
-    'far'
-    ? s.heard
-    : s.target;
+export function shownNote(s: TunerState): number | null {
+  if (s.kind !== 'locked') return null;
+  return s.advice === 'far' ? s.heard : s.target;
 }
 
 /** The tuner in the shape `createRunner` takes; it has no effects. */
-export function createTunerMachine(
-  preset: TunerPreset,
-): Machine<
-  TunerState,
-  TunerEvent,
-  never
-> {
+export function createTunerMachine(preset: TunerPreset): Machine<TunerState, TunerEvent, never> {
   return {
-    initial:
-      tunerInitial(
-        preset,
-      ),
-    step: (
-      state,
-      event,
-    ) => ({
-      state:
-        tunerStep(
-          state,
-          event,
-        ),
-      effects:
-        [],
+    initial: tunerInitial(preset),
+    step: (state, event) => ({
+      state: tunerStep(state, event),
+      effects: [],
     }),
   };
 }
