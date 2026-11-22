@@ -9,6 +9,7 @@
  * succeeds, so it cannot be faked.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
@@ -27,12 +28,12 @@ async function resolveRecipient(
   handle: string | null,
 ): Promise<{ id: string; handle: string | null } | { error: string }> {
   if (access.kind === 'dm') {
-    if (access.isSelf || !access.otherId) return { error: "You can't tip yourself" };
+    if (access.isSelf || !access.otherId) return { ...refusalBody('TIP_SELF') };
     const u = await prisma.user.findUnique({
       where: { id: access.otherId },
       select: { id: true, handle: true },
     });
-    return u ?? { error: 'Recipient not found' };
+    return u ?? { ...refusalBody('TIP_RECIPIENT_NOT_FOUND') };
   }
   if (!handle) return { error: 'Say who to tip: /tip 50 @name' };
   const member = await prisma.chatMember.findFirst({
@@ -48,7 +49,7 @@ async function resolveRecipient(
     select: { user: { select: { id: true, handle: true } } },
   });
   if (!member) return { error: `Nobody in this group is called @${handle}` };
-  if (member.user.id === access.viewerId) return { error: "You can't tip yourself" };
+  if (member.user.id === access.viewerId) return { ...refusalBody('TIP_SELF') };
   return member.user;
 }
 
@@ -79,7 +80,7 @@ export async function sendChatTip(
       e instanceof InsufficientFundsError ||
       (e instanceof Error && e.message === 'INSUFFICIENT_COINS')
     ) {
-      return { ok: false, status: 400, error: 'Not enough coins' };
+      return { ok: false, status: 400, ...refusalBody('COINS_NOT_ENOUGH') };
     }
     throw e;
   }

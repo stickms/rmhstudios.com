@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
@@ -16,7 +17,6 @@ import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   rateRideApi,
   rideActionApi,
@@ -98,6 +98,7 @@ export function ActiveRidePanel({
   onClose?: () => void;
 }) {
   const { t } = useTranslation("c-rideshare");
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const [ride, setRide] = useState<SyncRide | null>(null);
   const [role, setRole] = useState<'rider' | 'driver'>('rider');
@@ -175,7 +176,7 @@ export function ActiveRidePanel({
       await sync();
       onChange?.();
     } catch (e) {
-      toast.error(serverError(e) || t("action-failed", { defaultValue: "Action failed." }));
+      toast.error(refusalText.maybe(e) || t("action-failed", { defaultValue: "Action failed." }));
     } finally {
       actingRef.current = false;
       setBusy(false);
@@ -186,7 +187,7 @@ export function ActiveRidePanel({
     try {
       await api(sendRideMessageApi, { params: { id: rideId }, body: { content } });
     } catch (e) {
-      toast.error(serverError(e) || t("could-not-send-message", { defaultValue: "Could not send message." }));
+      toast.error(refusalText.maybe(e) || t("could-not-send-message", { defaultValue: "Could not send message." }));
       return;
     }
     sync();
@@ -202,7 +203,7 @@ export function ActiveRidePanel({
       sync();
     } catch (e) {
       setRating(null);
-      toast.error(serverError(e) || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
+      toast.error(refusalText.maybe(e) || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
     }
   }
 
@@ -210,7 +211,7 @@ export function ActiveRidePanel({
     try {
       await api(rideActionApi, { params: { id: rideId }, body: { action: 'tip', tipCents: cents } });
     } catch (e) {
-      toast.error(serverError(e) || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
+      toast.error(refusalText.maybe(e) || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
       return;
     }
     toast.success(t("tip-sent", { defaultValue: "Tip sent — thank you!" }));

@@ -9,6 +9,7 @@
  * here is cached across keys.
  */
 import { prisma, prismaRead } from '@/lib/prisma.server';
+import { discoverableCommunityWhere } from '@/lib/communities/discovery';
 import { parseQuery } from '@/lib/search/parse';
 import { fuzzyTerms } from '@/lib/search/db.server';
 import { searchPostsScored, resolveCommunityId, type ScoredPost } from '@/lib/search/posts.server';
@@ -181,9 +182,7 @@ export async function searchPostsForKey(input: {
           communityId: null,
         },
         {
-          community: {
-            isPrivate: false,
-          },
+          community: discoverableCommunityWhere({ isPrivate: false }),
         },
       ],
     },

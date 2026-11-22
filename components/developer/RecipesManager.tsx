@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import {
   type RecipeView,
 } from '@/lib/developer/recipes';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createRecipeApi,
   deleteRecipeApi,
@@ -32,6 +32,7 @@ interface Options {
 /** D5 — "when X then Y" recipes, on the /developer page. */
 export function RecipesManager() {
   const { t } = useTranslation('f-devplatform');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const query = recipesQuery();
   const { data, isError } = useQuery(query);
@@ -69,7 +70,7 @@ export function RecipesManager() {
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('recipes-createFailed', { defaultValue: 'Check the recipe fields and try again' }),
       );
     } finally {

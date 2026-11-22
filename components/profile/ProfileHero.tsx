@@ -315,6 +315,11 @@ export function ProfileHero({
                 {t('profile-cosmetics-title', { defaultValue: 'Profile customization' })}
               </Link>
             </Button>
+            <Button asChild variant="ghost">
+              <Link to="/settings/preview">
+                {t('preview-profile', { ns: 'profile-preview', defaultValue: 'Preview as others see it' })}
+              </Link>
+            </Button>
           </>
         ) : signedIn ? (
           <>

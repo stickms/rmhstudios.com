@@ -2,6 +2,7 @@
  * A member's private deck folders. A folder is the owner's organisation only: it is read by the owner's own
  * list and export, never by a public payload, the marketplace or the developer API.
  */
+import { refusalBody } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import {
@@ -37,15 +38,15 @@ export async function createFolder(
   rawName: string,
 ): Promise<FolderResult<{ folder: DeckFolderSummary }>> {
   const name = normalizeFolderName(rawName);
-  if (!name) return { ok: false, status: 400, error: 'Invalid name' };
+  if (!name) return { ok: false, status: 400, ...refusalBody('STUDY_NAME_INVALID') };
   return prisma.$transaction(async (tx) => {
     await lockKey(tx, 'deck-folders:' + userId);
     const existing = await tx.deckFolder.findMany({ where: { userId }, select: { name: true, position: true } });
     if (existing.length >= MAX_FOLDERS_PER_MEMBER) {
-      return { ok: false, status: 400, error: 'Too many folders' } as const;
+      return { ok: false, status: 400, ...refusalBody('STUDY_FOLDER_LIMIT') } as const;
     }
     if (existing.some((f) => sameFolderName(f.name, name))) {
-      return { ok: false, status: 409, error: 'Name taken' } as const;
+      return { ok: false, status: 409, ...refusalBody('STUDY_NAME_TAKEN') } as const;
     }
     const position = existing.reduce((max, f) => Math.max(max, f.position), -1) + 1;
     const folder = await tx.deckFolder.create({ data: { userId, name, position }, select: folderSelect });
@@ -55,13 +56,13 @@ export async function createFolder(
 
 export async function renameFolder(userId: string, folderId: string, rawName: string): Promise<FolderResult> {
   const name = normalizeFolderName(rawName);
-  if (!name) return { ok: false, status: 400, error: 'Invalid name' };
+  if (!name) return { ok: false, status: 400, ...refusalBody('STUDY_NAME_INVALID') };
   return prisma.$transaction(async (tx) => {
     await lockKey(tx, 'deck-folders:' + userId);
     const all = await tx.deckFolder.findMany({ where: { userId }, select: { id: true, name: true } });
     if (!all.some((f) => f.id === folderId)) return { ok: false, status: 404, error: 'Not found' } as const;
     if (all.some((f) => f.id !== folderId && sameFolderName(f.name, name))) {
-      return { ok: false, status: 409, error: 'Name taken' } as const;
+      return { ok: false, status: 409, ...refusalBody('STUDY_NAME_TAKEN') } as const;
     }
     await tx.deckFolder.updateMany({ where: { id: folderId, userId }, data: { name } });
     return { ok: true } as const;

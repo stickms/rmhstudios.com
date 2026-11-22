@@ -10,6 +10,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { lazy } from 'react';
 import { getBook } from '@/lib/library/library.server';
+import { parsePassageSearch } from '@/lib/library/passage-search';
 import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
@@ -39,6 +40,11 @@ const fetchBook = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/library/$slug')({
+  // `p` is a passage link: the reader opens that page or chapter's text view at it. The canonical URL stays the book's.
+  validateSearch: (search: Record<string, unknown>) => {
+    const p = parsePassageSearch(search.p);
+    return p ? { p } : {};
+  },
   loader: async ({ params }) => {
     const { book } = await fetchBook({ data: params.slug });
     if (!book) throw notFound();

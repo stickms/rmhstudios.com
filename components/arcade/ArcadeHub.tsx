@@ -12,6 +12,7 @@
  * invalidate; it owns its own state end to end.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -25,7 +26,6 @@ import { CoinIcon } from '@/components/ui/CoinIcon';
 import { games } from '@/lib/catalog';
 import { APPLE_SPRING } from '@/lib/app-motion';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { claimArcadeChallengeApi, getArcadeStateApi } from '@/lib/arcade/arcade.contract';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
 import { useArrival } from '@/components/ui/arrive';
@@ -55,6 +55,7 @@ export function ArcadeHub({
   hideHeader?: boolean;
 }) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [state, setState] = useState<ArcadeState | null>(initialState);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function ArcadeHub({
         data = await api(claimArcadeChallengeApi, { body: { challengeId } });
       } catch (e) {
         toast.error(
-          serverError(e) ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
+          refusalText.maybe(e) ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
         );
         return;
       }

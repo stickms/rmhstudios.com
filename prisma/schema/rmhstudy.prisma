@@ -63,6 +63,15 @@ model FlashcardDeck {
   notifyUpdates   Boolean  @default(true)
   /// The owner's private folder for this deck (null: "No folder"). Never in a public payload.
   folderId     String?
+  /// New cards a day for the owner (0-200); null = no daily limit, the per-session rule (s10-03). Owner only, never copied.
+  newPerDay    Int?
+  /// The owner's test date, a local YYYY-MM-DD (s10-03). Owner only, never copied.
+  testDate     String?  @db.VarChar(10)
+  /// The local day `extraNew` applies to ("Learn 10 more"); a different day means no extra.
+  extraNewDay  String?  @db.VarChar(10)
+  extraNew     Int      @default(0)
+  /// The author lets people who study this deck suggest a corrected card; off for every deck until they turn it on (s10-04).
+  acceptsSuggestions Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -70,6 +79,7 @@ model FlashcardDeck {
   folder      DeckFolder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
   cards       Flashcard[]
   testResults FlashcardTestResult[]
+  suggestions DeckSuggestion[]
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
@@ -127,17 +137,31 @@ model Flashcard {
   frontImageAlt String? @db.VarChar(1000)
   backImageUrl  String? @db.VarChar(500)
   backImageAlt  String? @db.VarChar(1000)
+  /// One optional sound per side of an authored card, with the transcript that is its text alternative and its length
+  /// (s10-02). Private to the member who recorded it: a copy and deck sync never carry these columns, and no payload
+  /// another member receives includes them. One stored object per side (no sharing, so no reference count).
+  frontSoundUrl  String? @db.VarChar(500)
+  frontSoundText String? @db.VarChar(500)
+  frontSoundMs   Int?
+  backSoundUrl   String? @db.VarChar(500)
+  backSoundText  String? @db.VarChar(500)
+  backSoundMs    Int?
 
   deck       FlashcardDeck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
   source     Flashcard?           @relation("FlashcardSiblings", fields: [sourceId], references: [id], onDelete: Cascade)
   siblings   Flashcard[]          @relation("FlashcardSiblings")
   reviews    FlashcardReview[]
   reviewLogs FlashcardReviewLog[]
+  /// Where an authored card came from when it was made from a reading highlight (s10-01); never copied with a deck.
+  highlightLink HighlightCardLink?
+  suggestions   DeckSuggestion[]
 
   @@index([deckId])
   @@index([sourceId])
   @@index([frontImageUrl])
   @@index([backImageUrl])
+  @@index([frontSoundUrl])
+  @@index([backSoundUrl])
   @@unique([deckId, externalId])
   @@map("flashcard")
 }
@@ -311,4 +335,48 @@ model CalcNotebook {
 
   @@index([userId, updatedAt])
   @@map("calc_notebook")
+}
+
+/// s10-01 — the reading highlight a flashcard was made from. Private bookkeeping for the card's owner: it names a
+/// private highlight, so deck copies never carry it. Deleting either side removes the link (the card stays).
+/// No `User` relation: both sides already belong to the member.
+model HighlightCardLink {
+  id          String   @id @default(cuid())
+  cardId      String   @unique
+  highlightId String
+  createdAt   DateTime @default(now())
+
+  card      Flashcard        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  highlight ReadingHighlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+
+  @@index([highlightId])
+  @@map("highlight_card_link")
+}
+
+/// s10-04 — a member's proposed correction to the text of one card of someone else's deck. Private to the suggester and
+/// the deck's author; no public read path. The author's decision is a compare-and-set on `status = 'open'`.
+model DeckSuggestion {
+  id            String    @id @default(cuid())
+  deckId        String
+  cardId        String
+  suggesterId   String
+  front         String    @db.Text
+  back          String    @db.Text
+  note          String?   @db.VarChar(500)
+  /// The card's hash (kind, front, back, pictures) when the suggestion was made; a different current hash means "the card changed since".
+  baseHash      String    @db.VarChar(64)
+  /// open | accepted | declined | withdrawn
+  status        String    @default("open") @db.VarChar(10)
+  declineReason String?   @db.VarChar(200)
+  decidedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  deck      FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  card      Flashcard     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  suggester User          @relation("DeckSuggestions", fields: [suggesterId], references: [id], onDelete: Cascade)
+
+  @@index([deckId, status, createdAt])
+  @@index([suggesterId, createdAt])
+  @@index([cardId])
+  @@map("deck_suggestion")
 }

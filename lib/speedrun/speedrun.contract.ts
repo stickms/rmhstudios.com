@@ -110,3 +110,11 @@ export const submitSpeedrunRunApi = endpoint<{
   method: 'POST',
   path: '/api/speedrun/runs',
 });
+
+/** The signed-in runner's own runs, with the reason of a verdict. The reason is never on the public board. */
+export const listMySpeedrunRunsApi = endpoint<{
+  res: { runs: SpeedrunEntryView[] };
+}>()({
+  method: 'GET',
+  path: '/api/speedrun/runs',
+});

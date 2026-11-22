@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';
@@ -5,10 +6,10 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { deleteBlogPostApi } from '@/lib/admin/admin-tools.contract';
 export function DeleteBlogButton({ slug, title }: { slug: string; title: string }) {
   const { t } = useTranslation('c-admin');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -38,7 +39,7 @@ export function DeleteBlogButton({ slug, title }: { slug: string; title: string 
         });
       } catch (error) {
         throw new Error(
-          serverError(error) ||
+          refusalText.maybe(error) ||
             t('delete-failed', {
               defaultValue: 'Failed to delete post',
             }),

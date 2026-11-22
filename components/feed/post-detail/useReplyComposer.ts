@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,7 @@ import type { Comment } from '../CommentItem';
 import { withCommentDelta } from './post-detail-state';
 
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
 import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 export interface ReplyComposerState {
@@ -26,6 +27,7 @@ export function useReplyComposer(
   bumpFeedComment: (delta: number) => void,
 ): ReplyComposerState {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const [commentContent, setCommentContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const reconsider = useReconsider();
@@ -57,7 +59,7 @@ export function useReplyComposer(
       if (error instanceof HttpError) {
         toast.error(
           sanctionRefusalText(error) ||
-            serverError(error) ||
+            refusalText.maybe(error) ||
             t('comment-failed', {
               defaultValue: 'Could not post your reply',
             }),

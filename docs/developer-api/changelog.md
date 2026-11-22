@@ -1,5 +1,27 @@
 # Changelog
 
+## Sprint 10 — 2026-11
+
+<!-- s10-12 api-events -->
+- New scope `manage:events` (group Events): create, edit and cancel events you host, and post updates to the people coming. `write:events` keeps its meaning (RSVPs only), so an existing key gains no hosting power; keys with `manage:*` or `*` already satisfy the new scope, as for every `manage` scope.
+- New endpoints, each acting as the key owner through the site's own event functions: `POST /api/v1/events` (`201`; `community` is a slug, the owner is always the host, a community event needs a moderator; at most 10 a minute, shared with the site), `PATCH /api/v1/events/{id}` (host or co-host), `POST /api/v1/events/{id}/cancel` (host only), `GET /api/v1/events/{id}/updates` (`read:events`) and `POST /api/v1/events/{id}/updates` (`201`, notifies the people coming exactly as on the site). Request fields are snake_case (`starts_at`, `venue_kind`, `repeat`, `repeat_tz`, ...).
+- New error codes: `not_host` (`403`), `invalid_dates`, `invalid_venue_url` and `invalid_recurrence` (`400`), `canceled` and `already_canceled` (`409`). Occurrence overrides, co-host invitations and host rotation stay on the site.
+
+<!-- s10-02 card-sound -->
+- Flashcards can carry a recorded sound on each side, added on the site. Cards in `GET`, `POST`, `PATCH` and `PUT /api/v1/me/decks/{id}/cards…` responses gain `frontSound` and `backSound`, each `{ url, transcript, durationMs }` or `null`. Read-only: sounds are private to the member who recorded them, so they appear only on your own decks and are never written through the API.
+
+<!-- s10-13 api-moderation -->
+- New scope `manage:moderation` (group Moderation): moderate communities where you are a moderator, through the mod queue and timeouts and bans. It is the first **explicit** scope: `*` and `manage:*` do not grant it, so no existing key gains the power to ban members; a key must list `manage:moderation` itself. The key-creation pickers leave it unticked under "All".
+- New endpoints, each acting as the key owner through the site's own moderation code, with the site's role checks and a row in the moderators' log (marked as made through the API; the public log does not show the marker): `GET /api/v1/communities/{slug}/modqueue` (`?view=pending|log`), `POST /api/v1/communities/{slug}/modqueue/{itemId}` (`decision` `approve` or `remove`, optional `rule_id` and `message`), `GET /api/v1/communities/{slug}/sanctions` (`?active=true|false`), `POST /api/v1/communities/{slug}/sanctions` (`201`; `handle`, `kind` `timeout` or `ban`, optional `duration`, `rule_id`, `reason`) and `DELETE /api/v1/communities/{slug}/sanctions/{id}` (`204`). The key owner must be a moderator of the community at the time of each call. At most 120 decisions and 30 sanctions per key per hour.
+- New error codes: `not_moderator` (`403`), `rule_not_found` (`400`), `item_resolved` and `sanction_refused` (`409`).
+
+<!-- s10-14 api-rmhtube -->
+- New scopes `read:rmhtube` and `write:rmhtube` (group RMHTube), and seven endpoints: `GET /api/v1/me/rmhtube/watch-later` (oldest first, pages of up to 50 by `cursor`), `POST /api/v1/me/rmhtube/watch-later` (`url`, optional `title`; `201`, or `200` with the existing item when the URL is already saved), `DELETE /api/v1/me/rmhtube/watch-later/{id}` (`204`), `GET /api/v1/rmhtube/parties` (the upcoming watch parties you can see, as the site lists them), `GET /api/v1/rmhtube/parties/{id}`, `PUT /api/v1/rmhtube/parties/{id}/going` (`{ "going": true|false }`) and `GET /api/v1/me/rmhtube/stats` (your own watch statistics). Watch later keeps the newest 200 as on the site, so adding a 201st drops the oldest. A party that is link-only is visible only to its host and the people going; an attendee list is never returned. Pausing or clearing statistics and creating parties stay on the site.
+- New error code: `party_closed` (`409`).
+
+<!-- s10-18 race-fixes -->
+- `held` on the `/api/v1/me/scheduled*` rows gains the value `automod`: the community's AutoMod rules would hold, flag or remove the draft (moderators are exempt, as in the post gate). The rule's name and text are never returned. Existing values are unchanged.
+
 ## Sprint 09 — 2026-11
 
 <!-- s09-03 occlusion-cards -->

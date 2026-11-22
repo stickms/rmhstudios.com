@@ -202,6 +202,8 @@ export interface MyHighlightRow extends HighlightView {
   key: string;
   title: string;
   href: string;
+  /** The member's decks that hold a card made from this highlight (s10-01); empty when none. */
+  cardDecks: { id: string; title: string }[];
 }
 
 export interface MyHighlightsPage {

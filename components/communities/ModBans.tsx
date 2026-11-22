@@ -1,10 +1,10 @@
 /** s06-01 — the Bans tab: active bans and timeouts with "Lift", and the last 100 lifted or expired. */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -21,6 +21,7 @@ type Segment = 'active' | 'past';
 
 export function ModBans({ slug }: { slug: string }) {
   const { t } = useTranslation(['community-bans', 'community-notes']);
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const confirm = useConfirm();
   const [segment, setSegment] = useState<Segment>('active');
@@ -99,7 +100,7 @@ export function ModBans({ slug }: { slug: string }) {
       setRows((prev) => (prev ? prev.filter((r) => r.id !== row.id) : prev));
     } catch (err) {
       toast.error(
-        serverError(err) ||
+        refusalText.maybe(err) ||
           t('action-failed', {
             defaultValue: 'Could not save that',
           }),

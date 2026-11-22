@@ -12,6 +12,7 @@
  * is one column and the same strip switches between the list and the map. The view strip is the shared
  * `Tabs` in both cases; which pair it offers follows the same 1024px breakpoint as the frame.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
@@ -36,7 +37,6 @@ import {
 } from '@/lib/homes/types';
 import { parseFilters, serializeFilters } from '@/lib/homes/query';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { browseHomeListingsApi } from '@/lib/homes/homes.contract';
 
 export const Route = createFileRoute('/_site/homes/')({
@@ -54,6 +54,7 @@ export const Route = createFileRoute('/_site/homes/')({
 
 function HomesBrowsePage() {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
 
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
@@ -94,7 +95,7 @@ function HomesBrowsePage() {
       } catch (err) {
         if (myReq === reqIdRef.current) {
           toast.error(
-            serverError(err) ?? t('homes-search-failed', { defaultValue: 'Search failed' }),
+            refusalText.maybe(err) ?? t('homes-search-failed', { defaultValue: 'Search failed' }),
           );
           setListings([]);
         }
@@ -102,7 +103,7 @@ function HomesBrowsePage() {
         if (myReq === reqIdRef.current) setLoading(false);
       }
     },
-    [t],
+    [t, refusalText],
   );
 
   // Seed from the URL and run an initial browse (newest everywhere if no filters).

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { fetchJson, serverError } from '@/lib/http';
+import { fetchJson } from '@/lib/http';
 import { uploadChallengeSampleApi } from '@/lib/creator/challenge-upload.contract';
 
 const DAY = 24 * 60 * 60_000;
@@ -20,6 +21,7 @@ const local = (ms: number) => {
 /** /admin/studio-challenges — start a weekly sample-flip challenge (F12). */
 export function AdminChallengePage() {
   const { t } = useTranslation('f-creative');
+  const refusalText = useRefusalText();
   const now = Date.now();
   const [title, setTitle] = useState('');
   const [brief, setBrief] = useState('');
@@ -38,7 +40,7 @@ export function AdminChallengePage() {
       const data = await api(uploadChallengeSampleApi, {
         body: form,
       }).catch((e: unknown) => {
-        throw new Error(serverError(e) ?? 'Upload failed');
+        throw new Error(refusalText.maybe(e) ?? 'Upload failed');
       });
       if (!data.key) throw new Error('Upload failed');
       await fetchJson('/api/admin/studio-challenges', {

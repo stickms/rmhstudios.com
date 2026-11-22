@@ -17,11 +17,14 @@ function seeded(seed: number): () => number {
 const NATURAL_PITCH_CLASSES = new Set([0, 2, 4, 5, 7, 9, 11]);
 
 describe('decks', () => {
-  it('has the five reading decks, the four spelled decks and the four voice-range decks, with matching ids', () => {
+  it('has the reading decks, the four spelled decks and the four voice-range decks, with matching ids', () => {
     expect(Object.keys(DECKS).sort()).toEqual([
       'accidentals-bass',
       'accidentals-treble',
       'bass-all',
+      'bass-lines',
+      'bass-spaces',
+      'grand-middle',
       'keys-flats',
       'keys-sharps',
       'middle-c',

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -10,7 +11,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { toggleBlockApi } from '@/lib/moderation/moderation.contract';
 import {
@@ -29,6 +29,7 @@ type Action = 'accept' | 'decline' | 'block';
  */
 export function RequestsList() {
   const { t, i18n } = useTranslation('message-requests');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -119,7 +120,7 @@ export function RequestsList() {
         toast.success(t('declined', { defaultValue: 'Request declined.' }));
       }
     } catch (error) {
-      toast.error(serverError(error) ?? t('decide-failed', { defaultValue: 'Could not update the request.' }));
+      toast.error(refusalText.maybe(error) ?? t('decide-failed', { defaultValue: 'Could not update the request.' }));
     } finally {
       setBusy(null);
     }

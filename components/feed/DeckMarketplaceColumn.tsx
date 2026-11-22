@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
@@ -8,7 +9,6 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { StudyTabs } from'@/components/feed/StudyTabs';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cloneDeckApi } from '@/lib/study/decks.contract';
 import { CardPicture } from '@/components/study/CardPicture';
 import type { CardImage } from '@/lib/study/card-images';
@@ -33,6 +33,7 @@ interface MarketplaceData {
 
 export function DeckMarketplaceColumn({ initialData }: { initialData: MarketplaceData }) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [decks, setDecks] = useState<MarketplaceDeck[]>(initialData.decks);
  const [query, setQuery] = useState('');
  const [loading, setLoading] = useState(false);
@@ -74,7 +75,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  delete next[deck.id];
  return next;
  });
- toast.error(serverError(err) ?? t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
+ toast.error(refusalText.maybe(err) ?? t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
  }
  };
 

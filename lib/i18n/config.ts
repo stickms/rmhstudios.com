@@ -260,6 +260,22 @@ export const NAMESPACES = [
   "board-privacy",
   "lights-out-replays",
   "notice-language",
+  // Sprint 10 (docs/autonomous/sprint-10): one namespace per feature.
+  "highlight-cards",
+  "card-sound",
+  "study-pace",
+  "deck-suggestions",
+  "type-texts",
+  "bass-clef",
+  "community-events",
+  "profile-preview",
+  "build-issues",
+  "timed-mutes",
+  "passage-links",
+  "admin-webhooks",
+  "speedrun-queue",
+  "admin-communities",
+  "race-fixes",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

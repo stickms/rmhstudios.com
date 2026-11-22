@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { pageSize } from '@/lib/pagination';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
@@ -41,7 +42,7 @@ export const route = apiRoute('/api/user-builds/$id/comments', {
       }
 
       const result = await createComment(build, userId, body);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
 
       void watchBuildComment(params.id, userId, result.content).catch(() => {});
       return Response.json(result.comment, { status: 201 });

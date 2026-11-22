@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -12,7 +13,7 @@ import {
   type PackSummary,
 } from '@features/slice-it/engine/packs';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   createPackApi,
   deletePackApi,
@@ -58,6 +59,7 @@ interface PackPanelProps {
 
 export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   const { t } = useTranslation('r-slice-it');
+  const refusalText = useRefusalText();
 
   const [packs, setPacks] = React.useState<PackSummary[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -145,7 +147,7 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
       await api(patchPackItemsApi, { params: { id: packId }, body: patch });
       return true;
     } catch (error) {
-      const message = serverError(error);
+      const message = refusalText.maybe(error);
       toast.error(
         message && message.length < 200
           ? message

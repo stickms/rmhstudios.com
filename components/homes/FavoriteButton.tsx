@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart, Loader2 } from 'lucide-react';
@@ -6,7 +7,7 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { favoriteHomeListingApi, unfavoriteHomeListingApi } from '@/lib/homes/homes.contract';
 
 interface FavoriteButtonProps {
@@ -33,6 +34,7 @@ export function FavoriteButton({
   onMedia = true,
 }: FavoriteButtonProps) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [isFav, setIsFav] = useState(favorited);
   const [busy, setBusy] = useState(false);
 
@@ -52,7 +54,7 @@ export function FavoriteButton({
     } catch (err) {
       setIsFav(!next);
       toast.error(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           (err instanceof HttpError
             ? t('homes-save-failed', { defaultValue: 'Could not update your saved listings' })
             : err instanceof Error

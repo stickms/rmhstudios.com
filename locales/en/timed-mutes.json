@@ -1,0 +1,18 @@
+{
+  "extend": "Extend",
+  "extend-aria": "Change how long {{name}} is muted",
+  "extend-failed": "Couldn't change the mute. Try again.",
+  "extend-menu": "Extend this mute",
+  "extended": "Mute for {{name}} updated.",
+  "mute-day": "Mute for 24 hours",
+  "mute-forever": "Mute until I unmute",
+  "mute-menu": "Mute this account",
+  "mute-month": "Mute for 30 days",
+  "mute-week": "Mute for 7 days",
+  "toast-muted-day": "Muted for 24 hours.",
+  "toast-muted-forever": "Muted until you unmute.",
+  "toast-muted-month": "Muted for 30 days.",
+  "toast-muted-week": "Muted for 7 days.",
+  "until": "until {{date}}",
+  "until-unmute": "until you unmute"
+}

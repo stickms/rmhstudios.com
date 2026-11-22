@@ -1,11 +1,11 @@
 /** s03-13 — mods write the community's rules: add, edit, delete, reorder, and the agreement switch. */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,6 +29,7 @@ const newKey = () => `new-${(draftCounter += 1)}`;
 
 export function ModRules({ slug, onChange }: { slug: string; onChange: () => void }) {
   const { t } = useTranslation('community-rules');
+  const refusalText = useRefusalText();
   const [drafts, setDrafts] = useState<Draft[] | null>(null);
   const [requireAgreement, setRequireAgreement] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -111,7 +112,7 @@ export function ModRules({ slug, onChange }: { slug: string; onChange: () => voi
       onChange();
     } catch (err) {
       toast.error(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           t('save-error', {
             defaultValue: "Couldn't save the rules",
           }),

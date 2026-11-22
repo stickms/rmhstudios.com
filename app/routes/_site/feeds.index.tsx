@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { feedsQuery } from '@/lib/discovery/feeds.queries';
 import { userListsQuery } from '@/lib/lists/list-feed.queries';
-import { FEEDS_TABS, FeedsPage, type FeedsTab } from '@/components/discovery/FeedsPage';
+import { FeedsPage } from '@/components/discovery/FeedsPage';
+import { FEEDS_TABS, type FeedsTab } from '@/components/discovery/feeds-tabs';
 
 export const Route = createFileRoute('/_site/feeds/')({
   head: () => ({

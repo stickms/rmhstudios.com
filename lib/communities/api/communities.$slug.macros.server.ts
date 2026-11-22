@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
@@ -18,7 +19,7 @@ export const route = apiRoute('/api/communities/$slug/macros', {
       const guard = await requireMod(params.slug, userId);
       if (!guard.ok) return guard.response;
       const macro = await createMacro(guard.value.id, userId, body);
-      if (!macro) return Response.json({ error: 'Macro limit reached' }, { status: 409 });
+      if (!macro) return Response.json({ ...refusalBody('COMMUNITY_MACRO_LIMIT') }, { status: 409 });
       return Response.json(macro, { status: 201 });
     },
   ),

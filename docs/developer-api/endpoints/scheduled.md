@@ -20,7 +20,7 @@
 
 ### `GET /api/v1/me/scheduled`
 
-Your unpublished drafts, scheduled posts and time capsules (capsules are read-only), newest first. Anything now due is published first, as on the site. `held` says why a row would not go out now (`community_sanction` or `image_descriptions`); it is read from the publish checks and never stored. Only your own rows are listed.
+Your unpublished drafts, scheduled posts and time capsules (capsules are read-only), newest first. Anything now due is published first, as on the site. `held` says why a row would not go out now (`community_sanction`, `image_descriptions` or `automod`; the rule is never returned); it is read from the publish checks and never stored. Only your own rows are listed.
 
 **Scope:** `read:scheduled` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyScheduled`
 

@@ -2,6 +2,7 @@
  * Admin — Prediction Markets moderation + resolution.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   adminModeratePredictionApi,
   adminPredictionQueueApi,
@@ -33,6 +33,7 @@ export const Route = createFileRoute('/_site/admin/predictions')({
 
 function AdminPredictionsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const [pending, setPending] = useState<AdminMarket[]>([]);
   const [open, setOpen] = useState<AdminMarket[]>([]);
@@ -61,7 +62,7 @@ function AdminPredictionsPage() { const fmt = useLocaleFormat();
       try {
         await api(adminModeratePredictionApi, { params: { id }, body: { action } });
       } catch (e) {
-        toast.error(serverError(e) || t('action-failed', { defaultValue: 'Action failed.' }));
+        toast.error(refusalText.maybe(e) || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(
@@ -85,7 +86,7 @@ function AdminPredictionsPage() { const fmt = useLocaleFormat();
       try {
         data = await api(adminResolvePredictionApi, { params: { id }, body: { outcome } });
       } catch (e) {
-        toast.error(serverError(e) || t('action-failed', { defaultValue: 'Action failed.' }));
+        toast.error(refusalText.maybe(e) || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(t('resolved-paid', { defaultValue: 'Resolved {{outcome}} — paid {{payouts}} coins', outcome, payouts: data.payouts }));

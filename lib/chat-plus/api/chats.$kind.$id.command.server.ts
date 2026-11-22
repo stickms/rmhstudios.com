@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
@@ -18,7 +19,7 @@ export const route = apiRoute('/api/chats/$kind/$id/command', {
       const access = await requireChat(params, userId, { write: true });
       if (access instanceof Response) return access;
       const res = await runChatCommand(access, body.text, session.user.name ?? 'Someone');
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json(
         { message: res.message.message, kind: res.message.kind },
         { status: 201 },

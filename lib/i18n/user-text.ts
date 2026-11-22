@@ -46,6 +46,7 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   { file: 'components/feed/HomeComposerSignedIn.tsx', kind: 'input' },
   { file: 'components/feed/profile-edit/IdentitySection.tsx', kind: 'input' },
   { file: 'components/profile/ProfileHero.tsx', kind: 'block' },
+  { file: 'components/settings/ProfilePreview.tsx', kind: 'block' },
   { file: 'components/profile/plus/rings/RingsIndex.tsx', kind: 'block' },
   { file: 'components/profile/plus/rings/RingPage.tsx', kind: 'block' },
   { file: 'components/communities/DocEditor.tsx', kind: 'block' },
@@ -77,6 +78,7 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   { file: 'components/requests/RequestCard.tsx', kind: 'block' },
   { file: 'components/messages/RequestsList.tsx', kind: 'block' },
   { file: 'components/study/CardRow.tsx', kind: 'block' },
+  { file: 'components/reading/MakeCardDialog.tsx', kind: 'input' },
   { file: 'components/feed/ComposeModal.tsx', kind: 'block' },
   { file: 'components/predictions/PredictionCard.tsx', kind: 'block' },
   { file: 'components/profile/GuestbookPanel.tsx', kind: 'block' },
@@ -105,6 +107,34 @@ export const USER_TEXT_RENDERERS: readonly UserTextRenderer[] = [
   { file: 'components/replays/ReplayBoard.tsx', kind: 'inline' },
   // The shared multi-line field: every <Textarea> carries dir="auto" unless a caller overrides it.
   { file: 'components/ui/textarea.tsx', kind: 'input' },
+
+  // Sprint 10 (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-01 highlight-cards
+
+  // s10-02 card-sound
+  { file: 'components/study/CardSound.tsx', kind: 'block' },
+  { file: 'components/study/CardSoundField.tsx', kind: 'input' },
+
+  // s10-04 deck-suggestions
+  { file: 'components/study/SuggestFixDialog.tsx', kind: 'input' },
+  { file: 'components/study/DeckSuggestions.tsx', kind: 'block' },
+
+  // s10-05 type-texts
+  { file: 'components/rmhtype/TextsPage.tsx', kind: 'block' },
+  { file: 'components/rmhtype/RmhTypeSoloPage.tsx', kind: 'block' },
+
+  // s10-08 profile-preview
+
+  // s10-09 build-issues
+  { file: 'components/user-builds/BuildIssues.tsx', kind: 'block' },
+  { file: 'components/user-builds/BuildIssueForm.tsx', kind: 'input' },
+
+  // s10-15 admin-webhooks
+
+  // s10-16 speedrun-queue
+
+  // s10-17 admin-communities
+  { file: 'components/communities/CommunityPlusBody.tsx', kind: 'block' },
 ];
 
 /**
@@ -137,7 +167,6 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/rmhtube/ChatMediaEmbed.tsx': 'parses a message for media embeds and renders no text',
   'components/rmhtube/SettingsPanel.tsx': 'description is the site-written setting hint',
   'components/rmhtype/DailyPage.tsx': '`body` is a layout fragment of site-written daily-challenge copy',
-  'components/rmhtype/RmhTypeSoloPage.tsx': 'typing-test field: its direction follows the test passage, not the typist',
   'components/study/CardImageField.tsx': '`body` is an upload request body, not text',
   'components/study/DeckUpdatesDialog.tsx':
     '`body` is a layout fragment; the member text in it already carries dir="auto"',
@@ -161,7 +190,8 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/site-history/': 'site history is written by the site',
   'components/site/': 'site chrome',
   'components/news/': 'news is written by the site',
-  'components/reading/': 'library and story copy is written by the site',
+  'components/reading/ArticleBody.tsx': 'article body is library and story copy written by the site',
+  'components/reading/StoryTimeline.tsx': 'story copy is written by the site',
   'components/library/': 'library metadata is catalogued by the site',
   'components/security/': 'security pages are written by the site',
   'components/shell/': 'Steel shell chrome',
@@ -176,7 +206,15 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/forecasting/': 'market copy is written by the site',
   'components/wallet/': 'shop and goal copy is written by the site',
   'components/shop/': 'shop copy is written by the site',
-  'components/settings/': "the member's own settings",
+  // `components/settings/` is not exempt as a whole: ProfilePreview renders other members' words and is listed above.
+  // These files only pass a site-written `body` / `description` prop or child through to a row.
+  'components/settings/AppearancePanel.tsx': 'the description is the site-written row hint',
+  'components/settings/MissingAltTextSection.tsx': 'body is a local layout node of site-written states',
+  'components/settings/QuietCountsSection.tsx': 'body is the request payload of the toggle, not rendered text',
+  'components/settings/RepostMutesSection.tsx':
+    'body is a local layout node (its rows show member names without isolation: a known gap, not a text field)',
+  'components/settings/SettingsSection.tsx': 'description is the site-written section hint',
+  'components/settings/SpendBudgetSection.tsx': 'body is the request payload of the form, not rendered text',
   'components/create/': 'storefront copy is written by the site',
   'components/discovery/': 'feed settings the member edits for themselves',
   'components/sohumtracker/': 'the owner-run tracker',

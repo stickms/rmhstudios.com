@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, Plus, Trash2, X } from 'lucide-react';
@@ -7,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { LocationSearch, type SavedPlaceOption } from './LocationSearch';
 import type { RidePlace } from '@/lib/rideshare/geo';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createSavedPlaceApi, deleteSavedPlaceApi } from '@/lib/rideshare/rideshare.contract';
 
 interface SavedPlacesProps {
@@ -17,6 +17,7 @@ interface SavedPlacesProps {
 
 export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
   const { t } = useTranslation("c-rideshare");
+  const refusalText = useRefusalText();
   const [adding, setAdding] = useState(false);
   const [label, setLabel] = useState('');
   const [place, setPlace] = useState<RidePlace | null>(null);
@@ -38,7 +39,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
       setPlace(null);
       onChanged();
     } catch (e) {
-      toast.error(serverError(e) || t("could-not-save-place", { defaultValue: "Could not save place." }));
+      toast.error(refusalText.maybe(e) || t("could-not-save-place", { defaultValue: "Could not save place." }));
     } finally {
       setSaving(false);
     }

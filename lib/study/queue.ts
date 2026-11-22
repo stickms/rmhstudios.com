@@ -3,13 +3,18 @@
  * path that counts or queues due cards. Suspension is per member, on the member's `FlashcardReview` row.
  */
 import type { CardImage } from '@/lib/study/card-images';
+import type { CardSound } from '@/lib/study/card-sound';
 import type { OcclusionReviewData } from '@/lib/study/occlusion';
 
 /** Grades of "Again" on a learned card that set it aside as a leech. */
 export const LEECH_THRESHOLD = 8;
 /** Lapses a card is given back when a member unsuspends a leech: four more tries. */
 export const LEECH_RESET = 4;
-/** Never-reviewed cards from the member's own decks that one session adds. */
+/**
+ * Never-reviewed cards from the member's own decks that one session adds. A deck with no pace shares this
+ * across the unpaced decks (oldest first); a deck the owner gave a pace is counted per day instead
+ * (`lib/study/pace.ts`), and its new cards still count toward this batch limit.
+ */
 export const NEW_PER_SESSION = 20;
 /** Cards in one session; "Keep going" fetches the next batch. */
 export const SESSION_MAX = 200;
@@ -49,6 +54,9 @@ export interface QueueCard {
   /** The pictures the card shows, a generated card's read from its source; absent when it has none (s08-15). */
   frontImage?: CardImage;
   backImage?: CardImage;
+  /** The sounds the member recorded on this card (s10-02); never present on a card of someone else's deck. */
+  frontSound?: CardSound;
+  backSound?: CardSound;
   /** On a generated occlusion card: the masks, the one this card asks and the author's note (s09-03). */
   occlusion?: OcclusionReviewData;
 }
@@ -63,6 +71,7 @@ export const DUE_COUNT_READ_PATHS = [
   'lib/study/api/study.decks.$id.review.server.ts',
   'lib/study.server.ts',
   'lib/study/stats.server.ts',
+  'lib/study/pace.server.ts',
   'lib/study/reminders.server.ts',
   'lib/api/v1/study.server.ts',
   'lib/history/resume.server.ts',

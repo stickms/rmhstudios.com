@@ -1,3 +1,4 @@
+import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -36,7 +37,7 @@ export const Route = createFileRoute('/api/tournaments/$id/start')({
         } catch (error) {
           if (error instanceof TournamentError) {
             return Response.json(
-              { error: error.message, code: error.code, details: error.details },
+              { error: error.message, ...tournamentRefusal(error), code: error.code, details: error.details },
               { status: error.status },
             );
           }

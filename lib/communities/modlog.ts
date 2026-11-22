@@ -31,6 +31,9 @@ export const MOD_ACTIONS_BY_GROUP = {
     'post_pinned',
     'post_unpinned',
     'pins_reordered',
+    // s10-07: a community's events. Public within the community, so these are in the public log too.
+    'event_hosted',
+    'event_cancelled',
   ],
   members: [
     'member_removed',
@@ -96,6 +99,8 @@ export const PUBLIC_MOD_ACTIONS = [
   'post_pinned',
   'post_unpinned',
   'pins_reordered',
+  'event_hosted',
+  'event_cancelled',
 ] as const;
 export type PublicModAction = (typeof PUBLIC_MOD_ACTIONS)[number];
 export const isPublicModAction = (v: string): v is PublicModAction =>
@@ -116,11 +121,25 @@ export const MOD_TARGET_TYPES = [
   'challenge',
   'recurring',
   'page',
+  'event',
 ] as const;
 export type ModTargetType = (typeof MOD_TARGET_TYPES)[number];
 
 /** Small structured facts about an action (field names, a role). Never free text from a member. */
 export type ModLogDetail = Record<string, string | number | boolean | string[] | null>;
+
+/**
+ * s10-13: how a moderator's action reached the site. An action taken through the developer API carries
+ * `via: 'api'` in its detail so the moderators' log can tell it from one taken on the site (which carries
+ * nothing). It is a field of `detail`, which the public log never returns (`toPublicEntry` is field by field).
+ */
+export type ModVia = 'api';
+
+/** `detail` with the `via` marker added when the action came in by a channel other than the site. */
+export function withVia(detail: ModLogDetail | null | undefined, via: ModVia | undefined): ModLogDetail | null {
+  if (!via) return detail ?? null;
+  return { ...(detail ?? {}), via };
+}
 
 /** The fields `logModAction` takes. */
 export interface ModActionInput {

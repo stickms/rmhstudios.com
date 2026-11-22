@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { takeVoteSchema } from '@/lib/feed/take';
@@ -28,7 +29,7 @@ export const route = apiRoute('/api/rmharks/$id/take', {
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'take-vote' }, body: takeVoteSchema },
     async ({ userId, params, body }) => {
       const result = await castTakeVote(params.id, userId, body.vote);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       return Response.json(result.state);
     },
   ),

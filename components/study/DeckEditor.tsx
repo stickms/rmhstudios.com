@@ -13,7 +13,10 @@ import { CardForm, type CardFormValue } from '@/components/study/CardForm';
 import { CardRow, type EditorCard } from '@/components/study/CardRow';
 import { ExportMenu } from '@/components/study/ExportMenu';
 import { ImportPanel } from '@/components/study/ImportPanel';
-import { api } from '@/lib/contract/client';
+import { DeckSuggestions } from '@/components/study/DeckSuggestions';
+import { useQuery } from '@tanstack/react-query';
+import { api, apiQuery } from '@/lib/contract/client';
+import { listSuggestionsApi } from '@/lib/study/suggestions.contract';
 import { toast } from '@/lib/toast';
 import { cardLabel } from '@/lib/study/card-types';
 import type { ParsedCard } from '@/lib/study/import';
@@ -29,7 +32,7 @@ import {
 } from '@/lib/study/decks.contract';
 import type { DeckDetail } from '@/lib/study.server';
 
-type TabId = 'cards' | 'import' | 'settings';
+type TabId = 'cards' | 'suggestions' | 'import' | 'settings';
 
 /** How long a deleted card can be brought back. */
 const UNDO_MS = 8000;
@@ -45,6 +48,12 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
   // Authored cards are listed; the deck holds more rows than that (reverse and cloze cards are
   // generated) and the 2,000-card cap counts every row.
   const [counts, setCounts] = useState({ review: initial.reviewCount, rows: initial.rowCount });
+  // Open suggestions from people who study the deck (s10-04): the tab's count (the panel reads the same query).
+  const suggestionsQuery = useQuery({
+    ...apiQuery(listSuggestionsApi, { params: { id: deckId }, query: { scope: 'author' } }),
+    retry: false,
+  });
+  const openSuggestions = suggestionsQuery.data?.author.length ?? null;
 
   // Order saves are coalesced: one in flight, the latest order waiting behind it.
   const savedOrder = useRef(initial.cards.map((c) => c.id));
@@ -111,6 +120,18 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...next } : c)));
     void refreshCounts();
     return true;
+  }
+
+  /** An accepted suggestion changed a card: read the list and the counts back. */
+  async function reloadCards() {
+    try {
+      const fresh = await api(getDeckApi, { params: { id: deckId } });
+      setCards(fresh.cards);
+      setCounts({ review: fresh.reviewCount, rows: fresh.rowCount });
+      savedOrder.current = fresh.cards.map((c) => c.id);
+    } catch {
+      /* the list catches up on the next change */
+    }
   }
 
   async function addCard(card: CardFormValue): Promise<boolean> {
@@ -202,8 +223,19 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
     }
   }
 
+  // The tab is there for a public deck, and for any deck that still has suggestions to decide.
+  const showSuggestions = meta.isPublic || (openSuggestions ?? 0) > 0;
   const tabs = [
     { id: 'cards', label: t('tab-cards', { defaultValue: 'Cards' }), count: cards.length },
+    ...(showSuggestions
+      ? [
+          {
+            id: 'suggestions',
+            label: t('tab-suggestions', { ns: 'deck-suggestions', defaultValue: 'Suggestions' }),
+            count: openSuggestions ?? 0,
+          },
+        ]
+      : []),
     { id: 'import', label: t('tab-import', { defaultValue: 'Import' }) },
     { id: 'settings', label: t('tab-settings', { defaultValue: 'Settings' }) },
   ];
@@ -282,6 +314,14 @@ export function DeckEditor({ deckId, initial }: { deckId: string; initial: DeckD
           </div>
         </section>
 
+        <section {...panel('suggestions')}>
+          <DeckSuggestions
+            deckId={deckId}
+            acceptsSuggestions={meta.acceptsSuggestions}
+            onAccepted={() => void reloadCards()}
+          />
+        </section>
+
         <section {...panel('import')}>
           <ImportPanel existingFronts={cards.map((c) => c.front)} cardCount={counts.rows} onImport={importCards} />
         </section>
@@ -301,7 +341,13 @@ function SettingsForm({
 }: {
   deckId: string;
   meta: DeckDetail['deck'];
-  onSaved: (next: { title: string; description: string | null; isPublic: boolean; notifyUpdates: boolean }) => void;
+  onSaved: (next: {
+    title: string;
+    description: string | null;
+    isPublic: boolean;
+    notifyUpdates: boolean;
+    acceptsSuggestions: boolean;
+  }) => void;
 }) {
   const { t } = useTranslation('study-editor');
   const uid = useId();
@@ -309,12 +355,14 @@ function SettingsForm({
   const [title, setTitle] = useState(meta.title);
   const [description, setDescription] = useState(meta.description ?? '');
   const [isPublic, setIsPublic] = useState(meta.isPublic);
+  const [acceptsSuggestions, setAcceptsSuggestions] = useState(meta.acceptsSuggestions);
   const [busy, setBusy] = useState(false);
 
   const dirty =
     title.trim() !== meta.title ||
     description.trim() !== (meta.description ?? '') ||
     isPublic !== meta.isPublic ||
+    acceptsSuggestions !== meta.acceptsSuggestions ||
     (meta.isCopy && notifyUpdates !== meta.notifyUpdates);
 
   async function save() {
@@ -327,10 +375,17 @@ function SettingsForm({
           title: title.trim(),
           description: description.trim(),
           isPublic,
+          acceptsSuggestions,
           ...(meta.isCopy ? { notifyUpdates } : {}),
         },
       });
-      onSaved({ title: title.trim(), description: description.trim() || null, isPublic, notifyUpdates });
+      onSaved({
+        title: title.trim(),
+        description: description.trim() || null,
+        isPublic,
+        notifyUpdates,
+        acceptsSuggestions,
+      });
       toast.success(t('settings-saved', { defaultValue: 'Deck saved' }));
     } catch {
       toast.error(t('settings-failed', { defaultValue: 'Could not save the deck' }));
@@ -380,6 +435,30 @@ function SettingsForm({
           aria-describedby={`${uid}-public-hint`}
         />
       </div>
+      {isPublic && (
+        <div className="flex items-center justify-between gap-3 border-b border-site-border pb-3">
+          <div className="min-w-0">
+            <p id={`${uid}-suggest`} className="t-body font-medium">
+              {t('accepts-suggestions', {
+                ns: 'deck-suggestions',
+                defaultValue: 'Let people who study this deck suggest fixes',
+              })}
+            </p>
+            <p id={`${uid}-suggest-hint`} className="t-meta">
+              {t('accepts-suggestions-hint', {
+                ns: 'deck-suggestions',
+                defaultValue: 'You decide each one. Nothing changes a card until you accept it.',
+              })}
+            </p>
+          </div>
+          <Switch
+            checked={acceptsSuggestions}
+            onCheckedChange={setAcceptsSuggestions}
+            aria-labelledby={`${uid}-suggest`}
+            aria-describedby={`${uid}-suggest-hint`}
+          />
+        </div>
+      )}
       {meta.isCopy && <NotifyUpdatesRow checked={notifyUpdates} onChange={setNotifyUpdates} />}
       <div>
         <Button variant="primary" disabled={!dirty || !title.trim()} loading={busy} onClick={save}>

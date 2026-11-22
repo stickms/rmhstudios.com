@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { requireChat } from '@/lib/chat-plus/route-helpers.server';
@@ -36,7 +37,7 @@ export const route = apiRoute('/api/chats/$kind/$id/settings', {
       if (access instanceof Response) return access;
       if (access.kind !== 'dm' || access.isSelf) {
         return Response.json(
-          { error: 'Receipts and typing indicators only apply to one-to-one chats' },
+          { ...refusalBody('GROUP_ONE_TO_ONE_ONLY') },
           { status: 400 },
         );
       }

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
@@ -6,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from '@/lib/toast';
-import { serverError } from '@/lib/http';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { adminEmailAiDesign, adminEmailDesignModels, adminEmailRender } from '@/lib/admin/email.contract';
 import type { EmailDesign } from '@/lib/email/campaign-schema';
@@ -39,6 +39,7 @@ export function EmailDesigner({
   onDesign: (design: EmailDesign | null) => void;
 }) {
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const [models, setModels] = useState<Record<DesignModel, boolean> | null>(null);
   const [model, setModel] = useState<DesignModel>('deepseek');
   const [direction, setDirection] = useState('');
@@ -87,7 +88,7 @@ export function EmailDesigner({
       setMadeFrom(sourceKey(draft));
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('email-design-failed', {
             defaultValue: 'The design could not be made',
           }),

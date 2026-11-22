@@ -10,6 +10,8 @@ export const reviewQueueQuery = z.object({
     .optional(),
   /** `?folder=` — review only this folder's decks (404 when it is not the member's). */
   folder: folderParam.optional(),
+  /** `?tz=` — the member's IANA zone, for the day a paced deck's new cards are counted in (UTC when unknown). */
+  tz: z.string().min(1).max(64).optional(),
 });
 
 export const suspendCardBody = z.object({

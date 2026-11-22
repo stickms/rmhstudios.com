@@ -24,6 +24,7 @@ const ROUTED: Record<LessonMode, true> = {
   'play-scale': true,
   'key-signature': true,
   'staff-intervals': true,
+  'grand-staff-find': true,
 };
 
 /** The modes `LessonScreen` has an activity for. */

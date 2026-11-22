@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { deleteSeriesApi, getSeriesApi, updateSeriesApi } from '@/lib/posts-plus/series.contract';
@@ -24,13 +25,13 @@ export const route = apiRoute('/api/series/$id', {
     { rateLimit: 'write', body: seriesUpdateSchema },
     async ({ userId, params, body }) => {
       const res = await updateSeries(userId, params.id, body);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({ ok: true });
     },
   ),
   DELETE: implement(deleteSeriesApi, { rateLimit: 'write' }, async ({ userId, params }) => {
     const res = await deleteSeries(userId, params.id);
-    if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+    if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
     return Response.json({ ok: true });
   }),
 });

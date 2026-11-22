@@ -167,7 +167,7 @@ Permanently delete the deck, its cards and their review history.
 
 ### `GET /api/v1/me/decks/{id}/cards`
 
-The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion or occlusion mask) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`. `occlusion` is `{ mode, masks }` on a `kind: "occlusion"` card and `null` on every other kind.
+The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion or occlusion mask) are not listed. `frontImage` and `backImage` are `{ url, alt }` or `null`. `frontSound` and `backSound` are `{ url, transcript, durationMs }` or `null`: a sound you recorded on the site, read-only here, and private to you. `occlusion` is `{ mode, masks }` on a `kind: "occlusion"` card and `null` on every other kind.
 
 **Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDeckCards`
 
@@ -192,6 +192,8 @@ The cards you wrote, in deck order. Cards generated from them (the reverse side 
       "externalId": null,
       "frontImage": null,
       "backImage": null,
+      "frontSound": null,
+      "backSound": null,
       "occlusion": null
     }
   ],
@@ -246,6 +248,8 @@ Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate
       "externalId": null,
       "frontImage": null,
       "backImage": null,
+      "frontSound": null,
+      "backSound": null,
       "occlusion": null
     }
   ],
@@ -293,6 +297,8 @@ Change a card’s kind, front, back, pictures or occlusion masks. Its review his
   "externalId": null,
   "frontImage": null,
   "backImage": null,
+  "frontSound": null,
+  "backSound": null,
   "occlusion": null
 }
 ```
@@ -349,6 +355,8 @@ Create the card keyed by your own id in this deck, or update it. The same body s
   "externalId": "verbs-001",
   "frontImage": null,
   "backImage": null,
+  "frontSound": null,
+  "backSound": null,
   "occlusion": null
 }
 ```

@@ -584,9 +584,18 @@ const EXEMPT: Record<string, string> = {
   'lib/api/routes/user-builds.$id.comments.server.ts': 'builds',
   'lib/games/workshop.server.ts': 'workshop items',
   'lib/communities/starboard.server.ts': 'orders by likeCount; its items come from mapRmharkToFeedItem',
+
+  // Sprint 10 (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-08 profile-preview
+
+  // s10-09 build-issues
+
+  // s10-13 api-moderation
+
+  // s10-17 admin-communities
 };
 
-const V1_SERIALISER = /serializePublicPost\(.*, userId\)/;
+const V1_SERIALISER = /serializePublicPost\(.*, (?:input\.)?(?:userId|viewerId)\)/;
 
 const NOT_POSTS = /user-build|tf2|slice-it|build/i;
 
@@ -597,7 +606,11 @@ describe('path ratchet', () => {
 
   it('every listed file redacts through the helpers (the v1 routes, by passing the caller to the serialiser)', () => {
     for (const rel of QUIET_COUNT_READ_PATHS) {
-      expect(src(rel), rel).toMatch(rel.startsWith('app/routes/api/v1/') ? V1_SERIALISER : REDACTS);
+      // A v1 file passes the caller to the shared serialiser, which redacts (`countsHiddenFrom` runs inside it); a
+      // `lib/api/v1/` module may instead call a helper itself. A comment mentioning a helper proves nothing.
+      const code = src(rel).replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, '');
+      const v1 = rel.startsWith('app/routes/api/v1/') || rel.startsWith('lib/api/v1/');
+      expect(code, rel).toMatch(v1 ? new RegExp(`${V1_SERIALISER.source}|${REDACTS.source}`) : REDACTS);
     }
   });
 

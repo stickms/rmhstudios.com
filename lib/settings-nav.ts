@@ -229,6 +229,19 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     keywords: 'device storage browser cache indexeddb local clear sign out shared computer samples drafts offline',
   },
 
+  // Sprint 10
+  // s10-08 profile-preview
+  {
+    id: 'preview',
+    to: '/settings/preview',
+    group: 'account',
+    icon: ShieldUser,
+    label: 'Preview your profile',
+    hint: 'Your profile as someone signed out, or not following you, sees it',
+    keywords: 'preview profile view as visitor stranger signed out privacy followers audience who can see check',
+    requiresAuth: true,
+  },
+
   {
     id: 'privacy',
     to: '/settings/privacy',

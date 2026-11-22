@@ -1,11 +1,17 @@
 /** The pasted-text custom test on the progress page's Keys section. Not ranked; per-key stats still count. */
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { usePrompt } from '@/components/ui/prompt-dialog';
+import { toast } from '@/lib/toast';
+import { HttpError } from '@/lib/http';
+import { RMHTYPE_TEXTS_KEY, createRmhTypeText } from '@/lib/rmhtype/rmhtype.queries';
+import { MAX_TEXTS_PER_MEMBER, normaliseTextBody, normaliseTextTitle } from '@/lib/rmhtype/texts';
 import { buildCustomTest, type GeneratedTest } from '@/lib/rmhtype/custom-test';
 
 export function CustomTestPanel({
@@ -23,6 +29,44 @@ export function CustomTestPanel({
 }) {
   const { t } = useTranslation('c-rmhtype');
   const [pasted, setPasted] = useState('');
+  const prompt = usePrompt();
+  const queryClient = useQueryClient();
+  const saveText = useMutation({
+    mutationFn: createRmhTypeText,
+    onSuccess: () => {
+      toast.success(t('saved-from-test', { ns: 'type-texts', defaultValue: 'Saved to your texts' }));
+      return queryClient.invalidateQueries({ queryKey: RMHTYPE_TEXTS_KEY });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof HttpError && error.status === 409
+          ? t('cap-reached', {
+              ns: 'type-texts',
+              defaultValue: 'You can keep up to {{max}} texts. Delete one to add another.',
+              max: MAX_TEXTS_PER_MEMBER,
+            })
+          : t('save-failed', { ns: 'type-texts', defaultValue: 'Could not save the text. Try again.' }),
+      ),
+  });
+  const bodyOk = normaliseTextBody(pasted).ok;
+
+  async function saveAsText() {
+    const body = normaliseTextBody(pasted);
+    if (!body.ok) return;
+    const title = await prompt({
+      title: t('save-title', { ns: 'type-texts', defaultValue: 'Save this text' }),
+      label: t('field-title', { ns: 'type-texts', defaultValue: 'Title' }),
+      confirmLabel: t('save', { ns: 'type-texts', defaultValue: 'Save text' }),
+      cancelLabel: t('cancel', { ns: 'type-texts', defaultValue: 'Cancel' }),
+      validate: (value) =>
+        normaliseTextTitle(value).ok
+          ? null
+          : t('title-empty', { ns: 'type-texts', defaultValue: 'Give the text a title.' }),
+    });
+    if (title === null) return;
+    const clean = normaliseTextTitle(title);
+    if (clean.ok) saveText.mutate({ title: clean.value, body: body.value });
+  }
 
   function startCustom() {
     const text = pasted.trim();
@@ -66,6 +110,18 @@ export function CustomTestPanel({
         />
         <Button onClick={startCustom} disabled={pasted.trim().length === 0}>
           {t('custom-start', { defaultValue: 'Type this' })}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => void saveAsText()}
+          disabled={!bodyOk || saveText.isPending}
+          title={
+            bodyOk
+              ? undefined
+              : t('save-needs-text', { ns: 'type-texts', defaultValue: 'Paste 20 to 3,000 characters to save a text.' })
+          }
+        >
+          {t('save-this-text', { ns: 'type-texts', defaultValue: 'Save this text' })}
         </Button>
       </div>
     </div>

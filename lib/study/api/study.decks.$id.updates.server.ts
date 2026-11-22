@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { applyDeckUpdatesApi, deckUpdatesApi } from '@/lib/study/deck-sync.contract';
@@ -20,6 +21,7 @@ export const route = apiRoute('/api/study/decks/$id/updates', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,
@@ -44,6 +46,7 @@ export const route = apiRoute('/api/study/decks/$id/updates', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

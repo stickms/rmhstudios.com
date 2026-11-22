@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,6 @@ import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { api, apiQuery, errorField } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -86,6 +86,7 @@ export function AliasMissesPanel() {
 
 function MissRow({ miss, schools }: { miss: AliasMissDto; schools: SchoolOptionDto[] }) {
   const { t, i18n } = useTranslation('medschools');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const [schoolId, setSchoolId] = useState('');
 
@@ -113,7 +114,7 @@ function MissRow({ miss, schools }: { miss: AliasMissDto; schools: SchoolOptionD
         });
       default:
         return (
-          serverError(e) ??
+          refusalText.maybe(e) ??
           t('action-failed', {
             defaultValue: 'Could not save the change',
           })

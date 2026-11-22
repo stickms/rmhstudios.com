@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -9,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { listAchievementTipsApi, postAchievementTipApi, voteAchievementTipApi } from '@/lib/arcade/arcade.contract';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 
@@ -35,6 +35,7 @@ export function AchievementTipsDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation('f-arcade');
+  const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
   const [tips, setTips] = useState<Tip[] | null>(null);
@@ -77,7 +78,7 @@ export function AchievementTipsDialog({
     } catch (err) {
       setBusy(false);
       toast.error(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           t('tip-failed', {
             defaultValue: 'Could not post that tip.',
           }),

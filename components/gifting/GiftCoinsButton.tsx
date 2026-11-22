@@ -4,12 +4,13 @@
  * /api/coins/gift. Reusable on profiles and the DM composer.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gift } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { coinGiftApi } from '@/lib/gifting/gift.contract';
 import {
   Dialog,
@@ -49,6 +50,7 @@ export function GiftCoinsButton({
   onSent,
 }: GiftCoinsButtonProps) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(50);
   const [note, setNote] = useState('');
@@ -74,7 +76,7 @@ export function GiftCoinsButton({
           toast.error(t('gift-coins-sign-in', { defaultValue: 'Please sign in to gift coins.' }));
         } else {
           toast.error(
-            serverError(e) || t('gift-coins-error', { defaultValue: 'Could not send gift' }),
+            refusalText.maybe(e) || t('gift-coins-error', { defaultValue: 'Could not send gift' }),
           );
         }
         return null;

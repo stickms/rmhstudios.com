@@ -1,5 +1,5 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { aiGeneratePostApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
@@ -35,6 +35,7 @@ interface AIGenerateButtonProps {
  */
 export function useAiGenerate(request: AIGenerateRequest, onGenerated: (text: string) => void) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [loading, setLoading] = useState(false);
  const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +50,7 @@ export function useAiGenerate(request: AIGenerateRequest, onGenerated: (text: st
  }
  return null;
  } catch (e) {
- const message = serverError(e) || t('ai-generate-failed', { defaultValue:'Failed to generate'});
+ const message = refusalText.maybe(e) || t('ai-generate-failed', { defaultValue:'Failed to generate'});
  setError(message);
  return message;
  } finally {

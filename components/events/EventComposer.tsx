@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import type { EventDTO, EventVenueKindValue } from '@/lib/events.server';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createEventApi, updateEventApi } from '@/lib/events.contract';
 import {
   NO_RECURRENCE,
@@ -29,6 +29,8 @@ interface EventComposerProps {
   onOpenChange: (open: boolean) => void;
   /** When set, the event is scoped to this community (host must be a mod/owner). */
   communityId?: string | null;
+  /** The community's name, shown as the host line when `communityId` is set. */
+  communityName?: string | null;
   onCreated?: (event: EventDTO) => void;
   /**
    * Edit mode (the host, or an accepted co-host): the composer opens on this event, saves it with a PATCH and
@@ -91,9 +93,18 @@ const VENUE_KINDS: {
   },
 ];
 
-export function EventComposer({ open, onOpenChange, communityId, onCreated, event, onUpdated }: EventComposerProps) {
+export function EventComposer({
+  open,
+  onOpenChange,
+  communityId,
+  communityName,
+  onCreated,
+  event,
+  onUpdated,
+}: EventComposerProps) {
   const { t } = useTranslation('site');
   const { t: te } = useTranslation('event-cohosts');
+  const refusalText = useRefusalText();
   const editing = !!event;
   const seriesTime = !!event?.recurrence;
   const [title, setTitle] = useState(event?.title ?? '');
@@ -169,7 +180,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated, even
       onOpenChange(false);
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           (editing
             ? te('event-save-error', { defaultValue: 'Could not save the event.' })
             : t('event-create-error', {
@@ -202,6 +213,11 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated, even
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
+          {!editing && communityId && communityName && (
+            <p className="t-meta">
+              {t('host-line', { ns: 'community-events', defaultValue: 'Hosting for' })} <bdi>{communityName}</bdi>
+            </p>
+          )}
           <Input
             aria-label={t('event-title-placeholder', {
               defaultValue: 'Title',

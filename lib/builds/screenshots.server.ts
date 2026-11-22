@@ -7,6 +7,7 @@
  * Saving a screenshot (or an uploaded cover) flips that row to `ATTACHED` with no post and no `attachedAt`, the shape
  * the sweep deliberately skips. Removing one deletes the object and the row.
  */
+import { refusalBody, type ErrorCode } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { ingest, IngestError } from '@/lib/media/ingest.server';
@@ -110,20 +111,20 @@ export async function uploadBuildImage(
     return {
       ok: false,
       status: 404,
-      error: 'Build not found',
+      ...refusalBody('BUILD_NOT_FOUND'),
     };
   }
   if (build.userId !== userId)
     return {
       ok: false,
       status: 403,
-      error: 'Only the build’s owner can add pictures',
+      ...refusalBody('BUILD_PICTURES_OWNER_ONLY'),
     };
   if (!file || file.size === 0)
     return {
       ok: false,
       status: 400,
-      error: 'No file provided',
+      ...refusalBody('FILE_MISSING'),
     };
   try {
     const stored = await ingest(file, 'build', {
@@ -157,7 +158,8 @@ export type SaveResult =
       ok: false;
       status: 400 | 403 | 404 | 409;
       error: string;
-      code?: ScreenshotProblem['code'];
+      /** A list problem (the form marks the item), or a taxonomy code from `refusalBody` (s10-20). */
+      code?: ScreenshotProblem['code'] | ErrorCode;
       index?: number;
     };
 
@@ -191,14 +193,14 @@ export async function saveScreenshots(
     return {
       ok: false,
       status: 404,
-      error: 'Build not found',
+      ...refusalBody('BUILD_NOT_FOUND'),
     };
   }
   if (build.userId !== userId)
     return {
       ok: false,
       status: 403,
-      error: 'Only the build’s owner can change screenshots',
+      ...refusalBody('BUILD_SCREENSHOTS_OWNER_ONLY'),
     };
 
   const problem = screenshotProblem(items);

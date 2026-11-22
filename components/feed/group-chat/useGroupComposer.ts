@@ -1,10 +1,11 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { api } from '@/lib/contract/client';
-import { errorField, serverError } from '@/lib/http';
+import { errorField } from '@/lib/http';
 import { useMessageImageAlts } from '@/components/feed/useMessageImageAlts';
 import { sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
@@ -27,6 +28,7 @@ export function useGroupComposer({
   appendMessages: (incoming: Msg[]) => void;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
@@ -149,7 +151,7 @@ export function useGroupComposer({
       // Restore the draft (poll included) on failure.
       restore();
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('failed-to-send-message', {
             defaultValue: 'Failed to send message',
           }),

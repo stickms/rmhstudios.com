@@ -2,7 +2,15 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { deleteWebhookApi, getWebhookApi, updateWebhookApi } from '@/lib/developer/webhooks.contract';
 import { deliveriesQuery, patchWebhookBody } from '@/lib/developer/webhooks-schema';
-import { deleteWebhook, getWebhook, updateWebhook } from '@/lib/developer/webhooks.server';
+import { deleteWebhook, getWebhook, updateWebhook, type Failure } from '@/lib/developer/webhooks.server';
+
+/** A refusal as `{ error }`, plus `code` and `reason` when an admin switched the endpoint off. */
+function failureResponse(f: Failure): Response {
+  return Response.json(
+    { error: f.error, ...(f.code ? { code: f.code, reason: f.reason ?? '' } : {}) },
+    { status: f.status },
+  );
+}
 
 const writeLimit = {
   policy: 'write',
@@ -29,7 +37,7 @@ export const route = apiRoute('/api/developer/webhooks/$id', {
     { rateLimit: writeLimit, body: patchWebhookBody },
     async ({ userId, params, body }) => {
       const updated = await updateWebhook(userId, params.id, body);
-      if (!updated.ok) return Response.json({ error: updated.error }, { status: updated.status });
+      if (!updated.ok) return failureResponse(updated);
       return { endpoint: updated.endpoint };
     },
   ),

@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getLesson, needsVoiceRange } from '@/lib/rmhmusic/learn/content/path';
+import { BASS_CLEF_UNIT_ID, getLesson, needsVoiceRange } from '@/lib/rmhmusic/learn/content/path';
 import { DECKS } from '@/lib/rmhmusic/learn/content/decks';
 import { isSpelledCard } from '@/lib/rmhmusic/learn/content/spelling';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
@@ -36,7 +36,8 @@ import { PracticeModeToggle } from './PracticeModeToggle';
 import { KeySignatureLesson } from './KeySignatureLesson';
 import { PlayScaleLesson, ScaleNameBox } from './PlayScaleLesson';
 import { RhythmLesson } from './RhythmLesson';
-import { STAFF_BOX, STAFF_LOW_ASPECT } from './StaffCard';
+import { PianoUnitNote } from './PianoUnitNote';
+import { STAFF_BOX, STAFF_GRAND_ASPECT, STAFF_LOW_ASPECT } from './StaffCard';
 import { useLearnerShape } from './useLearnerShape';
 import { useInputRelease } from './useLearnInput';
 import { useArrival } from '@/components/ui/arrive';
@@ -136,8 +137,11 @@ function LessonSkeleton() {
  */
 export function FlashcardSkeleton({
   low = false,
+  grand = false,
   signs = false,
 }: {
+  /** A grand staff deck: the grand card's box (`STAFF_GRAND_ASPECT`). */
+  grand?: boolean;
   /** An alto's deck: the low card's box (`STAFF_LOW_ASPECT`). */
   low?: boolean;
   /** A deck of sharps, flats or keys: the answers box also holds the ♭ ♮ ♯ row. */
@@ -150,7 +154,12 @@ export function FlashcardSkeleton({
           <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
         <div className={STAFF_BOX}>
-          <div className={cn('app-skeleton w-full', low ? STAFF_LOW_ASPECT : 'aspect-[200/102]')} />
+          <div
+            className={cn(
+              'app-skeleton w-full',
+              grand ? STAFF_GRAND_ASPECT : low ? STAFF_LOW_ASPECT : 'aspect-[200/102]',
+            )}
+          />
           <div className="h-9" />
         </div>
         <div className="flex h-11 items-center">
@@ -177,7 +186,7 @@ export function FlashcardSkeleton({
  * card with its name drawn inside it, the sentence line), then the board and the input line
  * (`.rmm-find__answers`, one height on piano and guitar, so the placeholder needs no instrument).
  */
-function FindNoteSkeleton() {
+function FindNoteSkeleton({ grand = false }: { grand?: boolean }) {
   return (
     // The mode toggle is the real one (it needs nothing from the store), outside the hidden placeholder.
     <div className="rmm-find space-y-4">
@@ -187,7 +196,7 @@ function FindNoteSkeleton() {
           <div className="h-8">
             <div className="app-skeleton mx-auto h-8 w-40" />
           </div>
-          <FindNoteStaffBox skeleton />
+          <FindNoteStaffBox skeleton grand={grand} />
           <div className="flex h-11 items-center">
             <div className="app-skeleton h-5 w-56 max-w-full" />
           </div>
@@ -416,6 +425,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     shape.voiceRange !== null &&
     staffCardRange(shape.voiceRange) === 'low' &&
     needsVoiceRange(lesson);
+  // A lesson on the grand staff draws a taller card, so its placeholder does too.
+  const grandDeck = lesson?.mode === 'staff-flashcards' && !!lesson.deck && DECKS[lesson.deck]?.grand === true;
   const playable = isPlayable(lesson);
   // The sound this lesson's notes are voiced with: the learner's (`resolveSound`), except that a
   // lesson of chords keeps to a sound that plays them (`chordSoundFor`: violin and flute fall back
@@ -514,7 +525,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     body =
       lesson.mode === 'staff-flashcards' ? (
         <FlashcardLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
-      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
+      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' || lesson.mode === 'grand-staff-find' ? (
         <FindNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
       ) : lesson.mode === 'match-note' || lesson.mode === 'sing-interval' ? (
         <MatchNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
@@ -582,10 +593,11 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
       lesson.mode === 'staff-flashcards' ? (
         <FlashcardSkeleton
           low={lowCard}
+          grand={grandDeck}
           signs={Boolean(lesson.deck && DECKS[lesson.deck]?.cards?.some(isSpelledCard))}
         />
-      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
-        <FindNoteSkeleton />
+      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' || lesson.mode === 'grand-staff-find' ? (
+        <FindNoteSkeleton grand={lesson.mode === 'grand-staff-find'} />
       ) : lesson.mode === 'match-note' || lesson.mode === 'sing-interval' ? (
         <MatchNoteSkeleton low={lowCard} />
       ) : lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord' ? (
@@ -634,7 +646,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
       }
     >
       {/* The lesson title is an English catalogue string for now, localised in a later phase. */}
-      <div className={arrival}>{body}</div>
+      <div className={arrival}>
+        {shape.instrument === 'guitar' && lesson?.unit === BASS_CLEF_UNIT_ID ? <PianoUnitNote /> : null}
+        {body}
+      </div>
       <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
     </Shell>
   );

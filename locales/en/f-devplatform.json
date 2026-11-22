@@ -61,6 +61,7 @@
   "keys-rotate-body": "The current secret stops working immediately and a new one is issued.",
   "keys-rotate-confirm": "Rotate",
   "keys-rotate-title": "Rotate this key?",
+  "keys-scope-explicit": "Not included in “All”: choose it on its own",
   "keys-scopes": "Scopes",
   "keys-select-all": "Select all",
   "keys-show-usage": "Show usage",

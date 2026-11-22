@@ -1,10 +1,11 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Pin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MenuItem } from '@/components/ui/menu';
 import { api } from '@/lib/contract/client';
 import type { FeedItem } from '@/lib/feed-types';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { PROFILE_PINS_CHANGED, moveOptions, type PinDirection } from '@/lib/feed/profile-pins';
 import { getPinStateApi, movePinApi, pinPostApi, type PinState } from '@/lib/feed/profile-pins.contract';
 import { toast } from '@/lib/toast';
@@ -30,6 +31,7 @@ interface PinMenuItemsProps {
  */
 export function PinMenuItems({ item, enabled, onDone, onUpdate }: PinMenuItemsProps) {
   const { t } = useTranslation('profile-pins');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const postId = item.actualId ?? item.id;
   const { data: loaded } = useQuery({
@@ -101,7 +103,7 @@ export function PinMenuItems({ item, enabled, onDone, onUpdate }: PinMenuItemsPr
         return;
       }
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('pin-error', {
             defaultValue: 'Could not change the pin',
           }),
@@ -132,7 +134,7 @@ export function PinMenuItems({ item, enabled, onDone, onUpdate }: PinMenuItemsPr
       );
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('move-error', {
             defaultValue: 'Could not move the pin',
           }),

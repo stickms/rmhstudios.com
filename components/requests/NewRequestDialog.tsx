@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -8,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { REQUEST_BODY_MAX, REQUEST_BODY_MIN, REQUEST_TITLE_MAX, REQUEST_TITLE_MIN } from '@/lib/requests/status';
 import type { FeatureRequestDTO } from '@/lib/requests/schema';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createRequestApi } from '@/lib/requests/requests.contract';
 
 export function NewRequestDialog({
@@ -21,6 +21,7 @@ export function NewRequestDialog({
   onCreated: (request: FeatureRequestDTO) => void;
 }) {
   const { t } = useTranslation('c-roadmap');
+  const refusalText = useRefusalText();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
@@ -48,7 +49,7 @@ export function NewRequestDialog({
       );
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('request-create-failed', {
             defaultValue: 'Could not file that request',
           }),

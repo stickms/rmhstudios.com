@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -32,9 +33,9 @@ export const route = apiRoute('/api/group-chats/$id/messages/$messageId/vote', {
       select: { id: true, pollOptions: true, pollQuestion: true },
     });
     if (!message || !message.pollQuestion)
-      return Response.json({ error: 'No such poll' }, { status: 404 });
+      return Response.json({ ...refusalBody('CHAT_POLL_NOT_FOUND') }, { status: 404 });
     if (parsed.data.optionIdx >= message.pollOptions.length) {
-      return Response.json({ error: 'Invalid option' }, { status: 400 });
+      return Response.json({ ...refusalBody('CHAT_POLL_OPTION_INVALID') }, { status: 400 });
     }
 
     await prisma.chatPollVote.upsert({

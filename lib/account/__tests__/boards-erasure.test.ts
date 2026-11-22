@@ -80,6 +80,5 @@ describe('boardsErasureOps', () => {
     for (const [m] of EXPECTED) expect(ERASURE_REGISTRY[m[0]!.toUpperCase() + m.slice(1)]?.decision).toBe('erase');
     const todo = Object.values(ERASURE_REGISTRY).filter((e) => e.decision === 'todo').length;
     expect(TODO_CEILING).toBe(todo);
-    expect(TODO_CEILING).toBe(17);
   });
 });

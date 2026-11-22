@@ -35,6 +35,13 @@ export interface FakeCard {
   frontImageAlt?: string | null;
   backImageUrl?: string | null;
   backImageAlt?: string | null;
+  /** Sounds on the card's sides (s10-02). */
+  frontSoundUrl?: string | null;
+  frontSoundText?: string | null;
+  frontSoundMs?: number | null;
+  backSoundUrl?: string | null;
+  backSoundText?: string | null;
+  backSoundMs?: number | null;
   /** The masks of an occlusion card (s09-03). */
   occlusion?: unknown;
 }
@@ -50,6 +57,8 @@ export interface FakeMedia {
   status: 'PENDING' | 'ATTACHED';
   postId?: string | null;
   attachedAt?: Date | null;
+  /** Absent means just now (the sound claim refuses an upload older than a day, s10-02). */
+  createdAt?: Date;
 }
 export interface FakeReview {
   id: string;
@@ -98,6 +107,11 @@ function matches(db: FakeDb, row: Row, where: Row | undefined): boolean {
       const have = key === 'kind' ? (row.kind ?? 'basic') : (row[key] ?? null);
       if (want !== null && typeof want === 'object' && 'not' in (want as Row)) {
         if (have === (want as { not: unknown }).not) return false;
+      } else if (want !== null && typeof want === 'object' && 'gte' in (want as Row)) {
+        const floor = (want as { gte: Date }).gte;
+        if (((have as Date | null) ?? new Date()).getTime() < floor.getTime()) return false;
+      } else if (want !== null && typeof want === 'object' && 'startsWith' in (want as Row)) {
+        if (typeof have !== 'string' || !have.startsWith((want as { startsWith: string }).startsWith)) return false;
       } else if (want !== null && typeof want === 'object' && 'lte' in (want as Row)) {
         if (typeof have !== 'number' || have > (want as { lte: number }).lte) return false;
       } else if (want !== null && typeof want === 'object' && 'in' in (want as Row)) {
@@ -118,6 +132,12 @@ const withDefaults = (c: FakeCard): Required<FakeCard> => ({
   frontImageAlt: null,
   backImageUrl: null,
   backImageAlt: null,
+  frontSoundUrl: null,
+  frontSoundText: null,
+  frontSoundMs: null,
+  backSoundUrl: null,
+  backSoundText: null,
+  backSoundMs: null,
   occlusion: null,
   ...c,
 });
@@ -277,6 +297,15 @@ export function makeStudyPrisma(db: FakeDb) {
       },
     },
     media: {
+      create: async ({ data }: { data: FakeMedia }) => {
+        (db.media ??= []).push({ ...data });
+        db.writes++;
+        return { ...data };
+      },
+      findFirst: async ({ where }: { where?: Row }) => {
+        const found = (db.media ??= []).find((m) => matches(db, m as unknown as Row, where));
+        return found ? { ...found } : null;
+      },
       updateMany: async ({ where, data }: { where: Row; data: Partial<FakeMedia> }) => {
         const found = (db.media ??= []).filter((m) => matches(db, m as unknown as Row, where));
         for (const m of found) Object.assign(m, data);

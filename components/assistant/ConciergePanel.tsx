@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { cn } from '@/lib/utils';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { askConciergeApi } from '@/lib/assistant/assistant.contract';
 import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 
@@ -75,6 +76,7 @@ const nextId = () => `m${Date.now()}_${idCounter++}`;
 
 export function ConciergePanel({ className }: { className?: string }) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -155,7 +157,7 @@ export function ConciergePanel({ className }: { className?: string }) {
         });
         if (e instanceof HttpError) {
           // The server's own words, except for the rate limit, which has copy of its own.
-          const msg = serverError(e) || generic;
+          const msg = refusalText.maybe(e) || generic;
           if (e.status === 429) {
             toast.error(
               t('concierge-slow', {
@@ -192,7 +194,7 @@ export function ConciergePanel({ className }: { className?: string }) {
         scrollToEnd();
       }
     },
-    [loading, messages, session, t, scrollToEnd],
+    [loading, messages, session, t, scrollToEnd, refusalText],
   );
 
   const onSubmit = (e: React.FormEvent) => {

@@ -14,6 +14,7 @@
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { Prisma } from '@prisma/client';
 import { prisma, prismaRead } from '@/lib/prisma.server';
+import { DISCOVERABLE_POST_SQL } from '@/lib/communities/discovery';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { fuzzyColumn, norm, type FuzzyTerms } from './db.server';
@@ -82,6 +83,8 @@ export async function searchPostsScored(
   else {
     filters.push(
       Prisma.sql`("communityId" IS NULL OR "communityId" NOT IN (SELECT id FROM community WHERE "isPrivate"))`,
+      // Out of discovery (s10-17): a delisted community's posts are not found by a site-wide search.
+      Prisma.raw(DISCOVERABLE_POST_SQL),
     );
   }
   if (opts.before) filters.push(Prisma.sql`"createdAt" < ${new Date(opts.before)}`);

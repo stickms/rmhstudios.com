@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import {
   cancelScheduledMessageApi,
@@ -46,6 +46,7 @@ export function ScheduledStrip({
   onDelivered: (message: SentMessage) => void;
 }) {
   const { t, i18n } = useTranslation('send-later');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -83,7 +84,7 @@ export function ScheduledStrip({
     },
     onError: (error) => {
       toast.error(
-        serverError(error) ||
+        refusalText.maybe(error) ||
           t('send-now-failed', {
             defaultValue: 'Could not send the message',
           }),
@@ -101,7 +102,7 @@ export function ScheduledStrip({
       }),
     onError: (error) => {
       toast.error(
-        serverError(error) ||
+        refusalText.maybe(error) ||
           t('cancel-failed', {
             defaultValue: 'Could not remove the message',
           }),
@@ -302,6 +303,7 @@ export function ScheduledStrip({
 /** Text and time of one pending message; images and the GIF stay as they were scheduled. */
 function EditDialog({ row, onClose }: { row: ScheduledMessageRow; onClose: () => void }) {
   const { t } = useTranslation('send-later');
+  const refusalText = useRefusalText();
   const [content, setContent] = useState(row.content);
   const [when, setWhen] = useState(toLocalInput(row.sendAt));
   const hasMedia = !!row.gifUrl || row.imageUrls.length > 0;
@@ -327,7 +329,7 @@ function EditDialog({ row, onClose }: { row: ScheduledMessageRow; onClose: () =>
     },
     onError: (error) => {
       toast.error(
-        serverError(error) ||
+        refusalText.maybe(error) ||
           t('save-failed', {
             defaultValue: 'Could not update the message',
           }),

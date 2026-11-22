@@ -5,6 +5,7 @@
  * whole cost. Notifications are created in one batch per event.
  */
 import { previewTextFor } from '@/lib/feed/content-warning';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { notice, noticeFallbackText, type NoticePreview } from '@/lib/notifications/notice-keys';
@@ -122,7 +123,7 @@ export async function notifyWatchers(ev: WatchEvent): Promise<number> {
         select: { blockerId: true, blockedId: true },
       }),
       prisma.userMute.findMany({
-        where: { muterId: { in: ids }, mutedId: ev.actorId },
+        where: { muterId: { in: ids }, mutedId: ev.actorId, ...activeMuteWhere(new Date()) },
         select: { muterId: true },
       }),
     ]);

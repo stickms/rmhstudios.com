@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1263 endpoints across 202 groups: 157 route files under `app/routes/api` and 1106 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1300 endpoints across 202 groups: 169 route files under `app/routes/api` and 1131 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -45,7 +45,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-141 routes.
+147 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -69,7 +69,11 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/canvas` | `GET` `POST` | `lib/canvas/api/admin.canvas.server.ts` |
 | `/api/admin/canvas/:id` | `DELETE` | `lib/canvas/api/admin.canvas.$id.server.ts` |
 | `/api/admin/census` | `GET` `POST` | `lib/admin/api/admin.census.server.ts` |
+| `/api/admin/communities` | `GET` | `lib/admin/api/admin.communities.server.ts` |
+| `/api/admin/communities/:slug` | `GET` | `lib/admin/api/admin.communities.$slug.server.ts` |
+| `/api/admin/communities/:slug/delist` | `POST` | `lib/admin/api/admin.communities.$slug.delist.server.ts` |
 | `/api/admin/communities/:slug/owner` | `PUT` | `lib/admin/api/admin.communities.$slug.owner.server.ts` |
+| `/api/admin/communities/:slug/relist` | `POST` | `lib/admin/api/admin.communities.$slug.relist.server.ts` |
 | `/api/admin/context-notes` | `GET` | `lib/context-notes/api/admin.context-notes.server.ts` |
 | `/api/admin/context-notes/:id` | `PATCH` | `lib/context-notes/api/admin.context-notes.$id.server.ts` |
 | `/api/admin/curated-builds/image` | `POST` | `lib/admin/api/admin.curated-builds.image.server.ts` |
@@ -190,6 +194,8 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `lib/rmhvibe/api/admin.vibe.backfill-thumbs.server.ts` |
 | `/api/admin/view-as` | `GET` | `lib/admin/api/admin.view-as.server.ts` |
 | `/api/admin/wager/:id/resolve` | `POST` | `lib/wager/api/admin.wager.$id.resolve.server.ts` |
+| `/api/admin/webhooks` | `GET` | `lib/admin/api/admin.webhooks.server.ts` |
+| `/api/admin/webhooks/:id` | `GET` `PATCH` | `lib/admin/api/admin.webhooks.$id.server.ts` |
 
 ## `/api/advent`
 
@@ -333,10 +339,16 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/builds`
 
-3 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/builds/:id/issues` | `GET` `POST` | `lib/builds/api/builds.$id.issues.server.ts` |
+| `/api/builds/:id/issues/:issueId` | `PATCH` | `lib/builds/api/builds.$id.issues.$issueId.server.ts` |
+| `/api/builds/:id/issues/:issueId/close` | `POST` | `lib/builds/api/builds.$id.issues.$issueId.close.server.ts` |
+| `/api/builds/:id/issues/:issueId/hide` | `POST` | `lib/builds/api/builds.$id.issues.$issueId.hide.server.ts` |
+| `/api/builds/:id/issues/:issueId/status` | `POST` | `lib/builds/api/builds.$id.issues.$issueId.status.server.ts` |
+| `/api/builds/:id/issues/:issueId/vote` | `PUT` | `lib/builds/api/builds.$id.issues.$issueId.vote.server.ts` |
 | `/api/builds/consent` | `DELETE` `GET` `POST` | `lib/builds/api/builds.consent.server.ts` |
 | `/api/builds/cover/:file` | `GET` | `app/routes/api/builds/cover/$file.ts` |
 | `/api/builds/review` | `POST` | `lib/builds/api/builds.review.server.ts` |
@@ -475,7 +487,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/communities`
 
-51 routes.
+52 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -495,6 +507,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/communities/:slug/challenge/:id` | `DELETE` | `lib/communities/api/communities.$slug.challenge.$id.server.ts` |
 | `/api/communities/:slug/challenge/vote` | `POST` | `lib/communities/api/communities.$slug.challenge.vote.server.ts` |
 | `/api/communities/:slug/contributors` | `GET` | `lib/communities/api/communities.$slug.contributors.server.ts` |
+| `/api/communities/:slug/events` | `GET` | `lib/communities/api/communities.$slug.events.server.ts` |
 | `/api/communities/:slug/extras` | `GET` | `lib/communities/api/communities.$slug.extras.server.ts` |
 | `/api/communities/:slug/feed` | `GET` | `lib/communities/api/communities.$slug.feed.server.ts` |
 | `/api/communities/:slug/flair-follows` | `PUT` | `lib/communities/api/communities.$slug.flair-follows.server.ts` |
@@ -1534,7 +1547,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/profile`
 
-32 routes.
+33 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1567,6 +1580,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/profile/layout` | `GET` `PUT` | `lib/profile/api/profile.layout.server.ts` |
 | `/api/profile/me` | `GET` | `lib/profile/api/profile.me.server.ts` |
 | `/api/profile/plus` | `GET` `PUT` | `lib/profile/api/profile.plus.server.ts` |
+| `/api/profile/preview` | `GET` | `lib/profile/api/profile.preview.server.ts` |
 | `/api/profile/pronunciation` | `DELETE` `POST` | `lib/profile/api/profile.pronunciation.server.ts` |
 | `/api/profile/status` | `DELETE` `PUT` | `lib/profile/api/profile.status.server.ts` |
 | `/api/profile/top-four` | `GET` `PUT` | `lib/profile/api/profile.top-four.server.ts` |
@@ -1942,7 +1956,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/rmhtype`
 
-11 routes.
+14 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1957,6 +1971,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/rmhtype/practice-test` | `POST` | `lib/rmhtype/api/rmhtype.practice-test.server.ts` |
 | `/api/rmhtype/progress` | `GET` | `lib/rmhtype/api/rmhtype.progress.server.ts` |
 | `/api/rmhtype/progress/runs` | `GET` | `lib/rmhtype/api/rmhtype.progress.runs.server.ts` |
+| `/api/rmhtype/texts` | `GET` `POST` | `lib/rmhtype/api/rmhtype.texts.server.ts` |
+| `/api/rmhtype/texts/:textId` | `DELETE` `GET` `PATCH` | `lib/rmhtype/api/rmhtype.texts.$textId.server.ts` |
+| `/api/rmhtype/texts/:textId/runs` | `POST` | `lib/rmhtype/api/rmhtype.texts.$textId.runs.server.ts` |
 
 ## `/api/rum`
 
@@ -2174,12 +2191,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/speedrun`
 
-5 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/speedrun/categories` | `GET` `POST` | `lib/speedrun/api/speedrun.categories.server.ts` |
 | `/api/speedrun/leaderboard` | `GET` | `lib/speedrun/api/speedrun.leaderboard.server.ts` |
+| `/api/speedrun/queue` | `GET` `POST` | `lib/speedrun/api/speedrun.queue.server.ts` |
 | `/api/speedrun/replays` | `GET` | `lib/speedrun/api/speedrun.replays.server.ts` |
 | `/api/speedrun/runs` | `GET` `POST` | `lib/speedrun/api/speedrun.runs.server.ts` |
 | `/api/speedrun/verify` | `GET` `POST` | `lib/speedrun/api/speedrun.verify.server.ts` |
@@ -2257,11 +2275,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/study`
 
-21 routes.
+28 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/study/card-images` | `POST` | `lib/study/api/study.card-images.server.ts` |
+| `/api/study/card-sound` | `POST` | `lib/study/api/study.card-sound.server.ts` |
+| `/api/study/card-sound/:file` | `GET` | `lib/study/api/study.card-sound.$file.server.ts` |
 | `/api/study/cards/:id` | `DELETE` `PATCH` | `lib/study/api/study.cards.$id.server.ts` |
 | `/api/study/cards/:id/review` | `POST` | `lib/study/api/study.cards.$id.review.server.ts` |
 | `/api/study/cards/:id/suspend` | `PUT` | `lib/study/api/study.cards.$id.suspend.server.ts` |
@@ -2272,15 +2292,20 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/study/decks/:id/folder` | `PUT` | `lib/study/api/study.decks.$id.folder.server.ts` |
 | `/api/study/decks/:id/link-original` | `POST` | `lib/study/api/study.decks.$id.link-original.server.ts` |
 | `/api/study/decks/:id/order` | `PUT` | `lib/study/api/study.decks.$id.order.server.ts` |
+| `/api/study/decks/:id/pace` | `GET` `PATCH` | `lib/study/api/study.decks.$id.pace.server.ts` |
 | `/api/study/decks/:id/review` | `GET` | `lib/study/api/study.decks.$id.review.server.ts` |
+| `/api/study/decks/:id/suggestions` | `GET` `POST` | `lib/study/api/study.decks.$id.suggestions.server.ts` |
 | `/api/study/decks/:id/tests` | `GET` `POST` | `lib/study/api/study.decks.$id.tests.server.ts` |
 | `/api/study/decks/:id/updates` | `GET` `POST` | `lib/study/api/study.decks.$id.updates.server.ts` |
 | `/api/study/folders` | `GET` `POST` | `lib/study/api/study.folders.server.ts` |
 | `/api/study/folders/:id` | `DELETE` `PATCH` | `lib/study/api/study.folders.$id.server.ts` |
+| `/api/study/highlight-cards` | `POST` | `lib/study/api/study.highlight-cards.server.ts` |
 | `/api/study/marketplace` | `GET` | `lib/study/api/study.marketplace.server.ts` |
 | `/api/study/reminders` | `GET` `PUT` | `lib/study/api/study.reminders.server.ts` |
 | `/api/study/review` | `GET` | `lib/study/api/study.review.server.ts` |
 | `/api/study/stats` | `GET` | `lib/study/api/study.stats.server.ts` |
+| `/api/study/suggestions/:id` | `DELETE` | `lib/study/api/study.suggestions.$id.server.ts` |
+| `/api/study/suggestions/:id/decision` | `POST` | `lib/study/api/study.suggestions.$id.decision.server.ts` |
 | `/api/study/tutor` | `POST` | `lib/study/api/study.tutor.server.ts` |
 
 ## `/api/study-buddy`
@@ -2479,7 +2504,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/v1`
 
-78 routes.
+90 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -2488,12 +2513,18 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/builds` | `GET` `OPTIONS` | `app/routes/api/v1/builds.ts` |
 | `/api/v1/builds/:slug` | `GET` `OPTIONS` | `app/routes/api/v1/builds/$slug.ts` |
 | `/api/v1/communities/:slug` | `GET` `OPTIONS` | `app/routes/api/v1/communities/$slug.ts` |
+| `/api/v1/communities/:slug/modqueue` | `GET` `OPTIONS` | `app/routes/api/v1/communities/$slug/modqueue.ts` |
+| `/api/v1/communities/:slug/modqueue/:itemId` | `OPTIONS` `POST` | `app/routes/api/v1/communities/$slug/modqueue/$itemId.ts` |
 | `/api/v1/communities/:slug/posts` | `GET` `OPTIONS` | `app/routes/api/v1/communities/$slug/posts.ts` |
 | `/api/v1/communities/:slug/rules` | `GET` `OPTIONS` | `app/routes/api/v1/communities/$slug/rules.ts` |
-| `/api/v1/events` | `GET` `OPTIONS` | `app/routes/api/v1/events.ts` |
-| `/api/v1/events/:id` | `GET` `OPTIONS` | `app/routes/api/v1/events/$id.ts` |
+| `/api/v1/communities/:slug/sanctions` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/communities/$slug/sanctions.ts` |
+| `/api/v1/communities/:slug/sanctions/:id` | `DELETE` `OPTIONS` | `app/routes/api/v1/communities/$slug/sanctions/$id.ts` |
+| `/api/v1/events` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/events.ts` |
+| `/api/v1/events/:id` | `GET` `OPTIONS` `PATCH` | `app/routes/api/v1/events/$id.ts` |
 | `/api/v1/events/:id/attendees` | `GET` `OPTIONS` | `app/routes/api/v1/events/$id/attendees.ts` |
+| `/api/v1/events/:id/cancel` | `OPTIONS` `POST` | `app/routes/api/v1/events/$id/cancel.ts` |
 | `/api/v1/events/:id/rsvp` | `DELETE` `OPTIONS` `PUT` | `app/routes/api/v1/events/$id/rsvp.ts` |
+| `/api/v1/events/:id/updates` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/events/$id/updates.ts` |
 | `/api/v1/feed` | `GET` `OPTIONS` | `app/routes/api/v1/feed.ts` |
 | `/api/v1/feeds/:id/posts` | `GET` `OPTIONS` | `app/routes/api/v1/feeds/$id/posts.ts` |
 | `/api/v1/games` | `GET` `OPTIONS` | `app/routes/api/v1/games.ts` |
@@ -2525,6 +2556,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/me/notifications` | `GET` `OPTIONS` | `app/routes/api/v1/me/notifications.ts` |
 | `/api/v1/me/personal-bests` | `GET` `OPTIONS` | `app/routes/api/v1/me/personal-bests.ts` |
 | `/api/v1/me/reading-goal` | `GET` `OPTIONS` | `app/routes/api/v1/me/reading-goal.ts` |
+| `/api/v1/me/rmhtube/stats` | `GET` `OPTIONS` | `app/routes/api/v1/me/rmhtube/stats.ts` |
+| `/api/v1/me/rmhtube/watch-later` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/me/rmhtube/watch-later.ts` |
+| `/api/v1/me/rmhtube/watch-later/:id` | `DELETE` `OPTIONS` | `app/routes/api/v1/me/rmhtube/watch-later/$id.ts` |
 | `/api/v1/me/scheduled` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/me/scheduled.ts` |
 | `/api/v1/me/scheduled/:id` | `DELETE` `GET` `OPTIONS` `PATCH` | `app/routes/api/v1/me/scheduled/$id.ts` |
 | `/api/v1/me/scheduled/:id/publish` | `OPTIONS` `POST` | `app/routes/api/v1/me/scheduled/$id/publish.ts` |
@@ -2542,6 +2576,9 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/v1/posts/:id/bookmark` | `DELETE` `OPTIONS` `POST` | `app/routes/api/v1/posts/$id/bookmark.ts` |
 | `/api/v1/posts/:id/comments` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/posts/$id/comments.ts` |
 | `/api/v1/posts/:id/like` | `DELETE` `OPTIONS` `POST` | `app/routes/api/v1/posts/$id/like.ts` |
+| `/api/v1/rmhtube/parties` | `GET` `OPTIONS` | `app/routes/api/v1/rmhtube/parties.ts` |
+| `/api/v1/rmhtube/parties/:id` | `GET` `OPTIONS` | `app/routes/api/v1/rmhtube/parties/$id.ts` |
+| `/api/v1/rmhtube/parties/:id/going` | `OPTIONS` `PUT` | `app/routes/api/v1/rmhtube/parties/$id/going.ts` |
 | `/api/v1/search/people` | `GET` `OPTIONS` | `app/routes/api/v1/search/people.ts` |
 | `/api/v1/search/posts` | `GET` `OPTIONS` | `app/routes/api/v1/search/posts.ts` |
 | `/api/v1/slice-it/charts` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/charts.ts` |

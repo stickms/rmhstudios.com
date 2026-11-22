@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { reorderSavedRepliesApi } from '@/lib/messages/saved-replies.contract';
@@ -17,7 +18,7 @@ export const route = apiRoute('/api/saved-replies/order', {
       const result = await reorderSavedReplies(userId, parseIdList(body.ids) ?? []);
       if (!result.ok)
         return Response.json(
-          { error: result.error, ...(result.code ? { code: result.code } : {}) },
+          { error: result.error, ...refusalCodeOf(result), ...refusalCodeOf(result) },
           { status: result.status },
         );
       return { replies: result.value };

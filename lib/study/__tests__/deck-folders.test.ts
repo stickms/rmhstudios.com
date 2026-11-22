@@ -158,7 +158,7 @@ describe('folder CRUD', () => {
     const a = await createFolder('u1', '  Biology   201 ');
     expect(a).toMatchObject({ ok: true, folder: { name: 'Biology 201', position: 0 } });
     expect(await createFolder('u1', 'Spanish')).toMatchObject({ ok: true, folder: { position: 1 } });
-    expect(await createFolder('u1', 'biology 201')).toEqual({ ok: false, status: 409, error: 'Name taken' });
+    expect(await createFolder('u1', 'biology 201')).toMatchObject({ ok: false, status: 409, error: 'Name taken' });
     // Another member may use the same name.
     expect(await createFolder('u2', 'Biology 201')).toMatchObject({ ok: true });
   });
@@ -174,7 +174,7 @@ describe('folder CRUD', () => {
     expect([a.ok, b.ok].sort()).toEqual([false, true]);
     expect(state.folders.filter((f) => f.userId === 'u1')).toHaveLength(30);
     const failed = a.ok ? b : a;
-    expect(failed).toEqual({ ok: false, status: 400, error: 'Too many folders' });
+    expect(failed).toMatchObject({ ok: false, status: 400, error: 'Too many folders' });
   });
 
   it('renames, moves and refuses a folder that is not the caller’s with a 404', async () => {

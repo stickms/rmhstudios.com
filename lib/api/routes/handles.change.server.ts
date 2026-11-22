@@ -1,7 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { changeHandle, getHandleHistory } from '@/lib/handles/history.server';
+import { changeHandle, getHandleHistory, handleRefusalBody } from '@/lib/handles/history.server';
 import { HANDLE_MAX_LENGTH, HANDLE_MIN_LENGTH } from '@/lib/handle';
 
 /**
@@ -9,9 +9,8 @@ import { HANDLE_MAX_LENGTH, HANDLE_MIN_LENGTH } from '@/lib/handle';
  * GET  /api/handles/change — the caller's own change history.
  *
  * The J2 path: 30-day cooldown, a 30-day block on reclaiming a handle somebody
- * else released, and a `HandleChange` row per change. (`PATCH /api/profile`
- * still has its own older, unrecorded path — see the note in
- * `lib/handles/history.server.ts`.)
+ * else released, and a `HandleChange` row per change. `PATCH /api/profile` delegates to the same
+ * `changeHandle`.
  */
 const changeSchema = z.object({
   handle: z.string().trim().min(HANDLE_MIN_LENGTH).max(HANDLE_MAX_LENGTH),
@@ -53,7 +52,7 @@ export const route = apiRoute('/api/handles/change', {
               : 400;
       return Response.json(
         {
-          error: result.message,
+          ...handleRefusalBody(result),
           reason: result.reason,
           ...(result.retryAfterMs ? { retryAfterMs: result.retryAfterMs } : {}),
         },

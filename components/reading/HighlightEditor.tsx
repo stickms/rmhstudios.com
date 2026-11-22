@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { passagesFor } from '@/lib/reading/passages';
 import type { NewHighlightInput } from '@/lib/reading/client';
+import { PassageMenuItems } from './PassageMenu';
 import { HIGHLIGHT_NOTE_MAX, type HighlightView } from '@/lib/reading/schema';
 
 export type EditorState =
@@ -55,9 +56,17 @@ export function HighlightEditor({
   indexText,
   actions,
   onError,
+  onMakeCard,
+  onCopyLink,
+  onPostPassage,
 }: {
+  /** Edit mode: the passage actions for the saved highlight (s10-11); offsets are its resolved position. */
+  onCopyLink?: (start: number, end: number) => void;
+  onPostPassage?: (start: number, end: number) => void;
   state: EditorState | null;
   onClose: () => void;
+  /** Edit mode: offer "Make a card" for the saved highlight (s10-01). */
+  onMakeCard?: (highlight: HighlightView) => void;
   /** The current unit text, for computing L8 passages. */
   indexText: () => string;
   actions: Actions;
@@ -200,13 +209,28 @@ export function HighlightEditor({
             </p>
           </div>
         </div>
+        {state?.mode === 'edit' && onCopyLink && onPostPassage ? (
+          <div className="flex flex-wrap gap-2">
+            <PassageMenuItems
+              onCopy={() => onCopyLink(state.start, state.end)}
+              onPost={() => onPostPassage(state.start, state.end)}
+            />
+          </div>
+        ) : null}
         <DialogFooter className="gap-2 sm:justify-between">
           {state?.mode === 'edit' ? (
-            <Button type="button" variant="default" onClick={remove} disabled={busy}>
-              {t('remove-highlight', {
-                defaultValue: 'Remove highlight',
-              })}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="default" onClick={remove} disabled={busy}>
+                {t('remove-highlight', {
+                  defaultValue: 'Remove highlight',
+                })}
+              </Button>
+              {onMakeCard ? (
+                <Button type="button" variant="default" disabled={busy} onClick={() => onMakeCard(state.highlight)}>
+                  {t('make-card', { ns: 'highlight-cards', defaultValue: 'Make a card' })}
+                </Button>
+              ) : null}
+            </div>
           ) : (
             <span />
           )}

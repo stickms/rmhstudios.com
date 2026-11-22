@@ -5,18 +5,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CardImageField } from '@/components/study/CardImageField';
+import { CardSoundField } from '@/components/study/CardSoundField';
 import { CardTypeControl } from '@/components/study/CardTypeControl';
 import { ClozePreview } from '@/components/study/ClozePreview';
 import { OcclusionEditor } from '@/components/study/OcclusionEditor';
 import { validateCard, wrapDeletion, type CardError, type CardInput, type CardKind } from '@/lib/study/card-types';
 import { cardImageProblem, type CardImage } from '@/lib/study/card-images';
+import { cardSoundProblem, type CardSound } from '@/lib/study/card-sound';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
 import type { Occlusion } from '@/lib/study/occlusion';
 
 const EMPTY_OCCLUSION: Occlusion = { mode: 'hide-all', masks: [] };
 
-/** What the form hands back: the card, and a picture per side (null: none, which also removes one on an edit). */
-export type CardFormValue = CardInput & { frontImage: CardImage | null; backImage: CardImage | null };
+/**
+ * What the form hands back: the card, a picture per side and a sound per side (null: none, which also removes one on
+ * an edit).
+ */
+export type CardFormValue = CardInput & {
+  frontImage: CardImage | null;
+  backImage: CardImage | null;
+  frontSound: CardSound | null;
+  backSound: CardSound | null;
+};
 
 /**
  * The card editor: a type control (Basic, Reversible, Cloze, Picture occlusion), the fields that type needs, for
@@ -33,6 +43,8 @@ export function CardForm({
   initial?: CardInput & {
     frontImage?: CardImage | null | undefined;
     backImage?: CardImage | null | undefined;
+    frontSound?: CardSound | null | undefined;
+    backSound?: CardSound | null | undefined;
     occlusion?: Occlusion | null | undefined;
   };
   submitLabel: string;
@@ -49,6 +61,8 @@ export function CardForm({
   const [back, setBack] = useState(initial?.back ?? '');
   const [frontImage, setFrontImage] = useState<CardImage | null>(initial?.frontImage ?? null);
   const [backImage, setBackImage] = useState<CardImage | null>(initial?.backImage ?? null);
+  const [frontSound, setFrontSound] = useState<CardSound | null>(initial?.frontSound ?? null);
+  const [backSound, setBackSound] = useState<CardSound | null>(initial?.backSound ?? null);
   const [occlusion, setOcclusion] = useState<Occlusion>(initial?.occlusion ?? EMPTY_OCCLUSION);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -137,6 +151,10 @@ export function CardForm({
     backImage: kind === 'occlusion' ? null : backImage,
   };
   const pictureProblem = cardImageProblem(kind, pictures, () => true);
+  // A cloze or occlusion card's front is generated or a picture, so only the back takes a sound; the form never sends
+  // the one a kind does not take. A sound needs its transcript.
+  const sounds = { frontSound: kind === 'cloze' || kind === 'occlusion' ? null : frontSound, backSound };
+  const soundProblem = cardSoundProblem(kind, sounds, () => true);
   // A cloze text is checked as it is typed; the other types wait for the first save attempt.
   const showError = !checked.ok && (submitted || (kind === 'cloze' && front.trim() !== ''));
   // An occlusion card with no picture has nothing to put masks on.
@@ -148,15 +166,17 @@ export function CardForm({
 
   async function save() {
     setSubmitted(true);
-    if (!checked.ok || pictureProblem || saving) return;
+    if (!checked.ok || pictureProblem || soundProblem || saving) return;
     setSaving(true);
-    const ok = await onSubmit({ ...checked.card, ...pictures });
+    const ok = await onSubmit({ ...checked.card, ...pictures, ...sounds });
     setSaving(false);
     if (ok && resetOnSave) {
       setFront('');
       setBack('');
       setFrontImage(null);
       setBackImage(null);
+      setFrontSound(null);
+      setBackSound(null);
       setOcclusion(EMPTY_OCCLUSION);
       setSubmitted(false);
     }
@@ -214,6 +234,7 @@ export function CardForm({
             </div>
             <ClozePreview text={front} />
             <CardImageField side="back" value={backImage} onChange={setBackImage} showMissing={submitted} />
+            <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
           </>
         ) : kind === 'occlusion' ? (
           <>
@@ -271,6 +292,7 @@ export function CardForm({
                   defaultValue: 'Shown after the answer is revealed. One card is made for each mask.',
                 })}
               </p>
+              <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
             </div>
           </>
         ) : (
@@ -287,6 +309,7 @@ export function CardForm({
                 onChange={(e) => setFront(e.target.value)}
               />
               <CardImageField side="front" value={frontImage} onChange={setFrontImage} showMissing={submitted} />
+              <CardSoundField side="front" value={frontSound} onChange={setFrontSound} showMissing={submitted} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={backId}>{t('back', { defaultValue: 'Back' })}</Label>
@@ -301,6 +324,7 @@ export function CardForm({
                 onChange={(e) => setBack(e.target.value)}
               />
               <CardImageField side="back" value={backImage} onChange={setBackImage} showMissing={submitted} />
+              <CardSoundField side="back" value={backSound} onChange={setBackSound} showMissing={submitted} />
               {kind === 'reversible' && (
                 <p className="t-meta">
                   {t('reversible-hint', {

@@ -6,6 +6,7 @@
  * membership is never copied onto the conversation rows.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { getChatAccess } from '@/lib/chat-plus/access.server';
@@ -54,7 +55,7 @@ export type FolderOpResult<T = FolderView> =
 export async function createFolder(userId: string, name: string): Promise<FolderOpResult> {
   const count = await prisma.chatFolder.count({ where: { userId } });
   if (count >= MAX_FOLDERS) {
-    return { ok: false, status: 409, error: `You can have up to ${MAX_FOLDERS} folders` };
+    return { ok: false, status: 409, ...refusalBody('CHAT_FOLDER_LIMIT', { max: MAX_FOLDERS }) };
   }
   const f = await prisma.chatFolder.create({
     data: { userId, name, position: count },
@@ -71,7 +72,7 @@ export async function renameFolder(
   const res = await prisma.chatFolder.updateMany({ where: { id, userId }, data: { name } });
   return res.count
     ? { ok: true, value: { id, name } }
-    : { ok: false, status: 404, error: 'Folder not found' };
+    : { ok: false, status: 404, ...refusalBody('CHAT_FOLDER_NOT_FOUND') };
 }
 
 export async function deleteFolder(userId: string, id: string): Promise<boolean> {
@@ -90,7 +91,7 @@ export async function setFolderMembership(
     where: { id: folderId, userId },
     select: { id: true },
   });
-  if (!folder) return { ok: false, status: 404, error: 'Folder not found' };
+  if (!folder) return { ok: false, status: 404, ...refusalBody('CHAT_FOLDER_NOT_FOUND') };
   const scopeKey = scopeKeyOf(chat.kind, chat.id);
 
   if (!member) {
@@ -98,11 +99,11 @@ export async function setFolderMembership(
     return { ok: true, value: { scopeKey, member } };
   }
   if (!(await getChatAccess(chat.kind, chat.id, userId))) {
-    return { ok: false, status: 404, error: 'Chat not found' };
+    return { ok: false, status: 404, ...refusalBody('CHAT_NOT_FOUND') };
   }
   const count = await prisma.chatFolderItem.count({ where: { folderId } });
   if (count >= MAX_FOLDER_CHATS) {
-    return { ok: false, status: 409, error: 'That folder is full' };
+    return { ok: false, status: 409, ...refusalBody('CHAT_FOLDER_FULL') };
   }
   await prisma.chatFolderItem.upsert({
     where: { folderId_scopeKey: { folderId, scopeKey } },

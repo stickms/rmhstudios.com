@@ -12,7 +12,10 @@ import { LEECH_RESET, NEW_PER_SESSION, SESSION_MAX, type QueueCard, type Suspend
 import type { ReviewQueueRes } from '@/lib/study/queue.contract';
 
 import { CARD_IMAGE_SELECT, picturesOfRow } from '@/lib/study/card-images';
+import { CARD_SOUND_SELECT, soundFields, soundsOfRow } from '@/lib/study/card-sound';
 import { reviewDataFor } from '@/lib/study/occlusion';
+import { applyAllowances, dayStartUtc, isPaced, newAllowance, todayKey, zoneOrUtc } from '@/lib/study/pace';
+import { newIntroducedToday } from '@/lib/study/pace.server';
 
 const EXPORT_CAP = 50_000;
 
@@ -25,14 +28,34 @@ const cardSelect = {
   clozeIndex: true,
   deckId: true,
   ...CARD_IMAGE_SELECT,
+  ...CARD_SOUND_SELECT,
   // A generated card shows its source's pictures; the siblings hold none of their own.
-  // An occlusion card also reads its masks and note from the source.
+  // An occlusion card also reads its masks and note from the source. Sounds follow, for the deck's owner only (s10-02).
   source: {
-    select: { ...CARD_IMAGE_SELECT, occlusion: true, back: true },
+    select: { ...CARD_IMAGE_SELECT, ...CARD_SOUND_SELECT, occlusion: true, back: true },
   },
   deck: {
     select: {
       title: true,
+      userId: true,
+    },
+  },
+} satisfies Prisma.FlashcardSelect;
+
+/**
+ * The never-reviewed cards also read their deck's pace (s10-03). A deck with no pace (`newPerDay` null) is the
+ * session rule exactly as before.
+ */
+const freshSelect = {
+  ...cardSelect,
+  // Replaces cardSelect's `deck`, so it repeats `userId`: without it a new card's sound never reached its owner.
+  deck: {
+    select: {
+      title: true,
+      userId: true,
+      newPerDay: true,
+      extraNewDay: true,
+      extraNew: true,
     },
   },
 } satisfies Prisma.FlashcardSelect;
@@ -41,7 +64,7 @@ type CardRow = Prisma.FlashcardGetPayload<{
   select: typeof cardSelect;
 }>;
 
-function toQueueCard(c: CardRow): QueueCard {
+function toQueueCard(c: CardRow, viewerId: string): QueueCard {
   return {
     id: c.id,
     front: c.front,
@@ -70,6 +93,8 @@ function toQueueCard(c: CardRow): QueueCard {
           : {}),
       };
     })(),
+    // A review session draws from public decks too: a sound is the recorder's alone, so only the owner's own cards carry one.
+    ...soundFields(soundsOfRow(c, c.source), c.deck.userId === viewerId),
   };
 }
 
@@ -119,6 +144,7 @@ export async function reviewQueue(
   after: string | undefined,
   now: Date = new Date(),
   folderId?: string,
+  tz?: string,
 ): Promise<ReviewQueueRes> {
   const boundary = decodeCursor(after);
   const scheduled = await prisma.flashcardReview.findMany({
@@ -209,7 +235,7 @@ export async function reviewQueue(
       batch = rest;
     }
   }
-  const cards = batch.map((r) => toQueueCard(r.card));
+  const cards = batch.map((r) => toQueueCard(r.card, userId));
   const last = batch[batch.length - 1];
   if (overflow && last) {
     return {
@@ -221,61 +247,176 @@ export async function reviewQueue(
 
   const room = Math.min(NEW_PER_SESSION, SESSION_MAX - cards.length);
   let includesNew = false;
+  let learnMore: { deckId: string; deckTitle: string }[] = [];
   if (room > 0) {
-    const fresh = await prisma.flashcard.findMany({
-      where: {
-        ...REVIEWABLE_WHERE,
-        deck: {
+    const freshWhere = {
+      ...REVIEWABLE_WHERE,
+      deck: {
+        userId,
+        ...(folderId
+          ? {
+              folderId,
+            }
+          : {}),
+      },
+      reviews: {
+        none: {
           userId,
-          ...(folderId
-            ? {
-                folderId,
-              }
-            : {}),
-        },
-        reviews: {
-          none: {
-            userId,
-          },
         },
       },
-      orderBy: [
-        {
-          deck: {
-            createdAt: 'asc',
-          },
+    };
+    const freshOrder = [
+      {
+        deck: {
+          createdAt: 'asc' as const,
         },
-        {
-          deckId: 'asc',
-        },
-        ...CARD_ORDER,
-      ],
-      take: room,
-      select: cardSelect,
-    });
+      },
+      {
+        deckId: 'asc' as const,
+      },
+      ...CARD_ORDER,
+    ];
+    const fetchFresh = (excluded: string[], take: number = room) =>
+      prisma.flashcard.findMany({
+        where: excluded.length
+          ? {
+              ...freshWhere,
+              deckId: {
+                notIn: excluded,
+              },
+            }
+          : freshWhere,
+        orderBy: freshOrder,
+        take,
+        select: freshSelect,
+      });
+    let fresh = await fetchFresh([]);
+    // Only when a deck has a pace: a deck without one is the single query above and nothing else.
+    if (fresh.some((c) => isPaced(c.deck))) {
+      const paced = await applyPace(userId, fresh, room, fetchFresh, zoneOrUtc(tz), now);
+      fresh = paced.cards;
+      learnMore = paced.learnMore;
+    }
     includesNew = fresh.length > 0;
-    for (const c of fresh) cards.push(toQueueCard(c));
+    for (const c of fresh) cards.push(toQueueCard(c, userId));
   }
   return {
     cards,
     next: null,
     includesNew,
+    ...(learnMore.length > 0
+      ? {
+          learnMore,
+        }
+      : {}),
   };
+}
+
+type FreshRow = Prisma.FlashcardGetPayload<{
+  select: typeof freshSelect;
+}>;
+
+/**
+ * Trim a batch of never-reviewed cards to each paced deck's allowance for today (its pace, plus "Learn more",
+ * less the new cards first graded today in the member's zone, counted from the review log). A deck that used up
+ * its allowance is left out and the batch is refilled from the decks after it, so a paced deck never starves an
+ * unpaced one behind it. Also returns the paced decks that still have new cards to "learn more" from. Two sessions
+ * open at once may each add the remainder once (bounded by `NEW_PER_SESSION`).
+ */
+async function applyPace(
+  userId: string,
+  first: FreshRow[],
+  room: number,
+  fetchMore: (excluded: string[], take: number) => Promise<FreshRow[]>,
+  tz: string,
+  now: Date,
+): Promise<{ cards: FreshRow[]; learnMore: { deckId: string; deckTitle: string }[] }> {
+  const today = todayKey(now, tz);
+  const dayStart = dayStartUtc(today, tz);
+  const allowance = new Map<string, number | null>();
+  const titles = new Map<string, string>();
+  const excluded: string[] = [];
+  // What a used-up deck already contributed stays; the rest of the room is refilled from the decks after it.
+  const base: FreshRow[] = [];
+  let pool = first;
+  for (;;) {
+    const roomLeft = room - base.length;
+    const unseen = new Map<string, FreshRow['deck']>();
+    for (const c of pool) {
+      titles.set(c.deckId, c.deck.title);
+      if (!allowance.has(c.deckId)) {
+        if (isPaced(c.deck)) unseen.set(c.deckId, c.deck);
+        else allowance.set(c.deckId, null);
+      }
+    }
+    if (unseen.size > 0) {
+      const introduced = await newIntroducedToday(userId, [...unseen.keys()], dayStart);
+      for (const [deckId, deck] of unseen)
+        allowance.set(deckId, newAllowance(deck, today, introduced.get(deckId) ?? 0));
+    }
+    const { kept, saturated, held } = applyAllowances(pool, allowance);
+    if (kept.length >= roomLeft || held.size === 0 || pool.length < roomLeft) {
+      // Decks whose allowance is gone: a card was held back, or the last of it was just taken (and more exist).
+      const more = new Set(held);
+      const justFilled = [...saturated].filter((id) => !held.has(id));
+      if (justFilled.length > 0) {
+        const left = await prisma.flashcard.groupBy({
+          by: ['deckId'],
+          where: {
+            ...REVIEWABLE_WHERE,
+            deckId: {
+              in: justFilled,
+            },
+            reviews: {
+              none: {
+                userId,
+              },
+            },
+          },
+          _count: {
+            _all: true,
+          },
+        });
+        for (const row of Array.isArray(left) ? left : []) {
+          const served = [...base, ...kept].filter((c) => c.deckId === row.deckId).length;
+          if (row._count._all > served) more.add(row.deckId);
+        }
+      }
+      for (const id of excluded) more.add(id);
+      return {
+        cards: [...base, ...kept],
+        learnMore: [...more].map((deckId) => ({ deckId, deckTitle: titles.get(deckId) ?? '' })),
+      };
+    }
+    base.push(...kept.filter((c) => held.has(c.deckId)));
+    excluded.push(...held);
+    pool = await fetchMore(excluded, room - base.length);
+  }
 }
 
 interface DeckDueRow {
   deckId: string;
   due: number;
+  /** Never-reviewed cards in the deck (counted in `due`). */
+  fresh?: number;
+  newPerDay?: number | null;
+  extraNewDay?: string | null;
+  extraNew?: number;
 }
 
 /**
  * Due cards per deck the member owns, as the deck page counts them: scheduled cards whose time has come plus
- * never-reviewed ones. A suspended card has a review row, so it is in neither.
+ * never-reviewed ones. A suspended card has a review row, so it is in neither. A paced deck counts only the new
+ * cards its allowance for today still lets in (the same allowance as `reviewQueue`).
  */
-export async function dueByDeck(userId: string, now: Date = new Date()): Promise<Map<string, number>> {
+export async function dueByDeck(userId: string, now: Date = new Date(), tz?: string): Promise<Map<string, number>> {
   const rows = await prisma.$queryRaw<DeckDueRow[]>`
     SELECT c."deckId" AS "deckId",
-           (COUNT(*) FILTER (WHERE r."id" IS NULL OR (r."suspendedAt" IS NULL AND r."dueAt" <= ${now})))::int AS "due"
+           (COUNT(*) FILTER (WHERE r."id" IS NULL OR (r."suspendedAt" IS NULL AND r."dueAt" <= ${now})))::int AS "due",
+           (COUNT(*) FILTER (WHERE r."id" IS NULL))::int AS "fresh",
+           MAX(d."newPerDay") AS "newPerDay",
+           MAX(d."extraNewDay") AS "extraNewDay",
+           MAX(d."extraNew") AS "extraNew"
     FROM flashcard c
     JOIN flashcard_deck d ON d."id" = c."deckId"
     LEFT JOIN flashcard_review r ON r."cardId" = c."id" AND r."userId" = ${userId}
@@ -283,12 +424,43 @@ export async function dueByDeck(userId: string, now: Date = new Date()): Promise
       AND NOT (c."kind" = 'cloze' AND c."sourceId" IS NULL)
       AND NOT (c."kind" = 'occlusion' AND c."sourceId" IS NULL)
     GROUP BY c."deckId"`;
-  return new Map((Array.isArray(rows) ? rows : []).map((r) => [r.deckId, r.due]));
+  const list = Array.isArray(rows) ? rows : [];
+  const paced = list.filter((r) => typeof r.newPerDay === 'number');
+  const out = new Map(list.map((r) => [r.deckId, r.due]));
+  if (paced.length === 0) return out;
+  const zone = zoneOrUtc(tz);
+  const today = todayKey(now, zone);
+  const introduced = await newIntroducedToday(
+    userId,
+    paced.map((r) => r.deckId),
+    dayStartUtc(today, zone),
+  );
+  for (const r of paced) {
+    const fresh = r.fresh ?? 0;
+    const allowed = newAllowance(
+      { newPerDay: r.newPerDay ?? null, extraNewDay: r.extraNewDay ?? null, extraNew: r.extraNew ?? 0 },
+      today,
+      introduced.get(r.deckId) ?? 0,
+    );
+    out.set(r.deckId, r.due - fresh + Math.min(fresh, allowed ?? fresh));
+  }
+  return out;
 }
 
 /** What "Review all" would hold right now, for the count on `/study` (the same rules as `reviewQueue`). */
-export async function reviewAllCount(userId: string, now: Date = new Date()): Promise<number> {
-  const [scheduled, fresh] = await Promise.all([
+export async function reviewAllCount(userId: string, now: Date = new Date(), tz?: string): Promise<number> {
+  const freshWhere = {
+    ...REVIEWABLE_WHERE,
+    deck: {
+      userId,
+    },
+    reviews: {
+      none: {
+        userId,
+      },
+    },
+  };
+  const [scheduled, freshAll, pacedDecks] = await Promise.all([
     prisma.flashcardReview.count({
       where: {
         userId,
@@ -303,19 +475,65 @@ export async function reviewAllCount(userId: string, now: Date = new Date()): Pr
       },
     }),
     prisma.flashcard.count({
+      where: freshWhere,
+    }),
+    // One card per paced deck that still has new cards; empty for a member who set no pace.
+    prisma.flashcard.findMany({
       where: {
-        ...REVIEWABLE_WHERE,
+        ...freshWhere,
         deck: {
           userId,
+          newPerDay: {
+            not: null,
+          },
         },
-        reviews: {
-          none: {
-            userId,
+      },
+      distinct: ['deckId'],
+      select: {
+        deckId: true,
+        deck: {
+          select: {
+            newPerDay: true,
+            extraNewDay: true,
+            extraNew: true,
           },
         },
       },
     }),
   ]);
+  let fresh = freshAll;
+  const paced = Array.isArray(pacedDecks) ? pacedDecks : [];
+  if (paced.length > 0) {
+    const zone = zoneOrUtc(tz);
+    const today = todayKey(now, zone);
+    const ids = paced.map((p) => p.deckId);
+    const [introduced, counts] = await Promise.all([
+      newIntroducedToday(userId, ids, dayStartUtc(today, zone)),
+      prisma.flashcard.groupBy({
+        by: ['deckId'],
+        where: {
+          ...REVIEWABLE_WHERE,
+          deckId: {
+            in: ids,
+          },
+          reviews: {
+            none: {
+              userId,
+            },
+          },
+        },
+        _count: {
+          _all: true,
+        },
+      }),
+    ]);
+    const have = new Map((Array.isArray(counts) ? counts : []).map((c) => [c.deckId, c._count._all]));
+    for (const p of paced) {
+      const n = have.get(p.deckId) ?? 0;
+      const allowed = newAllowance(p.deck, today, introduced.get(p.deckId) ?? 0) ?? n;
+      fresh -= n - Math.min(n, allowed);
+    }
+  }
   const base = Math.min(scheduled, SESSION_MAX);
   return Math.min(SESSION_MAX, base + (scheduled > SESSION_MAX ? 0 : Math.min(fresh, NEW_PER_SESSION)));
 }

@@ -1,7 +1,7 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { extendPollApi } from '@/lib/feed/poll-lifecycle.contract';
 import { POLL_EXTEND_DAYS, type PollExtendDays, type PollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { toast } from '@/lib/toast';
@@ -27,6 +27,7 @@ interface PollExtendDialogProps {
 /** The author gives an open, timed poll 1, 3 or 7 more days. A choice past 30 days from the post is disabled, with the reason below. */
 export function PollExtendDialog({ open, onOpenChange, postId, allowedDays, onExtended }: PollExtendDialogProps) {
   const { t } = useTranslation('poll-lifecycle');
+  const refusalText = useRefusalText();
   const [busy, setBusy] = useState<PollExtendDays | null>(null);
   const someRefused = POLL_EXTEND_DAYS.some((d) => !allowedDays.includes(d));
 
@@ -51,7 +52,7 @@ export function PollExtendDialog({ open, onOpenChange, postId, allowedDays, onEx
       );
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('extend-error', {
             defaultValue: 'Could not extend the poll',
           }),

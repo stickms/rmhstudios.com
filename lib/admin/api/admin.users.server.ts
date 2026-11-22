@@ -6,6 +6,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { adminUserUpdateSchema } from '@/lib/admin/schemas';
+import { changeHandle } from '@/lib/handles/history.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { activeStrikeWhere } from '@/lib/moderation/standing.server';
 import { activeRestrictionWhere } from '@/lib/moderation/restrictions.server';
@@ -146,23 +147,25 @@ export const route = apiRoute('/api/admin/users', {
       if (typeof isVerified === 'boolean') updateData.isVerified = isVerified;
       if (typeof isAdmin === 'boolean') updateData.isAdmin = isAdmin;
 
-      // Admin handle change (no cooldown, but must be valid and unique)
+      // Admin handle change (no cooldown, but valid, unique and not a recently released name)
       if (typeof handle === 'string') {
         // Prevent admins from changing other admins' handles
         if (targetUser.isAdmin && userId !== session.user.id) {
           return new Response("Cannot change another admin's handle", { status: 403 });
         }
 
-        const existing = await prisma.user.findUnique({
-          where: { handle },
-          select: { id: true },
-        });
-        if (existing && existing.id !== userId) {
-          return Response.json({ error: 'This handle is already taken' }, { status: 409 });
+        // `changeHandle` keeps the 30-day reclaim block, the uniqueness check and the `HandleChange` row;
+        // the admin only skips the rename cooldown. A name that was just released is still held for its owner.
+        const renamed = await changeHandle(userId, handle, { isAdmin: true });
+        if (!renamed.ok && renamed.reason !== 'unchanged') {
+          const status =
+            renamed.reason === 'taken' || renamed.reason === 'reclaim-blocked'
+              ? 409
+              : renamed.reason === 'no-account'
+                ? 404
+                : 400;
+          return Response.json({ error: renamed.message }, { status });
         }
-
-        updateData.handle = handle;
-        updateData.handleChangedAt = new Date();
       }
 
       const updatedUser = await prisma.user.update({
@@ -181,7 +184,7 @@ export const route = apiRoute('/api/admin/users', {
       await logAdminAction(session.user.id, 'user.update', {
         targetType: 'User',
         targetId: userId,
-        detail: Object.keys(updateData).join(',') || 'none',
+        detail: [...Object.keys(updateData), ...(typeof handle === 'string' ? ['handle'] : [])].join(',') || 'none',
       });
 
       return Response.json(updatedUser);

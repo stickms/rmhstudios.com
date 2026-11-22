@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { deleteFolderApi, updateFolderApi } from '@/lib/study/folders.contract';
@@ -19,13 +20,14 @@ export const route = apiRoute('/api/study/folders/$id', {
           : body.collapsed !== undefined
             ? await setCollapsed(userId, params.id, body.collapsed)
             : await moveFolder(userId, params.id, body.move ?? 'up');
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok)
+        return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       return { success: true as const };
     },
   ),
   DELETE: implement(deleteFolderApi, { rateLimit: 'write' }, async ({ userId, params }) => {
     const result = await deleteFolder(userId, params.id);
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return { success: true as const };
   }),
 });

@@ -22,6 +22,9 @@ export interface Failure {
   ok: false;
   status: 400 | 404 | 409;
   error: string;
+  /** `admin_disabled`: an admin switched the endpoint off; `reason` is what they wrote (s10-15). */
+  code?: 'admin_disabled';
+  reason?: string;
 }
 export type Result<T> = ({ ok: true } & T) | Failure;
 
@@ -37,6 +40,8 @@ const endpointSelect = {
   lastDeliveryAt: true,
   createdAt: true,
   previousSecretExpiresAt: true,
+  adminDisabledAt: true,
+  adminDisabledReason: true,
 } satisfies Prisma.WebhookEndpointSelect;
 
 type EndpointRecord = Prisma.WebhookEndpointGetPayload<{ select: typeof endpointSelect }>;
@@ -76,6 +81,9 @@ function serializeEndpoint(
     health: webhookHealth(counts ?? { delivered: 0, failed: 0, pending: 0 }),
     disabledReason: e.enabled ? null : disabledReason,
     previousSecretExpiresAt: overlapOpen ? (e.previousSecretExpiresAt as Date).toISOString() : null,
+    adminDisabled: e.adminDisabledAt
+      ? { at: e.adminDisabledAt.toISOString(), reason: e.adminDisabledReason ?? '' }
+      : null,
   };
 }
 
@@ -255,10 +263,31 @@ export async function updateWebhook(
     // Turning an endpoint back on is a fresh start: the failures that switched it off no longer count.
     if (body.enabled) data.failureCount = 0;
   }
-  const { count } = await prisma.webhookEndpoint.updateMany({ where: { id, userId }, data });
-  if (count === 0) return notFound;
+  // Turning an endpoint on is refused while an admin has it off: the condition is in the write, so an admin who
+  // disables it between the owner's click and this statement still wins.
+  const { count } = await prisma.webhookEndpoint.updateMany({
+    where: { id, userId, ...(body.enabled ? { adminDisabledAt: null } : {}) },
+    data,
+  });
+  if (count === 0) return (await adminDisabledFailure(userId, id)) ?? notFound;
   const endpoint = await readEndpoint(userId, id);
   return endpoint ? { ok: true, endpoint } : notFound;
+}
+
+/** The refusal for an endpoint an admin switched off, with the reason the owner reads; null when it is not one. */
+async function adminDisabledFailure(userId: string, id: string): Promise<Failure | null> {
+  const held = await prisma.webhookEndpoint.findFirst({
+    where: { id, userId, adminDisabledAt: { not: null } },
+    select: { adminDisabledReason: true },
+  });
+  if (!held) return null;
+  return {
+    ok: false,
+    status: 409,
+    error: 'An admin turned this webhook off. It stays off until they lift it.',
+    code: 'admin_disabled',
+    reason: held.adminDisabledReason ?? '',
+  };
 }
 
 export async function deleteWebhook(userId: string, id: string): Promise<Result<object>> {
@@ -310,8 +339,20 @@ export async function sendTestEvent(
   id: string,
   event: string = WEBHOOK_PING_EVENT,
 ): Promise<Result<{ delivery: WebhookDeliveryRow }>> {
-  const owned = await prisma.webhookEndpoint.findFirst({ where: { id, userId }, select: { id: true } });
+  const owned = await prisma.webhookEndpoint.findFirst({
+    where: { id, userId },
+    select: { id: true, adminDisabledAt: true, adminDisabledReason: true },
+  });
   if (!owned) return notFound;
+  if (owned.adminDisabledAt) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'An admin turned this webhook off. It stays off until they lift it.',
+      code: 'admin_disabled',
+      reason: owned.adminDisabledReason ?? '',
+    };
+  }
   const body =
     event === PERSONAL_BEST_EVENT || event === ACHIEVEMENT_EVENT
       ? buildGameEventSample(event)

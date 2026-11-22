@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { listRepostMutesApi, setRepostMuteApi } from '@/lib/feed/repost-mutes.contract';
@@ -54,7 +55,7 @@ export const route = apiRoute('/api/feed/repost-mutes', {
           if (err.code === 'not-found')
             return Response.json(
               {
-                error: 'Member not found',
+                ...refusalBody('COMMUNITY_MEMBER_NOT_FOUND'),
               },
               {
                 status: 404,

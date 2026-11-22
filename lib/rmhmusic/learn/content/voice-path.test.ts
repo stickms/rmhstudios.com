@@ -1,6 +1,15 @@
 /** The voice path (Phase 5): its own lessons, the right decks and pools, no chord or keyboard lessons. */
 import { describe, expect, it } from 'vitest';
-import { PATH, VOICE_PATH, VOICE_RANGE_DECK, getLesson, isKnownLesson, pathFor, needsVoiceRange } from './path';
+import {
+  PATH,
+  PIANO_PATH,
+  VOICE_PATH,
+  VOICE_RANGE_DECK,
+  getLesson,
+  isKnownLesson,
+  pathFor,
+  needsVoiceRange,
+} from './path';
 import { DECKS, voiceDeck } from './decks';
 import { isPlayable } from './routing';
 import { VOICE_RANGES } from '../schemas';
@@ -13,7 +22,7 @@ const voiceLessons = VOICE_PATH.flatMap((u) => u.lessons);
 describe('voice path', () => {
   it('is the path a voice learner gets; piano and guitar keep theirs', () => {
     expect(pathFor('voice')).toBe(VOICE_PATH);
-    expect(pathFor('piano')).toBe(PATH);
+    expect(pathFor('piano')).toBe(PIANO_PATH);
     expect(pathFor('guitar')).toBe(PATH);
   });
 

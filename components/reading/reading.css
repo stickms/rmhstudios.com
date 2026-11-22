@@ -28,6 +28,16 @@
   color: inherit;
 }
 
+/* A linked passage (?p=): static mark on arrival, the same quiet fill the Find match uses. */
+::highlight(rf-passage) {
+  background-color: var(--site-bg-subtle);
+  color: var(--site-text);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--site-text);
+  text-underline-offset: 3px;
+}
+
 /* Find in book: the match the reader's Find panel last jumped to. */
 ::highlight(rf-find) {
   background-color: var(--site-bg-subtle);
@@ -157,6 +167,8 @@
   position: fixed;
   z-index: 70;
   display: flex;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 16px);
   gap: 0.25rem;
   padding: 0.25rem;
   border-radius: var(--site-radius-sm);

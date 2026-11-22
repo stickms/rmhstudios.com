@@ -9,12 +9,13 @@
  * ranked promotion — see integration notes).
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { createMomentApi } from '@/lib/moments.contract';
 import { Check, Copy, Download, Link2, Loader2, Send, Share2 } from 'lucide-react';
 import {
@@ -43,6 +44,7 @@ interface ShareMomentSheetProps {
 
 export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMomentSheetProps) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   // Not useNavigate(): the sheet also opens inside game islands, which have no router (redesign B1).
   const navigate = useSiteNavigate();
   const [creating, setCreating] = useState(false);
@@ -70,7 +72,7 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
         toast.error(t('share-moment-sign-in', { defaultValue: 'Please sign in to share.' }));
       } else {
         toast.error(
-          serverError(e) ||
+          refusalText.maybe(e) ||
             t('share-moment-error', { defaultValue: 'Could not create share link' }),
         );
       }
@@ -78,7 +80,7 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
     } finally {
       setCreating(false);
     }
-  }, [kind, payload, onOpenChange, t]);
+  }, [kind, payload, onOpenChange, t, refusalText]);
 
   // Create exactly one moment per sheet: the guards make this idempotent even
   // if the parent passes a fresh `payload` object each render.

@@ -5,13 +5,13 @@
  * the job leaves alone because settling them would finish the tournament).
  * Rows on rules; nothing here ticks.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { decideMatchResultApi } from '@/lib/tournaments/match-results.contract';
 import { DISPUTE_NOTE_MAX, claimExpired } from '@/lib/tournaments/match-results';
 import { useClaimWhen } from '@/components/tournaments/MatchResultControls';
@@ -24,6 +24,7 @@ interface Props {
 
 export function DisputesPanel({ tournament, onChanged }: Props) {
   const { t } = useTranslation('match-results');
+  const refusalText = useRefusalText();
   const prompt = usePrompt();
   const claimWhen = useClaimWhen();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -92,7 +93,7 @@ export function DisputesPanel({ tournament, onChanged }: Props) {
       await onChanged();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('failed', {
             defaultValue: 'Something went wrong',
           }),

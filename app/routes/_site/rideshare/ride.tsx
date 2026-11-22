@@ -2,6 +2,7 @@
 /**
  * RMH Rideshare — request a ride (/rideshare/ride)
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
@@ -37,7 +38,7 @@ import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   createRideApi,
   listRidesApi,
@@ -102,6 +103,7 @@ function minScheduleValue(): string {
 
 function RequestRidePage() {
   const { t } = useTranslation('rideshare');
+  const refusalText = useRefusalText();
   const { data: session, isPending } = useSession();
 
   const [pickup, setPickup] = useState<RidePlace | null>(null);
@@ -272,7 +274,7 @@ function RequestRidePage() {
     } catch (e) {
       if (e instanceof HttpError) {
         toast.error(
-          serverError(e) || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
+          refusalText.maybe(e) || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
         );
       } else {
         toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
@@ -288,7 +290,7 @@ function RequestRidePage() {
       toast.success(t('success-ride-cancelled', { defaultValue: 'Scheduled ride cancelled.' }));
       loadRides();
     } catch (e) {
-      toast.error(serverError(e) || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
+      toast.error(refusalText.maybe(e) || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
     }
   }
 

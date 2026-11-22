@@ -83,7 +83,7 @@ const NULLABLE: Record<string, string> = {
   nextMatch: '{ id: string; round: number; slot: number; bracket: string; state: string; playerA: { entrantId: string; seed: number | null; handle: string; name: string } | null; playerB: { entrantId: string; seed: number | null; handle: string; name: string } | null; winnerEntrantId: string | null; resultSource: string | null; scheduledAt: string | null; deadlineAt: string | null; claim: { state: \'open\' | \'disputed\'; winnerEntrantId: string | null; claimedByEntrantId: string | null; claimedAt: string | null; answerBy: string | null } | null } | null',
 
   // s08-03 api-scheduled
-  held: "'community_sanction' | 'image_descriptions' | null",
+  held: "'community_sanction' | 'image_descriptions' | 'automod' | null",
   postId: 'string | null',
 
   // s08-14 api-search
@@ -114,6 +114,23 @@ const NULLABLE: Record<string, string> = {
   weeklyGoalMinutes: 'number | null',
 
   // s09-10 api-sync-deletions
+
+  // Sprint 10
+  // s10-02 card-sound
+  frontSound: '{ url: string; transcript: string; durationMs: number } | null',
+  backSound: '{ url: string; transcript: string; durationMs: number } | null',
+
+  // s10-12 api-events
+
+  // s10-13 api-moderation
+  reporters: 'number | null',
+  citedRule: '{ position: number; title: string } | null',
+  liftedAt: 'string | null',
+  moderator: '{ id: string; name: string | null; handle: string | null } | null',
+  rule: '{ id: string; title: string } | null',
+  post: '{ id: string; content: string; imageUrls: string[]; imageAlts: string[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; createdAt: string; author: { id: string; name: string | null; handle: string | null; image: string | null }; metrics: { likes: number | null; comments: number | null; reposts: number | null; views: number | null } } | null',
+
+  // s10-14 api-rmhtube
 };
 
 const SCHEDULED_ROW_FIELDS: Record<string, string> = {

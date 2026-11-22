@@ -7,6 +7,7 @@
  * caused; that happens server-side in POST /api/admin/appeals/$id.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Gavel, ShieldCheck, ShieldX, Clock } from 'lucide-react';
@@ -23,7 +24,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { decideAdminAppealApi, getAdminAppealsApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -62,6 +62,7 @@ interface Appeal {
 
 function AdminAppealsPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const [view, setView] = useState<View>('PENDING');
   const [items, setItems] = useState<Appeal[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -97,7 +98,7 @@ function AdminAppealsPage() { const fmt = useLocaleFormat();
           body: { action, note: notes[id]?.trim() || undefined },
         });
       } catch (e) {
-        toast.error(serverError(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+        toast.error(refusalText.maybe(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         return;
       }
       toast.success(

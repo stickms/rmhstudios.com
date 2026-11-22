@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +27,6 @@ import { LockedCommunityHeader, RequestToJoin } from '@/components/communities/L
 import { ColumnHeader } from './ColumnHeader';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { createCommunityApi, listCommunitiesApi } from '@/lib/communities/communities.contract';
 
@@ -67,6 +67,7 @@ export function CommunitiesColumn({
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const [items, setItems] = useState<Community[]>(initialCommunities);
   // The route loader already provided the first page, so we start resolved —
@@ -125,7 +126,7 @@ export function CommunitiesColumn({
       navigate({ to: `/c/${data.slug}` as string });
     } catch (err) {
       toast.error(
-        serverError(err) || t('community-create-error', { defaultValue: 'Could not create community' }),
+        refusalText.maybe(err) || t('community-create-error', { defaultValue: 'Could not create community' }),
       );
     } finally {
       setSubmitting(false);

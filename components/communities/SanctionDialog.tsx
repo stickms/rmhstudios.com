@@ -1,11 +1,11 @@
 /** s06-01 — "Time out…" / "Ban…": the dialog a moderator fills in, and the member-row menu that opens it. */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ellipsis } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
@@ -41,6 +41,7 @@ export function SanctionDialog({
   onDone: (kind: SanctionKind) => void;
 }) {
   const { t } = useTranslation(['community-bans', 'community-notes']);
+  const refusalText = useRefusalText();
   const [duration, setDuration] = useState<SanctionDuration>(kind === 'ban' ? '7d' : '1d');
   const [ruleId, setRuleId] = useState('');
   const [reason, setReason] = useState('');
@@ -115,7 +116,7 @@ export function SanctionDialog({
       onClose();
     } catch (err) {
       toast.error(
-        serverError(err) ||
+        refusalText.maybe(err) ||
           t('action-failed', {
             defaultValue: 'Could not save that',
           }),

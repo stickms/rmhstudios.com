@@ -1,10 +1,10 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { adminViewAsApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ const label = (u: Brief) => u.handle || u.name || u.id;
 /** S5: read-only render of what a member sees. Every lookup is audit-logged server-side. */
 export function ViewAsAdmin() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-safety');
+  const refusalText = useRefusalText();
   const [query, setQuery] = useState('');
   const [data, setData] = useState<ViewAs | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +52,7 @@ export function ViewAsAdmin() { const fmt = useLocaleFormat();
       setData(result);
     } catch (e) {
       setLoading(false);
-      setError(serverError(e) || t('viewas-failed', { defaultValue: 'Lookup failed' }));
+      setError(refusalText.maybe(e) || t('viewas-failed', { defaultValue: 'Lookup failed' }));
     }
   };
 

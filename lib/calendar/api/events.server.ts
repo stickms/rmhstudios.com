@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { httpUrl } from '@/lib/url-schema';
 import { createEvent, listEvents, EventError, type EventScope } from '@/lib/events.server';
+import { checkRateLimit } from '@/lib/rate-limit.server';
 import { eventRecurrenceSchema } from '@/lib/calendar/schema';
 
 const venueKindSchema = z.enum(['SPACE', 'TOURNAMENT', 'GAME', 'URL', 'IRL']);
@@ -85,6 +86,14 @@ export const route = apiRoute('/api/events', {
     },
     async ({ session, body }) => {
       try {
+        // The per-account half of the budget, shared with `POST /api/v1/events` (`manage:events`): the form and the
+        // API together cannot exceed 10 a minute.
+        const budget = await checkRateLimit(session.user.id, { limit: 10, windowMs: 60_000, prefix: 'event-create' });
+        if (!budget.allowed)
+          return Response.json(
+            { error: 'Too many requests' },
+            { status: 429, headers: { 'Retry-After': String(budget.retryAfter) } },
+          );
         const event = await createEvent({
           hostId: session.user.id,
           communityId: body.communityId ?? null,

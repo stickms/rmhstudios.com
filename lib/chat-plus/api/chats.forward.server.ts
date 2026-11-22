@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { forwardMessage, forwardSchema } from '@/lib/chat-plus/forward.server';
@@ -12,7 +13,7 @@ export const route = apiRoute('/api/chats/forward', {
     { rateLimit: { limit: 15, windowMs: 60_000, prefix: 'chat-forward' }, body: forwardSchema },
     async ({ userId, body }) => {
       const res = await forwardMessage(userId, body);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({
         sent: res.sent,
         failed: res.failed,

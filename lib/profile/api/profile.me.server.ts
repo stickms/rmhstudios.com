@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/profile/profile-extras.contract';
@@ -22,7 +23,7 @@ export const route = apiRoute('/api/profile/me', {
     });
 
     if (!user) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('MESSAGE_USER_NOT_FOUND') }, { status: 404 });
     }
 
     const resolved = resolveUserDisplay(user);

@@ -6,6 +6,7 @@
  * are sent — the server never has to know the viewer's timezone.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -16,7 +17,6 @@ import { Input } from '@/components/ui/input';
 import { MenuItem } from '@/components/ui/menu';
 import { resolvePreset, type ReminderKind, type ReminderPreset } from '@/lib/reminders/shared';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -46,6 +46,7 @@ export default function RemindMeDialog({
 }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('c-saves');
+  const refusalText = useRefusalText();
   const [custom, setCustom] = useState(() => toLocalInput(resolvePreset('tomorrow')));
   const [saving, setSaving] = useState(false);
 
@@ -73,7 +74,7 @@ export default function RemindMeDialog({
       onOpenChange(false);
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('remind-error', {
             defaultValue: "Couldn't set the reminder",
           }),

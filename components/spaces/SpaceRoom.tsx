@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Radio, Send, Pin, PinOff, Users } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -12,7 +13,6 @@ import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { SPACE_C2S, SPACE_S2C } from '@/lib/spaces/events';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { startSpaceApi } from '@/lib/spaces/spaces.contract';
 import type { SpacePinned, SpaceStatus, SpaceView } from '@/lib/spaces/types';
 import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
@@ -112,6 +112,7 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
 
 export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const reduced = useReducedMotion();
 
@@ -250,11 +251,11 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       setStatus('LIVE');
       toast.success(t('space-now-live', { defaultValue: 'You are live' }));
     } catch (err) {
-      toast.error(serverError(err) ?? 'Failed to start');
+      toast.error(refusalText.maybe(err) ?? 'Failed to start');
     } finally {
       setStartingLive(false);
     }
-  }, [initialSpace.id, startingLive, t]);
+  }, [initialSpace.id, startingLive, t, refusalText]);
 
   // No optimistic ENDED: the server broadcasts SPACE_S2C.ENDED to the room
   // (this socket included) once it has accepted the end, and that handler

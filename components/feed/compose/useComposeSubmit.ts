@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -6,7 +7,7 @@ import { yieldToMain } from '@/lib/scheduler';
 import { useFeedStore } from '@/stores/feedStore';
 import type { FeedItem } from '@/lib/feed-types';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { createScheduledApi } from '@/lib/scheduled/scheduled.contract';
 import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 
@@ -41,6 +42,7 @@ export function useComposeSubmit<Draft>({
   setSavedMsg: (msg: string | null) => void;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const sanctionRefusalText = useSanctionRefusal();
   const { prependItem, removeItem, reconcileItem } = useFeedStore();
 
@@ -224,7 +226,7 @@ export function useComposeSubmit<Draft>({
       if (!(error instanceof HttpError)) console.error('Save draft error:', error);
       setSavedMsg(
         sanctionRefusalText(error) ??
-          serverError(error) ??
+          refusalText.maybe(error) ??
           t('could-not-save', {
             defaultValue: 'Could not save',
           }),

@@ -3,12 +3,12 @@
  * words, the next post in the reader's locale, the last post, status) with Post now, Pause or Resume, Edit and
  * Delete, and a form dialog to add one. Moderators only; members never see a template.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -28,6 +28,7 @@ import type { FlairDTO } from '@/lib/communities/plus';
 
 export function ModRecurring({ slug, flairs }: { slug: string; flairs: FlairDTO[] }) {
   const { t } = useTranslation('recurring-threads');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -53,7 +54,7 @@ export function ModRecurring({ slug, flairs }: { slug: string; flairs: FlairDTO[
     });
   const fail = (err: unknown) =>
     toast.error(
-      serverError(err) ||
+      refusalText.maybe(err) ||
         t('action-failed', {
           defaultValue: 'Could not save that',
         }),

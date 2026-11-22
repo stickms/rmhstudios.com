@@ -4,6 +4,7 @@
  * album. Admin-gated by the parent /_site/admin route.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Play, Trash2 } from 'lucide-react';
@@ -19,7 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   adminAlbumDelete,
   adminAlbumPatch,
@@ -45,6 +45,7 @@ type AdminAlbum = {
 
 function ManageAlbumPage() {
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -89,7 +90,7 @@ function ManageAlbumPage() {
         params: { id: album.id },
         body: { title: title.trim(), description },
       }).catch((e: unknown) => {
-        throw new Error(serverError(e) || t('album-save-failed', { defaultValue: 'Save failed' }));
+        throw new Error(refusalText.maybe(e) || t('album-save-failed', { defaultValue: 'Save failed' }));
       });
       setAlbum((prev) =>
         prev ? { ...prev, title: data.album.title, description: data.album.description } : prev,

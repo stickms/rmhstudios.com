@@ -10,7 +10,9 @@
  *    happens in this view.
  */
 
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { parsePassageSearch } from '@/lib/library/passage-link';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { BookMarked, FileText, ScanLine } from 'lucide-react';
@@ -90,7 +92,10 @@ export function ReaderReadingTools({
   const { data: shelves } = useMyShelves(!!session && ready);
   const { set, remove } = useShelfMutations();
   const setShelfAsync = set.mutateAsync;
-  const [textOpen, setTextOpen] = useState(false);
+  // A passage link (?p=) opens the text view straight away; it picks its own page or chapter.
+  const { p: passageCode } = useSearch({ strict: false }) as { p?: string };
+  const passage = useMemo(() => parsePassageSearch(passageCode), [passageCode]);
+  const [textOpen, setTextOpen] = useState(() => passage !== undefined);
   const [ruler, setRuler] = useReadingRuler();
   const stageRef = useRef<HTMLElement | null>(null);
   stageRef.current = stageEl;
@@ -276,7 +281,13 @@ export function ReaderReadingTools({
       {textOpen && source && stageEl
         ? createPortal(
             <Suspense fallback={null}>
-              <ReaderTextView book={book} source={source} jump={findJump} onClose={() => setTextOpen(false)} />
+              <ReaderTextView
+                book={book}
+                source={source}
+                jump={findJump}
+                passage={passage}
+                onClose={() => setTextOpen(false)}
+              />
             </Suspense>,
             stageEl,
           )

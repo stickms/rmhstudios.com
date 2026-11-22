@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { voteChatPollApi } from '@/lib/chat-plus/chat.contract';
@@ -19,7 +20,7 @@ export const route = apiRoute('/api/chats/$kind/$id/vote', {
       const access = await requireChat(params, userId, { write: true });
       if (access instanceof Response) return access;
       const res = await voteDmPoll(access, body.messageId, body.optionIdx);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({ poll: res.poll });
     },
   ),

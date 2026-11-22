@@ -7,7 +7,8 @@
  * it. Lesson ids are stored in `music_learn_lesson_progress`, so renaming one
  * orphans learners' progress: add a new id instead.
  *
- * Two paths: `PATH` for piano and guitar learners (each lesson adapts to the instrument) and
+ * Three paths: `PATH` for guitar learners (each lesson adapts to the instrument), `PIANO_PATH` (the same
+ * plus the bass clef unit) and
  * `VOICE_PATH` for singers (`pathFor`), whose lessons are their own ids except the shared rhythm
  * unit. A singer gets no chord-playing, keyboard or fretboard lesson.
  */
@@ -29,7 +30,8 @@ export type LessonMode =
   | 'sing-interval'
   | 'play-scale'
   | 'key-signature'
-  | 'staff-intervals';
+  | 'staff-intervals'
+  | 'grand-staff-find';
 
 export interface Lesson {
   id: string;
@@ -389,6 +391,59 @@ export const PATH: Unit[] = [
   READ_SPELLED_UNIT,
 ];
 
+/**
+ * The bass clef and the grand staff: piano only (`PIANO_PATH`). A guitarist reads the treble clef,
+ * an octave up, and a singer's clef comes from their range, so neither path has this unit. The first
+ * three lessons are staff flashcards (the third on the grand staff, `grand-middle`); the fourth is the
+ * note finder drawing its target on the grand staff. Ids are stored with progress: add new ones, never rename.
+ */
+export const BASS_CLEF_UNIT_ID = 'bass-clef-grand-staff';
+
+const BASS_CLEF_UNIT: Unit = {
+  id: BASS_CLEF_UNIT_ID,
+  title: 'Bass clef and the grand staff',
+  lessons: [
+    {
+      id: 'bass-clef-lines-spaces',
+      unit: BASS_CLEF_UNIT_ID,
+      title: 'Bass clef: lines and spaces',
+      summary: 'Read the five lines and four spaces of the bass staff, where the left hand lives.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'bass-lines',
+    },
+    {
+      id: 'bass-clef-all',
+      unit: BASS_CLEF_UNIT_ID,
+      title: 'All the bass notes',
+      summary: 'Name every note from the low E up to middle C, ledger lines included.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'bass-all',
+    },
+    {
+      id: 'grand-staff-middle',
+      unit: BASS_CLEF_UNIT_ID,
+      title: 'The grand staff around middle C',
+      summary: 'Two staves joined by a brace: read the notes either side of middle C on the staff they sit on.',
+      mode: 'staff-flashcards',
+      available: true,
+      deck: 'grand-middle',
+    },
+    {
+      id: 'grand-staff-play',
+      unit: BASS_CLEF_UNIT_ID,
+      title: 'Play what you read',
+      summary: 'A note appears on the grand staff: find it on the keyboard, or play it.',
+      mode: 'grand-staff-find',
+      available: true,
+    },
+  ],
+};
+
+/** The piano learner's path: the shared path with the bass clef unit after the first, "Meet the staff & the keys". */
+export const PIANO_PATH: Unit[] = [...PATH.slice(0, 1), BASS_CLEF_UNIT, ...PATH.slice(1)];
+
 /** The singer's path: read the staff of your range, sing notes back, sing intervals, rhythm. */
 export const VOICE_PATH: Unit[] = [
   {
@@ -473,7 +528,8 @@ export const VOICE_PATH: Unit[] = [
 
 /** The path a learner sees. */
 export function pathFor(instrument: Instrument): Unit[] {
-  return instrument === 'voice' ? VOICE_PATH : PATH;
+  if (instrument === 'voice') return VOICE_PATH;
+  return instrument === 'piano' ? PIANO_PATH : PATH;
 }
 
 const RANGE_LESSONS = new Set(
@@ -493,7 +549,7 @@ export function needsVoiceRange(lesson: Lesson | undefined): boolean {
 }
 
 const BY_ID = new Map<string, Lesson>(
-  [...PATH, ...VOICE_PATH].flatMap((u) => u.lessons).map((l) => [l.id, l]),
+  [...PIANO_PATH, ...PATH, ...VOICE_PATH].flatMap((u) => u.lessons).map((l) => [l.id, l]),
 );
 
 export function getLesson(id: string): Lesson | undefined {

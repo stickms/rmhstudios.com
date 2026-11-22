@@ -4,6 +4,7 @@
  * which wipes credentials + scrubs personal data. Rendered on /settings/privacy.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -12,7 +13,6 @@ import { toast } from '@/lib/toast';
 
 import { authClient } from '@/lib/auth-client';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { deleteAccountApi } from '@/lib/account/account.contract';
 import { getDeletionPreviewApi } from '@/lib/account/deletion-preview.contract';
 import { useSession } from '@/components/Providers';
@@ -25,6 +25,7 @@ import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 
 export function DeleteAccountPanel() {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const user = session?.user as
     | {
@@ -58,7 +59,7 @@ export function DeleteAccountPanel() {
         });
       } catch (e) {
         toast.error(
-          serverError(e) ||
+          refusalText.maybe(e) ||
             t('delete-failed', {
               defaultValue: 'Could not delete your account.',
             }),

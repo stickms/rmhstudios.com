@@ -25,6 +25,7 @@ import type { UpdatesSummary } from '@/lib/study/deck-sync';
 import { ExportMenu } from '@/components/study/ExportMenu';
 import { DeckPageFolderMenu } from '@/components/study/MoveToFolderMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
+import { DeckPace } from '@/components/study/DeckPace';
 import { PracticeTestLink } from '@/components/study/PracticeTestLink';
 import { TestHistory } from '@/components/study/TestHistory';
 import { CardForm, type CardFormValue } from '@/components/study/CardForm';
@@ -347,6 +348,7 @@ export function DeckStudyColumn({
  <div className="space-y-4 p-4">
  {deck.isOwner && updates && <DeckUpdatesLine deckId={deckId} summary={updates} onChanged={() => void load()} />}
  {signedIn && <DeckStatsSummary deckId={deckId} />}
+ {deck.isOwner && <DeckPace deckId={deckId} />}
  {signedIn && (
  <div>
  <Button

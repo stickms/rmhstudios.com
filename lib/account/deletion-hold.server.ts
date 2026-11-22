@@ -119,7 +119,8 @@ export async function restoreAfterCancel(userId: string, now: Date = new Date())
       data: { suspendedAt: null, suspendReason: null },
     }),
     prisma.webhookEndpoint.updateMany({
-      where: { userId, id: { in: plan.webhookIds }, enabled: false },
+      // An endpoint an admin switched off while the hold was in place stays off (s10-15).
+      where: { userId, id: { in: plan.webhookIds }, enabled: false, adminDisabledAt: null },
       data: { enabled: true, failureCount: 0 },
     }),
     prisma.deletionHold.deleteMany({ where: { userId } }),

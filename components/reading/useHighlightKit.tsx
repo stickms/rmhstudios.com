@@ -17,6 +17,7 @@ import { Highlighter, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { createAnchor, resolveAnchor, type TextAnchor } from '@/lib/library/text-anchor';
 import {
   buildTextIndex,
@@ -30,7 +31,10 @@ import {
 import { MIN_READERS_TO_SHOW, passagesFor, textVersion } from '@/lib/reading/passages';
 import { ApiError, useHighlightActions } from '@/lib/reading/client';
 import type { HighlightView, PopularPassage, PublicNoteView, ReadingDocKind } from '@/lib/reading/schema';
+import { buildPassageShare, buildPassageUrl, encodePassage, selectionAnchor } from '@/lib/library/passage-link';
 import { HighlightEditor, type EditorState } from './HighlightEditor';
+import { PassageMenuItems } from './PassageMenu';
+import { useMakeCard } from './MakeCardKit';
 
 /** Stable empties, so a not-yet-loaded bundle does not hand the kit a new array every render. */
 export const NO_HIGHLIGHTS: HighlightView[] = [];
@@ -54,6 +58,8 @@ interface KitOptions {
   signedIn: boolean;
   /** Changes whenever the text under rootRef is replaced (e.g. a new unit loads). */
   textKey?: string;
+  /** The document's title, for "Post this passage". */
+  title?: string;
 }
 
 interface Sel {
@@ -69,8 +75,9 @@ interface Sel {
 const rafIdle = (fn: () => void) => window.setTimeout(fn, 120);
 
 export function useHighlightKit(opts: KitOptions) {
-  const { kind, docKey, unit, rootRef, mine, popular, signedIn, textKey } = opts;
+  const { kind, docKey, unit, rootRef, mine, popular, signedIn, textKey, title } = opts;
   const { t } = useTranslation('f-reading');
+  const navigate = useNavigate();
   const actions = useHighlightActions(kind, docKey);
   const indexRef = useRef<TextIndex | null>(null);
   const [resolved, setResolved] = useState<ResolvedHighlight[]>([]);
@@ -78,6 +85,7 @@ export function useHighlightKit(opts: KitOptions) {
   const [popularShown, setPopularShown] = useState(0);
   const [sel, setSel] = useState<Sel | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
+  const makeCard = useMakeCard();
   const resolvedRef = useRef<ResolvedHighlight[]>([]);
   resolvedRef.current = resolved;
 
@@ -292,6 +300,55 @@ export function useHighlightKit(opts: KitOptions) {
     [sel, signedIn, unit, actions, failure, t],
   );
 
+  // Passage links: the anchor of the selection or highlight, as the document's own text only (no note).
+  const passageFor = useCallback((start: number, end: number) => {
+    const index = indexRef.current;
+    const anchor = index ? selectionAnchor(index.text, start, end) : null;
+    return anchor ? { anchor } : null;
+  }, []);
+
+  const copyPassage = useCallback(
+    (start: number, end: number) => {
+      const found = passageFor(start, end);
+      const code = found ? encodePassage(found.anchor, unit) : null;
+      if (!code) return;
+      const url = buildPassageUrl(window.location.origin, window.location.pathname, code);
+      const done = () => toast.success(t('link-copied', { ns: 'passage-links', defaultValue: 'Link copied.' }));
+      const fail = () =>
+        toast.error(t('link-copy-failed', { ns: 'passage-links', defaultValue: 'Could not copy the link.' }));
+      try {
+        void navigator.clipboard.writeText(url).then(done, fail);
+      } catch {
+        fail();
+      }
+    },
+    [passageFor, unit, t],
+  );
+
+  const postPassage = useCallback(
+    (start: number, end: number) => {
+      const found = passageFor(start, end);
+      if (!found) return;
+      const share = buildPassageShare({
+        anchor: found.anchor,
+        unit,
+        title: title ?? '',
+        origin: window.location.origin,
+        pathname: window.location.pathname,
+        format: (quote, name) =>
+          t('share-quote', {
+            ns: 'passage-links',
+            quote,
+            title: name,
+            defaultValue: '\u201C{{quote}}\u201D \u2014 {{title}}',
+          }),
+      });
+      if (!share) return;
+      void navigate({ to: '/share', search: { title: '', text: share.text, url: share.url, pending: '' } });
+    },
+    [passageFor, unit, title, t, navigate],
+  );
+
   // Clicking an existing highlight opens it for editing.
   useEffect(() => {
     const root = rootRef.current;
@@ -385,6 +442,10 @@ export function useHighlightKit(opts: KitOptions) {
               defaultValue: 'Add note',
             })}
           </Button>
+          <PassageMenuItems
+            onCopy={() => copyPassage(sel.start, sel.end)}
+            onPost={() => postPassage(sel.start, sel.end)}
+          />
         </div>
       ) : null}
       <HighlightEditor
@@ -393,7 +454,18 @@ export function useHighlightKit(opts: KitOptions) {
         indexText={() => indexRef.current?.text ?? ''}
         actions={actions}
         onError={failure}
+        onCopyLink={(start, end) => copyPassage(start, end)}
+        onPostPassage={(start, end) => {
+          setEditor(null);
+          postPassage(start, end);
+        }}
+        onMakeCard={(h) => {
+          // One dialog at a time: the editor closes, then the card dialog opens for the saved highlight.
+          setEditor(null);
+          makeCard.start([{ id: h.id, exact: h.exact, note: h.note, title: null }]);
+        }}
       />
+      {makeCard.view}
     </>
   );
 

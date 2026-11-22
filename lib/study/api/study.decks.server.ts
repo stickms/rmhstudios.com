@@ -1,7 +1,8 @@
+import { refusalBody, refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
-import { createDeckBody } from '@/lib/study/decks-schema';
+import { createDeckBody, listDecksQuery } from '@/lib/study/decks-schema';
 import { atDeckCap, createDeck } from '@/lib/study/deck-editor.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { generateCards } from '@/lib/rmhstudy/tutor.server';
@@ -12,8 +13,8 @@ import { listDecks } from '@/lib/study.server';
  * POST /api/study/decks — create a deck (optionally AI-seeded).
  */
 export const route = apiRoute('/api/study/decks', {
-  GET: implement(listDecksApi, { auth: 'optional' }, async ({ session }) => {
-    return await listDecks(session?.user.id ?? null);
+  GET: implement(listDecksApi, { auth: 'optional', query: listDecksQuery }, async ({ session, query }) => {
+    return await listDecks(session?.user.id ?? null, query.tz);
   }),
 
   POST: implement(
@@ -26,7 +27,7 @@ export const route = apiRoute('/api/study/decks', {
       const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'deck-create' });
       if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-      if (await atDeckCap(userId)) return Response.json({ error: 'Too many decks' }, { status: 400 });
+      if (await atDeckCap(userId)) return Response.json({ ...refusalBody('STUDY_DECK_LIMIT') }, { status: 400 });
 
       // Optionally seed with AI-generated cards.
       let cards: { front: string; back: string }[] = [];
@@ -41,7 +42,7 @@ export const route = apiRoute('/api/study/decks', {
         isPublic: body.isPublic,
         cards,
       });
-      if (!created.ok) return Response.json({ error: created.error }, { status: created.status });
+      if (!created.ok) return Response.json({ error: created.error, ...refusalCodeOf(created) }, { status: created.status });
       const deck = created;
 
       return Response.json(

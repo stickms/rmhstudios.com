@@ -10,6 +10,11 @@ export interface ReviewQueueRes {
   next: string | null;
   /** True when new cards were added to this batch. */
   includesNew: boolean;
+  /**
+   * Paced decks whose allowance for today is used up and that still have new cards: the end screen offers
+   * "Learn 10 more" for each (s10-03). Absent unless some deck has a pace.
+   */
+  learnMore?: { deckId: string; deckTitle: string }[];
 }
 
 export const reviewQueueApi = endpoint<{

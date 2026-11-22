@@ -1,0 +1,9 @@
+{
+  "copy-link": "Copy link to passage",
+  "link-copied": "Link copied.",
+  "link-copy-failed": "Could not copy the link.",
+  "linked-passage": "Linked passage",
+  "passage-missing": "That passage is no longer in this text.",
+  "post-passage": "Post this passage",
+  "share-quote": "“{{quote}}” — {{title}}"
+}

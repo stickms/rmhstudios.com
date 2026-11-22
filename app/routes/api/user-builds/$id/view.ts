@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { createFileRoute } from '@tanstack/react-router';
 /**
  * Build View API
@@ -38,12 +39,12 @@ export const Route = createFileRoute('/api/user-builds/$id/view')({
     });
 
     if (!build) {
-      return Response.json({ error: 'Build not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('BUILD_NOT_FOUND') }, { status: 404 });
     }
 
     // Check if build is accessible
     if (build.visibility === 'PRIVATE') {
-      return Response.json({ error: 'Build not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('BUILD_NOT_FOUND') }, { status: 404 });
     }
 
     // For curated builds, increment every time without creating a BuildView record

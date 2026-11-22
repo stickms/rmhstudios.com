@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import {
@@ -18,7 +19,7 @@ const NO_STORE = {
 const notFound = () =>
   Response.json(
     {
-      error: 'Post not found',
+      ...refusalBody('POST_NOT_FOUND'),
     },
     {
       status: 404,

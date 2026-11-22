@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
@@ -5,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { CoinIcon } from '@/components/ui/CoinIcon';
 import { RARITY_COLORS } from '@/lib/shop/catalog';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { buyListingApi } from '@/lib/market/market.contract';
 import type { MarketListingView } from '@/lib/market/market.contract';
 import { PersonAvatar } from './SteamPeople';
@@ -21,6 +21,7 @@ export function MarketplacePage({
   viewerId: string | null;
 }) {
   const { t } = useTranslation('games-hub');
+  const refusalText = useRefusalText();
   const pathname = useLocation({ select: (l) => l.pathname });
   const [listings, setListings] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function MarketplacePage({
         setListings((prev) => prev.filter((x) => x.id !== l.id));
       }
     } catch (e) {
-      toast.error(serverError(e) ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
+      toast.error(refusalText.maybe(e) ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
     } finally {
       setBusy(null);
     }

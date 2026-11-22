@@ -106,3 +106,21 @@ export function aheadByMs(ghostTimeMs: number, runTimeMs: number): number {
 export function formatGapSeconds(ms: number): string {
   return (Math.abs(ms) / 1000).toFixed(1);
 }
+
+/**
+ * A saved text (s10-05) keeps its ghost under the passage id `text:<id>`, in the same table and under the same
+ * checks and 500-ghost cap as a curated passage. The prefix is how the ghost endpoint knows to check the text
+ * belongs to the caller before it reads one.
+ */
+export const TEXT_PASSAGE_PREFIX = 'text:';
+
+export function textPassageId(textId: string): string {
+  return `${TEXT_PASSAGE_PREFIX}${textId}`;
+}
+
+/** The text id inside a `text:<id>` passage id, or null for any other passage. */
+export function textIdFromPassage(passageId: string): string | null {
+  return passageId.startsWith(TEXT_PASSAGE_PREFIX) && passageId.length > TEXT_PASSAGE_PREFIX.length
+    ? passageId.slice(TEXT_PASSAGE_PREFIX.length)
+    : null;
+}

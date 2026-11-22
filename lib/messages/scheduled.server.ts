@@ -10,6 +10,7 @@
  * is invisible to everyone but its sender.
  */
 
+import { refusalBeside } from '@/lib/errors/codes';
 import { normalizeGifAlt } from '@/lib/feed/gif-alt';
 import { prisma } from '@/lib/prisma.server';
 import { findDm, findGroupMembership } from '@/lib/chat/chat.server';
@@ -498,7 +499,7 @@ export async function sendScheduledNow(userId: string, id: string): Promise<Send
     : {
         ok: false,
         status: 409,
-        error: 'The message could not be sent',
+        ...refusalBeside('MESSAGE_COULD_NOT_SEND'),
         code: outcome.code,
       };
 }

@@ -13,6 +13,7 @@ import { isBirthdayOn } from '@/lib/gifting/birthday';
 import { filterOnlineUsers } from '@/lib/hot-counters.server';
 import { getActivity } from '@/lib/presence.server';
 import type { ProfilePresence } from '@/lib/presence-types';
+import { inPresenceAudience } from '@/lib/profile/audience';
 import { canSeeFollowLists } from '@/lib/social/follow-list-privacy.server';
 import { normalizeFollowListVisibility, type FollowListVisibility } from '@/lib/social/follow-list-privacy';
 
@@ -161,11 +162,8 @@ const profileMissKey = (idOrHandle: string) => hashTagged('profile-miss', idOrHa
  *
  * Call from every path that makes a handle start resolving: signup's
  * auto-handle (`lib/auth.ts`), `changeHandle` (`lib/handles/history.server.ts`),
- * and the handle backfill sweep. `lib/api/routes/profile.server.ts` still renames
- * handles directly instead of delegating to `changeHandle` (noted in
- * `lib/handles/history.server.ts`), so a rename through that route is not
- * announced here; the exposure is bounded by `NEGATIVE_TTL_MS` (10s) and closes
- * when that route delegates.
+ * and the handle backfill sweep. Every rename (the profile form, `/api/handles/change`, the
+ * admin rename) goes through `changeHandle`, which calls this.
  */
 export function invalidateProfileLookup(idOrHandle: string | null | undefined): void {
   if (!idOrHandle) return;
@@ -341,14 +339,22 @@ async function resolveProfilePresence(p: {
   // online dot and when you were last seen (settings audit, 2026-11-19). `followers` is anyone who follows the
   // profile owner; `mutuals` also needs the owner to follow them back.
   const inAudience = async (): Promise<boolean> => {
-    if (p.isOwnProfile) return true;
-    if (!p.viewerId || p.visibility === 'nobody' || !p.isFollowing) return false;
-    if (p.visibility === 'followers') return true;
-    const back = await prisma.follow.findFirst({
-      where: { followerId: p.userId, followingId: p.viewerId },
-      select: { id: true },
+    // The owner follows the viewer back only matters for `mutuals`, so the lookup runs only then.
+    const needsBack =
+      !p.isOwnProfile && !!p.viewerId && p.isFollowing && p.visibility === 'mutuals';
+    const back = needsBack
+      ? await prisma.follow.findFirst({
+          where: { followerId: p.userId, followingId: p.viewerId as string },
+          select: { id: true },
+        })
+      : null;
+    return inPresenceAudience({
+      visibility: p.visibility,
+      isOwnProfile: p.isOwnProfile,
+      hasViewer: !!p.viewerId,
+      viewerFollowsOwner: p.isFollowing,
+      ownerFollowsViewer: back !== null,
     });
-    return back !== null;
   };
   if (!(await inAudience())) return { state: 'offline' };
   if (!p.isOnline) {

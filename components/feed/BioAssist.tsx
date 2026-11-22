@@ -1,11 +1,12 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { draftBioApi } from '@/lib/feed/compose-assist.contract';
 type Tone = 'friendly' | 'professional' | 'funny';
 
@@ -32,6 +33,7 @@ export function BioAssist({
   maxChars: number;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const [busy, setBusy] = useState<Tone | null>(null);
   const [previous, setPrevious] = useState<string | null>(null);
 
@@ -60,7 +62,7 @@ export function BioAssist({
       if (e instanceof HttpError && e.status === 503) {
         toast.error(t('ai-unavailable', { defaultValue: 'AI assist is unavailable right now.' }));
       } else {
-        toast.error(serverError(e) || t('bio-failed', { defaultValue: 'Could not write a bio' }));
+        toast.error(refusalText.maybe(e) || t('bio-failed', { defaultValue: 'Could not write a bio' }));
       }
     } finally {
       setBusy(null);

@@ -6,6 +6,7 @@
  * and the caller writes the AdminAuditLog row before this runs.
  */
 import { prisma } from '@/lib/prisma.server';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 import { getUserTier } from '@/lib/entitlements';
 import { getTimeline } from '@/lib/feed/timeline';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -30,7 +31,7 @@ export async function viewAsMember(userId: string) {
     }),
     getUserTier(userId),
     prisma.userMute.findMany({
-      where: { muterId: userId },
+      where: { muterId: userId, ...activeMuteWhere(new Date()) },
       take: LIST_CAP,
       select: { muted: { select: userDisplaySelect } },
     }),

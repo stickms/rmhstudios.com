@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import type { ProfileData } from '@/components/profile/profile-types';
 import type { ProfileEditInitial, SavedProfileData } from '../profile-edit/profile-edit-state';
+import { guestbookTabVisible, likesTabVisible } from '@/lib/profile/audience';
 import { currentDocumentLocale, formatDate } from '@/lib/core/format';
 
 /**
@@ -26,11 +27,11 @@ export function initialTabForHash(hash: string): ProfileTab {
 }
 
 export function canSeeLikesTab(profile: ProfileData): boolean {
-  return profile.isOwnProfile || profile.showLikes;
+  return likesTabVisible(profile);
 }
 
 export function canSeeGuestbookTab(profile: ProfileData): boolean {
-  return profile.isOwnProfile || (!!profile.guestbookMode && profile.guestbookMode !== 'off');
+  return guestbookTabVisible(profile);
 }
 
 /**

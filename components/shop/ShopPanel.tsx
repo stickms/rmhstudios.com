@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -12,7 +13,6 @@ import { shopView, type ShopShow, type ShopSort } from '@/lib/shop/view';
 import { purchaseShopItemApi, equipShopItemApi, type ShopListItem } from '@/lib/shop/shop.contract';
 import { TIER_LABELS } from '@/lib/entitlements/features';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { ShopWishButton } from '@/components/wallet/ShopWishButton';
 import { CoinAmount } from './CoinAmount';
 import { ItemDialog } from './ItemDialog';
@@ -49,6 +49,7 @@ export function ShopPanel({
 }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const router = useRouter();
   const { coins, items, signedIn } = data;
   const [kind, setKind] = useState<ShopItemKind>(
@@ -87,7 +88,7 @@ export function ShopPanel({
       await router.invalidate();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('purchase-failed', {
             defaultValue: 'Purchase failed',
           }),
@@ -109,7 +110,7 @@ export function ShopPanel({
       await router.invalidate();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('shop-equip-failed', {
             defaultValue: 'That did not save. Try again.',
           }),

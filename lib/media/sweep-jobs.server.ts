@@ -45,6 +45,9 @@ export function mediaSweepDeps(): SweepDeps {
     feedAnnouncement: prisma.feedAnnouncement,
     chatMessage: prisma.chatMessage,
     scheduledChatMessage: prisma.scheduledChatMessage,
+    homeListing: prisma.homeListing,
+    emailCampaign: prisma.emailCampaign,
+    siteEra: prisma.siteEra,
   } satisfies Record<keyof SweepDeps['prisma'], unknown>;
   return {
     prisma: delegates as unknown as SweepDeps['prisma'],

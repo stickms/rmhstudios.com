@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { requireMod } from '@/lib/communities/guard.server';
@@ -21,7 +22,7 @@ export const route = apiRoute('/api/communities/$slug/notes/$userId/$noteId', {
       viewerId: userId,
       body: body.body,
     });
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return { note: result.note };
   }),
   DELETE: implement(deleteNoteApi, { rateLimit: 'write' }, async ({ params, userId }) => {
@@ -33,7 +34,7 @@ export const route = apiRoute('/api/communities/$slug/notes/$userId/$noteId', {
       noteId: params.noteId,
       actorId: userId,
     });
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return { success: true as const };
   }),
 });

@@ -44,6 +44,11 @@ export interface SubmitScoreInput {
   username?: string | null;
   /** Game-specific numeric extras the adapter understands. */
   meta?: Record<string, number>;
+  /**
+   * Read the assist claim without clearing it, for a game whose run is also read by a second path (Neon
+   * Driftway's ghost save follows its score submit). The claim is shortened to a short grace window instead.
+   */
+  keepAssistClaim?: boolean;
 }
 
 /**
@@ -138,7 +143,11 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
 
   // An assisted run never reaches the board (P7). Progression and personal bests below still run:
   // the player finished a run and keeps their quest progress, streak and coins.
-  const assisted = await consumeAssistRun(input.userId, input.gameId);
+  const assisted = await consumeAssistRun(
+    input.userId,
+    input.gameId,
+    input.keepAssistClaim ? { keepClaim: true, settleClaim: true } : {},
+  );
   const ranked = !assisted;
   if (ranked) {
     await adapter.submit({

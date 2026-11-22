@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useMemo, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -8,7 +9,6 @@ import type { GifSelection } from '@/lib/feed/gif-alt';
 import { parseRemind, resolveCommand, suggestCommands } from '@/lib/chat-plus/commands';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
 import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -48,6 +48,7 @@ export function useSlashCommands({
 } {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('f-messaging');
+  const refusalText = useRefusalText();
   const [active, setActive] = useState(0);
   const [dismissedFor, setDismissedFor] = useState<string | null>(null);
   const [gifQuery, setGifQuery] = useState<string | null>(null);
@@ -137,7 +138,7 @@ export function useSlashCommands({
           );
         } catch (e) {
           toast.error(
-            serverError(e) ||
+            refusalText.maybe(e) ||
               t('remind-failed', {
                 defaultValue: 'Could not set that reminder',
               }),
@@ -162,7 +163,7 @@ export function useSlashCommands({
       } catch (err) {
         // The draft stays, so a typo in `/poll` is one edit away from working.
         toast.error(
-          serverError(err) ||
+          refusalText.maybe(err) ||
             t('command-failed', {
               defaultValue: 'That command did not work',
             }),
@@ -170,7 +171,7 @@ export function useSlashCommands({
       }
       return true;
     },
-    [chat.id, chat.kind, onPosted, setDraft, t, fmt],
+    [chat.id, chat.kind, onPosted, setDraft, t, fmt, refusalText],
   );
 
   const popover = (

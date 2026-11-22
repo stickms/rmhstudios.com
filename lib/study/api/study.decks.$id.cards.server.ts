@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { importCardsApi } from '@/lib/study/decks.contract';
@@ -8,7 +9,7 @@ import { importCards } from '@/lib/study/deck-editor.server';
 export const route = apiRoute('/api/study/decks/$id/cards', {
   POST: implement(importCardsApi, { rateLimit: 'write', body: importCardsBody }, async ({ userId, params, body }) => {
     const result = await importCards(userId, params.id, body.cards);
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return Response.json(
       { success: true as const, created: result.created, cardCount: result.cardCount },
       { status: 201 },

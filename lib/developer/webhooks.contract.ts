@@ -32,6 +32,8 @@ export interface WebhookEndpointRow {
   disabledReason: string | null;
   /** When the rotated-out secret stops being accepted, while an overlap is open. */
   previousSecretExpiresAt: string | null;
+  /** Set while an admin has the endpoint off: when, and the reason they wrote. The owner cannot enable it. */
+  adminDisabled: { at: string; reason: string } | null;
 }
 
 export interface WebhookDeliveryRow {

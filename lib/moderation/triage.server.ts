@@ -9,6 +9,7 @@
  */
 
 import { moderatorDeleteComment } from '@/lib/builds/comments.server';
+import { moderatorRemoveIssue } from '@/lib/builds/issues.server';
 import type { Prisma, ReportStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
@@ -142,6 +143,9 @@ export async function takedownReportedContent(entityType: string, entityId: stri
   } else if (entityType === 'build-comment') {
     // s06-14: a soft delete by a moderator; the build's comment count drops with it.
     await moderatorDeleteComment(entityId);
+  } else if (entityType === 'build-issue') {
+    // s10-09: the issue (and its "me too" marks) is removed.
+    await moderatorRemoveIssue(entityId);
   }
 }
 
@@ -400,7 +404,8 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
   const postIds = idsOf('rmhark');
   const commentIds = idsOf('comment');
   const buildCommentIds = idsOf('build-comment');
-  const [posts, comments, feedback, buildComments] = await Promise.all([
+  const buildIssueIds = idsOf('build-issue');
+  const [posts, comments, feedback, buildComments, buildIssues] = await Promise.all([
     postIds.length
       ? prisma.rMHark.findMany({
           where: {
@@ -460,7 +465,29 @@ async function previewsFor(targets: readonly DecideTarget[]): Promise<Map<string
           },
         })
       : [],
+    // s10-09: an admin reading a build-issue report sees the reported title and text and its build (whatever its state).
+    buildIssueIds.length
+      ? prisma.buildIssue.findMany({
+          where: {
+            id: {
+              in: buildIssueIds,
+            },
+          },
+          select: {
+            id: true,
+            title: true,
+            body: true,
+            build: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        })
+      : [],
   ]);
+  for (const bi of buildIssues)
+    out.set(groupKey('build-issue', bi.id), snippet(`${bi.build.title}: ${bi.title}. ${bi.body}`, 160));
   for (const bc of buildComments)
     out.set(groupKey('build-comment', bc.id), snippet(`${bc.build.title}: ${bc.content}`, 160));
   for (const f of feedback) out.set(groupKey('jam-feedback', f.id), snippet(f.body, 160));

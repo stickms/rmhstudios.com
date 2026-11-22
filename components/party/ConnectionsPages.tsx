@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCopyFallback } from '@/components/ui/copy-fallback';
@@ -14,7 +15,6 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createConnectionGridApi,
   deleteConnectionGridApi,
@@ -143,6 +143,7 @@ export function ConnectionsSection() {
 
 export function ConnectionsNew() {
   const { t } = useTranslation('f-party');
+  const refusalText = useRefusalText();
   const session = useSession();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
@@ -171,7 +172,7 @@ export function ConnectionsNew() {
       void navigate({ to: '/connections/u/$id', params: { id } });
     } catch (err) {
       setBusy(false);
-      toast.error(serverError(err) ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
+      toast.error(refusalText.maybe(err) ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
     }
   }
 
@@ -248,6 +249,7 @@ export function ConnectionsNew() {
 
 export function ConnectionsPlay({ id }: { id: string }) {
   const { t } = useTranslation('f-party');
+  const refusalText = useRefusalText();
   const session = useSession();
   const signedIn = !!session.data?.user;
   const isAdmin = !!(session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
@@ -303,7 +305,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
     try {
       r = await api(guessConnectionGridApi, { params: { id }, body: { items: picked } });
     } catch (err) {
-      toast.error(serverError(err) ?? t('guess-failed', { defaultValue: 'Could not check that guess.' }));
+      toast.error(refusalText.maybe(err) ?? t('guess-failed', { defaultValue: 'Could not check that guess.' }));
       return;
     }
     setMsg(

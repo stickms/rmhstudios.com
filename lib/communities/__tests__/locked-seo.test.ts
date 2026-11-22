@@ -50,10 +50,10 @@ describe('private communities and search engines', () => {
     const { SITEMAP_SECTIONS } = await import('@/lib/sitemap.server');
     await SITEMAP_SECTIONS.community.count();
     await SITEMAP_SECTIONS.community.page(0, 10);
-    expect(h.communityCount).toHaveBeenCalledWith({ where: { isPrivate: false } });
+    expect(h.communityCount).toHaveBeenCalledWith({ where: { isPrivate: false, delistedAt: null } });
     expect(h.communityFindMany.mock.calls.length).toBeGreaterThan(0);
     for (const [arg] of h.communityFindMany.mock.calls) {
-      expect((arg as { where: unknown }).where).toEqual({ isPrivate: false });
+      expect((arg as { where: unknown }).where).toEqual({ isPrivate: false, delistedAt: null });
     }
   });
 
