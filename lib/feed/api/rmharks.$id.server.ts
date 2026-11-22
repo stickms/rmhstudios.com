@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
@@ -350,7 +351,7 @@ export const route = apiRoute('/api/rmharks/$id', {
     }
     const existingHasGif = !!existing.gifUrl;
     if (!content && !(gifUrlProvided ? nextGifUrl : existingHasGif)) {
-      return Response.json({ error: 'Post cannot be empty' }, { status: 400 });
+      return Response.json({ ...refusalBody('POST_EMPTY') }, { status: 400 });
     }
     // The description follows the GIF: a new GIF starts from the description sent with it, never the old one's.
     const nextGif = resolveEditedGifAlt({

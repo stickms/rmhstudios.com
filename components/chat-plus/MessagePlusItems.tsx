@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -11,7 +12,6 @@ import { isPlainKind, type ChatRef } from '@/lib/chat-plus/types';
 import { useChatPlusUi } from '@/lib/chat-plus/ui-store';
 import type { ChatMeta } from '@/lib/chat-plus/settings.client';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { setChatPinApi } from '@/lib/chat-plus/chat.contract';
 import { chatMetaKey, useChatMeta } from './hooks';
 
@@ -41,6 +41,7 @@ export function MessagePlusItems({
   onDone: () => void;
 }) {
   const { t } = useTranslation('f-messaging');
+  const refusalText = useRefusalText();
   const qc = useQueryClient();
   const { data: meta } = useChatMeta(chat);
   const openForward = useChatPlusUi((s) => s.openForward);
@@ -69,7 +70,7 @@ export function MessagePlusItems({
       });
     } catch (err) {
       toast.error(
-        serverError(err) ||
+        refusalText.maybe(err) ||
           t('pin-failed', {
             defaultValue: 'Could not update the pin',
           }),

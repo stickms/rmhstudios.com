@@ -27,6 +27,7 @@
  */
 
 import { deckFolderErasureOps } from '@/lib/study/folders.server';
+import { cardSoundErasureOps, deleteMemberCardSoundObjects } from '@/lib/study/card-sound.server';
 import { groupMentionErasureOps } from '@/lib/group-chat/mentions.server';
 import { awayErasureOps } from '@/lib/messages/away.server';
 import { buildCommentErasureOps } from '@/lib/builds/comments.server';
@@ -74,6 +75,11 @@ import { privateDataErasureOps } from '@/lib/account/erasure-private.server';
 import { listsErasureOps } from '@/lib/account/erasure-lists.server';
 import { gameProgressErasureOps } from '@/lib/account/erasure-games.server';
 import { boardsErasureOps } from '@/lib/account/erasure-boards.server';
+import {
+  deleteMemberListingImageObjects,
+  followsErasureOps,
+  readListingImageUrls,
+} from '@/lib/account/erasure-follows.server';
 import { runAfterErasureInline } from '@/lib/account/after-erasure-jobs.server';
 import { recurringThreadErasureOps } from '@/lib/communities/recurring.server';
 import { restoreAfterCancel } from '@/lib/account/deletion-hold.server';
@@ -273,6 +279,8 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   // s04-20 flag-targeting
   // Flag allow and deny lists hold member ids in arrays, so no cascade reaches them; read, then rewrite.
   await removeMemberFromFlagLists(userId);
+  // s10-19 erasure-follows (counter reads before the transaction)
+  const listingImageUrls = await readListingImageUrls(userId);
 
   await prisma.$transaction([
     // 1. Destroy every way to authenticate as this account. Re-run safe: by the
@@ -625,6 +633,26 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // s09-16 erasure-boards
     ...boardsErasureOps(userId),
 
+    // Sprint 10 erasures (docs/autonomous/sprint-10/plan.md §Anchors): each feature adds its operations under its own line.
+    // s10-02 card-sound
+    // The cards stay (decks are an open owner decision); the member's voice recordings are erased (columns nulled).
+    ...cardSoundErasureOps(userId),
+
+    // s10-04 deck-suggestions
+    // The suggestions the member made are erased (open ones leave the author's list); suggestions to the member's
+    // decks stay with the decks (an open owner decision) until the member, as author, would have decided them.
+    prisma.deckSuggestion.deleteMany({ where: { suggesterId: userId } }),
+
+    // s10-05 type-texts
+    ...(await import('@/lib/rmhtype/texts.server')).typeTextErasureOps(userId),
+
+    // s10-09 build-issues
+    // Published issues stay under "Deleted user" (as build comments do); the member's "I see this too" marks are
+    // erased and each issue's count is corrected.
+    ...(await (await import('@/lib/builds/issues.server')).buildIssueErasureOps(userId)),
+
+    // s10-19 erasure-follows
+    ...followsErasureOps(userId),
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
@@ -666,4 +694,8 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   // runs once here and, if one throws, the idempotent `account.after-erasure` job retries them all.
   // s08-20 erasure-games, s09-16 erasure-boards (after the transaction)
   await runAfterErasureInline(userId);
+  // s10-02 card-sound (stored objects deleted after the transaction)
+  await deleteMemberCardSoundObjects(userId).catch(() => {});
+  // s10-19 erasure-follows (listing photo objects, after the transaction)
+  await deleteMemberListingImageObjects(userId, listingImageUrls).catch(() => {});
 }

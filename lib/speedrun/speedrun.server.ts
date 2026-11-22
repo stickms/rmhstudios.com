@@ -20,6 +20,10 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { recordAdminActionIn } from '@/lib/admin-audit.server';
+import { createNotification } from '@/lib/notifications.server';
+import { notice } from '@/lib/notifications/notice-keys';
+import { games } from '@/lib/catalog';
 import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
 import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
@@ -52,7 +56,8 @@ export type SpeedrunErrorCode =
   | 'GAME_MISMATCH'
   | 'NO_CATEGORY_FOR_VERSION'
   | 'DUPLICATE_RUN'
-  | 'ENTRY_NOT_FOUND';
+  | 'ENTRY_NOT_FOUND'
+  | 'ALREADY_DECIDED';
 
 export class SpeedrunError extends Error {
   constructor(public code: SpeedrunErrorCode) {
@@ -273,7 +278,9 @@ export async function getBoard(options: {
     select: entrySelect,
   });
 
-  return { categories, metric, entries: rows.map(toEntryView) };
+  // `rejectReason` is admin-written text about a member and this response is public and cached: it never travels
+  // here. A runner reads their own reason from `getRunsForUser` (`GET /api/speedrun/runs`).
+  return { categories, metric, entries: rows.map((row) => ({ ...toEntryView(row), rejectReason: null })) };
 }
 
 /** Runs awaiting a human verdict, oldest first — the manual queue. */
@@ -443,6 +450,49 @@ export interface ReverifyResult {
   stillPending: number;
 }
 
+/** Where a batch stopped, oldest first by `(createdAt, id)`: the next batch starts after it. */
+export interface ReverifyCursor {
+  createdAt: Date;
+  id: string;
+}
+
+/** The notification's entity type; one label ("Speedrun verdict") covers both notice keys. */
+export const SPEEDRUN_VERDICT_ENTITY = 'speedrun-verdict';
+
+/** The game's title for a notice; the id when the catalog does not know it. Member-independent plain text. */
+function gameTitle(game: string): string {
+  return games.find((g) => g.id === game)?.title ?? game;
+}
+
+/**
+ * Tell the runner what happened to their run: the `notice()` keys of the inbox. Best-effort and called only by the
+ * writer whose compare-and-set won, so a verdict is announced once. A failed notification never undoes the verdict.
+ */
+async function notifyRunner(entry: {
+  id: string;
+  userId: string;
+  status: 'verified' | 'rejected';
+  reason: string | null;
+  game: string;
+}): Promise<void> {
+  const game = gameTitle(entry.game);
+  try {
+    await createNotification({
+      userId: entry.userId,
+      type: 'SYSTEM',
+      entityType: SPEEDRUN_VERDICT_ENTITY,
+      entityId: `${entry.id}:${entry.status}`,
+      preview:
+        entry.status === 'verified'
+          ? notice('speedrun-run-verified', { game })
+          : notice('speedrun-run-rejected', { game, reason: entry.reason ?? 'No reason was given.' }),
+      link: '/compete',
+    });
+  } catch (error) {
+    console.error('[speedrun] could not notify the runner', error);
+  }
+}
+
 /**
  * Re-run the registry over queued runs.
  *
@@ -450,16 +500,29 @@ export interface ReverifyResult {
  * version, a `consistency` game graduates to `deterministic`. Re-running the
  * pass is how those runs get their verdict without a re-submission — and it is
  * safe to run repeatedly, because the verifier is pure and a run whose verdict
- * does not change is written back only when it actually changes.
+ * does not change is written back only when it actually changes. A run that DOES
+ * change tells its runner, once: the write is a compare-and-set on `pending`, and
+ * only the pass that won it notifies.
  */
-export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
+export async function reverifyPending(
+  limit = 50,
+  after?: ReverifyCursor,
+): Promise<ReverifyResult & { last: ReverifyCursor | null }> {
   const take = Math.min(Math.max(Math.trunc(limit) || 50, 1), 200);
   const rows = await prisma.speedrunEntry.findMany({
-    where: { status: 'pending' },
-    orderBy: { createdAt: 'asc' },
+    // `after` lets the nightly job walk past runs that legitimately stay pending instead of re-reading them.
+    where: after
+      ? {
+          status: 'pending',
+          OR: [{ createdAt: { gt: after.createdAt } }, { createdAt: after.createdAt, id: { gt: after.id } }],
+        }
+      : { status: 'pending' },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     take,
     select: {
       id: true,
+      userId: true,
+      createdAt: true,
       timeMs: true,
       score: true,
       category: { select: { game: true, metric: true } },
@@ -467,8 +530,16 @@ export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
     },
   });
 
-  const result: ReverifyResult = { checked: 0, verified: 0, rejected: 0, stillPending: 0 };
+  const result: ReverifyResult & { last: ReverifyCursor | null } = {
+    checked: 0,
+    verified: 0,
+    rejected: 0,
+    stillPending: 0,
+    last: null,
+  };
   if (rows.length === 0) return result;
+  const tail = rows[rows.length - 1];
+  if (tail) result.last = { createdAt: tail.createdAt, id: tail.id };
 
   const replays = await prisma.gameReplay.findMany({
     where: { id: { in: rows.map((r) => r.replayId) } },
@@ -483,14 +554,15 @@ export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
       // The replay is gone (owner deleted it), so the run can never be checked.
       // Conditional on still pending: an admin verdict that landed while the
       // sweep ran is never overwritten by automation.
+      const reason = clampReason('The replay this run points at no longer exists.');
       const { count } = await prisma.speedrunEntry.updateMany({
         where: { id: row.id, status: 'pending' },
-        data: {
-          status: 'rejected',
-          rejectReason: clampReason('The replay this run points at no longer exists.'),
-        },
+        data: { status: 'rejected', rejectReason: reason },
       });
-      if (count > 0) result.rejected++;
+      if (count > 0) {
+        result.rejected++;
+        await notifyRunner({ id: row.id, userId: row.userId, status: 'rejected', reason, game: row.category.game });
+      }
       continue;
     }
 
@@ -510,50 +582,151 @@ export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
       continue;
     }
 
+    const reason = verdict.reason ? clampReason(speedrunRejectionMessage(verdict.reason)) : null;
     const { count } = await prisma.speedrunEntry.updateMany({
       // CAS on 'pending' (see above): the sweep never overrides a human.
       where: { id: row.id, status: 'pending' },
       data: {
         status: verdict.status,
         score: verdict.derivedScore ?? row.score,
-        rejectReason: verdict.reason ? clampReason(speedrunRejectionMessage(verdict.reason)) : null,
+        rejectReason: reason,
         verifiedAt: verdict.status === 'verified' ? new Date() : null,
       },
     });
     if (count === 0) continue;
     if (verdict.status === 'verified') result.verified++;
     else result.rejected++;
+    await notifyRunner({ id: row.id, userId: row.userId, status: verdict.status, reason, game: row.category.game });
   }
 
   return result;
 }
 
+/** Who gave a verdict, as the page shows it: a display name, or null for the automatic pass. */
+export interface Decider {
+  id: string;
+  name: string | null;
+}
+
+async function resolveDeciders(ids: readonly (string | null)[]): Promise<Map<string, Decider>> {
+  const unique = [...new Set(ids.filter((id): id is string => typeof id === 'string'))];
+  const out = new Map<string, Decider>();
+  if (unique.length === 0) return out;
+  const users = await prisma.user.findMany({ where: { id: { in: unique } }, select: userDisplaySelect });
+  for (const u of Array.isArray(users) ? users : []) {
+    out.set(u.id, { id: u.id, name: resolveUserDisplay(u).name });
+  }
+  return out;
+}
+
+export type ReviewResult =
+  | { ok: true; entry: SpeedrunEntryView }
+  | { ok: false; code: 'ALREADY_DECIDED'; status: SpeedrunStatus; decidedBy: Decider | null };
+
+const verdictAction = (status: 'verified' | 'rejected') => (status === 'verified' ? 'speedrun.verify' : 'speedrun.reject');
+
 /**
  * An admin's verdict on a queued run.
  *
- * Manual review exists precisely for the runs automation cannot settle, so this
- * records WHY in `rejectReason` even on an approval — a board whose top entry was
- * approved by hand should say so.
+ * It applies only while the run is still `pending` (a compare-and-set, so two admins never overwrite each other and a
+ * verdict never overwrites an automatic one); the loser is told who decided. The change and its audit row are one
+ * transaction. Manual review exists precisely for the runs automation cannot settle, so this records WHY in
+ * `rejectReason` even on an approval — a board whose top entry was approved by hand should say so. Only the writer
+ * that won the compare-and-set tells the runner.
+ *
+ * To reverse a verdict, {@link reopenEntry} puts the run back in the queue first.
  */
 export async function reviewEntry(input: {
   entryId: string;
   status: Extract<SpeedrunStatus, 'verified' | 'rejected'>;
-  reason?: string;
-}): Promise<SpeedrunEntryView> {
-  const existing = await prisma.speedrunEntry.findUnique({
-    where: { id: input.entryId },
-    select: { id: true },
+  reason?: string | undefined;
+  adminId: string;
+}): Promise<ReviewResult> {
+  const reason = input.reason ? clampReason(input.reason) : null;
+  const now = new Date();
+  const won = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.speedrunEntry.updateMany({
+      where: { id: input.entryId, status: 'pending' },
+      data: {
+        status: input.status,
+        rejectReason: reason,
+        verifiedAt: input.status === 'verified' ? now : null,
+        reviewedById: input.adminId,
+        reviewedAt: now,
+      },
+    });
+    if (count === 0) return false;
+    await recordAdminActionIn(tx, input.adminId, verdictAction(input.status), {
+      targetType: 'speedrun_entry',
+      targetId: input.entryId,
+      detail: reason ? `${input.status}: ${reason}` : input.status,
+    });
+    return true;
   });
-  if (!existing) throw new SpeedrunError('ENTRY_NOT_FOUND');
 
-  const row = await prisma.speedrunEntry.update({
+  if (!won) {
+    const existing = await prisma.speedrunEntry.findUnique({
+      where: { id: input.entryId },
+      select: { status: true, reviewedById: true },
+    });
+    if (!existing) throw new SpeedrunError('ENTRY_NOT_FOUND');
+    const deciders = await resolveDeciders([existing.reviewedById]);
+    return {
+      ok: false,
+      code: 'ALREADY_DECIDED',
+      status: toSpeedrunStatus(existing.status),
+      decidedBy: existing.reviewedById ? (deciders.get(existing.reviewedById) ?? { id: existing.reviewedById, name: null }) : null,
+    };
+  }
+
+  const row = await prisma.speedrunEntry.findUnique({
     where: { id: input.entryId },
-    data: {
-      status: input.status,
-      rejectReason: input.reason ? clampReason(input.reason) : null,
-      verifiedAt: input.status === 'verified' ? new Date() : null,
-    },
-    select: entrySelect,
+    select: { ...entrySelect, userId: true, category: { select: { version: true, game: true } } },
   });
-  return toEntryView(row);
+  if (!row) throw new SpeedrunError('ENTRY_NOT_FOUND');
+  await notifyRunner({
+    id: row.id,
+    userId: row.userId,
+    status: input.status,
+    reason,
+    game: row.category.game,
+  });
+  return { ok: true, entry: toEntryView(row) };
+}
+
+export type ReopenResult =
+  | { ok: true }
+  | { ok: false; code: 'STATUS_CHANGED'; status: SpeedrunStatus };
+
+/**
+ * Put a decided run back in the queue (the way an admin reverses a verification once cheating comes to light).
+ *
+ * A compare-and-set from the status the admin saw (`from`) back to `pending`, audited in the same transaction with the
+ * reason. The runner is not told: they hear only of the verdict that follows.
+ */
+export async function reopenEntry(input: {
+  entryId: string;
+  from: Extract<SpeedrunStatus, 'verified' | 'rejected'>;
+  reason: string;
+  adminId: string;
+}): Promise<ReopenResult> {
+  const reason = clampReason(input.reason);
+  const reopened = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.speedrunEntry.updateMany({
+      where: { id: input.entryId, status: input.from },
+      data: { status: 'pending', rejectReason: null, verifiedAt: null, reviewedById: null, reviewedAt: null },
+    });
+    if (count === 0) return false;
+    await recordAdminActionIn(tx, input.adminId, 'speedrun.reopen', {
+      targetType: 'speedrun_entry',
+      targetId: input.entryId,
+      detail: `was ${input.from}: ${reason}`,
+    });
+    return true;
+  });
+  if (reopened) return { ok: true };
+
+  const existing = await prisma.speedrunEntry.findUnique({ where: { id: input.entryId }, select: { status: true } });
+  if (!existing) throw new SpeedrunError('ENTRY_NOT_FOUND');
+  return { ok: false, code: 'STATUS_CHANGED', status: toSpeedrunStatus(existing.status) };
 }

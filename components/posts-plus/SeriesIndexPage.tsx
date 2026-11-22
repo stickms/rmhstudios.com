@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -13,7 +14,6 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createSeriesApi } from '@/lib/posts-plus/series.contract';
 import { seriesQuery } from '@/lib/posts-plus/series.queries';
 import { useArrival } from '@/components/ui/arrive';
@@ -34,6 +34,7 @@ interface Summary {
 /** /series - the series you have written and the ones you follow (X5). */
 export function SeriesIndexPage() {
   const { t } = useTranslation('f-posts-plus');
+  const refusalText = useRefusalText();
   const { data: session, isPending } = useSession();
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -81,7 +82,7 @@ export function SeriesIndexPage() {
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('series-create-failed', {
             defaultValue: 'Could not create the series',
           }),

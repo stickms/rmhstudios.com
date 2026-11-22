@@ -602,6 +602,27 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // s09-12 media-sweep
   '/admin/media-sweep': 'admin',
 
+  // Sprint 10 (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-05 type-texts
+  '/rmhtype/texts': 'personal',
+  // (/rmhtype/texts, 'personal')
+
+  // s10-08 profile-preview
+  '/settings/preview': 'personal',
+  // (/settings/preview, 'personal')
+
+  // s10-15 admin-webhooks
+  '/admin/webhooks': 'admin',
+  // (/admin/webhooks, 'admin')
+
+  // s10-16 speedrun-queue
+  '/admin/speedruns': 'admin',
+  // (/admin/speedruns, 'admin')
+
+  // s10-17 admin-communities
+  '/admin/communities': 'admin',
+  // (/admin/communities, 'admin')
+
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
   '/settings/appearance': 'personal',
@@ -925,6 +946,11 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
 
   // s09-05 guide-history
   '/games/$gameId/guides/$guideId/history': null, // a guide's edit history: its author's (and admins') only, never indexed
+
+  // Sprint 10 (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-09 build-issues
+  // (/builds/$slug/issues, 'content')
+  '/builds/$slug/issues': null, // reached from the build page; unlisted builds' issues are link-only, and public ones are not indexed yet
 };
 
 // ──────────────────────────── XML rendering ────────────────────────────

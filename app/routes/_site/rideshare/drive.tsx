@@ -1,6 +1,7 @@
 /**
  * RMH Rideshare — driver application & dashboard (/rideshare/drive)
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
@@ -34,7 +35,7 @@ import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/c
 import { formatDistance, formatDuration, formatUsd, payoutBreakdown } from '@/lib/rideshare/geo';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   applyToDriveApi,
   getDriverApi,
@@ -193,6 +194,7 @@ function ApplicationForm({
   );
   const [submitting, setSubmitting] = useState(false);
   const { t } = useTranslation('rideshare');
+  const refusalText = useRefusalText();
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -211,7 +213,7 @@ function ApplicationForm({
       onApplied();
     } catch (e) {
       if (e instanceof HttpError) {
-        toast.error(serverError(e) || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
+        toast.error(refusalText.maybe(e) || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
       } else {
         toast.error(t('error-generic-retry', { defaultValue: 'Something went wrong. Please try again.' }));
       }
@@ -317,6 +319,7 @@ function DriverDashboard({
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [focusRideId, setFocusRideId] = useState<string | null>(null);
   const { t } = useTranslation('rideshare');
+  const refusalText = useRefusalText();
   // The ride rows animate themselves (RideCard); only the empty state needs the M9 fade.
   const arrival = useArrival(!loading);
 
@@ -371,7 +374,7 @@ function DriverDashboard({
       load();
     } catch (e) {
       if (e instanceof HttpError) {
-        toast.error(serverError(e) || t('error-action-failed', { defaultValue: 'Action failed.' }));
+        toast.error(refusalText.maybe(e) || t('error-action-failed', { defaultValue: 'Action failed.' }));
       } else {
         toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
       }

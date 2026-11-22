@@ -425,6 +425,8 @@ model ReadingHighlight {
 
   user     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   passages ReadingHighlightPassage[]
+  /// Flashcards made from this highlight (s10-01).
+  cardLinks HighlightCardLink[]
 
   @@index([userId, docKind, docKey])
   @@index([userId, createdAt(sort: Desc)])

@@ -28,6 +28,7 @@ import {
   type EventReminderJob,
 } from '@/lib/events/reminders.server';
 import { getRole, canModerate } from '@/lib/communities/access.server';
+import { logModAction } from '@/lib/communities/modlog.server';
 import { activeSanction } from '@/lib/communities/sanction-read.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -644,6 +645,38 @@ export async function listEvents(opts: {
   return attachAndMap(rows, viewerId);
 }
 
+/** How many past events a community's Events tab shows. */
+export const COMMUNITY_PAST_EVENTS_LIMIT = 20;
+
+/**
+ * A community's ended events, newest first (s10-07). The same visibility as the upcoming list: public events only,
+ * never a draft, and nothing at all for a private community the viewer is not in. A canceled event is not listed, and
+ * a repeating series that is still running is upcoming, not past.
+ */
+export async function listCommunityPastEvents(
+  communityId: string,
+  viewerId: string | null,
+  limit: number = COMMUNITY_PAST_EVENTS_LIMIT,
+): Promise<EventDTO[]> {
+  if (!(await canViewCommunityEvents(communityId, viewerId))) return [];
+  const now = new Date();
+  const rows = await prisma.event.findMany({
+    where: {
+      ...publicMemberEventWhere,
+      communityId,
+      canceledAt: null,
+      AND: [
+        { OR: [{ endsAt: { lt: now } }, { endsAt: null, startsAt: { lt: now } }] },
+        { OR: [{ recurrence: null }, { recurUntil: { lt: new Date(now.getTime() - 86_400_000) } }] },
+      ],
+    },
+    orderBy: { startsAt: 'desc' },
+    take: Math.min(Math.max(1, Math.floor(limit)), 50),
+    include: eventInclude,
+  });
+  return attachAndMap(rows, viewerId);
+}
+
 /** Upcoming events across every community the viewer is a member of. */
 export async function listMemberCommunityEvents(userId: string): Promise<EventDTO[]> {
   const memberships = await prisma.communityMember.findMany({
@@ -702,25 +735,36 @@ export async function createEvent(input: CreateEventInput): Promise<EventDTO> {
     if (!recurrenceData.ok) throw new EventError('INVALID_RECURRENCE');
   }
 
-  const created = await prisma.event.create({
-    data: {
-      ...(recurrenceData?.ok ? recurrenceData.data : {}),
-      owner: input.communityId ? 'COMMUNITY' : 'USER',
-      kind: EVENT_KIND,
-      visibility: input.visibility ?? 'PUBLIC',
-      pollId: input.pollId ?? null,
-      hostId: input.hostId,
-      communityId: input.communityId ?? null,
-      title: input.title.trim(),
-      description: input.description?.trim() ?? '',
-      startsAt: start,
-      endsAt: end,
-      venueKind: input.venueKind,
-      venueRef,
-      capacity: input.capacity ?? null,
-    },
-    select: { id: true },
-  });
+  const data: Prisma.EventUncheckedCreateInput = {
+    ...(recurrenceData?.ok ? recurrenceData.data : {}),
+    owner: input.communityId ? 'COMMUNITY' : 'USER',
+    kind: EVENT_KIND,
+    visibility: input.visibility ?? 'PUBLIC',
+    pollId: input.pollId ?? null,
+    hostId: input.hostId,
+    communityId: input.communityId ?? null,
+    title: input.title.trim(),
+    description: input.description?.trim() ?? '',
+    startsAt: start,
+    endsAt: end,
+    venueKind: input.venueKind,
+    venueRef,
+    capacity: input.capacity ?? null,
+  };
+  // A community's event is recorded in its mod log in the same transaction, so a hosted event is never unlogged.
+  const created = input.communityId
+    ? await prisma.$transaction(async (tx) => {
+        const row = await tx.event.create({ data, select: { id: true } });
+        await logModAction(tx, {
+          communityId: input.communityId!,
+          actorId: input.hostId,
+          action: 'event_hosted',
+          targetType: 'event',
+          targetId: row.id,
+        });
+        return row;
+      })
+    : await prisma.event.create({ data, select: { id: true } });
 
   if (recurrenceData?.ok && recurrenceData.data.rotatingHostIds.length) {
     notifyRotation(
@@ -830,7 +874,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
 export async function cancelEvent(id: string, hostId: string): Promise<EventDTO> {
   const event = await prisma.event.findFirst({
     where: { id, ...memberEventWhere },
-    select: { id: true, hostId: true, canceledAt: true, title: true },
+    select: { id: true, hostId: true, canceledAt: true, title: true, communityId: true },
   });
   if (!event) throw new EventError('NOT_FOUND');
   if (event.hostId !== hostId) throw new EventError('FORBIDDEN');
@@ -840,6 +884,15 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
     await prisma.$transaction(async (tx) => {
       await lockEventRsvps(tx, id);
       await tx.event.update({ where: { id }, data: { canceledAt: new Date() } });
+      if (event.communityId) {
+        await logModAction(tx, {
+          communityId: event.communityId,
+          actorId: hostId,
+          action: 'event_cancelled',
+          targetType: 'event',
+          targetId: id,
+        });
+      }
     });
     // Notify everyone who RSVP'd (best-effort). Pending reminder jobs stay put;
     // the worker's canceled-check turns them into no-ops.

@@ -16,6 +16,14 @@ import { getLessonProgressApi, recordLessonRunApi } from '@/lib/rmhtype/lessons.
 import { getRmhTypeProgressApi, getRmhTypeRunsApi } from '@/lib/rmhtype/progress.contract';
 import { clearRmhTypeGhostsApi, getRmhTypeGhostApi } from '@/lib/rmhtype/ghost.contract';
 import {
+  createRmhTypeTextApi,
+  deleteRmhTypeTextApi,
+  getRmhTypeTextApi,
+  listRmhTypeTextsApi,
+  recordRmhTypeTextRunApi,
+  updateRmhTypeTextApi,
+} from '@/lib/rmhtype/texts.contract';
+import {
   buildRmhTypePracticeTestApi,
   clearRmhTypeKeyStatsApi,
   getRmhTypeKeyStatsApi,
@@ -112,3 +120,31 @@ export const rmhTypeGhostQuery = (passageId: string, enabled: boolean) =>
   );
 
 export const clearRmhTypeGhosts = () => api(clearRmhTypeGhostsApi);
+
+/* Saved texts (s10-05) */
+
+export const RMHTYPE_TEXTS_KEY = ['rmhtype', 'texts'] as const;
+
+/** The member's saved texts, for the texts page. The solo page never reads the list. */
+export const rmhTypeTextsQuery = () =>
+  contractQuery(RMHTYPE_TEXTS_KEY, listRmhTypeTextsApi, { retries: 0 }, { staleTime: 15_000 });
+
+/** One saved text with its runs: the texts page's section and the solo page's `?text=<id>`. */
+export const rmhTypeTextQuery = (textId: string, enabled = true) =>
+  contractQuery(
+    [...RMHTYPE_TEXTS_KEY, textId],
+    getRmhTypeTextApi,
+    { params: { textId }, retries: 0 },
+    { staleTime: 0, enabled: enabled && textId !== '' },
+  );
+
+export const createRmhTypeText = (body: ApiInput<typeof createRmhTypeTextApi>['body']) =>
+  api(createRmhTypeTextApi, { body });
+
+export const updateRmhTypeText = (textId: string, body: ApiInput<typeof updateRmhTypeTextApi>['body']) =>
+  api(updateRmhTypeTextApi, { params: { textId }, body });
+
+export const deleteRmhTypeText = (textId: string) => api(deleteRmhTypeTextApi, { params: { textId } });
+
+export const recordRmhTypeTextRun = (textId: string, body: ApiInput<typeof recordRmhTypeTextRunApi>['body']) =>
+  api(recordRmhTypeTextRunApi, { params: { textId }, body });

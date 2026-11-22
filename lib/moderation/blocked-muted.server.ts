@@ -10,6 +10,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { DELETED_USER_ID } from '@/lib/account/deleted-user';
 import { decodeCursor, encodeCursor } from '@/lib/feed/cursor';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { BLOCKED_MUTED_PAGE_SIZE, type BlockedMutedTab } from '@/lib/moderation/blocked-muted-schema';
 import type { BlockedMutedPage, BlockedMutedRow } from '@/lib/moderation/blocked-muted.contract';
@@ -36,9 +37,17 @@ function isDeletedAccount(user: PersonRow): boolean {
 }
 
 /** A deleted account shows nothing of itself; the id stays because the unblock call needs it. */
-function toRow(user: Parameters<typeof resolveUser>[0], since: Date): BlockedMutedRow {
+function toRow(user: Parameters<typeof resolveUser>[0], since: Date, expiresAt: Date | null = null): BlockedMutedRow {
   if (isDeletedAccount(user)) {
-    return { userId: user.id, deleted: true, name: null, handle: null, image: null, since: since.toISOString() };
+    return {
+      userId: user.id,
+      deleted: true,
+      name: null,
+      handle: null,
+      image: null,
+      since: since.toISOString(),
+      expiresAt: expiresAt?.toISOString() ?? null,
+    };
   }
   const resolved = resolveUser(user);
   return {
@@ -48,6 +57,7 @@ function toRow(user: Parameters<typeof resolveUser>[0], since: Date): BlockedMut
     handle: resolved.handle,
     image: resolved.image ?? null,
     since: since.toISOString(),
+    expiresAt: expiresAt?.toISOString() ?? null,
   };
 }
 
@@ -73,7 +83,7 @@ function keyset(after: string | undefined): Keyset | undefined {
 async function counts(userId: string): Promise<BlockedMutedPage['counts']> {
   const [blocked, muted] = await Promise.all([
     prisma.userBlock.count({ where: { blockerId: userId } }),
-    prisma.userMute.count({ where: { muterId: userId } }),
+    prisma.userMute.count({ where: { muterId: userId, ...activeMuteWhere(new Date()) } }),
   ]);
   return { blocked, muted };
 }
@@ -112,15 +122,21 @@ export async function listBlocked(userId: string, opts: ListOptions = {}): Promi
 export async function listMuted(userId: string, opts: ListOptions = {}): Promise<BlockedMutedPage> {
   const person = personFilter(opts.q);
   const rows = await prisma.userMute.findMany({
-    where: { muterId: userId, ...keyset(opts.after), ...(person ? { muted: person } : {}) },
-    select: { id: true, createdAt: true, muted: { select: userDisplaySelect } },
+    where: {
+      muterId: userId,
+      ...keyset(opts.after),
+      ...(person ? { muted: person } : {}),
+      // keyset() already uses OR, so the expiry filter joins through AND.
+      AND: [activeMuteWhere(new Date())],
+    },
+    select: { id: true, createdAt: true, expiresAt: true, muted: { select: userDisplaySelect } },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: BLOCKED_MUTED_PAGE_SIZE + 1,
   });
   const { page, nextCursor } = pageOf(rows);
   return {
     tab: 'muted',
-    items: page.map((r) => toRow(r.muted, r.createdAt)),
+    items: page.map((r) => toRow(r.muted, r.createdAt, r.expiresAt)),
     nextCursor,
     counts: await counts(userId),
   };
@@ -147,7 +163,7 @@ export function blockMuteErasureOps(userId: string) {
 
 export interface BlocksMutesExport {
   blocked: { userId: string; handle: string | null; since: string }[];
-  muted: { userId: string; handle: string | null; since: string }[];
+  muted: { userId: string; handle: string | null; since: string; expiresAt: string | null }[];
 }
 
 /** The member's own block and mute lists for the account export: who, and since when. */
@@ -160,12 +176,18 @@ export async function exportBlocksMutes(userId: string): Promise<BlocksMutesExpo
     }),
     prisma.userMute.findMany({
       where: { muterId: userId },
-      select: { mutedId: true, createdAt: true, muted: { select: { handle: true } } },
+      select: { mutedId: true, createdAt: true, expiresAt: true, muted: { select: { handle: true } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     }),
   ]);
   return {
     blocked: blocks.map((b) => ({ userId: b.blockedId, handle: b.blocked.handle, since: b.createdAt.toISOString() })),
-    muted: mutes.map((m) => ({ userId: m.mutedId, handle: m.muted.handle, since: m.createdAt.toISOString() })),
+    muted: mutes.map((m) => ({
+      userId: m.mutedId,
+      handle: m.muted.handle,
+      since: m.createdAt.toISOString(),
+      // When a timed mute ends; null for a mute until the member unmutes (s10-10).
+      expiresAt: m.expiresAt?.toISOString() ?? null,
+    })),
   };
 }

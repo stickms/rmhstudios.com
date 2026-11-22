@@ -4,6 +4,7 @@
  * member's own reports or strikes, and search. Rows on rules; "Add note" is the section's only primary.
  * Note text is rendered as text; links are detected for display and never followed automatically.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { Fragment, useCallback, useId, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +20,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import {
   createModeratorNoteApi,
@@ -59,6 +59,7 @@ export function ModeratorNotes({
 }) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('mod-notes');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
   const confirm = useConfirm();
@@ -122,7 +123,7 @@ export function ModeratorNotes({
     });
   const failed = (e: unknown) =>
     toast.error(
-      serverError(e) ??
+      refusalText.maybe(e) ??
         t('action-failed', {
           defaultValue: 'That did not go through.',
         }),

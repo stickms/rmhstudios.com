@@ -35,7 +35,7 @@ export const MEDIA_SWEEP_SURFACES = {
   post: {
     kind: 'swept',
     rules: ['orphan-pending', 'soft-deleted-post', 'hard-deleted-post'],
-    why: 'Feed uploads are PENDING until a post attaches them (lib/media/attach.server.ts), so each rule has a row to act on.',
+    why: 'Feed uploads are PENDING until a post attaches them (lib/media/attach.server.ts), so each rule has a row to act on. The same URLs can be re-used by tables that claim no row (a post, an announcement, a chat message, a homes listing photo, an email campaign picture, a museum era screenshot); `referencedUrls` keeps any URL one of them still names.',
   },
   album: {
     kind: 'not-recorded',
@@ -56,6 +56,11 @@ export const MEDIA_SWEEP_SURFACES = {
     kind: 'excluded',
     keptBy: 'lib/media/sweep.server.ts (referencedUrls: flashcard.frontImageUrl, flashcard.backImageUrl)',
     why: 'Card pictures stay PENDING for good and copies share one object by URL; a card side that names it keeps it.',
+  },
+  'card-sound': {
+    kind: 'excluded',
+    keptBy: 'lib/media/sweep.server.ts (referencedUrls: flashcard.frontSoundUrl, flashcard.backSoundUrl)',
+    why: 'Card sounds are claimed by compare-and-set when a card is saved and stay ATTACHED with no post; a card side that names one keeps it, and an upload no card claimed is reclaimed by the orphan rule. One object per side, never shared.',
   },
   chat: {
     kind: 'excluded',

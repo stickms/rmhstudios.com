@@ -7,6 +7,7 @@
  * a code that is invalid, so a link never says who blocked whom nor confirms that a group exists.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { randomBytes } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -119,7 +120,7 @@ export async function createInvite(
       return {
         ok: false,
         status: 400,
-        error: `A group can have ${MAX_LIVE_INVITES} invite links at a time`,
+        ...refusalBody('GROUP_INVITE_LIMIT', { max: MAX_LIVE_INVITES }),
       } as const;
     }
     const row = await tx.chatInvite.create({

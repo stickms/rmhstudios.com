@@ -67,6 +67,8 @@ model UserBuild {
   views      BuildView[]
   unlocks    BuildUnlock[]
   screenshots BuildScreenshot[]
+  /// s10-09: bug reports on the build.
+  issues     BuildIssue[]
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
@@ -121,6 +123,9 @@ model BuildVersion {
 
   build    UserBuild            @relation(fields: [buildId], references: [id], onDelete: Cascade)
   manifest BuildManifestRecord?
+  /// s10-09: issues reported against this release, and issues fixed in it (a deleted release sets both to null).
+  issuesFound   BuildIssue[] @relation("BuildIssueVersion")
+  issuesFixedIn BuildIssue[] @relation("BuildIssueFixedIn")
 
   @@unique([buildId, version])
   @@index([buildId, createdAt(sort: Desc)])
@@ -243,4 +248,55 @@ model PostCodeEmbed {
   post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@map("post_code_embed")
+}
+
+/// s10-09: a bug report on a user build. The reporter's row stays at erasure (shown as "Deleted user", as build comments
+/// are); `versionId`, `fixedInId` and `duplicateOfId` are set null when what they point at is deleted.
+model BuildIssue {
+  id              String    @id @default(cuid())
+  buildId         String
+  reporterId      String
+  title           String    @db.VarChar(120)
+  body            String    @db.VarChar(4000)
+  steps           String?   @db.VarChar(2000)
+  versionId       String?
+  /// desktop | phone | tablet
+  platform        String    @db.VarChar(10)
+  /// open | confirmed | fixed | wont_fix | duplicate | closed (closed: the reporter withdrew it)
+  status          String    @default("open") @db.VarChar(10)
+  fixedInId       String?
+  wontFixReason   String?   @db.VarChar(200)
+  duplicateOfId   String?
+  hiddenAt        DateTime?
+  /// People who see it too (a count of people affected, not a post count); kept equal to the vote rows.
+  voteCount       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  statusChangedAt DateTime?
+
+  build       UserBuild        @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  reporter    User             @relation("BuildIssuesReported", fields: [reporterId], references: [id], onDelete: Cascade)
+  version     BuildVersion?    @relation("BuildIssueVersion", fields: [versionId], references: [id], onDelete: SetNull)
+  fixedIn     BuildVersion?    @relation("BuildIssueFixedIn", fields: [fixedInId], references: [id], onDelete: SetNull)
+  duplicateOf BuildIssue?      @relation("BuildIssueDuplicates", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  duplicates  BuildIssue[]     @relation("BuildIssueDuplicates")
+  votes       BuildIssueVote[]
+
+  @@index([buildId, status, createdAt])
+  @@index([reporterId, createdAt])
+  @@map("build_issue")
+}
+
+/// s10-09: "I see this too", once per member per issue. Erased at account deletion with the count corrected.
+model BuildIssueVote {
+  issueId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  issue BuildIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user  User       @relation("BuildIssueVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, userId])
+  @@index([userId])
+  @@map("build_issue_vote")
 }

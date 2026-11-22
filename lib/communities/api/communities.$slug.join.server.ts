@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
@@ -64,7 +65,7 @@ export const route = apiRoute('/api/communities/$slug/join', {
           ? await acceptInvite(community.id, userId, body.invite)
           : null;
         if (!accepted?.ok) {
-          return Response.json({ error: "This invite isn't valid" }, { status: 404 });
+          return Response.json({ ...refusalBody('COMMUNITY_INVITE_INVALID') }, { status: 404 });
         }
         return Response.json({ success: true, joined: true });
       }
@@ -73,7 +74,7 @@ export const route = apiRoute('/api/communities/$slug/join', {
         // The creator can't leave their own community.
         if (community.createdById === userId) {
           return Response.json(
-            { error: 'The creator cannot leave the community' },
+            { ...refusalBody('COMMUNITY_CREATOR_CANNOT_LEAVE') },
             { status: 400 },
           );
         }

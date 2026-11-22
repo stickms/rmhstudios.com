@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -11,7 +12,6 @@ import { StudyTabs } from '@/components/feed/StudyTabs';
 import { ReminderSettings } from '@/components/study/ReminderSettings';
 import { DeckDue, ReviewAllLink } from '@/components/study/DueCount';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { DeckFolderList } from '@/components/study/DeckFolderList';
@@ -30,6 +30,15 @@ interface Deck {
   user?: { name: string | null; handle: string | null };
 }
 
+/** The member's IANA zone; undefined when the browser will not say. */
+function viewerTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
+
 export function FlashcardsColumn({
   initialData,
 }: {
@@ -40,9 +49,11 @@ export function FlashcardsColumn({
     folders?: DeckFolderSummary[];
     signedIn: boolean;
     reviewAllCount?: number;
+    paced?: boolean;
   } | null;
 } = {}) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   // Seed from the loader when provided so the list paints immediately.
   const seeded = useRef(initialData != null);
@@ -66,7 +77,8 @@ export function FlashcardsColumn({
 
   const load = useCallback(async () => {
     try {
-      const data = await api(listDecksApi);
+      const tz = viewerTimeZone();
+      const data = await api(listDecksApi, tz ? { query: { tz } } : undefined);
       setMine(data.mine ?? []);
       setPopular(data.popular ?? []);
       setFolders(data.folders ?? []);
@@ -76,6 +88,13 @@ export function FlashcardsColumn({
       /* a failed load leaves the lists as they were */
     }
   }, []);
+
+  // The loader counts a paced deck's new cards in UTC (the server does not know the member's zone); the
+  // session counts them in the member's own, so fetch the badges again in that zone once (s10-03).
+  const correctZone = initialData?.paced === true;
+  useEffect(() => {
+    if (correctZone && viewerTimeZone() !== 'UTC') void load();
+  }, [correctZone, load]);
 
   useEffect(() => {
     if (seeded.current) return;
@@ -106,7 +125,7 @@ export function FlashcardsColumn({
       });
       navigate({ to: `/study/${data.id}` as string });
     } catch (err) {
-      setError(serverError(err) ?? t('could-not-create', { defaultValue: 'Could not create' }));
+      setError(refusalText.maybe(err) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }

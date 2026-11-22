@@ -9,7 +9,7 @@
 import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Award, BarChart3, MessageSquare, ShieldCheck, Star, Trophy } from 'lucide-react';
+import { Award, BarChart3, CalendarDays, MessageSquare, ShieldCheck, Star, Trophy } from 'lucide-react';
 import { VirtualPostList } from '@/components/feed/VirtualPostList';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
@@ -34,6 +34,7 @@ const HallOfFamePanel = lazy(() => import('@/components/communities/HallOfFamePa
 const ChallengePanel = lazy(() => import('@/components/communities/ChallengePanel'));
 const CensusPanel = lazy(() => import('@/components/communities/CensusPanel'));
 const TopContributorsPanel = lazy(() => import('@/components/communities/TopContributorsPanel'));
+const CommunityEventsPanel = lazy(() => import('@/components/communities/CommunityEventsPanel'));
 const ModPanel = lazy(() => import('@/components/communities/ModPanel'));
 
 /** A rules-only sheet is offered to members who joined within this long. */
@@ -55,7 +56,10 @@ export function CommunityPlusBody({
   setItems,
   initialPinned = null,
   composerLocked = false,
+  initialTab,
 }: {
+  /** s10-07: `?tab=events` opens the Events tab; anything else opens Posts. */
+  initialTab?: string | undefined;
   /** s09-06: the pinned posts the loader read with the first page. */
   initialPinned?: FeedItem[] | null;
   /** s06-01: a timed-out member reads but does not post; the page shows the notice instead of the composer. */
@@ -74,7 +78,7 @@ export function CommunityPlusBody({
   const { t } = useTranslation('f-communities-plus');
   const { slug } = community;
   const isMod = community.role === 'ADMIN' || community.role === 'MOD';
-  const [tab, setTab] = useState('posts');
+  const [tab, setTab] = useState(initialTab === 'events' ? 'events' : 'posts');
   const [extras, setExtras] = useState<CommunityExtrasDTO | null>(null);
   const [flairFilter, setFlairFilter] = useState<string | null>(null);
   const [filtered, setFiltered] = useState<FeedItem[] | null>(null);
@@ -115,6 +119,14 @@ export function CommunityPlusBody({
           defaultValue: 'Posts',
         }),
         icon: MessageSquare,
+      },
+      {
+        id: 'events',
+        label: t('tab-events', {
+          ns: 'community-events',
+          defaultValue: 'Events',
+        }),
+        icon: CalendarDays,
       },
       {
         id: 'fame',
@@ -215,6 +227,15 @@ export function CommunityPlusBody({
   return (
     <div>
       {community.role === 'MOD' && <HandoverBanner slug={slug} name={community.name} />}
+      {extras?.delistedReason != null && (
+        <p className={cn('t-meta border-b border-site-border px-4 py-2', extrasArrival)} dir="auto">
+          {t('out-of-discovery', {
+            ns: 'admin-communities',
+            defaultValue: 'This community is out of discovery: {{reason}}',
+            reason: extras.delistedReason,
+          })}
+        </p>
+      )}
       {extras && <CommunityRulesRail rules={extras.rules} communityName={community.name} className={extrasArrival} />}
       {extras?.requireImageAlt && <ImageAltRule className={extrasArrival} />}
       {extras?.publicModLog && <PublicModLog slug={slug} communityName={community.name} className={extrasArrival} />}
@@ -315,6 +336,9 @@ export function CommunityPlusBody({
       )}
 
       <ArrivalSuspense fallback={panelFallback}>
+        {tab === 'events' && (
+          <CommunityEventsPanel slug={slug} communityId={community.id} communityName={community.name} isMod={isMod} />
+        )}
         {tab === 'fame' && <HallOfFamePanel slug={slug} />}
         {tab === 'challenge' && (
           <ChallengePanel

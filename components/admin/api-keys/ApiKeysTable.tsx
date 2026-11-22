@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, type FormEvent } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,6 @@ import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { listAdminApiKeysApi, patchAdminApiKeyApi } from '@/lib/admin/api-keys.contract';
 import {
   ADMIN_CAP_MAX,
@@ -34,6 +34,7 @@ type StatusFilter = 'all' | ApiKeyStatus;
  */
 export function ApiKeysTable() {
   const { t } = useTranslation('admin-api-oversight');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const confirm = useConfirm();
   const prompt = usePrompt();
@@ -129,7 +130,7 @@ export function ApiKeysTable() {
       });
     } catch (error) {
       toast.error(
-        serverError(error) ??
+        refusalText.maybe(error) ??
           t('change-failed', {
             defaultValue: 'That change did not save. Try again.',
           }),

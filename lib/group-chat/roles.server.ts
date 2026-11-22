@@ -8,6 +8,7 @@
  * best-effort, like every other management line.
  */
 
+import { refusalBody, refusalBeside } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { announce, displayName, lockedGroup, refuseUnlessManager } from '@/lib/group-chat/manage.server';
 import { revokeInvitesOf } from '@/lib/group-chat/invites-revoke.server';
@@ -70,7 +71,7 @@ export async function setAdmin(
       return {
         ok: false,
         status: 400,
-        error: 'The owner is already above admins',
+        ...refusalBody('GROUP_OWNER_ABOVE_ADMINS'),
       } as const;
     const isAdmin = target.role === 'admin';
     const targetName = displayName(target.user);
@@ -92,7 +93,7 @@ export async function setAdmin(
         return {
           ok: false,
           status: 409,
-          error: `A group can have ${MAX_GROUP_ADMINS} admins`,
+          ...refusalBeside('GROUP_ADMIN_LIMIT', { max: MAX_GROUP_ADMINS }),
           code: 'ADMIN_LIMIT',
         } as const;
     }

@@ -26,7 +26,7 @@ export interface ErasureEntry {
  * The most `todo` entries the registry may hold. It may fall (erase one, or classify it, and lower this number in
  * the same change) and must never rise: a new model lands classified, not as `todo`.
  */
-export const TODO_CEILING = 17;
+export const TODO_CEILING = 4;
 
 /**
  * Entries by decision:
@@ -57,7 +57,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       "The member's trading cards, drop ledger, badges, pinned achievements, library collections and showcase; the cascade never fires.",
   },
-  Activity: { decision: 'todo', reason: 'Rule 2: activity feed rows that followers see; needs a product call.' },
+  Activity: {
+    decision: 'erase',
+    reason:
+      'Derived "X did Y" rows that followers see; the content they point at follows its own rule. `meta` goes with the row.',
+  },
   AdminAuditLog: { decision: 'keep', reason: 'Rule 4: admin audit trail.' },
   AdventClaim: {
     decision: 'keep',
@@ -159,6 +163,16 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   BuildGrant: {
     decision: 'keep',
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
+  },
+  BuildIssue: {
+    decision: 'keep',
+    reason:
+      'Rules 2 and 3: a published bug report on a build stays under "Deleted user" (as build comments do; the reporter row is anonymised in place, so it keeps no name); the creator\'s status and the other members\' "me too" marks are theirs.',
+  },
+  BuildIssueVote: {
+    decision: 'erase',
+    reason:
+      'The member\'s "I see this too" marks are their own: deleted, and each issue\'s voteCount is decremented in the same transaction.',
   },
   BuildLike: {
     decision: 'keep',
@@ -404,8 +418,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone.',
   },
   CustomFeedSubscription: {
-    decision: 'todo',
-    reason: "Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision.",
+    decision: 'erase',
+    reason:
+      'Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `CustomFeed.subscriberCount` is decremented (floored) in the same transaction.',
   },
   DailyPuzzleScore: {
     decision: 'erase',
@@ -417,6 +432,13 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
   DeckFolder: { decision: 'erase', reason: 'Private deck folders (sprint 07 deck-folders); decks stay, folderless.' },
+  DeckSuggestion: {
+    decision: 'erase',
+    scope:
+      "rows where the member is the suggester (suggesterId); suggestions to the member's own decks stay with the decks",
+    reason:
+      "The member's proposed corrections to other members' cards are their own writing, private to them and the deck's author: erased, so open ones leave the author's list.",
+  },
   DeletionHold: {
     decision: 'erase',
     reason:
@@ -708,8 +730,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
   HandleChange: {
-    decision: 'todo',
-    reason: 'Rule 4/5: audit trail of former handles; needs a product call on keeping them for impersonation guards.',
+    decision: 'erase',
+    reason:
+      'Rows past the 30-day reclaim window go with the account; newer ones stay so the released handle is still protected, and a daily job erases them once they pass it. "Previously known as" is never shown for a deleted profile.',
+    scope: 'Rows older than the reclaim window at deletion; the rest by the daily job',
   },
   HeldNotification: { decision: 'erase', reason: 'Rule 1: notifications held for the member by quiet hours.' },
   HistoryEntry: { decision: 'erase', reason: "Rule 1: the member's own browsing history." },
@@ -718,14 +742,12 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "The member's saved homes.",
   },
   HomeListing: {
-    decision: 'todo',
-    reason:
-      'Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal.',
+    decision: 'erase',
+    reason: "The member's listings (inquiries and favourites cascade from the listing).",
   },
   HomeRoommateProfile: {
-    decision: 'todo',
-    reason:
-      'Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal.',
+    decision: 'erase',
+    reason: "The member's roommate profile.",
   },
   HomeWatch: {
     decision: 'erase',
@@ -850,8 +872,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   LayoutPreference: { decision: 'erase', reason: 'Rule 1: settings only the member sees.' },
   LibraryCollection: {
-    decision: 'todo',
-    reason: 'Rule 5: library collections can be shared and a quota request is an admin workflow; needs a product call.',
+    decision: 'erase',
+    reason:
+      "The member's own collections (items cascade). An official collection they own is the site's: `ownerUserId` is nulled instead.",
+    scope: 'Own collections where `official` is false',
   },
   LibraryDocument: {
     decision: 'keep',
@@ -859,8 +883,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
   LibraryQuotaRequest: {
-    decision: 'todo',
-    reason: 'Rule 5: library collections can be shared and a quota request is an admin workflow; needs a product call.',
+    decision: 'erase',
+    reason:
+      "The member's quota requests; where the member decided others' requests as an admin, `decidedByUserId` is nulled.",
   },
   LibraryReaderMark: {
     decision: 'erase',
@@ -885,9 +910,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: 'A personal reading list; its shareId page 404s afterwards (the share page reads only this row).',
   },
   Media: {
-    decision: 'keep',
+    decision: 'deidentify',
     reason:
-      'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
+      'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove. The exception is the member\'s own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it.',
   },
   MemberMemory: {
     decision: 'erase',
@@ -997,8 +1022,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
   PostSeriesFollow: {
-    decision: 'todo',
-    reason: "Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision.",
+    decision: 'erase',
+    reason:
+      'Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `PostSeries.followCount` is decremented (floored) in the same transaction.',
   },
   PostUnlock: {
     decision: 'keep',
@@ -1191,9 +1217,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "The member's saved places.",
   },
   RideshareDriver: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 5: a driver application with vehicle and plate details and an aggregate rating; needs a product call.',
+      "The driver application (vehicle, plate, licence, last location). Rides reference the user, not this row; where the member reviewed others' applications `reviewedById` is nulled.",
   },
   RmhCharacter: {
     decision: 'erase',
@@ -1230,9 +1256,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   RmhTubeRoomRsvp: { decision: 'erase', reason: 'Going marks on watch parties (sprint 03).' },
   RmhTubeSubscription: {
-    decision: 'todo',
+    decision: 'owner',
     reason:
-      'Rule 2: subscriber counts shown on a channel; needs a counter correction and a link to the follows decision.',
+      "Subscriptions to a member's channel are the social graph: the open owner decision on a deleted member's follows (as `Follow`); rows untouched.",
   },
   RmhTubeTimedComment: {
     decision: 'keep',
@@ -1269,13 +1295,22 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Has children (`RmhTypeMatchPlayer.profile` cascades), so totals and bests are reset to defaults, never deleted; `fetchLeaderboard` already requires `bestWpm > 0`. The `RmhTypeMatchPlayer.userName` copies become "Deleted user".',
   },
+  RmhTypeText: {
+    decision: 'erase',
+    reason:
+      "Rule 1: the member's own saved practice texts; deleted in anonymizeAccount (sprint 10 05). Never on a board.",
+  },
+  RmhTypeTextRun: {
+    decision: 'erase',
+    reason: "Rule 1: the member's runs on their saved texts; deleted in anonymizeAccount (sprint 10 05).",
+  },
   RmhboxPack: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
   RmhboxPackReport: { decision: 'keep', reason: "Rule 4: a report about someone else's pack is a moderation record." },
   RmhboxSettingsPreset: { decision: 'erase', reason: 'Saved RMHBox game settings.' },
   Rsvp: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 2: attendee lists show the member to hosts; releaseSeatsOf frees seats but the row stays; needs a product call on attendee lists.',
+      'Every RSVP row, after `releaseSeatsOf` has freed seats and promoted the waitlist; attendee lists no longer show a deleted member and past turnout drops by one.',
   },
   SaveFolder: {
     decision: 'erase',
@@ -1488,9 +1523,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: 'Profile PII (display name, bio, location, website, image, profile song) is nulled; the row stays.',
   },
   UserQuest: {
-    decision: 'todo',
-    reason:
-      "Rule 1: the member's own progress and owned items (inventory may hold coin purchases); erase candidate after a product call on purchased cosmetics.",
+    decision: 'erase',
+    reason: 'Progress only; rewards already paid stay in the coin ledger.',
   },
   UserSeasonProgress: {
     decision: 'todo',
@@ -1541,8 +1575,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
   Watch: {
-    decision: 'todo',
-    reason: "Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision.",
+    decision: 'erase',
+    reason:
+      'Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; notification levels on things, never on people; no counter.',
   },
   WebhookEndpoint: {
     decision: 'erase',

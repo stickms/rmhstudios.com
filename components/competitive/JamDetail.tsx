@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -11,7 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Hammer } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
@@ -80,6 +80,7 @@ function RateForm({
   onSaved: () => void;
 }) {
   const { t } = useTranslation('f-competitive');
+  const refusalText = useRefusalText();
   const [scores, setScores] = useState<Partial<Scores>>(initial ?? {});
   const [feedback, setFeedback] = useState(initialFeedback?.body ?? '');
   const [anonymous, setAnonymous] = useState(initialFeedback?.anonymous ?? false);
@@ -109,7 +110,7 @@ function RateForm({
       onSaved();
     } catch (e) {
       toast.error(
-        serverError(e) ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }),
+        refusalText.maybe(e) ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }),
       );
     } finally {
       setBusy(false);
@@ -148,6 +149,7 @@ function RateForm({
 
 export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-competitive');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const signedIn = !!session?.user?.id;
   const queryClient = useQueryClient();
@@ -179,7 +181,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
       toast.success(t('jam-entered', { defaultValue: 'Entry saved' }));
       await load();
     } catch (e) {
-      toast.error(serverError(e) ?? t('jam-enter-failed', { defaultValue: 'Could not enter' }));
+      toast.error(refusalText.maybe(e) ?? t('jam-enter-failed', { defaultValue: 'Could not enter' }));
     } finally {
       setBusy(false);
     }

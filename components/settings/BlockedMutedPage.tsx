@@ -11,6 +11,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { MuteDurationChoices } from '@/components/feed/MuteDurationMenu';
+import type { AccountMuteDuration } from '@/lib/moderation/mute-expiry';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
@@ -31,7 +33,7 @@ const KEY = 'blocked-muted';
  * explicit intent, so a stale list can never flip the wrong way.
  */
 export function BlockedMutedPage() {
-  const { t, i18n } = useTranslation('blocked-muted');
+  const { t, i18n } = useTranslation(['blocked-muted', 'timed-mutes']);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const [tab, setTab] = useState<BlockedMutedTab>('blocked');
@@ -40,6 +42,9 @@ export function BlockedMutedPage() {
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
   const [counts, setCounts] = useState<Page['counts'] | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // "Extend" opens the duration menu under the button that was pressed (s10-10).
+  const extendAnchor = useRef<HTMLElement | null>(null);
+  const [extendRow, setExtendRow] = useState<BlockedMutedRow | null>(null);
   const commitSearch = useDebouncedCallback((value: string) => setQ(value.trim()), 250);
 
   const list = useInfiniteQuery({
@@ -193,6 +198,30 @@ export function BlockedMutedPage() {
             },
           },
         },
+      );
+      await reloadAndRefocus();
+    });
+  };
+
+  const extend = async (row: BlockedMutedRow, duration: AccountMuteDuration) => {
+    await withBusy(row.userId, async () => {
+      try {
+        await api(toggleMuteApi, { body: { targetUserId: row.userId, mute: true, duration } });
+      } catch {
+        toast.error(
+          t('extend-failed', {
+            ns: 'timed-mutes',
+            defaultValue: "Couldn't change the mute. Try again.",
+          }),
+        );
+        return;
+      }
+      toast.success(
+        t('extended', {
+          ns: 'timed-mutes',
+          name: nameOf(row),
+          defaultValue: 'Mute for {{name}} updated.',
+        }),
       );
       await reloadAndRefocus();
     });
@@ -367,6 +396,38 @@ export function BlockedMutedPage() {
                               defaultValue: 'Muted {{date}}',
                             })}
                       </span>
+                      {tab === 'muted' && (
+                        <span className="t-meta shrink-0">
+                          {row.expiresAt
+                            ? t('until', {
+                                ns: 'timed-mutes',
+                                date: dateFormat.format(new Date(row.expiresAt)),
+                                defaultValue: 'until {{date}}',
+                              })
+                            : t('until-unmute', {
+                                ns: 'timed-mutes',
+                                defaultValue: 'until you unmute',
+                              })}
+                        </span>
+                      )}
+                      {tab === 'muted' && !row.deleted && (
+                        <Button
+                          size="sm"
+                          disabled={busy.has(row.userId)}
+                          onClick={(e) => {
+                            extendAnchor.current = e.currentTarget;
+                            setExtendRow(row);
+                          }}
+                          aria-haspopup="menu"
+                          aria-label={t('extend-aria', {
+                            ns: 'timed-mutes',
+                            name,
+                            defaultValue: 'Change how long {{name}} is muted',
+                          })}
+                        >
+                          {t('extend', { ns: 'timed-mutes', defaultValue: 'Extend' })}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         disabled={busy.has(row.userId)}
@@ -408,6 +469,15 @@ export function BlockedMutedPage() {
           )}
         </div>
       </div>
+      <MuteDurationChoices
+        extend
+        open={extendRow !== null}
+        onClose={() => setExtendRow(null)}
+        anchorRef={extendAnchor}
+        onChoose={(duration) => {
+          if (extendRow) void extend(extendRow, duration);
+        }}
+      />
     </SettingsSection>
   );
 }

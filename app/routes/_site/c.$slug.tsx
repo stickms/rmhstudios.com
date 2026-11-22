@@ -87,12 +87,16 @@ export const Route = createFileRoute('/_site/c/$slug')({
       ],
     };
   },
+  // `?tab=events` opens the Events tab; any other value is dropped.
+  validateSearch: (search: Record<string, unknown>): { tab?: 'events' } =>
+    search.tab === 'events' ? { tab: 'events' } : {},
   loader: ({ params }) => fetchCommunityPage({ data: params.slug }),
   component: CommunityPage,
 });
 
 function CommunityPage() {
   const { slug } = Route.useParams();
+  const { tab } = Route.useSearch();
   // createServerFn's `.validator` + FeedItem's recursive `original` type defeat
   // loader-data inference (it collapses to `undefined`); the runtime shape is
   // exactly the loader's return, so assert it.
@@ -124,6 +128,7 @@ function CommunityPage() {
         initialCommunity={community}
         initialItems={feed?.items ?? null}
         initialPinned={feed?.pinned ?? null}
+        initialTab={tab}
       />
     </PageFrame>
   );

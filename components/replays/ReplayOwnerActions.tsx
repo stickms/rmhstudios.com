@@ -3,6 +3,7 @@
  * by the replay viewer, so both refuse the same things for the same reasons: a speedrun proof can be neither deleted
  * nor unlisted (the run's evidence would go), and a race ghost is always unlisted.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { deleteReplayApi, setReplayVisibilityApi } from '@/lib/game/replay-library.contract';
 import {
@@ -55,6 +55,7 @@ export function ReplayOwnerActions({
   onDeleted: () => void;
 }) {
   const { t } = useTranslation('replay-library');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const replayName = useReplayName();
   const [busy, setBusy] = useState(false);
@@ -76,7 +77,7 @@ export function ReplayOwnerActions({
           : t('made-unlisted', { defaultValue: 'Replay is now unlisted.' }),
       );
     } catch (e) {
-      toast.error(serverError(e) ?? t('visibility-failed', { defaultValue: 'Could not change the replay.' }));
+      toast.error(refusalText.maybe(e) ?? t('visibility-failed', { defaultValue: 'Could not change the replay.' }));
     } finally {
       setBusy(false);
     }
@@ -97,7 +98,7 @@ export function ReplayOwnerActions({
       await api(deleteReplayApi, { params: { id: replay.id } });
       onDeleted();
     } catch (e) {
-      toast.error(serverError(e) ?? t('delete-failed', { defaultValue: 'Could not delete the replay.' }));
+      toast.error(refusalText.maybe(e) ?? t('delete-failed', { defaultValue: 'Could not delete the replay.' }));
       setBusy(false);
     }
   }

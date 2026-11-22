@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { editPostAltsApi } from '@/lib/feed/alt-text-edit.contract';
@@ -26,6 +27,7 @@ export const route = apiRoute('/api/rmharks/$id/alt-text', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

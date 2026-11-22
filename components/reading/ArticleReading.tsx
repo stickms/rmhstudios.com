@@ -17,10 +17,12 @@ export default function ArticleReading({
   kind,
   docKey,
   containerRef,
+  title,
 }: {
   kind: ReadingDocKind;
   docKey: string;
   containerRef: RefObject<HTMLElement | null>;
+  title?: string;
 }) {
   const { data } = useDocBundle(kind, docKey, true);
   const kit = useHighlightKit({
@@ -32,6 +34,7 @@ export default function ArticleReading({
     popular: data?.popular ?? NO_POPULAR,
     signedIn: data?.signedIn ?? false,
     textKey: `${data?.glossary.length ?? 0}`,
+    title,
   });
 
   const clock = useReadingClock({

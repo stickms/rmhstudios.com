@@ -3,7 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { updateProfileApi } from '@/lib/profile.contract';
 import { prisma } from '@/lib/prisma.server';
 import { updateProfileSchema, type ProfileLink } from '@/lib/profile-schema';
-import { canChangeHandle } from '@/lib/handle';
+import { changeHandle, handleRefusalBody } from '@/lib/handles/history.server';
 import { handleSchema } from '@/lib/handle-schema';
 import { normalizeFollowListVisibility } from '@/lib/social/follow-list-privacy';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
@@ -17,7 +17,7 @@ export const route = apiRoute('/api/profile', {
       invalid: (err) =>
         Response.json({ error: err.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
     },
-    async ({ userId, body: data }) => {
+    async ({ userId, isAdmin, body: data }) => {
       const {
         handle,
         displayName,
@@ -39,7 +39,8 @@ export const route = apiRoute('/api/profile', {
         membershipPriceCoins,
       } = data;
 
-      // Handle change logic
+      // Handle change: `changeHandle` owns the cooldown (30 days), the reclaim block, uniqueness and the
+      // `HandleChange` row, in one transaction. This route only maps its failures onto its own messages.
       let newHandle: string | undefined;
       if (handle !== undefined) {
         const handleValidation = handleSchema.safeParse(handle);
@@ -50,42 +51,28 @@ export const route = apiRoute('/api/profile', {
           );
         }
 
-        // Check if handle actually changed
-        const currentUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { handle: true, handleChangedAt: true, isAdmin: true },
-        });
-
-        if (handle !== currentUser?.handle) {
-          // Check cooldown
-          if (
-            !canChangeHandle(currentUser?.handleChangedAt ?? null, currentUser?.isAdmin ?? false)
-          ) {
-            return Response.json(
-              { error: 'You can only change your handle once every two weeks' },
-              { status: 429 },
-            );
-          }
-
-          // Check uniqueness
-          const existing = await prisma.user.findUnique({
-            where: { handle },
-            select: { id: true },
-          });
-          if (existing && existing.id !== userId) {
-            return Response.json({ error: 'This handle is already taken' }, { status: 409 });
-          }
-
-          newHandle = handle;
+        const result = await changeHandle(userId, handle, { isAdmin });
+        if (result.ok) {
+          newHandle = result.newHandle;
+        } else if (result.reason !== 'unchanged') {
+          const status =
+            result.reason === 'taken' || result.reason === 'reclaim-blocked'
+              ? 409
+              : result.reason === 'cooldown'
+                ? 429
+                : result.reason === 'no-account'
+                  ? 404
+                  : 400;
+          return Response.json(
+            { ...handleRefusalBody(result) },
+            {
+              status,
+              ...(result.reason === 'cooldown' && result.retryAfterMs
+                ? { headers: { 'Retry-After': String(Math.ceil(result.retryAfterMs / 1000)) } }
+                : {}),
+            },
+          );
         }
-      }
-
-      // Update handle on user model if changed
-      if (newHandle) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { handle: newHandle, handleChangedAt: new Date() },
-        });
       }
 
       const songFields =

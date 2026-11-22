@@ -36,11 +36,11 @@ describe('MEDIA_SWEEP_SURFACES', () => {
   });
 
   it('classifies the writers outside the ingest door', () => {
-    for (const key of ['persona-avatar', 'pronunciation', 'emoji']) expect(surfaces[key]).toBeDefined();
+    for (const key of ['persona-avatar', 'pronunciation', 'emoji', 'card-sound']) expect(surfaces[key]).toBeDefined();
   });
 
   it('has no entry for something that is neither a policy nor one of those writers', () => {
-    const known = new Set([...Object.keys(POLICIES), 'persona-avatar', 'pronunciation', 'emoji']);
+    const known = new Set([...Object.keys(POLICIES), 'persona-avatar', 'pronunciation', 'emoji', 'card-sound']);
     for (const key of Object.keys(surfaces)) expect(known.has(key), `${key} is not an upload surface`).toBe(true);
   });
 
@@ -58,7 +58,8 @@ describe('MEDIA_SWEEP_SURFACES', () => {
   });
 
   it('never sweeps a surface that keeps its pictures by URL, that shares the feed space unattached, or that records nothing', () => {
-    for (const key of ['build', 'flashcard', 'chat', 'emoji']) expect(surfaces[key]!.kind).toBe('excluded');
+    for (const key of ['build', 'flashcard', 'card-sound', 'chat', 'emoji'])
+      expect(surfaces[key]!.kind).toBe('excluded');
     for (const key of ['avatar', 'album', 'library', 'persona-avatar', 'pronunciation']) {
       expect(surfaces[key]!.kind).toBe('not-recorded');
     }
@@ -80,6 +81,22 @@ describe('MEDIA_SWEEP_SURFACES', () => {
     for (const needle of ['scheduledPost', 'flashcard', 'buildScreenshot', 'userBuild']) {
       expect(sweepSource).toContain(needle);
     }
+  });
+
+  it('keeps every URL a table stores from the site image upload: posts, chat, listings, email, museum', () => {
+    const post = surfaces.post as SweepSurface & { why: string };
+    for (const needle of [
+      'rMHark',
+      'feedAnnouncement',
+      'chatMessage',
+      'scheduledChatMessage',
+      'homeListing',
+      'emailCampaign',
+      'siteEra',
+    ]) {
+      expect(sweepSource).toContain(needle);
+    }
+    expect(post.why).toContain('homes listing photo');
   });
 });
 

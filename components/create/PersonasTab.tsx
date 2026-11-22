@@ -7,6 +7,7 @@
  * above the public showcase, which is ranked (Best by default; lib/ranking/best.ts).
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -24,7 +25,6 @@ import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
 import '@/components/builds/builds.css';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
 import '@/components/create/storefront.css';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -42,6 +42,7 @@ interface Persona {
 
 export function PersonasTab() { const fmt = useLocaleFormat().number; 
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [mine, setMine] = useState<Persona[]>([]);
@@ -105,7 +106,7 @@ export function PersonasTab() { const fmt = useLocaleFormat().number;
       setShowForm(false);
       await load();
     } catch (e) {
-      setError(serverError(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
+      setError(refusalText.maybe(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }

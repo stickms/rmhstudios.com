@@ -10,6 +10,7 @@
  * entry's `version` on any logic change.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import type { ReplayData } from '@/lib/game/replay';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { submitReplayApi } from '@/lib/game/replay.contract';
 import { replayShareSearch } from '@/lib/game/replay-share';
 
@@ -46,6 +46,7 @@ export function SaveReplayButton({
   className,
 }: SaveReplayButtonProps) {
   const { t } = useTranslation('lights-out-replays');
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   const { data: session } = useSession();
   const [saving, setSaving] = useState(false);
@@ -71,7 +72,7 @@ export function SaveReplayButton({
       setSavedId(json.id);
       toast.success(t('replay-saved', { defaultValue: 'Replay saved' }));
     } catch (e: unknown) {
-      toast.error(serverError(e) ?? t('replay-save-failed', { defaultValue: 'Could not save the replay.' }));
+      toast.error(refusalText.maybe(e) ?? t('replay-save-failed', { defaultValue: 'Could not save the replay.' }));
     } finally {
       setSaving(false);
     }

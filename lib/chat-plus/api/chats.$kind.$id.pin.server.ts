@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
@@ -16,7 +17,7 @@ export const route = apiRoute('/api/chats/$kind/$id/pin', {
       const access = await requireChat(params, userId, { write: true });
       if (access instanceof Response) return access;
       const res = await setPin(access, body.messageId, body.pinned);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({ success: true });
     },
   ),

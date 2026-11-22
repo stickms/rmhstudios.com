@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -11,7 +12,6 @@ import { knownLabel } from '@/lib/i18n/known-label';
 import { skillLabels } from './skill-labels';
 import { useJson } from './useJson';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { setEndorsementApi } from '@/lib/profile/profile-extras.contract';
 
 interface EndorsementData {
@@ -36,6 +36,7 @@ export default function EndorsementsModule({
   isOwner: boolean;
 }) {
   const { t } = useTranslation('f-profile-plus');
+  const refusalText = useRefusalText();
   const skillNames = skillLabels(t);
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user);
@@ -65,7 +66,7 @@ export default function EndorsementsModule({
       });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('endorse-failed', {
             defaultValue: "Couldn't save that",
           }),

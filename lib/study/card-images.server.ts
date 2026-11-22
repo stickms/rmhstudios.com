@@ -11,6 +11,7 @@
  * transaction, under a lock per URL that copying takes too, so a copy and a removal cannot both miss each other).
  * The storage bound is the per-member cap on cards carrying a picture they uploaded, taken under a lock.
  */
+import { refusalBody, refusalBeside } from '@/lib/errors/codes';
 import type { Prisma } from '@prisma/client';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { ingest, IngestError, POLICIES } from '@/lib/media/ingest.server';
@@ -26,7 +27,7 @@ export type UploadResult =
 
 /** Store one picture for the member through the `flashcard` surface. Nothing is attached to a card yet. */
 export async function uploadCardImage(userId: string, file: File | null): Promise<UploadResult> {
-  if (!file || file.size === 0) return { ok: false, status: 400, error: 'No file provided' };
+  if (!file || file.size === 0) return { ok: false, status: 400, ...refusalBody('FILE_MISSING') };
   try {
     const stored = await ingest(file, 'flashcard', { userId, record: true });
     return { ok: true, url: stored.url, width: stored.width, height: stored.height };
@@ -78,7 +79,7 @@ export async function attachCardImages(
   // A still picture only: the feed surface stores an animated GIF as an animated WebP that otherwise passes the claim.
   // Checked before any claim, so a refusal leaves every upload pending.
   const animated = await firstAnimatedUpload(tx, userId, [...new Set(plan.urls)]);
-  if (animated) return { ok: false, status: 400, code: 'ANIMATED', error: 'Use a still picture, not an animated one' };
+  if (animated) return { ok: false, status: 400, code: 'ANIMATED', ...refusalBeside('STUDY_PICTURE_ANIMATED') };
   for (const url of new Set(plan.urls)) {
     const claimed = await tx.media.updateMany({
       // The claim re-checks the flashcard policy, not just ownership: a pending upload from another surface (or the
@@ -98,7 +99,8 @@ export async function attachCardImages(
     const reused = await tx.flashcard.count({
       where: { deck: { userId }, OR: [{ frontImageUrl: url }, { backImageUrl: url }] },
     });
-    if (reused === 0) return { ok: false, status: 400, code: 'MEDIA_NOT_FOUND', error: 'Upload the picture again' };
+    if (reused === 0)
+      return { ok: false, status: 400, code: 'MEDIA_NOT_FOUND', ...refusalBeside('STUDY_PICTURE_REUPLOAD') };
   }
   return { ok: true };
 }

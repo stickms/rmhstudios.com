@@ -135,7 +135,16 @@ export function SpeedrunBoard({ entries, metric, tier, version, viewerId }: Spee
  * The runs that are not on the board yet — queued or rejected — shown to their
  * owner. A queue you cannot see is indistinguishable from a run that vanished.
  */
-export function SpeedrunQueue({ entries, tier }: { entries: SpeedrunEntryView[]; tier: VerificationTier }) {
+export function SpeedrunQueue({
+  entries,
+  tier,
+  ownReasons,
+}: {
+  entries: SpeedrunEntryView[];
+  tier: VerificationTier;
+  /** The signed-in runner's own verdict reasons by run id, from their own runs (never the public board). */
+  ownReasons?: Readonly<Record<string, string>>;
+}) {
   const { t } = useTranslation('c-tournaments');
   const unranked = entries.filter((e) => e.status !== 'verified');
   if (unranked.length === 0) return null;
@@ -159,8 +168,18 @@ export function SpeedrunQueue({ entries, tier }: { entries: SpeedrunEntryView[];
               </span>
               <span className="font-mono text-sm tabular-nums text-site-text-muted">{formatRunTime(entry.timeMs)}</span>
               <Badge variant="default">{entry.version}</Badge>
-              <VerificationBadge status={entry.status} tier={tier} reason={entry.rejectReason} />
+              <VerificationBadge status={entry.status} tier={tier} />
             </div>
+            {ownReasons?.[entry.id] ? (
+              <p dir="auto" className="mt-1 break-words text-xs text-site-text-muted">
+                {entry.status === 'rejected'
+                  ? t('speedrun-rejected-reason', {
+                      reason: ownReasons[entry.id],
+                      defaultValue: 'Not verified: {{reason}}',
+                    })
+                  : ownReasons[entry.id]}
+              </p>
+            ) : null}
           </li>
         ))}
       </ul>

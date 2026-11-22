@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { createSeriesApi, listSeriesApi } from '@/lib/posts-plus/series.contract';
@@ -21,7 +22,7 @@ export const route = apiRoute('/api/series', {
     { rateLimit: 'write', body: seriesCreateSchema },
     async ({ userId, body }) => {
       const res = await createSeries(userId, body);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({ id: res.id, title: body.title }, { status: 201 });
     },
   ),

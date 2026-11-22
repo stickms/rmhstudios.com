@@ -1,5 +1,5 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { editPostApi } from '@/lib/feed/compose-assist.contract';
 import { useId, useRef, useState } from'react';
 import { useTranslation } from'react-i18next';
@@ -60,6 +60,7 @@ export function EditPostModal({
  onSaved,
 }: EditPostModalProps) {
  const { t } = useTranslation(['feed', 'content-warnings', 'quiz-polls']);
+ const refusalText = useRefusalText();
  const quizName = useId();
  const [quizAnswer, setQuizAnswer] = useState<string>(quiz?.correctOptionId ??'');
  const [quizWhy, setQuizWhy] = useState<string>(quiz?.explanation ??'');
@@ -114,7 +115,7 @@ export function EditPostModal({
  onOpenChange(false);
  toast.success(t('post-updated', { defaultValue:'Post updated'}));
  } catch (e) {
- toast.error(serverError(e) || t('could-not-update-post', { defaultValue:'Could not update post'}));
+ toast.error(refusalText.maybe(e) || t('could-not-update-post', { defaultValue:'Could not update post'}));
  } finally {
  setSaving(false);
  }

@@ -1,3 +1,4 @@
+import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
@@ -25,7 +26,7 @@ export const route = apiRoute('/api/tournaments/$id/matches/$matchId/report', {
         return { ok: true as const, ...result };
       } catch (error) {
         if (error instanceof TournamentError) {
-          return Response.json({ error: error.message }, { status: error.status });
+          return Response.json({ error: error.message, ...tournamentRefusal(error) }, { status: error.status });
         }
         throw error;
       }

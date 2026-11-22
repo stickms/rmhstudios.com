@@ -183,7 +183,7 @@ describe('browse list', () => {
   it('lists private communities as locked cards with the post count withheld', async () => {
     h.community.findMany.mockResolvedValue([row({}), row({ id: 'c2', slug: 'p', isPrivate: false })]);
     const list = await listCommunities({ userId: null });
-    expect(h.community.findMany.mock.calls[0][0].where).toEqual({});
+    expect(h.community.findMany.mock.calls[0][0].where).toEqual({ delistedAt: null });
     expect(list[0]).toMatchObject({ slug: 's', isPrivate: true, locked: true, postCount: 0, requestState: null });
     expect(list[1]).toMatchObject({ slug: 'p', locked: false, postCount: 9 });
   });

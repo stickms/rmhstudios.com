@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
@@ -10,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createUserBuildApi,
   updateUserBuildApi,
@@ -55,6 +55,7 @@ const COMMON_TECHNOLOGIES = [
 
 export function BuildForm({ build, onSuccess }: BuildFormProps) {
   const { t } = useTranslation('c-user-builds');
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   const isEditing = !!build;
 
@@ -123,7 +124,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           : await api(createUserBuildApi, { body });
       } catch (err) {
         throw new Error(
-          serverError(err) || t('failed-to-save', { defaultValue: 'Failed to save build' }),
+          refusalText.maybe(err) || t('failed-to-save', { defaultValue: 'Failed to save build' }),
           { cause: err },
         );
       }

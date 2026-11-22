@@ -6,6 +6,7 @@
  * everything that protects a person (blocks, mutes, message requests, DM privacy) and never trusts the sender's client.
  */
 import { prisma } from '@/lib/prisma.server';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 import { dmKeyOf, findDmByPair } from '@/lib/chat/chat.server';
 import { getChatAccess } from '@/lib/chat-plus/access.server';
 import { canDirectMessage } from '@/lib/chat-plus/dm-privacy.server';
@@ -123,9 +124,14 @@ async function pairIsClosed(a: string, b: string): Promise<boolean> {
     }),
     prisma.userMute.findFirst({
       where: {
-        OR: [
-          { muterId: a, mutedId: b },
-          { muterId: b, mutedId: a },
+        AND: [
+          {
+            OR: [
+              { muterId: a, mutedId: b },
+              { muterId: b, mutedId: a },
+            ],
+          },
+          activeMuteWhere(new Date()),
         ],
       },
       select: { id: true },

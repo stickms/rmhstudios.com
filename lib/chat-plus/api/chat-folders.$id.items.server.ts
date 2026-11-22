@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { folderItemSchema, setFolderMembership } from '@/lib/chat-plus/folders.server';
@@ -8,7 +9,7 @@ export const route = apiRoute('/api/chat-folders/$id/items', {
     { rateLimit: 'write', body: folderItemSchema },
     async ({ userId, params, body }) => {
       const res = await setFolderMembership(userId, params.id, body.chat, body.member);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json(res.value);
     },
   ),

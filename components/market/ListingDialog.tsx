@@ -1,9 +1,9 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { buyListingApi, cancelListingApi, type MarketListingView } from '@/lib/market/market.contract';
 import { Button } from '@/components/ui/button';
 import { CoinAmount } from '@/components/shop/CoinAmount';
@@ -39,6 +39,7 @@ export function ListingDialog({
   const fmt = useLocaleFormat();
   const { t } = useTranslation('site');
   const { t: tf } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const [busy, setBusy] = useState(false);
   // Keep drawing the last listing while the dialog fades out.
   const last = useRef<MarketListingView | null>(null);
@@ -77,7 +78,7 @@ export function ListingDialog({
       }
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('market-buy-failed', {
             defaultValue: 'Purchase failed',
           }),
@@ -103,7 +104,7 @@ export function ListingDialog({
       onDone(shown.id);
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('market-cancel-failed', {
             defaultValue: "Couldn't cancel",
           }),

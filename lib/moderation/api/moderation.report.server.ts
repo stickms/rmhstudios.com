@@ -7,6 +7,7 @@ import { musicReportOwner } from '@/lib/rmhmusic/learn/moderation.server';
 // report dialog validates against the same declaration this route enforces.
 import { reportDetailsWithSnapshot } from '@/lib/competitive/jam-feedback';
 import { reportSchema } from '@/lib/moderation/report-schema';
+import { issueVisibleTo, issuesReadable } from '@/lib/builds/issues';
 
 /**
  * POST /api/moderation/report — file a content report for admin review.
@@ -84,6 +85,14 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         });
         return bc?.userId ?? null;
       }
+      case 'build-issue': {
+        // s10-09: the member who reported the issue is who a report is about.
+        const bi = await prisma.buildIssue.findUnique({
+          where: { id: entityId },
+          select: { reporterId: true },
+        });
+        return bi?.reporterId ?? null;
+      }
       case 'music-score':
       case 'music-share':
         // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.
@@ -144,6 +153,21 @@ export const route = apiRoute('/api/moderation/report', {
         const readable = !!bc && (bc.build.visibility !== 'PRIVATE' || admin || bc.build.userId === me);
         if (!bc || bc.deletedAt || !readable) {
           return Response.json({ error: 'Comment not found' }, { status: 404 });
+        }
+      }
+
+      // s10-09: only an issue the reporter could read can be reported (not a private build's, not one the creator hid
+      // from them), so the report flow never confirms that a hidden issue exists.
+      if (entityType === 'build-issue') {
+        const bi = await prisma.buildIssue.findUnique({
+          where: { id: entityId },
+          select: { reporterId: true, hiddenAt: true, build: { select: { visibility: true, userId: true } } },
+        });
+        const me = session.user.id;
+        const readable = !!bi && issuesReadable(bi.build.visibility, bi.build.userId === me);
+        const seen = !!bi && issueVisibleTo(bi, { userId: me, buildOwnerId: bi.build.userId });
+        if (!bi || !readable || !seen) {
+          return Response.json({ error: 'Issue not found' }, { status: 404 });
         }
       }
 

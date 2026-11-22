@@ -7,6 +7,7 @@
  * counters; s08-05), sends in batches of 200 and drops the author, anyone blocked with the author and banned
  * accounts. A worker that dies mid-send is resumed after its last batch, and each recipient is told once.
  */
+import { refusalBeside } from '@/lib/errors/codes';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -63,7 +64,7 @@ export function refused(error: unknown): Response {
             : 400;
     return Response.json(
       {
-        error: 'That update could not be posted',
+        ...refusalBeside('EVENT_UPDATE_FAILED'),
         code: error.code,
         nextAt: error.nextAt ? error.nextAt.toISOString() : null,
       },

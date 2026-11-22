@@ -706,6 +706,18 @@ model User {
   // s09-14 deletion-pause
   deletionHold DeletionHold? @relation("UserDeletionHold")
 
+  // Sprint 10 back-relations (one block per feature, docs/autonomous/sprint-10/plan.md)
+  // s10-04 deck-suggestions
+  deckSuggestions DeckSuggestion[] @relation("DeckSuggestions")
+
+  // s10-05 type-texts
+  rmhTypeTexts    RmhTypeText[]    @relation("RmhTypeTexts")
+  rmhTypeTextRuns RmhTypeTextRun[] @relation("RmhTypeTextRuns")
+
+  // s10-09 build-issues
+  buildIssuesReported BuildIssue[]     @relation("BuildIssuesReported")
+  buildIssueVotes     BuildIssueVote[] @relation("BuildIssueVotes")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

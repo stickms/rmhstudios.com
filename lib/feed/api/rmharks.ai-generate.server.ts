@@ -17,6 +17,7 @@
  * user to keep the paid API in check.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
@@ -93,7 +94,7 @@ async function buildCommentChain(parentId: string, rmharkId: string): Promise<st
 export const route = apiRoute('/api/rmharks/ai-generate', {
   POST: defineHandler({ body: bodySchema }, async ({ request, session, userId, body }) => {
     if (!isRmharkAIConfigured()) {
-      return Response.json({ error: 'AI drafting is not available right now.' }, { status: 503 });
+      return Response.json({ ...refusalBody('AI_DRAFT_UNAVAILABLE') }, { status: 503 });
     }
 
     // Per-user cap (fall back to IP). Model calls are paid + a little slow.
@@ -153,12 +154,12 @@ export const route = apiRoute('/api/rmharks/ai-generate', {
         select: { ...readable, original: { select: readable } },
       });
       if (!post || !(await canReadThread(post, userId))) {
-        return Response.json({ error: 'Post not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
       }
       const unlocked = (p: { userId: string; unlockPrice: number | null; unlocks: unknown[] }) =>
         !p.unlockPrice || p.unlockPrice <= 0 || p.userId === userId || p.unlocks.length > 0;
       if (!unlocked(post)) {
-        return Response.json({ error: 'Unlock this post to draft a reply.' }, { status: 403 });
+        return Response.json({ ...refusalBody('POST_UNLOCK_TO_DRAFT') }, { status: 403 });
       }
       const original =
         post.original && unlocked(post.original) && (await canReadThread(post.original, userId))

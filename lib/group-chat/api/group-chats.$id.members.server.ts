@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { addGroupMembersApi } from '@/lib/group-chat/manage.contract';
@@ -28,6 +29,7 @@ export const route = apiRoute('/api/group-chats/$id/members', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

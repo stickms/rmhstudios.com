@@ -184,8 +184,12 @@ export async function deliverToEndpoint(
   payload: object,
   opts: { redeliveryOfId?: string } = {},
 ): Promise<{ id: string } | null> {
-  const endpoint = await prisma.webhookEndpoint.findUnique({ where: { id: endpointId }, select: ENDPOINT_SEND_SELECT });
-  if (!endpoint) return null;
+  const endpoint = await prisma.webhookEndpoint.findUnique({
+    where: { id: endpointId },
+    select: { ...ENDPOINT_SEND_SELECT, adminDisabledAt: true },
+  });
+  // Not even the owner's test ping or a redelivery goes to an endpoint an admin switched off.
+  if (!endpoint || endpoint.adminDisabledAt) return null;
   const delivery = await createDelivery(endpoint.id, event, payload, opts.redeliveryOfId);
   await attemptDelivery(delivery.id, event, { id: delivery.id, ...payload }, endpoint, 1);
   return delivery;
@@ -199,7 +203,8 @@ export async function deliverToEndpoint(
 export async function emitWebhookEvent(userId: string, event: string, data: unknown): Promise<void> {
   try {
     const endpoints = await prisma.webhookEndpoint.findMany({
-      where: { userId, enabled: true },
+      // An endpoint an admin switched off (s10-15) is skipped even if something wrote `enabled` back to true.
+      where: { userId, enabled: true, adminDisabledAt: null },
       select: { ...ENDPOINT_SEND_SELECT, events: true },
     });
     const targets = endpoints.filter((e) => matchesEvent(e.events, event));
@@ -230,12 +235,13 @@ export async function deliverDuePending(max = 50): Promise<number> {
     where: { status: 'PENDING', nextAttemptAt: { lte: new Date() } },
     orderBy: { nextAttemptAt: 'asc' },
     take: max,
-    include: { endpoint: { select: { ...ENDPOINT_SEND_SELECT, enabled: true } } },
+    include: { endpoint: { select: { ...ENDPOINT_SEND_SELECT, enabled: true, adminDisabledAt: true } } },
   });
 
   // Deliveries whose endpoint was disabled after queueing are all failed in one
   // statement rather than an UPDATE apiece.
-  const disabled = due.filter((d) => !d.endpoint.enabled);
+  const off = (d: (typeof due)[number]) => !d.endpoint.enabled || d.endpoint.adminDisabledAt !== null;
+  const disabled = due.filter(off);
   if (disabled.length > 0) {
     await prisma.webhookDelivery.updateMany({ where: { id: { in: disabled.map((d) => d.id) }, status: 'PENDING' }, data: { status: 'FAILED', error: 'endpoint disabled' } }).catch(() => {});
   }
@@ -250,7 +256,7 @@ export async function deliverDuePending(max = 50): Promise<number> {
   // requests at any single subscriber, which a flat parallel drain would do.
   const byEndpoint = new Map<string, typeof due>();
   for (const d of due) {
-    if (!d.endpoint.enabled) continue;
+    if (off(d)) continue;
     const group = byEndpoint.get(d.endpoint.id);
     if (group) group.push(d);
     else byEndpoint.set(d.endpoint.id, [d]);

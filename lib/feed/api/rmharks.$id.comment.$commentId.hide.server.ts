@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
@@ -15,7 +16,7 @@ export const route = apiRoute('/api/rmharks/$id/comment/$commentId/hide', {
     { rateLimit: 'write', body: z.object({ hidden: z.boolean() }) },
     async ({ userId, params, body }) => {
       const result = await setReplyHidden(params.id, params.commentId, userId, body.hidden);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       return Response.json({ hidden: result.hidden });
     },
   ),

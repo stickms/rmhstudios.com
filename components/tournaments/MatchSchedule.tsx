@@ -12,6 +12,7 @@
  * the viewer's time zone (named beside the field), travel as UTC instants and
  * are shown in the viewer's zone. Nothing here ticks (R5).
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -20,7 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import {
   acceptMatchTimeApi,
@@ -104,6 +104,7 @@ export function MatchSchedule({
   idScope = '',
 }: Props) {
   const { t, i18n } = useTranslation('match-scheduling');
+  const refusalText = useRefusalText();
   const zone = useViewerZone();
   const [busy, setBusy] = useState(false);
   const [composer, setComposer] = useState<'propose' | 'host' | null>(null);
@@ -143,7 +144,7 @@ export function MatchSchedule({
       await onChanged();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('failed', {
             defaultValue: 'Something went wrong',
           }),
@@ -496,6 +497,7 @@ export function DeadlineSettings({
   onChanged: () => Promise<void> | void;
 }) {
   const { t } = useTranslation('match-scheduling');
+  const refusalText = useRefusalText();
   const [busy, setBusy] = useState(false);
   if (!canManage || (tourney.status !== 'REGISTRATION' && tourney.status !== 'LIVE')) return null;
 
@@ -518,7 +520,7 @@ export function DeadlineSettings({
       await onChanged();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('failed', {
             defaultValue: 'Something went wrong',
           }),

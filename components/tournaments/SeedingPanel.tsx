@@ -7,6 +7,7 @@
  * entrant's rating and projected seed to everyone. Random shows nothing before
  * the start, and a hand order is the host's alone until then.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp } from 'lucide-react';
@@ -17,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { serverError } from '@/lib/http';
 import {
   SEEDING_METHODS,
   isSeedingMethod,
@@ -121,6 +121,7 @@ interface PanelProps {
 
 export function SeedingPanel({ tourney, canManage, onChanged }: PanelProps) {
   const { t } = useTranslation('tournament-seeding');
+  const refusalText = useRefusalText();
   const copy = useSeedingCopy();
   const method: SeedingMethod = isSeedingMethod(tourney.seeding) ? tourney.seeding : 'join';
   // Ratings are public; a hand order is only fetched for (and shown to) the host.
@@ -180,7 +181,7 @@ export function SeedingPanel({ tourney, canManage, onChanged }: PanelProps) {
       toast.success(okMsg);
       await onChanged();
     } catch (e) {
-      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Seeding could not be saved' }));
+      toast.error(refusalText.maybe(e) ?? t('failed', { defaultValue: 'Seeding could not be saved' }));
     } finally {
       setBusy(false);
     }

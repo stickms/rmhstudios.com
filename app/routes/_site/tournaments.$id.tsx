@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute } from '@tanstack/react-router';
 import { plural } from '@/lib/core/format';
 import { createServerFn } from '@tanstack/react-start';
@@ -29,7 +30,6 @@ import { getTournamentApi } from '@/lib/tournaments/tournaments.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { serverError } from '@/lib/http';
 import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
 
 /**
@@ -102,6 +102,7 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
 
 function TournamentDetailPage() {
   const { t } = useTranslation('c-tournaments');
+  const refusalText = useRefusalText();
   const startRefusal = useStartRefusal();
   const { id } = Route.useParams();
   const { view } = Route.useSearch();
@@ -162,7 +163,7 @@ function TournamentDetailPage() {
       else toast.success(t('result-recorded', { defaultValue: 'Result recorded' }));
       await load();
     } catch (e) {
-      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Something went wrong' }));
+      toast.error(refusalText.maybe(e) ?? t('failed', { defaultValue: 'Something went wrong' }));
     } finally {
       setReportingId(null);
     }

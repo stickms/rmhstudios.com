@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +14,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { useInvalidateSavedReplies, useSavedRepliesQuery } from '@/components/messages/useSavedRepliesQuery';
 import { api } from '@/lib/contract/client';
-import { errorField, serverError } from '@/lib/http';
+import { errorField } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import {
@@ -49,6 +50,7 @@ export function SavedRepliesDialog({
   onCloseAutoFocus?: (event: Event) => void;
 }) {
   const { t } = useTranslation('saved-replies');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const invalidate = useInvalidateSavedReplies();
   const list = useSavedRepliesQuery(open);
@@ -64,7 +66,7 @@ export function SavedRepliesDialog({
     mutationFn: (ids: string[]) => api(reorderSavedRepliesApi, { body: { ids: ids.join(',') } }),
     onSettled: () => void invalidate(),
     onError: (error) =>
-      toast.error(serverError(error) || t('reorder-failed', { defaultValue: 'Could not move that reply' })),
+      toast.error(refusalText.maybe(error) || t('reorder-failed', { defaultValue: 'Could not move that reply' })),
   });
 
   const remove = useMutation({
@@ -72,7 +74,7 @@ export function SavedRepliesDialog({
     onSuccess: () => toast.success(t('deleted', { defaultValue: 'Reply deleted' })),
     onSettled: () => void invalidate(),
     onError: (error) =>
-      toast.error(serverError(error) || t('delete-failed', { defaultValue: 'Could not delete that reply' })),
+      toast.error(refusalText.maybe(error) || t('delete-failed', { defaultValue: 'Could not delete that reply' })),
   });
 
   const save = useMutation({
@@ -93,7 +95,7 @@ export function SavedRepliesDialog({
               max: MAX_SAVED_REPLIES,
               defaultValue: 'You can keep up to {{max}} saved replies. Delete one to add another.',
             })
-          : serverError(error) || t('save-failed', { defaultValue: 'Could not save that reply' }),
+          : refusalText.maybe(error) || t('save-failed', { defaultValue: 'Could not save that reply' }),
       ),
   });
 

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +10,6 @@ import { MenuItem, MenuLabel } from '@/components/ui/menu';
 import { ScheduleControl } from '@/components/ui/schedule-control';
 import { api } from '@/lib/contract/client';
 import { isValidTimeZone } from '@/lib/calendar/tz';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { createScheduledMessageApi, listScheduledMessagesApi } from '@/lib/messages/scheduled.contract';
 import { sendLaterPresets, type SendLaterPresets } from '@/lib/messages/scheduled';
@@ -57,6 +57,7 @@ export function SendLaterMenu({
   className?: string;
 }) {
   const { t, i18n } = useTranslation('send-later');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,7 +125,7 @@ export function SendLaterMenu({
     },
     onError: (error) => {
       toast.error(
-        serverError(error) ||
+        refusalText.maybe(error) ||
           t('schedule-failed', {
             defaultValue: 'Could not schedule the message',
           }),

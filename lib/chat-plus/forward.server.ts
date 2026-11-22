@@ -6,6 +6,7 @@
  * may only be sent to one chat at a time — enforced here, not just in the UI.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { getActiveBan } from '@/lib/admin-audit.server';
@@ -34,10 +35,10 @@ export type ForwardResult =
 
 export async function forwardMessage(userId: string, input: ForwardInput): Promise<ForwardResult> {
   if (await getActiveBan(userId))
-    return { ok: false, status: 403, error: 'Your account is suspended' };
+    return { ok: false, status: 403, ...refusalBody('ACCOUNT_SUSPENDED') };
 
   const source = await getChatAccess(input.source.kind, input.source.id, userId);
-  if (!source) return { ok: false, status: 404, error: 'Message not found' };
+  if (!source) return { ok: false, status: 404, ...refusalBody('MESSAGE_NOT_FOUND') };
 
   const select = {
     id: true,
@@ -58,19 +59,19 @@ export async function forwardMessage(userId: string, input: ForwardInput): Promi
     where: { id: input.messageId, chatId: source.id, AND: [live] },
     select,
   });
-  if (!msg || msg.deletedAt) return { ok: false, status: 404, error: 'Message not found' };
+  if (!msg || msg.deletedAt) return { ok: false, status: 404, ...refusalBody('MESSAGE_NOT_FOUND') };
   if (source.kind === 'dm') {
     const hidden = await prisma.directMessageHide.findUnique({
       where: { messageId_userId: { messageId: msg.id, userId } },
       select: { messageId: true },
     });
-    if (hidden) return { ok: false, status: 404, error: 'Message not found' };
+    if (hidden) return { ok: false, status: 404, ...refusalBody('MESSAGE_NOT_FOUND') };
   }
   if (msg.kind !== 'text' || msg.audioUrl) {
-    return { ok: false, status: 400, error: "This kind of message can't be forwarded" };
+    return { ok: false, status: 400, ...refusalBody('FORWARD_KIND_BLOCKED') };
   }
   if (!msg.content.trim() && !msg.gifUrl && msg.imageUrls.length === 0) {
-    return { ok: false, status: 400, error: 'Nothing to forward' };
+    return { ok: false, status: 400, ...refusalBody('FORWARD_NOTHING') };
   }
 
   const targets = [...new Map(input.targets.map((t) => [`${t.kind}:${t.id}`, t])).values()];
@@ -78,7 +79,7 @@ export async function forwardMessage(userId: string, input: ForwardInput): Promi
     return {
       ok: false,
       status: 400,
-      error: 'Messages forwarded many times can only go to one chat at a time',
+      ...refusalBody('FORWARD_ONE_CHAT_ONLY'),
     };
   }
 
@@ -88,7 +89,7 @@ export async function forwardMessage(userId: string, input: ForwardInput): Promi
   for (const target of targets) {
     const access = await getChatAccess(target.kind, target.id, userId);
     if (!access) {
-      failed.push({ target, error: 'Chat not found' });
+      failed.push({ target, ...refusalBody('CHAT_NOT_FOUND') });
       continue;
     }
     if (

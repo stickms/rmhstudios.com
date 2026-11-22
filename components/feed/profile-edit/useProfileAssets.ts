@@ -1,8 +1,8 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api, apiUrl } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { bannerSourceApi, removeProfileAvatarApi } from '@/lib/profile.contract';
 import { MAX_AVATAR_MB, MAX_BANNER_MB, revokeBlob, type SavedProfileData } from './profile-edit-state';
 import type { ProfileEditForm } from './useProfileEditForm';
@@ -25,6 +25,7 @@ export function useProfileAssets(
   refreshResolvedUser: () => void,
 ) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const {
     avatarPreview,
@@ -197,7 +198,7 @@ export function useProfileAssets(
       });
     } catch (resetError) {
       setError(
-        serverError(resetError) ||
+        refusalText.maybe(resetError) ||
           t('failed-reset-avatar', {
             defaultValue: 'Failed to reset avatar',
           }),

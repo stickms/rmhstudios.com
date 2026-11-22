@@ -1,8 +1,8 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MediaRejection } from '@/hooks/useSmartPaste';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { MAX_IMAGES, appendImages } from './compose-state';
 
@@ -15,6 +15,7 @@ import { MAX_IMAGES, appendImages } from './compose-state';
  */
 export function useComposeUploads() {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   // Per-image alt text, aligned by index with imageUrls. A missing/empty entry
   // means"no description"; the ALT pill on each preview opens the editor.
@@ -26,25 +27,28 @@ export function useComposeUploads() {
   const [uploadingCount, setUploadingCount] = useState(0);
   const uploadEpochRef = useRef(0);
 
-  const uploadImages = useCallback(async (files: File[]) => {
-    if (files.length === 0) return;
-    setImageError(null);
-    const epoch = uploadEpochRef.current;
-    const form = new FormData();
-    files.forEach((f) => form.append('images', f));
-    setUploadingCount((n) => n + 1);
-    try {
-      const { urls } = await api(uploadImagesApi, {
-        body: form,
-      });
-      if (epoch !== uploadEpochRef.current) return;
-      setImageUrls((prev) => appendImages(prev, urls));
-    } catch (e) {
-      if (epoch === uploadEpochRef.current) setImageError(serverError(e) ?? 'Upload failed');
-    } finally {
-      setUploadingCount((n) => Math.max(0, n - 1));
-    }
-  }, []);
+  const uploadImages = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0) return;
+      setImageError(null);
+      const epoch = uploadEpochRef.current;
+      const form = new FormData();
+      files.forEach((f) => form.append('images', f));
+      setUploadingCount((n) => n + 1);
+      try {
+        const { urls } = await api(uploadImagesApi, {
+          body: form,
+        });
+        if (epoch !== uploadEpochRef.current) return;
+        setImageUrls((prev) => appendImages(prev, urls));
+      } catch (e) {
+        if (epoch === uploadEpochRef.current) setImageError(refusalText.maybe(e) ?? 'Upload failed');
+      } finally {
+        setUploadingCount((n) => Math.max(0, n - 1));
+      }
+    },
+    [refusalText],
+  );
 
   const handleImageFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;

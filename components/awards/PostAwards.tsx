@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -5,7 +6,6 @@ import { Award } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { getAwardsApi, giveAwardApi } from '@/lib/awards/awards.contract';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -37,6 +37,7 @@ export function PostAwards({
   initial?: Summary;
 }) {
   const { t } = useTranslation('c-awards');
+  const refusalText = useRefusalText();
   const [summary, setSummary] = useState<Summary | null>(initial ?? null);
   const [open, setOpen] = useState(false);
   const [anonymous, setAnonymous] = useState(false);
@@ -74,7 +75,7 @@ export function PostAwards({
           },
         });
       } catch (err) {
-        throw new Error(serverError(err) ?? 'give failed', {
+        throw new Error(refusalText.maybe(err) ?? 'give failed', {
           cause: err,
         });
       }

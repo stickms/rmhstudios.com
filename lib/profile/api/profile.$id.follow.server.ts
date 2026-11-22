@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
@@ -20,8 +21,8 @@ export const route = apiRoute('/api/profile/$id/follow', {
 
       const result = await toggleFollow({ followerId, followingId, followerHandle });
       if (result.selfFollow)
-        return Response.json({ error: 'Cannot follow yourself' }, { status: 400 });
-      if (!result.found) return Response.json({ error: 'User not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('FOLLOW_SELF') }, { status: 400 });
+      if (!result.found) return Response.json({ ...refusalBody('MESSAGE_USER_NOT_FOUND') }, { status: 404 });
       return { success: true as const, following: result.following };
     },
   ),

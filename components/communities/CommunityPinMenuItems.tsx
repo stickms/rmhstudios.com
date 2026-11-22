@@ -2,6 +2,7 @@
  * "Pin to community", "Unpin from community", "Move up" and "Move down" in a community post's overflow menu (s09-06),
  * for moderators only. The menu asks where the pins stand when it opens; a person who may not pin sees nothing.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Pin, PinOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +16,7 @@ import {
 } from '@/lib/communities/pins.contract';
 import { movePinned, pinMoves, type PinDirection } from '@/lib/communities/pins';
 import type { FeedItem } from '@/lib/feed-types';
-import { HttpError, errorField, serverError } from '@/lib/http';
+import { HttpError, errorField } from '@/lib/http';
 import { toast } from '@/lib/toast';
 
 interface Props {
@@ -31,6 +32,7 @@ export function CommunityPinMenuItems({ item, enabled, onDone }: Props) {
   // Only a top-level post of the community can be pinned (a repost wrapper has an `actualId`).
   const eligible = !!slug && !item.actualId;
   const { t } = useTranslation('community-pins');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const { data } = useQuery({
     ...apiQuery(getCommunityPinsApi, { params: { slug: slug ?? '' } }),
@@ -49,7 +51,7 @@ export function CommunityPinMenuItems({ item, enabled, onDone }: Props) {
       );
       return;
     }
-    toast.error(serverError(e) || fallback);
+    toast.error(refusalText.maybe(e) || fallback);
   };
 
   const pin = useMutation({

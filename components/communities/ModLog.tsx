@@ -319,6 +319,18 @@ export function actionSentence(t: TFunction, e: ModLogEntryDTO): string {
         actor,
         defaultValue: '{{actor}} reordered the pinned posts',
       });
+    case 'event_hosted':
+      return t('modlog-event-hosted', {
+        ns: 'community-events',
+        actor,
+        defaultValue: '{{actor}} hosted an event',
+      });
+    case 'event_cancelled':
+      return t('modlog-event-cancelled', {
+        ns: 'community-events',
+        actor,
+        defaultValue: '{{actor}} cancelled an event',
+      });
   }
 }
 

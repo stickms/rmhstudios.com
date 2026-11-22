@@ -82,7 +82,11 @@ describe('listBlocked / listMuted', () => {
 
     h.mutes = [{ id: 'm1', createdAt: new Date(), muted: user('x') }];
     await listMuted('me');
-    expect((h.calls[1]!.args as { where: unknown }).where).toEqual({ muterId: 'me' });
+    // Only the member's own rows, and only mutes still in force (s10-10).
+    expect((h.calls[1]!.args as { where: unknown }).where).toMatchObject({
+      muterId: 'me',
+      AND: [{ OR: expect.any(Array) }],
+    });
   });
 
   it('pages by (createdAt, id): 51 rows give a page of 50 and a cursor that continues after the last one', async () => {
@@ -117,7 +121,8 @@ describe('listBlocked / listMuted', () => {
       OR: [{ name: starts }, { handle: starts }, { profile: { is: { displayName: starts } } }],
     });
     await listMuted('me', { q: '   ' });
-    expect((h.calls[1]!.args as { where: Record<string, unknown> }).where).toEqual({ muterId: 'me' });
+    expect((h.calls[1]!.args as { where: Record<string, unknown> }).where).toMatchObject({ muterId: 'me' });
+    expect((h.calls[1]!.args as { where: Record<string, unknown> }).where).not.toHaveProperty('muted');
   });
 
   it('labels a deleted account and shows none of its details', async () => {

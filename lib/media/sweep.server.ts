@@ -1,6 +1,7 @@
 import { orphanCutoff, deletedPostCutoff } from "@/lib/media/sweep-policy";
 import { SWEEP_RULES, type SweepRule } from "@/lib/media/sweep-surfaces";
 import { SAMPLE_KEYS, type SweepSummary } from "@/lib/media/sweep-summary";
+import { CARD_SOUND_PREFIX } from "@/lib/study/card-sound";
 import { FEED_IMAGE_PREFIX } from "@/lib/storage/keys";
 
 interface Target { id: string; key: string; url: string }
@@ -26,7 +27,14 @@ export interface SweepDeps {
     // ATTACHED at the moment they are saved (s08-03, s08-15, s07-17). A target
     // any of them still names is kept, whatever its status says.
     scheduledPost: { findMany: FindMany<{ imageUrls: string[] }> };
-    flashcard: { findMany: FindMany<{ frontImageUrl: string | null; backImageUrl: string | null }> };
+    flashcard: {
+      findMany: FindMany<{
+        frontImageUrl: string | null;
+        backImageUrl: string | null;
+        frontSoundUrl?: string | null;
+        backSoundUrl?: string | null;
+      }>;
+    };
     buildScreenshot: { findMany: FindMany<{ url: string }> };
     userBuild: { findMany: FindMany<{ thumbnailUrl: string | null }> };
     // Live content that names an upload by URL, whatever the Media row says: a copied, re-posted or
@@ -35,6 +43,12 @@ export interface SweepDeps {
     feedAnnouncement: { findMany: FindMany<{ imageUrls: string[] }> };
     chatMessage: { findMany: FindMany<{ imageUrls: string[] }> };
     scheduledChatMessage: { findMany: FindMany<{ imageUrls: string[] }> };
+    // Other tables that store a feed-space URL from `/api/rmharks/image` as a plain string: a homes listing's photos
+    // (`aiImages` is a subset of `images`), an admin email campaign's pictures and a museum era's screenshot. None of
+    // them claims a Media row, so without these a re-used upload could be reclaimed while they still show it.
+    homeListing: { findMany: FindMany<{ images: string[] }> };
+    emailCampaign: { findMany: FindMany<{ imageUrls: string[] }> };
+    siteEra: { findMany: FindMany<{ imageUrl: string | null }> };
   };
   deleteObject(key: string): Promise<void>;
   purgeFromCdn(key: string): Promise<void>;
@@ -60,21 +74,31 @@ const REFERENCE_CHUNK = 500;
  * The target URLs something still points at:
  *  - an unpublished ScheduledPost (a draft or a scheduled post whose developer
  *    API uploads stay PENDING until `publishScheduledPost` attaches them),
- *  - a flashcard side (copies share one object by URL),
- *  - a build screenshot or a build cover.
+ *  - a flashcard side, a picture (copies share one object by URL) or a sound (s10-02: one object per side, never
+ *    shared; a sound a card uses is never swept, and an unclaimed upload goes by `orphan-pending`),
+ *  - a build screenshot or a build cover,
+ *  - a live post, announcement or chat message (sent or scheduled),
+ *  - a homes listing photo, an admin email campaign picture or a museum era screenshot.
  */
-async function referencedUrls(deps: SweepDeps, urls: string[]): Promise<Set<string>> {
+export async function referencedUrls(deps: SweepDeps, urls: string[]): Promise<Set<string>> {
   const kept = new Set<string>();
   for (let i = 0; i < urls.length; i += REFERENCE_CHUNK) {
     const chunk = urls.slice(i, i + REFERENCE_CHUNK);
-    const [scheduled, cards, shots, builds, live] = await Promise.all([
+    const [scheduled, cards, shots, builds, live, listings, eras] = await Promise.all([
       deps.prisma.scheduledPost.findMany({
         where: { publishedId: null, imageUrls: { hasSome: chunk } },
         select: { imageUrls: true },
       }),
       deps.prisma.flashcard.findMany({
-        where: { OR: [{ frontImageUrl: { in: chunk } }, { backImageUrl: { in: chunk } }] },
-        select: { frontImageUrl: true, backImageUrl: true },
+        where: {
+          OR: [
+            { frontImageUrl: { in: chunk } },
+            { backImageUrl: { in: chunk } },
+            { frontSoundUrl: { in: chunk } },
+            { backSoundUrl: { in: chunk } },
+          ],
+        },
+        select: { frontImageUrl: true, backImageUrl: true, frontSoundUrl: true, backSoundUrl: true },
       }),
       deps.prisma.buildScreenshot.findMany({ where: { url: { in: chunk } }, select: { url: true } }),
       deps.prisma.userBuild.findMany({ where: { thumbnailUrl: { in: chunk } }, select: { thumbnailUrl: true } }),
@@ -89,13 +113,20 @@ async function referencedUrls(deps: SweepDeps, urls: string[]): Promise<Set<stri
           where: { imageUrls: { hasSome: chunk } },
           select: { imageUrls: true },
         }),
+        deps.prisma.emailCampaign.findMany({ where: { imageUrls: { hasSome: chunk } }, select: { imageUrls: true } }),
       ]),
+      deps.prisma.homeListing.findMany({ where: { images: { hasSome: chunk } }, select: { images: true } }),
+      deps.prisma.siteEra.findMany({ where: { imageUrl: { in: chunk } }, select: { imageUrl: true } }),
     ]);
+    for (const l of listings) for (const u of l.images) kept.add(u);
+    for (const e of eras) if (e.imageUrl) kept.add(e.imageUrl);
     for (const rows of live) for (const r of rows) for (const u of r.imageUrls) kept.add(u);
     for (const s of scheduled) for (const u of s.imageUrls) kept.add(u);
     for (const c of cards) {
       if (c.frontImageUrl) kept.add(c.frontImageUrl);
       if (c.backImageUrl) kept.add(c.backImageUrl);
+      if (c.frontSoundUrl) kept.add(c.frontSoundUrl);
+      if (c.backSoundUrl) kept.add(c.backSoundUrl);
     }
     for (const s of shots) kept.add(s.url);
     for (const b of builds) if (b.thumbnailUrl) kept.add(b.thumbnailUrl);
@@ -104,12 +135,17 @@ async function referencedUrls(deps: SweepDeps, urls: string[]): Promise<Set<stri
 }
 
 /**
- * Only feed-space keys are ever deleted: that is where every row of a `swept` surface lives
- * (lib/media/sweep-surfaces.ts). A row with any other key, an empty one, or one that climbs out of its
- * folder is kept, whatever its status says.
+ * Only feed-space keys, and card sounds (an unclaimed upload, s10-02: `referencedUrls` keeps every sound a card
+ * names), are ever deleted. A row with any other key, an empty one, or one that climbs out of its folder is kept,
+ * whatever its status says.
  */
+const SWEEPABLE_PREFIXES = [FEED_IMAGE_PREFIX, CARD_SOUND_PREFIX];
 function sweepableKey(key: string): boolean {
-  return typeof key === "string" && key.startsWith(FEED_IMAGE_PREFIX) && key.length > FEED_IMAGE_PREFIX.length && !key.includes("..");
+  return (
+    typeof key === "string" &&
+    !key.includes("..") &&
+    SWEEPABLE_PREFIXES.some((prefix) => key.startsWith(prefix) && key.length > prefix.length)
+  );
 }
 
 function candidateWhere(now: Date) {
@@ -222,8 +258,8 @@ async function countByRule(deps: SweepDeps, targets: Target[]): Promise<Record<S
  *  (c) ATTACHED media whose post was hard-deleted (`hard-deleted-post`).
  * Self-healing — keys off post.deletedAt, not a delete-handler hook.
  *
- * A target whose URL is still referenced by an unpublished scheduled post, a
- * flashcard or a build (screenshot or cover) is never deleted.
+ * A target whose URL is still referenced (`referencedUrls`: an unpublished scheduled post, a flashcard, a build, a
+ * live post or chat message, a homes listing, an email campaign or a museum era) is never deleted.
  *
  * One run takes at most {@link SWEEP_ROW_CAP} rows, oldest first, and deletes them {@link SWEEP_BATCH} at a time.
  * A row's object (its smaller variants first) goes before the row; a row whose delete failed stays for the next

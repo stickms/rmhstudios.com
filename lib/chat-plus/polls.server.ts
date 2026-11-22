@@ -7,6 +7,7 @@
  * with the question and options in `meta`, and votes in `DirectPollVote`.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
@@ -102,10 +103,10 @@ export async function voteDmPoll(
     select: { id: true, kind: true, meta: true, expiresAt: true },
   });
   if (!msg || (msg.expiresAt && msg.expiresAt.getTime() <= Date.now())) {
-    return { ok: false, status: 404, error: 'No such poll' };
+    return { ok: false, status: 404, ...refusalBody('CHAT_POLL_NOT_FOUND') };
   }
   const meta = msg.meta as unknown as PollMeta;
-  if (optionIdx >= meta.options.length) return { ok: false, status: 400, error: 'Invalid option' };
+  if (optionIdx >= meta.options.length) return { ok: false, status: 400, ...refusalBody('CHAT_POLL_OPTION_INVALID') };
 
   await prisma.chatPollVote.upsert({
     where: { messageId_userId: { messageId, userId: access.viewerId } },

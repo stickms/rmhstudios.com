@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { lazy, useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { TrendingUp, Gamepad2 } from 'lucide-react';
@@ -8,7 +9,7 @@ import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { claimCoinsApi } from '@/lib/coins.contract';
 import { CoinIcon } from '../ui/CoinIcon';
 import { PlayTab } from './PlayTab';
@@ -26,6 +27,7 @@ const ForecastingPanel = lazy(() =>
 
 export function RMHCoinsPage() {
   const { t } = useTranslation('c-rmhcoins');
+  const refusalText = useRefusalText();
   const { data: session, isPending } = useSession();
   const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export function RMHCoinsPage() {
       // A refusal carries the server's own message; anything else is a transport failure.
       if (e instanceof HttpError) {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('claim-failed', {
               defaultValue: 'Claim failed',
             }),

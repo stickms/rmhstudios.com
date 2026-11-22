@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
-import { serverError } from '@/lib/http';
 import { removeFromWaitlist, waitlistQuery } from '@/lib/events/waitlist.queries';
 import type { WaitlistViewDTO } from '@/lib/events/waitlist';
 
@@ -18,6 +18,7 @@ import type { WaitlistViewDTO } from '@/lib/events/waitlist';
  */
 export function WaitlistPanel({ eventId, onChange }: { eventId: string; onChange?: (waiting: number) => void }) {
   const { t } = useTranslation('event-waitlist');
+  const refusalText = useRefusalText();
   const lf = useLocaleFormat();
   const queryClient = useQueryClient();
   const query = useQuery(waitlistQuery(eventId));
@@ -35,12 +36,14 @@ export function WaitlistPanel({ eventId, onChange }: { eventId: string; onChange
         onChange?.(next.waitlist.length);
         toast.success(t('removed', { defaultValue: 'Removed from the waitlist.' }));
       } catch (e) {
-        toast.error(serverError(e) || t('remove-error', { defaultValue: 'Could not remove them from the waitlist.' }));
+        toast.error(
+          refusalText.maybe(e) || t('remove-error', { defaultValue: 'Could not remove them from the waitlist.' }),
+        );
       } finally {
         setRemoving(null);
       }
     },
-    [eventId, onChange, queryClient, t],
+    [eventId, onChange, queryClient, t, refusalText],
   );
 
   if (failed) {

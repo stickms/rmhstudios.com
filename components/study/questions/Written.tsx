@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { gradeWritten, type WrittenQuestion } from '@/lib/study/practice-test';
+import { CardSound } from '@/components/study/CardSound';
 import { PromptPicture, useQuestionPrompt } from '@/components/study/questions/PromptPicture';
 import { Verdict } from '@/components/study/questions/Verdict';
 
@@ -34,6 +35,7 @@ export function Written({
         {prompt}
       </legend>
       {question.promptImage && <PromptPicture image={question.promptImage} occlusion={question.promptOcclusion} />}
+      {question.promptSound && <CardSound sound={question.promptSound} side={question.promptSoundSide ?? 'front'} showTranscript={false} />}
       <label htmlFor={id} className="t-label block">
         {t('written-label', { defaultValue: 'Your answer' })}
       </label>

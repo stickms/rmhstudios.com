@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -32,7 +33,7 @@ export const route = apiRoute('/api/rmharks/$id/like', {
       // XP, quests, achievements, and webhooks all live there).
       const result = await togglePostLike(userId, id);
       if (!result.found) {
-        return Response.json({ error: 'Post not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
       }
       return Response.json({ success: true, liked: result.liked });
     },

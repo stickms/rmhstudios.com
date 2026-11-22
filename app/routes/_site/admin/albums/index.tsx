@@ -3,6 +3,7 @@
  * media is bulk-uploaded. Admin-gated by the parent /_site/admin route.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Images, Plus, Video } from 'lucide-react';
@@ -17,7 +18,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { adminAlbumCreate, adminAlbumsList } from '@/lib/admin/albums.contract';
 
 export const Route = createFileRoute('/_site/admin/albums/')({
@@ -37,6 +37,7 @@ type AdminAlbum = {
 
 function AdminAlbumsPage() {
   const { t } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   const [albums, setAlbums] = useState<AdminAlbum[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +65,7 @@ function AdminAlbumsPage() {
     try {
       const data = await api(adminAlbumCreate, { body: { title: trimmed } }).catch((e: unknown) => {
         throw new Error(
-          serverError(e) || t('album-create-failed', { defaultValue: 'Failed to create album' }),
+          refusalText.maybe(e) || t('album-create-failed', { defaultValue: 'Failed to create album' }),
         );
       });
       toast.success(

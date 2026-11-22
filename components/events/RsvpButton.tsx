@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, HelpCircle, Hourglass } from 'lucide-react';
@@ -5,7 +6,7 @@ import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import type { RsvpRequest, RsvpResult } from '@/lib/events.server';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { rsvpEventApi, withdrawRsvpApi } from '@/lib/events.contract';
 import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
 
@@ -38,6 +39,7 @@ export function RsvpButton({
 }: RsvpButtonProps) {
   const { t } = useTranslation('site');
   const { t: tr } = useTranslation('event-waitlist');
+  const refusalText = useRefusalText();
   // A community event refuses a banned or timed-out member with the community's own refusal (s06-01).
   const sanctionRefusalText = useSanctionRefusal();
   const [busy, setBusy] = useState(false);
@@ -64,9 +66,9 @@ export function RsvpButton({
       } else if (refusal) {
         toast.error(refusal);
       } else if (e instanceof HttpError && e.status === 409) {
-        toast.error(serverError(e) || t('event-full', { defaultValue: 'This event is full.' }));
+        toast.error(refusalText.maybe(e) || t('event-full', { defaultValue: 'This event is full.' }));
       } else {
-        toast.error(serverError(e) || t('rsvp-error', { defaultValue: 'Could not update RSVP.' }));
+        toast.error(refusalText.maybe(e) || t('rsvp-error', { defaultValue: 'Could not update RSVP.' }));
       }
     } finally {
       setBusy(false);

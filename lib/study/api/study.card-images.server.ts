@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { uploadCardImageApi } from '@/lib/study/card-images.contract';
@@ -24,7 +25,8 @@ export const route = apiRoute('/api/study/card-images', {
       const form = await request.formData().catch(() => null);
       const file = form?.get('image');
       const result = await uploadCardImage(userId, file instanceof File ? file : null);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok)
+        return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       return { url: result.url, width: result.width, height: result.height };
     },
   ),

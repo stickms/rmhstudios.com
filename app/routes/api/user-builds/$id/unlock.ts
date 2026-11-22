@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { notice } from '@/lib/notifications/notice-keys';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
@@ -37,13 +38,13 @@ export const Route = createFileRoute('/api/user-builds/$id/unlock')({
               where: { slug: params.id },
               select: { id: true, userId: true, price: true, readme: true, repoUrl: true, demoUrl: true },
             });
-            if (!bySlug) return Response.json({ error: 'Build not found' }, { status: 404 });
+            if (!bySlug) return Response.json({ ...refusalBody('BUILD_NOT_FOUND') }, { status: 404 });
             return await doUnlock(bySlug, userId, session.user.name ?? 'Someone');
           }
           return await doUnlock(build, userId, session.user.name ?? 'Someone');
         } catch (error) {
           if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
-            return Response.json({ error: 'Not enough coins' }, { status: 400 });
+            return Response.json({ ...refusalBody('COINS_NOT_ENOUGH') }, { status: 400 });
           }
           console.error('Build unlock error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

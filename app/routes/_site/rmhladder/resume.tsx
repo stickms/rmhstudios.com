@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
@@ -7,7 +8,6 @@ import { CheckCircle2, Download, FileText, Sparkles, Trash2, Upload } from 'luci
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   analyzeLadderResumeApi,
   confirmLadderResumeApi,
@@ -47,6 +47,7 @@ function formatBytes(bytes: number): string {
 
 function ResumePage() {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const loaded = Route.useLoaderData();
   const router = useRouter();
@@ -82,7 +83,7 @@ function ResumePage() {
     setBusyId(`analyze-${version.id}`);
     try {
       await api(analyzeLadderResumeApi, { params: { id: resume.id }, body: { versionId: version.id } }).catch((e: unknown) => {
-        throw new Error(serverError(e) || 'Review failed');
+        throw new Error(refusalText.maybe(e) || 'Review failed');
       });
       toast.success(t('ladder.resume.reviewReady', { defaultValue: 'AI review is ready. Confirm the extracted profile to generate matches.' }));
       await refresh();
@@ -98,7 +99,7 @@ function ResumePage() {
     setBusyId(`delete-${resume.id}`);
     try {
       await api(deleteLadderResumeApi, { params: { id: resume.id } }).catch((e: unknown) => {
-        throw new Error(serverError(e) || 'Delete failed');
+        throw new Error(refusalText.maybe(e) || 'Delete failed');
       });
       setResumes((rows) => rows.filter((row) => row.id !== resume.id));
       toast.success(t('ladder.resume.deleted', { defaultValue: 'Resume deleted' }));
@@ -229,6 +230,7 @@ function ReviewPanel({ review }: { review: Record<string, unknown> }) {
 
 function ProfileConfirmation({ resume, version, initial, onRefresh }: { resume: ResumeRow; version: VersionRow; initial: CandidateProfile; onRefresh: () => Promise<void> }) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const [profile, setProfile] = useState(initial);
   const [saving, setSaving] = useState(false);
   const skills = useMemo(() => profile.skills.join(', '), [profile.skills]);
@@ -236,7 +238,7 @@ function ProfileConfirmation({ resume, version, initial, onRefresh }: { resume: 
     setSaving(true);
     try {
       await api(confirmLadderResumeApi, { params: { id: resume.id }, body: { versionId: version.id, profile } }).catch((e: unknown) => {
-        throw new Error(serverError(e) || 'Confirmation failed');
+        throw new Error(refusalText.maybe(e) || 'Confirmation failed');
       });
       toast.success(t('ladder.resume.matchesReady', { defaultValue: 'Profile confirmed and matches refreshed' }));
       await onRefresh();

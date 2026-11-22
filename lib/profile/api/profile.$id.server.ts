@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getProfileApi } from '@/lib/profile/profile.contract';
@@ -13,7 +14,7 @@ export const route = apiRoute('/api/profile/$id', {
     async ({ params, userId: viewerId, isAdmin: viewerIsAdmin }) => {
       try {
         const payload = await getProfile(params.id, { id: viewerId, isAdmin: viewerIsAdmin });
-        if (!payload) return Response.json({ error: 'User not found' }, { status: 404 });
+        if (!payload) return Response.json({ ...refusalBody('MESSAGE_USER_NOT_FOUND') }, { status: 404 });
         return payload;
       } catch (error) {
         console.error('Profile fetch error:', error);

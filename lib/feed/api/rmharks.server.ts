@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { pageSize } from '@/lib/pagination';
 import { apiRoute } from '@/lib/api/route.server';
@@ -167,7 +168,7 @@ export const route = apiRoute('/api/rmharks', {
       } = input;
 
       if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
-        return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+        return Response.json({ ...refusalBody('MESSAGE_IMAGE_INVALID') }, { status: 400 });
       }
 
       // RMH Vibes: the pinned page must be ready and the version must be one of its own.
@@ -269,7 +270,7 @@ export const route = apiRoute('/api/rmharks', {
         // A quote republishes the quoted post, so it must be readable by the quoter
         // (deleted, audience, blocks, private community): same 400 as a missing post.
         if (!orig || !(await canReadThread(orig, session.user.id))) {
-          return Response.json({ error: 'Quoted post not found' }, { status: 400 });
+          return Response.json({ ...refusalBody('POST_QUOTED_NOT_FOUND') }, { status: 400 });
         }
         // Quoting a quote quotes the ROOT, so the root is what gets republished,
         // counted and notified: it must be readable by the quoter too (the quote
@@ -280,7 +281,7 @@ export const route = apiRoute('/api/rmharks', {
             select: { userId: true, audience: true, communityId: true, deletedAt: true },
           });
           if (!root || !(await canReadThread(root, session.user.id))) {
-            return Response.json({ error: 'Quoted post not found' }, { status: 400 });
+            return Response.json({ ...refusalBody('POST_QUOTED_NOT_FOUND') }, { status: 400 });
           }
         }
         quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote

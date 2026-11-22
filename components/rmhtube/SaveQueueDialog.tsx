@@ -5,11 +5,11 @@
  * server answers with what it added, which is what the dialog reports.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/shared/app-toast';
 import { addPlaylistItemsBulkApi, createPlaylistApi, deletePlaylistApi } from '@/lib/playlists/playlists.contract';
 import { queueToPlaylistRows, type QueueItemLike } from '@/lib/rmhtube/playlist-queue';
@@ -26,6 +26,7 @@ interface Saved {
 
 export default function SaveQueueDialog({ queue, onClose }: SaveQueueDialogProps) {
   const { t } = useTranslation('rmhtube-playlists');
+  const refusalText = useRefusalText();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -64,7 +65,7 @@ export default function SaveQueueDialog({ queue, onClose }: SaveQueueDialogProps
     } catch (err) {
       // A playlist that was made but could not be filled is not left behind empty.
       if (createdId) await api(deletePlaylistApi, { params: { id: createdId } }).catch(() => undefined);
-      setError(serverError(err) ?? t('save-failed', { defaultValue: "Couldn't save the playlist. Try again." }));
+      setError(refusalText.maybe(err) ?? t('save-failed', { defaultValue: "Couldn't save the playlist. Try again." }));
     } finally {
       setBusy(false);
     }

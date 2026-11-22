@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -19,7 +20,6 @@ import {
 } from '@/lib/profile/stamps';
 import { StampImage } from '../StampWallModule';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   addStampToWallApi,
   browseStampsApi,
@@ -39,6 +39,7 @@ type Sort = 'new' | 'popular';
  */
 export default function StampSettings({ userId }: { userId: string }) {
   const { t } = useTranslation('f-profile-plus');
+  const refusalText = useRefusalText();
   const [mine, setMine] = useState<StampView[] | null>(null);
   const [wall, setWall] = useState<StampView[] | null>(null);
   const [gallery, setGallery] = useState<StampView[]>([]);
@@ -139,7 +140,7 @@ export default function StampSettings({ userId }: { userId: string }) {
         () => true,
         (e: unknown) => {
           toast.error(
-            serverError(e) ??
+            refusalText.maybe(e) ??
               t('stamp-create-failed', {
                 defaultValue: "Couldn't create that stamp",
               }),
@@ -171,7 +172,7 @@ export default function StampSettings({ userId }: { userId: string }) {
       });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('stamp-failed', {
             defaultValue: "Couldn't update your wall",
           }),

@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useCallback } from'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
@@ -23,7 +24,6 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { ColumnHeader } from'./ColumnHeader';
 import { api } from'@/lib/contract/client';
-import { serverError } from'@/lib/http';
 import {
  claimBattlePassTierApi,
  claimQuestApi,
@@ -36,6 +36,7 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const queryClient = useQueryClient();
  const progressQ = useQuery(progressSummaryQuery());
  const passQ = useQuery(battlepassQuery());
@@ -82,7 +83,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  await api(unlockBattlePassApi);
  await load();
  } catch (e) {
- const message = serverError(e);
+ const message = refusalText.maybe(e);
  if (message) toast.error(message);
  } finally {
  setBusy(null);

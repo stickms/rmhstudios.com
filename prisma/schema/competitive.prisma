@@ -287,6 +287,9 @@ model SpeedrunEntry {
   status       String    @default("pending") @db.VarChar(10)
   rejectReason String?   @db.VarChar(200)
   verifiedAt   DateTime?
+  /// The admin who gave the verdict (an id, not a relation: the row outlives the admin). Null for an automatic verdict.
+  reviewedById String?
+  reviewedAt   DateTime?
   createdAt    DateTime  @default(now())
 
   category SpeedrunCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)

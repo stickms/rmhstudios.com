@@ -123,7 +123,7 @@ describe('saving a card', () => {
       { kind: 'reversible' as const, front: 'one side only', back: '' },
       { front: 'front only' },
     ]) {
-      expect(await addCard('me', 'mine', draft)).toEqual({ ok: false, status: 400, error: 'Invalid card' });
+      expect(await addCard('me', 'mine', draft)).toMatchObject({ ok: false, status: 400, error: 'Invalid card' });
     }
     expect(db.writes).toBe(0);
   });
@@ -203,7 +203,7 @@ describe('editing a card regenerates its siblings in place', () => {
   it('an edit that makes the card invalid is refused and changes nothing', async () => {
     const { id } = await reviewed();
     const writes = db.writes;
-    expect(await updateCard('me', id, { front: 'no deletions left' })).toEqual({
+    expect(await updateCard('me', id, { front: 'no deletions left' })).toMatchObject({
       ok: false,
       status: 400,
       error: 'Invalid card',
@@ -260,7 +260,7 @@ describe('the deck cap counts every row, under the lock', () => {
     db.locks = [];
     // One authored row and three generated ones would make 2,001.
     const over = await addCard('me', 'mine', { kind: 'cloze', front: '{{c1::a}} {{c2::b}} {{c3::c}}' });
-    expect(over).toEqual({ ok: false, status: 400, error: 'Deck is full' });
+    expect(over).toMatchObject({ ok: false, status: 400, error: 'Deck is full' });
     expect(db.locks).toEqual(['deck-cards:mine']);
     expect(rows()).toHaveLength(MAX_DECK_CARDS - 3);
     expect((await addCard('me', 'mine', { kind: 'cloze', front: '{{c1::a}} {{c2::b}}' })).ok).toBe(true);
@@ -272,7 +272,7 @@ describe('the deck cap counts every row, under the lock', () => {
     const writes = db.writes;
     const cards = Array.from({ length: 6 }, (_, i) => ({ kind: 'reversible' as const, front: `q${i}`, back: `a${i}` }));
     // Six reversible cards are twelve rows.
-    expect(await importCards('me', 'mine', cards)).toEqual({ ok: false, status: 400, error: 'Deck is full' });
+    expect(await importCards('me', 'mine', cards)).toMatchObject({ ok: false, status: 400, error: 'Deck is full' });
     expect(db.writes).toBe(writes);
     expect(await importCards('me', 'mine', cards.slice(0, 5))).toMatchObject({ ok: true, created: 5 });
     expect(rows()).toHaveLength(MAX_DECK_CARDS);
@@ -284,7 +284,7 @@ describe('the deck cap counts every row, under the lock', () => {
       db.cards.push({ id: `pad${i}`, deckId: 'mine', front: 'p', back: 'p', position: 100 + i });
     }
     expect(rows()).toHaveLength(MAX_DECK_CARDS);
-    expect(await updateCard('me', id, { front: '{{c1::a}} {{c2::b}}' })).toEqual({
+    expect(await updateCard('me', id, { front: '{{c1::a}} {{c2::b}}' })).toMatchObject({
       ok: false,
       status: 400,
       error: 'Deck is full',
@@ -321,7 +321,7 @@ describe('import', () => {
       { front: 'ok', back: 'fine' },
       { kind: 'cloze', front: 'broken {{c1::' },
     ]);
-    expect(r).toEqual({ ok: false, status: 400, error: 'Invalid import' });
+    expect(r).toMatchObject({ ok: false, status: 400, error: 'Invalid import' });
     expect(db.writes).toBe(0);
   });
 });

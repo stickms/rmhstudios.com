@@ -6,13 +6,13 @@
  * Mounted on /settings/security under Account standing, which is a signed-in page; signed out, this renders nothing.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Flag } from 'lucide-react';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { listMyReportsApi, withdrawReportApi, type MyReport } from '@/lib/moderation/my-reports.contract';
 import type { MyReportsFilter, ReporterStatus } from '@/lib/moderation/my-reports';
@@ -33,6 +33,7 @@ const QUERY_KEY = ['account', 'reports'] as const;
 export function MyReportsPanel() {
   const { t } = useTranslation('my-reports');
   const { t: ts } = useTranslation('c-moderation');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const qc = useQueryClient();
   const confirm = useConfirm();
@@ -95,6 +96,7 @@ export function MyReportsPanel() {
     'music-share': t('kind-music-share', { defaultValue: 'Shared music result' }),
     'jam-feedback': t('kind-jam-feedback', { defaultValue: 'Jam feedback' }),
     'build-comment': t('kind-build-comment', { defaultValue: 'Build comment' }),
+    'build-issue': t('kind-build-issue', { defaultValue: 'Build issue' }),
   };
   const GONE: Partial<Record<ReportEntityType, string>> = {
     rmhark: t('gone-rmhark', { defaultValue: 'A post that is no longer available' }),
@@ -102,6 +104,7 @@ export function MyReportsPanel() {
     user: t('gone-user', { defaultValue: 'A profile that is no longer available' }),
     build: t('gone-build', { defaultValue: 'A build that is no longer available' }),
     'build-comment': t('gone-build-comment', { defaultValue: 'A build comment that is no longer available' }),
+    'build-issue': t('gone-build-issue', { defaultValue: 'A build issue that is no longer available' }),
   };
 
   const whatOf = (r: MyReport): string =>
@@ -129,7 +132,7 @@ export function MyReportsPanel() {
       await api(withdrawReportApi, { params: { id: r.id } });
       toast.success(t('withdrawn-toast', { defaultValue: 'Report withdrawn.' }));
     } catch (e) {
-      toast.error(serverError(e) ?? t('withdraw-failed', { defaultValue: 'Could not withdraw the report.' }));
+      toast.error(refusalText.maybe(e) ?? t('withdraw-failed', { defaultValue: 'Could not withdraw the report.' }));
     } finally {
       setWithdrawing(null);
       // A 409 means a moderator moved first: refetching shows where the report stands now.

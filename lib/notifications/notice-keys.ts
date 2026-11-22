@@ -205,6 +205,31 @@ export const NOTICE_TEMPLATES = {
   'wishlist-daily-shop': "{{item}} is in today's shop",
   'wishlist-price-drop': '{{item}} dropped to {{price}} coins',
   'wishlist-target-met': '{{item}} is at {{price}} coins — within your target price',
+
+  // Sprint 10 notices (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-04 deck-suggestions
+  'deck-suggestions-new': 'New suggestions on {{deck}}',
+  'deck-suggestion-accepted': 'Your suggestion to {{deck}} was accepted',
+  'deck-suggestion-declined': 'Your suggestion to {{deck}} was not taken: {{reason}}',
+
+  // s10-09 build-issues
+  'build-issues-new': 'New issues on {{build}}',
+  'build-issue-confirmed': 'Your issue on {{build}} was confirmed: {{issue}}',
+  'build-issue-fixed': 'Your issue on {{build}} was fixed in {{version}}: {{issue}}',
+  'build-issue-fixed-seen': 'An issue you see too on {{build}} was fixed in {{version}}: {{issue}}',
+  'build-issue-wont-fix': 'Your issue on {{build}} will not be fixed: {{issue}}',
+  'build-issue-duplicate': 'Your issue on {{build}} was marked as a duplicate: {{issue}}',
+  'build-issue-reopened': 'Your issue on {{build}} was reopened: {{issue}}',
+
+  // s10-15 admin-webhooks
+  'webhook-admin-disabled': 'An admin turned off your webhook to {{host}}: {{reason}}',
+
+  // s10-16 speedrun-queue
+  'speedrun-run-verified': 'Your {{game}} run was verified',
+  'speedrun-run-rejected': 'Your {{game}} run was not verified: {{reason}}',
+
+  // s10-17 admin-communities
+  'community-delisted': '{{community}} is out of discovery: {{reason}}',
 } as const;
 
 export type NoticeKey = keyof typeof NOTICE_TEMPLATES;
@@ -409,6 +434,31 @@ export interface NoticeParamTypes {
   'wishlist-daily-shop': { item: string | number };
   'wishlist-price-drop': { item: string | number; price: string | number };
   'wishlist-target-met': { item: string | number; price: string | number };
+
+  // Sprint 10 notices (docs/autonomous/sprint-10/plan.md §Anchors)
+  // s10-04 deck-suggestions
+  'deck-suggestions-new': { deck: string | number };
+  'deck-suggestion-accepted': { deck: string | number };
+  'deck-suggestion-declined': { deck: string | number; reason: string | number };
+
+  // s10-09 build-issues
+  'build-issues-new': { build: string | number };
+  'build-issue-confirmed': { build: string | number; issue: string | number };
+  'build-issue-fixed': { build: string | number; version: string | number; issue: string | number };
+  'build-issue-fixed-seen': { build: string | number; version: string | number; issue: string | number };
+  'build-issue-wont-fix': { build: string | number; issue: string | number };
+  'build-issue-duplicate': { build: string | number; issue: string | number };
+  'build-issue-reopened': { build: string | number; issue: string | number };
+
+  // s10-15 admin-webhooks
+  'webhook-admin-disabled': { host: string | number; reason: string | number };
+
+  // s10-16 speedrun-queue
+  'speedrun-run-verified': { game: string | number };
+  'speedrun-run-rejected': { game: string | number; reason: string | number };
+
+  // s10-17 admin-communities
+  'community-delisted': { community: string | number; reason: string | number };
 }
 
 export type NoticeParamValue = string | number;

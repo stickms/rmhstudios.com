@@ -45,6 +45,10 @@ vi.mock('@/lib/communities/recurring.server', () => ({
   }),
   pauseRecurring: vi.fn(),
   specOf: vi.fn(() => ({ cadence: 'weekly', weekday: 1, dayOfMonth: null, minuteOfDay: 0, timeZone: 'UTC' })),
+  // S10-18: the cron's claim shares Post now's 60 s window; the real predicate is pure, so it is reproduced here.
+  notPostedRecently: vi.fn((now: Date) => ({
+    OR: [{ lastPostedAt: null }, { lastPostedAt: { lt: new Date(now.getTime() - 60_000) } }],
+  })),
 }));
 
 import type { ScheduledPost } from '@prisma/client';
@@ -88,7 +92,13 @@ describe('the recurring job', () => {
     h.due[0]!.createdBy = { deletionScheduledAt: new Date('2026-12-30') };
     expect(await runDueRecurringThreads(NOW)).toBe(0);
     expect(h.posted).toEqual([]);
-    expect(h.claims).toHaveLength(1);
+    // S10-18: the claim moves nextAt (the occurrence is used up, nothing catches up later); because nothing was
+    // posted, a second write gives the lastPostedAt stamp back without touching nextAt.
+    expect(h.claims).toHaveLength(2);
+    const [claim, giveBack] = h.claims as { data: Record<string, unknown> }[];
+    expect(claim!.data).toHaveProperty('nextAt');
+    expect(giveBack!.data).not.toHaveProperty('nextAt');
+    expect(giveBack!.data).toHaveProperty('lastPostedAt');
   });
 
   it('posts a template whose author is not being deleted', async () => {

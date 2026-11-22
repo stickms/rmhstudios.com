@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { joinGroupInviteApi } from '@/lib/group-chat/invites.contract';
@@ -19,7 +20,7 @@ export const route = apiRoute('/api/group-invites/$code/join', {
       const refused = () =>
         Response.json(
           {
-            error: "This invite can't be used",
+            ...refusalBody('GROUP_INVITE_UNUSABLE'),
           },
           {
             status: 400,

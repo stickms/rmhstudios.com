@@ -141,6 +141,22 @@ describe('system notification labels', () => {
       // s09-14 deletion-pause
       'deletion-drafts-waited': 'Scheduled posts waited',
 
+      // Sprint 10 system labels (docs/autonomous/sprint-10/plan.md §Anchors)
+      // s10-04 deck-suggestions
+      'deck-suggestion': 'Deck suggestion',
+
+      // s10-09 build-issues
+      'build-issue': 'Build issue',
+
+      // s10-15 admin-webhooks
+      'webhook-admin-disabled': 'Webhook turned off',
+
+      // s10-16 speedrun-queue
+      'speedrun-verdict': 'Speedrun verdict',
+
+      // s10-17 admin-communities
+      'community-delisted': 'Out of discovery',
+
       default: 'RMH Studios',
     });
   });

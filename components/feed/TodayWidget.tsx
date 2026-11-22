@@ -5,6 +5,7 @@
  * so a missed day doesn't wipe a long streak.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Flame, Puzzle, CircleDot, Target, Snowflake, Check } from 'lucide-react';
@@ -13,7 +14,6 @@ import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { buyStreakFreezeApi, getTodayApi, type TodaySummary } from '@/lib/today.contract';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -74,6 +74,7 @@ function TaskRow({
  */
 export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const isDesktop = useIsDesktop();
   const idle = useIdleReady();
@@ -118,7 +119,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
       );
       setData((d) => (d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d));
     } catch (e) {
-      toast.error(serverError(e) ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
+      toast.error(refusalText.maybe(e) ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
     } finally {
       setBuying(false);
     }

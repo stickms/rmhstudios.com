@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PATH, VOICE_PATH } from '../content/path';
+import { PATH, PIANO_PATH, VOICE_PATH } from '../content/path';
 
 interface UserRow {
   id: string;
@@ -501,7 +501,7 @@ describe('loadFriendsProgress', () => {
     });
     expect(pia!.units).toEqual({
       finished: 1,
-      total: PATH.length,
+      total: PIANO_PATH.length,
       last: PATH[0]!.title,
     });
     expect(pia!.songs).toEqual([

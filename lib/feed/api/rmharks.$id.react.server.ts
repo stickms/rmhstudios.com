@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
@@ -17,7 +18,7 @@ export const route = apiRoute('/api/rmharks/$id/react', {
       const body = await request.json().catch(() => null);
       const parsed = z.object({ emoji: z.string().min(1).max(32) }).safeParse(body);
       if (!parsed.success || !isValidReactionEmoji(parsed.data.emoji)) {
-        return Response.json({ error: 'Invalid emoji' }, { status: 400 });
+        return Response.json({ ...refusalBody('MESSAGE_EMOJI_INVALID') }, { status: 400 });
       }
 
       const result = await togglePostReaction(userId, id, parsed.data.emoji);

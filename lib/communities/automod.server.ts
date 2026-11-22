@@ -12,6 +12,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
 import { logModAction } from '@/lib/communities/modlog.server';
+import { withVia, type ModVia } from '@/lib/communities/modlog';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { createComment } from '@/lib/social/engagement.server';
@@ -257,7 +258,12 @@ export async function resolveModItem(
   decision: 'approve' | 'remove',
   moderatorId: string,
   /** What the log records beside the decision: the rule a removal cites and its reason. */
-  note: { rule?: { id: string; title: string } | null; reason?: string | null } = {},
+  note: {
+    rule?: { id: string; title: string } | null;
+    reason?: string | null;
+    /** s10-13: set when the decision came in through the developer API; goes in the moderators' log detail only. */
+    via?: ModVia;
+  } = {},
 ): Promise<{ status: 'APPROVED' | 'REMOVED' }> {
   const item = await prisma.communityModItem.findFirst({
     where: { id: itemId, communityId },
@@ -284,6 +290,7 @@ export async function resolveModItem(
       ruleId: note.rule?.id ?? null,
       ruleTitle: note.rule?.title ?? null,
       reason: note.reason ?? null,
+      ...(note.via ? { detail: withVia(null, note.via) } : {}),
     });
   });
   if (logId === null) throw new AutomodError('Already resolved', 409);

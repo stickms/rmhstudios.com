@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { decideMessageRequestApi } from '@/lib/messages/requests.contract';
@@ -20,7 +21,7 @@ export const route = apiRoute('/api/messages/requests/$id', {
         requestId: params.id,
         action: body.action,
       });
-      if (!result.ok) return Response.json({ error: 'Request not found' }, { status: 404 });
+      if (!result.ok) return Response.json({ ...refusalBody('MESSAGE_REQUEST_NOT_FOUND') }, { status: 404 });
       return { success: true as const, conversationId: result.conversationId };
     },
   ),

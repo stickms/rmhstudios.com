@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
@@ -57,7 +58,7 @@ export const route = apiRoute('/api/rmharks/thread', {
 
       const segments = body.segments.map((s) => s.trim()).filter(Boolean);
       if (segments.length < 2) {
-        return Response.json({ error: 'A thread needs at least 2 posts' }, { status: 400 });
+        return Response.json({ ...refusalBody('POST_THREAD_TOO_SHORT') }, { status: 400 });
       }
 
       // Create the whole chain atomically. All rows in one transaction get an

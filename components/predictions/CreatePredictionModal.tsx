@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -15,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Market } from './types';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { createPredictionApi } from '@/lib/predictions/predictions.contract';
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
 
 export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
   const { t } = useTranslation('c-predictions');
+  const refusalText = useRefusalText();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [closesAt, setClosesAt] = useState('');
@@ -63,7 +65,7 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
     } catch (e) {
       toast.error(
         e instanceof HttpError
-          ? serverError(e) ||
+          ? refusalText.maybe(e) ||
               t('create-failed', {
                 defaultValue: 'Could not submit prediction',
               })

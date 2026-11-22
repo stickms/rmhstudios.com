@@ -1,6 +1,6 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import type { UpdateProfileInput } from '@/lib/profile-schema';
 import { removeProfileBannerApi, updateProfileApi, uploadAvatarApi, uploadBannerApi } from '@/lib/profile.contract';
 import {
@@ -23,6 +23,7 @@ export function useProfileSave(
   onClose: () => void,
 ) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const {
     submitting,
     resettingAvatar,
@@ -51,7 +52,7 @@ export function useProfileSave(
           body: formData,
         }).catch((e: unknown) => {
           throw new Error(
-            serverError(e) ||
+            refusalText.maybe(e) ||
               t('failed-upload-avatar', {
                 defaultValue: 'Failed to upload avatar',
               }),
@@ -74,7 +75,7 @@ export function useProfileSave(
           body: bannerForm,
         }).catch((e: unknown) => {
           throw new Error(
-            serverError(e) ||
+            refusalText.maybe(e) ||
               t('failed-upload-banner', {
                 defaultValue: 'Failed to upload banner',
               }),
@@ -91,7 +92,7 @@ export function useProfileSave(
       } else if (bannerRemoved && initial.bannerUrl) {
         await api(removeProfileBannerApi).catch((e: unknown) => {
           throw new Error(
-            serverError(e) ||
+            refusalText.maybe(e) ||
               t('failed-remove-banner', {
                 defaultValue: 'Failed to remove banner',
               }),
@@ -110,7 +111,7 @@ export function useProfileSave(
         },
       }).catch((e: unknown) => {
         throw new Error(
-          serverError(e) ||
+          refusalText.maybe(e) ||
             t('failed-save', {
               defaultValue: 'Failed to save',
             }),

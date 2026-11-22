@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -17,7 +18,6 @@ import { useSession } from '@/components/Providers';
 import type { StampView } from '@/lib/profile/stamps';
 import { useJson } from './useJson';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { addStampToWallApi, removeStampFromWallApi } from '@/lib/profile/stamps.contract';
 
 const ReportDialog = lazy(() =>
@@ -58,6 +58,7 @@ export default function StampWallModule({
   isOwner: boolean;
 }) {
   const { t } = useTranslation('f-profile-plus');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user);
   const { data, setData } = useJson<{
@@ -81,7 +82,7 @@ export default function StampWallModule({
         });
       } catch (e) {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('stamp-failed', {
               defaultValue: "Couldn't update your wall",
             }),

@@ -35,6 +35,8 @@ export const REPORT_ENTITY_TYPES = [
   'jam-feedback',
   // s06-14: a comment on a User Build (the `BuildComment` id).
   'build-comment',
+  // s10-09: a bug report on a User Build (the `BuildIssue` id).
+  'build-issue',
 ] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
@@ -54,6 +56,7 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] = [
   'music-share',
   'jam-feedback',
   'build-comment',
+  'build-issue',
 ];
 
 /**

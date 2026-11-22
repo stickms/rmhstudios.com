@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +10,6 @@ import type { RoomListItem } from '@/lib/elections/rooms';
 import type { RoomSource } from './useRoomState';
 import { api } from '@/lib/contract/client';
 import { listElectionRoomsApi, createElectionRoomApi } from '@/lib/elections/elections.contract';
-import { serverError } from '@/lib/http';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
  */
 export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSource) => void }) {
   const { t } = useTranslation('c-elections');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const [name, setName] = useState('');
   const [visibility, setVisibility] = useState<'PRIVATE' | 'PUBLIC'>('PRIVATE');
@@ -67,7 +68,7 @@ export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSo
       });
     } catch (err) {
       setError(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           t('lobby.createFail', {
             defaultValue: 'Could not create the room.',
           }),

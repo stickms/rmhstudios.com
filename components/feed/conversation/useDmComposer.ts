@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useRef, useState } from 'react';
 import type { Dispatch, KeyboardEvent, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,7 @@ import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 import { useMessageSuggestion } from '@/hooks/useMessageSuggestion';
 import { yieldToMain } from '@/lib/scheduler';
 import { api } from '@/lib/contract/client';
-import { errorField, serverError } from '@/lib/http';
+import { errorField } from '@/lib/http';
 import { useMessageImageAlts } from '@/components/feed/useMessageImageAlts';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
@@ -69,6 +70,7 @@ export function useDmComposer({
   onRequestSent?: () => void;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,7 +157,7 @@ export function useDmComposer({
       }
     } catch (e) {
       setError(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('failed-to-upload-image', {
             defaultValue: 'Failed to upload image',
           }),
@@ -265,7 +267,7 @@ export function useDmComposer({
       if (errorField(err, 'code') === 'alt-text-required') imageAlts.markRequired();
       // Remove the optimistic message and restore the draft + media.
       setError(
-        serverError(err) ||
+        refusalText.maybe(err) ||
           t('failed-to-send-message', {
             defaultValue: 'Failed to send message',
           }),

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { toast } from '@/lib/toast';
@@ -7,7 +8,6 @@ import { Button } from'@/components/ui/button';
 import { Input } from'@/components/ui/input';
 import { Spinner } from'@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
  addPlaylistItemApi,
  createPlaylistApi,
@@ -47,6 +47,7 @@ export function AddToPlaylistDialog({
  onOpenChange: (open: boolean) => void;
 }) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [playlists, setPlaylists] = useState<Summary[]>([]);
  const [loading, setLoading] = useState(false);
  const [busyId, setBusyId] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export function AddToPlaylistDialog({
  : t('playlist-added', { defaultValue:'Added to playlist.'}),
  );
  } catch (err) {
- toast.error(serverError(err) ?? t('playlist-add-failed', { defaultValue:'Could not add.'}));
+ toast.error(refusalText.maybe(err) ?? t('playlist-add-failed', { defaultValue:'Could not add.'}));
  } finally {
  setBusyId(null);
  }
@@ -95,7 +96,7 @@ export function AddToPlaylistDialog({
  setPlaylists((ps) => [{ id: data.id, name, itemCount: 0 }, ...ps]);
  await add(data.id);
  } catch (err) {
- toast.error(serverError(err) ?? t('playlist-create-failed', { defaultValue:'Could not create playlist.'}));
+ toast.error(refusalText.maybe(err) ?? t('playlist-create-failed', { defaultValue:'Could not create playlist.'}));
  } finally {
  setCreating(false);
  }

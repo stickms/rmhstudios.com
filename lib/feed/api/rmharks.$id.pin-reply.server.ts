@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { pinReplyApi, unpinReplyApi } from '@/lib/feed/conversation-controls.contract';
@@ -21,6 +22,7 @@ export const route = apiRoute('/api/rmharks/$id/pin-reply', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,
@@ -42,6 +44,7 @@ export const route = apiRoute('/api/rmharks/$id/pin-reply', {
         return Response.json(
           {
             error: result.error,
+            ...refusalCodeOf(result),
           },
           {
             status: result.status,

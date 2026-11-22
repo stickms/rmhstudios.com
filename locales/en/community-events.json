@@ -1,0 +1,21 @@
+{
+  "count-coming": "{{n}} coming up",
+  "count-none": "No events coming up",
+  "empty-member": "When a moderator hosts an event, it will be listed here.",
+  "empty-mod": "Host a game night or a meet-up and members can answer here.",
+  "empty-title": "No events yet",
+  "error-title": "Could not load events",
+  "host-button": "Host an event",
+  "host-line": "Hosting for",
+  "modlog-event-cancelled": "{{actor}} cancelled an event",
+  "modlog-event-hosted": "{{actor}} hosted an event",
+  "past-empty": "No past events.",
+  "past-error": "Could not load past events.",
+  "past-heading": "Past events",
+  "past-label": "Past events",
+  "past-show": "Show past events",
+  "public-event-cancelled": "A moderator cancelled an event",
+  "public-event-hosted": "A moderator hosted an event",
+  "retry": "Try again",
+  "tab-events": "Events"
+}

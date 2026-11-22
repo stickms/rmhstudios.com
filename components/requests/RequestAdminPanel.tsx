@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -8,7 +9,6 @@ import { OFFICIAL_NOTE_MAX, REQUEST_STATUSES, validateStatusNote, type RequestSt
 import type { FeatureRequestDTO } from '@/lib/requests/schema';
 import { useRequestStatusLabels } from './RequestStatusBadge';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { updateRequestApi } from '@/lib/requests/requests.contract';
 
 /**
@@ -27,6 +27,7 @@ export function RequestAdminPanel({
   onChanged: (next: FeatureRequestDTO) => void;
 }) {
   const { t } = useTranslation('c-roadmap');
+  const refusalText = useRefusalText();
   const labels = useRequestStatusLabels();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<RequestStatus>(request.status);
@@ -57,7 +58,7 @@ export function RequestAdminPanel({
       );
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('request-save-failed', {
             defaultValue: 'Could not save',
           }),

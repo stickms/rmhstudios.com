@@ -1104,6 +1104,101 @@ export function noticeText(
         defaultValue: '{{item}} is at {{price}} coins — within your target price',
         ...values,
       });
+    // Sprint 10 notices (docs/autonomous/sprint-10/plan.md §Anchors)
+    // s10-04 deck-suggestions
+    case 'deck-suggestions-new':
+      return t('notice-deck-suggestions-new', {
+        ns: 'notice-language',
+        defaultValue: 'New suggestions on {{deck}}',
+        ...values,
+      });
+    case 'deck-suggestion-accepted':
+      return t('notice-deck-suggestion-accepted', {
+        ns: 'notice-language',
+        defaultValue: 'Your suggestion to {{deck}} was accepted',
+        ...values,
+      });
+    case 'deck-suggestion-declined':
+      return t('notice-deck-suggestion-declined', {
+        ns: 'notice-language',
+        defaultValue: 'Your suggestion to {{deck}} was not taken: {{reason}}',
+        ...values,
+      });
+
+    // s10-09 build-issues
+    case 'build-issues-new':
+      return t('notice-build-issues-new', {
+        ns: 'notice-language',
+        defaultValue: 'New issues on {{build}}',
+        ...values,
+      });
+    case 'build-issue-confirmed':
+      return t('notice-build-issue-confirmed', {
+        ns: 'notice-language',
+        defaultValue: 'Your issue on {{build}} was confirmed: {{issue}}',
+        ...values,
+      });
+    case 'build-issue-fixed':
+      return t('notice-build-issue-fixed', {
+        ns: 'notice-language',
+        defaultValue: 'Your issue on {{build}} was fixed in {{version}}: {{issue}}',
+        ...values,
+      });
+    case 'build-issue-fixed-seen':
+      return t('notice-build-issue-fixed-seen', {
+        ns: 'notice-language',
+        defaultValue: 'An issue you see too on {{build}} was fixed in {{version}}: {{issue}}',
+        ...values,
+      });
+    case 'build-issue-wont-fix':
+      return t('notice-build-issue-wont-fix', {
+        ns: 'notice-language',
+        defaultValue: 'Your issue on {{build}} will not be fixed: {{issue}}',
+        ...values,
+      });
+    case 'build-issue-duplicate':
+      return t('notice-build-issue-duplicate', {
+        ns: 'notice-language',
+        defaultValue: 'Your issue on {{build}} was marked as a duplicate: {{issue}}',
+        ...values,
+      });
+    case 'build-issue-reopened':
+      return t('notice-build-issue-reopened', {
+        ns: 'notice-language',
+        defaultValue: 'Your issue on {{build}} was reopened: {{issue}}',
+        ...values,
+      });
+
+    // s10-15 admin-webhooks
+    case 'webhook-admin-disabled':
+      return t('notice-webhook-admin-disabled', {
+        ns: 'notice-language',
+        defaultValue: 'An admin turned off your webhook to {{host}}: {{reason}}',
+        ...values,
+      });
+
+    // s10-16 speedrun-queue
+    case 'speedrun-run-verified':
+      return t('notice-speedrun-run-verified', {
+        ns: 'notice-language',
+        defaultValue: 'Your {{game}} run was verified',
+        ...values,
+      });
+    case 'speedrun-run-rejected':
+      return t('notice-speedrun-run-rejected', {
+        ns: 'notice-language',
+        defaultValue: 'Your {{game}} run was not verified: {{reason}}',
+        ...values,
+      });
+
+    // s10-17 admin-communities
+    case 'community-delisted':
+      return t('notice-community-delisted', {
+        ns: 'notice-language',
+        defaultValue: '{{community}} is out of discovery: {{reason}}',
+        ...values,
+      });
+
     default:
       return null;
   }
