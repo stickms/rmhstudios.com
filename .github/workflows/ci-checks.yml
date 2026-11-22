@@ -39,17 +39,40 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-deps
+      # The typecheck is incremental: warm (a build-info cache restored) it is ~1 min, cold it checks the whole
+      # site project, ~10-13 GB of memory at full speed, which a 16 GB runner cannot hold next to its own
+      # overhead (it thrashed for 30 minutes before the job was cancelled, PR 1787). So a miss is not allowed to
+      # run unbounded: it runs single-threaded under a Go memory limit, measured at ~2.5 min and ~10.8 GB.
+      # Pull requests only RESTORE the cache. Saving is left to main (and the nightly), so a PR push does not add
+      # an entry, and the newest entry any PR can find is always a main build.
       - name: Restore typecheck cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: tsc-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .cache/tsc
           key: tsc-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             tsc-${{ runner.os }}-
       - name: Typecheck
+        # Far longer than a cold run needs (~5 min with setup), far shorter than the 30 it used to hang for.
+        timeout-minutes: 12
         run: |
           mkdir -p .cache/tsc
-          pnpm run typecheck
+          if [ -f .cache/tsc/site.tsbuildinfo ]; then
+            echo "Typecheck cache restored (${{ steps.tsc-cache.outputs.cache-matched-key }}): incremental run."
+            # A restored build info from far back, or a changed generated Prisma client, can invalidate most of the
+            # project; the limit only acts then (a normal incremental run peaks at 3-7 GB).
+            GOMEMLIMIT=10GiB pnpm run typecheck
+          else
+            echo "::warning::No typecheck cache was restored: cold run, single-threaded and memory-capped."
+            GOMEMLIMIT=6GiB GOGC=25 node node_modules/typescript-native/bin/tsc -b --singleThreaded
+          fi
+      - name: Save typecheck cache
+        if: success() && github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .cache/tsc
+          key: tsc-${{ runner.os }}-${{ github.sha }}
       - name: Typecheck (strict islands)
         run: pnpm run typecheck:strict
       - name: Restore lint cache
