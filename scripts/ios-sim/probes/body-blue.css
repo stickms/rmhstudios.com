@@ -1,0 +1,4 @@
+/* Paint BODY blue (colour and no wash image) and leave the root alone. */
+body {
+  background: #0000ff !important;
+}

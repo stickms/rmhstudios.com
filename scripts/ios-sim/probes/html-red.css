@@ -1,0 +1,4 @@
+/* Which element's background colours Safari's strips? Paint the ROOT red and leave body alone. */
+html {
+  background: #ff0000 !important;
+}
