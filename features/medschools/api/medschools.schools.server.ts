@@ -9,7 +9,7 @@ export const route = apiRoute('/api/medschools/schools', {
   GET: implement(
     listMedSchoolsApi,
     {
-      auth: 'optional',
+      auth: 'none',
       rateLimit: 'read',
       query: listSchoolsQuery,
       cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 120 },

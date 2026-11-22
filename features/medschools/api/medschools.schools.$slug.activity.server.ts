@@ -9,7 +9,7 @@ export const route = apiRoute('/api/medschools/schools/$slug/activity', {
   GET: implement(
     getMedSchoolActivityApi,
     {
-      auth: 'optional',
+      auth: 'none',
       rateLimit: 'read',
       query: activityQuery,
       cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 120 },

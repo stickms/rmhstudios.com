@@ -9,7 +9,7 @@ export const route = apiRoute('/api/medschools/schools/$slug/history', {
   GET: implement(
     getMedSchoolHistoryApi,
     {
-      auth: 'optional',
+      auth: 'none',
       rateLimit: 'read',
       query: historyQuery,
       cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 120 },

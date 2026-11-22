@@ -8,7 +8,7 @@ export const route = apiRoute('/api/medschools/schools/$slug', {
   GET: implement(
     getMedSchoolApi,
     {
-      auth: 'optional',
+      auth: 'none',
       rateLimit: 'read',
       cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 120 },
     },

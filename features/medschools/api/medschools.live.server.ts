@@ -9,7 +9,7 @@ export const route = apiRoute('/api/medschools/live', {
   GET: implement(
     getMedLiveApi,
     {
-      auth: 'optional',
+      auth: 'none',
       rateLimit: 'read',
       query: liveQuery,
       cache: { visibility: 'public', maxAge: 15, sMaxAge: 15, staleWhileRevalidate: 30 },

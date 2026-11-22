@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
+import { clearResponseCache } from '@/lib/api/response-cache.server';
 
 const mocks = vi.hoisted(() => ({
   session: vi.fn(async () => null),
@@ -43,6 +44,7 @@ const cases: Array<[string, unknown, ReturnType<typeof vi.fn>, boolean]> = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearResponseCache(); // public GETs are micro-cached by URL; each case must reach its loader
   for (const [, , fn] of cases) fn.mockResolvedValue({ ok: true });
 });
 

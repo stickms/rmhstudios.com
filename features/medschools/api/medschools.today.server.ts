@@ -9,7 +9,7 @@ export const route = apiRoute('/api/medschools/today', {
   GET: implement(
     getMedTodayApi,
     {
-      auth: 'optional',
+      auth: 'none',
       rateLimit: 'read',
       query: todayQuery,
       cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 120 },
