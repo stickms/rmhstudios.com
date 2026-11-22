@@ -116,9 +116,19 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
     const events: Array<Record<string, unknown>> = [];
     const questions = new Map<string, Record<string, unknown>>();
     const cells = new Map<string, TouchedCell>();
-    for (const [post, r] of results) {
+    const keys = new Set<string>();
+    const scope = `${thread.schoolId}:${thread.cycleYear}`;
+    // Post order, so the first report of a member wins whatever order the model answered in.
+    const ordered = span.filter((p) => results.has(p));
+    for (const post of ordered) {
+      const r = results.get(post) as ExtractedPost;
       for (const e of r.events) {
         const day = isoDay(e.occurredAt);
+        const key = post.eventKey(e.type, scope, day);
+        // A repeat of an earlier report (same member, type, school, cycle) is dropped here and by the unique
+        // dedupeHash; it neither inserts nor touches a count cell.
+        if (keys.has(key)) continue;
+        keys.add(key);
         events.push({
           schoolId: thread.schoolId,
           cycleYear: thread.cycleYear,
@@ -126,7 +136,7 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
           eventType: e.type,
           occurredAt: e.occurredAt,
           source: 'SDN',
-          dedupeHash: post.eventKey(e.type, day),
+          dedupeHash: key,
           inState: e.inState,
         });
         if (e.program) {

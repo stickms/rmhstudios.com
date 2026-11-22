@@ -324,8 +324,9 @@ describe('SDN anonymization boundary (live, backfill, interviews, model payload)
     for (const w of ['quotedonlywords', 'outerquotedwords', 'innerquotedwords', 'accepted 11/1', 'waitlisted on 10/30'])
       expect(later).not.toContain(w);
     expect(userPayloads(leaky).join('')).not.toMatch(/quotedwords|quotedonlywords|waitlisted on 10\/30|Congrats/);
-    // One event per post the model actually saw, none for the quoting replies.
-    expect(rows(leaky, 'medCycleEvent').filter((e) => 'dedupeHash' in e)).toHaveLength(2 * 2);
+    // None for the quoting replies. Both posts the model saw carry the fixture's one member id and the model
+    // answers INTERVIEW for each, so the author-scoped key keeps one event per run (live, backfill).
+    expect(rows(leaky, 'medCycleEvent').filter((e) => 'dedupeHash' in e)).toHaveLength(2);
   });
 
   it("the extra author key in the model's JSON is rejected by the strict schema and nothing from that batch is stored", () => {

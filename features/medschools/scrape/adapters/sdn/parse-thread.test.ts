@@ -24,12 +24,41 @@ describe('parseThreadPage', () => {
     expect(p.posts.map((x) => x.postHash)).toEqual(['h(8000001)', 'h(8000002)', 'h(8000003)', 'h(8000004)']);
     expect(p.posts[0]?.postedAt.toISOString()).toBe('2026-11-01T15:00:00.000Z');
   });
-  it('eventKey(type, day) is deterministic and differs per type and day', () => {
-    const post = hostile().posts[0];
-    expect(post?.eventKey('INTERVIEW', '2026-11-03')).toBe('h(8000001:INTERVIEW:2026-11-03)');
-    expect(post?.eventKey('INTERVIEW', '2026-11-03')).toBe(post?.eventKey('INTERVIEW', '2026-11-03'));
-    expect(post?.eventKey('INTERVIEW', '2026-11-04')).not.toBe(post?.eventKey('INTERVIEW', '2026-11-03'));
-    expect(post?.eventKey('ACCEPTANCE', '2026-11-03')).not.toBe(post?.eventKey('INTERVIEW', '2026-11-03'));
+  it('eventKey is deterministic and differs per type; the member key ignores the day, the fallback does not', () => {
+    const posts = hostile().posts;
+    const k = (n: number, type: 'INTERVIEW' | 'ACCEPTANCE', day: string) => posts[n]?.eventKey(type, '9:2027', day);
+    // Every post in the hostile fixture carries member id 7771: one member, one key per type and scope.
+    expect(k(0, 'INTERVIEW', '2026-11-03')).toBe(k(0, 'INTERVIEW', '2026-11-03'));
+    expect(k(0, 'INTERVIEW', '2026-11-03')).toBe(k(1, 'INTERVIEW', '2026-11-20'));
+    expect(k(0, 'ACCEPTANCE', '2026-11-03')).not.toBe(k(0, 'INTERVIEW', '2026-11-03'));
+    expect(posts[0]?.eventKey('INTERVIEW', '9:2028', 'd')).not.toBe(k(0, 'INTERVIEW', 'd'));
+    // No member id and no handle: the per-post key.
+    const bare = parseThreadPage(
+      '<article class="message--post" data-content="post-5"><time class="u-dt" datetime="2026-11-01T10:00:00+0000"></time><div class="bbWrapper">x</div></article>',
+      hash,
+    ).posts[0];
+    expect(bare?.eventKey('INTERVIEW', 's', '2026-11-03')).toBe('h(5:INTERVIEW:2026-11-03)');
+    expect(bare?.eventKey('INTERVIEW', 's', '2026-11-04')).not.toBe(bare?.eventKey('INTERVIEW', 's', '2026-11-03'));
+  });
+  it('the member is the header link id, else the lower-cased handle; a body mention is never the author', () => {
+    const post = (attrs: string, header: string) =>
+      parseThreadPage(
+        `<article class="message--post" ${attrs} data-content="post-1"><section class="message-user">${header}</section><time class="u-dt" datetime="2026-11-01T10:00:00+0000"></time><div class="bbWrapper"><a class="username" data-user-id="999">@Other</a> hi</div></article>`,
+        hash,
+      ).posts[0];
+    const key = (p: ReturnType<typeof post>) => p?.eventKey('INTERVIEW', 's', 'd');
+    const byId = key(post('data-author="Foo"', '<a class="username" data-user-id="42">Foo</a>'));
+    expect(byId).toBe('h(author:u42:s:INTERVIEW)');
+    expect(key(post('data-author="Bar"', '<a class="username" data-user-id="42">Bar</a>'))).toBe(byId);
+    expect(key(post('data-author="FooBar"', ''))).toBe('h(author:hfoobar:s:INTERVIEW)');
+  });
+  it('the member id and handle never appear in the parse output, its JSON, or a real hash', () => {
+    const real = (id: string) => createHash('sha256').update(`secret:${id}`).digest('hex');
+    const p = parseThreadPage(readFixture('thread-hostile.html'), real);
+    const keys = p.posts.map((x) => x.eventKey('INTERVIEW', '9:2027', '2026-11-03'));
+    const dump = JSON.stringify(p) + p.posts.map((x) => x.text + x.postHash).join('|') + keys.join('|');
+    for (const a of ['7771', 'u7771', 'hostile_author_zq', 'author-002', 'author:']) expect(dump).not.toContain(a);
+    expect(keys.every((k) => /^[0-9a-f]{64}$/.test(k))).toBe(true);
   });
   it('a link-unfurl card (a member page title or snippet) never reaches the text, which keeps the words around it', () => {
     const plain = hostile().posts[3];

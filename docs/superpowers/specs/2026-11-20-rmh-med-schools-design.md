@@ -249,6 +249,11 @@ threads per cycle × a few hundred posts, ~40% surviving the prefilter, a few hu
 tokens for the full prior-year backfill, a few dollars at DeepSeek prices — so the full backfill is in scope, newest
 cycles first.
 
+Event dedupe is author-scoped: the parser keys each event by
+`HMAC(author:<member id or lower-cased handle>:<school>:<cycle>:<type>)`, held in memory only, so one forum member
+counts at most once per event type per school per cycle (first post wins), with the per-post `postId:type:day` key as
+the fallback when a post carries no member id.
+
 ## 10. Statistics and forecasting
 
 Day-of-cycle `d` = days since the cycle's AMCAS/AACOMAS submission opening (stored per cycle). For each school × program

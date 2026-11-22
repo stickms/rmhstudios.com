@@ -14,6 +14,9 @@ const TID = 77;
 interface P {
   id: number;
   text: string;
+  /** Numeric member id on the post header; omitted = a distinct handle per post and no member id. */
+  member?: number | null;
+  date?: string;
 }
 const path = (page: number) => (page <= 1 ? `/threads/${SLUG}.${TID}/` : `/threads/${SLUG}.${TID}/page-${page}`);
 
@@ -27,7 +30,10 @@ function page(posts: P[], lastPage: number): string {
   const arts = posts
     .map(
       (p) =>
-        `<article class="message message--post" data-author="authorzz${p.id}" data-content="post-${p.id}" id="js-post-${p.id}">` +
+        `<article class="message message--post" data-author="authorzz${p.member ?? p.id}" data-content="post-${p.id}" id="js-post-${p.id}">` +
+        (p.member
+          ? `<section class="message-user"><a class="username" data-user-id="${p.member}">x</a></section>`
+          : '') +
         `<header class="message-attribution"><ul class="message-attribution-main"><li><time class="u-dt" datetime="2026-11-20T10:00:00-0500" data-timestamp="1795186800"></time></li></ul></header>` +
         `<div class="bbWrapper">${p.text}</div></article>`,
     )
@@ -172,8 +178,122 @@ function setup(opts: {
   };
 }
 
+/** A model that answers each post with the given event type and the day written in its text (`d:YYYY-MM-DD`). */
+const typedAnswer =
+  (type: string): Answer =>
+  (reqs) => ({
+    posts: reqs.map((r) => ({
+      postRef: r.ref,
+      events: [{ type, date: /d:(\d{4}-\d{2}-\d{2})/.exec(r.text)?.[1] ?? '2026-11-18' }],
+      questions: [],
+    })),
+  });
+
 const eventRows = (t: Record<string, unknown[]>) => (t.medCycleEvent ?? []) as Array<Record<string, unknown>>;
 const questionRows = (t: Record<string, unknown[]>) => (t.medInterviewQuestion ?? []) as Array<Record<string, unknown>>;
+
+describe('processThread: one member, one report', () => {
+  const dup = (a: P, b: P, answer: Answer = typedAnswer('INTERVIEW')) =>
+    setup({ routes: { [path(1)]: page([a, b], 1) }, answer });
+
+  it('the same member reporting INTERVIEW in two posts on different days stores one event, the first', async () => {
+    const s = dup(
+      { id: 1, member: 501, text: 'II from Duke! interview d:2026-11-10' },
+      { id: 2, member: 501, text: 'update on my Duke interview d:2026-11-17' },
+    );
+    const r = await processThread(s.deps, await s.seed());
+    expect(r.eventsCreated).toBe(1);
+    const rows = eventRows(s.tables);
+    expect(rows).toHaveLength(1);
+    expect((rows[0]?.occurredAt as Date).toISOString().slice(0, 10)).toBe('2026-11-10');
+    // The skipped repeat touched no day cell: only the first report's day is counted.
+    expect(r.touched.map((c) => c.date)).toEqual(['2026-11-10']);
+    expect((await s.fresh()).postsProcessed).toBe(2);
+  });
+
+  it('a repeat in a later chunk or run is dropped by the stored dedupeHash and counts nothing', async () => {
+    const s = dup(
+      { id: 1, member: 501, text: 'interview d:2026-11-10' },
+      { id: 2, member: 502, text: 'interview d:2026-11-11' },
+    );
+    await processThread(s.deps, await s.seed());
+    const again = setup({
+      routes: { [path(1)]: page([{ id: 3, member: 501, text: 'interview again d:2026-11-20' }], 1) },
+      answer: typedAnswer('INTERVIEW'),
+    });
+    expect(eventRows(again.tables)).toHaveLength(0);
+    // same fake db across runs is not shared, so replay both on one db: duplicates must still be 2 rows.
+    const s2 = setup({
+      routes: {
+        [path(1)]: page(
+          [
+            { id: 1, member: 501, text: 'interview d:2026-11-10' },
+            { id: 2, member: 502, text: 'interview d:2026-11-11' },
+            { id: 3, member: 501, text: 'interview again d:2026-11-20' },
+          ],
+          1,
+        ),
+      },
+      answer: typedAnswer('INTERVIEW'),
+    });
+    const r = await processThread(s2.deps, await s2.seed());
+    expect(r.eventsCreated).toBe(2);
+    expect(r.touched.map((c) => c.date).sort()).toEqual(['2026-11-10', '2026-11-11']);
+  });
+
+  it('different members reporting the same thing store two events', async () => {
+    const s = dup(
+      { id: 1, member: 501, text: 'interview d:2026-11-10' },
+      { id: 2, member: 502, text: 'interview d:2026-11-10' },
+    );
+    expect((await processThread(s.deps, await s.seed())).eventsCreated).toBe(2);
+  });
+
+  it('the same member reporting two event types stores two events', async () => {
+    const s = setup({
+      routes: {
+        [path(1)]: page(
+          [
+            { id: 1, member: 501, text: 'interview d:2026-11-10' },
+            { id: 2, member: 501, text: 'accepted d:2026-11-19' },
+          ],
+          1,
+        ),
+      },
+      answer: (reqs) => ({
+        posts: reqs.map((r) => ({
+          postRef: r.ref,
+          events: [
+            { type: r.text.includes('accepted') ? 'ACCEPTANCE' : 'INTERVIEW', date: /d:(\S+)/.exec(r.text)?.[1] },
+          ],
+          questions: [],
+        })),
+      }),
+    });
+    expect((await processThread(s.deps, await s.seed())).eventsCreated).toBe(2);
+  });
+
+  it('with no member id, the per-post key applies: two posts on different days both count', async () => {
+    const s = dup(
+      { id: 1, member: null, text: 'interview d:2026-11-10' },
+      { id: 2, member: null, text: 'interview d:2026-11-17' },
+    );
+    expect((await processThread(s.deps, await s.seed())).eventsCreated).toBe(2);
+  });
+
+  it('the same member at another school or cycle is a separate report', async () => {
+    const mk = async (schoolId: string) => {
+      const s = setup({
+        schoolId,
+        routes: { [path(1)]: page([{ id: 1, member: 501, text: 'interview d:2026-11-10' }], 1) },
+        answer: typedAnswer('INTERVIEW'),
+      });
+      await processThread(s.deps, await s.seed());
+      return eventRows(s.tables)[0]?.dedupeHash;
+    };
+    expect(await mk('school-a')).not.toBe(await mk('school-b'));
+  });
+});
 
 describe('processThread', () => {
   it('a first pass processes every page and ends caught-up', async () => {
