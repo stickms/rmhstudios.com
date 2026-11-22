@@ -3,11 +3,10 @@ import type { PointerEvent } from 'react';
 /**
  * Pointer tilt for a game capsule. The handlers only write four CSS variables (tilt about each axis and where the
  * highlight sits); the 3D transform and the specular glare are drawn by the compositor from `steam.css`, so no
- * animation loop runs and a capsule at rest costs nothing. Writes are coalesced to one per frame. Mouse only: touch
+ * animation loop runs and a capsule at rest costs nothing. Mouse only: touch
  * has no hover to follow.
  */
 const MAX_DEG = 11;
-const pending = new WeakMap<HTMLElement, number>();
 
 function apply(el: HTMLElement, e: { clientX: number; clientY: number }) {
   const r = el.getBoundingClientRect();
@@ -23,23 +22,10 @@ function apply(el: HTMLElement, e: { clientX: number; clientY: number }) {
 export const capsuleTilt = {
   onPointerMove(e: PointerEvent<HTMLElement>) {
     if (e.pointerType !== 'mouse') return;
-    const el = e.currentTarget;
-    const { clientX, clientY } = e;
-    const queued = pending.get(el);
-    if (queued !== undefined) window.cancelAnimationFrame(queued);
-    pending.set(
-      el,
-      window.requestAnimationFrame(() => {
-        pending.delete(el);
-        apply(el, { clientX, clientY });
-      }),
-    );
+    apply(e.currentTarget, e);
   },
   onPointerLeave(e: PointerEvent<HTMLElement>) {
     const el = e.currentTarget;
-    const queued = pending.get(el);
-    if (queued !== undefined) window.cancelAnimationFrame(queued);
-    pending.delete(el);
     for (const v of ['--tilt-x', '--tilt-y', '--glare-x', '--glare-y']) el.style.removeProperty(v);
   },
 };

@@ -219,6 +219,7 @@
   inline-size: 8px;
   block-size: 8px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--site-notify);
 }
 .site-sidebar__write {

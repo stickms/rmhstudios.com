@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
+import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Link } from '@tanstack/react-router';
@@ -63,8 +63,25 @@ export function PostArticle({
   const linkPreviewUrl = useMemo(() => postLinkPreviewUrl(post), [post]);
   const { translatedText, showTranslated, translating, handleTranslate } = translation;
 
+  // The author's bought cosmetics, as the feed row draws them: a name colour (solid or a gradient) and post flair as the
+  // edge laid over the spine along this post.
+  const cosmetics = freshPostUser?.cosmetics ?? post.user?.cosmetics;
+  const nameColor = cosmetics?.nameColor;
+  const nameStyle: CSSProperties | undefined = nameColor?.gradient
+    ? {
+        backgroundImage: nameColor.gradient,
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+      }
+    : nameColor?.color
+      ? { color: nameColor.color }
+      : undefined;
+  const postFlair = cosmetics?.postFlair?.gradient ?? cosmetics?.postFlair?.color ?? null;
+
   return (
     <SpineItem as="article">
+      {postFlair ? <span aria-hidden className="post-flair" style={{ background: postFlair }} /> : null}
       {/* Author, with the menu word at the inline end (shared with the feed row so features match) */}
       <div className="flex items-center gap-3">
         <UserAvatar user={freshPostUser} size="lg" />
@@ -73,7 +90,12 @@ export function PostArticle({
             to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string}
             className="hover:underline"
           >
-            <span className="t-body block truncate font-semibold text-site-text">{authorName}</span>
+            <span
+              className={cn('t-body block truncate font-semibold', !nameStyle && 'text-site-text')}
+              style={nameStyle}
+            >
+              {authorName}
+            </span>
           </Link>
           {freshPostUser?.handle && <p className="t-meta truncate">@{freshPostUser.handle}</p>}
         </div>
