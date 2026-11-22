@@ -151,3 +151,42 @@ model RmhTypeGhost {
   @@index([userId, updatedAt])
   @@map("rmhtype_ghost")
 }
+
+/// A text a member keeps to practise (s10-05): up to 50 each, private to the owner, never on a board.
+/// `bestWpm` / `bestAccuracy` / `runs` / `lastRunAt` are the member's own record on it. Editing the body
+/// resets them and deletes the runs (and the `text:<id>` ghost, which lives in `rmhtype_ghost`).
+model RmhTypeText {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation("RmhTypeTexts", fields: [userId], references: [id], onDelete: Cascade)
+  title        String    @db.VarChar(80)
+  body         String    @db.VarChar(3000)
+  bestWpm      Float?
+  bestAccuracy Float?
+  runs         Int       @default(0)
+  lastRunAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  textRuns RmhTypeTextRun[]
+
+  @@index([userId, updatedAt])
+  @@map("rmhtype_text")
+}
+
+/// One finished run on a saved text; the newest 50 per text are kept (trimmed on insert).
+model RmhTypeTextRun {
+  id        String      @id @default(cuid())
+  textId    String
+  text      RmhTypeText @relation(fields: [textId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation("RmhTypeTextRuns", fields: [userId], references: [id], onDelete: Cascade)
+  wpm       Float
+  accuracy  Float
+  timeMs    Int
+  createdAt DateTime    @default(now())
+
+  @@index([textId, createdAt])
+  @@index([userId])
+  @@map("rmhtype_text_run")
+}

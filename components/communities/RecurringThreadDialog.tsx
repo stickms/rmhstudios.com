@@ -2,11 +2,11 @@
  * s08-09 — the form for one recurring thread: title, body, flair, cadence, weekday or day of the month, time and
  * time zone. Text only. Save is the dialog's one ink primary; saving makes the editor the author.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,7 @@ export function RecurringThreadDialog({
   onSaved: () => void;
 }) {
   const { t } = useTranslation('recurring-threads');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const ids = useId();
   const [title, setTitle] = useState(thread?.title ?? '');
@@ -140,7 +141,7 @@ export function RecurringThreadDialog({
         });
       onSaved();
     } catch (err) {
-      const message = serverError(err);
+      const message = refusalText.maybe(err);
       setError(
         message ||
           t('action-failed', {

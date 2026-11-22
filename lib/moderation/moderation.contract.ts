@@ -43,10 +43,17 @@ export const toggleMuteApi = endpoint<{
     targetUserId: string;
     /** Explicit intent (s05-14): true mutes, false unmutes, absent flips the current state. */
     mute?: boolean | undefined;
+    /**
+     * How long the mute lasts (s10-10). Absent means until the member unmutes. On an account that is already muted it
+     * changes the end ("Extend"). The end is worked out on the server.
+     */
+    duration?: 'day' | 'week' | 'month' | 'forever' | undefined;
   };
   res: {
     success: true;
     muted: boolean;
+    /** ISO end of a timed mute that is now in force; null when it has none or the account is not muted. */
+    expiresAt?: string | null | undefined;
   };
 }>()({
   method: 'POST',

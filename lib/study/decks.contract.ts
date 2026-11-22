@@ -9,6 +9,7 @@ import type { DeckCard, DeckDetail, DecksList } from '@/lib/study.server';
 import type {
   addCardBody,
   createDeckBody,
+  listDecksQuery,
   importCardsBody,
   reorderCardsBody,
   reviewCardBody,
@@ -18,6 +19,7 @@ import type {
 
 /** Your decks plus popular public decks (signed-out visitors see only public ones). */
 export const listDecksApi = endpoint<{
+  query: z.infer<typeof listDecksQuery>;
   res: DecksList;
 }>()({
   method: 'GET',

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +12,6 @@ import { IconButton } from '@/components/ui/icon-button';
 import { MAX_ALERTS, MAX_ALERT_LENGTH } from '@/lib/search/keyword-alerts';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   addDiscoveryAlertApi,
   removeDiscoveryAlertApi,
@@ -31,6 +31,7 @@ export function DiscoverySettings({
   only?: 'alerts';
 } = {}) {
   const { t } = useTranslation('f-discovery');
+  const refusalText = useRefusalText();
   const queryClient = useQueryClient();
   const alertsKey = discoveryAlertsQuery();
   const memoriesKey = discoveryMemoriesQuery();
@@ -77,7 +78,7 @@ export function DiscoverySettings({
         ).alert;
       } catch (e) {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('alerts-add-failed', {
               defaultValue: 'Could not add that alert',
             }),

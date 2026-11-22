@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -7,7 +8,6 @@ import { PRONUNCIATION_MAX_MS } from '@/lib/profile/plus';
 import type { RecordedClip, VoiceRecorder } from '@/lib/voice/recorder';
 
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { removePronunciationApi, uploadPronunciationApi } from '@/lib/profile/pronunciation.contract';
 /**
  * P3 — record the 5-second "this is how you say my name" clip. Uses the same
@@ -23,6 +23,7 @@ export function PronunciationRecorder({
   onChange: (url: string | null) => void;
 }) {
   const { t } = useTranslation('f-profile-plus');
+  const refusalText = useRefusalText();
   const recorderRef = useRef<VoiceRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [recording, setRecording] = useState(false);
@@ -54,7 +55,7 @@ export function PronunciationRecorder({
         body: form,
       }).catch((e: unknown) => {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('pron-failed', {
               defaultValue: "Couldn't save that recording",
             }),

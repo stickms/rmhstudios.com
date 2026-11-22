@@ -98,7 +98,7 @@ describe('prepareCommunityPost', () => {
   it('refuses a non-member 403 before the gate runs', async () => {
     h.member = false;
     const r = await prepareCommunityPost(input);
-    expect(r).toEqual({
+    expect(r).toMatchObject({
       ok: false,
       refusal: {
         status: 403,

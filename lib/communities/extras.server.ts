@@ -20,7 +20,14 @@ export async function getCommunityExtras(
 ): Promise<CommunityExtrasDTO | null> {
   const community = await prisma.community.findUnique({
     where: { slug },
-    select: { id: true, isPrivate: true, rulesRequireAgreement: true, publicModLog: true },
+    select: {
+      id: true,
+      isPrivate: true,
+      rulesRequireAgreement: true,
+      publicModLog: true,
+      delistedAt: true,
+      delistedReason: true,
+    },
   });
   if (!community) return null;
 
@@ -78,6 +85,8 @@ export async function getCommunityExtras(
     rulesRequireAgreement: community.rulesRequireAgreement,
     publicModLog: community.publicModLog,
     requireImageAlt: settings.requireImageAlt,
+    // s10-17: why an admin took the community out of discovery; read by its moderators only.
+    delistedReason: isMod && community.delistedAt ? (community.delistedReason ?? '') : null,
     member: member
       ? { joinedAt: member.joinedAt.toISOString(), followedFlairIds: member.followedFlairIds,
           roleTags: member.roleTags,

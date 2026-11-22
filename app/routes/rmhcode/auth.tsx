@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon: <Spinner> renders role="status" and would join the button accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { Link } from '@tanstack/react-router';
@@ -11,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { initiateRmhCodeAuthApi } from '@/lib/rmhcode/tokens.contract';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
@@ -26,6 +26,7 @@ function isLocalhostCallback(cb: string): boolean {
 
 function AuthContent() {
   const { t } = useTranslation("r-rmhcode");
+  const refusalText = useRefusalText();
   const navigate = useNavigate();
   const { callback, session: sessionId } = Route.useSearch();
   const { data: session, isPending } = useSession();
@@ -55,7 +56,7 @@ function AuthContent() {
       try {
         result = await api(initiateRmhCodeAuthApi, { body: { sessionId } });
       } catch (err) {
-        throw new Error(serverError(err) || t("failed-to-generate-token", { defaultValue: "Failed to generate token" }), { cause: err });
+        throw new Error(refusalText.maybe(err) || t("failed-to-generate-token", { defaultValue: "Failed to generate token" }), { cause: err });
       }
       const { token, user } = result;
       const callbackUrl = new URL(callback);

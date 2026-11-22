@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronUp, Megaphone, GitMerge } from 'lucide-react';
@@ -8,7 +9,6 @@ import type { FeatureRequestDTO } from '@/lib/requests/schema';
 import { RequestStatusBadge } from './RequestStatusBadge';
 import { RequestAdminPanel } from './RequestAdminPanel';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { voteRequestApi } from '@/lib/requests/requests.contract';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -33,6 +33,7 @@ interface RequestCardProps {
 export function RequestCard({ request, signedIn, isAdmin, onChanged, onVoted, className }: RequestCardProps) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('c-roadmap');
+  const refusalText = useRefusalText();
   const [voting, setVoting] = useState(false);
   const votable = isVotable(request);
 
@@ -55,7 +56,7 @@ export function RequestCard({ request, signedIn, isAdmin, onChanged, onVoted, cl
       onVoted(data.requestId, data.voteCount, data.hasVoted);
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('request-vote-failed', {
             defaultValue: 'Could not vote',
           }),

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +10,6 @@ import type { ProfileData } from '@/components/profile/profile-types';
 import { api } from '@/lib/contract/client';
 import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
-import { serverError } from '@/lib/http';
 import { sendMessageApi } from '@/lib/messages/messages.contract';
 import { joinProfileMembershipApi } from '@/lib/profile/profile-extras.contract';
 import { applyFollow, applyMembershipJoined, rollbackFollow } from './profile-column-state';
@@ -35,6 +35,7 @@ export function useProfileActions(
   setProfile: Dispatch<SetStateAction<ProfileData | null>>,
 ): ProfileActions {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const { run: runFollow } = useOptimisticAction();
@@ -79,7 +80,7 @@ export function useProfileActions(
       );
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('membership-failed', {
             defaultValue: 'Could not join',
           }),
@@ -105,7 +106,7 @@ export function useProfileActions(
       });
     } catch (err) {
       setMessageError(
-        serverError(err) ||
+        refusalText.maybe(err) ||
           t('failed-to-start-conversation', {
             defaultValue: 'Failed to start conversation',
           }),

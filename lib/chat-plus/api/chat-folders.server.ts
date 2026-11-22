@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { createFolder, folderNameSchema, listFolders } from '@/lib/chat-plus/folders.server';
@@ -16,7 +17,7 @@ export const route = apiRoute('/api/chat-folders', {
   ),
   POST: defineHandler({ rateLimit: 'write', body: folderNameSchema }, async ({ userId, body }) => {
     const res = await createFolder(userId, body.name);
-    if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+    if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
     return Response.json({ folder: res.value }, { status: 201 });
   }),
 });

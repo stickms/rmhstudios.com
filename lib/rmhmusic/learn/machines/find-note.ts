@@ -21,6 +21,9 @@
  * - `fretboard` (First frets): on guitar every natural some string sounds in frets 0–5 (E2…A4, so
  *   each target has at least one position on the board shown); on piano the naturals of the two
  *   octaves from C3 (C3…B4), which take the octave buttons on a phone.
+ * - `grand-staff-find` (Play what you read): the naturals A2 to E4, each drawn on the grand staff and
+ *   played on the keys, MIDI, computer keys or microphone; piano at pitch, so a target below middle C is
+ *   written on the bass staff and middle C and above on the treble.
  * Naturals only (Phase 2), so no enharmonic naming. Ten targets are dealt with `dealRounds`: the
  * whole pool before any repeat, never the same target twice in a row.
  *
@@ -70,7 +73,11 @@ export type Event = SessionEvent<Answer>;
 export type Effect = SessionEffect;
 
 /** The lessons the note finder runs (their `LessonMode`). */
-export type FindNoteMode = 'keyboard-map' | 'fretboard';
+export type FindNoteMode = 'keyboard-map' | 'fretboard' | 'grand-staff-find';
+
+/** The lowest and highest pitches of the grand-staff lesson: the naturals A2 to E4, around middle C. */
+export const GRAND_FIND_LOW = 45;
+export const GRAND_FIND_HIGH = 64;
 
 /** The pitch an answer sounds, or null for a place that is not on the board. */
 export function answerMidi(answer: Answer): number | null {
@@ -126,6 +133,8 @@ const naturalsBetween = (low: number, high: number): number[] => {
 
 /** The sounding pitches a lesson asks for, for the learner's instrument (see the header). */
 export function findNotePool(mode: FindNoteMode, instrument: Instrument): number[] {
+  // Read on the grand staff and played at pitch: piano only, so the guitar's tuning has no say.
+  if (mode === 'grand-staff-find') return naturalsBetween(GRAND_FIND_LOW, GRAND_FIND_HIGH);
   if (instrument === 'guitar') {
     return mode === 'keyboard-map' ? [...STANDARD_TUNING] : naturalsInFrets(FIRST_FRETS);
   }

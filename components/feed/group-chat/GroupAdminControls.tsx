@@ -1,9 +1,9 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { errorField } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import { setGroupAdmin } from '@/lib/group-chat/manage.queries';
 import type { GroupMember } from '@/lib/group-chat/types';
@@ -37,6 +37,7 @@ export function AdminToggle({
   onChanged: () => void | Promise<void>;
 }) {
   const { t } = useTranslation('group-admins');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const isAdmin = member.role === 'admin';
   const label = isAdmin
@@ -76,7 +77,7 @@ export function AdminToggle({
           ? t('admin-limit', {
               defaultValue: 'A group can have 5 admins.',
             })
-          : (serverError(e) ??
+          : (refusalText.maybe(e) ??
               t('could-not-set-admin', {
                 defaultValue: 'Could not change the admin',
               })),

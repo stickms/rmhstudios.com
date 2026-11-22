@@ -191,7 +191,11 @@ describe('the deck’s card cap', () => {
   it('counts the siblings: three masks are four rows', async () => {
     fill(MAX_DECK_CARDS - 3);
     const before = db.writes;
-    expect(await addCard('me', 'mine', occlusionCard())).toEqual({ ok: false, status: 400, error: 'Deck is full' });
+    expect(await addCard('me', 'mine', occlusionCard())).toMatchObject({
+      ok: false,
+      status: 400,
+      error: 'Deck is full',
+    });
     expect(db.writes).toBe(before);
     fill(0);
     db.cards.pop();
@@ -210,7 +214,7 @@ describe('the deck’s card cap', () => {
     const id = await add();
     expect(db.cards.filter((c) => c.deckId === 'mine')).toHaveLength(MAX_DECK_CARDS);
     const res = await updateCard('me', id, { occlusion: masks('aorta', 'valve', 'atrium', 'extra') });
-    expect(res).toEqual({ ok: false, status: 400, error: 'Deck is full' });
+    expect(res).toMatchObject({ ok: false, status: 400, error: 'Deck is full' });
     expect(siblingsOf(id)).toHaveLength(3);
   });
 });

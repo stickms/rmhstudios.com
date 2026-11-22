@@ -1371,6 +1371,8 @@ describe('the public log', () => {
       'post_pinned',
       'post_unpinned',
       'pins_reordered',
+      'event_hosted',
+      'event_cancelled',
     ]);
     expect(Object.keys(args.select).sort()).toEqual(
       ['action', 'createdAt', 'id', 'reason', 'ruleTitle', 'targetType'].sort(),

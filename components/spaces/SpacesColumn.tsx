@@ -15,6 +15,7 @@
  * of its own and links to its community, where the voice banner is.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +35,6 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createSpaceApi, listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
 import { useArrival } from '@/components/ui/arrive';
@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 
 export function SpacesColumn() {
   const { t, i18n } = useTranslation('site');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const [spaces, setSpaces] = useState<LiveSpaceSummary[]>([]);
@@ -79,7 +80,7 @@ export function SpacesColumn() {
       navigate({ to: '/spaces/$id', params: { id: data.space.id } });
     } catch (e) {
       toast.error(
-        serverError(e) ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
+        refusalText.maybe(e) ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
       );
     } finally {
       setCreating(false);

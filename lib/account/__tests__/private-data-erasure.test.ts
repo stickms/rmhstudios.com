@@ -160,6 +160,7 @@ describe('anonymizeAccount with the coverage operations', () => {
       GameReviewVote: [],
       GameGuide: [],
       GameJamEntry: [],
+      RmhTubeSubscription: [],
       FlashcardDeck: ['updateMany'],
     };
     const tx = await recorded();

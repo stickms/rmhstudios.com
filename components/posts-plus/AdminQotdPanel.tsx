@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MAX_QOTD_LENGTH, utcDayKey } from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { addAdminQotdApi, getAdminQotdApi, removeAdminQotdApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ interface Data {
  */
 export function AdminQotdPanel() {
   const { t } = useTranslation('f-posts-plus');
+  const refusalText = useRefusalText();
   const [data, setData] = useState<Data | null>(null);
   const [text, setText] = useState('');
   const [dayKey, setDayKey] = useState('');
@@ -83,7 +84,7 @@ export function AdminQotdPanel() {
         });
       } catch (e) {
         toast.error(
-          serverError(e) ??
+          refusalText.maybe(e) ??
             t('admin-add-failed', {
               defaultValue: 'Could not add the prompt',
             }),
@@ -112,7 +113,7 @@ export function AdminQotdPanel() {
       });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('admin-remove-failed', {
             defaultValue: 'Could not remove the prompt',
           }),

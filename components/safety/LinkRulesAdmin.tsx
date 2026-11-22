@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { addAdminLinkRuleApi, deleteAdminLinkRuleApi, listAdminLinkRulesApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ interface Rule {
 /** S6: the admin-editable list behind the /out link warning. */
 export function LinkRulesAdmin() {
   const { t } = useTranslation('f-safety');
+  const refusalText = useRefusalText();
   const [rules, setRules] = useState<Rule[] | null>(null);
   const [domain, setDomain] = useState('');
   const [kind, setKind] = useState<'DENY' | 'ALLOW'>('DENY');
@@ -56,7 +57,7 @@ export function LinkRulesAdmin() {
       });
     } catch (e) {
       return toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('rules-failed', {
             defaultValue: "Couldn't save the rule",
           }),

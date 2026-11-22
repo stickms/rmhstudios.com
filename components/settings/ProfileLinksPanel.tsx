@@ -12,6 +12,7 @@
  * the same way.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -29,7 +30,6 @@ import { profileLinkRel, profileUrlFor } from '@/lib/profile-links/rel-me';
 import { MAX_PROFILE_LINKS, linkDisplayLabel, type ProfileLinkDTO } from '@/lib/profile-links/shared';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   addProfileLinkApi,
   deleteProfileLinkApi,
@@ -44,6 +44,7 @@ interface ProfileLinksPanelProps {
 
 export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const query = profileLinksQuery();
@@ -76,7 +77,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
       setLabel('');
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('links-add-failed', {
             defaultValue: 'Could not add that link.',
           }),
@@ -122,7 +123,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
       }
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('links-verify-failed', {
             defaultValue: 'Verification failed.',
           }),

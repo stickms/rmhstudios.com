@@ -140,12 +140,15 @@ model UserMute {
   muterId   String
   mutedId   String
   createdAt DateTime @default(now())
+  /// Null = until the member unmutes. A past value is never honoured (readers use `activeMuteWhere`, s10-10).
+  expiresAt DateTime?
 
   muter User @relation("MuteMuter", fields: [muterId], references: [id], onDelete: Cascade)
   muted User @relation("MuteMuted", fields: [mutedId], references: [id], onDelete: Cascade)
 
   @@unique([muterId, mutedId])
   @@index([muterId])
+  @@index([expiresAt])
   @@map("user_mute")
 }
 

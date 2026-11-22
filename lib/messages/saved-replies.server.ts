@@ -10,6 +10,7 @@
  * this module sends a message.
  */
 
+import { refusalBody, refusalBeside } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { MAX_SAVED_REPLIES, type SavedReplyRow } from '@/lib/messages/saved-replies';
@@ -26,7 +27,7 @@ type Row = {
 export type SavedReplyResult<T> =
   { ok: true; value: T } | { ok: false; status: 404 | 409 | 400; error: string; code?: string };
 
-const NOT_FOUND = { ok: false, status: 404, error: 'Saved reply not found' } as const;
+const NOT_FOUND = { ok: false, status: 404, ...refusalBody('SAVED_REPLY_NOT_FOUND') } as const;
 
 export function toSavedReplyRow(r: Row): SavedReplyRow {
   return {
@@ -64,7 +65,7 @@ export async function createSavedReply(
         ok: false,
         status: 409,
         code: 'limit',
-        error: `You can keep up to ${MAX_SAVED_REPLIES} saved replies`,
+        ...refusalBeside('SAVED_REPLY_LIMIT', { max: MAX_SAVED_REPLIES }),
       } as const;
     }
     const last = await tx.savedReply.findFirst({

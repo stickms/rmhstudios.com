@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
@@ -19,11 +20,11 @@ import { messageStamp } from '@/lib/chat-plus/post.server';
 /** A lost race on opening a request answers as the gate would have (s04-16). */
 function requestRefusal(reason: 'NONE' | 'FOLLOWERS' | 'pending' | 'cap'): Response {
   if (reason === 'NONE') {
-    return Response.json({ error: 'This user is not accepting messages.' }, { status: 403 });
+    return Response.json({ ...refusalBody('MESSAGE_NOT_ACCEPTING') }, { status: 403 });
   }
   if (reason === 'FOLLOWERS') {
     return Response.json(
-      { error: 'This user only accepts messages from people they follow.' },
+      { ...refusalBody('MESSAGE_FOLLOWS_ONLY') },
       { status: 403 },
     );
   }
@@ -67,12 +68,12 @@ export const route = apiRoute('/api/messages', {
       const senderId = session.user.id;
 
       if (recipientId === senderId) {
-        return Response.json({ error: 'Cannot message yourself' }, { status: 400 });
+        return Response.json({ ...refusalBody('MESSAGE_SELF') }, { status: 400 });
       }
 
       // Images must belong to the sender (filename is prefixed with their id).
       if (imageUrls?.some((u) => !ownsFeedImageUrl(u, senderId))) {
-        return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+        return Response.json({ ...refusalBody('MESSAGE_IMAGE_INVALID') }, { status: 400 });
       }
       const altFailure = await guardImageAlts(senderId, imageUrls, imageAlts);
       if (altFailure) return altFailure.response;
@@ -85,13 +86,13 @@ export const route = apiRoute('/api/messages', {
       });
 
       if (!recipient) {
-        return Response.json({ error: 'User not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('MESSAGE_USER_NOT_FOUND') }, { status: 404 });
       }
 
       // A block in either direction: no new conversation and no message (same answer as the send path).
       if (await isBlockedPair(senderId, recipientId)) {
         return Response.json(
-          { error: 'You can no longer message this person' },
+          { ...refusalBody('MESSAGE_NO_LONGER_ALLOWED') },
           { status: 403 },
         );
       }
@@ -107,10 +108,10 @@ export const route = apiRoute('/api/messages', {
       if (gate.outcome === 'refused') {
         switch (gate.reason) {
           case 'NONE':
-            return Response.json({ error: 'This user is not accepting messages.' }, { status: 403 });
+            return Response.json({ ...refusalBody('MESSAGE_NOT_ACCEPTING') }, { status: 403 });
           case 'FOLLOWERS':
             return Response.json(
-              { error: 'This user only accepts messages from people they follow.' },
+              { ...refusalBody('MESSAGE_FOLLOWS_ONLY') },
               { status: 403 },
             );
           case 'cap':

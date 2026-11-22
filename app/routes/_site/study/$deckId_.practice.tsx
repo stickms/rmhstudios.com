@@ -19,7 +19,7 @@ const fetchTestDeck = createServerFn({ method: 'GET' })
         ? {
             deck: { id: detail.deck.id, title: detail.deck.title },
             // Reviewable cards: reverse and cloze cards included, an authored cloze text left out.
-            cards: await getTestCards(deckId),
+            cards: await getTestCards(deckId, session?.user?.id ?? null),
             signedIn: detail.signedIn,
           }
         : null,

@@ -13,6 +13,8 @@ export interface BlockedMutedRow {
   image: string | null;
   /** When the member blocked or muted them. */
   since: string;
+  /** Muted accounts only: when a timed mute ends (ISO); null for a block or a mute until the member unmutes (s10-10). */
+  expiresAt: string | null;
 }
 
 export interface BlockedMutedPage {

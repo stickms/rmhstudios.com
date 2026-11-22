@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { reactMessageApi } from '@/lib/messages/message-actions.contract';
@@ -22,7 +23,7 @@ export const route = apiRoute('/api/messages/$conversationId/react', {
       const conversation = await findDm(conversationId);
 
       if (!conversation) {
-        return Response.json({ error: 'Conversation not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
       }
 
       if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
@@ -32,14 +33,14 @@ export const route = apiRoute('/api/messages/$conversationId/react', {
       // s04-16: a message request waiting for this viewer is not theirs to react to, and the sender's
       // reactions inside a request that is out never reach the recipient.
       if (hiddenFromRecipient(conversation.request, userId)) {
-        return Response.json({ error: 'Conversation not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
       }
       const requestOpen = requestOut(conversation.request, userId);
 
       const body = await request.json().catch(() => null);
       const parsed = reactMessageBody.safeParse(body);
       if (!parsed.success || !isValidReactionEmoji(parsed.data.emoji)) {
-        return Response.json({ error: 'Invalid emoji' }, { status: 400 });
+        return Response.json({ ...refusalBody('MESSAGE_EMOJI_INVALID') }, { status: 400 });
       }
 
       const result = await toggleDmReaction(
@@ -48,7 +49,7 @@ export const route = apiRoute('/api/messages/$conversationId/react', {
         parsed.data.messageId,
         parsed.data.emoji,
       );
-      if (!result.found) return Response.json({ error: 'Message not found' }, { status: 404 });
+      if (!result.found) return Response.json({ ...refusalBody('MESSAGE_NOT_FOUND') }, { status: 404 });
 
       const otherParticipantId =
         conversation.participantOneId === userId

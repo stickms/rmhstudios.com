@@ -24,6 +24,11 @@ export interface ScopeDetail {
   group: string;
   /** One-line description shown in the key-creation UI and the wiki. */
   description: string;
+  /**
+   * Granted only when a key lists this scope literally: `*` and the action wildcard (`manage:*`) do not
+   * satisfy it, so no existing wildcard key gains the power the day the scope ships. (s10-13)
+   */
+  explicit?: true;
 }
 
 /**
@@ -263,11 +268,47 @@ export const SCOPES: ScopeDetail[] = [
     description:
       'Read your own typing, music practice and focus-session history. Read-only: practice cannot be written through the API.',
   },
+
+  // Sprint 10
+  // s10-12 api-events
+  {
+    id: 'manage:events',
+    action: 'manage',
+    group: 'Events',
+    description: 'Create, edit and cancel events you host, and post updates to the people coming.',
+  },
+
+  // s10-13 api-moderation
+  {
+    id: 'manage:moderation',
+    action: 'manage',
+    group: 'Moderation',
+    description:
+      'Moderate communities where you are a moderator: the mod queue and timeouts and bans. Not included in `*` or `manage:*`: a key must list it itself.',
+    explicit: true,
+  },
+
+  // s10-14 api-rmhtube
+  {
+    id: 'read:rmhtube',
+    action: 'read',
+    group: 'RMHTube',
+    description: 'Read your Watch later list and watch statistics, and upcoming watch parties.',
+  },
+  {
+    id: 'write:rmhtube',
+    action: 'write',
+    group: 'RMHTube',
+    description: 'Add to and remove from Watch later, and say whether you are going to a watch party.',
+  },
 ];
 
 export const ALL_SCOPES: string[] = SCOPES.map((s) => s.id);
 
 const SCOPE_BY_ID = new Map(SCOPES.map((s) => [s.id, s]));
+
+/** The scopes a wildcard or "select all" covers: every catalog scope that is not explicit-only. */
+export const WILDCARD_SCOPES: string[] = SCOPES.filter((s) => !s.explicit).map((s) => s.id);
 
 /** Read-only scopes — the safe default grant for a new key. */
 export const READ_SCOPES: string[] = SCOPES.filter((s) => s.action === 'read').map((s) => s.id);
@@ -302,11 +343,14 @@ export function normalizeScopes(input: unknown): string[] {
 
 /**
  * Does a key's granted scopes satisfy a required scope? `*` grants everything;
- * an action wildcard (`read:*`) grants every scope with that action.
+ * an action wildcard (`read:*`) grants every scope with that action. Except a scope marked `explicit`,
+ * which only a literal entry grants.
  */
 export function hasScope(granted: readonly string[], required: string): boolean {
-  if (granted.includes('*')) return true;
   if (granted.includes(required)) return true;
+  // An explicit scope is never implied by a wildcard (`explicit` on ScopeDetail).
+  if (SCOPE_BY_ID.get(required)?.explicit) return false;
+  if (granted.includes('*')) return true;
   const action = required.split(':')[0];
   return granted.includes(`${action}:*`);
 }

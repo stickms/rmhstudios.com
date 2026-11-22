@@ -371,11 +371,11 @@ export async function deleteHighlight(userId: string, id: string): Promise<boole
   return true;
 }
 
-const hrefFor = (kind: ReadingDocKind, key: string) =>
+export const hrefFor = (kind: ReadingDocKind, key: string) =>
   kind === 'blog' ? `/blog/${key}` : kind === 'news' ? `/news/${key}` : `/library/${key}`;
 
 /** Titles for a set of highlights' documents, keyed `kind:key`; a missing document falls back to its key. */
-async function documentTitles(
+export async function documentTitles(
   rows: readonly { docKind: ReadingDocKind; docKey: string }[],
 ): Promise<Map<string, string>> {
   const slugsOf = (k: ReadingDocKind) => [
@@ -420,14 +420,40 @@ function loadRows(where: Prisma.ReadingHighlightWhereInput, orderBy: Prisma.Read
   });
 }
 
-async function toMyRows(rows: MyRow[]): Promise<MyHighlightRow[]> {
-  const titles = await documentTitles(rows);
+/**
+ * The decks holding a card made from each highlight (s10-01), one query for the page. Only the member's own
+ * highlights reach here (every caller starts from `userId`), and the link names a private highlight, so the
+ * `highlight.userId` condition is repeated rather than trusted.
+ */
+async function cardDecksFor(
+  userId: string,
+  highlightIds: readonly string[],
+): Promise<Map<string, { id: string; title: string }[]>> {
+  const out = new Map<string, { id: string; title: string }[]>();
+  if (highlightIds.length === 0) return out;
+  const links = await prisma.highlightCardLink.findMany({
+    where: { highlightId: { in: [...highlightIds] }, highlight: { userId } },
+    orderBy: { createdAt: 'asc' },
+    select: { highlightId: true, card: { select: { deck: { select: { id: true, title: true } } } } },
+  });
+  for (const link of Array.isArray(links) ? links : []) {
+    const deck = link.card.deck;
+    const list = out.get(link.highlightId) ?? [];
+    if (!list.some((d) => d.id === deck.id)) list.push({ id: deck.id, title: deck.title });
+    out.set(link.highlightId, list);
+  }
+  return out;
+}
+
+async function toMyRows(userId: string, rows: MyRow[]): Promise<MyHighlightRow[]> {
+  const [titles, decks] = await Promise.all([documentTitles(rows), cardDecksFor(userId, rows.map((r) => r.id))]);
   return rows.map((r) => ({
     ...toView(r),
     kind: r.docKind,
     key: r.docKey,
     title: titles.get(`${r.docKind}:${r.docKey}`) ?? r.docKey,
     href: hrefFor(r.docKind, r.docKey),
+    cardDecks: decks.get(r.id) ?? [],
   }));
 }
 
@@ -447,7 +473,7 @@ export async function listMyHighlights(
   const rows = await loadRows({ userId }, NEWEST, { take: limit + 1, cursor });
   const page = rows.slice(0, limit);
   return {
-    items: await toMyRows(page),
+    items: await toMyRows(userId, page),
     nextCursor: rows.length > limit ? page[page.length - 1]!.id : null,
   };
 }
@@ -487,7 +513,7 @@ export async function searchHighlights(
   ]);
   const page = rows.slice(0, limit);
   return {
-    items: await toMyRows(page),
+    items: await toMyRows(userId, page),
     nextCursor: rows.length > limit ? page[page.length - 1]!.id : null,
     total,
   };

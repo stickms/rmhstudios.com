@@ -16,6 +16,8 @@ import { isMediaId } from '@/lib/media/id';
 import { attachError, MAX_MEDIA_PER_POST } from '@/lib/media/policy';
 import { prepareCommunityPost } from '@/lib/communities/post-gate.server';
 import { activeSanction } from '@/lib/communities/bans.server';
+import { getAutomodRules } from '@/lib/communities/automod.server';
+import { derivePostKind, evaluateAutomod } from '@/lib/communities/automod';
 import { getCommunitySettings } from '@/lib/communities/settings.server';
 import { communityAltMissing, communityGifAltMissing } from '@/lib/communities/alt-required';
 import {
@@ -93,11 +95,16 @@ export function serializeScheduled(r: ScheduledPost, held: HeldReason | null): A
   };
 }
 
-/** The checks `publishScheduledPost` makes, asked of each row without publishing anything. */
+/**
+ * The checks `publishScheduledPost` makes, asked of each row without publishing anything: a sanction, missing image
+ * descriptions, and the community's AutoMod rules (the same matcher `prepareCommunityPost` runs; a moderator is
+ * exempt there, so here). The rule itself is never returned, only `automod`.
+ */
 export async function heldReasonsFor(rows: ScheduledPost[]): Promise<Map<string, HeldReason>> {
   const out = new Map<string, HeldReason>();
   const settings = new Map<string, boolean>();
   const sanctioned = new Map<string, boolean>();
+  const rulesByCommunity = new Map<string, Awaited<ReturnType<typeof getAutomodRules>>>();
   for (const r of rows) {
     if (!r.communityId || r.publishedId) continue;
     let banned = sanctioned.get(r.communityId);
@@ -120,10 +127,52 @@ export async function heldReasonsFor(rows: ScheduledPost[]): Promise<Map<string,
         communityGifAltMissing(on, r.gifUrl, r.gifAlt)
       ) {
         out.set(r.id, 'image_descriptions');
+        continue;
       }
     }
+    if (await automodWouldAct(r, rulesByCommunity)) out.set(r.id, 'automod');
   }
   return out;
+}
+
+/** Would the community's AutoMod hold, flag or remove this draft? Rules are read once per community. */
+async function automodWouldAct(
+  r: ScheduledPost,
+  rulesByCommunity: Map<string, Awaited<ReturnType<typeof getAutomodRules>>>,
+): Promise<boolean> {
+  if (!r.communityId) return false;
+  let rules = rulesByCommunity.get(r.communityId);
+  if (!rules) {
+    rules = await getAutomodRules(r.communityId);
+    rulesByCommunity.set(r.communityId, rules);
+  }
+  if (rules.length === 0) return false;
+  const [member, user] = await Promise.all([
+    prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId: r.communityId, userId: r.userId } },
+      select: { role: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: r.userId },
+      // Not a display shape: the matcher needs two account facts.
+      // eslint-disable-next-line local/no-adhoc-user-select
+      select: { createdAt: true, image: true },
+    }),
+  ]);
+  if (!user || member?.role === 'MOD' || member?.role === 'ADMIN') return false;
+  const verdict = evaluateAutomod(rules, {
+    target: 'post',
+    text: r.content,
+    postKind: derivePostKind({
+      content: r.content,
+      gifUrl: r.gifUrl,
+      imageUrls: r.imageUrls,
+      hasPoll: r.poll != null,
+    }),
+    accountAgeDays: (Date.now() - user.createdAt.getTime()) / 86_400_000,
+    hasAvatar: !!user.image,
+  });
+  return verdict !== null;
 }
 
 /** `media_ids` to the member's own pending uploads' URLs, in order. Nothing is attached: the draft only points at them. */

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -22,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
+import { WILDCARD_SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 import { KeyUsage } from '@/components/developer/KeyUsage';
 import { KeySuspendedLine } from '@/components/developer/KeySuspendedLine';
@@ -34,7 +35,6 @@ import {
   restrictionsDraft,
 } from '@/components/developer/KeyRestrictions';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   createDeveloperKeyApi,
   revokeDeveloperKeyApi,
@@ -56,6 +56,7 @@ const EXPIRY_OPTIONS = [
 export function KeysManager() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation('f-devplatform');
   const { t: tr } = useTranslation('key-restrictions');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const query = developerKeysQuery();
@@ -105,7 +106,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
       await load();
     } catch (e) {
       toast.error(
-        serverError(e) || t('keys-create-failed', { defaultValue: 'Could not create key' }),
+        refusalText.maybe(e) || t('keys-create-failed', { defaultValue: 'Could not create key' }),
       );
     } finally {
       setCreating(false);
@@ -246,13 +247,20 @@ export function KeysManager() { const fmt = useLocaleFormat();
                     <code className="text-site-text">{s.id}</code>
                   </label>
                 ))}
+                {g.scopes.some((s) => s.explicit) && (
+                  <p className="t-meta">
+                    {t('keys-scope-explicit', {
+                      defaultValue: 'Not included in “All”: choose it on its own',
+                    })}
+                  </p>
+                )}
               </div>
             ))}
           </div>
           <div className="flex gap-3 text-xs">
             <button
               type="button"
-              onClick={() => setScopes(SCOPES.map((s) => s.id))}
+              onClick={() => setScopes([...WILDCARD_SCOPES])}
               className="text-site-accent hover:underline"
             >
               {t('keys-select-all', { defaultValue: 'Select all' })}

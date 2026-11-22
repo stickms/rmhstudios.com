@@ -3,12 +3,12 @@
  * "Edited" marker), an "Add note" field with the section's one ink primary, edit (author, 15 minutes) and
  * delete (any moderator). Moderators only; the member never sees any of it. Rows on rules, dates `t-meta`.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -41,6 +41,7 @@ export function MemberNotesDialog({
   onCount?: (count: number) => void;
 }) {
   const { t } = useTranslation('community-notes');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const confirm = useConfirm();
   const ids = useId();
@@ -78,7 +79,7 @@ export function MemberNotesDialog({
       : t('former-moderator', { defaultValue: 'A former moderator' });
 
   const fail = (err: unknown) =>
-    toast.error(serverError(err) || t('action-failed', { defaultValue: 'Could not save that' }));
+    toast.error(refusalText.maybe(err) || t('action-failed', { defaultValue: 'Could not save that' }));
 
   const save = async () => {
     const body = draft.trim();

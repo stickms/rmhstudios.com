@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { notice } from '@/lib/notifications/notice-keys';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
@@ -43,7 +44,7 @@ export const Route = createFileRoute('/api/rmharks/$id/unlock')({
           // the viewer must be allowed to see the post at all (and must not be charged for
           // one they cannot): the route used to return any post's content to anyone.
           if (!post || !(await canReadThread(post, userId))) {
-            return Response.json({ error: 'Post not found' }, { status: 404 });
+            return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
           }
 
           // Author or free post — nothing to pay.
@@ -88,7 +89,7 @@ export const Route = createFileRoute('/api/rmharks/$id/unlock')({
           return Response.json({ success: true, content: post.content });
         } catch (error) {
           if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
-            return Response.json({ error: 'Not enough coins' }, { status: 400 });
+            return Response.json({ ...refusalBody('COINS_NOT_ENOUGH') }, { status: 400 });
           }
           console.error('Post unlock error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

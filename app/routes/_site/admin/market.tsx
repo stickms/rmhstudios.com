@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { createFileRoute } from '@tanstack/react-router';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -11,7 +12,7 @@ import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { listAdminHeldListingsApi, resolveAdminHeldListingApi } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,7 @@ type Action = 'release' | 'cancel';
  */
 function AdminMarketPage() { const fmt = useLocaleFormat(); 
   const { t, i18n } = useTranslation('admin');
+  const refusalText = useRefusalText();
   const [rows, setRows] = useState<HeldListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const arrival = useArrival(!loading);
@@ -58,7 +60,7 @@ function AdminMarketPage() { const fmt = useLocaleFormat();
       setRows(data.listings ?? []);
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }),
       );
       // An HTTP refusal empties the list; a network failure leaves it as it was.
@@ -66,7 +68,7 @@ function AdminMarketPage() { const fmt = useLocaleFormat();
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, refusalText]);
 
   useEffect(() => {
     void load();
@@ -79,7 +81,7 @@ function AdminMarketPage() { const fmt = useLocaleFormat();
       try {
         await api(resolveAdminHeldListingApi, { params: { id }, body: { action } });
       } catch (e) {
-        toast.error(serverError(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+        toast.error(refusalText.maybe(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         // 409: someone else resolved it (or the seller cancelled) — drop it.
         if (e instanceof HttpError && e.status === 409) {
           setRows((prev) => prev.filter((r) => r.id !== id));

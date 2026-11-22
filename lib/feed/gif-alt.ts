@@ -117,6 +117,8 @@ export const GIF_ALT_READ_PATHS: readonly string[] = [
   'app/routes/api/v1/feed.ts',
   'lib/api/v1/search.server.ts',
   'lib/api/v1/communities.server.ts',
+  // s10-13: a moderator's queue; the held post goes through `serializePublicPost`, which carries the reason, the GIF description and quiet counts.
+  'lib/api/v1/moderation.server.ts',
   'lib/api/v1/feeds.server.ts',
   'app/routes/api/v1/users/$handle/posts.ts',
   'app/routes/api/v1/me/bookmarks.ts',
@@ -149,4 +151,6 @@ export const GIF_ALT_EXEMPT_PATHS: Readonly<Record<string, string>> = {
     'the shared-media grid lists thumbnails by type; images have no description there either',
   'lib/chat-plus/pins.server.ts': 'a pinned-message row says it has media (hasMedia); the media is not shown',
   'lib/chat-plus/saved.server.ts': 'a saved-message row checks for media to build its label; the media is not shown',
+  'lib/profile/preview.server.ts':
+    'a preview row says the post includes media (hasMedia); neither the GIF nor its description is returned',
 };

@@ -144,6 +144,8 @@ export interface CommunityExtrasDTO {
   publicModLog: boolean;
   /** s07-16: every image posted here needs a description. */
   requireImageAlt: boolean;
+  /** s10-17: the reason an admin took the community out of discovery; moderators only, else null. */
+  delistedReason: string | null;
   /** Present for members only. */
   member: {
     /** When the viewer joined (ISO); the rules sheet is for people who just did. */ joinedAt: string;

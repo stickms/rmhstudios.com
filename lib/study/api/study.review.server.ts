@@ -24,7 +24,7 @@ export const route = apiRoute('/api/study/review', {
             status: 404,
           },
         );
-      return reviewQueue(userId, query.after, new Date(), query.folder);
+      return reviewQueue(userId, query.after, new Date(), query.folder, query.tz);
     },
   ),
 });

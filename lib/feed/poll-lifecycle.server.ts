@@ -7,6 +7,7 @@
  * the final tally) or is refused with `POLL_CLOSED`; an extension can never reopen a poll that just ended.
  */
 import { notice } from '@/lib/notifications/notice-keys';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -220,6 +221,7 @@ async function withheldFrom(db: NoticeDb, authorId: string, voterIds: string[]):
         muterId: {
           in: voterIds,
         },
+        ...activeMuteWhere(new Date()),
       },
       select: {
         muterId: true,

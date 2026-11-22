@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -7,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { castJamThemeVotesApi } from '@/lib/competitive/jam-themes.contract';
 import { jamThemeVoteQuery } from '@/lib/competitive/jam-themes.queries';
 import { MAX_THEME_MARKS } from '@/lib/competitive/jam-themes';
@@ -20,6 +20,7 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
  */
 export function JamThemeVote({ slug, signedIn }: { slug: string; signedIn: boolean }) {
   const { t } = useTranslation('jam-themes');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const queryClient = useQueryClient();
   const query = jamThemeVoteQuery(slug);
@@ -63,7 +64,7 @@ export function JamThemeVote({ slug, signedIn }: { slug: string; signedIn: boole
       });
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('vote-failed', {
             defaultValue: 'Could not save your votes',
           }),

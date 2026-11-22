@@ -29,6 +29,8 @@ export const route = apiRoute('/api/neon-driftway/score', {
       const result = await submitGameScore({
         gameId: 'neon-driftway',
         userId: session.user.id,
+        // The ghost save that follows reads the same assist claim.
+        keepAssistClaim: true,
         score,
         progress: typeof distance === 'number' ? distance : 0,
         durationMs: typeof timeMs === 'number' ? timeMs : undefined,

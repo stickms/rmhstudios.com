@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,7 @@ import { MAX_CHAT_LENGTH } from '@/lib/elections/chat';
 import { useRoomStream, type ReactionBurst, type StreamStatus } from './useRoomStream';
 import type { ChatMessage } from '@/lib/elections/chat';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { deleteElectionChatApi, postElectionChatApi } from '@/lib/elections/elections.contract';
 import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 
@@ -35,6 +36,7 @@ export function ElectionChat({
   height?: number | 'fill';
 }) {
   const { t } = useTranslation('c-elections');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
   const own = useRoomStream(stream ? null : cycle, stream ? null : room);
@@ -69,7 +71,7 @@ export function ElectionChat({
       if (err instanceof HttpError && err.status === 429) {
         setError(t('chat.slow', { defaultValue: 'Slow down a little.' }));
       } else {
-        setError(serverError(err) ?? t('chat.fail', { defaultValue: 'Could not send that.' }));
+        setError(refusalText.maybe(err) ?? t('chat.fail', { defaultValue: 'Could not send that.' }));
       }
     } finally {
       setBusy(false);

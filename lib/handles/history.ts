@@ -7,10 +7,8 @@
  * without a record the history is simply gone. Three rules, all of them here so
  * they can be tested without a database:
  *
- *  1. **Cooldown** — one change per 30 days. (`lib/handle.ts` still carries the
- *     older 14-day `HANDLE_COOLDOWN_MS` used by `PATCH /api/profile`; J2 asks
- *     for 30, and this module is the J2 path. See the note on
- *     {@link HANDLE_CHANGE_COOLDOWN_MS}.)
+ *  1. **Cooldown** — one change per 30 days, on every path (`lib/handle.ts`'s
+ *     `HANDLE_COOLDOWN_MS` is the same figure, for the form's countdown).
  *  2. **Reclaim block** — a handle released in the last 30 days cannot be
  *     taken by anyone else. Without it, "wait for @alice to rename, grab it,
  *     impersonate her" is a thirty-second attack.
@@ -21,15 +19,7 @@
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * One handle change per 30 days (J2).
- *
- * Deliberately longer than `HANDLE_COOLDOWN_MS` in `lib/handle.ts` (14 days),
- * which predates this feature and still governs the legacy
- * `PATCH /api/profile` path. Two cooldowns is one too many: the legacy route
- * should call {@link canChangeHandleNow} and this constant should become the
- * only answer.
- */
+/** One handle change per 30 days (J2), on the profile form and on `POST /api/handles/change` alike. */
 export const HANDLE_CHANGE_COOLDOWN_MS = 30 * DAY_MS;
 
 /** A released handle is frozen for 30 days before anyone else may claim it. */

@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getBuildInsightsApi } from '@/lib/builds/insights.contract';
@@ -20,7 +21,7 @@ export const route = apiRoute('/api/user-builds/$id/insights', {
         userId ? { id: userId, isAdmin } : null,
         parseRange(query.range),
       );
-      if (!insights) return Response.json({ error: 'Build not found' }, { status: 404 });
+      if (!insights) return Response.json({ ...refusalBody('BUILD_NOT_FOUND') }, { status: 404 });
       return Response.json(insights, { headers: { 'Cache-Control': 'private, no-store' } });
     },
   ),

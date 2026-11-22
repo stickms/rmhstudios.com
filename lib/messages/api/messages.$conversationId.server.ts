@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
@@ -54,7 +55,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
     const conversation = await findDm(conversationId);
 
     if (!conversation) {
-      return Response.json({ error: 'Conversation not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
     }
 
     if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
@@ -63,7 +64,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
 
     // A message request waiting for this viewer is read from the Requests folder only (s04-16).
     if (hiddenFromRecipient(conversation.request, userId)) {
-      return Response.json({ error: 'Conversation not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
     }
 
     const url = new URL(request.url);
@@ -181,7 +182,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
     });
     if (!senderRl.allowed) {
       return Response.json(
-        { error: "You're sending messages too quickly. Please slow down." },
+        { ...refusalBody('MESSAGE_TOO_FAST') },
         { status: 429, headers: { 'Retry-After': String(senderRl.retryAfter) } },
       );
     }
@@ -193,7 +194,7 @@ export const route = apiRoute('/api/messages/$conversationId', {
       body = await readJsonLimited(request, 256 * 1024);
     } catch (e) {
       if (e instanceof RequestTooLargeError) {
-        return Response.json({ error: 'Message payload too large' }, { status: 413 });
+        return Response.json({ ...refusalBody('MESSAGE_PAYLOAD_TOO_LARGE') }, { status: 413 });
       }
       return Response.json({ error: 'Invalid input' }, { status: 400 });
     }

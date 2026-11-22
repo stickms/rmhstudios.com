@@ -185,6 +185,8 @@ export const CONTENT_WARNING_READ_PATHS: readonly string[] = [
   'app/routes/api/v1/feed.ts',
   'lib/api/v1/search.server.ts',
   'lib/api/v1/communities.server.ts',
+  // s10-13: a moderator's queue; the held post goes through `serializePublicPost`, which carries the reason, the GIF description and quiet counts.
+  'lib/api/v1/moderation.server.ts',
   'lib/api/v1/feeds.server.ts',
   'app/routes/api/v1/posts.ts',
   'app/routes/api/v1/posts/$id.ts',

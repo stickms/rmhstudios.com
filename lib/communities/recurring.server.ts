@@ -542,12 +542,31 @@ export async function pauseRecurring(
 }
 
 /** A second "Post now" inside this window is the same click twice, not a second thread. */
-const POST_NOW_WINDOW_MS = 60_000;
+export const POST_NOW_WINDOW_MS = 60_000;
+
+/** The `where` fragment both claims share: nobody has posted this thread inside the window. */
+export function notPostedRecently(now: Date) {
+  return {
+    OR: [
+      {
+        lastPostedAt: null,
+      },
+      {
+        lastPostedAt: {
+          lt: new Date(now.getTime() - POST_NOW_WINDOW_MS),
+        },
+      },
+    ],
+  };
+}
 
 /**
- * "Post now": the next occurrence happens at once and the schedule does not move. `postOccurrence` creates the post
- * outside any transaction, so an advisory lock cannot cover it; the claim is one compare-and-set on `lastPostedAt`
- * (the cron path claims `nextAt` the same way). Losing it is `409 just_posted`; a failed post puts the old value back.
+ * "Post now": the next occurrence happens at once. `postOccurrence` creates the post outside any transaction, so an
+ * advisory lock cannot cover it; the claim is one compare-and-set, and the cron's claim (`recurring-jobs.server.ts`)
+ * is the same one: both require `lastPostedAt` outside the window and both set it, so whichever comes second updates
+ * nothing. When the occurrence being posted is the next due one (`nextAt` due now or within the window) the same
+ * update also moves `nextAt` to the occurrence after it, so the cron has nothing left to claim; otherwise the
+ * schedule stays where it was. Losing the claim is `409 just_posted`; a failed post puts both columns back.
  */
 export async function postRecurringNow(args: { communityId: string; id: string; now?: Date }): Promise<string> {
   const row = await prisma.communityRecurringThread.findFirst({
@@ -558,26 +577,44 @@ export async function postRecurringNow(args: { communityId: string; id: string; 
   });
   if (!row) throw new RecurringError(404, 'not_found', 'Not found');
   const now = args.now ?? new Date();
-  const claim = await prisma.communityRecurringThread.updateMany({
-    where: {
-      id: row.id,
-      communityId: args.communityId,
-      OR: [
-        {
-          lastPostedAt: null,
+  const dueSoon = row.nextAt instanceof Date && row.nextAt.getTime() <= now.getTime() + POST_NOW_WINDOW_MS;
+  let movedFrom: Date | null = null;
+  let claimed = 0;
+  if (dueSoon && row.active) {
+    // The due occurrence: take it from the cron in one update (only while `nextAt` is still the value we read).
+    claimed = (
+      await prisma.communityRecurringThread.updateMany({
+        where: {
+          id: row.id,
+          communityId: args.communityId,
+          active: true,
+          nextAt: row.nextAt,
+          ...notPostedRecently(now),
         },
-        {
-          lastPostedAt: {
-            lt: new Date(now.getTime() - POST_NOW_WINDOW_MS),
-          },
+        data: {
+          lastPostedAt: now,
+          nextAt: new Date(nextThreadAt(specOf(row), now.getTime())),
         },
-      ],
-    },
-    data: {
-      lastPostedAt: now,
-    },
-  });
-  if (claim.count !== 1) throw new RecurringError(409, 'just_posted', 'This thread was posted a moment ago');
+      })
+    ).count;
+    if (claimed === 1) movedFrom = row.nextAt;
+  }
+  if (claimed !== 1) {
+    // Not due soon (or the cron moved it first): claim `lastPostedAt` alone. Whoever got there first made this fail.
+    claimed = (
+      await prisma.communityRecurringThread.updateMany({
+        where: {
+          id: row.id,
+          communityId: args.communityId,
+          ...notPostedRecently(now),
+        },
+        data: {
+          lastPostedAt: now,
+        },
+      })
+    ).count;
+  }
+  if (claimed !== 1) throw new RecurringError(409, 'just_posted', 'This thread was posted a moment ago');
   // Give the claim back unless the post went out: only while the row still carries our claim.
   const release = () =>
     prisma.communityRecurringThread
@@ -588,6 +625,7 @@ export async function postRecurringNow(args: { communityId: string; id: string; 
         },
         data: {
           lastPostedAt: row.lastPostedAt,
+          ...(movedFrom ? { nextAt: movedFrom } : {}),
         },
       })
       .catch((e: unknown) => console.error('[recurring] post-now release error:', e));

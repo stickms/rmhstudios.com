@@ -8,6 +8,7 @@
  * (scripts/check-bundle-budget.ts measures that map as part of the entry).
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldAlert } from 'lucide-react';
@@ -27,7 +28,7 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { moderateContentApi } from '@/lib/moderation/admin-moderation.contract';
 import {
   DEFAULT_FEATURE,
@@ -274,6 +275,7 @@ export function ModerateContentDialog({
   onDone,
 }: ModerateContentDialogProps) {
   const { t } = useTranslation('c-moderation');
+  const refusalText = useRefusalText();
   const featureLabels = useFeatureLabels();
   const timeoutLabel = useTimeoutLabel();
   const ids = useId();
@@ -407,7 +409,7 @@ export function ModerateContentDialog({
       onOpenChange(false);
       onDone?.(action);
     } catch (e) {
-      const msg = e instanceof HttpError ? serverError(e) : null;
+      const msg = e instanceof HttpError ? refusalText.maybe(e) : null;
       toast.error(
         msg ??
           t('moderate-toast-error', {

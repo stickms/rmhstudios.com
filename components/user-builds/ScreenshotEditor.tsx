@@ -4,6 +4,7 @@
  * without a description cannot be saved; the form says which one, and the server refuses it too. Loaded on demand
  * by `BuildForm`. Pictures can only be uploaded to a build that exists, so a new build shows a hint instead.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ImagePlus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
   MAX_SCREENSHOTS,
   SCREENSHOT_DESCRIPTION_MAX,
@@ -45,6 +45,7 @@ export default function ScreenshotEditor({
   onThumbnailAlt,
 }: Props) {
   const { t } = useTranslation('build-screenshots');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const ids = useId();
   const coverInput = useRef<HTMLInputElement | null>(null);
@@ -77,7 +78,7 @@ export default function ScreenshotEditor({
       };
     } catch (err) {
       toast.error(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           t('upload-failed', {
             defaultValue: 'The picture could not be uploaded.',
           }),
@@ -144,7 +145,7 @@ export default function ScreenshotEditor({
       );
     } catch (err) {
       toast.error(
-        serverError(err) ??
+        refusalText.maybe(err) ??
           t('save-failed', {
             defaultValue: 'The screenshots could not be saved.',
           }),

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { jamsQuery } from '@/lib/competitive/jams.queries';
@@ -14,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/components/Providers';
 import { Hammer } from 'lucide-react';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createJamApi } from '@/lib/competitive/jams.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,7 @@ export function PhaseBadge({ phase }: { phase: JamSummary['phase'] }) {
 
 function AdminForm({ onCreated }: { onCreated: () => void }) {
   const { t } = useTranslation('f-competitive');
+  const refusalText = useRefusalText();
   const [busy, setBusy] = useState(false);
   const [voting, setVoting] = useState<ThemeVotingDraft>(EMPTY_THEME_VOTING);
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -89,7 +90,7 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
       onCreated();
     } catch (e) {
       toast.error(
-        serverError(e) ?? t('jam-create-failed', { defaultValue: 'Could not create the jam' }),
+        refusalText.maybe(e) ?? t('jam-create-failed', { defaultValue: 'Could not create the jam' }),
       );
     } finally {
       setBusy(false);

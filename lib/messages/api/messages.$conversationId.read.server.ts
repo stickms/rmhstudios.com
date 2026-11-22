@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { markConversationReadApi } from '@/lib/messages/message-actions.contract';
@@ -19,7 +20,7 @@ export const route = apiRoute('/api/messages/$conversationId/read', {
     const conversation = await findDm(conversationId);
 
     if (!conversation) {
-      return Response.json({ error: 'Conversation not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
     }
 
     if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
@@ -28,7 +29,7 @@ export const route = apiRoute('/api/messages/$conversationId/read', {
 
     // A message request waiting for this viewer is read from the Requests folder; nothing here marks it read (s04-16).
     if (hiddenFromRecipient(conversation.request, userId)) {
-      return Response.json({ error: 'Conversation not found' }, { status: 404 });
+      return Response.json({ ...refusalBody('CONVERSATION_NOT_FOUND') }, { status: 404 });
     }
 
     const marked = await prisma.chatMessage.updateMany({

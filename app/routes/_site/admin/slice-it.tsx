@@ -24,6 +24,7 @@
  * rest of the site in.
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -48,7 +49,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   listRankingApi,
   rankChartActionApi,
@@ -77,6 +78,7 @@ export const Route = createFileRoute('/_site/admin/slice-it')({
 
 function AdminSliceItRankingPage() {
   const { t } = useTranslation('r-slice-it');
+  const refusalText = useRefusalText();
   const [status, setStatus] = useState<RankStatus>('qualified');
   const [rows, setRows] = useState<RankingRow[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -109,7 +111,7 @@ function AdminSliceItRankingPage() {
       } catch (error) {
         if (!(error instanceof HttpError)) throw error;
         toast.error(
-          serverError(error) ??
+          refusalText.maybe(error) ??
             t('admin-rank-action-failed', { defaultValue: 'That did not go through.' }),
         );
         // A 409 means this list is stale, which is exactly the case where

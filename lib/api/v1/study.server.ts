@@ -12,6 +12,7 @@ import type { ApiContext } from '@/lib/api/with-developer-api.server';
 import type { z } from 'zod';
 import { AUTHORED_WHERE } from '@/lib/study/card-query.server';
 import { CARD_IMAGE_SELECT, fromColumns, type CardImage } from '@/lib/study/card-images';
+import { CARD_SOUND_SELECT, fromSoundColumns, type CardSound } from '@/lib/study/card-sound';
 import { readOcclusion, type Occlusion } from '@/lib/study/occlusion';
 import { resolveMediaUrls } from '@/lib/study/card-images.server';
 import {
@@ -59,6 +60,10 @@ export interface ApiCard {
   frontImage: CardImage | null;
   /** The picture on the back, or null. */
   backImage: CardImage | null;
+  /** The sound on the front, or null (s10-02). Read-only, and only ever the key owner's own: a sound is private. */
+  frontSound: CardSound | null;
+  /** The sound on the back, or null. */
+  backSound: CardSound | null;
   /** The masks of an occlusion card (`kind: 'occlusion'`, over `frontImage`), or null on every other kind (s09-03). */
   occlusion: Occlusion | null;
 }
@@ -165,9 +170,18 @@ function apiCard(row: {
   frontImageAlt: string | null;
   backImageUrl: string | null;
   backImageAlt: string | null;
+  frontSoundUrl: string | null;
+  frontSoundText: string | null;
+  frontSoundMs: number | null;
+  backSoundUrl: string | null;
+  backSoundText: string | null;
+  backSoundMs: number | null;
   occlusion: unknown;
 }): ApiCard {
   const { frontImage, backImage } = fromColumns(row);
+  // Every card this reads is in a deck the key owner owns (`listMyCards` and the writes check it), so the sounds
+  // are the owner's own.
+  const { frontSound, backSound } = fromSoundColumns(row);
   return {
     id: row.id,
     kind: row.kind,
@@ -177,6 +191,8 @@ function apiCard(row: {
     externalId: row.externalId,
     frontImage,
     backImage,
+    frontSound,
+    backSound,
     occlusion: row.kind === 'occlusion' ? readOcclusion(row.occlusion) : null,
   };
 }
@@ -417,6 +433,7 @@ const cardSelect = {
   externalId: true,
   occlusion: true,
   ...CARD_IMAGE_SELECT,
+  ...CARD_SOUND_SELECT,
 } satisfies Prisma.FlashcardSelect;
 
 /** A deck's authored cards in deck order, keyset on (`position`, `id`); null when the deck is not the owner's. */

@@ -198,6 +198,15 @@ that plugin.
   catalog) → a maintainer runs the **i18n-translate** workflow from the Actions tab (machine-translates only missing or
   stale keys, commits them to the `i18n/catalogs` branch and redeploys; `docs/translations.md`) → `pnpm i18n:coverage`
   (verify; `--strict` gate available).
+- **Refusals (s10-20).** A route that refuses answers `{ error: '<English>', code, ...params }`: spread
+  `refusalBody('CODE', params?)` from `@/lib/errors/codes` where `{ error: '…' }` was written (`refusalBeside` when the
+  body already has a `code` another layer reads; `refusalCodeOf(result)` to pass a service result's code through).
+  Every code is in `ERROR_CODES` and `locales/en/errors.json`; the client renders it with `useRefusalText()`
+  (`components/errors/useRefusalText.ts`, a literal `switch`, because the extractor reads only `app/`, `components/`,
+  `features/`), `refusalText.maybe(error) ?? fallback` where a call site has its own fallback. A code's English `text` is
+  the sentence the server sent, so English readers see no change; a new code needs its `case` in the hook (the catalogue
+  test fails without it). New code does not call `serverError(`: `lib/__tests__/server-error-ratchet.test.ts` only lets
+  the count fall.
 - Locale resolution: `rmh-lang` cookie → Accept-Language → `en` (`lib/i18n/resolve.ts`); `<html lang/dir>` is set
   pre-paint by the `locale` step of the generated pre-paint script (`lib/prepaint/`, `docs/fouc.md`).
 

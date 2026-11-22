@@ -1,3 +1,4 @@
+import { refusalBody, refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { deleteFolder, folderNameSchema, renameFolder } from '@/lib/chat-plus/folders.server';
@@ -8,13 +9,13 @@ export const route = apiRoute('/api/chat-folders/$id', {
     { rateLimit: 'write', body: folderNameSchema },
     async ({ userId, params, body }) => {
       const res = await renameFolder(userId, params.id, body.name);
-      if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+      if (!res.ok) return Response.json({ error: res.error, ...refusalCodeOf(res) }, { status: res.status });
       return Response.json({ folder: res.value });
     },
   ),
   DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
     const ok = await deleteFolder(userId, params.id);
-    if (!ok) return Response.json({ error: 'Folder not found' }, { status: 404 });
+    if (!ok) return Response.json({ ...refusalBody('CHAT_FOLDER_NOT_FOUND') }, { status: 404 });
     return Response.json({ success: true });
   }),
 });

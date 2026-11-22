@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { browseStampsApi, createStampApi } from '@/lib/profile/stamps.contract';
@@ -40,7 +41,7 @@ export const route = apiRoute('/api/stamps', {
     async ({ request, userId }) => {
       const contentLength = Number(request.headers.get('content-length') ?? 0);
       if (contentLength > STAMP_MAX_UPLOAD_BYTES + 64 * 1024) {
-        return Response.json({ error: 'That image is too large.' }, { status: 413 });
+        return Response.json({ ...refusalBody('POST_IMAGE_TOO_LARGE') }, { status: 413 });
       }
       let form: FormData;
       try {
@@ -50,7 +51,7 @@ export const route = apiRoute('/api/stamps', {
       }
       const image = form.get('image');
       if (!(image instanceof File) || image.size === 0) {
-        return Response.json({ error: 'No image provided' }, { status: 400 });
+        return Response.json({ ...refusalBody('POST_IMAGE_MISSING') }, { status: 400 });
       }
       const name = stampNameSchema.safeParse(form.get('name'));
       if (!name.success) {

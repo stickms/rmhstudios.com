@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Mic, Square, Trash2, Send, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import { canRecordVoice, VoiceRecorder, VoiceRecorderError } from '@/lib/voice/r
 import { VoiceWaveform } from '@/components/voice/VoiceWaveform';
 import { VoicePlayer } from '@/components/voice/VoicePlayer';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { sendVoiceMessageApi, type SentVoiceMessage } from '@/lib/messages/voice.contract';
 
 /**
@@ -52,6 +52,7 @@ export function VoiceComposer({
   disabled?: boolean;
 }) {
   const { t } = useTranslation('feed');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const reducedMotion = useReducedMotion();
 
@@ -249,14 +250,14 @@ export function VoiceComposer({
       // The server names the caller's own ceiling ("60 seconds on your plan"),
       // so its message is more useful than anything generic here.
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('voice-send-failed', {
             defaultValue: 'Could not send that recording.',
           }),
       );
       setPhase('review');
     }
-  }, [clip, conversationId, note, onSent, reset, t]);
+  }, [clip, conversationId, note, onSent, reset, t, refusalText]);
 
   if (!active) {
     return (

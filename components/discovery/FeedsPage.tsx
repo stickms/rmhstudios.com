@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -20,8 +21,8 @@ import type { FeedSummary } from '@/lib/discovery/feeds.server';
 import { feedsQuery } from '@/lib/discovery/feeds.queries';
 import { EMPTY_FEED_FORM, FeedForm, feedBody } from './FeedForm';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
+import type { FeedsTab } from './feeds-tabs';
 import { createCustomFeedApi } from '@/lib/discovery/discovery.contract';
 
 function FeedRow({ f }: { f: FeedSummary }) {
@@ -68,8 +69,7 @@ function Section({ title, items }: { title: string; items: FeedSummary[] }) {
   );
 }
 
-export const FEEDS_TABS = ['feeds', 'lists', 'searches', 'alerts'] as const;
-export type FeedsTab = (typeof FEEDS_TABS)[number];
+export { FEEDS_TABS, type FeedsTab } from './feeds-tabs';
 
 /** The Lists tab: the caller's lists of accounts, each a Feed of kind 'list'. */
 function ListsTab() {
@@ -97,6 +97,7 @@ export function FeedsPage({
   onTabChange?: (tab: FeedsTab) => void;
 }) {
   const { t } = useTranslation('f-discovery');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
@@ -119,7 +120,7 @@ export function FeedsPage({
       void navigate({ to: '/feeds/$id', params: { id: data.feed.id } });
     } catch (e) {
       toast.error(
-        serverError(e) ?? t('feeds-create-failed', { defaultValue: 'Could not create the feed' }),
+        refusalText.maybe(e) ?? t('feeds-create-failed', { defaultValue: 'Could not create the feed' }),
       );
     } finally {
       setBusy(false);

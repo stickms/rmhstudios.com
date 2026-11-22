@@ -18,16 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/Tooltip';
 import type { SpeedrunStatus, VerificationTier } from '@/lib/speedrun/types';
 
-export function VerificationBadge({
-  status,
-  tier,
-  reason,
-}: {
-  status: SpeedrunStatus;
-  tier: VerificationTier;
-  /** The stored `rejectReason`, shown as the tooltip when there is one. */
-  reason?: string | null;
-}) {
+export function VerificationBadge({ status, tier }: { status: SpeedrunStatus; tier: VerificationTier }) {
   const { t } = useTranslation('c-tournaments');
 
   const tierHint =
@@ -60,7 +51,7 @@ export function VerificationBadge({
   const variant = status === 'verified' ? 'success' : status === 'rejected' ? 'danger' : 'warning';
 
   return (
-    <Tooltip content={reason ? `${label} — ${reason}` : tierHint}>
+    <Tooltip content={tierHint}>
       <Badge variant={variant}>{label}</Badge>
     </Tooltip>
   );

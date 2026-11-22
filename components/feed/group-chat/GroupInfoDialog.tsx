@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Crown, LogOut, UserMinus, X } from 'lucide-react';
@@ -20,7 +21,6 @@ import { AdminMarker, AdminToggle } from './GroupAdminControls';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { serverError } from '@/lib/http';
 import { toast } from '@/lib/toast';
 import {
   addGroupMembers,
@@ -99,6 +99,7 @@ function GroupInfoBody({
   onLeave: () => void;
 }) {
   const { t } = useTranslation('group-chat-admin');
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
   const isOwner = group.isOwner;
   // s07-04: an admin (read from the member list) manages like the owner, short of roles and ownership.
@@ -114,7 +115,7 @@ function GroupInfoBody({
 
   const failed = (e: unknown) =>
     toast.error(
-      serverError(e) ||
+      refusalText.maybe(e) ||
         t('could-not-change', {
           defaultValue: 'Could not change the group',
         }),
@@ -342,6 +343,7 @@ function GroupInfoBody({
 
 function AddPeople({ group, onChanged }: { group: Group; onChanged: () => void | Promise<void> }) {
   const { t } = useTranslation('group-chat-admin');
+  const refusalText = useRefusalText();
   const [q, setQ] = useState('');
   const [results, setResults] = useState<ResolvedUser[]>([]);
   const [searching, setSearching] = useState(false);
@@ -397,7 +399,7 @@ function AddPeople({ group, onChanged }: { group: Group; onChanged: () => void |
       await onChanged();
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('could-not-change', {
             defaultValue: 'Could not change the group',
           }),

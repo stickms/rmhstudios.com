@@ -6,6 +6,7 @@ import { isCardKind } from '@/lib/study/card-types';
 import { ACTIVE_REVIEW_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import { CARD_IMAGE_SELECT, picturesOfRow } from '@/lib/study/card-images';
 import { reviewDataFor } from '@/lib/study/occlusion';
+import { CARD_SOUND_SELECT, soundFields, soundsOfRow } from '@/lib/study/card-sound';
 import { pictureFields } from '@/lib/study.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
@@ -33,9 +34,10 @@ export const route = apiRoute('/api/study/decks/$id/review', {
         sourceId: true,
         clozeIndex: true,
         ...CARD_IMAGE_SELECT,
+        ...CARD_SOUND_SELECT,
         // A generated card shows its source's pictures; the siblings hold none of their own. An occlusion card
-        // also reads its masks and note from the source.
-        source: { select: { ...CARD_IMAGE_SELECT, occlusion: true, back: true } },
+        // also reads its masks and note from the source. Sounds follow, for the deck's owner only (s10-02).
+        source: { select: { ...CARD_IMAGE_SELECT, ...CARD_SOUND_SELECT, occlusion: true, back: true } },
         // Every review row is read: a suspended card is not new, and is not due.
         reviews: { where: { userId }, select: { dueAt: true, suspendedAt: true } },
       },
@@ -58,6 +60,7 @@ export const route = apiRoute('/api/study/decks/$id/review', {
         clozeIndex: c.clozeIndex,
         sourceId: c.sourceId,
         ...pictureFields(picturesOfRow(c, c.source)),
+        ...soundFields(soundsOfRow(c, c.source), deck.userId === userId),
         ...(c.kind === 'occlusion'
           ? (() => {
               const occlusionReview = reviewDataFor(c.source, c.clozeIndex);

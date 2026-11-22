@@ -5,7 +5,7 @@
 
 # Endpoint reference
 
-Every endpoint in the public `v1` API — 96 across 19 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
+Every endpoint in the public `v1` API — 113 across 21 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
 
 | Group | Endpoints | Covers |
 | ----- | --------- | ------ |
@@ -20,7 +20,7 @@ Every endpoint in the public `v1` API — 96 across 19 groups. Paths are relativ
 | [Webhooks](./webhooks.md) | 5 | `manage:webhooks` |
 | [Meta](./meta.md) | 1 | no scope required |
 | [Study](./study.md) | 11 | `read:study`, `write:study` |
-| [Events](./events.md) | 6 | `read:events`, `write:events` |
+| [Events](./events.md) | 11 | `read:events`, `write:events`, `manage:events` |
 | [Communities](./communities.md) | 4 | `read:communities` |
 | [Reading](./reading.md) | 7 | `read:reading`, `write:reading` |
 | [Tournaments](./tournaments.md) | 8 | `read:tournaments`, `write:tournaments` |
@@ -28,6 +28,8 @@ Every endpoint in the public `v1` API — 96 across 19 groups. Paths are relativ
 | [Search](./search.md) | 2 | `read:search` |
 | [Feeds](./feeds.md) | 4 | `read:feeds`, `write:feeds` |
 | [Practice](./practice.md) | 5 | `read:practice` |
+| [Moderation](./moderation.md) | 5 | `manage:moderation` |
+| [RMHTube](./rmhtube.md) | 7 | `read:rmhtube`, `write:rmhtube` |
 
 ```{toctree}
 :maxdepth: 2
@@ -52,4 +54,6 @@ scheduled
 search
 feeds
 practice
+moderation
+rmhtube
 ```

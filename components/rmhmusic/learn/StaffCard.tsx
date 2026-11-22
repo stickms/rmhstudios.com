@@ -49,7 +49,17 @@ import {
   spelledNameWords,
 } from '@/lib/rmhmusic/learn/content/spelling';
 import { noteLetter } from '@/lib/rmhmusic/learn/theory/clef';
+import {
+  GRAND_BAR,
+  GRAND_BASS_DY,
+  GRAND_BRACE_PATH,
+  GRAND_H,
+  GRAND_VIEW_X,
+  GRAND_W,
+  grandStaffLayout,
+} from '@/lib/rmhmusic/learn/grand-staff-layout';
 import { cn } from '@/lib/utils';
+import { useStaffSpotText } from './staff-spot-text';
 
 export type StaffCardState = 'ask' | 'right' | 'wrong';
 
@@ -62,6 +72,9 @@ export const STAFF_BOX = 'mx-auto w-full max-w-72 sm:max-w-80';
 
 /** The low card's aspect ratio, for a placeholder of the same box (`range="low"`). */
 export const STAFF_LOW_ASPECT = 'aspect-[200/117]';
+
+/** The grand staff card's aspect ratio (`GRAND_W` × `GRAND_H`: 212 × 180), for a placeholder of the same box. */
+export const STAFF_GRAND_ASPECT = 'aspect-[212/180]';
 
 /** How far left of the right note the played (wrong) note sits: clear of a neighbouring head. */
 const PLAYED_DX = 28;
@@ -86,8 +99,20 @@ export function StaffCard({
   caption,
   label: labelOverride,
   played,
+  grand,
+  announcePlace = false,
 }: {
   card: Card;
+  /**
+   * Say where a bass staff note sits ("Bass staff, second line") in the card's text alternative, as a
+   * grand staff card always does. Off by default so the cards of other screens keep the words they had.
+   */
+  announcePlace?: boolean;
+  /**
+   * Draw the note on the grand staff (two staves and a brace), on the staff `card.clef` names. A card
+   * with `grand: true` is drawn that way whatever this says; the note finder sets it for its own targets.
+   */
+  grand?: boolean;
   state: StaffCardState;
   /**
    * A wrong answer's pitch, drawn as a second (red pencil) notehead beside the right note, so the
@@ -109,12 +134,15 @@ export function StaffCard({
   label?: string;
 }) {
   const { t } = useTranslation('c-rmhmusic');
+  const spotText = useStaffSpotText();
   const titleId = useId();
   const low = range === 'low';
-  const height = low ? CARD_LOW_H : CARD_H;
+  const isGrand = grand === true || card.grand === true;
+  const height = isGrand ? GRAND_H : low ? CARD_LOW_H : CARD_H;
   const minStep = low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP;
   // A sharp, a flat or a note a key alters is drawn on the natural it is written on.
-  const layout = cardLayout(card.clef, cardWritten(card), minStep);
+  const place = (midi: number) => (isGrand ? grandStaffLayout(card.clef, midi) : cardLayout(card.clef, midi, minStep));
+  const layout = place(cardWritten(card));
   const spelled = isSpelledCard(card);
   const sign = cardAlteration(card);
 
@@ -140,7 +168,7 @@ export function StaffCard({
           const written = playedNote.written ?? playedNote.midi;
           const accidental = playedNote.accidental ?? 0;
           return {
-            layout: cardLayout(card.clef, written, minStep),
+            layout: place(written),
             accidental,
             // "D4" for a natural, "F sharp 4" for a sign (a screen reader says the sign as a word).
             name:
@@ -151,7 +179,10 @@ export function StaffCard({
         })()
       : null;
 
-  const label = labelOverride
+  // A bass-staff card or a grand-staff card says where its note sits ("Bass staff, second line"): the
+  // place is what the drawing shows, and the note itself is what the learner is asked for.
+  const positional = isGrand || (announcePlace && card.clef === 'bass' && !spelled && !keyName);
+  const flashLabel = labelOverride
     ? labelOverride
     : miss
       ? card.clef === 'bass'
@@ -213,18 +244,25 @@ export function StaffCard({
                   defaultValue: 'A note on the treble staff',
                 });
 
+  const label =
+    !labelOverride && !miss && positional
+      ? answered
+        ? spotText.named(name, card.clef, layout.step, isGrand)
+        : spotText.place(card.clef, layout.step, isGrand)
+      : flashLabel;
+
   const ink = state === 'right' || miss ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
 
   return (
     <figure className={cn(STAFF_BOX, className)}>
       <svg
-        viewBox={`0 0 ${CARD_W} ${height}`}
+        viewBox={isGrand ? `${GRAND_VIEW_X} 0 ${GRAND_W} ${height}` : `0 0 ${CARD_W} ${height}`}
         role="img"
         aria-labelledby={titleId}
         className="block h-auto w-full text-app-text"
       >
         <title id={titleId}>{label}</title>
-        <StaffRuling clef={card.clef} octaveClef={octaveClef} />
+        {isGrand ? <GrandStaffRuling /> : <StaffRuling clef={card.clef} octaveClef={octaveClef} />}
         {card.key ? (
           // The key signature, after the clef: part of the question, so it keeps the page's ink in every state.
           <g stroke="currentColor" fill="none" strokeLinecap="round" data-key-signature={card.key}>
@@ -363,6 +401,25 @@ export function StaffRuling({ clef, octaveClef = false }: { clef: Card['clef']; 
           </text>
         ) : null}
       </g>
+    </>
+  );
+}
+
+/**
+ * The grand staff's ruling: the treble staff above, the bass staff below it, the bar line that joins
+ * them and the brace (`grand-staff-layout.ts`). The note's own ledger lines are the card's.
+ */
+export function GrandStaffRuling() {
+  return (
+    <>
+      <StaffRuling clef="treble" />
+      <g transform={`translate(0 ${GRAND_BASS_DY})`}>
+        <StaffRuling clef="bass" />
+      </g>
+      <g fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6">
+        <path d={`M ${GRAND_BAR.x} ${GRAND_BAR.y1} L ${GRAND_BAR.x} ${GRAND_BAR.y2}`} />
+      </g>
+      <path d={GRAND_BRACE_PATH} fill="currentColor" stroke="none" data-grand-brace="" />
     </>
   );
 }

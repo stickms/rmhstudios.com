@@ -8,6 +8,7 @@
  * a failed announcement never undoes a change that was made.
  */
 
+import { refusalBody } from '@/lib/errors/codes';
 import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -44,13 +45,13 @@ const notFound = {
 const notOwner = {
   ok: false,
   status: 403,
-  error: 'Only the owner can do that',
+  ...refusalBody('GROUP_OWNER_ONLY'),
 } as const;
 /** The generic refusal for an admin who reaches for something above admin standing, or for the owner or an admin. */
 const forbidden = {
   ok: false,
   status: 403,
-  error: "You can't do that",
+  ...refusalBody('GROUP_NOT_ALLOWED'),
 } as const;
 
 type NamedUser = Parameters<typeof resolveUserDisplay>[0] & {
@@ -404,7 +405,7 @@ export async function removeMember(actorId: string, chatId: string, targetId: st
     return {
       ok: false,
       status: 400,
-      error: 'Use leave instead',
+      ...refusalBody('GROUP_USE_LEAVE'),
     };
   const done = await prisma.$transaction(async (tx) => {
     const group = await lockedGroup(tx, chatId);
@@ -502,7 +503,7 @@ export async function transferOwnership(
     return {
       ok: false,
       status: 400,
-      error: 'You already own this group',
+      ...refusalBody('GROUP_ALREADY_OWNER'),
     };
   const done = await prisma.$transaction(async (tx) => {
     const group = await lockedGroup(tx, chatId);
@@ -616,7 +617,7 @@ export async function leaveGroup(userId: string, chatId: string): Promise<Manage
       return {
         ok: false,
         status: 400,
-        error: 'Not a member',
+        ...refusalBody('GROUP_NOT_A_MEMBER'),
       } as const;
     await tx.chatMember.delete({
       where: {

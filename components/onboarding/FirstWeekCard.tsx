@@ -11,12 +11,12 @@
  * hidden once graduated/dismissed (see integration notes).
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { claimFirstWeekApi } from '@/lib/onboarding.contract';
 import { CheckCircle2, Circle, GraduationCap, Lock, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,7 @@ interface FirstWeekCardProps {
 
 export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardProps) {
   const { t } = useTranslation('site');
+  const refusalText = useRefusalText();
   const celebrate = useCelebration();
   const [graduated, setGraduated] = useState(status.graduated);
   const [claiming, setClaiming] = useState(false);
@@ -83,7 +84,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
       }
     } catch (e) {
       toast.error(
-        serverError(e) || t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }),
+        refusalText.maybe(e) || t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }),
       );
     } finally {
       setClaiming(false);

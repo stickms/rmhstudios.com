@@ -36,6 +36,12 @@ model Community {
   /// Catalog id of the game/app this community is the home of (shown on that
   /// title's library page). Set by admins; no owner UI yet.
   gameId            String?  @db.VarChar(64)
+  /// s10-17: an admin took the community out of discovery (directory, Explore, related rail, a game's
+  /// communities, the sitemap, RSS, search). Members, the page and the feed are untouched. Null = discoverable.
+  delistedAt        DateTime?
+  delistedReason    String?  @db.VarChar(300)
+  /// The admin who did it. A plain column: the audit log, not this column, is the record of who.
+  delistedById      String?
 
   flairsP06            CommunityFlair[]
   starPostsP06         CommunityStarPost[]

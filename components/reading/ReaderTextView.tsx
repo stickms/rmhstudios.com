@@ -29,6 +29,9 @@ import { ListenButton } from './ListenButton';
 import type { ReaderTextSource } from './ReaderReadingTools';
 import { NO_HIGHLIGHTS, NO_NOTES, NO_POPULAR, useHighlightKit } from './useHighlightKit';
 import { useArrival } from '@/components/ui/arrive';
+import { decodePassage } from '@/lib/library/passage-link';
+import { PassageMissingNote } from './PassageMenu';
+import { usePassageArrival } from './usePassageArrival';
 import { cn } from '@/lib/utils';
 
 /** Fewer characters than this on a page means no usable text layer. */
@@ -39,16 +42,26 @@ export default function ReaderTextView({
   book,
   source,
   jump,
+  passage,
   onClose,
 }: {
   book: { slug: string; title: string };
   source: ReaderTextSource;
   /** A match chosen in the Find panel: shown on its page and marked. */
   jump?: FindTarget | null;
+  /** A `?p=` passage code: opens its page or chapter and marks the passage. */
+  passage?: string;
   onClose: () => void;
 }) {
   const { t } = useTranslation('f-reading');
-  const [unit, setUnit] = useState(() => Math.max(1, Math.min(source.count, source.current)));
+  const linked = useMemo(() => (passage ? decodePassage(passage) : null), [passage]);
+  // A passage link names the unit it was made in ("p12", "c3"): open that page or chapter first.
+  const linkedUnit = useMemo(() => {
+    if (!linked) return 0;
+    for (let n = 1; n <= source.count; n++) if (source.unitKey(n) === linked.unit) return n;
+    return 0;
+  }, [linked, source]);
+  const [unit, setUnit] = useState(() => linkedUnit || Math.max(1, Math.min(source.count, source.current)));
   const [text, setText] = useState<string | null>(null);
   // The unit `text` belongs to: it lags `unit` for a render while the next page loads.
   const [textUnit, setTextUnit] = useState(0);
@@ -142,6 +155,16 @@ export default function ReaderTextView({
     popular: data?.popular ?? NO_POPULAR,
     signedIn: data?.signedIn ?? false,
     textKey: `${unitKey}:${text ? textVersion(text) : ''}`,
+    title: book.title,
+  });
+
+  const arrived = usePassageArrival({
+    code: passage,
+    unit: textUnit === unit ? unitKey : '\u0000',
+    ready: text !== null && textUnit === unit,
+    textKey: `${unitKey}:${text ? textVersion(text) : ''}`,
+    rootRef: bodyRef,
+    label: t('linked-passage', { ns: 'passage-links', defaultValue: 'Linked passage' }),
   });
 
   const go = useCallback(
@@ -237,6 +260,7 @@ export default function ReaderTextView({
                   })}
                 </p>
               ) : null}
+              {arrived === 'missing' || (passage && !linkedUnit) ? <PassageMissingNote /> : null}
               {noText ? (
                 <div
                   className={cn('surface-card rounded-site p-5 text-site-text-muted', arrival)}

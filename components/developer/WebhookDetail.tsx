@@ -24,6 +24,7 @@ import { DELIVERY_STATUS_FILTERS } from '@/lib/developer/webhooks-schema';
 import { toast } from '@/lib/toast';
 import { WEBHOOK_EVENT_NAMES, WEBHOOK_PING_EVENT } from '@/lib/webhooks/events';
 import { cn } from '@/lib/utils';
+import { AdminDisabledLine } from './webhooks/AdminDisabledLine';
 import { DeliveryRow } from './webhooks/DeliveryRow';
 import { EndpointFormDialog } from './webhooks/EndpointFormDialog';
 import { failureText, formatWhen } from './webhooks/format';
@@ -220,7 +221,16 @@ export function WebhookDetail({ id, onBack }: { id: string; onBack: () => void }
             </div>
           </div>
 
-          {!endpoint.enabled && (
+          {endpoint.adminDisabled && (
+            <div className="space-y-2 border-y border-site-border py-3">
+              <p className="t-body font-medium text-site-danger">
+                {t('detail-disabled', { defaultValue: 'This endpoint is disabled.' })}
+              </p>
+              <AdminDisabledLine at={endpoint.adminDisabled.at} reason={endpoint.adminDisabled.reason} />
+            </div>
+          )}
+
+          {!endpoint.enabled && !endpoint.adminDisabled && (
             <div className="space-y-2 border-y border-site-border py-3">
               <p className="t-body font-medium text-site-danger">
                 {t('detail-disabled', { defaultValue: 'This endpoint is disabled.' })}

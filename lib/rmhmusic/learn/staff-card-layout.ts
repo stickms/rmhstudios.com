@@ -136,7 +136,7 @@ function spline(pts: readonly Pt[], per: number): Pt[] {
 }
 
 /** The filled outline of a stroke whose pen width varies along it, scaled and moved into place. */
-function ribbon(pts: readonly Pt[], per: number, x: number, y: number, s: number): string {
+export function ribbon(pts: readonly Pt[], per: number, x: number, y: number, s: number): string {
   const line = spline(pts, per);
   const left: [number, number][] = [];
   const right: [number, number][] = [];

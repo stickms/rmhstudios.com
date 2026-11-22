@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { discoverableCommunityWhere } from '@/lib/communities/discovery';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { listAchievements } from '@/lib/achievements.server';
 import { achievementsForTitle } from '@/lib/games/achievement-groups';
@@ -48,7 +49,7 @@ async function titleAchievements(
 
 async function titleCommunities(gameId: string): Promise<DetailCommunity[]> {
   return prisma.community.findMany({
-    where: { gameId, isPrivate: false },
+    where: discoverableCommunityWhere({ gameId, isPrivate: false }),
     orderBy: { memberCount: 'desc' },
     take: 6,
     select: { slug: true, name: true, icon: true, color: true, memberCount: true },

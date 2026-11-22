@@ -133,9 +133,15 @@ describe('buildTest', () => {
   it('builds 50 questions from a 2,000-card deck quickly', () => {
     const cards = deck(2000);
     buildTest(cards, { ...ALL, count: 50 }, 1); // warm up
-    const start = performance.now();
-    buildTest(cards, { ...ALL, count: 50 }, 2);
-    expect(performance.now() - start).toBeLessThan(20);
+    // The fastest of five runs: one sample on a shared CI runner can land on a GC pause or a
+    // descheduled core (main saw 20.1 ms once), while a slow algorithm is slow on every run.
+    let best = Infinity;
+    for (let seed = 2; seed < 7; seed++) {
+      const start = performance.now();
+      buildTest(cards, { ...ALL, count: 50 }, seed);
+      best = Math.min(best, performance.now() - start);
+    }
+    expect(best).toBeLessThan(20);
   });
 });
 

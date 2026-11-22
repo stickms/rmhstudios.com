@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { requireMod } from '@/lib/communities/guard.server';
@@ -26,7 +27,7 @@ export const route = apiRoute('/api/communities/$slug/notes/$userId', {
       banId: body.banId,
       modItemId: body.modItemId,
     });
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return Response.json({ note: result.note }, { status: 201 });
   }),
 });

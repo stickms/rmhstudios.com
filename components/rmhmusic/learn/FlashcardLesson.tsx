@@ -63,7 +63,14 @@ import {
   useQuestionSession,
   type AnsweredQuestion,
 } from './QuestionSession';
-import { STAFF_BOX, STAFF_LOW_ASPECT, StaffCard, type PlayedNote, type StaffCardState } from './StaffCard';
+import {
+  STAFF_BOX,
+  STAFF_GRAND_ASPECT,
+  STAFF_LOW_ASPECT,
+  StaffCard,
+  type PlayedNote,
+  type StaffCardState,
+} from './StaffCard';
 import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 
@@ -175,6 +182,8 @@ export function FlashcardSession({
   const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
   // A session with sharps, flats or key cards asks for the sign as well as the letter (fixed for the whole session).
   const needsSigns = cards.some(isSpelledCard);
+  // A session of grand-staff cards: the empty card box before the first card takes the grand card's height.
+  const grandCards = cards.some((c) => c.grand === true);
   // The sign chosen for the question on screen; a new question (or a retry) starts at natural.
   const askKey = lesson.kind === 'asking' ? `${lesson.index}:${lesson.misses ?? 0}` : null;
   const [pick, setPick] = useState<{ key: string | null; sign: -1 | 0 | 1 }>({ key: null, sign: 0 });
@@ -495,6 +504,7 @@ export function FlashcardSession({
           card ? (
             <StaffCard
               card={card}
+              announcePlace
               octaveClef={octaveClef}
               range={lowCard ? 'low' : 'deck'}
               state={cardState}
@@ -506,7 +516,12 @@ export function FlashcardSession({
             />
           ) : (
             <div aria-hidden="true" className={STAFF_BOX}>
-              <div className={cn(lowCard ? STAFF_LOW_ASPECT : 'aspect-[200/102]', 'w-full')} />
+              <div
+                className={cn(
+                  grandCards ? STAFF_GRAND_ASPECT : lowCard ? STAFF_LOW_ASPECT : 'aspect-[200/102]',
+                  'w-full',
+                )}
+              />
               <div className="h-9" />
             </div>
           )

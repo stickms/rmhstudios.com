@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { leaveGroup } from '@/lib/group-chat/manage.server';
@@ -11,7 +12,7 @@ export const route = apiRoute('/api/group-chats/$id/leave', {
     { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:group-chats/:id/leave' } },
     async ({ params, session }) => {
       const result = await leaveGroup(session.user.id, params.id);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       return Response.json({ success: true });
     },
   ),

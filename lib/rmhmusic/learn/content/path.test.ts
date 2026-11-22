@@ -3,12 +3,14 @@ import { DECKS } from './decks';
 import { CHORDS } from '../theory/chords';
 import { INTERVALS } from '../theory/intervals';
 import { rhythmActivity } from '../machines/rhythm';
-import { PATH, VOICE_PATH, VOICE_RANGE_DECK, getLesson, isKnownLesson } from './path';
+import { PATH, PIANO_PATH, VOICE_PATH, VOICE_RANGE_DECK, getLesson, isKnownLesson } from './path';
 import { ROUTED_MODES, isPlayable } from './routing';
 
-// Both paths' lessons, once each (the rhythm unit is on both).
+// Every path's lessons, once each (the rhythm unit is on all of them).
 const lessons = [
-  ...new Map([...PATH, ...VOICE_PATH].flatMap((unit) => unit.lessons).map((l) => [l.id, l] as const)).values(),
+  ...new Map(
+    [...PIANO_PATH, ...PATH, ...VOICE_PATH].flatMap((unit) => unit.lessons).map((l) => [l.id, l] as const),
+  ).values(),
 ];
 
 describe('learning path', () => {

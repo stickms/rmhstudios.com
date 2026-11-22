@@ -6,13 +6,13 @@
  * the `HandleChange` row all happen together, in one transaction, so a change
  * cannot land without its record.
  *
- * NOTE for whoever owns `lib/api/routes/profile.server.ts`: that route still changes
- * handles directly (14-day cooldown, no history row, no reclaim block). It
- * should delegate to `changeHandle` here — until it does, the J2 rules are only
- * enforced on `POST /api/handles/change`.
+ * `PATCH /api/profile` delegates here too, so the J2 rules hold on the profile form as well as on
+ * `POST /api/handles/change`.
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { refusalBody, type ErrorCode } from '@/lib/errors/codes';
+import { isDeletedAccount } from '@/lib/account-lifecycle';
 import { handleSchema } from '@/lib/handle-schema';
 import { invalidateProfileLookup } from '@/lib/profile.server';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
@@ -44,6 +44,24 @@ async function releasesOf(handle: string): Promise<HandleChangeRecord[]> {
     select: { userId: true, oldHandle: true, newHandle: true, createdAt: true },
   });
   return rows;
+}
+
+/** The body of a refused handle change: the English `message` as `error`, plus the taxonomy `code` it was minted for. */
+export function handleRefusalBody(result: Extract<HandleChangeResult, { ok: false }>): { error: string; code?: ErrorCode } {
+  switch (result.reason) {
+    case 'no-account':
+      return refusalBody('ACCOUNT_NOT_FOUND');
+    case 'unchanged':
+      return refusalBody('HANDLE_UNCHANGED');
+    case 'cooldown':
+      return refusalBody('HANDLE_COOLDOWN');
+    case 'reclaim-blocked':
+      return refusalBody('HANDLE_RECLAIM_BLOCKED');
+    case 'taken':
+      return refusalBody('HANDLE_TAKEN');
+    default:
+      return { error: result.message };
+  }
 }
 
 /**
@@ -182,6 +200,9 @@ export async function getPreviouslyKnownAs(
   userId: string,
   options: { currentHandle?: string | null; now?: Date } = {},
 ): Promise<PreviousHandle[]> {
+  // A deleted profile shows only its tombstone header; rows kept for the reclaim block are never shown (s10-19).
+  const account = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, banReason: true } });
+  if (account && isDeletedAccount(account)) return [];
   // Pre-filter in SQL with the same window `previousHandles` applies, so the
   // query and the pure filter can never drift apart.
   const cutoff = new Date((options.now ?? new Date()).getTime() - PREVIOUS_HANDLE_WINDOW_MS);

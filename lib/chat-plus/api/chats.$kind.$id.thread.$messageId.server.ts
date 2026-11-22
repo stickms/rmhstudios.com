@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { requireChat } from '@/lib/chat-plus/route-helpers.server';
@@ -13,7 +14,7 @@ export const route = apiRoute('/api/chats/$kind/$id/thread/$messageId', {
     const access = await requireChat(params, userId);
     if (access instanceof Response) return access;
     const page = await loadThread(access, params.messageId);
-    if (!page) return Response.json({ error: 'Thread not found' }, { status: 404 });
+    if (!page) return Response.json({ ...refusalBody('CHAT_THREAD_NOT_FOUND') }, { status: 404 });
     return Response.json(page, { headers: { 'Cache-Control': 'private, no-store' } });
   }),
   POST: defineHandler(
@@ -25,7 +26,7 @@ export const route = apiRoute('/api/chats/$kind/$id/thread/$messageId', {
       const access = await requireChat(params, userId, { write: true });
       if (access instanceof Response) return access;
       const reply = await postThreadReply(access, params.messageId, body.content);
-      if (!reply) return Response.json({ error: 'Thread not found' }, { status: 404 });
+      if (!reply) return Response.json({ ...refusalBody('CHAT_THREAD_NOT_FOUND') }, { status: 404 });
       return Response.json({ reply }, { status: 201 });
     },
   ),

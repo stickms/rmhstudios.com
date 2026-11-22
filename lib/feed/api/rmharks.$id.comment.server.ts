@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { restrictionResponse } from '@/lib/moderation/restrictions.server';
 import { REMOVED_REPLY_TEXT } from '@/lib/moderation/removed-text';
 import { apiRoute } from '@/lib/api/route.server';
@@ -276,7 +277,7 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
       // Visibility first: reply-control / community answers below would otherwise
       // confirm that a post the viewer cannot see exists.
       if (!target || !(await canReadThread(target, session.user.id))) {
-        return Response.json({ error: 'Post not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
       }
       const mayReply = await canReplyToPost(
         {
@@ -288,7 +289,7 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
       );
       if (!mayReply) {
         return Response.json(
-          { error: 'The author limited who can reply to this post' },
+          { ...refusalBody('POST_REPLY_LIMITED') },
           { status: 403 },
         );
       }
@@ -396,7 +397,7 @@ export const route = apiRoute('/api/rmharks/$id/comment', {
         parentId: input.parentId ?? null,
       });
       if (!result.found || !result.comment) {
-        return Response.json({ error: 'Post not found' }, { status: 404 });
+        return Response.json({ ...refusalBody('POST_NOT_FOUND') }, { status: 404 });
       }
       const comment = result.comment;
 

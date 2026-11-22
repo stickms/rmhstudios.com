@@ -1,7 +1,7 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createChatFolderApi, setChatFolderMemberApi } from '@/lib/chat-plus/folders.contract';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FolderPlus } from 'lucide-react';
@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 /** M1 — put this chat in (or out of) the viewer's folders; create a folder inline. */
 export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
   const { t } = useTranslation('f-messaging');
+  const refusalText = useRefusalText();
   const qc = useQueryClient();
   const { data: folders } = useChatFolders();
   const arrival = useArrival(!!folders);
@@ -40,7 +41,7 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
       }),
     onError: (e: Error) =>
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('folder-failed', {
             defaultValue: 'Could not update the folder',
           }),
@@ -67,7 +68,7 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
     },
     onError: (e: Error) =>
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('folder-failed', {
             defaultValue: 'Could not update the folder',
           }),

@@ -1,3 +1,4 @@
+import { refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { editMessageApi } from '@/lib/messages/message-actions.contract';
@@ -33,7 +34,7 @@ export const route = apiRoute('/api/messages/$conversationId/edit', {
       });
 
       if (!result.ok) {
-        return Response.json({ error: result.error }, { status: result.status });
+        return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       }
 
       return { success: true as const, message: result.message };

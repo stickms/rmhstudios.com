@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TrueFalseQuestion } from '@/lib/study/practice-test';
+import { CardSound } from '@/components/study/CardSound';
 import { PromptPicture, useQuestionPrompt } from '@/components/study/questions/PromptPicture';
 import { Verdict } from '@/components/study/questions/Verdict';
 
@@ -30,6 +31,7 @@ export function TrueFalse({
       </legend>
       <div className="space-y-2 border-y border-site-border py-3">
         {question.promptImage && <PromptPicture image={question.promptImage} occlusion={question.promptOcclusion} />}
+      {question.promptSound && <CardSound sound={question.promptSound} side={question.promptSoundSide ?? 'front'} showTranscript={false} />}
         <p className="t-prose whitespace-pre-wrap text-site-text" dir="auto">
           {prompt}
         </p>

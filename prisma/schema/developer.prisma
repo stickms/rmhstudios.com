@@ -136,6 +136,12 @@ model WebhookEndpoint {
   /// `previousSecretExpiresAt`, so a receiver can switch over without dropping events.
   previousSecret          String?   @db.VarChar(128)
   previousSecretExpiresAt DateTime?
+  /// Set while an admin has switched the endpoint off (s10-15). The owner cannot enable it until an admin lifts it,
+  /// delivery skips it, and the reason is shown to the owner. Lifting clears all three and leaves `enabled` false.
+  adminDisabledAt         DateTime?
+  adminDisabledReason     String?   @db.VarChar(300)
+  /// The admin who did it. A plain id, not a relation: the audit row is the record of who.
+  adminDisabledById       String?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 

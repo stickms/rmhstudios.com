@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
@@ -36,7 +37,7 @@ export const route = apiRoute('/api/communities/$slug/join-request', {
       const ctx = await communityWithRole(params.slug, session.user.id);
       if (!ctx) return Response.json({ error: 'Not found' }, { status: 404 });
       if (!ctx.isPrivate) {
-        return Response.json({ error: 'This community is open: just join it' }, { status: 400 });
+        return Response.json({ ...refusalBody('COMMUNITY_IS_OPEN') }, { status: 400 });
       }
       const banned = await activeSanction(ctx.id, session.user.id);
       if (banned) {
@@ -57,7 +58,7 @@ export const route = apiRoute('/api/communities/$slug/join-request', {
       );
       if (result.ok) return Response.json({ success: true, status: result.status });
       if (result.reason === 'member') {
-        return Response.json({ error: 'You are already a member' }, { status: 409 });
+        return Response.json({ ...refusalBody('COMMUNITY_ALREADY_MEMBER') }, { status: 409 });
       }
       return Response.json(
         { error: 'You can ask again later', retryAt: result.retryAt },

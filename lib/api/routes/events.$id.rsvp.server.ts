@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { rsvp, unrsvp, EventError } from '@/lib/events.server';
 import { denyCode, denyText } from '@/lib/communities/bans';
+import { refusalBody, type ErrorCode } from '@/lib/errors/codes';
 
 const rsvpSchema = z.object({
   // 'waitlist' joins the waitlist of a full one-off event; a plain 'going' on a full event is still refused.
@@ -16,22 +17,22 @@ const withdrawQuery = z.object({
   occurrenceAt: z.coerce.date().optional(),
 });
 
-function mapEventError(err: EventError): [string, number] {
+function mapEventError(err: EventError): [ErrorCode, number] {
   switch (err.code) {
     case 'NOT_FOUND':
-      return ['Not found', 404];
+      return ['EVENT_NOT_FOUND', 404];
     case 'CAPACITY_FULL':
-      return ['This event is full', 409];
+      return ['EVENT_FULL', 409];
     case 'WAITLIST_CLOSED':
-      return ['The waitlist is closed', 409];
+      return ['WAITLIST_CLOSED', 409];
     case 'WAITLIST_FULL':
-      return ['The waitlist is full', 409];
+      return ['WAITLIST_FULL', 409];
     case 'CANCELED':
-      return ['This event was canceled', 409];
+      return ['EVENT_CANCELED', 409];
     case 'OCCURRENCE_SKIPPED':
-      return ['This date was skipped', 409];
+      return ['EVENT_DATE_SKIPPED', 409];
     default:
-      return ['Could not update RSVP', 400];
+      return ['RSVP_FAILED', 400];
   }
 }
 
@@ -68,8 +69,8 @@ export const route = apiRoute('/api/events/$id/rsvp', {
               { status: 403 },
             );
           }
-          const [message, status] = mapEventError(error);
-          return Response.json({ error: message }, { status });
+          const [code, status] = mapEventError(error);
+          return Response.json({ ...refusalBody(code) }, { status });
         }
         throw error;
       }
@@ -90,8 +91,8 @@ export const route = apiRoute('/api/events/$id/rsvp', {
         return Response.json(result);
       } catch (error) {
         if (error instanceof EventError) {
-          const [message, status] = mapEventError(error);
-          return Response.json({ error: message }, { status });
+          const [code, status] = mapEventError(error);
+          return Response.json({ ...refusalBody(code) }, { status });
         }
         throw error;
       }

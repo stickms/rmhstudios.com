@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
 import { VibeComposeChip } from '@/components/rmhvibe/VibeComposeChip';
@@ -18,7 +19,6 @@ import { usePopPresence } from '@/hooks/usePopPresence';
 import { api } from '@/lib/contract/client';
 import { cn } from '@/lib/utils';
 import './compose-sheet.css';
-import { serverError } from '@/lib/http';
 import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
 import type { CreateRMHarkInput } from '@/lib/rmhark-schema';
 import { uploadImagesApi } from '@/lib/media/upload.contract';
@@ -69,6 +69,7 @@ interface ComposeModalProps {
 
 export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialFiles, initialVibe, onPosted, mobileFullscreen = true}: ComposeModalProps) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  // Both `.glass-scrim` backdrops here are viewport-covering `backdrop-filter`
  // layers, and nothing may animate above one — Chromium re-blurs the whole
  // layer every frame that anything does.
@@ -165,7 +166,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  if (epoch !== uploadEpochRef.current) return;
  setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
  } catch (e) {
- if (epoch === uploadEpochRef.current) setImageError(serverError(e) ??'Upload failed');
+ if (epoch === uploadEpochRef.current) setImageError(refusalText.maybe(e) ??'Upload failed');
  } finally {
  setUploadingCount((n) => Math.max(0, n - 1));
  }
@@ -210,7 +211,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  if (quoteItem) body.originalId = quoteItem.id;
 
  const item = await api(createRMHarkApi, { body }).catch((e: unknown) => {
- console.error('Post error:', serverError(e));
+ console.error('Post error:', refusalText.maybe(e));
  return null;
  });
  if (!item) return;

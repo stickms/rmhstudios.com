@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Download, Globe, Highlighter, Lock, NotebookPen, Pencil, Quote, Search, Trash2 } from 'lucide-react';
+import { Download, Globe, Highlighter, Layers, Lock, NotebookPen, Pencil, Quote, Search, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,9 @@ import { HIGHLIGHT_NOTE_MAX, type MyHighlightRow } from '@/lib/reading/schema';
 import { cn } from '@/lib/utils';
 import { EMPTY_FILTERS, NotebookFilters, type NotebookFilterState } from './NotebookFilters';
 import { ExportDialog } from './ExportDialog';
+import { CardDecksLine, useMakeCard } from './MakeCardKit';
+import type { CardSource } from './MakeCardDialog';
+import { MAX_HIGHLIGHT_CARD_BATCH } from '@/lib/study/highlight-cards';
 
 const NOTEBOOK_KEY = 'reading-notebook';
 const SEARCH_DEBOUNCE_MS = 250;
@@ -77,17 +80,25 @@ function toFilter(f: NotebookFilterState, q: string): HighlightsFilter {
   };
 }
 
+const toSource = (row: ExportRow): CardSource => ({ id: row.id, exact: row.exact, note: row.note, title: row.title });
+
+const NO_DECKS: readonly { id: string; title: string }[] = [];
+
 function HighlightItem({
   row,
   selected,
   onToggle,
   onChanged,
+  onMakeCard,
+  cardDecks,
   isNew,
 }: {
   row: ExportRow;
   selected: boolean;
   onToggle: () => void;
   onChanged: () => void;
+  onMakeCard: (row: ExportRow, from: HTMLElement) => void;
+  cardDecks: readonly { id: string; title: string }[];
   isNew: boolean;
 }) {
   const { t, i18n } = useTranslation('highlights');
@@ -211,6 +222,7 @@ function HighlightItem({
               dateStyle: 'medium',
             })}
           </time>
+          <CardDecksLine decks={cardDecks} />
         </p>
       </div>
       <div className="flex shrink-0 items-center">
@@ -224,6 +236,11 @@ function HighlightItem({
             ...row,
             url: new URL(row.url, origin || 'https://rmhstudios.com').href,
           })}
+        />
+        <IconButton
+          label={t('make-card', { ns: 'highlight-cards', defaultValue: 'Make a card' })}
+          icon={Layers}
+          onClick={(e) => onMakeCard(row, e.currentTarget)}
         />
         <IconButton
           label={t('edit-note', {
@@ -278,6 +295,11 @@ export default function HighlightsNotebook() {
   const groups = useMemo(() => (grouped ? groupByDocument(rows) : []), [grouped, rows]);
   const arrival = useArrival(!query.isPending);
   const isNew = useArrivingKeys(rows.map((r) => r.id));
+  // The decks holding a card made from each highlight, as the page rows carry them (s10-01).
+  const decksById = useMemo(
+    () => new Map(query.data?.pages.flatMap((p) => p.items.map((r) => [r.id, r.cardDecks] as const)) ?? []),
+    [query.data],
+  );
 
   const changeFilters = (next: NotebookFilterState) => {
     setFilters(next);
@@ -297,6 +319,7 @@ export default function HighlightsNotebook() {
       queryKey: ['reading-my-highlights'],
     });
   };
+  const makeCard = useMakeCard(refresh);
   const item = (row: ExportRow) => (
     <HighlightItem
       key={row.id}
@@ -304,6 +327,8 @@ export default function HighlightsNotebook() {
       selected={selected.has(row.id)}
       onToggle={() => toggle(row.id)}
       onChanged={refresh}
+      onMakeCard={(r, from) => makeCard.start([toSource(r)], from)}
+      cardDecks={decksById.get(row.id) ?? NO_DECKS}
       isNew={isNew(row.id)}
     />
   );
@@ -452,6 +477,25 @@ export default function HighlightsNotebook() {
               icon: Download,
               onClick: () => setExporting(true),
             },
+            {
+              id: 'make-cards',
+              label: t('make-cards', { ns: 'highlight-cards', defaultValue: 'Make cards' }),
+              icon: Layers,
+              onClick: () => {
+                // A step-through takes at most 50, in the order the list shows them.
+                const chosen = rows.filter((r) => selected.has(r.id));
+                if (chosen.length > MAX_HIGHLIGHT_CARD_BATCH) {
+                  toast.info(
+                    t('batch-capped', {
+                      ns: 'highlight-cards',
+                      max: MAX_HIGHLIGHT_CARD_BATCH,
+                      defaultValue: 'Making cards for the first {{max}} you selected.',
+                    }),
+                  );
+                }
+                makeCard.start(chosen.slice(0, MAX_HIGHLIGHT_CARD_BATCH).map(toSource));
+              },
+            },
           ]}
         />
       ) : null}
@@ -463,6 +507,7 @@ export default function HighlightsNotebook() {
         selectedIds={[...selected]}
         total={total}
       />
+      {makeCard.view}
     </div>
   );
 }

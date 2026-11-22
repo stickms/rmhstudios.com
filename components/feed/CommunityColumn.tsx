@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useState, useCallback, useRef } from'react';
 import { Link } from'@tanstack/react-router';
 import {
@@ -38,7 +39,6 @@ import type { FeedItem } from'@/lib/feed-types';
 import { WatchControl } from'@/components/discovery/WatchControl';
 import { FindATimeLink } from'@/components/calendar/FindATimeLink';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import {
  communityFeedApi,
  communityMembersApi,
@@ -97,7 +97,10 @@ export function CommunityColumn({
  initialCommunity,
  initialItems,
  initialPinned,
+ initialTab,
 }: {
+ /** s10-07: the route's `?tab=` (only `events` is read). */
+ initialTab?: string | undefined;
  slug: string;
  /** Community details prefetched by the route loader; `null`if not found. */
  initialCommunity?: CommunityData | null;
@@ -107,6 +110,7 @@ export function CommunityColumn({
  initialPinned?: FeedItem[] | null;
 }) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const { data: session } = useSession();
  // s06-01: the caller's own ban or timeout, for the notice and the locked composer / Join button.
  const standing = useMyStanding(slug, !!session);
@@ -185,7 +189,7 @@ export function CommunityColumn({
  onError: (err) => {
  toast.error(
  sanctionRefusalText(err) ??
- serverError(err) ??
+ refusalText.maybe(err) ??
  t('could-not-update-membership', { defaultValue:'Could not update membership'}),
  );
  },
@@ -400,6 +404,7 @@ export function CommunityColumn({
  items={items}
  setItems={setItems}
  initialPinned={initialPinned ?? null}
+ initialTab={initialTab}
  composerLocked={standing?.kind ==='timeout'}
  />
 
@@ -440,6 +445,7 @@ function AnnounceDialog({
  onPosted: (a: Announcement) => void;
 }) {
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [body, setBody] = useState('');
  const [submitting, setSubmitting] = useState(false);
 
@@ -458,7 +464,7 @@ function AnnounceDialog({
  toast.error(t('could-not-post', { defaultValue:'Could not post'}));
  }
  } catch (err) {
- toast.error(serverError(err) || t('could-not-post', { defaultValue:'Could not post'}));
+ toast.error(refusalText.maybe(err) || t('could-not-post', { defaultValue:'Could not post'}));
  } finally {
  setSubmitting(false);
  }
@@ -509,6 +515,7 @@ function MembersDialog({
  onClose: () => void;
 }) {
  const { t } = useTranslation(['feed', 'community-bans']);
+ const refusalText = useRefusalText();
  const fmt = useLocaleFormat();
  const confirm = useConfirm();
  // s06-01: who is timed out until when (moderators only).
@@ -587,7 +594,7 @@ function MembersDialog({
  await api(setCommunityMemberRoleApi, { params: { slug, userId: m.id }, body: { role } });
  setMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, role } : x)));
  } catch (err) {
- toast.error(serverError(err) || t('action-failed', { defaultValue:'Action failed'}));
+ toast.error(refusalText.maybe(err) || t('action-failed', { defaultValue:'Action failed'}));
  }
  } finally {
  setBusy(null);
@@ -611,7 +618,7 @@ function MembersDialog({
  await api(removeCommunityMemberApi, { params: { slug, userId: m.id } });
  setMembers((prev) => prev.filter((x) => x.id !== m.id));
  } catch (err) {
- toast.error(serverError(err) || t('action-failed', { defaultValue:'Action failed'}));
+ toast.error(refusalText.maybe(err) || t('action-failed', { defaultValue:'Action failed'}));
  }
  } finally {
  setBusy(null);

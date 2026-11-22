@@ -4,6 +4,7 @@
  * its only action. The preview lists passkeys and linked sign-in accounts read-only, because this
  * never removes them.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { toast } from '@/lib/toast';
 import { api, apiQuery } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { previewSecureAccountApi, secureAccountApi } from '@/lib/admin/secure-account.contract';
 import {
@@ -36,6 +36,7 @@ export function SecureAccountSection({
   displayName: string;
 }) {
   const { t } = useTranslation('admin-secure-account');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -77,7 +78,7 @@ export function SecureAccountSection({
     },
     onError: (e) =>
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('failed', {
             defaultValue: 'Could not secure the account.',
           }),

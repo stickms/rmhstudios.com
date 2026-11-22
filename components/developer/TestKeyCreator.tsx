@@ -1,17 +1,18 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SCOPES } from '@/lib/api/scopes';
+import { WILDCARD_SCOPES } from '@/lib/api/scopes';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createDeveloperKeyApi } from '@/lib/developer/keys.contract';
 
 /** D1: creates an `rmh_test_` sandbox key — fixtures for reads, no-op writes. */
 export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) => void }) {
   const { t } = useTranslation('f-devplatform');
+  const refusalText = useRefusalText();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +22,7 @@ export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) =
       const data = await api(createDeveloperKeyApi, {
         body: {
           name: name.trim(),
-          scopes: SCOPES.map((s) => s.id),
+          scopes: [...WILDCARD_SCOPES],
           testMode: true,
         },
       });
@@ -29,7 +30,7 @@ export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) =
       onCreated(data.key);
     } catch (e) {
       toast.error(
-        serverError(e) ||
+        refusalText.maybe(e) ||
           t('testKeys-error', {
             defaultValue: 'Could not create the test key',
           }),

@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/communities/communities.contract';
@@ -22,7 +23,7 @@ export const route = apiRoute('/api/communities/$slug/announcements/$id', {
     const role = await getRole(community.id, session.user.id);
     const isAuthor = ann.authorId === session.user.id;
     if (!isAuthor && !canModerate(role)) {
-      return Response.json({ error: 'Not allowed' }, { status: 403 });
+      return Response.json({ ...refusalBody('COMMUNITY_NOT_ALLOWED') }, { status: 403 });
     }
 
     await prisma.$transaction(async (tx) => {

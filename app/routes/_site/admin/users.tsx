@@ -2,6 +2,7 @@
  * Admin Users Route
  */
 
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -19,9 +20,8 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { usePrompt } from '@/components/ui/prompt-dialog';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   grantAdminMembershipApi,
   updateAdminUserApi,
@@ -30,6 +30,8 @@ import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { UserModerationPanel } from '@/components/admin/UserModerationPanel';
 import { CoinAdjustButton } from '@/components/admin/CoinAdjustDialog';
+import { GrantMembershipDialog } from '@/components/admin/GrantMembershipDialog';
+import type { GrantBody } from '@/lib/admin/grant-membership';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type AccountFilter = 'all' | 'people' | 'bots';
@@ -67,8 +69,8 @@ export const Route = createFileRoute('/_site/admin/users')({
 
 function AdminUsersPage() { const fmt = useLocaleFormat(); 
   const { t } = useTranslation("admin");
+  const refusalText = useRefusalText();
   const confirm = useConfirm();
-  const prompt = usePrompt();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const linked = Route.useSearch();
@@ -152,26 +154,16 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
       const updated = await api(updateAdminUserApi, { body: { userId, [field]: !currentValue } });
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u));
     } catch (error) {
-      if (error instanceof HttpError) { const err = error.text ?? serverError(error) ?? ''; toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
+      if (error instanceof HttpError) { const err = error.text ?? refusalText.maybe(error) ?? ''; toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
       else { console.error("Failed to update user", error); toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); }
     } finally { setUpdating(null); }
   };
 
-  const grantMembership = async (userId: string) => {
-    const choice = await prompt({ title: t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), initialValue: 'pro' });
-    if (!choice) return;
-    const action = choice.trim().toLowerCase();
-    let body: { revoke: true } | { tier: 'starter' | 'pro'; months: number };
-    if (action === 'revoke') {
-      body = { revoke: true };
-    } else if (action === 'starter' || action === 'pro') {
-      const monthsStr = await prompt({ title: t("prompt-how-many-months", { defaultValue: 'How many months?' }), initialValue: '1' });
-      const months = Math.max(1, Math.min(24, parseInt(monthsStr || '1', 10) || 1));
-      body = { tier: action, months };
-    } else {
-      toast.error(t("alert-invalid-membership-choice", { defaultValue: 'Enter "starter", "pro", or "revoke".' }));
-      return;
-    }
+  // The grant dialog's member while it is open. Cancel and Escape clear it and call nothing.
+  const [grantFor, setGrantFor] = useState<{ id: string; name: string } | null>(null);
+
+  const grantMembership = async (userId: string, body: GrantBody) => {
+    const action = 'revoke' in body ? 'revoke' : body.tier;
     if (updating !== null) return;
     setUpdating(userId);
     try {
@@ -180,10 +172,10 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
         toast.success(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
       } catch (e) {
         // An HTTP refusal reports the server's message; anything else is "can't connect".
-        if (e instanceof HttpError) toast.error(t("alert-membership-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
+        if (e instanceof HttpError) toast.error(t("alert-membership-failed", { error: refusalText.maybe(e) || 'error', defaultValue: 'Failed: {{error}}' }));
         else throw e;
       }
-    } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+    } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); setGrantFor(null); }
   };
 
   const startEditHandle = (user: User) => { setEditingHandle(user.id); setHandleInput(user.handle || ''); setHandleError(null); };
@@ -199,7 +191,7 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
         const updated = await api(updateAdminUserApi, { body: { userId, handle: handleInput.trim().toLowerCase() } });
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); setEditingHandle(null); setHandleInput('');
       } catch (e) {
-        if (e instanceof HttpError) setHandleError(serverError(e) || t("error-update-handle", { defaultValue: 'Failed to update handle' }));
+        if (e instanceof HttpError) setHandleError(refusalText.maybe(e) || t("error-update-handle", { defaultValue: 'Failed to update handle' }));
         else throw e;
       }
     } catch { setHandleError(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
@@ -358,7 +350,7 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
                         label={t("title-moderation", { defaultValue: "Strikes and timeouts" })}
                       />
                       <CoinAdjustButton userId={user.id} userName={user.name} balance={user.profile?.coins ?? 0} disabled={busy} onBalanceChange={(coins) => setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, profile: { coins } } : u)))} />
-                      <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
+                      <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => setGrantFor({ id: user.id, name: user.name })} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
                         icon={Shield}
                         size="icon-sm"
@@ -392,6 +384,15 @@ function AdminUsersPage() { const fmt = useLocaleFormat();
           )}
         </div>
       </AdminBody>
+      {grantFor && (
+        <GrantMembershipDialog
+          userName={grantFor.name}
+          open
+          busy={updating !== null}
+          onOpenChange={(open) => { if (!open) setGrantFor(null); }}
+          onGrant={(body) => void grantMembership(grantFor.id, body)}
+        />
+      )}
     </PageLayout>
   );
 }

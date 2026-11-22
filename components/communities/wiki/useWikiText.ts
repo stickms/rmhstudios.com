@@ -2,15 +2,17 @@
  * The wording of the wiki's refusals (s09-04): why a viewer cannot edit a page, and what a failed save said.
  * `lib/` returns codes; this turns them into the member's language.
  */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useSanctionRefusal } from '@/components/communities/useSanctionRefusal';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import type { EditPolicy, PageRefusal } from '@/lib/communities/page-policy';
 
 export function useWikiText() {
   const { t } = useTranslation('community-wiki');
+  const refusalText = useRefusalText();
   const fmt = useLocaleFormat();
   const sanctionText = useSanctionRefusal();
 
@@ -55,11 +57,11 @@ export function useWikiText() {
       }
       return (
         sanctionText(error) ??
-        serverError(error) ??
+        refusalText.maybe(error) ??
         t('error-generic', { defaultValue: "That didn't work. Try again." })
       );
     },
-    [t, sanctionText],
+    [t, sanctionText, refusalText],
   );
 
   const policyLabel = useCallback(

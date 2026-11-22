@@ -1,4 +1,5 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from'react';
 import { Lock, Loader2 } from'lucide-react';
 import { Button } from'@/components/ui/button';
@@ -7,7 +8,7 @@ import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
 import { unlockPostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 /** Paywall card shown in place of a locked post's content. */
@@ -21,6 +22,7 @@ export function PostLockedCard({
  onUnlocked: (content: string) => void;
 }) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
+ const refusalText = useRefusalText();
  const [loading, setLoading] = useState(false);
 
  const unlock = async () => {
@@ -33,7 +35,7 @@ export function PostLockedCard({
  if (e instanceof HttpError && e.status === 401) {
  toast.error(t('sign-in-to-unlock', { defaultValue:'Sign in to unlock this post.'}));
  } else {
- toast.error(serverError(e) || t('could-not-unlock', { defaultValue:'Could not unlock'}));
+ toast.error(refusalText.maybe(e) || t('could-not-unlock', { defaultValue:'Could not unlock'}));
  }
  } finally {
  setLoading(false);

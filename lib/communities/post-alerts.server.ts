@@ -16,6 +16,7 @@
  *  - notifies the rest through `createNotification`, so notification preferences, quiet hours and push apply.
  */
 import { notice, noticeColumns } from '@/lib/notifications/notice-keys';
+import { activeMuteWhere } from '@/lib/moderation/mute-expiry';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect } from '@/lib/user-display';
@@ -215,7 +216,7 @@ export async function runPostAlertFanout(postId: string, now: Date = new Date())
             select: { blockerId: true, blockedId: true },
           }),
           prisma.userMute.findMany({
-            where: { mutedId: authorId, muterId: { in: ids } },
+            where: { mutedId: authorId, muterId: { in: ids }, ...activeMuteWhere(now) },
             select: { muterId: true },
           }),
           prisma.notification.findMany({

@@ -1,4 +1,7 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
+import { documentTitles, hrefFor } from '@/lib/reading/highlights.server';
+import type { ReadingDocKind } from '@/lib/reading/schema';
 import { isCardKind, isReviewable, noteIdOf, type CardKind } from '@/lib/study/card-types';
 import { ACTIVE_REVIEW_WHERE, AUTHORED_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import { dueByDeck, reviewAllCount } from '@/lib/study/queue.server';
@@ -13,12 +16,20 @@ import {
   type CardImage,
 } from '@/lib/study/card-images';
 import { lockPictureUrls } from '@/lib/study/card-images.server';
+import {
+  CARD_SOUND_SELECT,
+  fromSoundColumns,
+  soundFields,
+  soundsOfRow,
+  type CardSound,
+} from '@/lib/study/card-sound';
 import { readOcclusion, reviewDataFor, type Occlusion, type OcclusionReviewData } from '@/lib/study/occlusion';
 import { cardHash, type UpdatesSummary } from '@/lib/study/deck-sync';
 import { deckUpdatesSummary } from '@/lib/study/deck-sync.server';
 import type { TestCard } from '@/lib/study/practice-test';
 import type { DeckFolderSummary } from '@/lib/study/folders';
 import { listFolders } from '@/lib/study/folders.server';
+import { isSuggestable } from '@/lib/study/suggestions';
 
 export interface DeckSummary {
   id: string;
@@ -48,6 +59,8 @@ export interface DecksList {
   signedIn: boolean;
   /** What "Review all" holds now across every readable deck; 0 when signed out. */
   reviewAllCount: number;
+  /** True when one of the viewer's decks has a pace: its counts depend on the viewer's time zone (s10-03). */
+  paced?: boolean;
 }
 
 /**
@@ -56,13 +69,13 @@ export interface DecksList {
  * server-rendered / prefetched instead of fetched client-side on mount. Pass
  * `null` for signed-out visitors (they see only public decks).
  */
-export async function listDecks(userId: string | null): Promise<DecksList> {
+export async function listDecks(userId: string | null, tz?: string): Promise<DecksList> {
   const [mine, popular, folders] = await Promise.all([
     userId
       ? prisma.flashcardDeck.findMany({
           where: { userId },
           orderBy: { updatedAt: 'desc' },
-          select: { id: true, title: true, description: true, isPublic: true, cardCount: true, folderId: true },
+          select: { id: true, title: true, description: true, isPublic: true, cardCount: true, folderId: true, newPerDay: true },
         })
       : Promise.resolve([]),
     prisma.flashcardDeck.findMany({
@@ -75,14 +88,15 @@ export async function listDecks(userId: string | null): Promise<DecksList> {
   ]);
   // Due counts skip suspended cards (lib/study/queue.server.ts applies ACTIVE_REVIEW_WHERE).
   const [dueMap, reviewAll] = userId
-    ? await Promise.all([dueByDeck(userId), reviewAllCount(userId)])
+    ? await Promise.all([dueByDeck(userId, new Date(), tz), reviewAllCount(userId, new Date(), tz)])
     : [new Map<string, number>(), 0];
   return {
-    mine: mine.map((d) => ({ ...d, dueCount: dueMap.get(d.id) ?? 0 })),
+    mine: mine.map(({ newPerDay: _pace, ...d }) => ({ ...d, dueCount: dueMap.get(d.id) ?? 0 })),
     popular,
     folders,
     signedIn: !!userId,
     reviewAllCount: reviewAll,
+    ...(mine.some((d) => typeof d.newPerDay === 'number') ? { paced: true } : {}),
   };
 }
 
@@ -216,8 +230,8 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       },
     },
   });
-  if (!source || !source.isPublic) return { ok: false, error: 'Deck not found', status: 404 };
-  if (source.userId === userId) return { ok: false, error: 'You already own this deck', status: 400 };
+  if (!source || !source.isPublic) return { ok: false, ...refusalBody('STUDY_DECK_NOT_FOUND'), status: 404 };
+  if (source.userId === userId) return { ok: false, ...refusalBody('STUDY_DECK_OWN'), status: 400 };
 
   // Idempotent: don't create duplicate clones of the same source.
   const existing = await prisma.flashcardDeck.findFirst({
@@ -227,7 +241,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
   if (existing) return { ok: true, id: existing.id, alreadyOwned: true };
 
   const count = await prisma.flashcardDeck.count({ where: { userId } });
-  if (count >= MAX_DECKS) return { ok: false, error: 'Too many decks', status: 400 };
+  if (count >= MAX_DECKS) return { ok: false, ...refusalBody('STUDY_DECK_LIMIT'), status: 400 };
 
   const deck = await prisma.$transaction(async (tx) => {
     const created = await tx.flashcardDeck.create({
@@ -304,10 +318,24 @@ export interface DeckCard {
   /** The pictures this card shows (a generated card reads its source's); absent when it has none (s08-15). */
   frontImage?: CardImage | null;
   backImage?: CardImage | null;
+  /** The sounds the OWNER recorded (s10-02); every other viewer's payload carries neither field. */
+  frontSound?: CardSound;
+  backSound?: CardSound;
   /** The masks of an authored occlusion card (the editor draws them over the front picture; s09-03). */
   occlusion?: Occlusion | null;
   /** On a generated occlusion card in review: the masks and the one this card asks. */
   occlusionReview?: OcclusionReviewData | null;
+  /**
+   * The document whose highlight this card was made from (s10-01). The owner's payload only: the link names a private
+   * highlight, so every other viewer's card carries no such field.
+   */
+  highlightSource?: { title: string; href: string };
+  /**
+   * Where "Suggest a fix" on this card goes (s10-04): this deck's card on a public deck that takes suggestions, or the
+   * source deck's card on a copy of one that does. Absent for the author, a signed-out viewer, an occlusion card and
+   * any deck that has not turned suggestions on.
+   */
+  suggestTarget?: { deckId: string; cardId: string };
 }
 
 export interface DeckDetail {
@@ -323,6 +351,8 @@ export interface DeckDetail {
     isCopy: boolean;
     /** "Tell me about updates" (copies only). */
     notifyUpdates: boolean;
+    /** The author lets people who study the deck suggest fixes (s10-04); off until they turn it on. */
+    acceptsSuggestions: boolean;
     /** The owner's folder for this deck (owner only; absent for every other viewer). */
     folderId?: string | null;
   };
@@ -340,6 +370,39 @@ export interface DeckDetail {
   signedIn: boolean;
 }
 
+/** Titles and links of the documents the owner's cards were made from (s10-01); a link to someone else's highlight is ignored. */
+async function highlightSources(
+  cards: readonly {
+    id: string;
+    highlightLink?: { highlight: { docKind: ReadingDocKind; docKey: string; userId: string } } | null;
+  }[],
+  ownerId: string,
+): Promise<Map<string, { title: string; href: string }>> {
+  const linked = cards.flatMap((c) =>
+    c.highlightLink && c.highlightLink.highlight.userId === ownerId
+      ? [{ id: c.id, docKind: c.highlightLink.highlight.docKind, docKey: c.highlightLink.highlight.docKey }]
+      : [],
+  );
+  const out = new Map<string, { title: string; href: string }>();
+  if (linked.length === 0) return out;
+  const titles = await documentTitles(linked);
+  for (const l of linked) {
+    out.set(l.id, { title: titles.get(`${l.docKind}:${l.docKey}`) ?? l.docKey, href: hrefFor(l.docKind, l.docKey) });
+  }
+  return out;
+}
+
+/** The "Suggest a fix" target of one card row, when the deck page offers it (text cards only). */
+function suggestTargetFor(
+  suggestDeckId: string | null,
+  thisDeckId: string,
+  card: { id: string; kind: string; originCardId: string | null },
+): { suggestTarget?: { deckId: string; cardId: string } } {
+  if (!suggestDeckId || !isSuggestable(card.kind)) return {};
+  const cardId = suggestDeckId === thisDeckId ? card.id : card.originCardId;
+  return cardId ? { suggestTarget: { deckId: suggestDeckId, cardId } } : {};
+}
+
 /**
  * Resolve a single deck (with its authored cards + this viewer's due count) for the given
  * viewer. Shared by the `/api/study/decks/$id` GET handler and the
@@ -352,7 +415,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
     where: { id: deckId },
     select: {
       id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
-      clonedFromId: true, notifyUpdates: true, folderId: true,
+      clonedFromId: true, notifyUpdates: true, folderId: true, acceptsSuggestions: true,
       cards: {
         orderBy: CARD_ORDER,
         select: {
@@ -363,7 +426,11 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
           sourceId: true,
           clozeIndex: true,
           occlusion: true,
+          originCardId: true,
           ...CARD_IMAGE_SELECT,
+          // Sounds are the recorder's alone: `soundFields(…, isOwner)` below drops them for any other viewer.
+          ...CARD_SOUND_SELECT,
+          highlightLink: { select: { highlight: { select: { docKind: true, docKey: true, userId: true } } } },
         },
       },
     },
@@ -371,6 +438,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
   if (!deck) return null;
   const isOwner = viewer.id === deck.userId;
   if (!deck.isPublic && !isOwner) return null;
+  const sources = isOwner ? await highlightSources(deck.cards, deck.userId) : new Map<string, { title: string; href: string }>();
 
   // Due cards are counted over what is reviewed (generated cards included), not what is listed.
   const reviewable = deck.cards.filter(isReviewable);
@@ -410,6 +478,18 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
     return null;
   };
 
+  // "Suggest a fix" (s10-04): a signed-in reader of a public deck that takes suggestions, or the holder of a copy of
+  // one that does. The server refuses everything the page cannot see (blocks, bans, new accounts) when they send it.
+  let suggestDeckId: string | null = null;
+  if (viewer.id && !isOwner && deck.isPublic && deck.acceptsSuggestions) suggestDeckId = deck.id;
+  if (viewer.id && isOwner && deck.clonedFromId) {
+    const origin = await prisma.flashcardDeck.findUnique({
+      where: { id: deck.clonedFromId },
+      select: { userId: true, acceptsSuggestions: true },
+    });
+    if (origin && origin.userId !== viewer.id && origin.acceptsSuggestions) suggestDeckId = deck.clonedFromId;
+  }
+
   return {
     deck: {
       id: deck.id,
@@ -420,6 +500,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
       cardCount: deck.cardCount,
       isCopy: !!deck.clonedFromId,
       notifyUpdates: deck.notifyUpdates ?? true,
+      acceptsSuggestions: deck.acceptsSuggestions,
       // A folder is the owner's private organisation: no other viewer's payload carries it.
       ...(isOwner ? { folderId: deck.folderId ?? null } : {}),
     },
@@ -438,7 +519,10 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
         sourceId: null,
         ...(viewer.id ? { suspended: suspendedOf(c.id) } : {}),
         ...pictureFields(fromColumns(c)),
+        ...soundFields(fromSoundColumns(c), isOwner),
         ...(c.kind === 'occlusion' ? { occlusion: readOcclusion(c.occlusion) } : {}),
+        ...suggestTargetFor(suggestDeckId, deck.id, c),
+        ...(sources.get(c.id) ? { highlightSource: sources.get(c.id) as { title: string; href: string } } : {}),
       })),
     reviewCount: reviewable.length,
     rowCount: deck.cards.length,
@@ -453,7 +537,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
  * so a test never asks about the same fact twice. The caller has already checked the viewer may
  * read the deck.
  */
-export async function getTestCards(deckId: string): Promise<TestCard[]> {
+export async function getTestCards(deckId: string, viewerId: string | null = null): Promise<TestCard[]> {
   const rows = await prisma.flashcard.findMany({
     where: { deckId, ...REVIEWABLE_WHERE },
     orderBy: CARD_ORDER,
@@ -465,13 +549,17 @@ export async function getTestCards(deckId: string): Promise<TestCard[]> {
       sourceId: true,
       clozeIndex: true,
       ...CARD_IMAGE_SELECT,
+      ...CARD_SOUND_SELECT,
       // A generated card shows its source's pictures (the siblings hold none of their own); an occlusion card
-      // also reads its masks and note from the source.
-      source: { select: { ...CARD_IMAGE_SELECT, occlusion: true, back: true } },
+      // also reads its masks and note from the source. Sounds follow the same rule, and are sent to the deck's
+      // owner only (s10-02).
+      source: { select: { ...CARD_IMAGE_SELECT, ...CARD_SOUND_SELECT, occlusion: true, back: true } },
+      deck: { select: { userId: true } },
     },
   });
   return rows.map((r) => {
     const review = r.kind === 'occlusion' ? reviewDataFor(r.source, r.clozeIndex) : null;
+    const owner = viewerId !== null && r.deck.userId === viewerId;
     return {
       id: r.id,
       front: r.front,
@@ -479,6 +567,7 @@ export async function getTestCards(deckId: string): Promise<TestCard[]> {
       clozeIndex: r.clozeIndex,
       noteId: noteIdOf(r),
       ...pictureFields(picturesOfRow(r, r.source)),
+      ...soundFields(soundsOfRow(r, r.source), owner),
       ...(review ? { occlusion: review } : {}),
     };
   });

@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Scale } from 'lucide-react';
@@ -9,7 +10,6 @@ import { useArrival } from '@/components/ui/arrive';
 import { takeSplit, type TakeState, type TakeVote } from '@/lib/feed/take';
 import { getTakeApi, voteTakeApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 
 /**
  * X6 — the take meter under a post its author marked as a take.
@@ -22,6 +22,7 @@ import { serverError } from '@/lib/http';
  */
 export default function TakeMeter({ postId }: { postId: string }) {
   const { t } = useTranslation('f-feed-plus');
+  const refusalText = useRefusalText();
   const { data: session } = useSession();
   const promptSignIn = useSignInPrompt();
   const { ref, visible } = useNearViewport<HTMLDivElement>();
@@ -55,13 +56,13 @@ export default function TakeMeter({ postId }: { postId: string }) {
         setState(data);
       } catch (e) {
         toast.error(
-          serverError(e) ?? t('take-vote-failed', { defaultValue: 'Could not record your vote' }),
+          refusalText.maybe(e) ?? t('take-vote-failed', { defaultValue: 'Could not record your vote' }),
         );
       } finally {
         setBusy(false);
       }
     },
-    [postId, signedIn, promptSignIn, t],
+    [postId, signedIn, promptSignIn, t, refusalText],
   );
 
   const showResults = state?.counts != null;

@@ -7,6 +7,7 @@
 import { mulberry32, shuffle } from '@/lib/core/rng';
 import { maskClozeText } from '@/lib/study/card-types';
 import type { CardImage } from '@/lib/study/card-images';
+import type { CardSound } from '@/lib/study/card-sound';
 import type { OcclusionReviewData } from '@/lib/study/occlusion';
 
 export const TEST_KINDS = ['multiple-choice', 'written', 'true-false', 'matching'] as const;
@@ -38,6 +39,9 @@ export interface TestCard {
   /** The pictures the card shows, a generated card's read from its source (s08-15). */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** The deck owner's own sounds, on their side of the card (s10-02); absent for every other student. */
+  frontSound?: CardSound | null | undefined;
+  backSound?: CardSound | null | undefined;
   /** Set on a generated occlusion card: the masks and the one asked, drawn over `frontImage` (s09-03). */
   occlusion?: OcclusionReviewData | null | undefined;
 }
@@ -59,6 +63,10 @@ export interface MultipleChoiceQuestion {
   prompt: string;
   /** The picture on the prompt's side of the card, when it has one (s08-15). */
   promptImage?: CardImage;
+  /** The sound on the prompt's side, when the student owns the deck and the card has one (s10-02). */
+  promptSound?: CardSound;
+  /** Which side of the card the prompt sound is on, for the button's name. */
+  promptSoundSide?: Side;
   /** The masks to draw over `promptImage`, on an occlusion card (the prompt may then be empty: the component says it). */
   promptOcclusion?: OcclusionReviewData;
   options: string[];
@@ -69,6 +77,9 @@ export interface WrittenQuestion {
   cardId: string;
   prompt: string;
   promptImage?: CardImage;
+  promptSound?: CardSound;
+  /** Which side of the card the prompt sound is on, for the button's name. */
+  promptSoundSide?: Side;
   /** The masks to draw over `promptImage`, on an occlusion card (the prompt may then be empty: the component says it). */
   promptOcclusion?: OcclusionReviewData;
   answer: string;
@@ -78,6 +89,9 @@ export interface TrueFalseQuestion {
   cardId: string;
   prompt: string;
   promptImage?: CardImage;
+  promptSound?: CardSound;
+  /** Which side of the card the prompt sound is on, for the button's name. */
+  promptSoundSide?: Side;
   /** The masks to draw over `promptImage`, on an occlusion card (the prompt may then be empty: the component says it). */
   promptOcclusion?: OcclusionReviewData;
   /** The answer shown next to the prompt; it is the real one when `isTrue`. */
@@ -217,6 +231,18 @@ function promptImageOf(
   if (card.occlusion) return card.frontImage ? { promptImage: card.frontImage, promptOcclusion: card.occlusion } : {};
   const image = isCloze(card) ? null : ask === 'front' ? card.frontImage : card.backImage;
   return image ? { promptImage: image } : {};
+}
+/**
+ * The sound on the side a question asks from. A cloze or occlusion card's only sound is on its back, which is
+ * the answer side, so those questions play none.
+ */
+function promptSoundOf(
+  card: TestCard,
+  ask: Side,
+): { promptSound: CardSound; promptSoundSide: Side } | Record<string, never> {
+  if (card.occlusion || isCloze(card)) return {};
+  const sound = ask === 'front' ? card.frontSound : card.backSound;
+  return sound ? { promptSound: sound, promptSoundSide: ask } : {};
 }
 function answerOf(card: TestCard, ask: Side): string {
   if (isCloze(card)) return card.back;
@@ -404,6 +430,7 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
           cardId: card.id,
           prompt,
           ...promptImageOf(card, cardAsk),
+          ...promptSoundOf(card, cardAsk),
           options: options4,
           answerIndex: options4.indexOf(answer),
         });
@@ -421,6 +448,7 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
         cardId: card.id,
         prompt,
         ...promptImageOf(card, cardAsk),
+        ...promptSoundOf(card, cardAsk),
         shown: other ? other.text : answer,
         answer,
         isTrue: !other,
@@ -428,7 +456,14 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
       continue;
     }
 
-    questions.push({ kind: 'written', cardId: card.id, prompt, ...promptImageOf(card, cardAsk), answer });
+    questions.push({
+      kind: 'written',
+      cardId: card.id,
+      prompt,
+      ...promptImageOf(card, cardAsk),
+      ...promptSoundOf(card, cardAsk),
+      answer,
+    });
   }
   return questions;
 }

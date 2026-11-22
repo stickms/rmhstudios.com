@@ -1,3 +1,4 @@
+import { refusalBody, refusalCodeOf } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import {
@@ -26,11 +27,11 @@ export const route = apiRoute('/api/study/decks/$id', {
   POST: implement(addDeckCardApi, {}, async ({ request, params, session }) => {
     const body = await request.json().catch(() => ({}));
     const parsed = addCardBody.safeParse(body);
-    if (!parsed.success) return Response.json({ error: 'Invalid card' }, { status: 400 });
+    if (!parsed.success) return Response.json({ ...refusalBody('STUDY_CARD_INVALID') }, { status: 400 });
 
     // Owner check, the deck cap (generated cards count) and the insert run under one deck lock.
     const result = await addCard(session.user.id, params.id, parsed.data);
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return Response.json({ success: true, card: result.card }, { status: 201 });
   }),
 
@@ -39,14 +40,14 @@ export const route = apiRoute('/api/study/decks/$id', {
     { rateLimit: 'write', body: updateDeckBody },
     async ({ userId, params, body }) => {
       const result = await updateDeck(userId, params.id, body);
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+      if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
       return { success: true as const };
     },
   ),
 
   DELETE: implement(deleteDeckApi, {}, async ({ params, session }) => {
     const result = await deleteDeck(session.user.id, params.id);
-    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return Response.json({ error: result.error, ...refusalCodeOf(result) }, { status: result.status });
     return { success: true as const };
   }),
 });

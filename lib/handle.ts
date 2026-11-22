@@ -21,8 +21,8 @@ export const HANDLE_MAX_LENGTH = 20;
  */
 export const HANDLE_BASE_MAX_LENGTH = HANDLE_MAX_LENGTH - 5;
 
-/** Two weeks in milliseconds */
-export const HANDLE_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+/** Thirty days in milliseconds: one handle change per 30 days, the same figure as `HANDLE_CHANGE_COOLDOWN_MS`. */
+export const HANDLE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Reserved handles that can't be claimed */
 export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
@@ -107,7 +107,7 @@ export function suffixHandle(base: string, random: () => number = Math.random): 
 }
 
 /**
- * Check if a user can change their handle (2-week cooldown).
+ * Check if a user can change their handle (30-day cooldown).
  * Admins bypass the cooldown.
  */
 export function canChangeHandle(handleChangedAt: Date | null, isAdmin: boolean): boolean {

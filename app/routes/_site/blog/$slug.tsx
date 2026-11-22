@@ -30,6 +30,7 @@ import { FollowButton } from '@/components/reading/FollowButton';
 import { FollowTagMenu } from '@/components/reading/FollowTagMenu';
 import { getPostBySlug } from '@/lib/blog';
 import { getBusiness } from '@/lib/businesses';
+import { parsePassageSearch } from '@/lib/library/passage-search';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import { liquidVTName } from '@/lib/view-transition';
@@ -75,6 +76,11 @@ const fetchPost = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/blog/$slug')({
+  // `p` is a passage link (lib/library/passage-link.ts): the reader scrolls to it; the canonical URL stays the article's.
+  validateSearch: (search: Record<string, unknown>) => {
+    const p = parsePassageSearch(search.p);
+    return p ? { p } : {};
+  },
   loader: ({ params }) => fetchPost({ data: params.slug }),
   head: ({ loaderData, params }) => {
     const title = (loaderData?.title as string) ?? 'Post';
@@ -136,6 +142,7 @@ export const Route = createFileRoute('/_site/blog/$slug')({
 function BlogPost() {
   const post = Route.useLoaderData();
   const { slug } = Route.useParams();
+  const { p: passage } = Route.useSearch();
   const { t } = useTranslation('pages');
   const { t: ts } = useTranslation('log-drafts');
 
@@ -218,7 +225,7 @@ function BlogPost() {
 
         {/* The body is the article's spine (ArticleBody): each section heading is a station, the paragraphs hang under it
             as `t-prose`. `markdownComponents` carries all of the body's styling. */}
-        <ArticleBody kind="blog" slug={slug} content={post.content as string} />
+        <ArticleBody kind="blog" slug={slug} content={post.content as string} title={post.title as string} passage={passage} />
 
         {/* Below the body, after the reader has the post. `AdSlot` renders
             nothing for members, for anyone who hasn't answered the cookie

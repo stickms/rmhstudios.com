@@ -6,6 +6,7 @@
  * Time: "active" is judged against the application clock (`endsAt > now`), the
  * same clock every other community check uses; expiry is read-time, no job.
  */
+import { refusalBody } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { userChipSelect } from '@/lib/user-display';
@@ -24,6 +25,7 @@ import {
   type SanctionDuration,
   type SanctionKind,
 } from '@/lib/communities/bans';
+import { withVia, type ModVia } from '@/lib/communities/modlog';
 import type { CommunityRole } from '@/lib/communities/access.server';
 
 export { activeSanction, type ActiveSanction } from '@/lib/communities/sanction-read.server';
@@ -53,6 +55,8 @@ export interface SanctionInput {
   duration: SanctionDuration;
   ruleId?: string | undefined;
   reason?: string | undefined;
+  /** s10-13: `'api'` when a developer-API key made the call; recorded in the moderators' log detail only. */
+  via?: ModVia | undefined;
 }
 
 /**
@@ -66,21 +70,21 @@ export async function sanction(input: SanctionInput): Promise<SanctionResult> {
     return {
       ok: false,
       status: 403,
-      error: 'Only community mods can do that',
+      ...refusalBody('COMMUNITY_MODS_ONLY'),
     };
   }
   if (targetUserId === actorId) {
     return {
       ok: false,
       status: 400,
-      error: "You can't sanction yourself",
+      ...refusalBody('COMMUNITY_SANCTION_SELF'),
     };
   }
   if (targetUserId === community.createdById) {
     return {
       ok: false,
       status: 400,
-      error: "The owner can't be banned or timed out",
+      ...refusalBody('COMMUNITY_OWNER_PROTECTED'),
     };
   }
   const target = await prisma.communityMember.findUnique({
@@ -99,21 +103,21 @@ export async function sanction(input: SanctionInput): Promise<SanctionResult> {
     return {
       ok: false,
       status: 400,
-      error: "The owner can't be banned or timed out",
+      ...refusalBody('COMMUNITY_OWNER_PROTECTED'),
     };
   }
   if (target?.role === 'MOD' && input.actorRole !== 'ADMIN') {
     return {
       ok: false,
       status: 403,
-      error: 'Only the owner can sanction a mod',
+      ...refusalBody('COMMUNITY_MOD_SANCTION_OWNER_ONLY'),
     };
   }
   if (!target && input.kind === 'timeout') {
     return {
       ok: false,
       status: 404,
-      error: 'Not a member',
+      ...refusalBody('COMMUNITY_NOT_A_MEMBER'),
     };
   }
   if (!target) {
@@ -129,7 +133,7 @@ export async function sanction(input: SanctionInput): Promise<SanctionResult> {
       return {
         ok: false,
         status: 404,
-        error: 'Member not found',
+        ...refusalBody('COMMUNITY_MEMBER_NOT_FOUND'),
       };
   }
   const rule = input.ruleId ? await getRule(community.id, input.ruleId) : null;
@@ -137,7 +141,7 @@ export async function sanction(input: SanctionInput): Promise<SanctionResult> {
     return {
       ok: false,
       status: 400,
-      error: 'Rule not found',
+      ...refusalBody('COMMUNITY_RULE_NOT_FOUND'),
     };
 
   const now = new Date();
@@ -202,9 +206,7 @@ export async function sanction(input: SanctionInput): Promise<SanctionResult> {
       ruleId: rule?.id ?? null,
       ruleTitle: rule?.title ?? null,
       reason,
-      detail: {
-        duration: input.duration,
-      },
+      detail: withVia({ duration: input.duration }, input.via),
     });
     return row.id;
   });
@@ -247,6 +249,7 @@ export async function lift(args: {
   };
   banId: string;
   actorId: string;
+  via?: ModVia | undefined;
 }): Promise<LiftResult> {
   const now = new Date();
   const row = await prisma.communityBan.findFirst({
@@ -288,9 +291,7 @@ export async function lift(args: {
       targetUserId: row.userId,
       targetType: 'member',
       targetId: row.id,
-      detail: {
-        kind: row.kind,
-      },
+      detail: withVia({ kind: row.kind }, args.via),
     });
     return true;
   });

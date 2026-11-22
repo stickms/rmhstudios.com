@@ -14,3 +14,4 @@ sprint directory holds its index, its plan, one specification per feature and a 
 | 07     | Promises the code already makes, and what deletion leaves behind                                | [sprint-07/README.md](sprint-07/README.md), [summary](sprint-07/summary.md) |
 | 08     | Tables nothing writes, TODOs in the code, and what deletion still leaves                        | [sprint-08/README.md](sprint-08/README.md)                                  |
 | 09     | Halves that never met: data nobody shows, backends with no page, and what deletion still leaves | [sprint-09/README.md](sprint-09/README.md)                                  |
+| 10     | Joining up what members already have, and the doors that skipped the rules                      | [sprint-10/README.md](sprint-10/README.md)                                  |

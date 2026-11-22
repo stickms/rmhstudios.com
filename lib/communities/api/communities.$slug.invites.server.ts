@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
@@ -28,7 +29,7 @@ export const route = apiRoute('/api/communities/$slug/invites', {
       if (!guard.ok) return guard.response;
       if (!guard.value.isPrivate) {
         return Response.json(
-          { error: 'Only private communities have invite links' },
+          { ...refusalBody('COMMUNITY_INVITES_PRIVATE_ONLY') },
           { status: 400 },
         );
       }
@@ -36,7 +37,7 @@ export const route = apiRoute('/api/communities/$slug/invites', {
       if (!result.ok) {
         return Response.json(
           {
-            error: `A community can have at most ${INVITE_LIMITS.activePerCommunity} live invite links`,
+            ...refusalBody('COMMUNITY_INVITE_LIMIT', { max: INVITE_LIMITS.activePerCommunity }),
           },
           { status: 409 },
         );

@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { listScreenshotsApi, saveScreenshotsApi } from '@/lib/builds/screenshots.contract';
@@ -20,7 +21,7 @@ export const route = apiRoute('/api/user-builds/$id/screenshots', {
       if (!items)
         return Response.json(
           {
-            error: 'Build not found',
+            ...refusalBody('BUILD_NOT_FOUND'),
           },
           {
             status: 404,

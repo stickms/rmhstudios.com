@@ -1,3 +1,4 @@
+import { refusalBody } from '@/lib/errors/codes';
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -46,7 +47,7 @@ export const route = apiRoute('/api/group-chats', {
 
       const count = await prisma.chatMember.count({ where: { userId, chat: { kind: GROUP_KIND } } });
       if (count >= MAX_GROUPS)
-        return Response.json({ error: 'You are in too many groups' }, { status: 400 });
+        return Response.json({ ...refusalBody('GROUP_TOO_MANY') }, { status: 400 });
 
       // Resolve members (by id or handle), leaving out anyone in a block with the creator, banned accounts and
       // names that match nobody. The creator is added below. Refusals are counted, never explained.
@@ -54,7 +55,7 @@ export const route = apiRoute('/api/group-chats', {
       const memberIds = new Set(vetted.allowed.map((u) => u.id));
       memberIds.delete(userId);
       if (memberIds.size === 0)
-        return Response.json({ error: 'Add at least one other member' }, { status: 400 });
+        return Response.json({ ...refusalBody('GROUP_NEEDS_MEMBER') }, { status: 400 });
 
       const group = await prisma.chat.create({
         data: {

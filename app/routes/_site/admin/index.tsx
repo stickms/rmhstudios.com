@@ -372,6 +372,37 @@ function AdminDashboardPage() {
             })}
           />
 
+          {/* Sprint 10 admin tools */}
+          {/* s10-16 speedrun-queue */}
+          <AdminHubCard
+            to="/admin/speedruns"
+            title={t('card-title', { ns: 'speedrun-queue', defaultValue: 'Speedrun review' })}
+            description={t('card-description', {
+              ns: 'speedrun-queue',
+              defaultValue: 'Runs waiting for a human verdict, with the replay one click away. Verify, reject or reopen.',
+            })}
+          />
+
+          {/* s10-15 admin-webhooks */}
+          <AdminHubCard
+            to="/admin/webhooks"
+            title={t('card-title', { ns: 'admin-webhooks', defaultValue: 'Webhooks' })}
+            description={t('card-description', {
+              ns: 'admin-webhooks',
+              defaultValue: 'Endpoints that are failing or off, with 24-hour delivery figures. Turn one off with a reason its owner reads.',
+            })}
+          />
+
+          {/* s10-17 admin-communities */}
+          <AdminHubCard
+            to="/admin/communities"
+            title={t('card-title', { ns: 'admin-communities', defaultValue: 'Communities' })}
+            description={t('card-description', {
+              ns: 'admin-communities',
+              defaultValue:
+                'Open reports, quiet moderators and fast growth for every community. Take one out of discovery with a reason its moderators read.',
+            })}
+          />
         </div>
       </AdminBody>
     </PageLayout>

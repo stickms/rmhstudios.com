@@ -12,6 +12,7 @@
  * The outcome is a plain value; the caller (the create route) performs the
  * refusal / hold / removal, because only it knows how its own content is stored.
  */
+import { refusalBeside } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunitySettings } from '@/lib/communities/settings.server';
 import { flairBelongsTo } from '@/lib/communities/flairs.server';
@@ -93,7 +94,7 @@ export async function gateCommunityContent(args: {
         kind: 'deny',
         status: 400,
         code: 'flair_required',
-        error: 'Choose a flair for your post — this community requires one.',
+        ...refusalBeside('COMMUNITY_FLAIR_REQUIRED'),
       };
     }
   }

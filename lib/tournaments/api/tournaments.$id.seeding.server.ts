@@ -1,3 +1,4 @@
+import { tournamentRefusal } from '@/lib/tournaments/tournament-error';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getSeedingApi, updateSeedingApi } from '@/lib/tournaments/seeding.contract';
@@ -7,7 +8,10 @@ import { TournamentError } from '@/lib/tournaments/tournament.server';
 
 function failure(error: unknown): Response {
   if (error instanceof TournamentError) {
-    return Response.json({ error: error.message, code: error.code }, { status: error.status });
+    return Response.json(
+      { error: error.message, ...tournamentRefusal(error), code: error.code },
+      { status: error.status },
+    );
   }
   throw error;
 }

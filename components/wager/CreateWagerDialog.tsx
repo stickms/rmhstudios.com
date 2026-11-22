@@ -1,3 +1,4 @@
+import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
@@ -17,7 +18,6 @@ import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
 import { MIN_WAGER_STAKE, MAX_WAGER_STAKE } from '@/lib/wager/constants';
 import type { SerializedWager } from '@/lib/wager/wager.server';
 import { api } from '@/lib/contract/client';
-import { serverError } from '@/lib/http';
 import { createWagerApi } from '@/lib/wager/wager.contract';
 
 interface Props {
@@ -31,6 +31,7 @@ interface Props {
 
 export function CreateWagerDialog({ open, onClose, onCreated, opponentId, opponentName }: Props) {
   const { t } = useTranslation('c-wager');
+  const refusalText = useRefusalText();
   const [gameId, setGameId] = useState(WAGER_ELIGIBLE_GAMES[0].id);
   const [stake, setStake] = useState(25);
   const [submitting, setSubmitting] = useState(false);
@@ -58,7 +59,7 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
       onClose();
     } catch (e) {
       toast.error(
-        serverError(e) ??
+        refusalText.maybe(e) ??
           t('create-failed', {
             defaultValue: 'Could not create challenge',
           }),
