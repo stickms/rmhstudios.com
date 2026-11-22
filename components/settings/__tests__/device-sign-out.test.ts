@@ -167,7 +167,7 @@ describe('the account deletion panel', () => {
   const src = read('components/site/DeleteAccountPanel.tsx');
 
   it('clears this device only after the server confirmed the deletion, forced and keeping on cancel', () => {
-    const api = src.indexOf('await api(\n            deleteAccountApi');
+    const api = src.search(/await api\(\s*deleteAccountApi/);
     const failedReturn = src.indexOf('return;', api);
     const clear = src.indexOf('deviceSignOut.run(');
     expect(api).toBeGreaterThan(-1);
