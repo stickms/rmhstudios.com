@@ -488,7 +488,7 @@ export function EarLesson({
                 })
               }
               className={cn(
-                'rmm-display flex h-11 w-full items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
+                'rmm-display flex h-9 w-full items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
                 // Waiting and finished answers read by ink and edge, never by opacity or the dim
                 // ink (2.8:1): the muted ink holds 4.5:1 on the tile in every theme.
                 lesson.kind === 'asking'

@@ -56,7 +56,7 @@ function rows(t: T, today: TodayData, staffReady: boolean): Row[] {
   if (today.ear) {
     earLines.push(t('today-due', { n: today.due.ear, defaultValue: 'Due now: {{n}}' }));
     const title = getLesson(today.ear.lessonId)?.title ?? today.ear.lessonId;
-    earLines.push(t('today-most-in', { where: title, defaultValue: 'Most in {{where}}.' }));
+    earLines.push(t('today-most-in-lesson', { where: title, defaultValue: 'Most in “{{where}}”.' }));
     earAction = {
       to: '/rmhmusic/lesson/$lessonId',
       params: { lessonId: today.ear.lessonId },
@@ -71,7 +71,7 @@ function rows(t: T, today: TodayData, staffReady: boolean): Row[] {
   if (today.interval) {
     intervalLines.push(t('today-due', { n: today.due.interval, defaultValue: 'Due now: {{n}}' }));
     const title = getLesson(today.interval.lessonId)?.title ?? today.interval.lessonId;
-    intervalLines.push(t('today-most-in', { where: title, defaultValue: 'Most in {{where}}.' }));
+    intervalLines.push(t('today-most-in-lesson', { where: title, defaultValue: 'Most in “{{where}}”.' }));
     intervalAction = {
       to: '/rmhmusic/lesson/$lessonId',
       params: { lessonId: today.interval.lessonId },
@@ -86,7 +86,7 @@ function rows(t: T, today: TodayData, staffReady: boolean): Row[] {
   if (today.sprint) {
     sprintLines.push(t('today-due', { n: today.due.sprint, defaultValue: 'Due now: {{n}}' }));
     sprintLines.push(
-      t('today-most-in', { where: levelName(t, today.sprint.level), defaultValue: 'Most in {{where}}.' }),
+      t('today-most-in-lesson', { where: levelName(t, today.sprint.level), defaultValue: 'Most in “{{where}}”.' }),
     );
     sprintAction = { to: '/rmhmusic/sprint', label: t('today-play-sprint', { defaultValue: 'Play Sprint' }) };
   } else {

@@ -71,6 +71,7 @@ export function PracticeList() {
         })}
       </h2>
       <Tabs
+        dense
         idBase={TABS_ID}
         tabs={[
           {

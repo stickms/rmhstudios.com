@@ -1,6 +1,6 @@
 /**
  * PracticeModeToggle — Learning mode or Test mode (`lib/rmhmusic/learn/practice-mode.ts`), the
- * sanctioned `<Tabs>` strip with one line saying what the chosen mode does. The line is always
+ * sanctioned `<Tabs dense>` strip with one line saying what the chosen mode does. The line is always
  * the height of its longer sentence's wrapped form (two lines reserved), so switching never moves
  * what is below. The choice is saved on the learner's profile (and on the device) and read by every drill.
  */
@@ -36,6 +36,7 @@ export function PracticeModeToggle({
   return (
     <div className={className}>
       <Tabs
+        dense
         tabs={[
           { id: 'learning', label: t('mode-learning', { defaultValue: 'Learning' }) },
           { id: 'test', label: t('mode-test', { defaultValue: 'Test' }) },

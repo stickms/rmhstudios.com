@@ -44,7 +44,7 @@ function Row({ id, icon: Icon, title, description, action, children }: RowProps)
         <p className="min-w-24 flex-1 font-medium text-app-text">{title}</p>
         <div className="ms-auto shrink-0">{action}</div>
       </div>
-      <div className="space-y-3 ps-8">
+      <div className="space-y-3 sm:ps-8">
         <p className="text-sm text-app-text-muted">{description}</p>
         {children}
       </div>

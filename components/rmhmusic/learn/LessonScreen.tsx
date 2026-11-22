@@ -11,6 +11,8 @@ import { Link } from '@tanstack/react-router';
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getLesson, needsVoiceRange } from '@/lib/rmhmusic/learn/content/path';
+import { DECKS } from '@/lib/rmhmusic/learn/content/decks';
+import { isSpelledCard } from '@/lib/rmhmusic/learn/content/spelling';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
 import { rhythmActivity } from '@/lib/rmhmusic/learn/machines/rhythm';
 import { staffCardRange } from '@/lib/rmhmusic/learn/voice/range';
@@ -134,9 +136,12 @@ function LessonSkeleton() {
  */
 export function FlashcardSkeleton({
   low = false,
+  signs = false,
 }: {
   /** An alto's deck: the low card's box (`STAFF_LOW_ASPECT`). */
   low?: boolean;
+  /** A deck of sharps, flats or keys: the answers box also holds the ♭ ♮ ♯ row. */
+  signs?: boolean;
 }) {
   return (
     <div aria-hidden="true" className="rmm-flash space-y-4">
@@ -152,7 +157,8 @@ export function FlashcardSkeleton({
           <div className="app-skeleton h-5 w-56 max-w-full" />
         </div>
       </section>
-      <div className="rmm-flash__answers">
+      <div className={cn('rmm-flash__answers', signs && 'rmm-flash__answers--signs')}>
+        {signs && <div className="rmm-flash__signs app-skeleton" />}
         <div className="rmm-flash__letters">
           {[0, 1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="app-skeleton h-full w-full" />
@@ -315,7 +321,7 @@ function KeySignatureSkeleton() {
       </section>
       <div className="grid grid-cols-2 gap-3">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="app-skeleton h-11 w-full" />
+          <div key={i} className="app-skeleton h-9 w-full" />
         ))}
       </div>
     </div>
@@ -574,7 +580,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     // `ready` takes the branch above).
     body =
       lesson.mode === 'staff-flashcards' ? (
-        <FlashcardSkeleton low={lowCard} />
+        <FlashcardSkeleton
+          low={lowCard}
+          signs={Boolean(lesson.deck && DECKS[lesson.deck]?.cards?.some(isSpelledCard))}
+        />
       ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
         <FindNoteSkeleton />
       ) : lesson.mode === 'match-note' || lesson.mode === 'sing-interval' ? (

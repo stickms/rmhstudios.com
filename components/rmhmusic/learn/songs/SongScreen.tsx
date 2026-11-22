@@ -1,6 +1,6 @@
 /**
  * SongScreen — `/rmhmusic/songs/$songId`: one song of the songbook, read from its score and played.
- * Two ways to play, switched with the sanctioned `<Tabs>`:
+ * Two ways to play, switched with the sanctioned `<Tabs dense>`:
  *
  * - **Wait for me:** the cursor waits on each note until the right one is played.
  * - **Play along:** a bar of metronome clicks counts in, then the cursor moves in time and every
@@ -334,6 +334,7 @@ export function SongScreen({ songId }: { songId: string }) {
         ) : (
           <>
             <Tabs
+              dense
               idBase={TABS_ID}
               tabs={[
                 {
@@ -478,9 +479,13 @@ function SpotBar({
           aria-pressed={spot.looping}
           className={TEXT_BUTTON}
         >
-          {t('spot-loop', {
-            defaultValue: 'Keep looping',
-          })}
+          {spot.looping
+            ? t('spot-loop-on', {
+                defaultValue: 'Keep looping: on',
+              })
+            : t('spot-loop-off', {
+                defaultValue: 'Keep looping: off',
+              })}
         </button>
         {spot.segments.length > 1 ? (
           <button type="button" onClick={() => dispatch({ type: 'next' })} className={SECONDARY_BUTTON}>

@@ -235,6 +235,7 @@ export function LearnHome() {
     body = (
       <div className={cn('space-y-4', arrival)}>
         <Tabs
+          dense
           tabs={tabs}
           value={instrument}
           onChange={(id) => chooseInstrument(id as Instrument)}

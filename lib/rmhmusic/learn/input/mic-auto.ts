@@ -39,6 +39,13 @@ const MAX_RISE = 1.02;
 const FLOOR_RISE = 0.002;
 const FLOOR_FALL = 0.2;
 const FLOOR_MIN = 1e-5;
+/**
+ * Where the floor starts: a quiet room (raw RMS), so the cutoff starts at its minimum. It must NOT start at the first
+ * frame: that frame is a partly filled buffer and reads low, and a note already sounding when the microphone opens
+ * would then be learned as the room (a cutoff of 3x it sits above the note, which is then never heard again; seen
+ * with a steady quiet tone in a real browser). The floor rises toward a noisy room over about ten seconds instead.
+ */
+const FLOOR_START = 0.0005;
 /** A level that fell by more than this since the last frame is a note dying away, not a quiet one. */
 const FALLING = 0.99;
 
@@ -55,13 +62,12 @@ function clampGain(g: number): number {
 
 export function createAutoLevel(initialGain = 1): AutoLevel {
   let gain = clampGain(clampMicGain(initialGain));
-  let floor: number | null = null;
+  let floor = FLOOR_START;
   let previous = 0;
   let gate = AUTO_GATE_MIN * 2;
 
   const compute = () => {
-    const raw = floor === null ? 0 : floor * gain * GATE_FACTOR;
-    gate = Math.min(AUTO_GATE_MAX, Math.max(AUTO_GATE_MIN, raw));
+    gate = Math.min(AUTO_GATE_MAX, Math.max(AUTO_GATE_MIN, floor * gain * GATE_FACTOR));
   };
 
   return {
@@ -71,8 +77,7 @@ export function createAutoLevel(initialGain = 1): AutoLevel {
       // Only a found pitch is a note. Anything else, however loud (a fan, a clap, a voice that is not
       // singing), is the room: it moves the floor, never the gain, so a steady noise cannot be chased.
       if (!pitched) {
-        if (floor === null) floor = raw;
-        else floor += (raw - floor) * (raw < floor ? FLOOR_FALL : FLOOR_RISE);
+        floor += (raw - floor) * (raw < floor ? FLOOR_FALL : FLOOR_RISE);
       } else if (rms > 0) {
         const ratio = TARGET_RMS / rms;
         if (rms > TARGET_RMS * 1.3) gain *= Math.max(MAX_DROP, ratio ** ATTACK);

@@ -145,7 +145,7 @@
    were 36–38px on touch. Grow the hit area on coarse pointers only; fine
    pointers keep the compact strip. */
 @media (pointer: coarse) {
-  [data-slot='liquid-tabs'] :is(button, a) {
+  [data-slot='liquid-tabs']:not([data-tab-dense]) :is(button, a) {
     min-height: var(--site-touch-target);
   }
 }

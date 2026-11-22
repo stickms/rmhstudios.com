@@ -84,7 +84,11 @@ function MicSensitivity({ meter }: { meter: MicMeter }) {
   const gainId = useId();
   const gateId = useId();
   const gainText = t('mic-sensitivity-value', { value: gain, defaultValue: '{{value}}x' });
-  const cutoffText = t('mic-cutoff-value', { value: levelToDb(gate), defaultValue: '{{value}} dB' });
+  // A real minus sign, and pinned left to right below: in a right-to-left page "-48 dB" drew as "dB 48-".
+  const cutoffText = t('mic-cutoff-value', {
+    value: String(levelToDb(gate)).replace('-', '−'),
+    defaultValue: '{{value}} dB',
+  });
   const store = useLearnStore.getState;
   return (
     <div className="space-y-3">
@@ -116,7 +120,9 @@ function MicSensitivity({ meter }: { meter: MicMeter }) {
               <label htmlFor={gainId} className="text-app-text">
                 {t('mic-sensitivity', { defaultValue: 'Microphone sensitivity' })}
               </label>
-              <span className="text-app-text-muted">{gainText}</span>
+              <span dir="ltr" className="text-app-text-muted">
+                {gainText}
+              </span>
             </div>
             <input
               id={gainId}
@@ -140,7 +146,9 @@ function MicSensitivity({ meter }: { meter: MicMeter }) {
               <label htmlFor={gateId} className="text-app-text">
                 {t('mic-cutoff', { defaultValue: 'Cutoff' })}
               </label>
-              <span className="text-app-text-muted">{cutoffText}</span>
+              <span dir="ltr" className="text-app-text-muted">
+                {cutoffText}
+              </span>
             </div>
             <input
               id={gateId}
@@ -166,6 +174,7 @@ function MicSensitivity({ meter }: { meter: MicMeter }) {
       <div className="space-y-1">
         <p className="text-sm text-app-text">{t('mic-hum', { defaultValue: 'Hum filter' })}</p>
         <Tabs
+          dense
           tabs={[
             { id: 'off', label: t('mic-hum-off', { defaultValue: 'Off' }) },
             { id: '50', label: t('mic-hum-50', { defaultValue: '50 Hz' }) },

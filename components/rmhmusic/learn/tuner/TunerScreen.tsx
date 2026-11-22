@@ -1,6 +1,6 @@
 /**
  * TunerScreen — `/rmhmusic/tuner`: a tuner and a note reader, switched with the sanctioned
- * `<Tabs>`. **Tune** listens through the microphone (`TunePanel`); **Read notes** writes every
+ * `<Tabs dense>`. **Tune** listens through the microphone (`TunePanel`); **Read notes** writes every
  * note played on any input on the staff (`ReadPanel`). A tool beside the path: it completes no
  * lesson and gates nothing.
  *
@@ -116,6 +116,7 @@ export function TunerScreen() {
     body = (
       <div className={loading ? 'space-y-4' : `space-y-4 ${arrival ?? ''}`}>
         <Tabs
+          dense
           idBase={TABS_ID}
           tabs={[
             {
