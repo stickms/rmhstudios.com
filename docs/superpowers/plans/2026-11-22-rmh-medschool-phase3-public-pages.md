@@ -34,7 +34,7 @@ satori OG cards, vitest.
   split from any source is suppressed when it rests on fewer than 3 contributors … The in-state split is suppressed
   independently of the count it splits. Admit and SDN events are already public one-by-one at their source … CycleTrack's
   counts are shown as published."
-- **MD and MD-PhD are separate (spec §4a):** pages offer a program switch defaulting to `REG`. "Null-program events are
+- **MD and MD-PhD are separate (spec §4a):** pages offer a program switch (O5: All, then the school's own degree and its PhD track, default All). "Null-program events are
   shown as 'program not reported' and never counted" in either program's series.
 - **Never sum sources (spec §10):** "CycleTrack is the primary series … Admit, SDN and RMH available as comparison
   series … the next source in the order CycleTrack → Admit → SDN → RMH is primary and the chart says so. Every chart
@@ -114,6 +114,11 @@ Inputs the spec implies but no obvious task test would reach; each line has its 
   the loaders treat `ALL` as `program in ['REG','PHD']` then sum per `(source, date, eventType)` before `buildTypeSeries`.
   Labels: `program-all` "All", `program-md` "MD", `program-md-phd` "MD-PhD", `program-do` "DO", `program-do-phd`
   "DO-PhD". The k floor applies per row before any sum.
+  **A school never shows the other degree's options (owner):** an MD school's control has no DO or DO-PhD, a DO
+  school's no MD or MD-PhD. When the live feed is filtered to one school, `DegreeProgramSelect` gets that school's degree
+  and shows only All and its two options (plus "Program not reported"), and a `degree` in the URL that contradicts the
+  school is dropped. Tests: `ProgramSelect` for `degree: 'DO'` renders no "MD" option; the live page with `school=<an MD
+  slug>&degree=DO` renders MD options only and filters by the school.
 
 ## Decisions made in this plan (owner may override)
 
