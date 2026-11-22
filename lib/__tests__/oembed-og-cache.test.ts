@@ -121,3 +121,20 @@ describe('oembed og', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('oembed og pictures', () => {
+  it('serves the og:image and icon through the same-origin proxy, never the raw host', async () => {
+    safeFetch.mockResolvedValue(
+      bodyOf(
+        [
+          `<meta content='T' property='og:title'><meta property="og:image" content="/i.png"><link rel="icon" href="/f.svg">`,
+        ],
+        { n: 0 },
+      ),
+    );
+    const body = await (await call('https://pics.test/a')).json();
+    expect(body.title).toBe('T');
+    expect(body.image).toBe(`/api/image-proxy?url=${encodeURIComponent('https://pics.test/i.png')}`);
+    expect(body.icon).toBe(`/api/image-proxy?url=${encodeURIComponent('https://pics.test/f.svg')}`);
+  });
+});

@@ -196,7 +196,7 @@ export function RMHarkActions({ item, onUpdate, className, onReply }: RMHarkActi
         <ActionCount value={likeCount} />
       </button>
 
-      <div className="relative">
+      <div className="feed-actions__slot">
         <button
           ref={repostBtnRef}
           type="button"

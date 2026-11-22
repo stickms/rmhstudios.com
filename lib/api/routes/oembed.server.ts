@@ -4,6 +4,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 import { cachedNullable } from '@/lib/cached.server';
 import { readCapped } from '@/lib/unfurl/unfurl.server';
+import { parseOpenGraph, proxiedImageUrl, siteIconUrl } from '@/lib/unfurl/parse';
 import { getArchivedCard, noteLinkSeen } from '@/lib/posts-plus/link-rescue.server';
 /**
  * /api/oembed — Resolve media URLs and extract OpenGraph metadata.
@@ -21,7 +22,10 @@ const TENOR_BYTES = 256 * 1024;
 interface OgCard {
   title: string | null;
   description: string | null;
+  /** Same-origin `/api/image-proxy` path, never a third-party URL. */
   image: string | null;
+  /** The site's icon (same-origin proxy path): the card's picture when the page has no image. */
+  icon: string | null;
   siteName: string;
 }
 
@@ -39,26 +43,7 @@ const MAX_URL_LENGTH = 2048;
 function ogCacheKey(parsed: URL): string {
   const u = new URL(parsed.href);
   u.hash = '';
-  return `oembed:og:${createHash('sha256').update(u.href).digest('hex')}`;
-}
-
-function extractMetaContent(html: string, property: string): string | null {
-  // Try property="..." content="..."
-  const propMatch = html.match(
-    new RegExp(`<meta\\s[^>]*(?:property|name)="${property}"\\s[^>]*content="([^"]*)"`, 'i'),
-  );
-  if (propMatch) return propMatch[1];
-
-  // Try content="..." property="..."
-  const altMatch = html.match(
-    new RegExp(`<meta\\s[^>]*content="([^"]*)"[^>]*(?:property|name)="${property}"`, 'i'),
-  );
-  return altMatch ? altMatch[1] : null;
-}
-
-function extractTagContent(html: string, tag: string): string | null {
-  const match = html.match(new RegExp(`<${tag}[^>]*>([^<]+)</${tag}>`, 'i'));
-  return match ? match[1].trim() : null;
+  return `oembed:og2:${createHash('sha256').update(u.href).digest('hex')}`;
 }
 
 export const route = apiRoute('/api/oembed', {
@@ -143,6 +128,7 @@ export const route = apiRoute('/api/oembed', {
                 title: archived.title,
                 description: archived.description,
                 image: null,
+                icon: proxiedImageUrl(siteIconUrl('', url)),
                 siteName: archived.siteName || new URL(url).hostname,
                 archivedUrl: archived.archiveUrl,
                 archivedAt: archived.archiveTimestamp,
@@ -173,25 +159,21 @@ export const route = apiRoute('/api/oembed', {
                 throw new UpstreamError();
               }
               const head = await readCapped(res, HEAD_BYTES);
-              const title =
-                extractMetaContent(head, 'og:title') ||
-                extractMetaContent(head, 'twitter:title') ||
-                extractTagContent(head, 'title');
-              const description =
-                extractMetaContent(head, 'og:description') ||
-                extractMetaContent(head, 'twitter:description') ||
-                extractMetaContent(head, 'description');
+              // One parser for every unfurl (lib/unfurl/parse.ts): either quote style, any
+              // attribute order, entities decoded, og → twitter → <title> precedence.
+              const meta = parseOpenGraph(head);
+              const { title, description, siteName } = meta;
               if (!title && !description) return null;
-              const image =
-                extractMetaContent(head, 'og:image') || extractMetaContent(head, 'twitter:image');
-              const siteName = extractMetaContent(head, 'og:site_name');
               // X11: remember this card's link so the weekly check can watch it.
               void noteLinkSeen(url, { title, description, siteName });
               return {
-                title: title || null,
-                description: description || null,
-                image: image || null,
-                siteName: siteName || new URL(url).hostname,
+                title,
+                description,
+                // Relative og:image paths resolve against the page; both pictures come back
+                // through our own proxy, so a preview never leaks the viewer's IP.
+                image: proxiedImageUrl(meta.image, url),
+                icon: proxiedImageUrl(siteIconUrl(head, url)),
+                siteName: siteName || new URL(url).hostname.replace(/^www\./i, ''),
               };
             },
           );
