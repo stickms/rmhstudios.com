@@ -58,6 +58,8 @@ export const OCCURRENCE_READ_PATHS =
     'lib/schedule/grid.server.ts',
     // The dates a host sees right after changing one.
     'lib/events/occurrences.server.ts',
+    // The developer API's events, their attendees and the dates a member answered (s07-10).
+    'lib/api/v1/events.server.ts',
   ] as const;
 
 /** Paths that only LOAD overrides for a reader above (they apply nothing themselves). */

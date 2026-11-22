@@ -6,6 +6,7 @@ import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.serve
 import { apiAuthorSelect, serializePostPoll, serializePublicPost } from '@/lib/api/serializers.server';
 import { pinnedOrderFor } from '@/lib/feed/profile-pins.server';
 import { resolveEndedResult } from '@/lib/feed/ranked-poll.server';
+import { quizRevealFor } from '@/lib/feed/quiz-poll';
 import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
 import { deleteOwnPost } from '@/lib/social/engagement.server';
 
@@ -33,7 +34,9 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
                 poll: {
                   select: {
                     id: true, question: true, multiSelect: true, ranked: true, resultJson: true, closesAt: true, closedAt: true,
-                    options: { orderBy: { position: 'asc' }, select: { id: true, text: true } },
+                    correctOptionId: true, explanation: true,
+                    // The key owner's own vote, so a quiz's answer is theirs once they have answered.
+                    options: { orderBy: { position: 'asc' }, select: { id: true, text: true, votes: { where: { userId }, select: { id: true }, take: 1 } } },
                   },
                 },
               },
@@ -55,7 +58,12 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
               ? serializePostPoll(
                   post.poll,
                   counted,
-                  countsHiddenFrom(post.userId, post.user.profile?.hideCountsOnMine, userId)
+                  countsHiddenFrom(post.userId, post.user.profile?.hideCountsOnMine, userId),
+                  quizRevealFor(
+                    post.poll,
+                    { viewerId: userId, authorId: post.userId },
+                    post.poll.options.some((o) => o.votes.length > 0),
+                  )
                 )
               : null;
             return json({ ...serializePublicPost({ ...post, pinnedOrder }, userId), poll });

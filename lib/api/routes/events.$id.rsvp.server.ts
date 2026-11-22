@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { rsvp, unrsvp, EventError } from '@/lib/events.server';
+import { denyCode, denyText } from '@/lib/communities/bans';
 
 const rsvpSchema = z.object({
   // 'waitlist' joins the waitlist of a full one-off event; a plain 'going' on a full event is still refused.
@@ -55,6 +56,18 @@ export const route = apiRoute('/api/events/$id/rsvp', {
         return Response.json(result);
       } catch (error) {
         if (error instanceof EventError) {
+          if (error.code === 'COMMUNITY_SANCTIONED' && error.sanction) {
+            // The same refusal body as the community's join and write paths (useSanctionRefusal reads it).
+            const { kind, endsAt } = error.sanction;
+            return Response.json(
+              {
+                error: denyText(kind, endsAt),
+                code: denyCode(kind),
+                endsAt: endsAt ? endsAt.toISOString() : null,
+              },
+              { status: 403 },
+            );
+          }
           const [message, status] = mapEventError(error);
           return Response.json({ error: message }, { status });
         }

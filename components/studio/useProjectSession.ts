@@ -59,6 +59,11 @@ import {
   updateCloudProjectApi,
   type CloudSaveRefusal,
 } from '@/lib/studio/projects.contract';
+import {
+  getProjectVersionApi,
+  listProjectVersionsApi,
+  restoreProjectVersionApi,
+} from '@/lib/studio/project-history.contract';
 import { useStudioStore } from '@/lib/studio/store';
 import type { Project } from '@/lib/studio/types';
 
@@ -70,6 +75,8 @@ export interface ProjectConflict {
   name: string;
   /** The account copy's current revision. */
   revision: number;
+  /** Set when the refused save was a restore of this version: Overwrite then repeats the restore. */
+  versionId?: string;
 }
 
 export interface ProjectSession {
@@ -101,6 +108,10 @@ export interface ProjectSession {
   openCloud: (id: string) => Promise<boolean>;
   deleteLocalById: (id: string, name: string) => Promise<boolean>;
   deleteCloudById: (id: string, name: string) => Promise<boolean>;
+  /** Write an earlier version of the open account project back as a new save, then open it (false: not restored). */
+  restoreVersion: (versionId: string) => Promise<boolean>;
+  /** Open an earlier version as a new local project named `copyName`, leaving the account copy alone. */
+  openVersionAsCopy: (versionId: string, copyName: string) => Promise<boolean>;
   /** The keybind handler for Ctrl/Cmd+S and Ctrl+Shift+S. */
   onProjectAction: (action: 'save' | 'saveAs') => void;
 }
@@ -256,10 +267,12 @@ export function useProjectSession(): ProjectSession {
     });
   }, [confirm, t]);
 
-  const refreshCloudList = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: [listCloudProjectsApi.path] }),
-    [queryClient],
-  );
+  const refreshCloudList = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: [listCloudProjectsApi.path] }),
+      queryClient.invalidateQueries({ queryKey: [listProjectVersionsApi.path] }),
+    ]);
+  }, [queryClient]);
 
   /** Tell the member how many audio clips lost their sample on this device; the clips stay and play silent. */
   const noticeMissingSamples = useCallback(async () => {
@@ -489,11 +502,68 @@ export function useProjectSession(): ProjectSession {
     [canDiscard, loadCloud],
   );
 
+  /** Restore an earlier version as a new save of the open account project, then open the result. */
+  const restoreVersion = useCallback(
+    async (versionId: string, baseOverride?: number): Promise<boolean> => {
+      const id = content().projectId;
+      const base = baseOverride ?? (id ? linksRef.current[id] : undefined);
+      if (!id || base === undefined) return false;
+      if (baseOverride === undefined && !(await canDiscard())) return false;
+      setSaving(true);
+      try {
+        await api(restoreProjectVersionApi, { params: { id, versionId }, body: { baseRevision: base } });
+      } catch (error) {
+        const code = errorField<CloudSaveRefusal>(error, 'code');
+        const revision = errorField<number>(error, 'revision');
+        if (error instanceof HttpError && error.status === 409 && isStaleOrExists(code) && typeof revision === 'number') {
+          setConflict({ id, name: content().projectName, revision, versionId });
+        } else if (error instanceof HttpError && error.status === 404) {
+          toast.error(t('restore-missing', { ns: 'studio-history', defaultValue: 'That version is no longer available.' }));
+        } else {
+          toast.error(t('restore-failed', { ns: 'studio-history', defaultValue: 'Could not restore that version.' }));
+        }
+        return false;
+      } finally {
+        setSaving(false);
+      }
+      void refreshCloudList();
+      if (!(await loadCloud(id))) return false;
+      toast.success(t('restored', { ns: 'studio-history', defaultValue: 'Version restored as a new save.' }));
+      return true;
+    },
+    [canDiscard, loadCloud, refreshCloudList, t],
+  );
+
+  const openVersionAsCopy = useCallback(
+    async (versionId: string, copyName: string): Promise<boolean> => {
+      const id = content().projectId;
+      if (!id) return false;
+      if (!(await canDiscard())) return false;
+      try {
+        const { version } = await api(getProjectVersionApi, { params: { id, versionId } });
+        const now = Date.now();
+        const name = copyName.trim().slice(0, MAX_PROJECT_NAME) || version.name;
+        applyProject({ ...version.data, id: crypto.randomUUID(), name, createdAt: now, updatedAt: now }, name);
+        await writeLocal();
+        void noticeMissingSamples();
+        return true;
+      } catch {
+        toast.error(t('copy-failed', { ns: 'studio-history', defaultValue: 'Could not open that version.' }));
+        return false;
+      }
+    },
+    [applyProject, canDiscard, noticeMissingSamples, t, writeLocal],
+  );
+
   const resolveConflict = useCallback(
     async (choice: 'overwrite' | 'open-newer' | 'cancel') => {
       const pending = conflict;
       setConflict(null);
       if (!pending || choice === 'cancel') return;
+      if (choice === 'overwrite' && pending.versionId !== undefined) {
+        await restoreVersion(pending.versionId, pending.revision);
+        return;
+      }
       if (choice === 'overwrite') {
         if (await pushCloud(pending.revision)) {
           toast.success(t('saved-account', { defaultValue: 'Saved to your account.' }));
@@ -502,7 +572,7 @@ export function useProjectSession(): ProjectSession {
       }
       await loadCloud(pending.id);
     },
-    [conflict, loadCloud, pushCloud, t],
+    [conflict, loadCloud, pushCloud, restoreVersion, t],
   );
 
   // ─── Delete ──────────────────────────────────────────────────────────────
@@ -609,6 +679,8 @@ export function useProjectSession(): ProjectSession {
       openCloud,
       deleteLocalById,
       deleteCloudById,
+      restoreVersion,
+      openVersionAsCopy,
       onProjectAction,
     }),
     [
@@ -634,6 +706,8 @@ export function useProjectSession(): ProjectSession {
       openCloud,
       deleteLocalById,
       deleteCloudById,
+      restoreVersion,
+      openVersionAsCopy,
       onProjectAction,
     ],
   );

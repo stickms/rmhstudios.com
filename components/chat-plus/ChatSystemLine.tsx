@@ -62,7 +62,7 @@ export function ChatSystemLine({
             },
           ));
 
-  // s04-10: a group's rename, add, remove and owner lines read from their own namespace.
+  // s04-10: a group's rename, add, remove, owner and (s07-04) admin lines read from their own namespace.
   if (
     action &&
     typeof action === 'object' &&
@@ -70,7 +70,9 @@ export function ChatSystemLine({
     (action.action === 'rename' ||
       action.action === 'add' ||
       action.action === 'remove' ||
-      action.action === 'owner')
+      action.action === 'owner' ||
+      action.action === 'admin-added' ||
+      action.action === 'admin-removed')
   ) {
     return <GroupManageLine action={action} viewerId={viewerId} nameOf={nameOf} />;
   }

@@ -263,6 +263,28 @@ type Handlers =
 async function lookup(
   q: string,
 ) {
+  // The GET refuses an e-mail address (s07-13: it would sit in an access log); the single lookup's
+  // behaviour for one is exercised through `runAdminLookup`, which the batch endpoint reuses.
+  if (
+    q.includes(
+      '@',
+    ) &&
+    !q.startsWith(
+      '@',
+    )
+  ) {
+    const {
+      runAdminLookup,
+    } =
+      await import('@/lib/admin/lookup.server');
+    return {
+      status: 200,
+      json: (await runAdminLookup(
+        'admin-1',
+        q,
+      )) as never,
+    };
+  }
   const {
     route,
   } =

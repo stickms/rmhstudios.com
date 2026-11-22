@@ -80,6 +80,7 @@ export const QUIET_COUNT_READ_PATHS = [
   'lib/bookmarks.server.ts',
   'lib/api/serializers.server.ts',
   'app/routes/api/v1/feed.ts',
+  'lib/api/v1/communities.server.ts',
   'app/routes/api/v1/posts/$id.ts',
   'app/routes/api/v1/users/$handle/posts.ts',
   'app/routes/api/v1/me/bookmarks.ts',

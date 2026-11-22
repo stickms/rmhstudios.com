@@ -42,6 +42,12 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `read:study` | Study | Read your flashcard decks, authored cards and due counts. |
 | `write:study` | Study | Create, edit and delete your flashcard decks and cards. Reviews cannot be written. |
 | `manage:webhooks` | Webhooks | Create and manage webhook subscriptions. |
+| `read:events` | Events | Read events you can see and your RSVPs. |
+| `write:events` | Events | RSVP to events and cancel your RSVP. |
+| `read:communities` | Communities | Read communities you can see, their rules and posts, and your memberships. |
+| `write:communities` | Communities | Post into communities you are a member of. |
+| `read:reading` | Reading | Read your highlights, notes, shelves and reading goal. |
+| `write:reading` | Reading | Edit, publish, unpublish and delete your highlights and notes, and edit your shelves. |
 
 <!-- END GENERATED: scopes -->
 

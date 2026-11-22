@@ -13,21 +13,21 @@ export type ScoreMoment = unknown;
 
 export const submitNeonDriftwayScoreApi = endpoint<{
   body: z.infer<typeof neonDriftwayScoreBody>;
-  res: { success: true; linked: true; moment: ScoreMoment };
+  res: { success: true; linked: true; ranked: boolean; moment: ScoreMoment };
 }>()({ method: 'POST', path: '/api/neon-driftway/score' });
 
 export const submitSynapseStormScoreApi = endpoint<{
   body: z.infer<typeof synapseStormScoreBody>;
-  res: { success: true; moment: ScoreMoment };
+  res: { success: true; ranked: boolean; moment: ScoreMoment };
 }>()({ method: 'POST', path: '/api/games/synapse-storm/score' });
 
 export const submitVoidBreakerScoreApi = endpoint<{
   body: z.infer<typeof voidBreakerScoreBody>;
-  res: { success: true; linked: true; moment: ScoreMoment };
+  res: { success: true; linked: true; ranked: boolean; moment: ScoreMoment };
 }>()({ method: 'POST', path: '/api/void-breaker/score' });
 
 /** The shared score pipeline: one POST for every scored game that has no bespoke route. */
 export const submitGameScoreApi = endpoint<{
   body: z.infer<typeof gameScoreBody>;
-  res: { success: true; moment: ScoreMoment };
+  res: { success: true; ranked: boolean; moment: ScoreMoment };
 }>()({ method: 'POST', path: '/api/games/$id/score' });

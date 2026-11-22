@@ -33,4 +33,20 @@ describe('settings hub labels', () => {
     expect(d).toMatchObject({ to: '/settings/feedback', group: 'account', requiresAuth: true, label: 'Your feedback' });
     expect(settingsNavText(echoDefault)['feedback']).toEqual({ label: d!.label, hint: d!.hint });
   });
+
+  // Sprint 07
+  // s07-02 game-assists
+  it('lists Game assists under account, signed-in only', () => {
+    const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'game-assists');
+    expect(d).toMatchObject({ to: '/settings/game-assists', group: 'account', requiresAuth: true, label: 'Game assists' });
+    expect(settingsNavText(echoDefault)['game-assists']).toEqual({ label: d!.label, hint: d!.hint });
+  });
+
+  // s07-03 device-data
+  it('lists This device under account, for visitors too', () => {
+    const d = SETTINGS_DESTINATIONS.find((x) => x.id === 'device');
+    expect(d).toMatchObject({ to: '/settings/device', group: 'account', label: 'This device' });
+    expect(d!.requiresAuth).toBeFalsy();
+    expect(settingsNavText(echoDefault)['device']).toEqual({ label: d!.label, hint: d!.hint });
+  });
 });

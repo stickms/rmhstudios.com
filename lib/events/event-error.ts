@@ -11,7 +11,10 @@ export class EventError extends Error {
       | 'WAITLIST_FULL'
       | 'CANCELED'
       | 'INVALID_RECURRENCE'
-      | 'OCCURRENCE_SKIPPED',
+      | 'OCCURRENCE_SKIPPED'
+      | 'COMMUNITY_SANCTIONED',
+    /** COMMUNITY_SANCTIONED only: the member's ban or timeout (never its private reason). */
+    public readonly sanction?: { kind: 'ban' | 'timeout'; endsAt: Date | null },
   ) {
     super(code);
     this.name = 'EventError';

@@ -37,6 +37,7 @@ export const route = apiRoute('/api/user-builds/featured', {
         title: build.title,
         description: build.description,
         thumbnailUrl: build.thumbnailUrl,
+        thumbnailAlt: build.thumbnailAlt ?? null,
         repoUrl: build.repoUrl,
         demoUrl: build.demoUrl,
         featured: build.featured,

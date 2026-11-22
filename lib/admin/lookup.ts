@@ -72,6 +72,72 @@ export type IdShape =
 
 export const MAX_LOOKUP_LENGTH = 500;
 
+/** The most items one batch lookup takes. */
+export const MAX_BATCH_ITEMS = 50;
+
+/**
+ * Split pasted text into lookup items: newlines, commas and spaces separate them, blanks drop and a
+ * repeated item keeps its first place. Pure, so the page can show "{{n}} items" before it submits.
+ */
+export function splitLookupInput(
+  raw: string,
+): string[] {
+  const seen =
+    new Set<string>();
+  const items: string[] =
+    [];
+  for (const part of raw.split(
+    /[\s,]+/,
+  )) {
+    const item =
+      part.trim();
+    if (
+      item.length ===
+        0 ||
+      seen.has(
+        item,
+      )
+    )
+      continue;
+    seen.add(
+      item,
+    );
+    items.push(
+      item,
+    );
+  }
+  return items;
+}
+
+/** Trim, drop blanks and collapse repeats (the server's own pass over a batch body). */
+export function normaliseBatchItems(
+  items: readonly string[],
+): string[] {
+  const seen =
+    new Set<string>();
+  const out: string[] =
+    [];
+  for (const raw of items) {
+    const item =
+      raw.trim();
+    if (
+      item.length ===
+        0 ||
+      seen.has(
+        item,
+      )
+    )
+      continue;
+    seen.add(
+      item,
+    );
+    out.push(
+      item,
+    );
+  }
+  return out;
+}
+
 const CUID =
   /^c[a-z0-9]{20,31}$/;
 const UUID =
@@ -682,6 +748,53 @@ export function auditDetail(
   return `input=${inputKind} found=${ids.length ? ids.join(',') : 'none'}${more}`;
 }
 
+/**
+ * What the one audit row of a batch records: how many items, how many of each input kind and how
+ * many matched. Counts only, so no input (least of all an e-mail address) reaches the log.
+ */
+export function batchAuditDetail(
+  items: ReadonlyArray<{
+    inputKind: LookupInputKind;
+    found: number;
+  }>,
+): string {
+  const kinds: Record<
+    string,
+    number
+  > =
+    {};
+  let matched = 0;
+  for (const i of items) {
+    kinds[
+      i.inputKind
+    ] =
+      (kinds[
+        i.inputKind
+      ] ?? 0) +
+      1;
+    if (
+      i.found >
+      0
+    )
+      matched++;
+  }
+  const list =
+    Object.entries(
+      kinds,
+    )
+      .map(
+        ([
+          k,
+          n,
+        ]) =>
+          `${k}:${n}`,
+      )
+      .join(
+        ',',
+      );
+  return `items=${items.length} kinds=${list} matched=${matched}`;
+}
+
 /** The admin page that acts on a result, with the filters that open it on that result. */
 export type LookupAdminTool =
   | {
@@ -736,7 +849,9 @@ export type LookupOutcome =
   | 'not-found'
   | 'foreign-link'
   | 'unknown-path'
-  | 'unrecognised';
+  | 'unrecognised'
+  /** Batch only: this item's lookup failed; the others are unaffected. */
+  | 'error';
 
 export interface LookupResponse {
   outcome: LookupOutcome;
@@ -744,4 +859,14 @@ export interface LookupResponse {
   results: LookupResult[];
   /** The kinds that were asked about, so "nothing found" says what it looked at. */
   tried: LookupKind[];
+}
+
+/** One item of a batch: what was pasted, and the single lookup's answer for it. */
+export interface LookupBatchGroup
+  extends LookupResponse {
+  input: string;
+}
+
+export interface LookupBatchResponse {
+  groups: LookupBatchGroup[];
 }

@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import { createJamApi, listJamsApi } from '@/lib/competitive/jams.contract';
+import { jamThemeVotingFields } from '@/lib/competitive/jam-themes-schema';
 import { createJam, listJams } from '@/lib/competitive/jams.server';
 
 const createSchema = z.object({
@@ -11,6 +12,7 @@ const createSchema = z.object({
   startsAt: z.coerce.date(),
   submitEndsAt: z.coerce.date(),
   ratingEndsAt: z.coerce.date(),
+  ...jamThemeVotingFields,
 });
 
 /**

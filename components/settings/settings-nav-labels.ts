@@ -73,6 +73,19 @@ export function settingsNavText(t: TFunction): Record<string, SettingsNavText> {
       label: t('settings-nav-feedback', { ns: 'feed', defaultValue: 'Your feedback' }),
       hint: t('settings-nav-feedback-hint', { ns: 'feed', defaultValue: 'What you sent us, where it stands, and any reply' }),
     },
+    // Sprint 07
+    // s07-02 game-assists
+    'game-assists': {
+      label: t('settings-nav-game-assists', { ns: 'feed', defaultValue: 'Game assists' }),
+      hint: t('settings-nav-game-assists-hint', { ns: 'feed', defaultValue: 'Calmer visuals, a slower clock and no timed input for the games that support them' }),
+    },
+
+    // s07-03 device-data
+    'device': {
+      label: t('settings-nav-device', { ns: 'feed', defaultValue: 'This device' }),
+      hint: t('settings-nav-device-hint', { ns: 'feed', defaultValue: 'What this site keeps in this browser, and clearing it' }),
+    },
+
     'privacy': {
       label: t('settings-nav-privacy', { ns: 'feed', defaultValue: 'Privacy & data' }),
       hint: t('settings-nav-privacy-hint', { ns: 'feed', defaultValue: 'Who sees you, close friends, calls, muted words, and your data' }),

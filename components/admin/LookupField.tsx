@@ -6,12 +6,17 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
-import { MAX_LOOKUP_LENGTH } from '@/lib/admin/lookup';
+import {
+  MAX_BATCH_ITEMS,
+  MAX_LOOKUP_LENGTH,
+  classifyLookup,
+  splitLookupInput,
+} from '@/lib/admin/lookup';
 
 /**
  * The one lookup box: paste an id, a handle, an e-mail address or a link, press Enter. It only
- * navigates to `/admin/lookup?q=`, so the address carries the query and a result can be shared
- * between admins. Used on the admin hub and on the lookup page.
+ * navigates to `/admin/lookup?q=` for one handle, id or link, so that result can be shared
+ * between admins; an e-mail address or a pasted list travels in router state, never the address. Used on the admin hub and on the lookup page.
  */
 export function LookupField({
   initial = '',
@@ -47,17 +52,45 @@ export function LookupField({
       e: FormEvent,
     ) => {
       e.preventDefault();
-      const q =
-        value.trim();
+      const items =
+        splitLookupInput(
+          value,
+        );
+      const only =
+        items[0];
       if (
-        q
+        items.length ===
+          1 &&
+        only !==
+          undefined &&
+        classifyLookup(
+          only,
+        ).type !==
+          'email'
       )
         void navigate(
           {
             to: '/admin/lookup',
             search:
               {
-                q,
+                q: only,
+              },
+          },
+        );
+      // An e-mail address or a pasted list goes in router state, never in the address.
+      else if (
+        items.length >
+        0
+      )
+        void navigate(
+          {
+            to: '/admin/lookup',
+            search:
+              {},
+            state:
+              {
+                lookupItems:
+                  items,
               },
           },
         );
@@ -85,7 +118,8 @@ export function LookupField({
           label
         }
         maxLength={
-          MAX_LOOKUP_LENGTH
+          MAX_LOOKUP_LENGTH *
+          MAX_BATCH_ITEMS
         }
         autoComplete="off"
         autoCapitalize="none"

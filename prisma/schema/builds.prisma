@@ -35,6 +35,8 @@ model UserBuild {
   repoUrl      String?         @db.VarChar(500)
   demoUrl      String?         @db.VarChar(500)
   thumbnailUrl String?         @db.VarChar(500)
+  /// s07-17: what the cover shows, for a screen reader; optional.
+  thumbnailAlt String?         @db.VarChar(500)
   visibility   BuildVisibility @default(PUBLIC)
   featured     Boolean         @default(false)
   isCurated    Boolean         @default(false) // Added for "Official Build" status
@@ -64,12 +66,30 @@ model UserBuild {
   commentsLocked Boolean @default(false)
   views      BuildView[]
   unlocks    BuildUnlock[]
+  screenshots BuildScreenshot[]
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
   @@index([gameId, visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
+}
+
+/// s07-17: a described screenshot of a build, at most eight, shown in `position` order on the build page.
+model BuildScreenshot {
+  id          String   @id @default(cuid())
+  buildId     String
+  url         String   @db.VarChar(500)
+  width       Int
+  height      Int
+  description String   @db.VarChar(500)
+  position    Int
+  createdAt   DateTime @default(now())
+
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId, position])
+  @@map("build_screenshot")
 }
 
 /// A paid unlock of a build's gated content (#16). Mirrors PostUnlock.

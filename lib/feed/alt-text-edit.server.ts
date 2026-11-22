@@ -13,6 +13,12 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { normalizeGifAlt } from '@/lib/feed/gif-alt';
+import { getCommunitySettings } from '@/lib/communities/settings.server';
+import {
+  ALT_REQUIRED_MESSAGE,
+  clearsDescription,
+  communityGifAltMissing,
+} from '@/lib/communities/alt-required';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 import {
   MISSING_ALT_BATCH_SIZE,
@@ -92,6 +98,7 @@ export async function updatePostAlts(args: {
             gifAlt: true,
             unlockPrice: true,
             expiresAt: true,
+            communityId: true,
           },
       },
     );
@@ -200,6 +207,15 @@ export async function updatePostAlts(args: {
           post.imageUrls,
           post.imageAlts,
         );
+  // s07-16: in a community that requires descriptions a description is never taken away (clearing one is refused).
+  if (writesImages && post.communityId) {
+    const community = await getCommunitySettings(post.communityId);
+    if (
+      community?.requireImageAlt &&
+      clearsDescription(post.imageAlts, imageAlts)
+    )
+      return fail(400, ALT_REQUIRED_MESSAGE);
+  }
   const gifAlt =
     gifGiven
       ? normalizeGifAlt(
@@ -207,6 +223,12 @@ export async function updatePostAlts(args: {
           args.gifAlt,
         )
       : undefined;
+  // s07-16: a GIF's description is never taken away there either.
+  if (gifAlt !== undefined && post.communityId) {
+    const community = await getCommunitySettings(post.communityId);
+    if (communityGifAltMissing(community?.requireImageAlt === true, post.gifUrl, gifAlt))
+      return fail(400, ALT_REQUIRED_MESSAGE);
+  }
   // The compare-and-set keeps a delete that lands between the read and the write from being undone by it.
   const written =
     await prisma.rMHark.updateMany(

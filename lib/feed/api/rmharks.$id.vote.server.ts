@@ -8,6 +8,17 @@ import { lockOpenPoll, PollLifecycleError, pollClosedError } from '@/lib/feed/po
 import { isPollEnded } from '@/lib/feed/poll-lifecycle';
 import { rankedBallotSchema } from '@/lib/feed/ranked-poll-schema';
 import { RankedBallotError, submitBallot } from '@/lib/feed/ranked-poll.server';
+import { quizRevealFor } from '@/lib/feed/quiz-poll';
+
+/** 409 `ALREADY_ANSWERED`: a quiz takes one vote, final (s07-19), so the answer cannot be fished for by changing it. */
+class QuizAlreadyAnswered extends Error {}
+
+function alreadyAnsweredResponse(): Response {
+  return Response.json(
+    { error: 'A quiz answer cannot be changed', code: 'ALREADY_ANSWERED' },
+    { status: 409 },
+  );
+}
 
 /** 409 `POLL_CLOSED`: the poll has ended, by the clock or by its author. */
 function pollClosedResponse(): Response {
@@ -69,7 +80,16 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         where: { id: optionId },
         include: {
           poll: {
-            select: { rmheetId: true, multiSelect: true, ranked: true, id: true, closesAt: true, closedAt: true },
+            select: {
+              rmheetId: true,
+              multiSelect: true,
+              ranked: true,
+              id: true,
+              closesAt: true,
+              closedAt: true,
+              correctOptionId: true,
+              explanation: true,
+            },
           },
         },
       });
@@ -97,6 +117,24 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         where: { optionId_userId: { optionId, userId } },
       });
 
+      const isQuiz = !!option.poll.correctOptionId;
+      // A quiz vote is final: a voter who already answered (this option or another) is refused before any write.
+      if (isQuiz) {
+        const already = await prisma.rMHarkPollVote.findFirst({
+          where: { userId, option: { pollId } },
+          select: { id: true },
+        });
+        if (already) return alreadyAnsweredResponse();
+        // The author wrote the answer, so their vote would only pad the count (the UI hides the buttons from them).
+        const post = await prisma.rMHark.findUnique({ where: { id }, select: { userId: true } });
+        if (post?.userId === userId) {
+          return Response.json(
+            { error: 'You cannot answer your own quiz', code: 'OWN_QUIZ' },
+            { status: 403 },
+          );
+        }
+      }
+
       // Voting needs a readable post (un-voting stays allowed).
       if (!existingVote && !(await canReadPostThread(id, userId))) {
         return Response.json({ error: 'Not found' }, { status: 404 });
@@ -108,6 +146,14 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         // the votes (guarded so a decrement never goes below zero).
         await prisma.$transaction(async (tx) => {
           await lockOpenPoll(tx, pollId);
+          if (isQuiz) {
+            // Re-checked under the poll's lock, so two racing answers from one member cannot both land.
+            const prior = await tx.rMHarkPollVote.findFirst({
+              where: { userId, option: { pollId } },
+              select: { id: true },
+            });
+            if (prior) throw new QuizAlreadyAnswered();
+          }
           if (existingVote) {
             // Toggle off.
             await tx.rMHarkPollVote.delete({ where: { id: existingVote.id } });
@@ -150,6 +196,7 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
         });
       } catch (err) {
         if (err instanceof PollLifecycleError && err.code === 'POLL_CLOSED') return pollClosedResponse();
+        if (err instanceof QuizAlreadyAnswered) return alreadyAnsweredResponse();
         throw err;
       }
       // Progression runs only when a vote was cast (not toggled off).
@@ -191,6 +238,8 @@ export const route = apiRoute('/api/rmharks/$id/vote', {
       return Response.json({
         success: true,
         myVotes: myVotes.map((v) => v.optionId),
+        // The voter has answered, so the reveal rides the response (`quizRevealFor`: voted is true).
+        ...quizRevealFor(option.poll, { viewerId: userId, authorId: '' }, myVotes.length > 0),
         totalVotes,
         options: updatedOptions.map((o) => ({
           id: o.id,

@@ -61,17 +61,37 @@ model FlashcardDeck {
   cardsChangedAt  DateTime?
   /// "Tell me about updates": the copy's owner wants the deck page to show the author's changes.
   notifyUpdates   Boolean  @default(true)
+  /// The owner's private folder for this deck (null: "No folder"). Never in a public payload.
+  folderId     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder      DeckFolder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
   cards       Flashcard[]
   testResults FlashcardTestResult[]
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
   @@index([userId, clonedFromId])
+  @@index([userId, folderId])
   @@map("flashcard_deck")
+}
+
+/// A member's private, one-level folder of decks: name, order and collapse state follow the member across devices.
+model DeckFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  position  Int
+  collapsed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decks FlashcardDeck[]
+
+  @@index([userId, position])
+  @@map("deck_folder")
 }
 
 model Flashcard {
@@ -121,6 +141,11 @@ model FlashcardReview {
   repetitions  Int      @default(0)
   dueAt        DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  /// Set aside by the member (`manual`) or after 8 lapses (`leech`); a suspended card is in no queue or due count.
+  suspendedAt   DateTime?
+  suspendReason String?   @db.VarChar(8)
+  /// Grades of "Again" on a card that had already been learned (repetitions > 0).
+  lapses        Int       @default(0)
 
   user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)

@@ -337,6 +337,9 @@ function AdminDashboardPage() {
           {/* s06-05 feedback-inbox */}
           <AdminFeedbackCard />
 
+          {/* Sprint 07 admin tools */}
+          {/* s07-13 admin-batch-lookup */}
+
         </div>
       </AdminBody>
     </PageLayout>

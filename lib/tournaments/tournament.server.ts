@@ -20,6 +20,8 @@ import { TournamentError } from './tournament-error';
 import { orderForStart } from './seeding.server';
 import { ratingSeedingAvailable, type SeedingMethod } from './seeding';
 import { randomUUID } from 'node:crypto';
+import { stampDeadline, stampTournamentDeadlines } from './deadline.server';
+import { isDeadlineHours } from './scheduling';
 
 type Db = PrismaClient;
 
@@ -47,6 +49,8 @@ export async function createTournament(
     maxPlayers: number;
     startsAt?: string | null;
     checkInMinutes?: number | null;
+    /** s07-06: each match must be played within this many hours of becoming ready; null or left out = no deadline. */
+    matchDeadlineHours?: number | null;
     /** How the field is seeded at the start; sign-up order when left out. */
     seeding?: SeedingMethod;
   },
@@ -60,6 +64,9 @@ export async function createTournament(
   }
   if (opts.seeding === 'rating' && !ratingSeedingAvailable(opts.gameId)) {
     throw new TournamentError('Rating seeding is only for ranked games', 'RATING_UNAVAILABLE', 400);
+  }
+  if (opts.matchDeadlineHours != null && !isDeadlineHours(opts.matchDeadlineHours)) {
+    throw new TournamentError('Pick a listed match deadline', 'BAD_DEADLINE', 400);
   }
   const seed = opts.seedPoolCoins ?? 0;
   try {
@@ -82,6 +89,7 @@ export async function createTournament(
           createdById: opts.createdById,
           startsAt: opts.startsAt ? new Date(opts.startsAt) : null,
           checkInMinutes: opts.checkInMinutes ?? null,
+          matchDeadlineHours: opts.matchDeadlineHours ?? null,
           seeding: opts.seeding ?? 'join',
           status: 'REGISTRATION',
         },
@@ -397,6 +405,8 @@ export async function startTournament(
         })),
       });
     }
+    // s07-06: the first round's matches are ready now; stamp their deadlines in the same transaction.
+    await stampTournamentDeadlines(tx, t.id);
   });
 
   await notifyRemovedNoShows(t, removedUserIds);
@@ -456,6 +466,8 @@ async function createSwissRound(
       completedAt: p.b === null ? now : null,
     })),
   });
+  // s07-06: every pairing of the round gets its deadline when the round is generated.
+  await stampTournamentDeadlines(tx, tournamentId, { round });
   for (const p of pairs) {
     if (p.b === null) {
       await tx.tournamentEntrant.update({ where: { id: p.a }, data: { wins: { increment: 1 } } });
@@ -508,6 +520,8 @@ async function fillSlot(
   const next = await tx.tournamentMatch.findUnique({ where: { id: matchId } });
   if (next && next.entrantAId && next.entrantBId && next.state === 'PENDING') {
     await tx.tournamentMatch.update({ where: { id: next.id }, data: { state: 'READY' } });
+    // s07-06: the second entrant just arrived, so the match is ready: stamp its deadline.
+    await stampDeadline(tx, next.id);
   }
 }
 
@@ -532,7 +546,14 @@ async function advanceIntoNext(
  * /"agreement"/"bye").
  */
 export async function settleMatch(
-  opts: { tournamentId: string; matchId: string; winnerEntrantId: string; source: string },
+  opts: {
+    tournamentId: string;
+    matchId: string;
+    winnerEntrantId: string;
+    source: string;
+    /** Runs inside the settling transaction, only when this call is the one that settled (s07-06: the walkover's audit row). */
+    inTx?: (tx: Prisma.TransactionClient) => Promise<void>;
+  },
   db: Db = prisma,
 ): Promise<{ settled: boolean; tournamentComplete: boolean }> {
   const outcome = await db.$transaction(async (tx) => {
@@ -574,9 +595,13 @@ export async function settleMatch(
         state: 'COMPLETE',
         resultSource: opts.source.slice(0, 24),
         completedAt: new Date(),
+        // s07-06: a settled match ignores scheduling; a live proposal goes with it.
+        proposedAt: null,
+        proposedById: null,
       },
     });
     if (claimed.count === 0) return { settled: false, isFinal: false, swiss: false };
+    if (opts.inTx) await opts.inTx(tx);
     await tx.tournamentEntrant.update({
       where: { id: opts.winnerEntrantId },
       data: { wins: { increment: 1 } },
@@ -594,7 +619,7 @@ export async function settleMatch(
       // The losers champion beat the winners champion: the same two play again,
       // and whoever wins that decides the tournament. Only the settle that won
       // the claim above gets here, so the reset is created once.
-      await tx.tournamentMatch.create({
+      const reset = await tx.tournamentMatch.create({
         data: {
           tournamentId: opts.tournamentId,
           round: match.round + 1,
@@ -605,6 +630,8 @@ export async function settleMatch(
           state: 'READY',
         },
       });
+      // s07-06: the reset match is ready as soon as it exists.
+      await stampDeadline(tx, reset.id);
     }
     const isFinal = match.nextMatchId == null && !resetFollows;
     return { settled: true, isFinal, swiss };
@@ -739,7 +766,8 @@ export async function cancelTournament(
     // COMPLETE and BYE rows keep their results.
     await tx.tournamentMatch.updateMany({
       where: { tournamentId: t.id, state: { in: ['PENDING', 'READY', 'LIVE'] } },
-      data: { state: 'CANCELLED' },
+      // s07-06: a live time proposal goes with the match.
+      data: { state: 'CANCELLED', proposedAt: null, proposedById: null },
     });
 
     const entrants = await tx.tournamentEntrant.findMany({ where: { tournamentId: t.id } });
@@ -825,6 +853,8 @@ export interface SerializedTournament {
   checkInOpensAt: string | null;
   /** How the field is seeded at the start: join, rating, random or manual. */
   seeding: string;
+  /** s07-06: hours each match has once it is ready (24, 48, 72 or 168); null = no deadline. */
+  matchDeadlineHours: number | null;
   createdAt: string;
   entrants?: {
     id: string;
@@ -856,6 +886,13 @@ export interface SerializedTournament {
     claimedAt: string | null;
     disputedByUserId: string | null;
     disputeNote: string | null;
+    /** s07-06: when the match must be played by (ISO), or null. */
+    deadlineAt: string | null;
+    /** s07-06: the agreed time (ISO), or null. */
+    scheduledAt: string | null;
+    /** s07-06: a live time proposal (players, host and admins only): the proposed instant and who proposed it. */
+    proposedAt: string | null;
+    proposedByUserId: string | null;
   }[];
   payouts?: { userId: string; placement: number; amountCoins: number }[];
   viewerEntered?: boolean;
@@ -885,6 +922,7 @@ function serializeSummary(t: Tournament & { _count: { entrants: number } }): Ser
     checkInMinutes: t.checkInMinutes,
     checkInOpensAt: checkInOpensAt(t)?.toISOString() ?? null,
     seeding: t.seeding,
+    matchDeadlineHours: t.matchDeadlineHours,
     createdAt: t.createdAt.toISOString(),
   };
 }
@@ -959,6 +997,10 @@ export async function getTournament(
       claimedAt: privileged && m.state !== 'COMPLETE' ? (m.claimedAt?.toISOString() ?? null) : null,
       disputedByUserId: privileged && m.state !== 'COMPLETE' ? m.disputedById : null,
       disputeNote: privileged && m.state !== 'COMPLETE' ? m.disputeNote : null,
+      deadlineAt: m.deadlineAt?.toISOString() ?? null,
+      scheduledAt: m.scheduledAt?.toISOString() ?? null,
+      proposedAt: privileged && m.state !== 'COMPLETE' ? (m.proposedAt?.toISOString() ?? null) : null,
+      proposedByUserId: privileged && m.state !== 'COMPLETE' ? m.proposedById : null,
       };
     }),
     payouts: t.payouts.map((p) => ({

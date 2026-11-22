@@ -20,6 +20,8 @@ import {
 } from './jam-teams';
 import { memberLockName, placementsOf } from './jam-teams.server';
 import { FEEDBACK_MAX, FEEDBACK_MIN, feedbackIntent } from './jam-feedback';
+import { effectiveThemes } from './jam-themes.server';
+import { resolveVoteOpensAt, themeVotingPhase, validateCandidates, CANDIDATE_PROBLEM_MESSAGE } from './jam-themes';
 import { feedbackCounts, myFeedbackFor, notifyTeamOfFeedback, saveFeedback, type FeedbackSaveOutcome } from './jam-feedback.server';
 
 const ENTRY_CAP = 200;
@@ -42,13 +44,38 @@ export async function createJam(
     startsAt: Date;
     submitEndsAt: Date;
     ratingEndsAt: Date;
+    /** s07-07: opt-in theme vote. */
+    themeVoting?: boolean | undefined;
+    themeCandidates?: string[] | undefined;
+    themeVoteOpensAt?: Date | undefined;
   },
 ) {
-  if (!(input.startsAt < input.submitEndsAt && input.submitEndsAt < input.ratingEndsAt)) {
+  const { themeVoting, themeCandidates, themeVoteOpensAt, ...core } = input;
+  if (!(core.startsAt < core.submitEndsAt && core.submitEndsAt < core.ratingEndsAt)) {
     return { ok: false as const, error: 'Dates must run start < submissions close < rating close' };
   }
+  if (!themeVoting) {
+    const jam = await prisma.gameJam.create({
+      data: { ...core, slug: slugify(core.title), createdById: userId },
+      select: { slug: true },
+    });
+    return { ok: true as const, slug: jam.slug };
+  }
+  const valid = validateCandidates(themeCandidates ?? []);
+  if (!valid.ok) return { ok: false as const, error: CANDIDATE_PROBLEM_MESSAGE[valid.problem] };
+  const opensAt = resolveVoteOpensAt(themeVoteOpensAt, core.startsAt);
+  if (!opensAt) return { ok: false as const, error: 'Voting must open before the jam starts' };
   const jam = await prisma.gameJam.create({
-    data: { ...input, slug: slugify(input.title), createdById: userId },
+    data: {
+      ...core,
+      // `theme` stays required: the first candidate stands in until the vote resolves at the start.
+      theme: valid.texts[0]!,
+      themeVoting: true,
+      themeVoteOpensAt: opensAt,
+      slug: slugify(core.title),
+      createdById: userId,
+      themeCandidates: { create: valid.texts.map((text, position) => ({ text, position })) },
+    },
     select: { slug: true },
   });
   return { ok: true as const, slug: jam.slug };
@@ -62,14 +89,20 @@ function summary(j: {
   startsAt: Date;
   submitEndsAt: Date;
   ratingEndsAt: Date;
-}) {
+  themeVoting: boolean;
+  themeVoteOpensAt: Date | null;
+}, themeOverride?: string) {
   const now = new Date();
   return {
     slug: j.slug,
     title: j.title,
     description: j.description,
     // The theme never leaves the server before the jam starts.
-    theme: themeVisible(j, now) ? j.theme : null,
+    // (A voting jam whose claim has not run yet shows the computed winner: `themeOverride`, only ever set after the start.)
+    theme: themeVisible(j, now) ? (themeOverride ?? j.theme) : null,
+    // s07-07: a voting jam, and whether marks are being taken now. No count or winner is ever part of a summary.
+    themeVoting: j.themeVoting,
+    themeVoteOpen: themeVotingPhase(j, now) === 'open',
     startsAt: j.startsAt.toISOString(),
     submitEndsAt: j.submitEndsAt.toISOString(),
     ratingEndsAt: j.ratingEndsAt.toISOString(),
@@ -82,14 +115,15 @@ export async function listJams() {
     orderBy: { startsAt: 'desc' },
     take: 30,
   });
-  return rows.map(summary);
+  const computed = await effectiveThemes(rows);
+  return rows.map((r) => summary(r, computed.get(r.id)));
 }
 
 export async function getJam(slug: string, viewerId: string | null) {
   const jam = await prisma.gameJam.findUnique({ where: { slug } });
   if (!jam) return null;
   const phase = jamPhase(jam);
-  const base = summary(jam);
+  const base = summary(jam, (await effectiveThemes([jam])).get(jam.id));
   if (phase === 'upcoming') {
     return {
       ...base,

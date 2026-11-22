@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { GameState } from '../engine/types';
 import { HUD } from './HUD';
 import { PuzzleCard } from './PuzzleCard';
+import { useSynapseAssist } from './assist-context';
+import { EndRunButton, useCappedScreenColor } from './assist-ui';
 
 interface GameBoardProps {
   state: GameState;
@@ -13,6 +15,8 @@ interface GameBoardProps {
   onSkipPhase?: (
     id: string,
   ) => void;
+  /** Assist: the run has no timers, so the player ends it. */
+  onEndRun?: () => void;
 }
 
 export const GameBoard: React.FC<
@@ -21,6 +25,7 @@ export const GameBoard: React.FC<
   state,
   onSolve,
   onSkipPhase,
+  onEndRun,
 }) => {
   const {
     t,
@@ -28,9 +33,18 @@ export const GameBoard: React.FC<
     useTranslation(
       'c-synapse-storm',
     );
+  const assist =
+    useSynapseAssist();
+  const saturated =
+    useCappedScreenColor(
+      Boolean(
+        state.isSaturated,
+      ),
+      assist,
+    );
   return (
     <div
-      className={`game-board ${state.isSaturated ? 'saturated' : ''}`}
+      className={`game-board ${saturated ? 'saturated' : ''}`}
     >
       <HUD
         state={
@@ -87,6 +101,15 @@ export const GameBoard: React.FC<
             ),
           )}
         </div>
+
+        {assist.frozenTimers &&
+          onEndRun && (
+            <EndRunButton
+              onEndRun={
+                onEndRun
+              }
+            />
+          )}
 
         {state.combo >=
           10 && (

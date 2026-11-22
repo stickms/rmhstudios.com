@@ -7,6 +7,7 @@ import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-ite
 import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { pollOptionCount, rankedPollFields } from '@/lib/feed/ranked-poll';
+import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -24,9 +25,14 @@ function pollInclude(userId: string | null) {
   };
 }
 
-function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
+function mapPoll(
+  poll: any,
+  countsHidden = false,
+  reader: { viewerId: string | null; authorId: string } = { viewerId: null, authorId: '' },
+): FeedPoll | undefined {
   if (!poll) return undefined;
   const lifecycle = pollLifecycleView(poll);
+  const voted = viewerHasVoted(poll.options);
   const totalVotes = poll.options.reduce((s: number, o: any) => s + pollOptionCount(poll, o), 0);
   return {
     id: poll.id,
@@ -34,6 +40,7 @@ function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
     multiSelect: poll.multiSelect,
     ...lifecycle,
     ...rankedPollFields(poll, { ended: lifecycle.ended, countsHidden }),
+    ...quizRevealFor(poll, reader, voted),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -141,7 +148,10 @@ export async function listBookmarks(
         liked: r.likes?.length > 0,
         reposted: r.reposts?.length > 0,
         bookmarked: true,
-        poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
+        poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId), {
+          viewerId,
+          authorId: r.userId,
+        }),
         gifUrl: r.gifUrl ?? undefined,
         gifAlt: r.gifAlt ?? undefined,
         imageUrls: r.imageUrls ?? undefined,

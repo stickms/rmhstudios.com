@@ -7,6 +7,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { countsHiddenFrom } from '@/lib/feed/quiet-counts';
 import { isPollEnded, pollEffectiveEnd } from '@/lib/feed/poll-lifecycle';
 import { viewRankedResult, type RankedResult } from '@/lib/feed/ranked-poll';
+import type { QuizFields } from '@/lib/feed/quiz-poll';
 
 /** The Prisma select for an author block on any post/comment/list item. */
 export const apiAuthorSelect = userDisplaySelect;
@@ -133,11 +134,15 @@ interface ApiPollRow {
  * The poll on a post, for `GET /api/v1/posts/{id}` (sprint 06 #19). `ranked` says the poll is ranked-choice; `result`
  * is the instant-runoff count, present only once a ranked poll has ended. Round tallies are whole percents when the
  * author hides counts from this viewer (quiet counts), counts otherwise.
+ *
+ * `quiz` is what `quizRevealFor` allowed this key's owner to know (s07-19): the marker always, the answer and the
+ * explanation only for the author, a voter, or anyone once the poll has ended.
  */
 export function serializePostPoll(
   poll: ApiPollRow,
   result: RankedResult | null,
   countsHidden: boolean,
+  quiz: QuizFields = {},
 ) {
   const view = result ? viewRankedResult(result, countsHidden) : null;
   const end = pollEffectiveEnd(poll);
@@ -146,6 +151,9 @@ export function serializePostPoll(
     question: poll.question,
     multiSelect: poll.multiSelect,
     ranked: poll.ranked,
+    quiz: quiz.quiz === true,
+    correctOptionId: quiz.correctOptionId ?? null,
+    explanation: quiz.explanation ?? null,
     ended: isPollEnded(poll),
     closesAt: end ? end.toISOString() : null,
     options: poll.options.map((o) => ({ id: o.id, text: o.text })),

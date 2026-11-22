@@ -1,0 +1,16 @@
+{
+  "admin-limit": "A group can have 5 admins.",
+  "could-not-set-admin": "Could not change the admin",
+  "created-by": "Made by {{name}}",
+  "line-admin-added": "{{name}} made {{target}} an admin",
+  "line-admin-removed": "{{name}} removed {{target}} as an admin",
+  "line-links-revoked_one": "{{count}} invite link revoked",
+  "line-links-revoked_other": "{{count}} invite links revoked",
+  "make-admin-name": "Make {{name}} admin",
+  "marker-admin": "Admin",
+  "remove-admin": "Remove as admin",
+  "remove-admin-confirm": "Remove {{name}} as admin?",
+  "remove-admin-description": "Invite links they made stop working.",
+  "remove-admin-name": "Remove {{name}} as admin",
+  "viewer-admin": "You are an admin"
+}

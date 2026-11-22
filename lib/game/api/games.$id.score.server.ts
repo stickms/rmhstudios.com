@@ -29,7 +29,7 @@ export const route = apiRoute('/api/games/$id/score', {
           { status: result.status },
         );
       }
-      return Response.json({ success: true, moment: result.moment ?? null });
+      return Response.json({ success: true, ranked: result.ranked, moment: result.moment ?? null });
     },
   ),
 });

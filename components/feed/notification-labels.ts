@@ -90,6 +90,25 @@ export function systemLabels(t: TFunction): Record<string, string> {
     // s06-20 match-results
     tournament_result: t('system-label-tournament_result', { ns: 'feed', defaultValue: 'Tournaments' }),
 
+    // Sprint 07 system labels (docs/autonomous/sprint-07/plan.md §Anchors)
+    // s07-05 group-mentions
+    'group-mention': t('system-label-group-mention', { ns: 'feed', defaultValue: 'Group mentions' }),
+
+    // s07-06 match-scheduling
+    'match-proposal': t('system-label-match-proposal', { ns: 'feed', defaultValue: 'Match time proposals' }),
+    'match-agreed': t('system-label-match-agreed', { ns: 'feed', defaultValue: 'Match times' }),
+    'match-reminder': t('system-label-match-reminder', { ns: 'feed', defaultValue: 'Match reminders' }),
+    'match-deadline': t('system-label-match-deadline', { ns: 'feed', defaultValue: 'Match deadlines' }),
+    'match-awarded': t('system-label-match-awarded', { ns: 'feed', defaultValue: 'Match awards' }),
+
+    // s07-07 jam-themes
+    jam_theme: t('system-label-jam_theme', { ns: 'feed', defaultValue: 'Game jams' }),
+
+    // s07-16 community-alt-text
+    'scheduled-alt-required': t('system-label-scheduled-alt-required', {
+      ns: 'feed',
+      defaultValue: 'Scheduled post held',
+    }),
 
     default: t('system-label-default', { ns: 'feed', defaultValue: 'RMH Studios' }),
   };

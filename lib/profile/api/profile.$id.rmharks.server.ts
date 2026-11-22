@@ -16,6 +16,7 @@ import { isExpired } from '@/lib/posts-plus/constants';
 import { countsHiddenFrom, redactCounts } from '@/lib/feed/quiet-counts';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { rankedPollFields } from '@/lib/feed/ranked-poll';
+import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
 import { PIN_LIMIT } from '@/lib/feed/profile-pins';
 
 function pollInclude(userId: string | null) {
@@ -36,9 +37,14 @@ function pollInclude(userId: string | null) {
   };
 }
 
-function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
+function mapPoll(
+  poll: any,
+  countsHidden = false,
+  reader: { viewerId: string | null; authorId: string } = { viewerId: null, authorId: '' },
+): FeedPoll | undefined {
   if (!poll) return undefined;
   const lifecycle = pollLifecycleView(poll);
+  const voted = viewerHasVoted(poll.options);
   const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o.voteCount ?? 0), 0);
   return {
     id: poll.id,
@@ -46,6 +52,7 @@ function mapPoll(poll: any, countsHidden = false): FeedPoll | undefined {
     multiSelect: poll.multiSelect,
     ...lifecycle,
     ...rankedPollFields(poll, { ended: lifecycle.ended, countsHidden }),
+    ...quizRevealFor(poll, reader, voted),
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -205,7 +212,10 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
           reposted: viewerId ? r.reposts.length > 0 : false,
           edited: !!r.editedAt,
           original: quote(r.original),
-          poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
+          poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId), {
+            viewerId,
+            authorId: r.userId,
+          }),
           gifUrl: r.gifUrl ?? undefined,
           gifAlt: r.gifAlt ?? undefined,
           imageUrls: r.imageUrls ?? undefined,
@@ -242,7 +252,10 @@ export const route = apiRoute('/api/profile/$id/rmharks', {
           reposted: viewerId ? r.reposts.length > 0 : false,
           repostedBy: resolveUser(rp.user),
           original: quote(r.original),
-          poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId)),
+          poll: mapPoll(r.poll, countsHiddenFrom(r.userId, r.user?.profile?.hideCountsOnMine, viewerId), {
+            viewerId,
+            authorId: r.userId,
+          }),
           gifUrl: r.gifUrl ?? undefined,
           gifAlt: r.gifAlt ?? undefined,
           imageUrls: r.imageUrls ?? undefined,

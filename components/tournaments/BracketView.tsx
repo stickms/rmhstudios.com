@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MatchResultControls } from '@/components/tournaments/MatchResultControls';
+import { MatchSchedule } from '@/components/tournaments/MatchSchedule';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 
 interface Props {
@@ -272,7 +273,7 @@ export function BracketView({
               key={
                 column[0]
               }
-              className="flex flex-col gap-3 min-w-56"
+              className="flex flex-col gap-3 w-56 shrink-0"
             >
               <h3 className="site-section-label px-1">
                 {label(
@@ -382,7 +383,7 @@ export function BracketView({
                             <Button
                               size="xs"
                               variant="default"
-                              className="flex-1"
+                              className="flex-1 min-w-0 truncate"
                               loading={
                                 reportingId ===
                                 m.id
@@ -401,7 +402,7 @@ export function BracketView({
                             <Button
                               size="xs"
                               variant="default"
-                              className="flex-1"
+                              className="flex-1 min-w-0 truncate"
                               loading={
                                 reportingId ===
                                 m.id
@@ -419,6 +420,17 @@ export function BracketView({
                             </Button>
                           </div>
                         )}
+                      {onChanged && (
+                        <MatchSchedule
+                          tournamentId={tournament.id}
+                          tournamentStatus={tournament.status}
+                          match={m}
+                          entrants={tournament.entrants ?? []}
+                          viewerId={viewerId}
+                          isManager={canReport}
+                          onChanged={onChanged}
+                        />
+                      )}
                       {onChanged && (
                         <MatchResultControls
                           tournamentId={tournament.id}

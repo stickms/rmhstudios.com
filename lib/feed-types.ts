@@ -112,6 +112,11 @@ export interface FeedPoll {
   myRanking?: string[];
   /** A ranked poll that has ended and been counted: the winner and the rounds (`lib/feed/ranked-poll`). */
   result?: RankedResultView;
+  /** s07-19: a quiz poll. The marker is always present on a quiz; the answer only once earned (`lib/feed/quiz-poll`). */
+  quiz?: true;
+  /** A quiz the viewer may see the answer of: its author, a voter, or anyone once it has ended. */
+  correctOptionId?: string;
+  explanation?: string;
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for

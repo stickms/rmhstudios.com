@@ -44,6 +44,7 @@ import { FlairChip } from '@/components/communities/FlairChip';
 import { RelatedRail } from '@/components/communities/RelatedRail';
 import { OnboardingSheet } from '@/components/communities/OnboardingSheet';
 import { CommunityRulesRail } from '@/components/communities/CommunityRules';
+import { ImageAltRule } from '@/components/communities/ImageAltRule';
 import { PublicModLog } from '@/components/communities/PublicModLog';
 import {
   communityApi,
@@ -472,6 +473,7 @@ export function CommunityPlusBody({
           }
         />
       )}
+      {extras?.requireImageAlt && <ImageAltRule className={extrasArrival} />}
       {extras?.publicModLog && (
         <PublicModLog
           slug={

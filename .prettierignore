@@ -1212,6 +1212,7 @@ lib/prepaint/generated.ts
 /docker-compose.yml
 /docs/_generated/db-census.md
 /docs/_generated/db-drop-candidates.md
+/docs/account-deletion.md
 /docs/_static/custom.css
 /docs/altair-multiplayer.md
 /docs/altair/multiplayer.md
@@ -3760,3 +3761,7 @@ docs/announcements/
 # Sprint 06 planning docs are wrapped at 80 columns, not one word per line, so their
 # line count reports the writing rather than the wrap (docs/autonomous/sprint-06/plan.md §Reporting).
 /docs/autonomous/sprint-06/
+
+# Sprint 07 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-07/plan.md §Reporting).
+/docs/autonomous/sprint-07/

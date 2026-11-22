@@ -9,6 +9,7 @@ import { toast } from'@/lib/toast';
 import { pollWinners } from'@/lib/feed/poll-lifecycle';
 import type { FeedPoll } from'@/lib/feed-types';
 import { RankedPoll } from'@/components/feed/RankedPoll';
+import { QuizPollView } from'@/components/feed/QuizPollView';
 
 /** A poll further than this from its end names the date ("Ends on 4 Dec"); nearer, how long is left. */
 const NEAR_END_MS = 2 * 86_400_000;
@@ -60,6 +61,9 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
 
  setVoting(true);
 
+ // A quiz answer is final and its verdict comes from the server, so nothing is guessed here: the row waits for the reply.
+ const isQuiz = !!localPoll.quiz;
+
  // Optimistic update
  const wasVoted = localPoll.myVotes?.includes(optionId);
  let newMyVotes: string[];
@@ -92,9 +96,11 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  if (!prevVoteId) newTotal += 1;
  }
 
- const optimistic = { ...localPoll, myVotes: newMyVotes, options: newOptions, totalVotes: newTotal };
+ const optimistic = isQuiz ? localPoll : { ...localPoll, myVotes: newMyVotes, options: newOptions, totalVotes: newTotal };
+ if (!isQuiz) {
  setLocalPoll(optimistic);
  onUpdate?.(optimistic);
+ }
 
  // OPT-34. Casting a vote flips the poll from choices to results: every bar
  // grows, the percentages appear, the check mark lands. That is two renders
@@ -119,6 +125,9 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  ? {
  ...localPoll,
  myVotes: data.myVotes,
+ // A quiz voter's reply carries the answer (s07-19); any other poll's reply has none.
+ ...(data.correctOptionId ? { correctOptionId: data.correctOptionId } : {}),
+ ...(data.explanation ? { explanation: data.explanation } : {}),
  totalVotes: data.totalVotes,
  options: localPoll.options.map((o) => {
  const updated = data.options.find((so: any) => so.id === o.id);
@@ -131,9 +140,12 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  } else {
  // Rollback on error. A vote on a poll that ended meanwhile (the author closed it) turns the poll into its
  // final results.
- let rolledBack = poll;
+ let rolledBack = isQuiz ? localPoll : poll;
  if (res.status === 409) {
  const refusal = await res.json().catch(() => null);
+ if (refusal?.code === 'ALREADY_ANSWERED') {
+ toast.error(t("quiz-already-answered", { ns: 'quiz-polls', defaultValue:"You already answered this quiz"}));
+ }
  if (refusal?.code === 'POLL_CLOSED') {
  rolledBack = { ...poll, ended: true };
  toast.error(t("poll-ended-error", { ns: 'poll-lifecycle', defaultValue:"This poll has ended"}));
@@ -149,6 +161,10 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  setVoting(false);
  }
  };
+
+ if (localPoll.quiz) {
+ return <QuizPollView poll={localPoll} closed={isClosed} voting={voting} signedIn={!!session} onAnswer={handleVote} />;
+ }
 
  const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 

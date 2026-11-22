@@ -74,6 +74,13 @@ export function ModSettings({
       extras.publicModLog,
     );
   const [
+    imageAlt,
+    setImageAlt,
+  ] =
+    useState(
+      extras.requireImageAlt,
+    );
+  const [
     threshold,
     setThreshold,
   ] =
@@ -118,6 +125,8 @@ export function ModSettings({
             flairRequired,
             publicModLog:
               publicLog,
+            requireImageAlt:
+              imageAlt,
             starThreshold:
               Math.min(
                 STAR_THRESHOLD_MAX,
@@ -361,6 +370,43 @@ export function ModSettings({
             setPublicLog
           }
           aria-labelledby="public-modlog-label"
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-3 text-sm text-site-text">
+        <span>
+          <span
+            id="image-alt-label"
+            className="block font-semibold"
+          >
+            {t(
+              'setting-title',
+              {
+                ns: 'community-alt-text',
+                defaultValue:
+                  'Images need a description',
+              },
+            )}
+          </span>
+          <span className="text-xs text-site-text-muted">
+            {t(
+              'setting-note',
+              {
+                ns: 'community-alt-text',
+                defaultValue:
+                  'A post with an image and no description is refused, moderators included. Posts made earlier are not changed.',
+              },
+            )}
+          </span>
+        </span>
+        <Switch
+          checked={
+            imageAlt
+          }
+          onCheckedChange={
+            setImageAlt
+          }
+          aria-labelledby="image-alt-label"
         />
       </div>
       <label className="flex flex-col gap-1 text-sm font-semibold text-site-text">

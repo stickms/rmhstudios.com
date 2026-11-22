@@ -18,6 +18,7 @@
   "export": "Export CSV",
   "field-flair-required": "flair required",
   "field-public-log": "public moderation log",
+  "field-require-image-alt": "images need a description",
   "field-star-threshold": "hall of fame threshold",
   "field-verification": "who can post",
   "filter-group": "Filter by kind of action",

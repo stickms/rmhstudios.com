@@ -769,6 +769,22 @@ export const EXCLUDED_ROUTES: Record<
     '/settings/feedback':
       'personal',
 
+    // Sprint 07 static personal paths (docs/autonomous/sprint-07/plan.md §Anchors)
+    // s07-02 game-assists
+    // (/settings/game-assists)
+    '/settings/game-assists':
+      'personal',
+
+    // s07-03 device-data
+    // (/settings/device)
+    '/settings/device':
+      'personal',
+
+    // s07-08 study-queue
+    // (/study/review)
+    '/study/review':
+      'personal',
+
     '/account/connect':
       'personal', // the account-merge step after a new sign-in; needs a session
     '/settings':

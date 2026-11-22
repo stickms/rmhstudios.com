@@ -9,6 +9,7 @@
  * gamification/notification side effects (those never block the core action).
  */
 
+import { normalizeExplanation, quizAnswerOptionId } from '@/lib/feed/quiz-poll';
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { feedEventBus } from '@/lib/feed-sse';
@@ -557,6 +558,16 @@ export async function createPost(args: {
   content: string;
   audience?: RMHarkAudience;
   mediaIds?: string[];
+  /** A poll on the post (developer API); a quiz names its answer by position (s07-19). */
+  poll?: {
+    question: string;
+    options: string[];
+    multiSelect?: boolean;
+    durationHours?: number;
+    quiz?: boolean;
+    correctIndex?: number;
+    explanation?: string;
+  };
 }): Promise<CreatePostResult> {
   const { userId } = args;
   const content = args.content.trim();
@@ -566,6 +577,31 @@ export async function createPost(args: {
     data: { userId, content, audience: args.audience ?? 'PUBLIC' },
     select: { id: true, content: true, createdAt: true, audience: true },
   });
+
+  if (args.poll) {
+    const poll = args.poll;
+    await prisma.$transaction(async (tx) => {
+      const made = await tx.rMHarkPoll.create({
+        data: {
+          rmheetId: post.id,
+          question: poll.question.trim(),
+          multiSelect: !!poll.multiSelect,
+          closesAt: poll.durationHours ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000) : null,
+          options: { create: poll.options.map((text, i) => ({ text: text.trim(), position: i })) },
+        },
+        include: { options: true },
+      });
+      if (poll.quiz) {
+        await tx.rMHarkPoll.update({
+          where: { id: made.id },
+          data: {
+            correctOptionId: quizAnswerOptionId(made.options, poll.correctIndex),
+            explanation: normalizeExplanation(poll.explanation),
+          },
+        });
+      }
+    });
+  }
 
   if (mediaIds.length > 0) {
     const attached = await resolveMediaForPost({ prisma }, { userId, mediaIds, postId: post.id });

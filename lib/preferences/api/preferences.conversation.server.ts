@@ -17,7 +17,11 @@
  */
 
 import { apiRoute } from '@/lib/api/route.server';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  getConversationPrefApi,
+  setConversationPrefApi,
+} from '@/lib/preferences/conversation.contract';
 import {
   conversationPrefQuerySchema,
   conversationPrefSchema,
@@ -27,18 +31,19 @@ import {
 } from '@/lib/notify/conversation-prefs.server';
 
 export const route = apiRoute('/api/preferences/conversation', {
-  GET: defineHandler({ query: conversationPrefQuerySchema }, async ({ userId, query }) => {
+  GET: implement(getConversationPrefApi, { query: conversationPrefQuerySchema }, async ({ userId, query }) => {
     const pref = await getConversationPref(userId, query.scopeKey);
     // Absent = the default (All, unpinned). Returned as a materialized
     // view so the client renders the same shape whether or not a row
     // exists, instead of branching on null.
-    return Response.json(toView(query.scopeKey, pref));
+    return toView(query.scopeKey, pref);
   }),
-  PUT: defineHandler(
+  PUT: implement(
+    setConversationPrefApi,
     {
       rateLimit: { limit: 40, windowMs: 60_000, prefix: 'conversation-pref' },
       body: conversationPrefSchema,
     },
-    async ({ userId, body }) => Response.json(await setConversationPref(userId, body)),
+    async ({ userId, body }) => setConversationPref(userId, body),
   ),
 });

@@ -45,3 +45,4 @@ shipped.
 | 04     | Games, builds, coins, the feed and the gaps between them: twenty features | [sprint-04/README.md](sprint-04/README.md), [summary](sprint-04/summary.md) |
 | 05     | Games, studio, admin tools and member controls: twenty features           | [sprint-05/README.md](sprint-05/README.md), [summary](sprint-05/summary.md) |
 | 06     | Finishing what was started, and the controls around it: twenty features   | [sprint-06/README.md](sprint-06/README.md), [summary](sprint-06/summary.md) |
+| 07     | Promises the code already makes, and what deletion leaves behind          | [sprint-07/README.md](sprint-07/README.md), [summary](sprint-07/summary.md) |

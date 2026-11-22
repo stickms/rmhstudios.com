@@ -22,7 +22,7 @@ import {
   displayName,
   lockedGroup,
   refusedForGroup,
-  refuseUnlessOwner,
+  refuseUnlessManager,
 } from '@/lib/group-chat/manage.server';
 import { canSeeFollowLists } from '@/lib/social/follow-list-privacy.server';
 import { GROUP_MEMBER_CAP } from '@/lib/group-chat/manage';
@@ -50,6 +50,8 @@ const toRow =
     uses: number;
     expiresAt: Date | null;
     createdAt: Date;
+    createdById?: string;
+    createdBy?: Parameters<typeof displayName>[0];
   }): InviteRow => ({
     id: r.id,
     code: r.code,
@@ -62,6 +64,14 @@ const toRow =
         : null,
     createdAt:
       r.createdAt.toISOString(),
+    createdById:
+      r.createdById ??
+      null,
+    createdByName:
+      displayName(
+        r.createdBy ??
+          null,
+      ),
   });
 
 const SELECT =
@@ -115,7 +125,7 @@ export function generateCode(): string {
   }
 }
 
-/** Owner only: make a link. At most five live ones per group; the count is taken under the group's lock. */
+/** Owner or admin: make a link. At most five live ones per group; the count is taken under the group's lock. */
 export async function createInvite(
   actorId: string,
   chatId: string,
@@ -140,10 +150,11 @@ export async function createInvite(
       )
         return notFound;
       const refusal =
-        await refuseUnlessOwner(
+        await refuseUnlessManager(
           tx,
           group,
           actorId,
+          'admin',
         );
       if (
         refusal
@@ -219,7 +230,7 @@ export async function createInvite(
   );
 }
 
-/** Owner only: the group's live links, newest first. */
+/** Owner or admin: the group's live links, newest first, with who made each. */
 export async function listInvites(
   actorId: string,
   chatId: string,
@@ -248,10 +259,11 @@ export async function listInvites(
   )
     return notFound;
   const refusal =
-    await refuseUnlessOwner(
+    await refuseUnlessManager(
       prisma,
       group,
       actorId,
+      'admin',
     );
   if (
     refusal
@@ -272,7 +284,15 @@ export async function listInvites(
               'desc',
           },
         select:
-          SELECT,
+          {
+            ...SELECT,
+            createdById: true,
+            createdBy:
+              {
+                select:
+                  userDisplaySelect,
+              },
+          },
       },
     );
   const now =
@@ -296,7 +316,7 @@ export async function listInvites(
   };
 }
 
-/** Owner only: stop new joins through a link. Nobody who joined is removed. Idempotent. */
+/** Owner or admin, any link: stop new joins through a link. Nobody who joined is removed. Idempotent. */
 export async function revokeInvite(
   actorId: string,
   chatId: string,
@@ -318,10 +338,11 @@ export async function revokeInvite(
       )
         return notFound;
       const refusal =
-        await refuseUnlessOwner(
+        await refuseUnlessManager(
           tx,
           group,
           actorId,
+          'admin',
         );
       if (
         refusal

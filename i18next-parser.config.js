@@ -54,8 +54,10 @@ export default {
     [
       'app/**/*.{ts,tsx}',
       'components/**/*.{ts,tsx}',
-      'features/medschools/**/*.{ts,tsx}',
-      'features/casino/**/*.{ts,tsx}',
+      'features/**/*.{ts,tsx}',
+      // Tests are not UI, and `for (const [t, x] of …)` crashes the lexer.
+      '!features/**/*.test.{ts,tsx}',
+      '!features/**/__tests__/**',
     ],
   output:
     'locales/$LOCALE/$NAMESPACE.json',

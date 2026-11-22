@@ -5,11 +5,14 @@ import { useTranslation } from 'react-i18next';
 export function ImagePreviewStrip({
   imageUrls,
   imageAlts,
+  needed = [],
   onEditAlt,
   onRemove,
 }: {
   imageUrls: string[];
   imageAlts: string[];
+  /** s07-16: indexes the community still needs a description for. */
+  needed?: number[];
   onEditAlt: (index: number) => void;
   onRemove: (index: number) => void;
 }) {
@@ -18,6 +21,7 @@ export function ImagePreviewStrip({
     <div className={`mt-2 grid gap-1 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
       {imageUrls.map((url, i) => {
         const hasAlt = !!imageAlts[i]?.trim();
+        const isNeeded = needed.includes(i);
         return (
           <div key={url} className="relative group">
             <img
@@ -30,6 +34,8 @@ export function ImagePreviewStrip({
  glance which images still need a description. */}
             <button
               type="button"
+              id={`compose-image-alt-${i}`}
+              aria-describedby={isNeeded ? `compose-image-alt-needed-${i}` : undefined}
               onClick={() => onEditAlt(i)}
               aria-label={
                 hasAlt
@@ -58,6 +64,14 @@ export function ImagePreviewStrip({
             >
               <X className="w-3.5 h-3.5" />
             </button>
+            {isNeeded && (
+              <p id={`compose-image-alt-needed-${i}`} className="t-meta mt-1 text-site-danger">
+                {t('description-needed', {
+                  ns: 'community-alt-text',
+                  defaultValue: 'Description needed',
+                })}
+              </p>
+            )}
           </div>
         );
       })}

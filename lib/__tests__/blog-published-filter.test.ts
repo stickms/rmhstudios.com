@@ -51,6 +51,8 @@ const READERS =
     'lib/og/api/og.blog.$slug.server.ts',
     'lib/ai/api/ai.takeaways.server.ts',
     'lib/reading/highlights.server.ts',
+    // s07-18: the titles in a member's reading-time summary.
+    'lib/reading/time-record.server.ts',
     'lib/blog/blog-comments.server.ts',
     'lib/reading/subscriptions.server.ts',
   ];

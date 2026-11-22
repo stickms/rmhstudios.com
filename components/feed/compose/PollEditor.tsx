@@ -1,7 +1,8 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useId, type Dispatch, type SetStateAction } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   MAX_POLL_QUESTION_LENGTH,
   MAX_POLL_OPTION_LENGTH,
@@ -9,6 +10,7 @@ import {
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-limits';
 import { RANKED_MAX_OPTIONS, RANKED_MIN_OPTIONS } from '@/lib/feed/ranked-poll';
+import { QUIZ_EXPLANATION_MAX } from '@/lib/feed/quiz-poll';
 import type { PollDraft } from './compose-state';
 
 type PollMethod = 'single' | 'multi' | 'ranked';
@@ -28,11 +30,15 @@ export function PollEditor({
   /** Close the editor and discard the draft poll. */
   onRemove: () => void;
 }) {
-  const { t } = useTranslation('feed');
+  const { t } = useTranslation(['feed', 'quiz-polls']);
+  const quizId = useId();
   const ranked = !!poll.ranked;
   const method: PollMethod = ranked ? 'ranked' : poll.multiSelect ? 'multi' : 'single';
   const maxOptions = ranked ? RANKED_MAX_OPTIONS : MAX_POLL_OPTIONS;
   const minOptions = ranked ? RANKED_MIN_OPTIONS : MIN_POLL_OPTIONS;
+  const quiz = !!poll.quiz;
+  // A quiz is single choice only: the switch is off-limits while another type is chosen, with the reason beside it.
+  const quizBlocked = method !== 'single';
 
   // Rank needs 3 to 6 options and a length; leaving it again trims back to the plain-poll limit.
   const chooseMethod = (next: PollMethod) => {
@@ -40,13 +46,15 @@ export function PollEditor({
       if (next === 'ranked') {
         const options = [...p.options];
         while (options.length < RANKED_MIN_OPTIONS) options.push('');
-        return { ...p, options, multiSelect: false, ranked: true };
+        return { ...p, options, multiSelect: false, ranked: true, quiz: false, correctIndex: undefined };
       }
       return {
         ...p,
         options: p.options.slice(0, MAX_POLL_OPTIONS),
         multiSelect: next === 'multi',
         ranked: false,
+        // Quiz and multiple choice cannot go together; picking another type turns the quiz off.
+        ...(next === 'multi' ? { quiz: false, correctIndex: undefined } : {}),
       };
     });
     if (next === 'ranked' && pollDuration === 0) setPollDuration(24);
@@ -79,6 +87,20 @@ export function PollEditor({
       <div className="space-y-2">
         {poll.options.map((opt, i) => (
           <div key={i} className="flex items-center gap-2">
+            {quiz && (
+              <input
+                type="radio"
+                name={`${quizId}-correct`}
+                checked={poll.correctIndex === i}
+                onChange={() => setPoll((p) => ({ ...p, correctIndex: i }))}
+                aria-label={t('quiz-mark-correct', {
+                  ns: 'quiz-polls',
+                  count: i + 1,
+                  defaultValue: 'Option {{count}} is the correct answer',
+                })}
+                className="size-4 shrink-0 accent-[var(--site-text)]"
+              />
+            )}
             <input
               type="text"
               value={opt}
@@ -103,7 +125,17 @@ export function PollEditor({
                 type="button"
                 onClick={() => {
                   const newOptions = poll.options.filter((_, j) => j !== i);
-                  setPoll((p) => ({ ...p, options: newOptions }));
+                  setPoll((p) => ({
+                    ...p,
+                    options: newOptions,
+                    // The marked answer follows its row; removing the marked row clears the mark.
+                    correctIndex:
+                      p.correctIndex === undefined || p.correctIndex === i
+                        ? undefined
+                        : p.correctIndex > i
+                          ? p.correctIndex - 1
+                          : p.correctIndex,
+                  }));
                 }}
                 aria-label={t('poll-remove-option', {
                   count: i + 1,
@@ -150,6 +182,59 @@ export function PollEditor({
               'Voters rank the options and the winner is counted when the poll ends. Needs 3 to 6 options and a length.',
           })}
         </p>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Switch
+          id={`${quizId}-switch`}
+          checked={quiz}
+          disabled={quizBlocked}
+          onCheckedChange={(on) =>
+            setPoll((p) => ({
+              ...p,
+              quiz: on,
+              options: p.options.slice(0, MAX_POLL_OPTIONS),
+              ...(on ? {} : { correctIndex: undefined, explanation: undefined }),
+            }))
+          }
+          aria-labelledby={`${quizId}-label`}
+        />
+        <span id={`${quizId}-label`} className="text-xs text-site-text-muted">
+          {t('quiz-switch-label', { ns: 'quiz-polls', defaultValue: 'Quiz' })}
+        </span>
+        {quizBlocked && (
+          <span className="t-meta">
+            {t('quiz-blocked-reason', {
+              ns: 'quiz-polls',
+              defaultValue: 'A quiz is pick one only. Switch the poll type to Pick one.',
+            })}
+          </span>
+        )}
+      </div>
+      {quiz && (
+        <div className="mt-2">
+          <p className="t-meta">
+            {t('quiz-editor-hint', {
+              ns: 'quiz-polls',
+              defaultValue: 'Mark the correct answer. Nobody sees it until they answer or the poll ends.',
+            })}
+          </p>
+          <label className="t-label mt-2 block" htmlFor={`${quizId}-explanation`}>
+            {t('quiz-explanation-label', { ns: 'quiz-polls', defaultValue: 'Explanation' })}
+          </label>
+          <input
+            id={`${quizId}-explanation`}
+            type="text"
+            value={poll.explanation ?? ''}
+            onChange={(e) => setPoll((p) => ({ ...p, explanation: e.target.value }))}
+            placeholder={t('quiz-explanation-placeholder', {
+              ns: 'quiz-polls',
+              defaultValue: 'Why it is right. Optional',
+            })}
+            maxLength={QUIZ_EXPLANATION_MAX}
+            className="w-full surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
+          />
+        </div>
       )}
 
       <label className="mt-3 flex items-center gap-2">

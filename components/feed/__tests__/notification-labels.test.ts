@@ -101,6 +101,22 @@ describe('system notification labels', () => {
       // s06-20 match-results
       tournament_result: 'Tournaments',
 
+      // Sprint 07 system labels (docs/autonomous/sprint-07/plan.md §Anchors)
+      // s07-05 group-mentions
+      'group-mention': 'Group mentions',
+
+      // s07-06 match-scheduling
+      'match-proposal': 'Match time proposals',
+      'match-agreed': 'Match times',
+      'match-reminder': 'Match reminders',
+      'match-deadline': 'Match deadlines',
+      'match-awarded': 'Match awards',
+
+      // s07-07 jam-themes
+      jam_theme: 'Game jams',
+
+      // s07-16 community-alt-text
+      'scheduled-alt-required': 'Scheduled post held',
 
       default: 'RMH Studios',
     });

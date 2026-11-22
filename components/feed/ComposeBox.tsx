@@ -100,6 +100,7 @@ const ThreadPostPanel = lazy(() => import('./ThreadPostPanel'));
  */
 export function ComposeBox({
   communityId,
+  requireImageAlt = false,
   onPosted,
   extraBody,
   variant = 'box',
@@ -118,6 +119,8 @@ export function ComposeBox({
   /** The home row's caret, and whether its field had focus, at the moment this composer replaced it. */
   fieldHandoff?: RefObject<ComposerFieldHandoff | null>;
   communityId?: string;
+  /** s07-16: the community needs a description on every image; the submit points at the first one without. */
+  requireImageAlt?: boolean;
   onPosted?: (item: any) => void;
   /** Extra fields merged into the create body (community flair / challenge entry). */
   extraBody?: Record<string, unknown>;
@@ -372,7 +375,7 @@ export function ComposeBox({
     }
   };
 
-  const { handleSubmit, handleThreadPosted, handleSaveScheduled } = useComposeSubmit({
+  const { handleSubmit: submitPost, handleThreadPosted, handleSaveScheduled } = useComposeSubmit({
     canSubmit,
     buildBody,
     buildOptimisticItem: (id) =>
@@ -457,6 +460,21 @@ export function ComposeBox({
     />
   );
 
+  // s07-16: the Post button stays enabled; with an undescribed image the press focuses that image's describe control.
+  const communityAltNeeded = requireImageAlt ? missingAltIndexes(imageUrls, imageAlts) : [];
+  const handleSubmit = () => {
+    const first = communityAltNeeded[0];
+    if (first !== undefined) {
+      document.getElementById(`compose-image-alt-${first}`)?.focus();
+      return;
+    }
+    if (requireImageAlt && hasGif && !gifAlt.trim()) {
+      document.querySelector<HTMLElement>('[data-gif-alt-input]')?.focus();
+      return;
+    }
+    submitPost();
+  };
+
   const submitOnModEnter = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
   };
@@ -528,7 +546,7 @@ export function ComposeBox({
           gifUrl={gifUrl.trim()}
           gifAlt={gifAlt}
           onGifAltChange={setGifAlt}
-          altRequired={requireAlt}
+          altRequired={requireAlt || (requireImageAlt && !gifAlt.trim())}
           onRemove={() => {
             setAttachment(null);
             setGifUrl('');
@@ -542,6 +560,7 @@ export function ComposeBox({
         <ImagePreviewStrip
           imageUrls={imageUrls}
           imageAlts={imageAlts}
+          needed={communityAltNeeded}
           onEditAlt={setAltEditIndex}
           onRemove={(i) => {
             setImageUrls((prev) => removeAt(prev, i));

@@ -19,6 +19,8 @@ import { createJamApi } from '@/lib/competitive/jams.contract';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { ThemeVoteOpenLabel } from './JamThemeVote';
+import { EMPTY_THEME_VOTING, JamThemeFormFields, type ThemeVotingDraft } from './JamThemeFormFields';
 
 interface JamSummary {
   slug: string;
@@ -29,6 +31,9 @@ interface JamSummary {
   submitEndsAt: string;
   ratingEndsAt: string;
   phase: 'upcoming' | 'open' | 'rating' | 'done';
+  /** s07-07: a jam whose theme members vote on, and whether marks are being taken now. */
+  themeVoting: boolean;
+  themeVoteOpen: boolean;
 }
 
 export function PhaseBadge({ phase }: { phase: JamSummary['phase'] }) {
@@ -49,6 +54,7 @@ export function PhaseBadge({ phase }: { phase: JamSummary['phase'] }) {
 function AdminForm({ onCreated }: { onCreated: () => void }) {
   const { t } = useTranslation('f-competitive');
   const [busy, setBusy] = useState(false);
+  const [voting, setVoting] = useState<ThemeVotingDraft>(EMPTY_THEME_VOTING);
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -65,10 +71,18 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
         body: {
           title: text('title'),
           description: text('description'),
-          theme: text('theme'),
+          // A voting jam's `theme` stands in as its first candidate until the vote resolves at the start.
+          theme: voting.enabled ? (voting.candidates[0] ?? '').trim() : text('theme'),
           startsAt: when('startsAt'),
           submitEndsAt: when('submitEndsAt'),
           ratingEndsAt: when('ratingEndsAt'),
+          ...(voting.enabled
+            ? {
+                themeVoting: true,
+                themeCandidates: voting.candidates,
+                ...(voting.opensAt ? { themeVoteOpensAt: when('themeOpensAt') } : {}),
+              }
+            : {}),
         },
       });
       toast.success(t('jam-created', { defaultValue: 'Jam created' }));
@@ -81,17 +95,21 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
       setBusy(false);
     }
   };
-  const field = (name: string, label: string, type = 'text') => (
+  const field = (name: string, label: string, type = 'text', required = true) => (
     <div className="space-y-1.5">
       <Label htmlFor={`jam-${name}`}>{label}</Label>
-      <Input id={`jam-${name}`} name={name} type={type} required />
+      <Input id={`jam-${name}`} name={name} type={type} required={required} />
     </div>
   );
   return (
     <Card className="p-4" pane>
       <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
         {field('title', t('jam-f-title', { defaultValue: 'Title' }))}
-        {field('theme', t('jam-f-theme', { defaultValue: 'Secret theme (revealed at start)' }))}
+        {voting.enabled ? (
+          <div />
+        ) : (
+          field('theme', t('jam-f-theme', { defaultValue: 'Secret theme (revealed at start)' }))
+        )}
         <div className="sm:col-span-2">
           {field('description', t('jam-f-desc', { defaultValue: 'Description' }))}
         </div>
@@ -106,6 +124,7 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
           t('jam-f-rating', { defaultValue: 'Rating closes' }),
           'datetime-local',
         )}
+        <JamThemeFormFields value={voting} onChange={setVoting} />
         <div className="sm:col-span-2">
           <Button type="submit" loading={busy}>
             {t('jam-create', { defaultValue: 'Create jam' })}
@@ -174,6 +193,9 @@ export function JamsList() { const fmt = useLocaleFormat();
                 {fmt.dateTime(new Date(j.startsAt))} →{' '}
                 {fmt.dateTime(new Date(j.submitEndsAt))}
               </p>
+              {j.themeVoteOpen && (
+                <ThemeVoteOpenLabel />
+              )}
             </Card>
           </Link>
         ))

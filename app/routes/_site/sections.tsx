@@ -8,6 +8,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 import { NoMargin } from '@/components/shell/NoMargin';
 import { SECTIONS, viewerPathFor } from '@/components/shell/sections';
 import { useSectionLabels } from '@/components/shell/use-section-labels';
@@ -30,15 +31,18 @@ const MORE: NavLeaf[] = SIDEBAR_NAV.flatMap((item) => (isNavGroup(item) ? item.c
   (leaf) => !SECTION_NAV_IDS.has(leaf.id),
 );
 
-function signOut() {
-  void import('@/lib/auth-client').then(({ authClient }) =>
-    authClient.signOut({ fetchOptions: { onSuccess: () => window.location.assign('/') } }),
-  );
-}
-
 function SectionsPage() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
+  const deviceSignOut = useDeviceSignOut();
+  // Clears this device first when the member asked for that (sprint 07, feature 03).
+  const signOut = () => {
+    void import('@/lib/auth-client').then(({ authClient }) =>
+      deviceSignOut.run(() =>
+        authClient.signOut({ fetchOptions: { onSuccess: () => window.location.assign('/') } }),
+      ),
+    );
+  };
   const labels = useSectionLabels();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
   const viewerPath = viewerPathFor(session?.user as { id: string; handle?: string | null } | undefined);
@@ -48,6 +52,7 @@ function SectionsPage() {
 
   return (
     <div data-slot="site-main-column">
+      {deviceSignOut.dialog}
       <NoMargin />
       <h1 className="t-title">{t('shell-sections-title', { defaultValue: 'Sections' })}</h1>
 

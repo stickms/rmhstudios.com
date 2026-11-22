@@ -180,4 +180,7 @@ export interface InviteRow {
     | string
     | null;
   createdAt: string;
+  /** s07-04: who made the link (an admin may revoke any link, so the list says whose it is). */
+  createdById: string | null;
+  createdByName: string | null;
 }

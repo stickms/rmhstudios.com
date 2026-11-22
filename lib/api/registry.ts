@@ -97,7 +97,7 @@ const PIN_NOTE =
 
 /** Appended to `getPost` (sprint 06 #19). */
 const POLL_NOTE =
-  '`poll` is `null` unless the post carries a poll. A ranked-choice poll has `ranked: true`; once it has ended, `poll.result` holds `winnerOptionId` (null when nobody ranked an option) and the instant-runoff `rounds` (each round\'s option tallies and the option eliminated at its end, null on the deciding round). When the author hides counts from you, tallies are whole percents and `percentOnly` is `true`.';
+  '`poll` is `null` unless the post carries a poll. A ranked-choice poll has `ranked: true`; once it has ended, `poll.result` holds `winnerOptionId` (null when nobody ranked an option) and the instant-runoff `rounds` (each round\'s option tallies and the option eliminated at its end, null on the deciding round). When the author hides counts from you, tallies are whole percents and `percentOnly` is `true`. A quiz poll has `quiz: true`; its `correctOptionId` and `explanation` are `null` until you may know them: you wrote the post, you voted on the poll, or it has ended. A poll that is not a quiz has `quiz: false` and both `null`.';
 
 const POST_OBJECT =
   {
@@ -359,6 +359,30 @@ export const ENDPOINTS: ApiEndpoint[] =
                 type: 'string',
                 description:
                   '`PUBLIC` (default), `FOLLOWERS`, or `PRIVATE`.',
+              },
+              {
+                name: 'communityId',
+                type: 'string',
+                description:
+                  'Post into this community instead of only your timeline. Needs the `write:communities` scope as well as `write:posts`, and you must be a member. The community\'s own rules apply (flair, verification, AutoMod, image descriptions, bans and timeouts): a held post answers `202` with `{ "status": "held", "id": … }`, an AutoMod removal `422` with the rule name, and a refusal the gate\'s `code` (a ban or timeout also carries `endsAt`).',
+              },
+              {
+                name: 'flairId',
+                type: 'string',
+                description:
+                  'A flair of that community (needs `communityId`); required when the community requires one.',
+              },
+              {
+                name: 'media_alts',
+                type: 'string[]',
+                description:
+                  'With `communityId`: a description for each `media_ids` image, in order. A community can require one on every image.',
+              },
+              {
+                name: 'poll',
+                type: 'object',
+                description:
+                  'A poll on the post (not with `communityId`): `question`, 2 to 4 `options` (strings), optional `multiSelect` and `durationHours` (1 to 720). A quiz adds `quiz: true`, `correctIndex` (the zero-based position of the one correct option) and an optional `explanation` of at most 280 characters; a quiz is single choice, so it cannot also set `multiSelect`. A post may carry just a poll, with no `content`.',
               },
             ],
           example:
@@ -1048,7 +1072,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       summary:
         'Get a build',
       description:
-        'A single public build, including its readme and its latest releases (up to 20, newest first). `versions` is deprecated: it carries the same releases without `commitHash`; read `releases` instead.',
+        'A single public build, including its readme, its cover description (`thumbnailAlt`), its described `screenshots` in order (up to 8) and its latest releases (up to 20, newest first). `versions` is deprecated: it carries the same releases without `commitHash`; read `releases` instead.',
       params:
         [
           {
@@ -1073,6 +1097,18 @@ export const ENDPOINTS: ApiEndpoint[] =
             null,
           demoUrl:
             null,
+          thumbnailAlt:
+            null,
+          screenshots:
+            [
+              {
+                url: 'https://rmhstudios.com/api/image/example.webp',
+                width: 1280,
+                height: 720,
+                description:
+                  'The title screen with the level list open.',
+              },
+            ],
           author:
             AUTHOR_OBJECT,
           technologies:
@@ -1813,7 +1849,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       group: 'Study',
       scope: 'read:study',
       summary: 'List your decks',
-      description: 'Your flashcard decks, newest change first. `dueCount` is how many cards are due now. Only your own decks are listed.',
+      description: 'Your flashcard decks, newest change first. `dueCount` is how many cards are due now; `suspended` is how many the key owner has set aside (not in `dueCount`). Only your own decks are listed.',
       paginated: true,
       params: [
         {
@@ -1838,6 +1874,7 @@ export const ENDPOINTS: ApiEndpoint[] =
             isPublic: false,
             cardCount: 2,
             dueCount: 2,
+            suspended: 0,
             updatedAt: '2026-11-20T21:14:00.000Z',
           },
         ],
@@ -1886,6 +1923,7 @@ export const ENDPOINTS: ApiEndpoint[] =
         isPublic: false,
         cardCount: 2,
         dueCount: 2,
+        suspended: 0,
         updatedAt: '2026-11-20T21:14:00.000Z',
       },
     },
@@ -1913,6 +1951,7 @@ export const ENDPOINTS: ApiEndpoint[] =
         isPublic: false,
         cardCount: 2,
         dueCount: 2,
+        suspended: 0,
         updatedAt: '2026-11-20T21:14:00.000Z',
       },
     },
@@ -1963,6 +2002,7 @@ export const ENDPOINTS: ApiEndpoint[] =
         isPublic: false,
         cardCount: 2,
         dueCount: 2,
+        suspended: 0,
         updatedAt: '2026-11-20T21:14:00.000Z',
       },
     },
@@ -2235,7 +2275,7 @@ export const ENDPOINTS: ApiEndpoint[] =
       group: 'Study',
       scope: 'read:study',
       summary: 'Get due counts',
-      description: 'How many cards in the deck are due now and in the next 24 hours, for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.',
+      description: 'How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.',
       params: [
         {
           name: 'id',
@@ -2252,6 +2292,477 @@ export const ENDPOINTS: ApiEndpoint[] =
         asOf: '2026-11-20T21:14:00.000Z',
       },
     },
+
+    // Sprint 07 (docs/autonomous/sprint-07/plan.md §Anchors)
+    // s07-10 api-events
+    {
+      method: 'GET',
+      path: '/api/v1/events',
+      operationId: 'listEvents',
+      group: 'Events',
+      scope: 'read:events',
+      summary: 'List events',
+      description: 'Events you can see on the site (a private event or a private community\'s events only when the site shows them to you), soonest first. A repeating event appears once per date inside the window, with skipped dates left out and moved dates where they now are; `occurrence` is the date\'s original start, which RSVPs are keyed by. The window defaults to the next 31 days and may be at most 31 days wide. Times are ISO 8601 UTC with the event\'s `timeZone` beside them.',
+      paginated: true,
+      params: [
+        { name: 'from', in: 'query', type: 'string', description: 'Start of the window, an ISO 8601 date or timestamp (default now).' },
+        { name: 'to', in: 'query', type: 'string', description: 'End of the window (default 31 days after `from`; at most 31 days after it).' },
+        { name: 'community', in: 'query', type: 'string', description: 'Only events of this community (id or slug).' },
+        { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 25).' },
+        { name: 'cursor', in: 'query', type: 'string', description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.' },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'clevent1',
+            title: 'Game night',
+            description: 'Bring a controller.',
+            startsAt: '2026-11-26T19:00:00.000Z',
+            endsAt: null,
+            timeZone: null,
+            occurrence: null,
+            state: 'normal',
+            note: null,
+            repeats: false,
+            venueKind: 'URL',
+            venue: null,
+            capacity: null,
+            communityId: null,
+            canceled: false,
+            host: { id: 'cluser1', handle: 'rmh', name: 'RMH' },
+            cohosts: [{ id: 'cluser1', handle: 'rmh', name: 'RMH' }],
+            counts: { going: 4, maybe: 1, waitlisted: 0 },
+            yourRsvp: null,
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/events/{id}',
+      operationId: 'getEvent',
+      group: 'Events',
+      scope: 'read:events',
+      summary: 'Get an event',
+      description: 'One event you can see, with its next dates (up to 10, overrides applied), the going, maybe and waitlisted counts, the host and co-hosts, and the latest five updates. For a repeating event the top-level date is the next one that is on. A guest list is `GET /events/{id}/attendees`, for hosts only. Counts are read from at most 8,000 answers per event, so on an event with more than that they are approximate.',
+      params: [
+        { name: 'id', in: 'path', type: 'string', description: 'The event id.', required: true },
+      ],
+      responseExample: {
+        id: 'clevent1',
+        title: 'Game night',
+        description: 'Bring a controller.',
+        startsAt: '2026-11-26T19:00:00.000Z',
+        endsAt: null,
+        timeZone: null,
+        occurrence: null,
+        state: 'normal',
+        note: null,
+        repeats: false,
+        venueKind: 'URL',
+        venue: null,
+        capacity: null,
+        communityId: null,
+        canceled: false,
+        host: { id: 'cluser1', handle: 'rmh', name: 'RMH' },
+        cohosts: [{ id: 'cluser1', handle: 'rmh', name: 'RMH' }],
+        counts: { going: 4, maybe: 1, waitlisted: 0 },
+        yourRsvp: null,
+        nextOccurrences: [
+          {
+            occurrence: '2026-11-26T19:00:00.000Z',
+            startsAt: '2026-11-26T19:00:00.000Z',
+            endsAt: '2026-11-26T21:00:00.000Z',
+            state: 'normal',
+            note: 'Back on.',
+          },
+        ],
+        updates: [
+          {
+            id: 'clupdate1',
+            body: 'Doors at 18:45.',
+            occurrence: null,
+            createdAt: '2026-11-22T10:00:00.000Z',
+          },
+        ],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/events/{id}/attendees',
+      operationId: 'listEventAttendees',
+      group: 'Events',
+      scope: 'read:events',
+      summary: 'List attendees',
+      description: 'Who is going or maybe for one date, by handle, display name and status. Only the event\'s host and accepted co-hosts may read it (`403` for anyone else, who can read the counts from the event). On a repeating event `occurrence` picks the date (its original start); without it, the next date that is on.',
+      paginated: true,
+      params: [
+        { name: 'id', in: 'path', type: 'string', description: 'The event id.', required: true },
+        { name: 'occurrence', in: 'query', type: 'string', description: 'The date\'s original start, an ISO 8601 timestamp (repeating events).' },
+        { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 25).' },
+        { name: 'cursor', in: 'query', type: 'string', description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.' },
+      ],
+      responseExample: {
+        data: [{ id: 'cluser2', handle: 'guest', name: 'Guest', status: 'going' }],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/events',
+      operationId: 'listMyEvents',
+      group: 'Events',
+      scope: 'read:events',
+      summary: 'List your events',
+      description: 'The dates of events you answered going or maybe to, soonest first, in the same shape as `GET /events` with `yourRsvp` set. A date you sat out or that was skipped is not listed. Same window rules as `GET /events`.',
+      paginated: true,
+      params: [
+        { name: 'from', in: 'query', type: 'string', description: 'Start of the window, an ISO 8601 date or timestamp (default now).' },
+        { name: 'to', in: 'query', type: 'string', description: 'End of the window (default 31 days after `from`; at most 31 days after it).' },
+        { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 25).' },
+        { name: 'cursor', in: 'query', type: 'string', description: 'Opaque cursor from a previous `nextCursor` to fetch the next page.' },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'clevent1',
+            title: 'Game night',
+            description: 'Bring a controller.',
+            startsAt: '2026-11-26T19:00:00.000Z',
+            endsAt: null,
+            timeZone: null,
+            occurrence: null,
+            state: 'normal',
+            note: null,
+            repeats: false,
+            venueKind: 'URL',
+            venue: null,
+            capacity: null,
+            communityId: null,
+            canceled: false,
+            host: { id: 'cluser1', handle: 'rmh', name: 'RMH' },
+            cohosts: [{ id: 'cluser1', handle: 'rmh', name: 'RMH' }],
+            counts: { going: 4, maybe: 1, waitlisted: 0 },
+            yourRsvp: null,
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'PUT',
+      path: '/api/v1/events/{id}/rsvp',
+      operationId: 'rsvpToEvent',
+      group: 'Events',
+      scope: 'write:events',
+      summary: 'RSVP to an event',
+      description: 'Answer going or maybe, through the site\'s own RSVP, so capacity, the waitlist, reminders and who may see the event are the site\'s rules. A full one-off event answers `status: "waitlisted"`; a full repeating event has no waitlist and is a `409`. A member banned or timed out of the event\'s community is refused with a `403`. On a repeating event the answer is for one date (`occurrence`, the date\'s original start; default the next one) or, with `everyTime`, every date. The response is the resulting state.',
+      idempotent: true,
+      params: [
+        { name: 'id', in: 'path', type: 'string', description: 'The event id.', required: true },
+      ],
+      requestBody: {
+        fields: [
+          { name: 'status', type: 'string', required: true, description: '`going` or `maybe`.' },
+          { name: 'occurrence', type: 'string', description: 'The date\'s original start, an ISO 8601 timestamp (repeating events).' },
+          { name: 'everyTime', type: 'boolean', description: 'Answer for every date of a repeating event.' },
+        ],
+        example: { status: 'going' },
+      },
+      responseExample: {
+        eventId: 'clevent1',
+        status: 'going',
+        occurrence: null,
+        everyTime: false,
+        counts: { going: 5, maybe: 1, waitlisted: 0 },
+        waitlistPosition: null,
+      },
+    },
+    {
+      method: 'DELETE',
+      path: '/api/v1/events/{id}/rsvp',
+      operationId: 'cancelEventRsvp',
+      group: 'Events',
+      scope: 'write:events',
+      summary: 'Cancel your RSVP',
+      description: 'Take your answer back, through the site\'s own un-RSVP (a freed seat goes to the waitlist). On a repeating event it sits out one date (`occurrence`, default the next one), or with `everyTime=true` leaves the series. The response is the resulting state, `status: "none"` when you no longer have an answer.',
+      idempotent: true,
+      params: [
+        { name: 'id', in: 'path', type: 'string', description: 'The event id.', required: true },
+        { name: 'occurrence', in: 'query', type: 'string', description: 'The date\'s original start, an ISO 8601 timestamp (repeating events).' },
+        { name: 'everyTime', in: 'query', type: 'string', description: '`true` to leave the whole series.' },
+      ],
+      responseExample: {
+        eventId: 'clevent1',
+        status: 'none',
+        occurrence: null,
+        everyTime: false,
+        counts: { going: 4, maybe: 1, waitlisted: 0 },
+        waitlistPosition: null,
+      },
+    },
+
+    // s07-11 api-communities
+    {
+      method: 'GET',
+      path: '/api/v1/me/communities',
+      operationId: 'listMyCommunities',
+      group: 'Communities',
+      scope: 'read:communities',
+      summary: 'List your communities',
+      description: 'The communities you belong to, newest membership first, with your role and the day you joined. Joining and leaving stay on the site.',
+      paginated: true,
+      params: PAGE_PARAMS,
+      responseExample: {
+        data: [
+          {
+            id: 'clcommunity1',
+            slug: 'retro-gamers',
+            name: 'Retro Gamers',
+            icon: '🎮',
+            isPrivate: false,
+            memberCount: 128,
+            role: 'MEMBER',
+            joinedAt: '2026-10-01T12:00:00.000Z',
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/communities/{slug}',
+      operationId: 'getCommunity',
+      group: 'Communities',
+      scope: 'read:communities',
+      summary: 'Get a community',
+      description: 'A community you can see: its description, member count, privacy, posting requirements, flairs and whether you are a member (`role` is `null` when you are not). A private community you are not a member of is a 404. Member lists are not exposed.',
+      params: [
+        { name: 'slug', in: 'path', type: 'string', description: 'The community slug.', required: true },
+      ],
+      responseExample: {
+        id: 'clcommunity1',
+        slug: 'retro-gamers',
+        name: 'Retro Gamers',
+        description: 'Talk about the old ones.',
+        icon: '🎮',
+        color: '#4455aa',
+        isPrivate: false,
+        memberCount: 128,
+        createdAt: '2026-09-01T12:00:00.000Z',
+        isMember: true,
+        role: 'MEMBER',
+        posting: {
+          verification: { level: 'none', value: 0 },
+          flairRequired: false,
+          requireImageAlt: false,
+        },
+        flairs: [{ id: 'clflair1', name: 'Discussion', color: 'accent' }],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/communities/{slug}/rules',
+      operationId: 'getCommunityRules',
+      group: 'Communities',
+      scope: 'read:communities',
+      summary: 'Get a community\'s rules',
+      description: 'The rules as the site shows them, in order (`position` starts at 1). Same visibility as `GET /communities/{slug}`.',
+      params: [
+        { name: 'slug', in: 'path', type: 'string', description: 'The community slug.', required: true },
+      ],
+      responseExample: {
+        data: [{ id: 'clrule1', position: 1, title: 'Be kind', description: 'No harassment.' }],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/communities/{slug}/posts',
+      operationId: 'listCommunityPosts',
+      group: 'Communities',
+      scope: 'read:communities',
+      summary: 'List a community\'s posts',
+      description: 'The community feed as the site returns it to you, newest first: the same visibility, removed and held posts left out, and quiet counts. Paginate with the opaque `nextCursor`. '+
+        QUIET_COUNTS_NOTE,
+      paginated: true,
+      params: [
+        { name: 'slug', in: 'path', type: 'string', description: 'The community slug.', required: true },
+        ...PAGE_PARAMS,
+        { name: 'flair', in: 'query', type: 'string', description: 'Only posts with this flair id.' },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'ck_post123',
+            content: 'What is everyone playing this week?',
+            imageUrls: [],
+            imageAlts: [],
+            gifUrl: null,
+            gifAlt: null,
+            sensitive: false,
+            contentWarning: null,
+            pinnedReplyId: null,
+            createdAt: '2026-11-20T10:00:00.000Z',
+            author: AUTHOR_OBJECT,
+            metrics: { likes: 3, comments: 1, reposts: 0, views: 42 },
+            flair: { id: 'clflair1', name: 'Discussion', color: 'accent' },
+          },
+        ],
+        nextCursor: null,
+      },
+    },
+
+    // s07-12 api-reading
+    {
+      method: 'GET',
+      path: '/api/v1/me/highlights',
+      operationId: 'listMyHighlights',
+      group: 'Reading',
+      scope: 'read:reading',
+      summary: 'List your highlights and notes',
+      description: 'Your highlights and notes on library books, blog posts and news, newest first. Private notes are returned because they are yours; a wildcard key (`read:*`, `*`) can read them too. With `since` (ISO 8601) you get the highlights **updated** after that instant instead, ordered by `updatedAt` then `id` ascending, so a sync can store the last `updatedAt` it saw and ask again from there; follow `nextCursor` (a cursor from one mode does not work in the other). A highlight whose document has been removed is returned with `document: null` (as in the example); otherwise `document` is `{ title, url }`. Deletions are not tombstoned: to learn which highlights were deleted, compare the ids you hold with a full listing. Highlights cannot be created through the API.',
+      paginated: true,
+      params: [
+        { name: 'limit', in: 'query', type: 'integer', description: 'Page size, 1–100 (default 30).' },
+        { name: 'cursor', in: 'query', type: 'string', description: 'Opaque cursor from a previous `nextCursor`.' },
+        { name: 'kind', in: 'query', type: 'string', description: 'Only `library`, `blog` or `news` highlights.' },
+        { name: 'since', in: 'query', type: 'string', description: 'Only highlights updated after this ISO 8601 instant, oldest update first.' },
+        { name: 'hasNote', in: 'query', type: 'boolean', description: '`true` for highlights with a note, `false` for those without.' },
+        { name: 'visibility', in: 'query', type: 'string', description: '`public` or `private`.' },
+      ],
+      responseExample: {
+        data: [
+          {
+            id: 'clhl1',
+            kind: 'library',
+            key: 'meditations',
+            document: null,
+            quote: 'You have power over your mind, not outside events.',
+            note: null,
+            isPublic: false,
+            createdAt: '2026-11-01T09:00:00.000Z',
+            updatedAt: '2026-11-20T18:30:00.000Z',
+          }
+        ],
+        nextCursor: null,
+      },
+    },
+    {
+      method: 'PATCH',
+      path: '/api/v1/me/highlights/{id}',
+      operationId: 'updateMyHighlight',
+      group: 'Reading',
+      scope: 'write:reading',
+      summary: 'Edit a highlight',
+      description: 'Change the note and/or visibility of one of your highlights. `note: null` or an empty string clears the note. It runs the same function as the site, so the public-highlight rules apply; the API cannot supply the passage positions the reader computes, so a highlight made public here is public but does not count toward "popular passages". A highlight that is not yours is a 404.',
+      idempotent: true,
+      params: [
+        { name: 'id', in: 'path', type: 'string', description: 'The highlight id.', required: true },
+      ],
+      requestBody: {
+        fields: [
+          { name: 'note', type: 'string | null', description: 'Up to 2000 characters; null or empty clears it.' },
+          { name: 'isPublic', type: 'boolean', description: 'Show the highlight and its note publicly.' },
+        ],
+        example: { note: 'Re-read before the review.' },
+      },
+      responseExample: {
+            id: 'clhl1',
+            kind: 'library',
+            key: 'meditations',
+            document: null,
+            quote: 'You have power over your mind, not outside events.',
+            note: null,
+            isPublic: false,
+            createdAt: '2026-11-01T09:00:00.000Z',
+            updatedAt: '2026-11-20T18:30:00.000Z',
+          },
+    },
+    {
+      method: 'DELETE',
+      path: '/api/v1/me/highlights/{id}',
+      operationId: 'deleteMyHighlight',
+      group: 'Reading',
+      scope: 'write:reading',
+      summary: 'Delete a highlight',
+      description: 'Permanently delete one of your highlights and its note. Deletions are not tombstoned for `since` syncs.',
+      idempotent: true,
+      status: 204,
+      params: [
+        { name: 'id', in: 'path', type: 'string', description: 'The highlight id.', required: true },
+      ],
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/shelves',
+      operationId: 'listMyShelves',
+      group: 'Reading',
+      scope: 'read:reading',
+      summary: 'List your shelves',
+      description: 'Your shelf entries (`want`, `reading`, `read`), most recently changed first, up to 500. Optionally only one shelf.',
+      params: [
+        { name: 'shelf', in: 'query', type: 'string', description: '`want`, `reading` or `read`.' },
+      ],
+      responseExample: {
+        data: [
+          { slug: 'meditations', title: 'Meditations', shelf: 'want', pages: 254, finishedAt: null, updatedAt: '2026-11-10T08:00:00.000Z' },
+        ],
+      },
+    },
+    {
+      method: 'PUT',
+      path: '/api/v1/me/shelves/{slug}',
+      operationId: 'setMyShelf',
+      group: 'Reading',
+      scope: 'write:reading',
+      summary: 'Put a book on a shelf',
+      description: 'Shelve a library book, moving it if it is already shelved. Marking it `read` stamps `finishedAt` (now, or the date already there, or the one you send) and it counts toward that year\'s reading goal. A slug that is not a library book is a 404.',
+      idempotent: true,
+      params: [
+        { name: 'slug', in: 'path', type: 'string', description: 'The library book slug.', required: true },
+      ],
+      requestBody: {
+        fields: [
+          { name: 'shelf', type: 'string', required: true, description: '`want`, `reading` or `read`.' },
+          { name: 'pages', type: 'integer', description: 'Page count, used only when the book has none of its own.' },
+          { name: 'finishedAt', type: 'string | null', description: 'ISO 8601 finish date; only with `read`, not in the future.' },
+        ],
+        example: { shelf: 'read', finishedAt: '2026-11-10T00:00:00.000Z' },
+      },
+      responseExample: { slug: 'meditations', title: 'Meditations', shelf: 'want', pages: 254, finishedAt: null, updatedAt: '2026-11-10T08:00:00.000Z' },
+    },
+    {
+      method: 'DELETE',
+      path: '/api/v1/me/shelves/{slug}',
+      operationId: 'removeMyShelf',
+      group: 'Reading',
+      scope: 'write:reading',
+      summary: 'Take a book off your shelves',
+      description: 'Remove the shelf entry. A book that is not on your shelves is a 404.',
+      idempotent: true,
+      status: 204,
+      params: [
+        { name: 'slug', in: 'path', type: 'string', description: 'The library book slug.', required: true },
+      ],
+    },
+    {
+      method: 'GET',
+      path: '/api/v1/me/reading-goal',
+      operationId: 'getMyReadingGoal',
+      group: 'Reading',
+      scope: 'read:reading',
+      summary: 'Get your reading goal',
+      description: 'Your goal for a year and how far along you are: books and pages finished that year and `done` in the goal\'s unit. `goal` is `null` when you set none, otherwise `{ unit, target, books, pages, done }`. Setting the goal stays on the site.',
+      params: [
+        { name: 'year', in: 'query', type: 'integer', description: 'The year, 2000–2200 (default the current UTC year).' },
+      ],
+      responseExample: {
+        year: 2026,
+        goal: null,
+      },
+    },
+
   ];
 
 /** Group endpoints in declared order for wiki rendering. */

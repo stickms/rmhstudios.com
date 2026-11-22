@@ -4,6 +4,7 @@
  * Order, cheapest and most explicit first:
  *   0. ban / timeout (s06-01) — an active sanction refuses everything, mods never carry one
  *   1. flair (N1)         — required flair present and belongs to the community
+ *   1b. images (s07-16)   — a requiring community refuses an image without a description (mods too)
  *   2. verification (S2)  — email / account age / member age
  *   3. AutoMod (N4)       — in-memory over the cached rules
  *
@@ -18,11 +19,22 @@ import { getAutomodRules, recordModItem } from '@/lib/communities/automod.server
 import { checkVerification } from '@/lib/communities/verification';
 import { activeSanction } from '@/lib/communities/bans.server';
 import { denyCode, denyText } from '@/lib/communities/bans';
+import { ALT_REQUIRED_CODE, ALT_REQUIRED_MESSAGE, communityAltMissing, communityGifAltMissing } from '@/lib/communities/alt-required';
 import { evaluateAutomod, type AutomodPostKind } from '@/lib/communities/automod';
 
 export type GateOutcome =
   | { kind: 'allow'; flag?: { ruleName: string } }
-  | { kind: 'deny'; status: 400 | 403 | 404; code: string; error: string; endsAt?: string | null }
+  | {
+      kind: 'deny';
+      status: 400 | 403 | 404;
+      code: string;
+      error: string;
+      endsAt?: string | null;
+      /** ALT_REQUIRED: the images that still need a description. */
+      missing?: number[];
+      /** ALT_REQUIRED: the GIF needs a description. */
+      missingGif?: boolean;
+    }
   | { kind: 'hold'; ruleName: string }
   | { kind: 'remove'; ruleName: string };
 
@@ -33,6 +45,11 @@ export async function gateCommunityContent(args: {
   content: string;
   postKind: AutomodPostKind;
   flairId?: string | null;
+  /** Every caller passes the images (s07-16); a comment or text-only post passes none. */
+  imageUrls?: readonly string[] | undefined;
+  imageAlts?: readonly string[] | undefined;
+  gifUrl?: string | null | undefined;
+  gifAlt?: string | null | undefined;
 }): Promise<GateOutcome> {
   const [settings, member, user, rules, sanction] = await Promise.all([
     getCommunitySettings(args.communityId),
@@ -79,6 +96,20 @@ export async function gateCommunityContent(args: {
         error: 'Choose a flair for your post — this community requires one.',
       };
     }
+  }
+
+  // 1b. Image descriptions (s07-16). Moderators are not exempt: the point is the readers.
+  const altMissing = communityAltMissing(settings.requireImageAlt, args.imageUrls, args.imageAlts);
+  const gifMissing = communityGifAltMissing(settings.requireImageAlt, args.gifUrl, args.gifAlt);
+  if (altMissing.length > 0 || gifMissing) {
+    return {
+      kind: 'deny',
+      status: 400,
+      code: ALT_REQUIRED_CODE,
+      error: ALT_REQUIRED_MESSAGE,
+      missing: altMissing,
+      ...(gifMissing ? { missingGif: true } : {}),
+    };
   }
 
   if (isMod) return { kind: 'allow' };

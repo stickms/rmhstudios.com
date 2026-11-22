@@ -185,6 +185,7 @@ export const CONTENT_WARNING_READ_PATHS: readonly string[] = [
   // The developer API passes the text through and adds `sensitive` and `contentWarning`.
   'lib/api/serializers.server.ts',
   'app/routes/api/v1/feed.ts',
+  'lib/api/v1/communities.server.ts',
   'app/routes/api/v1/posts.ts',
   'app/routes/api/v1/posts/$id.ts',
   'app/routes/api/v1/users/$handle/posts.ts',

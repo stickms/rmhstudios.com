@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import {
   Crown,
   Pencil,
+  ShieldCheck,
+  ShieldOff,
   UserMinus,
   UserPlus,
 } from 'lucide-react';
@@ -15,7 +17,9 @@ type ManageAction =
         | 'rename'
         | 'add'
         | 'remove'
-        | 'owner';
+        | 'owner'
+        | 'admin-added'
+        | 'admin-removed';
     }
   >;
 
@@ -181,6 +185,64 @@ export function GroupManageLine({
               },
             );
       break;
+    case 'admin-added':
+      Icon =
+        ShieldCheck;
+      text =
+        t(
+          'line-admin-added',
+          {
+            ns: 'group-admins',
+            name: who(
+              action.actorId,
+            ),
+            target:
+              target(
+                action.targetId,
+                action.targetName,
+              ),
+            defaultValue:
+              '{{name}} made {{target}} an admin',
+          },
+        );
+      break;
+    case 'admin-removed': {
+      Icon =
+        ShieldOff;
+      const removed =
+        t(
+          'line-admin-removed',
+          {
+            ns: 'group-admins',
+            name: who(
+              action.actorId,
+            ),
+            target:
+              target(
+                action.targetId,
+                action.targetName,
+              ),
+            defaultValue:
+              '{{name}} removed {{target}} as an admin',
+          },
+        );
+      text =
+        action.revokedLinks
+          ? `${removed}. ${t(
+              'line-links-revoked',
+              {
+                ns: 'group-admins',
+                count:
+                  action.revokedLinks,
+                defaultValue_one:
+                  '{{count}} invite link revoked',
+                defaultValue_other:
+                  '{{count}} invite links revoked',
+              },
+            )}`
+          : removed;
+      break;
+    }
   }
 
   return (

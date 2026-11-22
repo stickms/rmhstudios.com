@@ -55,8 +55,11 @@ import { SEND_SCHEDULED_QUEUE, registerSendScheduledMessagesCron } from '@/lib/m
 import { PARTY_REMINDERS_QUEUE, registerPartyRemindersCron } from '@/lib/rmhtube/parties-jobs.server';
 import { DAILY_PUZZLE_PREWARM_QUEUE, registerDailyPuzzlePrewarmCron } from '@/lib/daily-puzzles/prewarm.server';
 import { MATCH_CLAIM_QUEUE, registerMatchClaimCron } from '@/lib/tournaments/match-results.server';
+import { MATCH_SCHEDULE_QUEUE, registerMatchScheduleCron } from '@/lib/tournaments/scheduling.server';
 import { CHECKIN_OPEN_QUEUE, registerCheckInOpenCron } from '@/lib/tournaments/checkin-jobs.server';
 import { POLL_ENDED_QUEUE, registerPollEndedCron } from '@/lib/feed/poll-lifecycle-jobs.server';
+import { JAM_THEME_QUEUE, registerJamThemeCron } from '@/lib/competitive/jam-themes.server';
+import { BULK_RECLAIM_QUEUE, BULK_RUN_QUEUE, registerBulkReclaimCron, registerBulkWorker } from '@/lib/bulk/queue.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/developer/recipes.server';
 import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
@@ -242,6 +245,21 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // s06-20 match-results
   // s06-20: every minute, settle result claims the opponent left unanswered for 15 minutes (never one that would finish the tournament).
   { queue: MATCH_CLAIM_QUEUE, register: registerMatchClaimCron },
+
+  // Sprint 07 (docs/autonomous/sprint-07/plan.md §Anchors)
+  // s07-06 match-scheduling
+  // s07-06: every minute, remind both players an hour before an agreed match time and 12 hours before a match deadline (once each).
+  { queue: MATCH_SCHEDULE_QUEUE, register: registerMatchScheduleCron },
+
+  // s07-07 jam-themes
+  // s07-07: every minute, reveal the theme of each voting jam that has started and tell the members who voted (once).
+  { queue: JAM_THEME_QUEUE, register: registerJamThemeCron },
+
+  // s07-15 bulk-durable
+  // s07-15: a work queue fed by confirming a bulk clean-up (one job per operation); a lease on the row decides who runs it.
+  { queue: BULK_RUN_QUEUE, register: registerBulkWorker },
+  // s07-15: every minute, queue the clean-ups whose lease expired (their process restarted); the fifth restart stops one as failed.
+  { queue: BULK_RECLAIM_QUEUE, register: registerBulkReclaimCron },
 
 ];
 

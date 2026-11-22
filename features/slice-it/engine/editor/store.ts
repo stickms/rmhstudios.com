@@ -12,6 +12,22 @@ import { create } from 'zustand';
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
 import type { EditorArtefacts } from './artefacts';
 import type { Command } from './commands';
+import {
+  copySelection,
+  cutSelection,
+  duplicateSelection,
+  insertTime as insertTimeOp,
+  mirrorLanes,
+  pasteAt,
+  quantizeSelection,
+  removeTime as removeTimeOp,
+  scaleSelection,
+  selectionOf,
+  type ClipboardData,
+  type ClipboardResult,
+  type EditContext,
+  type Outcome,
+} from './clipboard';
 import type { GeneratePlan } from './generate';
 import {
   EMPTY_LINT,
@@ -183,6 +199,10 @@ interface EditorState {
   placeType: SliceType;
   nestingMode: NestingMode;
 
+  /* ── Clipboard (in memory, per tab; never the system clipboard) ───────── */
+  /** Survives a difficulty switch, so Expert phrases can be pasted into Hard. */
+  clipboard: ClipboardData | null;
+
   /* ── History ──────────────────────────────────────────────────────────── */
   undoStack: Command[];
   redoStack: Command[];
@@ -284,6 +304,19 @@ interface EditorState {
   ) => void;
   clearSelection: () => void;
   selectAll: () => void;
+  /**
+   * Clipboard and time edits (sprint 07 / 01). Each is one undo step and returns
+   * what happened as codes and counts for the UI to announce.
+   */
+  copy: () => ClipboardResult;
+  cut: () => ClipboardResult;
+  paste: (mirrored?: boolean) => ClipboardResult;
+  duplicate: () => ClipboardResult;
+  mirror: () => ClipboardResult;
+  quantize: () => ClipboardResult;
+  scaleTiming: (percent: number) => ClipboardResult;
+  insertTime: () => ClipboardResult;
+  removeTime: () => ClipboardResult;
   setSaving: (
     saving: boolean,
   ) => void;
@@ -431,6 +464,8 @@ const initial =
       'STANDARD' as SliceType,
     nestingMode:
       'cascade' as NestingMode,
+    clipboard:
+      null as ClipboardData | null,
     undoStack:
       [] as Command[],
     redoStack:
@@ -500,6 +535,7 @@ export const useEditorStore =
   create<EditorState>()(
     (
       set,
+      get,
     ) => ({
       ...initial,
 
@@ -623,6 +659,11 @@ export const useEditorStore =
               // that has just landed.
               return {
                 charts,
+                ...timingPatch(
+                  state,
+                  command,
+                  'apply',
+                ),
                 undoStack,
                 redoStack:
                   [],
@@ -653,6 +694,11 @@ export const useEditorStore =
                 command.invert(
                   state.charts,
                 ),
+              ...timingPatch(
+                state,
+                command,
+                'invert',
+              ),
               undoStack:
                 state.undoStack.slice(
                   0,
@@ -690,6 +736,11 @@ export const useEditorStore =
                 command.apply(
                   state.charts,
                 ),
+              ...timingPatch(
+                state,
+                command,
+                'apply',
+              ),
               undoStack:
                 [
                   ...state.undoStack,
@@ -1065,6 +1116,139 @@ export const useEditorStore =
             }),
           ),
 
+      copy: () => {
+        const state =
+          get();
+        const clip =
+          copySelection(
+            selectionOf(
+              editContext(
+                state,
+              ),
+            ),
+            state.keys,
+          );
+        if (
+          !clip
+        )
+          return {
+            code: 'nothing-selected',
+          };
+        set(
+          {
+            clipboard:
+              clip,
+          },
+        );
+        return {
+          code: 'copied',
+          count:
+            clip
+              .notes
+              .length,
+        };
+      },
+      cut: () => {
+        const outcome =
+          cutSelection(
+            editContext(
+              get(),
+            ),
+          );
+        if (
+          outcome.clipboard
+        )
+          set(
+            {
+              clipboard:
+                outcome.clipboard,
+            },
+          );
+        return commit(
+          get,
+          outcome,
+        );
+      },
+      paste: (
+        mirrored = false,
+      ) => {
+        const state =
+          get();
+        return commit(
+          get,
+          pasteAt(
+            editContext(
+              state,
+            ),
+            state.clipboard,
+            mirrored,
+          ),
+        );
+      },
+      duplicate:
+        () =>
+          commit(
+            get,
+            duplicateSelection(
+              editContext(
+                get(),
+              ),
+            ),
+          ),
+      mirror:
+        () =>
+          commit(
+            get,
+            mirrorLanes(
+              editContext(
+                get(),
+              ),
+            ),
+          ),
+      quantize:
+        () =>
+          commit(
+            get,
+            quantizeSelection(
+              editContext(
+                get(),
+              ),
+            ),
+          ),
+      scaleTiming:
+        (
+          percent,
+        ) =>
+          commit(
+            get,
+            scaleSelection(
+              editContext(
+                get(),
+              ),
+              percent,
+            ),
+          ),
+      insertTime:
+        () =>
+          commit(
+            get,
+            insertTimeOp(
+              editContext(
+                get(),
+              ),
+            ),
+          ),
+      removeTime:
+        () =>
+          commit(
+            get,
+            removeTimeOp(
+              editContext(
+                get(),
+              ),
+            ),
+          ),
+
       setSaving:
         (
           saving,
@@ -1107,6 +1291,89 @@ export const useEditorStore =
           ),
     }),
   );
+
+/** What the clipboard operations read from the store. */
+function editContext(
+  state: EditorState,
+): EditContext {
+  return {
+    charts:
+      state.charts,
+    difficulty:
+      state.active,
+    keys: state.keys,
+    nesting:
+      state.nestingMode,
+    timingPoints:
+      state.timingPoints,
+    svPoints:
+      state.svPoints,
+    snap: state.snap,
+    snapEnabled:
+      state.snapEnabled,
+    playhead:
+      state.playhead,
+  };
+}
+
+/**
+ * Apply an operation's command as one undo step, then select what it produced
+ * (paste selects the pasted notes). Selection is view state and not part of the
+ * command, so undo does not touch it.
+ */
+function commit(
+  get: () => EditorState,
+  outcome: Outcome,
+): ClipboardResult {
+  if (
+    outcome.command
+  ) {
+    get().apply(
+      outcome.command,
+    );
+    if (
+      outcome.select
+    )
+      get().setSelection(
+        outcome.select,
+      );
+  }
+  return outcome.result;
+}
+
+/**
+ * The timing map half of a command that carries one (insert / remove time).
+ * Every tier is marked dirty with it, as `setTimingPoints` does: the map is
+ * stored on each chart row.
+ */
+function timingPatch(
+  state: EditorState,
+  command: Command,
+  direction: 'apply' | 'invert',
+): Partial<EditorState> {
+  if (
+    !command.timing
+  )
+    return {};
+  const map =
+    command
+      .timing[
+      direction
+    ](
+      {
+        timingPoints:
+          state.timingPoints,
+        svPoints:
+          state.svPoints,
+      },
+    );
+  return {
+    timingPoints:
+      map.timingPoints,
+    svPoints:
+      map.svPoints,
+  };
+}
 
 /** Every tier dirty — see `setTimingPoints`. */
 function markAllDirty(

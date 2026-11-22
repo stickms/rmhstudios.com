@@ -5,7 +5,7 @@
 
 # Endpoint reference
 
-Every endpoint in the public `v1` API — 53 across 11 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
+Every endpoint in the public `v1` API — 70 across 14 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
 
 | Group | Endpoints | Covers |
 | ----- | --------- | ------ |
@@ -20,6 +20,9 @@ Every endpoint in the public `v1` API — 53 across 11 groups. Paths are relativ
 | [Webhooks](./webhooks.md) | 5 | `manage:webhooks` |
 | [Meta](./meta.md) | 1 | no scope required |
 | [Study](./study.md) | 11 | `read:study`, `write:study` |
+| [Events](./events.md) | 6 | `read:events`, `write:events` |
+| [Communities](./communities.md) | 4 | `read:communities` |
+| [Reading](./reading.md) | 7 | `read:reading`, `write:reading` |
 
 ```{toctree}
 :maxdepth: 2
@@ -36,4 +39,7 @@ games
 webhooks
 meta
 study
+events
+communities
+reading
 ```

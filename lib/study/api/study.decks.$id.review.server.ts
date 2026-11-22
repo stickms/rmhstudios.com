@@ -3,7 +3,7 @@ import { implement } from '@/lib/api/implement.server';
 import { deckReviewQueueApi } from '@/lib/study/decks.contract';
 import { prisma } from '@/lib/prisma.server';
 import { isCardKind } from '@/lib/study/card-types';
-import { CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { ACTIVE_REVIEW_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
 export const route = apiRoute('/api/study/decks/$id/review', {
@@ -29,7 +29,8 @@ export const route = apiRoute('/api/study/decks/$id/review', {
         kind: true,
         sourceId: true,
         clozeIndex: true,
-        reviews: { where: { userId }, select: { dueAt: true } },
+        // Every review row is read: a suspended card is not new, and is not due.
+        reviews: { where: { userId }, select: { dueAt: true, suspendedAt: true } },
       },
     });
 
@@ -37,7 +38,9 @@ export const route = apiRoute('/api/study/decks/$id/review', {
     const due = cards
       .filter((c) => {
         const r = c.reviews[0];
-        return !r || r.dueAt.getTime() <= now;
+        if (!r) return true;
+        // Same rule as ACTIVE_REVIEW_WHERE: a suspended row is out.
+        return r.suspendedAt === ACTIVE_REVIEW_WHERE.suspendedAt && r.dueAt.getTime() <= now;
       })
       .slice(0, 50)
       .map((c) => ({

@@ -17,12 +17,13 @@ export const Route = createFileRoute('/api/v1/builds/$slug')({
             const build = await prisma.userBuild.findUnique({
               where: { slug: params.slug },
               select: {
-                slug: true, title: true, description: true, readme: true, repoUrl: true, demoUrl: true, thumbnailUrl: true,
+                slug: true, title: true, description: true, readme: true, repoUrl: true, demoUrl: true, thumbnailUrl: true, thumbnailAlt: true,
                 technologies: true, price: true, visibility: true, likeCount: true, commentCount: true, viewCount: true,
                 createdAt: true, publishedAt: true,
                 category: { select: { slug: true, name: true } },
                 user: { select: apiAuthorSelect },
                 tags: { select: { name: true } },
+                screenshots: { orderBy: [{ position: 'asc' }, { id: 'asc' }], select: { url: true, width: true, height: true, description: true } },
                 versions: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: RELEASES_PAGE, select: { version: true, changelog: true, commitHash: true, createdAt: true } },
               },
             });
@@ -36,6 +37,8 @@ export const Route = createFileRoute('/api/v1/builds/$slug')({
               repoUrl: build.repoUrl,
               demoUrl: build.demoUrl,
               thumbnailUrl: build.thumbnailUrl,
+              thumbnailAlt: build.thumbnailAlt,
+              screenshots: build.screenshots,
               author: serializeAuthor(build.user),
               technologies: build.technologies,
               tags: build.tags.map((t) => t.name),

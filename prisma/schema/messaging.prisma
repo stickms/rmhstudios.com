@@ -85,6 +85,8 @@ model ChatMember {
   joinedAt   DateTime @default(now())
   /// s06-09: the invite link this member joined through (FR-4). Null for members added by the owner.
   joinedViaInviteId String?
+  /// s07-04: groups only. 'member' or 'admin' (at most 5 admins; the owner is Chat.ownerId, never an admin row).
+  role       String   @default("member") @db.VarChar(8)
 
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
   user User @relation("ChatMembership", fields: [userId], references: [id], onDelete: Cascade)
@@ -146,6 +148,7 @@ model ChatMessage {
   pollVotes     ChatPollVote[]
   threadParent  ChatMessage?          @relation("ChatMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
   threadReplies ChatMessage[]         @relation("ChatMessageThread")
+  mentions      ChatMention[]
 
   @@index([chatId, createdAt])
   @@index([senderId])
@@ -155,6 +158,21 @@ model ChatMessage {
   // DM unread badge: chatId IN (...) AND read = false AND senderId <> me.
   @@index([chatId, read, senderId])
   @@map("chat_message")
+}
+
+/// s07-05: a current member @mentioned in a group message. "Your mentions" in the group info dialog is one indexed read.
+model ChatMention {
+  messageId String
+  chatId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation("ChatMentionTarget", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId, chatId, createdAt(sort: Desc)])
+  @@map("chat_mention")
 }
 
 model ChatMessageReaction {

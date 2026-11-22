@@ -1,0 +1,23 @@
+{
+  "form-add": "Add a theme",
+  "form-candidate": "Theme {{n}}",
+  "form-down": "Move down",
+  "form-hint": "Offer {{min}} to {{max}} themes. The first one wins a tie.",
+  "form-opens": "Voting opens (blank is now)",
+  "form-remove": "Remove theme",
+  "form-switch": "Let members vote on the theme",
+  "form-up": "Move up",
+  "list-vote-open": "Theme vote open",
+  "results-chosen": "Chosen",
+  "results-title": "The theme vote",
+  "results-votes": "Votes: {{n}}",
+  "vote-closes": "Voting closes when the jam starts, {{time}}",
+  "vote-failed": "Could not save your votes",
+  "vote-hint": "Mark up to {{max}} themes. {{n}} marked.",
+  "vote-max": "You can mark up to {{max}}",
+  "vote-opens": "Theme voting opens {{time}}",
+  "vote-save": "Save votes",
+  "vote-saved": "Your votes are saved",
+  "vote-sign-in": "Sign in to vote",
+  "vote-title": "Vote for the theme"
+}

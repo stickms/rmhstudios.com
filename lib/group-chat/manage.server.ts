@@ -31,9 +31,14 @@ import { revokeInvitesOf } from '@/lib/group-chat/invites-revoke.server';
 import {
   applyCap,
   isGroupOwner,
-  pickHeir,
   splitCandidates,
 } from '@/lib/group-chat/manage';
+import {
+  canManage,
+  canRemoveMember,
+  pickSuccessor,
+  type ManagerNeed,
+} from '@/lib/group-chat/roles';
 
 type Db =
   Prisma.TransactionClient;
@@ -67,6 +72,14 @@ const notOwner =
     status: 403,
     error:
       'Only the owner can do that',
+  } as const;
+/** The generic refusal for an admin who reaches for something above admin standing, or for the owner or an admin. */
+const forbidden =
+  {
+    ok: false,
+    status: 403,
+    error:
+      "You can't do that",
   } as const;
 
 type NamedUser =
@@ -161,6 +174,66 @@ export async function refuseUnlessOwner(
   return member
     ? notOwner
     : notFound;
+}
+
+/**
+ * Null when `actorId` may take an action that needs `need` (s07-04); otherwise the refusal. The role is read from the
+ * member's own row, so called after `lockedGroup` it is the role as it is when the lock is held: an admin demoted a
+ * moment ago is refused. A stranger to the group is told it does not exist; a member without standing gets 403.
+ */
+export async function refuseUnlessManager(
+  tx: Db,
+  group: {
+    id: string;
+    ownerId:
+      | string
+      | null;
+  },
+  actorId: string,
+  need: ManagerNeed,
+) {
+  if (
+    isGroupOwner(
+      group.ownerId,
+      actorId,
+    )
+  )
+    return null;
+  const member =
+    await tx.chatMember.findUnique(
+      {
+        where:
+          {
+            chatId_userId:
+              {
+                chatId:
+                  group.id,
+                userId:
+                  actorId,
+              },
+          },
+        select:
+          {
+            id: true,
+            role: true,
+          },
+      },
+    );
+  if (
+    !member
+  )
+    return notFound;
+  return canManage(
+    group.ownerId,
+    member.role,
+    actorId,
+    need,
+  )
+    ? null
+    : need ===
+        'owner'
+      ? notOwner
+      : forbidden;
 }
 
 /** A system line and/or a realtime update for a group, sent as `senderId` (who must still be a member). */
@@ -414,10 +487,11 @@ export async function renameGroup(
         )
           return notFound;
         const refusal =
-          await refuseUnlessOwner(
+          await refuseUnlessManager(
             tx,
             group,
             actorId,
+            'admin',
           );
         if (
           refusal
@@ -510,10 +584,11 @@ export async function addMembers(
         )
           return notFound;
         const refusal =
-          await refuseUnlessOwner(
+          await refuseUnlessManager(
             tx,
             group,
             actorId,
+            'admin',
           );
         if (
           refusal
@@ -761,10 +836,11 @@ export async function removeMember(
         )
           return notFound;
         const refusal =
-          await refuseUnlessOwner(
+          await refuseUnlessManager(
             tx,
             group,
             actorId,
+            'admin',
           );
         if (
           refusal
@@ -785,6 +861,7 @@ export async function removeMember(
               select:
                 {
                   id: true,
+                  role: true,
                   user: {
                     select:
                       userDisplaySelect,
@@ -796,6 +873,19 @@ export async function removeMember(
           !target
         )
           return notFound;
+        // An admin removes ordinary members only; the owner removes admins too (s07-04). Checked under the lock.
+        if (
+          !canRemoveMember(
+            group.ownerId,
+            actorId,
+            {
+              userId:
+                targetId,
+              role: target.role,
+            },
+          )
+        )
+          return forbidden;
         await tx.chatMember.delete(
           {
             where:
@@ -829,6 +919,16 @@ export async function removeMember(
               },
           },
         );
+        // An admin's links go with their standing (s07-04).
+        if (
+          target.role ===
+          'admin'
+        )
+          await revokeInvitesOf(
+            tx,
+            chatId,
+            targetId,
+          );
         return {
           ok: true,
           targetName:
@@ -942,6 +1042,7 @@ export async function transferOwnership(
                 },
               select:
                 {
+                  role: true,
                   user: {
                     select:
                       userDisplaySelect,
@@ -965,12 +1066,52 @@ export async function transferOwnership(
             },
           },
         );
-        // The old owner's links go with the ownership; the new owner makes their own (s06-09).
-        await revokeInvitesOf(
-          tx,
-          chatId,
-          actorId,
-        );
+        // The new owner is no admin row (the owner sits above admins). A transfer to an admin keeps the old owner as an
+        // admin, so the admin count does not move; a transfer to a member leaves the admin list as it is (s07-04).
+        if (
+          target.role ===
+          'admin'
+        ) {
+          await tx.chatMember.update(
+            {
+              where:
+                {
+                  chatId_userId:
+                    {
+                      chatId,
+                      userId:
+                        targetId,
+                    },
+                },
+              data: {
+                role: 'member',
+              },
+            },
+          );
+          await tx.chatMember.update(
+            {
+              where:
+                {
+                  chatId_userId:
+                    {
+                      chatId,
+                      userId:
+                        actorId,
+                    },
+                },
+              data: {
+                role: 'admin',
+              },
+            },
+          );
+        } else {
+          // Handing it to an ordinary member leaves the old owner without standing: their links go (s06-09).
+          await revokeInvitesOf(
+            tx,
+            chatId,
+            actorId,
+          );
+        }
         return {
           ok: true,
           targetName:
@@ -1022,7 +1163,7 @@ export type LeaveOutcome =
   };
 
 /**
- * Leave a group. If the owner leaves, ownership passes to the longest-standing remaining member; the last one out
+ * Leave a group. If the owner leaves, ownership passes to the earliest-joined admin, else the earliest-joined member; the last one out
  * deletes the group. Shared by the Leave endpoint and account erasure.
  */
 export async function leaveGroup(
@@ -1059,6 +1200,7 @@ export async function leaveGroup(
               select:
                 {
                   id: true,
+                  role: true,
                 },
             },
           );
@@ -1079,6 +1221,16 @@ export async function leaveGroup(
               },
           },
         );
+        // An admin who leaves takes their live links with them (s07-04).
+        if (
+          membership.role ===
+          'admin'
+        )
+          await revokeInvitesOf(
+            tx,
+            chatId,
+            userId,
+          );
         const rest =
           await tx.chatMember.findMany(
             {
@@ -1090,6 +1242,7 @@ export async function leaveGroup(
                 {
                   userId: true,
                   joinedAt: true,
+                  role: true,
                 },
             },
           );
@@ -1129,11 +1282,14 @@ export async function leaveGroup(
               null,
           } as const;
         }
-        const heirId =
-          pickHeir(
+        // Read under the lock with the leaver gone: the earliest admin, else the earliest member (s07-04).
+        const successor =
+          pickSuccessor(
             rest,
             userId,
           );
+        const heirId =
+          successor?.userId;
         if (
           !heirId
         )
@@ -1162,6 +1318,26 @@ export async function leaveGroup(
           chatId,
           userId,
         );
+        // An owner is no admin row.
+        if (
+          successor?.wasAdmin
+        )
+          await tx.chatMember.update(
+            {
+              where:
+                {
+                  chatId_userId:
+                    {
+                      chatId,
+                      userId:
+                        heirId,
+                    },
+                },
+              data: {
+                role: 'member',
+              },
+            },
+          );
         const heir =
           await tx.user.findUnique(
             {

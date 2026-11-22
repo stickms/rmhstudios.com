@@ -268,7 +268,12 @@ export function MatchResultControls({
                       'Settled by the game',
                   },
                 )
-              : t(
+              : kind === 'walkover'
+                ? t('source-walkover', {
+                    ns: 'match-scheduling',
+                    defaultValue: 'Awarded by the host: not played in time',
+                  })
+                : t(
                   'source-unanswered',
                   {
                     defaultValue:

@@ -25,7 +25,7 @@
 
 ### `GET /api/v1/me/decks`
 
-Your flashcard decks, newest change first. `dueCount` is how many cards are due now. Only your own decks are listed.
+Your flashcard decks, newest change first. `dueCount` is how many cards are due now; `suspended` is how many the key owner has set aside (not in `dueCount`). Only your own decks are listed.
 
 **Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDecks`
 
@@ -46,6 +46,7 @@ Your flashcard decks, newest change first. `dueCount` is how many cards are due 
       "isPublic": false,
       "cardCount": 2,
       "dueCount": 2,
+      "suspended": 0,
       "updatedAt": "2026-11-20T21:14:00.000Z"
     }
   ],
@@ -85,6 +86,7 @@ Create an empty deck. At most 200 decks per account.
   "isPublic": false,
   "cardCount": 2,
   "dueCount": 2,
+  "suspended": 0,
   "updatedAt": "2026-11-20T21:14:00.000Z"
 }
 ```
@@ -109,6 +111,7 @@ One of your decks. A deck that is not yours is 404.
   "isPublic": false,
   "cardCount": 2,
   "dueCount": 2,
+  "suspended": 0,
   "updatedAt": "2026-11-20T21:14:00.000Z"
 }
 ```
@@ -147,6 +150,7 @@ Change the title, description or visibility. An empty description clears it.
   "isPublic": false,
   "cardCount": 2,
   "dueCount": 2,
+  "suspended": 0,
   "updatedAt": "2026-11-20T21:14:00.000Z"
 }
 ```
@@ -332,7 +336,7 @@ Create the card keyed by your own id in this deck, or update it. The same body s
 
 ### `GET /api/v1/me/decks/{id}/due`
 
-How many cards in the deck are due now and in the next 24 hours, for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.
+How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.
 
 **Scope:** `read:study` · **Success:** `200` · **Operation id:** `getMyDeckDue`
 

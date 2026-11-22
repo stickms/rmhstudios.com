@@ -12,6 +12,7 @@ import {
   CloudUpload,
   FilePlus,
   FolderOpen,
+  History,
   LogIn,
   Pencil,
   Save,
@@ -21,12 +22,14 @@ import {
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { ExportMenuItems } from '@/components/studio/ExportMenuItems';
+import { ProjectVersionsDialog } from '@/components/studio/ProjectVersionsDialog';
 import type { ProjectSession } from '@/components/studio/useProjectSession';
 
 export function ProjectsMenu({ session }: { session: ProjectSession }) {
   const { t } = useTranslation('studio-projects');
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
 
   const close = () => setOpen(false);
   /** Run a menu action after the menu has closed, so focus returns to the trigger first. */
@@ -109,6 +112,11 @@ export function ProjectsMenu({ session }: { session: ProjectSession }) {
               {t('menu-open-account', { defaultValue: 'Open from account' })}
             </MenuItem>
             {session.linked ? (
+              <MenuItem icon={History} onSelect={run(() => setVersionsOpen(true))}>
+                {t('menu-versions', { ns: 'studio-history', defaultValue: 'Versions…' })}
+              </MenuItem>
+            ) : null}
+            {session.linked ? (
               <MenuItem icon={CloudOff} tone="danger" onSelect={run(session.deleteCurrentFromAccount)}>
                 {t('menu-delete-account', { defaultValue: 'Delete from account…' })}
               </MenuItem>
@@ -120,6 +128,7 @@ export function ProjectsMenu({ session }: { session: ProjectSession }) {
           </MenuItem>
         )}
       </AnchoredMenu>
+      {versionsOpen ? <ProjectVersionsDialog session={session} onClose={() => setVersionsOpen(false)} /> : null}
     </div>
   );
 }

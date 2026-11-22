@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma.server';
 import { isReviewable } from '@/lib/study/card-types';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { nextState, type Grade } from '@/lib/rmhstudy/srs';
+import { isLapse } from '@/lib/study/queue';
 import { saveReview } from '@/lib/study/review-log.server';
 import { recordStudyReview } from '@/lib/quests/engine.server';
 
@@ -46,7 +47,8 @@ export const route = apiRoute('/api/study/cards/$id/review', {
       const prev = existing ?? { easeFactor: 2.5, intervalDays: 0, repetitions: 0 };
       const next = nextState(prev, body.grade as Grade);
 
-      await saveReview({
+      const { leech } = await saveReview({
+        lapse: isLapse(body.grade, prev.repetitions),
         userId,
         cardId: params.id,
         deckId: card.deckId,
@@ -61,6 +63,7 @@ export const route = apiRoute('/api/study/cards/$id/review', {
         success: true,
         dueAt: next.dueAt,
         intervalDays: next.intervalDays,
+        leech,
       });
     },
   ),

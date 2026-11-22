@@ -118,6 +118,7 @@ import { useEffectiveKeys } from '@/hooks/useEffectiveShortcuts';
 import { eventMatchesKeystroke, isCharacterKeyBinding } from '@/lib/shortcuts/bindings';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { OverlaySignal } from '@/components/ui/overlay-signal';
+import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 
 type Section =
   | 'pages'
@@ -638,6 +639,11 @@ export function CommandPalette({
       open,
     ]);
 
+  const deviceSignOut =
+    useDeviceSignOut();
+  const runDeviceSignOut =
+    deviceSignOut.run;
+
   const commands =
     useMemo<
       Command[]
@@ -813,9 +819,18 @@ export function CommandPalette({
                 authClient,
               } =
                 await import('@/lib/auth-client');
-              await authClient.signOut();
-              window.location.href =
-                '/';
+              // Clears this device first when the member asked for that (sprint 07, feature 03).
+              const outcome =
+                await runDeviceSignOut(
+                  () =>
+                    authClient.signOut(),
+                );
+              if (
+                outcome ===
+                'signed-out'
+              )
+                window.location.href =
+                  '/';
             },
           },
         );
@@ -941,6 +956,7 @@ export function CommandPalette({
       setStyle,
       surprise,
       whatsNewUnread,
+      runDeviceSignOut,
     ]);
 
   // Ranked by the SAME scorer the Explore page and the top-bar panel use
@@ -1214,6 +1230,7 @@ export function CommandPalette({
 
   return (
     <>
+      {deviceSignOut.dialog}
       {composeOpen && (
         <Suspense
           fallback={

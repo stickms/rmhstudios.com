@@ -47,6 +47,7 @@ const SETTING_FIELDS =
     'flairRequired',
     'starThreshold',
     'publicModLog',
+    'requireImageAlt',
   ] as const;
 
 /** The label of one changed setting, for the sentence "changed the community settings: …". */
@@ -87,6 +88,14 @@ function settingLabel(
         {
           defaultValue:
             'public moderation log',
+        },
+      );
+    case 'requireImageAlt':
+      return t(
+        'field-require-image-alt',
+        {
+          defaultValue:
+            'images need a description',
         },
       );
     default:

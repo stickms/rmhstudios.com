@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSynapseAssist } from './assist-context';
+import { CardStateMark } from './assist-ui';
+import { useHoldRepeat } from './useHoldRepeat';
+import { colorGlyph } from '../engine/assist-profile';
 import {
     ActivePuzzle,
     MathPuzzleData,
@@ -366,6 +370,7 @@ const MemoryRenderer: React.FC<{
     onAnswer: (correct: boolean) => void;
     onSkipPhase?: (id: string) => void;
 }> = ({ data, puzzleId, phase = 'show', onAnswer, onSkipPhase }) => {
+    const assist = useSynapseAssist();
     const { t } = useTranslation("c-synapse-storm");
     const [input, setInput] = useState('');
 
@@ -404,8 +409,8 @@ const MemoryRenderer: React.FC<{
                                 </svg>
                             </span>
                         ) : (
-                        <span key={i} className="memory-digit" style={data.variant === 'colors' ? { backgroundColor: n as string, color: 'transparent', width: 28, height: 28, borderRadius: '6px', display: 'inline-block', boxShadow: '0 0 8px rgba(0,0,0,0.3)' } : {}}>
-                            {data.variant === 'colors' ? '' : n}
+                        <span key={i} className="memory-digit" style={data.variant === 'colors' ? { backgroundColor: n as string, color: assist.colorSafe ? '#000' : 'transparent', width: 28, height: 28, borderRadius: '6px', display: assist.colorSafe ? 'inline-flex' : 'inline-block', alignItems: 'center', justifyContent: 'center', fontWeight: 700, boxShadow: '0 0 8px rgba(0,0,0,0.3)' } : {}}>
+                            {data.variant === 'colors' ? (assist.colorSafe ? colorGlyph(n as string) : '') : n}
                         </span>
                         )
                     ))}
@@ -486,7 +491,7 @@ const MemoryRenderer: React.FC<{
                     <div className="color-input-controls">
                         <div className="selected-colors">
                             {input.split(',').filter(Boolean).map((c, i) => (
-                                <span key={i} className="color-dot" style={{ backgroundColor: c, width: 20, height: 20, borderRadius: '50%', display: 'inline-block' }} />
+                                <span key={i} className="color-dot" style={{ backgroundColor: c, width: 20, height: 20, borderRadius: '50%', display: assist.colorSafe ? 'inline-flex' : 'inline-block', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '0.7rem', fontWeight: 700 }}>{assist.colorSafe ? colorGlyph(c) : null}</span>
                             ))}
                             {input === '' && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t("tap-colors-in-order", { defaultValue: "Tap colors in order" })}</span>}
                         </div>
@@ -496,15 +501,16 @@ const MemoryRenderer: React.FC<{
                                     <button
                                         type="button"
                                         key={c}
-                                        style={{ backgroundColor: c }}
+                                        style={assist.colorSafe ? { backgroundColor: c, color: '#000', fontWeight: 700 } : { backgroundColor: c }}
                                         className="color-pick-btn"
+                                        aria-label={assist.colorSafe ? colorGlyph(c) : undefined}
                                         onClick={() => {
                                             const parts = input.split(',').filter(Boolean);
                                             if (parts.length < data.sequence.length) {
                                                 setInput(prev => prev ? `${prev},${c}` : c);
                                             }
                                         }}
-                                    />
+                                    >{assist.colorSafe ? colorGlyph(c) : null}</button>
                                 ))}
                             </div>
                             <button
@@ -538,6 +544,7 @@ const ReactionRenderer: React.FC<{
     data: ReactionPuzzleData;
     onAnswer: (correct: boolean) => void;
 }> = ({ data, onAnswer }) => {
+    const assist = useSynapseAssist();
     const [targets, setTargets] = useState<{ x: number; y: number; id: number; isDecoy?: boolean; num?: number; health?: number }[]>([]);
     const [clicked, setClicked] = useState(0);
     const needed = data.targetCount;
@@ -640,7 +647,7 @@ const ReactionRenderer: React.FC<{
                             onClick={() => handleClick(t)}
                             disabled={!isTargetActive && !t.isDecoy}
                         >
-                            {t.num ? <span className="target-num">{t.num}</span> : (t.health && t.health > 1 ? '2' : '')}
+                            {t.num ? <span className="target-num">{t.num}</span> : (t.health && t.health > 1 ? '2' : (assist.colorSafe && data.variant === 'decoy' ? (t.isDecoy ? '\u2715' : '\u25CB') : ''))}
                         </button>
                     );
                 })}
@@ -655,6 +662,7 @@ const MinigameRenderer: React.FC<{
     onAnswer: (correct: boolean) => void;
 }> = ({ data, onAnswer }) => {
     const { t } = useTranslation("c-synapse-storm");
+    const assist = useSynapseAssist();
     const [phase, setPhase] = useState<'wait' | 'go'>('wait');
     const [count, setCount] = useState(3);
     const [tapCount, setTapCount] = useState(0);
@@ -706,7 +714,8 @@ const MinigameRenderer: React.FC<{
     };
     const handleDoubleTap = () => {
         const now = Date.now();
-        if (now - lastTapRef.current < 400) {
+        // Hold-to-press: one press stands in for the pair.
+        if (assist.holdToPress || now - lastTapRef.current < 400) {
             onAnswer(true);
         } else {
             lastTapRef.current = now;
@@ -729,6 +738,8 @@ const MinigameRenderer: React.FC<{
         setTapCount(next);
         if (next >= 5) onAnswer(true);
     };
+
+    const holdProps = useHoldRepeat(assist.holdToPress && data.variant === 'tap_fast', handleTapFast);
 
     // click_when_go
     if (data.variant === 'click_when_go') {
@@ -803,7 +814,7 @@ const MinigameRenderer: React.FC<{
     if (data.variant === 'tap_fast') {
         return (
             <div className="puzzle-content minigame-area">
-                <button className="minigame-tap-fast" onClick={handleTapFast}>
+                <button className="minigame-tap-fast" onClick={handleTapFast} {...holdProps}>
                     {tapCount}/5
                 </button>
             </div>
@@ -916,6 +927,7 @@ const PowerUpRenderer: React.FC<{
 
 // ---- MAIN CARD ----
 export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSolve, onSkipPhase }) => {
+    const assist = useSynapseAssist();
     const [status, setStatus] = useState<'idle' | 'correct' | 'wrong'>('idle');
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -930,7 +942,8 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
     const color = CATEGORY_COLORS[puzzle.category];
     const label = CATEGORY_LABELS[puzzle.category];
     const progress = puzzle.timeRemaining / puzzle.timeLimit;
-    const isUrgent = progress < 0.25;
+    // With no timers (assist) a card never runs out, so it is never urgent.
+    const isUrgent = !assist.frozenTimers && progress < 0.25;
     const isExpired = puzzle.expired;
 
     useEffect(() => {
@@ -1132,7 +1145,7 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
                     '--card-x': puzzle.position.x,
                     '--card-y': puzzle.position.y,
                     transition: isDragging ? 'none' : 'box-shadow 0.2s ease-out, background 0.2s ease-out',
-                    transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) ${status === 'correct' ? 'scale(1.05)' : (status === 'wrong' ? 'translateX(5px)' : '')}`,
+                    transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) ${assist.calm ? '' : status === 'correct' ? 'scale(1.05)' : (status === 'wrong' ? 'translateX(5px)' : '')}`,
                     cursor: isDragging ? 'grabbing' : 'grab',
                     zIndex: isDragging ? 100 : 1
                 } as React.CSSProperties
@@ -1142,17 +1155,20 @@ export const PuzzleCard: React.FC<PuzzleCardProps> = ({ puzzle, gameState, onSol
                 <span className="card-category">{label}</span>
                 <span className="card-points">+{puzzle.basePoints}</span>
             </div>
+            {assist.colorSafe && <CardStateMark status={status} urgent={isUrgent} />}
             <div className="card-instruction">{puzzle.instruction}</div>
             {renderPuzzle()}
-            <div className="timer-bar">
-                <div
-                    className="timer-fill"
-                    style={{
-                        width: `${progress * 100}%`,
-                        backgroundColor: isUrgent ? '#ff5252' : color,
-                    }}
-                />
-            </div>
+            {!assist.frozenTimers && (
+                <div className="timer-bar">
+                    <div
+                        className="timer-fill"
+                        style={{
+                            width: `${progress * 100}%`,
+                            backgroundColor: isUrgent ? '#ff5252' : color,
+                        }}
+                    />
+                </div>
+            )}
         </div>
     );
 };

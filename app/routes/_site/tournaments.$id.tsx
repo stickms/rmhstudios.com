@@ -18,6 +18,7 @@ import { BracketView } from '@/components/tournaments/BracketView';
 import { DisputesPanel } from '@/components/tournaments/DisputesPanel';
 import { CheckInPanel, EntrantCheckIn, useStartRefusal } from '@/components/tournaments/CheckInPanel';
 import { SeedingPanel } from '@/components/tournaments/SeedingPanel';
+import { DeadlineSettings, YourNextMatch } from '@/components/tournaments/MatchSchedule';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
 import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
@@ -332,6 +333,8 @@ function TournamentDetailPage() {
 
         <SeedingPanel tourney={tourney} canManage={canManage} onChanged={load} />
 
+        <DeadlineSettings tourney={tourney} canManage={canManage} onChanged={load} />
+
         {/* Bracket (live / complete, or cancelled after it started: its open matches read "Cancelled") */}
         {(tourney.status === 'LIVE' ||
           tourney.status === 'COMPLETE' ||
@@ -340,6 +343,7 @@ function TournamentDetailPage() {
             <h2 className="site-section-label mb-3">
               {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}
             </h2>
+            <YourNextMatch tourney={tourney} viewerId={viewerId} />
             {canReport && <DisputesPanel tournament={tourney} onChanged={load} />}
             <BracketView
               tournament={tourney}

@@ -669,6 +669,19 @@ model User {
   // s06-18 away-message
   awayMessage AwayMessage? @relation("AwayMessageOwner")
 
+  // Sprint 07 back-relations (one block per feature, docs/autonomous/sprint-07/plan.md)
+  // s07-05 group-mentions
+  chatMentions ChatMention[] @relation("ChatMentionTarget")
+
+  // s07-07 jam-themes
+  jamThemeVotes GameJamThemeVote[]
+
+  // s07-09 deck-folders
+  deckFolders DeckFolder[]
+
+  // s07-18 reading-time
+  readingTimeDays ReadingTimeDay[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 397 routes. 209 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 400 routes. 212 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -172,7 +172,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings/blocked` | — | public | `app/routes/_site/settings/blocked.tsx` |
 | `/settings/cloud-saves` | Cloud saves | public | `app/routes/_site/settings/cloud-saves.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
+| `/settings/device` | — | public | `app/routes/_site/settings/device.tsx` |
 | `/settings/feedback` | — | public | `app/routes/_site/settings/feedback.tsx` |
+| `/settings/game-assists` | — | public | `app/routes/_site/settings/game-assists.tsx` |
 | `/settings/keyboard` | Keyboard | public | `app/routes/_site/settings/keyboard.tsx` |
 | `/settings/layout` | Sidebar | public | `app/routes/_site/settings/layout.tsx` |
 | `/settings/notifications` | Notifications | public | `app/routes/_site/settings/notifications.tsx` |
@@ -191,6 +193,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/study/:deckId/edit` | Edit deck \| RMHStudy | public | `app/routes/_site/study/$deckId_.edit.tsx` |
 | `/study/:deckId/practice` | — | public | `app/routes/_site/study/$deckId_.practice.tsx` |
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
+| `/study/review` | — | public | `app/routes/_site/study/review.tsx` |
 | `/study/stats` | — | public | `app/routes/_site/study/stats.tsx` |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |

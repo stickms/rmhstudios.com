@@ -1,10 +1,14 @@
 import { prisma } from '@/lib/prisma.server';
 import { isCardKind, isReviewable, noteIdOf, type CardKind } from '@/lib/study/card-types';
-import { AUTHORED_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { ACTIVE_REVIEW_WHERE, AUTHORED_WHERE, CARD_ORDER, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
+import { dueByDeck, reviewAllCount } from '@/lib/study/queue.server';
+import type { SuspendReason } from '@/lib/study/queue';
 import { insertCards } from '@/lib/study/deck-editor.server';
 import { cardHash, type UpdatesSummary } from '@/lib/study/deck-sync';
 import { deckUpdatesSummary } from '@/lib/study/deck-sync.server';
 import type { TestCard } from '@/lib/study/practice-test';
+import type { DeckFolderSummary } from '@/lib/study/folders';
+import { listFolders } from '@/lib/study/folders.server';
 
 export interface DeckSummary {
   id: string;
@@ -12,6 +16,10 @@ export interface DeckSummary {
   description: string | null;
   isPublic: boolean;
   cardCount: number;
+  /** Cards due today in this deck for the viewer (suspended cards excluded). */
+  dueCount: number;
+  /** The owner's private folder for this deck; null when it has none. */
+  folderId: string | null;
 }
 
 export interface PopularDeck {
@@ -25,7 +33,11 @@ export interface PopularDeck {
 export interface DecksList {
   mine: DeckSummary[];
   popular: PopularDeck[];
+  /** The viewer's own deck folders, in order (private; empty when signed out). */
+  folders: DeckFolderSummary[];
   signedIn: boolean;
+  /** What "Review all" holds now across every readable deck; 0 when signed out. */
+  reviewAllCount: number;
 }
 
 /**
@@ -35,12 +47,12 @@ export interface DecksList {
  * `null` for signed-out visitors (they see only public decks).
  */
 export async function listDecks(userId: string | null): Promise<DecksList> {
-  const [mine, popular] = await Promise.all([
+  const [mine, popular, folders] = await Promise.all([
     userId
       ? prisma.flashcardDeck.findMany({
           where: { userId },
           orderBy: { updatedAt: 'desc' },
-          select: { id: true, title: true, description: true, isPublic: true, cardCount: true },
+          select: { id: true, title: true, description: true, isPublic: true, cardCount: true, folderId: true },
         })
       : Promise.resolve([]),
     prisma.flashcardDeck.findMany({
@@ -49,8 +61,19 @@ export async function listDecks(userId: string | null): Promise<DecksList> {
       take: 30,
       select: { id: true, title: true, description: true, cardCount: true, user: { select: { name: true, handle: true } } },
     }),
+    userId ? listFolders(userId) : Promise.resolve([] as DeckFolderSummary[]),
   ]);
-  return { mine, popular, signedIn: !!userId };
+  // Due counts skip suspended cards (lib/study/queue.server.ts applies ACTIVE_REVIEW_WHERE).
+  const [dueMap, reviewAll] = userId
+    ? await Promise.all([dueByDeck(userId), reviewAllCount(userId)])
+    : [new Map<string, number>(), 0];
+  return {
+    mine: mine.map((d) => ({ ...d, dueCount: dueMap.get(d.id) ?? 0 })),
+    popular,
+    folders,
+    signedIn: !!userId,
+    reviewAllCount: reviewAll,
+  };
 }
 
 export interface MarketplaceDeck {
@@ -212,6 +235,8 @@ export interface DeckCard {
   /** Always null for an authored card; set on the generated cards review returns. */
   clozeIndex: number | null;
   sourceId: string | null;
+  /** The viewer's suspension of this card (or of a card generated from it); absent for a signed-out viewer. */
+  suspended?: SuspendReason | null;
 }
 
 export interface DeckDetail {
@@ -227,6 +252,8 @@ export interface DeckDetail {
     isCopy: boolean;
     /** "Tell me about updates" (copies only). */
     notifyUpdates: boolean;
+    /** The owner's folder for this deck (owner only; absent for every other viewer). */
+    folderId?: string | null;
   };
   /** What the author of the original changed; owner of a copy only, null when there is nothing to say. */
   updates: UpdatesSummary | null;
@@ -237,6 +264,8 @@ export interface DeckDetail {
   /** Every row in the deck, generated cards included: what the 2,000-card cap counts. */
   rowCount: number;
   dueCount: number;
+  /** Cards the viewer has suspended in this deck (generated cards included). */
+  suspendedCount: number;
   signedIn: boolean;
 }
 
@@ -252,7 +281,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
     where: { id: deckId },
     select: {
       id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
-      clonedFromId: true, notifyUpdates: true,
+      clonedFromId: true, notifyUpdates: true, folderId: true,
       cards: {
         orderBy: CARD_ORDER,
         select: { id: true, front: true, back: true, kind: true, sourceId: true, clozeIndex: true },
@@ -266,18 +295,40 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
   // Due cards are counted over what is reviewed (generated cards included), not what is listed.
   const reviewable = deck.cards.filter(isReviewable);
   let dueCount = 0;
+  const suspendedBy = new Map<string, SuspendReason>();
   if (viewer.id) {
-    const reviewed = await prisma.flashcardReview.findMany({
-      where: { userId: viewer.id, cardId: { in: reviewable.map((c) => c.id) } },
-      select: { cardId: true, dueAt: true },
-    });
-    const reviewedMap = new Map(reviewed.map((r) => [r.cardId, r.dueAt]));
+    const ids = reviewable.map((c) => c.id);
+    // A suspended card has a review row but is not due: only active rows schedule, suspended ones are read apart.
+    const [active, suspended] = await Promise.all([
+      prisma.flashcardReview.findMany({
+        where: { userId: viewer.id, cardId: { in: ids }, ...ACTIVE_REVIEW_WHERE },
+        select: { cardId: true, dueAt: true },
+      }),
+      prisma.flashcardReview.findMany({
+        where: { userId: viewer.id, cardId: { in: ids }, suspendedAt: { not: null } },
+        select: { cardId: true, suspendReason: true },
+      }),
+    ]);
+    for (const s of suspended) {
+      suspendedBy.set(s.cardId, s.suspendReason === 'leech' ? 'leech' : 'manual');
+    }
+    const reviewedMap = new Map(active.map((r) => [r.cardId, r.dueAt]));
     const now = Date.now();
     for (const c of reviewable) {
+      if (suspendedBy.has(c.id)) continue;
       const due = reviewedMap.get(c.id);
       if (!due || due.getTime() <= now) dueCount++;
     }
   }
+  // An authored note shows as suspended when it, or a card generated from it, is.
+  const suspendedOf = (cardId: string): SuspendReason | null => {
+    const own = suspendedBy.get(cardId);
+    if (own) return own;
+    for (const c of deck.cards) {
+      if (c.sourceId === cardId && suspendedBy.has(c.id)) return suspendedBy.get(c.id) ?? null;
+    }
+    return null;
+  };
 
   return {
     deck: {
@@ -289,6 +340,8 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
       cardCount: deck.cardCount,
       isCopy: !!deck.clonedFromId,
       notifyUpdates: deck.notifyUpdates ?? true,
+      // A folder is the owner's private organisation: no other viewer's payload carries it.
+      ...(isOwner ? { folderId: deck.folderId ?? null } : {}),
     },
     updates:
       isOwner && deck.clonedFromId && (deck.notifyUpdates ?? true)
@@ -296,10 +349,19 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
         : null,
     cards: deck.cards
       .filter((c) => c.sourceId === null)
-      .map((c) => ({ id: c.id, front: c.front, back: c.back, kind: cardKind(c.kind), clozeIndex: null, sourceId: null })),
+      .map((c) => ({
+        id: c.id,
+        front: c.front,
+        back: c.back,
+        kind: cardKind(c.kind),
+        clozeIndex: null,
+        sourceId: null,
+        ...(viewer.id ? { suspended: suspendedOf(c.id) } : {}),
+      })),
     reviewCount: reviewable.length,
     rowCount: deck.cards.length,
     dueCount,
+    suspendedCount: suspendedBy.size,
     signedIn: !!viewer.id,
   };
 }

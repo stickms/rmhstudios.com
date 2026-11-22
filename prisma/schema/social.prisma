@@ -305,6 +305,10 @@ model RMHarkPoll {
   endNotifiedAt DateTime?
   /// s06-19: the instant-runoff result of a ranked poll, computed once when the poll ends (`lib/feed/ranked-poll.server.ts`).
   resultJson    Json?
+  /// s07-19: a quiz poll's one correct option (a plain ref, not a relation). Never leaves the server except through `quizRevealFor` (`lib/feed/quiz-poll`).
+  correctOptionId String? @db.VarChar(30)
+  /// s07-19: the quiz's explanation (at most 280 characters), revealed with the answer.
+  explanation     String? @db.VarChar(280)
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]

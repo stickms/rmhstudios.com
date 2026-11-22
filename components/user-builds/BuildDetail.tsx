@@ -37,6 +37,7 @@ import { liquidVTName } from '@/lib/view-transition';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
 import { BuildReleases } from './BuildReleases';
+import { ScreenshotStrip } from './ScreenshotStrip';
 import { PostAwards } from '@/components/awards/PostAwards';
 import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
@@ -785,7 +786,7 @@ export function BuildDetail({
               build.thumbnailUrl
             }
             alt={
-              build.title
+              build.thumbnailAlt || build.title
             }
             fit="cover"
             width={
@@ -801,6 +802,9 @@ export function BuildDetail({
           />
         </div>
       )}
+
+      {/* Screenshots (s07-17): the page's pictures, shown before an unlock; the viewer loads on first use. */}
+      {build.screenshots && build.screenshots.length > 0 && <ScreenshotStrip items={build.screenshots} />}
 
       {/* Paywall — paid build whose content the viewer hasn't unlocked */}
       {build.locked && (

@@ -7,6 +7,7 @@ import {
   MIN_TOURNAMENT_PLAYERS,
 } from '@/lib/wager/constants';
 import { seedingMethodSchema } from './seeding-schema';
+import { deadlineHoursSchema } from './scheduling-schema';
 
 /** The check-in windows a host can pick: minutes before the start (s04-03). */
 const checkInMinutesSchema = z.union([z.literal(10), z.literal(15), z.literal(30), z.literal(60)]);
@@ -91,6 +92,9 @@ export const createTournamentSchema =
           .nullable()
           .optional(),
       seeding: seedingMethodSchema.optional(),
+      matchDeadlineHours:
+        deadlineHoursSchema
+          .optional(),
     },
   ).refine((v) => v.format !== 'DOUBLE_ELIM' || v.maxPlayers >= MIN_DOUBLE_ELIM_PLAYERS, {
     message: 'Double elimination needs at least 4 players',
