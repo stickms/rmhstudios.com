@@ -143,7 +143,7 @@ export function sprintMiss(args: {
     heads: [head],
     dx:
       prompt.kind === 'bar'
-        ? BAR_X[k] - CARD_NOTE_X + DX_BAR
+        ? (BAR_X[k] ?? CARD_NOTE_X) - CARD_NOTE_X + DX_BAR
         : prompt.kind === 'accidental' || want.accidental !== 0 || head.accidental !== 0
           ? DX_WIDE
           : DX_PLAIN,

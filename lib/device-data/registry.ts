@@ -219,6 +219,7 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-tf2-ctrlw-hint',
       'rmh-device-clear-on-sign-out',
       'rmhmusic-mode',
+      'rmhmusic-practice-mode',
       'rmh-elections-split',
       'rmh-elections-room',
       'rmh-elections-alerts',
