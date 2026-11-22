@@ -482,6 +482,9 @@ cleanup() {
     fi
     if [ "$DEPLOY_IN_PROGRESS" = 1 ] && [ "$DEPLOY_REPORTED" = 0 ]; then
         discord_close 16711680 "deploy died (exit $rc) without a result — check webhook.log" || true
+        # send_deploy_started posted a `deploy/<env>` "pending" status on this commit;
+        # without a final one it would read as in progress on GitHub forever.
+        set_github_status "error" "Deploy died (exit $rc) without a result" || true
     fi
     rm -f "$DEPLOY_LOG"
 }
