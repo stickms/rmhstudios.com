@@ -7,27 +7,25 @@
 
 4 endpoints. Paths are relative to `https://rmhstudios.com`.
 
-| Endpoint                               | Scope              | Summary                  |
-| -------------------------------------- | ------------------ | ------------------------ |
-| `GET /api/v1/me/communities`           | `read:communities` | List your communities    |
-| `GET /api/v1/communities/{slug}`       | `read:communities` | Get a community          |
-| `GET /api/v1/communities/{slug}/rules` | `read:communities` | Get a community's rules  |
+| Endpoint | Scope | Summary |
+| -------- | ----- | ------- |
+| `GET /api/v1/me/communities` | `read:communities` | List your communities |
+| `GET /api/v1/communities/{slug}` | `read:communities` | Get a community |
+| `GET /api/v1/communities/{slug}/rules` | `read:communities` | Get a community's rules |
 | `GET /api/v1/communities/{slug}/posts` | `read:communities` | List a community's posts |
 
 ## Reference
 
 ### `GET /api/v1/me/communities`
 
-The communities you belong to, newest membership first, with your role and the day you joined. Joining and leaving stay
-on the site.
+The communities you belong to, newest membership first, with your role and the day you joined. Joining and leaving stay on the site.
 
-**Scope:** `read:communities` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) ·
-**Operation id:** `listMyCommunities`
+**Scope:** `read:communities` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyCommunities`
 
-| Parameter | In    | Type    | Required | Description                                                        |
-| --------- | ----- | ------- | -------- | ------------------------------------------------------------------ |
-| `limit`   | query | integer | no       | Page size, 1–50 (default 20).                                      |
-| `cursor`  | query | string  | no       | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `limit` | query | integer | no | Page size, 1–50 (default 20). |
+| `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
 
 **Example response** (`200`)
 
@@ -51,15 +49,13 @@ on the site.
 
 ### `GET /api/v1/communities/{slug}`
 
-A community you can see: its description, member count, privacy, posting requirements, flairs and whether you are a
-member (`role` is `null` when you are not). A private community you are not a member of is a 404. Member lists are not
-exposed.
+A community you can see: its description, member count, privacy, posting requirements, flairs and whether you are a member (`role` is `null` when you are not). A private community you are not a member of is a 404. Member lists are not exposed.
 
 **Scope:** `read:communities` · **Success:** `200` · **Operation id:** `getCommunity`
 
-| Parameter | In   | Type   | Required | Description         |
-| --------- | ---- | ------ | -------- | ------------------- |
-| `slug`    | path | string | yes      | The community slug. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `slug` | path | string | yes | The community slug. |
 
 **Example response** (`200`)
 
@@ -100,9 +96,9 @@ The rules as the site shows them, in order (`position` starts at 1). Same visibi
 
 **Scope:** `read:communities` · **Success:** `200` · **Operation id:** `getCommunityRules`
 
-| Parameter | In   | Type   | Required | Description         |
-| --------- | ---- | ------ | -------- | ------------------- |
-| `slug`    | path | string | yes      | The community slug. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `slug` | path | string | yes | The community slug. |
 
 **Example response** (`200`)
 
@@ -121,19 +117,16 @@ The rules as the site shows them, in order (`position` starts at 1). Same visibi
 
 ### `GET /api/v1/communities/{slug}/posts`
 
-The community feed as the site returns it to you, newest first: the same visibility, removed and held posts left out,
-and quiet counts. Paginate with the opaque `nextCursor`. `metrics` fields are `null` on a post whose author hides the
-counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
+The community feed as the site returns it to you, newest first: the same visibility, removed and held posts left out, and quiet counts. Paginate with the opaque `nextCursor`. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
 
-**Scope:** `read:communities` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) ·
-**Operation id:** `listCommunityPosts`
+**Scope:** `read:communities` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listCommunityPosts`
 
-| Parameter | In    | Type    | Required | Description                                                        |
-| --------- | ----- | ------- | -------- | ------------------------------------------------------------------ |
-| `slug`    | path  | string  | yes      | The community slug.                                                |
-| `limit`   | query | integer | no       | Page size, 1–50 (default 20).                                      |
-| `cursor`  | query | string  | no       | Opaque cursor from a previous `nextCursor` to fetch the next page. |
-| `flair`   | query | string  | no       | Only posts with this flair id.                                     |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `slug` | path | string | yes | The community slug. |
+| `limit` | query | integer | no | Page size, 1–50 (default 20). |
+| `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| `flair` | query | string | no | Only posts with this flair id. |
 
 **Example response** (`200`)
 

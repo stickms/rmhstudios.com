@@ -7,34 +7,32 @@
 
 11 endpoints. Paths are relative to `https://rmhstudios.com`.
 
-| Endpoint                                                      | Scope         | Summary                                |
-| ------------------------------------------------------------- | ------------- | -------------------------------------- |
-| `GET /api/v1/me/decks`                                        | `read:study`  | List your decks                        |
-| `POST /api/v1/me/decks`                                       | `write:study` | Create a deck                          |
-| `GET /api/v1/me/decks/{id}`                                   | `read:study`  | Get a deck                             |
-| `PATCH /api/v1/me/decks/{id}`                                 | `write:study` | Update a deck                          |
-| `DELETE /api/v1/me/decks/{id}`                                | `write:study` | Delete a deck                          |
-| `GET /api/v1/me/decks/{id}/cards`                             | `read:study`  | List a deck’s cards                    |
-| `POST /api/v1/me/decks/{id}/cards`                            | `write:study` | Add cards                              |
-| `PATCH /api/v1/me/decks/{id}/cards/{cardId}`                  | `write:study` | Update a card                          |
-| `DELETE /api/v1/me/decks/{id}/cards/{cardId}`                 | `write:study` | Delete a card                          |
+| Endpoint | Scope | Summary |
+| -------- | ----- | ------- |
+| `GET /api/v1/me/decks` | `read:study` | List your decks |
+| `POST /api/v1/me/decks` | `write:study` | Create a deck |
+| `GET /api/v1/me/decks/{id}` | `read:study` | Get a deck |
+| `PATCH /api/v1/me/decks/{id}` | `write:study` | Update a deck |
+| `DELETE /api/v1/me/decks/{id}` | `write:study` | Delete a deck |
+| `GET /api/v1/me/decks/{id}/cards` | `read:study` | List a deck’s cards |
+| `POST /api/v1/me/decks/{id}/cards` | `write:study` | Add cards |
+| `PATCH /api/v1/me/decks/{id}/cards/{cardId}` | `write:study` | Update a card |
+| `DELETE /api/v1/me/decks/{id}/cards/{cardId}` | `write:study` | Delete a card |
 | `PUT /api/v1/me/decks/{id}/cards/by-external-id/{externalId}` | `write:study` | Create or update a card by external id |
-| `GET /api/v1/me/decks/{id}/due`                               | `read:study`  | Get due counts                         |
+| `GET /api/v1/me/decks/{id}/due` | `read:study` | Get due counts |
 
 ## Reference
 
 ### `GET /api/v1/me/decks`
 
-Your flashcard decks, newest change first. `dueCount` is how many cards are due now; `suspended` is how many the key
-owner has set aside (not in `dueCount`). Only your own decks are listed.
+Your flashcard decks, newest change first. `dueCount` is how many cards are due now; `suspended` is how many the key owner has set aside (not in `dueCount`). Only your own decks are listed.
 
-**Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation
-id:** `listMyDecks`
+**Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDecks`
 
-| Parameter | In    | Type    | Required | Description                                                        |
-| --------- | ----- | ------- | -------- | ------------------------------------------------------------------ |
-| `limit`   | query | integer | no       | Page size, 1–100 (default 20).                                     |
-| `cursor`  | query | string  | no       | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `limit` | query | integer | no | Page size, 1–100 (default 20). |
+| `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
 
 **Example response** (`200`)
 
@@ -60,16 +58,15 @@ id:** `listMyDecks`
 
 Create an empty deck. At most 200 decks per account.
 
-**Scope:** `write:study` · **Success:** `201` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`createMyDeck`
+**Scope:** `write:study` · **Success:** `201` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `createMyDeck`
 
 **Request body** (`application/json`)
 
-| Field         | Type      | Required | Description                                              |
-| ------------- | --------- | -------- | -------------------------------------------------------- |
-| `title`       | `string`  | yes      | 1–100 characters.                                        |
-| `description` | `string`  | no       | Up to 500 characters.                                    |
-| `isPublic`    | `boolean` | no       | List the deck in the public marketplace (default false). |
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `title` | `string` | yes | 1–100 characters. |
+| `description` | `string` | no | Up to 500 characters. |
+| `isPublic` | `boolean` | no | List the deck in the public marketplace (default false). |
 
 ```json
 {
@@ -100,9 +97,9 @@ One of your decks. A deck that is not yours is 404.
 
 **Scope:** `read:study` · **Success:** `200` · **Operation id:** `getMyDeck`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
 
 **Example response** (`200`)
 
@@ -123,20 +120,19 @@ One of your decks. A deck that is not yours is 404.
 
 Change the title, description or visibility. An empty description clears it.
 
-**Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`updateMyDeck`
+**Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `updateMyDeck`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
 
 **Request body** (`application/json`)
 
-| Field         | Type      | Required | Description                            |
-| ------------- | --------- | -------- | -------------------------------------- |
-| `title`       | `string`  | no       | 1–100 characters.                      |
-| `description` | `string`  | no       | Up to 500 characters; empty clears it. |
-| `isPublic`    | `boolean` | no       | Public in the marketplace.             |
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `title` | `string` | no | 1–100 characters. |
+| `description` | `string` | no | Up to 500 characters; empty clears it. |
+| `isPublic` | `boolean` | no | Public in the marketplace. |
 
 ```json
 {
@@ -163,26 +159,23 @@ Change the title, description or visibility. An empty description clears it.
 
 Permanently delete the deck, its cards and their review history.
 
-**Scope:** `write:study` · **Success:** `204` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`deleteMyDeck`
+**Scope:** `write:study` · **Success:** `204` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `deleteMyDeck`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
 
 ### `GET /api/v1/me/decks/{id}/cards`
 
-The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze
-deletion) are not listed.
+The cards you wrote, in deck order. Cards generated from them (the reverse side of a reversible card, one card per cloze deletion) are not listed.
 
-**Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation
-id:** `listMyDeckCards`
+**Scope:** `read:study` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDeckCards`
 
-| Parameter | In    | Type    | Required | Description                                                        |
-| --------- | ----- | ------- | -------- | ------------------------------------------------------------------ |
-| `id`      | path  | string  | yes      | The deck id.                                                       |
-| `limit`   | query | integer | no       | Page size, 1–100 (default 20).                                     |
-| `cursor`  | query | string  | no       | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
+| `limit` | query | integer | no | Page size, 1–100 (default 20). |
+| `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
 
 **Example response** (`200`)
 
@@ -204,23 +197,19 @@ id:** `listMyDeckCards`
 
 ### `POST /api/v1/me/decks/{id}/cards`
 
-Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its
-2,000-card limit (generated cards count) writes nothing. Reversible and cloze cards get their generated cards exactly as
-in the editor. `kind` is `basic`, `reversible` or `cloze` (a cloze card has only `front`, with `{{c1::answer}}`
-deletions).
+Add 1 to 100 cards in one request, all or nothing: one invalid card, a duplicate `externalId`, or a deck over its 2,000-card limit (generated cards count) writes nothing. Reversible and cloze cards get their generated cards exactly as in the editor. `kind` is `basic`, `reversible` or `cloze` (a cloze card has only `front`, with `{{c1::answer}}` deletions).
 
-**Scope:** `write:study` · **Success:** `201` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`createMyDeckCards`
+**Scope:** `write:study` · **Success:** `201` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `createMyDeckCards`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
 
 **Request body** (`application/json`)
 
-| Field   | Type       | Required | Description                                                                                                                                                                       |
-| ------- | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cards` | `object[]` | yes      | 1–100 cards: `{ kind?, front, back?, externalId? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. |
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `cards` | `object[]` | yes | 1–100 cards: `{ kind?, front, back?, externalId? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. |
 
 ```json
 {
@@ -259,24 +248,22 @@ deletions).
 
 ### `PATCH /api/v1/me/decks/{id}/cards/{cardId}`
 
-Change a card’s kind, front or back. Its review history stays; its generated cards are regenerated in place. A generated
-card is 404.
+Change a card’s kind, front or back. Its review history stays; its generated cards are regenerated in place. A generated card is 404.
 
-**Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`updateMyDeckCard`
+**Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `updateMyDeckCard`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
-| `cardId`  | path | string | yes      | The card id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
+| `cardId` | path | string | yes | The card id. |
 
 **Request body** (`application/json`)
 
-| Field   | Type     | Required | Description                            |
-| ------- | -------- | -------- | -------------------------------------- |
-| `kind`  | `string` | no       | `basic`, `reversible` or `cloze`.      |
-| `front` | `string` | no       | The front (a cloze card’s whole text). |
-| `back`  | `string` | no       | The back.                              |
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `kind` | `string` | no | `basic`, `reversible` or `cloze`. |
+| `front` | `string` | no | The front (a cloze card’s whole text). |
+| `back` | `string` | no | The back. |
 
 ```json
 {
@@ -301,34 +288,31 @@ card is 404.
 
 Delete a card with its generated cards and review history.
 
-**Scope:** `write:study` · **Success:** `204` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`deleteMyDeckCard`
+**Scope:** `write:study` · **Success:** `204` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `deleteMyDeckCard`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
-| `cardId`  | path | string | yes      | The card id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
+| `cardId` | path | string | yes | The card id. |
 
 ### `PUT /api/v1/me/decks/{id}/cards/by-external-id/{externalId}`
 
-Create the card keyed by your own id in this deck, or update it. The same body sent twice changes nothing the second
-time. 201 when created, 200 when the card already existed.
+Create the card keyed by your own id in this deck, or update it. The same body sent twice changes nothing the second time. 201 when created, 200 when the card already existed.
 
-**Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:**
-`upsertMyDeckCard`
+**Scope:** `write:study` · **Success:** `200` · **Idempotent:** accepts `Idempotency-Key` · **Operation id:** `upsertMyDeckCard`
 
-| Parameter    | In   | Type   | Required | Description                                                         |
-| ------------ | ---- | ------ | -------- | ------------------------------------------------------------------- |
-| `id`         | path | string | yes      | The deck id.                                                        |
-| `externalId` | path | string | yes      | Your own id for the card, up to 100 characters, unique in the deck. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
+| `externalId` | path | string | yes | Your own id for the card, up to 100 characters, unique in the deck. |
 
 **Request body** (`application/json`)
 
-| Field   | Type     | Required | Description                                 |
-| ------- | -------- | -------- | ------------------------------------------- |
-| `kind`  | `string` | no       | `basic` (default), `reversible` or `cloze`. |
-| `front` | `string` | yes      | The front.                                  |
-| `back`  | `string` | no       | The back (not used by cloze cards).         |
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `kind` | `string` | no | `basic` (default), `reversible` or `cloze`. |
+| `front` | `string` | yes | The front. |
+| `back` | `string` | no | The back (not used by cloze cards). |
 
 ```json
 {
@@ -352,14 +336,13 @@ time. 201 when created, 200 when the card already existed.
 
 ### `GET /api/v1/me/decks/{id}/due`
 
-How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40
-cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.
+How many cards in the deck are due now and in the next 24 hours (suspended cards are not counted), for a “you have 40 cards due” widget. No card content. Reviews are made in the app and cannot be written through the API.
 
 **Scope:** `read:study` · **Success:** `200` · **Operation id:** `getMyDeckDue`
 
-| Parameter | In   | Type   | Required | Description  |
-| --------- | ---- | ------ | -------- | ------------ |
-| `id`      | path | string | yes      | The deck id. |
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `id` | path | string | yes | The deck id. |
 
 **Example response** (`200`)
 
