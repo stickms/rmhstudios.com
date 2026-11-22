@@ -155,6 +155,7 @@ describe('themeCssVars (v2 derivation)', () => {
         '--site-text-muted',
         '--site-theme-wash',
         '--site-theme-wash-top',
+        '--site-theme-wash-bottom',
         '--site-accent-fill',
       ].sort(),
     );

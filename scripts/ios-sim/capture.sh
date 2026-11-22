@@ -10,6 +10,7 @@
 #   APPEARANCES  "light dark" (Day and Night: with nothing stored, the pre-paint script follows the device)
 #   DEVICE       simulator name to prefer, default "iPhone 17 Pro" (falls back to the newest iPhone)
 #   OPEN_GLOBE   "1" taps the docked globe and shoots again (needs `idb`, best effort)
+#   SCROLL_BOTTOM "1" (default) also swipes to the bottom of the page and shoots it (needs `idb`); SWIPES caps the swipes (25)
 #   NAME_PREFIX  prefix for the file names, default "" (the themed run uses "theme-")
 #   SETTLE       seconds to wait after a page opens, default 8
 #
@@ -113,6 +114,19 @@ for appearance in $APPEARANCES; do
       first=0
     fi
     shoot "${slug}-${appearance}"
+    if [ "${SCROLL_BOTTOM:-1}" = "1" ] && [ -n "$IDB" ]; then
+      # The bottom of the page: the strip behind Safari's tab bar is outside the document, so a wash that stops at the
+      # document's end shows as a seam there. Swipe up until the page stops moving (SWIPES at most), then shoot.
+      read -r W H < <(screen_points)
+      for _ in $(seq 1 "${SWIPES:-25}"); do
+        "$IDB" ui swipe --udid "$UDID" $((W / 2)) $((H * 75 / 100)) $((W / 2)) $((H * 20 / 100)) --duration 0.15 >/dev/null 2>&1 || break
+      done
+      sleep 2
+      shoot "${slug}-${appearance}-bottom"
+      # Back to the top for the globe tap below.
+      open_url "${BASE%/}${path}" || true
+      sleep "$SETTLE"
+    fi
     if [ "${OPEN_GLOBE:-0}" = "1" ] && [ -n "$IDB" ]; then
       read -r W H < <(screen_points)
       # The docked globe: centred, about 150pt above the screen bottom (18px off the visual viewport, which ends above
