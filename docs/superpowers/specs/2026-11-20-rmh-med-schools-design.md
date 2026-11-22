@@ -187,6 +187,22 @@ The single rule: **no identifier of a person crosses the adapter boundary.**
   `SUBMITTED`/`COMPLETE`, date). Owner only; sharing writes an anonymous `MedCycleEvent` (source `RMH`) per milestone
   and deletes it if sharing is turned off.
 - `MedSchoolFollow` (userId, schoolId) — phase 7.
+- **School lists and preferences (owner, 2026-11-22; phase 4, with the tracker).** Owner only, never public, deleted
+  with the account (`onDelete: Cascade` on the user), never an input to any public figure.
+  - `MedSchoolList` (id, userId, name ≤ 60 chars, position, createdAt, updatedAt): a user's named lists ("Applying",
+    "Reach", "Maybe"). One list, "My schools", is created on first use; at most 20 lists per user.
+  - `MedSchoolListItem` (id, listId, schoolId, program `MedProgram?` (null = either), position, note ≤ 500 chars,
+    addedAt; unique `[listId, schoolId, program]`; at most 200 items per list).
+  - `MedUserPrefs` (userId as the id, program filter `ALL|REG|PHD`, degree `MD|DO|null`, homeState `String?`, chart
+    categories `MedEventType[]` (the Activity toggles), updatedAt).
+  - Behaviour: signed-in users get "Save to list" on the school page and on index rows (a menu of their lists plus "New
+    list"), a lists view under `/rmh-medschool/lists` (rename, reorder, notes, remove), "Show my lists only" on the
+    index, and "Add this list to my tracker" (creates `MedTrackerApplication` rows; the two stay separate records).
+    Preferences fill in a page's defaults only when the URL does not say otherwise (a URL parameter always wins, so
+    shared links read the same for everyone); the public read endpoints stay user-independent and publicly cached, and
+    lists and preferences come from their own `auth: 'required'` endpoints that are never cached publicly.
+  - The anonymization schema test allows `userId` on `MedSchoolList` and `MedUserPrefs` (owner-only models) as it does
+    on `MedTracker*`; `MedSchoolListItem` has no `userId` (it reaches its owner through the list).
 
 ## 8. The worker and its jobs
 
@@ -316,7 +332,7 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    backs off after failed runs; phone numbers and email addresses are redacted before the model, names may reach the
    model but are never stored. Detail: `server/CLAUDE.md`.
 3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n.
-4. Private tracker with anonymous sharing.
+4. Private tracker with anonymous sharing, saved school lists and preferences (section 7).
 5. Statistics + forecast tab + personal conditional chance.
 6. AI Q&A.
 7. Follow a school + wave notifications.
