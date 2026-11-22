@@ -316,10 +316,23 @@ const BUDGETS = {
   // `vite build`. The Docker image build measures about 0.2% more than a plain build (it measured 32,698 B on this
   // branch's first push, where the plain build gave 32,610), so the line keeps about 0.2 KB brotli of headroom over
   // that, as the lines above did.
+  //
+  // RMH Med Schools public pages (2026-11-22): entry RAISED 711,300 -> 716,000 B, critical path RAISED 933,500 ->
+  // 938,200 B raw and 245,700 -> 246,500 B brotli (OPT-01 line); site CSS unchanged (it measures 31,287 B, under its
+  // line). The feature that bought the bytes is the public RMH Med Schools pages (/rmh-medschool,
+  // /rmh-medschool/live, /rmh-medschool/$slug): three route records with their head() and search parsers, the
+  // contract, the query factories and the pure read rules those import (features/medschools/engine/{public-read,
+  // search,cycle}.ts), all of which the router registers for every page. Per-module sourcemap attribution of the
+  // entry puts 6,157 B on features/medschools and the three routes (136 B of it the phase 1 admin route); no zod, no
+  // d3-* and no chart or page component is in the entry (check-entry-composition --strict passes; charts live in
+  // the lazy page chunk). Measured on a plain `vite build` (the sourcemap build gives the same figures): main at
+  // 3fe20109e entry 710,356 B, critical path 932,378 B raw and 245,292 B brotli, site CSS 32,483 B; this branch
+  // entry 715,093 B, critical path 937,275 B raw and 246,097 B brotli, site CSS 31,287 B. Each raised line keeps
+  // the feature's bytes plus about 0.9 KB raw (0.4 KB brotli) of headroom, as the lines above did.
   siteCssBrotli: 32_800,
-  entryRaw: 711_300,
-  criticalPathRaw: 933_500,
-  criticalPathBrotli: 245_700,
+  entryRaw: 716_000,
+  criticalPathRaw: 938_200,
+  criticalPathBrotli: 246_500,
 };
 
 /**
