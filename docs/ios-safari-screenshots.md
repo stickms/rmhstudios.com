@@ -56,6 +56,14 @@ reads the root's or body's background colour; `fixed-edge-gradient` shows whethe
 Safari extend its pixels (so a gradient could continue into the strip) or reduce it to one flat colour. Add a probe by
 adding a stylesheet.
 
+**What they showed (iOS 26.5 simulator, 2026-11-22):** the strips are painted opaque over the page in ONE flat colour,
+and that colour is `<body>`'s `background-color` (`body-blue` turned both strips blue); with a transparent body it is
+the root's (`root-red-body-clear` turned them red); a root colour under an opaque body does nothing (`html-red`). A thin
+fixed gradient at each edge (`fixed-edge-gradient`) was not visible at all, so no layer can carry a gradient into a
+strip. The gradient cannot continue there; the only lever is that one colour, which is why `--site-theme-edge` exists
+(`lib/themes/tokens.ts`): body's `background-color` on iOS is the wash's own edge average, over a ground layer so the
+page stays `--site-bg`.
+
 ## Reading the pictures
 
 - Look at the **top 140px and the bottom 200px** (the picture is 3x): the status-bar strip, and the strip behind the tab
