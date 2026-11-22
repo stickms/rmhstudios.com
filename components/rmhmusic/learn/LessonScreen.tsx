@@ -12,6 +12,7 @@ import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getLesson, needsVoiceRange } from '@/lib/rmhmusic/learn/content/path';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
+import { rhythmActivity } from '@/lib/rmhmusic/learn/machines/rhythm';
 import { staffCardRange } from '@/lib/rmhmusic/learn/voice/range';
 import { cn } from '@/lib/utils';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -25,9 +26,11 @@ import { FirstNoteLesson } from './FirstNoteLesson';
 import { FindNoteLesson, FindNoteStaffBox } from './FindNoteLesson';
 import { FlashcardLesson } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
+import { IntervalReadLesson } from './IntervalReadLesson';
 import { MatchNoteLesson, MatchStaffBox } from './MatchNoteLesson';
 import { ModeToggle } from './ModeToggle';
 import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
+import { PracticeModeToggle } from './PracticeModeToggle';
 import { KeySignatureLesson } from './KeySignatureLesson';
 import { PlayScaleLesson, ScaleNameBox } from './PlayScaleLesson';
 import { RhythmLesson } from './RhythmLesson';
@@ -170,21 +173,25 @@ export function FlashcardSkeleton({
  */
 function FindNoteSkeleton() {
   return (
-    <div aria-hidden="true" className="rmm-find space-y-4">
-      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <div className="h-8">
-          <div className="app-skeleton mx-auto h-8 w-40" />
+    // The mode toggle is the real one (it needs nothing from the store), outside the hidden placeholder.
+    <div className="rmm-find space-y-4">
+      <PracticeModeToggle />
+      <div aria-hidden="true" className="space-y-4">
+        <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+          <div className="h-8">
+            <div className="app-skeleton mx-auto h-8 w-40" />
+          </div>
+          <FindNoteStaffBox skeleton />
+          <div className="flex h-11 items-center">
+            <div className="app-skeleton h-5 w-56 max-w-full" />
+          </div>
+        </section>
+        <div className="rmm-find__answers">
+          <div className="rmm-find__board max-[359px]:-mx-2 max-[332px]:-mx-3.5">
+            <div className="app-skeleton h-full w-full" />
+          </div>
+          <div className="rmm-find__device" />
         </div>
-        <FindNoteStaffBox skeleton />
-        <div className="flex h-11 items-center">
-          <div className="app-skeleton h-5 w-56 max-w-full" />
-        </div>
-      </section>
-      <div className="rmm-find__answers">
-        <div className="rmm-find__board max-[359px]:-mx-2 max-[332px]:-mx-3.5">
-          <div className="app-skeleton h-full w-full" />
-        </div>
-        <div className="rmm-find__device" />
       </div>
     </div>
   );
@@ -320,22 +327,57 @@ function KeySignatureSkeleton() {
  * box, the sentence line) and the 12.5rem answers box (`.rmm-rhythm__answers`). All three rhythm
  * lessons share it.
  */
-function RhythmSkeleton() {
+function RhythmSkeleton({ toggle = false }: { toggle?: boolean }) {
   return (
-    <div aria-hidden="true" className="rmm-rhythm space-y-4">
-      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <div className="h-8">
-          <div className="app-skeleton mx-auto h-8 w-40" />
-        </div>
-        <div className="rmm-values">
+    // The two question lessons carry the mode toggle (the real one, outside the hidden placeholder);
+    // tap-the-beat is not a question session and has none.
+    <div className="rmm-rhythm space-y-4">
+      {toggle ? <PracticeModeToggle /> : null}
+      <div aria-hidden="true" className="space-y-4">
+        <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+          <div className="h-8">
+            <div className="app-skeleton mx-auto h-8 w-40" />
+          </div>
+          <div className="rmm-values">
+            <div className="app-skeleton h-full w-full" />
+          </div>
+          <div className="flex min-h-11 items-center">
+            <div className="app-skeleton h-5 w-56 max-w-full" />
+          </div>
+        </section>
+        <div className="rmm-rhythm__answers">
           <div className="app-skeleton h-full w-full" />
         </div>
-        <div className="flex min-h-11 items-center">
-          <div className="app-skeleton h-5 w-56 max-w-full" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The interval reading lessons' placeholder: their boxes exactly — the mode toggle (the real one),
+ * the sheet (title line, the staff and the note names under it, the sentence line) and the 12.5rem
+ * answers box (`.rmm-interval__answers`).
+ */
+function IntervalSkeleton() {
+  return (
+    <div className="rmm-interval space-y-4">
+      <PracticeModeToggle />
+      <div aria-hidden="true" className="space-y-4">
+        <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+          <div className="h-8">
+            <div className="app-skeleton mx-auto h-8 w-40" />
+          </div>
+          <div className={STAFF_BOX}>
+            <div className="app-skeleton aspect-[200/102] w-full" />
+            <div className="h-9" />
+          </div>
+          <div className="flex h-11 items-center">
+            <div className="app-skeleton h-5 w-56 max-w-full" />
+          </div>
+        </section>
+        <div className="rmm-interval__answers">
+          <div className="app-skeleton h-full w-full" />
         </div>
-      </section>
-      <div className="rmm-rhythm__answers">
-        <div className="app-skeleton h-full w-full" />
       </div>
     </div>
   );
@@ -379,7 +421,9 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     playable &&
     mode !== 'rhythm-basics' &&
     // A key signature is read from the page: no note is played, so no sound is loaded.
-    mode !== 'key-signature';
+    mode !== 'key-signature' &&
+    // Neither is an interval read off the staff.
+    mode !== 'staff-intervals';
   const soundId =
     mode === 'ear-chord' || mode === 'play-chord'
       ? chordSoundFor({
@@ -482,6 +526,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <PlayScaleLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
       ) : lesson.mode === 'key-signature' ? (
         <KeySignatureLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'staff-intervals' ? (
+        <IntervalReadLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
@@ -541,8 +587,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <PlayScaleSkeleton />
       ) : lesson.mode === 'key-signature' ? (
         <KeySignatureSkeleton />
+      ) : lesson.mode === 'staff-intervals' ? (
+        <IntervalSkeleton />
       ) : lesson.mode === 'rhythm-basics' ? (
-        <RhythmSkeleton />
+        <RhythmSkeleton toggle={rhythmActivity(lesson.id) !== 'tap'} />
       ) : (
         <LessonSkeleton />
       );

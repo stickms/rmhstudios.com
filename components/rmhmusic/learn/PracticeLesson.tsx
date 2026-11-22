@@ -22,14 +22,23 @@ import { Link } from '@tanstack/react-router';
 import { SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/lib/rmhmusic/learn/content/decks';
-import { buildPracticeSession, practiceDecks, stateFromRow } from '@/lib/rmhmusic/learn/content/practice';
+import {
+  PRACTICE_CARDS,
+  buildPracticeSession,
+  buildWeakSession,
+  completedLessonIds,
+  newCardsLeft,
+  practiceDecks,
+  stateFromRow,
+} from '@/lib/rmhmusic/learn/content/practice';
+import { DEFAULT_NEW_PER_DAY } from '@/lib/rmhmusic/learn/srs/practice-settings';
 import { STAFF_TIMES, gradeAttempt } from '@/lib/rmhmusic/learn/srs/grade';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { isVoiceRange, staffCardRange, voiceReading } from '@/lib/rmhmusic/learn/voice/range';
 import { beginSoundSession } from '@/lib/rmhmusic/learn/audio/instruments/engine';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import { useLearnerSound } from './SoundDialog';
-import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
+import { PRIMARY_BUTTON, SECONDARY_BUTTON, TEXT_BUTTON } from './buttons';
 import { FlashcardSession, type Answered } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
 import { FlashcardSkeleton, Shell } from './LessonScreen';
@@ -100,7 +109,7 @@ function Practice({
   );
 }
 
-export function PracticeLesson() {
+export function PracticeLesson({ weak = false }: { weak?: boolean }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
   const error = useLearnStore((s) => s.error);
@@ -113,6 +122,8 @@ export function PracticeLesson() {
   const [octaveClef, setOctaveClef] = useState(false);
   const [lowCard, setLowCard] = useState(false);
   const [session, setSession] = useState<Card[] | null>(null);
+  // New cards left in today's allowance when the session was dealt (the empty message says so).
+  const [newLeft, setNewLeft] = useState<number | null>(null);
   if (session === null && status === 'ready' && cardsStatus === 'ready') {
     const rows = useLearnStore.getState().cards.map((r) => ({
       cardId: r.cardId,
@@ -123,7 +134,23 @@ export function PracticeLesson() {
     const range = profile?.instrument === 'voice' && isVoiceRange(profile.voiceRange) ? profile.voiceRange : null;
     setOctaveClef(range !== null && voiceReading(range).octaveClef);
     setLowCard(range !== null && staffCardRange(range) === 'low');
-    setSession(buildPracticeSession(rows, practiceDecks(profile?.instrument, range), Date.now(), Math.random));
+    const now = Date.now();
+    const stored = useLearnStore.getState().cards;
+    const left = newCardsLeft(stored, now, profile?.newPerDay ?? DEFAULT_NEW_PER_DAY);
+    setNewLeft(left);
+    setSession(
+      weak
+        ? // Weak spots: the weakest reviewed cards, due or not (Insights' "Drill my weak spots").
+          buildWeakSession(rows, now, PRACTICE_CARDS)
+        : buildPracticeSession(
+            rows,
+            practiceDecks(profile?.instrument, range, completedLessonIds(useLearnStore.getState().progress)),
+            now,
+            Math.random,
+            PRACTICE_CARDS,
+            left,
+          ),
+    );
   }
 
   useEffect(() => {
@@ -161,10 +188,26 @@ export function PracticeLesson() {
     body = (
       <div className="rmm-sheet space-y-3 p-5">
         <p className="text-app-text-muted">
-          {t('practice-nothing-due', {
-            defaultValue: 'Nothing to practise right now. Come back when a card is due.',
-          })}
+          {weak
+            ? t('practice-weak-none', {
+                defaultValue: 'No weak spots yet. Answer a few cards in Practice first.',
+              })
+            : t('practice-nothing-due', {
+                defaultValue: 'Nothing to practise right now. Come back when a card is due.',
+              })}
         </p>
+        {!weak && newLeft === 0 ? (
+          <p className="text-app-text-muted">
+            {t('practice-new-used', {
+              defaultValue: "You've added today's new cards.",
+            })}{' '}
+            <Link to="/rmhmusic/insights" className={TEXT_BUTTON}>
+              {t('practice-raise-limit', {
+                defaultValue: 'Change the daily limit',
+              })}
+            </Link>
+          </p>
+        ) : null}
         <Link to="/rmhmusic" className={PRIMARY_BUTTON}>
           {t('lesson-back-to-path', {
             defaultValue: 'Back to your lessons',
@@ -206,9 +249,15 @@ export function PracticeLesson() {
   const ready = session !== null && session.length > 0;
   return (
     <Shell
-      title={t('practice', {
-        defaultValue: 'Practice',
-      })}
+      title={
+        weak
+          ? t('practice-weak-title', {
+              defaultValue: 'Weak spots',
+            })
+          : t('practice', {
+              defaultValue: 'Practice',
+            })
+      }
       busy={session === null && status !== 'error' && cardsStatus !== 'load_failed'}
       action={
         // As in a lesson: always in the header so nothing moves, hidden (and inert) until the

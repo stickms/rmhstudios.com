@@ -28,8 +28,10 @@ import {
   CLEF_GLYPHS,
   HEAD_RX,
   HEAD_RY,
+  CARD_ACC_X,
   cardLayout,
   flatPath,
+  keySignatureLayout,
   ledgerLine,
   nowMarkPath,
   ruledLine,
@@ -38,6 +40,14 @@ import {
   sheetLedgerLine,
   type SheetNote,
 } from '@/lib/rmhmusic/learn/staff-card-layout';
+import {
+  cardAlteration,
+  cardWritten,
+  isSpelledCard,
+  keyCardTonic,
+  spelledName,
+  spelledNameWords,
+} from '@/lib/rmhmusic/learn/content/spelling';
 import { noteLetter } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +66,17 @@ export const STAFF_LOW_ASPECT = 'aspect-[200/117]';
 /** How far left of the right note the played (wrong) note sits: clear of a neighbouring head. */
 const PLAYED_DX = 28;
 
+/**
+ * A wrong answer as the card draws it: the pitch it sounds, and — for a sharp or flat — the natural it
+ * is written on and the sign before it, so a wrong G♭ is drawn on the G line with a flat. A bare
+ * number is a natural note (or a black key drawn on the natural below it, as the staff spells it).
+ */
+export interface PlayedNote {
+  midi: number;
+  written?: number;
+  accidental?: -1 | 0 | 1;
+}
+
 export function StaffCard({
   card,
   state,
@@ -73,7 +94,7 @@ export function StaffCard({
    * learner sees how far off it was. The right note then takes the accent colour. Only drawn once
    * the card is answered wrong.
    */
-  played?: number | null;
+  played?: number | PlayedNote | null;
   className?: string;
   /** `low` reaches three ledger lines under the treble staff (the note finder; see the layout). */
   range?: 'deck' | 'low';
@@ -91,16 +112,43 @@ export function StaffCard({
   const titleId = useId();
   const low = range === 'low';
   const height = low ? CARD_LOW_H : CARD_H;
-  const layout = cardLayout(card.clef, card.midi, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP);
+  const minStep = low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP;
+  // A sharp, a flat or a note a key alters is drawn on the natural it is written on.
+  const layout = cardLayout(card.clef, cardWritten(card), minStep);
+  const spelled = isSpelledCard(card);
+  const sign = cardAlteration(card);
 
   const answered = state !== 'ask';
-  const name = midiToName(card.midi);
+  const words = {
+    sharp: t('flash-word-sharp', { defaultValue: 'sharp' }),
+    flat: t('flash-word-flat', { defaultValue: 'flat' }),
+  };
+  // A natural card is named as it always was ("E4"); a spelled one by letter and sign ("F sharp 4").
+  const name = spelled
+    ? `${spelledNameWords(card, words)} ${Math.floor(cardWritten(card) / 12) - 1}`
+    : midiToName(card.midi);
+  const keyName = card.key ? keyCardTonic(card.key) : null;
+  const playedNote: PlayedNote | null =
+    state === 'wrong' && played !== undefined && played !== null
+      ? typeof played === 'number'
+        ? { midi: played }
+        : played
+      : null;
   const miss =
-    state === 'wrong' && played !== undefined && played !== null && Number.isFinite(played)
-      ? {
-          layout: cardLayout(card.clef, played, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP),
-          name: midiToName(played),
-        }
+    playedNote && Number.isFinite(playedNote.midi)
+      ? (() => {
+          const written = playedNote.written ?? playedNote.midi;
+          const accidental = playedNote.accidental ?? 0;
+          return {
+            layout: cardLayout(card.clef, written, minStep),
+            accidental,
+            // "D4" for a natural, "F sharp 4" for a sign (a screen reader says the sign as a word).
+            name:
+              accidental === 0
+                ? `${noteLetter(written)}${Math.floor(written / 12) - 1}`
+                : `${noteLetter(written)} ${accidental > 0 ? words.sharp : words.flat} ${Math.floor(written / 12) - 1}`,
+          };
+        })()
       : null;
 
   const label = labelOverride
@@ -118,22 +166,52 @@ export function StaffCard({
             defaultValue: '{{note}} on the treble staff; you played {{played}}',
           })
       : answered
-        ? card.clef === 'bass'
-          ? t('flash-card-named-bass', {
-              note: name,
-              defaultValue: '{{note}} on the bass staff',
-            })
-          : t('flash-card-named-treble', {
-              note: name,
-              defaultValue: '{{note}} on the treble staff',
-            })
-        : card.clef === 'bass'
-          ? t('flash-card-ask-bass', {
-              defaultValue: 'A note on the bass staff',
-            })
-          : t('flash-card-ask-treble', {
-              defaultValue: 'A note on the treble staff',
-            });
+        ? keyName
+          ? card.clef === 'bass'
+            ? t('flash-card-named-key-bass', {
+                note: name,
+                key: keyName,
+                defaultValue: '{{note}} on the bass staff, in {{key}} major',
+              })
+            : t('flash-card-named-key-treble', {
+                note: name,
+                key: keyName,
+                defaultValue: '{{note}} on the treble staff, in {{key}} major',
+              })
+          : card.clef === 'bass'
+            ? t('flash-card-named-bass', {
+                note: name,
+                defaultValue: '{{note}} on the bass staff',
+              })
+            : t('flash-card-named-treble', {
+                note: name,
+                defaultValue: '{{note}} on the treble staff',
+              })
+        : keyName
+          ? card.clef === 'bass'
+            ? t('flash-card-ask-key-bass', {
+                key: keyName,
+                defaultValue: 'A note on the bass staff, in {{key}} major',
+              })
+            : t('flash-card-ask-key-treble', {
+                key: keyName,
+                defaultValue: 'A note on the treble staff, in {{key}} major',
+              })
+          : card.accidental !== undefined
+            ? card.clef === 'bass'
+              ? t('flash-card-ask-accidental-bass', {
+                  defaultValue: 'A sharp or flat note on the bass staff',
+                })
+              : t('flash-card-ask-accidental-treble', {
+                  defaultValue: 'A sharp or flat note on the treble staff',
+                })
+            : card.clef === 'bass'
+              ? t('flash-card-ask-bass', {
+                  defaultValue: 'A note on the bass staff',
+                })
+              : t('flash-card-ask-treble', {
+                  defaultValue: 'A note on the treble staff',
+                });
 
   const ink = state === 'right' || miss ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
 
@@ -147,10 +225,31 @@ export function StaffCard({
       >
         <title id={titleId}>{label}</title>
         <StaffRuling clef={card.clef} octaveClef={octaveClef} />
+        {card.key ? (
+          // The key signature, after the clef: part of the question, so it keeps the page's ink in every state.
+          <g stroke="currentColor" fill="none" strokeLinecap="round" data-key-signature={card.key}>
+            {keySignatureLayout(card.clef, card.key).map((k) => (
+              <path
+                key={`${k.x}-${k.y}`}
+                d={k.kind === 'sharp' ? sharpPath(k.x, k.y) : flatPath(k.x, k.y)}
+                strokeWidth={k.kind === 'sharp' ? 1.2 : 1.3}
+              />
+            ))}
+          </g>
+        ) : null}
         <g className={ink} stroke="currentColor" fill="currentColor" strokeLinecap="round">
           {layout.ledgerYs.map((y, i) => (
             <path key={y} d={ledgerLine(y, i)} strokeWidth="1.4" fill="none" />
           ))}
+          {card.accidental !== undefined && sign !== 0 ? (
+            // The sign printed before the notehead (an accidental card), pencilled like the sheet's.
+            <path
+              d={sign > 0 ? sharpPath(CARD_ACC_X, layout.noteY) : flatPath(CARD_ACC_X, layout.noteY)}
+              strokeWidth={sign > 0 ? 1.2 : 1.3}
+              fill="none"
+              data-accidental={sign > 0 ? 'sharp' : 'flat'}
+            />
+          ) : null}
           <line x1={layout.stem.x} x2={layout.stem.x} y1={layout.stem.y1} y2={layout.stem.y2} strokeWidth="1.3" />
           <ellipse
             cx={CARD_NOTE_X}
@@ -195,6 +294,17 @@ export function StaffCard({
             {miss.layout.ledgerYs.map((y, i) => (
               <path key={y} d={ledgerLine(y, i, CARD_NOTE_X - PLAYED_DX)} strokeWidth="1.4" fill="none" />
             ))}
+            {miss.accidental !== 0 ? (
+              <path
+                d={
+                  miss.accidental > 0
+                    ? sharpPath(CARD_ACC_X - PLAYED_DX, miss.layout.noteY)
+                    : flatPath(CARD_ACC_X - PLAYED_DX, miss.layout.noteY)
+                }
+                strokeWidth={miss.accidental > 0 ? 1.2 : 1.3}
+                fill="none"
+              />
+            ) : null}
             <ellipse
               cx={CARD_NOTE_X - PLAYED_DX}
               cy={miss.layout.noteY}
@@ -209,7 +319,7 @@ export function StaffCard({
       {caption === undefined ? (
         // The answer, written under the note once given; the line is reserved while asking.
         <figcaption aria-hidden="true" className={cn('rmm-display h-9 text-center text-[1.75rem] leading-9', ink)}>
-          {answered ? <span key={card.id}>{noteLetter(card.midi)}</span> : null}
+          {answered ? <span key={card.id}>{spelled ? spelledName(card) : noteLetter(card.midi)}</span> : null}
         </figcaption>
       ) : null}
     </figure>

@@ -16,6 +16,8 @@
  */
 
 import { clefStep, ledgerSteps, type Clef } from './theory/clef';
+import { keySignatureOf, type KeyCardKey } from './content/spelling';
+import { signaturePositions } from './theory/key-signatures';
 
 export const CARD_W = 200;
 export const CARD_H = 102;
@@ -458,6 +460,35 @@ export function sharpPath(x: number, y: number): string {
 /** A pencilled flat centred on (x, y): a tall stroke and its bowl closing on the note's line. */
 export function flatPath(x: number, y: number): string {
   return `M ${f(x - 2.5)} ${f(y - 12)} L ${f(x - 2.6)} ${f(y + 4.5)} C ${f(x + 5)} ${f(y + 0.5)} ${f(x + 4)} ${f(y - 5.5)} ${f(x - 2.55)} ${f(y - 0.8)}`;
+}
+
+/** Where an accidental printed before a card's note is centred: the same gap the sight reading sheet leaves. */
+export const CARD_ACC_X = CARD_NOTE_X - (HEAD_RX + 7);
+
+/** The first key-signature sign's centre, after the clef (the clef ends near x = 38), and the gap between signs. */
+const KEY_SIG_X0 = 46;
+const KEY_SIG_DX = 10;
+
+export interface KeySignSign {
+  kind: 'sharp' | 'flat';
+  /** The sign's centre. */
+  x: number;
+  y: number;
+}
+
+/**
+ * The signs of a key signature on `clef`, left to right, each on its line or space in the
+ * conventional zig-zag (`theory/key-signatures.ts`). At most three for the keys the cards use, so they
+ * end well before the note's own accidental.
+ */
+export function keySignatureLayout(clef: Clef, key: KeyCardKey): KeySignSign[] {
+  const sig = keySignatureOf(key);
+  if (sig.accidental === null) return [];
+  return signaturePositions(sig, clef).map((midi, i) => ({
+    kind: sig.accidental === 'flat' ? 'flat' : 'sharp',
+    x: KEY_SIG_X0 + i * KEY_SIG_DX,
+    y: cardY(clefStep(clef, midi)),
+  }));
 }
 
 /** The "now" mark: a small pencilled caret over the note, pointing down to it, tip at (x, y). */

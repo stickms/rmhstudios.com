@@ -12,8 +12,13 @@
  *
  * Both question lessons run the session lifecycle (ask, feedback, next, saving, saved / failed
  * with Retry / signed out) through `useQuestionSession`, and every box has the height of
- * LessonScreen's RhythmSkeleton: the sheet (title line, an 8rem question box, the sentence line)
- * and the 12.5rem answers box.
+ * LessonScreen's RhythmSkeleton: the mode toggle, the sheet (title line, an 8rem question box, the
+ * sentence line) and the 12.5rem answers box.
+ *
+ * Learning or Test mode (`PracticeModeToggle`): after a wrong answer the sentence says what was
+ * right, and in Learning mode the same question comes back (Next reads "Try again") until it is
+ * answered right; a bar that comes back has already been heard. Only a first-try answer scores. Tap
+ * the beat is not a question session and has no mode.
  *
  * The metronome click is a neutral synth click: it does not depend on the instrument setting.
  */
@@ -42,6 +47,7 @@ import {
   type ValueAnswer,
   type ValueQuestion,
 } from '@/lib/rmhmusic/learn/machines/rhythm';
+import { getPracticeMode } from '@/lib/rmhmusic/learn/practice-mode';
 import { scoreFrom, starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
@@ -49,6 +55,7 @@ import { cn } from '@/lib/utils';
 import { EarSoundRow, soundProblem } from './EarSoundRow';
 import { LessonResult } from './LessonParts';
 import { NoteValues, beatsLabel, valueName } from './NoteValues';
+import { PracticeModeToggle, usePracticeMode } from './PracticeModeToggle';
 import { SaidParts, SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
 import { TapBeatLesson } from './TapBeatLesson';
 
@@ -129,8 +136,9 @@ function ChoiceButton({
 function NoteValuesLesson({ lessonId, paused }: { lessonId: string; paused: boolean }) {
   const { t } = useTranslation('c-rmhmusic');
   const [questions] = useState(() => dealValues(Math.random));
+  const practiceMode = usePracticeMode();
   const session = useQuestionSession<ValueQuestion, ValueAnswer>({
-    machine: () => createValueMachine(questions),
+    machine: () => createValueMachine(questions, () => getPracticeMode() === 'learning'),
     save: (fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score),
     paused,
     focusFirst: 'button',
@@ -253,6 +261,7 @@ function NoteValuesLesson({ lessonId, paused }: { lessonId: string; paused: bool
 
   return (
     <SessionFrame className="rmm-rhythm space-y-4">
+      <PracticeModeToggle />
       <SessionSheet
         session={session}
         title={title}
@@ -260,6 +269,7 @@ function NoteValuesLesson({ lessonId, paused }: { lessonId: string; paused: bool
         line={line}
         lineKey={lineKey}
         said={said}
+        retry={practiceMode === 'learning' && lesson.kind === 'feedback' && !lesson.right}
       />
       <Answers box={session.answersBox}>{answers}</Answers>
     </SessionFrame>
@@ -280,6 +290,7 @@ type Extra =
 function MeterLesson({ lessonId, paused }: { lessonId: string; paused: boolean }) {
   const { t } = useTranslation('c-rmhmusic');
   const [questions] = useState(() => dealMeters(METER_QUESTIONS, Math.random));
+  const practiceMode = usePracticeMode();
   // The lesson is rendered only once the store has loaded in the browser, so the audio state can
   // be read at once: the sound row is right from its first paint.
   const [status, setStatus] = useState<SoundStatus>(soundStatus);
@@ -304,7 +315,7 @@ function MeterLesson({ lessonId, paused }: { lessonId: string; paused: boolean }
   );
 
   const session = useQuestionSession<MeterQuestion, MeterAnswer, MeterState, Extra, MeterEffect>({
-    machine: () => createMeterMachine(questions),
+    machine: () => createMeterMachine(questions, () => getPracticeMode() === 'learning'),
     save: (fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score),
     paused,
     focusFirst: 'button',
@@ -541,6 +552,7 @@ function MeterLesson({ lessonId, paused }: { lessonId: string; paused: boolean }
 
   return (
     <SessionFrame className="rmm-rhythm space-y-4">
+      <PracticeModeToggle />
       <SessionSheet
         session={session}
         title={title}
@@ -552,6 +564,7 @@ function MeterLesson({ lessonId, paused }: { lessonId: string; paused: boolean }
         line={line}
         lineKey={lineKey}
         said={said}
+        retry={practiceMode === 'learning' && lesson.kind === 'feedback' && !lesson.right}
       />
       <Answers box={session.answersBox}>{answers}</Answers>
     </SessionFrame>

@@ -11,6 +11,11 @@
  *   question must be heard before it can be answered (`played`), and `replay` plays it again
  *   without touching the state or the score. The screen carries `play` out and answers `played`
  *   for the pattern it sounded.
+ *
+ * Both run in Learning or Test mode (`practice-mode.ts`): in Test mode one answer settles a question;
+ * in Learning mode a wrong answer shows its feedback and the same question comes back until it is
+ * answered right (a bar that comes back has already been heard), and only a first-try answer scores.
+ * `createValueMachine` and `createMeterMachine` take either, or a getter read at every event.
  */
 import { shuffle } from '../content/decks';
 import type { Machine } from './runner';
@@ -62,12 +67,28 @@ export function dealValues(rand: () => number): ValueQuestion[] {
   }));
 }
 
-const valueStep = sessionStep<ValueQuestion, ValueAnswer>((q, a) => BEATS_OF[q.value] === a.beats);
+const valueIsRight = (q: ValueQuestion, a: ValueAnswer) => BEATS_OF[q.value] === a.beats;
+/** One note-values step in Test mode. */
+const valueStep = sessionStep<ValueQuestion, ValueAnswer>(valueIsRight);
+/** One note-values step in Learning mode: a wrong answer brings the same note back. */
+const valueLearningStep = sessionStep<ValueQuestion, ValueAnswer>(valueIsRight, { learning: true });
 
+/**
+ * The note-values machine. `learning` is Learning mode (retry until right) or Test mode, or a
+ * getter read at every event, so a mode switched mid-lesson is obeyed from the next answer.
+ */
 export function createValueMachine(
   questions: ValueQuestion[],
+  learning: boolean | (() => boolean) = false,
 ): Machine<SessionState<ValueQuestion, ValueAnswer>, SessionEvent<ValueAnswer>, SessionEffect> {
-  return createSessionMachine(questions, valueStep);
+  return createSessionMachine(
+    questions,
+    typeof learning === 'function'
+      ? (s, e) => (learning() ? valueLearningStep : valueStep)(s, e)
+      : learning
+        ? valueLearningStep
+        : valueStep,
+  );
 }
 
 /** How many beats a bar of the pattern has. */
@@ -139,9 +160,12 @@ export type MeterEffect =
       beatsPerBar: BeatsPerBar;
     };
 
-const meterBase = sessionStep<MeterQuestion, MeterAnswer>((q, a) => q.beatsPerBar === a.beatsPerBar);
+const meterIsRight = (q: MeterQuestion, a: MeterAnswer) => q.beatsPerBar === a.beatsPerBar;
+const meterTestBase = sessionStep<MeterQuestion, MeterAnswer>(meterIsRight);
+const meterLearningBase = sessionStep<MeterQuestion, MeterAnswer>(meterIsRight, { learning: true });
 
-function meterStep(
+function meterStepWith(
+  base: typeof meterTestBase,
   s: MeterState,
   e: MeterEvent,
 ): {
@@ -178,18 +202,20 @@ function meterStep(
     };
   }
   if (e.type === 'answer' && s.kind === 'asking' && !s.heard) return same;
-  const r = meterBase(s, e);
+  const r = base(s, e);
   if (r.state === s)
     return {
       state: s,
       effects: r.effects,
     };
-  // A question reached by Next starts unheard.
+  // A question reached by Next starts unheard. The same question asked again (Learning mode, after
+  // a miss) was already heard, so it can be answered at once; Replay still plays it.
+  const retry = r.state.kind === 'asking' && s.kind === 'feedback' && r.state.index === s.index;
   const state = (
     r.state.kind === 'asking'
       ? {
           ...r.state,
-          heard: false,
+          heard: retry,
         }
       : r.state
   ) as MeterState;
@@ -199,12 +225,33 @@ function meterStep(
   };
 }
 
-export function createMeterMachine(questions: MeterQuestion[]): Machine<MeterState, MeterEvent, MeterEffect> {
+/** One 4/4-versus-3/4 step in Test mode. */
+function meterStep(s: MeterState, e: MeterEvent) {
+  return meterStepWith(meterTestBase, s, e);
+}
+
+/** One 4/4-versus-3/4 step in Learning mode: a wrong answer brings the same bar back, already heard. */
+function meterLearningStep(s: MeterState, e: MeterEvent) {
+  return meterStepWith(meterLearningBase, s, e);
+}
+
+/**
+ * The 4/4-versus-3/4 machine. `learning` is Learning mode or Test mode, or a getter read at every event.
+ */
+export function createMeterMachine(
+  questions: MeterQuestion[],
+  learning: boolean | (() => boolean) = false,
+): Machine<MeterState, MeterEvent, MeterEffect> {
   return {
     initial: {
       ...sessionInitial<MeterQuestion, MeterAnswer>(questions),
       heard: false,
     } as MeterState,
-    step: meterStep,
+    step:
+      typeof learning === 'function'
+        ? (s, e) => (learning() ? meterLearningStep : meterStep)(s, e)
+        : learning
+          ? meterLearningStep
+          : meterStep,
   };
 }

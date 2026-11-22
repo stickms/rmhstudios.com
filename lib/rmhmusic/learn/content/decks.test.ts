@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { noteLetter } from '../theory/clef';
-import { DECKS, buildSession, cardId, isKnownCardId, parseCardId, type Deck } from './decks';
+import { DECKS, buildSession, cardId, deckCards, isKnownCardId, parseCardId, type Deck } from './decks';
 
 /** A small deterministic generator (mulberry32) so a failing shuffle can be replayed. */
 function seeded(seed: number): () => number {
@@ -17,9 +17,13 @@ function seeded(seed: number): () => number {
 const NATURAL_PITCH_CLASSES = new Set([0, 2, 4, 5, 7, 9, 11]);
 
 describe('decks', () => {
-  it('has the five reading decks and the four voice-range decks, with matching ids', () => {
+  it('has the five reading decks, the four spelled decks and the four voice-range decks, with matching ids', () => {
     expect(Object.keys(DECKS).sort()).toEqual([
+      'accidentals-bass',
+      'accidentals-treble',
       'bass-all',
+      'keys-flats',
+      'keys-sharps',
       'middle-c',
       'treble-all',
       'treble-lines',
@@ -176,5 +180,65 @@ describe('isKnownCardId / parseCardId', () => {
   ])('rejects %j', (id) => {
     expect(isKnownCardId(id)).toBe(false);
     expect(parseCardId(id)).toBeNull();
+  });
+});
+
+describe('spelled decks', () => {
+  const SPELLED = ['accidentals-treble', 'accidentals-bass', 'keys-sharps', 'keys-flats'] as const;
+
+  it('list their cards outright, with no natural midis a legacy loop could mistake for natural cards', () => {
+    for (const id of SPELLED) {
+      expect(DECKS[id].midis, id).toEqual([]);
+      expect(DECKS[id].cards?.length ?? 0, id).toBeGreaterThan(0);
+    }
+  });
+
+  it('deals every one of their cards by an id the table knows, and no id twice', () => {
+    const all = SPELLED.flatMap((id) => deckCards(DECKS[id]).map((c) => c.id));
+    expect(new Set(all).size).toBe(all.length);
+    for (const id of all) {
+      expect(isKnownCardId(id), id).toBe(true);
+      expect(parseCardId(id)?.id, id).toBe(id);
+    }
+  });
+
+  it('keeps every id of the natural decks exactly as it was', () => {
+    expect(isKnownCardId('treble:64')).toBe(true);
+    expect(parseCardId('treble:64')).toEqual({ id: 'treble:64', clef: 'treble', midi: 64 });
+    expect(cardId('bass', 43)).toBe('bass:43');
+    expect(parseCardId('bass:43')).toEqual({ id: 'bass:43', clef: 'bass', midi: 43 });
+  });
+
+  it('rejects ids no deck deals', () => {
+    for (const id of [
+      'treble:66', // F♯ with no spelling: no natural deck holds it
+      'treble:66:sharp:x',
+      'treble:65:sharp', // F♯ sounds as 66, not 65
+      'treble:64:flat', // E♭ sounds as 63
+      'key:G:treble:65', // F in G major sounds as 66
+      'key:C:treble:64', // C major has no key cards
+      'key:G:alto:66',
+      'key:G:treble',
+    ]) {
+      expect(isKnownCardId(id), id).toBe(false);
+      expect(parseCardId(id), id).toBeNull();
+    }
+  });
+
+  it('deals a session from a spelled deck without a card twice in a row', () => {
+    const rand = seeded(7);
+    for (const id of SPELLED) {
+      const cards = buildSession(DECKS[id], 30, rand);
+      expect(cards).toHaveLength(30);
+      for (let i = 1; i < cards.length; i++) expect(cards[i]?.id, id).not.toBe(cards[i - 1]?.id);
+      for (const c of cards) expect(isKnownCardId(c.id)).toBe(true);
+    }
+  });
+
+  it('hands out copies, so a session cannot change a deck', () => {
+    const [a] = buildSession(DECKS['keys-sharps'], 1, seeded(1));
+    expect(a).toBeDefined();
+    if (a) a.midi = 0;
+    expect(deckCards(DECKS['keys-sharps']).every((c) => c.midi !== 0)).toBe(true);
   });
 });

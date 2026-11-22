@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import type { CardRow } from './content/practice';
 import type { ReviewInput } from './schemas';
 import { isKnownItemId } from './srs/items';
+import { clampRetention } from './srs/practice-settings';
 import { newCard, review, type CardState } from './srs/schedule';
 
 export type { CardRow };
@@ -118,9 +119,13 @@ export async function applyReviews(
       select: SELECT,
     });
 
+    // The learner's retention target (90% until they choose another): how long a card they got right waits.
+    const profile = await tx.musicLearnProfile.findUnique({ where: { userId }, select: { retention: true } });
+    const retention = clampRetention(profile?.retention);
+
     const states = new Map<string, CardState>(stored.map((r) => [r.cardId, toState(r)]));
     for (const r of reviews) {
-      states.set(r.cardId, review(states.get(r.cardId) ?? newCard(now), r.grade, now));
+      states.set(r.cardId, review(states.get(r.cardId) ?? newCard(now), r.grade, now, retention));
     }
 
     const out: CardRow[] = [];
