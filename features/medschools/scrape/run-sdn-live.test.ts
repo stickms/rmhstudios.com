@@ -554,6 +554,78 @@ describe('runSdnLive', () => {
   });
 });
 
+describe('runSdnLive and the backfill set', () => {
+  it('never flips, polls or processes a thread the backfill owns', async () => {
+    const s = setup(feedRoutes([A, B]));
+    s.tables.medSdnThread = [
+      {
+        threadId: A.id,
+        slug: 'old-slug',
+        schoolId: 's1',
+        cycleYear: 2024,
+        degree: 'MD',
+        archive: true,
+        repliesSeen: 9,
+        repliesDone: -1,
+        cursorPage: 1,
+        cursorPostHash: null,
+        postsProcessed: 0,
+        parkedAt: null,
+        failCount: 0,
+      },
+    ];
+    const r = await s.run();
+    const mine = s.tables.medSdnThread!.find((t) => t.threadId === A.id)!;
+    expect(mine).toMatchObject({ archive: true, slug: 'old-slug', repliesSeen: 9, repliesDone: -1, cycleYear: 2024 });
+    expect(s.requested.some((p) => p.includes(`.${A.id}/`))).toBe(false);
+    expect(r.processed).toBe(1); // B only
+    expect(s.tables.medSdnThread!.find((t) => t.threadId === B.id)!.archive).toBe(false);
+  });
+
+  it('repairs the cells a failed backfill roll-up left short, once, on the discovery tick', async () => {
+    const s = setup(feedRoutes([]));
+    s.tables.medCycleEvent!.push({
+      id: 'e1',
+      schoolId: 's1',
+      source: 'SDN',
+      program: 'REG',
+      cycleYear: 2025,
+      eventType: 'INTERVIEW',
+      occurredAt: new Date('2025-03-18T00:00:00Z'),
+    });
+    s.tables.medSourceRun!.push({
+      id: 'b1',
+      source: 'SDN',
+      job: 'sdn-backfill',
+      status: 'PARTIAL',
+      startedAt: new Date(NOW.getTime() - 3_600_000),
+      stats: { rollupPending: [{ schoolId: 's1', program: 'REG', cycleYear: 2025, date: '2025-03-18' }] },
+    });
+    const r = await s.run();
+    expect(r.rolledUp).toBe(1);
+    expect(s.tables.medCycleCount!.length).toBe(1);
+    expect(
+      (s.tables.medSourceRun!.find((x) => x.id === 'b1')!.stats as { rollupPending: unknown[] }).rollupPending,
+    ).toEqual([]);
+  });
+
+  it('leaves a backfill run that is still in flight to repair its own cells', async () => {
+    const s = setup(feedRoutes([]));
+    s.tables.medSourceRun!.push({
+      id: 'b1',
+      source: 'SDN',
+      job: 'sdn-backfill',
+      status: 'RUNNING',
+      startedAt: new Date(NOW.getTime() - 60_000),
+      stats: { rollupPending: [{ schoolId: 's1', program: 'REG', cycleYear: 2025, date: '2025-03-18' }] },
+    });
+    await s.run();
+    expect(
+      (s.tables.medSourceRun!.find((x) => x.id === 'b1')!.stats as { rollupPending: unknown[] }).rollupPending,
+    ).toHaveLength(1);
+  });
+});
+
 describe('sdnBackfillOwed', () => {
   const owed = async (stats: unknown | null, now = NOW, ai = true) => {
     const { prisma, tables } = createFakePrisma();
@@ -586,6 +658,12 @@ describe('sdnBackfillOwed', () => {
         pausedMonth: '2026-10',
       }),
     ).toBe(true);
+  });
+  it('is false while waiting on parked threads until the earliest park is 24 h old', async () => {
+    const until = new Date(NOW.getTime() + 3_600_000).toISOString();
+    const stats = { cursor: { stage: 'threads' }, waitingOnParked: true, parkedUntil: until, failStreak: 0 };
+    expect(await owed(stats)).toBe(false);
+    expect(await owed(stats, new Date(NOW.getTime() + 2 * 3_600_000))).toBe(true);
   });
   it('is false while peak-paused and still peak', async () => {
     const peak = new Date('2026-11-20T07:00:00Z'); // Friday 07:00 UTC

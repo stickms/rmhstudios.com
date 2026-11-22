@@ -18,6 +18,7 @@ import { SOURCES } from './sources';
 import type { BudgetGate } from './sdn/budget';
 import type { SdnAi } from './sdn/extract';
 import { processThread, type ThreadDeps } from './sdn/process-thread';
+import { addPendingCells, cellKey, readPendingCells } from './sdn/rollup-pending';
 import type { Logger, MedPrisma, MedSdnThreadRow } from './types';
 
 export type SdnBackfillStage = 'discover' | 'threads' | 'done';
@@ -84,6 +85,10 @@ export interface SdnBackfillSummary {
   peakPaused: boolean;
   /** UTC `YYYY-MM` the monthly budget refused in; `sdnBackfillOwed` reads it. */
   pausedMonth: string | null;
+  /** True when every unfinished archive thread is parked (404 or repeated failures); not `done`, not failing. */
+  waitingOnParked: boolean;
+  /** ISO time the earliest parked thread becomes retryable (park + 24 h); `sdnBackfillOwed` reads it. */
+  parkedUntil: string | null;
   capPaused: boolean;
   halted: boolean;
   requests: number;
@@ -176,6 +181,8 @@ export async function runSdnBackfill(
     budgetPaused: false,
     peakPaused: false,
     pausedMonth: null,
+    waitingOnParked: false,
+    parkedUntil: null,
     capPaused: false,
     halted: false,
     requests: 0,
@@ -204,6 +211,8 @@ export async function runSdnBackfill(
     count: number;
   } | null = null;
   let skippedListingPages: string[] = [];
+  /** Roll-up cells a failed roll-up left short; persisted in the stats, retried at the start of every run. */
+  const rollupPending = new Map<string, TouchedCell>();
   try {
     const recent = await prisma.medSourceRun.findMany({
       where: {
@@ -230,6 +239,7 @@ export async function runSdnBackfill(
             page: lf.page,
             count: lf.count,
           };
+        addPendingCells(rollupPending, readPendingCells(st));
         if (Array.isArray(st.skippedListingPages))
           skippedListingPages = st.skippedListingPages.filter((x): x is string => typeof x === 'string');
         break;
@@ -290,7 +300,27 @@ export async function runSdnBackfill(
       failStreak,
       listingFail,
       skippedListingPages,
+      rollupPending: [...rollupPending.values()],
     };
+  };
+  /**
+   * Rolls the cells up; a failure keeps them in `rollupPending` (and so in the run's stats) for the next run's
+   * start and the live tick, because the events are already committed and nothing else would recount them.
+   */
+  const rollup = async (cells: TouchedCell[]): Promise<void> => {
+    if (cells.length === 0) return;
+    try {
+      summary.rolledUp += await rollupEventCounts(prisma, {
+        source: 'SDN',
+        touched: cells,
+      });
+      for (const c of cells) rollupPending.delete(cellKey(c));
+    } catch (e) {
+      summary.rollupErrors++;
+      incomplete = true;
+      addPendingCells(rollupPending, cells);
+      log.error(`sdn-backfill: roll-up failed: ${brief(e)}`);
+    }
   };
   const persistStats = async (): Promise<void> => {
     summary.pages = state.pages;
@@ -345,6 +375,9 @@ export async function runSdnBackfill(
   };
 
   try {
+    // Cells an earlier run could not roll up: retried first, before the no-op and the AI checks (no model needed).
+    if (rollupPending.size > 0) await rollup([...rollupPending.values()]);
+
     // A completed backfill is a recorded no-op on later cron fires.
     if (cursor.stage === 'done') {
       summary.noop = true;
@@ -514,8 +547,12 @@ export async function runSdnBackfill(
                 postsProcessed: 0,
               },
               // Cursor fields are never part of a rediscovery update; an unknown count ("1K") leaves it alone.
+              // `archive` is never part of an update: a row the live tick owns stays the live tick's.
               update: {
-                ...fields,
+                slug: fields.slug,
+                schoolId: fields.schoolId,
+                cycleYear: fields.cycleYear,
+                degree: fields.degree,
                 ...(t.replies !== null
                   ? {
                       repliesSeen: t.replies,
@@ -602,19 +639,6 @@ export async function runSdnBackfill(
       .sort((a, b) => b.cycleYear - a.cycleYear || a.threadId - b.threadId);
     summary.pending = pending.length;
 
-    const rollup = async (cells: TouchedCell[]): Promise<void> => {
-      if (cells.length === 0) return;
-      try {
-        summary.rolledUp += await rollupEventCounts(prisma, {
-          source: 'SDN',
-          touched: cells,
-        });
-      } catch (e) {
-        summary.rollupErrors++;
-        incomplete = true;
-        log.error(`sdn-backfill: roll-up failed: ${brief(e)}`);
-      }
-    };
     const mark = async (threadId: number, data: Record<string, unknown>): Promise<void> => {
       try {
         await prisma.medSdnThread.update({
@@ -719,7 +743,25 @@ export async function runSdnBackfill(
       break;
     }
 
-    if (stopped || incomplete) {
+    if (stopped) {
+      incomplete = true;
+      await persistStats();
+      return await close('PARTIAL');
+    }
+    // Not done while a thread is still owed. What is left is parked (404 or repeated failures); the run waits
+    // for the earliest park to pass 24 h, which `sdnBackfillOwed` reads from `parkedUntil`. Marking it done here
+    // would abandon those threads for good.
+    const left = (await prisma.medSdnThread.findMany({ where: { archive: true } })).filter(
+      (t) => t.repliesDone !== t.repliesSeen,
+    );
+    if (left.length > 0 && left.every((t) => t.parkedAt)) {
+      const earliest = Math.min(...left.map((t) => t.parkedAt!.getTime()));
+      summary.waitingOnParked = true;
+      summary.parkedUntil = new Date(earliest + DAY_MS).toISOString();
+      await persistStats();
+      return await close(incomplete ? 'PARTIAL' : 'OK');
+    }
+    if (incomplete || left.length > 0) {
       incomplete = true;
       await persistStats();
       return await close('PARTIAL');

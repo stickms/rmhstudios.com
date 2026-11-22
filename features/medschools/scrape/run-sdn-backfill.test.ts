@@ -471,11 +471,82 @@ describe('runSdnBackfill', () => {
     const stats = s.tables.medSourceRun![0]!.stats as Record<string, unknown>;
     expect(Object.keys(stats).filter((k) => /author|user|post|title|text/i.test(k))).toEqual([]);
     for (const [k, v] of Object.entries(stats))
-      if (!['cursor', 'listingFail', 'skippedListingPages'].includes(k))
+      if (!['cursor', 'listingFail', 'skippedListingPages', 'rollupPending'].includes(k))
         expect(v === null || typeof v !== 'object').toBe(true);
     assertNoLeak(s.tables.medSourceRun!, NEEDLES);
     assertNoLeak(s.writes, ['authorzz']);
     expect(s.logs.join('\n')).not.toContain('authorzz');
+  });
+});
+
+describe('parked threads and failed roll-ups', () => {
+  const hours = (n: number) => n * 3_600_000;
+  const gone = () => {
+    const routes = archiveRoutes();
+    delete routes[`/threads/${Y23.slug}.${Y23.id}/`]; // 404
+    return routes;
+  };
+
+  it('a parked archive thread keeps the backfill open, is not owed for 24 h, then is retried and the stage reaches done', async () => {
+    const s = setup(gone());
+    const r1 = await s.run();
+    expect(r1.threadsSkipped).toBe(1);
+    expect(r1.waitingOnParked).toBe(true);
+    expect(r1.cursor.stage).toBe('threads');
+    expect(r1.parkedUntil).toBe(new Date(NOW.getTime() + hours(24)).toISOString());
+    // Benign: no back-off streak, and not owed every tick.
+    expect((s.tables.medSourceRun!.at(-1)!.stats as { failStreak: number }).failStreak).toBe(0);
+    for (const h of [0.02, 1, 23])
+      expect(await sdnBackfillOwed(s.prisma, new Date(NOW.getTime() + hours(h)), true)).toBe(false);
+    expect(await sdnBackfillOwed(s.prisma, new Date(NOW.getTime() + hours(25)), true)).toBe(true);
+
+    // A run before the 24 h are up makes no thread request and stays open.
+    s.clock.t = new Date(NOW.getTime() + hours(2));
+    const before = threadRequests(s).length;
+    const idle = await s.run();
+    expect(threadRequests(s).length).toBe(before);
+    expect(idle.waitingOnParked).toBe(true);
+    expect(idle.cursor.stage).toBe('threads');
+
+    // The thread is back; after 24 h it is retried and the backfill finishes.
+    s.live.routes[`/threads/${Y23.slug}.${Y23.id}/`] = threadPage([Y23.id * 10]);
+    s.clock.t = new Date(NOW.getTime() + hours(25));
+    const r2 = await s.run();
+    expect(threadRequests(s).filter((p) => p.includes(`.${Y23.id}/`)).length).toBe(2);
+    expect(r2.processed).toBe(1);
+    expect(r2.status).toBe('OK');
+    expect(r2.waitingOnParked).toBe(false);
+    expect(r2.cursor.stage).toBe('done');
+    expect(await sdnBackfillOwed(s.prisma, new Date(NOW.getTime() + hours(60)), true)).toBe(false);
+  });
+
+  it('a failed roll-up is kept in the stats as bare cells and the next run repairs the counts', async () => {
+    const s = setup(archiveRoutes());
+    const real = s.prisma.medCycleCount.findMany.bind(s.prisma.medCycleCount);
+    let down = true;
+    s.prisma.medCycleCount.findMany = (async (a: never) => {
+      if (down) throw new Error('db down');
+      return real(a);
+    }) as never;
+    const r1 = await s.run();
+    expect(r1.rollupErrors).toBeGreaterThan(0);
+    expect(r1.status).toBe('PARTIAL');
+    expect(r1.cursor.stage).toBe('threads');
+    expect(s.tables.medCycleEvent!.length).toBeGreaterThan(0);
+    expect(s.tables.medCycleCount!.length).toBe(0);
+    const pending = (s.tables.medSourceRun!.at(-1)!.stats as { rollupPending: Array<Record<string, unknown>> })
+      .rollupPending;
+    expect(pending.length).toBeGreaterThan(0);
+    for (const c of pending) expect(Object.keys(c).sort()).toEqual(['cycleYear', 'date', 'program', 'schoolId']);
+
+    down = false;
+    s.clock.t = new Date(NOW.getTime() + hours(2));
+    const r2 = await s.run();
+    expect(r2.rolledUp).toBeGreaterThan(0);
+    expect(s.tables.medCycleCount!.length).toBeGreaterThan(0);
+    expect(r2.status).toBe('OK');
+    expect(r2.cursor.stage).toBe('done');
+    expect((s.tables.medSourceRun!.at(-1)!.stats as { rollupPending: unknown[] }).rollupPending).toEqual([]);
   });
 });
 

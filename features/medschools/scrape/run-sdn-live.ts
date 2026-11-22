@@ -22,6 +22,7 @@ import { rollupEventCounts, type TouchedCell } from './rollup-events';
 import { brief, closeStaleRuns, recordAliasMiss } from './run-support';
 import type { BudgetGate } from './sdn/budget';
 import type { SdnAi } from './sdn/extract';
+import { repairBackfillRollups } from './sdn/rollup-pending';
 import { processThread, type ThreadDeps } from './sdn/process-thread';
 import type { Logger, MedPrisma, MedSdnThreadRow } from './types';
 
@@ -198,16 +199,12 @@ export async function runSdnLive(
     const schoolIdByStem = new Map(aliases.map((a) => [a.sourceKey, a.schoolId]));
     const schools = new Map((await prisma.medSchool.findMany()).map((s) => [s.id, s]));
 
-    // Thread rows already known (live set only).
-    const known = new Map<number, MedSdnThreadRow>(
-      (
-        await prisma.medSdnThread.findMany({
-          where: {
-            archive: false,
-          },
-        })
-      ).map((t) => [t.threadId, t]),
-    );
+    // Thread rows already known. The live set (archive: false) and the backfill set (archive: true) are disjoint:
+    // a row's flag is only ever written when it is created, the live tick skips archive rows entirely and the
+    // backfill walks only archive rows, so the two jobs can never process the same thread.
+    const allRows = await prisma.medSdnThread.findMany();
+    const known = new Map<number, MedSdnThreadRow>(allRows.filter((t) => !t.archive).map((t) => [t.threadId, t]));
+    const archiveIds = new Set<number>(allRows.filter((t) => t.archive).map((t) => t.threadId));
 
     const changed = new Set<number>();
     const forced = new Set<number>();
@@ -247,6 +244,7 @@ export async function runSdnLive(
         summary.degreeMismatch++;
         return;
       }
+      if (archiveIds.has(item.threadId)) return; // the backfill's thread; never flip or process it here
       seenThreads.set(item.threadId, {
         schoolId,
         cycleYear: parsed.cycleYear,
@@ -274,9 +272,13 @@ export async function runSdnLive(
             cursorPostHash: null,
             postsProcessed: 0,
           },
-          // Cursor fields are never part of an update from polling.
+          // Cursor fields are never part of an update from polling, and neither is `archive` (a row the
+          // backfill created between our read and this write stays the backfill's).
           update: {
-            ...fields,
+            slug: fields.slug,
+            schoolId: fields.schoolId,
+            cycleYear: fields.cycleYear,
+            degree: fields.degree,
             ...(item.replies !== null
               ? {
                   repliesSeen: item.replies,
@@ -637,6 +639,24 @@ export async function runSdnLive(
       }
     }
 
+    // 6. Cells the backfill could not roll up (its events are committed, its counts are short): retried here too,
+    // once per discovery tick, so a backfill that is paused or finished does not leave them wrong.
+    if (discoveryTick) {
+      try {
+        const repaired = await repairBackfillRollups(prisma);
+        summary.rolledUp += repaired.rolledUp;
+        if (repaired.failed) {
+          summary.rollupErrors++;
+          incomplete = true;
+          log.error('sdn-live: backfill roll-up repair failed');
+        }
+      } catch (e) {
+        summary.rollupErrors++;
+        incomplete = true;
+        log.error(`sdn-live: backfill roll-up repair failed: ${brief(e)}`);
+      }
+    }
+
     if (summary.halted) return await close('FAILED');
   } catch (e) {
     error = brief(e);
@@ -688,7 +708,8 @@ const BACKFILL_BACKOFF_CAP_MS = 24 * 3_600_000;
  * newest backfill run finished the walk, when any recent run paused for this UTC month's budget, when it paused
  * for DeepSeek peak hours and it is still peak, or when the newest run failed (FAILED, or PARTIAL with real
  * failures) and is inside its back-off window (1 h, doubling per consecutive failed run, capped at 24 h; the
- * count is `stats.failStreak`). Cap, peak, budget and AI-off pauses are benign and never back off. True
+ * count is `stats.failStreak`), or when the newest run is waiting on parked threads and the earliest park is under
+ * 24 h old (`stats.parkedUntil`). Cap, peak, budget, AI-off and parked waits are benign and never back off. True
  * otherwise, including before any run.
  */
 export async function sdnBackfillOwed(prisma: MedPrisma, now: Date, aiConfigured = true): Promise<boolean> {
@@ -716,6 +737,11 @@ export async function sdnBackfillOwed(prisma: MedPrisma, now: Date, aiConfigured
       }
     | undefined;
   if ((cursor?.stage ?? stats.stage) === 'done') return false;
+  // Waiting on parked threads (404 or repeated failures): benign, and not owed until the earliest park is 24 h old.
+  if (stats.waitingOnParked === true && typeof stats.parkedUntil === 'string') {
+    const until = Date.parse(stats.parkedUntil);
+    if (Number.isFinite(until) && now.getTime() < until) return false;
+  }
   // The newest run that carries a pausedMonth, so a later manual or failed run does not lose the pause.
   const month = now.toISOString().slice(0, 7);
   const paused = recent.map(statsOf).find((st) => typeof st.pausedMonth === 'string');
