@@ -10,6 +10,7 @@
 #   APPEARANCES  "light dark" (Day and Night: with nothing stored, the pre-paint script follows the device)
 #   DEVICE       simulator name to prefer, default "iPhone 17 Pro" (falls back to the newest iPhone)
 #   OPEN_GLOBE   "1" taps the docked globe and shoots again (needs `idb`, best effort)
+#   NAME_PREFIX  prefix for the file names, default "" (the themed run uses "theme-")
 #   SETTLE       seconds to wait after a page opens, default 8
 #
 # The simulator shares the host's network, so a server on localhost:7005 is reachable as http://localhost:7005.
@@ -21,7 +22,15 @@ ROUTES="${ROUTES:-/}"
 APPEARANCES="${APPEARANCES:-light dark}"
 DEVICE="${DEVICE:-iPhone 17 Pro}"
 SETTLE="${SETTLE:-8}"
+NAME_PREFIX="${NAME_PREFIX:-}"
 mkdir -p "$OUT"
+
+# pip installs idb into the user base, which is not on the runner's PATH.
+IDB="$(command -v idb || true)"
+[ -n "$IDB" ] || { for d in "$(python3 -m site --user-base 2>/dev/null)/bin" "$HOME/Library/Python"/*/bin; do [ -x "$d/idb" ] && IDB="$d/idb" && break; done; }
+if [ "${OPEN_GLOBE:-0}" = "1" ]; then
+  if [ -n "$IDB" ]; then echo "idb: $IDB"; else echo "idb: NOT FOUND, so the globe-open shots and the popup dismissal are skipped"; fi
+fi
 
 # Newest installed iOS runtime, and the device type to put on it.
 RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
@@ -52,10 +61,31 @@ xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --ba
   --cellularMode active --cellularBars 4 --wifiBars 3 || true
 
 shoot() { # name
-  xcrun simctl io "$UDID" screenshot --type=png "$OUT/$1.png" >/dev/null
-  echo "wrote $OUT/$1.png"
+  xcrun simctl io "$UDID" screenshot --type=png "$OUT/${NAME_PREFIX}$1.png" >/dev/null
+  echo "wrote $OUT/${NAME_PREFIX}$1.png"
 }
 
+# Screen size in points (idb reports it; an iPhone 17 Pro is 402 x 874).
+screen_points() {
+  "$IDB" describe --udid "$UDID" --json 2>/dev/null | python3 -c '
+import json, sys
+def find(o):
+    if isinstance(o, dict):
+        if "width_points" in o and "height_points" in o:
+            return o
+        for v in o.values():
+            r = find(v)
+            if r: return r
+    return None
+try:
+    d = find(json.load(sys.stdin)) or {}
+except Exception:
+    d = {}
+print(int(d.get("width_points", 402)), int(d.get("height_points", 874)))
+'
+}
+
+first=1
 for appearance in $APPEARANCES; do
   xcrun simctl ui "$UDID" appearance "$appearance"
   IFS=',' read -ra paths <<<"$ROUTES"
@@ -63,15 +93,19 @@ for appearance in $APPEARANCES; do
     slug=$(echo "${path:-/}" | sed 's#^/##; s#/#_#g'); slug="${slug:-home}"
     xcrun simctl openurl "$UDID" "${BASE%/}${path}"
     sleep "$SETTLE"
+    if [ "$first" = "1" ] && [ -n "$IDB" ]; then
+      # Safari's one-time "View Bookmarks, Share Menu, and Open Tabs" popup: its close button is at about 90% x 71% y.
+      read -r W H < <(screen_points)
+      "$IDB" ui tap --udid "$UDID" $((W * 90 / 100)) $((H * 71 / 100)) >/dev/null 2>&1 || true
+      sleep 1
+      first=0
+    fi
     shoot "${slug}-${appearance}"
-    if [ "${OPEN_GLOBE:-0}" = "1" ] && command -v idb >/dev/null 2>&1; then
-      # The docked globe: horizontally centred, about 50pt above the bottom edge of the screen.
-      read -r W H < <(idb describe --udid "$UDID" --json | python3 -c '
-import json, sys
-d = json.load(sys.stdin)["screen_dimensions"]
-print(int(d["width_points"]), int(d["height_points"]))
-')
-      idb ui tap --udid "$UDID" $((W / 2)) $((H - 90)) || true
+    if [ "${OPEN_GLOBE:-0}" = "1" ] && [ -n "$IDB" ]; then
+      read -r W H < <(screen_points)
+      # The docked globe: centred, about 150pt above the screen bottom (18px off the visual viewport, which ends above
+      # Safari's tab bar).
+      "$IDB" ui tap --udid "$UDID" $((W / 2)) $((H - 150)) >/dev/null 2>&1 || echo "idb tap failed"
       sleep 2
       shoot "${slug}-${appearance}-globe-open"
     fi

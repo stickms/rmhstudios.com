@@ -75,8 +75,6 @@ background-image,
 `theme-color`,
 a
 `position: fixed`
-or
-sticky
 layer
 at
 a
@@ -113,6 +111,25 @@ whether
 it
 looks
 right.
+**Do
+not
+call
+an
+iOS-bars
+change
+done
+on
+the
+contract
+test
+alone**:
+it
+passed
+while
+the
+strips
+were
+white.
 
 ## Run it
 
@@ -123,45 +140,132 @@ workflow
 Safari
 screenshots**
 (`.github/workflows/ios-safari-screenshots.yml`),
-manual.
-From
-an
+manual
+(`workflow_dispatch`).
+An
 agent
-session
-with
-no
-`gh`
-CLI,
-ask
-the
-user
-to
-run
-it,
-or
-trigger
-it
 with
 the
 GitHub
 MCP
+can
+start
+it
+with
 `actions_run_trigger`
-tool
-for
+(workflow
+file
+`ios-safari-screenshots.yml`,
+`ref`
+set
+to
+its
+own
+branch:
+GitHub
+runs
+the
+file
+from
+the
+ref
+you
+pick,
+once
 the
 workflow
-file
+exists
 on
-your
-branch.
+`main`),
+then
+find
+the
+run
+with
+`actions_list`
+(`list_workflow_runs`),
+wait
+for
+it
+to
+complete,
+list
+its
+artifacts,
+and
+read
+the
+PNGs
+with
+`actions_get`
+`download_workflow_run_artifact`
+(the
+returned
+URL
+is
+short-lived;
+`curl`
+it
+into
+a
+scratch
+directory
+and
+unzip
+there).
+
 Inputs:
-`routes`
-(default
-`/,/terms`),
-`open_globe`,
-`runner`,
-`device`.
-It
+
+- `routes`
+  (default
+  `/,/terms`)
+- `open_globe`
+  (default
+  on):
+  tap
+  the
+  docked
+  globe
+  and
+  shoot
+  it
+  open,
+  needs
+  `idb`,
+  best
+  effort
+- `theme`
+  (default
+  `paper`;
+  `none`
+  skips):
+  also
+  shoot
+  with
+  that
+  official
+  bought
+  theme
+  applied,
+  so
+  its
+  gradient
+  wash
+  is
+  on
+  the
+  page.
+  Any
+  key
+  of
+  `OFFICIAL_SITE_THEMES`
+  in
+  `lib/themes/official.ts`
+- `runner`,
+  `device`
+
+A
+run
 takes
 roughly
 20
@@ -212,41 +316,37 @@ Safari
 at
 each
 route
-in
-Day
-and
-Night,
 and
 uploads
+the
 PNGs
 as
 the
 artifact
-`ios-safari-screenshots`
-(`<route>-light.png`,
-`<route>-dark.png`,
-and
-`<route>-<mode>-globe-open.png`
-when
-`open_globe`
-worked).
-Download
-the
-artifact
-(`actions_get`
-with
-the
-run
-id,
-or
-the
-Actions
-UI)
-and
-look
-at
-the
-pictures.
+`ios-safari-screenshots`:
+
+- `<route>-light.png`,
+  `<route>-dark.png`:
+  the
+  site's
+  own
+  Day
+  and
+  Night
+- `<route>-<mode>-globe-open.png`:
+  the
+  same
+  with
+  the
+  globe
+  tapped
+  open
+- `theme-<id>-<route>-light.png`
+  (and
+  `-globe-open`):
+  the
+  bought
+  theme
 
 To
 run
@@ -268,12 +368,49 @@ then
 `APPEARANCES`,
 `DEVICE`,
 `OPEN_GLOBE`,
-`SETTLE`
+`SETTLE`,
+`NAME_PREFIX`
 are
 documented
 in
 the
 script).
+For
+the
+themed
+run
+also
+start
+`node scripts/ios-sim/theme-proxy.mjs 7005 7006 <theme.json>`
+(the
+JSON
+comes
+from
+`pnpm exec tsx scripts/ios-sim/theme-json.ts <id>`)
+and
+shoot
+`http://localhost:7006`:
+a
+simulator
+cannot
+set
+another
+origin's
+localStorage,
+so
+the
+proxy
+writes
+`rmh-user-theme`
+into
+every
+HTML
+page
+before
+the
+pre-paint
+script
+runs.
 
 ## Reading the pictures
 
@@ -285,7 +422,11 @@ script).
   and
   the
   bottom
-  200px**:
+  200px**
+  (the
+  picture
+  is
+  3x):
   the
   status-bar
   strip,
@@ -339,6 +480,46 @@ script).
   strips
   went
   white).
+- With
+  a
+  gradient
+  theme,
+  compare
+  the
+  strip
+  with
+  the
+  page
+  just
+  under
+  it.
+  Safari
+  paints
+  the
+  strips
+  itself
+  from
+  one
+  flat
+  colour,
+  so
+  the
+  gradient
+  may
+  stop
+  at
+  the
+  strip
+  edge;
+  the
+  goal
+  is
+  a
+  seam
+  that
+  is
+  not
+  noticeable.
 - Day
   is
   the
@@ -367,18 +548,40 @@ script).
   Day
   and
   Night.
+- Check
+  the
+  home
+  page
+  is
+  the
+  real
+  page.
   A
-  bought
-  theme
-  needs
-  its
-  stored
-  `rmh-user-theme`,
-  which
-  this
-  does
-  not
-  set.
+  shot
+  of
+  "Something
+  went
+  wrong"
+  proves
+  nothing
+  about
+  the
+  strips:
+  the
+  workflow's
+  "Probe
+  the
+  routes"
+  step
+  and
+  the
+  server
+  log
+  say
+  why
+  a
+  route
+  errored.
 
 ## Limits
 
@@ -439,36 +642,53 @@ script).
   scroll;
   only
   the
-  globe
-  tap
+  taps
   (through
-  `idb`,
-  best
-  effort,
-  may
-  be
-  skipped
-  with
-  a
-  warning)
-  interacts.
-  A
-  page's
-  bottom
-  strip
-  is
-  still
-  visible
-  at
-  scroll
-  top,
-  because
+  `idb`:
+  Safari's
+  first-run
+  popup
+  and
   the
-  tab
-  bar
-  is
-  always
-  there.
+  globe)
+  interact.
+  The
+  log
+  says
+  `idb: NOT FOUND`
+  when
+  they
+  are
+  skipped.
+- The
+  themed
+  run
+  loads
+  the
+  theme
+  from
+  localStorage
+  as
+  a
+  signed-out
+  visitor;
+  a
+  page
+  that
+  re-derives
+  or
+  clears
+  it
+  after
+  hydration
+  can
+  change
+  the
+  picture
+  after
+  the
+  first
+  paint.
 - Nothing
   here
   gates
@@ -478,47 +698,3 @@ script).
   is
   on
   demand.
-- The
-  workflow
-  was
-  written
-  without
-  being
-  run
-  from
-  the
-  agent
-  sandbox
-  that
-  added
-  it.
-  If
-  the
-  first
-  run
-  fails,
-  the
-  failing
-  step
-  names
-  the
-  cause
-  (Postgres
-  install,
-  build
-  memory
-  on
-  the
-  runner,
-  simulator
-  runtime,
-  `idb`);
-  fix
-  that
-  step
-  rather
-  than
-  working
-  around
-  the
-  check.
