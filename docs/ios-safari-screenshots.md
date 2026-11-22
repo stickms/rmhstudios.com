@@ -34,6 +34,7 @@ It builds the site, runs it on the runner against a throwaway Postgres, boots an
 route and uploads the PNGs as the artifact `ios-safari-screenshots`:
 
 - `<route>-light.png`, `<route>-dark.png`: the site's own Day and Night
+- `<route>-<mode>-bottom.png`: scrolled to the bottom of the page (needs `idb`): the strip behind the tab bar is outside the document, so this is where a wash that ends at the document's last pixel shows as a seam
 - `<route>-<mode>-globe-open.png`: the same with the globe tapped open
 - `theme-<id>-<route>-light.png` (and `-globe-open`): the bought theme
 

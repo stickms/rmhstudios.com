@@ -198,6 +198,7 @@ export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
     '--site-theme-wash': themeWash(t),
     '--site-accent-fill': accentFill(t),
     '--site-theme-wash-top': themeWashTop(t),
+    '--site-theme-wash-bottom': themeWashBottom(t),
   };
 }
 
@@ -220,6 +221,15 @@ function themeWash(t: ThemeTokens): string {
  */
 function themeWashTop(t: ThemeTokens): string {
   return `linear-gradient(to bottom, ${t.canvasBase} env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 96px))`;
+}
+
+/**
+ * The ground fading into the wash at the END of the document, iOS only. The strip behind Safari's floating tab bar is
+ * outside the document, so Safari paints it from the flat ground; the wash used to stop at the document's last pixel and
+ * show as a lighter band there. The ground holds over the home-indicator inset and gives way to the wash over 96px.
+ */
+function themeWashBottom(t: ThemeTokens): string {
+  return `linear-gradient(to top, ${t.canvasBase} env(safe-area-inset-bottom, 0px), transparent calc(env(safe-area-inset-bottom, 0px) + 96px))`;
 }
 
 /** The ink-primary sheen: accent into accent-plus-a-third-of-glow2, or `none` if that would fail AA. */
@@ -251,7 +261,7 @@ export interface AppliedUserTheme {
 }
 
 /** Bump when `themeCssVars` changes what it emits, so every cached applied theme is re-derived once. */
-export const THEME_DERIVATION_VERSION = 3;
+export const THEME_DERIVATION_VERSION = 4;
 
 /** True when a cached applied theme was derived by an older (or unstamped) derivation. */
 export function isStaleAppliedTheme(theme: AppliedUserTheme): boolean {

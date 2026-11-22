@@ -114,15 +114,20 @@ html:not(.app-route) body {
 }
 html.ios-webkit:not(.app-route) body {
   background-attachment: scroll;
-  /* At scroll top Safari fills the strip behind the status bar with one flat colour (the ground), so the wash showed a
-     hard line right under it. `--site-theme-wash-top` (lib/themes/tokens.ts) holds the ground over that strip and fades
-     it into the wash; it is anchored to the top of the document, so a scrolled page shows the wash itself. */
-  background-image: var(--site-theme-wash-top, none), var(--site-theme-wash, none);
+  /* Safari fills the strips outside the page with one flat colour (the ground): at scroll top the one behind the status
+     bar, and past the document's end the one behind the floating tab bar. The wash is a gradient, so it met each as a
+     hard line. `--site-theme-wash-top` and `--site-theme-wash-bottom` (lib/themes/tokens.ts) hold the ground over those
+     strips and fade it into the wash. They are anchored to the top and bottom of the DOCUMENT, so a scrolled page shows
+     the wash itself. */
+  background-image:
+    var(--site-theme-wash-top, none), var(--site-theme-wash-bottom, none), var(--site-theme-wash, none);
   background-size:
     100% calc(env(safe-area-inset-top, 0px) + 96px),
+    100% calc(env(safe-area-inset-bottom, 0px) + 96px),
     100% 100%;
   background-position:
     0 0,
+    0 100%,
     0 0;
 }
 
