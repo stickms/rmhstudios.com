@@ -2,8 +2,8 @@
 
 > **For LLMs and auditors:** this is the single place for RMH Music (`/rmhmusic`, the beginner
 > piano, guitar and singing programme) status, unfinished work, future features, known gaps and
-> hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-15
-> (Phase 5: more instrument sounds, and voice as a learner instrument). If this file disagrees
+> hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-22
+> (FSRS, Learning/Test mode and the wrong note on the staff; before that Phase 5). If this file disagrees
 > with the code, the code wins; fix this file. Plans live in `docs/superpowers/plans/`.
 
 ## 1. What shipped (in production on `main`)
@@ -29,6 +29,27 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 `onNoteStart`, `onAllStarted`).
 
 ## 2. Recent work
+
+### 2.000000 FSRS, Learning/Test mode and the wrong note on the staff — done
+
+- **Scheduler:** `srs/schedule.ts` now runs FSRS-6 (`srs/fsrs.ts`, default weights, no optimizer or
+  fuzz; golden values in `fsrs.test.ts` come from the reference implementation). Stored
+  `music_learn_card` rows are read as FSRS memory as they are (stability in days, difficulty 1–10), so
+  there was no migration. Desired retention is fixed at 90%; a missed card returns in 10 minutes; a
+  lapse is a miss on a card whose stability had reached a day.
+- **Grades** come from the FIRST answer only (`srs/grade.ts`): a miss is `again`, a right answer is
+  `easy`/`good`/`hard` by speed (`STAFF_TIMES`, `EAR_TIMES`, `SPRINT_TIMES`).
+- **Items** (`srs/items.ts`): staff cards (`treble:64`), ear (`ear:interval:third`, `ear:chord:minor`)
+  and Sprint (`sprint:note:…`, `sprint:chord:…`) share the one table and the cards API; Practice
+  still deals only staff cards. Ear lessons and Sprint freeplay deal due and weak items first.
+- **Learning / Test mode** (`practice-mode.ts`, device preference, default Learning): Learning keeps
+  a wrong question on screen until it is answered right (`sessionStep(isRight, {learning})`); the
+  miss still grades `again` and scores nothing. Applies to staff flashcards, Practice, ear training
+  and Sprint freeplay. The Daily challenge and any scored run are always Test; Learning Sprint runs
+  save no best. Not applied to the note finder or rhythm lessons.
+- **The wrong note** is drawn on the staff beside the right one (`StaffCard` `played`, `SprintSheet`
+  `played`) with "You played E4, not C4." and the distance in staff steps (`miss.ts`). A letter-only
+  answer (button, computer key, voice) is drawn at the octave nearest the right note.
 
 ### 2.00000 Friends' progress and Share a result (Phase 6, PR C and PR D) — done
 

@@ -13,6 +13,10 @@ model MusicLearnProfile {
   sound      String?  @db.VarChar(16)
   /// A voice learner's range (`VOICE_RANGES`: soprano, alto, tenor, bass); null until chosen.
   voiceRange String?  @db.VarChar(16)
+  /// `learning` keeps a missed question until it is answered right; `test` moves on (`practice-mode.ts`).
+  practiceMode String @default("learning") @db.VarChar(8)
+  /// Microphone input gain, a linear multiplier from 1 (as heard) to 16, for quiet microphones (`input/mic-gain.ts`).
+  micGain    Float    @default(1)
   updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

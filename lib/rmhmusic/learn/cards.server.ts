@@ -5,17 +5,17 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { isKnownCardId } from './content/decks';
 import type { CardRow } from './content/practice';
 import type { ReviewInput } from './schemas';
+import { isKnownItemId } from './srs/items';
 import { newCard, review, type CardState } from './srs/schedule';
 
 export type { CardRow };
 
-/** At most this many rows in one listing (the decks hold far fewer cards). */
-export const MAX_CARDS_LISTED = 200;
+/** At most this many rows in one listing: staff cards, ear items and Sprint items together. */
+export const MAX_CARDS_LISTED = 600;
 
-/** Thrown by `applyReviews` for a card id that no deck deals. */
+/** Thrown by `applyReviews` for an id no drill produces (`srs/items.ts`). */
 export class UnknownCardError extends Error {
   constructor(cardId: string) {
     super(`Unknown card: ${cardId}`);
@@ -80,7 +80,7 @@ export async function loadCards(userId: string): Promise<CardRow[]> {
 /**
  * Review cards for `userId` at `now` (the server's clock; never a client's), in the order given —
  * the same card twice is reviewed twice, the second from the first's result. Every id must be a
- * deck card or nothing is written. A card's first review starts from `newCard(now)`.
+ * known item (`srs/items.ts`) or nothing is written. A card's first review starts from `newCard(now)`.
  *
  * One transaction: the missing rows are inserted as new cards (`skipDuplicates`), every touched
  * row is locked (`SELECT ... FOR UPDATE`), then read, reviewed and written. A concurrent batch for
@@ -92,7 +92,7 @@ export async function applyReviews(
   reviews: readonly ReviewInput[],
   now: number,
 ): Promise<CardRow[]> {
-  for (const r of reviews) if (!isKnownCardId(r.cardId)) throw new UnknownCardError(r.cardId);
+  for (const r of reviews) if (!isKnownItemId(r.cardId)) throw new UnknownCardError(r.cardId);
   // Throws RangeError on a non-finite clock, before any write.
   const fresh = newCard(now);
   const ids = [...new Set(reviews.map((r) => r.cardId))].sort();

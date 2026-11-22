@@ -53,6 +53,9 @@ export const STAFF_BOX = 'mx-auto w-full max-w-72 sm:max-w-80';
 /** The low card's aspect ratio, for a placeholder of the same box (`range="low"`). */
 export const STAFF_LOW_ASPECT = 'aspect-[200/117]';
 
+/** How far left of the right note the played (wrong) note sits: clear of a neighbouring head. */
+const PLAYED_DX = 28;
+
 export function StaffCard({
   card,
   state,
@@ -61,9 +64,16 @@ export function StaffCard({
   octaveClef = false,
   caption,
   label: labelOverride,
+  played,
 }: {
   card: Card;
   state: StaffCardState;
+  /**
+   * A wrong answer's pitch, drawn as a second (red pencil) notehead beside the right note, so the
+   * learner sees how far off it was. The right note then takes the accent colour. Only drawn once
+   * the card is answered wrong.
+   */
+  played?: number | null;
   className?: string;
   /** `low` reaches three ledger lines under the treble staff (the note finder; see the layout). */
   range?: 'deck' | 'low';
@@ -85,28 +95,47 @@ export function StaffCard({
 
   const answered = state !== 'ask';
   const name = midiToName(card.midi);
+  const miss =
+    state === 'wrong' && played !== undefined && played !== null && Number.isFinite(played)
+      ? {
+          layout: cardLayout(card.clef, played, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP),
+          name: midiToName(played),
+        }
+      : null;
 
   const label = labelOverride
     ? labelOverride
-    : answered
+    : miss
       ? card.clef === 'bass'
-        ? t('flash-card-named-bass', {
+        ? t('flash-card-miss-bass', {
             note: name,
-            defaultValue: '{{note}} on the bass staff',
+            played: miss.name,
+            defaultValue: '{{note}} on the bass staff; you played {{played}}',
           })
-        : t('flash-card-named-treble', {
+        : t('flash-card-miss-treble', {
             note: name,
-            defaultValue: '{{note}} on the treble staff',
+            played: miss.name,
+            defaultValue: '{{note}} on the treble staff; you played {{played}}',
           })
-      : card.clef === 'bass'
-        ? t('flash-card-ask-bass', {
-            defaultValue: 'A note on the bass staff',
-          })
-        : t('flash-card-ask-treble', {
-            defaultValue: 'A note on the treble staff',
-          });
+      : answered
+        ? card.clef === 'bass'
+          ? t('flash-card-named-bass', {
+              note: name,
+              defaultValue: '{{note}} on the bass staff',
+            })
+          : t('flash-card-named-treble', {
+              note: name,
+              defaultValue: '{{note}} on the treble staff',
+            })
+        : card.clef === 'bass'
+          ? t('flash-card-ask-bass', {
+              defaultValue: 'A note on the bass staff',
+            })
+          : t('flash-card-ask-treble', {
+              defaultValue: 'A note on the treble staff',
+            });
 
-  const ink = state === 'right' ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
+  const ink = state === 'right' || miss ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
 
   return (
     <figure className={cn(STAFF_BOX, className)}>
@@ -153,6 +182,29 @@ export function StaffCard({
             </text>
           ) : null}
         </g>
+        {miss ? (
+          // The note the learner played, left of the right one so two neighbouring notes do not
+          // overlap, in red pencil; the sentence under the card says it in words.
+          <g
+            className="text-app-danger"
+            stroke="currentColor"
+            fill="currentColor"
+            strokeLinecap="round"
+            data-played-note=""
+          >
+            {miss.layout.ledgerYs.map((y, i) => (
+              <path key={y} d={ledgerLine(y, i, CARD_NOTE_X - PLAYED_DX)} strokeWidth="1.4" fill="none" />
+            ))}
+            <ellipse
+              cx={CARD_NOTE_X - PLAYED_DX}
+              cy={miss.layout.noteY}
+              rx={HEAD_RX}
+              ry={HEAD_RY}
+              transform={`rotate(-20 ${CARD_NOTE_X - PLAYED_DX} ${miss.layout.noteY})`}
+              stroke="none"
+            />
+          </g>
+        ) : null}
       </svg>
       {caption === undefined ? (
         // The answer, written under the note once given; the line is reserved while asking.
@@ -228,8 +280,18 @@ export function SprintSheet({
   className,
   range = 'deck',
   octaveClef = false,
+  played,
 }: {
   clef: Card['clef'];
+  /**
+   * A wrong answer's notes as the page would write them, drawn in red pencil `dx` SVG units left
+   * of the written notes (`sprint/miss.ts`); the written notes then take the accent colour. Only
+   * drawn once the prompt is answered wrong.
+   */
+  played?: {
+    notes: readonly SheetNote[];
+    dx: number;
+  } | null;
   notes: readonly SheetNote[];
   arrangement: 'chord' | 'bar';
   /** A bar: the note to play next. */
@@ -250,7 +312,14 @@ export function SprintSheet({
   const low = range === 'low';
   const layout = sheetLayout(clef, notes, arrangement, now, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP);
   const answered = state !== 'ask';
-  const ink = state === 'right' ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
+  const miss =
+    state === 'wrong' && played && played.notes.length > 0
+      ? {
+          ...played,
+          layout: sheetLayout(clef, played.notes, 'chord', undefined, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP),
+        }
+      : null;
+  const ink = state === 'right' || miss ? 'text-app-accent' : state === 'wrong' ? 'text-app-danger' : 'text-app-text';
   return (
     <figure className={cn(STAFF_BOX, className)}>
       <svg
@@ -288,6 +357,41 @@ export function SprintSheet({
             />
           ))}
         </g>
+        {miss ? (
+          // What the learner played, in red pencil beside the written notes: heads, ledger lines
+          // and accidentals only (no stem), so two columns never read as one chord.
+          <g
+            className="text-app-danger"
+            transform={`translate(${miss.dx} 0)`}
+            stroke="currentColor"
+            fill="currentColor"
+            strokeLinecap="round"
+            data-played-notes=""
+          >
+            {miss.layout.ledgers.map((l, i) => (
+              <path key={`${l.y}-${l.x0}`} d={sheetLedgerLine(l, i)} strokeWidth="1.4" fill="none" />
+            ))}
+            {miss.layout.heads.map((h, i) => (
+              <ellipse
+                key={`${i}-${h.x}-${h.y}`}
+                cx={h.x}
+                cy={h.y}
+                rx={HEAD_RX}
+                ry={HEAD_RY}
+                transform={`rotate(-20 ${h.x} ${h.y})`}
+                stroke="none"
+              />
+            ))}
+            {miss.layout.accidentals.map((a) => (
+              <path
+                key={`${a.x}-${a.y}`}
+                d={a.kind === 'sharp' ? sharpPath(a.x, a.y) : flatPath(a.x, a.y)}
+                strokeWidth={a.kind === 'sharp' ? 1.2 : 1.3}
+                fill="none"
+              />
+            ))}
+          </g>
+        ) : null}
         <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4">
           {layout.now && !answered ? <path d={nowMarkPath(layout.now.x, layout.now.y)} /> : null}
           {state === 'right' ? (

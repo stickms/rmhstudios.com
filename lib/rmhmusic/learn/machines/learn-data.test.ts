@@ -19,6 +19,8 @@ const PROFILE: Profile = {
   dailyGoal: 1,
   sound: null,
   voiceRange: null,
+  practiceMode: 'learning',
+  micGain: 1,
 };
 const ROW: LessonProgressRow = {
   lessonId: 'staff-what-is-a-staff',

@@ -28,6 +28,10 @@ export const profileSchema = z.object({
   sound: z.enum(INSTRUMENT_IDS).nullable().optional(),
   /** A voice learner's range; null until chosen. Optional so an older client leaves it alone. */
   voiceRange: z.enum(VOICE_RANGES).nullable().optional(),
+  /** Learning or Test mode (`practice-mode.ts`). Optional so an older client's PUT leaves it alone. */
+  practiceMode: z.enum(['learning', 'test']).optional(),
+  /** Microphone input gain, 1 to 16 (`input/mic-gain.ts`). Optional so an older client leaves it alone. */
+  micGain: z.number().min(1).max(16).optional(),
 });
 
 /** Body of `POST /api/rmhmusic/learn/lesson-complete`. */

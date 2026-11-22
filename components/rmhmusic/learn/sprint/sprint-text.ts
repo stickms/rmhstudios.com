@@ -15,6 +15,8 @@ import type { NoteEvent } from '@/lib/rmhmusic/learn/input/events';
 import type { SprintLevelId } from '@/lib/rmhmusic/learn/sprint/levels';
 import type { SprintPrompt } from '@/lib/rmhmusic/learn/sprint/generate';
 import type { SprintState } from '@/lib/rmhmusic/learn/sprint/machine';
+import type { SprintMissFacts } from '@/lib/rmhmusic/learn/sprint/miss';
+import { noteList } from '@/lib/rmhmusic/learn/note-list';
 import type { RunSummary } from '@/lib/rmhmusic/learn/sprint/scoring';
 import type { SprintOverview } from '@/lib/rmhmusic/learn/sprint/sprint.contract';
 
@@ -248,6 +250,115 @@ export function feedbackLine(
   });
 }
 
+/**
+ * The sentences that tell a wrong answer against the written prompt: what was played and what was
+ * written, then how far off it sits on the staff (or, for a chord, the notes played and the notes
+ * asked). Each is one translated string; the distance sentences are the flashcards' own, so a miss
+ * reads the same in both.
+ */
+export function missSentences(t: T, language: string, facts: SprintMissFacts): string[] {
+  if (facts.type === 'chord') {
+    return [
+      t('sprint-miss-chord', {
+        ns: 'c-rmhmusic',
+        played: noteList(language, facts.played),
+        wanted: noteList(language, facts.wanted),
+        defaultValue: 'You played {{played}}; the chord is {{wanted}}.',
+      }),
+    ];
+  }
+  const lead = t('flash-miss-played', {
+    ns: 'c-rmhmusic',
+    played: facts.played,
+    note: facts.wanted,
+    defaultValue: 'You played {{played}}, not {{note}}.',
+  });
+  const above = facts.direction === 'above';
+  let how: string;
+  if (facts.direction === 'level') {
+    how = t('flash-miss-level', {
+      ns: 'c-rmhmusic',
+      defaultValue: 'Right line or space, wrong accidental.',
+    });
+  } else if (facts.steps === 7 && facts.octaves) {
+    how = above
+      ? t('flash-miss-octave-above', {
+          ns: 'c-rmhmusic',
+          defaultValue: 'An octave above the right note.',
+        })
+      : t('flash-miss-octave-below', {
+          ns: 'c-rmhmusic',
+          defaultValue: 'An octave below the right note.',
+        });
+  } else if (facts.steps === 1) {
+    how = above
+      ? t('flash-miss-above-one', {
+          ns: 'c-rmhmusic',
+          defaultValue: 'One step above the right note.',
+        })
+      : t('flash-miss-below-one', {
+          ns: 'c-rmhmusic',
+          defaultValue: 'One step below the right note.',
+        });
+  } else {
+    how = above
+      ? t('flash-miss-above', {
+          ns: 'c-rmhmusic',
+          n: facts.steps,
+          defaultValue: '{{n}} steps above the right note.',
+        })
+      : t('flash-miss-below', {
+          ns: 'c-rmhmusic',
+          n: facts.steps,
+          defaultValue: '{{n}} steps below the right note.',
+        });
+  }
+  return [lead, how];
+}
+
+/**
+ * Everything the feedback says, one sentence per entry: a right answer's time (or, in Learning
+ * mode, that it was right this time), or a wrong one told against the written prompt, and in
+ * Learning mode that the prompt comes back. `facts` is null when there is nothing to compare (the
+ * old sentence stands). The caller renders each entry on its own line.
+ */
+export function feedbackParts(
+  t: T,
+  language: string,
+  state: Extract<
+    SprintState,
+    {
+      kind: 'feedback';
+    }
+  >,
+  notes: string,
+  exact: string,
+  facts: SprintMissFacts | null,
+): string[] {
+  const right = state.right ?? state.result.correct;
+  if (right) {
+    return [
+      state.right && !state.result.correct
+        ? t('sprint-right-retry', {
+            ns: 'c-rmhmusic',
+            defaultValue: 'Right this time.',
+          })
+        : feedbackLine(t, language, state, notes, exact),
+    ];
+  }
+  const parts =
+    state.octaveOff || !facts ? [feedbackLine(t, language, state, notes, exact)] : missSentences(t, language, facts);
+  if (state.right === false) {
+    parts.push(
+      t('sprint-try-again', {
+        ns: 'c-rmhmusic',
+        defaultValue: 'Try it again.',
+      }),
+    );
+  }
+  return parts;
+}
+
 /** The result in one sentence: one key per case. */
 export function resultSentence(t: T, language: string, s: RunSummary): string {
   if (s.played === 0) {
@@ -334,6 +445,12 @@ export function saveSentence(t: T, state: Finished): string {
           return t('sprint-practice', {
             ns: 'c-rmhmusic',
             defaultValue: "Practice: today's score is your first run.",
+          });
+        case 'learning':
+          return t('sprint-learning-done', {
+            ns: 'c-rmhmusic',
+            defaultValue:
+              'Learning run: your first tries are scored, but no best is kept. What you practised is remembered.',
           });
         case 'empty':
           return t('sprint-not-saved-empty', {

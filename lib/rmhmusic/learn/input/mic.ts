@@ -13,6 +13,7 @@ import { getAudioContext } from '@/lib/shared/platform';
 import { resumeAudio } from '../audio/resume';
 import { freqToMidi } from '../pitch/notes';
 import { DEFAULT_MIN_RMS, detectPitch } from '../pitch/yin';
+import { DEFAULT_MIC_GAIN, clampMicGain } from './mic-gain';
 import type { InputAdapter, NoteEvent, NoteListener } from './events';
 import { createDeviceRunner } from './device-runner';
 import { createSegmenter, type Segmenter } from './mic-segmenter';
@@ -61,6 +62,18 @@ export function setMicReattack(on: boolean): void {
   reattackOn = on;
 }
 
+/**
+ * The input gain the microphone chain applies (`mic-gain.ts`), read live: a slider moved while the
+ * mic is running changes the level at once. 1 is the microphone as heard.
+ */
+let micGain = DEFAULT_MIC_GAIN;
+let gainNode: GainNode | null = null;
+
+export function setMicGain(gain: number): void {
+  micGain = clampMicGain(gain);
+  if (gainNode) gainNode.gain.value = micGain;
+}
+
 export function createMicInput(
   opts: {
     onLevel?: (rms: number) => void;
@@ -76,6 +89,7 @@ export function createMicInput(
   let timer: ReturnType<typeof setInterval> | null = null;
   let stream: MediaStream | null = null;
   let source: MediaStreamAudioSourceNode | null = null;
+  let gain: GainNode | null = null;
   let analyser: AnalyserNode | null = null;
   let segmenter: Segmenter | null = null;
 
@@ -84,9 +98,12 @@ export function createMicInput(
     timer = null;
     stream?.getTracks().forEach((t) => t.stop());
     source?.disconnect();
+    gain?.disconnect();
     analyser?.disconnect();
+    if (gainNode === gain) gainNode = null;
     stream = null;
     source = null;
+    gain = null;
     analyser = null;
   };
 
@@ -127,7 +144,13 @@ export function createMicInput(
       source = ctx.createMediaStreamSource(media);
       analyser = ctx.createAnalyser();
       analyser.fftSize = fftSizeFor(ctx.sampleRate);
-      source.connect(analyser);
+      // The gain sits before the analyser, so the meter, the level gate and the pitch detector all
+      // see the same amplified signal (a quiet microphone is raised, not just displayed louder).
+      gain = ctx.createGain();
+      gain.gain.value = micGain;
+      gainNode = gain;
+      source.connect(gain);
+      gain.connect(analyser);
       segmenter = createSegmenter({
         reattack: () => reattackOn,
       });

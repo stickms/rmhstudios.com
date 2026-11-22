@@ -76,3 +76,28 @@ describe('StaffCard text', () => {
     ).toHaveLength(0);
   });
 });
+
+describe('StaffCard played note', () => {
+  const card = { id: 'treble:64', clef: 'treble', midi: 64 } as const;
+
+  it('draws the played note beside the right one once answered wrong, and names it in the label', () => {
+    const html = render({ card, state: 'wrong', played: 62 });
+    expect(html).toContain('data-played-note');
+    expect(html).toContain('E4 on the treble staff; you played D4');
+    // Two noteheads: the right one and the played one.
+    expect(html.match(/<ellipse/g)).toHaveLength(2);
+  });
+
+  it('draws no played note while asking, when right, or when none was given', () => {
+    expect(render({ card, state: 'ask', played: 62 })).not.toContain('data-played-note');
+    expect(render({ card, state: 'right', played: 62 })).not.toContain('data-played-note');
+    expect(render({ card, state: 'wrong' })).not.toContain('data-played-note');
+    expect(render({ card, state: 'wrong', played: null })).not.toContain('data-played-note');
+  });
+
+  it('gives the played note its own ledger lines when it sits below the staff', () => {
+    const html = render({ card, state: 'wrong', played: 57 }); // A3: one ledger line under the staff
+    expect(html).toContain('data-played-note');
+    expect(html).toMatch(/data-played-note[^>]*>\s*<path/);
+  });
+});

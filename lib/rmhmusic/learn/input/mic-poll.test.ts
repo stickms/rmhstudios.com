@@ -14,6 +14,11 @@ const ctx = vi.hoisted(() => ({
     connect: () => {},
     disconnect: () => {},
   }),
+  createGain: () => ({
+    gain: { value: 1 },
+    connect: () => {},
+    disconnect: () => {},
+  }),
   createAnalyser: () => ({
     fftSize: 0,
     disconnect: () => {},
