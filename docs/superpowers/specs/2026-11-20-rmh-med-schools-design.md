@@ -308,7 +308,13 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
 1. Foundation: schema, registry + aliases seed, worker skeleton and wiring, CycleTrack adapter + historical backfill,
    anonymization tests.
 2. Admit.org adapter (live + backfill + interviews; phase 2a, shipped with the alias-miss admin page) and SDN adapter
-   (RSS live, prior-year backfill, LLM extraction).
+   (RSS live, prior-year backfill, LLM extraction). Phase 2b (SDN) shipped as three queues in the medschools worker:
+   `medschools.sdn-live` (10 min), `medschools.sdn-backfill` (its own queue rather than the shared backfill queue,
+   queued by the live tick while owed, no bootstrap trigger) and `medschools.sdn-interviews` (weekly). Program is MD
+   unless MD-PhD, DO-PhD or MSTP is stated (section 4a SDN paragraph); extraction is capped by
+   `MEDSCHOOLS_AI_MONTHLY_USD` (20, backfill 80%), pauses in DeepSeek peak hours and backs off after failed runs; phone
+   numbers and email addresses are redacted before the model, names may reach the model but are never stored. Detail:
+   `server/CLAUDE.md`.
 3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n.
 4. Private tracker with anonymous sharing.
 5. Statistics + forecast tab + personal conditional chance.

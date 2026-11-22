@@ -12,20 +12,20 @@ is the `command:` lines in `docker-compose.yml`** — not the README, not old do
 
 Current production (Docker Compose on the VPS):
 
-| Service                                  | Runtime  | Port                          | Entry                                                  |
-| ---------------------------------------- | -------- | ----------------------------- | ------------------------------------------------------ |
-| `web` (Nitro SSR)                        | **Node** | 7005 (blue/green spare: 7015) | `server/web-cluster.mjs` → `.output/server/worker.mjs` |
-| `socket` (games hub)                     | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs`           |
-| `rmhbox` (party games)                   | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`                  |
-| `rmhtube` (watch together)               | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`                 |
-| `rmhos-net` (rmhOS relay hub)            | **Node** | 7009 (profile `rmhos-net`)    | `dist-server/server/rmhos-net/index.cjs`               |
-| `ladder-worker` (job cron)               | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs`           |
-| `homes-worker` (listings cron)           | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`            |
-| `medschools-worker` (CycleTrack + Admit) | **Node** | —                             | `dist-server/server/medschools-worker/index.cjs`       |
-| `jobs` (pg-boss async backbone)          | **Node** | —                             | `dist-server/server/jobs/index.cjs`                    |
-| `status`                                 | **Go**   | 7008                          | `/app/bin/status`                                      |
-| `assets`                                 | **Go**   | 7007                          | `/app/bin/assets`                                      |
-| `minio`                                  | infra    | 9000/9001                     | S3-compatible store                                    |
+| Service                                        | Runtime  | Port                          | Entry                                                  |
+| ---------------------------------------------- | -------- | ----------------------------- | ------------------------------------------------------ |
+| `web` (Nitro SSR)                              | **Node** | 7005 (blue/green spare: 7015) | `server/web-cluster.mjs` → `.output/server/worker.mjs` |
+| `socket` (games hub)                           | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs`           |
+| `rmhbox` (party games)                         | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`                  |
+| `rmhtube` (watch together)                     | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`                 |
+| `rmhos-net` (rmhOS relay hub)                  | **Node** | 7009 (profile `rmhos-net`)    | `dist-server/server/rmhos-net/index.cjs`               |
+| `ladder-worker` (job cron)                     | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs`           |
+| `homes-worker` (listings cron)                 | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`            |
+| `medschools-worker` (CycleTrack + Admit + SDN) | **Node** | —                             | `dist-server/server/medschools-worker/index.cjs`       |
+| `jobs` (pg-boss async backbone)                | **Node** | —                             | `dist-server/server/jobs/index.cjs`                    |
+| `status`                                       | **Go**   | 7008                          | `/app/bin/status`                                      |
+| `assets`                                       | **Go**   | 7007                          | `/app/bin/assets`                                      |
+| `minio`                                        | infra    | 9000/9001                     | S3-compatible store                                    |
 
 Consequences:
 
@@ -218,7 +218,48 @@ Consequences:
   `MEDSCHOOLS_ADMIT_ENABLED`. (5) A GraphQL `errors` reply to a profile lookup defers that user and does not count
   toward the three-strike halt. (6) `pnpm i18n:extract` scans `features/medschools/**` (scoped in
   `i18next-parser.config.js`); other feature folders are not yet scanned. Built by `pnpm build` and run as its own
-  compose service.
+  compose service. **SDN (Student Doctor Network) connector, phase 2b.** Three more queues (all `exclusive`,
+  `retryLimit: 0`, UTC): `medschools.sdn-live` (every 10 min, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after 25 min: RSS
+  feeds, then the changed threads), `medschools.sdn-backfill` (monthly `15 0 1 * *`, `MEDSCHOOLS_SDN_BACKFILL_CRON`,
+  expires after 3 h: a safety net that also covers the budget reset) and `medschools.sdn-interviews` (weekly,
+  `50 5 * * 1`, `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page interview reports, no model). The
+  backfill has its own queue (spec section 8 names one shared backfill queue; this is a recorded deviation: its own
+  cadence, budget share and host session) and no bootstrap trigger: the live tick queues it, after its own run, while
+  `sdnBackfillOwed(prisma, now, aiConfigured)` says it is owed, and a manual `runNow({ manual: true })` can too. Two
+  polite hosts, each separate from the CycleTrack and Admit hosts: `SOURCES.SDN_FORUMS` (forums.studentdoctor.net,
+  shared by live and backfill, the backfill taking the slower `backfillSpacingMs` session on it) and `SOURCES.SDN_WWW`
+  (www.studentdoctor.net, interviews only). `MEDSCHOOLS_SDN_ENABLED=false` disables the three crons, the live tick's
+  backfill queueing and nothing else (only a manual `runNow({ manual: true })` bypasses it; bootstrap queues no SDN run;
+  alias seeding is not gated). All three SDN jobs refuse to run without `MEDSCHOOLS_DEDUPE_SECRET` (16+ characters;
+  manual never bypasses it); CycleTrack and Admit are unaffected. Shutdown pauses all seven consumers and waits for the
+  in-flight SDN runs with the others. Bootstrap also calls `seedSdnAliases` and `seedSdnIgnoredMisses` from
+  `data/medschools/sdn-aliases.json`, each in its own try/catch so neither can block CycleTrack's or Admit's bootstrap,
+  and logs the skipped (conflicting) and unmatched keys. Update `data/medschools/sdn-forums.json` each cycle (D10); the
+  live tick reports `staleForumConfig` when it is out of date. SDN rules the readers depend on. (1) **Program (D1):** an
+  SDN event is MD unless the thread or post states MD-PhD, DO-PhD or MSTP; an unlabelled post counts as MD (the owner's
+  SDN exception to spec section 4a, which otherwise never defaults to MD). (2) **Cursor (D2):** `MedSdnThread` stores a
+  cursor that holds an HMAC keyed by the dedupe secret, never a post id; dedupe hashes are `HMAC('SDN:post:' + id)` and
+  nothing person-shaped is stored (no username, author, avatar, raw post body or permalink). (3) **Cycle year (D7):**
+  `cycleYearOf(eventDate, type) === thread.cycleYear`, so SDN buckets match phase 2a's event-type rule. (4) **Scrubbing
+  (D4):** before a post reaches the model, quoted replies are stripped and email addresses, URLs, `@handles` and US
+  phone numbers are redacted (`[phone]`); names cannot be redacted reliably, so a name in post text MAY reach the model,
+  but it is never stored: every interview question is rewritten and scrubbed (`scrubQuestion`) before it is written. (5)
+  **AI budget (D5):** `MEDSCHOOLS_AI_MONTHLY_USD` (default 20) is the UTC-month ceiling on `medschools-extract` spend,
+  read from `AiUsage.costMicros` before every call (a ledger read error fails closed). Live may use all of it; the
+  backfill stops at 80% (`BACKFILL_SHARE`), pauses during DeepSeek peak hours (`isDeepseekPeak`, Mon-Fri UTC 01-04 and
+  06-10) and backs off after failed runs: 1 h, doubling per consecutive failed run, capped at 24 h (Q23; budget, peak,
+  cap and AI-off pauses are benign and never back off). Per-run caps: `MEDSCHOOLS_SDN_MAX_LLM_CALLS` (40) and
+  `MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS` (150). With no `DEEPSEEK_API_KEY` AI is not configured: extraction stores
+  nothing and keeps its cursors, the live tick queues no backfill, startup warns, and the interviews job still runs. The
+  real provider's `AiUsage` insert opens at most one extra connection through `lib/prisma.server`, inside the
+  `DATABASE_POOL_SIZE=3` slack, so the compose value is unchanged. (6) **Alias keys (D6):** SDN is a multi-key source: a
+  school holds one alias per thread stem plus a `summary:<CODE>/<slug>` key; a key owned by another school is skipped,
+  never moved. Unmapped keys land on `/admin/medschools` like Admit's. (7) **Permission and Content-Signal:** the SDN
+  owners gave written permission on 2026-11-20 for all data provided it is anonymized. `studentdoctor.net` sends
+  `Content-Signal: search=yes, ai-input=yes, ai-train=no`: RMH trains no model, and sending text to a hosted model for
+  extraction is input, not training. Robots allow `/forums/` and `/threads/` and disallow `/members/`, `/goto/`,
+  `/search/` and `/find-threads/`; the connector never logs in and never touches a disallowed path. Endpoint facts:
+  `docs/superpowers/specs/2026-11-20-rmh-medschool-source-endpoints.md`.
 - **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss** consumer that drains queues and runs
   background work that used to block request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest` cron. D3 ports from the Go supervisor:

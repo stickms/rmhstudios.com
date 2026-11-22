@@ -13,9 +13,16 @@
  *   medschools.admit-live   every 5 min — the Admit.org live decisions feed (needs the dedupe secret).
  *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
  *
+ *   medschools.sdn-live       every 10 min — Student Doctor Network RSS feeds, then the changed threads, with the
+ *                             posts read by the extraction model (needs the dedupe secret; AI optional).
+ *   medschools.sdn-backfill   monthly safety net, and queued by the live tick while the prior-year walk is owed
+ *                             (own queue: its own cadence, budget share and back-off).
+ *   medschools.sdn-interviews weekly — SDN summary-page interview reports (no model; needs the dedupe secret).
+ *
  * The two CycleTrack jobs share ONE polite host (`createPoliteHost(SOURCES.CYCLETRACK)`), which is what makes them
  * mutually exclusive against CycleTrack: one request at a time at the configured rate, one halt flag.
  * The two Admit jobs share their own host (`createPoliteHost(SOURCES.ADMIT)`), independent of CycleTrack.
+ * SDN has two hosts (forums for live and backfill, www for interviews), separate from both.
  *
  * Runs as a separate Docker service or dev process, alongside the ladder-worker and homes-worker.
  */
@@ -35,6 +42,13 @@ import { createPoliteHost } from '../../features/medschools/scrape/http';
 import { runAdmitLive } from '../../features/medschools/scrape/run-admit-live';
 import { runAdmitInterviews } from '../../features/medschools/scrape/run-admit-interviews';
 import admitAliasesJson from '../../data/medschools/admit-aliases.json';
+import sdnAliasesJson from '../../data/medschools/sdn-aliases.json';
+import sdnForumsJson from '../../data/medschools/sdn-forums.json';
+import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/medschools/scrape/run-sdn-live';
+import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
+import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
+import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
+import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
 import { SOURCES } from '../../features/medschools/scrape/sources';
 import { runCycletrack } from '../../features/medschools/scrape/run-cycletrack';
 import {
@@ -44,7 +58,10 @@ import {
 import {
   seedAdmitAliases,
   seedAdmitIgnoredMisses,
+  seedSdnAliases,
+  seedSdnIgnoredMisses,
   type AdmitAliasFile,
+  type SdnAliasFile,
   seedCycles,
   seedRegistryIfEmpty,
   type CycleSeed,
@@ -117,6 +134,19 @@ const CYCLETRACK_ENABLED =
 const ADMIT_ENABLED =
   process.env.MEDSCHOOLS_ADMIT_ENABLED !== 'false';
 
+// R12-style flag for the three SDN crons, the live tick's backfill queueing and nothing else (bootstrap queues no SDN
+// run). Only an explicit manual runNow({ manual: true }) bypasses it. Alias seeding is not gated by it.
+const SDN_ENABLED =
+  process.env.MEDSCHOOLS_SDN_ENABLED !== 'false';
+
+/** A positive integer from env, else the default. */
+function intEnv(name: string, dflt: number): number {
+  const n = Number(process.env[name]);
+  return Number.isInteger(n) && n > 0 ? n : dflt;
+}
+const SDN_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_MAX_LLM_CALLS', 40);
+const SDN_BACKFILL_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS', 150);
+
 /** The dedupe hashes are keyed with this; an Admit job without it would store unkeyed, guessable hashes. */
 const secretOk = () =>
   (process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '').length >= 16;
@@ -186,6 +216,17 @@ const admitHost =
   createPoliteHost(
     SOURCES.ADMIT,
   );
+
+// SDN has two politeness domains. Live and backfill share the forums host (the backfill takes its slower spacing
+// session on it), so they never double the request rate; the interviews job has the www host to itself.
+const sdnForumsHost = createPoliteHost(SOURCES.SDN_FORUMS);
+const sdnWwwHost = createPoliteHost(SOURCES.SDN_WWW);
+
+// The extraction model and its monthly budget are built once. `configured()` is false without a DeepSeek key:
+// extraction then stores nothing and keeps its cursors, and the live tick queues no backfill.
+const sdnAi = createSdnAi();
+const sdnBudget = createBudgetGate(medPrisma, () => new Date(), monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD));
+const sdnForums = sdnForumsJson as SdnForumsFile;
 
 /** Wraps a job so a second concurrent call is skipped, and so shutdown can await it. */
 function guarded(
@@ -356,6 +397,19 @@ function admitGate(
   return true;
 }
 
+/** True while an SDN backfill run executes in this process (the live tick must not queue another). */
+let sdnBackfillInFlight = false;
+
+/** Shared gate for the three SDN ticks: the flag first (manual bypasses), then the secret (never bypassed). */
+function sdnGate(name: string, data: Record<string, unknown>): boolean {
+  if (!SDN_ENABLED && data.manual !== true) return false;
+  if (!secretOk()) {
+    log.error(`${name}: MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — run refused`);
+    return false;
+  }
+  return true;
+}
+
 const admitLiveTick =
   guarded(
     'admit-live',
@@ -398,6 +452,83 @@ const interviewsTick =
     },
   );
 
+const sdnLiveTick = guarded('sdn-live', async (data) => {
+  if (!sdnGate('sdn-live', data)) return;
+  const r = await runSdnLive(
+    {
+      prisma: medPrisma,
+      host: sdnForumsHost,
+      ai: sdnAi,
+      budget: sdnBudget,
+      secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+      forums: sdnForums,
+      shouldStop: () => stopping,
+      log,
+      maxLlmCalls: SDN_MAX_LLM_CALLS,
+    },
+    { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+  );
+  log.info(
+    `sdn-live run complete [${r.runId}] — status=${r.status} feeds=${r.feedsPolled} known=${r.threadsKnown} changed=${r.threadsChanged} pending=${r.pending} processed=${r.processed} pages=${r.pages} llmCalls=${r.llmCalls} events=${r.eventsCreated} questions=${r.questionsCreated} misses=${r.misses} rolledUp=${r.rolledUp} aiConfigured=${r.aiConfigured} budgetPaused=${r.budgetPaused} halted=${r.halted} requests=${r.requests}`,
+  );
+  // The walk owed since the last run resumes here, without waiting for the monthly cron. The queue is exclusive and the
+  // backfill tick guarded, so a second queueing is a no-op; sdnBackfillOwed already rules out budget, peak and back-off
+  // pauses and an AI-less worker. The queued run carries no manual marker, so the flag still governs it.
+  if (!stopping && !sdnBackfillInFlight && SDN_ENABLED) {
+    try {
+      if (await sdnBackfillOwed(medPrisma, new Date(), sdnAi.configured())) {
+        log.info('sdn-live: backfill owed — queueing it');
+        await sdnBackfillConsumer?.runNow();
+      }
+    } catch (e) {
+      log.warn(`sdn-live: backfill check failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+});
+
+const sdnBackfillTick = guarded('sdn-backfill', async (data) => {
+  if (!sdnGate('sdn-backfill', data)) return;
+  sdnBackfillInFlight = true;
+  try {
+    const r = await runSdnBackfill(
+      {
+        prisma: medPrisma,
+        host: sdnForumsHost,
+        ai: sdnAi,
+        budget: sdnBudget,
+        secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+        forums: sdnForums,
+        shouldStop: () => stopping,
+        log,
+        maxLlmCalls: SDN_BACKFILL_MAX_LLM_CALLS,
+      },
+      { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+    );
+    log.info(
+      `sdn-backfill run complete [${r.runId}] — status=${r.status} stage=${r.cursor.stage} noop=${r.noop} listingPages=${r.listingPages} discovered=${r.threadsDiscovered} pending=${r.pending} processed=${r.processed} pages=${r.pages} llmCalls=${r.llmCalls} events=${r.eventsCreated} questions=${r.questionsCreated} misses=${r.misses} requests=${r.requests}`,
+    );
+  } finally {
+    sdnBackfillInFlight = false;
+  }
+});
+
+const sdnInterviewsTick = guarded('sdn-interviews', async (data) => {
+  if (!sdnGate('sdn-interviews', data)) return;
+  const r = await runSdnInterviews(
+    {
+      prisma: medPrisma,
+      host: sdnWwwHost,
+      secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+      shouldStop: () => stopping,
+      log,
+    },
+    { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+  );
+  log.info(
+    `sdn-interviews run complete [${r.runId}] — status=${r.status} schools=${r.schools} skipped=${r.skipped} fetched=${r.fetched} unavailable=${r.unavailable} failed=${r.failed} profiles=${r.profiles} questionsCreated=${r.questionsCreated} questionsRejected=${r.questionsRejected} duplicateKeys=${r.duplicateKeys} requests=${r.requests}`,
+  );
+});
+
 // ─── Startup bootstrap ──────────────────────────────────────────
 // A fresh database has no schools and no history, and the first hourly tick can be most of an hour
 // away. Seed the registry and cycle dates (both idempotent and converging, from JSON that esbuild
@@ -439,6 +570,25 @@ async function bootstrap(): Promise<boolean> {
         `Bootstrap: Admit alias seed failed: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
+    // Own try/catch again: an SDN seed failure never blocks CycleTrack's or Admit's bootstrap. Not gated by
+    // the SDN flag either (idempotent, queues no request, and the admin page needs the keys). A key owned by
+    // another school is skipped, never moved; both lists are named so the next alias review can act on them.
+    try {
+      const sdn = await seedSdnAliases(seedPrisma, sdnAliasesJson as SdnAliasFile);
+      log.info(`Bootstrap: seeded ${sdn.created} SDN alias keys (${sdn.unmatched.length} unmatched)`);
+      if (sdn.unmatched.length > 0) {
+        log.warn(`Bootstrap: ${sdn.unmatched.length} SDN keys have no school here: ${sdn.unmatched.join('; ')}`);
+      }
+      if (sdn.skipped.length > 0) {
+        log.warn(
+          `Bootstrap: ${sdn.skipped.length} SDN alias keys skipped (conflict): ${sdn.skipped.map((p) => `${p.cycletrackKey} -> ${p.key}`).join('; ')}`,
+        );
+      }
+      const sdnIgnored = await seedSdnIgnoredMisses(seedPrisma, sdnAliasesJson as SdnAliasFile);
+      if (sdnIgnored > 0) log.info(`Bootstrap: pre-ignored ${sdnIgnored} unmapped SDN stems`);
+    } catch (e) {
+      log.error(`Bootstrap: SDN alias seed failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
     return (
       CYCLETRACK_ENABLED &&
       !stopping &&
@@ -471,6 +621,14 @@ const admitLiveCron =
   process.env.MEDSCHOOLS_ADMIT_LIVE_CRON?.trim() || '*/5 * * * *';
 const interviewsCron =
   process.env.MEDSCHOOLS_INTERVIEWS_CRON?.trim() || '35 4 * * *';
+const SDN_LIVE_QUEUE = 'medschools.sdn-live';
+const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
+const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
+const sdnLiveCron = process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '*/10 * * * *';
+// Monthly safety net: the live tick queues the real walk, this one covers a missed tick and the budget reset (1st, UTC).
+const sdnBackfillCron = process.env.MEDSCHOOLS_SDN_BACKFILL_CRON?.trim() || '15 0 1 * *';
+// Monday just before DeepSeek's 06:00 UTC peak; the job uses no model anyway.
+const sdnInterviewsCron = process.env.MEDSCHOOLS_SDN_INTERVIEWS_CRON?.trim() || '50 5 * * 1';
 // Yearly no-op safety net: a finished backfill records an OK no-op, an unfinished one resumes.
 const BACKFILL_CRON =
   '0 0 1 1 *';
@@ -483,12 +641,26 @@ let admitLiveConsumer: ScheduledConsumer | null =
   null;
 let interviewsConsumer: ScheduledConsumer | null =
   null;
+let sdnLiveConsumer: ScheduledConsumer | null = null;
+let sdnBackfillConsumer: ScheduledConsumer | null = null;
+let sdnInterviewsConsumer: ScheduledConsumer | null = null;
 
 async function main() {
   // The Admit jobs hash dedupe keys with this and refuse to run without it; CycleTrack never reads it.
   if (!secretOk()) {
     log.error(
       'MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — the Admit jobs (admit-live, interviews) are disabled; CycleTrack is unaffected. Set it with: openssl rand -hex 32',
+    );
+  }
+
+  if (!secretOk()) {
+    log.error(
+      'MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — the SDN jobs (sdn-live, sdn-backfill, sdn-interviews) are disabled too',
+    );
+  }
+  if (!sdnAi.configured()) {
+    log.warn(
+      'DEEPSEEK_API_KEY is not set — SDN extraction stores nothing and keeps its cursors; the SDN interviews job still runs',
     );
   }
 
@@ -600,13 +772,55 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  sdnLiveConsumer = await startScheduledConsumer({
+    queue: SDN_LIVE_QUEUE,
+    cron: sdnLiveCron,
+    expireInSeconds: 25 * 60,
+    retryLimit: 0,
+    handler: sdnLiveTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!sdnLiveConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
+  sdnBackfillConsumer = await startScheduledConsumer({
+    queue: SDN_BACKFILL_QUEUE,
+    cron: sdnBackfillCron,
+    expireInSeconds: 3 * 60 * 60,
+    retryLimit: 0,
+    handler: sdnBackfillTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!sdnBackfillConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
+  sdnInterviewsConsumer = await startScheduledConsumer({
+    queue: SDN_INTERVIEWS_QUEUE,
+    cron: sdnInterviewsCron,
+    expireInSeconds: 60 * 60,
+    retryLimit: 0,
+    handler: sdnInterviewsTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!sdnInterviewsConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   if (
     stopping
   )
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admitEnabled=${ADMIT_ENABLED}`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE}"`,
   );
   if (
     backfillDue
@@ -654,6 +868,9 @@ async function shutdown(
       backfillConsumer?.pause(),
       admitLiveConsumer?.pause(),
       interviewsConsumer?.pause(),
+      sdnLiveConsumer?.pause(),
+      sdnBackfillConsumer?.pause(),
+      sdnInterviewsConsumer?.pause(),
     ],
   );
 
@@ -706,7 +923,7 @@ async function shutdown(
     }
   }
 
-  // The pg-boss instance is shared by all four consumers, so stopping it once is enough.
+  // The pg-boss instance is shared by all seven consumers, so stopping it once is enough.
   await (
     cycletrackConsumer ??
     backfillConsumer
