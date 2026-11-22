@@ -120,6 +120,14 @@ Inputs the spec implies but no obvious task test would reach; each line has its 
   school is dropped. Tests: `ProgramSelect` for `degree: 'DO'` renders no "MD" option; the live page with `school=<an MD
   slug>&degree=DO` renders MD options only and filters by the school.
 
+- **O6 Visual check on phones and odd aspect ratios (owner).** Task 12's screenshots cover, Day and Night: 320×568
+  (smallest phone), 360×740, 390×844, 430×932, 844×390 (phone landscape), 768×1024 (tablet portrait), 1024×600 (short
+  landscape), 1280×800, 1920×1080 and 2560×1080 (ultrawide), plus 390×844 and 1280×800 in `ar`. Every page and tab,
+  with toggles in a non-default state and the program select open, is looked at: nothing clipped or overlapping, no
+  sideways scroll, controls reachable and at least 44px on touch, chart end labels legible, the toggle row wrapping
+  cleanly, and the layout reading as one site with the rest of `/services`. A rough check (390 and 1280, Day) also runs
+  right after Task 7 and Task 9, before the next task starts, so problems are fixed while the code is fresh.
+
 ## Decisions made in this plan (owner may override)
 
 - **D1 Data loading:** route loaders prefetch `contractQuery` options (`lib/route/route-query.ts`), as `series.$id.tsx`
