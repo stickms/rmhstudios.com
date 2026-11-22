@@ -197,6 +197,7 @@ export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
     '--site-radius-sm': `${Math.round(t.radius * 0.66)}px`,
     '--site-theme-wash': themeWash(t),
     '--site-accent-fill': accentFill(t),
+    '--site-theme-wash-top': themeWashTop(t),
   };
 }
 
@@ -207,6 +208,18 @@ function themeWash(t: ThemeTokens): string {
     `radial-gradient(55% 50% at 100% 0%, ${rgba(t.glow2, 0.18)}, transparent 70%)`,
     `radial-gradient(70% 45% at 50% 100%, ${rgba(t.glow3, 0.12)}, transparent 70%)`,
   ].join(', ');
+}
+
+/**
+ * The ground fading into the wash at the top of the document, iOS only (base-interaction.css). At scroll top Safari fills
+ * the strip behind its status bar with ONE flat colour (the ground), where the page's wash is a gradient, so the wash
+ * began at a hard line under the strip. The strip is `env(safe-area-inset-top)` tall; the ground holds that far and then
+ * gives way to the wash over 96px, so there is no line to see. It sits at the top of the DOCUMENT (scroll attachment on
+ * iOS), so once the page scrolls the strip shows the content itself, which is already the wash. Zero inset, no strip, and
+ * the fade only softens the top glows a little.
+ */
+function themeWashTop(t: ThemeTokens): string {
+  return `linear-gradient(to bottom, ${t.canvasBase} env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 96px))`;
 }
 
 /** The ink-primary sheen: accent into accent-plus-a-third-of-glow2, or `none` if that would fail AA. */
@@ -238,7 +251,7 @@ export interface AppliedUserTheme {
 }
 
 /** Bump when `themeCssVars` changes what it emits, so every cached applied theme is re-derived once. */
-export const THEME_DERIVATION_VERSION = 2;
+export const THEME_DERIVATION_VERSION = 3;
 
 /** True when a cached applied theme was derived by an older (or unstamped) derivation. */
 export function isStaleAppliedTheme(theme: AppliedUserTheme): boolean {
