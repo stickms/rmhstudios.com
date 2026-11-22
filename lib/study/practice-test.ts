@@ -6,6 +6,7 @@
  */
 import { mulberry32, shuffle } from '@/lib/core/rng';
 import { maskClozeText } from '@/lib/study/card-types';
+import type { CardImage } from '@/lib/study/card-images';
 
 export const TEST_KINDS = ['multiple-choice', 'written', 'true-false', 'matching'] as const;
 export type TestKind = (typeof TEST_KINDS)[number];
@@ -33,6 +34,9 @@ export interface TestCard {
   clozeIndex?: number | null | undefined;
   /** The authored card this one belongs to; cards of one note are one fact, asked about once. */
   noteId?: string | undefined;
+  /** The pictures the card shows, a generated card's read from its source (s08-15). */
+  frontImage?: CardImage | null | undefined;
+  backImage?: CardImage | null | undefined;
 }
 
 export interface TestOptions {
@@ -50,6 +54,8 @@ export interface MultipleChoiceQuestion {
   kind: 'multiple-choice';
   cardId: string;
   prompt: string;
+  /** The picture on the prompt's side of the card, when it has one (s08-15). */
+  promptImage?: CardImage;
   options: string[];
   answerIndex: number;
 }
@@ -57,12 +63,14 @@ export interface WrittenQuestion {
   kind: 'written';
   cardId: string;
   prompt: string;
+  promptImage?: CardImage;
   answer: string;
 }
 export interface TrueFalseQuestion {
   kind: 'true-false';
   cardId: string;
   prompt: string;
+  promptImage?: CardImage;
   /** The answer shown next to the prompt; it is the real one when `isTrue`. */
   shown: string;
   /** The real answer, for the results screen. */
@@ -188,6 +196,11 @@ function askSideOf(card: TestCard, ask: Side): Side {
 function promptOf(card: TestCard, ask: Side, blank: string): string {
   if (isCloze(card)) return maskClozeText(card.front, card.clozeIndex, blank);
   return ask === 'front' ? card.front : card.back;
+}
+/** The picture on the side a question asks from; a cloze prompt is text only (its picture sits on the back). */
+function promptImageOf(card: TestCard, ask: Side): { promptImage: CardImage } | Record<string, never> {
+  const image = isCloze(card) ? null : ask === 'front' ? card.frontImage : card.backImage;
+  return image ? { promptImage: image } : {};
 }
 function answerOf(card: TestCard, ask: Side): string {
   if (isCloze(card)) return card.back;
@@ -369,6 +382,7 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
           kind: 'multiple-choice',
           cardId: card.id,
           prompt,
+          ...promptImageOf(card, cardAsk),
           options: options4,
           answerIndex: options4.indexOf(answer),
         });
@@ -385,6 +399,7 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
         kind: 'true-false',
         cardId: card.id,
         prompt,
+        ...promptImageOf(card, cardAsk),
         shown: other ? other.text : answer,
         answer,
         isTrue: !other,
@@ -392,7 +407,7 @@ export function buildTest(cards: readonly TestCard[], options: TestOptions, seed
       continue;
     }
 
-    questions.push({ kind: 'written', cardId: card.id, prompt, answer });
+    questions.push({ kind: 'written', cardId: card.id, prompt, ...promptImageOf(card, cardAsk), answer });
   }
   return questions;
 }

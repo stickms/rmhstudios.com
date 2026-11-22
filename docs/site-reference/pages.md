@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 400 routes. 212 render inside the standard site shell (sidebar, nav, context rail); 188 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 405 routes. 214 render inside the standard site shell (sidebar, nav, context rail); 191 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -25,6 +25,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/albums` | Library Albums \| Admin | admin | `app/routes/_site/admin/albums/index.tsx` |
 | `/admin/albums/:id` | Manage Album \| Admin | admin | `app/routes/_site/admin/albums/$id.tsx` |
 | `/admin/analytics` | Analytics | admin | `app/routes/_site/admin/analytics.tsx` |
+| `/admin/api-keys` | API keys \| Admin | admin | `app/routes/_site/admin/api-keys.tsx` |
 | `/admin/appeals` | Strike Appeals | admin | `app/routes/_site/admin/appeals.tsx` |
 | `/admin/audit` | Audit Log | admin | `app/routes/_site/admin/audit.tsx` |
 | `/admin/blog` | Manage Blog Posts \| Admin | admin | `app/routes/_site/admin/blog/index.tsx` |
@@ -61,6 +62,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
 | `/admin/studio-challenges` | Studio sample flip \| Admin | admin | `app/routes/_site/admin/studio-challenges.tsx` |
+| `/admin/sweeps` | Spam sweeps \| Admin | admin | `app/routes/_site/admin/sweeps.tsx` |
 | `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
@@ -246,6 +248,8 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/altair/multiplayer/:lobbyId` | — | sign-in | `app/routes/altair/multiplayer/$lobbyId.tsx` |
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
+| `/builds/:slug/rss.xml` | — | public | `app/routes/builds.$slug.rss[.]xml.ts` |
+| `/c/:slug/rss.xml` | — | public | `app/routes/c.$slug.rss[.]xml.ts` |
 | `/controller/:code` | Phone Controller | public | `app/routes/controller.$code.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
@@ -275,6 +279,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
 | `/games/:gameId/updates` | — | public | `app/routes/games/_library/$gameId_.updates.tsx` |
+| `/games/:gameId/updates/rss.xml` | — | public | `app/routes/games_.$gameId.updates.rss[.]xml.ts` |
 | `/games/groups/:slug` | redirects to `/c/$slug` | public | `app/routes/games/groups.$slug.tsx` |
 | `/games/hub/:gameId` | — | public | `app/routes/games/hub.$gameId.index.tsx` |
 | `/games/hub/:gameId/t/:threadId` | — | public | `app/routes/games/hub.$gameId.t.$threadId.tsx` |

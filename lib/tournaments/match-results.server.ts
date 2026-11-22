@@ -27,6 +27,7 @@ import {
   reportOutcome,
   type ClaimState,
   type CompletionInput,
+  wouldCompleteTournament,
 } from './match-results';
 
 type Db = PrismaClient;
@@ -61,6 +62,7 @@ interface Locked {
     format: CompletionInput['format'];
     status: string;
     swissRounds: number | null;
+    prizePoolCoins: number;
   };
   /** entrant id -> user id for the match's two sides. */
   users: Map<string, string>;
@@ -88,6 +90,7 @@ async function lockMatch(tx: Tx, tournamentId: string, matchId: string): Promise
       format: true,
       status: true,
       swissRounds: true,
+      prizePoolCoins: true,
     },
   });
   if (!tournament) throw new TournamentError('Tournament not found', 'NOT_FOUND', 404);
@@ -225,6 +228,14 @@ async function finish(p: Pending): Promise<Settlement> {
       };
 }
 
+/** Under the match lock: refuse when settling this match would complete a tournament with a prize pool. */
+async function assertSettlementPaysNothing(tx: Tx, l: Locked): Promise<void> {
+  if (l.tournament.prizePoolCoins <= 0) return;
+  if (wouldCompleteTournament(await completionInput(tx, l))) {
+    throw new TournamentError('Confirm this result on the site: it decides the prizes', 'CONFIRM_ON_SITE', 409);
+  }
+}
+
 // ─── Claim ──────────────────────────────────────────────────────────────────
 
 /**
@@ -237,6 +248,12 @@ export async function claimResult(
     matchId: string;
     userId: string;
     winnerEntrantId: string;
+    /**
+     * Refuse (409 `CONFIRM_ON_SITE`, nothing changed) a report that would confirm the claim of a
+     * match whose settlement pays a prize. Checked under the match lock, before the claim is
+     * consumed, so a caller that must never move coins (the developer API) cannot race it.
+     */
+    refuseIfPays?: boolean;
   },
   db: Db = prisma,
 ): Promise<{
@@ -310,6 +327,7 @@ export async function claimResult(
       };
     }
     // confirm: the opponent reported the claimed winner.
+    if (opts.refuseIfPays) await assertSettlementPaysNothing(tx, l);
     const pending = await consumeClaim(db, tx, l, 'agreement', match.claimedWinnerId!);
     return {
       kind: 'settle',
@@ -357,6 +375,8 @@ export async function confirmResult(
     tournamentId: string;
     matchId: string;
     userId: string;
+    /** As on `claimResult`: refuse, under the lock, a confirmation that would pay a prize. */
+    refuseIfPays?: boolean;
   },
   db: Db = prisma,
 ): Promise<{
@@ -373,6 +393,7 @@ export async function confirmResult(
     if (!canAnswerClaim(state, opts.userId, participants(l))) {
       throw new TournamentError('You cannot confirm your own report', 'OWN_CLAIM', 403);
     }
+    if (opts.refuseIfPays) await assertSettlementPaysNothing(tx, l);
     return {
       pending: await consumeClaim(db, tx, l, 'agreement', state.claimedWinnerId!),
       l,

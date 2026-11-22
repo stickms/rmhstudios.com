@@ -1,6 +1,6 @@
 import { Suspense, lazy, memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { BadgeCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
@@ -19,6 +19,7 @@ import { ARRIVE } from '@/components/ui/arrive';
 import { CoveredLine } from '@/components/feed/CoveredLine';
 import { useAppliedContentWarning } from '@/components/feed/use-show-content-warnings';
 import { feedKickerLabel } from '@/components/feed/kicker-labels';
+import { usePostAction } from '@/components/feed/feed-nav';
 
 /** The post menu's rows and dialogs: fetched the first time a row's three dots are used, never with the feed. */
 const loadFeedRowMenu = () => import('@/components/feed/FeedRowMenu');
@@ -69,6 +70,13 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
   const external = href.startsWith('http');
   // An optimistic post has a temporary id: there is nothing to open and nothing to like until the server answers.
   const pending = Boolean(item.pending);
+  // `o` and Enter on the focused row (feed-nav.tsx): the row's one link.
+  const navigate = useNavigate();
+  const openRow = () => {
+    if (external) window.open(href, '_blank', 'noopener,noreferrer');
+    else navigate({ to: href } as never);
+  };
+  usePostAction(item.id, 'open', openRow, !pending);
   const menuAnchor = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
@@ -201,6 +209,15 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
       as="article"
       className={pending ? 'opacity-60' : undefined}
       aria-busy={pending || undefined}
+      // The current post of the feed keys (j / k): a real focus target. Enter on the row itself opens it.
+      data-feed-post={item.id}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.target === e.currentTarget && !pending) {
+          e.preventDefault();
+          openRow();
+        }
+      }}
     >
       {postFlair ? <span aria-hidden className="post-flair" style={{ background: postFlair }} /> : null}
       {pending ? (

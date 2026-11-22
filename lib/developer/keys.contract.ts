@@ -36,6 +36,9 @@ export interface KeyRefusals {
 /** A key as listed on /developer: its metadata plus its refusal summary. */
 export interface DeveloperKeyListRow extends DeveloperKeyRow {
   refusals: KeyRefusals;
+  /** An admin suspended the key (it answers 403 `key_suspended`), and the reason the owner is shown. */
+  suspendedAt: string | null;
+  suspendReason: string | null;
 }
 
 export const listDeveloperKeysApi = endpoint<{

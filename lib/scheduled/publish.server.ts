@@ -89,6 +89,18 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       WHERE "id" = ${sp.id} AND "publishedId" IS NULL FOR UPDATE`;
     if (claim.length === 0) return null;
 
+    // Uploads made through the developer API (`media_ids`) are `Media` rows that only a post's attachment keeps
+    // from the orphan sweep. Claim the author's pending ones for this post; one already attached to another post
+    // (two drafts naming the same upload) is not shared: this publish stops cleanly and the row stays a draft.
+    const mediaUrls = sp.imageUrls ?? [];
+    if (mediaUrls.length > 0) {
+      const owned = await tx.media.findMany({
+        where: { userId: sp.userId, url: { in: mediaUrls } },
+        select: { status: true, postId: true },
+      });
+      if (owned.some((m) => m.status === 'ATTACHED' && m.postId)) return null;
+    }
+
     const post = await tx.rMHark.create({
       data: {
         content: sp.content.trim(),
@@ -115,6 +127,12 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       where: { id: sp.userId },
       data: { postCount: { increment: 1 } },
     });
+    if (mediaUrls.length > 0) {
+      await tx.media.updateMany({
+        where: { userId: sp.userId, url: { in: mediaUrls }, status: 'PENDING' },
+        data: { status: 'ATTACHED', postId: post.id, attachedAt: new Date() },
+      });
+    }
     if (sp.communityId) {
       await tx.community.update({
         where: { id: sp.communityId },

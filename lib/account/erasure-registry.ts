@@ -26,7 +26,7 @@ export interface ErasureEntry {
  * The most `todo` entries the registry may hold. It may fall (erase one, or classify it, and lower this number in
  * the same change) and must never rise: a new model lands classified, not as `todo`.
  */
-export const TODO_CEILING = 96;
+export const TODO_CEILING = 43;
 
 /**
  * Entries by decision:
@@ -76,19 +76,18 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
   AltairCoopProfile: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      'The co-op board orders this table (`totalCoopWins`, `totalRevivesGiven` indexes) at read time; the row going takes the member off it.',
   },
   AltairMatchPlayer: {
-    decision: 'todo',
+    decision: 'deidentify',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      'A row in a shared co-op match (up to four players): `userId` is required so the row stays and the copied `userName` becomes "Deleted user"; no board lists it by name.',
   },
   AltairMetaProgress: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'Solo meta progress (in-game coins only; the site ledger is separate); no board.',
   },
   AltairPlayer: {
     decision: 'erase',
@@ -96,20 +95,18 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy).',
   },
   AltairSoloRun: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'Solo runs (in-game coins only); no board reads them by member.',
   },
   AppearancePreference: { decision: 'erase', reason: 'Rule 1: settings only the member sees.' },
   ArcadeRival: {
-    decision: 'todo',
-    reason:
-      "Rule 1: the member's own rival list (and rows naming them as a rival); erase candidate on userId, a rivalUserId pass needed.",
+    decision: 'erase',
+    reason: "Both directions: the member's own rivals, and rows naming them as a rival (`rivalUserId` is indexed).",
   },
   ArcadeSeedRun: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      'Daily, seed and basket boards read these rows in `board()` (`lib/arcade/runs.server.ts`), cached 30 s per seed key; the TTL is the drop.',
   },
   AvailabilityPoll: {
     decision: 'keep',
@@ -117,8 +114,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
   AvailabilityPollInvitee: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own inbox arrangement and availability settings; erase candidates.",
+    decision: 'erase',
+    reason:
+      "The member's invitation rows on a poll; their answers are `AvailabilityPollResponse`, kept for the poll's integrity.",
   },
   AvailabilityPollResponse: {
     decision: 'keep',
@@ -126,7 +124,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   AwayMessage: { decision: 'erase', reason: "The away message and its reply markers are the member's own." },
-  BlogAnnouncementSeen: { decision: 'todo', reason: "Rule 1: the member's seen markers; erase candidate." },
+  BlogAnnouncementSeen: {
+    decision: 'erase',
+    reason: "The member's seen markers.",
+  },
   BlogComment: {
     decision: 'keep',
     reason:
@@ -185,13 +186,13 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone.',
   },
   CallMute: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own call mute choices (and rows naming them as muted); erase candidate.",
+    decision: 'erase',
+    reason:
+      "Both directions: the member's own mutes, and rows naming them as the muted user. `mutedUserId` is unindexed; the small table is scanned once per deletion.",
   },
   CanvasCooldown: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'A placement timer; no board.',
   },
   CanvasPlacement: {
     decision: 'keep',
@@ -227,8 +228,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     scope: 'chats of pending or draft message requests only',
   },
   ChatFolder: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own inbox arrangement and availability settings; erase candidates.",
+    decision: 'erase',
+    reason: 'Inbox arrangement (folder items go by cascade).',
   },
   ChatInvite: { decision: 'erase', reason: 'Group invite links the member created.' },
   ChatMember: {
@@ -334,6 +335,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
+  CommunityRecurringThread: {
+    decision: 'deidentify',
+    reason:
+      'Thread templates the member authored are handed to the community owner and paused (nothing posts under their name until a moderator saves one); when the member owned the community, or it has no owner, they are deleted.',
+  },
   CommunityOnboardingAnswer: {
     decision: 'todo',
     reason:
@@ -350,9 +356,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   ConnectionsGrid: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
   ConnectionsPlay: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      "The member's own plays; no board. No children: it is the child of `ConnectionsGrid`, whose anonymous play and rating tallies stay (counter rule).",
   },
   ContentAward: {
     decision: 'keep',
@@ -395,9 +401,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 2: follow-like rows on someone else's series or feed; has aggregates; tied to the follows decision.",
   },
   DailyPuzzleScore: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      "The daily leaderboard and results endpoints read at request time; the member's cached stats (`dailyStatsKey`) are dropped after the transaction.",
   },
   DailyWheelSpin: {
     decision: 'keep',
@@ -405,20 +411,20 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   DeckFolder: { decision: 'erase', reason: 'Private deck folders (sprint 07 deck-folders); decks stay, folderless.' },
   DevRecipe: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own automation recipes (webhook and DM actions); erase candidate.",
+    decision: 'erase',
+    reason: "The member's automation recipes (webhook and DM actions).",
   },
   DeveloperApiKey: {
     decision: 'erase',
     reason: 'Hashed developer API keys; deleting a key also cascades its usage, refusal and idempotency rows.',
   },
   DirectMessageHide: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own inbox arrangement and availability settings; erase candidates.",
+    decision: 'erase',
+    reason: "Inbox arrangement: the member's hidden messages.",
   },
   DiscordWatchAlert: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own Discord alert subscriptions; erase candidate.",
+    decision: 'erase',
+    reason: "The member's alert subscriptions.",
   },
   DoctrineAccessLog: {
     decision: 'keep',
@@ -497,8 +503,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   EventCohost: { decision: 'erase', reason: "The member's co-host rows and every row on events they host." },
   ExperimentExposure: {
-    decision: 'todo',
-    reason: 'Rule 1: analytics exposure log tied to the member; erase candidate.',
+    decision: 'erase',
+    reason: 'Analytics exposure tied to the member; experiment counts computed at read drop by one, accepted.',
   },
   FeatureRequest: {
     decision: 'keep',
@@ -549,8 +555,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Open owner decision: a deleted member's follows (sprint 05 README). Rows stay today; followEvent history is handled separately.",
   },
   FortuneCookie: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own persona chats and subscriptions; erase candidates.",
+    decision: 'erase',
+    reason:
+      "The text is the member's own words and nothing names its author; if today's fortune is theirs the next approved one replaces it after the 60 s cache.",
   },
   FriendlyChallenge: {
     decision: 'keep',
@@ -563,9 +570,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy).',
   },
   GabrielsHornTableRead: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: "The member's own tells statistics; no board.",
   },
   GameAssistPreference: { decision: 'erase', reason: 'The cross-game assist preference (sprint 07 game-assists).' },
   GameBadge: {
@@ -602,9 +608,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   GameJamThemeVote: { decision: 'erase', reason: "The member's theme votes (sprint 07 jam-themes)." },
   GamePersonalBest: { decision: 'erase', reason: "The member's own record history." },
   GamePlayStatus: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: "The member's own play statuses; counts by status are computed at read, no board.",
   },
   GamePlaytime: {
     decision: 'erase',
@@ -698,7 +703,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   HeldNotification: { decision: 'erase', reason: 'Rule 1: notifications held for the member by quiet hours.' },
   HistoryEntry: { decision: 'erase', reason: "Rule 1: the member's own browsing history." },
-  HomeFavorite: { decision: 'todo', reason: "Rule 1: the member's own saved homes and watches; erase candidate." },
+  HomeFavorite: {
+    decision: 'erase',
+    reason: "The member's saved homes.",
+  },
   HomeListing: {
     decision: 'todo',
     reason:
@@ -709,11 +717,13 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rule 5: a public housing listing or roommate profile with personal details; needs a product call on removal.',
   },
-  HomeWatch: { decision: 'todo', reason: "Rule 1: the member's own saved homes and watches; erase candidate." },
+  HomeWatch: {
+    decision: 'erase',
+    reason: "The member's saved home searches.",
+  },
   HuntProgress: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: "The hunt's finish board orders `durationMs` at read; the row going takes the member off it.",
   },
   KaikaiDebtEntry: {
     decision: 'keep',
@@ -727,9 +737,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   LadderAiTask: {
-    decision: 'todo',
-    reason:
-      'Rule 1: private RMHLadder data not covered by the earlier ladder passes (resume text, matches, referrals); strong erase candidates.',
+    decision: 'erase',
+    reason: 'Nullable resume relation: tasks that carry only a job id are not reached by the resume cascade.',
   },
   LadderAlert: {
     decision: 'erase',
@@ -767,9 +776,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes.',
   },
   LadderJobMatch: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: private RMHLadder data not covered by the earlier ladder passes (resume text, matches, referrals); strong erase candidates.',
+      'Explicit delete by userId (not `cascade`: the coverage test needs a direct cascade relation to an erase parent). The database cascade also fires when the resume goes.',
   },
   LadderKeyword: {
     decision: 'erase',
@@ -787,14 +796,13 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes.',
   },
   LadderReferralOffer: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: private RMHLadder data not covered by the earlier ladder passes (resume text, matches, referrals); strong erase candidates.',
+      "The member's offers (company, roles, note). Requests other members sent to them go by the database cascade, the one place rows another member wrote are removed: a request to a deleted offer can never be answered and would keep the member's company beside it.",
   },
   LadderReferralRequest: {
-    decision: 'todo',
-    reason:
-      'Rule 1: private RMHLadder data not covered by the earlier ladder passes (resume text, matches, referrals); strong erase candidates.',
+    decision: 'erase',
+    reason: "The member's requests to others' offers (by applicant).",
   },
   LadderResume: {
     decision: 'erase',
@@ -802,9 +810,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Private RMHLadder data (resumes, applications, salary and EEO answers, alerts, offers) erased in the sprint 02 and 03 passes.',
   },
   LadderResumeReview: {
-    decision: 'todo',
-    reason:
-      'Rule 1: private RMHLadder data not covered by the earlier ladder passes (resume text, matches, referrals); strong erase candidates.',
+    decision: 'erase',
+    reason: 'Explicit delete by userId (not `cascade`: its direct parent is itself a cascade entry).',
   },
   LadderResumeVersion: {
     decision: 'cascade',
@@ -860,9 +867,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
   LoadoutPreset: {
-    decision: 'todo',
-    reason:
-      'Rule 1: profile content (links, pronouns, time zone, pronunciation clip, layout) that the profile scrub does not reach; strong erase candidates because the profile is scrubbed.',
+    decision: 'erase',
+    reason: 'Saved cosmetic loadouts; the items stay with the inventory decision.',
   },
   MarathonList: {
     decision: 'todo',
@@ -877,6 +883,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   MemberMemory: { decision: 'todo', reason: 'Rule 1: private memories; has children, so not one deleteMany.' },
   MemoriesOptIn: { decision: 'erase', reason: "Rule 1: the member's own opt-in to memories." },
   MessageRequest: { decision: 'erase', reason: 'Requests the member sent or received; decided ones are removed too.' },
+  ModerationSweep: {
+    decision: 'keep',
+    reason:
+      'Rule 4: the audit trail of an admin moderation action (who removed what from whom, and why); the sweep and its items stay when either member is deleted. Its items hold only ids and a timestamp.',
+  },
   ModeratorNote: {
     decision: 'erase',
     reason: 'Notes about the member go with them; notes they wrote or deleted as a moderator lose the reference.',
@@ -891,9 +902,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   MusicSprintBest: { decision: 'erase', reason: 'Every RMH Music learning table (owner decision Q4).' },
   MusicSprintDaily: { decision: 'erase', reason: 'Every RMH Music learning table (owner decision Q4).' },
   NdwLivery: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'A cosmetic save; no board.',
   },
   NeonDriftwayPlayer: {
     decision: 'erase',
@@ -924,8 +934,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   NotificationPreference: { decision: 'erase', reason: 'Rule 1: settings only the member sees.' },
   OfficeHoursConfig: {
-    decision: 'todo',
-    reason: "Rule 1: the member's own inbox arrangement and availability settings; erase candidates.",
+    decision: 'erase',
+    reason: 'Availability settings (windows go by cascade); bookings others made have their own entry.',
   },
   Passkey: {
     decision: 'erase',
@@ -998,24 +1008,22 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
   },
   ProfileLayout: {
-    decision: 'todo',
-    reason:
-      'Rule 1: profile content (links, pronouns, time zone, pronunciation clip, layout) that the profile scrub does not reach; strong erase candidates because the profile is scrubbed.',
+    decision: 'erase',
+    reason: "The member's profile layout.",
   },
   ProfileLink: {
-    decision: 'todo',
-    reason:
-      'Rule 1: profile content (links, pronouns, time zone, pronunciation clip, layout) that the profile scrub does not reach; strong erase candidates because the profile is scrubbed.',
+    decision: 'erase',
+    reason: "The member's profile links; the profile itself is scrubbed, so the links go with it.",
   },
   ProfilePlus: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: profile content (links, pronouns, time zone, pronunciation clip, layout) that the profile scrub does not reach; strong erase candidates because the profile is scrubbed.',
+      "Pronunciation clip, pronouns, time zone and visit counts of the member's profile (`ProfileVisitDay` goes by cascade); the clip's stored object is deleted by the deletion request.",
   },
   ProfileStamp: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: profile content (links, pronouns, time zone, pronunciation clip, layout) that the profile scrub does not reach; strong erase candidates because the profile is scrubbed.',
+      "The member's placement of a `Stamp`; the stamp stays and `Stamp.addCount` is not decremented (an anonymous tally on a kept model).",
   },
   PromoClaim: {
     decision: 'keep',
@@ -1090,9 +1098,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   RMHboxProfile: {
-    decision: 'todo',
+    decision: 'deidentify',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      'Has children (`RMHboxMatchPlayer.profile` cascades), so the profile is reset to defaults, never deleted; the RMHBox boards (socket and `/api/rmhbox/leaderboard`) list only `totalGamesPlayed > 0`. The `RMHboxMatchPlayer.userName` copies and the name inside `RMHboxMatch.results` become "Deleted user"; `RMHboxMatch.gameLog` (free-form) is a follow-up.',
   },
   RankedChallenge: {
     decision: 'keep',
@@ -1117,9 +1125,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason: "Rule 1: the member's own reading-time rows, erased by readingTimeErasureOps (sprint 07 reading-time).",
   },
   ReadingShelfEntry: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      "Rule 1: the member's shelf, but entries can be public, so it needs a public/private split like highlights.",
+      "The member's shelves; only ever shown on their own profile (no cross-member aggregate), which the deletion scrubs.",
   },
   ReadingSubscription: {
     decision: 'todo',
@@ -1168,13 +1176,19 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
-  RideSavedPlace: { decision: 'todo', reason: "Rule 1: the member's saved places; erase candidate." },
+  RideSavedPlace: {
+    decision: 'erase',
+    reason: "The member's saved places.",
+  },
   RideshareDriver: {
     decision: 'todo',
     reason:
       'Rule 5: a driver application with vehicle and plate details and an aggregate rating; needs a product call.',
   },
-  RmhCharacter: { decision: 'todo', reason: "Rule 1: the member's own characters; erase candidate." },
+  RmhCharacter: {
+    decision: 'erase',
+    reason: "The member's characters; private (only the owner-scoped character API reads them).",
+  },
   RmhCodeToken: {
     decision: 'erase',
     reason: 'Hashed bearer tokens for the rmhcode CLI would stay valid for a tombstone.',
@@ -1215,27 +1229,35 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove.',
   },
-  RmhTubeUserStats: { decision: 'todo', reason: "Rule 1: the member's own watch statistics; erase candidate." },
+  RmhTubeUserStats: {
+    decision: 'erase',
+    reason: "Rule 1: the member's own watch statistics; deleted in anonymizeAccount (sprint 08 01).",
+  },
+  RmhTubeWatchDay: {
+    decision: 'erase',
+    reason: "Rule 1: the member's per-day minutes; deleted in anonymizeAccount (sprint 08 01).",
+  },
   RmhTubeWatchLater: { decision: 'erase', reason: "Rule 1: the member's own watch-later list." },
   RmhTypeDailyEntry: {
-    decision: 'todo',
-    reason:
-      'Rule 1: RMHType profile, key statistics, lesson progress and daily entries; have children or boards, so not one deleteMany.',
+    decision: 'erase',
+    reason: 'The RMHType daily board orders `wpm` at read; the row going takes the member off it.',
+  },
+  RmhTypeGhost: {
+    decision: 'erase',
+    reason: "Rule 1: the member's own best-run progress curves; deleted in anonymizeAccount (sprint 08 11).",
   },
   RmhTypeKeyStat: {
-    decision: 'todo',
-    reason:
-      'Rule 1: RMHType profile, key statistics, lesson progress and daily entries; have children or boards, so not one deleteMany.',
+    decision: 'erase',
+    reason: 'Private per-key counters; no board.',
   },
   RmhTypeLessonProgress: {
-    decision: 'todo',
-    reason:
-      'Rule 1: RMHType profile, key statistics, lesson progress and daily entries; have children or boards, so not one deleteMany.',
+    decision: 'erase',
+    reason: 'Private lesson progress; no board.',
   },
   RmhTypeProfile: {
-    decision: 'todo',
+    decision: 'deidentify',
     reason:
-      'Rule 1: RMHType profile, key statistics, lesson progress and daily entries; have children or boards, so not one deleteMany.',
+      'Has children (`RmhTypeMatchPlayer.profile` cascades), so totals and bests are reset to defaults, never deleted; `fetchLeaderboard` already requires `bestWpm > 0`. The `RmhTypeMatchPlayer.userName` copies become "Deleted user".',
   },
   RmhboxPack: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
   RmhboxPackReport: { decision: 'keep', reason: "Rule 4: a report about someone else's pack is a moderation record." },
@@ -1282,8 +1304,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy).',
   },
   SiteIdempotencyKey: {
-    decision: 'todo',
-    reason: 'Rule 1: short-lived idempotency record whose stored response may hold member data; erase candidate.',
+    decision: 'erase',
+    reason: 'Short-lived; stored responses may hold member data.',
   },
   SkillEndorsement: {
     decision: 'keep',
@@ -1291,19 +1313,18 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   SliceDailyEntry: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'The Slice It daily board reads at request time; the row going takes the member off it.',
   },
   SliceRun: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'Per-chart boards read at request time; the library shelves cache lists songs, never players.',
   },
   SliceSetlist: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'Private setlists go; the daily and chart boards do not read them.',
+    scope:
+      '`isPublic = false`; public setlists are published lists other members open (an open owner decision), they stay under "Deleted user"',
   },
   Song: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
   SongComment: {
@@ -1322,9 +1343,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   SongPlay: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'Per-member play counts; no board. `Song.plays` is an anonymous tally and stays (counter rule).',
   },
   SpeedrunEntry: {
     decision: 'keep',
@@ -1366,9 +1386,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   TargetedNoticeDismissal: { decision: 'erase', reason: 'Rule 1: which site notices the member dismissed.' },
   TempleOfJoySave: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'A game save; no board.',
   },
   Tf2Hud: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
   Tf2HudLike: {
@@ -1377,9 +1396,9 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       "Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity.",
   },
   Tf2HudUserBlob: {
-    decision: 'todo',
+    decision: 'erase',
     reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+      "The member's link to a content-addressed blob other members may share; the blob stays (an orphan sweep is not this feature's).",
   },
   Tf2Loadout: { decision: 'keep', reason: 'Rule 3: published content others use stays under "Deleted user".' },
   Tf2LoadoutLike: {
@@ -1475,14 +1494,12 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
       'Rule 2: a record shared with another member (their match, call, membership or entry) that the other side still sees; entries on boards stay as history under the tombstone.',
   },
   VersecraftProgress: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'A game save; no board.',
   },
   VersecraftSave: {
-    decision: 'todo',
-    reason:
-      'Rule 1: per-game progress, saves or daily results of the member; some feed boards, so each needs its board checked before it is erased.',
+    decision: 'erase',
+    reason: 'A game save; no board.',
   },
   VersecraftSeedListing: {
     decision: 'keep',

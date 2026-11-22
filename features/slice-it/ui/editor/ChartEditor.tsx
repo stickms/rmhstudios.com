@@ -32,10 +32,12 @@ import { editorState, useEditorStore } from '@features/slice-it/engine/editor/st
 import { SNAP_DIVISIONS, toSlices } from '@features/slice-it/engine/editor/types';
 import type { Difficulty, EditorNote, SliceType, SnapDivision } from '@features/slice-it/engine/editor/types';
 import { useLintRunner } from '@features/slice-it/engine/editor/useLint';
+import { DensityMinimap } from './DensityMinimap';
 import { DifficultyTabs } from './DifficultyTabs';
 import { GeneratePanel } from './GeneratePanel';
 import { LintPanel } from './LintPanel';
 import { NoteInspector } from './NoteInspector';
+import { stepIssue } from './NoteIssues';
 import { TimingPanel } from './TimingPanel';
 import { ShortcutSheet } from './ShortcutSheet';
 import { ScaleTimingDialog } from './ScaleTimingDialog';
@@ -381,6 +383,25 @@ export function ChartEditor({ songId }: { songId: string }) {
           break;
       }
 
+      // Next / previous lint issue: `e` / Shift+E. (`[` and `]` step the snap.)
+      if (!mod && !event.altKey && (event.key === 'e' || event.key === 'E')) {
+        event.preventDefault();
+        const target = stepIssue(event.shiftKey ? 'prev' : 'next');
+        announce(
+          target
+            ? t('editor-announce-issue', {
+                ns: 'chart-overview',
+                defaultValue: 'Issue at {{time}} seconds',
+                time: target.time.toFixed(2),
+              })
+            : t('editor-announce-no-issues', {
+                ns: 'chart-overview',
+                defaultValue: 'No issues in this difficulty',
+              }),
+        );
+        return;
+      }
+
       // Clipboard, mirror, quantise, scale, insert / remove time (§5.2).
       const clipboardOp = clipboardOpForEvent(event);
       if (clipboardOp) {
@@ -528,10 +549,7 @@ export function ChartEditor({ songId }: { songId: string }) {
 
       <Toolbar onSave={() => void save('manual')} onClipboardOp={runClipboardOp} />
 
-      {/*
-        TODO(phase 2 extension — §12.4): the whole-song density minimap strip
-        sits below the toolbar.
-      */}
+      <DensityMinimap />
 
       <p aria-live="polite" className="sr-only">
         {announcement}

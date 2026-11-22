@@ -15,9 +15,16 @@
  */
 import { createHash } from 'node:crypto';
 import { isCardKind, type CardKind } from '@/lib/study/card-types';
+import {
+  fromColumns,
+  hasPictures,
+  pictureHashInput,
+  type CardImage,
+  type CardImageColumns,
+} from '@/lib/study/card-images';
 
-/** An authored card's content: the three fields a hash covers. */
-export interface CardContent {
+/** An authored card's content: the fields a hash covers (the pictures too, once it has any: s08-15). */
+export interface CardContent extends Partial<CardImageColumns> {
   kind: string;
   front: string;
   back: string;
@@ -33,10 +40,13 @@ export interface CopyCard extends CardContent {
   originHash: string | null;
 }
 
-/** Stable hash of an authored card's kind, front and back (SHA-256, 64 hex characters). */
+/**
+ * Stable hash of an authored card's kind, front and back (SHA-256, 64 hex characters), and its pictures when it has
+ * any. A card with none hashes exactly as before pictures existed, so every stored `originHash` still matches.
+ */
 export function cardHash(card: CardContent): string {
   return createHash('sha256')
-    .update(JSON.stringify([card.kind, card.front, card.back]))
+    .update(JSON.stringify([card.kind, card.front, card.back, ...(pictureHashInput(card) ?? [])]))
     .digest('hex');
 }
 
@@ -44,12 +54,16 @@ export interface Side {
   kind: CardKind;
   front: string;
   back: string;
+  /** The card's pictures, present only on a card that has one (the update dialog shows them; s08-15). */
+  frontImage?: CardImage | null;
+  backImage?: CardImage | null;
 }
 
 const side = (card: CardContent): Side => ({
   kind: isCardKind(card.kind) ? card.kind : 'basic',
   front: card.front,
   back: card.back,
+  ...(hasPictures(card) ? fromColumns(card) : {}),
 });
 
 export interface NewItem {

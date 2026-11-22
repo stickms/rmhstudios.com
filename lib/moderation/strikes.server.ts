@@ -140,3 +140,81 @@ export async function issueStrike(input: IssueStrikeInput): Promise<IssueStrikeR
     autoBanned,
   };
 }
+
+/**
+ * After a strike stops counting (an appeal overturned it, or a sweep was undone), recount the active strikes
+ * and lift the auto-ban if it no longer applies. Deliberately narrow: only a ban carrying exactly
+ * `AUTO_BAN_REASON` is cleared, never a manual ban an admin issued for separate reasons. Shared by the appeal
+ * decision (`admin.appeals.$id.server.ts`) and the spam-sweep undo, so the rule is written once.
+ */
+export async function liftAutoBanIfNoLongerApplies(userId: string): Promise<boolean> {
+  const remaining = await prisma.userStrike.count({
+    where: activeStrikeWhere(userId),
+  });
+  if (remaining >= AUTO_BAN_THRESHOLD) return false;
+  const lifted = await prisma.user.updateMany({
+    where: {
+      id: userId,
+      banReason: AUTO_BAN_REASON,
+      bannedUntil: {
+        gt: new Date(),
+      },
+    },
+    data: {
+      bannedUntil: null,
+      banReason: null,
+    },
+  });
+  if (lifted.count === 0) return false;
+  await dropLearnerBoardCaches(userId, Date.now());
+  return true;
+}
+
+/**
+ * Void a strike the way an overturned appeal does (there is no strike-withdraw function): `appealStatus`
+ * becomes OVERTURNED, which `activeStrikeWhere` excludes, then the auto-ban is lifted if it no longer applies.
+ * Compare-and-set, so a strike already overturned is left alone. Returns whether this call voided it.
+ */
+export async function overturnStrike(input: {
+  strikeId: string;
+  adminId: string;
+  note: string;
+}): Promise<{ overturned: boolean; banLifted: boolean }> {
+  const strike = await prisma.userStrike.findUnique({
+    where: {
+      id: input.strikeId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+  if (!strike)
+    return {
+      overturned: false,
+      banLifted: false,
+    };
+  const { count } = await prisma.userStrike.updateMany({
+    where: {
+      id: input.strikeId,
+      appealStatus: {
+        not: 'OVERTURNED',
+      },
+    },
+    data: {
+      appealStatus: 'OVERTURNED',
+      appealNote: input.note.slice(0, 1000),
+      appealAdminId: input.adminId,
+      decidedAt: new Date(),
+    },
+  });
+  if (count === 0)
+    return {
+      overturned: false,
+      banLifted: false,
+    };
+  const banLifted = await liftAutoBanIfNoLongerApplies(strike.userId);
+  return {
+    overturned: true,
+    banLifted,
+  };
+}

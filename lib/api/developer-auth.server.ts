@@ -22,6 +22,10 @@ import { isDeletedAccount } from '@/lib/account-lifecycle';
 export const KEY_PREFIX = 'rmh_live_';
 export const TEST_KEY_PREFIX = 'rmh_test_';
 
+/** The fixed body of `403 key_suspended`. */
+export const SUSPENDED_MESSAGE =
+  'This API key was suspended by RMH Studios. Its owner can see why on the developer keys page.';
+
 /** Generate a new plaintext key + its storage hash + display prefix/suffix. */
 export function generateApiKey(testMode = false): { plaintext: string; hashedKey: string; prefix: string; lastFour: string } {
   const secret = randomBytes(24).toString('base64url'); // ~32 url-safe chars
@@ -50,6 +54,8 @@ export interface ApiAuthSuccess {
   allowedCidrs: string[];
   /** The key's own per-minute limit, or null for the tier's. */
   rateLimitPerMinute: number | null;
+  /** An admin's cap on the key, or null. The limiter applies the lowest of the three limits. */
+  adminRateLimitPerMinute: number | null;
 }
 export interface ApiAuthFailure {
   ok: false;
@@ -110,6 +116,8 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
       testMode: true,
       allowedCidrs: true,
       rateLimitPerMinute: true,
+      suspendedAt: true,
+      adminRateLimitPerMinute: true,
       user: { select: { id: true, banReason: true } },
     },
   });
@@ -118,6 +126,12 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
   }
   if (record.expiresAt && record.expiresAt.getTime() <= Date.now()) {
     return { ok: false, status: 401, code: 'key_expired', message: 'This API key has expired. Create a new one.' };
+  }
+
+  // After revoked and expired, so a revoked key still reads as invalid. The reason is for the
+  // key's owner only: this body reaches other people's apps and bots.
+  if (record.suspendedAt) {
+    return { ok: false, status: 403, code: 'key_suspended', message: SUSPENDED_MESSAGE };
   }
 
   // Defence in depth: erasure deletes the owner's keys, but a key that survived (a failed or
@@ -146,5 +160,6 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
     testMode: record.testMode,
     allowedCidrs: record.allowedCidrs,
     rateLimitPerMinute: record.rateLimitPerMinute,
+    adminRateLimitPerMinute: record.adminRateLimitPerMinute,
   };
 }

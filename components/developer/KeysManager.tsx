@@ -25,6 +25,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 import { KeyUsage } from '@/components/developer/KeyUsage';
+import { KeySuspendedLine } from '@/components/developer/KeySuspendedLine';
 import { TestKeyCreator } from '@/components/developer/TestKeyCreator';
 import {
   KeyRefusalLine,
@@ -396,6 +397,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
                   </div>
                 </div>
                 <KeyRefusalLine refusals={k.refusals} />
+                <KeySuspendedLine suspendedAt={k.suspendedAt} reason={k.suspendReason} />
                 {usageFor === k.id && <KeyUsage keyId={k.id} />}
                 {restrictionsFor === k.id && (
                   <KeyRestrictionsPanel keyRow={k} maxLimit={maxLimit} onSaved={load} />

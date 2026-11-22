@@ -29,6 +29,12 @@ export interface JobSchedule {
   nextRunAt: string | null;
 }
 
+/** The "Fan-outs" line of the jobs console (s08-05): runs in flight and runs that failed in the last seven days. */
+export interface FanoutSummary {
+  running: number;
+  failedLast7Days: number;
+}
+
 export interface QueueSummary {
   name: string;
   policy: string | null;

@@ -151,6 +151,17 @@ export const POLICIES = {
     strip: 'all',
     quota: false,
   },
+  /**
+   * Picture on a flashcard side (s08-15). Still images only. `quota` is the daily upload allowance; the storage bound
+   * is the per-member cap of cards carrying a picture (`lib/study/card-images.ts`), since copies share the object.
+   */
+  flashcard: {
+    maxBytes: 5 * 1024 * 1024,
+    mime: STILL_IMAGE,
+    variants: [400, 1200],
+    strip: 'all',
+    quota: true,
+  },
   /** DM / group-chat image. Shares the feed key space, as the route already does. */
   chat: {
     maxBytes: 5 * 1024 * 1024,

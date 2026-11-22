@@ -37,6 +37,15 @@ import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 import { NightrailAudio } from '@features/nightrail/engine/audio';
 import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
 import type { InputState, LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
+import { useSession } from '@/components/session/session-context';
+import { useAssistRun } from '@/components/games/assist-run-island';
+import {
+  NO_ASSIST_FLAGS,
+  nightrailAssistFlags,
+  trickInput,
+  type NightrailAssistFlags,
+} from '@features/nightrail/engine/assist-profile';
+import { AssistRunLine } from './assist-ui';
 import { NightrailHud, type HudHandle } from './NightrailHud';
 import { NightrailUI, type UIState } from './NightrailUI';
 import { NightrailTouchControls } from './NightrailTouchControls';
@@ -111,7 +120,13 @@ export function NightrailGame() {
   const openPhotoModeRef = useRef<() => void>(() => {});
   const closePhotoModeRef = useRef<() => void>(() => {});
   const inputRef = useRef<InputState>(emptyInput());
+  /** The trick key currently held, for the hold-to-press assist. */
+  const heldTrickRef = useRef<TrickDirection | null>(null);
 
+  const session = useSession();
+  const startAssistRun = useAssistRun('nightrail', !!session.data);
+  const startingRef = useRef(false);
+  const [assistFlags, setAssistFlags] = useState<NightrailAssistFlags>(NO_ASSIST_FLAGS);
   const [uiState, setUiState] = useState<UIState>('menu');
   const [runStats, setRunStats] = useState<RunStats | null>(null);
   const [unlockedLevels, setUnlockedLevels] = useState<Set<LevelId>>(
@@ -211,6 +226,12 @@ export function NightrailGame() {
     rendererRef.current?.setReducedMotion(reducedMotion);
   }, [reducedMotion]);
 
+  // A rebuilt renderer (a restored GL context) starts plain; hand it the run's assists again.
+  useEffect(() => {
+    rendererRef.current?.setCalmVisuals(assistFlags.calm);
+    rendererRef.current?.setColorSafe(assistFlags.colorSafe);
+  }, [assistFlags, rendererEpoch, webglReady]);
+
   // ── Audio lifecycle ──
 
   useEffect(() => {
@@ -228,6 +249,15 @@ export function NightrailGame() {
     const onKey = (e: KeyboardEvent, down: boolean) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const input = inputRef.current;
+      // A fresh press is the trick; the key also becomes the held direction (hold-to-press assist).
+      const setTrick = (isDown: boolean, direction: TrickDirection) => {
+        if (isDown) {
+          input.trick = direction;
+          heldTrickRef.current = direction;
+        } else if (heldTrickRef.current === direction) {
+          heldTrickRef.current = null;
+        }
+      };
       // `e.code` rather than `e.key` so the layout under the player's fingers
       // is the same shape on AZERTY as on QWERTY.
       switch (e.code) {
@@ -267,30 +297,30 @@ export function NightrailGame() {
         // can and asking for two simultaneous arrows would be worse than a
         // dedicated key.
         case 'ArrowUp':
-          if (down) input.trick = 'up';
+          setTrick(down, 'up');
           e.preventDefault();
           break;
         case 'ArrowDown':
-          if (down) input.trick = 'down';
+          setTrick(down, 'down');
           e.preventDefault();
           break;
         case 'ArrowLeft':
-          if (down) input.trick = 'left';
+          setTrick(down, 'left');
           break;
         case 'ArrowRight':
-          if (down) input.trick = 'right';
+          setTrick(down, 'right');
           break;
         case 'Digit1':
-          if (down) input.trick = 'upLeft';
+          setTrick(down, 'upLeft');
           break;
         case 'Digit2':
-          if (down) input.trick = 'upRight';
+          setTrick(down, 'upRight');
           break;
         case 'Digit3':
-          if (down) input.trick = 'downLeft';
+          setTrick(down, 'downLeft');
           break;
         case 'Digit4':
-          if (down) input.trick = 'downRight';
+          setTrick(down, 'downRight');
           break;
       }
     };
@@ -299,6 +329,7 @@ export function NightrailGame() {
     // Alt-tabbing away with a key held would otherwise leave it held forever.
     const blur = () => {
       inputRef.current = { ...emptyInput() };
+      heldTrickRef.current = null;
       if (runRef.current) pauseRun(runRef.current);
     };
     window.addEventListener('keydown', kd);
@@ -353,16 +384,36 @@ export function NightrailGame() {
 
   // ── Run control ──
 
-  const startLevel = useCallback((id: LevelId) => {
-    const run = createRun(LEVELS[id]);
-    runRef.current = run;
-    rendererRef.current?.setLevel(run.level);
-    inputRef.current = { ...emptyInput() };
-    setRunStats(null);
-    setUiState('playing');
-    // Audio has to be unlocked from a gesture, and pressing Play is one.
-    audioRef.current?.unlock();
-  }, []);
+  const startLevel = useCallback(
+    (id: LevelId) => {
+      // Audio has to be unlocked from a gesture, and pressing Play is one.
+      audioRef.current?.unlock();
+      // The server hands out the assist profile (and records the claim that keeps an assisted run
+      // off the board) before the run begins. A second press while it is in flight is ignored.
+      if (startingRef.current) return;
+      startingRef.current = true;
+      void startAssistRun()
+        .then((profile) => {
+          const flags = nightrailAssistFlags(profile);
+          const run = createRun(LEVELS[id]);
+          run.assist = flags;
+          runRef.current = run;
+          const renderer = rendererRef.current;
+          renderer?.setLevel(run.level);
+          renderer?.setCalmVisuals(flags.calm);
+          renderer?.setColorSafe(flags.colorSafe);
+          setAssistFlags(flags);
+          inputRef.current = { ...emptyInput() };
+          heldTrickRef.current = null;
+          setRunStats(null);
+          setUiState('playing');
+        })
+        .finally(() => {
+          startingRef.current = false;
+        });
+    },
+    [startAssistRun],
+  );
 
   const restart = useCallback(() => {
     const level = runRef.current?.level.id ?? LEVEL_ORDER[0];
@@ -419,6 +470,9 @@ export function NightrailGame() {
         padTrick = next;
         break;
       }
+
+      // Hold-to-press: a held trick key or stick stands for a press on every frame.
+      input.trick = trickInput(input.trick, heldTrickRef.current ?? padTrick, run.assist);
 
       const playing = uiStateRef.current === 'playing';
 
@@ -583,6 +637,8 @@ export function NightrailGame() {
           <PhotoMode adapter={rendererRef.current} gameName="Nightrail" onExit={closePhotoMode} />
         </Suspense>
       )}
+
+      {uiState === 'playing' && assistFlags.active && <AssistRunLine />}
 
       <NightrailUI
         uiState={uiState}

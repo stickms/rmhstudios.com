@@ -7,8 +7,9 @@
  * calls {@link runPostAlertFanout}, which:
  *
  *  - re-reads the post and does nothing when it is gone, held, removed or its author is banned;
- *  - claims the post with an insert-if-absent row (`CommunityPostAlertRun`), so a retried or duplicated job never
- *    notifies twice;
+ *  - runs on a durable `FanoutRun` (`lib/fanout/run.server.ts`): a lease, a recipient cursor and counters, so a retried
+ *    or duplicated job never notifies twice and a worker killed mid-send resumes after its last batch (the
+ *    `CommunityPostAlertRun` row is still written for the code that reads it);
  *  - reads the community's opted-in members in batches of 500 by id cursor (at most 5 000 per post), drops the author,
  *    blocks either way, members who muted the author and banned members, and collapses a burst: a member with an
  *    unread alert for this community from the last 30 minutes gets that alert reworded instead of a new one;
@@ -19,6 +20,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect } from '@/lib/user-display';
 import { getBoss } from '@/lib/jobs/boss.server';
 import { createNotification } from '@/lib/notifications.server';
+import { runFanout } from '@/lib/fanout/run.server';
 import {
   ALERT_BATCH_SIZE,
   COMMUNITY_POST_ENTITY,
@@ -157,198 +159,118 @@ const NONE: FanoutResult = {
 
 export async function runPostAlertFanout(postId: string, now: Date = new Date()): Promise<FanoutResult> {
   const post = await prisma.rMHark.findFirst({
-    where: {
-      id: postId,
-      deletedAt: null,
-      communityId: {
-        not: null,
-      },
-    },
+    where: { id: postId, deletedAt: null, communityId: { not: null } },
     select: {
       id: true,
       userId: true,
       communityId: true,
-      user: {
-        select: {
-          ...userDisplaySelect,
-          bannedUntil: true,
-        },
-      },
-      community: {
-        select: {
-          name: true,
-        },
-      },
+      user: { select: { ...userDisplaySelect, bannedUntil: true } },
+      community: { select: { name: true } },
     },
   });
   if (!post?.communityId || !post.community) return NONE;
   if (isBannedNow(post.user.bannedUntil, now)) return NONE;
   const communityId = post.communityId;
+  const communityName = post.community.name;
+  const authorId = post.userId;
 
-  // Claim the post: insert-if-absent, and only the run that inserted it goes on.
-  const claim = await prisma.communityPostAlertRun.createMany({
-    data: [
-      {
-        postId,
-      },
-    ],
-    skipDuplicates: true,
-  });
-  if (claim.count !== 1) return NONE;
+  // Compatibility: `CommunityPostAlertRun` is still written (other code reads it); the `FanoutRun` is the authority.
+  await prisma.communityPostAlertRun.createMany({ data: [{ postId }], skipDuplicates: true });
 
   const authorName = post.user.profile?.displayName ?? post.user.name ?? post.user.handle ?? 'Someone';
-  const preview = alertPreview(authorName, post.community.name);
+  const preview = alertPreview(authorName, communityName);
   const link = alertLink(post.user, postId);
-  const total: FanoutResult = {
-    notified: 0,
-    collapsed: 0,
-  };
 
-  try {
-    let after: string | undefined;
-    let scanned = 0;
-    while (scanned < MAX_ALERT_RECIPIENTS) {
-      const members = await prisma.communityMember.findMany({
-        where: {
-          communityId,
-          postAlerts: 'all',
-          userId: {
-            not: post.userId,
-            ...(after
-              ? {
-                  gt: after,
-                }
-              : {}),
-          },
-        },
-        orderBy: {
-          userId: 'asc',
-        },
-        take: Math.min(ALERT_BATCH_SIZE, MAX_ALERT_RECIPIENTS - scanned),
-        select: {
-          userId: true,
-          user: {
-            select: {
-              bannedUntil: true,
-            },
-          },
-        },
-      });
-      if (members.length === 0) break;
-      scanned += members.length;
-      after = members[members.length - 1]!.userId;
-
-      const ids = members.map((m) => m.userId);
-      const [blocks, mutes, recent] = await Promise.all([
-        prisma.userBlock.findMany({
+  // The unread alert id of each member of the batch being sent, set by `step` for `send`'s reword.
+  let unreadByUser = new Map<string, string>();
+  const totals = await runFanout(
+    {
+      kind: 'post-alert',
+      subjectId: postId,
+      delivery: { type: 'SYSTEM', entityType: COMMUNITY_POST_ENTITY, entityId: communityId, link },
+      async step(after, scanned) {
+        const take = Math.min(ALERT_BATCH_SIZE, MAX_ALERT_RECIPIENTS - scanned);
+        if (take <= 0) return { recipients: [], collapse: [], lastId: null, scanned: 0, done: true };
+        const members = await prisma.communityMember.findMany({
           where: {
-            OR: [
-              {
-                blockerId: post.userId,
-                blockedId: {
-                  in: ids,
-                },
-              },
-              {
-                blockedId: post.userId,
-                blockerId: {
-                  in: ids,
-                },
-              },
-            ],
+            communityId,
+            postAlerts: 'all',
+            userId: { not: authorId, ...(after ? { gt: after } : {}) },
           },
-          select: {
-            blockerId: true,
-            blockedId: true,
-          },
-        }),
-        prisma.userMute.findMany({
-          where: {
-            mutedId: post.userId,
-            muterId: {
-              in: ids,
+          orderBy: { userId: 'asc' },
+          take,
+          select: { userId: true, user: { select: { bannedUntil: true } } },
+        });
+        if (members.length === 0) return { recipients: [], collapse: [], lastId: null, scanned: 0, done: true };
+        const lastId = members[members.length - 1]!.userId;
+        const done = members.length < take || scanned + members.length >= MAX_ALERT_RECIPIENTS;
+        const ids = members.map((m) => m.userId);
+        const [blocks, mutes, recent] = await Promise.all([
+          prisma.userBlock.findMany({
+            where: {
+              OR: [
+                { blockerId: authorId, blockedId: { in: ids } },
+                { blockedId: authorId, blockerId: { in: ids } },
+              ],
             },
-          },
-          select: {
-            muterId: true,
-          },
-        }),
-        prisma.notification.findMany({
-          where: {
-            userId: {
-              in: ids,
+            select: { blockerId: true, blockedId: true },
+          }),
+          prisma.userMute.findMany({
+            where: { mutedId: authorId, muterId: { in: ids } },
+            select: { muterId: true },
+          }),
+          prisma.notification.findMany({
+            where: {
+              userId: { in: ids },
+              type: 'SYSTEM',
+              entityType: COMMUNITY_POST_ENTITY,
+              entityId: communityId,
+              read: false,
+              createdAt: { gte: collapseSince(now) },
             },
+            select: { id: true, userId: true },
+          }),
+        ]);
+        const recipients = filterRecipients(
+          members.map((m) => ({ userId: m.userId, bannedUntil: m.user.bannedUntil })),
+          {
+            authorId,
+            blockedWithAuthor: new Set(blocks.map((b) => (b.blockerId === authorId ? b.blockedId : b.blockerId))),
+            mutedAuthor: new Set(mutes.map((m) => m.muterId)),
+            now,
+          },
+        );
+        unreadByUser = new Map(recent.map((n) => [n.userId, n.id] as const));
+        const { fresh, collapsed } = splitByCollapse(recipients, new Set(unreadByUser.keys()));
+        return { recipients: fresh, collapse: collapsed, lastId, scanned: members.length, done };
+      },
+      async send(fresh, collapsed) {
+        // A burst: the member's unread alert now says "New posts in …"; no second notification, no second push.
+        if (collapsed.length > 0) {
+          const ids = collapsed.map((id) => unreadByUser.get(id)).filter((id): id is string => !!id);
+          if (ids.length > 0) {
+            await prisma.notification.updateMany({
+              where: { id: { in: ids } },
+              data: { preview: collapsedPreview(communityName) },
+            });
+          }
+        }
+        // createNotification applies each member's preferences, quiet hours and push, one recipient at a time.
+        for (const userId of fresh) {
+          await createNotification({
+            userId,
             type: 'SYSTEM',
             entityType: COMMUNITY_POST_ENTITY,
             entityId: communityId,
-            read: false,
-            createdAt: {
-              gte: collapseSince(now),
-            },
-          },
-          select: {
-            id: true,
-            userId: true,
-          },
-        }),
-      ]);
-
-      const recipients = filterRecipients(
-        members.map((m) => ({
-          userId: m.userId,
-          bannedUntil: m.user.bannedUntil,
-        })),
-        {
-          authorId: post.userId,
-          blockedWithAuthor: new Set(blocks.map((b) => (b.blockerId === post.userId ? b.blockedId : b.blockerId))),
-          mutedAuthor: new Set(mutes.map((m) => m.muterId)),
-          now,
-        },
-      );
-      const unreadByUser = new Map(recent.map((n) => [n.userId, n.id]));
-      const { fresh, collapsed } = splitByCollapse(recipients, new Set(unreadByUser.keys()));
-
-      // A burst: the member's unread alert now says "New posts in …"; no second notification, no second push.
-      if (collapsed.length > 0) {
-        await prisma.notification.updateMany({
-          where: {
-            id: {
-              in: collapsed.map((id) => unreadByUser.get(id)!),
-            },
-          },
-          data: {
-            preview: collapsedPreview(post.community.name),
-          },
-        });
-        total.collapsed += collapsed.length;
-      }
-
-      // createNotification applies each member's preferences, quiet hours and push, one recipient at a time.
-      for (const userId of fresh) {
-        await createNotification({
-          userId,
-          type: 'SYSTEM',
-          entityType: COMMUNITY_POST_ENTITY,
-          entityId: communityId,
-          preview,
-          link,
-        });
-      }
-      total.notified += fresh.length;
-    }
-  } catch (error) {
-    // Give the claim back so the retry can finish the job; members already notified have an unread alert, which the
-    // collapse rule turns into a reword rather than a second notification.
-    await prisma.communityPostAlertRun
-      .deleteMany({
-        where: {
-          postId,
-        },
-      })
-      .catch(() => {});
-    throw error;
-  }
-  return total;
+            preview,
+            link,
+          });
+        }
+      },
+    },
+    now,
+  );
+  return totals ? { notified: totals.sent, collapsed: totals.collapsed } : NONE;
 }
 
 export async function registerCommunityPostAlertWorker(boss: PgBoss): Promise<void> {

@@ -3,15 +3,17 @@
  *
  * `postUpdate` checks the limit and inserts in one transaction that first takes `event-update:<id>`, so two
  * racing posts cannot both take the third place. The people coming are told after the commit, through the
- * `events.update-fanout` work queue: the job claims the update with a compare-and-set on `notifiedAt` before it
- * sends, reads recipients in batches of 200, and drops the author, anyone blocked with the author and banned
- * accounts. The claim comes first, so a worker that dies mid-send tells the rest nobody (at most once, by design).
+ * `events.update-fanout` work queue: the job runs the update on a durable `FanoutRun` (lease, recipient cursor,
+ * counters; s08-05), sends in batches of 200 and drops the author, anyone blocked with the author and banned
+ * accounts. A worker that dies mid-send is resumed after its last batch, and each recipient is told once.
  */
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { getBoss } from '@/lib/jobs/boss.server';
 import { createNotification } from '@/lib/notifications.server';
+import { runFanout } from '@/lib/fanout/run.server';
+import { pageAfter } from '@/lib/fanout/run';
 import { WHOLE_EVENT, seriesOf } from '@/lib/calendar/event-model';
 import { canManageEvent } from '@/lib/events/cohosts.server';
 import { canViewEvent } from '@/lib/events.server';
@@ -289,42 +291,65 @@ export async function enqueueUpdateFanout(updateId: string): Promise<void> {
 }
 
 /**
- * The job. Claims the update (`notifiedAt` null → now, compare-and-set), so a retried or duplicated job tells
- * nobody twice, then notifies in batches of {@link FANOUT_BATCH}. Returns how many people were notified.
+ * The job. Runs the update's fan-out on a durable `FanoutRun` (`lib/fanout/run.server.ts`): a lease, a recipient cursor
+ * and counters, so a retried or duplicated job tells nobody twice and a worker killed mid-send resumes after its last
+ * batch of {@link FANOUT_BATCH}. `EventUpdate.notifiedAt` is still stamped for the code that reads it. Returns how many
+ * people the run has notified (0 when the run is held by another runner or already finished).
  */
 export async function runEventUpdateFanout(updateId: string, now: Date = new Date()): Promise<number> {
-  const claim = await prisma.eventUpdate.updateMany({
-    where: { id: updateId, notifiedAt: null, deletedAt: null },
-    data: { notifiedAt: now },
-  });
-  if (claim.count !== 1) return 0;
-  const update = await prisma.eventUpdate.findUnique({
-    where: { id: updateId },
+  const update = await prisma.eventUpdate.findFirst({
+    where: { id: updateId, deletedAt: null },
     select: { id: true, eventId: true, occurrenceAt: true, authorId: true, body: true },
   });
   if (!update?.authorId) return 0;
+  const authorId = update.authorId;
   const event = await prisma.event.findUnique({ where: { id: update.eventId }, select: eventSelect });
   if (!event || event.canceledAt) return 0;
-  const ids = await audienceFor(event, update.occurrenceAt);
+  await prisma.eventUpdate.updateMany({
+    where: { id: updateId, notifiedAt: null, deletedAt: null },
+    data: { notifiedAt: now },
+  });
+
   const preview = notifyPreview(update.body);
-  let notified = 0;
-  for (let i = 0; i < ids.length; i += FANOUT_BATCH) {
-    const batch = ids.slice(i, i + FANOUT_BATCH);
-    const blocked = await blockedWith(update.authorId, batch);
-    for (const userId of withoutAuthorAndBlocked(batch, update.authorId, blocked)) {
-      await createNotification({
-        userId,
-        actorId: update.authorId,
-        type: 'SYSTEM',
-        entityType: UPDATE_ENTITY,
-        entityId: event.id,
-        preview,
-        link: '/calendar',
-      });
-      notified += 1;
-    }
-  }
-  return notified;
+  // The hash makes the link unique to this update, which is what a resumed run matches "already told" on.
+  const link = `/calendar#update-${updateId}`;
+  // The audience is read once per runner (the rows decide a repeating event's attendance) and walked in id order, so the
+  // cursor means the same thing after a restart.
+  let audience: string[] | null = null;
+  const totals = await runFanout(
+    {
+      kind: 'event-update',
+      subjectId: updateId,
+      delivery: { type: 'SYSTEM', entityType: UPDATE_ENTITY, entityId: event.id, link },
+      async step(cursor) {
+        audience ??= (await audienceFor(event, update.occurrenceAt)).sort();
+        const { ids, nextCursor } = pageAfter(audience, cursor, FANOUT_BATCH);
+        const blocked = await blockedWith(authorId, ids);
+        return {
+          recipients: withoutAuthorAndBlocked(ids, authorId, blocked),
+          collapse: [],
+          lastId: ids[ids.length - 1] ?? null,
+          scanned: ids.length,
+          done: nextCursor === null,
+        };
+      },
+      async send(recipients) {
+        for (const userId of recipients) {
+          await createNotification({
+            userId,
+            actorId: authorId,
+            type: 'SYSTEM',
+            entityType: UPDATE_ENTITY,
+            entityId: event.id,
+            preview,
+            link,
+          });
+        }
+      },
+    },
+    now,
+  );
+  return totals?.sent ?? 0;
 }
 
 export async function registerEventUpdateWorker(boss: PgBoss): Promise<void> {

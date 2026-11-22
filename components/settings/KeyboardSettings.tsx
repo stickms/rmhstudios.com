@@ -10,6 +10,7 @@ import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { KeyCaps, ShortcutCapture } from '@/components/settings/ShortcutCapture';
 import { detectKeyPlatform } from '@/components/site/KeyboardShortcuts';
 import { ALL_SHORTCUTS, SITE_SHORTCUTS, type Shortcut } from '@/lib/shortcuts/registry';
+import { useFeedNavLabel } from '@/components/feed/feed-nav-labels';
 import {
   applyOverrides,
   effectiveBindings,
@@ -45,7 +46,9 @@ export function KeyboardSettings() {
   const ready = hydrated && !isPending && (!signedIn || remote === 'ready' || remote === 'error');
   const arrive = useArrival(ready);
 
-  const nameOf = (s: Shortcut) => t(s.labelKey, { ns: s.ns ?? 'feed', defaultValue: s.label ?? s.id });
+  const feedNavLabel = useFeedNavLabel();
+  const nameOf = (s: Shortcut) =>
+    feedNavLabel(s.id) ?? t(s.labelKey, { ns: s.ns ?? 'feed', defaultValue: s.label ?? s.id });
   const saved = (ok: boolean) => {
     if (!ok) {
       toast.error(

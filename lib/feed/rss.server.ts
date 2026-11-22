@@ -43,7 +43,7 @@ export const PUBLIC_POST_WHERE: Prisma.RMHarkWhereInput = {
 };
 
 /** Collapse a post body into a one-line plain-text summary. */
-function summarize(content: string, max = 400): string {
+export function summarize(content: string, max = 400): string {
   const flat = content.replace(/\s+/g, ' ').trim();
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
@@ -61,7 +61,7 @@ interface FeedPost {
  * server-side catalog the other server-written strings use (`getServerI18n`); a failed load falls back to the English
  * default, so a feed never fails over a string.
  */
-async function warningNotice(reason: string): Promise<string> {
+export async function warningNotice(reason: string): Promise<string> {
   try {
     const { getServerI18n } = await import('@/lib/i18n/instances');
     return getServerI18n(DEFAULT_LOCALE).t('content-warnings:rss-description', {

@@ -584,6 +584,18 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // (/study/review)
   '/study/review': 'personal',
 
+  // Sprint 08 (docs/autonomous/sprint-08/plan.md §Anchors)
+  // s08-08 admin-api-oversight
+  // (/admin/api-keys, 'admin')
+  '/admin/api-keys': 'admin',
+
+  // s08-17 rss-feeds
+  // (only if the coverage test lists feed routes)
+
+  // s08-18 admin-spam-sweep
+  // (/admin/sweeps, 'admin')
+  '/admin/sweeps': 'admin',
+
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
   '/settings/appearance': 'personal',

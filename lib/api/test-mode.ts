@@ -8,6 +8,8 @@
  * written, so integrations can be built without touching a live account.
  */
 import { ENDPOINTS, type ApiEndpoint } from '@/lib/api/registry';
+import { errorBody, defaultStatus } from '@/lib/api/errors';
+import { scheduleBoundsError } from '@/lib/api/v1/scheduled-schema';
 
 export const TEST_KEY_PREFIX = 'rmh_test_';
 
@@ -25,6 +27,12 @@ export function findEndpoint(method: string, pathname: string): ApiEndpoint | nu
   return compiled.find((c) => c.ep.method === m && c.re.test(pathname))?.ep ?? null;
 }
 
+/**
+ * The match id a test key confirms to see the refusal a prize-deciding result gets
+ * (`POST /api/v1/tournaments/{id}/matches/match_test_final/claim/confirm`, s08-02).
+ */
+export const TEST_PRIZE_FINAL_MATCH = 'match_test_final';
+
 export interface SandboxResult {
   status: number;
   body: unknown | null;
@@ -39,6 +47,26 @@ export function sandboxResponse(
 ): SandboxResult | null {
   const ep = findEndpoint(method, pathname);
   if (!ep) return null;
+  if (ep.operationId === 'confirmTournamentMatchResult' && pathname.split('/')[6] === TEST_PRIZE_FINAL_MATCH)
+    return {
+      status: defaultStatus('confirm_on_site'),
+      body: errorBody('confirm_on_site', 'Confirm this result on the site: it decides the prizes.', 'test'),
+    };
+  // s08-03: the sandbox refuses what the real route refuses before it stores anything.
+  if (ep.operationId === 'createMyScheduled' || ep.operationId === 'updateMyScheduled') {
+    const sent = requestBody && typeof requestBody === 'object' ? (requestBody as Record<string, unknown>) : {};
+    const refuse =
+      sent.capsule === true
+        ? 'Time capsules are created on the site, not through the API.'
+        : typeof sent.scheduledAt === 'string'
+          ? scheduleBoundsError(sent.scheduledAt)
+          : null;
+    if (refuse)
+      return {
+        status: 400,
+        body: errorBody('invalid_request', refuse, 'test'),
+      };
+  }
   const example = ep.responseExample;
   if (ep.method === 'GET') {
     if (example !== undefined)

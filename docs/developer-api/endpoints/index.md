@@ -5,7 +5,7 @@
 
 # Endpoint reference
 
-Every endpoint in the public `v1` API — 70 across 14 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
+Every endpoint in the public `v1` API — 86 across 17 groups. Paths are relative to `https://rmhstudios.com`. The same registry generates the [OpenAPI 3.1 document](https://rmhstudios.com/api/v1/openapi.json), so the two never disagree.
 
 | Group | Endpoints | Covers |
 | ----- | --------- | ------ |
@@ -23,6 +23,9 @@ Every endpoint in the public `v1` API — 70 across 14 groups. Paths are relativ
 | [Events](./events.md) | 6 | `read:events`, `write:events` |
 | [Communities](./communities.md) | 4 | `read:communities` |
 | [Reading](./reading.md) | 7 | `read:reading`, `write:reading` |
+| [Tournaments](./tournaments.md) | 8 | `read:tournaments`, `write:tournaments` |
+| [Scheduled](./scheduled.md) | 6 | `read:scheduled`, `write:scheduled` |
+| [Search](./search.md) | 2 | `read:search` |
 
 ```{toctree}
 :maxdepth: 2
@@ -42,4 +45,7 @@ study
 events
 communities
 reading
+tournaments
+scheduled
+search
 ```

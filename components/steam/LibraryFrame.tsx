@@ -1,6 +1,7 @@
 import { useLocation } from '@tanstack/react-router';
 import type { Collection } from '@/lib/games/collections';
 import type { LibraryKind } from '@/lib/games/library';
+import type { AccessFilter } from '@/lib/games/access-filter';
 import { LibraryList } from './LibraryList';
 import { PlaytimeNotice } from './PlaytimeNotice';
 
@@ -17,6 +18,8 @@ export function LibraryFrame({
   following,
   followedIds,
   onFollowingChange,
+  accessFilter,
+  onAccessChange,
   children,
 }: {
   recentIds: string[];
@@ -27,6 +30,9 @@ export function LibraryFrame({
   following: boolean;
   followedIds: string[];
   onFollowingChange: (on: boolean) => void;
+  /** The "Can be played with" and "Accessibility" selection, kept in the URL by the route. */
+  accessFilter: AccessFilter;
+  onAccessChange: (next: AccessFilter) => void;
   onKindChange: (k: LibraryKind) => void;
   children: React.ReactNode;
 }) {
@@ -44,6 +50,8 @@ export function LibraryFrame({
         following={following}
         followedIds={followedIds}
         onFollowingChange={onFollowingChange}
+        accessFilter={accessFilter}
+        onAccessChange={onAccessChange}
         recentIds={recentIds}
         collections={collections}
         signedIn={signedIn}

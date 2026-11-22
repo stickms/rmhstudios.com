@@ -118,6 +118,18 @@ describe('system notification labels', () => {
       // s07-16 community-alt-text
       'scheduled-alt-required': 'Scheduled post held',
 
+      // Sprint 08 system labels (docs/autonomous/sprint-08/plan.md §Anchors)
+      // s08-08 admin-api-oversight
+      'api-key-suspended': 'API key suspended',
+      'api-key-restored': 'API key restored',
+
+      // s08-09 recurring-threads
+      'community-recurring-paused': 'Recurring thread paused',
+
+      // s08-18 admin-spam-sweep
+      'moderation-sweep': 'Content removed',
+      'moderation-sweep-undone': 'Content restored',
+
       default: 'RMH Studios',
     });
   });

@@ -242,3 +242,16 @@ describe('card shape', () => {
     expect(JSON.stringify(card.headline)).toContain('"hours":2');
   });
 });
+
+describe('the RMHTube card shows what the hub records', () => {
+  beforeEach(allRows);
+
+  it('turns the recorded minutes into hours and keeps the counters, for the owner only', async () => {
+    const card = (await appProfiles(OWNER, OWNER)).find((c) => c.appId === 'rmhtube');
+    expect(card?.headline.vars).toEqual({
+      hours: 3,
+    });
+    expect(card?.stats.map((s) => s.value)).toEqual([40, 2, 9]);
+    expect((await appProfiles(OWNER, STRANGER)).some((c) => c.appId === 'rmhtube')).toBe(false);
+  });
+});

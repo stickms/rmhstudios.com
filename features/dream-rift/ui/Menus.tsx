@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CoopAssistLine } from './assist-ui';
 import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { useDreamRift } from '@features/dream-rift/engine/store';
 import { CHARACTERS, PLAYER_IDS } from '@features/dream-rift/engine/render/sprites';
@@ -474,6 +475,8 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                         <DiffPicker value={lobby.difficulty} onChange={(d) => setLobbySettings(d)} />
                     </div>
                 )}
+
+                <CoopAssistLine className="drm-muted mb-3 text-xs" />
 
                 <div className="drm-actions">
                     <Btn variant="ghost" onClick={() => { leaveLobby(); onLeave(); }} className="flex-1">

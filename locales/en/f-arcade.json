@@ -12,6 +12,7 @@
   "board-empty": "No finished runs yet. Be the first.",
   "board-title": "Today’s leaderboard",
   "copy-link": "Copy this link:",
+  "daily-assisted": "Assisted run: saved to your history, not the leaderboard. It used today's attempt.",
   "daily-failed": "Couldn't save the daily result.",
   "daily-practice": "Practice run: today's attempt was already used.",
   "daily-saved": "Saved to today's leaderboard.",

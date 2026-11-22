@@ -4,6 +4,15 @@ import { ACTIVE_REVIEW_WHERE, AUTHORED_WHERE, CARD_ORDER, REVIEWABLE_WHERE } fro
 import { dueByDeck, reviewAllCount } from '@/lib/study/queue.server';
 import type { SuspendReason } from '@/lib/study/queue';
 import { insertCards } from '@/lib/study/deck-editor.server';
+import {
+  CARD_IMAGE_SELECT,
+  NO_PICTURES,
+  fromColumns,
+  picturesOfRow,
+  pictureUrls,
+  type CardImage,
+} from '@/lib/study/card-images';
+import { lockPictureUrls } from '@/lib/study/card-images.server';
 import { cardHash, type UpdatesSummary } from '@/lib/study/deck-sync';
 import { deckUpdatesSummary } from '@/lib/study/deck-sync.server';
 import type { TestCard } from '@/lib/study/practice-test';
@@ -84,6 +93,8 @@ export interface MarketplaceDeck {
   user: { name: string | null; handle: string | null; image: string | null };
   isOwn: boolean;
   alreadyCloned: boolean;
+  /** The deck's first card with a picture, for the preview; absent when no card has one (s08-15). */
+  preview?: { front: string; image: CardImage };
 }
 
 export interface MarketplaceList {
@@ -138,17 +149,41 @@ export async function listMarketplaceDecks(
     clonedSet = new Set(cloned.map((c) => c.clonedFromId).filter((v): v is string => !!v));
   }
 
+  // One preview per deck: its first card with a picture (the front's when both sides have one).
+  const previews = new Map<string, { front: string; image: CardImage }>();
+  if (decks.length > 0) {
+    const pictured = await prisma.flashcard.findMany({
+      where: {
+        deckId: { in: decks.map((d) => d.id) },
+        ...AUTHORED_WHERE,
+        OR: [{ frontImageUrl: { not: null } }, { backImageUrl: { not: null } }],
+      },
+      distinct: ['deckId'],
+      orderBy: [{ deckId: 'asc' }, { position: 'asc' }],
+      select: { deckId: true, front: true, ...CARD_IMAGE_SELECT },
+    });
+    for (const row of pictured) {
+      const { frontImage, backImage } = fromColumns(row);
+      const image = frontImage ?? backImage;
+      if (image) previews.set(row.deckId, { front: row.front, image });
+    }
+  }
+
   return {
     signedIn: !!viewerId,
-    decks: decks.map((d) => ({
-      id: d.id,
-      title: d.title,
-      description: d.description,
-      cardCount: d.cardCount,
-      user: d.user,
-      isOwn: d.userId === viewerId,
-      alreadyCloned: clonedSet.has(d.id),
-    })),
+    decks: decks.map((d) => {
+      const preview = previews.get(d.id);
+      return {
+        id: d.id,
+        title: d.title,
+        description: d.description,
+        cardCount: d.cardCount,
+        user: d.user,
+        isOwn: d.userId === viewerId,
+        alreadyCloned: clonedSet.has(d.id),
+        ...(preview ? { preview } : {}),
+      };
+    }),
   };
 }
 
@@ -176,7 +211,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       cards: {
         where: AUTHORED_WHERE,
         orderBy: CARD_ORDER,
-        select: { id: true, kind: true, front: true, back: true },
+        select: { id: true, kind: true, front: true, back: true, ...CARD_IMAGE_SELECT },
       },
     },
   });
@@ -207,16 +242,35 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       select: { id: true },
     });
     if (source.cards.length > 0) {
+      // The copy SHARES the author's picture objects (same URL, never a second object). The URLs are locked first,
+      // the cards' pictures read again under the lock, so an author removing a picture right now either finishes
+      // first (the copy gets none) or waits for this copy to commit (the object stays).
+      await lockPictureUrls(
+        tx,
+        source.cards.flatMap((c) => pictureUrls(c)),
+      );
+      const current = new Map(
+        (
+          await tx.flashcard.findMany({
+            where: { id: { in: source.cards.map((c) => c.id) } },
+            select: { id: true, ...CARD_IMAGE_SELECT },
+          })
+        ).map((row) => [row.id, row]),
+      );
       await insertCards(
         tx,
         created.id,
-        source.cards.map((c) => ({
-          kind: cardKind(c.kind),
-          front: c.front,
-          back: c.back,
-          originCardId: c.id,
-          originHash: cardHash(c),
-        })),
+        source.cards.map((c) => {
+          const live = { ...c, ...(current.get(c.id) ?? NO_PICTURES) };
+          return {
+            kind: cardKind(c.kind),
+            front: c.front,
+            back: c.back,
+            ...fromColumns(live),
+            originCardId: c.id,
+            originHash: cardHash(live),
+          };
+        }),
       );
     }
     return created;
@@ -225,6 +279,14 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
 }
 
 const cardKind = (kind: string): CardKind => (isCardKind(kind) ? kind : 'basic');
+
+/** The picture fields of a card payload: present only for a side that has a picture, so a text card is unchanged. */
+export function pictureFields(pictures: { frontImage: CardImage | null; backImage: CardImage | null }) {
+  return {
+    ...(pictures.frontImage ? { frontImage: pictures.frontImage } : {}),
+    ...(pictures.backImage ? { backImage: pictures.backImage } : {}),
+  };
+}
 
 /** An authored card as the deck page, the editor and export read it. */
 export interface DeckCard {
@@ -237,6 +299,9 @@ export interface DeckCard {
   sourceId: string | null;
   /** The viewer's suspension of this card (or of a card generated from it); absent for a signed-out viewer. */
   suspended?: SuspendReason | null;
+  /** The pictures this card shows (a generated card reads its source's); absent when it has none (s08-15). */
+  frontImage?: CardImage | null;
+  backImage?: CardImage | null;
 }
 
 export interface DeckDetail {
@@ -284,7 +349,15 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
       clonedFromId: true, notifyUpdates: true, folderId: true,
       cards: {
         orderBy: CARD_ORDER,
-        select: { id: true, front: true, back: true, kind: true, sourceId: true, clozeIndex: true },
+        select: {
+          id: true,
+          front: true,
+          back: true,
+          kind: true,
+          sourceId: true,
+          clozeIndex: true,
+          ...CARD_IMAGE_SELECT,
+        },
       },
     },
   });
@@ -357,6 +430,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
         clozeIndex: null,
         sourceId: null,
         ...(viewer.id ? { suspended: suspendedOf(c.id) } : {}),
+        ...pictureFields(fromColumns(c)),
       })),
     reviewCount: reviewable.length,
     rowCount: deck.cards.length,
@@ -375,7 +449,17 @@ export async function getTestCards(deckId: string): Promise<TestCard[]> {
   const rows = await prisma.flashcard.findMany({
     where: { deckId, ...REVIEWABLE_WHERE },
     orderBy: CARD_ORDER,
-    select: { id: true, front: true, back: true, sourceId: true, clozeIndex: true },
+    select: {
+      id: true,
+      front: true,
+      back: true,
+      kind: true,
+      sourceId: true,
+      clozeIndex: true,
+      ...CARD_IMAGE_SELECT,
+      // A generated card shows its source's pictures (the siblings hold none of their own).
+      source: { select: CARD_IMAGE_SELECT },
+    },
   });
   return rows.map((r) => ({
     id: r.id,
@@ -383,5 +467,6 @@ export async function getTestCards(deckId: string): Promise<TestCard[]> {
     back: r.back,
     clozeIndex: r.clozeIndex,
     noteId: noteIdOf(r),
+    ...pictureFields(picturesOfRow(r, r.source)),
   }));
 }

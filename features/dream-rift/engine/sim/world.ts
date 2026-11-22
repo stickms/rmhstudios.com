@@ -191,6 +191,13 @@ function mkEffect(): Effect {
 }
 
 export class World {
+  /**
+   * Assist (no timed input): the slowest-tier graze radius and a longer death-bomb
+   * window. Solo, practice and the seeded daily only; a shared co-op sim never sets them.
+   * Neither touches the RNG, so the seeded pattern is unchanged.
+   */
+  assistGrazeRadius = 0;
+  assistDeathbombFrames = 0;
   bullets = new Pool<Bullet>(MAX_BULLETS, mkBullet, (b) => Object.assign(b, mkBullet()));
   shots = new Pool<Shot>(MAX_SHOTS, mkShot, (s) => Object.assign(s, mkShot()));
   items = new Pool<Item>(MAX_ITEMS, mkItem, (i) => Object.assign(i, mkItem()));
@@ -567,7 +574,7 @@ export class World {
   }
 
   private checkLocalHits(p: PlayerShip, events: SimEvent[], onDeath: (d: boolean) => void): void {
-    const gr = this.diff.grazeRadius;
+    const gr = Math.max(this.diff.grazeRadius, this.assistGrazeRadius);
     const invuln = p.invuln > 0 || p.bombActive > 0;
     this.bullets.forEach((b) => {
       if (b.dying > 0) return;
@@ -582,7 +589,7 @@ export class World {
       if (!invuln && d2 <= hit * hit) {
         // hit — start deathbomb window then die
         if (p.deathbombWindow <= 0) {
-          p.deathbombWindow = DEATHBOMB_FRAMES;
+          p.deathbombWindow = Math.max(DEATHBOMB_FRAMES, this.assistDeathbombFrames);
         }
         // actual death resolves after window unless bombed; simplify: die now if no bombs or window elapsed
         this.killLocalPlayer(p, events, onDeath);

@@ -63,6 +63,8 @@ import {
   readWaitlist,
 } from '@/lib/events/waitlist.server';
 import type { Prisma } from '@prisma/client';
+import { emitRsvpChanged } from '@/lib/webhooks/activity-emit.server';
+import { rsvpPayloadStatus } from '@/lib/webhooks/activity-events';
 
 // ─── Types (client-safe: imported as `import type` by the UI) ────────────────
 
@@ -909,10 +911,26 @@ export async function rsvp(
     // Repeating events have no waitlist: attendance merges standing and per-date answers.
     if (status === 'waitlist') throw new EventError('FORBIDDEN');
     try {
+      const before = await prisma.rsvp.findMany({
+        where: { eventId: event.id, userId },
+        select: { status: true, occurrenceAt: true },
+      });
       const done = await rsvpRecurring(event, userId, status, {
         everyTime: !!opts.everyTime,
         occurrenceAt: opts.occurrenceAt,
       });
+      // The answer in force for this date before the call: the date's own, else the standing one.
+      const rows = Array.isArray(before) ? before : [];
+      const prior =
+        rows.find((r) => r.occurrenceAt.getTime() === done.at.getTime()) ??
+        rows.find((r) => r.occurrenceAt.getTime() === WHOLE_EVENT.getTime());
+      if (prior?.status !== status) {
+        await emitRsvpChanged(userId, {
+          eventId: event.id,
+          occurrenceAt: done.at,
+          status: rsvpPayloadStatus(status),
+        });
+      }
       if (status === 'going') {
         await scheduleEventReminders({ id: event.id, startsAt: done.effectiveAt }, userId, true, {
           occurrenceAt: done.at,
@@ -988,9 +1006,17 @@ export async function rsvp(
     }
     const promoted =
       mine?.status === 'going' && next !== 'going' ? await promoteFromWaitlist(tx, seats) : [];
-    return { next, seats, promoted };
+    return { next, seats, promoted, prev: mine?.status ?? null };
   });
 
+  // After commit, and only when the answer actually changed (re-sending the same one emits nothing).
+  if (done.prev !== done.next) {
+    await emitRsvpChanged(userId, {
+      eventId,
+      occurrenceAt: null,
+      status: rsvpPayloadStatus(done.next),
+    });
+  }
   await announcePromotions(done.seats, done.promoted);
   if (done.next === 'going') await scheduleEventReminders(event, userId);
   else await cancelEventReminders(eventId, userId);
@@ -1040,8 +1066,10 @@ export async function unrsvp(
     });
     await tx.rsvp.deleteMany({ where: { eventId, userId, occurrenceAt: WHOLE_EVENT } });
     const seats = mine?.status === 'going' ? await readSeatState(tx, eventId) : null;
-    return { seats, promoted: seats ? await promoteFromWaitlist(tx, seats) : [] };
+    return { seats, promoted: seats ? await promoteFromWaitlist(tx, seats) : [], had: !!mine };
   });
+  // Taking an answer back is a change too; withdrawing with no answer on file changes nothing.
+  if (done.had) await emitRsvpChanged(userId, { eventId, occurrenceAt: null, status: rsvpPayloadStatus('none') });
   if (done.seats) await announcePromotions(done.seats, done.promoted);
   await cancelEventReminders(eventId, userId);
   return summarize(eventId, userId);

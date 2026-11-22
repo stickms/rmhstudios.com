@@ -13,6 +13,7 @@ import { logger } from '../logger';
 import { awardAppProgress } from '../economy';
 import { PresenceGrace } from '../../shared/presence-grace';
 import { S2C } from '../../../lib/rmhtype/events';
+import { saveGhostIfBest, type GhostDb } from '../../../lib/rmhtype/ghost-save.server';
 import { PASSAGES, type Passage } from '../../../lib/rmhtype/passages';
 import { generateTypingPassage } from '../../../lib/ai/text.server';
 import { parseSoloSource, pickCodeSnippet, extractLorePassage } from '../../../lib/rmhtype/sources';
@@ -1838,7 +1839,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     },
   );
 
-  socket.on('rmhtype:solo:finish', (payload?: { position?: number; errors?: number }) => {
+  socket.on('rmhtype:solo:finish', (payload?: { position?: number; errors?: number; samples?: unknown }) => {
     const roomId = socketRoomMap.get(socket.id);
     if (!roomId || !roomId.startsWith('solo-')) return;
 
@@ -1898,6 +1899,26 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
         });
       });
     }
+
+    // Keep the run's progress curve as the member's ghost on a new passage best.
+    // Only this socket's own run reaches here; an implausible or missing curve is
+    // dropped without touching the score (see lib/rmhtype/ghost.server.ts).
+    saveGhostIfBest(getPrismaClient() as unknown as GhostDb, {
+      userId,
+      passageId: room.passageId,
+      aiPassage: Boolean(room.aiPassage),
+      passageLength: room.passage?.length ?? 0,
+      wpm: player.wpm,
+      accuracy: player.accuracy,
+      timeMs: player.finishTime,
+      samples: payload?.samples,
+    }).catch((err) => {
+      logger.error({
+        event: 'rmhtype_ghost_save_error',
+        userId,
+        error: String(err),
+      });
+    });
 
     cleanupSoloRoom(roomId, socket);
   });

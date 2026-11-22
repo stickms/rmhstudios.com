@@ -70,6 +70,8 @@ export class LeaderboardService {
               };
 
       const profiles = await prisma.rMHboxProfile.findMany({
+        // A profile reset by account deletion (zero games) is never listed.
+        where: { totalGamesPlayed: { gt: 0 } },
         orderBy,
         take: limit,
         include: {

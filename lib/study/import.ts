@@ -10,6 +10,7 @@
  * outright, which is what the exporter writes so a round trip is lossless.
  */
 import { hasCloze, parseCloze, type CardKind } from '@/lib/study/card-types';
+import { CARD_IMAGE_ALT_MAX, cardImageProblem, type CardImage } from '@/lib/study/card-images';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
 
 export type Separator = 'tab' | 'comma' | 'semicolon' | 'dash' | 'equals' | 'colon';
@@ -23,13 +24,18 @@ export type RejectReason =
   | 'front-too-long'
   | 'back-too-long'
   /** A cloze row whose deletions do not parse, or are too many. */
-  | 'invalid-cloze';
+  | 'invalid-cloze'
+  /** A JSON row whose picture has no description, sits on a cloze front, or is not an address the site stored. */
+  | 'invalid-picture';
 
 export interface ParsedCard {
   front: string;
   back: string;
   /** Absent for a basic card read without a type column. */
   kind?: CardKind;
+  /** Only a deck's own JSON export carries pictures; see {@link parseDeckJson}. */
+  frontImage?: CardImage;
+  backImage?: CardImage;
 }
 
 export interface ParseOptions {
@@ -288,8 +294,77 @@ function clozeRow(front: string): ParsedCard | RejectReason {
   return parseCloze(front).ok ? { front, back: '', kind: 'cloze' } : 'invalid-cloze';
 }
 
+const JSON_KINDS: Record<string, CardKind> = { basic: 'basic', reversible: 'reversible', cloze: 'cloze' };
+
+/** `{ url, alt }` from a parsed JSON value, or null when it is not one. The address is checked by `cardImageProblem`. */
+function jsonImage(value: unknown): CardImage | null | 'bad' {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object') return 'bad';
+  const { url, alt } = value as { url?: unknown; alt?: unknown };
+  if (typeof url !== 'string' || typeof alt !== 'string' || alt.length > CARD_IMAGE_ALT_MAX * 2) return 'bad';
+  return { url, alt };
+}
+
+/**
+ * Read a deck's own JSON export (`{ "cards": [{ front, back, type, frontImage, backImage }] }`), the one text format
+ * that carries pictures. A picture is accepted only as an address the flashcard surface can have stored, and the
+ * server then checks it is one of the member's own uploads: nothing is fetched from a remote address. Null when the
+ * text is not such a file, so the caller reads it as a separated list instead. A `line` is the card's 1-based number.
+ */
+export function parseDeckJson(text: string): ParseResult | null {
+  const body = stripBom(text).trim();
+  if (!body.startsWith('{')) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  const list = (data as { cards?: unknown } | null)?.cards;
+  if (!Array.isArray(list)) return null;
+  const cards: ParsedCard[] = [];
+  const rejected: ParseResult['rejected'] = [];
+  list.forEach((raw: unknown, index) => {
+    const line = index + 1;
+    const row = (raw ?? {}) as Record<string, unknown>;
+    const front = typeof row.front === 'string' ? row.front.trim() : '';
+    const back = typeof row.back === 'string' ? row.back.trim() : '';
+    const kind = typeof row.type === 'string' ? JSON_KINDS[row.type.trim().toLowerCase()] : undefined;
+    const frontImage = jsonImage(row.frontImage);
+    const backImage = jsonImage(row.backImage);
+    if (frontImage === 'bad' || backImage === 'bad') {
+      rejected.push({ line, reason: 'invalid-picture' });
+      return;
+    }
+    const pictures = { frontImage, backImage };
+    if (cardImageProblem(kind ?? 'basic', pictures)) {
+      rejected.push({ line, reason: 'invalid-picture' });
+      return;
+    }
+    const withPictures = (card: ParsedCard): ParsedCard => ({
+      ...card,
+      ...(frontImage ? { frontImage: { url: frontImage.url, alt: frontImage.alt.trim() } } : {}),
+      ...(backImage ? { backImage: { url: backImage.url, alt: backImage.alt.trim() } } : {}),
+    });
+    if (kind === 'cloze' || (kind === undefined && hasCloze(front))) {
+      const made = clozeRow(front);
+      if (typeof made === 'string') rejected.push({ line, reason: made });
+      else cards.push(withPictures(made));
+      return;
+    }
+    if (front === '') rejected.push({ line, reason: 'missing-front' });
+    else if (back === '') rejected.push({ line, reason: 'missing-back' });
+    else if (front.length > CARD_SIDE_MAX) rejected.push({ line, reason: 'front-too-long' });
+    else if (back.length > CARD_SIDE_MAX) rejected.push({ line, reason: 'back-too-long' });
+    else cards.push(withPictures(kind === 'reversible' ? { front, back, kind: 'reversible' } : { front, back }));
+  });
+  return { cards, rejected, separator: null };
+}
+
 /** Parse text into cards using the chosen (or detected) separator. */
 export function parseCards(text: string, options: ParseOptions = {}): ParseResult {
+  const json = parseDeckJson(text);
+  if (json) return json;
   const shield = shieldDeletions(stripBom(text));
   const body = shield.text;
   const restore = shield.restore;

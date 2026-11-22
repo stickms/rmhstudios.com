@@ -10,6 +10,8 @@ import { StudyTabs } from'@/components/feed/StudyTabs';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { cloneDeckApi } from '@/lib/study/decks.contract';
+import { CardPicture } from '@/components/study/CardPicture';
+import type { CardImage } from '@/lib/study/card-images';
 
 import { deckMarketplaceApi } from '@/lib/feed/feed-reads.contract';
 interface MarketplaceDeck {
@@ -20,6 +22,8 @@ interface MarketplaceDeck {
  user: { name: string | null; handle: string | null; image: string | null };
  isOwn: boolean;
  alreadyCloned: boolean;
+ /** The deck's first card with a picture (s08-15); absent when none has one. */
+ preview?: { front: string; image: CardImage };
 }
 
 interface MarketplaceData {
@@ -124,6 +128,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  {deck.title}
  </h2>
  </Link>
+ {deck.preview && <CardPicture image={deck.preview.image} compact className="mt-3"/>}
  {deck.description && (
  <p className="mt-1 line-clamp-2 text-xs text-site-text-muted">
  {deck.description}

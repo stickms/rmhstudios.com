@@ -4,10 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { CardImageField } from '@/components/study/CardImageField';
 import { CardTypeControl } from '@/components/study/CardTypeControl';
 import { ClozePreview } from '@/components/study/ClozePreview';
 import { validateCard, wrapDeletion, type CardError, type CardInput, type CardKind } from '@/lib/study/card-types';
+import { cardImageProblem, type CardImage } from '@/lib/study/card-images';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
+
+/** What the form hands back: the card, and a picture per side (null: none, which also removes one on an edit). */
+export type CardFormValue = CardInput & { frontImage: CardImage | null; backImage: CardImage | null };
 
 /**
  * The card editor: a type control (Basic, Reversible, Cloze), the fields that type needs, and for
@@ -21,10 +26,10 @@ export function CardForm({
   onCancel,
   resetOnSave = false,
 }: {
-  initial?: CardInput;
+  initial?: CardInput & { frontImage?: CardImage | null | undefined; backImage?: CardImage | null | undefined };
   submitLabel: string;
   /** Resolves true when the card was saved. */
-  onSubmit: (card: CardInput) => Promise<boolean>;
+  onSubmit: (card: CardFormValue) => Promise<boolean>;
   onCancel?: () => void;
   /** Clear the fields after a save (the add form); the edit form closes instead. */
   resetOnSave?: boolean;
@@ -34,6 +39,8 @@ export function CardForm({
   const [kind, setKind] = useState<CardKind>(initial?.kind ?? 'basic');
   const [front, setFront] = useState(initial?.front ?? '');
   const [back, setBack] = useState(initial?.back ?? '');
+  const [frontImage, setFrontImage] = useState<CardImage | null>(initial?.frontImage ?? null);
+  const [backImage, setBackImage] = useState<CardImage | null>(initial?.backImage ?? null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selection, setSelection] = useState<[number, number]>([0, 0]);
@@ -78,6 +85,9 @@ export function CardForm({
   };
 
   const checked = validateCard({ kind, front, back });
+  // A cloze card's front is its text, so it takes no front picture; the form never sends one for it.
+  const pictures = { frontImage: kind === 'cloze' ? null : frontImage, backImage };
+  const pictureProblem = cardImageProblem(kind, pictures, () => true);
   // A cloze text is checked as it is typed; the other types wait for the first save attempt.
   const showError = !checked.ok && (submitted || (kind === 'cloze' && front.trim() !== ''));
   const errorId = `${uid}-error`;
@@ -87,13 +97,15 @@ export function CardForm({
 
   async function save() {
     setSubmitted(true);
-    if (!checked.ok || saving) return;
+    if (!checked.ok || pictureProblem || saving) return;
     setSaving(true);
-    const ok = await onSubmit(checked.card);
+    const ok = await onSubmit({ ...checked.card, ...pictures });
     setSaving(false);
     if (ok && resetOnSave) {
       setFront('');
       setBack('');
+      setFrontImage(null);
+      setBackImage(null);
       setSubmitted(false);
     }
   }
@@ -149,6 +161,7 @@ export function CardForm({
               </Button>
             </div>
             <ClozePreview text={front} />
+            <CardImageField side="back" value={backImage} onChange={setBackImage} showMissing={submitted} />
           </>
         ) : (
           <>
@@ -163,6 +176,7 @@ export function CardForm({
                 aria-describedby={describedBy}
                 onChange={(e) => setFront(e.target.value)}
               />
+              <CardImageField side="front" value={frontImage} onChange={setFrontImage} showMissing={submitted} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={backId}>{t('back', { defaultValue: 'Back' })}</Label>
@@ -176,6 +190,7 @@ export function CardForm({
                 aria-describedby={describedBy}
                 onChange={(e) => setBack(e.target.value)}
               />
+              <CardImageField side="back" value={backImage} onChange={setBackImage} showMissing={submitted} />
               {kind === 'reversible' && (
                 <p className="t-meta">
                   {t('reversible-hint', {

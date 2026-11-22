@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { StudyTabs } from '@/components/feed/StudyTabs';
 import { ClozeText } from '@/components/study/ClozeText';
+import { CardPicture, usePreloadPicture } from '@/components/study/CardPicture';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -72,6 +73,8 @@ export function ReviewAll({
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
+  // The next card's picture is fetched ahead of time (that card's only, never the whole session's).
+  usePreloadPicture(batch?.cards[idx + 1]?.frontImage);
   const [reviewed, setReviewed] = useState(0);
   const [setAside, setSetAside] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -401,17 +404,20 @@ export function ReviewAll({
                 <>
                   <div className="my-4 h-px w-16 bg-site-border" />
                   <ClozeText text={card.front} index={card.clozeIndex} reveal className="t-prose text-site-text" />
+                  {card.backImage && <CardPicture image={card.backImage} eager className="mt-4" />}
                 </>
               )}
             </>
           ) : (
             <>
+              {card.frontImage && <CardPicture image={card.frontImage} eager className="mb-4" />}
               <p dir="auto" className="t-heading break-words">
                 {card.front}
               </p>
               {revealed && (
                 <>
                   <div className="my-4 h-px w-16 bg-site-border" />
+                  {card.backImage && <CardPicture image={card.backImage} eager className="mb-4" />}
                   <p dir="auto" className="t-prose whitespace-pre-wrap break-words text-site-text-muted">
                     {card.back}
                   </p>

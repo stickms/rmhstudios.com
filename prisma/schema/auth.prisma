@@ -682,6 +682,20 @@ model User {
   // s07-18 reading-time
   readingTimeDays ReadingTimeDay[]
 
+  // Sprint 08 back-relations (one block per feature, docs/autonomous/sprint-08/plan.md)
+  // s08-01 rmhtube-stats
+  rmhTubeWatchDays RmhTubeWatchDay[] @relation("RmhTubeWatchDays")
+
+  // s08-09 recurring-threads
+  recurringThreads CommunityRecurringThread[] @relation("CommunityRecurringThreadAuthor")
+
+  // s08-11 type-ghost
+  rmhTypeGhosts RmhTypeGhost[] @relation("RmhTypeGhosts")
+
+  // s08-18 admin-spam-sweep
+  sweepsAsSubject ModerationSweep[] @relation("SweepSubject")
+  sweepsAsAdmin   ModerationSweep[] @relation("SweepAdmin")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the

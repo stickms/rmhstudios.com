@@ -53,6 +53,7 @@ model Community {
   handovers            CommunityHandover[]
   bans                 CommunityBan[]
   memberNotes          CommunityMemberNote[]
+  recurringThreads     CommunityRecurringThread[]
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -669,4 +670,43 @@ model CommunityMemberNote {
 
   @@index([communityId, subjectId, createdAt(sort: Desc)])
   @@map("community_member_note")
+}
+
+/// s08-09 — a thread template a community's moderators set to post itself, weekly or monthly, at a local time in a
+/// chosen time zone. Text only (title, body, flair). `nextAt` is the next occurrence in UTC; the minute cron moves
+/// it to the following occurrence in a compare-and-set before it posts, so an occurrence is posted once. The
+/// template posts as `createdById`, the moderator who last saved it.
+model CommunityRecurringThread {
+  id           String    @id @default(cuid())
+  communityId  String
+  createdById  String
+  title        String    @db.VarChar(120)
+  body         String    @db.VarChar(2000)
+  /// Plain id (no relation): a flair deleted later just posts without one.
+  flairId      String?   @db.VarChar(64)
+  /// 'weekly' | 'monthly'
+  cadence      String    @db.VarChar(8)
+  /// 0 (Sunday) to 6, for a weekly template.
+  weekday      Int?
+  /// 1 to 28, for a monthly template.
+  dayOfMonth   Int?
+  /// Minutes after local midnight, 0 to 1439.
+  minuteOfDay  Int
+  timeZone     String    @db.VarChar(64)
+  nextAt       DateTime
+  active       Boolean   @default(true)
+  /// Why a paused template stopped (a short code), null while active.
+  pausedReason String?   @db.VarChar(32)
+  lastPostId   String?
+  lastPostedAt DateTime?
+  failures     Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("CommunityRecurringThreadAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([active, nextAt])
+  @@index([communityId])
+  @@map("community_recurring_thread")
 }

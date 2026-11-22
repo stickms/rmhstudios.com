@@ -105,6 +105,8 @@ interface EditorState {
   zoom: number;
   playing: boolean;
   playbackRate: number;
+  /** The timeline canvas's height in CSS pixels, so the minimap can outline the visible window. 0 until measured. */
+  viewHeight: number;
   /** Loop markers for A/B practice inside the editor (P1's mechanism). Phase 4. */
   loop: {
     start: number;
@@ -203,6 +205,7 @@ interface EditorState {
   setPlayhead: (seconds: number) => void;
   setZoom: (zoom: number) => void;
   setPlaying: (playing: boolean) => void;
+  setViewHeight: (height: number) => void;
   setPlaybackRate: (rate: number) => void;
   setLoop: (
     loop: {
@@ -304,6 +307,7 @@ const initial = {
   lastSavedAt: null as number | null,
   playhead: 0,
   zoom: 1,
+  viewHeight: 0,
   playing: false,
   playbackRate: 1,
   loop: null,
@@ -464,6 +468,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set({
       zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom)),
     }),
+  setViewHeight: (height) =>
+    set((state) =>
+      state.viewHeight === height
+        ? state
+        : {
+            viewHeight: height,
+          },
+    ),
   setPlaying: (playing) =>
     set({
       playing,

@@ -74,7 +74,7 @@ export const BAN_ENFORCEMENT_PATHS = [
   'app/routes/api/v1/posts/$id/comments.ts',
   'lib/communities/join-requests.server.ts',
   'lib/scheduled/publish.server.ts',
-  'lib/scheduled/api/scheduled.server.ts',
+  'lib/scheduled/create.server.ts',
   // RSVPs to a community's events: the site route and PUT /api/v1/events/{id}/rsvp both call `rsvp` (s07-10)
   'lib/events.server.ts',
 ] as const;

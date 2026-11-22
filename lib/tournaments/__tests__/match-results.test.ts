@@ -323,6 +323,34 @@ describe('confirm, dispute, withdraw', () => {
     expect(settleSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('refuseIfPays refuses, under the lock and changing nothing, a confirmation that would pay a prize', async () => {
+    Object.assign(state.tournament, { prizePoolCoins: 300 });
+    state.matches[0].nextMatchId = null;
+    await expect(
+      results.confirmResult({ tournamentId: ids.t, matchId: ids.m, userId: 'uB', refuseIfPays: true }, db),
+    ).rejects.toMatchObject({ code: 'CONFIRM_ON_SITE', status: 409 });
+    expect(settleSpy).not.toHaveBeenCalled();
+    expect(state.matches[0].claimedAt).not.toBeNull();
+    // Reporting the claimed winner is a confirmation too, and is refused the same way.
+    await expect(
+      results.claimResult(
+        { tournamentId: ids.t, matchId: ids.m, userId: 'uB', winnerEntrantId: 'eA', refuseIfPays: true },
+        db,
+      ),
+    ).rejects.toMatchObject({ code: 'CONFIRM_ON_SITE', status: 409 });
+    expect(settleSpy).not.toHaveBeenCalled();
+    expect(state.matches[0].claimedAt).not.toBeNull();
+  });
+
+  it('refuseIfPays lets a settlement that pays nothing through (no prize pool, or not the deciding match)', async () => {
+    Object.assign(state.tournament, { prizePoolCoins: 0 });
+    state.matches[0].nextMatchId = null;
+    expect(
+      (await results.confirmResult({ tournamentId: ids.t, matchId: ids.m, userId: 'uB', refuseIfPays: true }, db))
+        .settled,
+    ).toBe(true);
+  });
+
   it('the claimant cannot confirm or dispute their own claim; a stranger is 403', async () => {
     await expect(
       results.confirmResult(

@@ -19,6 +19,7 @@ interface Note {
   type: string;
   entityType: string;
   entityId: string;
+  link?: string;
   read: boolean;
   createdAt: Date;
   preview: string;
@@ -45,6 +46,7 @@ const db = vi.hoisted(() => ({
     mutedId: string;
   }[],
   notes: [] as Note[],
+  fanoutRuns: [] as unknown[],
   claims: new Set<string>(),
   memberCount: 10,
   created: [] as Record<string, unknown>[],
@@ -61,7 +63,10 @@ vi.mock('@/lib/notifications.server', () => ({
     db.created.push(input);
   }),
 }));
-vi.mock('@/lib/prisma.server', () => {
+vi.mock('@/lib/prisma.server', async () => {
+  // The durable run (s08-05): the in-memory fake lives in lib/fanout/__tests__.
+  const { createFanoutRunFake } = await import('@/lib/fanout/__tests__/fake-fanout-run');
+  const fanout = createFanoutRunFake(db.fanoutRuns as never);
   const inSet = (
     v: unknown,
     w:
@@ -82,6 +87,7 @@ vi.mock('@/lib/prisma.server', () => {
   };
   return {
     prisma: {
+      fanoutRun: fanout.fanoutRun,
       rMHark: {
         findFirst: async () => {
           const p = db.post;
@@ -215,9 +221,9 @@ vi.mock('@/lib/prisma.server', () => {
               in: string[];
             };
             type: string;
-            entityType: string;
-            entityId: string;
-            read: boolean;
+            entityType?: string;
+            entityId?: string;
+            read?: boolean;
             createdAt: {
               gte: Date;
             };
@@ -227,9 +233,9 @@ vi.mock('@/lib/prisma.server', () => {
             (n) =>
               where.userId.in.includes(n.userId) &&
               n.type === where.type &&
-              n.entityType === where.entityType &&
-              n.entityId === where.entityId &&
-              n.read === where.read &&
+              (where.entityType === undefined || n.entityType === where.entityType) &&
+              (where.entityId === undefined || n.entityId === where.entityId) &&
+              (where.read === undefined || n.read === where.read) &&
               n.createdAt >= where.createdAt.gte,
           ),
         updateMany: async ({
@@ -255,7 +261,7 @@ vi.mock('@/lib/prisma.server', () => {
   };
 });
 
-import { createNotification } from '@/lib/notifications.server';
+import { createNotification, type CreateNotificationInput } from '@/lib/notifications.server';
 import {
   POST_ALERT_QUEUE,
   enqueuePostAlert,
@@ -287,6 +293,7 @@ beforeEach(() => {
   db.blocks = [];
   db.mutes = [];
   db.notes = [];
+  db.fanoutRuns.length = 0;
   db.claims = new Set();
   db.memberCount = 10;
   db.created = [];
@@ -427,13 +434,16 @@ describe('runPostAlertFanout', () => {
     expect(db.created).toEqual([]);
   });
 
-  it('gives the claim back when it fails part-way, so the retry can finish', async () => {
+  it('gives the lease back when it fails part-way, so the retry can finish', async () => {
     db.members = [member('a'), member('b')];
     vi.mocked(createNotification).mockRejectedValueOnce(new Error('boom'));
     await expect(runPostAlertFanout('p1', NOW)).rejects.toThrow('boom');
-    expect(db.claims.has('p1')).toBe(false);
+    // The run stays RUNNING with its lease released (the post's compatibility claim row stays too).
+    expect(db.fanoutRuns).toHaveLength(1);
+    expect(db.fanoutRuns[0]).toMatchObject({ status: 'RUNNING' });
     await runPostAlertFanout('p1', NOW);
     expect(told()).toContain('b');
+    expect(db.fanoutRuns[0]).toMatchObject({ status: 'DONE' });
   });
 
   it('collapses a burst: a recent unread alert for the community is reworded, not duplicated', async () => {
@@ -482,6 +492,7 @@ describe('runPostAlertFanout', () => {
         type: 'SYSTEM',
         entityType: 'community_post',
         entityId: input.entityId as string,
+        link: input.link as string,
         read: false,
         createdAt: minutesAgo(10 - db.notes.length * 2),
         preview: input.preview as string,
@@ -512,6 +523,55 @@ describe('runPostAlertFanout', () => {
     );
     const result = await runPostAlertFanout('p1', NOW);
     expect(result.notified).toBe(5000);
+  });
+
+  it('survives a worker killed mid-send: the 1 200 members each get exactly one alert after the restart', async () => {
+    db.members = Array.from({ length: 1200 }, (_, i) => member(`u${String(i).padStart(5, '0')}`));
+    // Every notification written is also a stored row, as in production, so the resumed batch can see who was told.
+    let calls = 0;
+    const original = vi.mocked(createNotification).getMockImplementation();
+    vi.mocked(createNotification).mockImplementation(async (input: CreateNotificationInput) => {
+      // The worker dies in the middle of the second batch, after 200 of its 500 members were told.
+      if (++calls === 700) throw new Error('killed');
+      db.created.push({ ...input });
+      db.notes.push({
+        id: `n${db.notes.length}`,
+        userId: input.userId as string,
+        type: 'SYSTEM',
+        entityType: 'community_post',
+        entityId: 'c1',
+        link: input.link as string,
+        read: false,
+        createdAt: NOW,
+        preview: input.preview as string,
+      } as never);
+    });
+    // A member of the community was told about ANOTHER post of it in the same window (and read it): that alert is not
+    // this post's, so the resumed run must still tell them about this one.
+    db.notes.push({
+      id: 'other',
+      userId: 'u00900',
+      type: 'SYSTEM',
+      entityType: 'community_post',
+      entityId: 'c1',
+      link: '/u/ada/post/p0',
+      read: true,
+      createdAt: NOW,
+      preview: 'x',
+    } as never);
+    await expect(runPostAlertFanout('p1', NOW)).rejects.toThrow('killed');
+    expect(db.fanoutRuns[0]).toMatchObject({ status: 'RUNNING', cursor: 'u00499', sent: 500 });
+    // The restart (or the reclaim sweep) runs the job again.
+    const result = await runPostAlertFanout('p1', NOW);
+    const told = db.created.map((c) => c.userId as string);
+    expect(new Set(told).size).toBe(1200);
+    expect(told).toHaveLength(1200);
+    expect(told).toContain('u00900');
+    expect(result.collapsed).toBe(0);
+    expect(db.fanoutRuns[0]).toMatchObject({ status: 'DONE', sent: 1200 });
+    // Nobody had their alert reworded as a burst: the 200 already told were skipped, not collapsed.
+    expect(db.notes.every((n) => !n.preview.startsWith('New posts'))).toBe(true);
+    if (original) vi.mocked(createNotification).mockImplementation(original);
   });
 });
 

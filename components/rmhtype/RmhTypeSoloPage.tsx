@@ -13,12 +13,16 @@ import { toast } from '@/lib/shared/app-toast';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useRouter } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { SoloSourcePicker, SourcePracticeNote } from '@/components/rmhtype/SoloSourcePicker';
 import { autoIndent, backspaceIndent, type SoloSource } from '@/lib/rmhtype/sources';
 import { formatSoloResult } from '@/lib/rmhtype/result-text';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { useArrival } from '@/components/ui/arrive';
+import { GHOST_STEP_MS, buildSamples, ghostPositionAt } from '@/lib/rmhtype/ghost';
+import { rmhTypeGhostQuery } from '@/lib/rmhtype/rmhtype.queries';
+import { GhostRacingNote, GhostResultLine, GhostSwitch } from '@/components/rmhtype/GhostControls';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
@@ -46,6 +50,12 @@ export default function RmhTypeSolo() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // The run's own clock, for the ghost: when the passage arrived and when the typed length changed.
+  // Counters over time, never keys (a ghost is positions only; lib/rmhtype/ghost.ts).
+  const runStartRef = useRef(0);
+  const marksRef = useRef<Array<[number, number]>>([]);
+  const [, setGhostTick] = useState(0);
+  const [tabHidden, setTabHidden] = useState(false);
   const passageRef = useRef<HTMLDivElement>(null);
 
   // Connect on mount (but don't auto-start)
@@ -99,6 +109,8 @@ export default function RmhTypeSolo() {
       setTypedText('');
       setStartTime(null);
       setFinished(false);
+      runStartRef.current = Date.now();
+      marksRef.current = [];
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [soloPassage, soloResult]);
@@ -127,6 +139,8 @@ export default function RmhTypeSolo() {
     if (!startTime) setStartTime(Date.now());
 
     setTypedText(value);
+    const elapsed = Date.now() - runStartRef.current;
+    marksRef.current.push([elapsed, value.length]);
 
     // Check if finished
     if (value.length >= soloPassage.length) {
@@ -136,6 +150,8 @@ export default function RmhTypeSolo() {
       emit(C2S.SOLO_FINISH, {
         position: value.length,
         errors,
+        // The coarse progress curve the server may keep as this passage's ghost.
+        samples: buildSamples(marksRef.current, elapsed),
       });
     }
   }, [soloPassage, soloPassageId, finished, startTime, source, typedText]);
@@ -179,6 +195,32 @@ export default function RmhTypeSolo() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [typingNow, resultsNow, handleRetry]);
+
+  // The ghost: one read per passage start. Never for a written-to-order passage (the server keeps none).
+  const raceGhost = settings.raceGhost !== false;
+  const ghostQuery = useQuery(rmhTypeGhostQuery(soloPassageId ?? '', raceGhost && started && !!soloPassageId));
+  const ghost = raceGhost ? (ghostQuery.data?.ghost ?? null) : null;
+  const racing = typingNow && ghost !== null;
+  // The one 250 ms interval of the solo page: alive only while a run is typing and a ghost is shown, so the
+  // caret keeps moving when the member pauses. Cleared on the result, the timeout, a hidden tab and unmount.
+  useEffect(() => {
+    if (!racing) return;
+    function onVisibility() {
+      setTabHidden(document.visibilityState === 'hidden');
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    onVisibility();
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [racing]);
+  useEffect(() => {
+    if (!racing || tabHidden) return;
+    const id = setInterval(() => setGhostTick((n) => n + 1), GHOST_STEP_MS);
+    return () => clearInterval(id);
+  }, [racing, tabHidden]);
+  const ghostIndex =
+    racing && ghost && soloPassage
+      ? Math.min(soloPassage.length - 1, Math.floor(ghostPositionAt(ghost.samples, Date.now() - runStartRef.current)))
+      : -1;
 
   const handleCopyResult = useCallback(async () => {
     if (!soloResult) return;
@@ -257,6 +299,8 @@ export default function RmhTypeSolo() {
                 </div>
 
                 <SoloSourcePicker value={source} onChange={setSource} />
+
+                <GhostSwitch checked={raceGhost} onChange={(on) => updateSettings({ raceGhost: on })} />
 
                 <div hidden={source !== 'standard'}>
                   <label
@@ -349,6 +393,10 @@ export default function RmhTypeSolo() {
                 </p>
               ) : null}
 
+              {ghost && !soloResult.timedOut && !soloResult.practice && (
+                <GhostResultLine ghostTimeMs={ghost.timeMs} runTimeMs={soloResult.timeMs} />
+              )}
+
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="p-4 rounded-app-sm bg-app-bg">
                   <div className="text-3xl font-bold text-app-accent">{soloResult.wpm}</div>
@@ -437,6 +485,7 @@ export default function RmhTypeSolo() {
                       className = typedText[i] === char ? 'rmhtype-char-correct' : 'rmhtype-char-incorrect';
                     }
                     if (i === typedText.length) className += ' rmhtype-cursor';
+                    if (i === ghostIndex) className += ' rmhtype-char-ghost';
                     return (
                       <span key={i} className={className}>
                         {char === '\n' ? '\u21b5\n' : char}
@@ -445,6 +494,8 @@ export default function RmhTypeSolo() {
                   })}
                 </div>
               </div>
+
+              {ghost && racing && <GhostRacingNote wpm={ghost.wpm} />}
 
               {/* Input — pinned below passage, seamless on mobile */}
               {source === 'code' ? (

@@ -39,6 +39,7 @@
   --rmhtype-correct: var(--app-accent);
   --rmhtype-incorrect: var(--app-danger);
   --rmhtype-untyped: var(--app-text-dim);
+  --rmhtype-ghost: var(--app-text-muted);
 }
 
 /* ─── Light ──────────────────────────────────────────────────────── */
@@ -104,6 +105,23 @@
 .rmhtype-cursor {
   border-inline-start: 2px solid var(--rmhtype-cursor);
   animation: rmhtype-blink 1s step-end infinite;
+}
+
+/* The ghost caret: a second, lower-contrast caret at the pace of the member's best run.
+   Drawn on the character it has reached; it never animates (it moves only as the run does). */
+.rmhtype-char-ghost {
+  position: relative;
+}
+
+.rmhtype-char-ghost::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -1px;
+  width: 2px;
+  background: var(--rmhtype-ghost);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 @keyframes rmhtype-blink {

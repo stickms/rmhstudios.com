@@ -27,10 +27,11 @@ import { DeckPageFolderMenu } from '@/components/study/MoveToFolderMenu';
 import { DeckStatsSummary } from '@/components/study/DeckStatsSummary';
 import { PracticeTestLink } from '@/components/study/PracticeTestLink';
 import { TestHistory } from '@/components/study/TestHistory';
-import { CardForm } from '@/components/study/CardForm';
+import { CardForm, type CardFormValue } from '@/components/study/CardForm';
+import { CardPicture, usePreloadPicture } from '@/components/study/CardPicture';
 import { ClozeText } from '@/components/study/ClozeText';
 import { DeckCardList } from '@/components/study/DeckCardList';
-import { isReverseCard, type CardInput } from '@/lib/study/card-types';
+import { isReverseCard } from '@/lib/study/card-types';
 import type { DeckCard as Card } from '@/lib/study.server';
 interface Deck {
  id: string;
@@ -139,6 +140,9 @@ export function DeckStudyColumn({
  };
  }, [load]);
 
+ // The review fetches the next card's picture ahead of time (that card's only, never the whole deck's).
+ usePreloadPicture(queue?.[idx + 1]?.frontImage);
+
  async function startReview() {
  if (startingReview) return;
  const session = ++reviewSession.current;
@@ -188,7 +192,7 @@ export function DeckStudyColumn({
  }
  }
 
- async function addCard(card: CardInput): Promise<boolean> {
+ async function addCard(card: CardFormValue): Promise<boolean> {
  try {
  const data = await api(addDeckCardApi, { params: { id: deckId }, body: card });
  setCards((c) => [...c, data.card]);
@@ -265,15 +269,18 @@ export function DeckStudyColumn({
  <>
  <div className="my-4 h-px w-16 bg-site-border"/>
  <ClozeText text={card.front} index={card.clozeIndex} reveal className="text-site-text"/>
+ {card.backImage && <CardPicture image={card.backImage} eager className="mt-4"/>}
  </>
  )}
  </>
  ) : (
  <>
+ {card.frontImage && <CardPicture image={card.frontImage} eager className="mb-4"/>}
  <p className="text-lg font-semibold text-site-text">{card.front}</p>
  {revealed && (
  <>
  <div className="my-4 h-px w-16 bg-site-border"/>
+ {card.backImage && <CardPicture image={card.backImage} eager className="mb-4"/>}
  <p className="whitespace-pre-wrap text-site-text-muted">{card.back}</p>
  </>
  )}

@@ -133,6 +133,19 @@ const GO: Array<[key: string, id: string, labelKey: string, label: string]> = [
   ['s', 'site.go.settings', 'kbd-go-settings', 'Settings'],
 ];
 
+// Post navigation, mirroring FEED_NAV_IDS in `feed-nav.ts`: [id suffix, key, English label].
+const FEED_NAV: Array<[name: string, key: string, label: string]> = [
+  ['next', 'j', 'Next post'],
+  ['prev', 'k', 'Previous post'],
+  ['open', 'o', 'Open post'],
+  ['like', 'l', 'Like or unlike'],
+  ['reply', 'r', 'Reply'],
+  ['repost', 't', 'Repost menu'],
+  ['save', 's', 'Save or unsave'],
+  ['reveal', 'x', 'Show or hide a content warning'],
+  ['leave', 'escape', 'Leave post navigation'],
+];
+
 /**
  * The site's default bindings, as data. The handlers are attached by
  * `KeyboardShortcuts.tsx` (and `CommandPalette.tsx` for the palette), which
@@ -183,6 +196,17 @@ export const SITE_SHORTCUTS: readonly Shortcut[] = Object.freeze([
     labelKey,
     label,
     ns: 'feed',
+  })),
+  // Moving through a list of posts (sprint 08 07). Character keys, so the single-key mode and remapping apply with no
+  // code of their own; `components/feed/feed-nav.tsx` runs them. `Enter` opens the focused post natively and is not a
+  // binding. The `g s` sequence above is not a bare `s`: a sequence's first key is `g`.
+  ...FEED_NAV.map(([name, key, label]): Shortcut => ({
+    id: `feed.nav.${name}`,
+    keys: [key],
+    scope: 'feed',
+    labelKey: `kbd-${name}`,
+    label,
+    ns: 'feed-keyboard',
   })),
 ]);
 

@@ -66,6 +66,8 @@ vi.mock('@/lib/prisma.server', () => {
     }),
     // pg-boss statements run on the transaction connection through this adapter.
     $queryRawUnsafe: vi.fn(async () => []),
+    // s08-05: the "Fan-outs" line counts running runs, then runs that failed in the last seven days.
+    fanoutRun: { count: vi.fn(async (a: { where: { status: string } }) => (a.where.status === 'RUNNING' ? 2 : 1)) },
     // The transaction hands the same mock back as `tx`.
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma),
   };
@@ -632,6 +634,7 @@ describe('s05-02 admin jobs: raw SQL names pg-boss tables and columns', () => {
         nextRunAt: string;
       }[];
     }[];
+    expect(r.json!.fanouts).toEqual({ running: 2, failedLast7Days: 1 });
     expect(queues.map((q) => q.name)).toEqual(['digest.send', 'clean']);
     expect(queues[0]!.newestFailureAt).toBe('2026-11-20T10:00:00.000Z');
     expect(queues[1]!.schedules[0]!.nextRunAt).toBe('2026-11-21T15:00:00.000Z');

@@ -529,3 +529,72 @@ model ModeratorNote {
   @@index([subjectId, pinned, createdAt(sort: Desc)])
   @@map("moderator_note")
 }
+
+// ─── Spam sweeps (sprint 08 18) ───────────────────────────────────────────
+// An admin removes a member's posts and replies in a time window in one
+// audited, durable, undoable run. Kept on purpose when either member is
+// deleted (the audit trail); see lib/account/erasure-registry.ts.
+
+model ModerationSweep {
+  id             String    @id @default(cuid())
+  subjectId      String
+  adminId        String
+  windowFrom     DateTime
+  windowTo       DateTime
+  includePosts   Boolean   @default(true)
+  includeReplies Boolean   @default(true)
+  /// Shown to the member once, in the notice.
+  reason         String    @db.VarChar(500)
+  /// A strike is issued when the run finishes; strikeId is set then.
+  withStrike     Boolean   @default(false)
+  strikeId       String?   @db.VarChar(40)
+  /// PREVIEW | RUNNING | DONE | FAILED | UNDONE
+  status         String    @default("PREVIEW") @db.VarChar(12)
+  /// 'remove' for a run, 'undo' while an undo is running.
+  phase          String    @default("remove") @db.VarChar(8)
+  /// What the window held at the last preview / confirm.
+  postCount      Int       @default(0)
+  replyCount     Int       @default(0)
+  removedCount   Int       @default(0)
+  restoredCount  Int       @default(0)
+  error          String?   @db.VarChar(300)
+  createdAt      DateTime  @default(now())
+  confirmedAt    DateTime?
+  /// When the run (or the undo) was last queued; a queued sweep with no heartbeat for too long is reclaimed.
+  queuedAt       DateTime?
+  finishedAt     DateTime?
+  undoneAt       DateTime?
+  undoneById     String?   @db.VarChar(40)
+  /// The lease (copied from the bulk runner): a runner owns the sweep while this is newer than two minutes.
+  heartbeatAt    DateTime?
+  reclaims       Int       @default(0)
+  /// The keyset of a run: strictly after (cursorAt, cursorId) within cursorType ('rmhark' then 'comment').
+  cursorType     String?   @db.VarChar(8)
+  cursorAt       DateTime?
+  cursorId       String?   @db.VarChar(40)
+
+  subject User @relation("SweepSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  admin   User @relation("SweepAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  items   ModerationSweepItem[]
+
+  @@index([status, heartbeatAt])
+  @@index([subjectId, createdAt])
+  @@map("moderation_sweep")
+}
+
+model ModerationSweepItem {
+  sweepId    String
+  /// 'rmhark' | 'comment'
+  entityType String    @db.VarChar(8)
+  entityId   String    @db.VarChar(40)
+  /// The exact deletedAt the removal wrote; undo restores the item only while it still equals this.
+  removedAt  DateTime
+  /// Null until undo handles the item: 'restored', or 'skipped' because the item changed since the sweep.
+  undone     String?   @db.VarChar(8)
+
+  sweep ModerationSweep @relation(fields: [sweepId], references: [id], onDelete: Cascade)
+
+  @@id([sweepId, entityType, entityId])
+  @@index([sweepId, undone])
+  @@map("moderation_sweep_item")
+}

@@ -14,6 +14,7 @@ import { nanoid } from 'nanoid';
 import { config } from './config';
 import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
+import { statsRecorder } from './stats-recorder';
 import { validated } from './schemas';
 import { C2S, S2C } from '../../lib/rmhtube/events';
 import { ChatSchema, ChatReactSchema, ChatPinSchema } from '../../lib/rmhtube/schemas';
@@ -205,6 +206,7 @@ export class ChatHandler {
     room.lastActivityAt = now;
 
     this.roomManager.broadcastAction(room, 'CHAT_MESSAGE', message);
+    statsRecorder.messageSent(userId);
 
     // Persist to DB (fire-and-forget)
     this.chatWriter.add({
@@ -296,6 +298,7 @@ export class ChatHandler {
       }
     } else {
       emojiUsers.add(userId);
+      statsRecorder.reactionUsed(userId);
     }
 
     // Build the serialized reactions: Record<string, string[]>

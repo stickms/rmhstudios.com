@@ -35,7 +35,12 @@ export interface RssChannel {
   items: RssItem[];
 }
 
-function xmlEscape(s: string): string {
+/** Characters XML 1.0 forbids (NUL and most C0 controls); user text can carry them and one breaks the whole feed. */
+// eslint-disable-next-line no-control-regex
+const XML_ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g;
+
+function xmlEscape(raw: string): string {
+  const s = raw.replace(XML_ILLEGAL, '');
   return s.replace(
     /[<>&'"]/g,
     (c) =>
@@ -50,7 +55,8 @@ function xmlEscape(s: string): string {
 }
 
 /** CDATA-wrap, defusing any nested `]]>` so the payload can't break out. */
-function cdata(s: string): string {
+function cdata(raw: string): string {
+  const s = raw.replace(XML_ILLEGAL, '');
   return `<![CDATA[${s.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 }
 

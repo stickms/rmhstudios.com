@@ -44,7 +44,7 @@ export function RunPanel({
   const seedKey = run ? seedKeyOf(run.seed, run.variant) : null;
 
   async function submit(kind: 'daily' | 'seed') {
-    if (!run) return false;
+    if (!run) return null;
     return api(submitArcadeRunApi, {
       body: {
         kind,
@@ -54,8 +54,8 @@ export function RunPanel({
         detail,
       },
     }).then(
-      () => true,
-      () => false,
+      (res) => res,
+      () => null,
     );
   }
 
@@ -80,11 +80,18 @@ export function RunPanel({
               defaultValue: "Practice run: today's attempt was already used.",
             }),
           );
-        const ok = await submit('daily');
+        const res = await submit('daily');
+        // `counted: false` after a counted start means an assisted run: kept off the board,
+        // and it still uses the day's one attempt.
         setNote(
-          ok
-            ? t('daily-saved', { defaultValue: "Saved to today's leaderboard." })
-            : t('daily-failed', { defaultValue: "Couldn't save the daily result." }),
+          !res
+            ? t('daily-failed', { defaultValue: "Couldn't save the daily result." })
+            : res.counted
+              ? t('daily-saved', { defaultValue: "Saved to today's leaderboard." })
+              : t('daily-assisted', {
+                  defaultValue:
+                    "Assisted run: saved to your history, not the leaderboard. It used today's attempt.",
+                }),
         );
         return;
       }

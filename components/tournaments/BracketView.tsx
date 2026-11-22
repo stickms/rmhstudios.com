@@ -211,6 +211,11 @@ export function BracketView({ tournament, canReport, reportingId, onReport, view
                       variant="default"
                       className="flex-1 min-w-0 truncate"
                       loading={reportingId === m.id}
+                      aria-label={t('report-winner', {
+                        ns: 'bracket-list',
+                        defaultValue: 'Report {{name}} won',
+                        name: name(m.entrantAId),
+                      })}
                       onClick={() => onReport(m.id, m.entrantAId!)}
                     >
                       {name(m.entrantAId)}
@@ -220,6 +225,11 @@ export function BracketView({ tournament, canReport, reportingId, onReport, view
                       variant="default"
                       className="flex-1 min-w-0 truncate"
                       loading={reportingId === m.id}
+                      aria-label={t('report-winner', {
+                        ns: 'bracket-list',
+                        defaultValue: 'Report {{name}} won',
+                        name: name(m.entrantBId),
+                      })}
                       onClick={() => onReport(m.id, m.entrantBId!)}
                     >
                       {name(m.entrantBId)}
@@ -235,6 +245,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport, view
                     viewerId={viewerId}
                     isManager={canReport}
                     onChanged={onChanged}
+                    idScope="tree-"
                   />
                 )}
                 {onChanged && (

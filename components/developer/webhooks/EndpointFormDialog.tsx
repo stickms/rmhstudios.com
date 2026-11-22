@@ -162,6 +162,16 @@ function EndpointForm({
         {WEBHOOK_EVENTS.filter((event) => !event.group).map(renderEvent)}
         <p className="t-label pt-2">{t('events-games', { ns: 'game-webhooks', defaultValue: 'Games' })}</p>
         {WEBHOOK_EVENTS.filter((event) => event.group === 'games').map(renderEvent)}
+        <p className="t-label pt-2">{t('group-builds', { ns: 'webhook-activity', defaultValue: 'Builds' })}</p>
+        {WEBHOOK_EVENTS.filter((event) => event.group === 'builds').map(renderEvent)}
+        <p className="t-label pt-2">{t('group-events', { ns: 'webhook-activity', defaultValue: 'Events' })}</p>
+        {WEBHOOK_EVENTS.filter((event) => event.group === 'events').map(renderEvent)}
+        <p className="t-label pt-2">{t('group-reading', { ns: 'webhook-activity', defaultValue: 'Reading' })}</p>
+        {WEBHOOK_EVENTS.filter((event) => event.group === 'reading').map(renderEvent)}
+        <p className="t-label pt-2">
+          {t('group-tournaments', { ns: 'webhook-activity', defaultValue: 'Tournaments' })}
+        </p>
+        {WEBHOOK_EVENTS.filter((event) => event.group === 'tournaments').map(renderEvent)}
       </fieldset>
 
       {error && (

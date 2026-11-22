@@ -12,6 +12,13 @@ import { listRecentGameIds } from '@/lib/playtime/playtime.server';
 import { listCollections } from '@/lib/games/collections.server';
 import { listFollowedGameIds } from '@/lib/arcade/updates.server';
 import type { LibraryKind } from '@/lib/games/library';
+import {
+  ACCESS_OPTIONS,
+  PLAY_OPTIONS,
+  parseAccessParam,
+  serializeAccessParam,
+  type AccessFilter,
+} from '@/lib/games/access-filter';
 
 const fetchRecents = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
@@ -23,11 +30,20 @@ const fetchRecents = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/games/_library')({
-  validateSearch: (search: Record<string, unknown>): { kind?: 'game' | 'app'; following?: true } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { kind?: 'game' | 'app'; following?: true; play?: string; access?: string } => ({
     ...(search.kind === 'game' || search.kind === 'app' ? { kind: search.kind } : {}),
     // The member's followed games only (`/games?following=1`).
     ...(search.following === true || search.following === 1 || search.following === '1' || search.following === 'true'
       ? { following: true as const }
+      : {}),
+    // Access filters, comma-separated and in display order so a selection is one URL (`?play=keyboard&access=no-timed-input`).
+    ...(serializeAccessParam(parseAccessParam(search.play, PLAY_OPTIONS))
+      ? { play: serializeAccessParam(parseAccessParam(search.play, PLAY_OPTIONS)) as string }
+      : {}),
+    ...(serializeAccessParam(parseAccessParam(search.access, ACCESS_OPTIONS))
+      ? { access: serializeAccessParam(parseAccessParam(search.access, ACCESS_OPTIONS)) as string }
       : {}),
   }),
   head: () => ({ meta: [{ title: 'Library | RMH Studios' }] }),
@@ -37,7 +53,7 @@ export const Route = createFileRoute('/games/_library')({
 
 function LibraryLayout() {
   const { recentIds, collections, followedIds, signedIn } = Route.useLoaderData();
-  const { kind = 'all', following = false } = Route.useSearch();
+  const { kind = 'all', following = false, play, access } = Route.useSearch();
   const navigate = useNavigate();
 
   return (
@@ -47,6 +63,18 @@ function LibraryLayout() {
       signedIn={signedIn}
       kind={kind}
       following={following}
+      accessFilter={{ play: parseAccessParam(play, PLAY_OPTIONS), access: parseAccessParam(access, ACCESS_OPTIONS) }}
+      onAccessChange={(next: AccessFilter) =>
+        void navigate({
+          to: '.',
+          search: ((prev: Record<string, unknown>) => ({
+            ...prev,
+            play: serializeAccessParam(next.play),
+            access: serializeAccessParam(next.access),
+          })) as never,
+          replace: true,
+        })
+      }
       followedIds={followedIds}
       onFollowingChange={(on: boolean) =>
         void navigate({

@@ -4,7 +4,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
 import { LockedCommunityPreview } from '@/components/communities/LockedCommunity';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { RssLink } from '@/components/feed/RssLink';
+import { SITE_URL, buildCanonical, buildMeta } from '@/lib/seo';
 import {
   getCommunity,
   getCommunityFeed,
@@ -73,7 +74,15 @@ export const Route = createFileRoute('/_site/c/$slug')({
         imageAlt: community.icon ? `${community.name}'s community icon.` : undefined,
         imageSize: community.icon ? null : undefined,
       }),
-      links: [buildCanonical(path)],
+      links: [
+        buildCanonical(path),
+        {
+          rel: 'alternate',
+          type: 'application/rss+xml',
+          title: `${community.name} — RMH Studios`,
+          href: `${SITE_URL}${path}/rss.xml`,
+        },
+      ],
     };
   },
   loader: ({ params }) => fetchCommunityPage({ data: params.slug }),
@@ -102,6 +111,11 @@ function CommunityPage() {
   }
   return (
     <PageFrame>
+      {community && !community.isPrivate && (
+        <div className="flex justify-end px-4 pt-3">
+          <RssLink href={`/c/${slug}/rss.xml`} />
+        </div>
+      )}
       <CommunityColumn
         slug={slug}
         initialCommunity={community}

@@ -13,17 +13,12 @@
 
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import * as C from '@/lib/admin/admin-ops.contract';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
-import {
-  AUTO_BAN_REASON,
-  AUTO_BAN_THRESHOLD,
-  activeStrikeWhere,
-} from '@/lib/moderation/standing.server';
+import { liftAutoBanIfNoLongerApplies } from '@/lib/moderation/strikes.server';
 
 const schema = z.object({
   action: z.enum(['uphold', 'overturn']),
@@ -69,24 +64,7 @@ export const route = apiRoute('/api/admin/appeals/$id', {
       }
 
       // Overturned: recount and lift the auto-ban if it no longer applies.
-      let banLifted = false;
-      if (decision === 'OVERTURNED') {
-        const remaining = await prisma.userStrike.count({
-          where: activeStrikeWhere(strike.userId),
-        });
-        if (remaining < AUTO_BAN_THRESHOLD) {
-          const lifted = await prisma.user.updateMany({
-            where: {
-              id: strike.userId,
-              banReason: AUTO_BAN_REASON,
-              bannedUntil: { gt: new Date() },
-            },
-            data: { bannedUntil: null, banReason: null },
-          });
-          banLifted = lifted.count > 0;
-          if (banLifted) await dropLearnerBoardCaches(strike.userId, Date.now());
-        }
-      }
+      const banLifted = decision === 'OVERTURNED' ? await liftAutoBanIfNoLongerApplies(strike.userId) : false;
 
       await logAdminAction(session.user.id, `appeal.${action}`, {
         targetType: 'strike',

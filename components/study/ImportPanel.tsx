@@ -78,6 +78,10 @@ export function ImportPanel({
     'invalid-cloze': ts('reason-invalid-cloze', {
       defaultValue: 'The cloze text has a broken, nested or missing deletion',
     }),
+    'invalid-picture': t('reason-invalid-picture', {
+      ns: 'card-images',
+      defaultValue: 'A picture has no description, is on a cloze front, or is not one of your uploads',
+    }),
   };
   const typeLabel = {
     basic: ts('type-basic', { defaultValue: 'Basic' }),

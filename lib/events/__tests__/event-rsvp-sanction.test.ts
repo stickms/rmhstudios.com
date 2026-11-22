@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   sanction: null as null | { id: string; kind: 'ban' | 'timeout'; endsAt: Date | null; ruleId: string | null },
   sanctionCalls: [] as [string, string][],
   rsvpRecurring: vi.fn(),
+  emitRsvp: vi.fn(async () => {}),
 }));
 
 vi.mock('@/lib/prisma.server', () => ({
@@ -46,6 +47,7 @@ vi.mock('@/lib/calendar/recurring-events.server', () => ({
   unrsvpRecurring: vi.fn(),
   upcomingOccurrenceEventIds: vi.fn(),
 }));
+vi.mock('@/lib/webhooks/activity-emit.server', () => ({ emitRsvpChanged: h.emitRsvp }));
 vi.mock('@/lib/user-display', () => ({
   userDisplaySelect: {},
   resolveUser: (u: { id: string; name?: string }) => ({ id: u.id, name: u.name ?? null, image: null, handle: null }),
@@ -103,6 +105,7 @@ beforeEach(() => {
   h.sanction = null;
   h.sanctionCalls = [];
   h.rsvpRecurring.mockReset();
+  h.emitRsvp.mockClear();
 });
 
 describe('RSVP to a community event under a sanction', () => {
@@ -187,5 +190,35 @@ describe('POST /api/events/$id/rsvp', () => {
       code: 'community_banned',
       endsAt: endsAt.toISOString(),
     });
+  });
+});
+
+describe('RSVP webhook emit (s08-12)', () => {
+  it('emits once when the answer changes, and nothing when it is re-sent', async () => {
+    setup({ communityId: null });
+    await rsvp('e1', 'm', 'going');
+    expect(h.emitRsvp).toHaveBeenCalledTimes(1);
+    expect(h.emitRsvp).toHaveBeenCalledWith('m', { eventId: 'e1', occurrenceAt: null, status: 'going' });
+    await rsvp('e1', 'm', 'going');
+    expect(h.emitRsvp).toHaveBeenCalledTimes(1);
+    await rsvp('e1', 'm', 'maybe');
+    expect(h.emitRsvp).toHaveBeenCalledTimes(2);
+    expect(h.emitRsvp).toHaveBeenLastCalledWith('m', { eventId: 'e1', occurrenceAt: null, status: 'maybe' });
+  });
+
+  it('emits not_going when an answer is taken back, nothing when there was none', async () => {
+    setup({ communityId: null }, [{ userId: 'm' }]);
+    await unrsvp('e1', 'm');
+    expect(h.emitRsvp).toHaveBeenCalledWith('m', { eventId: 'e1', occurrenceAt: null, status: 'not_going' });
+    h.emitRsvp.mockClear();
+    await unrsvp('e1', 'm');
+    expect(h.emitRsvp).not.toHaveBeenCalled();
+  });
+
+  it('emits nothing when the RSVP is refused', async () => {
+    setup({ communityId: 'c1' });
+    h.sanction = { id: 'b1', kind: 'ban', endsAt: null, ruleId: null };
+    await rsvp('e1', 'm', 'going').catch(() => {});
+    expect(h.emitRsvp).not.toHaveBeenCalled();
   });
 });

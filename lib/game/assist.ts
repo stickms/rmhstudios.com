@@ -153,7 +153,12 @@ export function profileFor(game: string, settings: AssistSettings): AssistProfil
  * `lib/game-capabilities.ts` — and `lib/__tests__/game-assist.test.ts` holds
  * those two to each other so the two halves cannot ship apart.
  */
-export const ASSIST_CAPABLE: ReadonlySet<string> = new Set<string>(['synapse-storm', 'void-breaker']);
+export const ASSIST_CAPABLE: ReadonlySet<string> = new Set<string>([
+  'synapse-storm',
+  'void-breaker',
+  'dream-rift',
+  'nightrail',
+]);
 
 /**
  * Which `AccessibilityFeature` strings a game must declare once it adopts.

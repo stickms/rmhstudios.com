@@ -354,7 +354,9 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: false,
     // Score-attack: DreamRiftPlayer holds high scores, there is no run to resume.
     save: 'none',
-    accessibility: [],
+    // Solo, practice and the seeded daily honour all five assists (assist-profile.ts); co-op
+    // applies only calm visuals and colour-safe, locally. Assisted runs stay off every board.
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'],
     descriptors: ['flashing'],
   },
   'gabriels-horn': {
@@ -388,7 +390,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     // reads back, so `own-table` would overstate what following your account
     // actually gets you.
     save: 'local-only',
-    accessibility: [],
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'no-timed-input'],
     // Neon signage, bloom, drift sparks and the crash burst all strobe.
     descriptors: ['flashing'],
   },

@@ -224,6 +224,13 @@ const ALLOWED: Readonly<
     count: 1,
     reason: HUB_HOUSEKEEPING,
   },
+  // s08-01: the watch-statistics recorder reads which members are in which room, state that exists
+  // only in this hub process, so no pg-boss cron can sample it; the second timer flushes the
+  // in-memory deltas that sampling holds. Both are unref'd and stopped on shutdown.
+  'server/rmhtube/stats-recorder.ts': {
+    count: 2,
+    reason: `${HUB_HOUSEKEEPING}: a 5 s sample of the hub's rooms and a 60 s flush of the held watch-time deltas`,
+  },
   'server/rmhtube/sync-engine.ts': {
     count: 1,
     reason: 'leader-authoritative 2 s sync heartbeat per room',

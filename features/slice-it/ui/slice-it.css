@@ -52,6 +52,7 @@
     --slice-primary: #2db3f0;
     --slice-accent: #f4509f;
     --slice-danger: #f4509f;
+    --slice-warning: #f5c542;
 
     /* Lanes: cyan on top, pink below — the same two inks as the key art. */
     --slice-lane-top: #2db3f0;

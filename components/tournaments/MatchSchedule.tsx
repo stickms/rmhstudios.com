@@ -89,6 +89,8 @@ interface Props {
   /** The host or an admin. */
   isManager: boolean;
   onChanged: () => Promise<void> | void;
+  /** Scopes the time field's id when one match is drawn in more than one place (the bracket and the Rounds view). */
+  idScope?: string;
 }
 
 export function MatchSchedule({
@@ -99,6 +101,7 @@ export function MatchSchedule({
   viewerId,
   isManager,
   onChanged,
+  idScope = '',
 }: Props) {
   const { t, i18n } = useTranslation('match-scheduling');
   const zone = useViewerZone();
@@ -304,7 +307,7 @@ export function MatchSchedule({
 
       {composer !== null && (
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`match-time-${match.id}`}>
+          <Label htmlFor={`${idScope}match-time-${match.id}`}>
             {composer === 'host'
               ? t('set-time-label', {
                   defaultValue: 'Match time',
@@ -314,7 +317,7 @@ export function MatchSchedule({
                 })}
           </Label>
           <Input
-            id={`match-time-${match.id}`}
+            id={`${idScope}match-time-${match.id}`}
             type="datetime-local"
             value={local}
             onChange={(e) => setLocal(e.target.value)}

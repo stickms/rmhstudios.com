@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { plausibleRun } from '@/lib/arcade/validate';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
 import {
   dailyMutator,
   findModifier,
@@ -66,6 +67,20 @@ export async function startDaily(userId: string): Promise<{ counted: boolean }> 
   }
 }
 
+/**
+ * An assisted run (P7) is stored, never ranked: `score` stays null, which every
+ * board query filters out, and the real score is kept in `detail` so it still
+ * shows in the member's own history. The claim is peeked, not consumed: the
+ * results screen files the personal score and the seeded run, and whichever
+ * lands second must see the same answer. The next run start rewrites the claim.
+ */
+export function assistedDetail(
+  detail: Record<string, number> | undefined,
+  score: number,
+) {
+  return { ...(detail ?? {}), assisted: true, assistedScore: score };
+}
+
 export type SubmitRunResult =
   { ok: true; counted: boolean; best?: number } | { ok: false; status: number; error: string };
 
@@ -93,12 +108,15 @@ export async function submitRun(input: {
     if (elapsed > MAX_ATTEMPT_MS || !plausibleRun(g, score, elapsed, detail)) {
       return { ok: false, status: 400, error: 'Implausible result' };
     }
+    const assisted = await consumeAssistRun(userId, g, { keepClaim: true });
     // First finish wins: only an unfinished row can be claimed.
     const claimed = await prisma.arcadeSeedRun.updateMany({
       where: { kind: 'daily', gameId: g, seedKey, userId, finishedAt: null },
-      data: { score, detail, finishedAt: new Date() },
+      data: assisted
+        ? { score: null, detail: assistedDetail(detail, score), finishedAt: new Date() }
+        : { score, detail, finishedAt: new Date() },
     });
-    return { ok: true, counted: claimed.count === 1, best: score };
+    return { ok: true, counted: claimed.count === 1 && !assisted, best: score };
   }
 
   const parsed = parseSeedKey(seedKey);
@@ -114,6 +132,23 @@ export async function submitRun(input: {
     where: { kind_gameId_seedKey_userId: { kind: 'seed', gameId: g, seedKey, userId } },
     select: { score: true },
   });
+  if (await consumeAssistRun(userId, g, { keepClaim: true })) {
+    // Never replaces a ranked score; with none yet, the run is kept unranked.
+    if (!existing) {
+      await prisma.arcadeSeedRun.create({
+        data: {
+          kind: 'seed',
+          gameId: g,
+          seedKey,
+          userId,
+          score: null,
+          detail: assistedDetail(detail, score),
+          finishedAt: new Date(),
+        },
+      });
+    }
+    return { ok: true, counted: false, best: existing?.score ?? 0 };
+  }
   if (existing && (existing.score ?? -1) >= score)
     return { ok: true, counted: false, best: existing.score ?? 0 };
   await prisma.arcadeSeedRun.upsert({

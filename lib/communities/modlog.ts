@@ -45,6 +45,10 @@ export const MOD_ACTIONS_BY_GROUP = {
     'rules_changed',
     'census_closed',
     'challenge_cancelled',
+    'recurring_created',
+    'recurring_updated',
+    'recurring_paused',
+    'recurring_deleted',
   ],
 } as const satisfies Record<ModLogGroup, readonly string[]>;
 
@@ -90,6 +94,7 @@ export const MOD_TARGET_TYPES = [
   'announcement',
   'census',
   'challenge',
+  'recurring',
 ] as const;
 export type ModTargetType = (typeof MOD_TARGET_TYPES)[number];
 
