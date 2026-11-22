@@ -12,10 +12,12 @@
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { useId, useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -179,64 +181,119 @@ export function ProfileCosmetics() {
   return (
     <>
       {sections.map(({ kind, items }) => (
-        <SettingsSection key={kind} title={kindLabel(t, kind)} className={arrival}>
-          <ul className="border-t border-site-border">
-            {items.map((item) => {
-              const busy = equipMutation.isPending && equipMutation.variables?.item.id === item.id;
-              return (
-                <li key={item.id} className="flex items-center gap-3 border-b border-site-border py-3">
-                  <ItemPicture kind={item.kind} art={item.data} size="thumb" className="w-16" />
-                  <div className="min-w-0 flex-1">
-                    <p className="t-body truncate font-medium text-site-text">{item.name}</p>
-                    <p className="t-meta">
-                      <RarityMark rarity={item.rarity} />
-                    </p>
-                    <p className="t-body truncate text-site-text-muted">{item.description}</p>
-                  </div>
-                  <div className="shrink-0">
-                    <Button
-                      size="sm"
-                      variant={item.equipped ? 'default' : 'default'}
-                      aria-pressed={item.equipped}
-                      aria-label={
-                        item.equipped
-                          ? t('profile-cosmetics-unequip-label', {
-                              name: item.name,
-                              defaultValue: 'Unequip {{name}}',
-                            })
-                          : t('profile-cosmetics-equip-label', {
-                              name: item.name,
-                              defaultValue: 'Equip {{name}}',
-                            })
-                      }
-                      disabled={busy}
-                      onClick={() =>
-                        equipMutation.mutate({
-                          item,
-                          equipped: !item.equipped,
-                        })
-                      }
-                    >
-                      {item.equipped ? (
-                        <>
-                          <Check className="h-4 w-4" aria-hidden />{' '}
-                          {t('profile-cosmetics-equipped', {
-                            defaultValue: 'Equipped',
-                          })}
-                        </>
-                      ) : (
-                        t('profile-cosmetics-equip', {
-                          defaultValue: 'Equip',
-                        })
-                      )}
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </SettingsSection>
+        <CosmeticSection
+          key={kind}
+          kind={kind}
+          items={items}
+          className={arrival}
+          pendingId={equipMutation.isPending ? (equipMutation.variables?.item.id ?? null) : null}
+          onToggle={(item) => equipMutation.mutate({ item, equipped: !item.equipped })}
+        />
       ))}
     </>
+  );
+}
+
+/** Past this many owned items a section gets the carousel and its Show all toggle; fewer just fit. */
+const RAIL_THRESHOLD = 3;
+
+/**
+ * One kind of cosmetic as a carousel (the shop's and the theme picker's pattern), so a long collection does not make
+ * the page long. "Show all" opens the same tiles as a grid in place; "Show fewer" folds it back.
+ */
+function CosmeticSection({
+  kind,
+  items,
+  className,
+  pendingId,
+  onToggle,
+}: {
+  kind: ShopItemKind;
+  items: CosmeticItem[];
+  className?: string;
+  pendingId: string | null;
+  onToggle: (item: CosmeticItem) => void;
+}) {
+  const { t } = useTranslation('feed');
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
+  const collapsible = items.length > RAIL_THRESHOLD;
+
+  const tiles = items.map((item) => (
+    <div key={item.id} className="cosmetic-tile">
+      <ItemPicture kind={item.kind} art={item.data} size="thumb" className="w-full" />
+      <div className="min-w-0">
+        <p className="t-body truncate font-medium text-site-text">{item.name}</p>
+        <p className="t-meta">
+          <RarityMark rarity={item.rarity} />
+        </p>
+      </div>
+      <Button
+        size="sm"
+        variant="default"
+        aria-pressed={item.equipped}
+        aria-label={
+          item.equipped
+            ? t('profile-cosmetics-unequip-label', {
+                name: item.name,
+                defaultValue: 'Unequip {{name}}',
+              })
+            : t('profile-cosmetics-equip-label', {
+                name: item.name,
+                defaultValue: 'Equip {{name}}',
+              })
+        }
+        disabled={pendingId === item.id}
+        onClick={() => onToggle(item)}
+      >
+        {item.equipped ? (
+          <>
+            <Check className="h-4 w-4" aria-hidden />{' '}
+            {t('profile-cosmetics-equipped', {
+              defaultValue: 'Equipped',
+            })}
+          </>
+        ) : (
+          t('profile-cosmetics-equip', {
+            defaultValue: 'Equip',
+          })
+        )}
+      </Button>
+    </div>
+  ));
+
+  return (
+    <SettingsSection
+      title={kindLabel(t, kind)}
+      className={className}
+      action={
+        collapsible ? (
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-expanded={expanded}
+            aria-controls={listId}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded
+              ? t('profile-cosmetics-show-fewer', { defaultValue: 'Show fewer' })
+              : t('profile-cosmetics-show-all', {
+                  count: items.length,
+                  defaultValue: 'Show all ({{count}})',
+                })}
+          </Button>
+        ) : null
+      }
+    >
+      <div id={listId}>
+        {collapsible && !expanded ? (
+          <HorizontalScroller surface="none" aria-label={kindLabel(t, kind)} contentClassName="cosmetic-rail">
+            {tiles}
+          </HorizontalScroller>
+        ) : (
+          <div className="cosmetic-grid">{tiles}</div>
+        )}
+      </div>
+    </SettingsSection>
   );
 }

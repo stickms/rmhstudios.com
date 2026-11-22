@@ -49,6 +49,14 @@ function defaultModule(kind: ModuleKind): ProfileModule {
         text: '',
       },
     };
+  // Top four needs its list: with `config: {}` the block rendered `items` as undefined and threw as soon as it was added.
+  if (kind === 'top-four')
+    return {
+      kind: 'top-four',
+      config: {
+        items: [],
+      },
+    };
   return {
     kind,
     config: {},
@@ -147,23 +155,35 @@ export function ProfileShowcase({
     }
   }
 
+  const editButton = (
+    <IconButton
+      icon={Pencil}
+      size="icon-xs"
+      variant="ghost"
+      label={t('edit-showcase', {
+        defaultValue: 'Edit showcase',
+      })}
+      onClick={() => setOpen(true)}
+    />
+  );
+
   return (
     // A flex gap, not space-y: an arriving module sits in ArrivalSuspense's box-less wrapper.
     <div className="mb-4 flex flex-col gap-3">
-      {isOwner ? (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-            <Pencil className="h-4 w-4" aria-hidden />
-            {t('edit-showcase', {
-              defaultValue: 'Edit showcase',
-            })}
-          </Button>
-        </div>
-      ) : null}
+      {/* The owner's edit control is one pencil, right-aligned on the first block's title row (it has its own row only
+          while the showcase is empty). It is the icon's tooltip that names it. Visitors never see it. */}
+      {isOwner && modules.length === 0 ? <div className="flex justify-end">{editButton}</div> : null}
 
-      {modules.map((m, i) => (
-        <ModuleBlock key={`${m.kind}-${i}`} module={m} profile={profile} isOwner={isOwner} />
-      ))}
+      {modules.map((m, i) =>
+        i === 0 && isOwner ? (
+          <div key={`${m.kind}-${i}`} className="relative [&_[data-slot=widget-frame]>div:first-child]:pe-12">
+            <ModuleBlock module={m} profile={profile} isOwner={isOwner} />
+            <div className="absolute end-2 top-2">{editButton}</div>
+          </div>
+        ) : (
+          <ModuleBlock key={`${m.kind}-${i}`} module={m} profile={profile} isOwner={isOwner} />
+        ),
+      )}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent>

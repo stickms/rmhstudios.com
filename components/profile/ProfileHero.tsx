@@ -233,13 +233,6 @@ export function ProfileHero({
           {profile.presence ? (
             <PresenceDot presence={profile.presence} className="absolute end-0 bottom-0" />
           ) : null}
-          {/* The equipped pet keeps the avatar company at its lower start corner; the presence dot has the other one. */}
-          <PetMark
-            pet={profile.cosmetics?.pet}
-            size={36}
-            title={t('equipped-pet', { defaultValue: 'Equipped pet' })}
-            className="pointer-events-none absolute -start-4 -bottom-3"
-          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -247,6 +240,13 @@ export function ProfileHero({
               <EmojiText>{name}</EmojiText>
             </h1>
             <IdentityBadges profile={profile} />
+            {/* The equipped pet sits after the name and its badges, in the row, not on the avatar's edge. */}
+            <PetMark
+              pet={profile.cosmetics?.pet}
+              size={28}
+              title={t('equipped-pet', { defaultValue: 'Equipped pet' })}
+              className="pointer-events-none shrink-0"
+            />
           </div>
           {profile.handle ? (
             <p className="t-meta mt-1" dir="ltr">

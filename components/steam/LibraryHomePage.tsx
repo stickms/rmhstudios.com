@@ -12,6 +12,7 @@ import {
   groupRail,
 } from '@/lib/games/library';
 import { CAPSULE_SIZES, TitleArt } from './TitleArt';
+import { capsuleTilt } from './tilt';
 
 const layoutApi =
   getRouteApi(
@@ -234,6 +235,7 @@ function Capsules({
                   b.id,
               }}
               className="stm-capsule"
+              {...capsuleTilt}
             >
               <TitleArt
                 build={

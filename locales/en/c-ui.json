@@ -25,6 +25,8 @@
   "move-down": "Move down{{name}}",
   "move-up": "Move up{{name}}",
   "next-page": "Next page",
+  "notification-badge-unread_one": "{{count}} unread",
+  "notification-badge-unread_other": "{{count}} unread",
   "page-of": "Page {{page}} of {{total}}",
   "prev-page": "Previous page",
   "prompt-unavailable": "Couldn't open the dialog. Check your connection and try again.",

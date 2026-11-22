@@ -3,7 +3,6 @@ import {
   Plus,
   MoreHorizontal,
   BarChart3,
-  ImagePlay,
   ImagePlus,
   Coins,
   Type,
@@ -13,6 +12,7 @@ import {
   AlertTriangle,
   Smile,
 } from 'lucide-react';
+import { GifIcon } from '@/components/ui/gif-icon';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
@@ -235,7 +235,7 @@ export function ComposeMenu({
               }}
               className={ITEM}
             >
-              <ImagePlay className="w-4 h-4 text-site-text-muted" />
+              <GifIcon className="w-4 h-4 text-site-text-muted" />
               {t('menu-add-gif', { defaultValue: 'Add GIF' })}
             </button>
             <button

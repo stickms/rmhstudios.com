@@ -2526,11 +2526,39 @@ html[dir='rtl'] .stm-drawer-panel {
     box-shadow var(--stm-dur) var(--stm-ease),
     opacity var(--stm-dur) var(--stm-ease);
 }
+/* Capsule tilt: the capsule leans toward the cursor in 3D and a specular highlight follows it, the way a glossy card
+   catches a light. `tilt.ts` only writes --tilt-x/-y and --glare-x/-y on pointer move; the transform and the glare
+   are compositor work (transform and opacity), so nothing runs per frame and a capsule at rest costs nothing. */
 .stm-capsule {
-  transition: transform var(--stm-dur) var(--stm-ease);
+  position: relative;
+  transition: transform 320ms var(--stm-ease);
 }
-.stm-capsule:hover {
-  transform: translateY(-2px);
+.stm-capsule::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--stm-radius);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms linear;
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 30%),
+    rgb(255 255 255 / 0.55),
+    rgb(255 255 255 / 0.12) 38%,
+    transparent 62%
+  );
+  mix-blend-mode: soft-light;
+}
+@media (hover: hover) and (pointer: fine) {
+  .stm-capsule:hover {
+    z-index: 1;
+    transform: perspective(700px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(1.06);
+    transition: transform 90ms linear;
+  }
+  .stm-capsule:hover::after {
+    opacity: 1;
+  }
 }
 
 /* In-page links (Achievements, Reviews, ...) land between the pinned bars, not under either. */

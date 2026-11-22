@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
 import { VibeComposeChip } from '@/components/rmhvibe/VibeComposeChip';
-import { X, BarChart3, ImagePlay, ImagePlus, MoreHorizontal, Smile } from'lucide-react';
+import { X, BarChart3, ImagePlus, MoreHorizontal, Smile } from'lucide-react';
+import { GifIcon } from '@/components/ui/gif-icon';
 import { GifAttachment, GifPopover } from './compose/GifAttachment';
 import { counterToneClass } from './compose/compose-state';
 import { AIGenerateButton } from'./AIGenerateButton';
@@ -329,7 +330,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
  className="absolute top-full right-0 mt-1 w-52 origin-top-right surface-overlay overflow-hidden py-1.5 z-50"
  >
  <MenuItem
- icon={ImagePlay}
+ icon={GifIcon}
  onSelect={() => {
  setMenuOpen(false);
  setGifOpen(true);

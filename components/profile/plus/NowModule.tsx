@@ -38,7 +38,7 @@ export default function NowModule({ title, userId, isOwner }: { title: string; u
       })}
       emptyAction={
         <Button asChild variant="default" size="sm">
-          <Link to="/settings/profile">
+          <Link to="/settings/profile" hash="plus-now">
             {t('now-write', {
               defaultValue: 'Write your /now',
             })}
@@ -48,7 +48,7 @@ export default function NowModule({ title, userId, isOwner }: { title: string; u
       action={
         isOwner && text ? (
           <Button asChild variant="ghost" size="xs">
-            <Link to="/settings/profile">
+            <Link to="/settings/profile" hash="plus-now">
               <Pencil aria-hidden />
               {t('now-edit', {
                 defaultValue: 'Update',

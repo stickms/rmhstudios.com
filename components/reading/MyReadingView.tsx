@@ -24,7 +24,7 @@ export function MyReadingView({ tab }: { tab: ReadingTab }) {
   const { t } = useTranslation('f-reading');
   const navigate = useNavigate();
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-2 pb-12" aria-labelledby="my-reading-title">
+    <section className="w-full space-y-4 pt-2 pb-12" aria-labelledby="my-reading-title">
       <div>
         <h2 id="my-reading-title" className="t-heading">
           {t('my-reading', {

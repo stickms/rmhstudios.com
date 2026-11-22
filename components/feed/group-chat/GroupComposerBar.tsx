@@ -1,7 +1,8 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, ImagePlay, ImagePlus, Loader2, Plus } from 'lucide-react';
+import { BarChart3, ImagePlus, Loader2, Plus } from 'lucide-react';
+import { GifIcon } from '@/components/ui/gif-icon';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
@@ -138,7 +139,7 @@ export function GroupComposerBar({
               {t('menu-add-image', { defaultValue: 'Add Image' })}
             </MenuItem>
             <MenuItem
-              icon={ImagePlay}
+              icon={GifIcon}
               onSelect={() => {
                 setAttachOpen(false);
                 setShowGifPicker((v) => !v);

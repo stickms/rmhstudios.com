@@ -126,7 +126,7 @@ export default function StampWallModule({
       })}
       emptyAction={
         <Button asChild variant="default" size="sm">
-          <Link to="/settings/profile">
+          <Link to="/settings/profile" hash="plus-stamps">
             {t('stamps-manage', {
               defaultValue: 'Get stamps',
             })}

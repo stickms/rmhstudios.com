@@ -310,14 +310,29 @@
   aspect-ratio: 16 / 9;
 }
 
-/* The one hover, focus and press cue of a tile: its picture's border turns ink (M1). */
-.store-spot__link:is(:hover, :focus-visible, :active) .store-art,
-.store-card__link:is(:hover, :focus-visible, :active) .store-art {
+/* A tile is a bordered card: picture on top, caption inside the same edge, so neighbouring tiles read as separate
+   items instead of captions floating between pictures. The picture drops its own box and sits flush under a rule. */
+.store-spot,
+.store-card {
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  transition: border-color 90ms linear;
+}
+.store-spot .store-art,
+.store-card .store-art {
+  border: 0;
+  border-bottom: 1px solid var(--site-border);
+  border-radius: 0;
+}
+/* The one hover, focus and press cue of a tile: its edge turns ink (M1). */
+.store-spot:has(.store-spot__link:is(:hover, :focus-visible, :active)),
+.store-card:has(.store-card__link:is(:hover, :focus-visible, :active)) {
   border-color: var(--site-text);
 }
 
 .store-spot__body {
-  padding: 8px 0 0;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -404,7 +419,7 @@
 }
 
 .store-card__body {
-  padding: 8px 0 0;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 3px;

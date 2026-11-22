@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SHOP_ITEMS } from '@/lib/shop/catalog';
 
 /**
- * Steel R1, purchased elements (owner, 2026-11-19): a bought name colour or avatar frame may be a gradient, but a
+ * Steel R1, purchased elements (owner, 2026-11-19): a bought name colour, avatar frame or post flair may be a gradient, but a
  * subtle, gradual one. "Subtle and gradual" as a rule a test can hold:
  *  - at most three distinct colours;
  *  - neighbouring colours within 60 degrees of hue (analogous: pink to violet, orange to red), never a spectrum;
@@ -23,7 +23,7 @@ function hue(hex: string): number {
   return (h * 60 + 360) % 360;
 }
 
-const GRADIENT_KINDS = new Set(['NAME_COLOR', 'AVATAR_FRAME']);
+const GRADIENT_KINDS = new Set(['NAME_COLOR', 'AVATAR_FRAME', 'POST_FLAIR']);
 const items = SHOP_ITEMS.filter(
   (item) => GRADIENT_KINDS.has(item.kind) && typeof (item.data as { gradient?: unknown }).gradient === 'string',
 );

@@ -1052,6 +1052,8 @@
   "profile-cosmetics-equipped": "Equipped",
   "profile-cosmetics-equipped-toast": "Equipped {{name}}",
   "profile-cosmetics-error": "Couldn't load your cosmetics.",
+  "profile-cosmetics-show-all": "Show all ({{count}})",
+  "profile-cosmetics-show-fewer": "Show fewer",
   "profile-cosmetics-signed-out": "Sign in to customize your profile.",
   "profile-cosmetics-subtitle": "Equip the cosmetics you own from the shop. These apply to your profile — everyone who visits it sees them.",
   "profile-cosmetics-title": "Profile customization",

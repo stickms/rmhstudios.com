@@ -175,7 +175,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
           maxWidth: `calc(100vw - ${VIEWPORT_MARGIN * 2}px)`,
         }}
         className={cn(
-          'px-2.5 py-1 text-xs font-medium text-site-text',
+          'px-2.5 py-1 text-xs font-medium whitespace-nowrap text-site-text',
           // Steel S5: the one raised surface (`--site-surface`, 1px border, 8px radius, the T4 shadow).
           'surface-overlay',
           className,

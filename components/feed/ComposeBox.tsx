@@ -8,7 +8,8 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from 'react';
-import { BarChart3, ImagePlay, ImagePlus, Check } from 'lucide-react';
+import { BarChart3, ImagePlus, Check } from 'lucide-react';
+import { GifIcon } from '@/components/ui/gif-icon';
 import { AIGenerateButton } from './AIGenerateButton';
 import { AIImageButton } from './AIImageButton';
 import { ComposeAssist } from './ComposeAssist';
@@ -734,7 +735,7 @@ export function ComposeBox({
             />
             <ComposerTool
               ref={gifBtnRef}
-              icon={ImagePlay}
+              icon={GifIcon}
               label={t('menu-add-gif', { defaultValue: 'Add GIF' })}
               aria-haspopup="dialog"
               aria-expanded={gifOpen}

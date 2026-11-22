@@ -1074,8 +1074,8 @@
   /* Aligned with the page controls above it: 1rem from the column on wide screens, none on a phone (below 768px the
      controls are pinned to the screen edge and the frame already provides the gutter, so a gutter here put the
      catalog section 8px inside the search and tabs). */
-  --lib-gutter: 1rem;
-  --lib-content: 1400px;
+  --lib-gutter: 0px;
+  --lib-content: none;
   padding-bottom: var(--site-page-bottom-space);
 }
 
@@ -1118,8 +1118,14 @@
   max-width: var(--lib-content);
   margin: var(--site-section-gap) auto 0;
   padding: var(--site-panel-padding);
+  padding-inline: 0;
   overflow: visible;
   border-radius: calc(var(--site-radius) * 1.25);
+}
+
+.lib--glass-playground .lib__section--catalog {
+  max-width: none;
+  padding-inline: 0;
 }
 
 .lib--glass-playground .lib__section + .lib__section {
