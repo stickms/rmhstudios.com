@@ -254,6 +254,7 @@ export const MentionTextarea = function MentionTextarea({ value, onChange, onKey
  autoComplete="off"
  autoCorrect="off"
  autoCapitalize="off"
+ dir="auto"
  {...props}
  ref={innerRef}
  value={value}

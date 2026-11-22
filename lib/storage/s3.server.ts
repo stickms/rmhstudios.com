@@ -113,6 +113,21 @@ async function localExists(key: string): Promise<boolean> {
   }
 }
 
+async function localListEntries(prefix: string, limit: number): Promise<ObjectEntry[]> {
+  const keys = await localList(prefix, limit);
+  const out: ObjectEntry[] = [];
+  for (const key of keys) {
+    try {
+      const stat = await fs.stat(localPath(key));
+      out.push({ key, lastModified: stat.mtime });
+    } catch {
+      // Gone between the listing and the stat: no time, so the entry carries none.
+      out.push({ key, lastModified: null });
+    }
+  }
+  return out;
+}
+
 async function localList(prefix: string, limit: number): Promise<string[]> {
   const root = localPath(prefix.endsWith("/") ? prefix : `${prefix}/`);
   try {
@@ -412,6 +427,41 @@ export async function listObjects(prefix: string, limit = 5000): Promise<string[
     token = page.IsTruncated ? page.NextContinuationToken : undefined;
   } while (token && keys.length < limit);
   return keys;
+}
+
+/** An object's key and the time storage last modified it (null when storage gave none). */
+export interface ObjectEntry {
+  key: string;
+  lastModified: Date | null;
+}
+
+/**
+ * {@link listObjects} with each object's last-modified time (S3's `LastModified`; the local
+ * fallback uses the file's modification time). Bounded by `limit` the same way, and the same
+ * rule holds: a caller that reaches `limit` has seen a truncated listing, so anything it
+ * deletes it must first prove unreferenced some other way. An entry storage gave no time
+ * for has `lastModified: null`; callers that decide by age skip it.
+ */
+export async function listObjectEntries(prefix: string, limit = 5000): Promise<ObjectEntry[]> {
+  if (!s3Configured()) return localListEntries(prefix, limit);
+
+  const entries: ObjectEntry[] = [];
+  let token: string | undefined;
+  do {
+    const page = await getClient().send(
+      new ListObjectsV2Command({
+        Bucket: getBucket(),
+        Prefix: prefix,
+        ContinuationToken: token,
+        MaxKeys: Math.min(1000, limit - entries.length),
+      })
+    );
+    for (const object of page.Contents ?? []) {
+      if (object.Key) entries.push({ key: object.Key, lastModified: object.LastModified ?? null });
+    }
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token && entries.length < limit);
+  return entries;
 }
 
 export async function objectExists(key: string): Promise<boolean> {

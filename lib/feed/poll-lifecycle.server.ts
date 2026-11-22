@@ -6,18 +6,18 @@
  * and re-read the poll's times under it. A vote in flight when the author ends the poll either lands first (and is in
  * the final tally) or is refused with `POLL_CLOSED`; an extension can never reopen a poll that just ended.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { createNotification } from '@/lib/notifications.server';
 import { computeAndStoreResult } from '@/lib/feed/ranked-result.server';
-import { rankedAuthorNoticeText, rankedVoterNoticeText } from '@/lib/feed/ranked-poll';
+import { rankedAuthorNotice, rankedVoterNotice } from '@/lib/feed/ranked-poll';
 import {
   POLL_NOTICE_BATCH,
   POLL_VOTER_PAGE,
-  VOTER_NOTICE_TEXT,
   allowedExtensions,
-  authorNoticeText,
+  authorNotice,
   extendedEnd,
   isPollEnded,
   pollLifecycleView,
@@ -315,7 +315,7 @@ async function announce(db: NoticeDb, pollId: string): Promise<void> {
   await createNotification({
     ...base,
     userId: authorId,
-    preview: poll.ranked ? rankedAuthorNoticeText(winnerText) : authorNoticeText(poll.options),
+    preview: poll.ranked ? rankedAuthorNotice(winnerText) : authorNotice(poll.options),
   });
 
   if (!votersAreNotified(totalVotesOf(poll.options))) return;
@@ -350,7 +350,7 @@ async function announce(db: NoticeDb, pollId: string): Promise<void> {
           createNotification({
             ...base,
             userId,
-            preview: poll.ranked ? rankedVoterNoticeText(winnerText) : VOTER_NOTICE_TEXT,
+            preview: poll.ranked ? rankedVoterNotice(winnerText) : notice('poll-voter-ended', {}),
           }),
         ),
     );

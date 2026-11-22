@@ -1,4 +1,5 @@
 /** Kudos (G4) — server side. No coins move: this is recognition only. */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userChipSelect } from '@/lib/user-display';
@@ -86,7 +87,7 @@ export async function giveKudos(
     type: 'SYSTEM',
     entityType: 'kudos',
     entityId: row.id,
-    preview: `Kudos: ${reason.slice(0, 100)}`,
+    preview: notice('kudos-received', { reason: reason.slice(0, 100) }),
     link: `/u/${toId}`,
   }).catch(() => {});
   return { ok: true, id: row.id };

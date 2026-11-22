@@ -8,6 +8,8 @@ import { gameName, isRankedGame } from '@/lib/ranked/elo';
 import { tierForRating } from '@/lib/ranked/tiers';
 import { getLadder } from '@/lib/ranked/season.server';
 import { AppError } from '@/lib/errors/codes';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 /**
  * `GET /api/ranked/$game/leaderboard` — a game's ladder.
@@ -44,8 +46,9 @@ export const route = apiRoute('/api/ranked/$game/leaderboard', {
       if (!isRankedGame(game)) throw new AppError('NOT_FOUND');
 
       if (query.scope === 'lifetime') {
+        const hidden = await leaderboardHiddenUserIds();
         const rows = await prismaRead.eloRating.findMany({
-          where: { game },
+          where: { game, ...userNotHiddenWhere(hidden) },
           orderBy: { rating: 'desc' },
           take: 100,
           include: { user: { select: userDisplaySelect } },

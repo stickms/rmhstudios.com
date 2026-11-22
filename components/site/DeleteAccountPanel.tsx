@@ -6,16 +6,20 @@
 
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 
 import { authClient } from '@/lib/auth-client';
-import { api } from '@/lib/contract/client';
+import { api, apiQuery } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { deleteAccountApi } from '@/lib/account/account.contract';
+import { getDeletionPreviewApi } from '@/lib/account/deletion-preview.contract';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
 
@@ -35,6 +39,10 @@ export function DeleteAccountPanel() {
   const [busy, setBusy] = useState(false);
 
   const deviceSignOut = useDeviceSignOut();
+
+  // What the request will stop, counted by the server (s09-14). Read only once the confirm step is open.
+  const preview = useQuery({ ...apiQuery(getDeletionPreviewApi), enabled: open, staleTime: 0 });
+  const arrive = useArrival(!preview.isPending);
 
   const matches = expected.length > 0 && confirm.trim().replace(/^@/, '').toLowerCase() === expected.toLowerCase();
 
@@ -120,6 +128,64 @@ export function DeleteAccountPanel() {
         </Button>
       ) : (
         <div className="space-y-3">
+          <div aria-live="polite">
+            <p className="t-label">
+              {t('stops-title', {
+                ns: 'deletion-pause',
+                defaultValue: 'What stops when you delete',
+              })}
+            </p>
+            {preview.isPending ? (
+              <Skeleton className="mt-2 h-24 w-full" />
+            ) : (
+              <ul className={`mt-2 ${arrive ?? ''}`}>
+                <li className="t-body border-b border-site-border py-2">
+                  {t('stops-signout', {
+                    ns: 'deletion-pause',
+                    defaultValue: 'You will be signed out everywhere.',
+                  })}
+                </li>
+                {preview.data && preview.data.apiKeys > 0 ? (
+                  <li className="t-body border-b border-site-border py-2">
+                    {t('stops-keys', {
+                      ns: 'deletion-pause',
+                      count: preview.data.apiKeys,
+                      defaultValue_one: 'Your {{count}} API key will stop until you sign back in.',
+                      defaultValue_other: 'Your {{count}} API keys will stop until you sign back in.',
+                    })}
+                  </li>
+                ) : null}
+                {preview.data && preview.data.webhooks > 0 ? (
+                  <li className="t-body border-b border-site-border py-2">
+                    {t('stops-webhooks', {
+                      ns: 'deletion-pause',
+                      count: preview.data.webhooks,
+                      defaultValue_one: 'Your {{count}} webhook will stop until you sign back in.',
+                      defaultValue_other: 'Your {{count}} webhooks will stop until you sign back in.',
+                    })}
+                  </li>
+                ) : null}
+                {preview.data && preview.data.scheduledPosts > 0 ? (
+                  <li className="t-body border-b border-site-border py-2">
+                    {t('stops-scheduled', {
+                      ns: 'deletion-pause',
+                      count: preview.data.scheduledPosts,
+                      defaultValue_one: 'Your {{count}} scheduled post will wait.',
+                      defaultValue_other: 'Your {{count}} scheduled posts will wait.',
+                    })}
+                  </li>
+                ) : null}
+              </ul>
+            )}
+            {preview.isError ? (
+              <p className="t-meta mt-2">
+                {t('stops-error', {
+                  ns: 'deletion-pause',
+                  defaultValue: 'The list could not be loaded. Deleting still stops all of this.',
+                })}
+              </p>
+            ) : null}
+          </div>
           <label htmlFor="delete-confirm" className="block text-sm text-site-text">
             {expected
               ? t('delete-confirm-label', {

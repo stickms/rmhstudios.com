@@ -146,10 +146,14 @@ vi.mock('@/lib/communities/rules.server', () => ({
   getRule: async () => h.rule,
 }));
 vi.mock('@/lib/notifications.server', () => ({
-  createNotification: async (n: { userId: string; preview?: string | null; entityType?: string | null }) => {
+  createNotification: async (n: {
+    userId: string;
+    preview?: string | { fallback: string } | null;
+    entityType?: string | null;
+  }) => {
     h.notifications.push({
       userId: n.userId,
-      preview: n.preview ?? null,
+      preview: typeof n.preview === 'object' && n.preview ? n.preview.fallback : (n.preview ?? null),
       entityType: n.entityType ?? null,
     });
   },

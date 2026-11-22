@@ -55,7 +55,7 @@ export function RulesList({ rules, className }: { rules: CommunityRuleDTO[]; cla
                   </span>
                 </button>
                 {expanded && (
-                  <p id={panelId} className="t-body ps-7 pb-3 text-site-text-muted">
+                  <p dir="auto" id={panelId} className="t-body ps-7 pb-3 text-site-text-muted">
                     {r.description}
                   </p>
                 )}

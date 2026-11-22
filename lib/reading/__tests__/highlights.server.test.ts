@@ -59,9 +59,11 @@ vi.mock('@/lib/prisma.server', () => {
           data,
         ),
       }),
-      delete: async ({ where }: Row) => {
-        db.highlights = db.highlights.filter((r) => r.id !== where.id);
-        db.links = db.links.filter((l) => l.highlightId !== where.id);
+      deleteMany: async ({ where }: Row) => {
+        const doomed = db.highlights.filter((r) => match(r, where));
+        db.highlights = db.highlights.filter((r) => !doomed.includes(r));
+        db.links = db.links.filter((l) => !doomed.some((r) => r.id === l.highlightId));
+        return { count: doomed.length };
       },
       findMany: async ({ where }: Row) =>
         db.highlights
@@ -79,6 +81,7 @@ vi.mock('@/lib/prisma.server', () => {
             },
           })),
     },
+    syncTombstone: { create: async () => ({}) },
     readingPassageStat: {
       upsert: async ({ where, create, update }: Row) => {
         const w = where.docKind_docKey_unit_passage;

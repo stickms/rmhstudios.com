@@ -274,7 +274,7 @@ export async function createGuide(
   return guide.id;
 }
 
-const MAX_REVISIONS = 50;
+export const MAX_REVISIONS = 50;
 
 export async function updateGuide(
   authorId: string,

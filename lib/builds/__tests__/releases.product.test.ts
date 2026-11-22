@@ -80,7 +80,7 @@ describe('ordering', () => {
     expect(earlier.map((x) => x.id)).toEqual(['old']);
   });
   it('words the notification', () => {
-    expect(releasePreview('Cube Run', '1.1')).toBe('Cube Run 1.1 is out');
+    expect(releasePreview('Cube Run', '1.1').fallback).toBe('Cube Run 1.1 is out');
   });
 });
 

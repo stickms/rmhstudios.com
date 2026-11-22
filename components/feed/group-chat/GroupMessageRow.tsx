@@ -114,6 +114,7 @@ export function GroupMessageRow({
             )}
             {!isCard && m.content && (
               <div
+                dir="auto"
                 className={`t-body whitespace-pre-wrap break-words ${mine ? 'conversation__bubble' : 'conversation__theirs'}`}
               >
                 {splitMentions(m.content, group.members, currentUserId).map((seg, i) =>

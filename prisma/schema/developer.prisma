@@ -223,6 +223,10 @@ model BulkOperation {
   cursorId    String?   @db.VarChar(40)
   /// How many times the reclaim sweep re-queued the run; the fifth stops it as FAILED.
   reclaims    Int       @default(0)
+  /// When a runner last took the lease; a reclaim counts only when this is later than reclaimedAt (s09-13).
+  claimedAt   DateTime?
+  /// When a reclaim pass last counted; null until the first.
+  reclaimedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

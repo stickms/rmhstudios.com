@@ -76,7 +76,11 @@ export type CardImageProblem =
   | { code: 'ALT_TOO_LONG'; side: CardImageSide }
   | { code: 'URL_INVALID'; side: CardImageSide }
   /** A cloze card's front is its text; only the back takes a picture. */
-  | { code: 'CLOZE_FRONT'; side: 'front' };
+  | { code: 'CLOZE_FRONT'; side: 'front' }
+  /** An occlusion card needs the picture its masks sit on (s09-03). */
+  | { code: 'OCCLUSION_FRONT_REQUIRED'; side: 'front' }
+  /** Masks sit on the front picture only; an occlusion card takes no back picture. */
+  | { code: 'OCCLUSION_BACK'; side: 'back' };
 
 /**
  * The first reason a card's pictures cannot be saved, or null. A picture needs a description (after trimming), a
@@ -88,6 +92,10 @@ export function cardImageProblem(
   isUrl: (url: string) => boolean = (url) => isCardImageUrl(url),
 ): CardImageProblem | null {
   if (pictures.frontImage && kind === 'cloze') return { code: 'CLOZE_FRONT', side: 'front' };
+  if (kind === 'occlusion') {
+    if (!pictures.frontImage) return { code: 'OCCLUSION_FRONT_REQUIRED', side: 'front' };
+    if (pictures.backImage) return { code: 'OCCLUSION_BACK', side: 'back' };
+  }
   for (const side of ['front', 'back'] as const) {
     const image = side === 'front' ? pictures.frontImage : pictures.backImage;
     if (!image) continue;
@@ -131,6 +139,18 @@ export function fromColumns(row: Partial<CardImageColumns>): {
   };
 }
 
+/**
+ * Whether the first bytes of a WebP file say it is animated: a RIFF/WEBP file whose first chunk is `VP8X` with the
+ * animation flag (bit 1 of the flags byte) set. The feed surface keeps an animated GIF as an animated WebP, and its
+ * `Media` row looks like any other WebP, so a card picture claim reads the header (s09-03 hardening of s08-15).
+ * 32 bytes are enough; anything shorter or not a WebP is not animated.
+ */
+export function isAnimatedWebp(head: Uint8Array): boolean {
+  if (head.length < 21) return false;
+  const tag = (at: number, text: string) => [...text].every((ch, i) => head[at + i] === ch.charCodeAt(0));
+  return tag(0, 'RIFF') && tag(8, 'WEBP') && tag(12, 'VP8X') && ((head[20] ?? 0) & 0x02) !== 0;
+}
+
 /** Whether a card carries at least one picture. */
 export const hasPictures = (row: Partial<CardImageColumns>): boolean => !!row.frontImageUrl || !!row.backImageUrl;
 
@@ -171,5 +191,7 @@ export function picturesOfRow(
   if (row.kind === 'reversible' && row.clozeIndex === null)
     return { frontImage: own.backImage, backImage: own.frontImage };
   if (row.kind === 'cloze') return { frontImage: null, backImage: own.backImage };
+  // An occlusion sibling shows the source's front picture, the masks drawn over it (s09-03).
+  if (row.kind === 'occlusion') return { frontImage: own.frontImage, backImage: null };
   return own;
 }

@@ -10,8 +10,11 @@ import {
  Lock,
  BarChart3,
  Image as ImageIcon,
+ Pencil,
 } from'lucide-react';
 import { ColumnHeader } from'./ColumnHeader';
+import { DraftEditDialog } from './DraftEditDialog';
+import { canEditDraft } from './draft-edit';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
@@ -33,10 +36,15 @@ interface ScheduledRow {
  imageUrls: string[];
  imageAlts: string[];
  audience:'PUBLIC'|'FOLLOWERS'|'PRIVATE';
+ contentWarning?: string | null;
+ /** The list leaves time capsules out; a row that is one still gets no "Edit" (s09-01). */
+ isCapsule?: boolean;
  unlockPrice: number | null;
  poll: { question?: string } | null;
  scheduledAt: string | null;
  createdAt: string;
+ /** Why the last publish attempt left it a draft (s09-11); null when there is none or the draft was edited since. */
+ blockedReason?: string | null;
 }
 
 const AUDIENCE_ICON = { PUBLIC: Globe, FOLLOWERS: Users, PRIVATE: Lock } as const;
@@ -63,6 +71,7 @@ export function DraftsColumn({
  const [scheduled, setScheduled] = useState<ScheduledRow[]>(initialData?.scheduled ?? []);
  const [loading, setLoading] = useState(!initialData);
  const [busy, setBusy] = useState<string | null>(null);
+ const [editing, setEditing] = useState<ScheduledRow | null>(null);
  // Steel M9: lists fetched here replace the spinner; the loader's are there on first paint.
  const arrival = useArrival(!loading);
 
@@ -152,6 +161,7 @@ export function DraftsColumn({
  busy={busy}
  onPublish={publishNow}
  onDiscard={discard}
+ onEdit={setEditing}
  />
  <Section
  title={t('section-drafts', { defaultValue:'Drafts'})}
@@ -160,8 +170,17 @@ export function DraftsColumn({
  busy={busy}
  onPublish={publishNow}
  onDiscard={discard}
+ onEdit={setEditing}
  />
  </div>
+ )}
+ {editing && (
+ <DraftEditDialog
+ key={editing.id}
+ row={editing}
+ onClose={() => setEditing(null)}
+ onSaved={() => void load()}
+ />
  )}
  </div>
  );
@@ -174,6 +193,7 @@ function Section({
  busy,
  onPublish,
  onDiscard,
+ onEdit,
 }: {
  title: string;
  icon: typeof FileText;
@@ -181,8 +201,9 @@ function Section({
  busy: string | null;
  onPublish: (id: string) => void;
  onDiscard: (id: string) => void;
+ onEdit: (row: ScheduledRow) => void;
 }) {
- const { t } = useTranslation('feed');
+ const { t } = useTranslation(['feed','draft-edit']);
   const { locale } = useLocaleFormat();
  if (rows.length === 0) return null;
  return (
@@ -205,6 +226,7 @@ function Section({
  </span>
  )}
  </p>
+ {r.blockedReason && <p className="t-meta mt-2 break-words">{r.blockedReason}</p>}
  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
  {r.scheduledAt && (
  <span className="inline-flex items-center gap-1 text-site-accent">
@@ -231,6 +253,12 @@ function Section({
  )}
  </div>
  <div className="mt-3 flex items-center gap-2">
+ {canEditDraft(r) && (
+ <Button size="sm" variant="ghost" onClick={() => onEdit(r)}>
+ <Pencil className="h-3.5 w-3.5"/>
+ {t('edit', { ns:'draft-edit', defaultValue:'Edit'})}
+ </Button>
+ )}
  <Button
  size="sm"
  variant="default"

@@ -6,6 +6,7 @@
  * column can brand them, and always carry an explicit `link`.
  */
 
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { rideClassName } from './classes';
@@ -15,7 +16,7 @@ export async function notifyRider(
   riderId: string,
   actorId: string | null,
   ride: { id: string; rideClass: string },
-  preview: string,
+  preview: string | NoticePreview,
 ): Promise<void> {
   await createNotification({
     userId: riderId,
@@ -33,7 +34,7 @@ export async function notifyDriver(
   driverId: string,
   actorId: string | null,
   ride: { id: string },
-  preview: string,
+  preview: string | NoticePreview,
 ): Promise<void> {
   await createNotification({
     userId: driverId,
@@ -63,7 +64,11 @@ export async function notifyAvailableDrivers(ride: {
       select: { userId: true },
       take: 30,
     });
-    const preview = `New ${rideClassName(ride.rideClass)} request: ${ride.pickupLabel} → ${ride.dropoffLabel}`;
+    const preview = notice('ride-requested', {
+      rideClass: rideClassName(ride.rideClass),
+      pickup: ride.pickupLabel,
+      dropoff: ride.dropoffLabel,
+    });
     await Promise.all(
       drivers.map((d) =>
         createNotification({
@@ -87,7 +92,7 @@ export async function notifyNewMessage(
   senderId: string,
   rideId: string,
   isRecipientRider: boolean,
-  preview: string,
+  preview: string | NoticePreview,
 ): Promise<void> {
   await createNotification({
     userId: recipientId,

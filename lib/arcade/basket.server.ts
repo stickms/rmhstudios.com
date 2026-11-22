@@ -2,7 +2,8 @@ import { prisma } from '@/lib/prisma.server';
 import { plausibleRun } from '@/lib/arcade/validate';
 import { utcDayKey } from '@/lib/arcade/seeded';
 import { BASKET_GAME, basketFor } from '@/lib/arcade/basket';
-import { MAX_ATTEMPT_MS, board } from '@/lib/arcade/runs.server';
+import { MAX_ATTEMPT_MS, assistedDetail, board } from '@/lib/arcade/runs.server';
+import { consumeAssistRun } from '@/lib/game/assist-run.server';
 
 const where = (userId: string, day: string) => ({
   kind_gameId_seedKey_userId: { kind: 'basket', gameId: BASKET_GAME, seedKey: day, userId },
@@ -46,11 +47,16 @@ export async function finishBasket(
   if (elapsed > MAX_ATTEMPT_MS || !plausibleRun('laundry-sort', score, elapsed, detail)) {
     return { ok: false, status: 400, error: 'Implausible result' };
   }
+  // An assisted run (P7) is stored, never ranked: `score` stays null, which every board query filters
+  // out. The claim is peeked, not consumed, so the personal-score submit reaches the same answer.
+  const assisted = await consumeAssistRun(userId, BASKET_GAME, { keepClaim: true });
   const claimed = await prisma.arcadeSeedRun.updateMany({
     where: { kind: 'basket', gameId: BASKET_GAME, seedKey: day, userId, finishedAt: null },
-    data: { score, detail, finishedAt: new Date() },
+    data: assisted
+      ? { score: null, detail: assistedDetail(detail, score), finishedAt: new Date() }
+      : { score, detail, finishedAt: new Date() },
   });
-  return { ok: true, counted: claimed.count === 1 };
+  return { ok: true, counted: claimed.count === 1 && !assisted };
 }
 
 export { basketFor };

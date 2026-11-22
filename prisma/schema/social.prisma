@@ -99,6 +99,7 @@ model RMHark {
   // P06 communities-plus: N1 flair, N2 starboard, N5 challenge entry
   communityFlair          CommunityPostFlair?
   communityStar           CommunityStarPost?
+  communityPins           CommunityPinnedPost[]   @relation("CommunityPinnedPostPost")
   communityChallengeEntry CommunityChallengeEntry?
 
   // P02 posts-plus. `expiresAt` (X8 TTL) and `seriesId` (X5) are read-time hints so

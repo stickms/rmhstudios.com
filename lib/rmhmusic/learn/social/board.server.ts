@@ -19,6 +19,7 @@
  */
 import { cached } from '@/lib/cached.server';
 import { scopeFilter } from '@/lib/game/leaderboard-scope.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -269,8 +270,14 @@ async function displayRows(entries: readonly RankedEntry[], viewerId: string): P
 export async function loadBoard(viewerId: string, date: string, scope: BoardScope, now: number): Promise<DailyBoard> {
   // Access control first: a failed lookup throws and fails the request.
   const blocked = new Set(await getBlockedAuthorIds(viewerId));
+  // Members who chose "Hide me from leaderboards" (and banned ones) are dropped before ranking, so the next
+  // learner moves up. This read is per viewer, so the viewer keeps their own line; the cached lists stay the same
+  // for everyone.
+  const hidden = new Set(await leaderboardHiddenUserIds());
+  hidden.delete(viewerId);
+  const listed = (entries: BoardEntry[]) => entries.filter((e) => !hidden.has(e.userId));
   const [everyone, social, row] = await Promise.all([
-    loadEveryone(date, now).then(rankEntries),
+    loadEveryone(date, now).then((entries) => rankEntries(listed(entries))),
     getMusicSocial(viewerId),
     readViewerRow(viewerId, date),
   ]);
@@ -286,7 +293,7 @@ export async function loadBoard(viewerId: string, date: string, scope: BoardScop
       friendsOff: true,
     };
   }
-  const ranked = scope === 'friends' ? rankEntries(await loadFriendsEntries(viewerId, date, now)) : everyone;
+  const ranked = scope === 'friends' ? rankEntries(listed(await loadFriendsEntries(viewerId, date, now))) : everyone;
   const me =
     scope === 'friends' ? boardMe(viewerId, row, true, ranked) : boardMe(viewerId, row, social.board, everyone);
   const slice = sliceBoard(ranked, viewerId, blocked);

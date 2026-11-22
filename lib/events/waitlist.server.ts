@@ -8,6 +8,7 @@
  * promoted by a compare-and-set on `status = 'waitlist'`, so only the transaction
  * that flips it notifies the member, and it does so once.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -103,7 +104,7 @@ export async function announcePromotions(
       type: 'SYSTEM',
       entityType: 'event_waitlist',
       entityId: event.id,
-      preview: `A place opened up: you are going to ${event.title}`,
+      preview: notice('event-waitlist-promoted', { title: event.title }),
       link: '/calendar',
     }).catch(() => {});
     await scheduleEventReminders({ id: event.id, startsAt: event.startsAt }, userId);

@@ -8,6 +8,9 @@ vi.mock('../prisma-client', () => ({
     rMHboxProfile: {
       findMany,
     },
+    // Nobody is hidden here (the hidden set has its own tests).
+    userProfile: { findMany: async () => [] },
+    user: { findMany: async () => [] },
   }),
 }));
 vi.mock('../logger', () => ({

@@ -75,6 +75,7 @@ function LightField({
   return (
     <textarea
       ref={ref}
+      dir="auto"
       id={HOME_COMPOSER_INPUT_ID}
       value={value}
       rows={1}

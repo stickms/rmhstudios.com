@@ -124,7 +124,7 @@ export function EventUpdates({
         <ul className={arrive}>
           {shown.map((u) => (
             <li key={u.id} className="flex flex-col gap-1 border-b border-site-border py-2">
-              <p className="t-body whitespace-pre-wrap break-words">
+              <p dir="auto" className="t-body whitespace-pre-wrap break-words">
                 <Linked text={u.body} />
               </p>
               <p className="t-meta flex flex-wrap items-center gap-x-2">

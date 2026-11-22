@@ -7,6 +7,7 @@
  * recipient accepting or declining; `listRequests` / `countPendingRequests` feed
  * the Requests folder and the sidebar count.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -361,7 +362,7 @@ export async function decideRequest(args: {
       type: 'SYSTEM',
       entityType: 'message-request',
       entityId: row.id,
-      preview: 'accepted your message request',
+      preview: notice('message-request-accepted', {}),
       link: `/messages/${row.chatId}`,
     });
   }

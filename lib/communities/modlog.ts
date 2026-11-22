@@ -18,7 +18,20 @@ export const MOD_LOG_GROUPS = ['content', 'members', 'settings'] as const;
 export type ModLogGroup = (typeof MOD_LOG_GROUPS)[number];
 
 export const MOD_ACTIONS_BY_GROUP = {
-  content: ['content_removed', 'content_approved', 'announcement_posted', 'announcement_removed'],
+  content: [
+    'content_removed',
+    'content_approved',
+    'announcement_posted',
+    'announcement_removed',
+    // s09-04: the community wiki. An ordinary edit is in the page's own history, not here.
+    'wiki_page_created',
+    'wiki_page_deleted',
+    'wiki_page_rolled_back',
+    // s09-06: pinned posts. The post is public in the community, so these are in the public log too.
+    'post_pinned',
+    'post_unpinned',
+    'pins_reordered',
+  ],
   members: [
     'member_removed',
     'member_role_changed',
@@ -49,6 +62,7 @@ export const MOD_ACTIONS_BY_GROUP = {
     'recurring_updated',
     'recurring_paused',
     'recurring_deleted',
+    'wiki_policy_changed',
   ],
 } as const satisfies Record<ModLogGroup, readonly string[]>;
 
@@ -73,10 +87,16 @@ export function groupOfAction(action: ModAction): ModLogGroup {
 
 /**
  * What members may see when a community turns its public log on: the decisions on
- * content, with the rule and reason. Never bans, role changes, settings, the actor or
+ * content (removals, approvals and which posts are pinned), with the rule and reason. Never bans, role changes, settings, the actor or
  * the target member.
  */
-export const PUBLIC_MOD_ACTIONS = ['content_removed', 'content_approved'] as const;
+export const PUBLIC_MOD_ACTIONS = [
+  'content_removed',
+  'content_approved',
+  'post_pinned',
+  'post_unpinned',
+  'pins_reordered',
+] as const;
 export type PublicModAction = (typeof PUBLIC_MOD_ACTIONS)[number];
 export const isPublicModAction = (v: string): v is PublicModAction =>
   (PUBLIC_MOD_ACTIONS as readonly string[]).includes(v);
@@ -95,6 +115,7 @@ export const MOD_TARGET_TYPES = [
   'census',
   'challenge',
   'recurring',
+  'page',
 ] as const;
 export type ModTargetType = (typeof MOD_TARGET_TYPES)[number];
 

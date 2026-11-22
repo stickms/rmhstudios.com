@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { pageSize } from '@/lib/pagination';
 import type { PrismaClient, WagerMatch } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -146,7 +147,7 @@ export async function createWager(
         type: 'SYSTEM',
         entityType: 'wager',
         entityId: row.id,
-        preview: `You've been challenged to ${game.title} for ${opts.stakeCoins} coins`,
+        preview: notice('wager-challenged', { game: game.title, coins: opts.stakeCoins }),
         link: `/wager/${row.id}`,
       }).catch(() => {});
     }
@@ -221,7 +222,7 @@ export async function acceptWager(
     type: 'SYSTEM',
     entityType: 'wager',
     entityId: opts.matchId,
-    preview: `Your ${wager.gameTitle ?? 'wager'} challenge was accepted — play now`,
+    preview: notice('wager-accepted', { game: wager.gameTitle ?? 'wager' }),
     link: `/wager/${opts.matchId}`,
   }).catch(() => {});
   return wager;
@@ -400,7 +401,7 @@ export async function settleWager(
       type: 'SYSTEM',
       entityType: 'wager',
       entityId: opts.matchId,
-      preview: `You won a wager — ${result.payout} coins paid out`,
+      preview: notice('wager-won', { coins: result.payout }),
       link: `/wager/${opts.matchId}`,
     }).catch(() => {});
   }

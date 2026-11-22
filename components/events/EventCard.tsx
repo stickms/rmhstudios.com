@@ -193,7 +193,7 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
       </div>
 
       {event.description && (
-        <p className="line-clamp-3 whitespace-pre-wrap text-sm text-site-text-muted">
+        <p dir="auto" className="line-clamp-3 whitespace-pre-wrap text-sm text-site-text-muted">
           {event.description}
         </p>
       )}

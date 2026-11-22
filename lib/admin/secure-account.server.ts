@@ -10,6 +10,7 @@
  * link is not revoked: Better Auth does not key those verifications by user id.
  */
 import { randomBytes } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { recordAdminActionIn } from '@/lib/admin-audit.server';
 import { isDeletedAccount } from '@/lib/account-lifecycle';
@@ -179,6 +180,83 @@ export async function previewSecureAccount(
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/* The steps, exported so a deletion request (s09-14) runs the same code.       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Sign the account out everywhere. Returns the number of sessions deleted.
+ *
+ * Better Auth keys a password reset as `reset-password:<token>` with the user id as the
+ * value; a pending link would let whoever holds it back in, so it goes with the sessions.
+ * Other verifications are not keyed by the user (an email-change link carries the address
+ * in a signed token, not this id), so a pending email change survives; see the feature doc.
+ * A device the account was signed in on keeps its web-push subscription after its session
+ * is gone; a compromised one should not go on receiving the member's notifications.
+ */
+export async function deleteSessionsOf(tx: Prisma.TransactionClient, userId: string): Promise<number> {
+  const { count } = await tx.session.deleteMany({
+    where: {
+      userId,
+    },
+  });
+  await tx.verification.deleteMany({
+    where: {
+      value: userId,
+    },
+  });
+  await tx.pushSubscription.deleteMany({
+    where: {
+      userId,
+    },
+  });
+  return count;
+}
+
+/** Revoke every API key that is not revoked yet. Returns how many. */
+export async function revokeApiKeysOf(tx: Prisma.TransactionClient, userId: string, now: Date): Promise<number> {
+  return (
+    await tx.developerApiKey.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: now,
+      },
+    })
+  ).count;
+}
+
+/** Revoke every RMHCode (CLI) token that is not revoked yet. Returns how many. */
+export async function revokeRmhCodeTokensOf(tx: Prisma.TransactionClient, userId: string, now: Date): Promise<number> {
+  return (
+    await tx.rmhCodeToken.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: now,
+      },
+    })
+  ).count;
+}
+
+/** Replace the calendar feed's token (the old URL stops working). True when the member has a feed. */
+export async function rotateCalendarFeedOf(tx: Prisma.TransactionClient, userId: string, now: Date): Promise<boolean> {
+  const { count } = await tx.calendarFeed.updateMany({
+    where: {
+      userId,
+    },
+    data: {
+      token: randomBytes(24).toString('base64url'),
+      rotatedAt: now,
+    },
+  });
+  return count > 0;
+}
+
 export async function secureAccount(
   actorId: string,
   targetId: string,
@@ -206,53 +284,11 @@ export async function secureAccount(
     };
 
     if (has('sessions')) {
-      out.sessions = (
-        await tx.session.deleteMany({
-          where: {
-            userId: targetId,
-          },
-        })
-      ).count;
-      // Better Auth keys a password reset as `reset-password:<token>` with the user id as the
-      // value; a pending link would let whoever holds it back in, so it goes with the sessions.
-      // Other verifications are not keyed by the user (an email-change link carries the address
-      // in a signed token, not this id), so a pending email change survives; see the feature doc.
-      await tx.verification.deleteMany({
-        where: {
-          value: targetId,
-        },
-      });
-      // A device the account was signed in on keeps its web-push subscription after its session
-      // is gone; a compromised one should not go on receiving the member's notifications.
-      await tx.pushSubscription.deleteMany({
-        where: {
-          userId: targetId,
-        },
-      });
+      out.sessions = await deleteSessionsOf(tx, targetId);
     }
     if (has('tokens')) {
-      out.apiKeys = (
-        await tx.developerApiKey.updateMany({
-          where: {
-            userId: targetId,
-            revokedAt: null,
-          },
-          data: {
-            revokedAt: now,
-          },
-        })
-      ).count;
-      out.rmhCodeTokens = (
-        await tx.rmhCodeToken.updateMany({
-          where: {
-            userId: targetId,
-            revokedAt: null,
-          },
-          data: {
-            revokedAt: now,
-          },
-        })
-      ).count;
+      out.apiKeys = await revokeApiKeysOf(tx, targetId, now);
+      out.rmhCodeTokens = await revokeRmhCodeTokensOf(tx, targetId, now);
     }
     if (has('webhooks')) {
       // Every endpoint gets a fresh secret (a stolen one verifies nothing); only the ones that were
@@ -282,16 +318,7 @@ export async function secureAccount(
       }
     }
     if (has('calendar')) {
-      const { count } = await tx.calendarFeed.updateMany({
-        where: {
-          userId: targetId,
-        },
-        data: {
-          token: randomBytes(24).toString('base64url'),
-          rotatedAt: now,
-        },
-      });
-      out.calendarRotated = count > 0;
+      out.calendarRotated = await rotateCalendarFeedOf(tx, targetId, now);
     }
 
     await recordAdminActionIn(tx, actorId, 'user.secure_account', {

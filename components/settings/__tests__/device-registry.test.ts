@@ -15,7 +15,8 @@ import { deviceStoreText } from '@/components/settings/device-data-labels';
 import { DEVICE_STORES, storeForKey } from '@/lib/device-data/registry';
 
 const ROOTS = ['lib', 'features', 'components', 'hooks', 'stores'];
-const STORAGE_MARKER = /\.setItem\(|openDB\(|indexedDB\.open\(/;
+// Writes through `lib/core/persist` (writeJson / writeString) count as storage writes too.
+const STORAGE_MARKER = /\.setItem\(|openDB\(|indexedDB\.open\(|\bwriteJson\(|\bwriteString\(/;
 const KEY_SHAPE = /^[a-z][a-z0-9]*[-:._][\w:.-]+$/;
 
 /** Not Web Storage keys: constants of the same shape that live in the server tier or name something else. */
@@ -40,6 +41,9 @@ const NOT_A_KEY_TEMPLATE: ReadonlySet<string> = new Set([
   '/tf2/play?',
   '/rmh/mp/packs/',
   'matrix3d(',
+  // A Neon Driftway livery share code, and the html class that names the active site style.
+  'ND1-',
+  'style-',
 ]);
 
 function sourceFiles(): string[] {

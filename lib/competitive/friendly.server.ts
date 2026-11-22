@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
@@ -95,7 +96,7 @@ export async function createFriendly(
     type: 'SYSTEM',
     entityType: 'friendly',
     entityId: c.id,
-    preview: `${userName ?? 'Someone'} sent you a friendly challenge`,
+    preview: notice('friendly-challenge', { name: userName ?? 'Someone' }),
     link: '/compete?tab=ranked',
   }).catch(() => {});
   return { ok: true as const, id: c.id };

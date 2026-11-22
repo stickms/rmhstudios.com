@@ -136,7 +136,7 @@ describe('startAssistRun', () => {
 
   it('stays ranked, and writes nothing, in a game that has not adopted the layer', async () => {
     h.settings = calm;
-    expect((await startAssistRun('u1', 'neon-driftway')).ranked).toBe(true);
+    expect((await startAssistRun('u1', 'signal-forge')).ranked).toBe(true);
     expect(h.redis.size).toBe(0);
   });
 
@@ -231,10 +231,10 @@ describe('submitGameScore and assisted runs', () => {
 
   it('always writes in a game outside ASSIST_CAPABLE, whatever the settings', async () => {
     h.settings = calm;
-    h.redis.set(assistRunKey('neon-driftway', 'u1'), {
+    h.redis.set(assistRunKey('signal-forge', 'u1'), {
       at: 1,
     });
-    const res = await submitGameScore(run('neon-driftway'));
+    const res = await submitGameScore(run('signal-forge'));
     expect(res).toMatchObject({
       ok: true,
       ranked: true,

@@ -245,6 +245,21 @@ export const NAMESPACES = [
   "game-access",
   "rss-feeds",
   "feed-keyboard",
+  // Sprint 09 (docs/autonomous/sprint-09): one namespace per feature.
+  "draft-edit",
+  "occlusion-cards",
+  "weak-keys",
+  "community-wiki",
+  "scheduled-gate",
+  "guide-history",
+  "media-sweep",
+  "community-pins",
+  "durable-reclaims",
+  "deletion-pause",
+  "driftway-laundry-assists",
+  "board-privacy",
+  "lights-out-replays",
+  "notice-language",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

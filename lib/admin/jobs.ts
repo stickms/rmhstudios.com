@@ -29,9 +29,15 @@ export interface JobSchedule {
   nextRunAt: string | null;
 }
 
-/** The "Fan-outs" line of the jobs console (s08-05): runs in flight and runs that failed in the last seven days. */
-export interface FanoutSummary {
+/** One leased job kind's line in the jobs console (s09-13). */
+export type LeasedKind = 'bulk' | 'fanout' | 'sweep';
+
+export interface LeasedKindSummary {
+  kind: LeasedKind;
+  /** RUNNING and claimed by a runner since the last reclaim. */
   running: number;
+  /** RUNNING, re-queued by a reclaim (or never started) and not claimed since: waiting for a worker. */
+  waiting: number;
   failedLast7Days: number;
 }
 

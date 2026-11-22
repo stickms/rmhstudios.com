@@ -8,6 +8,7 @@
  * Gifts use `sendCoinGift` (an ordinary coin transfer); this file moves no coins
  * itself, and only one gift per member per exchange is claimed (`giftedAt`).
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { randomInt } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -296,7 +297,7 @@ export async function runDraw(id: string): Promise<{ ok: true } | Fail> {
         type: 'SYSTEM',
         entityType: 'exchange',
         entityId: id,
-        preview: `"${ex.title}" could not be drawn: it needs ${EXCHANGE_MIN_MEMBERS}+ members the exclusions allow.`,
+        preview: notice('exchange-undrawable', { title: ex.title, min: EXCHANGE_MIN_MEMBERS }),
         link: `/exchange/${id}`,
       }).catch(() => {});
     }
@@ -327,8 +328,8 @@ export async function runDraw(id: string): Promise<{ ok: true } | Fail> {
       entityId: id,
       preview:
         ex.kind === 'MIXTAPE'
-          ? `"${ex.title}" is drawn: your mixtape is ready.`
-          : `"${ex.title}" is drawn: see who you are gifting.`,
+          ? notice('exchange-drawn-mixtape', { title: ex.title })
+          : notice('exchange-drawn', { title: ex.title }),
       link: `/exchange/${id}`,
     }).catch(() => {});
   }

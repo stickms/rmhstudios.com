@@ -7,6 +7,7 @@
  * second delivery path.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { adjustNotifUnread, createNotification } from '@/lib/notifications.server';
 import {
@@ -138,7 +139,7 @@ export async function fireDueReminders(now = new Date()): Promise<number> {
       type: 'SYSTEM',
       entityType: 'reminder',
       entityId: r.id,
-      preview: r.note ? `${r.label} — ${r.note}` : r.label,
+      preview: r.note ? notice('reminder-note', { label: r.label, note: r.note }) : r.label,
       link: r.url,
     });
     fired += 1;

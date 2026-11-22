@@ -178,6 +178,9 @@ export interface NotificationRow {
   entityType: string | null;
   entityId: string | null;
   preview: string | null;
+  /** A site-written notice's translation key and params (`lib/notifications/notice-keys.ts`); absent on old rows. */
+  previewKey?: string | null;
+  previewParams?: unknown;
   link: string | null;
   read: boolean;
   createdAt: string;

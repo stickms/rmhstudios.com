@@ -433,7 +433,7 @@ describe('notifications', () => {
     const told = h.notify.mock.calls.map((c) => c[0]);
     expect(told.map((n) => n.userId).sort()).toEqual(['u1', 'u2', 'u3']);
     expect(told.every((n) => n.entityType === 'event_occurrence' && n.entityId === 'e1')).toBe(true);
-    expect(told[0]!.preview).toMatch(/^Game night on \d{1,2} \w{3} is skipped$/);
+    expect((told[0]!.preview as { fallback: string }).fallback).toMatch(/^Game night on \d{1,2} \w{3} is skipped$/);
   });
 
   it('says where a moved date went, in the event time zone', async () => {
@@ -443,7 +443,9 @@ describe('notifications', () => {
       kind: 'move',
       startsAt: new Date(T0.getTime() + DAY),
     });
-    expect(String(h.notify.mock.calls[0]![0].preview)).toMatch(/ moves to \w{3},? \d{1,2} \w{3},? \d{2}:\d{2}$/);
+    expect((h.notify.mock.calls[0]![0].preview as { fallback: string }).fallback).toMatch(
+      / moves to \w{3},? \d{1,2} \w{3},? \d{2}:\d{2}$/,
+    );
   });
 });
 

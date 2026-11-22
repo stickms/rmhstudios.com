@@ -8,6 +8,7 @@
  * An accept claims its invitation with a conditional update, so it flips once and notifies once. After
  * `submitEndsAt` every write is refused: results never change owners once rating starts.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -201,7 +202,7 @@ export async function inviteTeammate(input: {
       type: 'SYSTEM',
       entityType: TEAM_ENTITY,
       entityId: entry.id,
-      preview: `${displayName(owner)} added you to their entry in ${entry.jam.title}`,
+      preview: notice('jam-team-added', { name: displayName(owner), jam: entry.jam.title }),
       link: `/jams/${entry.jam.slug}`,
     });
   }
@@ -266,7 +267,7 @@ export async function respondToTeamInvite(input: {
       type: 'SYSTEM',
       entityType: TEAM_ENTITY,
       entityId: entry.id,
-      preview: `${displayName(me)} joined your entry in ${entry.jam.title}`,
+      preview: notice('jam-team-joined', { name: displayName(me), jam: entry.jam.title }),
       link: `/jams/${entry.jam.slug}`,
     });
   }

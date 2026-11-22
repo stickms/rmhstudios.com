@@ -9,6 +9,7 @@
  * author. It runs from the worker (see jobs.server.ts) and, idempotently, from
  * the first read after the deadline so the result never waits for a cron tick.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { logModAction } from '@/lib/communities/modlog.server';
@@ -179,7 +180,7 @@ export async function finalizeChallenge(challengeId: string): Promise<boolean> {
     type: 'SYSTEM',
     entityType: 'rmhark',
     entityId: winner.postId,
-    preview: `You won the "${challenge.title}" challenge`,
+    preview: notice('community-challenge-won', { title: challenge.title }),
     link: `/c/${challenge.community.slug}`,
   });
   return true;

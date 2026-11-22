@@ -19,6 +19,7 @@
  * The sweep never bans; the admin gets the ban action as a link beside it.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -31,6 +32,7 @@ import { ACCOUNT_STATUS_LINK } from '@/lib/moderation/restrictions.server';
 import { countActiveStrikes } from '@/lib/moderation/standing.server';
 import { issueStrike, overturnStrike } from '@/lib/moderation/strikes.server';
 import { REMOVED_POST_TEXT } from '@/lib/moderation/removed-text';
+import { NO_WORKER_ERROR, failedForNoWorker, reclaimDecision } from '@/lib/jobs/lease';
 import type { createSweepBody } from '@/lib/admin/sweeps-schema';
 import type { z } from 'zod';
 import {
@@ -48,7 +50,6 @@ import {
   overLimit,
   removalNoticeText,
   resolveWindow,
-  restoreNoticeText,
   type SweepEntityType,
   type SweepPhase,
   type SweepPreview,
@@ -64,6 +65,8 @@ export const SWEEP_LEASE_MS = 2 * 60 * 1000;
 export const SWEEP_STALLED_AFTER_MS = 10 * 60 * 1000;
 /** The reclaim sweep re-queues a sweep at most this many times; the next time it is stopped as FAILED. */
 export const SWEEP_MAX_RECLAIMS = 5;
+/** The advisory-lock key every confirm takes before counting the admin's confirms in the last hour. */
+export const SWEEP_CONFIRM_CAP_LOCK = 'sweeps:confirm-cap';
 export const SWEEP_REPEATED_RESTARTS_ERROR = 'Stopped after the worker restarted repeatedly.';
 
 /** A refusal the route turns into its HTTP status and `reason`. */
@@ -351,6 +354,9 @@ export async function confirmSweep(adminId: string, id: string, now: Date = new 
       const first = await tx.moderationSweep.findUnique({ where: { id } });
       // Somebody else's preview is not visible to this admin.
       if (!first || first.adminId !== adminId) throw new SweepRefused('not-found');
+      // The hourly cap is one count over every subject, so one global lock (taken first, always in this order
+      // so two confirms cannot deadlock) holds it; the subject lock still serialises that member's sweeps.
+      await lockKey(tx, SWEEP_CONFIRM_CAP_LOCK);
       await lockKey(tx, `sweep:${first.subjectId}`);
       const row = await tx.moderationSweep.findUnique({ where: { id } });
       if (!row) throw new SweepRefused('not-found');
@@ -386,6 +392,8 @@ export async function confirmSweep(adminId: string, id: string, now: Date = new 
           confirmedAt: now,
           queuedAt: now,
           heartbeatAt: null,
+          claimedAt: null,
+          reclaimedAt: null,
           reclaims: 0,
           cursorType: null,
           cursorAt: null,
@@ -430,6 +438,8 @@ export async function undoSweep(adminId: string, id: string, now: Date = new Dat
           undoneById: adminId,
           queuedAt: now,
           heartbeatAt: null,
+          claimedAt: null,
+          reclaimedAt: null,
           reclaims: 0,
           restoredCount: 0,
           error: null,
@@ -463,7 +473,7 @@ async function claimLease(id: string, now: Date): Promise<Date | null> {
       status: 'RUNNING',
       OR: [{ heartbeatAt: null }, { heartbeatAt: { lt: new Date(now.getTime() - SWEEP_LEASE_MS) } }],
     },
-    data: { heartbeatAt: beat },
+    data: { heartbeatAt: beat, claimedAt: beat },
   });
   return count > 0 ? beat : null;
 }
@@ -542,6 +552,7 @@ export async function runSweep(id: string, now: Date = new Date()): Promise<void
   if (!first) return;
   let row: SweepRow = first;
   try {
+    await settlePendingItems(row.id);
     if (row.phase === 'undo') await runUndo(row, lease);
     else {
       for (;;) {
@@ -583,6 +594,55 @@ async function markFailed(row: SweepRow, lease: Date, message: string): Promise<
   });
 }
 
+/** `ModerationSweepItem.undone` while the removal it records may not have happened yet (written before it). */
+const PENDING_ITEM = 'pending';
+
+/** True when `state` is a moderator removal made at or after `since`: the deletion a sweep may record and undo. */
+function isOurRemoval(
+  state: { deletedAt: Date | null; deletedBy: string | null } | null,
+  since: Date,
+): state is { deletedAt: Date; deletedBy: string } {
+  return !!state?.deletedAt && state.deletedBy === 'moderator' && state.deletedAt.getTime() >= since.getTime();
+}
+
+async function dropPending(sweepId: string, type: string, id: string): Promise<void> {
+  await prisma.moderationSweepItem.deleteMany({
+    where: { sweepId, entityType: type, entityId: id, undone: PENDING_ITEM },
+  });
+}
+
+/**
+ * Resolve the item rows a dead runner left `pending`: removed by a moderator since the row was written, with no audit row of another moderator's removal, means the
+ * removal was the sweep's (confirm it with the exact `deletedAt`, so undo sees it); anything else means it did not (drop
+ * the row). Runs under the lease, before the removal continues and before an undo reads its items.
+ */
+export async function settlePendingItems(sweepId: string): Promise<number> {
+  const pending = await prisma.moderationSweepItem.findMany({ where: { sweepId, undone: PENDING_ITEM } });
+  let confirmed = 0;
+  for (const item of Array.isArray(pending) ? pending : []) {
+    const state = await itemState(item.entityType as SweepEntityType, item.entityId);
+    // A sweep writes no per-item audit row, a moderator's own removal does: one since the row was written means the
+    // removal is theirs, and undo must not restore it.
+    const theirs = await prisma.adminAuditLog.findFirst({
+      where: {
+        action: 'content.remove',
+        targetType: item.entityType,
+        targetId: item.entityId,
+        createdAt: { gte: item.removedAt },
+      },
+      select: { id: true },
+    });
+    if (!theirs && isOurRemoval(state, item.removedAt)) {
+      await prisma.moderationSweepItem.updateMany({
+        where: { sweepId, entityType: item.entityType, entityId: item.entityId, undone: PENDING_ITEM },
+        data: { removedAt: state.deletedAt, undone: null },
+      });
+      confirmed += 1;
+    } else await dropPending(sweepId, item.entityType, item.entityId);
+  }
+  return confirmed;
+}
+
 /** Remove one batch; returns the new lease and cursor, or null when the lease was lost. */
 async function removeBatch(
   row: SweepRow,
@@ -595,6 +655,14 @@ async function removeBatch(
     const state = await itemState(item.type, item.id);
     if (!state || state.deletedAt) continue;
     const before = new Date();
+    // `moderateContent` writes through the global client, so it cannot join a transaction of ours. The item row
+    // goes first instead, as `pending` with the time before the removal; once the removal is seen it is
+    // confirmed with the exact `deletedAt`. A crash in between leaves the pending row, which `settlePending`
+    // resolves against the content's state (removed by a moderator since: confirmed; else dropped).
+    await prisma.moderationSweepItem.createMany({
+      data: [{ sweepId: row.id, entityType: item.type, entityId: item.id, removedAt: before, undone: PENDING_ITEM }],
+      skipDuplicates: true,
+    });
     try {
       await moderateContent({
         adminId: row.adminId,
@@ -605,22 +673,26 @@ async function removeBatch(
         sweep: { id: row.id },
       });
     } catch (error) {
+      await dropPending(row.id, item.type, item.id);
       if (error instanceof ModerationError) continue;
       throw error;
     }
     const after = await itemState(item.type, item.id);
     // Record the exact `deletedAt` the removal wrote, and only when it is ours: an author who deleted the
     // item in the same instant keeps their own deletion, which undo must never restore.
-    if (!after?.deletedAt || after.deletedBy !== 'moderator' || after.deletedAt.getTime() < before.getTime()) continue;
-    await prisma.moderationSweepItem.createMany({
-      data: [{ sweepId: row.id, entityType: item.type, entityId: item.id, removedAt: after.deletedAt }],
-      skipDuplicates: true,
+    if (!isOurRemoval(after, before)) {
+      await dropPending(row.id, item.type, item.id);
+      continue;
+    }
+    await prisma.moderationSweepItem.updateMany({
+      where: { sweepId: row.id, entityType: item.type, entityId: item.id, undone: PENDING_ITEM },
+      data: { removedAt: after.deletedAt, undone: null },
     });
     if (item.type === 'rmhark') removedPosts.push(item.id);
   }
   const last = batch[batch.length - 1]!;
   const beat = new Date();
-  const removed = await prisma.moderationSweepItem.count({ where: { sweepId: row.id } });
+  const removed = await prisma.moderationSweepItem.count({ where: { sweepId: row.id, undone: null } });
   const { count } = await prisma.moderationSweep.updateMany({
     where: { id: row.id, status: 'RUNNING', phase: 'remove', heartbeatAt: lease },
     data: {
@@ -638,7 +710,7 @@ async function removeBatch(
 
 /** The end of a run: DONE and the one audit row in one transaction, then the strike and the one notice. */
 async function finishRemoval(row: SweepRow, lease: Date): Promise<void> {
-  const removed = await prisma.moderationSweepItem.count({ where: { sweepId: row.id } });
+  const removed = await prisma.moderationSweepItem.count({ where: { sweepId: row.id, undone: null } });
   const finishedAt = new Date();
   try {
     await prisma.$transaction(async (tx) => {
@@ -796,7 +868,7 @@ async function finishUndo(row: SweepRow, lease: Date, adminId: string): Promise<
       entityType: 'moderation-sweep-undone',
       entityId: row.id,
       link: ACCOUNT_STATUS_LINK,
-      preview: restoreNoticeText(restored),
+      preview: restored === 1 ? notice('sweep-restored-one', {}) : notice('sweep-restored', { count: restored }),
     });
   }
 }
@@ -817,9 +889,11 @@ function expiredLeaseWhere(now: Date) {
 }
 
 /**
- * The reclaim sweep (every minute, in the jobs worker): finds RUNNING sweeps whose lease expired and returns
- * the ids to queue again, counting each in `reclaims`. One already re-queued `SWEEP_MAX_RECLAIMS` times is
- * marked FAILED. Each change is a compare-and-set on what it read, so two sweeps cannot count one twice.
+ * The reclaim sweep (every minute, in the jobs worker): finds RUNNING sweeps whose lease expired and returns the
+ * ids to queue again. `reclaimDecision` (`lib/jobs/lease.ts`) says what to do with each: a reclaim is counted
+ * only when a runner started the sweep since the last counted one, so minutes with no worker only re-queue it.
+ * One whose runner died `SWEEP_MAX_RECLAIMS` times, or that nobody picked up for a day, is marked FAILED. Each
+ * write is a compare-and-set on what it read, so two sweeps cannot count one attempt twice.
  */
 export async function reclaimStalledSweeps(now: Date = new Date(), take = 20): Promise<string[]> {
   const expired = expiredLeaseWhere(now);
@@ -827,20 +901,48 @@ export async function reclaimStalledSweeps(now: Date = new Date(), take = 20): P
     where: expired,
     orderBy: { createdAt: 'asc' },
     take,
-    select: { id: true, reclaims: true },
+    select: {
+      id: true,
+      reclaims: true,
+      claimedAt: true,
+      reclaimedAt: true,
+      heartbeatAt: true,
+      queuedAt: true,
+      createdAt: true,
+    },
   });
   const requeue: string[] = [];
   for (const r of rows) {
-    if (r.reclaims >= SWEEP_MAX_RECLAIMS) {
+    const input = {
+      claimedAt: r.claimedAt,
+      reclaimedAt: r.reclaimedAt,
+      reclaims: r.reclaims,
+      heartbeatAt: r.heartbeatAt,
+      createdAt: r.queuedAt ?? r.createdAt,
+      now,
+      maxReclaims: SWEEP_MAX_RECLAIMS,
+    };
+    const verdict = reclaimDecision(input);
+    if (verdict === 'skip') continue;
+    if (verdict === 'requeue') {
+      requeue.push(r.id);
+      continue;
+    }
+    const seen = { id: r.id, reclaims: r.reclaims, claimedAt: r.claimedAt, reclaimedAt: r.reclaimedAt, ...expired };
+    if (verdict === 'fail') {
       await prisma.moderationSweep.updateMany({
-        where: { id: r.id, reclaims: { gte: SWEEP_MAX_RECLAIMS }, ...expired },
-        data: { status: 'FAILED', error: SWEEP_REPEATED_RESTARTS_ERROR, finishedAt: now },
+        where: seen,
+        data: {
+          status: 'FAILED',
+          error: failedForNoWorker(input) ? NO_WORKER_ERROR : SWEEP_REPEATED_RESTARTS_ERROR,
+          finishedAt: now,
+        },
       });
       continue;
     }
     const { count } = await prisma.moderationSweep.updateMany({
-      where: { id: r.id, reclaims: r.reclaims, ...expired },
-      data: { reclaims: { increment: 1 } },
+      where: seen,
+      data: { reclaims: { increment: 1 }, reclaimedAt: now },
     });
     if (count > 0) requeue.push(r.id);
   }

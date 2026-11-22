@@ -244,10 +244,16 @@ describe('the reclaim sweep', () => {
     expect(await reclaimStalledOperations()).toEqual([]);
   });
 
-  it('counts the fifth reclaim and fails on the sixth sweep', async () => {
+  it('counts the fifth reclaim and fails when the sixth attempt dies too', async () => {
     seed({ likes: 2, op: { status: 'RUNNING', heartbeatAt: ago(LEASE_MS + 1000), reclaims: MAX_RECLAIMS - 1 } });
     expect(await reclaimStalledOperations()).toEqual(['op1']);
     expect(op().reclaims).toBe(MAX_RECLAIMS);
+    // No runner started since: the next pass queues it again and counts nothing.
+    expect(await reclaimStalledOperations()).toEqual(['op1']);
+    expect(op().status).toBe('RUNNING');
+    // A runner starts and dies; the pass after it fails the run.
+    db.state.bulkOperation[0]!.claimedAt = new Date(Date.now() + 5);
+    db.state.bulkOperation[0]!.heartbeatAt = ago(LEASE_MS + 1000);
     expect(await reclaimStalledOperations()).toEqual([]);
     expect(op().status).toBe('FAILED');
   });

@@ -8,6 +8,7 @@
  * achievements engine), so farmed empty accounts never pay out.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { customAlphabet } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
 import { awardCoins } from '@/lib/coins.server';
@@ -116,7 +117,7 @@ export async function maybeRewardReferral(refereeId: string): Promise<void> {
         type: 'SYSTEM',
         entityType: 'coins',
         entityId: refereeId,
-        preview: `${refereeName} is now active — you both earned ${REFERRAL_REWARD} coins!`,
+        preview: notice('referral-active', { name: refereeName, coins: REFERRAL_REWARD }),
         link: '/wallet',
       }),
       createNotification({
@@ -124,7 +125,7 @@ export async function maybeRewardReferral(refereeId: string): Promise<void> {
         type: 'SYSTEM',
         entityType: 'coins',
         entityId: referral.referrerId,
-        preview: `Referral bonus: +${REFERRAL_REWARD} coins for joining through an invite!`,
+        preview: notice('referral-bonus', { coins: REFERRAL_REWARD }),
         link: '/wallet',
       }),
     ]);

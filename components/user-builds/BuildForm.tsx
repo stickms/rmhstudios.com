@@ -209,6 +209,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         </label>
         <Textarea
           id="build-description"
+          dir="auto"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t('placeholder-description', {

@@ -85,14 +85,14 @@ vi.mock('@/lib/prisma.server', () => ({
 vi.mock('@/lib/notifications.server', () => ({
   createNotification: async (n: {
     userId: string;
-    preview: string;
+    preview: string | { fallback: string };
     link: string;
     entityType?: string;
     dedupeUnread?: boolean;
   }) => {
     created.push({
       userId: n.userId,
-      preview: n.preview,
+      preview: typeof n.preview === 'string' ? n.preview : n.preview.fallback,
       link: n.link,
       entityType: n.entityType,
       dedupeUnread: n.dedupeUnread,

@@ -11,6 +11,7 @@ import {
   feedSourceSelect,
   readFeedPage,
   readableByOthers,
+  setFeedPeople,
   toFeedSource,
 } from '@/lib/feeds/feeds.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
@@ -122,6 +123,22 @@ export async function addMember(ownerId: string, listId: string, userId: string)
     create: { feedId: listId, userId },
     update: {},
   });
+}
+
+/**
+ * Replace a list's members with exactly `userIds` (the developer API's one list write). Ownership and kind are
+ * checked here, the cap applies to the whole set, and `setFeedPeople` does the delete-and-insert. Who may be a
+ * member (blocks, bans, deleted accounts) is the caller's decision: this only stores the ids it is given.
+ */
+export async function replaceListMembers(ownerId: string, listId: string, userIds: string[]): Promise<void> {
+  const list = await prisma.customFeed.findFirst({
+    where: { id: listId, ownerId, kind: 'list' },
+    select: { id: true },
+  });
+  if (!list) throw new ListError('NOT_FOUND');
+  const unique = [...new Set(userIds)];
+  if (unique.length > MAX_MEMBERS) throw new ListError('MEMBER_LIMIT');
+  await setFeedPeople(listId, unique);
 }
 
 /** Remove a member. The list owner may remove anyone; a member may remove themselves. */

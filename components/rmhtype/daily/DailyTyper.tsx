@@ -8,6 +8,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createTypingRun, type TypingRun, type TypingRunResult } from '@/lib/rmhtype/typing-run';
 import { useArrival } from '@/components/ui/arrive';
+import { recordKeyStats } from '@/lib/rmhtype/rmhtype.queries';
+import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
+import { useRmhTypeStore } from '@/lib/rmhtype/store';
 
 function clock(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));
@@ -54,7 +57,17 @@ export function DailyTyper({
       if (e.repeat) return;
       current.type(e.key, at);
       setTyped(current.typed());
-      if (current.done()) onDone(current.result());
+      if (current.done()) {
+        const result = current.result();
+        // One request per finished run, honouring the "Record key statistics" switch; a failure is silent.
+        const body = buildKeyStatsBody({
+          enabled: useRmhTypeStore.getState().settings.recordKeyStats,
+          finished: true,
+          aggregates: result.keyStats,
+        });
+        if (body) recordKeyStats(body).catch(() => undefined);
+        onDone(result);
+      }
     },
     [onDone],
   );

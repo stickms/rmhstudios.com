@@ -13,6 +13,7 @@
  * and a decision only applies to a PENDING row (`updateMany … status: PENDING`),
  * so two moderators approving at once cannot double-count the member.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { activeSanction } from '@/lib/communities/sanction-read.server';
 import { prisma } from '@/lib/prisma.server';
 import { logModAction } from '@/lib/communities/modlog.server';
@@ -147,7 +148,7 @@ async function notifyModerators(
         type: 'SYSTEM',
         entityType: 'community-join-request',
         entityId: community.id,
-        preview: `${requesterName ?? 'Someone'} asked to join ${community.name}`,
+        preview: notice('community-join-asked', { name: requesterName ?? 'Someone', community: community.name }),
         link: `/c/${community.slug}`,
         dedupeUnread: true,
       }),
@@ -271,8 +272,8 @@ export async function decideRequest(
     entityId: community.id,
     preview:
       decision === 'approve'
-        ? `You're in: your request to join ${community.name} was approved`
-        : `Your request to join ${community.name} was not approved`,
+        ? notice('community-join-approved', { community: community.name })
+        : notice('community-join-declined', { community: community.name }),
     link: `/c/${community.slug}`,
   });
   return { ok: true, decision };

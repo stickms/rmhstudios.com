@@ -19,7 +19,7 @@ export function DraftRestoreBanner({
       <p className="min-w-0 flex-1 truncate text-xs text-site-text-muted">
         {t('draft-restore-prompt', { defaultValue: 'You have an unsent draft:' })}
         {''}
-        <span className="text-site-text">{draft.content}</span>
+        <span dir="auto" className="text-site-text">{draft.content}</span>
       </p>
       <button
         type="button"

@@ -26,10 +26,15 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 vi.mock('@/lib/moderation.server', () => ({ getBlockedAuthorIds: async () => [] as string[] }));
 vi.mock('@/lib/rate-limit', () => ({ RATE_LIMIT_POLICIES: {}, rateLimit: vi.fn(async () => ({ allowed: true })) }));
+// The head of a still WebP (RIFF, WEBP, a VP8X chunk with no animation flag): what every stored picture reads as here.
+const STILL_WEBP_HEAD = vi.hoisted(() =>
+  Buffer.from('RIFF\0\0\0\0WEBPVP8X\u000a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0', 'latin1'),
+);
 vi.mock('@/lib/storage/s3.server', () => ({
   deleteObject: async (key: string) => {
     deleted.push(key);
   },
+  getObjectRange: async () => ({ body: STILL_WEBP_HEAD, contentType: 'image/webp', start: 0, end: 31, total: 32 }),
 }));
 vi.mock('@/lib/media/ingest.server', () => ({
   ingest: ingestMock,

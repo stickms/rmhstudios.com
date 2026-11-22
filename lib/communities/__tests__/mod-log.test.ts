@@ -1365,7 +1365,13 @@ describe('the public log', () => {
       };
       select: Record<string, boolean>;
     };
-    expect(args.where.action.in).toEqual(['content_removed', 'content_approved']);
+    expect(args.where.action.in).toEqual([
+      'content_removed',
+      'content_approved',
+      'post_pinned',
+      'post_unpinned',
+      'pins_reordered',
+    ]);
     expect(Object.keys(args.select).sort()).toEqual(
       ['action', 'createdAt', 'id', 'reason', 'ruleTitle', 'targetType'].sort(),
     );

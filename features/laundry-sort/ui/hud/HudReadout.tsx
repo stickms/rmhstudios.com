@@ -17,10 +17,14 @@ import { useTranslation } from 'react-i18next';
 import { Timer, Trophy, Flame } from 'lucide-react';
 import type { LaundryMatch } from '@features/laundry-sort/engine/match';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { UntimedReadout } from './UntimedReadout';
 
 interface Props {
   matchRef: React.RefObject<LaundryMatch | null>;
   running: boolean;
+  /** Solo with no timed input: no clock, and the player ends the round. */
+  untimed?: boolean;
+  onFinish?: () => void;
 }
 
 function formatClock(seconds: number): string {
@@ -30,7 +34,7 @@ function formatClock(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function HudReadout({ matchRef, running }: Props) {
+export function HudReadout({ matchRef, running, untimed = false, onFinish }: Props) {
   const fmt = useLocaleFormat();
   const { t } = useTranslation('c-laundry-sort');
   const scoreRef = useRef<HTMLSpanElement>(null);
@@ -59,8 +63,8 @@ export function HudReadout({ matchRef, running }: Props) {
         scoreRef.current.textContent = fmt.number(score);
       }
 
-      const clock = formatClock(match.remaining);
-      if (clock !== lastClock && clockRef.current) {
+      const clock = untimed ? '' : formatClock(match.remaining);
+      if (!untimed && clock !== lastClock && clockRef.current) {
         lastClock = clock;
         clockRef.current.textContent = clock;
         // The last ten seconds turn amber. Set via a data attribute so the
@@ -77,11 +81,12 @@ export function HudReadout({ matchRef, running }: Props) {
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [matchRef, running, fmt]);
+  }, [matchRef, running, fmt, untimed]);
 
   // One announcement a second, not sixty.
   useEffect(() => {
-    if (!running) return;
+    // An untimed round has no seconds left to announce; its own readout says so.
+    if (!running || untimed) return;
     const id = window.setInterval(() => {
       const match = matchRef.current;
       if (!match) return;
@@ -94,7 +99,7 @@ export function HudReadout({ matchRef, running }: Props) {
       );
     }, 1000);
     return () => window.clearInterval(id);
-  }, [matchRef, running, t]);
+  }, [matchRef, running, t, untimed]);
 
   return (
     <>
@@ -127,21 +132,25 @@ export function HudReadout({ matchRef, running }: Props) {
           </div>
         </div>
 
-        <div
-          ref={clockBoxRef}
-          data-urgent="false"
-          className="ls-panel px-3 py-2 data-[urgent=true]:border-[var(--ls-warn)] sm:px-4"
-        >
-          <div className="ls-muted flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest sm:text-xs">
-            <Timer className="size-3 sm:size-3.5" aria-hidden="true" />
-            {t('time', {
-              defaultValue: 'Time',
-            })}
+        {untimed ? (
+          <UntimedReadout onFinish={onFinish} />
+        ) : (
+          <div
+            ref={clockBoxRef}
+            data-urgent="false"
+            className="ls-panel px-3 py-2 data-[urgent=true]:border-[var(--ls-warn)] sm:px-4"
+          >
+            <div className="ls-muted flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest sm:text-xs">
+              <Timer className="size-3 sm:size-3.5" aria-hidden="true" />
+              {t('time', {
+                defaultValue: 'Time',
+              })}
+            </div>
+            <span ref={clockRef} className="ls-numeric block text-xl font-black leading-tight sm:text-3xl">
+              0:00
+            </span>
           </div>
-          <span ref={clockRef} className="ls-numeric block text-xl font-black leading-tight sm:text-3xl">
-            0:00
-          </span>
-        </div>
+        )}
       </div>
 
       <div className="sr-only" role="status" aria-live="polite">

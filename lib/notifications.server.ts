@@ -22,7 +22,8 @@ import {
 } from '@/lib/notify/categories';
 import { holdNotification } from '@/lib/notify/held.server';
 import { getConversationPref, shouldDeliver } from '@/lib/notify/conversation-prefs.server';
-import type { NotificationType } from '@prisma/client';
+import { Prisma, type NotificationType } from '@prisma/client';
+import { noticeFallbackText, type NoticePreview } from '@/lib/notifications/notice-keys';
 
 /**
  * Denormalized per-user unread-notification counter in Redis. The unread badge
@@ -75,6 +76,9 @@ export interface NotificationListItem {
   entityType: string | null;
   entityId: string | null;
   preview: string | null;
+  /** A site-written notice's translation key and params (the inbox renders them; `preview` is the English). */
+  previewKey: string | null;
+  previewParams: unknown;
   link: string | null;
   read: boolean;
   createdAt: string;
@@ -118,6 +122,8 @@ export async function listNotifications(
     entityType: n.entityType,
     entityId: n.entityId,
     preview: n.preview,
+    previewKey: n.previewKey,
+    previewParams: n.previewParams,
     link: n.link,
     read: n.read,
     createdAt: n.createdAt.toISOString(),
@@ -134,7 +140,11 @@ export interface CreateNotificationInput {
   type: NotificationType;
   entityType?: string | null;
   entityId?: string | null;
-  preview?: string | null;
+  /**
+   * The English text, or a key-based notice (`notice('key', params)`): the key and params are stored for the inbox to
+   * render in the reader's language, and the English fallback is the stored `preview` that push and e-mail send.
+   */
+  preview?: string | NoticePreview | null;
   link?: string | null;
   /** §16 batching key — rows sharing it collapse in the list/badge. */
   groupKey?: string | null;
@@ -312,6 +322,12 @@ export async function createNotification(input: CreateNotificationInput): Promis
   // Never notify someone about their own action.
   if (input.actorId && input.actorId === input.userId) return;
 
+  // A key-based notice stores its key and params; push and e-mail read the English fallback (no reader locale here).
+  const previewText = noticeFallbackText(input.preview);
+  const noticed = typeof input.preview === 'object' && input.preview !== null ? input.preview : null;
+  const previewKey = noticed?.key ?? null;
+  const previewParams = noticed ? noticed.params : undefined;
+
   try {
     // The conversation gate runs before anything is read or written: a muted thread is not a notification source.
     if (input.conversationKey && !isUnmutable(input)) {
@@ -339,7 +355,16 @@ export async function createNotification(input: CreateNotificationInput): Promis
         // refreshes deliberately do NOT re-push — the device was already told.
         await prisma.notification.update({
           where: { id: existing.id },
-          data: { createdAt: new Date(), preview: input.preview ?? undefined },
+          data: {
+            createdAt: new Date(),
+            preview: previewText ?? undefined,
+            // A refresh with a different preview replaces the key too: a stale key would render the old sentence.
+            ...(previewText !== null
+              ? previewKey
+                ? { previewKey, previewParams }
+                : { previewKey: null, previewParams: Prisma.DbNull }
+              : {}),
+          },
         });
         return;
       }
@@ -353,7 +378,9 @@ export async function createNotification(input: CreateNotificationInput): Promis
         type: input.type,
         entityType: input.entityType ?? null,
         entityId: input.entityId ?? null,
-        preview: input.preview?.slice(0, 280) ?? null,
+        preview: previewText?.slice(0, 280) ?? null,
+        previewKey,
+        previewParams,
         link: input.link ?? null,
         groupKey: input.groupKey ?? null,
       },
@@ -375,7 +402,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
         channel: 'push',
         payload: {
           title: pushTitleFor(input.type),
-          ...(input.preview ? { body: input.preview } : {}),
+          ...(previewText ? { body: previewText } : {}),
           url: input.link ?? '/notifications',
           ...(tag ? { tag } : {}),
         },
@@ -389,7 +416,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
     }
     void sendPushToUser(input.userId, {
       title: pushTitleFor(input.type),
-      body: input.preview ?? undefined,
+      body: previewText ?? undefined,
       url: input.link ?? '/notifications',
       tag,
       nid: created.id,

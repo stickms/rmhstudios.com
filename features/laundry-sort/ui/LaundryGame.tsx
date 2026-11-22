@@ -40,6 +40,8 @@ import { VersusTicker } from './hud/VersusTicker';
 import { WashLegend } from './hud/WashLegend';
 import './laundry.css';
 import { useGameSession } from '@/hooks/useGameSession';
+import { NO_LAUNDRY_ASSIST } from '@features/laundry-sort/engine/assist-profile';
+import { useRunAssists } from './useRunAssists';
 
 export function LaundryGame() {
   const { t } = useTranslation('c-laundry-sort');
@@ -62,6 +64,12 @@ export function LaundryGame() {
   const countdown = useLaundryStore((s) => s.countdown);
   const connection = useLaundryStore((s) => s.connection);
   const error = useLaundryStore((s) => s.error);
+
+  const assist = useLaundryStore((s) => s.assist);
+  const loadRunAssists = useRunAssists(signedIn);
+  // Read through a ref so a session refresh never rebuilds a running match.
+  const loadRunAssistsRef = useRef(loadRunAssists);
+  loadRunAssistsRef.current = loadRunAssists;
 
   const running = screen === 'playing';
   // Session contract: keep the screen on through a match.
@@ -139,6 +147,10 @@ export function LaundryGame() {
 
   const startSolo = useCallback(async () => {
     const state = useLaundryStore.getState();
+    // The server hands out the assist profile (and records the claim that keeps an assisted run
+    // off the board) before the round begins.
+    const flags = await loadRunAssists(false);
+    state.setAssist(flags);
     // A seed link or the daily mutator fixes the seed and may force the options.
     const plan = await planRun('laundry-sort', `${state.difficulty}-${state.durationSec}`);
     const durationSec = (plan.options?.durationSec as MatchDuration | undefined) ?? state.durationSec;
@@ -151,6 +163,7 @@ export function LaundryGame() {
       seed: plan.kind === 'free' ? randomSeed() : plan.seed,
       durationSec,
       difficulty,
+      untimed: flags.untimed,
     });
     if (plan.kind === 'free') {
       useArcadeRun.getState().set({
@@ -164,7 +177,7 @@ export function LaundryGame() {
     state.setSoloResult(null);
     state.setResults(null);
     state.setScreen('playing');
-  }, []);
+  }, [loadRunAssists]);
 
   // Versus rounds start when the server says so, on the seed it chose — that
   // single number is what guarantees both players get identical laundry.
@@ -177,6 +190,15 @@ export function LaundryGame() {
     });
     setPopups([]);
     setAwaitingResults(false);
+    // Versus takes colour-safe only, read locally; the countdown covers the read.
+    useLaundryStore.getState().setAssist(NO_LAUNDRY_ASSIST);
+    let current = true;
+    void loadRunAssistsRef.current(true).then((flags) => {
+      if (current) useLaundryStore.getState().setAssist(flags);
+    });
+    return () => {
+      current = false;
+    };
   }, [start]);
 
   // ── Publishing a running score (versus only) ─────────────────────────────
@@ -220,6 +242,7 @@ export function LaundryGame() {
       useLaundryStore.getState().patchSoloResult({
         submitted: 'done',
         personalBest: Boolean(data.personalBest),
+        ranked: typeof data.ranked === 'boolean' ? data.ranked : null,
       });
       setLeaderboardKey((key) => key + 1);
     } catch {
@@ -259,6 +282,7 @@ export function LaundryGame() {
       difficulty: match.options.difficulty,
       submitted: 'idle',
       personalBest: false,
+      ranked: null,
     });
     store.setScreen('results');
     void submitSolo(match);
@@ -348,7 +372,12 @@ export function LaundryGame() {
 
         {running ? (
           <>
-            <HudReadout matchRef={matchRef} running={running && !awaitingResults} />
+            <HudReadout
+              matchRef={matchRef}
+              running={running && !awaitingResults}
+              untimed={mode === 'solo' && assist.untimed}
+              onFinish={() => matchRef.current?.finish()}
+            />
             <ScorePopups popups={popups} />
             {mode === 'versus' ? <VersusTicker /> : null}
             <div className="ls-legend pointer-events-none absolute inset-x-0 bottom-1.5 z-30 flex justify-center px-2">

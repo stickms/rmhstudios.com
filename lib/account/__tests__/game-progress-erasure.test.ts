@@ -136,7 +136,9 @@ describe('gameProgressErasureOps', () => {
     // The snapshot is the rankings in order: the rebuilt array keeps each entry's position.
     expect(args.sql).toContain('WITH ORDINALITY');
     expect(args.sql).toContain('ORDER BY e.ord');
-    expect(args.values).toEqual(['user-1', 'Deleted user', 'user-1']);
+    // The member's id, the name twice (with and without an avatar to clear), then the id again for the match filter.
+    expect(args.values).toEqual(['user-1', 'Deleted user', 'Deleted user', 'user-1']);
+    expect(args.sql).toContain('{avatarUrl}');
   });
 
   it('renames the three match-player name copies by userId and deletes none', () => {

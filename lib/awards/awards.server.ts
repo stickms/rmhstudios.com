@@ -3,6 +3,7 @@
  * credit recipient share, ledger rows, insert award, notify), lists grouped
  * awards for content, and lets a recipient hide an award.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { dispatch } from '@/lib/notify/dispatch.server';
@@ -99,7 +100,11 @@ export async function giveAward(
     actorId: input.anonymous ? null : giverId,
     entityType: input.entityType,
     entityId: input.entityId,
-    preview: `Your ${input.entityType === 'rmhark' ? 'post' : input.entityType} received a ${def.name} award ${def.emoji}`,
+    preview: notice('award-received', {
+      target: input.entityType === 'rmhark' ? 'post' : input.entityType,
+      award: def.name,
+      emoji: def.emoji,
+    }),
   }).catch(() => {});
 
   return result;

@@ -1,20 +1,10 @@
 import { apiRoute } from '@/lib/api/route.server';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
-import { getRole } from '@/lib/communities/access.server';
+import { pageAccess, pageErrorResponse } from '@/lib/communities/page-access.server';
 import { communityPageRollbackSchema } from '@/lib/communities/pages-schema';
-import {
-  listRevisions,
-  rollbackCommunityPage,
-  CommunityPageError,
-} from '@/lib/communities/pages.server';
-
-const STATUS_BY_CODE = {
-  INVALID: 400,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-} as const;
+import { listRevisions, rollbackCommunityPage, CommunityPageError } from '@/lib/communities/pages.server';
+import { listCommunityPageRevisionsApi, rollbackCommunityPageApi } from '@/lib/communities/pages.contract';
 
 /**
  * GET  /api/community-pages/:id/revisions — the page's history.
@@ -23,35 +13,29 @@ const STATUS_BY_CODE = {
  * Rollback is a POST to the history collection rather than a PUT on the page
  * because it *appends*: restoring an old body snapshots the current one first,
  * so the vandalised version stays in the record and the revert is itself
- * revertible.
+ * revertible. It takes `baseUpdatedAt` like an edit does.
  */
 export const route = apiRoute('/api/community-pages/$id/revisions', {
-  GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
+  GET: implement(listCommunityPageRevisionsApi, { auth: 'optional', rateLimit: 'read' }, async ({ params, userId, isAdmin }) => {
     // Members-only: the history of a private community's page is invisible to
-    // non-members (404, as for a missing page).
-    const page = await prisma.communityPage.findUnique({
-      where: { id: params.id },
-      select: { communityId: true, community: { select: { isPrivate: true } } },
-    });
-    if (page?.community.isPrivate && !(await getRole(page.communityId, userId))) {
-      return Response.json({ error: 'Not found' }, { status: 404 });
-    }
-    return Response.json({ revisions: await listRevisions(params.id) });
+    // non-members (404, as for a missing page), as it is to a member banned from it.
+    const page = await prisma.communityPage.findUnique({ where: { id: params.id }, select: { communityId: true } });
+    const access = page ? await pageAccess(page.communityId, userId, isAdmin) : null;
+    const revisions = access?.read ? await listRevisions(params.id, access) : null;
+    if (!revisions) return Response.json({ error: 'Not found' }, { status: 404 });
+    return { revisions };
   }),
-  POST: defineHandler(
+  POST: implement(
+    rollbackCommunityPageApi,
     {
       rateLimit: { limit: 20, windowMs: 3_600_000, prefix: 'community-page', scope: 'user' },
       body: communityPageRollbackSchema,
     },
     async ({ params, userId, isAdmin, body }) => {
       try {
-        return Response.json(
-          await rollbackCommunityPage(userId, params.id, body.revisionId, isAdmin),
-        );
+        return await rollbackCommunityPage(userId, params.id, body.revisionId, body.baseUpdatedAt, isAdmin);
       } catch (error) {
-        if (error instanceof CommunityPageError) {
-          return Response.json({ error: error.message }, { status: STATUS_BY_CODE[error.code] });
-        }
+        if (error instanceof CommunityPageError) return pageErrorResponse(error);
         throw error;
       }
     },

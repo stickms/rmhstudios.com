@@ -50,7 +50,9 @@ function FeedbackRow({
         <p className="t-label text-site-text">{who}</p>
         <p className="t-meta">{fmt.date(new Date(item.createdAt))}</p>
       </div>
-      <p className="t-body whitespace-pre-wrap break-words">{item.body}</p>
+      <p dir="auto" className="t-body whitespace-pre-wrap break-words">
+        {item.body}
+      </p>
       <div className="flex items-center gap-2">
         <Button size="sm" variant="ghost" aria-pressed={item.helpful} disabled={busy} onClick={() => onHelpful(item)}>
           {item.helpful

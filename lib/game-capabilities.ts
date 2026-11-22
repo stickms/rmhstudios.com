@@ -292,7 +292,10 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     engine: 'webgl',
     demanding: true,
     save: 'shared-table',
-    accessibility: [],
+    // Solo honours calm visuals, colour-safe and the speed floor (assist-profile.ts); online races
+    // apply only calm visuals and colour-safe, locally. Assisted runs stay off the board. The
+    // default experience still flashes, so the descriptor stays.
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe'],
     descriptors: ['flashing'],
   },
   'laundry-sort': {
@@ -304,7 +307,10 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     engine: 'webgl',
     demanding: true,
     save: 'none',
-    accessibility: [],
+    // Colour-safe pattern glyphs on garments and bins, and an untimed solo match ended with
+    // "Finish" (engine/assist-profile.ts). Online versus applies colour-safe only. No flash or
+    // shake exists to remove and there is no quick-tap input, so no reduced-flashing entry.
+    accessibility: ['assist-mode', 'colorblind-safe', 'no-timed-input'],
     partyCapable: true,
   },
   'void-breaker': {

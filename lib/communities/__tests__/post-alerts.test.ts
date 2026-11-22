@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -347,7 +348,7 @@ describe('runPostAlertFanout', () => {
       type: 'SYSTEM',
       entityType: 'community_post',
       entityId: 'c1',
-      preview: 'Ada posted in Quiet Group',
+      preview: expect.objectContaining({ fallback: 'Ada posted in Quiet Group' }),
       link: '/u/ada/post/p1',
     });
   });
@@ -495,7 +496,7 @@ describe('runPostAlertFanout', () => {
         link: input.link as string,
         read: false,
         createdAt: minutesAgo(10 - db.notes.length * 2),
-        preview: input.preview as string,
+        preview: noticeFallbackText(input.preview as never) as string,
       });
     });
     for (let i = 1; i <= 5; i++) {
@@ -543,7 +544,7 @@ describe('runPostAlertFanout', () => {
         link: input.link as string,
         read: false,
         createdAt: NOW,
-        preview: input.preview as string,
+        preview: noticeFallbackText(input.preview as never) as string,
       } as never);
     });
     // A member of the community was told about ANOTHER post of it in the same window (and read it): that alert is not

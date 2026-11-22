@@ -598,6 +598,10 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // (/admin/sweeps, 'admin')
   '/admin/sweeps': 'admin',
 
+  // Sprint 09 (docs/autonomous/sprint-09/plan.md §Anchors)
+  // s09-12 media-sweep
+  '/admin/media-sweep': 'admin',
+
   '/account/connect': 'personal', // the account-merge step after a new sign-in; needs a session
   '/settings': 'personal',
   '/settings/appearance': 'personal',
@@ -913,6 +917,14 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
 
   // s04-12 rmhbox-stats
   '/rmhbox/players/$userId': null, // a member's record, shown per their game-activity privacy; only a public one is indexable
+
+  // Sprint 09 (docs/autonomous/sprint-09/plan.md §Anchors)
+  // s09-04 community-wiki
+  '/c/$slug/wiki': 'content', // a public community's wiki list: reached from its pages, which the content section lists
+  '/c/$slug/wiki/$page': 'content', // each public wiki page (lib/sitemap.server.ts)
+
+  // s09-05 guide-history
+  '/games/$gameId/guides/$guideId/history': null, // a guide's edit history: its author's (and admins') only, never indexed
 };
 
 // ──────────────────────────── XML rendering ────────────────────────────

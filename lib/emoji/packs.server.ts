@@ -1,3 +1,5 @@
+import { notice } from '@/lib/notifications/notice-keys';
+import { mediaExpired } from '@/lib/media/policy';
 import { pageSize } from '@/lib/pagination';
 /**
  * Emoji & sticker packs — server queries.
@@ -268,10 +270,11 @@ export async function addItem(
 
   const media = await prisma.media.findUnique({
     where: { id: input.mediaId },
-    select: { id: true, userId: true, url: true, status: true, contentType: true },
+    select: { id: true, userId: true, url: true, status: true, contentType: true, createdAt: true },
   });
   if (!media || media.userId !== userId) throw new PackError('Media not found.', 404);
   if (media.status !== 'PENDING') throw new PackError('That upload is already in use.');
+  if (mediaExpired(media)) throw new PackError('Media not found.', 404);
 
   const clash = await prisma.emojiPackItem.findUnique({
     where: { packId_name: { packId, name: input.name } },
@@ -529,8 +532,10 @@ export async function moderatePack(
     entityId: pack.id,
     preview:
       action === 'approve'
-        ? `Your pack "${pack.name}" was approved — anyone can install it now`
-        : `Your pack "${pack.name}" was removed by moderators${note ? `: ${note}` : ''}`,
+        ? notice('emoji-pack-approved', { pack: pack.name })
+        : note
+          ? notice('emoji-pack-removed-note', { pack: pack.name, note })
+          : notice('emoji-pack-removed', { pack: pack.name }),
     link: '/emoji-packs',
   }).catch(() => {});
 

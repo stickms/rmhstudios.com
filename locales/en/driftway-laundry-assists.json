@@ -1,0 +1,11 @@
+{
+  "assisted-not-ranked": "Assisted, not ranked",
+  "driftway-online-line": "Assists on for what you see. Races are not ranked either way.",
+  "driftway-run-line": "Assisted, not ranked.",
+  "driftway-run-line-slow": "Assisted, not ranked. Speed floor {{percent}}%.",
+  "laundry-finish": "Finish",
+  "laundry-time-label": "Time",
+  "laundry-untimed": "Untimed",
+  "laundry-untimed-status": "Untimed round. Choose Finish when you are done.",
+  "settings-link": "Game assists"
+}

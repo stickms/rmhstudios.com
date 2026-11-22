@@ -23,7 +23,11 @@ vi.mock('@/lib/prisma.server', () => {
   return {
     prisma: {
       rMHark: { findMany: vi.fn().mockResolvedValue([]), count: vi.fn().mockResolvedValue(1) },
-      user: { findFirst: vi.fn().mockResolvedValue({ id: 'u1', name: 'A', handle: 'a' }) },
+      user: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'u1', name: 'A', handle: 'a' }),
+        // The deletion-pause hold (s09-14): an author with no deletion scheduled publishes.
+        findUnique: vi.fn().mockResolvedValue({ deletionScheduledAt: null }),
+      },
       scheduledPost: { findUnique: vi.fn().mockResolvedValue(null) },
       $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
     },

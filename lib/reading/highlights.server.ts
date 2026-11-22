@@ -14,6 +14,7 @@
  *    last public highlight on the passage.
  */
 
+import { recordTombstone } from '@/lib/sync/tombstones.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { publishedLogWhere } from '@/lib/blog/publication';
@@ -357,10 +358,15 @@ export async function deleteHighlight(userId: string, id: string): Promise<boole
     select: { id: true, docKind: true, docKey: true, isPublic: true },
   });
   if (!existing) return false;
-  await prisma.$transaction(async (tx) => {
+  const deleted = await prisma.$transaction(async (tx) => {
     if (existing.isPublic) await removePassages(tx, id, userId);
-    await tx.readingHighlight.delete({ where: { id } });
+    // deleteMany: a concurrent second delete finds nothing and writes no tombstone.
+    const { count } = await tx.readingHighlight.deleteMany({ where: { id, userId } });
+    if (count === 0) return false;
+    await recordTombstone(tx, userId, 'highlight', id);
+    return true;
   });
+  if (!deleted) return false;
   invalidateDoc(existing.docKind, existing.docKey);
   return true;
 }

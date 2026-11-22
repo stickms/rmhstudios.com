@@ -767,7 +767,7 @@ export default function GuestbookPanel({
                           ))}
                       </span>
                     </p>
-                    <p className="mt-0.5 whitespace-pre-line break-words text-sm text-site-text">
+                    <p dir="auto" className="mt-0.5 whitespace-pre-line break-words text-sm text-site-text">
                       {
                         entry.body
                       }

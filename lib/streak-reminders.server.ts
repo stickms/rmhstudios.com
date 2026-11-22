@@ -14,6 +14,7 @@
  * sweep that throws (query failed) is a failed job and does not count. Individual
  * insert failures do not throw, exactly like the Go `RecordJob("streak_sweep","ok")`.
  */
+import { notice, noticeColumns } from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { sendPushToUser } from '@/lib/push/send.server';
@@ -101,7 +102,7 @@ function notificationRow(r: Reminder) {
     type: 'SYSTEM' as const,
     entityType: REMINDER_ENTITY_TYPE,
     entityId: String(r.current),
-    preview: reminderPreview(r.current),
+    ...noticeColumns(notice('streak-continues', { days: r.current })),
     link: REMINDER_LINK,
     read: false,
   };

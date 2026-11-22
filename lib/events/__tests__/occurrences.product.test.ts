@@ -7,6 +7,7 @@ import {
   applyOverrides,
   checkOverride,
   occurrenceNotice,
+  occurrenceNoticePreview,
   upcomingDates,
   type OccurrenceOverride,
 } from '@/lib/events/occurrences';
@@ -256,6 +257,30 @@ describe('upcomingDates and notices', () => {
         tz: NY,
       }),
     ).toMatch(/^Game night on 24 Dec moves to \w{3},? 27 Dec,? 14:00$/);
+
+    const keyed = occurrenceNoticePreview({
+      title: 'Game night',
+      change: 'move',
+      occurrenceAt: at,
+      startsAt: to,
+      tz: NY,
+    });
+    expect(keyed.key).toBe('event-occurrence-moved');
+    expect(keyed.params).toMatchObject({
+      title: 'Game night',
+      occurrenceAt: at.toISOString(),
+      startsAt: to.toISOString(),
+    });
+    // Push keeps the event-time-zone English sentence.
+    expect(keyed.fallback).toBe(
+      occurrenceNotice({ title: 'Game night', change: 'move', occurrenceAt: at, startsAt: to, tz: NY }),
+    );
+    expect(occurrenceNoticePreview({ title: 'G', change: 'skip', occurrenceAt: at, tz: NY }).key).toBe(
+      'event-occurrence-skipped',
+    );
+    expect(occurrenceNoticePreview({ title: 'G', change: 'restore', occurrenceAt: at, tz: NY }).key).toBe(
+      'event-occurrence-restored',
+    );
   });
 });
 

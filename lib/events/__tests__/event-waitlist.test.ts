@@ -199,7 +199,7 @@ describe('promotion', () => {
       type: 'SYSTEM',
       entityType: 'event_waitlist',
       entityId: 'e1',
-      preview: 'A place opened up: you are going to Game night',
+      preview: expect.objectContaining({ fallback: 'A place opened up: you are going to Game night' }),
     });
     // A repeat of the same un-RSVP frees nothing and notifies nobody.
     await unrsvp('e1', 'a');

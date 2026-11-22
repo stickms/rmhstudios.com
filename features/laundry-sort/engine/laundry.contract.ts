@@ -9,6 +9,8 @@ export const submitLaundryScoreApi = endpoint<{
   res: {
     ok: true;
     personalBest: boolean;
+    /** False when the run was assisted and so kept off the board. */
+    ranked: boolean;
   };
 }>()({
   method: 'POST',

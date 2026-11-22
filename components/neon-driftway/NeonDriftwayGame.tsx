@@ -61,6 +61,10 @@ import { NeonDriftwayUI } from './NeonDriftwayUI';
 import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
 import { NeonDriftwayHud, type HudHandle } from './NeonDriftwayHud';
 import { NDWMultiplayerLobby } from './NDWMultiplayerLobby';
+import { useSession } from '@/components/Providers';
+import { NO_NDW_ASSIST, type NdwAssistFlags } from '@/lib/neon-driftway/assist-profile';
+import { useRunAssists } from './useRunAssists';
+import { AssistRunLine } from './assist-ui';
 import { NDWMultiplayerClient } from '@/lib/neon-driftway/multiplayer';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -158,6 +162,12 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
   // Values the frame loop reads. Kept in refs so the loop is created once.
   const unlocksRef = useRef(unlockedLevels);
   const stereoRef = useRef(false);
+
+  // ── Game assists: the profile is decided at run start and kept for the whole run ──
+  const session = useSession();
+  const loadRunAssists = useRunAssists(!!session.data);
+  const [assistFlags, setAssistFlags] = useState<NdwAssistFlags>(NO_NDW_ASSIST);
+  const startingRef = useRef(false);
   const multiplayerRoomRef = useRef<string | null>(null);
 
   // ── Photo mode (U14): solo only; the sim is paused for the whole session ──
@@ -365,6 +375,11 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
   useEffect(() => {
     rendererRef.current?.setReducedMotion(reducedMotion);
   }, [reducedMotion]);
+
+  // A rebuilt renderer (a restored GL context, a reduced-motion change) starts plain; hand it the run's assists again.
+  useEffect(() => {
+    rendererRef.current?.setAssist(assistFlags);
+  }, [assistFlags, rendererEpoch, webglReady, reducedMotion]);
 
   // ── Multiplayer event handlers ──
 
@@ -704,18 +719,30 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
 
   const handleStartLevel = useCallback((levelId: LevelId) => {
     const game = gameRef.current;
-    if (!game) return;
-    game.isMultiplayer = false;
-    game.remotePlayers.clear();
-    game.startLevel(levelId);
-    ghostRecorderRef.current.reset();
-    loadGhost(levelId, ghostMode);
-    rendererRef.current?.setLevel(LEVELS[levelId]);
-    rendererRef.current?.recenterView();
-    setCurrentLevel(levelId);
-    setRunStats(null);
-    setUiState('playing');
-  }, [loadGhost, ghostMode]);
+    if (!game || startingRef.current) return;
+    startingRef.current = true;
+    // The server hands out the assist profile (and records the claim that keeps an assisted
+    // run off the board) before the run begins; a second press while it is in flight is ignored.
+    void loadRunAssists(false)
+      .then((flags) => {
+        game.isMultiplayer = false;
+        game.remotePlayers.clear();
+        game.setAssist(flags);
+        game.startLevel(levelId);
+        ghostRecorderRef.current.reset();
+        loadGhost(levelId, ghostMode);
+        rendererRef.current?.setAssist(flags);
+        rendererRef.current?.setLevel(LEVELS[levelId]);
+        rendererRef.current?.recenterView();
+        setAssistFlags(flags);
+        setCurrentLevel(levelId);
+        setRunStats(null);
+        setUiState('playing');
+      })
+      .finally(() => {
+        startingRef.current = false;
+      });
+  }, [loadGhost, ghostMode, loadRunAssists]);
 
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
@@ -751,13 +778,24 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
     game.isMultiplayer = true;
     ghostPlayerRef.current = null;
     game.remotePlayers.clear();
+    // Online races take only the visual assists, locally; the shared clock keeps its pace. Until
+    // they are read, the race runs plain, so a slow read never holds the countdown.
+    game.setAssist(NO_NDW_ASSIST);
+    rendererRef.current?.setAssist(NO_NDW_ASSIST);
+    setAssistFlags(NO_NDW_ASSIST);
+    void loadRunAssists(true).then((flags) => {
+      if (!game.isMultiplayer) return;
+      game.setAssist(flags);
+      rendererRef.current?.setAssist(flags);
+      setAssistFlags(flags);
+    });
     game.startLevel(levelId);
     rendererRef.current?.setLevel(LEVELS[levelId]);
     rendererRef.current?.recenterView();
     setCurrentLevel(levelId);
     setRunStats(null);
     setUiState('multiplayerPlaying');
-  }, []);
+  }, [loadRunAssists]);
 
   const handleBackFromMultiplayer = useCallback(() => {
     multiplayerRoomRef.current = null;
@@ -924,6 +962,9 @@ export function NeonDriftwayGame() { const fmt = useLocaleFormat();
           </div>
         </div>
       )}
+
+      {uiState === 'playing' && assistFlags.active && <AssistRunLine flags={assistFlags} />}
+      {uiState === 'multiplayerPlaying' && assistFlags.active && <AssistRunLine flags={assistFlags} online />}
 
       <NeonDriftwayUI
         uiState={uiState}

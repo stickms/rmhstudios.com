@@ -5,6 +5,7 @@
  * can accept in one tap, which flips the post's existing `replyControl` to
  * FOLLOWING for 24h; an hourly maintenance sweep restores the previous value.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { redisIncrBy } from '@/lib/redis.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -54,7 +55,7 @@ export async function noteReply(args: {
       type: 'SYSTEM',
       entityType: 'pile_on',
       entityId: postId,
-      preview: 'A post of yours is getting a burst of replies from people you do not know.',
+      preview: notice('pile-on', {}),
       link: `/safety/pile-on?post=${encodeURIComponent(postId)}`,
     });
   } catch (err) {

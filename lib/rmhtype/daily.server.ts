@@ -8,6 +8,7 @@
  */
 import { userChipSelect } from '@/lib/user-display';
 import { prisma } from '@/lib/prisma.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { cached, invalidateTag } from '@/lib/cached.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { PASSAGES } from '@/lib/rmhtype/passages';
@@ -47,6 +48,18 @@ interface Entry {
 
 const passageText = (passageId: string): string | null => PASSAGES.find((p) => p.id === passageId)?.text ?? null;
 
+/**
+ * Who a board query may include: the friends scope's ids minus the hidden members, or everyone but
+ * the hidden members (the viewer's own row is `me`, which is read apart from the board).
+ */
+function visibleUsers(
+  userIds: string[] | undefined,
+  hidden: ReadonlySet<string>,
+): { userId?: { in: string[] } | { notIn: string[] } } {
+  if (userIds) return { userId: { in: userIds.filter((id) => !hidden.has(id)) } };
+  return hidden.size === 0 ? {} : { userId: { notIn: [...hidden] } };
+}
+
 /** Place among scored entries of the day (optionally only `userIds`): wpm, then accuracy, then earlier finish. */
 async function rankOf(
   entry: {
@@ -57,18 +70,14 @@ async function rankOf(
   },
   userIds?: string[],
 ): Promise<number> {
+  // Hidden members are not ahead of anyone: the viewer's place counts only the members still listed.
+  const hidden = await leaderboardHiddenUserIds();
   const scope = {
     day: entry.day,
     wpm: {
       not: null,
     },
-    ...(userIds
-      ? {
-          userId: {
-            in: userIds,
-          },
-        }
-      : {}),
+    ...visibleUsers(userIds, hidden),
   };
   const ahead = await prisma.rmhTypeDailyEntry.count({
     where: {
@@ -289,19 +298,14 @@ export async function finishDaily(
 }
 
 async function boardRows(day: string, userIds?: string[]): Promise<DailyBoardRow[]> {
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prisma.rmhTypeDailyEntry.findMany({
     where: {
       day,
       wpm: {
         not: null,
       },
-      ...(userIds
-        ? {
-            userId: {
-              in: userIds,
-            },
-          }
-        : {}),
+      ...visibleUsers(userIds, hidden),
     },
     orderBy: [
       {

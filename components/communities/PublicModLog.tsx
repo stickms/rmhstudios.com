@@ -83,6 +83,15 @@ export function PublicModLog({
   };
 
   const sentence = (e: PublicModLogEntryDTO) => {
+    if (e.action === 'post_pinned') {
+      return t('public-post-pinned', { ns: 'community-pins', defaultValue: 'Post pinned' });
+    }
+    if (e.action === 'post_unpinned') {
+      return t('public-post-unpinned', { ns: 'community-pins', defaultValue: 'Post unpinned' });
+    }
+    if (e.action === 'pins_reordered') {
+      return t('public-pins-reordered', { ns: 'community-pins', defaultValue: 'Pinned posts reordered' });
+    }
     if (e.action === 'content_removed') {
       return e.targetType === 'comment'
         ? t('public-comment-removed', {

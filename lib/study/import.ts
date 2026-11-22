@@ -12,6 +12,7 @@
 import { hasCloze, parseCloze, type CardKind } from '@/lib/study/card-types';
 import { CARD_IMAGE_ALT_MAX, cardImageProblem, type CardImage } from '@/lib/study/card-images';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX } from '@/lib/study/limits';
+import { checkOcclusion, type Occlusion } from '@/lib/study/occlusion';
 
 export type Separator = 'tab' | 'comma' | 'semicolon' | 'dash' | 'equals' | 'colon';
 
@@ -26,7 +27,9 @@ export type RejectReason =
   /** A cloze row whose deletions do not parse, or are too many. */
   | 'invalid-cloze'
   /** A JSON row whose picture has no description, sits on a cloze front, or is not an address the site stored. */
-  | 'invalid-picture';
+  | 'invalid-picture'
+  /** A JSON occlusion row whose masks are missing, out of the picture, too small, too many or unlabelled (s09-03). */
+  | 'invalid-occlusion';
 
 export interface ParsedCard {
   front: string;
@@ -36,6 +39,8 @@ export interface ParsedCard {
   /** Only a deck's own JSON export carries pictures; see {@link parseDeckJson}. */
   frontImage?: CardImage;
   backImage?: CardImage;
+  /** Only a deck's own JSON export carries an occlusion card's masks. */
+  occlusion?: Occlusion;
 }
 
 export interface ParseOptions {
@@ -294,7 +299,12 @@ function clozeRow(front: string): ParsedCard | RejectReason {
   return parseCloze(front).ok ? { front, back: '', kind: 'cloze' } : 'invalid-cloze';
 }
 
-const JSON_KINDS: Record<string, CardKind> = { basic: 'basic', reversible: 'reversible', cloze: 'cloze' };
+const JSON_KINDS: Record<string, CardKind> = {
+  basic: 'basic',
+  reversible: 'reversible',
+  cloze: 'cloze',
+  occlusion: 'occlusion',
+};
 
 /** `{ url, alt }` from a parsed JSON value, or null when it is not one. The address is checked by `cardImageProblem`. */
 function jsonImage(value: unknown): CardImage | null | 'bad' {
@@ -306,8 +316,8 @@ function jsonImage(value: unknown): CardImage | null | 'bad' {
 }
 
 /**
- * Read a deck's own JSON export (`{ "cards": [{ front, back, type, frontImage, backImage }] }`), the one text format
- * that carries pictures. A picture is accepted only as an address the flashcard surface can have stored, and the
+ * Read a deck's own JSON export (`{ "cards": [{ front, back, type, frontImage, backImage, occlusion }] }`), the one
+ * text format that carries pictures and occlusion masks. A picture is accepted only as an address the flashcard surface can have stored, and the
  * server then checks it is one of the member's own uploads: nothing is fetched from a remote address. Null when the
  * text is not such a file, so the caller reads it as a separated list instead. A `line` is the card's 1-based number.
  */
@@ -346,6 +356,15 @@ export function parseDeckJson(text: string): ParseResult | null {
       ...(frontImage ? { frontImage: { url: frontImage.url, alt: frontImage.alt.trim() } } : {}),
       ...(backImage ? { backImage: { url: backImage.url, alt: backImage.alt.trim() } } : {}),
     });
+    if (kind === 'occlusion') {
+      // The prompt and the note are optional; the picture (checked above) and the masks are what the card is.
+      const checked = checkOcclusion(row.occlusion);
+      if (!checked.ok) rejected.push({ line, reason: 'invalid-occlusion' });
+      else if (front.length > CARD_SIDE_MAX) rejected.push({ line, reason: 'front-too-long' });
+      else if (back.length > CARD_SIDE_MAX) rejected.push({ line, reason: 'back-too-long' });
+      else cards.push({ ...withPictures({ front, back, kind: 'occlusion' }), occlusion: checked.occlusion });
+      return;
+    }
     if (kind === 'cloze' || (kind === undefined && hasCloze(front))) {
       const made = clozeRow(front);
       if (typeof made === 'string') rejected.push({ line, reason: made });

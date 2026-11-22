@@ -42,12 +42,14 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { recordTombstones } from '@/lib/sync/tombstones.server';
 import { unfollowUser } from '@/lib/social/engagement.server';
 import { adjustNotifUnread } from '@/lib/notifications.server';
 import { softDeleteCommentAsAuthor, softDeletePostAsAuthor } from '@/lib/trash/trash.server';
 import { excerptOf } from '@/lib/trash/types';
 import { REPEATED_RESTARTS_ERROR, BULK_CHUNK_SIZE, BULK_SAMPLE_SIZE, buildWhere, droppedFilters, isBulkKind, normalizeFilter, type BulkFilter, type BulkKind, type BulkOperationView, type BulkPreview, type BulkSample, type BulkStatus } from '@/lib/bulk/types';
 import { bulkFilterSchema } from '@/lib/bulk/schema';
+import { NO_WORKER_ERROR, failedForNoWorker, reclaimDecision } from '@/lib/jobs/lease';
 
 /**
  * How old a `RUNNING` row with no heartbeat at all may be before it is reclaimable. Only runs that started before
@@ -416,10 +418,20 @@ async function applyChunk(kind: BulkKind, userId: string, rows: ChunkRow[]): Pro
       return count;
     }
     case 'clear-bookmarks': {
-      const { count } = await prisma.savedItem.deleteMany({
-        where: { userId, entityType: 'rmhark', id: { in: rows.map((r) => r.id) } },
+      const where = { userId, entityType: 'rmhark', id: { in: rows.map((r) => r.id) } };
+      return prisma.$transaction(async (tx) => {
+        const posts = await tx.savedItem.findMany({ where, select: { entityId: true } });
+        const { count } = await tx.savedItem.deleteMany({ where });
+        if (count > 0) {
+          await recordTombstones(
+            tx,
+            userId,
+            'bookmark',
+            posts.map((p) => p.entityId),
+          );
+        }
+        return count;
       });
-      return count;
     }
     case 'unlike-posts':
     case 'delete-reposts':
@@ -567,7 +579,7 @@ async function claimLease(id: string, now: Date): Promise<Date | null> {
         },
       ],
     },
-    data: { status: 'RUNNING', heartbeatAt: beat },
+    data: { status: 'RUNNING', heartbeatAt: beat, claimedAt: beat },
   });
   return count > 0 ? beat : null;
 }
@@ -655,12 +667,12 @@ function expiredLeaseWhere(now: Date) {
 }
 
 /**
- * The reclaim sweep (every minute, in the jobs worker). Finds `RUNNING` operations
- * whose lease expired — a restarted process stopped renewing it — and returns the
- * ids to queue again, counting each in `reclaims`. An operation already re-queued
- * `MAX_RECLAIMS` times is marked FAILED instead, so one that keeps dying never
- * loops forever. Each change is a compare-and-set on the state it read, so two
- * sweeps cannot count one operation twice.
+ * The reclaim sweep (every minute, in the jobs worker). Finds `RUNNING` operations whose lease expired and returns
+ * the ids to queue again. What a pass does with each is `reclaimDecision` (`lib/jobs/lease.ts`): a reclaim is counted
+ * in `reclaims` only when a runner started the run since the last counted one, so minutes with no worker at all only
+ * re-queue it. An operation whose runner died `MAX_RECLAIMS` times, or that nobody picked up for a day, is marked
+ * FAILED. Each write is a compare-and-set on what it read (the counters and both timestamps), so two sweeps never
+ * count one attempt twice and a sweep that lost the race does nothing.
  */
 export async function reclaimStalledOperations(
   now: Date = new Date(),
@@ -671,20 +683,32 @@ export async function reclaimStalledOperations(
     where: expired,
     orderBy: { createdAt: 'asc' },
     take,
-    select: { id: true, reclaims: true },
+    select: { id: true, reclaims: true, claimedAt: true, reclaimedAt: true, heartbeatAt: true, createdAt: true },
   });
   const requeue: string[] = [];
   for (const r of rows) {
-    if (r.reclaims >= MAX_RECLAIMS) {
+    const input = { ...r, now, maxReclaims: MAX_RECLAIMS };
+    const verdict = reclaimDecision(input);
+    if (verdict === 'skip') continue;
+    if (verdict === 'requeue') {
+      requeue.push(r.id);
+      continue;
+    }
+    const seen = { id: r.id, reclaims: r.reclaims, claimedAt: r.claimedAt, reclaimedAt: r.reclaimedAt, ...expired };
+    if (verdict === 'fail') {
       await prisma.bulkOperation.updateMany({
-        where: { id: r.id, reclaims: { gte: MAX_RECLAIMS }, ...expired },
-        data: { status: 'FAILED', error: REPEATED_RESTARTS_ERROR, finishedAt: now },
+        where: seen,
+        data: {
+          status: 'FAILED',
+          error: failedForNoWorker(input) ? NO_WORKER_ERROR : REPEATED_RESTARTS_ERROR,
+          finishedAt: now,
+        },
       });
       continue;
     }
     const { count } = await prisma.bulkOperation.updateMany({
-      where: { id: r.id, reclaims: r.reclaims, ...expired },
-      data: { reclaims: { increment: 1 } },
+      where: seen,
+      data: { reclaims: { increment: 1 }, reclaimedAt: now },
     });
     if (count > 0) requeue.push(r.id);
   }

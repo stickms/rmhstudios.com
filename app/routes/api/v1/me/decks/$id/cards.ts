@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
-import { batchBody, deckPath, pageQuery } from '@/lib/api/v1/study-schema';
+import { batchBody, cardsQuery, deckPath } from '@/lib/api/v1/study-schema';
 import {
   createMyCards,
   editFailure,
@@ -12,7 +12,8 @@ import {
 } from '@/lib/api/v1/study.server';
 
 /**
- * GET  /api/v1/me/decks/{id}/cards — the deck's authored cards in deck order (keyset by ?cursor).
+ * GET  /api/v1/me/decks/{id}/cards — the deck's authored cards in deck order (keyset by ?cursor); `?since=` keeps
+ *      the cards created after an instant.
  *      Generated siblings (reverse sides, cloze deletions) are never listed.
  * POST /api/v1/me/decks/{id}/cards — add 1 to 100 cards, all or nothing.
  */
@@ -27,9 +28,15 @@ export const Route = createFileRoute('/api/v1/me/decks/$id/cards')({
           async ({ userId, json, error }) => {
             const p = readInput(params, deckPath);
             if (!p.ok) return error('invalid_request', p.message, 400);
-            const q = readInput(queryOf(request), pageQuery);
+            const q = readInput(queryOf(request), cardsQuery);
             if (!q.ok) return error('invalid_request', q.message, 400);
-            const page = await listMyCards(userId, p.data.id, q.data.limit, q.data.cursor);
+            const page = await listMyCards(
+              userId,
+              p.data.id,
+              q.data.limit,
+              q.data.cursor,
+              q.data.since === undefined ? undefined : new Date(q.data.since),
+            );
             if (page === 'invalid_cursor') return error('invalid_request', 'Invalid cursor.', 400);
             return page ? json(page) : error('not_found', 'Deck not found.', 404);
           },

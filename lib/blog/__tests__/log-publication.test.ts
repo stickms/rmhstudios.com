@@ -197,6 +197,10 @@ vi.mock('@/lib/prisma.server', () => {
       count: async () => 0,
       findMany: async () => [],
     },
+    communityPage: {
+      count: async () => 0,
+      findMany: async () => [],
+    },
     backfillCheckpoint: {
       findUnique: async () => null,
       upsert: async () => ({}),

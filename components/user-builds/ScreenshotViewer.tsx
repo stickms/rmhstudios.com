@@ -47,7 +47,7 @@ export function ScreenshotViewerBody({ items, index, onIndexChange }: BodyProps)
           className="mx-auto h-auto max-h-[60dvh] w-auto max-w-full object-contain"
         />
       </div>
-      <p id={descriptionId} className="t-body text-site-text">
+      <p dir="auto" id={descriptionId} className="t-body text-site-text">
         {current.description}
       </p>
       {many && (

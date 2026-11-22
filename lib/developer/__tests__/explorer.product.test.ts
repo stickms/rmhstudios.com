@@ -164,7 +164,13 @@ describe('keys, docs and filtering', () => {
     const groups = endpointsByGroup();
     const count = (q: string) => filterGroups(groups, q).reduce((n, g) => n + g.endpoints.length, 0);
     expect(count('')).toBe(ENDPOINTS.length);
-    expect(count('delete')).toBe(ENDPOINTS.filter((e) => e.method === 'DELETE').length);
+    // Every DELETE, plus any endpoint that names deletion in its path or summary (`/me/deleted`, s09-10).
+    const deleteCount = count('delete');
+    expect(deleteCount).toBeGreaterThanOrEqual(ENDPOINTS.filter((e) => e.method === 'DELETE').length);
+    expect(deleteCount).toBe(
+      ENDPOINTS.filter((e) => `${e.method} ${e.path} ${e.summary} ${e.scope ?? ''}`.toLowerCase().includes('delete'))
+        .length,
+    );
     expect(count('/api/v1/me')).toBeGreaterThan(0);
     const scope = ENDPOINTS.find((e) => e.scope)!.scope!;
     expect(count(scope)).toBeGreaterThan(0);

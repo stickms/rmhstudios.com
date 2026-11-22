@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Game jam teams: the cap is a cap under the lock, a member is on one entry per jam (accept and submit paths,
@@ -358,7 +359,9 @@ describe('inviting', () => {
       entityId: 'e1',
       link: '/jams/jam',
     });
-    expect(h.notify.mock.calls[0]![0].preview).toContain('added you to their entry in Spring jam');
+    expect(noticeFallbackText(h.notify.mock.calls[0]![0].preview as never)).toContain(
+      'added you to their entry in Spring jam',
+    );
 
     expect((await invite('a')).ok).toBe(true);
     expect(h.members).toHaveLength(1);

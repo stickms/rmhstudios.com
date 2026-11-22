@@ -1,6 +1,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { weekKey, type TricksPayload } from '@/lib/trick-week/trick-week';
 import {
   getNightrailTricksApi,
@@ -22,9 +23,12 @@ export const route = apiRoute('/api/nightrail/tricks', {
     { auth: 'optional', rateLimit: 'read' },
     async ({ userId }) => {
       const week = weekKey();
+      // Hidden authors are left off the list before the cut; a viewer keeps their own trick (private response).
+      const hidden = await leaderboardHiddenUserIds();
+      const left = [...hidden].filter((id) => id !== userId);
       const [rows, mine] = await Promise.all([
         prisma.nightrailTrick.findMany({
-          where: { week },
+          where: { week, ...(left.length > 0 ? { authorId: { notIn: left } } : {}) },
           orderBy: [{ votes: 'desc' }, { score: 'desc' }],
           take: 20,
           include: authorInclude,

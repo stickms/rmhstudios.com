@@ -28,6 +28,7 @@
     "lib/api/route-sources.ts",
     "lib/ranking/**/*.ts",
     "lib/streak-reminders.server.ts",
+    "lib/sync/tombstones.ts",
     "lib/businesses.ts",
     "lib/rmh-research/*.ts",
     "lib/rmh-research/data/*.ts",

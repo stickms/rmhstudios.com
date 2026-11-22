@@ -21,7 +21,10 @@ import { formatSoloResult } from '@/lib/rmhtype/result-text';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { useArrival } from '@/components/ui/arrive';
 import { GHOST_STEP_MS, buildSamples, ghostPositionAt } from '@/lib/rmhtype/ghost';
-import { rmhTypeGhostQuery } from '@/lib/rmhtype/rmhtype.queries';
+import { recordKeyStats, rmhTypeGhostQuery } from '@/lib/rmhtype/rmhtype.queries';
+import { createKeyStatAccumulator } from '@/lib/rmhtype/keystats';
+import { buildKeyStatsBody } from '@/lib/rmhtype/record-keystats';
+import { RecordKeyStatsSwitch } from '@/components/rmhtype/RecordKeyStatsSwitch';
 import { GhostRacingNote, GhostResultLine, GhostSwitch } from '@/components/rmhtype/GhostControls';
 
 export default function RmhTypeSolo() {
@@ -55,6 +58,14 @@ export default function RmhTypeSolo() {
   const runStartRef = useRef(0);
   const marksRef = useRef<Array<[number, number]>>([]);
   const [, setGhostTick] = useState(0);
+  // Per-key counters for the key statistics: folded in by the typing handler, sent once when the run finishes.
+  // Three counters per key and no order (lib/rmhtype/keystats.ts).
+  const keyStatsRef = useRef(createKeyStatAccumulator());
+  const lastKeyAtRef = useRef<number | null>(null);
+  // A generated practice test (from the progress page) runs here without the server: practice, never on the boards.
+  const pendingPractice = useRmhTypeStore((s) => s.pendingPractice);
+  const [customRun, setCustomRun] = useState(false);
+  const customTextRef = useRef('');
   const [tabHidden, setTabHidden] = useState(false);
   const passageRef = useRef<HTMLDivElement>(null);
 
@@ -111,11 +122,26 @@ export default function RmhTypeSolo() {
       setFinished(false);
       runStartRef.current = Date.now();
       marksRef.current = [];
+      keyStatsRef.current.reset();
+      lastKeyAtRef.current = null;
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [soloPassage, soloResult]);
 
+  // Pick up a practice test handed over by the progress page.
+  useEffect(() => {
+    if (!pendingPractice) return;
+    const store = useRmhTypeStore.getState();
+    store.setPendingPractice(null);
+    store.clearSolo();
+    customTextRef.current = pendingPractice;
+    setCustomRun(true);
+    setStarted(true);
+    store.setSoloPassage('custom-practice', pendingPractice);
+  }, [pendingPractice]);
+
   const handleSoloStart = useCallback(() => {
+    setCustomRun(false);
     updateSettings({ soloDifficulty, soloPassageLength: soloLength });
     useRmhTypeStore.getState().clearSolo();
     setStarted(true);
@@ -138,6 +164,18 @@ export default function RmhTypeSolo() {
     // Start timer on first keystroke
     if (!startTime) setStartTime(Date.now());
 
+    // Fold a single appended character into the key counters (no extra listener; pastes and edits are skipped).
+    const now = performance.now();
+    if (value.length === typedText.length + 1 && value.startsWith(typedText)) {
+      const expected = soloPassage.charAt(typedText.length);
+      keyStatsRef.current.record(
+        expected,
+        lastKeyAtRef.current === null ? 0 : now - lastKeyAtRef.current,
+        value.charAt(value.length - 1) === expected,
+      );
+    }
+    lastKeyAtRef.current = now;
+
     setTypedText(value);
     const elapsed = Date.now() - runStartRef.current;
     marksRef.current.push([elapsed, value.length]);
@@ -147,6 +185,29 @@ export default function RmhTypeSolo() {
       setFinished(true);
       const errors = [...value].filter((c, i) => c !== soloPassage[i]).length;
 
+      // One request per finished run, honouring the switch; a failure is silent and never retried.
+      const body = buildKeyStatsBody({
+        enabled: useRmhTypeStore.getState().settings.recordKeyStats,
+        finished: true,
+        aggregates: keyStatsRef.current.snapshot(),
+      });
+      if (body) recordKeyStats(body).catch(() => undefined);
+
+      if (customRun) {
+        // A practice test is not a server passage: score it here and keep it off the boards.
+        const timeMs = Math.max(1, Date.now() - (startTime ?? Date.now()));
+        const correct = value.length - errors;
+        useRmhTypeStore.getState().setSoloResult({
+          wpm: Math.min(300, Math.round((correct / 5 / (timeMs / 60000)) * 10) / 10),
+          accuracy: Math.round((correct / Math.max(1, value.length)) * 1000) / 10,
+          timeMs,
+          timedOut: false,
+          scorePosted: false,
+          practice: true,
+        });
+        return;
+      }
+
       emit(C2S.SOLO_FINISH, {
         position: value.length,
         errors,
@@ -154,9 +215,19 @@ export default function RmhTypeSolo() {
         samples: buildSamples(marksRef.current, elapsed),
       });
     }
-  }, [soloPassage, soloPassageId, finished, startTime, source, typedText]);
+  }, [soloPassage, soloPassageId, finished, startTime, source, typedText, customRun]);
 
   const handleRetry = useCallback(() => {
+    if (customRun) {
+      // The same practice text again.
+      const store = useRmhTypeStore.getState();
+      store.clearSolo();
+      setTypedText('');
+      setStartTime(null);
+      setFinished(false);
+      store.setSoloPassage('custom-practice', customTextRef.current);
+      return;
+    }
     // Same gate as the Start button: offline, SOLO_START goes nowhere and the
     // cleared screen would wait for a passage that never comes.
     if (useRmhTypeStore.getState().connectionStatus !== 'connected') return;
@@ -171,7 +242,7 @@ export default function RmhTypeSolo() {
       topic: source === 'standard' ? topic.trim() || undefined : undefined,
       source,
     });
-  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source]);
+  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source, customRun]);
 
   // Quick restart: Esc while typing, Enter on the results screen. Tab is left to
   // keyboard navigation. Enter on a focused button/link is left to the browser so
@@ -198,7 +269,7 @@ export default function RmhTypeSolo() {
 
   // The ghost: one read per passage start. Never for a written-to-order passage (the server keeps none).
   const raceGhost = settings.raceGhost !== false;
-  const ghostQuery = useQuery(rmhTypeGhostQuery(soloPassageId ?? '', raceGhost && started && !!soloPassageId));
+  const ghostQuery = useQuery(rmhTypeGhostQuery(soloPassageId ?? '', raceGhost && started && !!soloPassageId && !customRun));
   const ghost = raceGhost ? (ghostQuery.data?.ghost ?? null) : null;
   const racing = typingNow && ghost !== null;
   // The one 250 ms interval of the solo page: alive only while a run is typing and a ghost is shown, so the
@@ -234,6 +305,7 @@ export default function RmhTypeSolo() {
 
   const handleBackToSettings = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
+    setCustomRun(false);
     setStarted(false);
     setTypedText('');
     setStartTime(null);
@@ -301,6 +373,11 @@ export default function RmhTypeSolo() {
                 <SoloSourcePicker value={source} onChange={setSource} />
 
                 <GhostSwitch checked={raceGhost} onChange={(on) => updateSettings({ raceGhost: on })} />
+
+                <RecordKeyStatsSwitch
+                  checked={settings.recordKeyStats !== false}
+                  onChange={(on) => updateSettings({ recordKeyStats: on })}
+                />
 
                 <div hidden={source !== 'standard'}>
                   <label
@@ -379,7 +456,11 @@ export default function RmhTypeSolo() {
 
               {/* A practice run has its own reason for not posting, and it is
                   not a failure — so it must not wear the failure colour. */}
-              {soloResult.practice && source !== 'standard' ? (
+              {customRun ? (
+                <p className="text-sm text-app-text-muted mb-4">
+                  {t('practice-result-note', { ns: 'weak-keys', defaultValue: 'Practice, not on the boards.' })}
+                </p>
+              ) : soloResult.practice && source !== 'standard' ? (
                 <SourcePracticeNote source={source} />
               ) : soloResult.practice ? (
                 <p className="text-sm text-app-text-muted mb-4">

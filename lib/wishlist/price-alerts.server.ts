@@ -17,7 +17,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { getShopItem } from '@/lib/shop/catalog';
 import { featuredIdsForDate } from '@/lib/shop/daily-shop.server';
 import { utcDateKey } from '@/lib/shop/daily-shop';
-import { alertPreview, decideAlert } from '@/lib/wishlist/price-alerts';
+import { alertNotice, decideAlert } from '@/lib/wishlist/price-alerts';
 import { lowestCosmeticPrices } from '@/lib/listings/listings.server';
 
 const PAGE = 500;
@@ -121,7 +121,7 @@ export async function runWishlistAlerts(now: Date = new Date()): Promise<AlertSw
           type: 'SYSTEM',
           entityType: e.entityType,
           entityId: e.entityId,
-          preview: alertPreview(decision.reason, name, currentPrice),
+          preview: alertNotice(decision.reason, name, currentPrice),
           link:
             decision.reason === 'daily-shop'
               ? '/store?tab=daily'

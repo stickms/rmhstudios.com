@@ -1,3 +1,4 @@
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const create = vi.hoisted(() => ({
@@ -37,7 +38,7 @@ describe('notification shapes', () => {
       outcome: 'declined',
     });
     expect(create.fn.mock.calls[0][0]).toMatchObject({
-      preview: 'declined your trade offer',
+      preview: expect.objectContaining({ fallback: 'declined your trade offer' }),
     });
     await notifyTradeResolved({
       actorId: 'b',
@@ -46,7 +47,7 @@ describe('notification shapes', () => {
       outcome: 'accepted',
     });
     expect(create.fn.mock.calls[1][0]).toMatchObject({
-      preview: 'accepted your trade offer',
+      preview: expect.objectContaining({ fallback: 'accepted your trade offer' }),
     });
   });
 
@@ -60,12 +61,12 @@ describe('notification shapes', () => {
       proceeds: 90,
     });
     const arg = create.fn.mock.calls[0][0] as unknown as {
-      preview: string;
+      preview: never;
       userId: string;
       link: string;
     };
     expect(arg.userId).toBe('s');
-    expect(arg.preview).toMatch(/for 90 coins$/);
+    expect(noticeFallbackText(arg.preview)).toMatch(/for 90 coins$/);
     expect(arg.link).toBe('/games/market');
   });
 
@@ -78,7 +79,7 @@ describe('notification shapes', () => {
       threadTitle: 'x'.repeat(200),
     });
     const arg = create.fn.mock.calls[0][0] as unknown as {
-      preview: string;
+      preview: never;
       link: string;
       dedupeUnread: boolean;
       type: string;
@@ -86,6 +87,6 @@ describe('notification shapes', () => {
     expect(arg.link).toBe('/games/hub/altair/t/th');
     expect(arg.dedupeUnread).toBe(true);
     expect(arg.type).toBe('REPLY');
-    expect(arg.preview.length).toBeLessThan(100);
+    expect(noticeFallbackText(arg.preview)!.length).toBeLessThan(100);
   });
 });

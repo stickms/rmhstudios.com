@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -171,7 +172,7 @@ export async function createRequest(
       type: 'SYSTEM',
       entityType: 'referral',
       entityId: request.id,
-      preview: `New referral request for ${offer.companyName}`,
+      preview: notice('referral-request-new', { company: offer.companyName }),
       link: '/rmhladder/referrals',
       dedupeUnread: true,
     });
@@ -247,8 +248,8 @@ export async function respondToRequest(
     entityId: requestId,
     preview:
       action === 'accept'
-        ? `Your referral request for ${request.offer.companyName} was accepted`
-        : `Your referral request for ${request.offer.companyName} was passed on`,
+        ? notice('referral-request-accepted', { company: request.offer.companyName })
+        : notice('referral-request-passed', { company: request.offer.companyName }),
     link: '/rmhladder/referrals',
   });
   return { ok: true, value: { status } };

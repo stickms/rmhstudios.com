@@ -32,7 +32,9 @@ export function MemberNotesPreview({ slug, member }: { slug: string; member: Not
       </p>
       {notes.slice(0, NOTE_PREVIEW_COUNT).map((n) => (
         <div key={n.id} className="border-b border-site-border py-2">
-          <p className="t-body whitespace-pre-wrap break-words text-site-text">{n.body}</p>
+          <p dir="auto" className="t-body whitespace-pre-wrap break-words text-site-text">
+            {n.body}
+          </p>
           <p className="t-meta">{fmt.date(n.createdAt)}</p>
         </div>
       ))}

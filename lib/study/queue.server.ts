@@ -12,6 +12,7 @@ import { LEECH_RESET, NEW_PER_SESSION, SESSION_MAX, type QueueCard, type Suspend
 import type { ReviewQueueRes } from '@/lib/study/queue.contract';
 
 import { CARD_IMAGE_SELECT, picturesOfRow } from '@/lib/study/card-images';
+import { reviewDataFor } from '@/lib/study/occlusion';
 
 const EXPORT_CAP = 50_000;
 
@@ -25,8 +26,9 @@ const cardSelect = {
   deckId: true,
   ...CARD_IMAGE_SELECT,
   // A generated card shows its source's pictures; the siblings hold none of their own.
+  // An occlusion card also reads its masks and note from the source.
   source: {
-    select: CARD_IMAGE_SELECT,
+    select: { ...CARD_IMAGE_SELECT, occlusion: true, back: true },
   },
   deck: {
     select: {
@@ -49,6 +51,10 @@ function toQueueCard(c: CardRow): QueueCard {
     sourceId: c.sourceId,
     deckId: c.deckId,
     deckTitle: c.deck.title,
+    ...(() => {
+      const review = c.kind === 'occlusion' ? reviewDataFor(c.source, c.clozeIndex) : null;
+      return review ? { occlusion: review } : {};
+    })(),
     ...(() => {
       const pictures = picturesOfRow(c, c.source);
       return {
@@ -275,6 +281,7 @@ export async function dueByDeck(userId: string, now: Date = new Date()): Promise
     LEFT JOIN flashcard_review r ON r."cardId" = c."id" AND r."userId" = ${userId}
     WHERE d."userId" = ${userId}
       AND NOT (c."kind" = 'cloze' AND c."sourceId" IS NULL)
+      AND NOT (c."kind" = 'occlusion' AND c."sourceId" IS NULL)
     GROUP BY c."deckId"`;
   return new Map((Array.isArray(rows) ? rows : []).map((r) => [r.deckId, r.due]));
 }

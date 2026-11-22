@@ -18,8 +18,8 @@ import { getRule } from '@/lib/communities/rules.server';
 import {
   PAST_SANCTIONS_LIMIT,
   endsAtFor,
-  liftedNoticeText,
-  sanctionNoticeText,
+  liftedNotice,
+  sanctionNotice,
   type SanctionDTO,
   type SanctionDuration,
   type SanctionKind,
@@ -215,7 +215,7 @@ export async function sanction(input: SanctionInput): Promise<SanctionResult> {
     type: 'SYSTEM',
     entityType: 'community_ban',
     entityId: community.id,
-    preview: sanctionNoticeText({
+    preview: sanctionNotice({
       communityName: community.name,
       kind: input.kind,
       endsAt,
@@ -305,7 +305,7 @@ export async function lift(args: {
     type: 'SYSTEM',
     entityType: 'community_ban',
     entityId: args.community.id,
-    preview: liftedNoticeText({
+    preview: liftedNotice({
       communityName: args.community.name,
       kind: asKind(row.kind),
     }),

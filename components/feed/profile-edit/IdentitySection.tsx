@@ -64,6 +64,7 @@ export function IdentitySection({
         />
         <Input
           id="profile-display-name"
+          dir="auto"
           value={form.displayName}
           onChange={(event) => form.setDisplayName(event.target.value)}
           maxLength={MAX_NAME}
@@ -92,6 +93,7 @@ export function IdentitySection({
         <Textarea
           ref={form.bioRef}
           id="profile-bio"
+          dir="auto"
           value={form.bio}
           onChange={(event) => form.setBio(event.target.value)}
           rows={4}

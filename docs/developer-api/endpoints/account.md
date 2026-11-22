@@ -5,7 +5,7 @@
 
 # Account
 
-5 endpoints. Paths are relative to `https://rmhstudios.com`.
+6 endpoints. Paths are relative to `https://rmhstudios.com`.
 
 | Endpoint | Scope | Summary |
 | -------- | ----- | ------- |
@@ -14,6 +14,7 @@
 | `GET /api/v1/me/bookmarks` | `read:bookmarks` | List your bookmarks |
 | `GET /api/v1/me/following` | `read:profile` | List who you follow |
 | `GET /api/v1/me/followers` | `read:profile` | List your followers |
+| `GET /api/v1/me/deleted` | `read:reading` | List what you deleted |
 
 ## Reference
 
@@ -81,7 +82,7 @@ Your notifications, newest first.
 
 ### `GET /api/v1/me/bookmarks`
 
-Posts you have bookmarked, newest first. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
+Posts you have bookmarked, newest first. With `since` you get only the bookmarks made after that instant; a post you un-bookmarked is reported by `GET /api/v1/me/deleted?kind=bookmark`. `metrics` fields are `null` on a post whose author hides the counts on their posts from other accounts (your own posts always carry them); see the `PostMetrics` schema.
 
 **Scope:** `read:bookmarks` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyBookmarks`
 
@@ -89,6 +90,7 @@ Posts you have bookmarked, newest first. `metrics` fields are `null` on a post w
 | --------- | -- | ---- | -------- | ----------- |
 | `limit` | query | integer | no | Page size, 1–50 (default 20). |
 | `cursor` | query | string | no | Opaque cursor from a previous `nextCursor` to fetch the next page. |
+| `since` | query | string | no | Only bookmarks made after this ISO 8601 instant. |
 
 **Example response** (`200`)
 
@@ -169,6 +171,34 @@ Users who follow the authenticated account.
       "name": "Ada",
       "handle": "ada",
       "image": "https://…"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+### `GET /api/v1/me/deleted`
+
+Deletions of one `kind` after `since`, oldest first, so an app keeping a copy of your highlights, decks, cards, bookmarks or shelf entries can drop what you removed on the site. `kind` is `highlight`, `deck`, `card`, `bookmark` or `shelf_entry`. Each item is `{ id, kind, deletedAt }` and carries no content. `id` is the highlight, deck or card id, the bookmarked post's id, or the book's slug. The scope is the read scope of the kind: `read:reading` for `highlight` and `shelf_entry`, `read:study` for `deck` and `card`, `read:bookmarks` for `bookmark` (the scope listed here is the first; the others are checked per kind). Deletions are kept 90 days: a `since` older than that is `410 sync_window_expired` and the client must resync in full. Without `since` you get every deletion still kept. Deleting a deck is one `deck` item and none for its cards. A bookmark or shelf entry you add again after deleting it has a later time than its tombstone: apply a deletion only when its `deletedAt` is later than the item you hold.
+
+**Scope:** `read:reading` · **Success:** `200` · **Paginated:** keyset — see [Pagination](../pagination.md) · **Operation id:** `listMyDeleted`
+
+| Parameter | In | Type | Required | Description |
+| --------- | -- | ---- | -------- | ----------- |
+| `kind` | query | string | yes | `highlight`, `deck`, `card`, `bookmark` or `shelf_entry`. |
+| `since` | query | string | no | Only deletions after this ISO 8601 instant. At most 90 days ago, or `410 sync_window_expired`. |
+| `cursor` | query | string | no | Opaque cursor from a previous `nextCursor`. |
+| `limit` | query | integer | no | Page size, 1–500 (default 100). |
+
+**Example response** (`200`)
+
+```json
+{
+  "data": [
+    {
+      "id": "clhl1",
+      "kind": "highlight",
+      "deletedAt": "2026-11-22T12:00:00.000Z"
     }
   ],
   "nextCursor": null

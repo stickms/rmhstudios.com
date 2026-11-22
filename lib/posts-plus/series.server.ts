@@ -8,6 +8,7 @@
  * is not deleted and not past its TTL - both rules are applied at read time.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCachedPrefix } from '@/lib/cached.server';
@@ -366,7 +367,7 @@ export async function notifySeriesFollowers(
     ]);
     if (!series || followers.length === 0) return;
     const link = `/u/${author?.handle ?? authorId}/post/${postId}`;
-    const preview = `New part in "${series.title}"`.slice(0, 280);
+    const preview = notice('series-new-part', { series: series.title });
     for (let i = 0; i < followers.length; i += 20) {
       await Promise.all(
         followers.slice(i, i + 20).map((f) =>

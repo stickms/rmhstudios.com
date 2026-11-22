@@ -37,7 +37,7 @@ export async function resolveMediaForPost(
   const byId = new Map(rows.map((r) => [r.id, r]));
 
   for (const id of mediaIds) {
-    const err = attachError(byId.get(id) ?? null, userId);
+    const err = attachError(byId.get(id) ?? null, userId, args.now);
     if (err) return { ok: false, error: err };
   }
 

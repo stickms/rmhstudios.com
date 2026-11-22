@@ -82,7 +82,7 @@ export function DirectoryItem({
           {tag}
         </div>
         {description && (
-          <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{description}</p>
+          <p dir="auto" className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{description}</p>
         )}
         {meta && (
           <div className="mt-2 flex items-center gap-4 text-xs text-site-text-muted">{meta}</div>

@@ -3772,3 +3772,7 @@ docs/announcements/
 # Sprint 08 planning docs are wrapped at 80 columns, not one word per line, so their
 # line count reports the writing rather than the wrap (docs/autonomous/sprint-08/plan.md §Reporting).
 /docs/autonomous/sprint-08/
+
+# Sprint 09 planning docs are wrapped at 80 columns, not one word per line, so their
+# line count reports the writing rather than the wrap (docs/autonomous/sprint-09/plan.md §Reporting).
+/docs/autonomous/sprint-09/

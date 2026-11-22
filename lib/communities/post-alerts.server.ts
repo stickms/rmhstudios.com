@@ -15,6 +15,7 @@
  *    unread alert for this community from the last 30 minutes gets that alert reworded instead of a new one;
  *  - notifies the rest through `createNotification`, so notification preferences, quiet hours and push apply.
  */
+import { notice, noticeColumns } from '@/lib/notifications/notice-keys';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect } from '@/lib/user-display';
@@ -26,9 +27,7 @@ import {
   COMMUNITY_POST_ENTITY,
   MAX_ALERT_RECIPIENTS,
   alertLink,
-  alertPreview,
   collapseSince,
-  collapsedPreview,
   filterRecipients,
   isBannedNow,
   isPostAlertLevel,
@@ -178,7 +177,7 @@ export async function runPostAlertFanout(postId: string, now: Date = new Date())
   await prisma.communityPostAlertRun.createMany({ data: [{ postId }], skipDuplicates: true });
 
   const authorName = post.user.profile?.displayName ?? post.user.name ?? post.user.handle ?? 'Someone';
-  const preview = alertPreview(authorName, communityName);
+  const preview = notice('community-post-alert', { author: authorName, community: communityName });
   const link = alertLink(post.user, postId);
 
   // The unread alert id of each member of the batch being sent, set by `step` for `send`'s reword.
@@ -251,7 +250,7 @@ export async function runPostAlertFanout(postId: string, now: Date = new Date())
           if (ids.length > 0) {
             await prisma.notification.updateMany({
               where: { id: { in: ids } },
-              data: { preview: collapsedPreview(communityName) },
+              data: noticeColumns(notice('community-post-alerts-collapsed', { community: communityName })),
             });
           }
         }

@@ -6,7 +6,8 @@ import { CardForm, type CardFormValue } from '@/components/study/CardForm';
 import { CardPicture } from '@/components/study/CardPicture';
 import type { CardImage } from '@/lib/study/card-images';
 import { ClozeText } from '@/components/study/ClozeText';
-import { clozePlainText, parseCloze, type CardKind } from '@/lib/study/card-types';
+import { cardLabel, parseCloze, type CardKind } from '@/lib/study/card-types';
+import type { Occlusion } from '@/lib/study/occlusion';
 
 export interface EditorCard {
   id: string;
@@ -16,6 +17,8 @@ export interface EditorCard {
   /** The card's pictures; absent on a card with none (s08-15). */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** The masks of an occlusion card (s09-03). */
+  occlusion?: Occlusion | null | undefined;
 }
 
 /** One authored card in the editor: its text by type, with inline edit and delete. */
@@ -51,7 +54,7 @@ export function CardRow({
   }
 
   const parsed = card.kind === 'cloze' ? parseCloze(card.front) : null;
-  const label = card.kind === 'cloze' ? clozePlainText(card.front) : card.front;
+  const label = cardLabel(card);
 
   return (
     <div className="flex items-start gap-2">
@@ -70,6 +73,23 @@ export function CardRow({
                 })}
               </p>
             )}
+          </>
+        ) : card.kind === 'occlusion' ? (
+          <>
+            {card.front.trim() !== '' && (
+              <p dir="auto" className="t-body font-medium break-words text-site-text">
+                {card.front}
+              </p>
+            )}
+            <p className="t-meta">
+              {t('type-occlusion-count', {
+                ns: 'occlusion-cards',
+                count: card.occlusion?.masks.length ?? 0,
+                defaultValue_one: 'Picture occlusion, {{count}} card',
+                defaultValue_other: 'Picture occlusion, {{count}} cards',
+                defaultValue: 'Picture occlusion, {{count}} cards',
+              })}
+            </p>
           </>
         ) : (
           <>

@@ -84,6 +84,7 @@ function CreateCensus({
         {t('census-create-title', { defaultValue: 'Open a community census' })}
       </h3>
       <Input
+        dir="auto"
         value={title}
         maxLength={100}
         onChange={(e) => setTitle(e.target.value)}
@@ -92,6 +93,7 @@ function CreateCensus({
         required
       />
       <Textarea
+        dir="auto"
         value={description}
         maxLength={500}
         onChange={(e) => setDescription(e.target.value)}
@@ -110,6 +112,7 @@ function CreateCensus({
         <fieldset key={i} className="surface-field flex flex-col gap-2 rounded-site p-4">
           <div className="flex items-center gap-2">
             <Input
+              dir="auto"
               value={q.prompt}
               maxLength={140}
               onChange={(e) => patch(i, { prompt: e.target.value })}
@@ -143,6 +146,7 @@ function CreateCensus({
             )}
           </div>
           <Textarea
+            dir="auto"
             value={q.options}
             onChange={(e) => patch(i, { options: e.target.value })}
             placeholder={t('census-options-ph', { defaultValue: 'One option per line (2 to 8)' })}
@@ -231,7 +235,7 @@ function AnswerForm({
                   onChange={() => toggle(q.id, o.id, q.kind === 'multi')}
                   className="accent-[var(--site-accent)]"
                 />
-                {o.label}
+                <bdi>{o.label}</bdi>
               </label>
             ))}
           </div>
@@ -311,9 +315,11 @@ export default function CensusPanel({
   return (
     <div className={cn('flex flex-col gap-3 px-3 py-3', arrival)}>
       <section className="p-4">
-        <h3 className="text-base font-semibold text-site-text">{census.title}</h3>
+        <h3 dir="auto" className="text-base font-semibold text-site-text">
+          {census.title}
+        </h3>
         {census.description && (
-          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text-muted">
+          <p dir="auto" className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text-muted">
             {census.description}
           </p>
         )}
@@ -366,12 +372,14 @@ export default function CensusPanel({
         <div className="flex flex-col gap-4">
           {census.results.map((q) => (
             <section key={q.id} className="p-4">
-              <h4 className="mb-2 text-sm font-semibold text-site-text">{q.prompt}</h4>
+              <h4 dir="auto" className="mb-2 text-sm font-semibold text-site-text">
+                {q.prompt}
+              </h4>
               <ul className="flex flex-col gap-2">
                 {q.options.map((o) => (
                   <li key={o.id}>
                     <div className="flex justify-between text-xs text-site-text">
-                      <span>{o.label}</span>
+                      <bdi>{o.label}</bdi>
                       <span className="tabular-nums text-site-text-muted">
                         {o.pct}% ({o.count})
                       </span>

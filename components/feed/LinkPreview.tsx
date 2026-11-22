@@ -112,7 +112,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  <p className="text-sm font-semibold text-site-text line-clamp-2">{data.title}</p>
  )}
  {data.description && (
- <p className="text-xs text-site-text-muted mt-1 line-clamp-2">{data.description}</p>
+ <p dir="auto" className="text-xs text-site-text-muted mt-1 line-clamp-2">{data.description}</p>
  )}
  </div>
  </a>

@@ -3,6 +3,7 @@
  * path that counts or queues due cards. Suspension is per member, on the member's `FlashcardReview` row.
  */
 import type { CardImage } from '@/lib/study/card-images';
+import type { OcclusionReviewData } from '@/lib/study/occlusion';
 
 /** Grades of "Again" on a learned card that set it aside as a leech. */
 export const LEECH_THRESHOLD = 8;
@@ -40,7 +41,7 @@ export interface QueueCard {
   id: string;
   front: string;
   back: string;
-  kind: 'basic' | 'reversible' | 'cloze';
+  kind: 'basic' | 'reversible' | 'cloze' | 'occlusion';
   clozeIndex: number | null;
   sourceId: string | null;
   deckId: string;
@@ -48,6 +49,8 @@ export interface QueueCard {
   /** The pictures the card shows, a generated card's read from its source; absent when it has none (s08-15). */
   frontImage?: CardImage;
   backImage?: CardImage;
+  /** On a generated occlusion card: the masks, the one this card asks and the author's note (s09-03). */
+  occlusion?: OcclusionReviewData;
 }
 
 /**

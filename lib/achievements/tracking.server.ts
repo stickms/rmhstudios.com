@@ -4,6 +4,7 @@
  * `onProgress` is called by the engine after progress moves and must never throw into it: achievement progress is
  * best-effort and may not fail the game action that triggered it.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { getAchievement } from '@/lib/achievements/catalog';
 import { createNotification } from '@/lib/notifications.server';
@@ -162,7 +163,10 @@ export async function onProgress(userId: string, achievementId: string, prev: nu
       type: 'SYSTEM',
       entityType: 'achievement',
       entityId: achievementId,
-      preview: milestone === 90 ? `Almost there: ${def.name}` : `Halfway to ${def.name}`,
+      preview:
+        milestone === 90
+          ? notice('achievement-almost', { name: def.name })
+          : notice('achievement-halfway', { name: def.name }),
       link: '/progress?tab=achievements',
     });
   } catch (err) {

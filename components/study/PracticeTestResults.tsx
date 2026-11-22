@@ -33,6 +33,11 @@ export function PracticeTestResults({
   onTestMissed: () => void;
 }) {
   const { t, i18n } = useTranslation('study-tests');
+  // An occlusion card with no prompt of its own asks "Name the covered part".
+  const promptOf = (q: { prompt: string; promptOcclusion?: unknown }) =>
+    q.promptOcclusion && q.prompt.trim() === ''
+      ? t('default-prompt', { ns: 'occlusion-cards', defaultValue: 'Name the covered part' })
+      : q.prompt;
   const percent = useMemo(
     () => new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 0 }),
     [i18n.language],
@@ -118,14 +123,14 @@ export function PracticeTestResults({
               </p>
               {q.kind === 'multiple-choice' && response.kind === 'multiple-choice' && (
                 <Answer
-                  prompt={q.prompt}
+                  prompt={promptOf(q)}
                   given={q.options[response.choice] ?? ''}
                   expected={right ? null : (q.options[q.answerIndex] ?? '')}
                 />
               )}
               {q.kind === 'written' && response.kind === 'written' && (
                 <Answer
-                  prompt={q.prompt}
+                  prompt={promptOf(q)}
                   given={response.text}
                   expected={right ? null : q.answer}
                   note={
@@ -140,7 +145,7 @@ export function PracticeTestResults({
               )}
               {q.kind === 'true-false' && response.kind === 'true-false' && (
                 <Answer
-                  prompt={`${q.prompt} — ${q.shown}`}
+                  prompt={`${promptOf(q)} — ${q.shown}`}
                   given={response.answer ? yes : no}
                   expected={right ? null : q.isTrue ? yes : no}
                 />

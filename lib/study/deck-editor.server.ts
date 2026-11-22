@@ -8,8 +8,9 @@
  * regenerates rows takes `lockKey(tx, 'deck-cards:<deckId>')` first, so the cap
  * holds when saves and imports race.
  */
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { lockKey } from '@/lib/db/advisory-lock.server';
+import { recordTombstone } from '@/lib/sync/tombstones.server';
 import { prisma } from '@/lib/prisma.server';
 import {
   isCardKind,
@@ -21,6 +22,7 @@ import {
   type CardKind,
 } from '@/lib/study/card-types';
 import { MAX_DECK_CARDS, MAX_DECKS_PER_MEMBER, MAX_IMPORT_CARDS } from '@/lib/study/limits';
+import { readOcclusion, sameOcclusion, type Occlusion } from '@/lib/study/occlusion';
 import {
   CARD_IMAGE_SELECT,
   cardImageProblem,
@@ -41,9 +43,17 @@ const INVALID_CARD = { ok: false, status: 400, error: 'Invalid card' } as const;
 /** A picture with no description, a cloze front picture, or an address the flashcard surface never stored. */
 const INVALID_PICTURE = { ok: false, status: 400, error: 'Invalid picture' } as const;
 const BAD_MEDIA = { ok: false, status: 400, error: 'Upload the picture again' } as const;
+const ANIMATED_PICTURE = { ok: false, status: 400, error: 'Use a still picture, not an animated one' } as const;
 const PICTURE_LIMIT = { ok: false, status: 409, error: 'Too many cards carry a picture' } as const;
 
 const CONFLICT = { ok: false, status: 409, error: 'External id already used in this deck' } as const;
+
+/** An occlusion card's masks as a Prisma JSON value: absent when there are none (a new row's column stays null). */
+const occlusionForCreate = (occlusion: Occlusion | null | undefined) =>
+  occlusion ? (occlusion as unknown as Prisma.InputJsonValue) : undefined;
+/** The same for an update, where no masks clears the column. */
+const occlusionForUpdate = (occlusion: Occlusion | null | undefined) =>
+  occlusion ? (occlusion as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
 
 const lockDeckCards = (tx: Prisma.TransactionClient, deckId: string) => lockKey(tx, `deck-cards:${deckId}`);
 
@@ -57,6 +67,8 @@ export interface CardDraft {
   /** A picture per side, each with its description (s08-15). Absent or null: none. */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** The masks of an occlusion card (s09-03); checked by `validateCard`, so it may arrive as parsed JSON. */
+  occlusion?: unknown;
 }
 
 /** A deck as created: the UI may seed it with cards. */
@@ -113,7 +125,10 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
     ((await prisma.flashcard.findMany({ where: picturedWhere, select: CARD_IMAGE_SELECT, take: 1 })) ?? []).length > 0;
   if (!anyPictures) {
     const { count } = await prisma.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
-    return count === 0 ? NOT_FOUND : { ok: true };
+    if (count === 0) return NOT_FOUND;
+    // One deck tombstone; a client drops the deck's cards with it.
+    await recordTombstone(prisma, userId, 'deck', deckId);
+    return { ok: true };
   }
   const keys = await prisma.$transaction(async (tx) => {
     // Pictures first (read again under the transaction): once the cards are gone, a picture no card shows is deleted
@@ -121,6 +136,7 @@ export async function deleteDeck(userId: string, deckId: string): Promise<EditRe
     const pictured = await tx.flashcard.findMany({ where: picturedWhere, select: CARD_IMAGE_SELECT });
     const { count } = await tx.flashcardDeck.deleteMany({ where: { id: deckId, userId } });
     if (count === 0) return null;
+    await recordTombstone(tx, userId, 'deck', deckId);
     return releaseCardImages(
       tx,
       (Array.isArray(pictured) ? pictured : []).flatMap((row) => pictureUrls(row)),
@@ -179,6 +195,7 @@ export async function insertCards(
       originCardId: c.originCardId ?? null,
       originHash: c.originHash ?? null,
       externalId: c.externalId ?? null,
+      occlusion: occlusionForCreate(c.occlusion),
       ...toColumns(c),
     })),
     select: { id: true, position: true },
@@ -226,9 +243,9 @@ function picturePlan(cards: readonly CardPictures[]) {
   return { urls, adding: cards.filter((c) => hasPictures(toColumns(c))).length };
 }
 
-/** Whether the picture refusal is the cap or a picture the member never uploaded. */
-const attachFailure = (failure: { code: 'LIMIT' | 'MEDIA_NOT_FOUND' }) =>
-  failure.code === 'LIMIT' ? PICTURE_LIMIT : BAD_MEDIA;
+/** Whether the picture refusal is the cap, an animated picture or a picture the member never uploaded. */
+const attachFailure = (failure: { code: 'LIMIT' | 'MEDIA_NOT_FOUND' | 'ANIMATED' }) =>
+  failure.code === 'LIMIT' ? PICTURE_LIMIT : failure.code === 'ANIMATED' ? ANIMATED_PICTURE : BAD_MEDIA;
 
 /**
  * Edit an authored card. The row stays, so its reviews do; its siblings are regenerated in place:
@@ -253,6 +270,8 @@ export interface CardPatch {
   /** A picture to set, `null` to remove it, absent to leave it (s08-15). */
   frontImage?: CardImage | null | undefined;
   backImage?: CardImage | null | undefined;
+  /** The masks to set; `null` clears them, absent keeps them (and a card that is no longer occlusion loses them). */
+  occlusion?: unknown;
 }
 
 /** How `updateCardIn` treats a picture's address: the member's own upload, or one shared from a public source deck. */
@@ -282,16 +301,20 @@ export async function updateCardIn(
         back: true,
         position: true,
         originCardId: true,
+        occlusion: true,
         ...CARD_IMAGE_SELECT,
         siblings: { select: { id: true, kind: true, front: true, back: true, clozeIndex: true } },
       },
     });
     if (!current) return NOT_FOUND;
 
+    const nextKind = patch.kind ?? (isCardKind(current.kind) ? current.kind : 'basic');
     const checked = validateCard({
-      kind: patch.kind ?? (isCardKind(current.kind) ? current.kind : 'basic'),
+      kind: nextKind,
       front: patch.front ?? current.front,
       back: patch.back ?? current.back,
+      // The masks stay with an occlusion card; a card changed to another kind drops them.
+      occlusion: patch.occlusion !== undefined ? patch.occlusion : nextKind === 'occlusion' ? current.occlusion : null,
     });
     if (!checked.ok) return INVALID_CARD;
     const next = checked.card;
@@ -324,7 +347,13 @@ export async function updateCardIn(
 
     await tx.flashcard.update({
       where: { id: cardId },
-      data: { kind: next.kind, front: next.front, back: next.back, ...nextColumns },
+      data: {
+        kind: next.kind,
+        front: next.front,
+        back: next.back,
+        occlusion: occlusionForUpdate(next.occlusion),
+        ...nextColumns,
+      },
     });
     if (plan.remove.length > 0) {
       await tx.flashcard.deleteMany({ where: { id: { in: plan.remove }, sourceId: cardId } });
@@ -367,6 +396,7 @@ export async function deleteCard(userId: string, cardId: string): Promise<EditRe
     // go with the card through the foreign key's cascade.
     const { count } = await tx.flashcard.deleteMany({ where: { id: cardId, sourceId: null } });
     if (count === 0) return NOT_FOUND;
+    await recordTombstone(tx, userId, 'card', cardId);
     await tx.flashcardDeck.update({
       where: { id: card.deckId },
       data: { cardCount: { decrement: 1 }, cardsChangedAt: new Date() },
@@ -387,6 +417,7 @@ export interface AddedCard {
   sourceId: null;
   frontImage: CardImage | null;
   backImage: CardImage | null;
+  occlusion: Occlusion | null;
 }
 
 /** Add one card after the current last one, with its generated siblings. Refused when the deck would pass its cap. */
@@ -423,6 +454,7 @@ export async function addCard(
         sourceId: null,
         frontImage: cards[0]?.frontImage ?? null,
         backImage: cards[0]?.backImage ?? null,
+        occlusion: card.occlusion ?? null,
       },
     } as const;
   });
@@ -503,7 +535,7 @@ export async function upsertCardByExternalId(
     if (!deck) return NOT_FOUND;
     const existing = await tx.flashcard.findFirst({
       where: { deckId, externalId, sourceId: null },
-      select: { id: true, kind: true, front: true, back: true, ...CARD_IMAGE_SELECT },
+      select: { id: true, kind: true, front: true, back: true, occlusion: true, ...CARD_IMAGE_SELECT },
     });
     if (existing) {
       // A side the draft says nothing about keeps its picture; `null` removes it; a picture replaces it.
@@ -512,13 +544,21 @@ export async function upsertCardByExternalId(
         want === undefined ||
         (want === null ? have === null : have !== null && have.url === want.url && have.alt === want.alt.trim());
       const unchanged = sameSide(draft.frontImage, had.frontImage) && sameSide(draft.backImage, had.backImage);
-      if (existing.kind === card.kind && existing.front === card.front && existing.back === card.back && unchanged) {
+      const sameMasks = sameOcclusion(readOcclusion(existing.occlusion), card.occlusion);
+      if (
+        existing.kind === card.kind &&
+        existing.front === card.front &&
+        existing.back === card.back &&
+        unchanged &&
+        sameMasks
+      ) {
         return { ok: true, id: existing.id, created: false, changed: false } as const;
       }
       const result = await updateCardIn(tx, userId, existing.id, {
         ...card,
         frontImage: draft.frontImage,
         backImage: draft.backImage,
+        occlusion: card.occlusion ?? null,
       });
       if (!result.ok) return result;
       released.push(...result.released);

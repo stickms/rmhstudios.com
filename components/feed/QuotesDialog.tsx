@@ -50,7 +50,7 @@ function QuoteRow({
             <RelativeTime date={item.createdAt} format={relativeTimeShort} />
           </span>
         </p>
-        <p className="mt-0.5 line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
+        <p dir="auto" className="mt-0.5 line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
           {item.content}
         </p>
       </div>

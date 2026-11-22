@@ -530,7 +530,7 @@ describe('adding people', () => {
       entityType: 'group_chat',
       entityId: G,
       link: `/groups/${G}`,
-      preview: 'OWNER added you to Raid',
+      preview: expect.objectContaining({ fallback: 'OWNER added you to Raid' }),
     });
   });
 

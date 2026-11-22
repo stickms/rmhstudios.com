@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { plausibleRun } from '@/lib/arcade/validate';
 import { consumeAssistRun } from '@/lib/game/assist-run.server';
@@ -29,8 +31,10 @@ export async function board(
   take: number,
 ): Promise<BoardRow[]> {
   return cached(`arcade:board:${kind}:${gameId}:${seedKey}`, 30_000, async () => {
+    // Hidden members are left out before the cut; the hidden set is the same for every caller.
+    const hidden = await leaderboardHiddenUserIds();
     const rows = await prisma.arcadeSeedRun.findMany({
-      where: { kind, gameId, seedKey, score: { not: null } },
+      where: { kind, gameId, seedKey, score: { not: null }, ...userNotHiddenWhere(hidden) },
       orderBy: [{ score: 'desc' }, { finishedAt: 'asc' }],
       take,
       select: { userId: true, score: true, user: { select: userDisplaySelect } },

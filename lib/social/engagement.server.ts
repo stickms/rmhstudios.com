@@ -9,6 +9,7 @@
  * gamification/notification side effects (those never block the core action).
  */
 
+import { recordTombstone } from '@/lib/sync/tombstones.server';
 import { normalizeExplanation, quizAnswerOptionId } from '@/lib/feed/quiz-poll';
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
@@ -366,7 +367,10 @@ export async function setBookmark(
     return { ok: true, found: true, bookmarked: true };
   }
 
-  await prisma.savedItem.delete({ where: { id: existing!.id } });
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.savedItem.deleteMany({ where: { id: existing!.id, userId } });
+    if (count > 0) await recordTombstone(tx, userId, 'bookmark', postId);
+  });
   return { ok: true, found: true, bookmarked: false };
 }
 

@@ -7,6 +7,7 @@
 import { previewTextFor } from '@/lib/feed/content-warning';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
+import { notice, noticeFallbackText, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { getShopItem } from '@/lib/shop/catalog';
 import type { WatchKind, WatchLevel } from './schema';
 import { lowestCosmeticPrice } from '@/lib/listings/listings.server';
@@ -73,7 +74,8 @@ export interface WatchEvent {
   actorId: string | null;
   /** "important" watchers only hear about these. */
   important: () => boolean | Promise<boolean>;
-  preview: string;
+  /** English text, or a key-based notice (`notice()`) the inbox renders in the reader's language. */
+  preview: string | NoticePreview;
   link: string;
   /** Members who hear about it without watching (a build's unlockers), before the block and mute filter. */
   alsoNotify?: () => Promise<string[]>;
@@ -179,7 +181,7 @@ export async function watchBuildComment(
 export async function watchBuildRelease(
   buildId: string,
   actorId: string,
-  preview: string,
+  preview: string | NoticePreview,
 ): Promise<number> {
   const build = await prisma.userBuild.findUnique({
     where: { id: buildId },
@@ -211,7 +213,7 @@ export async function watchBuildRelease(
           type: 'SYSTEM',
           entityType: RELEASE_ENTITY,
           entityId: buildId,
-          preview,
+          preview: noticeFallbackText(preview) ?? undefined,
         },
         select: { userId: true },
       });
@@ -236,7 +238,7 @@ export async function watchMarketListing(listing: {
       const lowest = await lowestCosmeticPrice(listing.itemId, { excludeId: listing.id });
       return lowest == null || listing.priceCoins < lowest;
     },
-    preview: `New listing for ${name}: ${listing.priceCoins} coins`,
+    preview: notice('watch-market-listing', { item: name, price: listing.priceCoins }),
     link: '/market',
   });
 }

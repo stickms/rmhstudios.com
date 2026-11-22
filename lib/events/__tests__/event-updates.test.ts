@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CreateNotificationInput } from '@/lib/notifications.server';
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 
 // Event updates: who may post, the rolling limit under the lock, the delete window, cancelled events, who the
 // fan-out tells (going, maybe, waitlist; never no, the author or a blocked pair) and that the job claims once.
@@ -375,7 +376,7 @@ describe('recipients and the fan-out', () => {
     const original = vi.mocked(createNotification).getMockImplementation();
     vi.mocked(createNotification).mockImplementation(async (a: CreateNotificationInput) => {
       if (++calls === 251) throw new Error('killed');
-      h.notified.push({ userId: a.userId, preview: a.preview ?? '', entityType: a.entityType ?? '' });
+      h.notified.push({ userId: a.userId, preview: noticeFallbackText(a.preview) ?? '', entityType: a.entityType ?? '' });
       h.stored.push({
         userId: a.userId,
         type: 'SYSTEM',

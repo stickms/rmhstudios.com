@@ -5,6 +5,7 @@
  * `poll-slots.ts` (the slot grid derived from a poll's parameters). A poll
  * stores its parameters; a response stores one character per slot.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { GROUP_KIND } from '@/lib/chat/chat.server';
 import { SITE_URL } from '@/lib/seo';
@@ -109,7 +110,7 @@ export async function createPoll(
       type: 'SYSTEM',
       entityType: 'availability-poll',
       entityId: poll.id,
-      preview: `${who} needs you to pick times for "${input.title}".`,
+      preview: notice('poll-pick-times', { name: who, title: input.title }),
       link: pollUrl(poll.id),
     });
   }
@@ -320,7 +321,7 @@ export async function lockPoll(
   }
   audience.delete(userId);
 
-  const when = new Date(startMin * 60_000).toUTCString().replace(':00 GMT', ' UTC');
+  const startsAt = new Date(startMin * 60_000);
   for (const uid of audience) {
     void createNotification({
       userId: uid,
@@ -328,11 +329,13 @@ export async function lockPoll(
       type: 'SYSTEM',
       entityType: 'availability-poll',
       entityId: pollId,
-      preview: `"${poll.title}" is locked in for ${when}. Open the poll to add it to your calendar.`,
+      preview: notice('poll-locked', { title: poll.title, startsAt }),
       link: pollUrl(pollId),
     });
   }
   if (poll.groupChatId) {
+    // The group chat line is a message from the poll's creator, not a notice, so it keeps its own UTC date text.
+    const when = startsAt.toUTCString().replace(':00 GMT', ' UTC');
     const access = await getChatAccess('group', poll.groupChatId, userId);
     if (access) {
       void postChatMessage(access, {

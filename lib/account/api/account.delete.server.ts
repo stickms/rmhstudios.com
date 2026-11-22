@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
 import { scheduleDeletion, DELETION_GRACE_DAYS } from '@/lib/account/deletion.server';
+import { pauseForDeletion, restoreAfterCancel } from '@/lib/account/deletion-hold.server';
 import { sendEmail } from '@/lib/email/send.server';
 import { SITE_URL } from '@/lib/seo';
 
@@ -103,7 +104,17 @@ export const route = apiRoute('/api/account/delete', {
       //
       // The erasure itself lives in `anonymizeAccount()`, which the nightly
       // sweep also calls, so the immediate and deferred paths cannot drift.
-      const scheduledAt = await scheduleDeletion(userId);
+      //
+      // Everything that acts for the member stops first (s09-14): sessions, API keys, webhooks, CLI tokens, the
+      // calendar feed and queued bulk clean-ups. A step that fails throws, the wrapper answers 500, and nothing is
+      // scheduled: a deletion that leaves a key live is worse than none. Storage deletions above are not undone.
+      await pauseForDeletion(userId);
+      // If scheduling fails after the pause landed, lift the pause again: nothing is scheduled, so nothing should
+      // stay stopped. (A failed lift is retried by the member's next sign-in.)
+      const scheduledAt = await scheduleDeletion(userId).catch(async (err) => {
+        await restoreAfterCancel(userId).catch((e) => console.error('[account] undo pause failed:', e));
+        throw err;
+      });
 
       // The address is read BEFORE scheduling (which nulls it), so the
       // notice can still be delivered. A failed send must not fail the
@@ -128,7 +139,8 @@ export const route = apiRoute('/api/account/delete', {
         });
       }
 
-      return Response.json({ success: true, scheduledAt, graceDays: DELETION_GRACE_DAYS });
+      // `signOut`: every session, this one included, is gone; the client signs out locally too.
+      return Response.json({ success: true, scheduledAt, graceDays: DELETION_GRACE_DAYS, signOut: true });
     },
   ),
 });

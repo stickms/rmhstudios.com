@@ -23,6 +23,8 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { auth } from '@/lib/auth';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { cached } from '@/lib/cached.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 /** One precomputed, viewer-independent leaderboard row (perf audit §2.6). */
 type BoardRow = {
@@ -87,18 +89,24 @@ async function handlePeriodLeaderboard(
     },
   );
 
-  return Response.json(paginateBoard(sorted, offset, limit, metric, currentUserId, { period }));
+  return Response.json(await paginateBoard(sorted, offset, limit, metric, currentUserId, { period }));
 }
 
-/** Slice a cached board into a response page + the viewer's rank. */
-function paginateBoard(
-  sorted: BoardRow[],
+/**
+ * Slice a cached board into a response page + the viewer's rank. Hidden members ("Hide me from leaderboards",
+ * and banned ones) are dropped after the cache read, so the cached list stays the same for everyone, the next
+ * member moves up, and the viewer keeps their own line.
+ */
+async function paginateBoard(
+  cachedRows: BoardRow[],
   offset: number,
   limit: number,
   metric: string,
   currentUserId: string | null,
   extra: Record<string, unknown>,
 ) {
+  const hidden = await leaderboardHiddenUserIds();
+  const sorted = cachedRows.filter((r) => !hidden.has(r.userId) || r.userId === currentUserId);
   const total = sorted.length;
   const entries = sorted.slice(offset, offset + limit).map((row, idx) => ({
     rank: offset + idx + 1,
@@ -165,12 +173,16 @@ async function handleMinigameLeaderboard(
   );
 
   return Response.json(
-    paginateBoard(sorted, offset, limit, metric, currentUserId, { period, minigame }),
+    await paginateBoard(sorted, offset, limit, metric, currentUserId, { period, minigame }),
   );
 }
 
 /** Compute a user's global rank based on metric */
-async function computeUserRank(userId: string, metric: string): Promise<number | null> {
+async function computeUserRank(
+  userId: string,
+  metric: string,
+  hidden: ReadonlySet<string>,
+): Promise<number | null> {
   const profile = await prisma.rMHboxProfile.findUnique({ where: { userId } });
   if (!profile) return null;
 
@@ -179,7 +191,7 @@ async function computeUserRank(userId: string, metric: string): Promise<number |
   const value = profile[field as keyof typeof profile] as number;
 
   const higherCount = await prisma.rMHboxProfile.count({
-    where: { [field]: { gt: value } },
+    where: { [field]: { gt: value }, ...userNotHiddenWhere(hidden) },
   });
 
   return higherCount + 1;
@@ -241,10 +253,13 @@ export const Route = createFileRoute('/api/rmhbox/leaderboard')({
                 ? { totalGamesPlayed: 'desc' as const }
                 : { totalScore: 'desc' as const };
 
+          // Hidden members are left out before the page is cut, so ranks and the total close up.
+          const hidden = await leaderboardHiddenUserIds();
+          const listed = { totalGamesPlayed: { gt: 0 }, ...userNotHiddenWhere(hidden) };
           const [profiles, total] = await Promise.all([
             prisma.rMHboxProfile.findMany({
               // A profile reset by account deletion (zero games) is never listed.
-              where: { totalGamesPlayed: { gt: 0 } },
+              where: listed,
               orderBy,
               skip: offset,
               take: limit,
@@ -258,7 +273,7 @@ export const Route = createFileRoute('/api/rmhbox/leaderboard')({
                 },
               },
             }),
-            prisma.rMHboxProfile.count({ where: { totalGamesPlayed: { gt: 0 } } }),
+            prisma.rMHboxProfile.count({ where: listed }),
           ]);
 
           const entries = profiles.map((p, idx) => {
@@ -282,7 +297,7 @@ export const Route = createFileRoute('/api/rmhbox/leaderboard')({
           // Compute requesting user's rank if authenticated
           let userRank: number | null = null;
           if (currentUserId) {
-            userRank = await computeUserRank(currentUserId, metric);
+            userRank = await computeUserRank(currentUserId, metric, hidden);
           }
 
           return Response.json({

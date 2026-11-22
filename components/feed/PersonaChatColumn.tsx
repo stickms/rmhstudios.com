@@ -247,6 +247,7 @@ export function PersonaChatColumn({
  {signedIn ? (
  <div className="flex items-end gap-2">
  <textarea
+ dir="auto"
  value={input}
  onChange={(e) => setInput(e.target.value)}
  onKeyDown={(e) => {
@@ -316,7 +317,7 @@ function Bubble({
  if (from === 'user') {
  return (
  <div className={cn('conversation__mine', className)}>
- <div className="conversation__bubble t-post whitespace-pre-wrap">{children}</div>
+ <div dir="auto" className="conversation__bubble t-post whitespace-pre-wrap">{children}</div>
  </div>
  );
  }
@@ -329,7 +330,7 @@ function Bubble({
  emoji || <Bot className="h-3.5 w-3.5 text-site-text-muted" aria-hidden />
  )}
  </div>
- <div className="conversation__theirs t-post min-w-0 whitespace-pre-wrap text-site-text">
+ <div dir="auto" className="conversation__theirs t-post min-w-0 whitespace-pre-wrap text-site-text">
  {children}
  </div>
  </div>

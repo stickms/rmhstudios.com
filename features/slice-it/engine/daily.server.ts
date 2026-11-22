@@ -39,6 +39,8 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { arcadeDayKey } from '@/lib/quests/arcade';
 import { reportGameResult } from '@/lib/game/results.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -212,8 +214,10 @@ export async function dailyBoard(
   dayKey = arcadeDayKey(),
   limit = DAILY_BOARD_LIMIT,
 ): Promise<DailyBoardRow[]> {
+  // Hidden members are left out before the cut, so the next player moves up.
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prisma.sliceDailyEntry.findMany({
-    where: { dayKey },
+    where: { dayKey, ...userNotHiddenWhere(hidden) },
     orderBy: [{ score: 'desc' }, { id: 'asc' }],
     take: limit,
     select: {
@@ -275,8 +279,10 @@ export async function getDailyState(userId: string | null): Promise<DailyState> 
       },
     });
     if (mine) {
+      // Count only members still listed: a hidden member does not rank ahead of anyone.
+      const hidden = await leaderboardHiddenUserIds();
       const ahead = await prisma.sliceDailyEntry.count({
-        where: { dayKey, score: { gt: mine.score } },
+        where: { dayKey, score: { gt: mine.score }, ...userNotHiddenWhere(hidden) },
       });
       myRank = ahead + 1;
       const user = resolveUser(mine.user);
@@ -360,8 +366,9 @@ export async function submitDailyEntry(
     daily: true,
   });
 
+  const hidden = await leaderboardHiddenUserIds();
   const ahead = await prisma.sliceDailyEntry.count({
-    where: { dayKey, score: { gt: submission.score } },
+    where: { dayKey, score: { gt: submission.score }, ...userNotHiddenWhere(hidden) },
   });
   const rank = ahead + 1;
 

@@ -116,6 +116,11 @@ export interface ReplayableGame {
   verifyAsync?(data: unknown): Promise<{
     score: number;
   } | null>;
+  /**
+   * The stored score is a cost (Lights Out stores its move count), so a board lists the smallest first. Every
+   * other game keeps `score desc`.
+   */
+  lowerIsBetter?: true;
 }
 
 /**
@@ -381,6 +386,7 @@ export const replayableGames: Record<string, ReplayableGame> = {
     version: LIGHTS_OUT_VERSION,
     schema: lightsOutSchema,
     verify: verifyLightsOut,
+    lowerIsBetter: true,
   },
   'slice-it': {
     game: 'slice-it',

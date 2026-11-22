@@ -13,6 +13,7 @@ import {
   type CardImage,
 } from '@/lib/study/card-images';
 import { lockPictureUrls } from '@/lib/study/card-images.server';
+import { readOcclusion, reviewDataFor, type Occlusion, type OcclusionReviewData } from '@/lib/study/occlusion';
 import { cardHash, type UpdatesSummary } from '@/lib/study/deck-sync';
 import { deckUpdatesSummary } from '@/lib/study/deck-sync.server';
 import type { TestCard } from '@/lib/study/practice-test';
@@ -211,7 +212,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
       cards: {
         where: AUTHORED_WHERE,
         orderBy: CARD_ORDER,
-        select: { id: true, kind: true, front: true, back: true, ...CARD_IMAGE_SELECT },
+        select: { id: true, kind: true, front: true, back: true, occlusion: true, ...CARD_IMAGE_SELECT },
       },
     },
   });
@@ -253,7 +254,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
         (
           await tx.flashcard.findMany({
             where: { id: { in: source.cards.map((c) => c.id) } },
-            select: { id: true, ...CARD_IMAGE_SELECT },
+            select: { id: true, occlusion: true, ...CARD_IMAGE_SELECT },
           })
         ).map((row) => [row.id, row]),
       );
@@ -266,6 +267,7 @@ export async function cloneDeck(userId: string, sourceId: string): Promise<Clone
             kind: cardKind(c.kind),
             front: c.front,
             back: c.back,
+            ...(live.kind === 'occlusion' ? { occlusion: readOcclusion(live.occlusion) } : {}),
             ...fromColumns(live),
             originCardId: c.id,
             originHash: cardHash(live),
@@ -302,6 +304,10 @@ export interface DeckCard {
   /** The pictures this card shows (a generated card reads its source's); absent when it has none (s08-15). */
   frontImage?: CardImage | null;
   backImage?: CardImage | null;
+  /** The masks of an authored occlusion card (the editor draws them over the front picture; s09-03). */
+  occlusion?: Occlusion | null;
+  /** On a generated occlusion card in review: the masks and the one this card asks. */
+  occlusionReview?: OcclusionReviewData | null;
 }
 
 export interface DeckDetail {
@@ -356,6 +362,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
           kind: true,
           sourceId: true,
           clozeIndex: true,
+          occlusion: true,
           ...CARD_IMAGE_SELECT,
         },
       },
@@ -431,6 +438,7 @@ export async function getDeck(deckId: string, viewer: { id: string | null }): Pr
         sourceId: null,
         ...(viewer.id ? { suspended: suspendedOf(c.id) } : {}),
         ...pictureFields(fromColumns(c)),
+        ...(c.kind === 'occlusion' ? { occlusion: readOcclusion(c.occlusion) } : {}),
       })),
     reviewCount: reviewable.length,
     rowCount: deck.cards.length,
@@ -457,16 +465,21 @@ export async function getTestCards(deckId: string): Promise<TestCard[]> {
       sourceId: true,
       clozeIndex: true,
       ...CARD_IMAGE_SELECT,
-      // A generated card shows its source's pictures (the siblings hold none of their own).
-      source: { select: CARD_IMAGE_SELECT },
+      // A generated card shows its source's pictures (the siblings hold none of their own); an occlusion card
+      // also reads its masks and note from the source.
+      source: { select: { ...CARD_IMAGE_SELECT, occlusion: true, back: true } },
     },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    front: r.front,
-    back: r.back,
-    clozeIndex: r.clozeIndex,
-    noteId: noteIdOf(r),
-    ...pictureFields(picturesOfRow(r, r.source)),
-  }));
+  return rows.map((r) => {
+    const review = r.kind === 'occlusion' ? reviewDataFor(r.source, r.clozeIndex) : null;
+    return {
+      id: r.id,
+      front: r.front,
+      back: r.back,
+      clozeIndex: r.clozeIndex,
+      noteId: noteIdOf(r),
+      ...pictureFields(picturesOfRow(r, r.source)),
+      ...(review ? { occlusion: review } : {}),
+    };
+  });
 }

@@ -1,0 +1,18 @@
+{
+  "fewest-empty": "No replays of today's puzzle yet",
+  "fewest-error": "Could not load the replays.",
+  "fewest-loading": "Loading replays",
+  "fewest-moves_one": "{{count}} move",
+  "fewest-moves_other": "{{count}} moves",
+  "fewest-moves-today": "Fewest moves today",
+  "fewest-row-aria": "Watch the replay by {{author}}",
+  "fewest-someone": "Someone",
+  "replay-post-it": "Post it",
+  "replay-save": "Save replay",
+  "replay-save-failed": "Could not save the replay.",
+  "replay-saved": "Replay saved",
+  "replay-share-text_one": "Lights Out, {{date}}: solved in {{count}} move",
+  "replay-share-text_other": "Lights Out, {{date}}: solved in {{count}} moves",
+  "replay-sign-in-to-save": "Sign in to save a replay",
+  "replay-view-replay": "View replay"
+}

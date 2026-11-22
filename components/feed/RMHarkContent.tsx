@@ -150,5 +150,5 @@ export function RMHarkContent({ text, className }: RMHarkContentProps) {
  segments.push(<span key={`t-${segIdx}`}>{renderInline(text.slice(last), `t-${segIdx}`)}</span>);
  }
 
- return <p className={className}>{segments.length > 0 ? segments : text}</p>;
+ return <p dir="auto" className={className}>{segments.length > 0 ? segments : text}</p>;
 }

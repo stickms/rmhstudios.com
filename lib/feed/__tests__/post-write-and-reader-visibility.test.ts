@@ -119,8 +119,14 @@ vi.mock('@/lib/prisma.server', () => {
       findMany: async () => [{ id: 's1', entityId: 'p1', entityType: 'rmhark', createdAt: new Date(), folderId: null }],
       create: write('save.create'),
       delete: write('save.delete'),
+      // Un-bookmarking deletes by id and owner and leaves a sync tombstone (s09-10).
+      deleteMany: async () => {
+        h.writes.push('save.delete');
+        return { count: 1 };
+      },
       upsert: write('save.upsert'),
     },
+    syncTombstone: { create: write('tombstone.create') },
     // The vote runs under the poll's advisory lock and re-reads its end (s04-08): an open poll.
     $executeRaw: async () => 1,
     rMHarkPoll: { findUnique: async () => ({ closesAt: null, closedAt: null }) },

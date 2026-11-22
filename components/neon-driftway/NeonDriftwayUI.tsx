@@ -20,6 +20,8 @@ import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
 import { saveGhostApi } from '@/lib/game/replay.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { parseRanked } from '@/components/games/assist-run-island';
+import { AssistMenuLines, AssistedNotRanked } from './assist-ui';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 type LeaderboardEntry = {
@@ -75,6 +77,8 @@ export function NeonDriftwayUI({
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const lbArrival = useArrival(leaderboard.length > 0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  // The server's verdict on the run: false when it was assisted and so kept off the board.
+  const [ranked, setRanked] = useState<boolean | null>(null);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const session = useSession();
   const navigate = useNavigate();
@@ -111,10 +115,12 @@ export function NeonDriftwayUI({
           if (e instanceof HttpError) return null;
           throw e;
         });
+        setRanked(parseRanked(body));
         void takeScoreMoment(body);
         // A new personal best becomes this level's ghost (U9). Only on a best,
         // so a player stores one trace per level however often they play.
-        const trace = parseScoreMoment(body) ? getGhostTrace() : null;
+        // An assisted run is not a record, so its ghost is never saved.
+        const trace = parseScoreMoment(body) && parseRanked(body) !== false ? getGhostTrace() : null;
         if (trace) {
           void api(saveGhostApi, {
             body: {
@@ -135,6 +141,7 @@ export function NeonDriftwayUI({
   useEffect(() => {
     if (uiState === 'playing') {
       setScoreSubmitted(false);
+      setRanked(null);
       clearScoreMoment();
     }
   }, [uiState, clearScoreMoment]);
@@ -252,6 +259,7 @@ export function NeonDriftwayUI({
                   {t("play", { defaultValue: "Play" })}
                 </Button>
                 <LiveryEditorButton />
+                <AssistMenuLines signedIn />
                 {onGoToMultiplayer && (
                   <Button
                     onClick={onGoToMultiplayer}
@@ -435,9 +443,10 @@ export function NeonDriftwayUI({
             </Button>
           ) : (
             <p className="text-xs text-green-400 text-center">
-              {scoreSubmitted ? t("score-submitted", { defaultValue: "Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}
+              {ranked === false ? null : scoreSubmitted ? t("score-submitted", { defaultValue: "Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}
             </p>
           )}
+          <AssistedNotRanked ranked={ranked} />
 
           <div className="flex gap-2">
             <Button
@@ -522,9 +531,10 @@ export function NeonDriftwayUI({
 
           {session.data && (
             <p className="text-xs text-green-400 text-center">
-              {scoreSubmitted ? t("score-submitted", { defaultValue: "Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}
+              {ranked === false ? null : scoreSubmitted ? t("score-submitted", { defaultValue: "Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}
             </p>
           )}
+          <AssistedNotRanked ranked={ranked} />
 
           <div className="flex gap-2">
             <Button

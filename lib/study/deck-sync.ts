@@ -22,12 +22,15 @@ import {
   type CardImage,
   type CardImageColumns,
 } from '@/lib/study/card-images';
+import { readOcclusion, type Occlusion } from '@/lib/study/occlusion';
 
 /** An authored card's content: the fields a hash covers (the pictures too, once it has any: s08-15). */
 export interface CardContent extends Partial<CardImageColumns> {
   kind: string;
   front: string;
   back: string;
+  /** The masks of an occlusion card (s09-03), as stored; part of the hash only for that kind. */
+  occlusion?: unknown;
 }
 
 export interface SourceCard extends CardContent {
@@ -46,7 +49,16 @@ export interface CopyCard extends CardContent {
  */
 export function cardHash(card: CardContent): string {
   return createHash('sha256')
-    .update(JSON.stringify([card.kind, card.front, card.back, ...(pictureHashInput(card) ?? [])]))
+    .update(
+      JSON.stringify([
+        card.kind,
+        card.front,
+        card.back,
+        ...(pictureHashInput(card) ?? []),
+        // Masks change what the card asks, so they change the hash; no other kind carries any (hashes stay as they were).
+        ...(card.kind === 'occlusion' ? [readOcclusion(card.occlusion)] : []),
+      ]),
+    )
     .digest('hex');
 }
 
@@ -57,6 +69,8 @@ export interface Side {
   /** The card's pictures, present only on a card that has one (the update dialog shows them; s08-15). */
   frontImage?: CardImage | null;
   backImage?: CardImage | null;
+  /** The masks, present on an occlusion card. */
+  occlusion?: Occlusion | null;
 }
 
 const side = (card: CardContent): Side => ({
@@ -64,6 +78,7 @@ const side = (card: CardContent): Side => ({
   front: card.front,
   back: card.back,
   ...(hasPictures(card) ? fromColumns(card) : {}),
+  ...(card.kind === 'occlusion' ? { occlusion: readOcclusion(card.occlusion) } : {}),
 });
 
 export interface NewItem {

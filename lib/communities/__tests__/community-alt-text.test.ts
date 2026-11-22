@@ -3,6 +3,7 @@
  * (`communityAltMissing`) is the member rule's own `missingAltIndexes`, so NBSP-only and blank descriptions count as
  * missing here too.
  */
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
@@ -90,6 +91,8 @@ vi.mock('@/lib/prisma.server', () => {
       },
     },
     $executeRaw: async () => 0,
+    // s09-11: the publisher takes the row lock before it runs the gate.
+    $queryRaw: async () => [{ id: 'sp1' }],
     $transaction: async (cb: (tx: unknown) => unknown) => cb(prisma),
   };
   return {
@@ -331,7 +334,7 @@ describe('scheduled publish', () => {
       entityType: 'scheduled-alt-required',
       entityId: 'sp1',
     });
-    expect(String(h.notes[0]!.preview)).toContain('an image needs a description');
+    expect(noticeFallbackText(h.notes[0]!.preview as never)).toContain('an image needs a description');
   });
   it('does not repeat the notice on a later pass', async () => {
     h.existingNotice = true;

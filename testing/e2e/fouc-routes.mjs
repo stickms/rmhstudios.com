@@ -133,6 +133,16 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Invalid-invite branch of the community invite page (the same generic state every bad code renders).',
   },
+  '/c/$slug/wiki/': {
+    path: '/c/fouc-audit-no-such-community/wiki',
+    fidelity: 'shell',
+    why: 'Not-found branch of a community wiki list (Sprint 09 feature 04).',
+  },
+  '/c/$slug/wiki/$page': {
+    path: '/c/fouc-audit-no-such-community/wiki/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a community wiki page.',
+  },
   '/deeplink/$page': {
     path: null,
     fidelity: 'shell',
@@ -157,6 +167,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/games/hearthworks/guides/fouc-audit',
     fidelity: 'shell',
     why: 'Real game, absent guide — the guide shell with its not-found branch.',
+  },
+  '/games/$gameId/guides/$guideId/history': {
+    path: '/games/hearthworks/guides/fouc-audit/history',
+    fidelity: 'shell',
+    why: 'Real game, absent guide — the guide history shell with its not-found branch (Sprint 09 feature 05).',
   },
   '/games/$gameId/updates': {
     path: '/games/hearthworks/updates',

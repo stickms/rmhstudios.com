@@ -7,6 +7,7 @@
  * by it or refused. Dropping and refunding no-shows is `startTournament`'s job
  * (`tournament.server.ts`); this module only records who is here.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
@@ -197,7 +198,7 @@ export async function runCheckInNotices(
             type: 'SYSTEM',
             entityType: 'tournament_checkin',
             entityId: t.id,
-            preview: `Check-in is open for ${t.name}`,
+            preview: notice('tournament-checkin-open', { name: t.name }),
             link: `/tournaments/${t.id}`,
           }),
         ),

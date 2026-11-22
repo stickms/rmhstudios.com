@@ -188,7 +188,7 @@ export function JamsList() { const fmt = useLocaleFormat();
                 <h2 className="font-semibold truncate">{j.title}</h2>
                 <PhaseBadge phase={j.phase} />
               </div>
-              <p className="text-sm text-site-text-muted line-clamp-2">{j.description}</p>
+              <p dir="auto" className="text-sm text-site-text-muted line-clamp-2">{j.description}</p>
               <p className="text-xs text-site-text-muted">
                 {fmt.dateTime(new Date(j.startsAt))} →{' '}
                 {fmt.dateTime(new Date(j.submitEndsAt))}

@@ -82,6 +82,12 @@ export function refusalReason(
 }
 
 /**
+ * Why the viewer cannot edit a page: the policy refusals above plus the ones the access helper adds
+ * (`page-access.server.ts`): signed out, a community timeout or ban, a site ban.
+ */
+export type PageRefusal = EditRefusal | 'SIGNED_OUT' | 'TIMED_OUT' | 'COMMUNITY_BANNED' | 'SITE_BANNED';
+
+/**
  * Slug for a wiki page. Bounded to the column's `VarChar(60)` and never empty —
  * an empty slug would collide on the `(communityId, slug)` unique index and
  * make the *second* page anyone creates fail with a database error.

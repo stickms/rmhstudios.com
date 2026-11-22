@@ -170,24 +170,25 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
       Promise.resolve([...STATIC_ROUTES, ...catalogRoutes(), ...researchSitemapRoutes()].slice(skip, skip + take)),
   },
 
-  /** Long-form: blog, news, library documents and albums, game guides. */
+  /** Long-form: blog, news, library documents and albums, game guides, public communities' wiki pages. */
   content: {
     cap: CAPS.content,
     count: async () => {
-      const [blog, news, docs, albums, guides] = await Promise.all([
+      const [blog, news, docs, albums, guides, wiki] = await Promise.all([
         prisma.blogPost.count({ where: publishedLogWhere(new Date()) }),
         prisma.newsArticle.count({ where: { status: 'PUBLISHED' } }),
         prisma.libraryDocument.count({ where: { hidden: false, reported: false } }),
         prisma.album.count(),
         prisma.gameGuide.count({ where: { published: true } }),
+        prisma.communityPage.count({ where: { community: { isPrivate: false } } }),
       ]);
-      return blog + news + docs + albums + guides;
+      return blog + news + docs + albums + guides + wiki;
     },
     page: async (skip, take) => {
       // Small enough to assemble whole and slice: the five sources together are
       // in the low thousands, and interleaving them by date would cost a union
       // query for no crawler-visible benefit.
-      const [blog, news, docs, albums, guides] = await Promise.all([
+      const [blog, news, docs, albums, guides, wiki] = await Promise.all([
         prisma.blogPost.findMany({
           where: publishedLogWhere(new Date()),
           select: { slug: true, updatedAt: true },
@@ -214,6 +215,13 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
         prisma.gameGuide.findMany({
           where: { published: true },
           select: { id: true, gameId: true, updatedAt: true },
+          orderBy: { updatedAt: 'desc' },
+          take: CAPS.content,
+        }),
+        // A private community's pages are for its members and never listed (s09-04).
+        prisma.communityPage.findMany({
+          where: { community: { isPrivate: false } },
+          select: { slug: true, updatedAt: true, community: { select: { slug: true } } },
           orderBy: { updatedAt: 'desc' },
           take: CAPS.content,
         }),
@@ -249,6 +257,12 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
           lastmod: g.updatedAt,
           changefreq: 'monthly' as const,
           priority: 0.5,
+        })),
+        ...wiki.map((w) => ({
+          loc: `/c/${w.community.slug}/wiki/${w.slug}`,
+          lastmod: w.updatedAt,
+          changefreq: 'weekly' as const,
+          priority: 0.4,
         })),
       ];
       return entries.slice(skip, skip + take);

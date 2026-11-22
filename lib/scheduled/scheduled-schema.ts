@@ -53,4 +53,9 @@ export const patchScheduledSchema = z.object({
   audience: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE']).optional(),
   unlockPrice: z.number().int().min(0).max(1_000_000).nullable().optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
+  // s09-01: the edit dialog. One description per image (the server trims to the post's image count), the
+  // composer's bounds; `null` clears the reason.
+  imageAlts: z.array(z.string().max(MAX_IMAGE_ALT_LENGTH)).max(4).optional(),
+  contentWarning: contentWarningFieldSchema,
+  isSensitive: z.boolean().optional(),
 });

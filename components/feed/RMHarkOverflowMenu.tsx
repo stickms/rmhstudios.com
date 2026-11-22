@@ -48,6 +48,7 @@ import { cn } from'@/lib/utils';
 import { PostMenuTrigger } from './PostMenuTrigger';
 import { RepostMuteMenuItem } from './RepostMuteMenuItem';
 import { PinMenuItems } from './PinMenuItems';
+import { CommunityPinMenuItems } from '@/components/communities/CommunityPinMenuItems';
 import {
  MuteConversationChoices,
  MuteConversationItem,
@@ -559,6 +560,9 @@ export function RMHarkOverflowPanel({
  {t('moderate-post', { defaultValue:'Moderate'})}
  </MenuItem>
  </>
+ )}
+ {session && communitySlug && (
+ <CommunityPinMenuItems item={item} enabled={menuOpen} onDone={() => setMenuOpen(false)} />
  )}
  </AnchoredMenu>
 

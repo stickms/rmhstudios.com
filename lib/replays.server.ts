@@ -13,6 +13,7 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { getReplayable, REPLAY_SIZE_CAP, type ReplayData } from '@/lib/game/replay';
 import { verifyDailyPuzzle } from '@/lib/daily-puzzles/replay.server';
 import { getGameAdapter } from '@/lib/game/adapters.server';
@@ -311,7 +312,9 @@ export async function setReplayVisibility(
 export type ReplayListItem = BoardReplay;
 
 /**
- * Public replays for a game, best score first (uses the `[game, score desc]` index). Only the current logic
+ * Public replays for a game, best score first (uses the `[game, score desc]` index; a lower-is-better game reads it
+ * backwards). `seed` (Lights Out only) keeps the replays of one puzzle: the seed lives in the `data` JSON, so it is
+ * a filter applied after the `game` index, bounded by `take`. Only the current logic
  * version is listed (an older one may not play back), authors who are banned are left out, and so are authors the
  * viewer has blocked or who blocked the viewer. A response with a viewer in it is block-filtered and so must not be
  * cached for anyone else.
@@ -320,11 +323,18 @@ export async function listReplaysForGame(
   game: string,
   limit = 20,
   viewerId: string | null = null,
+  seed?: number,
 ): Promise<ReplayListItem[]> {
-  const version = getReplayable(game)?.version;
+  const def = getReplayable(game);
+  const version = def?.version;
   if (!version) return [];
+  // A seed names a puzzle; only Lights Out has them.
+  if (seed !== undefined && game !== 'lights-out') return [];
   const take = Math.min(Math.max(Math.trunc(limit) || 20, 1), 100);
   const blocked = await getBlockedAuthorIds(viewerId);
+  // Hidden members are left off the board; a signed-in viewer keeps their own replays (that response is private).
+  const hidden = await leaderboardHiddenUserIds();
+  const left = [...blocked, ...[...hidden].filter((id) => id !== viewerId)];
   const rows = await prisma.gameReplay.findMany({
     where: {
       game,
@@ -332,10 +342,11 @@ export async function listReplaysForGame(
       visibility: 'public',
       // Postgres sorts NULL first in a descending order; an unscored run is not a board entry.
       score: { not: null },
-      ...(blocked.length > 0 ? { userId: { notIn: blocked } } : {}),
+      ...(seed !== undefined ? { data: { path: ['seed'], equals: seed } } : {}),
+      ...(left.length > 0 ? { userId: { notIn: left } } : {}),
       user: { OR: [{ bannedUntil: null }, { bannedUntil: { lte: new Date() } }] },
     },
-    orderBy: [{ score: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ score: def?.lowerIsBetter ? 'asc' : 'desc' }, { createdAt: 'desc' }],
     take,
     select: {
       id: true,

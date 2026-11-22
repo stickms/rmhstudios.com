@@ -130,6 +130,17 @@ describe('system notification labels', () => {
       'moderation-sweep': 'Content removed',
       'moderation-sweep-undone': 'Content restored',
 
+      // Sprint 09 system labels (docs/autonomous/sprint-09/plan.md §Anchors)
+      // s09-06 community-pins
+      'community-pin': 'Post pinned',
+
+      // s09-11 scheduled-gate
+      'scheduled-held': 'Scheduled post in review',
+      'scheduled-refused': 'Scheduled post not published',
+
+      // s09-14 deletion-pause
+      'deletion-drafts-waited': 'Scheduled posts waited',
+
       default: 'RMH Studios',
     });
   });

@@ -6,7 +6,7 @@
  * request (`/extras`) after first paint supplies flairs, posting status, the
  * rail and any pending onboarding questions.
  */
-import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Award, BarChart3, MessageSquare, ShieldCheck, Star, Trophy } from 'lucide-react';
@@ -27,6 +27,7 @@ import { PublicModLog } from '@/components/communities/PublicModLog';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 import { HandoverBanner } from '@/components/communities/HandoverBanner';
+import { PinnedPosts, useCommunityPins } from '@/components/communities/PinnedPosts';
 import type { FeedItem } from '@/lib/feed-types';
 
 const HallOfFamePanel = lazy(() => import('@/components/communities/HallOfFamePanel'));
@@ -52,8 +53,11 @@ export function CommunityPlusBody({
   community,
   items,
   setItems,
+  initialPinned = null,
   composerLocked = false,
 }: {
+  /** s09-06: the pinned posts the loader read with the first page. */
+  initialPinned?: FeedItem[] | null;
   /** s06-01: a timed-out member reads but does not post; the page shows the notice instead of the composer. */
   composerLocked?: boolean;
   community: {
@@ -176,7 +180,29 @@ export function CommunityPlusBody({
     typeof window !== 'undefined' &&
     !wasDismissed(slug);
 
-  const posts = flairFilter ? filtered : items;
+  // s09-06: the pinned block leads the unfiltered list and its posts are not repeated below it. A post unpinned from
+  // a menu goes back into the list at its place in time.
+  const pins = useCommunityPins(slug, initialPinned);
+  const pinnedItems = useMemo(() => pins?.items ?? [], [pins]);
+  const pinnedIds = useMemo(() => new Set(pinnedItems.map((i) => i.id)), [pinnedItems]);
+  const lastPinned = useRef<FeedItem[]>(pinnedItems);
+  useEffect(() => {
+    // Only an explicit unpin (the id left the order) puts a post back; one that merely stopped being visible, a
+    // removed post or a blocked author, stays out.
+    const order = new Set(pins?.order ?? []);
+    const gone = lastPinned.current.filter((i) => !order.has(i.id));
+    lastPinned.current = pinnedItems;
+    if (gone.length === 0) return;
+    setItems((cur) => {
+      const have = new Set(cur.map((i) => i.id));
+      const back = gone.filter((i) => !have.has(i.id)).map((i) => ({ ...i, communityPinned: false }));
+      return back.length === 0
+        ? cur
+        : [...cur, ...back].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+    });
+  }, [pins, pinnedItems, setItems]);
+  const unpinned = useMemo(() => items.filter((i) => !pinnedIds.has(i.id)), [items, pinnedIds]);
+  const posts = flairFilter ? filtered : unpinned;
   // `/extras` lands after first paint; a flair filter swaps the list for a spinner and back.
   const extrasArrival = useArrival(!!extras);
   const postsArrival = useArrival(posts !== null);
@@ -266,9 +292,10 @@ export function CommunityPlusBody({
               )}
             </div>
           )}
+          {!flairFilter && <PinnedPosts items={pinnedItems} />}
           {posts === null ? (
             panelFallback
-          ) : posts.length === 0 ? (
+          ) : posts.length === 0 && (flairFilter || pinnedItems.length === 0) ? (
             <EmptyState
               className={postsArrival}
               description={

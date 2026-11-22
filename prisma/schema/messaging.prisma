@@ -228,6 +228,10 @@ model Notification {
   entityType String?          @db.VarChar(32) // e.g. "rmhark", "comment", "user"
   entityId   String?          @db.VarChar(64)
   preview    String?          @db.VarChar(280) // short snapshot of the content
+  // A SYSTEM notice written by the site: its translation key and params (instants as ISO strings under `*At`),
+  // rendered in the reader's language; `preview` stays the English fallback for push, e-mail and old rows (s09-19).
+  previewKey    String?       @db.VarChar(64)
+  previewParams Json?
   link       String?          @db.VarChar(500) // where clicking should take the user
   read       Boolean          @default(false)
   // §16 batching: rows sharing a groupKey collapse in the list/badge ("12 people
@@ -268,6 +272,7 @@ model CallMute {
 
   @@unique([userId, mutedUserId])
   @@index([userId, until])
+  @@index([mutedUserId])
   @@map("call_mute")
 }
 

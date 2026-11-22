@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
@@ -98,7 +99,7 @@ async function doUnlock(
     type: 'SYSTEM',
     entityType: 'build',
     entityId: build.id,
-    preview: `${buyerName} unlocked your build for ${price} coins`,
+    preview: notice('build-unlocked', { name: buyerName, price }),
   }).catch(() => {});
   await grantAchievement(build.userId, 'creator.first_sale').catch(() => {});
 

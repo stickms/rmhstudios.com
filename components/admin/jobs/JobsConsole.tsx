@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { apiQuery } from '@/lib/contract/client';
 import { listAdminJobQueuesApi } from '@/lib/admin/jobs.contract';
 import { filterQueues, formatUtc, type QueueSummary } from '@/lib/admin/jobs';
+import { LeasedJobs } from '@/components/admin/jobs/LeasedJobs';
 import { QueueJobs } from '@/components/admin/jobs/QueueJobs';
 
 function Count({ label, n, danger }: { label: string; n: number; danger?: boolean }) {
@@ -144,17 +145,7 @@ export function JobsConsole({ queue }: { queue: string | undefined }) {
           })}
         </Button>
       </div>
-      {list.data?.fanouts ? (
-        <p className="t-meta flex flex-wrap items-center gap-x-4 border-b border-site-border pb-2">
-          <span className="font-medium text-site-text">{t('fanouts-label', { defaultValue: 'Fan-outs' })}</span>
-          <Count label={t('fanouts-running', { defaultValue: 'Running' })} n={list.data.fanouts.running} />
-          <Count
-            label={t('fanouts-failed', { defaultValue: 'Failed in 7 days' })}
-            n={list.data.fanouts.failedLast7Days}
-            danger
-          />
-        </p>
-      ) : null}
+      {list.data?.leased ? <LeasedJobs leased={list.data.leased} /> : null}
       {list.isPending ? (
         <div className="space-y-2" aria-busy="true">
           {Array.from(

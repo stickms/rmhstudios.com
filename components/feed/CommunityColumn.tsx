@@ -96,12 +96,15 @@ export function CommunityColumn({
  slug,
  initialCommunity,
  initialItems,
+ initialPinned,
 }: {
  slug: string;
  /** Community details prefetched by the route loader; `null`if not found. */
  initialCommunity?: CommunityData | null;
  /** First page of posts prefetched by the route loader. */
  initialItems?: FeedItem[] | null;
+ /** s09-06: the pinned posts the loader read with the first page. */
+ initialPinned?: FeedItem[] | null;
 }) { const fmt = useLocaleFormat(); 
  const { t } = useTranslation('feed');
  const { data: session } = useSession();
@@ -230,7 +233,7 @@ export function CommunityColumn({
  >
  <ArrowLeft className="h-5 w-5"/>
  </Link>
- <h1 className="truncate text-lg font-semibold text-site-text">{community.name}</h1>
+ <h1 dir="auto" className="truncate text-lg font-semibold text-site-text">{community.name}</h1>
  </header>
 
  <div className="border-b border-site-border p-4">
@@ -242,7 +245,7 @@ export function CommunityColumn({
  {community.icon ||'👥'}
  </div>
  <div className="min-w-0 flex-1">
- <h2 className="text-xl font-semibold text-site-text">{community.name}</h2>
+ <h2 dir="auto" className="text-xl font-semibold text-site-text">{community.name}</h2>
  <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-site-text-muted">
  <span className="inline-flex items-center gap-1">
  <Users className="h-3.5 w-3.5"/>{''}
@@ -310,7 +313,7 @@ export function CommunityColumn({
  </div>
  </div>
  {community.description && (
- <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>
+ <p dir="auto" className="mt-2 text-sm text-site-text-muted">{community.description}</p>
  )}
  </div>
 
@@ -396,6 +399,7 @@ export function CommunityColumn({
  community={community}
  items={items}
  setItems={setItems}
+ initialPinned={initialPinned ?? null}
  composerLocked={standing?.kind ==='timeout'}
  />
 

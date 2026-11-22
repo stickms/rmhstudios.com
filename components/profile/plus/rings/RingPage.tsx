@@ -117,7 +117,9 @@ export default function RingPage({ slug }: { slug: string }) {
       <header className="space-y-2">
         <h2 className="text-2xl font-semibold text-site-text">{ring.name}</h2>
         {ring.description ? (
-          <p className="whitespace-pre-wrap break-words text-sm text-site-text-muted">{ring.description}</p>
+          <p dir="auto" className="whitespace-pre-wrap break-words text-sm text-site-text-muted">
+            {ring.description}
+          </p>
         ) : null}
         <p className="text-xs text-site-text-muted">
           {t('ring-members', {

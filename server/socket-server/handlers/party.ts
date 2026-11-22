@@ -36,6 +36,7 @@
  * different piece of work from filling in a registry.
  */
 
+import { notice, noticeColumns } from '../../../lib/notifications/notice-keys';
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
@@ -309,7 +310,7 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
           type: 'SYSTEM',
           entityType: 'party',
           entityId: party.id,
-          preview: `${selfName()} invited you to a party`,
+          ...noticeColumns(notice('party-invite', { name: selfName() })),
           link: '/',
         },
       })

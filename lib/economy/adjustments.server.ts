@@ -11,6 +11,7 @@
  * refusal (a missing member, a short balance, a second reversal).
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { randomUUID } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -34,7 +35,6 @@ import {
   adjustmentLedgerKey,
   isAdjustmentReason,
   ledgerNote,
-  notificationPreview,
   reversalLedgerKey,
   signedDelta,
   type AdjustmentDirection,
@@ -140,7 +140,10 @@ async function notifyMember(userId: string, row: Row) {
     type: 'SYSTEM',
     entityType: ADJUSTMENT_ENTITY,
     entityId: row.id,
-    preview: notificationPreview(row.delta, isAdjustmentReason(row.reason) ? row.reason : 'correction'),
+    preview: notice(row.delta >= 0 ? 'coins-added' : 'coins-removed', {
+      amount: Math.abs(row.delta).toLocaleString('en-US'),
+      reason: (isAdjustmentReason(row.reason) ? row.reason : 'correction').replace('_', ' '),
+    }),
     link: '/wallet',
   }).catch(() => {});
 }

@@ -11,6 +11,7 @@
  * whose `occurrenceAt` is that occurrence, and overrides the standing one
  * (status `no` sits one out).
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { getRole } from '@/lib/communities/access.server';
@@ -135,7 +136,7 @@ export function notifyRotation(
       type: 'SYSTEM',
       entityType: 'event',
       entityId: event.id,
-      preview: `You are in the host rotation for "${event.title}".`,
+      preview: notice('event-host-rotation', { title: event.title }),
       link: '/events',
     });
   }

@@ -46,6 +46,7 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
+import { AFTER_ERASURE_QUEUE, registerAfterErasureWorker } from '@/lib/account/after-erasure-jobs.server';
 import { registerAltairVerifyWorker } from '@features/altair/engine/verify/queue.server';
 import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.server';
 import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
@@ -78,6 +79,13 @@ import { registerBlogPublicationJobs } from '@/lib/blog/publication-jobs.server'
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
 import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
+import {
+  MEDIA_CLIP_SWEEP_QUEUE,
+  MEDIA_SWEEP_QUEUE,
+  registerClipSweepCron,
+  registerMediaSweepCron,
+} from '@/lib/media/sweep-jobs.server';
+import { TOMBSTONE_PRUNE_QUEUE, registerTombstonePruneCron } from '@/lib/sync/tombstones.server';
 import { CENSUS_QUEUE, registerCensusCron } from '@/lib/admin/census.server';
 import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
 import {
@@ -283,6 +291,21 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: SWEEP_QUEUE, register: registerSweepWorker },
   // s08-18: every minute, re-queue the sweeps whose lease expired.
   { queue: SWEEP_RECLAIM_QUEUE, register: registerSweepReclaimCron },
+
+  // Sprint 09 (docs/autonomous/sprint-09/plan.md §Anchors)
+  // s09-10 api-sync-deletions
+  // s09-10: daily at 03:41 UTC, delete sync tombstones older than 90 days in batches of 5,000.
+  { queue: TOMBSTONE_PRUNE_QUEUE, register: registerTombstonePruneCron },
+
+  // s09-12 media-sweep
+  // s09-12: nightly at 03:17 UTC, delete uploads nobody uses (capped, oldest first); behind the `media-sweep` flag, off until the owner turns it on.
+  { queue: MEDIA_SWEEP_QUEUE, register: registerMediaSweepCron },
+  // s09-12: Sundays at 04:41 UTC, delete pronunciation clips no profile names and a week old; same flag.
+  { queue: MEDIA_CLIP_SWEEP_QUEUE, register: registerClipSweepCron },
+
+  // s09-16 erasure-boards
+  // s09-16: a work queue fed by account deletion when an after-erasure step failed (one job per member); retried with backoff, idempotent.
+  { queue: AFTER_ERASURE_QUEUE, register: registerAfterErasureWorker },
 
 ];
 

@@ -19,7 +19,7 @@ import {
   applyOverrides,
   checkOverride,
   effectiveStart,
-  occurrenceNotice,
+  occurrenceNoticePreview,
   upcomingDates,
   type OccurrenceKind,
   type OccurrenceOverride,
@@ -216,7 +216,7 @@ function nextLive(
 
 /** After the commit: drop the old reminders, schedule the new ones and tell each person once. */
 async function announce(eventId: string, actorId: string, at: Date, a: Applied): Promise<void> {
-  const text = occurrenceNotice({
+  const text = occurrenceNoticePreview({
     title: a.title,
     change: a.change,
     occurrenceAt: at,

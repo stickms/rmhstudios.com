@@ -5,6 +5,7 @@
  * written once.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -130,7 +131,7 @@ export async function issueStrike(input: IssueStrikeInput): Promise<IssueStrikeR
       entityType: 'strike',
       entityId: strike.id,
       link: '/settings/account-status',
-      preview: `You received a moderation warning: ${input.reason}. You can review or appeal it in Settings → Account status.`,
+      preview: notice('strike-warning', { reason: input.reason }),
     });
   }
 

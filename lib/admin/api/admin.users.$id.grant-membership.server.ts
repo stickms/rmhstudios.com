@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
@@ -78,7 +79,7 @@ export const route = apiRoute('/api/admin/users/$id/grant-membership', {
         type: 'SYSTEM',
         entityType: 'membership',
         entityId: tier,
-        preview: `An admin granted you ${months} month(s) of ${tier === 'pro' ? 'Pro' : 'HARD-R'}!`,
+        preview: notice('membership-granted', { months, tier: tier === 'pro' ? 'Pro' : 'HARD-R' }),
         link: '/store?tab=membership',
       }).catch(() => {});
 

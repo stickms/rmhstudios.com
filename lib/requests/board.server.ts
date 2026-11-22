@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { pageSize } from '@/lib/pagination';
 /**
  * The public request board (F22) — service layer.
@@ -380,7 +381,7 @@ export async function updateRequest(
       type: 'SYSTEM',
       entityType: 'request',
       entityId: requestId,
-      preview: `Your request "${existing.title}" is now ${input.status.toLowerCase().replace('_', ' ')}`,
+      preview: notice('request-status', { title: existing.title, status: input.status.toLowerCase().replace('_', ' ') }),
       link: `/roadmap?request=${requestId}`,
     }).catch(() => {});
   }

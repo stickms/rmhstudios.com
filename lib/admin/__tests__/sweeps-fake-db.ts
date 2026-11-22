@@ -81,6 +81,7 @@ export interface FakeState {
   user: Row[];
   userStrike: Row[];
   notification: Row[];
+  adminAuditLog: Row[];
 }
 
 type Name = keyof FakeState;
@@ -94,6 +95,7 @@ export function createSweepDb(initial: Partial<FakeState> = {}) {
     user: [],
     userStrike: [],
     notification: [],
+    adminAuditLog: [],
     ...initial,
   };
   let seq = 0;
@@ -153,6 +155,12 @@ export function createSweepDb(initial: Partial<FakeState> = {}) {
         }
         return { count: n };
       },
+      deleteMany: async (args: { where: Row }) => {
+        const keep = state[name].filter((x) => !matches(x, args.where));
+        const n = state[name].length - keep.length;
+        state[name] = keep;
+        return { count: n };
+      },
       update: async (args: { where: Row; data: Row }) => {
         const r = state[name].find((x) => matches(x, args.where));
         if (!r) throw new Error('fake db: update of a missing row');
@@ -203,6 +211,7 @@ export function createSweepDb(initial: Partial<FakeState> = {}) {
     user: table('user'),
     userStrike: table('userStrike'),
     notification: table('notification'),
+    adminAuditLog: table('adminAuditLog'),
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => {
       const before = structuredClone(state);
       try {

@@ -11,7 +11,7 @@
 
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
-import { publishDueForUser, publishScheduledPost } from '@/lib/scheduled/publish.server';
+import { publishDueForUser, publishScheduledPost, withoutRecentlyRefused } from '@/lib/scheduled/publish.server';
 import { DAY_MS } from './constants';
 
 export interface CapsuleRow {
@@ -94,7 +94,7 @@ export async function publishDueScheduled(now: Date = new Date()): Promise<numbe
     });
     if (due.length === 0) break;
     let progressed = 0;
-    for (const sp of due) {
+    for (const sp of await withoutRecentlyRefused(due, now)) {
       try {
         const id = await publishScheduledPost(sp);
         if (id) progressed++;

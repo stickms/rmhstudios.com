@@ -85,6 +85,7 @@ export function MessageImages({
               </button>
               <p
                 id={`${base}-${i}`}
+                dir="auto"
                 hidden={!shown}
                 className={cn('t-body whitespace-pre-wrap break-words', !shown && 'hidden')}
               >

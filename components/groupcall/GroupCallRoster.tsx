@@ -231,7 +231,7 @@ function RosterRow({
     <li className={cn('surface-card flex items-center gap-2.5 rounded-site px-2.5 py-1.5', ringing && 'opacity-70')}>
       {avatar}
       <span className="flex min-w-0 flex-1 items-center gap-1.5">
-        <span className="truncate text-sm font-medium text-site-text">{displayName}</span>
+        <bdi className="truncate text-sm font-medium text-site-text">{displayName}</bdi>
         {host && (
           <>
             <Crown className="h-3.5 w-3.5 shrink-0 text-site-text-muted" aria-hidden />

@@ -15,7 +15,12 @@ export interface ScheduledRow {
   poll: { question?: string } | null;
   scheduledAt: string | null;
   createdAt: string;
+  /** Why the last publish attempt left this draft unpublished; null once the draft was edited since (s09-11). */
+  blockedReason: string | null;
 }
+
+/** The notices a refused attempt leaves; the newest per draft is the row's reason. */
+export const BLOCKED_NOTICE_TYPES = ['scheduled-refused', 'scheduled-alt-required'] as const;
 
 /**
  * The viewer's drafts + scheduled posts (publishing any that are now due first).
@@ -33,6 +38,30 @@ export async function listScheduled(
     orderBy: [{ scheduledAt: 'asc' }, { updatedAt: 'desc' }],
   });
 
+  // One query for every listed draft's refusal notices, newest first; the first per draft is the one that counts.
+  const notices =
+    rows.length > 0
+      ? await prisma.notification.findMany({
+          where: {
+            userId,
+            type: 'SYSTEM',
+            entityType: { in: [...BLOCKED_NOTICE_TYPES] },
+            entityId: { in: rows.map((r) => r.id) },
+          },
+          orderBy: { createdAt: 'desc' },
+          select: { entityId: true, preview: true, createdAt: true },
+        })
+      : [];
+  const newest = new Map<string, { preview: string; createdAt: Date }>();
+  for (const n of Array.isArray(notices) ? notices : []) {
+    if (n.entityId && n.preview && !newest.has(n.entityId)) newest.set(n.entityId, { preview: n.preview, createdAt: n.createdAt });
+  }
+  // Editing a draft bumps its `updatedAt`, which clears the line until the next due pass decides again.
+  const reasonOf = (r: (typeof rows)[number]): string | null => {
+    const n = newest.get(r.id);
+    return n && n.createdAt.getTime() > r.updatedAt.getTime() ? n.preview : null;
+  };
+
   const map = (r: (typeof rows)[number]): ScheduledRow => ({
     id: r.id,
     content: r.content,
@@ -46,6 +75,7 @@ export async function listScheduled(
     poll: (r.poll as { question?: string } | null) ?? null,
     scheduledAt: r.scheduledAt ? r.scheduledAt.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
+    blockedReason: reasonOf(r),
   });
 
   return {

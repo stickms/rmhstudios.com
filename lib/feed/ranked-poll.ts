@@ -6,6 +6,7 @@
  * `RMHarkPollVote` row per ranked option, `rank` 1..n without gaps. An option's `voteCount` on a ranked poll is its
  * first-preference count (rank 1), which is all anyone sees while the poll is open.
  */
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { ballotsFromVotes, instantRunoff, type IrvResult } from '@/lib/feed/poll-count';
 
 export const RANKED_MIN_OPTIONS = 3;
@@ -244,6 +245,18 @@ export function pollOptionCount(
 /** The end notice for a ranked poll's author, naming the winner; the option text is passed in. */
 export function rankedAuthorNoticeText(winnerText: string | null): string {
   return winnerText ? `Your ranked poll ended: ${winnerText} won the count` : 'Your ranked poll ended with no votes';
+}
+
+/** {@link rankedAuthorNoticeText} as a key and params. */
+export function rankedAuthorNotice(winnerText: string | null): NoticePreview {
+  return winnerText ? notice('poll-ranked-ended', { winner: winnerText }) : notice('poll-ranked-ended-no-votes', {});
+}
+
+/** {@link rankedVoterNoticeText} as a key and params. */
+export function rankedVoterNotice(winnerText: string | null): NoticePreview {
+  return winnerText
+    ? notice('poll-ranked-voter-ended-winner', { winner: winnerText })
+    : notice('poll-ranked-voter-ended', {});
 }
 
 /** The end notice for a voter in a ranked poll. */

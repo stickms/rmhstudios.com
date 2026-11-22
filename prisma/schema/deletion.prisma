@@ -1,0 +1,14 @@
+/// What a deletion request paused (s09-14), so signing back in restores exactly that and nothing the member or an
+/// admin had already switched off. Ids only. One row per member; erased with the account.
+model DeletionHold {
+  userId     String   @id
+  /// API keys this request suspended (reason `DELETION_REQUESTED`).
+  keyIds     String[] @default([])
+  /// Webhook endpoints this request disabled.
+  webhookIds String[] @default([])
+  createdAt  DateTime @default(now())
+
+  user User @relation("UserDeletionHold", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("deletion_hold")
+}

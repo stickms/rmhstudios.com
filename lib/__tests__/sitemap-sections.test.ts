@@ -18,6 +18,7 @@ const prismaMock = {
   libraryDocument: { count: vi.fn(), findMany: vi.fn() },
   album: { count: vi.fn(), findMany: vi.fn() },
   gameGuide: { count: vi.fn(), findMany: vi.fn() },
+  communityPage: { count: vi.fn(), findMany: vi.fn() },
   userBuild: { count: vi.fn(), findMany: vi.fn() },
   vibePage: { count: vi.fn(), findMany: vi.fn() },
   user: { count: vi.fn(), findMany: vi.fn() },

@@ -1,4 +1,5 @@
 /** Birthdays (G1) — server side. */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userChipSelect } from '@/lib/user-display';
@@ -98,7 +99,7 @@ export async function notifyTodaysBirthdays(now = new Date()): Promise<number> {
         type: 'SYSTEM',
         entityType: 'birthday',
         entityId: userId,
-        preview: `It's ${who}'s birthday today. Say happy birthday!`,
+        preview: notice('birthday-today', { name: who }),
         link: `/u/${user.handle ?? userId}`,
       }).catch(() => {});
       notified++;

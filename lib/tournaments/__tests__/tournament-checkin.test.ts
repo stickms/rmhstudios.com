@@ -6,6 +6,7 @@
  * moving a coin, check-in is refused outside the window, nobody can check you in
  * but the host or an admin, and the notice job claims each tournament once.
  */
+import { noticeFallbackText } from '@/lib/notifications/notice-keys';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createNotification = vi.hoisted(() => vi.fn(async (_input: unknown) => {}));
@@ -226,7 +227,9 @@ describe('start drops and refunds the unchecked', () => {
     const notified = createNotification.mock.calls.map((c: any) => c[0]);
     expect(notified.map((n: any) => n.userId).sort()).toEqual(['u5', 'u6']);
     expect(notified[0]).toMatchObject({ entityType: 'tournament_checkin', entityId: 't1' });
-    expect(notified[0].preview).toBe('You were removed from Friday Cup because you did not check in');
+    expect(noticeFallbackText(notified[0].preview)).toBe(
+      'You were removed from Friday Cup because you did not check in',
+    );
   });
 
   it('refunds once when the start is run twice', async () => {
@@ -443,7 +446,7 @@ describe('the check-in-open notice job', () => {
       type: 'SYSTEM',
       entityType: 'tournament_checkin',
       entityId: 't1',
-      preview: 'Check-in is open for Friday Cup',
+      preview: expect.objectContaining({ fallback: 'Check-in is open for Friday Cup' }),
       link: '/tournaments/t1',
     });
     expect(await runCheckInNotices(db, minutes(1))).toBe(0);

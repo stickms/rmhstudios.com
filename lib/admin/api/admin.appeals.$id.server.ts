@@ -11,6 +11,7 @@
  * ban an admin issued for separate reasons.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/admin/admin-ops.contract';
@@ -79,8 +80,8 @@ export const route = apiRoute('/api/admin/appeals/$id', {
         entityId: strike.id,
         preview:
           decision === 'OVERTURNED'
-            ? 'Your appeal was accepted — the strike has been removed from your account.'
-            : 'Your appeal was reviewed and the strike stands.',
+            ? notice('appeal-accepted', {})
+            : notice('appeal-upheld', {}),
       });
 
       return Response.json({ success: true, appealStatus: decision, banLifted });

@@ -82,6 +82,7 @@ export const QUIET_COUNT_READ_PATHS = [
   'app/routes/api/v1/feed.ts',
   'lib/api/v1/search.server.ts',
   'lib/api/v1/communities.server.ts',
+  'lib/api/v1/feeds.server.ts',
   'app/routes/api/v1/posts/$id.ts',
   'app/routes/api/v1/users/$handle/posts.ts',
   'app/routes/api/v1/me/bookmarks.ts',

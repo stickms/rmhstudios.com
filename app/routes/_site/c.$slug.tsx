@@ -5,6 +5,7 @@ import { CommunityColumn } from '@/components/feed/CommunityColumn';
 import { LockedCommunityPreview } from '@/components/communities/LockedCommunity';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { RssLink } from '@/components/feed/RssLink';
+import { WikiRow } from '@/components/communities/wiki/WikiRow';
 import { SITE_URL, buildCanonical, buildMeta } from '@/lib/seo';
 import {
   getCommunity,
@@ -28,7 +29,7 @@ const fetchCommunityPage = createServerFn({ method: 'GET' })
       const viewerId = session?.user?.id ?? null;
       const community = await getCommunity(slug, viewerId);
       // A locked (private, non-member) viewer gets metadata only: no feed query.
-      const feed = community?.locked ? null : await getCommunityFeed(slug, viewerId);
+      const feed = community?.locked ? null : await getCommunityFeed(slug, viewerId, { withPins: true });
       return { community, feed };
     },
   );
@@ -116,10 +117,12 @@ function CommunityPage() {
           <RssLink href={`/c/${slug}/rss.xml`} />
         </div>
       )}
+      {community && <WikiRow slug={slug} />}
       <CommunityColumn
         slug={slug}
         initialCommunity={community}
         initialItems={feed?.items ?? null}
+        initialPinned={feed?.pinned ?? null}
       />
     </PageFrame>
   );

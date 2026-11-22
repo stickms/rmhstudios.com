@@ -10,6 +10,7 @@
  * the gameplay/social action that triggered it.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoins } from '@/lib/economy/ledger.server';
 import { getAchievement } from '@/lib/achievements/catalog';
@@ -34,7 +35,10 @@ async function rewardUnlock(userId: string, achievementId: string, name: string,
     type: 'SYSTEM',
     entityType: 'achievement',
     entityId: achievementId,
-    preview: `Achievement unlocked: ${name}${coinReward > 0 ? ` (+${coinReward} coins)` : ''}`,
+    preview:
+      coinReward > 0
+        ? notice('achievement-unlocked-coins', { name, coins: coinReward })
+        : notice('achievement-unlocked', { name }),
     link: '/progress?tab=achievements',
   });
   // A first unlock marks a referred account as genuinely active — pay out the

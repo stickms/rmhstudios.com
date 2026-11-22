@@ -121,9 +121,9 @@ export const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
         />
         <div className="min-w-0">
           <span className="t-body flex items-center gap-1 font-semibold text-site-text">
-            <span className="truncate" style={nameStyle}>
+            <bdi className="truncate" style={nameStyle}>
               {displayName}
-            </span>
+            </bdi>
             <BadgeMark
               badge={cosmetics?.badge}
               size={16}

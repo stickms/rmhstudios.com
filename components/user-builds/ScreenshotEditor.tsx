@@ -210,6 +210,7 @@ export default function ScreenshotEditor({
             </label>
             <Input
               id={`${ids}-cover-alt`}
+              dir="auto"
               value={thumbnailAlt}
               maxLength={SCREENSHOT_DESCRIPTION_MAX}
               onChange={(e) => onThumbnailAlt(e.target.value)}
@@ -298,6 +299,7 @@ export default function ScreenshotEditor({
                     </label>
                     <Textarea
                       id={`${ids}-desc-${i}`}
+                      dir="auto"
                       rows={2}
                       value={item.description}
                       maxLength={SCREENSHOT_DESCRIPTION_MAX}

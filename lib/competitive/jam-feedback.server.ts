@@ -9,6 +9,7 @@
  * `notifyTeamOfFeedback` claims `GameJamEntry.feedbackNotifiedAt` with a compare-and-set, so ten raters inside an
  * hour produce one notification.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
@@ -152,8 +153,8 @@ export async function notifyTeamOfFeedback(
   const n = Math.max(1, count);
   const preview =
     n === 1
-      ? `New feedback on your entry in ${entry.jam.title}`
-      : `${n} new pieces of feedback on your entry in ${entry.jam.title}`;
+      ? notice('jam-feedback-one', { jam: entry.jam.title })
+      : notice('jam-feedback-many', { count: n, jam: entry.jam.title });
   for (const userId of new Set([entry.userId, ...team.map((m) => m.userId)])) {
     // The author is not told about their own words (and is never named: feedback can be anonymous).
     if (userId === authorId) continue;

@@ -5,7 +5,7 @@ import { ClozeText } from '@/components/study/ClozeText';
 import { CardPicture } from '@/components/study/CardPicture';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
-import { clozePlainText } from '@/lib/study/card-types';
+import { cardLabel } from '@/lib/study/card-types';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { suspendCardApi } from '@/lib/study/queue.contract';
@@ -62,7 +62,7 @@ export function DeckCardList({
     }
   }
 
-  const label = (c: DeckCard) => (c.kind === 'cloze' ? clozePlainText(c.front) : c.front);
+  const label = (c: DeckCard) => cardLabel(c);
 
   return (
     <div>
@@ -141,6 +141,19 @@ export function DeckCardList({
                 <>
                   <ClozeText text={c.front} index={null} reveal className="t-body text-site-text" />
                   {c.backImage && <CardPicture image={c.backImage} compact />}
+                </>
+              ) : c.kind === 'occlusion' ? (
+                <>
+                  {c.front.trim() !== '' && <p className="t-body font-medium">{c.front}</p>}
+                  <p className="t-meta">
+                    {t('type-occlusion-count', {
+                      ns: 'occlusion-cards',
+                      count: c.occlusion?.masks.length ?? 0,
+                      defaultValue_one: 'Picture occlusion, {{count}} card',
+                      defaultValue_other: 'Picture occlusion, {{count}} cards',
+                      defaultValue: 'Picture occlusion, {{count}} cards',
+                    })}
+                  </p>
                 </>
               ) : (
                 <>

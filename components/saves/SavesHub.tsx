@@ -288,8 +288,14 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-site-text">{save.title}</span>
-        {save.subtitle ? <span className="block truncate text-xs text-site-text-muted">{save.subtitle}</span> : null}
+        <span dir="auto" className="block truncate text-sm font-medium text-site-text">
+          {save.title}
+        </span>
+        {save.subtitle ? (
+          <span dir="auto" className="block truncate text-xs text-site-text-muted">
+            {save.subtitle}
+          </span>
+        ) : null}
       </span>
     </>
   );

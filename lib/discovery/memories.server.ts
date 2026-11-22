@@ -3,6 +3,7 @@
  * ONE query over the whole batch of opted-in members (index: userId, createdAt)
  * and sends each member at most one notification a day.
  */
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { utcDay } from './schema';
@@ -74,7 +75,10 @@ export async function runMemories(now = new Date()): Promise<number> {
         type: 'SYSTEM',
         entityType: 'memory',
         entityId: b.id,
-        preview: `${b.years === 1 ? '1 year ago today' : `${b.years} years ago today`}: ${b.content.replace(/\s+/g, ' ').trim().slice(0, 120)}`,
+        preview:
+          b.years === 1
+            ? notice('memory-one-year', { text: b.content.replace(/\s+/g, ' ').trim().slice(0, 120) })
+            : notice('memory-years', { years: b.years, text: b.content.replace(/\s+/g, ' ').trim().slice(0, 120) }),
         link: `/u/${b.handle ?? userId}/post/${b.id}`,
       });
       sent++;

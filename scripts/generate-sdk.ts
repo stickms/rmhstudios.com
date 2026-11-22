@@ -95,12 +95,34 @@ const NULLABLE: Record<string, string> = {
   frontImage: '{ url: string; alt: string } | null',
   backImage: '{ url: string; alt: string } | null',
 
+  // Sprint 09
+  // s09-03 occlusion-cards
+  occlusion: "{ mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null",
+
+  // s09-08 api-feeds
+  query: 'string | null',
+
+  // s09-09 api-practice
+  wpm: 'number | null',
+  accuracy: 'number | null',
+  timeMs: 'number | null',
+  mode: 'string | null',
+  score: 'number | null',
+  durationMs: 'number | null',
+  endedAt: 'string | null',
+  completedAt: 'string | null',
+  weeklyGoalMinutes: 'number | null',
+
+  // s09-10 api-sync-deletions
 };
 
 const SCHEDULED_ROW_FIELDS: Record<string, string> = {
   scheduledAt: 'string | null',
   poll: 'Record<string, unknown> | null',
 };
+
+// Response fields a later page omits (s09-09: `summary` rides the first page of focus sessions only).
+const OPTIONAL_FIELDS = new Set(['summary']);
 
 function tsOf(v: unknown, k = ''): string {
   if (v === null) return NULLABLE[k] ?? 'unknown';
@@ -110,7 +132,7 @@ function tsOf(v: unknown, k = ''): string {
     const row = 'held' in (v as Json) && 'postId' in (v as Json) && 'kind' in (v as Json);
     const entries = Object.entries(v as Json).map(([k, x]) => {
       const over = row ? SCHEDULED_ROW_FIELDS[k] : undefined;
-      return `${key(k)}: ${over ?? tsOf(x, k)}`;
+      return `${key(k)}${OPTIONAL_FIELDS.has(k) ? '?' : ''}: ${over ?? tsOf(x, k)}`;
     });
     return entries.length ? `{ ${entries.join('; ')} }` : 'Record<string, unknown>';
   }

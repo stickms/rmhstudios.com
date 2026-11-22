@@ -4,6 +4,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@features/doctrine/engine/doctrine.contract';
 import { getReputationLeaderboard } from '@features/doctrine/engine/reputation';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 
 export const route = apiRoute('/api/doctrine/reputation/leaderboard', {
   GET: implement(
@@ -22,7 +23,8 @@ export const route = apiRoute('/api/doctrine/reputation/leaderboard', {
       try {
         const url = new URL(request.url);
         const limit = pageSize(url.searchParams.get('limit'), 50, 100);
-        const leaderboard = await getReputationLeaderboard(limit);
+        const hidden = await leaderboardHiddenUserIds();
+        const leaderboard = await getReputationLeaderboard(limit, [...hidden]);
         return Response.json(leaderboard);
       } catch (e) {
         console.error('Doctrine reputation leaderboard failed:', e);

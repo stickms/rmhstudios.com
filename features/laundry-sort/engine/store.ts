@@ -13,6 +13,7 @@ import { DEFAULT_DIFFICULTY, DEFAULT_DURATION, type Difficulty, type MatchDurati
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import type { LobbySnapshot, LiveScore, MatchResults, MatchStartPayload, PublicLobbyInfo } from './net/events';
 import type { MatchStats } from './match';
+import { NO_LAUNDRY_ASSIST, type LaundryAssistFlags } from './assist-profile';
 
 export type Screen = 'menu' | 'lobby' | 'browse' | 'playing' | 'results';
 export type Mode = 'solo' | 'versus';
@@ -24,6 +25,8 @@ export interface SoloResult {
   /** Filled in once the score POST resolves. */
   submitted: 'idle' | 'pending' | 'done' | 'error';
   personalBest: boolean;
+  /** The server's verdict: false when the run was assisted and kept off the board; null until it answers. */
+  ranked: boolean | null;
 }
 
 interface LaundryStore {
@@ -47,6 +50,9 @@ interface LaundryStore {
   results: MatchResults | null;
   soloResult: SoloResult | null;
 
+  /** This round's assists (settings > Game assists), decided at round start. */
+  assist: LaundryAssistFlags;
+
   /** Last recoverable server message, surfaced inline rather than as a toast. */
   error: string | null;
 
@@ -64,6 +70,7 @@ interface LaundryStore {
   setLiveScores: (scores: LiveScore[]) => void;
   setResults: (results: MatchResults | null) => void;
   setSoloResult: (result: SoloResult | null) => void;
+  setAssist: (assist: LaundryAssistFlags) => void;
   patchSoloResult: (patch: Partial<SoloResult>) => void;
   setError: (message: string | null) => void;
   /** Back to the menu, keeping connection + setup preferences. */
@@ -86,6 +93,7 @@ const INITIAL = {
   liveScores: [],
   results: null,
   soloResult: null,
+  assist: NO_LAUNDRY_ASSIST,
   error: null,
 };
 
@@ -148,6 +156,10 @@ export const useLaundryStore = create<LaundryStore>((set) => ({
   setSoloResult: (soloResult) =>
     set({
       soloResult,
+    }),
+  setAssist: (assist) =>
+    set({
+      assist,
     }),
   patchSoloResult: (patch) =>
     set((state) =>

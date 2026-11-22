@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { createRankedChallengeApi, getRankedOverviewApi } from '@/lib/ranked/ranked.contract';
@@ -75,7 +76,7 @@ export const route = apiRoute('/api/ranked', {
         type: 'SYSTEM',
         entityType: 'ranked',
         entityId: challenge.id,
-        preview: `${session.user.name ?? 'Someone'} challenged you to a ranked match`,
+        preview: notice('ranked-challenge', { name: session.user.name ?? 'Someone' }),
         link: '/ranked',
       }).catch(() => {});
 

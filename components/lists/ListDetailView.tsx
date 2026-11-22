@@ -139,7 +139,11 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
             </div>
           </div>
         ) : null}
-        {list.bio ? <p className="text-sm text-site-text-muted">{list.bio}</p> : null}
+        {list.bio ? (
+          <p dir="auto" className="text-sm text-site-text-muted">
+            {list.bio}
+          </p>
+        ) : null}
         <div className="mt-3 flex -space-x-2">
           {members.slice(0, 12).map((m) => (
             <UserAvatar
@@ -193,7 +197,7 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
                       {p.author.name ?? p.author.handle}
                     </span>
                   </span>
-                  <span className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-site-text">
+                  <span dir="auto" className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-site-text">
                     {p.content}
                   </span>
                 </Link>

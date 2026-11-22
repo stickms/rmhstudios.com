@@ -1,3 +1,4 @@
+import { notice } from '@/lib/notifications/notice-keys';
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
@@ -81,7 +82,7 @@ export const Route = createFileRoute('/api/rmharks/$id/unlock')({
             type: 'SYSTEM',
             entityType: 'rmhark',
             entityId: id,
-            preview: `${session.user.name ?? 'Someone'} unlocked your post for 🪙 ${price}`,
+            preview: notice('post-unlocked', { name: session.user.name ?? 'Someone', price }),
           });
 
           return Response.json({ success: true, content: post.content });

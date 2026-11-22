@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
+import { ORPHAN_TTL_MS } from '@/lib/media/sweep-policy';
 
 function deps(
   rows: Array<{
@@ -7,6 +8,7 @@ function deps(
     url: string;
     userId: string;
     status: string;
+    createdAt?: Date;
   }>,
 ) {
   return {
@@ -147,5 +149,23 @@ describe('resolveMediaForPost', () => {
         attachedAt: null,
       },
     });
+  });
+});
+
+describe('resolveMediaForPost: an upload past the sweep threshold', () => {
+  const now = new Date('2026-06-22T12:00:00.000Z');
+  const row = (createdAt: Date) => ({ id: 'media_a', url: '/x.png', userId: 'u1', status: 'PENDING', createdAt });
+
+  it('is refused as not found, and nothing is flipped', async () => {
+    const d = deps([row(new Date(now.getTime() - ORPHAN_TTL_MS - 1))]);
+    const res = await resolveMediaForPost(d, { userId: 'u1', mediaIds: ['media_a'], postId: 'p1', now });
+    expect(res).toEqual({ ok: false, error: 'Media not found.' });
+    expect(d.prisma.media.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('still attaches one exactly at the threshold', async () => {
+    const d = deps([row(new Date(now.getTime() - ORPHAN_TTL_MS))]);
+    const res = await resolveMediaForPost(d, { userId: 'u1', mediaIds: ['media_a'], postId: 'p1', now });
+    expect(res.ok).toBe(true);
   });
 });

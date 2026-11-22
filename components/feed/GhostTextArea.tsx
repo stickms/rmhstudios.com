@@ -77,6 +77,7 @@ export const GhostTextArea = function GhostTextArea({ value, suggestion ='', onA
  autoComplete="off"
  autoCorrect="off"
  autoCapitalize="off"
+ dir="auto"
  {...props}
  ref={setRefs}
  value={value}

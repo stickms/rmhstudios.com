@@ -1,5 +1,7 @@
 /** Z2 — site-wide hunt. A member sees only their current clue's pointer; answers never leave the server. */
 import { prisma } from '@/lib/prisma.server';
+import { userNotHiddenWhere } from '@/lib/game/leaderboard-privacy';
+import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
 import { dropDelightConfigCache } from '@/lib/delight/config.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -106,8 +108,10 @@ export async function markerFor(userId: string, path: string): Promise<{ text: s
 export async function huntLeaderboard() {
   const hunt = await activeHunt();
   if (!hunt) return null;
+  // Hidden members are left out before the cut of 25, so the next finisher moves up.
+  const hidden = await leaderboardHiddenUserIds();
   const rows = await prisma.huntProgress.findMany({
-    where: { huntId: hunt.id, durationMs: { not: null } },
+    where: { huntId: hunt.id, durationMs: { not: null }, ...userNotHiddenWhere(hidden) },
     orderBy: { durationMs: 'asc' },
     take: 25,
     select: {

@@ -568,6 +568,10 @@ model ModerationSweep {
   /// The lease (copied from the bulk runner): a runner owns the sweep while this is newer than two minutes.
   heartbeatAt    DateTime?
   reclaims       Int       @default(0)
+  /// When a runner last took the lease; a reclaim counts only when this is later than reclaimedAt (s09-13).
+  claimedAt      DateTime?
+  /// When a reclaim pass last counted; null until the first.
+  reclaimedAt    DateTime?
   /// The keyset of a run: strictly after (cursorAt, cursorId) within cursorType ('rmhark' then 'comment').
   cursorType     String?   @db.VarChar(8)
   cursorAt       DateTime?

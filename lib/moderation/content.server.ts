@@ -8,6 +8,7 @@
  * audit log always gets a row, and a strike always links to what earned it.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { clearPinnedForComment } from '@/lib/feed/conversation-controls.server';
 import { feedEventBus } from '@/lib/feed-sse';
@@ -721,23 +722,23 @@ export async function moderateContent(input: ModerateContentInput): Promise<Mode
   if (notifyOwner) {
     const noun = TYPE_NOUN[type];
     const named = target.label ? ` “${target.label}”` : '';
-    const what =
-      action === 'remove'
-        ? `Your ${noun}${named} was removed by site moderation.`
-        : action === 'edit'
-          ? `Your ${noun}${named} was edited by site moderation.`
-          : `Your ${noun}${named} was restored by site moderation.`;
-    const why = action === 'restore' ? '' : ` Reason: ${input.reason}`;
-    const strikeNote = strike
-      ? ' A strike was added to your account; you can review or appeal it in Settings → Account status.'
-      : '';
+    const preview =
+      action === 'restore'
+        ? notice('moderation-restored', { noun, named })
+        : action === 'remove'
+          ? strike
+            ? notice('moderation-removed-strike', { noun, named, reason: input.reason })
+            : notice('moderation-removed', { noun, named, reason: input.reason })
+          : strike
+            ? notice('moderation-edited-strike', { noun, named, reason: input.reason })
+            : notice('moderation-edited', { noun, named, reason: input.reason });
     await createNotification({
       userId: ownerId!,
       type: 'SYSTEM',
       entityType: 'moderation',
       entityId: id,
       link: ACCOUNT_STATUS_LINK,
-      preview: `${what}${why}${strikeNote}`.slice(0, 1000),
+      preview,
     });
   }
 

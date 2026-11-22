@@ -129,8 +129,9 @@ export function KeyHeatmap({ keys, layout, className }: KeyHeatmapProps) {
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       {/* The keyboard is wider than a 360px phone, so IT scrolls — the page
-          never does. */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+          never does. `relative` makes this the containing block of the keys'
+          absolutely placed sr-only labels, which otherwise widen the page. */}
+      <div className="relative -mx-1 overflow-x-auto px-1 pb-1">
         <div className="flex w-max flex-col items-center gap-1.5">
           {rows.map((row, index) => (
             <div

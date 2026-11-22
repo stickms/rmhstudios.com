@@ -218,6 +218,7 @@ export function AltTextDialog({
         </label>
         <textarea
           id="alt-text-input"
+          dir="auto"
           autoFocus
           rows={3}
           maxLength={MAX_IMAGE_ALT_LENGTH}

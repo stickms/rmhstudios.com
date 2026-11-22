@@ -137,3 +137,27 @@ export async function clearKeyStats(userId: string, layout: TypingLayout): Promi
   const result = await prisma.rmhTypeKeyStat.deleteMany({ where: { userId, layout } });
   return result.count;
 }
+
+export interface RmhTypeKeyStatExportRow {
+  key: string;
+  layout: string;
+  attempts: number;
+  errors: number;
+  totalMs: number;
+}
+
+/** The member's own key counters for the account export: the three counters per key and layout, nothing else. */
+export async function exportRmhTypeKeyStats(userId: string): Promise<RmhTypeKeyStatExportRow[]> {
+  const rows = await prisma.rmhTypeKeyStat.findMany({
+    where: { userId },
+    orderBy: [{ layout: 'asc' }, { key: 'asc' }],
+    select: { key: true, layout: true, attempts: true, errors: true, totalMs: true },
+  });
+  return rows.map((row) => ({
+    key: row.key,
+    layout: row.layout,
+    attempts: row.attempts,
+    errors: row.errors,
+    totalMs: row.totalMs,
+  }));
+}

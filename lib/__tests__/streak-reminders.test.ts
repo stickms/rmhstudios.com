@@ -124,6 +124,8 @@ describe('insertAll', () => {
       entityType: 'streak_reminder',
       entityId: '3',
       preview: reminderPreview(3),
+      previewKey: 'streak-continues',
+      previewParams: { days: 3 },
       link: '/progress',
       read: false,
     });

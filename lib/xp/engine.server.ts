@@ -4,6 +4,7 @@
  * notification, and unlocks level-milestone achievements.
  */
 
+import { notice } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { levelFromXp } from '@/lib/xp/levels';
 import { currentSeasonId } from '@/lib/battlepass/season';
@@ -43,7 +44,7 @@ export async function awardXp(userId: string, amount: number): Promise<number | 
         type: 'SYSTEM',
         entityType: 'level',
         entityId: String(afterLevel),
-        preview: `You reached level ${afterLevel}!`,
+        preview: notice('level-reached', { level: afterLevel }),
         link: '/progress',
       });
       if (afterLevel >= 10) await grantAchievement(userId, 'special.level_10');

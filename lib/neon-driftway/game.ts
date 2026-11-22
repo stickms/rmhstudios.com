@@ -52,6 +52,13 @@ import {
   LANE_WIDTH,
 } from './constants';
 import { SeededRNG } from './rng';
+import {
+  NO_NDW_ASSIST,
+  headlightFlickerAllowed,
+  scaledStep,
+  shakeMagnitudeFor,
+  type NdwAssistFlags,
+} from './assist-profile';
 import { clamp } from '@/lib/core/math';
 
 /** Paint jobs handed out to traffic so the road isn't monochrome. */
@@ -425,6 +432,9 @@ export class NeonDriftwayEngine {
   headlightFlickerDim = false;
   flickerTimer = 0;
 
+  /** This run's assists, set before `startLevel` from the profile the server handed out. */
+  assist: NdwAssistFlags = NO_NDW_ASSIST;
+
   spawnTimer = 0;
   boostSpawnTimer = 0;
   nextObstacleId = 0;
@@ -580,8 +590,17 @@ export class NeonDriftwayEngine {
     this.state = 'countdown';
   }
 
+  setAssist(flags: NdwAssistFlags): void {
+    this.assist = flags;
+    if (flags.calm) {
+      this.shakeX = this.shakeY = this.shakeMagnitude = this.shakeTimer = 0;
+      this.headlightFlickerDim = false;
+    }
+  }
+
   update(dt: number, input: InputState): void {
-    dt = Math.min(dt, 0.033);
+    // The speed floor scales the whole simulation's clock (solo only; the flags carry 1 online).
+    dt = scaledStep(Math.min(dt, 0.033), this.assist);
 
     if (this.state === 'countdown') {
       this.countdownTimer -= dt;
@@ -1140,6 +1159,10 @@ export class NeonDriftwayEngine {
   // ── Level 3: Headlights ──
 
   private updateHeadlights(dt: number): void {
+    if (!headlightFlickerAllowed(this.assist)) {
+      this.headlightFlickerDim = false;
+      return;
+    }
     this.flickerTimer += dt;
     if (this.flickerTimer > 0.8) {
       this.flickerTimer = 0;
@@ -1213,7 +1236,9 @@ export class NeonDriftwayEngine {
 
   // ── Screen Shake ──
 
-  private triggerShake(magnitude: number, durationMs: number): void {
+  private triggerShake(requested: number, durationMs: number): void {
+    const magnitude = shakeMagnitudeFor(requested, this.assist);
+    if (magnitude <= 0) return;
     this.shakeMagnitude = Math.max(this.shakeMagnitude, magnitude);
     this.shakeDuration = durationMs / 1000;
     this.shakeTimer = this.shakeDuration;

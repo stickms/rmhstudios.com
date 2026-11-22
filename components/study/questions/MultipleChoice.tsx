@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MultipleChoiceQuestion } from '@/lib/study/practice-test';
-import { CardPicture } from '@/components/study/CardPicture';
+import { PromptPicture, useQuestionPrompt } from '@/components/study/questions/PromptPicture';
 import { Verdict } from '@/components/study/questions/Verdict';
 
 /** Four options as native radio buttons inside a fieldset whose legend is the prompt. */
@@ -17,13 +17,14 @@ export function MultipleChoice({
   locked: boolean;
 }) {
   const { t } = useTranslation('study-tests');
+  const prompt = useQuestionPrompt(question);
   const name = useId();
   return (
     <fieldset className="space-y-3">
       <legend className="t-prose whitespace-pre-wrap text-site-text" dir="auto">
-        {question.prompt}
+        {prompt}
       </legend>
-      {question.promptImage && <CardPicture image={question.promptImage} eager />}
+      {question.promptImage && <PromptPicture image={question.promptImage} occlusion={question.promptOcclusion} />}
       <div className="border-t border-site-border">
         {question.options.map((option, i) => {
           const isAnswer = i === question.answerIndex;

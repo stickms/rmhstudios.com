@@ -70,7 +70,7 @@ function VersionDiff({
         ) : null}
       </div>
 
-      <p className="text-body leading-relaxed break-words whitespace-pre-wrap text-site-text">
+      <p dir="auto" className="text-body leading-relaxed break-words whitespace-pre-wrap text-site-text">
         {previous ? (
           parts.map((part, i) => {
             if (part.op === 'equal') return <span key={i}>{part.value}</span>;

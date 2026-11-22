@@ -20,6 +20,8 @@
  * appearance (a new date) does.
  */
 
+import { notice, type NoticePreview } from '@/lib/notifications/notice-keys';
+
 export type AlertReason = 'price-drop' | 'target-met' | 'daily-shop';
 
 export interface AlertFacts {
@@ -66,6 +68,18 @@ export function decideAlert(f: AlertFacts): AlertDecision | null {
     });
 
   return candidates.find((c) => c.key !== f.lastAlertKey) ?? null;
+}
+
+/** The same notice as a key and params, for the inbox to write in the reader's language. */
+export function alertNotice(reason: AlertReason, itemName: string, price: number | null): NoticePreview {
+  switch (reason) {
+    case 'price-drop':
+      return notice('wishlist-price-drop', { item: itemName, price: price ?? '' });
+    case 'target-met':
+      return notice('wishlist-target-met', { item: itemName, price: price ?? '' });
+    case 'daily-shop':
+      return notice('wishlist-daily-shop', { item: itemName });
+  }
 }
 
 /** The notification text for a decision. */

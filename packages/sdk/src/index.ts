@@ -48,6 +48,8 @@ export interface ListMyBookmarksArgs {
   limit?: number;
   /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
   cursor?: string;
+  /** Only bookmarks made after this ISO 8601 instant. */
+  since?: string;
 }
 
 export type ListMyBookmarksResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string }; bookmarkedAt: string }[]; nextCursor: string | null };
@@ -480,12 +482,14 @@ export interface ListMyDeckCardsArgs {
   limit?: number;
   /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
   cursor?: string;
+  /** Only cards created after this ISO 8601 instant, still in deck order. Editing a card does not change its creation time; deleted cards are in `GET /api/v1/me/deleted?kind=card`. */
+  since?: string;
 }
 
-export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null }[]; nextCursor: string | null };
+export type ListMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null }[]; nextCursor: string | null };
 
 export interface CreateMyDeckCardsBody {
-  /** 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. */
+  /** 1–100 cards: `{ kind?, front, back?, externalId?, frontImage?, backImage?, occlusion? }`. `front` and `back` up to 500 characters (a cloze `front` up to 1000; an occlusion card’s `front` is an optional prompt and its `back` an optional note); `externalId` up to 100 characters, unique in the deck. A picture is `{ media_id, alt }`: `media_id` from `POST /api/v1/images` with `surface=flashcard`, `alt` a required description (up to 1,000 characters). A cloze card takes a picture on the back only. An occlusion card needs a front picture (a still image) and `occlusion: { mode: "hide-all" | "hide-one", masks: [{ id?, x, y, w, h, label }] }`: 1–20 masks in picture-relative units (0–1, at least 0.02 wide and tall, inside the picture), `label` the answer (up to 200 characters); a mask with no `id` takes the next free one. */
   cards?: string[];
 }
 
@@ -497,12 +501,12 @@ export interface CreateMyDeckCardsArgs {
   body: CreateMyDeckCardsBody;
 }
 
-export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null }[]; cardCount: number };
+export type CreateMyDeckCardsResponse = { data: { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null }[]; cardCount: number };
 
 export interface UpdateMyDeckCardBody {
-  /** `basic`, `reversible` or `cloze`. */
+  /** `basic`, `reversible`, `cloze` or `occlusion`. */
   kind?: string;
-  /** The front (a cloze card’s whole text). */
+  /** The front (a cloze card’s whole text; an occlusion card’s optional prompt). */
   front?: string;
   /** The back. */
   back?: string;
@@ -510,6 +514,8 @@ export interface UpdateMyDeckCardBody {
   frontImage?: Record<string, unknown>;
   /** The picture on the back, the same shape as `frontImage`. */
   backImage?: Record<string, unknown>;
+  /** The masks of an occlusion card: `{ mode: "hide-all" | "hide-one", masks: [{ id?, x, y, w, h, label }] }`. Send back the `id`s a read returned so each mask keeps its card’s review history. `null` clears them (a card changed to another kind). */
+  occlusion?: Record<string, unknown>;
 }
 
 export interface UpdateMyDeckCardArgs {
@@ -522,7 +528,7 @@ export interface UpdateMyDeckCardArgs {
   body: UpdateMyDeckCardBody;
 }
 
-export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null };
+export type UpdateMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string | null; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null };
 
 export interface DeleteMyDeckCardArgs {
   /** The deck id. */
@@ -534,9 +540,9 @@ export interface DeleteMyDeckCardArgs {
 }
 
 export interface UpsertMyDeckCardBody {
-  /** `basic` (default), `reversible` or `cloze`. */
+  /** `basic` (default), `reversible`, `cloze` or `occlusion`. */
   kind?: string;
-  /** The front. */
+  /** The front. Optional for an occlusion card, where it is the prompt. */
   front?: string;
   /** The back (not used by cloze cards). */
   back?: string;
@@ -544,6 +550,8 @@ export interface UpsertMyDeckCardBody {
   frontImage?: Record<string, unknown>;
   /** The picture on the back, the same shape as `frontImage`. */
   backImage?: Record<string, unknown>;
+  /** The masks of an occlusion card, as for `POST …/cards`. Send back the `id`s a read returned so each mask keeps its card’s review history. */
+  occlusion?: Record<string, unknown>;
 }
 
 export interface UpsertMyDeckCardArgs {
@@ -556,7 +564,7 @@ export interface UpsertMyDeckCardArgs {
   body: UpsertMyDeckCardBody;
 }
 
-export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null };
+export type UpsertMyDeckCardResponse = { id: string; kind: string; front: string; back: string; position: number; externalId: string; frontImage: { url: string; alt: string } | null; backImage: { url: string; alt: string } | null; occlusion: { mode: 'hide-all' | 'hide-one'; masks: { id: number; x: number; y: number; w: number; h: number; label: string }[] } | null };
 
 export interface GetMyDeckDueArgs {
   /** The deck id. */
@@ -679,7 +687,7 @@ export interface ListCommunityPostsArgs {
   flair?: string;
 }
 
-export type ListCommunityPostsResponse = { data: { id: string; content: string; imageUrls: unknown[]; imageAlts: unknown[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; createdAt: string; author: { id: string; name: string; handle: string; image: string }; metrics: { likes: number; comments: number; reposts: number; views: number }; flair: { id: string; name: string; color: string } }[]; nextCursor: string | null };
+export type ListCommunityPostsResponse = { data: { id: string; content: string; imageUrls: unknown[]; imageAlts: unknown[]; gifUrl: string | null; gifAlt: string | null; sensitive: boolean; contentWarning: string | null; pinnedReplyId: string | null; pinned: boolean; createdAt: string; author: { id: string; name: string; handle: string; image: string }; metrics: { likes: number; comments: number; reposts: number; views: number }; flair: { id: string; name: string; color: string } }[]; nextCursor: string | null };
 
 export interface ListMyHighlightsArgs {
   /** Page size, 1–100 (default 30). */
@@ -966,6 +974,103 @@ export interface SearchPeopleArgs {
 
 export type SearchPeopleResponse = { data: { id: string; name: string; handle: string; image: string; bio: string | null; location: string | null; website: string | null; createdAt: string }[]; nextCursor: string | null };
 
+export interface ListMyFeedsArgs {
+  /** Only this kind: `feed`, `list`, `search` or `alert`. */
+  kind?: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyFeedsResponse = { data: { id: string; kind: string; name: string; description: string | null; visibility: string; pinned: boolean; tags: string[]; keywords: string[]; query: string | null; types: string[]; notify: boolean; subscribers: number; createdAt: string; updatedAt: string }[]; nextCursor: string | null };
+
+export interface GetMyFeedArgs {
+  /** The feed id. */
+  id: string;
+}
+
+export type GetMyFeedResponse = { id: string; kind: string; name: string; description: string | null; visibility: string; pinned: boolean; tags: string[]; keywords: string[]; query: string | null; types: string[]; notify: boolean; subscribers: number; createdAt: string; updatedAt: string; members: string[] };
+
+export interface ListFeedPostsArgs {
+  /** The feed id. */
+  id: string;
+  /** Page size, 1–50 (default 20). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListFeedPostsResponse = { data: { id: string; content: string; audience: string; sensitive: boolean; contentWarning: string | null; createdAt: string; metrics: { likes: number; comments: number; reposts: number; views: number }; author: { id: string; name: string; handle: string; image: string } }[]; nextCursor: string | null };
+
+export interface ReplaceListMembersBody {
+  /** The handles of the members, with or without a leading `@`. At most 500. */
+  handles?: string[];
+}
+
+export interface ReplaceListMembersArgs {
+  /** The list id. */
+  id: string;
+  /** Retried requests with the same key are applied once. */
+  idempotencyKey?: string;
+  body: ReplaceListMembersBody;
+}
+
+export type ReplaceListMembersResponse = { id: string; memberCount: number; members: string[]; skipped: { handle: string; reason: string }[] };
+
+export type GetMyTypingResponse = { profiles: { difficulty: string; totalGamesPlayed: number; totalWins: number; bestWpm: number; bestWpmAccuracy: number; avgWpm: number; bestAccuracy: number; avgAccuracy: number; totalCharsTyped: number; totalTimeMs: number; currentStreak: number; bestStreak: number; updatedAt: string }[]; lessons: { lessonId: string; bestWpm: number; bestAccuracy: number; stars: number; attempts: number; completedAt: string | null }[] };
+
+export interface ListMyTypingDailyArgs {
+  /** First day, inclusive. Default: 29 days before `to`. */
+  from?: string;
+  /** Last day, inclusive. Default: today (UTC). */
+  to?: string;
+}
+
+export type ListMyTypingDailyResponse = { from: string; to: string; data: { day: string; passageId: string; wpm: number | null; accuracy: number | null; timeMs: number | null; finishedAt: string | null }[] };
+
+export interface ListMyTypingKeysArgs {
+  /** Only this layout: `qwerty`, `azerty`, `dvorak` or `colemak`. Default: every layout you have data for. */
+  layout?: string;
+}
+
+export type ListMyTypingKeysResponse = { minAttempts: number; data: { key: string; layout: string; attempts: number; errors: number; totalMs: number; msPerKey: number; errorRate: number; weakness: number }[] };
+
+export interface ListMyMusicPracticeArgs {
+  /** Only entries at or after this ISO 8601 instant. */
+  since?: string;
+  /** Page size, 1–100 (default 50). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyMusicPracticeResponse = { data: { id: number; kind: string; refId: string; mode: string | null; score: number | null; durationMs: number | null; createdAt: string }[]; nextCursor: string | null };
+
+export interface ListMyFocusSessionsArgs {
+  /** Only sessions started at or after this ISO 8601 instant. */
+  since?: string;
+  /** Page size, 1–100 (default 50). */
+  limit?: number;
+  /** Opaque cursor from a previous `nextCursor` to fetch the next page. */
+  cursor?: string;
+}
+
+export type ListMyFocusSessionsResponse = { summary?: { weeklyGoalMinutes: number | null; timeZone: string | null }; data: { id: string; focusTimeMs: number; breakTimeMs: number; sessionsInRun: number; startedAt: string; endedAt: string | null }[]; nextCursor: string | null };
+
+export interface ListMyDeletedArgs {
+  /** `highlight`, `deck`, `card`, `bookmark` or `shelf_entry`. */
+  kind: string;
+  /** Only deletions after this ISO 8601 instant. At most 90 days ago, or `410 sync_window_expired`. */
+  since?: string;
+  /** Opaque cursor from a previous `nextCursor`. */
+  cursor?: string;
+  /** Page size, 1–500 (default 100). */
+  limit?: number;
+}
+
+export type ListMyDeletedResponse = { data: { id: string; kind: string; deletedAt: string }[]; nextCursor: string | null };
+
 export class RmhClient {
   private apiKey: string;
   private baseUrl: string;
@@ -1014,7 +1119,7 @@ export class RmhClient {
 
   /** List your bookmarks (scope: read:bookmarks) */
   listMyBookmarks(args: ListMyBookmarksArgs = {}): Promise<ListMyBookmarksResponse> {
-    return this.request<ListMyBookmarksResponse>("GET", { path: "/api/v1/me/bookmarks", query: { limit: args.limit, cursor: args.cursor } });
+    return this.request<ListMyBookmarksResponse>("GET", { path: "/api/v1/me/bookmarks", query: { limit: args.limit, cursor: args.cursor, since: args.since } });
   }
 
   /** List who you follow (scope: read:profile) */
@@ -1239,7 +1344,7 @@ export class RmhClient {
 
   /** List a deck’s cards (scope: read:study) */
   listMyDeckCards(args: ListMyDeckCardsArgs): Promise<ListMyDeckCardsResponse> {
-    return this.request<ListMyDeckCardsResponse>("GET", { path: "/api/v1/me/decks/{id}/cards", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor } });
+    return this.request<ListMyDeckCardsResponse>("GET", { path: "/api/v1/me/decks/{id}/cards", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor, since: args.since } });
   }
 
   /** Add cards (scope: write:study) */
@@ -1430,5 +1535,55 @@ export class RmhClient {
   /** Search people (scope: read:search) */
   searchPeople(args: SearchPeopleArgs): Promise<SearchPeopleResponse> {
     return this.request<SearchPeopleResponse>("GET", { path: "/api/v1/search/people", query: { q: args.q, limit: args.limit } });
+  }
+
+  /** List your feeds (scope: read:feeds) */
+  listMyFeeds(args: ListMyFeedsArgs = {}): Promise<ListMyFeedsResponse> {
+    return this.request<ListMyFeedsResponse>("GET", { path: "/api/v1/me/feeds", query: { kind: args.kind, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Get one of your feeds (scope: read:feeds) */
+  getMyFeed(args: GetMyFeedArgs): Promise<GetMyFeedResponse> {
+    return this.request<GetMyFeedResponse>("GET", { path: "/api/v1/me/feeds/{id}", pathParams: { id: args.id } });
+  }
+
+  /** Read a feed's posts (scope: read:feeds) */
+  listFeedPosts(args: ListFeedPostsArgs): Promise<ListFeedPostsResponse> {
+    return this.request<ListFeedPostsResponse>("GET", { path: "/api/v1/feeds/{id}/posts", pathParams: { id: args.id }, query: { limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Replace a list's members (scope: write:feeds) */
+  replaceListMembers(args: ReplaceListMembersArgs): Promise<ReplaceListMembersResponse> {
+    return this.request<ReplaceListMembersResponse>("PUT", { path: "/api/v1/me/feeds/{id}/members", pathParams: { id: args.id }, body: args.body, idempotencyKey: args.idempotencyKey });
+  }
+
+  /** Your typing summary (scope: read:practice) */
+  getMyTyping(): Promise<GetMyTypingResponse> {
+    return this.request<GetMyTypingResponse>("GET", { path: "/api/v1/me/typing" });
+  }
+
+  /** Your daily typing entries (scope: read:practice) */
+  listMyTypingDaily(args: ListMyTypingDailyArgs = {}): Promise<ListMyTypingDailyResponse> {
+    return this.request<ListMyTypingDailyResponse>("GET", { path: "/api/v1/me/typing/daily", query: { from: args.from, to: args.to } });
+  }
+
+  /** Your per-key typing figures (scope: read:practice) */
+  listMyTypingKeys(args: ListMyTypingKeysArgs = {}): Promise<ListMyTypingKeysResponse> {
+    return this.request<ListMyTypingKeysResponse>("GET", { path: "/api/v1/me/typing/keys", query: { layout: args.layout } });
+  }
+
+  /** Your music practice entries (scope: read:practice) */
+  listMyMusicPractice(args: ListMyMusicPracticeArgs = {}): Promise<ListMyMusicPracticeResponse> {
+    return this.request<ListMyMusicPracticeResponse>("GET", { path: "/api/v1/me/music/practice", query: { since: args.since, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** Your focus sessions (scope: read:practice) */
+  listMyFocusSessions(args: ListMyFocusSessionsArgs = {}): Promise<ListMyFocusSessionsResponse> {
+    return this.request<ListMyFocusSessionsResponse>("GET", { path: "/api/v1/me/focus-sessions", query: { since: args.since, limit: args.limit, cursor: args.cursor } });
+  }
+
+  /** List what you deleted (scope: read:reading) */
+  listMyDeleted(args: ListMyDeletedArgs): Promise<ListMyDeletedResponse> {
+    return this.request<ListMyDeletedResponse>("GET", { path: "/api/v1/me/deleted", query: { kind: args.kind, since: args.since, cursor: args.cursor, limit: args.limit } });
   }
 }

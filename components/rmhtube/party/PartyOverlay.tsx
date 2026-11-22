@@ -66,7 +66,7 @@ export default function PartyOverlay() {
             className="max-w-[70%] truncate rounded-app-sm bg-app-scrim px-2 py-0.5 text-xs text-app-text"
           >
             <span className="text-app-text-muted">{c.author}: </span>
-            {c.body}
+            <bdi>{c.body}</bdi>
           </li>
         ))}
       </ul>

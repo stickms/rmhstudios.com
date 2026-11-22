@@ -43,6 +43,7 @@ export default function BingoTab() {
           })}
         </p>
         <textarea
+          dir="auto"
           className={`${input} h-40`}
           value={text}
           onChange={(e) => setText(e.target.value)}

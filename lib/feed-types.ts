@@ -164,6 +164,8 @@ export interface FeedItem {
   hasEmbed?: boolean;
   /** A vibe page is pinned to the post (RMH Vibes). */
   hasVibe?: boolean;
+  /** s09-06: a moderator pinned this post to the top of its community (community feeds only; `pinned` is the profile pin). */
+  communityPinned?: boolean;
   /** s03-13: the community this post was read from (community feed only), for "breaks a rule" reports. */
   communitySlug?: string;
   /** N1: community post flair (community feeds only). */

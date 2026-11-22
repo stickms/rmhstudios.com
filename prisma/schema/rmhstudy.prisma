@@ -101,15 +101,18 @@ model Flashcard {
   back       String   @db.Text
   position   Int      @default(0)
   createdAt  DateTime @default(now())
-  /// basic | reversible | cloze. An authored card (`sourceId` null) carries the
+  /// basic | reversible | cloze | occlusion. An authored card (`sourceId` null) carries the
   /// kind the owner chose; generated siblings carry `reversible` (the reverse
-  /// side) or `cloze` (one per deletion index). An authored cloze row is never
-  /// reviewed; its siblings are.
+  /// side), `cloze` (one per deletion index) or `occlusion` (one per mask). An authored
+  /// cloze or occlusion row is never reviewed; its siblings are.
   kind       String   @default("basic") @db.VarChar(10)
   /// The authored card this row was generated from; null for an authored card.
   sourceId   String?
-  /// The cloze deletion index (cN) a cloze sibling hides; null otherwise.
+  /// The deletion (cloze cN) or mask (occlusion, the mask's stable `id`) a sibling hides; null otherwise.
   clozeIndex Int?
+  /// On an authored occlusion card: `{ mode: 'hide-all' | 'hide-one', masks: [{ id, x, y, w, h, label }] }`, the
+  /// rectangles over the front picture in picture-relative units (s09-03). Null on every other row.
+  occlusion  Json?
   /// On a copied authored card: the source deck's card it came from, and the hash of that card's
   /// kind, front and back when it was copied or last synced. Null on cards the member wrote.
   originCardId String? @db.VarChar(30)

@@ -31,6 +31,17 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import {
+  COLOR_SAFE_BOOST,
+  COLOR_SAFE_HAZARD,
+  COLOR_SAFE_HAZARD_DARK,
+  NO_NDW_ASSIST,
+  bloomTargetFor,
+  crashFlashScale,
+  lightningAllowed,
+  motionEffectsAllowed,
+  type NdwAssistFlags,
+} from './assist-profile';
 
 import { RenderScaleGovernor } from '@/lib/render/scale-governor';
 import type { NeonDriftwayEngine } from './game';
@@ -240,6 +251,11 @@ export class NeonDriftwayRenderer3D {
   private stereo = false;
   private reducedMotion: boolean;
   private wantsBloom: boolean;
+  private assist: NdwAssistFlags = NO_NDW_ASSIST;
+  private safeTextures: THREE.CanvasTexture[] = [];
+  private safeHazardTexture: THREE.CanvasTexture | null = null;
+  private safeBoostTexture: THREE.CanvasTexture | null = null;
+  private stockBarrierMap: THREE.Texture | null = null;
   private time = 0;
   private lightning = 0;
   private lightningTimer = 6;
@@ -413,6 +429,95 @@ export class NeonDriftwayRenderer3D {
     this.reducedMotion = on;
   }
 
+  /**
+   * Assists for this run. Calm visuals takes out the crash flash, shake, bob, streaks,
+   * lightning and most of the bloom; colour-safe swaps the hazard and boost markings for
+   * the colour-safe pair with a stripe or a chevron. Both only remove or restyle effects.
+   */
+  setAssist(flags: NdwAssistFlags): void {
+    this.assist = flags;
+    if (flags.calm) {
+      this.lightning = 0;
+      this.impactLight.intensity = 0;
+      if (this.bloomPass) this.bloomPass.strength = bloomTargetFor(this.bloomPass.strength, flags);
+    }
+    this.applyColorSafe(flags.colorSafe);
+  }
+
+  private applyColorSafe(on: boolean): void {
+    const hazard = on ? (this.safeHazardTexture ??= this.makeSafeHazardTexture()) : null;
+    const boost = on ? (this.safeBoostTexture ??= this.makeSafeBoostTexture()) : null;
+    const set = (mesh: THREE.InstancedMesh, color: number | null, map: THREE.Texture | null, emissive?: number) => {
+      const mat = mesh.material as THREE.MeshStandardMaterial | THREE.MeshBasicMaterial;
+      if (color !== null) mat.color.set(color);
+      mat.map = map;
+      if (emissive !== undefined && 'emissive' in mat) mat.emissive.set(emissive);
+      mat.needsUpdate = true;
+    };
+    const safeHazard = new THREE.Color(COLOR_SAFE_HAZARD).getHex();
+    set(this.cones, on ? 0xffffff : 0xff8a3a, hazard, on ? safeHazard : 0xff5a1a);
+    const barrierMat = this.barriers.material as THREE.MeshStandardMaterial;
+    this.stockBarrierMap ??= barrierMat.map;
+    set(this.barriers, null, on ? hazard : this.stockBarrierMap, on ? safeHazard : 0xff4466);
+    set(this.debris, on ? 0xffffff : 0x8a8a99, hazard, on ? safeHazard : 0x442255);
+    set(this.boostPads, on ? 0xffffff : 0xff8fd0, boost);
+    (this.boostBeams.material as THREE.MeshBasicMaterial).color.set(on ? COLOR_SAFE_BOOST : 0xff5cf0);
+  }
+
+  /** Orange stripes on near-black, for every hazard. */
+  private makeSafeHazardTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = COLOR_SAFE_HAZARD_DARK;
+      ctx.fillRect(0, 0, 64, 64);
+      ctx.fillStyle = COLOR_SAFE_HAZARD;
+      for (let x = -64; x < 128; x += 32) {
+        ctx.beginPath();
+        ctx.moveTo(x, 64);
+        ctx.lineTo(x + 16, 64);
+        ctx.lineTo(x + 80, 0);
+        ctx.lineTo(x + 64, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    this.safeTextures.push(texture);
+    return texture;
+  }
+
+  /** Light chevrons on blue, pointing down the road. */
+  private makeSafeBoostTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = COLOR_SAFE_BOOST;
+      ctx.fillRect(0, 0, 64, 64);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 8;
+      ctx.lineJoin = 'miter';
+      for (let y = 4; y < 64; y += 32) {
+        ctx.beginPath();
+        ctx.moveTo(8, y + 20);
+        ctx.lineTo(32, y);
+        ctx.lineTo(56, y + 20);
+        ctx.stroke();
+      }
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    this.safeTextures.push(texture);
+    return texture;
+  }
+
   /** Point "forward" at wherever the device is aimed right now. */
   recenterView(): void {
     this.look.recenter();
@@ -466,6 +571,7 @@ export class NeonDriftwayRenderer3D {
     for (const texture of this.ghostLabelCache.values()) texture.dispose();
     this.ghostLabelCache.clear();
     this.roadTexture?.dispose();
+    for (const texture of this.safeTextures) texture.dispose();
     this.liveryTexture?.dispose();
     this.envTarget?.dispose();
     this.pmrem?.dispose();
@@ -598,10 +704,10 @@ export class NeonDriftwayRenderer3D {
 
   private updateCarRig(dt: number, game: NeonDriftwayEngine): void {
     const car = game.car;
-    const shake = this.reducedMotion ? 0.25 : 1;
+    const shake = this.assist.calm ? 0 : this.reducedMotion ? 0.25 : 1;
 
     // Speed-scaled bob keeps the cabin alive without inducing motion sickness.
-    const bobAmount = this.reducedMotion ? 0 : 0.006 + (car.speed / V_MAX_BOOST) * 0.012;
+    const bobAmount = !motionEffectsAllowed(this.assist, this.reducedMotion) ? 0 : 0.006 + (car.speed / V_MAX_BOOST) * 0.012;
     this.headBob += dt * (6 + (car.speed / V_MAX_BOOST) * 10);
 
     this.carRig.position.set(car.x + game.shakeX * shake, game.shakeY * shake, 0);
@@ -960,7 +1066,7 @@ export class NeonDriftwayRenderer3D {
 
     // Speed streaks only show up once the car is genuinely quick.
     const streakStrength = clamp((game.car.speed - V_MAX_NORMAL * 0.62) / (V_MAX_BOOST - V_MAX_NORMAL * 0.62), 0, 1);
-    this.streaks.visible = streakStrength > 0.02 && !this.reducedMotion;
+    this.streaks.visible = streakStrength > 0.02 && motionEffectsAllowed(this.assist, this.reducedMotion);
     if (this.streaks.visible) {
       (this.streaks.material as THREE.LineBasicMaterial).opacity = streakStrength * 0.5;
       const rush = 60 + streakStrength * 190;
@@ -984,7 +1090,7 @@ export class NeonDriftwayRenderer3D {
 
     // Distant lightning on the storm level — skipped under reduced motion,
     // where a full-scene flash is exactly the wrong thing to do.
-    if (visuals.rain > 0 && !this.reducedMotion) {
+    if (visuals.rain > 0 && lightningAllowed(this.assist, this.reducedMotion)) {
       this.lightningTimer -= dt;
       if (this.lightningTimer <= 0) {
         this.lightningTimer = 5 + Math.random() * 11;
@@ -1012,14 +1118,14 @@ export class NeonDriftwayRenderer3D {
     // Crash flash: bright for a moment right after a hit, then gone.
     const sinceHit = game.car.invincibleUntil - game.elapsedMs;
     const flash = clamp(sinceHit / 600, 0, 1);
-    this.impactLight.intensity = flash * 260;
+    this.impactLight.intensity = flash * 260 * crashFlashScale(this.assist);
     this.impactLight.position.set(game.car.x, 1.4, -2.5);
 
     if (this.bloomPass) {
       const boosting = game.car.speed > V_MAX_NORMAL;
       const target =
         (visuals.roadside === 'neon' ? 0.75 : 0.45) + (boosting ? 0.35 : 0) + (game.car.boostMeter / BOOST_MAX) * 0.1;
-      this.bloomPass.strength += (target - this.bloomPass.strength) * Math.min(1, dt * 4);
+      this.bloomPass.strength += (bloomTargetFor(target, this.assist) - this.bloomPass.strength) * Math.min(1, dt * 4);
     }
   }
 

@@ -9,6 +9,7 @@
  * off and members who already have a notification for that note or guide, and writes the rest with one `createMany`
  * per batch. A retried job therefore notifies nobody twice.
  */
+import { notice, noticeColumns, type NoticePreview } from '@/lib/notifications/notice-keys';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { games } from '@/lib/catalog';
@@ -20,9 +21,7 @@ import {
   GAME_GUIDE_ENTITY,
   GAME_UPDATE_ENTITY,
   gameGuideLink,
-  gameGuidePreview,
   gameUpdateLink,
-  gameUpdatePreview,
   pageOf,
   UPDATES_PAGE_SIZE,
   type FanoutJob,
@@ -309,7 +308,7 @@ export function latestForLaunch(gameId: string) {
 async function describeJob(job: FanoutJob): Promise<{
   entityType: string;
   entityId: string;
-  preview: string;
+  preview: NoticePreview;
   link: string;
   exceptUserId: string | null;
 } | null> {
@@ -330,7 +329,7 @@ async function describeJob(job: FanoutJob): Promise<{
     return {
       entityType: GAME_UPDATE_ENTITY,
       entityId: job.noteId,
-      preview: gameUpdatePreview(game.title, note.version, note.title),
+      preview: notice('game-updated', { game: game.title, version: note.version, title: note.title }),
       link: gameUpdateLink(job.gameId),
       exceptUserId: null,
     };
@@ -350,7 +349,7 @@ async function describeJob(job: FanoutJob): Promise<{
   return {
     entityType: GAME_GUIDE_ENTITY,
     entityId: job.guideId,
-    preview: gameGuidePreview(game.title, guide.title),
+    preview: notice('game-guide-new', { game: game.title, title: guide.title }),
     link: gameGuideLink(job.gameId, job.guideId),
     exceptUserId: guide.authorId,
   };
@@ -424,7 +423,7 @@ export async function fanOutGameUpdate(job: FanoutJob): Promise<number> {
           type: 'SYSTEM' as const,
           entityType: what.entityType,
           entityId: what.entityId,
-          preview: what.preview.slice(0, 280),
+          ...noticeColumns(what.preview),
           link: what.link,
         })),
       });

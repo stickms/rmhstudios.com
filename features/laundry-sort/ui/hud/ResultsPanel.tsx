@@ -20,6 +20,7 @@ import { useArcadeRun } from '@/lib/arcade/run-client';
 import { useSession } from '@/components/Providers';
 import { laundryNet } from '@features/laundry-sort/engine/net/client';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
+import { AssistedNote } from './AssistedNote';
 
 const PLACE_COLOR = ['var(--ls-warn)', '#cbd5e1', '#d08a52'];
 
@@ -95,6 +96,8 @@ export function ResultsPanel({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
                   })}
                 </p>
               ) : null}
+
+              <AssistedNote ranked={soloResult.ranked} />
 
               <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
                 <Stat

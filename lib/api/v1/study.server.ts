@@ -12,6 +12,7 @@ import type { ApiContext } from '@/lib/api/with-developer-api.server';
 import type { z } from 'zod';
 import { AUTHORED_WHERE } from '@/lib/study/card-query.server';
 import { CARD_IMAGE_SELECT, fromColumns, type CardImage } from '@/lib/study/card-images';
+import { readOcclusion, type Occlusion } from '@/lib/study/occlusion';
 import { resolveMediaUrls } from '@/lib/study/card-images.server';
 import {
   createDeck,
@@ -58,6 +59,8 @@ export interface ApiCard {
   frontImage: CardImage | null;
   /** The picture on the back, or null. */
   backImage: CardImage | null;
+  /** The masks of an occlusion card (`kind: 'occlusion'`, over `frontImage`), or null on every other kind (s09-03). */
+  occlusion: Occlusion | null;
 }
 
 /** A picture to set on a card side: a `media_id` from `POST /api/v1/images` and its description. */
@@ -162,6 +165,7 @@ function apiCard(row: {
   frontImageAlt: string | null;
   backImageUrl: string | null;
   backImageAlt: string | null;
+  occlusion: unknown;
 }): ApiCard {
   const { frontImage, backImage } = fromColumns(row);
   return {
@@ -173,6 +177,7 @@ function apiCard(row: {
     externalId: row.externalId,
     frontImage,
     backImage,
+    occlusion: row.kind === 'occlusion' ? readOcclusion(row.occlusion) : null,
   };
 }
 
@@ -233,6 +238,7 @@ export async function dueCounts(
     LEFT JOIN "flashcard_review" r ON r."cardId" = c."id" AND r."userId" = ${userId}
     WHERE c."deckId" = ANY(${deckIds}::text[])
       AND NOT (c."kind" = 'cloze' AND c."sourceId" IS NULL)
+      AND NOT (c."kind" = 'occlusion' AND c."sourceId" IS NULL)
     GROUP BY c."deckId"`);
   for (const row of Array.isArray(rows) ? rows : []) {
     out.set(row.deckId, {
@@ -409,6 +415,7 @@ const cardSelect = {
   back: true,
   position: true,
   externalId: true,
+  occlusion: true,
   ...CARD_IMAGE_SELECT,
 } satisfies Prisma.FlashcardSelect;
 
@@ -418,6 +425,7 @@ export async function listMyCards(
   deckId: string,
   limit: number,
   cursor: string | undefined,
+  since?: Date,
 ): Promise<Page<ApiCard> | 'invalid_cursor' | null> {
   const at = cursor === undefined ? null : decodeCardCursor(cursor);
   if (cursor !== undefined && !at) return 'invalid_cursor';
@@ -435,6 +443,8 @@ export async function listMyCards(
     where: {
       deckId,
       ...AUTHORED_WHERE,
+      // Cards carry only a creation time (an edit does not move it), so `since` is "added after".
+      ...(since ? { createdAt: { gt: since } } : {}),
       ...(at
         ? {
             OR: [
