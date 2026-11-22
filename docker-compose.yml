@@ -243,9 +243,10 @@ services:
       # containers at once = 88. Everything else, worst case: socket/rmhbox/rmhtube
       # hubs 3 x (SERVER_DB_POOL_SIZE 5 + AUTH_DB_POOL_SIZE 4) = 27, jobs 16 + pg-boss
       # 8 = 24 (the Discord bot runs in jobs and shares its Prisma pool), ladder-worker 3
-      # (own client) + 3 (alerts pool) = 6, homes-worker 3, medschools-worker 3, status probe 2 (+2 slack),
+      # (own client) + 3 (alerts pool) = 6, homes-worker 3, medschools-worker 3 (own client) + 1 (the AI metering pool,
+      # lib/prisma.server via lib/ai/provider.server), status probe 2 (+2 slack),
       # admin/psql/migrate ~10, the wiki's 8 Apache workers (deploy/mediawiki):
-      # 88 + 27 + 24 + 6 + 3 + 3 + 4 + 10 + 8 = 173 < 197 usable at 200.
+      # 88 + 27 + 24 + 6 + 3 + 3 + 1 + 4 + 10 + 8 = 174 < 197 usable at 200.
       # (The Go supervisor's GO_DB_POOL_SIZE 3 left with it.)
       #
       # A STOCK host (100) cannot hold that, and applying the tuning is a root
@@ -564,8 +565,10 @@ services:
     cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
     environment:
-      # Own Prisma pool of 3 (counted in scripts/db-connection-budget.mjs).
-      - DATABASE_POOL_SIZE=3
+      # Two pools, both counted in scripts/db-connection-budget.mjs: the worker's own client (3, set in
+      # server/medschools-worker/index.ts) and lib/prisma.server, which lib/ai/provider.server pulls in to meter
+      # each model call (one aiUsage insert at a time), sized here. The pool only connects when it is used.
+      - DATABASE_POOL_SIZE=1
       # 75% of mem_limit, the repo's heap rule (see the ladder-worker block).
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/medschools-worker/index.cjs']

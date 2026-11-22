@@ -48,11 +48,11 @@ const SLACK = 2;
  *  MaxRequestWorkers). Counted whether or not the opt-in wiki runs. */
 const WIKI = 8;
 /** Connections nothing here sizes: pg-boss worker 8, ladder-worker 3+3,
- *  homes-worker 3, medschools-worker 3, status probe 2 (+2 slack), 10 for migrate / psql /
+ *  homes-worker 3, medschools-worker 3 + 1 (its AI metering pool: lib/prisma.server, DATABASE_POOL_SIZE=1), status probe 2 (+2 slack), 10 for migrate / psql /
  *  backups / admin sessions, and the wiki. (The Go supervisor's GO_DB_POOL_SIZE
  *  pool went with it: the Discord bot it ran now uses the jobs worker's Prisma
  *  pool, D3.) */
-const FIXED = 8 + 6 + 3 + 3 + STATUS_PROBE + SLACK + 10 + WIKI;
+const FIXED = 8 + 6 + 3 + (3 + 1) + STATUS_PROBE + SLACK + 10 + WIKI;
 
 /**
  * @typedef {{ web: number, server: number, auth: number, jobs: number }} Pools
