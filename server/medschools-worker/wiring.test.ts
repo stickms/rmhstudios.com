@@ -42,7 +42,8 @@ describe('medschools-worker wiring', () => {
     const block = next === -1 ? rest : rest.slice(0, next + 1);
     expect(block).toMatch(/mem_limit:\s*512m/);
     expect(block).toMatch(/cpus:\s*0\.5/);
-    expect(block).toContain('DATABASE_POOL_SIZE=3');
+    // lib/prisma.server (the AI metering pool) is sized here; the worker's own client is fixed at 3 in index.ts.
+    expect(block).toContain('DATABASE_POOL_SIZE=1');
     expect(block).toContain("command: ['node', 'dist-server/server/medschools-worker/index.cjs']");
   });
 
@@ -276,7 +277,7 @@ describe('medschools-worker wiring', () => {
     const src = flat();
     expect(src.match(/createSdnAi\(\)/g)).toHaveLength(1);
     expect(src.match(/createBudgetGate\(/g)).toHaveLength(1);
-    expect(src).toContain('monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD)');
+    expect(src).toContain('monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD,');
     expect(src).toContain('MEDSCHOOLS_SDN_MAX_LLM_CALLS');
     expect(src).toContain('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS');
     const live = slice(src, 'const sdnLiveTick', 'const sdnBackfillTick');
@@ -338,9 +339,5 @@ describe('medschools-worker wiring', () => {
     const src = flat();
     const sd = src.slice(src.indexOf('async function shutdown'));
     expect(sd.match(/\.stop\(\)/g)).toHaveLength(1);
-  });
-
-  it('the compose service keeps DATABASE_POOL_SIZE=3 (the AiUsage ledger reads and writes inside the budget slack)', () => {
-    expect(read('docker-compose.yml')).toContain('DATABASE_POOL_SIZE=3');
   });
 });

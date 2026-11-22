@@ -13,11 +13,17 @@ export function monthStartUtc(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-/** `MEDSCHOOLS_AI_MONTHLY_USD`: unset, non-numeric or negative gives 20; `0` pauses extraction. */
-export function monthlyCapUsd(env: string | undefined): number {
+/**
+ * `MEDSCHOOLS_AI_MONTHLY_USD`: only an unset (or blank) variable defaults to 20. A value that is present but not a
+ * non-negative number (negative, NaN, garbage) is a typo about money, so it fails closed to 0, which pauses
+ * extraction, and `warn` says so once. `0` pauses extraction on purpose.
+ */
+export function monthlyCapUsd(env: string | undefined, warn?: (line: string) => void): number {
   if (env === undefined || env.trim() === '') return DEFAULT_CAP_USD;
   const n = Number(env);
-  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_CAP_USD;
+  if (Number.isFinite(n) && n >= 0) return n;
+  warn?.('MEDSCHOOLS_AI_MONTHLY_USD is not a non-negative number; extraction is paused (cap 0) until it is fixed');
+  return 0;
 }
 
 export interface BudgetGate {

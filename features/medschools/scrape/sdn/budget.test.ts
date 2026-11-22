@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createFakePrisma } from '../test-support';
 import { BACKFILL_SHARE, createBudgetGate, monthStartUtc, monthlyCapUsd } from './budget';
 
@@ -20,12 +20,22 @@ describe('budget', () => {
   it('monthStartUtc is the first of the UTC month', () => {
     expect(monthStartUtc(NOW).toISOString()).toBe('2026-11-01T00:00:00.000Z');
   });
-  it('monthlyCapUsd defaults and parses', () => {
+  it('monthlyCapUsd defaults only when unset or blank, and parses', () => {
     expect(monthlyCapUsd(undefined)).toBe(20);
-    expect(monthlyCapUsd('abc')).toBe(20);
-    expect(monthlyCapUsd('-5')).toBe(20);
+    expect(monthlyCapUsd('')).toBe(20);
+    expect(monthlyCapUsd('  ')).toBe(20);
     expect(monthlyCapUsd('0')).toBe(0);
     expect(monthlyCapUsd('35.5')).toBe(35.5);
+  });
+  it('a present but invalid monthlyCapUsd is 0 (extraction paused) and warns once', () => {
+    for (const bad of ['abc', '-5', 'NaN', 'Infinity', '12usd']) {
+      const warn = vi.fn();
+      expect(monthlyCapUsd(bad, warn), bad).toBe(0);
+      expect(warn).toHaveBeenCalledTimes(1);
+    }
+    const warn = vi.fn();
+    expect(monthlyCapUsd('20', warn)).toBe(20);
+    expect(warn).not.toHaveBeenCalled();
   });
   it('allows live below the cap and refuses at it', async () => {
     expect(await createBudgetGate(seed([row(9_999_999)]), () => NOW, 10).allow('live')).toBe(true);

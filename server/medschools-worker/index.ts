@@ -225,7 +225,11 @@ const sdnWwwHost = createPoliteHost(SOURCES.SDN_WWW);
 // The extraction model and its monthly budget are built once. `configured()` is false without a DeepSeek key:
 // extraction then stores nothing and keeps its cursors, and the live tick queues no backfill.
 const sdnAi = createSdnAi();
-const sdnBudget = createBudgetGate(medPrisma, () => new Date(), monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD));
+const sdnBudget = createBudgetGate(
+  medPrisma,
+  () => new Date(),
+  monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD, (line) => log.warn(line)),
+);
 const sdnForums = sdnForumsJson as SdnForumsFile;
 
 /** Wraps a job so a second concurrent call is skipped, and so shutdown can await it. */
