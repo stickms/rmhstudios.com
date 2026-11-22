@@ -6,7 +6,7 @@ import { SDN_HOSTILE_NEEDLES } from '../../test-support';
 const DIR = join(__dirname, '__fixtures__');
 const read = (f: string) => readFileSync(join(DIR, f), 'utf8');
 
-const HOSTILE = ['thread-hostile.html'];
+const HOSTILE = ['thread-hostile.html', 'rss-hostile.xml', 'listing-hostile.html', 'summary-hostile.html'];
 const REQUIRED = [
   'forum-1198.rss',
   'forum-1199.rss',
@@ -23,6 +23,9 @@ const REQUIRED = [
   'school-index.html',
   'thread-hostile.html',
   'thread-challenge.html',
+  'rss-hostile.xml',
+  'listing-hostile.html',
+  'summary-hostile.html',
 ];
 const TRIMMED_THREADS = [
   'thread-small-p1.html',
@@ -63,13 +66,14 @@ describe('SDN fixtures', () => {
     }
   });
 
-  it('only the hostile fixture contains the SDN needles', () => {
+  it('only the hostile fixtures contain the SDN needles', () => {
     for (const f of REQUIRED) {
       const body = read(f);
-      for (const needle of SDN_HOSTILE_NEEDLES) {
-        if (HOSTILE.includes(f)) expect(body, `${f} should carry ${needle}`).toContain(needle);
-        else expect(body, `${f} must not carry ${needle}`).not.toContain(needle);
-      }
+      const found = SDN_HOSTILE_NEEDLES.filter((n) => body.includes(n));
+      if (f === 'thread-hostile.html')
+        expect(found, `${f} carries every needle`).toHaveLength(SDN_HOSTILE_NEEDLES.length);
+      else if (HOSTILE.includes(f)) expect(found.length, `${f} carries a needle`).toBeGreaterThan(0);
+      else expect(found, `${f} must not carry a needle`).toEqual([]);
     }
   });
 
