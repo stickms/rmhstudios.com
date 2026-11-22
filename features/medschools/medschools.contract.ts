@@ -2,6 +2,7 @@
  * Contracts for the med schools admin endpoints. Client-safe: no zod, no server imports.
  */
 import { endpoint } from '@/lib/contract/endpoint';
+import type { MedEventType, MedProgram, MedSource } from './engine/types';
 
 export interface AliasMissDto {
   id: string;
@@ -54,3 +55,201 @@ export const ignoreAliasMissApi = endpoint<{
   method: 'POST',
   path: '/api/admin/medschools/alias-misses/ignore',
 });
+
+/* ------------------------------ public reads ------------------------------ */
+/* Anonymous, signed-out-readable. No DTO below carries a person identifier (spec §6). */
+
+export type MedSourceId = MedSource;
+export type MedProgramId = MedProgram;
+export type MedEventTypeId = MedEventType;
+/** The five types the charts offer (`CHARTED_TYPES`); WITHDRAWN and HOLD appear in the live feed only. */
+export type MedChartedTypeId = 'INTERVIEW' | 'SECONDARY' | 'WAITLIST' | 'REJECTION' | 'ACCEPTANCE';
+/** O5: ALL is REG + PHD summed within one source per day, never across sources. */
+export type MedProgramFilter = 'ALL' | 'REG' | 'PHD';
+export type MedLiveProgramFilter = MedProgramFilter | 'NONE';
+export type MedDegreeId = 'MD' | 'DO';
+
+export interface MedSchoolListItemDto {
+  slug: string;
+  name: string;
+  shortName: string;
+  degree: MedDegreeId;
+  city: string;
+  state: string;
+  reported: { source: MedSourceId; count: number } | null;
+}
+
+export interface SourceLinkDto {
+  source: 'CYCLETRACK' | 'ADMIT' | 'SDN';
+  name: string;
+  href: string;
+  scope: 'school' | 'thread' | 'summary';
+  cycleYear: number | null;
+}
+
+export interface SchoolStatsDto {
+  source: MedSourceId;
+  program: MedProgramId | null;
+  cycleYear: number;
+  residence: 'GLOBAL' | 'IN_STATE' | 'OUT_OF_STATE';
+  allCycles: boolean;
+  gpaMedian: number | null;
+  gpaLow: number | null;
+  gpaHigh: number | null;
+  mcatMedian: number | null;
+  mcatLow: number | null;
+  mcatHigh: number | null;
+  interviewToAcceptancePct: number | null;
+  applicationToInterviewPct: number | null;
+  applicationCount: number | null;
+  interviewCount: number | null;
+  admittedCount: number | null;
+  researchHours: number | null;
+  clinicalHours: number | null;
+  nonClinicalHours: number | null;
+}
+
+export interface InterviewProfileDto {
+  source: MedSourceId;
+  format: string | null;
+  fileType: string | null;
+  avgDifficulty: number | null;
+  avgStress: number | null;
+  avgImpression: number | null;
+  interviewCount: number | null;
+  interviewStyle: string | null;
+  interviewLength: string | null;
+  split: { inState: number; outOfState: number } | null;
+  feedbackPositive: string[];
+  feedbackNegative: string[];
+  feedbackBefore: string[];
+}
+
+export interface InterviewQuestionDto {
+  text: string;
+  source: MedSourceId;
+  votes: number | null;
+  cycleYear: number | null;
+}
+
+export interface MedSchoolDetailDto {
+  school: {
+    slug: string;
+    name: string;
+    shortName: string;
+    /** The school's own degree: the UI hides the other degree's program options. */
+    degree: MedDegreeId;
+    city: string;
+    state: string;
+    website: string | null;
+    interviewFormat: string | null;
+    interviewType: string | null;
+  };
+  cycleYear: number;
+  programsWithData: MedProgramId[];
+  links: SourceLinkDto[];
+  stats: SchoolStatsDto[];
+  profiles: InterviewProfileDto[];
+  questions: InterviewQuestionDto[];
+}
+
+export interface ActivityTypeDto {
+  eventType: MedChartedTypeId;
+  primary: MedSourceId | null;
+  sources: { source: MedSourceId; days: { date: string; count: number }[]; total: number }[];
+}
+
+export interface HistoryCycleDto {
+  cycleYear: number;
+  dayZeroEstimated: boolean;
+  sources: { source: MedSourceId; points: { day: number; cumulative: number }[]; total: number }[];
+}
+
+export interface LiveEventDto {
+  id: string;
+  eventType: MedEventTypeId;
+  program: MedProgramId | null;
+  school: { slug: string; shortName: string; name: string };
+  /** ISO, truncated to the minute. */
+  occurredAt: string;
+  source: 'ADMIT' | 'SDN';
+}
+
+export interface ListMedSchoolsRes {
+  cycleYear: number;
+  program: MedProgramFilter;
+  schools: MedSchoolListItemDto[];
+  states: string[];
+}
+
+export interface MedSchoolActivityRes {
+  cycleYear: number;
+  program: MedProgramFilter;
+  dayZeroOn: string;
+  dayZeroEstimated: boolean;
+  /** All five CHARTED_TYPES, always, so toggling a category refetches nothing (O4). */
+  types: ActivityTypeDto[];
+  unreportedProgram: number;
+}
+
+export interface MedSchoolHistoryRes {
+  program: MedProgramFilter;
+  eventType: MedChartedTypeId;
+  cycles: HistoryCycleDto[];
+}
+
+export interface MedLiveRes {
+  events: LiveEventDto[];
+  nextCursor: string | null;
+  asOf: string;
+}
+
+export interface MedTodayRes {
+  date: string | null;
+  isToday: boolean;
+  program: MedProgramFilter;
+  schools: { slug: string; shortName: string; name: string; state: string; count: number; source: MedSourceId }[];
+}
+
+export const listMedSchoolsApi = endpoint<{
+  query: {
+    q?: string | undefined;
+    degree?: MedDegreeId | undefined;
+    state?: string | undefined;
+    program?: MedProgramFilter | undefined;
+  };
+  res: ListMedSchoolsRes;
+}>()({ method: 'GET', path: '/api/medschools/schools' });
+
+/** 404 for an unknown or inactive slug. */
+export const getMedSchoolApi = endpoint<{ res: MedSchoolDetailDto }>()({
+  method: 'GET',
+  path: '/api/medschools/schools/$slug',
+});
+
+export const getMedSchoolActivityApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined; cycle?: number | undefined };
+  res: MedSchoolActivityRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/activity' });
+
+export const getMedSchoolHistoryApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
+  res: MedSchoolHistoryRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/history' });
+
+export const getMedLiveApi = endpoint<{
+  query: {
+    type?: MedEventTypeId | undefined;
+    school?: string | undefined;
+    degree?: MedDegreeId | undefined;
+    program?: MedLiveProgramFilter | undefined;
+    cursor?: string | undefined;
+    limit?: number | undefined;
+  };
+  res: MedLiveRes;
+}>()({ method: 'GET', path: '/api/medschools/live' });
+
+export const getMedTodayApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined };
+  res: MedTodayRes;
+}>()({ method: 'GET', path: '/api/medschools/today' });
