@@ -2,7 +2,6 @@ import { useEffect, type ComponentProps, type ReactNode, type RefObject } from '
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { cn } from '@/lib/utils';
 
 /**
  * The home composer's one look (owner, 2026-11-13: "I don't like how the three buttons menu changes the look of the
@@ -80,34 +79,17 @@ export interface ComposerFieldHandoff {
 /** What the row was expanded for: the popover or editor the full composer opens as it mounts. */
 export type ComposerOpen = 'menu' | 'gif' | 'poll' | 'ai';
 
-/**
- * One quick action: a ghost icon button named by its label, which is also its tooltip.
- *
- * On hover, and while its popover is open, it takes the control's 1px border as well as the fill, so it reads as a
- * button that lifts out of the row. A border, not a shadow: Steel is flat (R1) and only overlays cast one (T4).
- */
+/** One quick action: a ghost icon button named by its label, which is also its tooltip. */
 export function ComposerTool({
   icon: Icon,
   label,
-  className,
   ...props
 }: { icon: LucideIcon; label: string } & Omit<
   ComponentProps<typeof Button>,
   'children' | 'variant' | 'size' | 'aria-label' | 'title'
 >) {
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      aria-label={label}
-      title={label}
-      className={cn(
-        'hover:border-site-border aria-expanded:border-site-border aria-expanded:bg-site-bg-subtle',
-        className,
-      )}
-      {...props}
-    >
+    <Button type="button" variant="ghost" size="icon" aria-label={label} title={label} {...props}>
       <Icon aria-hidden />
     </Button>
   );
