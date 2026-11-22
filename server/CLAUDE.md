@@ -219,27 +219,28 @@ Consequences:
   toward the three-strike halt. (6) `pnpm i18n:extract` scans `features/medschools/**` (scoped in
   `i18next-parser.config.js`); other feature folders are not yet scanned. Built by `pnpm build` and run as its own
   compose service. **SDN (Student Doctor Network) connector, phase 2b.** Three more queues (all `exclusive`,
-  `retryLimit: 0`, UTC): `medschools.sdn-live` (every 10 min, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after 25 min: RSS
-  feeds, then the changed threads), `medschools.sdn-backfill` (monthly `15 0 1 * *`, `MEDSCHOOLS_SDN_BACKFILL_CRON`,
-  expires after 3 h: a safety net that also covers the budget reset) and `medschools.sdn-interviews` (weekly,
-  `50 5 * * 1`, `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page interview reports, no model). The
-  backfill has its own queue (spec section 8 names one shared backfill queue; this is a recorded deviation: its own
-  cadence, budget share and host session) and no bootstrap trigger: the live tick queues it, after its own run, while
-  `sdnBackfillOwed(prisma, now, aiConfigured)` says it is owed, and a manual `runNow({ manual: true })` can too. Two
-  polite hosts, each separate from the CycleTrack and Admit hosts: `SOURCES.SDN_FORUMS` (forums.studentdoctor.net,
-  shared by live and backfill, the backfill taking the slower `backfillSpacingMs` session on it) and `SOURCES.SDN_WWW`
-  (www.studentdoctor.net, interviews only). `MEDSCHOOLS_SDN_ENABLED=false` disables the three crons, the live tick's
-  backfill queueing and nothing else (only a manual `runNow({ manual: true })` bypasses it; bootstrap queues no SDN run;
-  alias seeding is not gated). All three SDN jobs refuse to run without `MEDSCHOOLS_DEDUPE_SECRET` (16+ characters;
-  manual never bypasses it); CycleTrack and Admit are unaffected. Shutdown pauses all seven consumers and waits for the
-  in-flight SDN runs with the others. Bootstrap also calls `seedSdnAliases` and `seedSdnIgnoredMisses` from
-  `data/medschools/sdn-aliases.json`, each in its own try/catch so neither can block CycleTrack's or Admit's bootstrap,
-  and logs the skipped (conflicting) and unmatched keys. Update `data/medschools/sdn-forums.json` each cycle (D10); the
-  live tick reports `staleForumConfig` when it is out of date. SDN rules the readers depend on. (1) **Program (D1):** an
-  SDN event is MD unless the thread or post states MD-PhD, DO-PhD or MSTP; an unlabelled post counts as MD (the owner's
-  SDN exception to spec section 4a, which otherwise never defaults to MD). (2) **Cursor (D2):** `MedSdnThread` stores a
-  cursor that holds an HMAC keyed by the dedupe secret, never a post id; dedupe hashes are `HMAC('SDN:post:' + id)` and
-  nothing person-shaped is stored (no username, author, avatar, raw post body or permalink). (3) **Cycle year (D7):**
+  `retryLimit: 0`, UTC): `medschools.sdn-live` (daily at 12:20 UTC, off-peak, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after
+  25 min: RSS feeds, then the changed threads), `medschools.sdn-backfill` (monthly `15 0 1 * *`,
+  `MEDSCHOOLS_SDN_BACKFILL_CRON`, expires after 3 h: a safety net that also covers the budget reset) and
+  `medschools.sdn-interviews` (weekly, `50 5 * * 1`, `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page
+  interview reports, no model). The backfill has its own queue (spec section 8 names one shared backfill queue; this is
+  a recorded deviation: its own cadence, budget share and host session) and no bootstrap trigger: the live tick queues
+  it, after its own run, while `sdnBackfillOwed(prisma, now, aiConfigured)` says it is owed, and a manual
+  `runNow({ manual: true })` can too. Two polite hosts, each separate from the CycleTrack and Admit hosts:
+  `SOURCES.SDN_FORUMS` (forums.studentdoctor.net, shared by live and backfill, the backfill taking the slower
+  `backfillSpacingMs` session on it) and `SOURCES.SDN_WWW` (www.studentdoctor.net, interviews only).
+  `MEDSCHOOLS_SDN_ENABLED=false` disables the three crons, the live tick's backfill queueing and nothing else (only a
+  manual `runNow({ manual: true })` bypasses it; bootstrap queues no SDN run; alias seeding is not gated). All three SDN
+  jobs refuse to run without `MEDSCHOOLS_DEDUPE_SECRET` (16+ characters; manual never bypasses it); CycleTrack and Admit
+  are unaffected. Shutdown pauses all seven consumers and waits for the in-flight SDN runs with the others. Bootstrap
+  also calls `seedSdnAliases` and `seedSdnIgnoredMisses` from `data/medschools/sdn-aliases.json`, each in its own
+  try/catch so neither can block CycleTrack's or Admit's bootstrap, and logs the skipped (conflicting) and unmatched
+  keys. Update `data/medschools/sdn-forums.json` each cycle (D10); the live tick reports `staleForumConfig` when it is
+  out of date. SDN rules the readers depend on. (1) **Program (D1):** an SDN event is MD unless the thread or post
+  states MD-PhD, DO-PhD or MSTP; an unlabelled post counts as MD (the owner's SDN exception to spec section 4a, which
+  otherwise never defaults to MD). (2) **Cursor (D2):** `MedSdnThread` stores a cursor that holds an HMAC keyed by the
+  dedupe secret, never a post id; dedupe hashes are `HMAC('SDN:post:' + id)` and nothing person-shaped is stored (no
+  username, author, avatar, raw post body or permalink). (3) **Cycle year (D7):**
   `cycleYearOf(eventDate, type) === thread.cycleYear`, so SDN buckets match phase 2a's event-type rule. (4) **Scrubbing
   (D4):** before a post reaches the model, quoted replies are stripped and email addresses, URLs, `@handles` and US
   phone numbers are redacted (`[phone]`); names cannot be redacted reliably, so a name in post text MAY reach the model,

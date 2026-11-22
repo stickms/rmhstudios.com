@@ -216,7 +216,7 @@ describe('medschools-worker wiring', () => {
     expect(src).toContain("const SDN_LIVE_QUEUE = 'medschools.sdn-live'");
     expect(src).toContain("const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill'");
     expect(src).toContain("const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews'");
-    expect(src).toContain("process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '*/10 * * * *'");
+    expect(src).toContain("process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '20 12 * * *'");
     expect(src).toContain("process.env.MEDSCHOOLS_SDN_BACKFILL_CRON?.trim() || '15 0 1 * *'");
     expect(src).toContain("process.env.MEDSCHOOLS_SDN_INTERVIEWS_CRON?.trim() || '50 5 * * 1'");
     const live = slice(src, 'sdnLiveConsumer = await startScheduledConsumer', 'sdnBackfillConsumer = await');
