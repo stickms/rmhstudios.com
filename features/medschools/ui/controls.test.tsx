@@ -125,6 +125,14 @@ describe('DegreeProgramSelect (index and live)', () => {
   });
 });
 
+describe('CategoryToggles pressed state', () => {
+  it('draws pressed and unpressed differently, not by colour alone', () => {
+    const html = renderToString(<CategoryToggles value={['INTERVIEW']} onChange={noop} />);
+    expect(html.match(/border-site-text font-semibold/g)).toHaveLength(1);
+    expect(html.match(/border-site-border text-site-text-muted/g)).toHaveLength(4);
+  });
+});
+
 describe('ReportedNote', () => {
   it('says reported events, not applicants', () => {
     const html = renderToString(<ReportedNote />);

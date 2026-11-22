@@ -98,17 +98,17 @@ export function HistoryTab({
                 }),
               )}
             />
-            {lines
-              .filter((l) => l.estimated)
-              .map((l) => (
-                <p key={l.cycleYear} className="t-meta m-0">
-                  {t('school-history-estimated', {
-                    defaultValue: '{{year}}: cycle start estimated as June 1.',
-                    year: String(l.cycleYear),
-                  })}
-                </p>
-              ))}
             <div>
+              {lines
+                .filter((l) => l.estimated)
+                .map((l) => (
+                  <p key={l.cycleYear} className="t-meta m-0">
+                    {t('school-history-estimated', {
+                      defaultValue: '{{year}}: cycle start estimated as June 1.',
+                      year: String(l.cycleYear),
+                    })}
+                  </p>
+                ))}
               {lines.map((l) => (
                 <SourceLinks key={l.cycleYear} links={detail.links.filter((k) => k.cycleYear === l.cycleYear)} />
               ))}

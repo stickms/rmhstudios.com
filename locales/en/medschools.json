@@ -143,5 +143,7 @@
   "seen_one": "Seen {{count}} time",
   "seen_other": "Seen {{count}} times",
   "source-line": "Source: {{name}}",
+  "source-line-cycle": "Source: {{name}}, {{year}} cycle",
+  "source-line-summary": "Source: {{name}}, interview feedback",
   "title": "Med Schools aliases"
 }

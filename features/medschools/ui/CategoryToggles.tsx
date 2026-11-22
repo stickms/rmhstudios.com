@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { MedChartedTypeId, MedEventTypeId } from '../medschools.contract';
 import { CATEGORY_STYLE } from './charts/CategoryLines';
 import { useMedLabels } from './labels';
@@ -65,6 +66,11 @@ export function CategoryToggles({
             variant="ghost"
             size="xs"
             aria-pressed={pressed}
+            // Pressed is an ink border and weight, unpressed a rule and muted text: state is never colour alone (A2).
+            className={cn(
+              'border',
+              pressed ? 'border-site-text font-semibold' : 'border-site-border text-site-text-muted',
+            )}
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
             onClick={() => onChange(toggleCategory(value, type))}
           >

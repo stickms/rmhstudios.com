@@ -37,6 +37,13 @@ describe('SourceLinks', () => {
   it('renders a CycleTrack link', () => {
     expect(renderToString(<SourceLinks links={[ct]} />)).toContain('Source: CycleTrack');
   });
+  it('tells apart links to the same source: cycle thread vs feedback summary', () => {
+    const html = renderToString(
+      <SourceLinks links={[sdn, { ...sdn, href: 'https://x.test/summary', scope: 'summary', cycleYear: null }]} />,
+    );
+    expect(html).toContain('Source: Student Doctor Network, 2026 cycle');
+    expect(html).toContain('Source: Student Doctor Network, interview feedback');
+  });
   it('renders nothing for no links', () => {
     expect(renderToString(<SourceLinks links={[]} />)).toBe('');
   });

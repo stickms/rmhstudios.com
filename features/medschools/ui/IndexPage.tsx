@@ -103,7 +103,7 @@ export function IndexPage() {
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <SearchField
-          containerClassName="min-w-48 flex-1"
+          containerClassName="w-full sm:w-auto sm:min-w-48 sm:flex-1"
           aria-label={t('index-search-label', { defaultValue: 'Search schools' })}
           placeholder={t('index-search-placeholder', { defaultValue: 'Search schools' })}
           value={text}
