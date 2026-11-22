@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -10,9 +10,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { formatUtcDay } from '../engine/public-read';
-import { parseIndexSearch } from '../engine/search';
+import { SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
 import { schoolsQuery, todayQuery } from '../medschools.queries';
-import { SchoolLink } from './SchoolLink';
 import { DegreeProgramSelect } from './ProgramSelect';
 import { ReportedNote } from './ReportedNote';
 import { SkeletonSwap } from './skeletons';
@@ -70,10 +69,24 @@ export function IndexPage() {
           <ul className="m-0 list-none p-0">
             {topRows.map((r) => (
               <li key={r.slug} className="flex items-baseline justify-between gap-4 border-b border-site-border py-3">
-                <SchoolLink slug={r.slug} className="t-body">
-                  {r.shortName}
-                </SchoolLink>
-                <span className="t-meta">
+                <div className="min-w-0">
+                  <Link
+                    to="/rmh-medschool/$slug"
+                    params={{ slug: r.slug }}
+                    search={SCHOOL_SEARCH_DEFAULTS}
+                    className="t-body"
+                  >
+                    {r.shortName}
+                  </Link>
+                  <p className="t-meta m-0">
+                    {t('index-today-place', {
+                      defaultValue: '{{city}}, {{state}}',
+                      city: r.city,
+                      state: r.state,
+                    })}
+                  </p>
+                </div>
+                <span className="t-meta shrink-0">
                   {t('index-day-invites', {
                     count: r.count,
                     defaultValue_one: '{{count}} invite · {{source}}',
@@ -141,9 +154,14 @@ export function IndexPage() {
                     className="flex items-baseline justify-between gap-4 border-b border-site-border py-3"
                   >
                     <div className="min-w-0">
-                      <SchoolLink slug={s.slug} className="t-body">
+                      <Link
+                        to="/rmh-medschool/$slug"
+                        params={{ slug: s.slug }}
+                        search={SCHOOL_SEARCH_DEFAULTS}
+                        className="t-body"
+                      >
                         {s.name}
-                      </SchoolLink>
+                      </Link>
                       <p className="t-meta m-0">
                         {t('index-school-meta', {
                           defaultValue: '{{degree}} · {{city}}, {{state}}',

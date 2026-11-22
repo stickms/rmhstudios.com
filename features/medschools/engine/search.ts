@@ -16,14 +16,21 @@ const Q_MAX = 100;
  */
 export const INDEX_SEARCH_DEFAULTS = { program: 'ALL' } as const satisfies { program: ProgramFilter };
 export const LIVE_SEARCH_DEFAULTS = { program: 'ALL' } as const satisfies { program: LiveProgramFilter };
+/** `show` travels in the URL as a lowercase comma list (`show=interview,acceptance`), in `CHARTED_TYPES` order. */
+export const showParam = (types: readonly MedEventType[]): string =>
+  CHARTED_TYPES.filter((t) => types.includes(t))
+    .map((t) => t.toLowerCase())
+    .join(',');
 export const SCHOOL_SEARCH_DEFAULTS = {
   tab: 'activity',
   program: 'ALL',
   type: 'INTERVIEW',
-  show: [...CHARTED_TYPES],
-} as const satisfies { tab: SchoolTab; program: ProgramFilter; type: MedEventType; show: readonly MedEventType[] };
+  show: showParam(CHARTED_TYPES),
+} as const satisfies { tab: SchoolTab; program: ProgramFilter; type: MedEventType; show: string };
 
-const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
+// The router JSON-parses what it can, so `?cycle=2026` or `?q=2026` reach a parser as numbers.
+const str = (v: unknown): string | undefined =>
+  typeof v === 'string' ? v : typeof v === 'number' && Number.isFinite(v) ? String(v) : undefined;
 const pick = <T extends string>(v: unknown, allowed: readonly T[], upper = true): T | undefined => {
   const s = str(v)?.trim();
   if (!s) return undefined;
@@ -93,4 +100,19 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
     ...(source ? { source } : {}),
     ...(cycle !== undefined ? { cycle } : {}),
   };
+}
+
+/**
+ * What the school route's `validateSearch` returns: `parseSchoolSearch` with `show` back as the comma list, because the
+ * router would write an array into the URL as JSON (`show=["INTERVIEW"]`) and a link would not read back. Pages read
+ * the typed list with `parseSchoolSearch`.
+ */
+export function validateSchoolSearch(raw: Record<string, unknown>): Omit<
+  ReturnType<typeof parseSchoolSearch>,
+  'show'
+> & {
+  show: string;
+} {
+  const { show, ...rest } = parseSchoolSearch(raw);
+  return { ...rest, show: showParam(show) };
 }

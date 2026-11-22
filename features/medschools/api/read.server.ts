@@ -439,7 +439,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
       program: true,
       occurredAt: true,
       source: true,
-      school: { select: { slug: true, shortName: true, name: true, degree: true } },
+      school: { select: { slug: true, shortName: true, name: true, degree: true, city: true, state: true } },
     },
     orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
@@ -451,7 +451,14 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
       id: r.id,
       eventType: r.eventType,
       program: r.program,
-      school: { slug: r.school.slug, shortName: r.school.shortName, name: r.school.name, degree: r.school.degree },
+      school: {
+        slug: r.school.slug,
+        shortName: r.school.shortName,
+        name: r.school.name,
+        degree: r.school.degree,
+        city: r.school.city,
+        state: r.school.state,
+      },
       occurredAt: truncateToMinute(r.occurredAt),
       source: r.source as 'ADMIT' | 'SDN',
     })),
@@ -484,7 +491,7 @@ export async function getToday(q: TodayQuery, now: Date = new Date()): Promise<M
       schoolId: true,
       source: true,
       count: true,
-      school: { select: { slug: true, shortName: true, name: true, state: true } },
+      school: { select: { slug: true, shortName: true, name: true, city: true, state: true } },
     },
   });
   const bySchool = new Map<string, { school: (typeof rows)[number]['school']; counts: Map<MedSource, number> }>();

@@ -73,7 +73,9 @@ const seedIndex =
     qc.setQueryData(todayQuery('ALL').queryKey, {
       ...today,
       program: 'ALL',
-      schools: [{ slug: 'duke', shortName: 'Duke', name: 'Duke', state: 'NC', count: 4, source: 'ADMIT' }],
+      schools: [
+        { slug: 'duke', shortName: 'Duke', name: 'Duke', city: 'Durham', state: 'NC', count: 4, source: 'ADMIT' },
+      ],
     });
   };
 
@@ -88,6 +90,7 @@ describe('IndexPage', () => {
     expect(html).toContain('href="/rmh-medschool/unc"');
     expect(html).toContain('120 reported invites, CycleTrack');
     expect(html).toContain('4 invites · Admit.org');
+    expect(html).toContain('>Durham, NC<');
     expect(html).not.toContain('data-variant="primary"');
   });
   it('prints nothing in the figure slot of a school with no data', () => {
@@ -117,7 +120,14 @@ const ev = (id: string, o: Partial<LiveEventDto> = {}): LiveEventDto => ({
   id,
   eventType: 'INTERVIEW',
   program: 'REG',
-  school: { slug: 'duke', shortName: 'Duke', name: 'Duke University School of Medicine', degree: 'MD' },
+  school: {
+    slug: 'duke',
+    shortName: 'Duke',
+    name: 'Duke University School of Medicine',
+    degree: 'MD',
+    city: 'Durham',
+    state: 'NC',
+  },
   occurredAt: '2026-11-20T15:04:00.000Z',
   source: 'ADMIT',
   ...o,
@@ -144,9 +154,24 @@ describe('LivePage', () => {
     expect(html).toContain('Withdrawn');
     expect(html).toContain('href="/rmh-medschool/duke"');
     expect(html).toContain('Program not reported');
+    expect(html).toContain('MD · Durham, NC');
     expect(html).toContain('Admit.org');
     expect(html).toContain('Student Doctor Network');
     expect(html).not.toMatch(/@|\/u\/|cabc123|cdef456/);
+  });
+  it('shows only the UTC day for an SDN event stored at midnight, and a relative time otherwise', () => {
+    h.search = { program: 'ALL' };
+    const html = withClient(
+      seedLive([
+        ev('d1', { source: 'SDN', occurredAt: '2026-11-18T00:00:00.000Z' }),
+        ev('d2', { source: 'SDN', occurredAt: '2026-11-18T09:30:00.000Z' }),
+        ev('d3', { source: 'ADMIT', occurredAt: '2026-11-19T00:00:00.000Z' }),
+      ]),
+      <LivePage />,
+    );
+    expect(html).toContain('>Nov 18<');
+    expect(html.match(/<time dateTime="2026-11-18"/g)).toHaveLength(1);
+    expect(html).toContain('<time dateTime="2026-11-19T00:00:00.000Z"'); // Admit keeps its exact time
   });
   it('when filtered to an MD school offers MD options only, whatever degree the URL says', () => {
     h.search = { program: 'ALL', school: 'duke', degree: 'DO' };

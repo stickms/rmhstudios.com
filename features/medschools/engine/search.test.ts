@@ -7,6 +7,8 @@ import {
   parseIndexSearch,
   parseLiveSearch,
   parseSchoolSearch,
+  showParam,
+  validateSchoolSearch,
 } from './search';
 import { CHARTED_TYPES } from './public-read';
 
@@ -36,6 +38,7 @@ describe('parseSchoolSearch', () => {
   });
   it('cycle, type, source', () => {
     expect(parseSchoolSearch({ cycle: '2027' }).cycle).toBe(2027);
+    expect(parseSchoolSearch({ cycle: 2027 }).cycle).toBe(2027); // the router parses ?cycle=2027 into a number
     expect(parseSchoolSearch({ cycle: 'abc' }).cycle).toBeUndefined();
     expect(parseSchoolSearch({ type: 'waitlist' }).type).toBe('WAITLIST');
     expect(parseSchoolSearch({ type: 'hold' }).type).toBe('INTERVIEW');
@@ -99,16 +102,30 @@ describe('defaults stay out of the URL (stripSearchParams)', () => {
     expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({ program: 'NONE' }))).toEqual({ program: 'NONE' });
   });
   it('school drops tab, program, type and the all-five show list, keeps the rest', () => {
-    expect(strip(SCHOOL_SEARCH_DEFAULTS, parseSchoolSearch({}))).toEqual({});
+    expect(strip(SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch({}))).toEqual({});
     expect(
-      strip(SCHOOL_SEARCH_DEFAULTS, parseSchoolSearch({ show: 'secondary,interview,waitlist,rejection,acceptance' })),
+      strip(
+        SCHOOL_SEARCH_DEFAULTS,
+        validateSchoolSearch({ show: 'secondary,interview,waitlist,rejection,acceptance' }),
+      ),
     ).toEqual({});
     expect(
-      strip(SCHOOL_SEARCH_DEFAULTS, parseSchoolSearch({ tab: 'history', show: 'interview,acceptance', cycle: '2026' })),
-    ).toEqual({
-      tab: 'history',
-      show: ['INTERVIEW', 'ACCEPTANCE'],
-      cycle: 2026,
-    });
+      strip(
+        SCHOOL_SEARCH_DEFAULTS,
+        validateSchoolSearch({ tab: 'history', show: 'interview,acceptance', cycle: '2026' }),
+      ),
+    ).toEqual({ tab: 'history', show: 'interview,acceptance', cycle: 2026 });
+  });
+});
+
+describe('validateSchoolSearch', () => {
+  it('keeps show as a lowercase comma list in CHARTED_TYPES order, so a link reads back', () => {
+    const v = validateSchoolSearch({ show: 'ACCEPTANCE,interview' });
+    expect(v.show).toBe('interview,acceptance');
+    expect(parseSchoolSearch(v).show).toEqual(['INTERVIEW', 'ACCEPTANCE']);
+    expect(showParam(CHARTED_TYPES)).toBe('interview,secondary,waitlist,rejection,acceptance');
+  });
+  it('falls back to every category for an empty or unknown list', () => {
+    expect(validateSchoolSearch({ show: 'x' }).show).toBe(SCHOOL_SEARCH_DEFAULTS.show);
   });
 });

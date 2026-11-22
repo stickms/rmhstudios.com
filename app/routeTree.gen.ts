@@ -300,6 +300,7 @@ import { Route as SiteRmhDatacenterNetworkRouteImport } from './routes/_site/rmh
 import { Route as SiteRmhDatacenterPlatformRouteImport } from './routes/_site/rmh-datacenter/platform'
 import { Route as SiteRmhDatacenterPowerRouteImport } from './routes/_site/rmh-datacenter/power'
 import { Route as SiteRmhMedschoolIndexRouteImport } from './routes/_site/rmh-medschool/index'
+import { Route as SiteRmhMedschoolSlugRouteImport } from './routes/_site/rmh-medschool/$slug'
 import { Route as SiteRmhMedschoolLiveRouteImport } from './routes/_site/rmh-medschool/live'
 import { Route as SiteRmhladderIndexRouteImport } from './routes/_site/rmhladder/index'
 import { Route as SiteRmhladderAlertsRouteImport } from './routes/_site/rmhladder/alerts'
@@ -2074,6 +2075,11 @@ const SiteRmhDatacenterPowerRoute = SiteRmhDatacenterPowerRouteImport.update({
 const SiteRmhMedschoolIndexRoute = SiteRmhMedschoolIndexRouteImport.update({
   id: '/rmh-medschool/',
   path: '/rmh-medschool/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteRmhMedschoolSlugRoute = SiteRmhMedschoolSlugRouteImport.update({
+  id: '/rmh-medschool/$slug',
+  path: '/rmh-medschool/$slug',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRmhMedschoolLiveRoute = SiteRmhMedschoolLiveRouteImport.update({
@@ -3955,6 +3961,7 @@ export interface FileRoutesByFullPath {
   '/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
   '/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
   '/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
+  '/rmh-medschool/$slug': typeof SiteRmhMedschoolSlugRoute
   '/rmh-medschool/live': typeof SiteRmhMedschoolLiveRoute
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
@@ -4532,6 +4539,7 @@ export interface FileRoutesByTo {
   '/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
   '/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
   '/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
+  '/rmh-medschool/$slug': typeof SiteRmhMedschoolSlugRoute
   '/rmh-medschool/live': typeof SiteRmhMedschoolLiveRoute
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
@@ -5137,6 +5145,7 @@ export interface FileRoutesById {
   '/_site/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
   '/_site/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
   '/_site/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
+  '/_site/rmh-medschool/$slug': typeof SiteRmhMedschoolSlugRoute
   '/_site/rmh-medschool/live': typeof SiteRmhMedschoolLiveRoute
   '/_site/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/_site/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
@@ -5742,6 +5751,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter/network'
     | '/rmh-datacenter/platform'
     | '/rmh-datacenter/power'
+    | '/rmh-medschool/$slug'
     | '/rmh-medschool/live'
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
@@ -6319,6 +6329,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter/network'
     | '/rmh-datacenter/platform'
     | '/rmh-datacenter/power'
+    | '/rmh-medschool/$slug'
     | '/rmh-medschool/live'
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
@@ -6923,6 +6934,7 @@ export interface FileRouteTypes {
     | '/_site/rmh-datacenter/network'
     | '/_site/rmh-datacenter/platform'
     | '/_site/rmh-datacenter/power'
+    | '/_site/rmh-medschool/$slug'
     | '/_site/rmh-medschool/live'
     | '/_site/rmhladder/alerts'
     | '/_site/rmhladder/companies'
@@ -9486,6 +9498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRmhMedschoolIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/rmh-medschool/$slug': {
+      id: '/_site/rmh-medschool/$slug'
+      path: '/rmh-medschool/$slug'
+      fullPath: '/rmh-medschool/$slug'
+      preLoaderRoute: typeof SiteRmhMedschoolSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/rmh-medschool/live': {
       id: '/_site/rmh-medschool/live'
       path: '/rmh-medschool/live'
@@ -11940,6 +11959,7 @@ interface SiteRouteChildren {
   SiteRmhDatacenterNetworkRoute: typeof SiteRmhDatacenterNetworkRoute
   SiteRmhDatacenterPlatformRoute: typeof SiteRmhDatacenterPlatformRoute
   SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
+  SiteRmhMedschoolSlugRoute: typeof SiteRmhMedschoolSlugRoute
   SiteRmhMedschoolLiveRoute: typeof SiteRmhMedschoolLiveRoute
   SiteSafetyPileOnRoute: typeof SiteSafetyPileOnRoute
   SiteSeriesIdRoute: typeof SiteSeriesIdRoute
@@ -12098,6 +12118,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhDatacenterNetworkRoute: SiteRmhDatacenterNetworkRoute,
   SiteRmhDatacenterPlatformRoute: SiteRmhDatacenterPlatformRoute,
   SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
+  SiteRmhMedschoolSlugRoute: SiteRmhMedschoolSlugRoute,
   SiteRmhMedschoolLiveRoute: SiteRmhMedschoolLiveRoute,
   SiteSafetyPileOnRoute: SiteSafetyPileOnRoute,
   SiteSeriesIdRoute: SiteSeriesIdRoute,
@@ -13263,6 +13284,7 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'

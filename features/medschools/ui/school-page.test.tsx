@@ -1,0 +1,330 @@
+import type { ReactNode } from 'react';
+import { readFileSync } from 'node:fs';
+import { renderToString } from 'react-dom/server';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, expect, it, vi } from 'vitest';
+
+const h = vi.hoisted(() => ({ search: {} as Record<string, unknown> }));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (_key: string, o: { defaultValue: string; [k: string]: unknown }) => {
+      const tpl =
+        o.count === 1 && typeof o.defaultValue_one === 'string' ? (o.defaultValue_one as string) : o.defaultValue;
+      return tpl.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(o[k] ?? ''));
+    },
+    i18n: { language: 'en-US' },
+  }),
+}));
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    to,
+    params,
+    children,
+    className,
+    id,
+  }: {
+    to: string;
+    params?: { slug: string };
+    children: ReactNode;
+    className?: string;
+    id?: string;
+  }) => (
+    <a href={params ? to.replace('$slug', params.slug) : to} className={className} id={id}>
+      {children}
+    </a>
+  ),
+  useNavigate: () => () => undefined,
+  useSearch: () => h.search,
+  useParams: () => ({ slug: 'duke' }),
+}));
+vi.mock('@/components/feed/PageLayout', () => ({
+  PageLayout: ({ title, children }: { title: string; children: ReactNode }) => (
+    <main>
+      <h1>{title}</h1>
+      {children}
+    </main>
+  ),
+}));
+vi.mock('@/components/ui/select', () => ({
+  Select: ({ value, children, ...rest }: { value: string; children: ReactNode; 'aria-label'?: string }) => (
+    <select aria-label={rest['aria-label']} defaultValue={value}>
+      {children}
+    </select>
+  ),
+}));
+
+import { SchoolPage } from './SchoolPage';
+import { activityQuery, historyQuery, schoolQuery } from '../medschools.queries';
+import type {
+  ActivityTypeDto,
+  MedChartedTypeId,
+  MedSchoolDetailDto,
+  MedSchoolActivityRes,
+  MedSchoolHistoryRes,
+} from '../medschools.contract';
+
+const root = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
+
+const detail = (o: Partial<MedSchoolDetailDto> = {}, degree: 'MD' | 'DO' = 'MD'): MedSchoolDetailDto => ({
+  school: {
+    slug: 'duke',
+    name: 'Duke University School of Medicine',
+    shortName: 'Duke',
+    degree,
+    city: 'Durham',
+    state: 'NC',
+    website: 'https://medschool.duke.edu/',
+    interviewFormat: 'MMI',
+    interviewType: null,
+  },
+  cycleYear: 2026,
+  programsWithData: ['REG'],
+  links: [{ source: 'ADMIT', name: 'Admit', href: 'https://example.org/admit/duke', scope: 'school', cycleYear: null }],
+  stats: [],
+  profiles: [],
+  questions: [],
+  ...o,
+});
+
+const TYPES: MedChartedTypeId[] = ['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE'];
+const days = [
+  { date: '2026-11-18', count: 3 },
+  { date: '2026-11-20', count: 4 },
+];
+const series = (source: 'CYCLETRACK' | 'ADMIT' | 'SDN') => ({ source, days, total: 7 });
+const activity = (
+  o: Partial<MedSchoolActivityRes> = {},
+  perType: (t: MedChartedTypeId) => ActivityTypeDto = (t) => ({
+    eventType: t,
+    primary: t === 'INTERVIEW' ? 'CYCLETRACK' : null,
+    sources: t === 'INTERVIEW' ? [series('CYCLETRACK'), series('ADMIT')] : [],
+  }),
+): MedSchoolActivityRes => ({
+  cycleYear: 2026,
+  program: 'ALL',
+  dayZeroOn: '2026-06-01',
+  dayZeroEstimated: false,
+  types: TYPES.map(perType),
+  unreportedProgram: 0,
+  unreportedProgramSource: null,
+  ...o,
+});
+
+function render(seed: (qc: QueryClient) => void): string {
+  const qc = new QueryClient();
+  seed(qc);
+  return renderToString(
+    <QueryClientProvider client={qc}>
+      <SchoolPage />
+    </QueryClientProvider>,
+  );
+}
+const seedActivity =
+  (act: MedSchoolActivityRes, d = detail(), program: 'ALL' | 'REG' | 'PHD' = 'ALL') =>
+  (qc: QueryClient) => {
+    qc.setQueryData(schoolQuery('duke').queryKey, d);
+    qc.setQueryData(activityQuery('duke', { program, cycle: undefined }).queryKey, act);
+  };
+
+describe('route file', () => {
+  const src = root('../../../app/routes/_site/rmh-medschool/$slug.tsx');
+  it('is thin: validateSearch, strip defaults, notFound through the loader, card and breadcrumbs, no charts', () => {
+    expect(src).toContain("createFileRoute('/_site/rmh-medschool/$slug')");
+    expect(src).toContain('validateSearch: validateSchoolSearch');
+    expect(src).toContain('stripSearchParams(SCHOOL_SEARCH_DEFAULTS)');
+    expect(src).toContain('definePage');
+    expect(src).toContain('ogCard');
+    expect(src).toContain('breadcrumbSchema');
+    expect(src).toContain('loadSchoolHead');
+    expect(src).not.toMatch(/ui\/charts|chart-geometry|d3-/);
+    expect(root('../medschools.queries.ts')).toContain('throw notFound()');
+  });
+  it('SchoolPage uses the shared tab strip in link mode, with no hand-rolled strip', () => {
+    const page = root('./SchoolPage.tsx');
+    expect(page).toContain('PageTabs');
+    expect(page).toContain('renderTab');
+    expect(page).not.toMatch(/aria-selected|layoutId/);
+    expect(page).not.toMatch(/forecast/i);
+  });
+  it('SchoolLink is gone: links are typed', () => {
+    expect(() => root('./SchoolLink.tsx')).toThrow();
+    expect(root('./IndexPage.tsx')).toContain('to="/rmh-medschool/$slug"');
+  });
+});
+
+describe('SchoolPage', () => {
+  it('renders exactly the three tabs and no Forecast', () => {
+    h.search = {};
+    const html = render(seedActivity(activity()));
+    expect(html).toContain('>Activity<');
+    expect(html).toContain('>History<');
+    expect(html).toContain('>Interviews<');
+    expect(html).not.toContain('Forecast');
+    expect(html).toContain('<h1>Duke University School of Medicine</h1>');
+    expect(html).toContain('MD · Durham, NC');
+  });
+
+  it('Activity server-renders svg paths, names the primary and the comparison, and attributes sources', () => {
+    h.search = {};
+    const html = render(seedActivity(activity()));
+    expect(html).toContain('<svg');
+    expect(html).toContain('<path');
+    expect(html).toContain('Reported events');
+    expect(html).toContain('CycleTrack (primary)');
+    expect(html).toContain('Admit.org');
+    expect(html).toContain('Source: Admit.org');
+  });
+
+  it('Activity toggles are the first thing, a labelled group, and `show` limits the drawn categories', () => {
+    h.search = { show: 'interview,acceptance' };
+    const html = render(seedActivity(activity()));
+    expect(html.indexOf('role="group"')).toBeGreaterThan(-1);
+    expect(html.indexOf('role="group"')).toBeLessThan(html.indexOf('<svg'));
+    expect(html.match(/aria-pressed="true"/g)).toHaveLength(2);
+  });
+
+  it('Activity with only Admit data names Admit primary and never CycleTrack', () => {
+    h.search = {};
+    const html = render(
+      seedActivity(
+        activity({}, (t) => ({
+          eventType: t,
+          primary: t === 'INTERVIEW' ? 'ADMIT' : null,
+          sources: t === 'INTERVIEW' ? [series('ADMIT')] : [],
+        })),
+      ),
+    );
+    expect(html).toContain('Admit.org (primary)');
+    expect(html).not.toContain('CycleTrack');
+  });
+
+  it('Activity with no types of data renders the empty state and no chart', () => {
+    h.search = {};
+    const html = render(seedActivity(activity({}, (t) => ({ eventType: t, primary: null, sources: [] }))));
+    expect(html).toContain('No reported events yet this cycle.');
+    expect(html).not.toContain('<svg');
+    expect(html).not.toContain('NaN');
+  });
+
+  it('an empty PHD program shows the empty state and none of the REG numbers', () => {
+    h.search = { program: 'PHD' };
+    const html = render(
+      seedActivity(
+        activity({ program: 'PHD' }, (t) => ({ eventType: t, primary: null, sources: [] })),
+        detail(),
+        'PHD',
+      ),
+    );
+    expect(html).toContain('No reported events yet this cycle.');
+    expect(html).not.toMatch(/>7</);
+  });
+
+  it('unreported program events appear as one muted line and in no chart or table cell', () => {
+    h.search = {};
+    const html = render(seedActivity(activity({ unreportedProgram: 9, unreportedProgramSource: 'ADMIT' })));
+    expect(html).toContain('9 reported events from Admit.org did not say a program');
+    expect(html.match(/>9</g)).toBeNull();
+  });
+
+  it('program select on a DO school offers All programs, DO and DO-PhD only', () => {
+    h.search = {};
+    const html = render(seedActivity(activity(), detail({}, 'DO')));
+    expect(html).toContain('>All programs</option>');
+    expect(html).toContain('>DO</option>');
+    expect(html).toContain('>DO-PhD</option>');
+    expect(html).not.toContain('>MD</option>');
+    expect(html).not.toContain('>MD-PhD</option>');
+  });
+
+  it('History draws one source: never a cross-source line', () => {
+    h.search = { tab: 'history' };
+    const pts = [
+      { day: 10, cumulative: 3 },
+      { day: 20, cumulative: 7 },
+    ];
+    const hist: MedSchoolHistoryRes = {
+      program: 'ALL',
+      eventType: 'INTERVIEW',
+      cycles: [
+        {
+          cycleYear: 2026,
+          dayZeroEstimated: false,
+          sources: [
+            { source: 'CYCLETRACK', points: pts, total: 7 },
+            { source: 'ADMIT', points: pts, total: 7 },
+          ],
+        },
+        { cycleYear: 2025, dayZeroEstimated: true, sources: [{ source: 'CYCLETRACK', points: pts, total: 7 }] },
+      ],
+    };
+    const html = render((qc) => {
+      qc.setQueryData(schoolQuery('duke').queryKey, detail());
+      qc.setQueryData(historyQuery('duke', { program: 'ALL', type: 'INTERVIEW' }).queryKey, hist);
+    });
+    expect(html).toContain('Sources: CycleTrack (primary)');
+    expect(html).not.toContain('Admit.org (primary)');
+    expect(html).toContain('2025: cycle start estimated as June 1.');
+    expect(html.match(/<path/g)).toHaveLength(2);
+  });
+
+  it('Interviews shows the split only when present, and labels Admit all-cycles stats', () => {
+    h.search = { tab: 'interviews' };
+    const profile = {
+      source: 'SDN' as const,
+      format: 'MMI',
+      fileType: null,
+      avgDifficulty: 3,
+      avgStress: null,
+      avgImpression: null,
+      interviewCount: 40,
+      interviewStyle: null,
+      interviewLength: null,
+      feedbackPositive: [],
+      feedbackNegative: [],
+      feedbackBefore: [],
+    };
+    const stat = {
+      source: 'ADMIT' as const,
+      program: null,
+      cycleYear: 2026,
+      residence: 'GLOBAL' as const,
+      allCycles: true,
+      gpaMedian: 3.9,
+      gpaLow: 3.7,
+      gpaHigh: 4,
+      mcatMedian: 520,
+      mcatLow: null,
+      mcatHigh: null,
+      interviewToAcceptancePct: null,
+      applicationToInterviewPct: null,
+      applicationCount: null,
+      interviewCount: null,
+      admittedCount: null,
+      researchHours: null,
+      clinicalHours: null,
+      nonClinicalHours: null,
+    };
+    const without = render((qc) =>
+      qc.setQueryData(schoolQuery('duke').queryKey, detail({ profiles: [{ ...profile, split: null }], stats: [stat] })),
+    );
+    expect(without).not.toMatch(/In-state/);
+    expect(without).toContain('Admit.org, all reported cycles');
+    expect(without).toContain('GPA median');
+    const withSplit = render((qc) =>
+      qc.setQueryData(
+        schoolQuery('duke').queryKey,
+        detail({ profiles: [{ ...profile, split: { inState: 12, outOfState: 28 } }] }),
+      ),
+    );
+    expect(withSplit).toContain('In-state');
+    expect(withSplit).toContain('>12<');
+    expect(withSplit).toContain('>28<');
+  });
+
+  it('Interviews with nothing reported renders the empty state', () => {
+    h.search = { tab: 'interviews' };
+    const html = render((qc) => qc.setQueryData(schoolQuery('duke').queryKey, detail()));
+    expect(html).toContain('No interview details reported yet.');
+  });
+});

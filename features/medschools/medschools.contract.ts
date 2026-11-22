@@ -169,7 +169,7 @@ export interface LiveEventDto {
   id: string;
   eventType: MedEventTypeId;
   program: MedProgramId | null;
-  school: { slug: string; shortName: string; name: string; degree: MedDegreeId };
+  school: { slug: string; shortName: string; name: string; degree: MedDegreeId; city: string; state: string };
   /** ISO, truncated to the minute. */
   occurredAt: string;
   source: 'ADMIT' | 'SDN';
@@ -210,7 +210,15 @@ export interface MedTodayRes {
   date: string | null;
   isToday: boolean;
   program: MedProgramFilter;
-  schools: { slug: string; shortName: string; name: string; state: string; count: number; source: MedSourceId }[];
+  schools: {
+    slug: string;
+    shortName: string;
+    name: string;
+    city: string;
+    state: string;
+    count: number;
+    source: MedSourceId;
+  }[];
 }
 
 export const listMedSchoolsApi = endpoint<{
