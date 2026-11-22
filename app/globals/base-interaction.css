@@ -114,6 +114,16 @@ html:not(.app-route) body {
 }
 html.ios-webkit:not(.app-route) body {
   background-attachment: scroll;
+  /* At scroll top Safari fills the strip behind the status bar with one flat colour (the ground), so the wash showed a
+     hard line right under it. `--site-theme-wash-top` (lib/themes/tokens.ts) holds the ground over that strip and fades
+     it into the wash; it is anchored to the top of the document, so a scrolled page shows the wash itself. */
+  background-image: var(--site-theme-wash-top, none), var(--site-theme-wash, none);
+  background-size:
+    100% calc(env(safe-area-inset-top, 0px) + 96px),
+    100% 100%;
+  background-position:
+    0 0,
+    0 0;
 }
 
 /* App/game routes are excluded above because they do not scroll the document —
