@@ -1,4 +1,4 @@
-import { globSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -80,5 +80,16 @@ describe('medschools ui rules', () => {
 
   it('keeps createServerFn out of the query factories', () => {
     expect(read('features/medschools/medschools.queries.ts')).not.toContain('createServerFn');
+  });
+
+  it('is listed under Services and in site search, not the catalog (O1)', async () => {
+    const manifest = (await import('../feature')).default;
+    for (const r of manifest.routes) expect(existsSync(r), r).toBe(true);
+    expect(manifest.listed).toBe(false);
+    expect(manifest.catalog).toBeUndefined();
+    expect(read('app/routes/_site/services/index.tsx')).toContain("href: '/rmh-medschool'");
+    expect(read('lib/search/catalog.ts')).toContain("'/rmh-medschool'");
+    expect(existsSync('features/medschools/catalog.ts')).toBe(false);
+    expect(read('lib/catalog/index.ts')).not.toContain('medschools');
   });
 });

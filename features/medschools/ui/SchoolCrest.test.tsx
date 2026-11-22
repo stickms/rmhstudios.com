@@ -27,7 +27,9 @@ describe('SchoolCrest', () => {
   });
   it('uses site tokens only', () => {
     const src = readFileSync('features/medschools/ui/SchoolCrest.tsx', 'utf8');
-    expect(src).not.toMatch(/rounded-(sm|md|lg|xl|full)\b|#[0-9a-f]{3,6}\b|\b(bg|text|border)-(white|black|gray|slate|zinc|neutral)/);
+    expect(src).not.toMatch(
+      /rounded-(sm|md|lg|xl|full)\b|#[0-9a-f]{3,6}\b|\b(bg|text|border)-(white|black|gray|slate|zinc|neutral)/,
+    );
     expect(src).toContain('rounded-site-sm');
   });
 });
