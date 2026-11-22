@@ -2,12 +2,13 @@
  * PracticeModeToggle — Learning mode or Test mode (`lib/rmhmusic/learn/practice-mode.ts`), the
  * sanctioned `<Tabs>` strip with one line saying what the chosen mode does. The line is always
  * the height of its longer sentence's wrapped form (two lines reserved), so switching never moves
- * what is below. The choice is kept on the device and read by every drill when it deals.
+ * what is below. The choice is saved on the learner's profile (and on the device) and read by every drill.
  */
 
 import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
+import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import {
   DEFAULT_PRACTICE_MODE,
   getPracticeMode,
@@ -41,7 +42,10 @@ export function PracticeModeToggle({
         ]}
         value={mode}
         onChange={(id) => {
-          if (isPracticeMode(id)) setPracticeMode(id);
+          if (!isPracticeMode(id)) return;
+          // On the device at once (it also applies signed out), then on the profile so it follows the learner.
+          setPracticeMode(id);
+          void useLearnStore.getState().setPracticeMode(id);
         }}
         size="sm"
         aria-label={t('mode-practice', { defaultValue: 'Practice mode' })}

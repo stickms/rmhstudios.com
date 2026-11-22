@@ -12,6 +12,8 @@ import {
   type VoiceRange,
 } from './schemas';
 import { isVoiceRange } from './voice/range';
+import { clampMicGain, DEFAULT_MIC_GAIN } from './input/mic-gain';
+import { DEFAULT_PRACTICE_MODE, isPracticeMode, type PracticeMode } from './practice-mode';
 import { isInstrumentId } from './audio/instruments/catalog';
 import type { InstrumentId } from './audio/instruments/types';
 import { mergeLessonResult } from './xp';
@@ -26,6 +28,10 @@ export interface Profile {
   sound: InstrumentId | null;
   /** A voice learner's range, or null until chosen (lessons in the range ask for it first). */
   voiceRange: VoiceRange | null;
+  /** Learning or Test mode (`practice-mode.ts`). */
+  practiceMode: PracticeMode;
+  /** Microphone input gain, 1 to 16 (`input/mic-gain.ts`). */
+  micGain: number;
 }
 
 export interface LessonProgressRow {
@@ -42,6 +48,8 @@ export const DEFAULT_PROFILE: Profile = {
   dailyGoal: 1,
   sound: null,
   voiceRange: null,
+  practiceMode: DEFAULT_PRACTICE_MODE,
+  micGain: DEFAULT_MIC_GAIN,
 };
 
 /** Thrown by `completeLesson` for an id that is not in the catalogue. */
@@ -59,6 +67,8 @@ function toProfile(row: {
   dailyGoal: number;
   sound?: string | null;
   voiceRange?: string | null;
+  practiceMode?: string;
+  micGain?: number;
 }): Profile {
   // Columns are plain strings; narrow them so a stale value never reaches the UI.
   return {
@@ -72,6 +82,8 @@ function toProfile(row: {
     dailyGoal: row.dailyGoal,
     sound: isInstrumentId(row.sound) ? row.sound : null,
     voiceRange: isVoiceRange(row.voiceRange) ? row.voiceRange : null,
+    practiceMode: isPracticeMode(row.practiceMode) ? row.practiceMode : DEFAULT_PRACTICE_MODE,
+    micGain: clampMicGain(row.micGain),
   };
 }
 
@@ -102,6 +114,8 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     // Absent: leave the stored sound alone; null: follow the instrument again.
     ...(input.sound !== undefined ? { sound: input.sound } : {}),
     ...(input.voiceRange !== undefined ? { voiceRange: input.voiceRange } : {}),
+    ...(input.practiceMode !== undefined ? { practiceMode: input.practiceMode } : {}),
+    ...(input.micGain !== undefined ? { micGain: clampMicGain(input.micGain) } : {}),
   };
   const row = await prisma.musicLearnProfile.upsert({
     where: { userId },

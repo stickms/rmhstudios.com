@@ -10,6 +10,11 @@ const ctx = {
     connect: vi.fn(),
     disconnect: vi.fn(),
   })),
+  createGain: vi.fn(() => ({
+    gain: { value: 1 },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  })),
   createAnalyser: vi.fn(() => ({
     fftSize: 0,
     disconnect: vi.fn(),
@@ -188,5 +193,29 @@ describe('fftSizeFor', () => {
 
   it('never asks for more than the Web Audio maximum', () => {
     expect(fftSizeFor(1e7)).toBe(32768);
+  });
+});
+
+describe('microphone gain', () => {
+  it('sits between the microphone and the analyser and follows setMicGain live', async () => {
+    const { setMicGain } = await import('./mic');
+    const node = { gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() };
+    const source = { connect: vi.fn(), disconnect: vi.fn() };
+    ctx.createGain.mockReturnValueOnce(node);
+    ctx.createMediaStreamSource.mockReturnValueOnce(source);
+    const { stream } = fakeStream();
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) } });
+    setMicGain(4);
+    const mic = createMicInput();
+    await mic.start();
+    expect(node.gain.value).toBe(4);
+    expect(source.connect).toHaveBeenCalledWith(node);
+    expect(node.connect).toHaveBeenCalledTimes(1);
+    setMicGain(8);
+    expect(node.gain.value).toBe(8);
+    await mic.stop();
+    expect(node.disconnect).toHaveBeenCalled();
+    setMicGain(1);
+    vi.unstubAllGlobals();
   });
 });

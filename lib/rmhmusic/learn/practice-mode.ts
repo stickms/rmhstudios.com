@@ -7,8 +7,9 @@
  *   test      One answer per question, right or wrong, then on to the next — as the drills always
  *             were. This is the mode the Daily board and its scored run are fixed to.
  *
- * Kept on the device (like the light/dark choice), not in the profile: it is a preference about how
- * to practise right now, not part of who the learner is.
+ * The learner's profile holds it (`MusicLearnProfile.practiceMode`), so it follows them between
+ * devices; a copy is kept on the device so it applies at once, before the profile has loaded, and for
+ * a learner who is signed out.
  */
 import { persisted } from '@/lib/core/persist';
 
@@ -41,6 +42,18 @@ export function getPracticeMode(): PracticeMode {
 
 export function setPracticeMode(mode: PracticeMode): void {
   if (!isPracticeMode(mode)) return;
+  current = mode;
+  store.write(mode);
+  for (const l of listeners) l();
+}
+
+/**
+ * Take the mode the profile holds (what the server knows, from another device or an earlier visit)
+ * as the current one. The profile is the source of truth once it has loaded; the device copy is
+ * what applies before that and when signed out.
+ */
+export function hydratePracticeMode(mode: PracticeMode): void {
+  if (!isPracticeMode(mode) || mode === current) return;
   current = mode;
   store.write(mode);
   for (const l of listeners) l();

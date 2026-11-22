@@ -17,6 +17,7 @@ vi.mock('./input/hub', () => ({
   }),
 }));
 vi.mock('./input/mic', () => ({
+  setMicGain: vi.fn(),
   createMicInput: vi.fn(
     () => (
       created.mic++,
@@ -67,6 +68,8 @@ const PROFILE: Profile = {
   dailyGoal: 1,
   sound: null,
   voiceRange: null,
+  practiceMode: 'learning',
+  micGain: 1,
 };
 const ROW: LessonProgressRow = {
   lessonId: 'staff-what-is-a-staff',
@@ -884,5 +887,31 @@ describe('learn store remembered cards', () => {
     fetchMock.mockRejectedValueOnce(new TypeError('offline'));
     expect(await useLearnStore.getState().saveReviews(reviews)).toBe('failed');
     expect(useLearnStore.getState().cards).toEqual([again, fresh]);
+  });
+});
+
+describe('profile settings that act outside the store', () => {
+  it('apply the loaded profile to the microphone gain and the practice mode', async () => {
+    const mic = await import('./input/mic');
+    const mode = await import('./practice-mode');
+    const { useLearnStore } = await import('./store');
+    const profile = {
+      instrument: 'piano',
+      input: 'mic',
+      latencyMs: 0,
+      dailyGoal: 1,
+      sound: null,
+      voiceRange: null,
+      practiceMode: 'test',
+      micGain: 5.66,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ profile, progress: [] }) }),
+    );
+    await useLearnStore.getState().load();
+    expect(mic.setMicGain).toHaveBeenCalledWith(5.66);
+    expect(mode.getPracticeMode()).toBe('test');
+    vi.unstubAllGlobals();
   });
 });

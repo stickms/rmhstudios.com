@@ -19,7 +19,9 @@ import { create } from 'zustand';
 import { createInputHub, type InputHub } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
 import { createFanOut } from './input/fan-out';
-import { createMicInput, type MicFrame } from './input/mic';
+import { createMicInput, setMicGain, type MicFrame } from './input/mic';
+import { clampMicGain } from './input/mic-gain';
+import { hydratePracticeMode, isPracticeMode, type PracticeMode } from './practice-mode';
 import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
 import type { LessonProgressRow, Profile } from './progress.server';
@@ -77,6 +79,10 @@ export interface LearnState {
   setSound(sound: InstrumentId | null): Promise<void>;
   /** A singer's range (soprano, alto, tenor, bass). */
   setVoiceRange(range: VoiceRange): Promise<void>;
+  /** Learning or Test mode, saved on the profile (and applied at once). */
+  setPracticeMode(mode: PracticeMode): Promise<void>;
+  /** The microphone's input gain, 1 to 16 (applied to the running microphone at once). */
+  setMicGain(gain: number): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(lessonId: string, stars: number, score: number): Promise<CompleteOutcome>;
 
@@ -240,7 +246,9 @@ const sameProfile = (a: Profile | null, b: Profile | null) =>
     a.latencyMs === b.latencyMs &&
     a.dailyGoal === b.dailyGoal &&
     a.sound === b.sound &&
-    a.voiceRange === b.voiceRange);
+    a.voiceRange === b.voiceRange &&
+    a.practiceMode === b.practiceMode &&
+    a.micGain === b.micGain);
 
 const sameList = <T>(a: readonly T[], b: readonly T[]) =>
   a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
@@ -262,6 +270,12 @@ export function project(sync: data.State, prev?: Projection): Projection {
   };
 }
 
+/** The profile's settings that act outside the store: the microphone's gain and the practice mode. */
+function applyProfileSettings(profile: Profile): void {
+  setMicGain(profile.micGain);
+  hydratePracticeMode(profile.practiceMode);
+}
+
 export const useLearnStore = create<LearnState>()((set, get) => {
   /** Callers waiting on an id (a load token, a write, a completion). */
   const waiters = new Map<number, ((outcome?: CompleteOutcome) => void)[]>();
@@ -270,11 +284,15 @@ export const useLearnStore = create<LearnState>()((set, get) => {
   function send(event: data.Event, waiter?: (outcome?: CompleteOutcome) => void): void {
     const current = get();
     const { state, effects } = data.step(current.sync, event);
-    if (state !== current.sync)
+    if (state !== current.sync) {
+      const next = project(state, current);
       set({
         sync: state,
-        ...project(state, current),
+        ...next,
       });
+      // The profile carries two settings that act outside the store: apply them as they change.
+      if (next.profile !== current.profile && next.profile) applyProfileSettings(next.profile);
+    }
     for (const fx of effects) {
       switch (fx.type) {
         case 'fetch':
@@ -453,6 +471,20 @@ export const useLearnStore = create<LearnState>()((set, get) => {
       return change({
         key: 'voiceRange',
         value: range,
+      });
+    },
+    setPracticeMode(mode) {
+      if (!isPracticeMode(mode)) return Promise.resolve();
+      return change({
+        key: 'practiceMode',
+        value: mode,
+      });
+    },
+    setMicGain(gain) {
+      if (typeof gain !== 'number' || !Number.isFinite(gain)) return Promise.resolve();
+      return change({
+        key: 'micGain',
+        value: clampMicGain(gain),
       });
     },
     setLatency(ms) {

@@ -5,15 +5,60 @@
  * only while mounted.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { InputSource } from '@/lib/rmhmusic/learn/input/events';
 import { AUDIO_START_ERROR } from '@/lib/rmhmusic/learn/input/mic';
+import { DEFAULT_MIC_GAIN, MIC_GAIN_STEPS, gainFromStep, stepFromGain } from '@/lib/rmhmusic/learn/input/mic-gain';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
+import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { SECONDARY_BUTTON } from './buttons';
 import { LiveStaff } from './LiveStaff';
 import { useLastNote, useMicLevel, useMidiDevices, useNoteEvents } from './useLearnInput';
+
+/**
+ * How loud the microphone is taken to be (`input/mic-gain.ts`): a slider from as heard (1x) to 16x,
+ * applied to the running microphone as it moves, so the level bar above it answers at once, and
+ * saved on the profile. For a quiet microphone, a soft voice or an instrument held back from it.
+ */
+function MicSensitivity() {
+  const { t } = useTranslation('c-rmhmusic');
+  const gain = useLearnStore((s) => s.profile?.micGain ?? DEFAULT_MIC_GAIN);
+  const failed = useLearnStore((s) => s.saveFailed.includes('micGain'));
+  const id = useId();
+  const step = stepFromGain(gain);
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <label htmlFor={id} className="text-app-text">
+          {t('mic-sensitivity', { defaultValue: 'Microphone sensitivity' })}
+        </label>
+        <span className="text-app-text-muted">
+          {t('mic-sensitivity-value', { value: gain, defaultValue: '{{value}}x' })}
+        </span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={0}
+        max={MIC_GAIN_STEPS}
+        step={1}
+        value={step}
+        aria-valuetext={t('mic-sensitivity-value', { value: gain, defaultValue: '{{value}}x' })}
+        onChange={(e) => void useLearnStore.getState().setMicGain(gainFromStep(Number(e.target.value)))}
+        className="h-11 w-full accent-app-accent"
+      />
+      <p className="text-sm text-app-text-muted">
+        {failed
+          ? t('mic-sensitivity-failed', { defaultValue: "Couldn't save the sensitivity. It still applies here." })
+          : t('mic-sensitivity-hint', {
+              defaultValue: 'Raise it if the bar above barely moves when you play or sing.',
+            })}
+      </p>
+    </div>
+  );
+}
 
 /** Live level bar plus the note the microphone hears, with how far off it is in cents. */
 export function MicDetails() {
@@ -41,6 +86,7 @@ export function MicDetails() {
           }}
         />
       </div>
+      <MicSensitivity />
       <p className="text-sm text-app-text-muted" aria-live="polite">
         {note
           ? t('mic-heard', {
