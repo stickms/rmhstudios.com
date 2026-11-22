@@ -15,6 +15,7 @@ import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ProgramSelect } from './ProgramSelect';
 import { ReportedNote } from './ReportedNote';
+import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
@@ -59,6 +60,14 @@ export function SchoolPage() {
   };
   const tabs: TabItem[] = SCHOOL_TABS.map((id) => ({ id, label: tabLabel(id) }));
 
+  const programControl = detail ? (
+    <ProgramSelect
+      degree={detail.school.degree}
+      value={search.program}
+      onChange={(program) => setSearch({ program })}
+    />
+  ) : null;
+
   if (detailQuery.isError || (!detail && !detailQuery.isPending)) {
     return (
       <PageLayout title={t('school-title-fallback', { defaultValue: 'Med school' })}>
@@ -82,16 +91,19 @@ export function SchoolPage() {
     >
       <SkeletonSwap ready={!!detail}>
         {detail ? (
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-3">
-              <p className="t-meta m-0">
-                {t('school-place', {
-                  defaultValue: '{{degree}} · {{city}}, {{state}}',
-                  degree: detail.school.degree,
-                  city: detail.school.city,
-                  state: detail.school.state,
-                })}
-              </p>
+          <div className="flex flex-col gap-4">
+            <div className="mb-2 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <SchoolCrest slug={slug} name={detail.school.name} size={40} />
+                <p className="t-meta m-0">
+                  {t('school-place', {
+                    defaultValue: '{{degree}} · {{city}}, {{state}}',
+                    degree: detail.school.degree,
+                    city: detail.school.city,
+                    state: detail.school.state,
+                  })}
+                </p>
+              </div>
               <SchoolFacts school={detail.school} />
               <ReportedNote />
             </div>
@@ -115,20 +127,24 @@ export function SchoolPage() {
                   </Link>
                 )}
               />
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <ProgramSelect
-                  degree={detail.school.degree}
-                  value={search.program}
-                  onChange={(program) => setSearch({ program })}
-                />
-              </div>
             </div>
-            {search.tab === 'activity' ? (
-              <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
-            ) : search.tab === 'history' ? (
-              <HistoryTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
+            {search.tab === 'history' ? (
+              <HistoryTab
+                slug={slug}
+                detail={detail}
+                search={search}
+                setSearch={setSearch}
+                programControl={programControl}
+              />
             ) : (
-              <InterviewsTab detail={detail} search={search} />
+              <>
+                <div className="flex flex-wrap items-center gap-2">{programControl}</div>
+                {search.tab === 'activity' ? (
+                  <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
+                ) : (
+                  <InterviewsTab detail={detail} search={search} />
+                )}
+              </>
             )}
           </div>
         ) : null}

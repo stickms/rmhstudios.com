@@ -176,6 +176,65 @@ describe('SchoolPage', () => {
     expect(html).toContain('Source: Admit.org');
   });
 
+  it('Activity totals are one compact matrix: a row per category, a column per source, the primary marked', () => {
+    h.search = {};
+    const html = render(
+      seedActivity(
+        activity({}, (t) => ({
+          eventType: t,
+          primary: t === 'INTERVIEW' ? 'CYCLETRACK' : t === 'SECONDARY' ? 'ADMIT' : null,
+          sources:
+            t === 'INTERVIEW' ? [series('CYCLETRACK'), series('SDN')] : t === 'SECONDARY' ? [series('ADMIT')] : [],
+        })),
+      ),
+    );
+    const table = html.slice(html.indexOf('Totals this cycle'));
+    expect(table.match(/<tr>/g)).toHaveLength(3); // head + two categories with data
+    expect(table).toContain('>CycleTrack<');
+    expect(table).toContain('>Admit<');
+    expect(table).toContain('>SDN<');
+    expect(table).not.toContain('Student Doctor Network</th>');
+    expect(table).toContain('font-semibold');
+    expect(table).toContain('(primary)');
+  });
+
+  it('the school header carries the crest (decorative) beside the place line, and the name is the only title', () => {
+    h.search = {};
+    const html = render(seedActivity(activity()));
+    expect(html).toContain('size-10');
+    expect(html).toMatch(/<img[^>]+alt=""/);
+    expect(html.match(/<h1>/g)).toHaveLength(1);
+  });
+
+  it('History puts the program, category and source selects in one controls row', () => {
+    h.search = { tab: 'history' };
+    const pts = [{ day: 10, cumulative: 3 }];
+    const hist: MedSchoolHistoryRes = {
+      program: 'ALL',
+      eventType: 'INTERVIEW',
+      cycles: [
+        {
+          cycleYear: 2026,
+          dayZeroEstimated: false,
+          sources: [
+            { source: 'CYCLETRACK', points: pts, total: 3 },
+            { source: 'ADMIT', points: pts, total: 3 },
+          ],
+        },
+        { cycleYear: 2025, dayZeroEstimated: false, sources: [{ source: 'CYCLETRACK', points: pts, total: 3 }] },
+      ],
+    };
+    const html = render((qc) => {
+      qc.setQueryData(schoolQuery('duke').queryKey, detail());
+      qc.setQueryData(historyQuery('duke', { program: 'ALL', type: 'INTERVIEW' }).queryKey, hist);
+    });
+    const row = html.slice(html.indexOf('flex flex-wrap items-center gap-2'));
+    const end = row.indexOf('Days since cycle start') > 0 ? row.indexOf('<figure') : row.length;
+    const head = row.slice(0, end);
+    for (const label of ['Program', 'Category', 'Source']) expect(head).toContain(`aria-label="${label}"`);
+    expect(html).toContain('Days since cycle start');
+  });
+
   it('Activity toggles are the first thing, a labelled group, and `show` limits the drawn categories', () => {
     h.search = { show: 'interview,acceptance' };
     const html = render(seedActivity(activity()));
@@ -265,7 +324,8 @@ describe('SchoolPage', () => {
     expect(html).toContain('Sources: CycleTrack (primary)');
     expect(html).not.toContain('Admit.org (primary)');
     expect(html).toContain('2025: cycle start estimated as June 1.');
-    expect(html.match(/<path/g)).toHaveLength(2);
+    // Two cycles, drawn once per width (phone, mid, wide).
+    expect(html.match(/<path/g)).toHaveLength(2 * 3);
   });
 
   it('Interviews shows the split only when present, and labels Admit all-cycles stats', () => {

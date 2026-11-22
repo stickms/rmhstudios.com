@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -19,11 +20,14 @@ export function HistoryTab({
   detail,
   search,
   setSearch,
+  programControl,
 }: {
   slug: string;
   detail: MedSchoolDetailDto;
   search: SchoolSearch;
   setSearch: SetSchoolSearch;
+  /** The school page's program select: one controls row with the category and source selects. */
+  programControl: ReactNode;
 }) {
   const { t } = useTranslation('medschools');
   const { eventLabel, sourceName } = useMedLabels();
@@ -57,6 +61,7 @@ export function HistoryTab({
     <SkeletonSwap ready={!!query.data} skeleton={<ChartSkeleton />}>
       <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center gap-2">
+          {programControl}
           <Select
             controlSize="sm"
             aria-label={t('school-type-label', { defaultValue: 'Category' })}
@@ -99,16 +104,17 @@ export function HistoryTab({
               )}
             />
             <div>
-              {lines
-                .filter((l) => l.estimated)
-                .map((l) => (
-                  <p key={l.cycleYear} className="t-meta m-0">
-                    {t('school-history-estimated', {
-                      defaultValue: '{{year}}: cycle start estimated as June 1.',
-                      year: String(l.cycleYear),
-                    })}
-                  </p>
-                ))}
+              {lines.some((l) => l.estimated) ? (
+                <p className="t-meta m-0">
+                  {t('school-history-estimated', {
+                    defaultValue: '{{year}}: cycle start estimated as June 1.',
+                    year: lines
+                      .filter((l) => l.estimated)
+                      .map((l) => String(l.cycleYear))
+                      .join(', '),
+                  })}
+                </p>
+              ) : null}
               {lines.map((l) => (
                 <SourceLinks key={l.cycleYear} links={detail.links.filter((k) => k.cycleYear === l.cycleYear)} />
               ))}

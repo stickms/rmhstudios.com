@@ -13,6 +13,7 @@ import { formatUtcDay } from '../engine/public-read';
 import { SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
 import { schoolsQuery, todayQuery } from '../medschools.queries';
 import { DegreeProgramSelect } from './ProgramSelect';
+import { SchoolCrest } from './SchoolCrest';
 import { ReportedNote } from './ReportedNote';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
@@ -68,8 +69,9 @@ export function IndexPage() {
           </h2>
           <ul className="m-0 list-none p-0">
             {topRows.map((r) => (
-              <li key={r.slug} className="flex items-baseline justify-between gap-4 border-b border-site-border py-3">
-                <div className="min-w-0">
+              <li key={r.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-site-border py-3">
+                <SchoolCrest slug={r.slug} name={r.shortName} size={24} />
+                <div className="min-w-44 flex-1">
                   <Link
                     to="/rmh-medschool/$slug"
                     params={{ slug: r.slug }}
@@ -86,7 +88,7 @@ export function IndexPage() {
                     })}
                   </p>
                 </div>
-                <span className="t-meta shrink-0">
+                <span className="t-meta ps-9 sm:ps-0">
                   {t('index-day-invites', {
                     count: r.count,
                     defaultValue_one: '{{count}} invite · {{source}}',
@@ -151,9 +153,10 @@ export function IndexPage() {
                 {(schools.data?.schools ?? []).map((s) => (
                   <li
                     key={s.slug}
-                    className="flex items-baseline justify-between gap-4 border-b border-site-border py-3"
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-site-border py-3"
                   >
-                    <div className="min-w-0">
+                    <SchoolCrest slug={s.slug} name={s.name} size={24} />
+                    <div className="min-w-44 flex-1">
                       <Link
                         to="/rmh-medschool/$slug"
                         params={{ slug: s.slug }}
@@ -172,7 +175,7 @@ export function IndexPage() {
                       </p>
                     </div>
                     {s.reported ? (
-                      <span className="t-meta shrink-0">
+                      <span className="t-meta ps-9 sm:ps-0">
                         {t('index-reported', {
                           defaultValue: '{{n}} reported invites, {{source}}',
                           n: s.reported.count,

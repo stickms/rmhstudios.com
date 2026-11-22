@@ -8,10 +8,76 @@ import { curveLinear, curveStepAfter, line } from 'd3-shape';
  * No DOM, no viewer time zone: a `YYYY-MM-DD` here is a UTC calendar day.
  */
 
-export const CHART_W = 640;
-export const CHART_H = 240;
-/** The plot rectangle inside the viewBox; the right margin holds the direct end labels. */
-export const PLOT = { left: 40, right: 500, top: 12, bottom: 212 } as const;
+/**
+ * One drawing's geometry. The charts are server-rendered in every geometry and CSS shows exactly one (no measuring,
+ * no JS): a viewBox that is scaled down to a phone shrinks its text with it, so each width gets a viewBox close to
+ * the width it is shown at and the text stays at a readable size (`font` is in viewBox units, about 1 px each).
+ */
+export interface ChartGeometry {
+  id: 'phone' | 'mid' | 'wide';
+  w: number;
+  h: number;
+  /** The plot rectangle inside the viewBox; the right margin holds the direct end labels. */
+  plot: { left: number; right: number; top: number; bottom: number };
+  /** Axis ticks. */
+  xTickCount: number;
+  yTickCount: number;
+  /** Axis and end-label text size. */
+  font: number;
+  /** Closest two end labels may sit. */
+  labelGap: number;
+  /** True when the end labels use the short names. */
+  shortLabels: boolean;
+}
+
+/** Shown below 30rem. A 320 px phone shows it at about 0.95 px per unit, a 430 px one at about 1.3. */
+export const PHONE: ChartGeometry = {
+  id: 'phone',
+  w: 290,
+  h: 230,
+  plot: { left: 38, right: 204, top: 12, bottom: 196 },
+  xTickCount: 3,
+  yTickCount: 3,
+  font: 12,
+  labelGap: 16,
+  shortLabels: true,
+};
+/** From 30rem to 40rem. */
+export const MID: ChartGeometry = {
+  id: 'mid',
+  w: 470,
+  h: 240,
+  plot: { left: 40, right: 360, top: 12, bottom: 206 },
+  xTickCount: 4,
+  yTickCount: 4,
+  font: 12,
+  labelGap: 16,
+  shortLabels: true,
+};
+/** From 40rem up. */
+export const WIDE: ChartGeometry = {
+  id: 'wide',
+  w: 640,
+  h: 250,
+  plot: { left: 44, right: 490, top: 12, bottom: 216 },
+  xTickCount: 5,
+  yTickCount: 4,
+  font: 12,
+  labelGap: 16,
+  shortLabels: false,
+};
+export const GEOMETRIES: readonly ChartGeometry[] = [PHONE, MID, WIDE];
+
+/** Room under the plot for the tick labels, and for an axis title when there is one. */
+export const TICK_ROOM = 22;
+export const TITLE_ROOM = 18;
+/** The viewBox height: the geometry's own, plus a line for an axis title. */
+export const heightOf = (g: ChartGeometry, withTitle: boolean) => g.h + (withTitle ? TITLE_ROOM : 0);
+
+/** The calendar day `day` days after `from` (both `YYYY-MM-DD`, UTC). */
+export function addUtcDays(from: string, day: number): string {
+  return new Date(Date.parse(`${from}T00:00:00Z`) + Math.round(day) * 86_400_000).toISOString().slice(0, 10);
+}
 
 type Day = { date: string; count: number };
 
@@ -42,32 +108,34 @@ export function niceMax(max: number): number {
 }
 
 /** Y ticks for a `[0, yMax]` axis, in pixels inside the plot. */
-export function yTicksFor(yMax: number): { v: number; y: number }[] {
+export function yTicksFor(yMax: number, g: ChartGeometry = WIDE): { v: number; y: number }[] {
   const y = scaleLinear()
     .domain([0, yMax > 0 ? yMax : 1])
-    .range([PLOT.bottom, PLOT.top]);
-  return y.ticks(4).map((v) => ({ v, y: round2(y(v)) }));
+    .range([g.plot.bottom, g.plot.top]);
+  return y.ticks(g.yTickCount).map((v) => ({ v, y: round2(y(v)) }));
 }
 
 /** `extraMax` lets comparison series share the scale: bars and lines are drawn against one y axis. */
 export function barsGeometry(
   days: Day[],
   extraMax = 0,
+  g: ChartGeometry = WIDE,
 ): { bars: { x: number; y: number; w: number; h: number }[]; yTicks: { v: number; y: number }[]; max: number } {
   const max = days.reduce((m, d) => Math.max(m, d.count), 0);
+  const { plot } = g;
   const top = niceMax(Math.max(max, extraMax));
-  const y = scaleLinear().domain([0, top]).range([PLOT.bottom, PLOT.top]);
+  const y = scaleLinear().domain([0, top]).range([plot.bottom, plot.top]);
   const x = scaleBand<string>()
     .domain(days.map((d) => d.date))
-    .range([PLOT.left, PLOT.right])
+    .range([plot.left, plot.right])
     .padding(0.15);
   const bars = days.map((d) => ({
-    x: round2(x(d.date) ?? PLOT.left),
+    x: round2(x(d.date) ?? plot.left),
     y: round2(y(d.count)),
     w: round2(x.bandwidth()),
-    h: round2(PLOT.bottom - y(d.count)),
+    h: round2(plot.bottom - y(d.count)),
   }));
-  return { bars, yTicks: yTicksFor(top), max };
+  return { bars, yTicks: yTicksFor(top, g), max };
 }
 
 /**
@@ -79,16 +147,17 @@ export function linePath(
   xDomain: [number, number],
   yMax: number,
   step = false,
+  g: ChartGeometry = WIDE,
 ): { d: string; end: { x: number; y: number } | null } {
   const last = points[points.length - 1];
   if (!last) return { d: '', end: null };
   const [x0, x1] = xDomain;
   const sx = scaleLinear()
     .domain(x1 > x0 ? [x0, x1] : [x0 - 0.5, x0 + 0.5])
-    .range([PLOT.left, PLOT.right]);
+    .range([g.plot.left, g.plot.right]);
   const sy = scaleLinear()
     .domain([0, yMax > 0 ? yMax : 1])
-    .range([PLOT.bottom, PLOT.top]);
+    .range([g.plot.bottom, g.plot.top]);
   const gen = line<{ x: number; y: number }>()
     .x((p) => sx(p.x))
     .y((p) => sy(p.y))
@@ -105,11 +174,11 @@ export function extendStep(points: { x: number; y: number }[], xMax: number): { 
 }
 
 /** `count` evenly spaced integer ticks across the domain, in plot pixels. A one-point domain is one tick. */
-export function xTicks(domain: [number, number], count: number): { v: number; x: number }[] {
+export function xTicks(domain: [number, number], count: number, g: ChartGeometry = WIDE): { v: number; x: number }[] {
   const [a, b] = domain;
   const sx = scaleLinear()
     .domain(b > a ? [a, b] : [a - 0.5, a + 0.5])
-    .range([PLOT.left, PLOT.right]);
+    .range([g.plot.left, g.plot.right]);
   if (!(b > a) || count < 2) return [{ v: a, x: round2(sx(a)) }];
   const seen = new Set<number>();
   const out: { v: number; x: number }[] = [];

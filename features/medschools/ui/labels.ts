@@ -34,6 +34,10 @@ export function useMedLabels() {
     }
   };
 
+  /** Where the full label does not fit (chart end labels on a phone). */
+  const eventShortLabel = (type: MedEventTypeId): string =>
+    type === 'INTERVIEW' ? t('event-interview-short', { defaultValue: 'Interview' }) : eventLabel(type);
+
   /** The label for a program filter value; `degree` names the school's own degree when one is known (O5). */
   const programFilterLabel = (value: MedLiveProgramFilter, degree?: MedDegreeId): string => {
     switch (value) {
@@ -58,5 +62,5 @@ export function useMedLabels() {
 
   const sourceName = (s: MedSourceId): string => SOURCE_NAMES[s];
 
-  return { eventLabel, programLabel, programFilterLabel, sourceName };
+  return { eventLabel, eventShortLabel, programLabel, programFilterLabel, sourceName };
 }

@@ -10,6 +10,9 @@ export function useChartLabels(): (title: string) => ChartLabels {
   return (title) => ({
     title,
     unit: t('chart-unit', { defaultValue: 'Reported events' }),
+    unitDaily: t('chart-unit-daily', { defaultValue: 'Reported events per day' }),
+    unitCumulative: t('chart-unit-cumulative', { defaultValue: 'Reported events, running total' }),
+    daysSinceStart: t('chart-days-since-start', { defaultValue: 'Days since cycle start' }),
     sourcesLine: ({ primary, comparison }) =>
       comparison.length > 0
         ? t('chart-sources-with-others', {

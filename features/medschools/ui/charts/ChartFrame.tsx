@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CHART_H, CHART_W, PLOT } from '../../engine/chart-geometry';
+import { GEOMETRIES, TICK_ROOM, heightOf, type ChartGeometry } from '../../engine/chart-geometry';
 
 /**
  * The shared frame for the RMH Med Schools charts (Phase 3 Task 5). Presentational and static: no state, no effect,
@@ -14,6 +14,10 @@ export interface ChartLabels {
   title: string;
   /** "Reported events". */
   unit: string;
+  /** Short axis cues: "Reported events per day", "Reported events, running total", "Days since cycle start". */
+  unitDaily: string;
+  unitCumulative: string;
+  daysSinceStart: string;
   /** "Sources: CycleTrack (primary), Admit.org", built from the sources the chart was given. */
   sourcesLine: (v: { primary: string; comparison: string[] }) => string;
   primary: string;
@@ -39,6 +43,7 @@ export function ChartFrame(p: {
   summary: string;
   table: ReactNode;
   tableLabel: string;
+  /** The drawing, from `ResponsivePlot`. */
   children: ReactNode;
 }) {
   return (
@@ -59,30 +64,63 @@ export function ChartFrame(p: {
   );
 }
 
-export function PlotSvg({ children }: { children: ReactNode }) {
+/** Which viewport widths show which drawing: exactly one is displayed, the others are `display: none`. */
+const SHOWN_AT: Record<ChartGeometry['id'], string> = {
+  phone: 'block min-[30rem]:hidden',
+  mid: 'hidden min-[30rem]:block sm:hidden',
+  wide: 'hidden sm:block',
+};
+
+/**
+ * The drawing in every geometry (phone, mid, wide), server-rendered, one shown by CSS. No measuring and no script:
+ * the markup is the same on the server and the client. `xTitle` is the short axis cue under the tick labels.
+ */
+export function ResponsivePlot({ render, xTitle }: { render: (g: ChartGeometry) => ReactNode; xTitle?: string }) {
   return (
-    <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="block h-auto w-full" aria-hidden="true" focusable="false">
-      {children}
-    </svg>
+    <>
+      {GEOMETRIES.map((g) => (
+        <svg
+          key={g.id}
+          viewBox={`0 0 ${g.w} ${heightOf(g, !!xTitle)}`}
+          className={`${SHOWN_AT[g.id]} h-auto w-full`}
+          aria-hidden="true"
+          focusable="false"
+        >
+          {render(g)}
+          {xTitle ? (
+            <text
+              x={(g.plot.left + g.plot.right) / 2}
+              y={g.plot.bottom + TICK_ROOM + 12}
+              textAnchor="middle"
+              fontSize={g.font}
+              fill="var(--site-text-muted)"
+            >
+              {xTitle}
+            </text>
+          ) : null}
+        </svg>
+      ))}
+    </>
   );
 }
 
-const TEXT = { fontSize: 11, fill: 'var(--site-text-muted)' } as const;
+const textProps = (g: ChartGeometry) => ({ fontSize: g.font, fill: 'var(--site-text-muted)' }) as const;
 
-export function YAxis({ ticks, format }: { ticks: { v: number; y: number }[]; format: (n: number) => string }) {
+export function YAxis({
+  ticks,
+  format,
+  g,
+}: {
+  ticks: { v: number; y: number }[];
+  format: (n: number) => string;
+  g: ChartGeometry;
+}) {
   return (
     <g>
       {ticks.map((t) => (
         <g key={t.v}>
-          <line
-            x1={PLOT.left}
-            x2={PLOT.right}
-            y1={t.y}
-            y2={t.y}
-            stroke="var(--site-border)"
-            strokeWidth={1}
-          />
-          <text x={PLOT.left - 6} y={t.y} dy="0.32em" textAnchor="end" {...TEXT}>
+          <line x1={g.plot.left} x2={g.plot.right} y1={t.y} y2={t.y} stroke="var(--site-border)" strokeWidth={1} />
+          <text x={g.plot.left - 6} y={t.y} dy="0.32em" textAnchor="end" {...textProps(g)}>
             {format(t.v)}
           </text>
         </g>
@@ -91,11 +129,18 @@ export function YAxis({ ticks, format }: { ticks: { v: number; y: number }[]; fo
   );
 }
 
-export function XAxis({ ticks }: { ticks: { x: number; label: string }[] }) {
+export function XAxis({ ticks, g }: { ticks: { x: number; label: string }[]; g: ChartGeometry }) {
   return (
     <g>
       {ticks.map((t) => (
-        <text key={`${t.x}-${t.label}`} x={t.x} y={PLOT.bottom + 16} textAnchor="middle" {...TEXT}>
+        <text
+          key={`${t.x}-${t.label}`}
+          x={t.x}
+          y={g.plot.bottom + 17}
+          // Labels near an edge hang inward so they stay inside the drawing and off the y axis numbers.
+          textAnchor={t.x - g.plot.left < 18 ? 'start' : g.plot.right - t.x < 18 ? 'end' : 'middle'}
+          {...textProps(g)}
+        >
           {t.label}
         </text>
       ))}
@@ -103,13 +148,25 @@ export function XAxis({ ticks }: { ticks: { x: number; label: string }[] }) {
   );
 }
 
-export function EndLabel({ x, y, text, ink }: { x: number; y: number; text: string; ink: 'ink' | 'muted' }) {
+export function EndLabel({
+  x,
+  y,
+  text,
+  ink,
+  g,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  ink: 'ink' | 'muted';
+  g: ChartGeometry;
+}) {
   return (
     <text
       x={x + 6}
       y={y}
       dy="0.32em"
-      fontSize={11}
+      fontSize={g.font}
       fill={ink === 'ink' ? 'var(--site-text)' : 'var(--site-text-muted)'}
     >
       {text}
@@ -117,14 +174,14 @@ export function EndLabel({ x, y, text, ink }: { x: number; y: number; text: stri
   );
 }
 
-export function EmptyNote({ text }: { text: string }) {
+export function EmptyNote({ text, g }: { text: string; g: ChartGeometry }) {
   return (
     <text
-      x={(PLOT.left + PLOT.right) / 2}
-      y={(PLOT.top + PLOT.bottom) / 2}
+      x={(g.plot.left + g.plot.right) / 2}
+      y={(g.plot.top + g.plot.bottom) / 2}
       textAnchor="middle"
       dy="0.32em"
-      {...TEXT}
+      {...textProps(g)}
     >
       {text}
     </text>

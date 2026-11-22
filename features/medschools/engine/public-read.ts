@@ -15,6 +15,15 @@ export const SOURCE_NAMES: Record<MedSource, string> = {
   MDAPPLICANTS: 'MDApplicants',
 };
 
+/** Column heads and phone end labels, where the full name does not fit. Proper nouns, not translated. */
+export const SHORT_SOURCE_NAMES: Record<MedSource, string> = {
+  CYCLETRACK: 'CycleTrack',
+  ADMIT: 'Admit',
+  SDN: 'SDN',
+  RMH: 'RMH',
+  MDAPPLICANTS: 'MDApplicants',
+};
+
 export type SchoolTab = 'activity' | 'history' | 'interviews';
 /** Phase 5 adds 'forecast' between history and interviews. */
 export const SCHOOL_TABS: readonly SchoolTab[] = ['activity', 'history', 'interviews'];

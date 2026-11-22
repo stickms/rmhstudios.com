@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
-import { formatUtcDay, toCumulativeByDay } from '../engine/public-read';
-import { CHARTED_TYPES } from '../engine/public-read';
+import { CHARTED_TYPES, SHORT_SOURCE_NAMES, formatUtcDay, toCumulativeByDay } from '../engine/public-read';
+import { buildTotalsMatrix } from '../engine/totals';
 import { activityQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
 import { CategoryToggles } from './CategoryToggles';
@@ -34,7 +34,7 @@ export function ActivityTab({
   setSearch: SetSchoolSearch;
 }) {
   const { t } = useTranslation('medschools');
-  const { eventLabel, sourceName } = useMedLabels();
+  const { eventLabel, eventShortLabel, sourceName } = useMedLabels();
   const chartLabels = useChartLabels();
   const { locale } = useLocaleFormat();
   const nf = new Intl.NumberFormat(locale);
@@ -53,6 +53,7 @@ export function ActivityTab({
 
   const data = query.data;
   const types = data?.types ?? [];
+  const matrix = buildTotalsMatrix(types);
   const hasAny = types.some((ty) => ty.sources.length > 0);
   const chosen = types.find((ty) => ty.eventType === search.type);
   const chosenPrimary = chosen?.sources.find((s) => s.source === chosen.primary) ?? chosen?.sources[0];
@@ -82,6 +83,7 @@ export function ActivityTab({
                 t('school-categories-title', { defaultValue: 'Cumulative reported events by category' }),
               )}
               visible={search.show.filter((s): s is MedChartedTypeId => CHARTED_TYPES.includes(s))}
+              dayZeroOn={data.dayZeroOn}
               sources={[...new Set(types.map((ty) => ty.primary).filter((s): s is MedSourceId => s !== null))]}
               series={types.flatMap((ty) => {
                 const src = ty.sources.find((s) => s.source === ty.primary);
@@ -90,6 +92,7 @@ export function ActivityTab({
                       {
                         eventType: ty.eventType,
                         label: eventLabel(ty.eventType),
+                        shortLabel: eventShortLabel(ty.eventType),
                         points: toCumulativeByDay(src.days, data.dayZeroOn),
                       },
                     ]
@@ -102,24 +105,25 @@ export function ActivityTab({
             className="flex flex-col gap-3"
             aria-label={t('school-type-section', { defaultValue: 'One category by day' })}
           >
-            <Select
-              controlSize="sm"
-              className="self-start"
-              aria-label={t('school-type-label', { defaultValue: 'Category' })}
-              value={search.type}
-              onChange={(e) => setSearch({ type: e.target.value as MedChartedTypeId })}
-            >
-              {CHARTED_TYPES.map((ty) => (
-                <option key={ty} value={ty}>
-                  {eventLabel(ty as MedChartedTypeId)}
-                </option>
-              ))}
-            </Select>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="t-label">{t('school-type-visible-label', { defaultValue: 'Category' })}</span>
+              <Select
+                controlSize="sm"
+                aria-label={t('school-type-label', { defaultValue: 'Category' })}
+                value={search.type}
+                onChange={(e) => setSearch({ type: e.target.value as MedChartedTypeId })}
+              >
+                {CHARTED_TYPES.map((ty) => (
+                  <option key={ty} value={ty}>
+                    {eventLabel(ty as MedChartedTypeId)}
+                  </option>
+                ))}
+              </Select>
+            </div>
             {chosenPrimary ? (
               <>
                 <DailyBars
                   primary={chosenPrimary}
-                  comparison={chosenComparison}
                   from={data.dayZeroOn}
                   to={today > data.dayZeroOn ? today : data.dayZeroOn}
                   labels={chartLabels(
@@ -164,37 +168,68 @@ export function ActivityTab({
             <h2 id="medschools-totals" className="t-heading m-0">
               {t('school-totals-title', { defaultValue: 'Totals this cycle' })}
             </h2>
-            <table className="t-body mt-2 w-full border-collapse">
-              <thead>
-                <tr>
-                  <th scope="col" className="t-meta border-b border-site-border py-2 pe-3 text-start font-normal">
-                    {t('school-totals-category', { defaultValue: 'Category' })}
-                  </th>
-                  <th scope="col" className="t-meta border-b border-site-border py-2 pe-3 text-start font-normal">
-                    {t('school-totals-source', { defaultValue: 'Source' })}
-                  </th>
-                  <th scope="col" className="t-meta border-b border-site-border py-2 text-end font-normal">
-                    {t('school-totals-count', { defaultValue: 'Reported events' })}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {types.flatMap((ty) =>
-                  ty.sources.map((s) => (
-                    <tr key={`${ty.eventType}-${s.source}`}>
-                      <td className="border-b border-site-border py-2 pe-3">{eventLabel(ty.eventType)}</td>
-                      <td className="border-b border-site-border py-2 pe-3">
-                        {sourceName(s.source)}
-                        {s.source === ty.primary ? (
-                          <span className="t-meta"> {t('school-totals-primary', { defaultValue: '(primary)' })}</span>
-                        ) : null}
-                      </td>
-                      <td className="border-b border-site-border py-2 text-end">{nf.format(s.total)}</td>
+            {matrix.rows.length > 0 ? (
+              <>
+                <table className="t-body mt-2 w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="t-meta border-b border-site-border py-2 pe-3 text-start font-normal">
+                        {t('school-totals-category', { defaultValue: 'Category' })}
+                      </th>
+                      {matrix.sources.map((src) => (
+                        <th
+                          key={src}
+                          scope="col"
+                          className="t-meta border-b border-site-border py-2 ps-3 text-end font-normal"
+                        >
+                          {SHORT_SOURCE_NAMES[src]}
+                        </th>
+                      ))}
                     </tr>
-                  )),
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {matrix.rows.map((row) => (
+                      <tr key={row.eventType}>
+                        <th scope="row" className="border-b border-site-border py-2 pe-3 text-start font-normal">
+                          {eventLabel(row.eventType)}
+                        </th>
+                        {row.cells.map((cell, i) => (
+                          <td
+                            key={matrix.sources[i]}
+                            className={`border-b border-site-border py-2 ps-3 text-end tabular-nums ${cell?.primary ? 'font-semibold' : 'text-site-text-muted'}`}
+                          >
+                            {cell ? (
+                              <>
+                                {nf.format(cell.total)}
+                                {cell.primary ? (
+                                  <span className="sr-only">
+                                    {' '}
+                                    {t('school-totals-primary', { defaultValue: '(primary)' })}
+                                  </span>
+                                ) : null}
+                              </>
+                            ) : (
+                              <>
+                                <span aria-hidden="true">&ndash;</span>
+                                <span className="sr-only">
+                                  {t('school-totals-none', { defaultValue: 'No figure' })}
+                                </span>
+                              </>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="t-meta mt-2 mb-0">
+                  {t('school-totals-note', {
+                    defaultValue:
+                      'Reported events this cycle. Bold marks the primary source, the one the daily chart draws.',
+                  })}
+                </p>
+              </>
+            ) : null}
           </section>
 
           {data.unreportedProgram > 0 && data.unreportedProgramSource ? (
