@@ -30,7 +30,10 @@ export const historyQuery = z.object({
 
 export const liveQuery = z.object({
   type: anyType.optional(),
-  school: z.string().max(80).optional(),
+  school: z
+    .string()
+    .regex(/^[a-z0-9-]{1,80}$/)
+    .optional(),
   degree: degree.optional(),
   program: z.enum(['ALL', 'REG', 'PHD', 'NONE']).optional(),
   cursor: z

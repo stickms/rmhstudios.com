@@ -189,7 +189,9 @@ export interface MedSchoolActivityRes {
   dayZeroEstimated: boolean;
   /** All five CHARTED_TYPES, always, so toggling a category refetches nothing (O4). */
   types: ActivityTypeDto[];
+  /** Null-program events of the charted types for one source (never a sum across sources). */
   unreportedProgram: number;
+  unreportedProgramSource: 'ADMIT' | 'SDN' | null;
 }
 
 export interface MedSchoolHistoryRes {

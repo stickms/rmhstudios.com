@@ -72,7 +72,11 @@ function sumPrograms(rows: readonly RawCell[]): RawCell[] {
   return [...out.values()];
 }
 
+/** Same shape the search parser accepts; anything else (`%00`, upper case, over-long) is a 404 and never reaches Postgres. */
+export const SLUG_RE = /^[a-z0-9-]{1,80}$/;
+
 async function findSchool(slug: string) {
+  if (!SLUG_RE.test(slug)) return null;
   return prisma.medSchool.findFirst({
     where: { slug, active: true },
     select: {
@@ -91,8 +95,9 @@ async function findSchool(slug: string) {
 }
 
 async function latestCycleWith(where: { schoolId?: string; eventType?: MedEventType }): Promise<number | null> {
+  // Floored too: a suppressed RMH row must not move the cycle the pages show.
   const r = await prisma.medCycleCount.findFirst({
-    where,
+    where: { ...where, ...FLOOR_WHERE },
     orderBy: { cycleYear: 'desc' },
     select: { cycleYear: true },
   });
@@ -203,7 +208,7 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
       take: 100,
     }),
     prisma.medCycleCount.findMany({
-      where: { schoolId: school.id, cycleYear },
+      where: { schoolId: school.id, cycleYear, ...FLOOR_WHERE },
       select: { program: true },
       distinct: ['program'],
     }),
@@ -228,7 +233,7 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
     cycleYear,
     programsWithData: programRows.map((r) => r.program),
     links: buildSourceLinks({ aliases, threads, currentCycle: cycleYear }),
-    stats: shownStats.map(({ contributors: _c, ...s }) => ({ ...s, allCycles: false })),
+    stats: shownStats.map(({ contributors: _c, ...s }) => ({ ...s, allCycles: s.source === 'ADMIT' })),
     profiles: profiles.map(
       ({ inStateCount, outOfStateCount, feedbackPositive, feedbackNegative, feedbackBefore, ...p }) => ({
         ...p,
@@ -240,6 +245,23 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
     ),
     questions: questions.slice(0, 100),
   };
+}
+
+/**
+ * Null-program events of the charted types, for ONE source: the first of ADMIT, SDN with any in the cycle. Sources
+ * are never added together; RMH events are not public one by one.
+ */
+async function unreportedFor(
+  schoolId: string,
+  cycleYear: number,
+): Promise<{ count: number; source: 'ADMIT' | 'SDN' | null }> {
+  for (const source of ['ADMIT', 'SDN'] as const) {
+    const count = await prisma.medCycleEvent.count({
+      where: { schoolId, cycleYear, program: null, source, eventType: { in: [...CHARTED_TYPES] } },
+    });
+    if (count > 0) return { count, source };
+  }
+  return { count: 0, source: null };
 }
 
 export async function getActivity(
@@ -255,7 +277,7 @@ export async function getActivity(
     latestWithData: await latestCycleWith({ schoolId: school.id }),
     now,
   });
-  const [rows, cycle, unreportedProgram] = await Promise.all([
+  const [rows, cycle, unreported] = await Promise.all([
     prisma.medCycleCount.findMany({
       where: {
         schoolId: school.id,
@@ -266,10 +288,7 @@ export async function getActivity(
       select: { source: true, date: true, eventType: true, count: true, contributors: true },
     }),
     prisma.medCycle.findUnique({ where: { cycleYear }, select: { dayZeroOn: true, dateEstimated: true } }),
-    // Event rows, not series: a null program is counted here and in no series. RMH events are not public one by one.
-    prisma.medCycleEvent.count({
-      where: { schoolId: school.id, cycleYear, program: null, source: { in: ['ADMIT', 'SDN'] } },
-    }),
+    unreportedFor(school.id, cycleYear),
   ]);
   const cells = sumPrograms(
     rows.map((r) => ({
@@ -290,7 +309,8 @@ export async function getActivity(
     dayZeroOn: cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear),
     dayZeroEstimated: cycle ? cycle.dateEstimated : true,
     types,
-    unreportedProgram,
+    unreportedProgram: unreported.count,
+    unreportedProgramSource: unreported.source,
   };
 }
 
@@ -303,7 +323,7 @@ export async function getHistory(
   if (!school) return null;
   const program = q.program ?? 'ALL';
   const eventType: MedChartedTypeId = q.type ?? 'INTERVIEW';
-  const base = { schoolId: school.id, program: { in: programsOf(program) }, eventType };
+  const base = { schoolId: school.id, program: { in: programsOf(program) }, eventType, ...FLOOR_WHERE };
   const years = await prisma.medCycleCount.findMany({
     where: base,
     select: { cycleYear: true },

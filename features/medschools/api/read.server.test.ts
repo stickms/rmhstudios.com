@@ -37,6 +37,7 @@ const school = {
   interviewFormat: null,
   interviewType: null,
 };
+const FLOOR = { OR: [{ source: { not: 'RMH' } }, { contributors: { gte: 3 } }] };
 const d = (s: string) => new Date(`${s}T00:00:00Z`);
 
 beforeEach(() => {
@@ -115,6 +116,9 @@ describe('getLive', () => {
     const p2 = await getLive({ limit: 2, cursor: p1.nextCursor! }, NOW);
     const p3 = await getLive({ limit: 2, cursor: p2.nextCursor! }, NOW);
     expect([...p1.events, ...p2.events, ...p3.events].map((e) => e.id)).toEqual(['e', 'd', 'c', 'b', 'a']);
+    const at = new Date('2026-11-20T10:15:00.000Z');
+    const second = m.medCycleEvent.findMany.mock.calls[1]![0] as { where: { OR: unknown } };
+    expect(second.where.OR).toEqual([{ occurredAt: { lt: at } }, { occurredAt: { equals: at }, id: { lt: 'd' } }]);
     expect(p3.nextCursor).toBeNull();
   });
 
@@ -159,10 +163,45 @@ describe('getActivity', () => {
       ['SDN', 1],
     ]);
     expect(res.unreportedProgram).toBe(4);
+    expect(res.unreportedProgramSource).toBe('ADMIT');
     expect(res.dayZeroEstimated).toBe(true);
     expect(JSON.stringify(res)).not.toContain('RMH');
     const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: { program: unknown } };
     expect(args.where.program).toEqual({ in: ['REG', 'PHD'] });
+  });
+
+  it('counts unreported-program events for one source only, charted types only', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleEvent.count.mockResolvedValueOnce(3).mockResolvedValueOnce(5);
+    const res = (await getActivity('duke', {}, NOW))!;
+    expect([res.unreportedProgram, res.unreportedProgramSource]).toEqual([3, 'ADMIT']);
+    expect(m.medCycleEvent.count).toHaveBeenCalledTimes(1);
+    const w = (m.medCycleEvent.count.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+    expect(w).toMatchObject({
+      program: null,
+      source: 'ADMIT',
+      eventType: { in: ['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE'] },
+    });
+
+    m.medCycleEvent.count.mockReset().mockResolvedValueOnce(0).mockResolvedValueOnce(5);
+    const sdn = (await getActivity('duke', {}, NOW))!;
+    expect([sdn.unreportedProgram, sdn.unreportedProgramSource]).toEqual([5, 'SDN']);
+    m.medCycleEvent.count.mockReset().mockResolvedValue(0);
+    const none = (await getActivity('duke', {}, NOW))!;
+    expect([none.unreportedProgram, none.unreportedProgramSource]).toEqual([0, null]);
+  });
+
+  it('floors each RMH row before summing programs', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findMany.mockResolvedValue([
+      c('RMH', '2026-11-10', 'INTERVIEW', 2, 2),
+      c('RMH', '2026-11-10', 'INTERVIEW', 2, 2),
+      c('RMH', '2026-11-11', 'INTERVIEW', 4, 3),
+      c('RMH', '2026-11-11', 'INTERVIEW', 6, 4),
+    ]);
+    const iv = (await getActivity('duke', {}, NOW))!.types[0]!;
+    // 2+2 contributors sums to 4 but each row is under the floor, so 2026-11-10 is absent; 3 and 4 survive and add.
+    expect(iv.sources).toEqual([{ source: 'RMH', days: [{ date: '2026-11-11', count: 10 }], total: 10 }]);
   });
 
   it('reads one program when asked and 404s unknown slugs', async () => {
@@ -277,7 +316,27 @@ describe('getSchool', () => {
     expect(res.profiles[0]!.feedbackPositive).toHaveLength(10);
     expect(res.questions).toHaveLength(100);
     expect(res.school.degree).toBe('MD');
+    expect(res.stats.every((x) => x.allCycles === false)).toBe(true);
     expect(res.programsWithData).toEqual(['REG']);
+  });
+
+  it('marks ADMIT stats as spanning all cycles', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medSchoolStats.findMany.mockResolvedValue([{ ...stat('GLOBAL', null), source: 'ADMIT' }, stat('GLOBAL', null)]);
+    const res = (await getSchool('duke', NOW))!;
+    expect(res.stats.map((x) => [x.source, x.allCycles])).toEqual([
+      ['ADMIT', true],
+      ['CYCLETRACK', false],
+    ]);
+  });
+
+  it('floors programsWithData and the latest-cycle lookup', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    await getSchool('duke', NOW);
+    const latest = m.medCycleCount.findFirst.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(latest.where).toMatchObject(FLOOR);
+    const progs = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(progs.where).toMatchObject(FLOOR);
   });
 
   it('returns null for an unknown or inactive slug', async () => {
@@ -336,5 +395,36 @@ describe('getToday', () => {
   it('is empty with no interview counts', async () => {
     const res = await getToday({}, NOW);
     expect(res).toMatchObject({ date: null, schools: [] });
+  });
+});
+
+describe('slug guard', () => {
+  it.each(['%00', 'DUKE', 'a'.repeat(81), '', 'du ke', 'duke/x'])('never queries for %j', async (slug) => {
+    expect(await getSchool(slug, NOW)).toBeNull();
+    expect(await getActivity(slug, {}, NOW)).toBeNull();
+    expect(await getHistory(slug, {}, NOW)).toBeNull();
+    expect(m.medSchool.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe('the k floor reaches every count read', () => {
+  it('listSchools and getToday', async () => {
+    m.medSchool.findMany.mockResolvedValue([school]);
+    await listSchools({}, NOW);
+    expect((m.medCycleCount.groupBy.mock.calls[0]![0] as { where: unknown }).where).toMatchObject(FLOOR);
+    m.medCycleCount.findFirst.mockReset().mockResolvedValue({ cycleYear: 2027, date: d('2027-11-20') });
+    await getToday({}, NOW);
+    for (const [a] of m.medCycleCount.findFirst.mock.calls) {
+      expect((a as { where: unknown }).where).toMatchObject(FLOOR);
+    }
+    expect((m.medCycleCount.findMany.mock.calls[0]![0] as { where: unknown }).where).toMatchObject(FLOOR);
+  });
+
+  it('history picks its four newest cycles from floored rows', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    await getHistory('duke', {}, NOW);
+    const pick = m.medCycleCount.findMany.mock.calls[0]![0] as { where: unknown; take: number; distinct: unknown };
+    expect(pick.where).toMatchObject(FLOOR);
+    expect([pick.take, pick.distinct]).toEqual([4, ['cycleYear']]);
   });
 });
