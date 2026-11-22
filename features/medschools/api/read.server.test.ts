@@ -90,7 +90,7 @@ describe('getLive', () => {
     program,
     source: 'ADMIT',
     occurredAt: new Date(at),
-    school: { slug: 'duke', shortName: 'Duke', name: 'Duke' },
+    school: { slug: 'duke', shortName: 'Duke', name: 'Duke', degree: 'MD' },
   });
 
   it('is public-source only, exact keys, minute-truncated, null program kept', async () => {
@@ -101,7 +101,7 @@ describe('getLive', () => {
     const e = res.events[0]!;
     expect(e.program).toBeNull();
     expect(Object.keys(e).sort()).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source']);
-    expect(Object.keys(e.school).sort()).toEqual(['name', 'shortName', 'slug']);
+    expect(Object.keys(e.school).sort()).toEqual(['degree', 'name', 'shortName', 'slug']);
     expect(e.occurredAt).toBe('2026-11-20T10:15:00.000Z');
   });
 

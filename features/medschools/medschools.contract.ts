@@ -169,7 +169,7 @@ export interface LiveEventDto {
   id: string;
   eventType: MedEventTypeId;
   program: MedProgramId | null;
-  school: { slug: string; shortName: string; name: string };
+  school: { slug: string; shortName: string; name: string; degree: MedDegreeId };
   /** ISO, truncated to the minute. */
   occurredAt: string;
   source: 'ADMIT' | 'SDN';

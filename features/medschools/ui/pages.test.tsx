@@ -107,7 +107,7 @@ const ev = (id: string, o: Partial<LiveEventDto> = {}): LiveEventDto => ({
   id,
   eventType: 'INTERVIEW',
   program: 'REG',
-  school: { slug: 'duke', shortName: 'Duke', name: 'Duke University School of Medicine' },
+  school: { slug: 'duke', shortName: 'Duke', name: 'Duke University School of Medicine', degree: 'MD' },
   occurredAt: '2026-11-20T15:04:00.000Z',
   source: 'ADMIT',
   ...o,
