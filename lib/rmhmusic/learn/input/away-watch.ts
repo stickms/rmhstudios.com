@@ -11,19 +11,11 @@
  */
 export const AWAY_BLUR_MS = 1500;
 
-export type AwayReason =
-  | 'hidden'
-  | 'blurred';
+export type AwayReason = 'hidden' | 'blurred';
 
 interface Listenable {
-  addEventListener(
-    type: string,
-    listener: () => void,
-  ): void;
-  removeEventListener(
-    type: string,
-    listener: () => void,
-  ): void;
+  addEventListener(type: string, listener: () => void): void;
+  removeEventListener(type: string, listener: () => void): void;
 }
 
 export function watchAway({
@@ -36,75 +28,34 @@ export function watchAway({
     readonly hidden: boolean;
   };
   win: Listenable;
-  onAway: (
-    reason: AwayReason,
-  ) => void;
+  onAway: (reason: AwayReason) => void;
   blurMs?: number;
 }): () => void {
-  let timer:
-    | ReturnType<
-        typeof setTimeout
-      >
-    | undefined;
-  const clear =
-    () => {
-      clearTimeout(
-        timer,
-      );
-      timer =
-        undefined;
-    };
-  const onVisibility =
-    () => {
-      if (
-        doc.hidden
-      ) {
-        clear();
-        onAway(
-          'hidden',
-        );
-      }
-    };
-  const onBlur =
-    () => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const clear = () => {
+    clearTimeout(timer);
+    timer = undefined;
+  };
+  const onVisibility = () => {
+    if (doc.hidden) {
       clear();
-      timer =
-        setTimeout(
-          () => {
-            timer =
-              undefined;
-            onAway(
-              'blurred',
-            );
-          },
-          blurMs,
-        );
-    };
-  doc.addEventListener(
-    'visibilitychange',
-    onVisibility,
-  );
-  win.addEventListener(
-    'blur',
-    onBlur,
-  );
-  win.addEventListener(
-    'focus',
-    clear,
-  );
+      onAway('hidden');
+    }
+  };
+  const onBlur = () => {
+    clear();
+    timer = setTimeout(() => {
+      timer = undefined;
+      onAway('blurred');
+    }, blurMs);
+  };
+  doc.addEventListener('visibilitychange', onVisibility);
+  win.addEventListener('blur', onBlur);
+  win.addEventListener('focus', clear);
   return () => {
     clear();
-    doc.removeEventListener(
-      'visibilitychange',
-      onVisibility,
-    );
-    win.removeEventListener(
-      'blur',
-      onBlur,
-    );
-    win.removeEventListener(
-      'focus',
-      clear,
-    );
+    doc.removeEventListener('visibilitychange', onVisibility);
+    win.removeEventListener('blur', onBlur);
+    win.removeEventListener('focus', clear);
   };
 }

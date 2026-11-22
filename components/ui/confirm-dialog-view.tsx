@@ -23,38 +23,17 @@ export function ConfirmDialogView({
   settle,
 }: {
   pending: ConfirmOptions | null;
-  settle: (
-    value: boolean,
-  ) => void;
+  settle: (value: boolean) => void;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-ui',
-    );
-  const Icon =
-    pending?.icon ??
-    (pending?.danger
-      ? AlertTriangle
-      : undefined);
+  const { t } = useTranslation('c-ui');
+  const Icon = pending?.icon ?? (pending?.danger ? AlertTriangle : undefined);
 
   return (
     <Dialog
-      open={
-        pending !==
-        null
-      }
-      onOpenChange={(
-        open,
-      ) => {
+      open={pending !== null}
+      onOpenChange={(open) => {
         // Any dismissal (Escape, overlay click, close X) resolves to false.
-        if (
-          !open
-        )
-          settle(
-            false,
-          );
+        if (!open) settle(false);
       }}
     >
       {pending && (
@@ -63,64 +42,26 @@ export function ConfirmDialogView({
             <DialogTitle className="flex items-center gap-2">
               {Icon && (
                 <Icon
-                  className={
-                    pending.danger
-                      ? 'h-5 w-5 shrink-0 text-site-danger'
-                      : 'h-5 w-5 shrink-0 text-site-accent'
-                  }
+                  className={pending.danger ? 'h-5 w-5 shrink-0 text-site-danger' : 'h-5 w-5 shrink-0 text-site-accent'}
                   aria-hidden
                 />
               )}
-              {
-                pending.title
-              }
+              {pending.title}
             </DialogTitle>
-            {pending.description && (
-              <DialogDescription>
-                {
-                  pending.description
-                }
-              </DialogDescription>
-            )}
+            {pending.description && <DialogDescription>{pending.description}</DialogDescription>}
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="default"
-              onClick={() =>
-                settle(
-                  false,
-                )
-              }
-            >
+            <Button variant="default" onClick={() => settle(false)}>
               {pending.cancelLabel ??
-                t(
-                  'cancel',
-                  {
-                    defaultValue:
-                      'Cancel',
-                  },
-                )}
+                t('cancel', {
+                  defaultValue: 'Cancel',
+                })}
             </Button>
-            <Button
-              variant={
-                pending.danger
-                  ? 'danger'
-                  : 'default'
-              }
-              onClick={() =>
-                settle(
-                  true,
-                )
-              }
-            >
+            <Button variant={pending.danger ? 'danger' : 'default'} onClick={() => settle(true)}>
               {pending.confirmLabel ??
-                t(
-                  'confirm',
-                  {
-                    defaultValue:
-                      'Confirm',
-                  },
-                )}
+                t('confirm', {
+                  defaultValue: 'Confirm',
+                })}
             </Button>
           </DialogFooter>
         </DialogContent>

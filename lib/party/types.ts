@@ -5,12 +5,8 @@
 
 export interface PartyMemberView {
   userId: string;
-  name:
-    | string
-    | null;
-  image:
-    | string
-    | null;
+  name: string | null;
+  image: string | null;
   isLeader: boolean;
 }
 
@@ -25,12 +21,8 @@ export interface PartyInviteMsg {
   partyId: string;
   from: {
     userId: string;
-    name:
-      | string
-      | null;
-    image:
-      | string
-      | null;
+    name: string | null;
+    image: string | null;
   };
 }
 

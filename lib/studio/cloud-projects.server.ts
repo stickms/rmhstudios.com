@@ -15,10 +15,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { lockKey } from '@/lib/db/advisory-lock.server';
 import { captureVersion, getVersion, trimVersions } from '@/lib/studio/project-history.server';
-import {
-  MAX_CLOUD_PROJECTS,
-  MAX_PROJECT_BYTES,
-} from '@/lib/studio/project-schema';
+import { MAX_CLOUD_PROJECTS, MAX_PROJECT_BYTES } from '@/lib/studio/project-schema';
 import type {
   CloudProject,
   CloudProjectSummary,
@@ -88,10 +85,7 @@ export interface CloudSaveInput {
 
 function isUniqueViolation(error: unknown): boolean {
   return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'P2002'
+    typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === 'P2002'
   );
 }
 

@@ -5,10 +5,7 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { UpcomingDateDTO } from '@/lib/events/occurrences';
-import type {
-  restoreOccurrenceQuery,
-  setOccurrenceBody,
-} from '@/lib/events/occurrences-schema';
+import type { restoreOccurrenceQuery, setOccurrenceBody } from '@/lib/events/occurrences-schema';
 
 export interface OccurrencesRes {
   upcoming: UpcomingDateDTO[];
@@ -25,31 +22,19 @@ export interface OccurrencesRes {
 }
 
 /** Skip a date, or move it; replaces any earlier change of that date. Host, co-host or admin. */
-export const setOccurrenceApi =
-  endpoint<{
-    body: z.infer<
-      typeof setOccurrenceBody
-    >;
-    res: OccurrencesRes;
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/events/$id/occurrences',
-    },
-  );
+export const setOccurrenceApi = endpoint<{
+  body: z.infer<typeof setOccurrenceBody>;
+  res: OccurrencesRes;
+}>()({
+  method: 'PUT',
+  path: '/api/events/$id/occurrences',
+});
 
 /** Bring a skipped or moved date back. Host, co-host or admin. */
-export const restoreOccurrenceApi =
-  endpoint<{
-    query: z.infer<
-      typeof restoreOccurrenceQuery
-    >;
-    res: OccurrencesRes;
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/events/$id/occurrences',
-    },
-  );
+export const restoreOccurrenceApi = endpoint<{
+  query: z.infer<typeof restoreOccurrenceQuery>;
+  res: OccurrencesRes;
+}>()({
+  method: 'DELETE',
+  path: '/api/events/$id/occurrences',
+});

@@ -1,271 +1,41 @@
 # docs/ — Index
 
-Map
-of
-everything
-under
-`docs/`,
-with
-freshness
-flags
-so
-agents
-and
-humans
-know
-what
-to
-trust.
-Agent-facing
-guides
-live
-at
-the
-repo
-root
-([`CLAUDE.md`](../CLAUDE.md),
-[`AGENTS.md`](../AGENTS.md))
-and
-in
-each
-major
-directory's
-`CLAUDE.md`.
+Map of everything under `docs/`, with freshness flags so agents and humans know what to trust. Agent-facing guides live
+at the repo root ([`CLAUDE.md`](../CLAUDE.md), [`AGENTS.md`](../AGENTS.md)) and in each major directory's `CLAUDE.md`.
 
-Latest
-build
-and
-deployment
-review:
-[`build-deploy-audit-2026-10-23.md`](./archive/2026/build-deploy-audit-2026-10-23.md)
-measures
-30
-recent
-deployment
-runs,
-separates
-CI
-handoff
-from
-production
-readiness,
-and
-ranks
-speed
-improvements
-with
-runtime-performance
-acceptance
-criteria.
-Implementation
-and
-post-merge
-activation:
+Latest build and deployment review:
+[`build-deploy-audit-2026-10-23.md`](./archive/2026/build-deploy-audit-2026-10-23.md) measures 30 recent deployment
+runs, separates CI handoff from production readiness, and ranks speed improvements with runtime-performance acceptance
+criteria. Implementation and post-merge activation:
 [`deployment-speed-implementation-2026-10-24.md`](./archive/2026/deployment-speed-implementation-2026-10-24.md).
 
-This
-tree
-also
-builds
-as
-a
-Sphinx/MyST
-site
-for
-Read
-the
-Docs
-—
-`conf.py`,
-`requirements.txt`
-and
-`index.md`
-(the
-landing
-page +
-nav)
-here,
-with
-`.readthedocs.yaml`
-at
-the
-repo
-root.
-Build
-it
-locally
-with:
+This tree also builds as a Sphinx/MyST site for Read the Docs — `conf.py`, `requirements.txt` and `index.md` (the
+landing page + nav) here, with `.readthedocs.yaml` at the repo root. Build it locally with:
 
 ```bash
 pip install -r docs/requirements.txt
 python -m sphinx -b html docs docs/_build/html
 ```
 
-New
-Markdown
-files
-are
-picked
-up
-by
-the
-globbed
-toctrees
-in
-`index.md`
-automatically;
-a
-file
-needs
-an
-`# H1`
-to
-get
-a
-nav
-entry.
+New Markdown files are picked up by the globbed toctrees in `index.md` automatically; a file needs an `# H1` to get a
+nav entry.
 
-The
-site
-is
-published
-in
-the
-same
-9
-languages
-as
-the
-product
-—
-see
-[`translations.md`](./translations.md)
-for
-the
-pipeline,
-the
-translated-page
-subset,
-and
-the
-Read
-the
-Docs
-per-language
-project
-setup.
+The site is published in the same 9 languages as the product — see [`translations.md`](./translations.md) for the
+pipeline, the translated-page subset, and the Read the Docs per-language project setup.
 
-**Trust
-order
-for
-conflicts:**
-code >
-`docker-compose.yml`/`deploy.sh` >
-root
-`CLAUDE.md`
-/
-directory
-`CLAUDE.md`s >
-the
-reference
-docs
-below >
-dated
-design
-docs/plans
-(historical
-snapshots
-—
-they
-describe
-intent
-at
-the
-time
-of
-writing,
-not
-necessarily
-the
-current
-code).
+**Trust order for conflicts:** code > `docker-compose.yml`/`deploy.sh` > root `CLAUDE.md` / directory `CLAUDE.md`s > the
+reference docs below > dated design docs/plans (historical snapshots — they describe intent at the time of writing, not
+necessarily the current code).
 
 ## Reference docs (keep current)
 
-- [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md)
-  —
-  Hearthworks
-  P2P
-  multiplayer:
-  wire
-  protocol
-  v2
-  (host→peer
-  refusals),
-  room
-  passwords,
-  remote-player
-  interpolation,
-  the
-  real-WebRTC
-  Chromium
-  e2e
-  (`pnpm test:hearthworks:e2e`)
-  and
-  what
-  loopback
-  cannot
-  prove.
-- [`hearthworks-models.md`](./hearthworks-models.md)
-  —
-  Hearthworks
-  skinned
-  character
-  models,
-  loaded
-  at
-  run
-  time
-  from
-  the
-  site's
-  own
-  Steam-sourced
-  R2
-  channels
-  (no
-  model
-  data
-  in
-  the
-  repo):
-  the
-  `features/hearthworks/engine/skins/models.manifest.json`
-  v2
-  contract,
-  index
-  resolution,
-  clip
-  selection,
-  fallbacks,
-  how
-  the
-  animator
-  blends
-  clips,
-  the
-  model/procedural
-  budget,
-  the
-  live-channel
-  browser
-  check,
-  and
-  how
-  to
-  add
-  a
-  skin.
+- [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md) — Hearthworks P2P multiplayer: wire protocol v2
+  (host→peer refusals), room passwords, remote-player interpolation, the real-WebRTC Chromium e2e
+  (`pnpm test:hearthworks:e2e`) and what loopback cannot prove.
+- [`hearthworks-models.md`](./hearthworks-models.md) — Hearthworks skinned character models, loaded at run time from the
+  site's own Steam-sourced R2 channels (no model data in the repo): the
+  `features/hearthworks/engine/skins/models.manifest.json` v2 contract, index resolution, clip selection, fallbacks, how
+  the animator blends clips, the model/procedural budget, the live-channel browser check, and how to add a skin.
 
 | Doc                                                                                                    | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -273,7 +43,7 @@ code).
 | [`codebase-overview.md`](./codebase-overview.md)                                                       | Canonical code-layout overview: stack, repo layout, conventions, where to look first                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | [`architecture.md`](./architecture.md)                                                                 | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | [`testing.md`](./testing.md)                                                                           | Test suites (Vitest main + epic, Go Bazel), how to run them, and which CI workflows gate them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| [`account-deletion.md`](./account-deletion.md) | What account deletion does (the 30-day schedule, `anonymizeAccount`) and the erasure registry: every model with a `User` relation as erased, kept on purpose, owner decision or TODO, with its reason; checked against `lib/account/erasure-registry.ts` |
+| [`account-deletion.md`](./account-deletion.md)                                                         | What account deletion does (the 30-day schedule, `anonymizeAccount`) and the erasure registry: every model with a `User` relation as erased, kept on purpose, owner decision or TODO, with its reason; checked against `lib/account/erasure-registry.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | [`fouc.md`](./fouc.md)                                                                                 | The FOUC audit: what counts as a flash, the six detectors and why each asks its question when it does, the appearance profiles, how route coverage is kept total, and the commit-time contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | [`performance-slo.md`](./performance-slo.md)                                                           | Performance guardrails: bundle budgets, synthetic probes, RUM SLO bands, and rollback trigger policy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | [`status-page.md`](./status-page.md)                                                                   | **status.rmhstudios.com**: how uptime, bars, incidents and percentiles are computed, the persistence files, the admin API for incidents/maintenance/announcements, every public endpoint (incl. the Statuspage-compatible v2 API, metrics, badges, feeds) and the feature catalogue                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -366,764 +136,77 @@ code).
 
 ## Historical: Plasmatic Jelly, the liquid globe and the eversion
 
-Steel
-(2026-11-11,
-[`plans/2026-11-11-steel-design-implementation.md`](./plans/2026-11-11-steel-design-implementation.md))
-replaced
-the
-old
-material
-and
-shell,
-and
-phase
-6
-deleted
-their
-code:
-`components/radial/`,
-`lib/jelly/`,
-`lib/liquid/`,
-`lib/eversion/`,
-the
-WebAssembly
-kernels,
-the
-glass,
-jelly
-and
-arc
-stylesheets
-and
-the
-`/jelly`
-and
-`/eversion-lab`
-routes.
-The
-documents
-below
-describe
-that
-code.
-They
-are
-**kept
-for
-the
-record
-and
-are
-not
-current**;
-nothing
-they
-say
-about
-the
-material,
-the
-radial
-shell,
-the
-liquid
-globe,
-the
-eversion
-or
-the
-WebAssembly
-kernels
-is
-true
-of
-the
-repo.
-The
-current
-design
-is
-`../design.md`
-and
-the
-Steel
-plan.
-`lib/dough.ts`,
-`lib/fluid.ts`
-and
-`lib/trackball.ts`
-survive:
-the
-chrome
-globe
-(`lib/globe/`)
-runs
-on
-them.
+Steel (2026-11-11,
+[`plans/2026-11-11-steel-design-implementation.md`](./plans/2026-11-11-steel-design-implementation.md)) replaced the old
+material and shell, and phase 6 deleted their code: `components/radial/`, `lib/jelly/`, `lib/liquid/`, `lib/eversion/`,
+the WebAssembly kernels, the glass, jelly and arc stylesheets and the `/jelly` and `/eversion-lab` routes. The documents
+below describe that code. They are **kept for the record and are not current**; nothing they say about the material, the
+radial shell, the liquid globe, the eversion or the WebAssembly kernels is true of the repo. The current design is
+`../design.md` and the Steel plan. `lib/dough.ts`, `lib/fluid.ts` and `lib/trackball.ts` survive: the chrome globe
+(`lib/globe/`) runs on them.
 
 - [`archive/2026/plasmatic-jelly-design-language.md`](./archive/2026/plasmatic-jelly-design-language.md),
   [`archive/2026/plasmatic-jelly-system.md`](./archive/2026/plasmatic-jelly-system.md),
   [`archive/2026/liquid-glass-system.md`](./archive/2026/liquid-glass-system.md),
   [`archive/2026/jelly-group-audit.md`](./archive/2026/jelly-group-audit.md)
 - [`archive/2026/plans/plasmatic-jelly/`](./archive/2026/plans/plasmatic-jelly/),
-  [`archive/2026/plans/globe-eversion/`](./archive/2026/plans/globe-eversion/),
-  `plans/2026-10-17-globe-eversion*.md`,
-  `archive/2026/plans/2026-10-21-liquid-glass-system.md`,
-  `archive/2026/plans/2026-10-22-liquid-refraction.md`,
-  the
-  two
+  [`archive/2026/plans/globe-eversion/`](./archive/2026/plans/globe-eversion/), `plans/2026-10-17-globe-eversion*.md`,
+  `archive/2026/plans/2026-10-21-liquid-glass-system.md`, `archive/2026/plans/2026-10-22-liquid-refraction.md`, the two
   `plans/2026-07-*-liquid-glass-*.md`
-- `superpowers/plans/`
-  and
-  `superpowers/specs/`
-  entries
-  named
-  `*jelly*`,
-  `*globe-jelly*`,
-  `*css-first-jelly*`
-  and
+- `superpowers/plans/` and `superpowers/specs/` entries named `*jelly*`, `*globe-jelly*`, `*css-first-jelly*` and
   `*refractive-glass*`
-- The
-  WebAssembly
-  kernels
-  doc
-  (`frontend-webassembly.md`)
-  was
-  deleted
-  with
-  the
-  kernels.
+- The WebAssembly kernels doc (`frontend-webassembly.md`) was deleted with the kernels.
 
 ## ⚠️ Known-stale docs (do not trust these claims)
 
-These
-predate
-the
-Next.js
-→
-TanStack
-Start
-migration
-and/or
-the
-Go
-cutover:
+These predate the Next.js → TanStack Start migration and/or the Go cutover:
 
-- Any
-  reference
-  to
-  a
-  repo-root
-  `specs/`
-  directory
-  —
-  it
-  was
-  deleted;
-  the
-  legacy
-  AI-agent
-  game
-  specs
-  it
-  held
-  (`vega.md`
-  and
-  friends)
-  are
-  gone
-  with
-  it
-- `rmhtube/features.md`
-  —
-  2025
-  roadmap
-  for
-  a
-  now-shipped
-  app
-  (its
-  stack
-  line
-  is
-  now
-  correct,
-  but
-  it
-  still
-  describes
-  intent
-  rather
-  than
-  the
-  shipped
-  feature
-  set)
-- Older
-  design
-  docs
-  in
-  `rmhbox/`,
-  `plans/`,
-  `misc/`,
-  and
-  the
-  textbook
-  chapters
-  mention
-  Next.js
-  in
-  historical
-  context
-  —
-  the
-  routes/stack
-  described
-  there
-  map
-  to
-  `app/routes/` +
-  TanStack
-  Start
-  today
-- `../go-services/FOUNDATION.md`
-  —
-  a
-  `pkg/`
-  API
-  reference;
-  the
-  removed
-  `pkg/events`/`pkg/realtime`
-  sections
-  were
-  cut,
-  but
-  treat
-  `go-services/CLAUDE.md`
-  as
-  canonical
-  (`go-services/README.md`
-  was
-  refreshed
-  to
-  the
-  current
-  2-service-in-prod
-  reality:
-  `status` +
-  `assets`)
-- The
-  June
-  2026
-  Go
-  cutover
-  runbooks
-  and
-  designs
-  (`runbooks/2026-06-22-go-runtime-cutover.md`,
-  `runbooks/2026-06-23-go-fleet-deploy.md`,
-  `superpowers/*/2026-06-22-goroutine-migration*`)
-  describe
-  a
-  Go
-  `supervisor`
-  running
-  the
-  background
-  workers.
-  Every
-  one
-  of
-  those
-  workers,
-  the
-  Discord
-  bot
-  last,
-  now
-  runs
-  in
-  the
-  Node
-  `jobs`
-  worker
-  and
-  the
-  supervisor
-  is
-  deleted
-  (D3)
-- Anything
-  claiming
-  production
-  runs
-  PM2
-  —
-  production
-  is
-  Docker
-  Compose
-  with
-  a
-  blue/green
-  web
-  hotswap
-  (see
+- Any reference to a repo-root `specs/` directory — it was deleted; the legacy AI-agent game specs it held (`vega.md`
+  and friends) are gone with it
+- `rmhtube/features.md` — 2025 roadmap for a now-shipped app (its stack line is now correct, but it still describes
+  intent rather than the shipped feature set)
+- Older design docs in `rmhbox/`, `plans/`, `misc/`, and the textbook chapters mention Next.js in historical context —
+  the routes/stack described there map to `app/routes/` + TanStack Start today
+- `../go-services/FOUNDATION.md` — a `pkg/` API reference; the removed `pkg/events`/`pkg/realtime` sections were cut,
+  but treat `go-services/CLAUDE.md` as canonical (`go-services/README.md` was refreshed to the current 2-service-in-prod
+  reality: `status` + `assets`)
+- The June 2026 Go cutover runbooks and designs (`runbooks/2026-06-22-go-runtime-cutover.md`,
+  `runbooks/2026-06-23-go-fleet-deploy.md`, `superpowers/*/2026-06-22-goroutine-migration*`) describe a Go `supervisor`
+  running the background workers. Every one of those workers, the Discord bot last, now runs in the Node `jobs` worker
+  and the supervisor is deleted (D3)
+- Anything claiming production runs PM2 — production is Docker Compose with a blue/green web hotswap (see
   `architecture.md`)
-- **Anything
-  describing
-  a
-  warm
-  `.vinxi`
-  module-graph
-  cache
-  as
-  load-bearing**
-  —
-  `opti/build-deploy-speedup.md`,
-  `runbooks/2026-06-23-go-fleet-deploy.md`
-  and
-  `ci-speed-audit-2026-07-17.md`
-  all
-  treat
-  it
-  as
-  the
-  thing
-  that
-  keeps
-  the
-  Vite
-  build
-  incremental.
-  It
-  never
-  was:
-  `.vinxi`
-  is
-  a
-  Vinxi
-  artifact
-  and
-  this
-  stack
-  builds
-  through
-  Vite/Nitro,
-  so
-  the
-  mount
-  was
-  always
-  empty.
-  It
-  was
-  removed
-  on
-  2026-08-08
-  —
-  see
-  `build-deploy-audit-2026-08-08.md`
-  §2.
-  `opti/`
-  also
-  predates
-  the
-  move
-  of
-  the
-  image
-  build
-  into
-  CI,
-  so
-  its
-  `deploy.sh`-builds-the-image
-  framing
-  is
-  superseded
-  wholesale
-- **Any
-  design
-  doc
-  describing
-  pointer-tracked
-  optics**
-  —
-  a
-  hovered-glass
-  diffuse
-  hotspot,
-  a
-  pointer-parallaxing
-  aurora
-  or
-  ring
-  backdrop,
-  `useGlassLight`,
-  `usePointerParallax`,
-  `useCardSheen`,
-  a
-  JS-published
-  `--light-x/--light-y`
-  scene
-  light,
-  or
-  the
-  `lib/liquid-gl`
-  GL/WebGPU
-  shader
-  tier.
-  All
-  of
-  it
-  was
-  deleted
-  on
-  2026-08-01;
-  the
-  glass
-  answers
-  a
-  static
-  sun
-  and
-  hover
-  is
-  a
-  state,
-  not
-  a
-  coordinate.
-  `archive/2026/plasmatic-jelly-design-language.md`
-  §5.1.1
-  is
-  the
-  record
-  of
-  what
-  went
-  and
-  why.
-  The
-  two
-  `plans/2026-07-*`
-  glass
-  docs
-  and
-  the
-  older
-  audits
-  still
-  describe
-  it
-  as
-  live
-  because
-  they
-  are
-  dated
-  snapshots
-- **Anything
-  describing
-  the
-  Liquid
-  Glass
-  material
-  as
-  current**
-  —
-  `archive/2026/liquid-glass-system.md`
-  (kept
-  behind
-  a
-  superseded
-  banner
-  for
-  its
-  optics
-  and
-  snapshot
-  history)
-  and
-  the
-  two
-  `plans/2026-07-*-liquid-glass-*`
-  docs
-  describe
-  clear
-  glass
-  with
-  no
-  resting
-  loop,
-  no
-  tap
-  feedback
-  and
-  still
-  neighbours.
-  The
-  material
-  is
-  Plasmatic
-  Jelly
-  since
-  2026-10-23:
-  always-moving
-  haze,
-  a
-  bounded
-  soft
-  body
-  and
-  electric
-  arcs;
-  the
-  authority
-  is
+- **Anything describing a warm `.vinxi` module-graph cache as load-bearing** — `opti/build-deploy-speedup.md`,
+  `runbooks/2026-06-23-go-fleet-deploy.md` and `ci-speed-audit-2026-07-17.md` all treat it as the thing that keeps the
+  Vite build incremental. It never was: `.vinxi` is a Vinxi artifact and this stack builds through Vite/Nitro, so the
+  mount was always empty. It was removed on 2026-08-08 — see `build-deploy-audit-2026-08-08.md` §2. `opti/` also
+  predates the move of the image build into CI, so its `deploy.sh`-builds-the-image framing is superseded wholesale
+- **Any design doc describing pointer-tracked optics** — a hovered-glass diffuse hotspot, a pointer-parallaxing aurora
+  or ring backdrop, `useGlassLight`, `usePointerParallax`, `useCardSheen`, a JS-published `--light-x/--light-y` scene
+  light, or the `lib/liquid-gl` GL/WebGPU shader tier. All of it was deleted on 2026-08-01; the glass answers a static
+  sun and hover is a state, not a coordinate. `archive/2026/plasmatic-jelly-design-language.md` §5.1.1 is the record of
+  what went and why. The two `plans/2026-07-*` glass docs and the older audits still describe it as live because they
+  are dated snapshots
+- **Anything describing the Liquid Glass material as current** — `archive/2026/liquid-glass-system.md` (kept behind a
+  superseded banner for its optics and snapshot history) and the two `plans/2026-07-*-liquid-glass-*` docs describe
+  clear glass with no resting loop, no tap feedback and still neighbours. The material is Plasmatic Jelly since
+  2026-10-23: always-moving haze, a bounded soft body and electric arcs; the authority is
   `archive/2026/plasmatic-jelly-system.md`
 
-Fixed
-in
-the
-2026-07-29
-audit:
-the
-stack
-lines
-in
-`void-breaker/specs.md`,
-`temple-of-joy/game-design.md`
-and
-`rmhtube/features.md`
-now
-name
-TanStack
-Start.
-`temple-of-joy/`
-was
-rewritten
-again
-on
-2026-07-30
-alongside
-the
-game
-itself:
-`game-design.md`
-describes
-the
-current
-economy,
-and
-the
-four
-docs
-that
-described
-the
-superseded
-one
-(`patch-1.md`,
-`patch-2.md`,
-`content-expansion.md`,
-`implementation-plan.md`)
-were
-deleted.
-The
-repo-root
-`specs/`
-directory
-this
-file
-used
-to
-point
-at
-no
-longer
-exists
-—
-the
-reference
-was
-removed
-rather
-than
-repaired.
+Fixed in the 2026-07-29 audit: the stack lines in `void-breaker/specs.md`, `temple-of-joy/game-design.md` and
+`rmhtube/features.md` now name TanStack Start. `temple-of-joy/` was rewritten again on 2026-07-30 alongside the game
+itself: `game-design.md` describes the current economy, and the four docs that described the superseded one
+(`patch-1.md`, `patch-2.md`, `content-expansion.md`, `implementation-plan.md`) were deleted. The repo-root `specs/`
+directory this file used to point at no longer exists — the reference was removed rather than repaired.
 
-Narrowed
-in
-the
-2026-08-08
-testing
-audit:
-the
-vitest
-suite
-no
-longer
-covers
-gameplay.
-180
-test
-files
-—
-Slice
-It's
-judgement
-engine,
-the
-RMHBox
-minigame
-rules,
-and
-the
-whole
-gameplay
-suites
-for
-cookgame
-/
-Kowloon
-Knockout
-/
-Dream
-Rift
-/
-Temple
-of
-Joy
-/
-Versecraft
-/
-Kaikai
-/
-laundry-sort
-/
-massive-march
-/
-isleworks
-/
-nightrail
-/
-daily-puzzles
-/
-Void
-Breaker
-—
-were
-deleted
-to
-take
-the
-run
-from
-~37s
-to
-~20s.
-**Any
-game
-design
-doc
-that
-describes
-a
-behaviour
-as
-"covered
-by
-tests"
-is
-now
-stale.**
-What
-survived
-and
-why:
-[`testing.md`](./testing.md)
-§What
-is
-not
-tested.
+Narrowed in the 2026-08-08 testing audit: the vitest suite no longer covers gameplay. 180 test files — Slice It's
+judgement engine, the RMHBox minigame rules, and the whole gameplay suites for cookgame / Kowloon Knockout / Dream Rift
+/ Temple of Joy / Versecraft / Kaikai / laundry-sort / massive-march / isleworks / nightrail / daily-puzzles / Void
+Breaker — were deleted to take the run from ~37s to ~20s. **Any game design doc that describes a behaviour as "covered
+by tests" is now stale.** What survived and why: [`testing.md`](./testing.md) §What is not tested.
 
-Fixed
-in
-the
-2026-08-08
-testing
-audit:
-`testing.md`
-was
-rewritten.
-It
-had
-described
-a
-`vitest-coverage.yml`,
-an
-`epic-tests.yml`
-and
-a
-`typecheck-server.yml`
-that
-did
-not
-exist,
-counted
-"~45
-workflows"
-and
-"~227
-test
-files"
-against
-a
-tree
-with
-10
-and
-427,
-and
-called
-the
-epic
-suite
-CI-gated
-when
-nothing
-ran
-it.
-The
-workflow
-count
-and
-the
-epic
-gate
-are
-now
-real
-(`epic-tests.yml`
-was
-written
-rather
-than
-the
-claim
-deleted);
-the
-rest
-is
-measured
-against
-the
-tree
-and
-dated
-in
-the
-doc's
-header.
+Fixed in the 2026-08-08 testing audit: `testing.md` was rewritten. It had described a `vitest-coverage.yml`, an
+`epic-tests.yml` and a `typecheck-server.yml` that did not exist, counted "~45 workflows" and "~227 test files" against
+a tree with 10 and 427, and called the epic suite CI-gated when nothing ran it. The workflow count and the epic gate are
+now real (`epic-tests.yml` was written rather than the claim deleted); the rest is measured against the tree and dated
+in the doc's header.

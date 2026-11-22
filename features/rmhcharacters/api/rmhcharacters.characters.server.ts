@@ -6,7 +6,6 @@ import { MAX_CHARACTERS } from '@features/rmhcharacters/engine/characters-schema
 import { listCharactersApi } from '@features/rmhcharacters/engine/characters.contract';
 import type { Character } from '@features/rmhcharacters/engine/types';
 
-
 /**
  * GET /api/rmhcharacters/characters — the signed-in account's characters, newest edit first.
  *

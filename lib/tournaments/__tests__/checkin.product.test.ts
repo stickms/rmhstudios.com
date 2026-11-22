@@ -21,12 +21,8 @@ describe('the check-in window', () => {
   });
 
   it('opens the chosen number of minutes before the start', () => {
-    expect(checkInOpensAt({ startsAt: START, checkInMinutes: 15 })?.toISOString()).toBe(
-      '2026-12-01T17:45:00.000Z',
-    );
-    expect(checkInOpensAt({ startsAt: START, checkInMinutes: 60 })?.toISOString()).toBe(
-      '2026-12-01T17:00:00.000Z',
-    );
+    expect(checkInOpensAt({ startsAt: START, checkInMinutes: 15 })?.toISOString()).toBe('2026-12-01T17:45:00.000Z');
+    expect(checkInOpensAt({ startsAt: START, checkInMinutes: 60 })?.toISOString()).toBe('2026-12-01T17:00:00.000Z');
   });
 
   it('has no window without a start time or without a setting', () => {
@@ -43,22 +39,14 @@ describe('the check-in window', () => {
   });
 
   it('is never open without check-in', () => {
-    expect(isCheckInOpen({ startsAt: START, checkInMinutes: null }, at('2026-12-01T18:00:00Z'))).toBe(
-      false,
-    );
-    expect(isCheckInOpen({ startsAt: null, checkInMinutes: 30 }, at('2026-12-01T18:00:00Z'))).toBe(
-      false,
-    );
+    expect(isCheckInOpen({ startsAt: START, checkInMinutes: null }, at('2026-12-01T18:00:00Z'))).toBe(false);
+    expect(isCheckInOpen({ startsAt: null, checkInMinutes: 30 }, at('2026-12-01T18:00:00Z'))).toBe(false);
   });
 
   it('names the phase: off, before, open', () => {
     expect(checkInPhase({ startsAt: START, checkInMinutes: null }, START)).toBe('off');
-    expect(checkInPhase({ startsAt: START, checkInMinutes: 10 }, at('2026-12-01T17:00:00Z'))).toBe(
-      'before',
-    );
-    expect(checkInPhase({ startsAt: START, checkInMinutes: 10 }, at('2026-12-01T17:50:00Z'))).toBe(
-      'open',
-    );
+    expect(checkInPhase({ startsAt: START, checkInMinutes: 10 }, at('2026-12-01T17:00:00Z'))).toBe('before');
+    expect(checkInPhase({ startsAt: START, checkInMinutes: 10 }, at('2026-12-01T17:50:00Z'))).toBe('open');
   });
 });
 
@@ -81,7 +69,13 @@ describe('the drop list', () => {
   });
 
   it('drops nobody when everyone checked in', () => {
-    expect(noShows(t, entrants.filter((e) => e.checkedInAt), START)).toEqual([]);
+    expect(
+      noShows(
+        t,
+        entrants.filter((e) => e.checkedInAt),
+        START,
+      ),
+    ).toEqual([]);
   });
 
   it('counts the checked-in entrants', () => {

@@ -6,28 +6,20 @@ export interface ReadReceiptSettings {
   typingIndicators: boolean;
 }
 
-export const getReadReceiptsApi =
-  endpoint<{
-    res: ReadReceiptSettings;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/settings/read-receipts',
-    },
-  );
+export const getReadReceiptsApi = endpoint<{
+  res: ReadReceiptSettings;
+}>()({
+  method: 'GET',
+  path: '/api/settings/read-receipts',
+});
 
-export const setReadReceiptsApi =
-  endpoint<{
-    body: {
-      readReceipts?: boolean;
-      typingIndicators?: boolean;
-    };
-    res: ReadReceiptSettings;
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/settings/read-receipts',
-    },
-  );
+export const setReadReceiptsApi = endpoint<{
+  body: {
+    readReceipts?: boolean;
+    typingIndicators?: boolean;
+  };
+  res: ReadReceiptSettings;
+}>()({
+  method: 'PUT',
+  path: '/api/settings/read-receipts',
+});

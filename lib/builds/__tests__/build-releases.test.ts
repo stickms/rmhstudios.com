@@ -24,7 +24,9 @@ const db = vi.hoisted(() => ({
   notifications: [] as { userId: string; preview: string; entityType: string; entityId: string }[],
   seq: 0,
 }));
-const created = vi.hoisted(() => [] as { userId: string; preview: string; link: string; entityType?: string; dedupeUnread?: boolean }[]);
+const created = vi.hoisted(
+  () => [] as { userId: string; preview: string; link: string; entityType?: string; dedupeUnread?: boolean }[],
+);
 
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
@@ -33,7 +35,11 @@ vi.mock('@/lib/prisma.server', () => ({
         db.builds.find((b) => (where.id ? b.id === where.id : b.slug === where.slug)) ?? null,
     },
     buildVersion: {
-      create: async ({ data }: { data: { buildId: string; version: string; changelog: string | null; commitHash: string | null } }) => {
+      create: async ({
+        data,
+      }: {
+        data: { buildId: string; version: string; changelog: string | null; commitHash: string | null };
+      }) => {
         if (db.versions.some((v) => v.buildId === data.buildId && v.version === data.version)) {
           throw new Prisma.PrismaClientKnownRequestError('unique', { code: 'P2002', clientVersion: 'test' });
         }
@@ -53,7 +59,8 @@ vi.mock('@/lib/prisma.server', () => ({
       },
     },
     buildUnlock: {
-      findMany: async ({ where }: { where: { buildId: string } }) => db.unlocks.filter((u) => u.buildId === where.buildId),
+      findMany: async ({ where }: { where: { buildId: string } }) =>
+        db.unlocks.filter((u) => u.buildId === where.buildId),
     },
     watch: {
       findMany: async ({ where }: { where: { kind: string; targetId: string; userId?: { not: string } } }) =>
@@ -76,8 +83,20 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 vi.mock('@/lib/notifications.server', () => ({
-  createNotification: async (n: { userId: string; preview: string; link: string; entityType?: string; dedupeUnread?: boolean }) => {
-    created.push({ userId: n.userId, preview: n.preview, link: n.link, entityType: n.entityType, dedupeUnread: n.dedupeUnread });
+  createNotification: async (n: {
+    userId: string;
+    preview: string;
+    link: string;
+    entityType?: string;
+    dedupeUnread?: boolean;
+  }) => {
+    created.push({
+      userId: n.userId,
+      preview: n.preview,
+      link: n.link,
+      entityType: n.entityType,
+      dedupeUnread: n.dedupeUnread,
+    });
   },
 }));
 vi.mock('@/lib/shop/catalog', () => ({ getShopItem: () => null }));
@@ -92,9 +111,7 @@ vi.mock('@/lib/rmhcode-auth', () => ({
   },
 }));
 
-const { createRelease, findReleaseBuild, listReleases, notifyRelease } = await import(
-  '@/lib/builds/releases.server'
-);
+const { createRelease, findReleaseBuild, listReleases, notifyRelease } = await import('@/lib/builds/releases.server');
 const { route: collection } = await import('@/lib/builds/api/user-builds.$id.releases.server');
 const { route: item } = await import('@/lib/builds/api/user-builds.$id.releases.$releaseId.server');
 
@@ -140,10 +157,18 @@ beforeEach(() => {
 describe('publishing a release', () => {
   it('lets the owner publish by session and by CLI token, and answers 201', async () => {
     getSession.mockResolvedValue({ user: { id: 'owner' } });
-    const bySession = await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', session: 'x', body: { version: '1.0' } });
+    const bySession = await call(
+      collection.handlers.POST!,
+      { id: 'b1' },
+      { method: 'POST', session: 'x', body: { version: '1.0' } },
+    );
     expect(bySession.status).toBe(201);
     getSession.mockResolvedValue(null);
-    const byToken = await call(collection.handlers.POST!, { id: 'b1-slug' }, { method: 'POST', token: 'owner-token', body: { version: '1.1', changelog: 'Faster', commitHash: 'ABCDEF1' } });
+    const byToken = await call(
+      collection.handlers.POST!,
+      { id: 'b1-slug' },
+      { method: 'POST', token: 'owner-token', body: { version: '1.1', changelog: 'Faster', commitHash: 'ABCDEF1' } },
+    );
     expect(byToken.status).toBe(201);
     const { release } = await byToken.json();
     expect(release).toMatchObject({ version: '1.1', changelog: 'Faster', commitHash: 'abcdef1' });
@@ -158,18 +183,30 @@ describe('publishing a release', () => {
 
   it('refuses a member who is not the owner, by session or by token', async () => {
     getSession.mockResolvedValue({ user: { id: 'other' } });
-    const bySession = await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', session: 'x', body: { version: '1.0' } });
+    const bySession = await call(
+      collection.handlers.POST!,
+      { id: 'b1' },
+      { method: 'POST', session: 'x', body: { version: '1.0' } },
+    );
     expect(bySession.status).toBe(403);
     getSession.mockResolvedValue(null);
-    const byToken = await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', token: 'other-token', body: { version: '1.0' } });
+    const byToken = await call(
+      collection.handlers.POST!,
+      { id: 'b1' },
+      { method: 'POST', token: 'other-token', body: { version: '1.0' } },
+    );
     expect(byToken.status).toBe(403);
     expect(db.versions).toHaveLength(0);
   });
 
   it('answers a duplicate version with 409', async () => {
     const body = { version: '2.0' };
-    expect((await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', token: 'owner-token', body })).status).toBe(201);
-    expect((await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', token: 'owner-token', body })).status).toBe(409);
+    expect(
+      (await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', token: 'owner-token', body })).status,
+    ).toBe(201);
+    expect(
+      (await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', token: 'owner-token', body })).status,
+    ).toBe(409);
     expect(db.versions).toHaveLength(1);
   });
 
@@ -198,7 +235,11 @@ describe('publishing a release', () => {
         params: { id: 'b1' },
         request: new Request('https://rmhstudios.com/api/user-builds/b1/releases', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.9', 'X-RMHCode-Token': 'owner-token' },
+          headers: {
+            'content-type': 'application/json',
+            'cf-connecting-ip': '203.0.113.9',
+            'X-RMHCode-Token': 'owner-token',
+          },
           body: JSON.stringify({ version: `r${i}` }),
         }),
       });
@@ -210,8 +251,24 @@ describe('publishing a release', () => {
 
   it('answers 404 for an unknown build, and 404 (not 403) to a stranger on a private build', async () => {
     addBuild('p1', 'PRIVATE');
-    expect((await call(collection.handlers.POST!, { id: 'nope' }, { method: 'POST', token: 'owner-token', body: { version: '1' } })).status).toBe(404);
-    expect((await call(collection.handlers.POST!, { id: 'p1' }, { method: 'POST', token: 'other-token', body: { version: '1' } })).status).toBe(404);
+    expect(
+      (
+        await call(
+          collection.handlers.POST!,
+          { id: 'nope' },
+          { method: 'POST', token: 'owner-token', body: { version: '1' } },
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await call(
+          collection.handlers.POST!,
+          { id: 'p1' },
+          { method: 'POST', token: 'other-token', body: { version: '1' } },
+        )
+      ).status,
+    ).toBe(404);
   });
 });
 
@@ -223,16 +280,26 @@ describe('deleting a release', () => {
   it('is the owner’s alone', async () => {
     const id = db.versions[0]!.id;
     expect((await call(item.handlers.DELETE!, { id: 'b1', releaseId: id }, { method: 'DELETE' })).status).toBe(401);
-    expect((await call(item.handlers.DELETE!, { id: 'b1', releaseId: id }, { method: 'DELETE', token: 'other-token' })).status).toBe(403);
+    expect(
+      (await call(item.handlers.DELETE!, { id: 'b1', releaseId: id }, { method: 'DELETE', token: 'other-token' }))
+        .status,
+    ).toBe(403);
     expect(db.versions).toHaveLength(1);
-    expect((await call(item.handlers.DELETE!, { id: 'b1', releaseId: id }, { method: 'DELETE', token: 'owner-token' })).status).toBe(200);
+    expect(
+      (await call(item.handlers.DELETE!, { id: 'b1', releaseId: id }, { method: 'DELETE', token: 'owner-token' }))
+        .status,
+    ).toBe(200);
     expect(db.versions).toHaveLength(0);
   });
 
   it('only removes a release of the build in the path', async () => {
     addBuild('b2', 'PUBLIC');
     const id = db.versions[0]!.id;
-    const res = await call(item.handlers.DELETE!, { id: 'b2', releaseId: id }, { method: 'DELETE', token: 'owner-token' });
+    const res = await call(
+      item.handlers.DELETE!,
+      { id: 'b2', releaseId: id },
+      { method: 'DELETE', token: 'owner-token' },
+    );
     expect(res.status).toBe(404);
     expect(db.versions).toHaveLength(1);
   });
@@ -278,7 +345,9 @@ describe('notifying about a release', () => {
     db.unlocks.push({ userId: 'both', buildId: 'b1' }, { userId: 'buyer', buildId: 'b1' });
     expect(await notifyRelease(await build(), { version: '2.0' })).toBe(4);
     expect(created.map((c) => c.userId).sort()).toEqual(['all', 'both', 'buyer', 'important']);
-    expect(created.every((c) => c.preview === 'Build b1 2.0 is out' && c.link === '/builds/b1-slug#releases')).toBe(true);
+    expect(created.every((c) => c.preview === 'Build b1 2.0 is out' && c.link === '/builds/b1-slug#releases')).toBe(
+      true,
+    );
   });
 
   it('skips blocked and muted members, and never tells the owner', async () => {
@@ -307,7 +376,12 @@ describe('notifying about a release', () => {
 
   it('does not tell a member again when a deleted version is published once more', async () => {
     watch('fan', 'all');
-    db.notifications.push({ userId: 'fan', preview: 'Build b1 2.0 is out', entityType: 'watch-build-release', entityId: 'b1' });
+    db.notifications.push({
+      userId: 'fan',
+      preview: 'Build b1 2.0 is out',
+      entityType: 'watch-build-release',
+      entityId: 'b1',
+    });
     watch('late', 'all');
     expect(await notifyRelease(await build(), { version: '2.0' })).toBe(1);
     expect(created.map((c) => c.userId)).toEqual(['late']);
@@ -328,7 +402,11 @@ describe('notifying about a release', () => {
 
   it('publishing through the endpoint notifies once after the write', async () => {
     watch('fan', 'important');
-    const res = await call(collection.handlers.POST!, { id: 'b1' }, { method: 'POST', token: 'owner-token', body: { version: '9.0' } });
+    const res = await call(
+      collection.handlers.POST!,
+      { id: 'b1' },
+      { method: 'POST', token: 'owner-token', body: { version: '9.0' } },
+    );
     expect(res.status).toBe(201);
     await vi.waitFor(() => expect(created.map((c) => c.userId)).toEqual(['fan']));
   });

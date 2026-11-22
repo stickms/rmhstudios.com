@@ -8,22 +8,13 @@
  */
 
 import type { RelayMsg } from './events';
-import {
-  sendRelay,
-  setRelayHandler,
-} from './connection';
+import { sendRelay, setRelayHandler } from './connection';
 
 export interface Transport {
   readonly isHost: boolean;
   readonly localSlot: number;
-  send(
-    msg: RelayMsg,
-  ): void;
-  start(
-    onMessage: (
-      msg: RelayMsg,
-    ) => void,
-  ): void;
+  send(msg: RelayMsg): void;
+  start(onMessage: (msg: RelayMsg) => void): void;
   stop(): void;
 }
 
@@ -47,25 +38,13 @@ export class SocketTransport implements Transport {
     readonly localSlot: number,
   ) {}
 
-  send(
-    msg: RelayMsg,
-  ): void {
-    sendRelay(
-      msg,
-    );
+  send(msg: RelayMsg): void {
+    sendRelay(msg);
   }
-  start(
-    onMessage: (
-      msg: RelayMsg,
-    ) => void,
-  ): void {
-    setRelayHandler(
-      onMessage,
-    );
+  start(onMessage: (msg: RelayMsg) => void): void {
+    setRelayHandler(onMessage);
   }
   stop(): void {
-    setRelayHandler(
-      null,
-    );
+    setRelayHandler(null);
   }
 }

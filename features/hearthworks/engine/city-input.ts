@@ -1,8 +1,4 @@
-import {
-  ROAD_RUN_MAX,
-  ZONE_BRUSH_MAX,
-  type ZoneId,
-} from './content';
+import { ROAD_RUN_MAX, ZONE_BRUSH_MAX, type ZoneId } from './content';
 import type { LocalCommand } from './store';
 
 /**
@@ -26,22 +22,9 @@ export function roadRuns(
   x2: number;
   z2: number;
 }[] {
-  const dx =
-    Math.abs(
-      b.x -
-        a.x,
-    );
-  const dz =
-    Math.abs(
-      b.z -
-        a.z,
-    );
-  if (
-    dx ===
-      0 ||
-    dz ===
-      0
-  )
+  const dx = Math.abs(b.x - a.x);
+  const dz = Math.abs(b.z - a.z);
+  if (dx === 0 || dz === 0)
     return [
       {
         x: a.x,
@@ -52,8 +35,7 @@ export function roadRuns(
     ];
   // The longer leg first.
   const corner =
-    dx >=
-    dz
+    dx >= dz
       ? {
           x: b.x,
           z: a.z,
@@ -79,149 +61,41 @@ export function roadRuns(
 }
 
 /** Every tile the L passes through, in order, without repeating the corner. */
-export function roadTiles(
-  a: Tile,
-  b: Tile,
-): Tile[] {
-  const out: Tile[] =
-    [];
-  for (const r of roadRuns(
-    a,
-    b,
-  )) {
-    const len =
-      Math.max(
-        Math.abs(
-          r.x2 -
-            r.x,
-        ),
-        Math.abs(
-          r.z2 -
-            r.z,
-        ),
-      ) +
-      1;
-    const sx =
-      Math.sign(
-        r.x2 -
-          r.x,
-      );
-    const sz =
-      Math.sign(
-        r.z2 -
-          r.z,
-      );
-    for (
-      let k = 0;
-      k <
-      len;
-      k++
-    ) {
-      const t =
-        {
-          x:
-            r.x +
-            sx *
-              k,
-          z:
-            r.z +
-            sz *
-              k,
-        };
-      const last =
-        out[
-          out.length -
-            1
-        ];
-      if (
-        !last ||
-        last.x !==
-          t.x ||
-        last.z !==
-          t.z
-      )
-        out.push(
-          t,
-        );
+export function roadTiles(a: Tile, b: Tile): Tile[] {
+  const out: Tile[] = [];
+  for (const r of roadRuns(a, b)) {
+    const len = Math.max(Math.abs(r.x2 - r.x), Math.abs(r.z2 - r.z)) + 1;
+    const sx = Math.sign(r.x2 - r.x);
+    const sz = Math.sign(r.z2 - r.z);
+    for (let k = 0; k < len; k++) {
+      const t = {
+        x: r.x + sx * k,
+        z: r.z + sz * k,
+      };
+      const last = out[out.length - 1];
+      if (!last || last.x !== t.x || last.z !== t.z) out.push(t);
     }
   }
   return out;
 }
 
 /** The commands for a finished road drag. A leg longer than one command may lay is split. */
-export function roadCommands(
-  a: Tile,
-  b: Tile,
-  remove = false,
-): LocalCommand[] {
-  const type =
-    remove
-      ? 'removeRoad'
-      : 'placeRoad';
-  const cmds: LocalCommand[] =
-    [];
-  for (const r of roadRuns(
-    a,
-    b,
-  )) {
-    const len =
-      Math.max(
-        Math.abs(
-          r.x2 -
-            r.x,
-        ),
-        Math.abs(
-          r.z2 -
-            r.z,
-        ),
-      ) +
-      1;
-    const sx =
-      Math.sign(
-        r.x2 -
-          r.x,
-      );
-    const sz =
-      Math.sign(
-        r.z2 -
-          r.z,
-      );
-    for (
-      let from = 0;
-      from <
-      len;
-      from +=
-        ROAD_RUN_MAX
-    ) {
-      const to =
-        Math.min(
-          len -
-            1,
-          from +
-            ROAD_RUN_MAX -
-            1,
-        );
-      cmds.push(
-        {
-          type,
-          x:
-            r.x +
-            sx *
-              from,
-          z:
-            r.z +
-            sz *
-              from,
-          x2:
-            r.x +
-            sx *
-              to,
-          z2:
-            r.z +
-            sz *
-              to,
-        },
-      );
+export function roadCommands(a: Tile, b: Tile, remove = false): LocalCommand[] {
+  const type = remove ? 'removeRoad' : 'placeRoad';
+  const cmds: LocalCommand[] = [];
+  for (const r of roadRuns(a, b)) {
+    const len = Math.max(Math.abs(r.x2 - r.x), Math.abs(r.z2 - r.z)) + 1;
+    const sx = Math.sign(r.x2 - r.x);
+    const sz = Math.sign(r.z2 - r.z);
+    for (let from = 0; from < len; from += ROAD_RUN_MAX) {
+      const to = Math.min(len - 1, from + ROAD_RUN_MAX - 1);
+      cmds.push({
+        type,
+        x: r.x + sx * from,
+        z: r.z + sz * from,
+        x2: r.x + sx * to,
+        z2: r.z + sz * to,
+      });
     }
   }
   return cmds;
@@ -237,100 +111,32 @@ export function brushRect(
   x2: number;
   z2: number;
 } {
-  const sx =
-    b.x >=
-    a.x
-      ? 1
-      : -1;
-  const sz =
-    b.z >=
-    a.z
-      ? 1
-      : -1;
-  let w =
-    Math.abs(
-      b.x -
-        a.x,
-    ) +
-    1;
-  let h =
-    Math.abs(
-      b.z -
-        a.z,
-    ) +
-    1;
-  if (
-    w *
-      h >
-    ZONE_BRUSH_MAX
-  ) {
+  const sx = b.x >= a.x ? 1 : -1;
+  const sz = b.z >= a.z ? 1 : -1;
+  let w = Math.abs(b.x - a.x) + 1;
+  let h = Math.abs(b.z - a.z) + 1;
+  if (w * h > ZONE_BRUSH_MAX) {
     // Keep the longer side as dragged (up to the cap) and trim the other to fit.
-    if (
-      w >=
-      h
-    ) {
-      w =
-        Math.min(
-          w,
-          ZONE_BRUSH_MAX,
-        );
-      h =
-        Math.max(
-          1,
-          Math.min(
-            h,
-            Math.floor(
-              ZONE_BRUSH_MAX /
-                w,
-            ),
-          ),
-        );
+    if (w >= h) {
+      w = Math.min(w, ZONE_BRUSH_MAX);
+      h = Math.max(1, Math.min(h, Math.floor(ZONE_BRUSH_MAX / w)));
     } else {
-      h =
-        Math.min(
-          h,
-          ZONE_BRUSH_MAX,
-        );
-      w =
-        Math.max(
-          1,
-          Math.min(
-            w,
-            Math.floor(
-              ZONE_BRUSH_MAX /
-                h,
-            ),
-          ),
-        );
+      h = Math.min(h, ZONE_BRUSH_MAX);
+      w = Math.max(1, Math.min(w, Math.floor(ZONE_BRUSH_MAX / h)));
     }
   }
   return {
     x: a.x,
     z: a.z,
-    x2:
-      a.x +
-      sx *
-        (w -
-          1),
-    z2:
-      a.z +
-      sz *
-        (h -
-          1),
+    x2: a.x + sx * (w - 1),
+    z2: a.z + sz * (h - 1),
   };
 }
 
-export function zoneCommand(
-  zone: ZoneId,
-  a: Tile,
-  b: Tile,
-): LocalCommand {
+export function zoneCommand(zone: ZoneId, a: Tile, b: Tile): LocalCommand {
   return {
     type: 'zone',
     zone,
-    ...brushRect(
-      a,
-      b,
-    ),
+    ...brushRect(a, b),
   };
 }

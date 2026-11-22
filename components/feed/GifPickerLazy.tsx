@@ -1,7 +1,4 @@
-import {
-  lazy,
-  type ComponentProps,
-} from 'react';
+import { lazy, type ComponentProps } from 'react';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -18,75 +15,33 @@ import { Skeleton } from '@/components/ui/skeleton';
  * scrolling height — as still blocks (M6: nothing shimmers), and the picker fades in
  * over it (M9).
  */
-const GifPickerInner =
-  lazy(
-    () =>
-      import('./GifPicker').then(
-        (
-          m,
-        ) => ({
-          default:
-            m.GifPicker,
-        }),
-      ),
-  );
+const GifPickerInner = lazy(() =>
+  import('./GifPicker').then((m) => ({
+    default: m.GifPicker,
+  })),
+);
 
-type GifPickerProps =
-  ComponentProps<
-    typeof GifPickerInner
-  >;
+type GifPickerProps = ComponentProps<typeof GifPickerInner>;
 
-function GifPickerSkeleton({
-  className = '',
-  listClassName = 'max-h-72',
-}: GifPickerProps) {
+function GifPickerSkeleton({ className = '', listClassName = 'max-h-72' }: GifPickerProps) {
   return (
-    <div
-      className={`surface-card rounded-site p-4 ${className}`}
-      aria-hidden
-    >
+    <div className={`surface-card rounded-site p-4 ${className}`} aria-hidden>
       <Skeleton className="mb-2 h-9 w-full rounded-site-sm" />
-      <div
-        className={`${listClassName} overflow-hidden`}
-      >
+      <div className={`${listClassName} overflow-hidden`}>
         <div className="grid grid-cols-2 gap-1">
-          {[
-            0,
-            1,
-            2,
-            3,
-          ].map(
-            (
-              i,
-            ) => (
-              <Skeleton
-                key={
-                  i
-                }
-                className="h-24 rounded-site-sm"
-              />
-            ),
-          )}
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-site-sm" />
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-export function GifPicker(
-  props: GifPickerProps,
-) {
+export function GifPicker(props: GifPickerProps) {
   return (
-    <ArrivalSuspense
-      fallback={
-        <GifPickerSkeleton
-          {...props}
-        />
-      }
-    >
-      <GifPickerInner
-        {...props}
-      />
+    <ArrivalSuspense fallback={<GifPickerSkeleton {...props} />}>
+      <GifPickerInner {...props} />
     </ArrivalSuspense>
   );
 }

@@ -12,63 +12,39 @@ import { editMessageImageAlts } from '@/lib/messages/alt-edit.server';
  * the sibling `edit` route.
  */
 
-export const route =
-  apiRoute(
-    '/api/messages/$conversationId/alt',
+export const route = apiRoute('/api/messages/$conversationId/alt', {
+  PATCH: implement(
+    editMessageAltsApi,
     {
-      PATCH:
-        implement(
-          editMessageAltsApi,
-          {
-            rateLimit:
-              {
-                limit: 30,
-                windowMs: 60_000,
-                prefix:
-                  'message:alt',
-                scope:
-                  'user',
-              },
-            body: editMessageAltsBody,
-          },
-          async ({
-            params,
-            userId,
-            body,
-          }) => {
-            const result =
-              await editMessageImageAlts(
-                {
-                  chatId:
-                    params.conversationId,
-                  messageId:
-                    body.messageId,
-                  userId,
-                  imageAlts:
-                    body.imageAlts,
-                },
-              );
-            if (
-              !result.ok
-            ) {
-              return Response.json(
-                {
-                  error:
-                    result.error,
-                },
-                {
-                  status:
-                    result.status,
-                },
-              );
-            }
-            return {
-              success:
-                true as const,
-              imageAlts:
-                result.imageAlts,
-            };
-          },
-        ),
+      rateLimit: {
+        limit: 30,
+        windowMs: 60_000,
+        prefix: 'message:alt',
+        scope: 'user',
+      },
+      body: editMessageAltsBody,
     },
-  );
+    async ({ params, userId, body }) => {
+      const result = await editMessageImageAlts({
+        chatId: params.conversationId,
+        messageId: body.messageId,
+        userId,
+        imageAlts: body.imageAlts,
+      });
+      if (!result.ok) {
+        return Response.json(
+          {
+            error: result.error,
+          },
+          {
+            status: result.status,
+          },
+        );
+      }
+      return {
+        success: true as const,
+        imageAlts: result.imageAlts,
+      };
+    },
+  ),
+});

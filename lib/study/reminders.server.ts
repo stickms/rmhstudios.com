@@ -9,12 +9,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { prisma } from '@/lib/prisma.server';
 import { ACTIVE_REVIEW_WHERE, REVIEWABLE_WHERE } from '@/lib/study/card-query.server';
 import type { ReminderSettings } from '@/lib/study/reminders.contract';
-import {
-  PAUSE_AFTER_REMINDERS,
-  SWEEP_BATCH,
-  isStale,
-  nextReminderMs,
-} from '@/lib/study/reminders';
+import { PAUSE_AFTER_REMINDERS, SWEEP_BATCH, isStale, nextReminderMs } from '@/lib/study/reminders';
 
 export const STUDY_REMINDER_QUEUE = 'study.due-reminders';
 export const STUDY_REMINDER_CRON = '* * * * *';
@@ -54,8 +49,7 @@ export async function saveReminder(
   const existing = await prisma.flashcardReminder.findUnique({ where: { userId } });
   const resume = !!input.resume || (input.enabled && !existing?.enabled);
   const paused = resume ? false : (existing?.paused ?? false);
-  const nextAt =
-    input.enabled && !paused ? new Date(nextReminderMs(input.time, input.timeZone, now)) : null;
+  const nextAt = input.enabled && !paused ? new Date(nextReminderMs(input.time, input.timeZone, now)) : null;
   const data = {
     enabled: input.enabled,
     localTime: input.time,

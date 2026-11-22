@@ -14,11 +14,7 @@ import type { ReadingDocKind } from '@/lib/reading/schema';
 import type { ReadingTimeSummary } from '@/lib/reading/time.contract';
 import { roomInDay } from '@/lib/reading/time';
 import { publishedLogWhere } from '@/lib/blog/publication';
-import {
-  dayKeyFor,
-  getTimePrefs,
-  weekStartFor,
-} from '@/lib/reading/time.server';
+import { dayKeyFor, getTimePrefs, weekStartFor } from '@/lib/reading/time.server';
 
 const TOP_DOCS = 5;
 const PREVIOUS_WEEKS = 4;
@@ -51,121 +47,68 @@ export async function recordReadingTime(
   },
   now: Date = new Date(),
 ): Promise<RecordResult> {
-  const prefs =
-    await prisma.readingPrefs.findUnique(
-      {
-        where:
-          {
-            userId,
-          },
-        select:
-          {
-            trackTime: true,
-          },
-      },
-    );
-  if (
-    !prefs?.trackTime
-  )
+  const prefs = await prisma.readingPrefs.findUnique({
+    where: {
+      userId,
+    },
+    select: {
+      trackTime: true,
+    },
+  });
+  if (!prefs?.trackTime)
     return {
       ok: false,
       status: 409,
-      error:
-        'Reading time is off',
+      error: 'Reading time is off',
     };
-  if (
-    !(await docExists(
-      input.kind,
-      input.key,
-    ))
-  ) {
+  if (!(await docExists(input.kind, input.key))) {
     return {
       ok: false,
       status: 404,
-      error:
-        'Document not found',
+      error: 'Document not found',
     };
   }
-  const day =
-    dayKeyFor(
-      now,
-      input.tz,
-    );
-  const recorded =
-    await prisma.$transaction(
-      async (
-        tx,
-      ) => {
-        await lockKey(
-          tx,
-          `reading-time:${userId}:${day}`,
-        );
-        const used =
-          (
-            await tx.readingTimeDay.aggregate(
-              {
-                where:
-                  {
-                    userId,
-                    day,
-                  },
-                _sum: {
-                  seconds: true,
-                },
-              },
-            )
-          )
-            ._sum
-            .seconds ??
-          0;
-        const add =
-          roomInDay(
-            used,
-            input.seconds,
-          );
-        if (
-          add <=
-          0
-        )
-          return 0;
-        await tx.readingTimeDay.upsert(
-          {
-            where:
-              {
-                userId_day_docKind_docKey:
-                  {
-                    userId,
-                    day,
-                    docKind:
-                      input.kind,
-                    docKey:
-                      input.key,
-                  },
-              },
-            create:
-              {
-                userId,
-                day,
-                docKind:
-                  input.kind,
-                docKey:
-                  input.key,
-                seconds:
-                  add,
-              },
-            update:
-              {
-                seconds:
-                  {
-                    increment:
-                      add,
-                  },
-              },
+  const day = dayKeyFor(now, input.tz);
+  const recorded = await prisma.$transaction(async (tx) => {
+    await lockKey(tx, `reading-time:${userId}:${day}`);
+    const used =
+      (
+        await tx.readingTimeDay.aggregate({
+          where: {
+            userId,
+            day,
           },
-        );
-        return add;
+          _sum: {
+            seconds: true,
+          },
+        })
+      )._sum.seconds ?? 0;
+    const add = roomInDay(used, input.seconds);
+    if (add <= 0) return 0;
+    await tx.readingTimeDay.upsert({
+      where: {
+        userId_day_docKind_docKey: {
+          userId,
+          day,
+          docKind: input.kind,
+          docKey: input.key,
+        },
       },
-    );
+      create: {
+        userId,
+        day,
+        docKind: input.kind,
+        docKey: input.key,
+        seconds: add,
+      },
+      update: {
+        seconds: {
+          increment: add,
+        },
+      },
+    });
+    return add;
+  });
   return {
     ok: true,
     recorded,
@@ -177,128 +120,45 @@ async function titlesFor(
     docKind: ReadingDocKind;
     docKey: string;
   }>,
-): Promise<
-  Map<
-    string,
-    string
-  >
-> {
-  const out =
-    new Map<
-      string,
-      string
-    >();
-  const keysOf =
-    (
-      k: ReadingDocKind,
-    ) =>
-      rows
-        .filter(
-          (
-            r,
-          ) =>
-            r.docKind ===
-            k,
-        )
-        .map(
-          (
-            r,
-          ) =>
-            r.docKey,
-        );
-  const blog =
-    keysOf(
-      'blog',
-    );
-  const news =
-    keysOf(
-      'news',
-    );
-  const [
-    posts,
-    articles,
-    books,
-  ] =
-    await Promise.all(
-      [
-        blog.length
-          ? prisma.blogPost.findMany(
-              {
-                // A Log taken back to draft keeps its minutes but no longer shows its title (s03-05).
-                where:
-                  {
-                    slug: {
-                      in: blog,
-                    },
-                    ...publishedLogWhere(
-                      new Date(),
-                    ),
-                  },
-                select:
-                  {
-                    slug: true,
-                    title: true,
-                  },
-              },
-            )
-          : [],
-        news.length
-          ? prisma.newsArticle.findMany(
-              {
-                where:
-                  {
-                    slug: {
-                      in: news,
-                    },
-                  },
-                select:
-                  {
-                    slug: true,
-                    title: true,
-                  },
-              },
-            )
-          : [],
-        Promise.all(
-          keysOf(
-            'library',
-          ).map(
-            (
-              k,
-            ) =>
-              getBook(
-                k,
-              ),
-          ),
-        ),
-      ],
-    );
-  for (const p of Array.isArray(
-    posts,
-  )
-    ? posts
-    : [])
-    out.set(
-      `blog:${p.slug}`,
-      p.title,
-    );
-  for (const a of Array.isArray(
-    articles,
-  )
-    ? articles
-    : [])
-    out.set(
-      `news:${a.slug}`,
-      a.title,
-    );
-  for (const b of books)
-    if (
-      b
-    )
-      out.set(
-        `library:${b.slug}`,
-        b.title,
-      );
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const keysOf = (k: ReadingDocKind) => rows.filter((r) => r.docKind === k).map((r) => r.docKey);
+  const blog = keysOf('blog');
+  const news = keysOf('news');
+  const [posts, articles, books] = await Promise.all([
+    blog.length
+      ? prisma.blogPost.findMany({
+          // A Log taken back to draft keeps its minutes but no longer shows its title (s03-05).
+          where: {
+            slug: {
+              in: blog,
+            },
+            ...publishedLogWhere(new Date()),
+          },
+          select: {
+            slug: true,
+            title: true,
+          },
+        })
+      : [],
+    news.length
+      ? prisma.newsArticle.findMany({
+          where: {
+            slug: {
+              in: news,
+            },
+          },
+          select: {
+            slug: true,
+            title: true,
+          },
+        })
+      : [],
+    Promise.all(keysOf('library').map((k) => getBook(k))),
+  ]);
+  for (const p of Array.isArray(posts) ? posts : []) out.set(`blog:${p.slug}`, p.title);
+  for (const a of Array.isArray(articles) ? articles : []) out.set(`news:${a.slug}`, a.title);
+  for (const b of books) if (b) out.set(`library:${b.slug}`, b.title);
   return out;
 }
 
@@ -311,197 +171,87 @@ export async function readingTimeSummary(
   },
   now: Date = new Date(),
 ): Promise<ReadingTimeSummary> {
-  const today =
-    dayKeyFor(
-      now,
-      opts.tz,
-    );
-  const weekStart =
-    weekStartFor(
-      today,
-      opts.locale,
-    );
-  const from =
-    addDays(
-      weekStart,
-      -7 *
-        PREVIOUS_WEEKS,
-    );
+  const today = dayKeyFor(now, opts.tz);
+  const weekStart = weekStartFor(today, opts.locale);
+  const from = addDays(weekStart, -7 * PREVIOUS_WEEKS);
   const monthStart = `${today.slice(0, 7)}-01`;
-  const [
-    prefs,
-    perDay,
-    perDoc,
-  ] =
-    await Promise.all(
-      [
-        getTimePrefs(
-          userId,
-        ),
-        prisma.readingTimeDay.groupBy(
-          {
-            by: [
-              'day',
-            ],
-            where:
-              {
-                userId,
-                day: {
-                  gte: from,
-                  lte: today,
-                },
-              },
-            _sum: {
-              seconds: true,
-            },
-          },
-        ),
-        prisma.readingTimeDay.groupBy(
-          {
-            by: [
-              'docKind',
-              'docKey',
-            ],
-            where:
-              {
-                userId,
-                day: {
-                  gte: monthStart,
-                  lte: today,
-                },
-              },
-            _sum: {
-              seconds: true,
-            },
-            orderBy:
-              {
-                _sum: {
-                  seconds:
-                    'desc',
-                },
-              },
-            take: TOP_DOCS,
-          },
-        ),
-      ],
-    );
-  const byDay =
-    new Map<
-      string,
-      number
-    >();
-  for (const r of perDay)
-    byDay.set(
-      r.day,
-      r
-        ._sum
-        .seconds ??
-        0,
-    );
-  const days =
-    Array.from(
-      {
-        length: 7,
+  const [prefs, perDay, perDoc] = await Promise.all([
+    getTimePrefs(userId),
+    prisma.readingTimeDay.groupBy({
+      by: ['day'],
+      where: {
+        userId,
+        day: {
+          gte: from,
+          lte: today,
+        },
       },
-      (
-        _,
-        i,
-      ) => {
-        const day =
-          addDays(
-            weekStart,
-            i,
-          );
-        return {
-          day,
-          seconds:
-            byDay.get(
-              day,
-            ) ??
-            0,
-        };
+      _sum: {
+        seconds: true,
       },
-    );
-  const previousWeeks =
-    Array.from(
-      {
-        length:
-          PREVIOUS_WEEKS,
+    }),
+    prisma.readingTimeDay.groupBy({
+      by: ['docKind', 'docKey'],
+      where: {
+        userId,
+        day: {
+          gte: monthStart,
+          lte: today,
+        },
       },
-      (
-        _,
-        w,
-      ) => {
-        const start =
-          addDays(
-            weekStart,
-            -7 *
-              (w +
-                1),
-          );
-        let seconds = 0;
-        for (
-          let i = 0;
-          i <
-          7;
-          i++
-        )
-          seconds +=
-            byDay.get(
-              addDays(
-                start,
-                i,
-              ),
-            ) ??
-            0;
-        return {
-          weekStart:
-            start,
-          seconds,
-        };
+      _sum: {
+        seconds: true,
       },
-    );
-  const titles =
-    await titlesFor(
-      perDoc,
-    );
+      orderBy: {
+        _sum: {
+          seconds: 'desc',
+        },
+      },
+      take: TOP_DOCS,
+    }),
+  ]);
+  const byDay = new Map<string, number>();
+  for (const r of perDay) byDay.set(r.day, r._sum.seconds ?? 0);
+  const days = Array.from(
+    {
+      length: 7,
+    },
+    (_, i) => {
+      const day = addDays(weekStart, i);
+      return {
+        day,
+        seconds: byDay.get(day) ?? 0,
+      };
+    },
+  );
+  const previousWeeks = Array.from(
+    {
+      length: PREVIOUS_WEEKS,
+    },
+    (_, w) => {
+      const start = addDays(weekStart, -7 * (w + 1));
+      let seconds = 0;
+      for (let i = 0; i < 7; i++) seconds += byDay.get(addDays(start, i)) ?? 0;
+      return {
+        weekStart: start,
+        seconds,
+      };
+    },
+  );
+  const titles = await titlesFor(perDoc);
   return {
-    trackTime:
-      prefs.trackTime,
-    weeklyMinutesTarget:
-      prefs.weeklyMinutesTarget,
+    trackTime: prefs.trackTime,
+    weeklyMinutesTarget: prefs.weeklyMinutesTarget,
     today,
     weekStart,
     days,
-    weekSeconds:
-      days.reduce(
-        (
-          n,
-          d,
-        ) =>
-          n +
-          d.seconds,
-        0,
-      ),
+    weekSeconds: days.reduce((n, d) => n + d.seconds, 0),
     previousWeeks,
-    topThisMonth:
-      perDoc.map(
-        (
-          r,
-        ) => ({
-          kind: r.docKind,
-          key: r.docKey,
-          title:
-            titles.get(
-              `${r.docKind}:${r.docKey}`,
-            ) ??
-            r.docKey,
-          seconds:
-            r
-              ._sum
-              .seconds ??
-            0,
-        }),
-      ),
+    topThisMonth: perDoc.map((r) => ({
+      kind: r.docKind,
+      key: r.docKey,
+      title: titles.get(`${r.docKind}:${r.docKey}`) ?? r.docKey,
+      seconds: r._sum.seconds ?? 0,
+    })),
   };
 }

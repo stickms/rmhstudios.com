@@ -8,11 +8,7 @@
  */
 
 import { z } from 'zod';
-import {
-  MM_CANVAS_SIZE,
-  MM_MIN_POINTS_PER_STROKE,
-  MM_MAX_POINTS_PER_STROKE,
-} from '../constants';
+import { MM_CANVAS_SIZE, MM_MIN_POINTS_PER_STROKE, MM_MAX_POINTS_PER_STROKE } from '../constants';
 
 /**
  * Hard cap on strokes accepted by the schema: the top of the `maxStrokes`
@@ -22,128 +18,41 @@ export const MM_MAX_STROKES_LIMIT = 30;
 
 // ─── Point Schema ────────────────────────────────────────────────
 
-export const PointSchema =
-  z.object(
-    {
-      x: z
-        .number()
-        .min(
-          0,
-        )
-        .max(
-          MM_CANVAS_SIZE,
-        ),
-      y: z
-        .number()
-        .min(
-          0,
-        )
-        .max(
-          MM_CANVAS_SIZE,
-        ),
-      pressure:
-        z
-          .number()
-          .min(
-            0,
-          )
-          .max(
-            1,
-          ),
-    },
-  );
+export const PointSchema = z.object({
+  x: z.number().min(0).max(MM_CANVAS_SIZE),
+  y: z.number().min(0).max(MM_CANVAS_SIZE),
+  pressure: z.number().min(0).max(1),
+});
 
 // ─── Stroke Schema ───────────────────────────────────────────────
 
-export const StrokeSchema =
-  z.object(
-    {
-      id: z
-        .string()
-        .min(
-          1,
-        )
-        .max(
-          36,
-        ),
-      points:
-        z
-          .array(
-            PointSchema,
-          )
-          .min(
-            MM_MIN_POINTS_PER_STROKE,
-          )
-          .max(
-            MM_MAX_POINTS_PER_STROKE,
-          ),
-      color:
-        z
-          .string()
-          .regex(
-            /^#[0-9a-fA-F]{6}$/,
-          ),
-      width:
-        z
-          .number()
-          .positive(),
-      timestamp:
-        z.number(),
-    },
-  );
+export const StrokeSchema = z.object({
+  id: z.string().min(1).max(36),
+  points: z.array(PointSchema).min(MM_MIN_POINTS_PER_STROKE).max(MM_MAX_POINTS_PER_STROKE),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  width: z.number().positive(),
+  timestamp: z.number(),
+});
 
 // ─── Submit Drawing Schema ───────────────────────────────────────
 
-export const SubmitDrawingSchema =
-  z.object(
-    {
-      strokes:
-        z
-          .array(
-            StrokeSchema,
-          )
-          .max(
-            MM_MAX_STROKES_LIMIT,
-          ),
-      backgroundColor:
-        z
-          .string()
-          .regex(
-            /^#[0-9a-fA-F]{6}$/,
-          )
-          .optional()
-          .default(
-            '#ffffff',
-          ),
-    },
-  );
+export const SubmitDrawingSchema = z.object({
+  strokes: z.array(StrokeSchema).max(MM_MAX_STROKES_LIMIT),
+  backgroundColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional()
+    .default('#ffffff'),
+});
 
 /** Auto-save schema — same shape as submit but does not lock the drawing. */
-export const SaveDrawingSchema =
-  SubmitDrawingSchema;
+export const SaveDrawingSchema = SubmitDrawingSchema;
 
 // ─── Place Bid Schema ────────────────────────────────────────────
 
-export const PlaceBidSchema =
-  z.object(
-    {
-      drawingId:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            36,
-          ),
-      // Non-negative whole amount; the handler checks it against the host's
-      // `bidIncrement` setting (not a fixed constant).
-      amount:
-        z
-          .number()
-          .int()
-          .min(
-            0,
-          ),
-    },
-  );
+export const PlaceBidSchema = z.object({
+  drawingId: z.string().min(1).max(36),
+  // Non-negative whole amount; the handler checks it against the host's
+  // `bidIncrement` setting (not a fixed constant).
+  amount: z.number().int().min(0),
+});

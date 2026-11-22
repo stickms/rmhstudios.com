@@ -2,25 +2,16 @@
 import { api } from '@/lib/contract/client';
 import { listMyGroupMentionsApi } from '@/lib/group-chat/mentions.contract';
 
-export const listMyGroupMentions =
-  (
-    groupId: string,
-    cursor?: string,
-  ) =>
-    api(
-      listMyGroupMentionsApi,
-      {
-        params:
-          {
-            id: groupId,
+export const listMyGroupMentions = (groupId: string, cursor?: string) =>
+  api(listMyGroupMentionsApi, {
+    params: {
+      id: groupId,
+    },
+    ...(cursor
+      ? {
+          query: {
+            cursor,
           },
-        ...(cursor
-          ? {
-              query:
-                {
-                  cursor,
-                },
-            }
-          : {}),
-      },
-    );
+        }
+      : {}),
+  });

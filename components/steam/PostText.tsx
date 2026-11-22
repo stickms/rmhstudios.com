@@ -15,55 +15,11 @@ export function PostText({
   ownedTitles: string[];
   className?: string;
 }) {
-  const segments =
-    useMemo(
-      () =>
-        splitEmotes(
-          text,
-          new Set(
-            ownedTitles,
-          ),
-        ),
-      [
-        text,
-        ownedTitles,
-      ],
-    );
+  const segments = useMemo(() => splitEmotes(text, new Set(ownedTitles)), [text, ownedTitles]);
   return (
-    <p
-      className={
-        className
-      }
-    >
-      {segments.map(
-        (
-          s,
-          i,
-        ) =>
-          s.type ===
-          'text' ? (
-            <span
-              key={
-                i
-              }
-            >
-              {
-                s.text
-              }
-            </span>
-          ) : (
-            <Emote
-              key={
-                i
-              }
-              gameId={
-                s.gameId
-              }
-              motif={
-                s.motif
-              }
-            />
-          ),
+    <p className={className}>
+      {segments.map((s, i) =>
+        s.type === 'text' ? <span key={i}>{s.text}</span> : <Emote key={i} gameId={s.gameId} motif={s.motif} />,
       )}
     </p>
   );

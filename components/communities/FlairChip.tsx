@@ -1,8 +1,5 @@
 import { cn } from '@/lib/utils';
-import {
-  FLAIR_CHIP_CLASSES,
-  isFlairColor,
-} from '@/lib/communities/plus';
+import { FLAIR_CHIP_CLASSES, isFlairColor } from '@/lib/communities/plus';
 
 /**
  * N1 — a community flair chip. Colour is a token preset (never a raw colour),
@@ -19,23 +16,12 @@ export function FlairChip({
     color: string;
   };
   className?: string;
-  as?:
-    | 'span'
-    | 'button';
-} & Omit<
-  React.HTMLAttributes<HTMLElement>,
-  'className'
->) {
-  const color =
-    isFlairColor(
-      flair.color,
-    )
-      ? flair.color
-      : 'accent';
+  as?: 'span' | 'button';
+} & Omit<React.HTMLAttributes<HTMLElement>, 'className'>) {
+  const color = isFlairColor(flair.color) ? flair.color : 'accent';
   return (
     <Tag
-      {...(Tag ===
-      'button'
+      {...(Tag === 'button'
         ? {
             type: 'button' as const,
           }
@@ -43,17 +29,11 @@ export function FlairChip({
       {...rest}
       className={cn(
         'inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-rem-70 font-semibold leading-none',
-        FLAIR_CHIP_CLASSES[
-          color
-        ],
+        FLAIR_CHIP_CLASSES[color],
         className,
       )}
     >
-      <span className="truncate">
-        {
-          flair.name
-        }
-      </span>
+      <span className="truncate">{flair.name}</span>
     </Tag>
   );
 }

@@ -13,18 +13,10 @@ import { frameLoaderResponse } from '@/lib/rmhvibe/frame-response.server';
  * The Nitro header plugin and the Apache vhost both leave this response's policy alone.
  * docs/csp.md, "Frames that run user code".
  */
-export const Route =
-  createFileRoute(
-    '/vibe-frame',
-  )(
-    {
-      server:
-        {
-          handlers:
-            {
-              GET: () =>
-                frameLoaderResponse(),
-            },
-        },
+export const Route = createFileRoute('/vibe-frame')({
+  server: {
+    handlers: {
+      GET: () => frameLoaderResponse(),
     },
-  );
+  },
+});

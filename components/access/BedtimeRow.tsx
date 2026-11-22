@@ -12,73 +12,36 @@ import { Switch } from '@/components/ui/switch';
 import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import { setAccessPrefs } from '@/lib/access/prefs';
 
-export function BedtimeRow({
-  hasQuietHours,
-}: {
-  hasQuietHours: boolean;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'f-access',
-    );
-  const p =
-    useAccessPrefs();
-  const id =
-    useId();
+export function BedtimeRow({ hasQuietHours }: { hasQuietHours: boolean }) {
+  const { t } = useTranslation('f-access');
+  const p = useAccessPrefs();
+  const id = useId();
   return (
     <div className="settings-row">
       <span className="settings-row__text">
-        <span
-          id={
-            id
-          }
-          className="settings-row__name block"
-        >
-          {t(
-            'bedtime-label',
-            {
-              defaultValue:
-                'Bedtime mode',
-            },
-          )}
+        <span id={id} className="settings-row__name block">
+          {t('bedtime-label', {
+            defaultValue: 'Bedtime mode',
+          })}
         </span>
         <span className="settings-row__hint block">
           {hasQuietHours
-            ? t(
-                'bedtime-desc',
-                {
-                  defaultValue:
-                    'Dim and soften colours during your quiet hours.',
-                },
-              )
-            : t(
-                'bedtime-needs-hours',
-                {
-                  defaultValue:
-                    'Dims and softens colours during the quiet hours above, once you set them.',
-                },
-              )}
+            ? t('bedtime-desc', {
+                defaultValue: 'Dim and soften colours during your quiet hours.',
+              })
+            : t('bedtime-needs-hours', {
+                defaultValue: 'Dims and softens colours during the quiet hours above, once you set them.',
+              })}
         </span>
       </span>
       <Switch
-        checked={
-          p.bedtime
+        checked={p.bedtime}
+        onCheckedChange={(v) =>
+          setAccessPrefs({
+            bedtime: v,
+          })
         }
-        onCheckedChange={(
-          v,
-        ) =>
-          setAccessPrefs(
-            {
-              bedtime:
-                v,
-            },
-          )
-        }
-        aria-labelledby={
-          id
-        }
+        aria-labelledby={id}
       />
     </div>
   );

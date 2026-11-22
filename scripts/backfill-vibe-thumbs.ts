@@ -20,48 +20,14 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import {
-  captureVibeThumbnail,
-  closeVibeBrowser,
-} from '@/lib/rmhvibe/vibe-screenshot.server';
-import {
-  savedTweakValues,
-  TWEAK_SOURCE_SELECT,
-} from '@/lib/rmhvibe/thumbnail-worker.server';
+import { captureVibeThumbnail, closeVibeBrowser } from '@/lib/rmhvibe/vibe-screenshot.server';
+import { savedTweakValues, TWEAK_SOURCE_SELECT } from '@/lib/rmhvibe/thumbnail-worker.server';
 
 function parseArgs() {
-  const args =
-    process.argv.slice(
-      2,
-    );
-  const all =
-    args.includes(
-      '--all',
-    );
-  const limitArg =
-    args
-      .find(
-        (
-          a,
-        ) =>
-          a.startsWith(
-            '--limit=',
-          ),
-      )
-      ?.split(
-        '=',
-      )[1];
-  const limit =
-    limitArg
-      ? Math.max(
-          1,
-          parseInt(
-            limitArg,
-            10,
-          ) ||
-            0,
-        )
-      : undefined;
+  const args = process.argv.slice(2);
+  const all = args.includes('--all');
+  const limitArg = args.find((a) => a.startsWith('--limit='))?.split('=')[1];
+  const limit = limitArg ? Math.max(1, parseInt(limitArg, 10) || 0) : undefined;
   return {
     all,
     limit,
@@ -69,54 +35,37 @@ function parseArgs() {
 }
 
 async function main() {
-  const {
-    all,
-    limit,
-  } =
-    parseArgs();
+  const { all, limit } = parseArgs();
 
   // Only "ready" pages have real HTML to screenshot. Default targets pages with
   // no thumbnail; `--all` re-renders every ready page (recovers lost objects).
-  const where =
-    all
+  const where = all
+    ? {
+        status: 'ready' as const,
+      }
+    : {
+        status: 'ready' as const,
+        thumbnailUrl: null,
+      };
+
+  const pages = await prisma.vibePage.findMany({
+    where,
+    select: {
+      slug: true,
+      html: true,
+      ...TWEAK_SOURCE_SELECT,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    ...(limit
       ? {
-          status:
-            'ready' as const,
+          take: limit,
         }
-      : {
-          status:
-            'ready' as const,
-          thumbnailUrl:
-            null,
-        };
+      : {}),
+  });
 
-  const pages =
-    await prisma.vibePage.findMany(
-      {
-        where,
-        select:
-          {
-            slug: true,
-            html: true,
-            ...TWEAK_SOURCE_SELECT,
-          },
-        orderBy:
-          {
-            createdAt:
-              'desc',
-          },
-        ...(limit
-          ? {
-              take: limit,
-            }
-          : {}),
-      },
-    );
-
-  if (
-    pages.length ===
-    0
-  ) {
+  if (pages.length === 0) {
     console.log(
       all
         ? 'No ready vibe pages found. Nothing to do.'
@@ -125,74 +74,40 @@ async function main() {
     return;
   }
 
-  console.log(
-    `${all ? 'Re-rendering' : 'Rendering'} thumbnails for ${pages.length} page(s)…`,
-  );
+  console.log(`${all ? 'Re-rendering' : 'Rendering'} thumbnails for ${pages.length} page(s)…`);
   let ok = 0;
   let failed = 0;
 
-  for (const [
-    i,
-    page,
-  ] of pages.entries()) {
-    process.stdout.write(
-      `  [${i + 1}/${pages.length}] ${page.slug} … `,
-    );
-    const url =
-      await captureVibeThumbnail(
-        page.slug,
-        page.html,
-        savedTweakValues(
-          page,
-        ),
-      );
-    if (
-      url
-    ) {
-      await prisma.vibePage.update(
-        {
-          where:
-            {
-              slug: page.slug,
-            },
-          data: {
-            thumbnailUrl:
-              url,
-            thumbnailStale: false,
-          },
+  for (const [i, page] of pages.entries()) {
+    process.stdout.write(`  [${i + 1}/${pages.length}] ${page.slug} … `);
+    const url = await captureVibeThumbnail(page.slug, page.html, savedTweakValues(page));
+    if (url) {
+      await prisma.vibePage.update({
+        where: {
+          slug: page.slug,
         },
-      );
+        data: {
+          thumbnailUrl: url,
+          thumbnailStale: false,
+        },
+      });
       ok++;
-      console.log(
-        'done',
-      );
+      console.log('done');
     } else {
       failed++;
-      console.log(
-        'FAILED (left without a thumbnail)',
-      );
+      console.log('FAILED (left without a thumbnail)');
     }
   }
 
-  console.log(
-    `\nFinished: ${ok} rendered, ${failed} failed.`,
-  );
+  console.log(`\nFinished: ${ok} rendered, ${failed} failed.`);
 }
 
 main()
-  .catch(
-    (
-      e,
-    ) => {
-      console.error(
-        e,
-      );
-      process.exitCode = 1;
-    },
-  )
-  .finally(
-    async () => {
-      await closeVibeBrowser();
-      await prisma.$disconnect();
-    },
-  );
+  .catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await closeVibeBrowser();
+    await prisma.$disconnect();
+  });

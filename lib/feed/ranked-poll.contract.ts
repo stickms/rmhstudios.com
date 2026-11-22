@@ -7,10 +7,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { rankedBallotSchema } from '@/lib/feed/ranked-poll-schema';
 
-type RankedBallotBody =
-  z.infer<
-    typeof rankedBallotSchema
-  >;
+type RankedBallotBody = z.infer<typeof rankedBallotSchema>;
 
 export interface RankedBallotResponse {
   success: true;
@@ -24,14 +21,10 @@ export interface RankedBallotResponse {
   }[];
 }
 
-export const submitBallotApi =
-  endpoint<{
-    body: RankedBallotBody;
-    res: RankedBallotResponse;
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/rmharks/$id/vote',
-    },
-  );
+export const submitBallotApi = endpoint<{
+  body: RankedBallotBody;
+  res: RankedBallotResponse;
+}>()({
+  method: 'POST',
+  path: '/api/rmharks/$id/vote',
+});

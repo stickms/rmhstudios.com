@@ -8,11 +8,7 @@
  */
 import type { MedSource } from './types';
 
-export const SINGLE_KEY_SOURCES: readonly MedSource[] =
-  [
-    'CYCLETRACK',
-    'ADMIT',
-  ];
+export const SINGLE_KEY_SOURCES: readonly MedSource[] = ['CYCLETRACK', 'ADMIT'];
 
 export type AliasPlan =
   | {
@@ -20,9 +16,7 @@ export type AliasPlan =
     }
   | {
       ok: false;
-      code:
-        | 'KEY_MAPPED_ELSEWHERE'
-        | 'SCHOOL_ALREADY_HAS_KEY';
+      code: 'KEY_MAPPED_ELSEWHERE' | 'SCHOOL_ALREADY_HAS_KEY';
       message: string;
     };
 
@@ -39,22 +33,9 @@ export function planAliasMapping(input: {
     schoolId: string;
   } | null;
 }): AliasPlan {
-  const {
-    source,
-    sourceKey,
-    schoolId,
-    schoolAliases,
-    keyOwner,
-  } =
-    input;
-  if (
-    keyOwner !==
-    null
-  ) {
-    if (
-      keyOwner.schoolId ===
-      schoolId
-    )
+  const { source, sourceKey, schoolId, schoolAliases, keyOwner } = input;
+  if (keyOwner !== null) {
+    if (keyOwner.schoolId === schoolId)
       return {
         ok: true,
       };
@@ -64,18 +45,7 @@ export function planAliasMapping(input: {
       message: `${source} key "${sourceKey}" already belongs to another school`,
     };
   }
-  if (
-    SINGLE_KEY_SOURCES.includes(
-      source,
-    ) &&
-    schoolAliases.some(
-      (
-        a,
-      ) =>
-        a.source ===
-        source,
-    )
-  ) {
+  if (SINGLE_KEY_SOURCES.includes(source) && schoolAliases.some((a) => a.source === source)) {
     return {
       ok: false,
       code: 'SCHOOL_ALREADY_HAS_KEY',

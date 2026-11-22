@@ -34,59 +34,28 @@ export interface StoredMessage {
   senderId: string;
   content: string;
   read?: boolean;
-  createdAt:
-    | Date
-    | string;
-  gifUrl?:
-    | string
-    | null;
+  createdAt: Date | string;
+  gifUrl?: string | null;
   /** The GIF's description (sprint 06 #15). */
-  gifAlt?:
-    | string
-    | null;
-  imageUrls?:
-    | string[]
-    | null;
-  imageAlts?:
-    | string[]
-    | null;
-  editedAt?:
-    | Date
-    | string
-    | null;
-  deletedAt?:
-    | Date
-    | string
-    | null;
-  deletedBy?:
-    | string
-    | null;
-  audioUrl?:
-    | string
-    | null;
-  audioDurationMs?:
-    | number
-    | null;
-  audioPeaks?:
-    | number[]
-    | null;
+  gifAlt?: string | null;
+  imageUrls?: string[] | null;
+  imageAlts?: string[] | null;
+  editedAt?: Date | string | null;
+  deletedAt?: Date | string | null;
+  deletedBy?: string | null;
+  audioUrl?: string | null;
+  audioDurationMs?: number | null;
+  audioPeaks?: number[] | null;
   reactions?: {
     emoji: string;
     userId: string;
   }[];
   /** P04 — absent on rows read before the columns existed (treated as text). */
-  kind?:
-    | string
-    | null;
+  kind?: string | null;
   meta?: unknown;
-  forwardCount?:
-    | number
-    | null;
+  forwardCount?: number | null;
   /** M3 — when the message disappears. */
-  expiresAt?:
-    | Date
-    | string
-    | null;
+  expiresAt?: Date | string | null;
 }
 
 /** What the client renders. `content` is already redacted where it must be. */
@@ -96,34 +65,20 @@ export interface MessageView {
   content: string;
   read: boolean;
   createdAt: string;
-  gifUrl:
-    | string
-    | null;
+  gifUrl: string | null;
   /** The GIF's description; null = undescribed (rendered as "GIF"). */
-  gifAlt:
-    | string
-    | null;
+  gifAlt: string | null;
   imageUrls: string[];
   /** Descriptions, index-aligned with `imageUrls` ('' = none); same length. */
   imageAlts: string[];
   /** Non-null once edited — the bubble renders an "edited" marker. */
-  editedAt:
-    | string
-    | null;
+  editedAt: string | null;
   /** Non-null once unsent — the bubble renders the tombstone. */
-  deletedAt:
-    | string
-    | null;
+  deletedAt: string | null;
   /** `'sender'` | `'moderator'`. Lets the tombstone say *who* removed it. */
-  deletedBy:
-    | string
-    | null;
-  audioUrl:
-    | string
-    | null;
-  audioDurationMs:
-    | number
-    | null;
+  deletedBy: string | null;
+  audioUrl: string | null;
+  audioDurationMs: number | null;
   audioPeaks: number[];
   reactions: {
     emoji: string;
@@ -136,32 +91,14 @@ export interface MessageView {
   /** M10 — how many times this message has been forwarded. */
   forwardCount: number;
   /** M3 — ISO time the message disappears, or null. Lets an open client hide it on the dot. */
-  expiresAt:
-    | string
-    | null;
+  expiresAt: string | null;
   /** P04 — tallies for `kind = 'poll'`, attached by the thread read path. */
   poll?: PollView | null;
 }
 
-function iso(
-  value:
-    | Date
-    | string
-    | null
-    | undefined,
-):
-  | string
-  | null {
-  if (
-    !value
-  )
-    return null;
-  return value instanceof
-    Date
-    ? value.toISOString()
-    : new Date(
-        value,
-      ).toISOString();
+function iso(value: Date | string | null | undefined): string | null {
+  if (!value) return null;
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
 export interface ViewOptions {
@@ -181,132 +118,55 @@ export interface ViewOptions {
  * the peaks alone would still describe the rhythm of what was said), and
  * reactions, which no longer refer to anything.
  */
-export function toMessageView(
-  row: StoredMessage,
-  opts: ViewOptions = {},
-): MessageView {
-  const deletedAt =
-    iso(
-      row.deletedAt,
-    );
-  const base: MessageView =
-    {
-      id: row.id,
-      senderId:
-        row.senderId,
-      content:
-        row.content,
-      read:
-        row.read ??
-        false,
-      createdAt:
-        iso(
-          row.createdAt,
-        ) ??
-        new Date(
-          0,
-        ).toISOString(),
-      gifUrl:
-        row.gifUrl ??
-        null,
-      gifAlt:
-        row.gifUrl
-          ? (row.gifAlt ??
-            null)
-          : null,
-      imageUrls:
-        row.imageUrls ??
-        [],
-      imageAlts:
-        normalizeImageAlts(
-          row.imageUrls,
-          row.imageAlts,
-        ),
-      editedAt:
-        iso(
-          row.editedAt,
-        ),
-      deletedAt,
-      deletedBy:
-        row.deletedBy ??
-        null,
-      audioUrl:
-        row.audioUrl ??
-        null,
-      audioDurationMs:
-        row.audioDurationMs ??
-        null,
-      audioPeaks:
-        row.audioPeaks ??
-        [],
-      reactions:
-        row.reactions ??
-        [],
-      kind:
-        row.kind ??
-        'text',
-      meta:
-        row.meta ??
-        null,
-      forwardCount:
-        row.forwardCount ??
-        0,
-      expiresAt:
-        iso(
-          row.expiresAt,
-        ),
-    };
+export function toMessageView(row: StoredMessage, opts: ViewOptions = {}): MessageView {
+  const deletedAt = iso(row.deletedAt);
+  const base: MessageView = {
+    id: row.id,
+    senderId: row.senderId,
+    content: row.content,
+    read: row.read ?? false,
+    createdAt: iso(row.createdAt) ?? new Date(0).toISOString(),
+    gifUrl: row.gifUrl ?? null,
+    gifAlt: row.gifUrl ? (row.gifAlt ?? null) : null,
+    imageUrls: row.imageUrls ?? [],
+    imageAlts: normalizeImageAlts(row.imageUrls, row.imageAlts),
+    editedAt: iso(row.editedAt),
+    deletedAt,
+    deletedBy: row.deletedBy ?? null,
+    audioUrl: row.audioUrl ?? null,
+    audioDurationMs: row.audioDurationMs ?? null,
+    audioPeaks: row.audioPeaks ?? [],
+    reactions: row.reactions ?? [],
+    kind: row.kind ?? 'text',
+    meta: row.meta ?? null,
+    forwardCount: row.forwardCount ?? 0,
+    expiresAt: iso(row.expiresAt),
+  };
 
-  if (
-    !deletedAt ||
-    opts.forModerator
-  )
-    return base;
+  if (!deletedAt || opts.forModerator) return base;
 
   return {
     ...base,
-    content:
-      '',
-    gifUrl:
-      null,
-    gifAlt:
-      null,
-    imageUrls:
-      [],
-    imageAlts:
-      [],
-    audioUrl:
-      null,
-    audioDurationMs:
-      null,
-    audioPeaks:
-      [],
-    reactions:
-      [],
+    content: '',
+    gifUrl: null,
+    gifAlt: null,
+    imageUrls: [],
+    imageAlts: [],
+    audioUrl: null,
+    audioDurationMs: null,
+    audioPeaks: [],
+    reactions: [],
     meta: null,
-    deletedBy:
-      base.deletedBy ??
-      DELETED_BY_SENDER,
+    deletedBy: base.deletedBy ?? DELETED_BY_SENDER,
   };
 }
 
 /** True when the row carries a voice note (after redaction). */
-export function isVoiceMessage(
-  view: Pick<
-    MessageView,
-    'audioUrl'
-  >,
-): boolean {
+export function isVoiceMessage(view: Pick<MessageView, 'audioUrl'>): boolean {
   return !!view.audioUrl;
 }
 
-export type PreviewKind =
-  | 'deleted'
-  | 'voice'
-  | 'image'
-  | 'gif'
-  | 'text'
-  | 'empty';
+export type PreviewKind = 'deleted' | 'voice' | 'image' | 'gif' | 'text' | 'empty';
 
 export interface ConversationPreview {
   kind: PreviewKind;
@@ -323,60 +183,30 @@ export interface ConversationPreview {
  * `t('dm-preview-voice', …)` from the kind and only ever prints `text` verbatim.
  */
 export function conversationPreview(
-  row: Pick<
-    StoredMessage,
-    'content'
-  > &
-    Partial<
-      Pick<
-        StoredMessage,
-        | 'deletedAt'
-        | 'audioUrl'
-        | 'imageUrls'
-        | 'gifUrl'
-      >
-    >,
+  row: Pick<StoredMessage, 'content'> & Partial<Pick<StoredMessage, 'deletedAt' | 'audioUrl' | 'imageUrls' | 'gifUrl'>>,
 ): ConversationPreview {
-  if (
-    row.deletedAt
-  )
+  if (row.deletedAt)
     return {
       kind: 'deleted',
       text: '',
     };
-  if (
-    row.audioUrl
-  )
+  if (row.audioUrl)
     return {
       kind: 'voice',
-      text:
-        row.content?.trim() ??
-        '',
+      text: row.content?.trim() ?? '',
     };
-  const trimmed =
-    row.content?.trim() ??
-    '';
-  if (
-    trimmed
-  )
+  const trimmed = row.content?.trim() ?? '';
+  if (trimmed)
     return {
       kind: 'text',
       text: trimmed,
     };
-  if (
-    (row
-      .imageUrls
-      ?.length ??
-      0) >
-    0
-  )
+  if ((row.imageUrls?.length ?? 0) > 0)
     return {
       kind: 'image',
       text: '',
     };
-  if (
-    row.gifUrl
-  )
+  if (row.gifUrl)
     return {
       kind: 'gif',
       text: '',
@@ -398,32 +228,11 @@ export function conversationPreview(
  * function pure and lets the caller fetch it in the same round trip as the page.
  */
 export function applyHides<
-  T extends
-    {
-      id: string;
-    },
->(
-  rows: T[],
-  hiddenIds: Iterable<string>,
-): T[] {
-  const hidden =
-    hiddenIds instanceof
-    Set
-      ? hiddenIds
-      : new Set(
-          hiddenIds,
-        );
-  if (
-    hidden.size ===
-    0
-  )
-    return rows;
-  return rows.filter(
-    (
-      row,
-    ) =>
-      !hidden.has(
-        row.id,
-      ),
-  );
+  T extends {
+    id: string;
+  },
+>(rows: T[], hiddenIds: Iterable<string>): T[] {
+  const hidden = hiddenIds instanceof Set ? hiddenIds : new Set(hiddenIds);
+  if (hidden.size === 0) return rows;
+  return rows.filter((row) => !hidden.has(row.id));
 }

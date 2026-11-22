@@ -26,10 +26,7 @@ export async function getLeaderboardPrivacy(userId: string): Promise<{ hidden: b
 }
 
 /** Set the caller's own switch (the profile row is created on first use). */
-export async function setLeaderboardHidden(
-  userId: string,
-  hidden: boolean,
-): Promise<{ hidden: boolean }> {
+export async function setLeaderboardHidden(userId: string, hidden: boolean): Promise<{ hidden: boolean }> {
   const row = await prisma.userProfile.upsert({
     where: { userId },
     create: { userId, hideFromLeaderboards: hidden },

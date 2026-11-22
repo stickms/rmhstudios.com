@@ -1,59 +1,29 @@
 import { blockFrame } from './frame';
-import {
-  fretBorder,
-  cloudMotif,
-} from './borders';
+import { fretBorder, cloudMotif } from './borders';
 import { seal } from './seal';
 
-const INK =
-  '#1a1410';
-const PAPER =
-  '#efe7d4';
+const INK = '#1a1410';
+const PAPER = '#efe7d4';
 
-function page(
-  W: number,
-  H: number,
-  inner: string,
-): string {
+function page(W: number, H: number, inner: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
     <rect width="${W}" height="${H}" fill="${PAPER}"/>
     ${inner}
   </svg>`;
 }
 
-function vtitle(
-  cx: number,
-  top: number,
-  text: string,
-  size: number,
-): string {
-  return [
-    ...text,
-  ]
+function vtitle(cx: number, top: number, text: string, size: number): string {
+  return [...text]
     .map(
-      (
-        ch,
-        i,
-      ) =>
+      (ch, i) =>
         `<text x="${cx}" y="${top + (i + 0.85) * size}" font-family="Kaiti SC, STKaiti, serif" font-weight="700" font-size="${size}" fill="${INK}" text-anchor="middle">${ch}</text>`,
     )
-    .join(
-      '',
-    );
+    .join('');
 }
 
-export function frontispiece(opts: {
-  titleZh: string;
-  titleEn: string;
-  W?: number;
-  H?: number;
-}): string {
-  const W =
-      opts.W ??
-      800,
-    H =
-      opts.H ??
-      1100;
+export function frontispiece(opts: { titleZh: string; titleEn: string; W?: number; H?: number }): string {
+  const W = opts.W ?? 800,
+    H = opts.H ?? 1100;
   const tSize = 96;
   return page(
     W,
@@ -70,34 +40,14 @@ export function frontispiece(opts: {
   );
 }
 
-export function xiuxiangPlate(opts: {
-  nameZh: string;
-  nameEn: string;
-  W?: number;
-  H?: number;
-}): string {
-  const W =
-      opts.W ??
-      800,
-    H =
-      opts.H ??
-      1100;
-  const cx =
-    W /
-    2;
+export function xiuxiangPlate(opts: { nameZh: string; nameEn: string; W?: number; H?: number }): string {
+  const W = opts.W ?? 800,
+    H = opts.H ?? 1100;
+  const cx = W / 2;
   // a minimal robed standing figure built from vector strokes
   // a robed standing figure (绣像) with hands clasped (拱手), built from flowing strokes
   const s = 1.6;
-  const u =
-    (
-      n: number,
-    ) =>
-      (
-        n *
-        s
-      ).toFixed(
-        1,
-      );
+  const u = (n: number) => (n * s).toFixed(1);
   const figure = `<g fill="none" stroke="${INK}" stroke-width="${2.4 * s}" stroke-linejoin="round" stroke-linecap="round" transform="translate(${cx} ${H * 0.12})">
     <path d="M ${-u(12)} ${u(2)} q ${u(12)} ${-u(18)} ${u(24)} 0"/>
     <ellipse cx="0" cy="${u(28)}" rx="${u(26)}" ry="${u(30)}" fill="${PAPER}"/>
@@ -123,49 +73,13 @@ export function xiuxiangPlate(opts: {
   );
 }
 
-export function colophon(opts: {
-  lines: string[];
-  W?: number;
-  H?: number;
-}): string {
-  const W =
-      opts.W ??
-      800,
-    H =
-      opts.H ??
-      1100;
-  const cx =
-    W /
-    2;
+export function colophon(opts: { lines: string[]; W?: number; H?: number }): string {
+  const W = opts.W ?? 800,
+    H = opts.H ?? 1100;
+  const cx = W / 2;
   const colGap = 56;
-  const startX =
-    cx +
-    ((opts
-      .lines
-      .length -
-      1) *
-      colGap) /
-      2; // right→left columns
-  const cols =
-    opts.lines
-      .map(
-        (
-          line,
-          i,
-        ) =>
-          vtitle(
-            startX -
-              i *
-                colGap,
-            H *
-              0.3,
-            line,
-            40,
-          ),
-      )
-      .join(
-        '',
-      );
+  const startX = cx + ((opts.lines.length - 1) * colGap) / 2; // right→left columns
+  const cols = opts.lines.map((line, i) => vtitle(startX - i * colGap, H * 0.3, line, 40)).join('');
   return page(
     W,
     H,

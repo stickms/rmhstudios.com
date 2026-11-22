@@ -1,9 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import {
-  getContentWarningSettingApi,
-  setContentWarningSettingApi,
-} from '@/lib/feed/content-warning-settings.contract';
+import { getContentWarningSettingApi, setContentWarningSettingApi } from '@/lib/feed/content-warning-settings.contract';
 import { contentWarningSettingSchema } from '@/lib/feed/content-warning-schema';
 import { getShowContentWarnings, setShowContentWarnings } from '@/lib/feed/content-warning-settings.server';
 

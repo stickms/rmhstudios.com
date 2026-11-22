@@ -7,293 +7,90 @@
 
 import fs from 'fs';
 import path from 'path';
-import {
-  CC_CATEGORIES_PER_ROUND,
-  CC_CATEGORY_DISTRIBUTION,
-  CC_LETTER_WEIGHTS,
-} from '../constants';
+import { CC_CATEGORIES_PER_ROUND, CC_CATEGORY_DISTRIBUTION, CC_LETTER_WEIGHTS } from '../constants';
 
 export interface Category {
   id: string;
   name: string;
-  difficulty:
-    | 'easy'
-    | 'medium'
-    | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard';
   examples: string[];
 }
 
-let cachedCategories:
-  | Category[]
-  | null =
-  null;
+let cachedCategories: Category[] | null = null;
 
 export function loadCategories(): Category[] {
-  if (
-    cachedCategories
-  )
-    return cachedCategories;
-  const raw =
-    fs.readFileSync(
-      path.join(
-        process.cwd(),
-        'data',
-        'rmhbox',
-        'category-crash',
-        'categories.json',
-      ),
-      'utf-8',
-    );
-  cachedCategories =
-    JSON.parse(
-      raw,
-    ) as Category[];
+  if (cachedCategories) return cachedCategories;
+  const raw = fs.readFileSync(path.join(process.cwd(), 'data', 'rmhbox', 'category-crash', 'categories.json'), 'utf-8');
+  cachedCategories = JSON.parse(raw) as Category[];
   return cachedCategories;
 }
 
 /** Selects a weighted random letter from A-Z, excluding usedLetters. */
-export function selectRoundLetter(
-  usedLetters: string[],
-): string {
-  const usedSet =
-    new Set(
-      usedLetters.map(
-        (
-          l,
-        ) =>
-          l.toUpperCase(),
-      ),
-    );
-  const entries =
-    Object.entries(
-      CC_LETTER_WEIGHTS,
-    ).filter(
-      ([
-        l,
-      ]) =>
-        !usedSet.has(
-          l,
-        ),
-    );
-  if (
-    entries.length ===
-    0
-  )
-    throw new Error(
-      'No available letters remaining',
-    );
-  const totalWeight =
-    entries.reduce(
-      (
-        sum,
-        [
-          ,
-          w,
-        ],
-      ) =>
-        sum +
-        w,
-      0,
-    );
-  let random =
-    Math.random() *
-    totalWeight;
-  for (const [
-    letter,
-    weight,
-  ] of entries) {
-    random -=
-      weight;
-    if (
-      random <=
-      0
-    )
-      return letter;
+export function selectRoundLetter(usedLetters: string[]): string {
+  const usedSet = new Set(usedLetters.map((l) => l.toUpperCase()));
+  const entries = Object.entries(CC_LETTER_WEIGHTS).filter(([l]) => !usedSet.has(l));
+  if (entries.length === 0) throw new Error('No available letters remaining');
+  const totalWeight = entries.reduce((sum, [, w]) => sum + w, 0);
+  let random = Math.random() * totalWeight;
+  for (const [letter, weight] of entries) {
+    random -= weight;
+    if (random <= 0) return letter;
   }
-  return entries[
-    entries.length -
-      1
-  ][0];
+  return entries[entries.length - 1][0];
 }
 
 /**
  * Difficulty mix for `count` categories: CC_CATEGORY_DISTRIBUTION (2 easy, 2
  * medium, 1 hard) at the default of 5, scaled for the host's 3-7.
  */
-function distributionFor(
-  count: number,
-): Record<
-  string,
-  number
-> {
-  if (
-    count ===
-    CC_CATEGORIES_PER_ROUND
-  )
-    return CC_CATEGORY_DISTRIBUTION as Record<
-      string,
-      number
-    >;
-  const hard =
-    Math.max(
-      1,
-      Math.round(
-        count /
-          5,
-      ),
-    );
-  const easy =
-    Math.ceil(
-      (count -
-        hard) /
-        2,
-    );
+function distributionFor(count: number): Record<string, number> {
+  if (count === CC_CATEGORIES_PER_ROUND) return CC_CATEGORY_DISTRIBUTION as Record<string, number>;
+  const hard = Math.max(1, Math.round(count / 5));
+  const easy = Math.ceil((count - hard) / 2);
   return {
     easy,
-    medium:
-      count -
-      hard -
-      easy,
+    medium: count - hard - easy,
     hard,
   };
 }
 
 /** Selects `count` categories (default CC_CATEGORIES_PER_ROUND) with the difficulty distribution, excluding used IDs. */
-export function selectRoundCategories(
-  usedCategoryIds: string[],
-  count: number = CC_CATEGORIES_PER_ROUND,
-): Category[] {
-  const all =
-    loadCategories();
-  const usedSet =
-    new Set(
-      usedCategoryIds,
-    );
-  const available =
-    all.filter(
-      (
-        c,
-      ) =>
-        !usedSet.has(
-          c.id,
-        ),
-    );
+export function selectRoundCategories(usedCategoryIds: string[], count: number = CC_CATEGORIES_PER_ROUND): Category[] {
+  const all = loadCategories();
+  const usedSet = new Set(usedCategoryIds);
+  const available = all.filter((c) => !usedSet.has(c.id));
 
-  const byDifficulty =
-    {
-      easy: available.filter(
-        (
-          c,
-        ) =>
-          c.difficulty ===
-          'easy',
-      ),
-      medium:
-        available.filter(
-          (
-            c,
-          ) =>
-            c.difficulty ===
-            'medium',
-        ),
-      hard: available.filter(
-        (
-          c,
-        ) =>
-          c.difficulty ===
-          'hard',
-      ),
-    };
+  const byDifficulty = {
+    easy: available.filter((c) => c.difficulty === 'easy'),
+    medium: available.filter((c) => c.difficulty === 'medium'),
+    hard: available.filter((c) => c.difficulty === 'hard'),
+  };
 
   // Shuffle each pool
-  for (const arr of Object.values(
-    byDifficulty,
-  )) {
-    for (
-      let i =
-        arr.length -
-        1;
-      i >
-      0;
-      i--
-    ) {
-      const j =
-        Math.floor(
-          Math.random() *
-            (i +
-              1),
-        );
-      [
-        arr[
-          i
-        ],
-        arr[
-          j
-        ],
-      ] =
-        [
-          arr[
-            j
-          ],
-          arr[
-            i
-          ],
-        ];
+  for (const arr of Object.values(byDifficulty)) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
     }
   }
 
-  const selected: Category[] =
-    [];
-  const dist =
-    distributionFor(
-      count,
-    );
-  for (const [
-    diff,
-    count,
-  ] of Object.entries(
-    dist,
-  )) {
-    const pool =
-      byDifficulty[
-        diff as keyof typeof byDifficulty
-      ];
-    selected.push(
-      ...pool.slice(
-        0,
-        count,
-      ),
-    );
+  const selected: Category[] = [];
+  const dist = distributionFor(count);
+  for (const [diff, count] of Object.entries(dist)) {
+    const pool = byDifficulty[diff as keyof typeof byDifficulty];
+    selected.push(...pool.slice(0, count));
   }
 
   // If we didn't get enough (rare edge case), fill from any remaining
-  while (
-    selected.length <
-    count
-  ) {
-    const remaining =
-      available.filter(
-        (
-          c,
-        ) =>
-          !selected.includes(
-            c,
-          ),
-      );
-    if (
-      remaining.length ===
-      0
-    )
-      break;
-    selected.push(
-      remaining[0],
-    );
+  while (selected.length < count) {
+    const remaining = available.filter((c) => !selected.includes(c));
+    if (remaining.length === 0) break;
+    selected.push(remaining[0]);
   }
 
   return selected;
 }
 
 export function _resetCache(): void {
-  cachedCategories =
-    null;
+  cachedCategories = null;
 }

@@ -121,7 +121,14 @@ export function entropyBits(kind: IdKind, size = 21, alphabetLength = NANOID_ALP
 }
 
 export type IdInspection =
-  | { kind: 'uuid'; version: number; variant: 'rfc' | 'ncs' | 'microsoft' | 'future'; time?: Date; nil?: boolean; max?: boolean }
+  | {
+      kind: 'uuid';
+      version: number;
+      variant: 'rfc' | 'ncs' | 'microsoft' | 'future';
+      time?: Date;
+      nil?: boolean;
+      max?: boolean;
+    }
   | { kind: 'ulid'; time: Date }
   | { kind: 'unknown' };
 

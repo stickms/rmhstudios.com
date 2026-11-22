@@ -22,10 +22,7 @@ export function handoverExpiry(now: Date): Date {
 }
 
 /** What an offer reads as right now. */
-export function handoverState(
-  offer: { status: string; expiresAt: Date },
-  now: Date,
-): HandoverState {
+export function handoverState(offer: { status: string; expiresAt: Date }, now: Date): HandoverState {
   if (offer.status !== 'pending') {
     return (HANDOVER_STATUSES as readonly string[]).includes(offer.status)
       ? (offer.status as HandoverStatus)
@@ -113,10 +110,7 @@ export type OrphanReason = 'deleted' | 'banned';
  * Why a community's owner is gone, or null when they are an ordinary, active account. A deletion
  * tombstone carries the sentinel ban reason; anyone else is orphaned only while a ban is in force.
  */
-export function orphanReason(
-  owner: BanFacts & { id?: string },
-  now: Date,
-): OrphanReason | null {
+export function orphanReason(owner: BanFacts & { id?: string }, now: Date): OrphanReason | null {
   if (isDeletedAccount(owner)) return 'deleted';
   return isBanned(owner, now) ? 'banned' : null;
 }

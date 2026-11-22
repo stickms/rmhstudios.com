@@ -47,42 +47,20 @@ interface MatchLike {
  * thrower is also `notFound`, but it is never above its own boundary, so the
  * lowest index is the boundary either way.
  */
-export function notFoundBoundaryIndex(
-  matches: readonly MatchLike[],
-): number {
+export function notFoundBoundaryIndex(matches: readonly MatchLike[]): number {
   for (const m of matches) {
-    if (
-      m._notFound ||
-      m.status ===
-        'notFound'
-    )
-      return m.index;
+    if (m._notFound || m.status === 'notFound') return m.index;
   }
   return -1;
 }
 
 /** Whether `match` sits below the not-found boundary — i.e. the server skipped its head. */
-export function isPastNotFoundBoundary(
-  matches: readonly MatchLike[],
-  match: MatchLike,
-): boolean {
-  const boundary =
-    notFoundBoundaryIndex(
-      matches,
-    );
-  return (
-    boundary !==
-      -1 &&
-    match.index >
-      boundary
-  );
+export function isPastNotFoundBoundary(matches: readonly MatchLike[], match: MatchLike): boolean {
+  const boundary = notFoundBoundaryIndex(matches);
+  return boundary !== -1 && match.index > boundary;
 }
 
-type AssetFn =
-  (ctx: {
-    matches: MatchLike[];
-    match: MatchLike;
-  }) => unknown;
+type AssetFn = (ctx: { matches: MatchLike[]; match: MatchLike }) => unknown;
 
 interface RouteLike {
   options: {
@@ -91,77 +69,38 @@ interface RouteLike {
   };
 }
 
-const GUARDED =
-  Symbol.for(
-    'rmh.notFoundHeadGuard',
-  );
+const GUARDED = Symbol.for('rmh.notFoundHeadGuard');
 
 /**
  * Wrap each route's `head`/`scripts` once. Idempotent — `getRouter()` can run
  * more than once per page, and the route objects are module singletons, so a
  * second call must not stack a second wrapper on the first.
  */
-export function installNotFoundHeadGuard(
-  routesById: object,
-): void {
-  for (const route of Object.values(
-    routesById,
-  ) as RouteLike[]) {
-    const options =
-      route?.options;
-    if (
-      !options
-    )
-      continue;
-    for (const key of [
-      'head',
-      'scripts',
-    ] as const) {
-      const fn =
-        options[
-          key
-        ];
+export function installNotFoundHeadGuard(routesById: object): void {
+  for (const route of Object.values(routesById) as RouteLike[]) {
+    const options = route?.options;
+    if (!options) continue;
+    for (const key of ['head', 'scripts'] as const) {
+      const fn = options[key];
       if (
-        typeof fn !==
-          'function' ||
+        typeof fn !== 'function' ||
         (
           fn as {
             [GUARDED]?: true;
           }
-        )[
-          GUARDED
-        ]
+        )[GUARDED]
       )
         continue;
-      const guarded: AssetFn =
-        (
-          ctx,
-        ) =>
-          ctx &&
-          Array.isArray(
-            ctx.matches,
-          ) &&
-          ctx.match &&
-          isPastNotFoundBoundary(
-            ctx.matches,
-            ctx.match,
-          )
-            ? undefined
-            : fn(
-                ctx,
-              );
+      const guarded: AssetFn = (ctx) =>
+        ctx && Array.isArray(ctx.matches) && ctx.match && isPastNotFoundBoundary(ctx.matches, ctx.match)
+          ? undefined
+          : fn(ctx);
       (
         guarded as {
           [GUARDED]?: true;
         }
-      )[
-        GUARDED
-      ] =
-        true;
-      options[
-        key
-      ] =
-        guarded;
+      )[GUARDED] = true;
+      options[key] = guarded;
     }
   }
 }

@@ -17,7 +17,9 @@ describe('presence context labels', () => {
       expect(labels[kind], kind).toBe(contextVerb(kind));
     }
     expect(Object.keys(englishByKey(calls)).sort()).toEqual(
-      Object.keys(labels).map((k) => `presence-context-${k}`).sort(),
+      Object.keys(labels)
+        .map((k) => `presence-context-${k}`)
+        .sort(),
     );
     expect(Object.keys(labels).sort()).toEqual(['game', 'space', 'tube_room']);
     expect(new Set(calls.map((c) => c.ns))).toEqual(new Set(['site']));

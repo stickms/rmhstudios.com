@@ -14,9 +14,7 @@ afterEach(() => vi.useRealTimers());
 
 describe('signatureHeader', () => {
   it('carries one v1 signature for one secret, matching signWebhookPayload', () => {
-    expect(signatureHeader(['whsec_new'], ts, body)).toBe(
-      `t=${ts},v1=${signWebhookPayload('whsec_new', ts, body)}`,
-    );
+    expect(signatureHeader(['whsec_new'], ts, body)).toBe(`t=${ts},v1=${signWebhookPayload('whsec_new', ts, body)}`);
   });
 
   it('carries both signatures, newest first, while two secrets are passed', () => {

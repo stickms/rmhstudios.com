@@ -19,7 +19,9 @@ interface ReleaseResponse {
 /** `git rev-parse HEAD` in the current directory, or undefined outside a git checkout. */
 function headCommit(): string | undefined {
   try {
-    return commitFromGit(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
+    return commitFromGit(
+      execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
+    );
   } catch {
     return undefined;
   }
@@ -31,7 +33,9 @@ async function chooseBuild(token: string, userId: string, rl: ReturnType<typeof 
   if (data.items.length === 1) return data.items[0];
   if (!stdin.isTTY) throw new Error('You have several builds: pass --build <slug>.');
   console.log('');
-  data.items.forEach((b, i) => console.log(`  ${color.cyan(String(i + 1).padStart(2))}  ${b.title} ${color.dim(`(${b.slug})`)}`));
+  data.items.forEach((b, i) =>
+    console.log(`  ${color.cyan(String(i + 1).padStart(2))}  ${b.title} ${color.dim(`(${b.slug})`)}`),
+  );
   console.log('');
   const answer = (await rl.question(`${color.cyan('?')} Build number: `)).trim();
   const picked = data.items[Number(answer) - 1];

@@ -16,7 +16,9 @@ describe('ladder nav labels', () => {
   it('covers every tab of the shell with the same English', () => {
     const { t, calls } = recordingT();
     const labels = ladderNavLabels(t);
-    const tabs = [...PUBLIC_NAV, ...PERSONAL_NAV, ...ADMIN_NAV].filter((n) => !OWN_NAMESPACE.has(n.label.toLowerCase()));
+    const tabs = [...PUBLIC_NAV, ...PERSONAL_NAV, ...ADMIN_NAV].filter(
+      (n) => !OWN_NAMESPACE.has(n.label.toLowerCase()),
+    );
     expect(Object.keys(labels).sort()).toEqual(tabs.map((n) => n.label.toLowerCase()).sort());
     for (const tab of tabs) expect(labels[tab.label.toLowerCase()], tab.label).toBe(tab.label);
     expect(Object.keys(englishByKey(calls)).sort()).toEqual(

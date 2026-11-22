@@ -28,22 +28,16 @@ export function loadCorsImage(
   onLoad: () => void,
   onFail: () => void = () => {},
 ): void {
-  image.crossOrigin =
-    'anonymous';
+  image.crossOrigin = 'anonymous';
   let retried = false;
-  image.onload =
-    onLoad;
-  image.onerror =
-    () => {
-      if (
-        retried
-      ) {
-        onFail();
-        return;
-      }
-      retried = true;
-      image.src = `${src}${src.includes('?') ? '&' : '?'}cors=1`;
-    };
-  image.src =
-    src;
+  image.onload = onLoad;
+  image.onerror = () => {
+    if (retried) {
+      onFail();
+      return;
+    }
+    retried = true;
+    image.src = `${src}${src.includes('?') ? '&' : '?'}cors=1`;
+  };
+  image.src = src;
 }

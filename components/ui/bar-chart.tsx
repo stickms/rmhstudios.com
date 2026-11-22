@@ -46,17 +46,12 @@ export function BarChart({
                   background: 'var(--chart-ink, var(--site-text))',
                   height: `${(Math.abs(bar.value) / span) * 100}%`,
                   minHeight: bar.value === 0 ? 0 : 2,
-                  ...(bar.value >= 0
-                    ? { bottom: `${(-min / span) * 100}%` }
-                    : { top: `${(max / span) * 100}%` }),
+                  ...(bar.value >= 0 ? { bottom: `${(-min / span) * 100}%` } : { top: `${(max / span) * 100}%` }),
                 }}
               />
             </div>
           ))}
-          <div
-            className="absolute inset-x-0 border-t border-site-border"
-            style={{ top: `${(max / span) * 100}%` }}
-          />
+          <div className="absolute inset-x-0 border-t border-site-border" style={{ top: `${(max / span) * 100}%` }} />
         </div>
       ) : (
         <div aria-hidden className="flex h-28 items-end gap-0.5 border-b border-site-border">

@@ -13,12 +13,7 @@ import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { useSession } from '@/components/Providers';
 import { useArrival } from '@/components/ui/arrive';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
-import {
-  formatPlayTime,
-  ordinalCategory,
-  sortMinigameRows,
-  type RecentMatch,
-} from '@/lib/rmhbox/player-stats';
+import { formatPlayTime, ordinalCategory, sortMinigameRows, type RecentMatch } from '@/lib/rmhbox/player-stats';
 import { playerStatsQuery } from '@/lib/rmhbox/player-stats.queries';
 import { cn } from '@/lib/utils';
 
@@ -77,7 +72,10 @@ export default function PlayerStatsPage({ userId }: { userId: string }) {
         <p className="mt-1 text-sm text-app-text-muted">
           {t('not-found-body', { defaultValue: 'There is no RMHBox player at this address.' })}
         </p>
-        <Link to="/rmhbox" className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-app-accent underline">
+        <Link
+          to="/rmhbox"
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-app-accent underline"
+        >
           {t('back-to-rmhbox', { defaultValue: 'Back to RMHBox' })}
         </Link>
       </div>
@@ -97,7 +95,10 @@ export default function PlayerStatsPage({ userId }: { userId: string }) {
         <h2 className="text-lg font-semibold text-app-text">
           {t('empty-title', { defaultValue: 'No RMHBox matches yet' })}
         </h2>
-        <Link to="/rmhbox" className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-app-accent underline">
+        <Link
+          to="/rmhbox"
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-app-accent underline"
+        >
           {t('start-lobby', { defaultValue: 'Start a lobby' })}
         </Link>
       </div>
@@ -153,11 +154,21 @@ export default function PlayerStatsPage({ userId }: { userId: string }) {
                   </caption>
                   <thead>
                     <tr className="border-b border-app-border text-left text-app-text-muted">
-                      <th scope="col" className="py-2 pe-3 font-medium">{t('col-game', { defaultValue: 'Minigame' })}</th>
-                      <th scope="col" className="py-2 pe-3 text-end font-medium">{t('col-played', { defaultValue: 'Played' })}</th>
-                      <th scope="col" className="py-2 pe-3 text-end font-medium">{t('col-wins', { defaultValue: 'Wins' })}</th>
-                      <th scope="col" className="py-2 pe-3 text-end font-medium">{t('col-best', { defaultValue: 'Best score' })}</th>
-                      <th scope="col" className="py-2 text-end font-medium">{t('col-average', { defaultValue: 'Average placing' })}</th>
+                      <th scope="col" className="py-2 pe-3 font-medium">
+                        {t('col-game', { defaultValue: 'Minigame' })}
+                      </th>
+                      <th scope="col" className="py-2 pe-3 text-end font-medium">
+                        {t('col-played', { defaultValue: 'Played' })}
+                      </th>
+                      <th scope="col" className="py-2 pe-3 text-end font-medium">
+                        {t('col-wins', { defaultValue: 'Wins' })}
+                      </th>
+                      <th scope="col" className="py-2 pe-3 text-end font-medium">
+                        {t('col-best', { defaultValue: 'Best score' })}
+                      </th>
+                      <th scope="col" className="py-2 text-end font-medium">
+                        {t('col-average', { defaultValue: 'Average placing' })}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -197,10 +208,18 @@ export default function PlayerStatsPage({ userId }: { userId: string }) {
                   </caption>
                   <thead>
                     <tr className="border-b border-app-border text-left text-app-text-muted">
-                      <th scope="col" className="py-2 pe-3 font-medium">{t('col-game', { defaultValue: 'Minigame' })}</th>
-                      <th scope="col" className="py-2 pe-3 font-medium">{t('col-placing', { defaultValue: 'Placing' })}</th>
-                      <th scope="col" className="py-2 pe-3 text-end font-medium">{t('col-score', { defaultValue: 'Score' })}</th>
-                      <th scope="col" className="py-2 text-end font-medium">{t('col-when', { defaultValue: 'When' })}</th>
+                      <th scope="col" className="py-2 pe-3 font-medium">
+                        {t('col-game', { defaultValue: 'Minigame' })}
+                      </th>
+                      <th scope="col" className="py-2 pe-3 font-medium">
+                        {t('col-placing', { defaultValue: 'Placing' })}
+                      </th>
+                      <th scope="col" className="py-2 pe-3 text-end font-medium">
+                        {t('col-score', { defaultValue: 'Score' })}
+                      </th>
+                      <th scope="col" className="py-2 text-end font-medium">
+                        {t('col-when', { defaultValue: 'When' })}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

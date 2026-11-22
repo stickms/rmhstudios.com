@@ -13,24 +13,19 @@ export type { LayoutPrefsInput } from './home-widgets-schema';
 // ─── Home widgets ──────────────────────────────────────────────────────────
 
 /** Every home-rail / pre-feed widget the user can order. */
-export const WIDGET_KINDS =
-  [
-    'arcade', // Today's Arcade
-    'streak', // Streak / daily wheel
-    'continue', // Continue watching / playing (§5)
-    'friends', // Friends online (§9)
-    'ladder', // RMHLadder digest
-    'livenow', // Live now
-    'events', // Community events
-    'wallet', // Wallet snapshot
-  ] as const;
-export type WidgetKind =
-  (typeof WIDGET_KINDS)[number];
+export const WIDGET_KINDS = [
+  'arcade', // Today's Arcade
+  'streak', // Streak / daily wheel
+  'continue', // Continue watching / playing (§5)
+  'friends', // Friends online (§9)
+  'ladder', // RMHLadder digest
+  'livenow', // Live now
+  'events', // Community events
+  'wallet', // Wallet snapshot
+] as const;
+export type WidgetKind = (typeof WIDGET_KINDS)[number];
 
-const WIDGET_KIND_SET =
-  new Set<string>(
-    WIDGET_KINDS,
-  );
+const WIDGET_KIND_SET = new Set<string>(WIDGET_KINDS);
 
 export interface WidgetDef {
   kind: WidgetKind;
@@ -44,92 +39,64 @@ export interface WidgetDef {
   defaultMobile: boolean;
 }
 
-export const WIDGET_CATALOG: Record<
-  WidgetKind,
-  WidgetDef
-> =
-  {
-    arcade:
-      {
-        kind: 'arcade',
-        label:
-          "Today's Arcade",
-        iconName:
-          'Gamepad2',
-        defaultDesktop: true,
-        defaultMobile: true,
-      },
-    streak:
-      {
-        kind: 'streak',
-        label:
-          'Streak & wheel',
-        iconName:
-          'Flame',
-        defaultDesktop: true,
-        defaultMobile: true,
-      },
-    continue:
-      {
-        kind: 'continue',
-        label:
-          'Continue watching',
-        iconName:
-          'History',
-        defaultDesktop: true,
-        defaultMobile: true,
-      },
-    friends:
-      {
-        kind: 'friends',
-        label:
-          'Friends',
-        iconName:
-          'Users',
-        defaultDesktop: true,
-        defaultMobile: false,
-      },
-    ladder:
-      {
-        kind: 'ladder',
-        label:
-          'Ladder digest',
-        iconName:
-          'Briefcase',
-        defaultDesktop: true,
-        defaultMobile: false,
-      },
-    livenow:
-      {
-        kind: 'livenow',
-        label:
-          'Live now',
-        iconName:
-          'Radio',
-        defaultDesktop: true,
-        defaultMobile: false,
-      },
-    events:
-      {
-        kind: 'events',
-        label:
-          'Community events',
-        iconName:
-          'CalendarDays',
-        defaultDesktop: true,
-        defaultMobile: false,
-      },
-    wallet:
-      {
-        kind: 'wallet',
-        label:
-          'Wallet',
-        iconName:
-          'Coins',
-        defaultDesktop: false,
-        defaultMobile: false,
-      },
-  };
+export const WIDGET_CATALOG: Record<WidgetKind, WidgetDef> = {
+  arcade: {
+    kind: 'arcade',
+    label: "Today's Arcade",
+    iconName: 'Gamepad2',
+    defaultDesktop: true,
+    defaultMobile: true,
+  },
+  streak: {
+    kind: 'streak',
+    label: 'Streak & wheel',
+    iconName: 'Flame',
+    defaultDesktop: true,
+    defaultMobile: true,
+  },
+  continue: {
+    kind: 'continue',
+    label: 'Continue watching',
+    iconName: 'History',
+    defaultDesktop: true,
+    defaultMobile: true,
+  },
+  friends: {
+    kind: 'friends',
+    label: 'Friends',
+    iconName: 'Users',
+    defaultDesktop: true,
+    defaultMobile: false,
+  },
+  ladder: {
+    kind: 'ladder',
+    label: 'Ladder digest',
+    iconName: 'Briefcase',
+    defaultDesktop: true,
+    defaultMobile: false,
+  },
+  livenow: {
+    kind: 'livenow',
+    label: 'Live now',
+    iconName: 'Radio',
+    defaultDesktop: true,
+    defaultMobile: false,
+  },
+  events: {
+    kind: 'events',
+    label: 'Community events',
+    iconName: 'CalendarDays',
+    defaultDesktop: true,
+    defaultMobile: false,
+  },
+  wallet: {
+    kind: 'wallet',
+    label: 'Wallet',
+    iconName: 'Coins',
+    defaultDesktop: false,
+    defaultMobile: false,
+  },
+};
 
 /** One entry in a user's ordered home stack. `collapsed` persists per widget. */
 export interface HomeStackItem {
@@ -138,106 +105,50 @@ export interface HomeStackItem {
 }
 
 /** Default desktop rail order — reproduces today's layout. */
-export const DEFAULT_HOME_STACK: HomeStackItem[] =
-  WIDGET_KINDS.filter(
-    (
-      k,
-    ) =>
-      WIDGET_CATALOG[
-        k
-      ]
-        .defaultDesktop,
-  ).map(
-    (
-      kind,
-    ) => ({
-      kind,
-    }),
-  );
+export const DEFAULT_HOME_STACK: HomeStackItem[] = WIDGET_KINDS.filter((k) => WIDGET_CATALOG[k].defaultDesktop).map(
+  (kind) => ({
+    kind,
+  }),
+);
 
 /** Default mobile pre-feed stack — short, so the feed stays above the fold. */
-export const DEFAULT_MOBILE_STACK: HomeStackItem[] =
-  WIDGET_KINDS.filter(
-    (
-      k,
-    ) =>
-      WIDGET_CATALOG[
-        k
-      ]
-        .defaultMobile,
-  ).map(
-    (
-      kind,
-    ) => ({
-      kind,
-    }),
-  );
+export const DEFAULT_MOBILE_STACK: HomeStackItem[] = WIDGET_KINDS.filter((k) => WIDGET_CATALOG[k].defaultMobile).map(
+  (kind) => ({
+    kind,
+  }),
+);
 
-export const MAX_STACK =
-  WIDGET_KINDS.length;
+export const MAX_STACK = WIDGET_KINDS.length;
 
 /**
  * Normalize a stored home stack: keep only known kinds, dedupe (first wins),
  * bound length. `[]` (empty / unset) yields the default desktop stack so an
  * unset row renders today's layout.
  */
-export function parseHomeStack(
-  raw: unknown,
-): HomeStackItem[] {
-  if (
-    !Array.isArray(
-      raw,
-    ) ||
-    raw.length ===
-      0
-  )
-    return DEFAULT_HOME_STACK;
-  const seen =
-    new Set<string>();
-  const out: HomeStackItem[] =
-    [];
+export function parseHomeStack(raw: unknown): HomeStackItem[] {
+  if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_HOME_STACK;
+  const seen = new Set<string>();
+  const out: HomeStackItem[] = [];
   for (const entry of raw) {
-    if (
-      out.length >=
-      MAX_STACK
-    )
-      break;
+    if (out.length >= MAX_STACK) break;
     const kind =
-      typeof entry ===
-      'string'
+      typeof entry === 'string'
         ? entry
         : (
             entry as {
               kind?: unknown;
             }
-          )
-            ?.kind;
-    if (
-      typeof kind !==
-        'string' ||
-      !WIDGET_KIND_SET.has(
-        kind,
-      ) ||
-      seen.has(
-        kind,
-      )
-    )
-      continue;
-    seen.add(
-      kind,
-    );
+          )?.kind;
+    if (typeof kind !== 'string' || !WIDGET_KIND_SET.has(kind) || seen.has(kind)) continue;
+    seen.add(kind);
     const collapsed =
-      typeof entry ===
-        'object' &&
-      entry !==
-        null &&
+      typeof entry === 'object' &&
+      entry !== null &&
       (
         entry as {
           collapsed?: unknown;
         }
-      )
-        .collapsed ===
-        true;
+      ).collapsed === true;
     out.push(
       collapsed
         ? {
@@ -249,9 +160,7 @@ export function parseHomeStack(
           },
     );
   }
-  return out.length
-    ? out
-    : DEFAULT_HOME_STACK;
+  return out.length ? out : DEFAULT_HOME_STACK;
 }
 
 // ─── Sidebar pin/hide ──────────────────────────────────────────────────────
@@ -265,29 +174,25 @@ export function parseHomeStack(
  * intentionally excluded — it's always pinned to the bottom of the rail, never
  * reordered or hidden.
  */
-export const SIDEBAR_NAV_IDS =
-  [
-    '/',
-    '/search',
-    '/messages',
-    '/create',
-    '/games',
-    '/library',
-    '/communities',
-    '/store',
-    '/predictions',
-    '/developer',
-    // Both hubs are plain links now (§15.7) — their ids are hrefs, not `group:`
-    // keys. An older saved order still naming the groups simply drops those
-    // entries at read time and the tabs keep their default position.
-    '/services',
-    '/ventures',
-  ] as const;
+export const SIDEBAR_NAV_IDS = [
+  '/',
+  '/search',
+  '/messages',
+  '/create',
+  '/games',
+  '/library',
+  '/communities',
+  '/store',
+  '/predictions',
+  '/developer',
+  // Both hubs are plain links now (§15.7) — their ids are hrefs, not `group:`
+  // keys. An older saved order still naming the groups simply drops those
+  // entries at read time and the tabs keep their default position.
+  '/services',
+  '/ventures',
+] as const;
 
-const SIDEBAR_ID_SET =
-  new Set<string>(
-    SIDEBAR_NAV_IDS,
-  );
+const SIDEBAR_ID_SET = new Set<string>(SIDEBAR_NAV_IDS);
 
 /**
  * Which places may be hidden from the desktop sidebar's list of places. Home,
@@ -298,20 +203,16 @@ const SIDEBAR_ID_SET =
  * sidebar with it. Everything here stays reachable from the globe, `/sections`,
  * search and its URL when hidden (§2.6).
  */
-export const SIDEBAR_HIDEABLE_IDS =
-  [
-    '/create',
-    '/library',
-    '/communities',
-    '/store',
-    '/predictions',
-    '/developer',
-  ] as const;
+export const SIDEBAR_HIDEABLE_IDS = [
+  '/create',
+  '/library',
+  '/communities',
+  '/store',
+  '/predictions',
+  '/developer',
+] as const;
 
-const SIDEBAR_HIDEABLE_SET =
-  new Set<string>(
-    SIDEBAR_HIDEABLE_IDS,
-  );
+const SIDEBAR_HIDEABLE_SET = new Set<string>(SIDEBAR_HIDEABLE_IDS);
 
 export interface SidebarPref {
   /** Tab ids promoted into the main rail (reserved; see nav pin buttons). */
@@ -327,84 +228,29 @@ export interface SidebarPref {
  * wins over hide. `order` is validated against the full orderable set; `hidden`
  * against the hideable subset only.
  */
-export function parseSidebarPref(
-  raw: unknown,
-): SidebarPref {
-  const obj =
-    (
-      raw &&
-      typeof raw ===
-        'object'
-        ? raw
-        : {}
-    ) as {
-      pinned?: unknown;
-      hidden?: unknown;
-      order?: unknown;
-    };
-  const clean =
-    (
-      v: unknown,
-      allowed: Set<string>,
-    ): string[] => {
-      if (
-        !Array.isArray(
-          v,
-        )
-      )
-        return [];
-      const seen =
-        new Set<string>();
-      const out: string[] =
-        [];
-      for (const x of v) {
-        if (
-          typeof x ===
-            'string' &&
-          allowed.has(
-            x,
-          ) &&
-          !seen.has(
-            x,
-          )
-        ) {
-          seen.add(
-            x,
-          );
-          out.push(
-            x,
-          );
-        }
+export function parseSidebarPref(raw: unknown): SidebarPref {
+  const obj = (raw && typeof raw === 'object' ? raw : {}) as {
+    pinned?: unknown;
+    hidden?: unknown;
+    order?: unknown;
+  };
+  const clean = (v: unknown, allowed: Set<string>): string[] => {
+    if (!Array.isArray(v)) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const x of v) {
+      if (typeof x === 'string' && allowed.has(x) && !seen.has(x)) {
+        seen.add(x);
+        out.push(x);
       }
-      return out;
-    };
-  const order =
-    clean(
-      obj.order,
-      SIDEBAR_ID_SET,
-    );
-  const pinned =
-    clean(
-      obj.pinned,
-      SIDEBAR_ID_SET,
-    );
-  const pinnedSet =
-    new Set(
-      pinned,
-    );
+    }
+    return out;
+  };
+  const order = clean(obj.order, SIDEBAR_ID_SET);
+  const pinned = clean(obj.pinned, SIDEBAR_ID_SET);
+  const pinnedSet = new Set(pinned);
   // A destination can't be both pinned and hidden — pin wins.
-  const hidden =
-    clean(
-      obj.hidden,
-      SIDEBAR_HIDEABLE_SET,
-    ).filter(
-      (
-        h,
-      ) =>
-        !pinnedSet.has(
-          h,
-        ),
-    );
+  const hidden = clean(obj.hidden, SIDEBAR_HIDEABLE_SET).filter((h) => !pinnedSet.has(h));
   return {
     pinned,
     hidden,
@@ -428,19 +274,11 @@ export function parseLayoutPref(
     | undefined,
 ): LayoutPref {
   return {
-    sidebar:
-      parseSidebarPref(
-        input?.sidebar,
-      ),
-    homeStack:
-      parseHomeStack(
-        input?.homeStack,
-      ),
+    sidebar: parseSidebarPref(input?.sidebar),
+    homeStack: parseHomeStack(input?.homeStack),
   };
 }
 
 /** localStorage mirror keys (flash-free first paint, appearance pattern). */
-export const LAYOUT_SIDEBAR_KEY =
-  'rmh-layout-sidebar';
-export const LAYOUT_HOMESTACK_KEY =
-  'rmh-layout-homestack';
+export const LAYOUT_SIDEBAR_KEY = 'rmh-layout-sidebar';
+export const LAYOUT_HOMESTACK_KEY = 'rmh-layout-homestack';

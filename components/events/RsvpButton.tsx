@@ -111,9 +111,7 @@ export function RsvpButton({
             disabled={disabled || busy}
           >
             <Check aria-hidden />
-            {status === 'going'
-              ? t('rsvp-going', { defaultValue: 'Going' })
-              : t('rsvp-go', { defaultValue: 'Going' })}
+            {status === 'going' ? t('rsvp-going', { defaultValue: 'Going' }) : t('rsvp-go', { defaultValue: 'Going' })}
           </Button>
         )}
         <Button

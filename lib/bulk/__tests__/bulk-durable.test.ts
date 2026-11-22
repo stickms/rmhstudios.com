@@ -212,7 +212,16 @@ describe('the reclaim sweep', () => {
   });
 
   it('picks up a run from before the lease existed (no heartbeat) once it is older than the stall window', async () => {
-    seed({ likes: 4, op: { kind: 'unlike-posts', status: 'RUNNING', heartbeatAt: null, createdAt: ago(STALLED_AFTER_MS + 1000), processed: 2 } });
+    seed({
+      likes: 4,
+      op: {
+        kind: 'unlike-posts',
+        status: 'RUNNING',
+        heartbeatAt: null,
+        createdAt: ago(STALLED_AFTER_MS + 1000),
+        processed: 2,
+      },
+    });
     expect(await reclaimStalledOperations()).toEqual(['op1']);
     await runBulkOperation('op1');
     expect(op().status).toBe('DONE');

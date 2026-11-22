@@ -2,11 +2,7 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { NoteDTO } from '@/lib/communities/member-notes';
-import type {
-  createNoteBody,
-  editNoteBody,
-  noteCountsQuery,
-} from './member-notes-schema';
+import type { createNoteBody, editNoteBody, noteCountsQuery } from './member-notes-schema';
 
 /** Live notes about one member, newest first. */
 export const listNotesApi = endpoint<{

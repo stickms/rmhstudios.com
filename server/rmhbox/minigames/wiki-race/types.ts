@@ -24,9 +24,7 @@ export interface WRPlayerState {
   path: string[];
   clickCount: number;
   hasFinished: boolean;
-  finishedAt:
-    | number
-    | null;
+  finishedAt: number | null;
   finishRank: number;
   score: number;
 }
@@ -36,20 +34,14 @@ export interface ActionLogEntry {
   seq: number;
   type: string;
   timestamp: number;
-  payload: Record<
-    string,
-    unknown
-  >;
+  payload: Record<string, unknown>;
 }
 
 /** Full internal state of the Wiki-Race minigame. */
 export interface WikiRaceState {
   phase: WikiRacePhase;
   articlePair: ArticlePair;
-  playerStates: Map<
-    string,
-    WRPlayerState
-  >;
+  playerStates: Map<string, WRPlayerState>;
   timeRemaining: number;
   finishCounter: number;
   actionLog: ActionLogEntry[];
@@ -58,10 +50,7 @@ export interface WikiRaceState {
   /** Total number of rounds */
   totalRounds: number;
   /** Cumulative scores across rounds (keyed by userId) */
-  cumulativeScores: Map<
-    string,
-    number
-  >;
+  cumulativeScores: Map<string, number>;
   /** Previously used pair keys (to avoid repeats) */
   usedPairKeys: string[];
   /** Per-round article pair metadata for history reconstruction */

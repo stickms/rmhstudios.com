@@ -1,42 +1,21 @@
 import { useId } from 'react';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/contract/client';
 import { muteFieldsFor } from '@/lib/feed/conversation-controls';
-import {
-  getConversationPrefApi,
-  setConversationPrefApi,
-} from '@/lib/preferences/conversation.contract';
+import { getConversationPrefApi, setConversationPrefApi } from '@/lib/preferences/conversation.contract';
 import { toast } from '@/lib/toast';
 
-type Mode =
-  | 'all'
-  | 'mentions'
-  | 'none';
+type Mode = 'all' | 'mentions' | 'none';
 
-const prefKey = (
-  groupId: string,
-) =>
-  [
-    'group-chat',
-    'notifications',
-    groupId,
-  ] as const;
+const prefKey = (groupId: string) => ['group-chat', 'notifications', groupId] as const;
 
 /**
  * "Notifications" for one group in its info dialog (s07-05, FR-6): All, Mentions only or Muted, read and written through
  * the member's per-conversation preference (`group:<id>`), the same row the notifier consults.
  */
-export function GroupNotificationSetting({
-  groupId,
-}: {
-  groupId: string;
-}) {
+export function GroupNotificationSetting({ groupId }: { groupId: string }) {
   const { t } = useTranslation('group-mentions');
   const queryClient = useQueryClient();
   const selectId = useId();
@@ -62,9 +41,7 @@ export function GroupNotificationSetting({
       return api(setConversationPrefApi, {
         body: {
           scopeKey,
-          muteUntil: fields.muteUntil
-            ? fields.muteUntil.toISOString()
-            : null,
+          muteUntil: fields.muteUntil ? fields.muteUntil.toISOString() : null,
           mentionsOnly: fields.mentionsOnly,
         },
       });
@@ -86,8 +63,7 @@ export function GroupNotificationSetting({
   const description =
     mode === 'mentions'
       ? t('notifications-mentions-desc', {
-          defaultValue:
-            'When someone writes your @handle, you are told. Other messages stay quiet.',
+          defaultValue: 'When someone writes your @handle, you are told. Other messages stay quiet.',
         })
       : mode === 'none'
         ? t('notifications-none-desc', {
@@ -98,10 +74,7 @@ export function GroupNotificationSetting({
           });
   return (
     <section>
-      <label
-        htmlFor={selectId}
-        className="t-label block pb-1"
-      >
+      <label htmlFor={selectId} className="t-label block pb-1">
         {t('notifications', { defaultValue: 'Notifications' })}
       </label>
       <Select
@@ -110,15 +83,9 @@ export function GroupNotificationSetting({
         disabled={save.isPending}
         onChange={(e) => save.mutate(e.target.value as Mode)}
       >
-        <option value="all">
-          {t('notifications-all', { defaultValue: 'All' })}
-        </option>
-        <option value="mentions">
-          {t('notifications-mentions', { defaultValue: 'Mentions only' })}
-        </option>
-        <option value="none">
-          {t('notifications-none', { defaultValue: 'Muted' })}
-        </option>
+        <option value="all">{t('notifications-all', { defaultValue: 'All' })}</option>
+        <option value="mentions">{t('notifications-mentions', { defaultValue: 'Mentions only' })}</option>
+        <option value="none">{t('notifications-none', { defaultValue: 'Muted' })}</option>
       </Select>
       <p className="t-meta pt-1">{description}</p>
     </section>

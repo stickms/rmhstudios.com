@@ -13,7 +13,10 @@ vi.mock('@tanstack/react-query', () => ({ useQuery: () => ({ data: { presets: h.
 vi.mock('@/lib/rmhbox/presets.queries', () => ({ presetsQuery: () => ({}) }));
 // Run effects synchronously in a bare render so the auto-apply hook can be driven.
 const fx = vi.hoisted(() => ({ run: [] as (() => void)[] }));
-vi.mock('react', async (orig) => ({ ...(await orig<typeof import('react')>()), useEffect: (f: () => void) => fx.run.push(f) }));
+vi.mock('react', async (orig) => ({
+  ...(await orig<typeof import('react')>()),
+  useEffect: (f: () => void) => fx.run.push(f),
+}));
 
 const { useApplyPreset, useAutoApplyDefaultPreset, usePresetSelection } = await import('../use-presets');
 const { C2S } = await import('@/lib/rmhbox/events');

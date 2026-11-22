@@ -1,12 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import {
-  MAX_SEQUENCE_STEPS,
-  keyLabel,
-  keystrokeFromEvent,
-  type KeyPlatform,
-} from '@/lib/shortcuts/bindings';
+import { MAX_SEQUENCE_STEPS, keyLabel, keystrokeFromEvent, type KeyPlatform } from '@/lib/shortcuts/bindings';
 
 /**
  * A keycap: a picture of a key, so it takes the control's border and radius
@@ -26,10 +21,7 @@ export function KeyCaps({ keys, platform }: { keys: readonly string[]; platform:
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       {keys.map((step, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center gap-1"
-        >
+        <span key={i} className="inline-flex items-center gap-1">
           {i > 0 ? <span className="t-meta">{t('then', { defaultValue: 'then' })}</span> : null}
           {keyLabel(step, platform).map((cap, j) => (
             <KeyCap key={j}>{cap}</KeyCap>
@@ -97,9 +89,7 @@ export function ShortcutCapture({
     const spec = keystrokeFromEvent(native);
     if (spec === null) return;
     e.preventDefault();
-    setSteps((prev) =>
-      prev.length > 0 && prev.length < MAX_SEQUENCE_STEPS ? [...prev, spec] : [spec],
-    );
+    setSteps((prev) => (prev.length > 0 && prev.length < MAX_SEQUENCE_STEPS ? [...prev, spec] : [spec]));
   };
 
   return (
@@ -116,20 +106,12 @@ export function ShortcutCapture({
           onKeyDown={onKeyDown}
           className="t-body h-9 min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 text-site-text pointer-coarse:h-11"
         />
-        <Button
-          variant="primary"
-          disabled={!canSave}
-          onClick={() => onSave(steps)}
-        >
+        <Button variant="primary" disabled={!canSave} onClick={() => onSave(steps)}>
           {t('save', { defaultValue: 'Save' })}
         </Button>
         <Button onClick={onCancel}>{t('cancel', { defaultValue: 'Cancel' })}</Button>
       </div>
-      <p
-        id={statusId}
-        role="status"
-        className={problem ? 't-meta text-site-danger' : 't-meta'}
-      >
+      <p id={statusId} role="status" className={problem ? 't-meta text-site-danger' : 't-meta'}>
         {problem ??
           (steps.length > 0
             ? t('capture-recorded', {

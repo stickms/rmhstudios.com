@@ -6,11 +6,4 @@
 
 import { registerClientProfile } from '@/lib/tf2-game/client/game-profile';
 
-registerClientProfile(
-  'csgo',
-  async () =>
-    (
-      await import('./profile')
-    )
-      .CSGO_PROFILE,
-);
+registerClientProfile('csgo', async () => (await import('./profile')).CSGO_PROFILE);

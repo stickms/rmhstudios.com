@@ -2,40 +2,14 @@
 import { z } from 'zod';
 import { MUTE_CHOICES } from '@/lib/feed/conversation-controls';
 
-export const muteConversationBody =
-  z.object(
-    {
-      choice:
-        z.enum(
-          MUTE_CHOICES,
-        ),
-    },
-  );
+export const muteConversationBody = z.object({
+  choice: z.enum(MUTE_CHOICES),
+});
 
-export const pinReplyBody =
-  z.object(
-    {
-      commentId:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            64,
-          ),
-    },
-  );
+export const pinReplyBody = z.object({
+  commentId: z.string().min(1).max(64),
+});
 
-export const mutedConversationsQuery =
-  z.object(
-    {
-      cursor:
-        z
-          .string()
-          .max(
-            80,
-          )
-          .optional(),
-    },
-  );
+export const mutedConversationsQuery = z.object({
+  cursor: z.string().max(80).optional(),
+});

@@ -43,9 +43,17 @@ export function EditorFrame({
   const update = useRoster((s) => s.update);
   const [exporting, setExporting] = useState(false);
   const tabs = [
-    { id: 'build', label: t('tab.build', { defaultValue: 'Build' }), ...(pending.build ? { badge: pending.build } : {}) },
+    {
+      id: 'build',
+      label: t('tab.build', { defaultValue: 'Build' }),
+      ...(pending.build ? { badge: pending.build } : {}),
+    },
     { id: 'sheet', label: t('tab.sheet', { defaultValue: 'Sheet' }) },
-    { id: 'spells', label: t('tab.spells', { defaultValue: 'Spells' }), ...(pending.spells ? { badge: pending.spells } : {}) },
+    {
+      id: 'spells',
+      label: t('tab.spells', { defaultValue: 'Spells' }),
+      ...(pending.spells ? { badge: pending.spells } : {}),
+    },
     { id: 'inventory', label: t('tab.inventory', { defaultValue: 'Inventory' }) },
     { id: 'story', label: t('tab.story', { defaultValue: 'Story' }) },
     { id: 'advisor', label: t('tab.advisor', { defaultValue: 'Advisor' }) },
@@ -114,13 +122,24 @@ export function EditorFrame({
           </div>
         </div>
         {pending.build + pending.spells > 0 ? (
-          <div className="rmhc-noprint flex flex-wrap items-center gap-x-3 gap-y-1 border-l-2 border-app-warning pl-3 text-sm text-app-text" role="status">
+          <div
+            className="rmhc-noprint flex flex-wrap items-center gap-x-3 gap-y-1 border-l-2 border-app-warning pl-3 text-sm text-app-text"
+            role="status"
+          >
             <span>
               <AlertTriangle className="mr-1.5 inline size-4 align-text-bottom text-app-warning" aria-hidden />
               {pending.build
-                ? t('editor.pendingBuild', { defaultValue: '{{count}} build choice(s) still to make', count: pending.build })
-                : t('editor.pendingSpells', { defaultValue: '{{count}} spell pick(s) still open', count: pending.spells })}
-              {pending.build && pending.spells ? ` · ${t('editor.pendingSpells', { defaultValue: '{{count}} spell pick(s) still open', count: pending.spells })}` : ''}
+                ? t('editor.pendingBuild', {
+                    defaultValue: '{{count}} build choice(s) still to make',
+                    count: pending.build,
+                  })
+                : t('editor.pendingSpells', {
+                    defaultValue: '{{count}} spell pick(s) still open',
+                    count: pending.spells,
+                  })}
+              {pending.build && pending.spells
+                ? ` · ${t('editor.pendingSpells', { defaultValue: '{{count}} spell pick(s) still open', count: pending.spells })}`
+                : ''}
             </span>
             {tab !== (pending.build ? 'build' : 'spells') ? (
               <Button type="button" size="xs" variant="ghost" onClick={() => onTab(pending.build ? 'build' : 'spells')}>
@@ -130,7 +149,13 @@ export function EditorFrame({
           </div>
         ) : null}
         <div className="rmhc-noprint">
-          <Tabs tabs={tabs} value={tab} onChange={(id) => onTab(id as EditorTab)} idBase="rmhc" aria-label={t('editor.sections', { defaultValue: 'Character sections' })} />
+          <Tabs
+            tabs={tabs}
+            value={tab}
+            onChange={(id) => onTab(id as EditorTab)}
+            idBase="rmhc"
+            aria-label={t('editor.sections', { defaultValue: 'Character sections' })}
+          />
         </div>
       </header>
       {(Object.keys(panels) as EditorTab[]).map((id) =>
@@ -144,14 +169,24 @@ export function EditorFrame({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('export.title', { defaultValue: 'Export character' })}</DialogTitle>
-            <DialogDescription>{t('export.body', { defaultValue: 'Choose a format. RMHCharacters JSON keeps everything; Foundry exports also carry a full copy so they import back losslessly.' })}</DialogDescription>
+            <DialogDescription>
+              {t('export.body', {
+                defaultValue:
+                  'Choose a format. RMHCharacters JSON keeps everything; Foundry exports also carry a full copy so they import back losslessly.',
+              })}
+            </DialogDescription>
           </DialogHeader>
           <ul className="flex flex-col">
             {(Object.keys(EXPORTS) as ExportFormat[])
               .filter((f) => EXPORTS[f].systems.includes(character.system))
               .map((f) => (
                 <li key={f} className="border-b border-app-border py-2 last:border-b-0">
-                  <Button type="button" variant="ghost" className="w-full justify-start" onClick={() => void doExport(f)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => void doExport(f)}
+                  >
                     <Download aria-hidden /> {exportLabel[f]}
                   </Button>
                 </li>
@@ -182,7 +217,9 @@ function SaveState({ id }: { id: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 font-mono text-xs text-app-text-muted" aria-live="polite">
       {state === 'saved' ? <Check className="size-3.5" aria-hidden /> : <Loader2 className="size-3.5" aria-hidden />}
-      {state === 'saved' ? t('editor.saved', { defaultValue: 'Saved' }) : t('editor.saving', { defaultValue: 'Saving…' })}
+      {state === 'saved'
+        ? t('editor.saved', { defaultValue: 'Saved' })
+        : t('editor.saving', { defaultValue: 'Saving…' })}
     </span>
   );
 }

@@ -16,16 +16,8 @@ import { publishedLogWhere } from '@/lib/blog/publication';
 import { getLibraryBook } from '@/lib/library/library';
 import { SITE_URL } from '@/lib/seo';
 import { rateLimit, RATE_LIMIT_POLICIES } from '@/lib/rate-limit';
-import {
-  deleteHighlight,
-  updateHighlight,
-} from '@/lib/reading/highlights.server';
-import {
-  getGoalProgress,
-  getMyShelves,
-  removeShelf,
-  setShelf,
-} from '@/lib/reading/shelves.server';
+import { deleteHighlight, updateHighlight } from '@/lib/reading/highlights.server';
+import { getGoalProgress, getMyShelves, removeShelf, setShelf } from '@/lib/reading/shelves.server';
 import type { ReadingDocKind, ShelfId } from '@/lib/reading/schema';
 import {
   decodeHighlightCursor,
@@ -89,19 +81,12 @@ export function readInput<T extends z.ZodType>(raw: unknown, schema: T) {
       } as const);
 }
 
-export async function readBody<T extends z.ZodType>(
-  request: Request,
-  schema: T,
-) {
+export async function readBody<T extends z.ZodType>(request: Request, schema: T) {
   return readInput(await request.json().catch(() => null), schema);
 }
 
 const pathFor = (kind: ReadingDocKind, key: string) =>
-  kind === 'blog'
-    ? `/blog/${key}`
-    : kind === 'news'
-      ? `/news/${key}`
-      : `/library/${key}`;
+  kind === 'blog' ? `/blog/${key}` : kind === 'news' ? `/news/${key}` : `/library/${key}`;
 
 type DocRef = { docKind: ReadingDocKind; docKey: string };
 
@@ -110,12 +95,8 @@ type DocRef = { docKind: ReadingDocKind; docKey: string };
  * is absent here is returned as `document: null`. Existence follows the site's own `docExists`: published blog posts
  * and news, and library books that are not hidden (an uploaded row wins over the bundled catalog).
  */
-async function liveDocumentTitles(
-  rows: readonly DocRef[],
-): Promise<Map<string, string>> {
-  const keysOf = (k: ReadingDocKind) => [
-    ...new Set(rows.filter((r) => r.docKind === k).map((r) => r.docKey)),
-  ];
+async function liveDocumentTitles(rows: readonly DocRef[]): Promise<Map<string, string>> {
+  const keysOf = (k: ReadingDocKind) => [...new Set(rows.filter((r) => r.docKind === k).map((r) => r.docKey))];
   const blog = keysOf('blog');
   const news = keysOf('news');
   const lib = keysOf('library');
@@ -170,19 +151,13 @@ type HighlightRow = Prisma.ReadingHighlightGetPayload<{
   select: typeof HIGHLIGHT_SELECT;
 }>;
 
-function toApiHighlight(
-  r: HighlightRow,
-  titles: Map<string, string>,
-): ApiHighlight {
+function toApiHighlight(r: HighlightRow, titles: Map<string, string>): ApiHighlight {
   const title = titles.get(`${r.docKind}:${r.docKey}`);
   return {
     id: r.id,
     kind: r.docKind,
     key: r.docKey,
-    document:
-      title === undefined
-        ? null
-        : { title, url: `${SITE_URL}${pathFor(r.docKind, r.docKey)}` },
+    document: title === undefined ? null : { title, url: `${SITE_URL}${pathFor(r.docKind, r.docKey)}` },
     quote: r.exact,
     note: r.note,
     isPublic: r.isPublic,
@@ -199,9 +174,7 @@ function toApiHighlight(
 export async function listMyHighlightsForKey(
   userId: string,
   q: HighlightsQuery,
-): Promise<
-  { data: ApiHighlight[]; nextCursor: string | null } | 'invalid_cursor'
-> {
+): Promise<{ data: ApiHighlight[]; nextCursor: string | null } | 'invalid_cursor'> {
   const syncMode = q.since !== undefined;
   const mode = syncMode ? 'u' : 'c';
   const cursor = q.cursor ? decodeHighlightCursor(q.cursor) : null;
@@ -213,20 +186,13 @@ export async function listMyHighlightsForKey(
   if (q.since !== undefined) and.push({ updatedAt: { gt: new Date(q.since) } });
   if (cursor)
     and.push({
-      OR: [
-        { [field]: { [dir]: cursor.at } },
-        { [field]: cursor.at, id: { [dir]: cursor.id } },
-      ],
+      OR: [{ [field]: { [dir]: cursor.at } }, { [field]: cursor.at, id: { [dir]: cursor.id } }],
     });
   const where: Prisma.ReadingHighlightWhereInput = {
     userId,
     ...(q.kind ? { docKind: q.kind } : {}),
     ...(q.visibility ? { isPublic: q.visibility === 'public' } : {}),
-    ...(q.hasNote === 'true'
-      ? { note: { not: null } }
-      : q.hasNote === 'false'
-        ? { note: null }
-        : {}),
+    ...(q.hasNote === 'true' ? { note: { not: null } } : q.hasNote === 'false' ? { note: null } : {}),
     ...(and.length ? { AND: and } : {}),
   };
   const order = syncMode ? 'asc' : 'desc';
@@ -271,10 +237,7 @@ export async function patchMyHighlight(
   return toApiHighlight(row, await liveDocumentTitles([row]));
 }
 
-export async function deleteMyHighlight(
-  userId: string,
-  id: string,
-): Promise<boolean> {
+export async function deleteMyHighlight(userId: string, id: string): Promise<boolean> {
   return deleteHighlight(userId, id);
 }
 
@@ -284,16 +247,14 @@ export async function listMyShelvesForKey(
 ): Promise<{ data: ApiShelfEntry[] }> {
   const { entries } = await getMyShelves(userId);
   return {
-    data: (shelf ? entries.filter((e) => e.shelf === shelf) : entries).map(
-      (e) => ({
-        slug: e.slug,
-        title: e.title,
-        shelf: e.shelf,
-        pages: e.pages,
-        finishedAt: e.finishedAt,
-        updatedAt: e.updatedAt,
-      }),
-    ),
+    data: (shelf ? entries.filter((e) => e.shelf === shelf) : entries).map((e) => ({
+      slug: e.slug,
+      title: e.title,
+      shelf: e.shelf,
+      pages: e.pages,
+      finishedAt: e.finishedAt,
+      updatedAt: e.updatedAt,
+    })),
   };
 }
 
@@ -302,11 +263,7 @@ export async function listMyShelvesForKey(
  * replaces the stamp `setShelf` chose (its own default is "now", or the date already there), so a book finished
  * elsewhere counts toward the right year's goal.
  */
-export async function putMyShelf(
-  userId: string,
-  slug: string,
-  body: PutShelfBody,
-): Promise<ApiShelfEntry | null> {
+export async function putMyShelf(userId: string, slug: string, body: PutShelfBody): Promise<ApiShelfEntry | null> {
   const result = await setShelf(userId, {
     slug,
     title: '',
@@ -330,17 +287,11 @@ export async function putMyShelf(
   return entry;
 }
 
-export async function deleteMyShelf(
-  userId: string,
-  slug: string,
-): Promise<boolean> {
+export async function deleteMyShelf(userId: string, slug: string): Promise<boolean> {
   return removeShelf(userId, slug);
 }
 
-export async function getMyReadingGoal(
-  userId: string,
-  year: number,
-): Promise<ApiReadingGoal> {
+export async function getMyReadingGoal(userId: string, year: number): Promise<ApiReadingGoal> {
   const p = await getGoalProgress(userId, year);
   return {
     year,

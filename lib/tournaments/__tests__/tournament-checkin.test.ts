@@ -12,9 +12,8 @@ const createNotification = vi.hoisted(() => vi.fn(async (_input: unknown) => {})
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification }));
 
-const { startTournament, registerForTournament, withdrawFromTournament, refundEntrant, TournamentError } = await import(
-  '@/lib/tournaments/tournament.server'
-);
+const { startTournament, registerForTournament, withdrawFromTournament, refundEntrant, TournamentError } =
+  await import('@/lib/tournaments/tournament.server');
 const { checkIn, hostCheckIn, undoHostCheckIn, updateCheckInSettings, runCheckInNotices } =
   await import('@/lib/tournaments/checkin.server');
 
@@ -61,11 +60,8 @@ function makeDb() {
     }),
     tournament: {
       findUnique: async ({ where }: any) =>
-        where.id === t().id
-          ? { ...t(), _count: { entrants: state.entrants.length } }
-          : null,
-      findMany: async ({ where, take }: any) =>
-        [t()].filter((x) => matches(x, where)).slice(0, take),
+        where.id === t().id ? { ...t(), _count: { entrants: state.entrants.length } } : null,
+      findMany: async ({ where, take }: any) => [t()].filter((x) => matches(x, where)).slice(0, take),
       updateMany: async ({ where, data }: any) => {
         if (!matches(t(), where)) return { count: 0 };
         apply(t(), data);
@@ -82,8 +78,7 @@ function makeDb() {
       findUnique: async ({ where }: any) =>
         state.entrants.find(
           (e) =>
-            e.tournamentId === where.tournamentId_userId.tournamentId &&
-            e.userId === where.tournamentId_userId.userId,
+            e.tournamentId === where.tournamentId_userId.tournamentId && e.userId === where.tournamentId_userId.userId,
         ) ?? null,
       updateMany: async ({ where, data }: any) => {
         const rows = state.entrants.filter((e) => matches(e, where));
@@ -91,7 +86,10 @@ function makeDb() {
         return { count: rows.length };
       },
       update: async ({ where, data }: any) => {
-        apply(state.entrants.find((e) => e.id === where.id), data);
+        apply(
+          state.entrants.find((e) => e.id === where.id),
+          data,
+        );
       },
       deleteMany: async ({ where }: any) => {
         const before = state.entrants.length;
@@ -352,19 +350,20 @@ describe('self check-in', () => {
 });
 
 describe('host check-in', () => {
-  it("another member cannot check you in or undo it; the host and an admin can", async () => {
+  it('another member cannot check you in or undo it; the host and an admin can', async () => {
     seed({ users: ['u1', 'u2'], checkedIn: [] });
     const db = makeDb();
-    await expect(
-      hostCheckIn({ tournamentId: 't1', byUserId: 'u2', userId: 'u1' }, db, NOW),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN', status: 403 });
+    await expect(hostCheckIn({ tournamentId: 't1', byUserId: 'u2', userId: 'u1' }, db, NOW)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      status: 403,
+    });
     expect(state.entrants[0].checkedInAt).toBeNull();
 
     await hostCheckIn({ tournamentId: 't1', byUserId: 'host', userId: 'u1' }, db, NOW);
     expect(state.entrants[0].checkedInAt).toEqual(NOW);
-    await expect(
-      undoHostCheckIn({ tournamentId: 't1', byUserId: 'u2', userId: 'u1' }, db),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(undoHostCheckIn({ tournamentId: 't1', byUserId: 'u2', userId: 'u1' }, db)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
     expect(state.entrants[0].checkedInAt).toEqual(NOW);
 
     await undoHostCheckIn({ tournamentId: 't1', byUserId: 'host', userId: 'u1' }, db);

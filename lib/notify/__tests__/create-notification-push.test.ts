@@ -94,7 +94,14 @@ describe('createNotification push decision', () => {
 
 describe('tips and awards follow the Tips & awards row', () => {
   it('a tip is not dropped when only System is off in-app', async () => {
-    prefsRow.current = { ...ON, system: false, matrix: { system: { inapp: false } }, quietStart: null, quietEnd: null, tz: null };
+    prefsRow.current = {
+      ...ON,
+      system: false,
+      matrix: { system: { inapp: false } },
+      quietStart: null,
+      quietEnd: null,
+      tz: null,
+    };
     await createNotification({ userId: 'u', actorId: 'a', type: 'SYSTEM', category: 'economy', entityType: 'tip' });
     expect(createRow).toHaveBeenCalledTimes(1);
   });

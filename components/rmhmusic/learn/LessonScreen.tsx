@@ -5,67 +5,31 @@
  * available yet" page with a link home, never a crash or a blank. A document (`.app-page`).
  */
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import {
-  ArrowLeft,
-  SlidersHorizontal,
-} from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import {
-  getLesson,
-  needsVoiceRange,
-} from '@/lib/rmhmusic/learn/content/path';
+import { getLesson, needsVoiceRange } from '@/lib/rmhmusic/learn/content/path';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
 import { staffCardRange } from '@/lib/rmhmusic/learn/voice/range';
 import { cn } from '@/lib/utils';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
-import {
-  chordSoundFor,
-  resolveSound,
-} from '@/lib/rmhmusic/learn/audio/instruments/catalog';
-import {
-  beginSoundSession,
-  prefetchSound,
-} from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import { chordSoundFor, resolveSound } from '@/lib/rmhmusic/learn/audio/instruments/catalog';
+import { beginSoundSession, prefetchSound } from '@/lib/rmhmusic/learn/audio/instruments/engine';
 import { whenIdle } from '@/lib/shared/platform';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
-import {
-  PRIMARY_BUTTON,
-  SECONDARY_BUTTON,
-} from './buttons';
-import {
-  EarLesson,
-  EarListenBox,
-} from './EarLesson';
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
+import { EarLesson, EarListenBox } from './EarLesson';
 import { FirstNoteLesson } from './FirstNoteLesson';
-import {
-  FindNoteLesson,
-  FindNoteStaffBox,
-} from './FindNoteLesson';
+import { FindNoteLesson, FindNoteStaffBox } from './FindNoteLesson';
 import { FlashcardLesson } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
-import {
-  MatchNoteLesson,
-  MatchStaffBox,
-} from './MatchNoteLesson';
+import { MatchNoteLesson, MatchStaffBox } from './MatchNoteLesson';
 import { ModeToggle } from './ModeToggle';
-import {
-  ChordNameBox,
-  PlayChordLesson,
-} from './PlayChordLesson';
+import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
 import { RhythmLesson } from './RhythmLesson';
-import {
-  STAFF_BOX,
-  STAFF_LOW_ASPECT,
-} from './StaffCard';
+import { STAFF_BOX, STAFF_LOW_ASPECT } from './StaffCard';
 import { useLearnerShape } from './useLearnerShape';
 import { useInputRelease } from './useLearnInput';
 import { useArrival } from '@/components/ui/arrive';
@@ -82,22 +46,14 @@ export function Shell({
   action?: ReactNode;
   /** Where the back link goes instead of the learn home (a song goes back to the songbook). */
   back?: {
-    to:
-      | '/rmhmusic/songs'
-      | '/rmhmusic/sprint'
-      | '/rmhmusic/history';
+    to: '/rmhmusic/songs' | '/rmhmusic/sprint' | '/rmhmusic/history';
     label: string;
   };
   /** The lesson is still loading: the main region says so to screen readers. */
   busy?: boolean;
   children: ReactNode;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
+  const { t } = useTranslation('c-rmhmusic');
   return (
     <div className="app-page">
       <div className="rmm-column mx-auto flex w-full max-w-3xl flex-1 flex-col pr-[max(1.25rem,var(--safe-right))] pl-[max(1.25rem,var(--safe-left))]">
@@ -105,63 +61,34 @@ export function Shell({
             end), and below each other if they must, rather than widen the page. */}
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
-            to={
-              back?.to ??
-              '/rmhmusic'
-            }
+            to={back?.to ?? '/rmhmusic'}
             className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-app-sm px-3 py-2 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
           >
-            <ArrowLeft
-              className="h-4 w-4 shrink-0 rtl-flip"
-              aria-hidden="true"
-            />
+            <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             <span>
               {back?.label ??
-                t(
-                  'back-to-lessons',
-                  {
-                    defaultValue:
-                      'Back to lessons',
-                  },
-                )}
+                t('back-to-lessons', {
+                  defaultValue: 'Back to lessons',
+                })}
             </span>
           </Link>
           <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
             <ModeToggle />
-            {
-              action
-            }
+            {action}
           </div>
         </header>
-        <main
-          aria-busy={
-            busy ||
-            undefined
-          }
-          className="flex-1 space-y-4 pt-4 pb-[calc(2rem+var(--safe-bottom))]"
-        >
+        <main aria-busy={busy || undefined} className="flex-1 space-y-4 pt-4 pb-[calc(2rem+var(--safe-bottom))]">
           {busy && (
-            <p
-              role="status"
-              className="sr-only"
-            >
-              {t(
-                'loading-lesson',
-                {
-                  defaultValue:
-                    'Loading the lesson…',
-                },
-              )}
+            <p role="status" className="sr-only">
+              {t('loading-lesson', {
+                defaultValue: 'Loading the lesson…',
+              })}
             </p>
           )}
           <h1 className="rmm-display text-[2.25rem] leading-[2.75rem] break-words text-app-text sm:text-[2.75rem] sm:leading-[3.25rem]">
-            {
-              title
-            }
+            {title}
           </h1>
-          {
-            children
-          }
+          {children}
         </main>
       </div>
     </div>
@@ -175,10 +102,7 @@ export function Shell({
  */
 function LessonSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="space-y-4"
-    >
+    <div aria-hidden="true" className="space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
@@ -210,27 +134,13 @@ export function FlashcardSkeleton({
   low?: boolean;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className="rmm-flash space-y-4"
-    >
+    <div aria-hidden="true" className="rmm-flash space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
-        <div
-          className={
-            STAFF_BOX
-          }
-        >
-          <div
-            className={cn(
-              'app-skeleton w-full',
-              low
-                ? STAFF_LOW_ASPECT
-                : 'aspect-[200/102]',
-            )}
-          />
+        <div className={STAFF_BOX}>
+          <div className={cn('app-skeleton w-full', low ? STAFF_LOW_ASPECT : 'aspect-[200/102]')} />
           <div className="h-9" />
         </div>
         <div className="flex h-11 items-center">
@@ -239,26 +149,9 @@ export function FlashcardSkeleton({
       </section>
       <div className="rmm-flash__answers">
         <div className="rmm-flash__letters">
-          {[
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-          ].map(
-            (
-              i,
-            ) => (
-              <div
-                key={
-                  i
-                }
-                className="app-skeleton h-full w-full"
-              />
-            ),
-          )}
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="app-skeleton h-full w-full" />
+          ))}
         </div>
         <div className="rmm-input-region">
           <div className="app-skeleton h-full w-full" />
@@ -275,17 +168,12 @@ export function FlashcardSkeleton({
  */
 function FindNoteSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="rmm-find space-y-4"
-    >
+    <div aria-hidden="true" className="rmm-find space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
-        <FindNoteStaffBox
-          skeleton
-        />
+        <FindNoteStaffBox skeleton />
         <div className="flex h-11 items-center">
           <div className="app-skeleton h-5 w-56 max-w-full" />
         </div>
@@ -312,20 +200,12 @@ function MatchNoteSkeleton({
   low?: boolean;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className="rmm-match space-y-4"
-    >
+    <div aria-hidden="true" className="rmm-match space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
-        <MatchStaffBox
-          skeleton
-          low={
-            low
-          }
-        />
+        <MatchStaffBox skeleton low={low} />
         <div className="h-11" />
         <div className="flex h-11 items-center">
           <div className="app-skeleton h-5 w-56 max-w-full" />
@@ -347,17 +227,12 @@ function MatchNoteSkeleton({
  */
 function EarSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="rmm-ear space-y-4"
-    >
+    <div aria-hidden="true" className="rmm-ear space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
-        <EarListenBox
-          skeleton
-        />
+        <EarListenBox skeleton />
         <div className="flex h-11 items-center">
           <div className="app-skeleton h-5 w-56 max-w-full" />
         </div>
@@ -375,17 +250,12 @@ function EarSkeleton() {
  */
 function PlayChordSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="rmm-chord space-y-4"
-    >
+    <div aria-hidden="true" className="rmm-chord space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
-        <ChordNameBox
-          skeleton
-        />
+        <ChordNameBox skeleton />
         <div className="flex h-11 items-center">
           <div className="app-skeleton h-5 w-56 max-w-full" />
         </div>
@@ -404,10 +274,7 @@ function PlayChordSkeleton() {
  */
 function RhythmSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="rmm-rhythm space-y-4"
-    >
+    <div aria-hidden="true" className="rmm-rhythm space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <div className="h-8">
           <div className="app-skeleton mx-auto h-8 w-40" />
@@ -426,274 +293,99 @@ function RhythmSkeleton() {
   );
 }
 
-export function LessonScreen({
-  lessonId,
-}: {
-  lessonId: string;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const status =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.status,
-    );
-  const error =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.error,
-    );
-  const [
-    setupOpen,
-    setSetupOpen,
-  ] =
-    useState(
-      false,
-    );
+export function LessonScreen({ lessonId }: { lessonId: string }) {
+  const { t } = useTranslation('c-rmhmusic');
+  const status = useLearnStore((s) => s.status);
+  const error = useLearnStore((s) => s.error);
+  const [setupOpen, setSetupOpen] = useState(false);
   // Once the lesson has been on screen, it stays: a session that expires (or a save that fails)
   // mid-lesson is the lesson's to show — its result stays up with a sign-in link or Retry — so the
   // store's `unauthorized` must not swap it for the load-time sign-in page and lose the result.
-  const [
-    started,
-    setStarted,
-  ] =
-    useState(
-      false,
-    );
-  if (
-    status ===
-      'ready' &&
-    !started
-  )
-    setStarted(
-      true,
-    );
-  const arrival =
-    useArrival(
-      started ||
-        status ===
-          'error',
-    );
-  const setupButton =
-    useRef<HTMLButtonElement>(
-      null,
-    );
+  const [started, setStarted] = useState(false);
+  if (status === 'ready' && !started) setStarted(true);
+  const arrival = useArrival(started || status === 'error');
+  const setupButton = useRef<HTMLButtonElement>(null);
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
   // through the hub's phases (useInputPhases), so nothing here needs to re-render.
   useInputRelease();
   // A singer with no range yet (the dialog was dismissed, or never opened) is asked to choose one
   // before a lesson in the range starts: a range is never assumed.
-  const noRange =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s
-          .profile
-          ?.instrument ===
-          'voice' &&
-        !s
-          .profile
-          .voiceRange,
-    );
-  const lesson =
-    getLesson(
-      lessonId,
-    );
+  const noRange = useLearnStore((s) => s.profile?.instrument === 'voice' && !s.profile.voiceRange);
+  const lesson = getLesson(lessonId);
   // An alto's lessons in the range draw on the low card; the placeholder takes its height too,
   // from the layout route's read of the profile before the store has loaded.
-  const shape =
-    useLearnerShape();
+  const shape = useLearnerShape();
   const lowCard =
-    shape.instrument ===
-      'voice' &&
-    shape.voiceRange !==
-      null &&
-    staffCardRange(
-      shape.voiceRange,
-    ) ===
-      'low' &&
-    needsVoiceRange(
-      lesson,
-    );
-  const playable =
-    isPlayable(
-      lesson,
-    );
+    shape.instrument === 'voice' &&
+    shape.voiceRange !== null &&
+    staffCardRange(shape.voiceRange) === 'low' &&
+    needsVoiceRange(lesson);
+  const playable = isPlayable(lesson);
   // The sound this lesson's notes are voiced with: the learner's (`resolveSound`), except that a
   // lesson of chords keeps to a sound that plays them (`chordSoundFor`: violin and flute fall back
   // to the learner's instrument; the Sound dialog says so). Rhythm lessons make no pitched sound.
-  const instrument =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s
-          .profile
-          ?.instrument ??
-        'piano',
-    );
-  const chosen =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s
-          .profile
-          ?.sound ??
-        null,
-    );
-  const mode =
-    lesson?.mode;
-  const pitched =
-    playable &&
-    mode !==
-      'rhythm-basics';
+  const instrument = useLearnStore((s) => s.profile?.instrument ?? 'piano');
+  const chosen = useLearnStore((s) => s.profile?.sound ?? null);
+  const mode = lesson?.mode;
+  const pitched = playable && mode !== 'rhythm-basics';
   const soundId =
-    mode ===
-      'ear-chord' ||
-    mode ===
-      'play-chord'
-      ? chordSoundFor(
-          {
-            instrument,
-            sound:
-              chosen,
-          },
-        )
-      : resolveSound(
-          {
-            instrument,
-            sound:
-              chosen,
-          },
-        );
-  const sound =
-    useMemo<PlayOptions>(
-      () => ({
-        instrument:
-          soundId,
-      }),
-      [
-        soundId,
-      ],
-    );
+    mode === 'ear-chord' || mode === 'play-chord'
+      ? chordSoundFor({
+          instrument,
+          sound: chosen,
+        })
+      : resolveSound({
+          instrument,
+          sound: chosen,
+        });
+  const sound = useMemo<PlayOptions>(
+    () => ({
+      instrument: soundId,
+    }),
+    [soundId],
+  );
   // One sound session per lesson: the samples load (at most LOAD_WAIT_MS of "Loading sound…"),
   // else the simple tone plays for the rest of the lesson. Ended when the lesson is left. A layout
   // effect: it must begin before the lesson's own (passive) effects play the first question.
-  const loaded =
-    status ===
-    'ready';
+  const loaded = status === 'ready';
   useLayoutEffect(() => {
-    if (
-      !loaded ||
-      !pitched
-    )
-      return;
-    return beginSoundSession(
-      soundId,
-    );
-  }, [
-    loaded,
-    pitched,
-    soundId,
-    lessonId,
-  ]);
+    if (!loaded || !pitched) return;
+    return beginSoundSession(soundId);
+  }, [loaded, pitched, soundId, lessonId]);
   // Entering a pitched lesson route starts the learner's sound loading in the background (browser
   // idle, skipped with Data Saver), as soon as the profile says which sound it is: the lesson's own
   // session then usually finds it ready. Never on the home page (plan §3.5).
-  const known =
-    useLearnStore(
-      (
-        s,
-      ) =>
-        s.profile !=
-        null,
-    );
+  const known = useLearnStore((s) => s.profile != null);
   useEffect(() => {
-    if (
-      !pitched ||
-      !known
-    )
-      return;
-    return whenIdle(
-      () =>
-        void prefetchSound(
-          soundId,
-        ),
-    );
-  }, [
-    pitched,
-    known,
-    soundId,
-  ]);
+    if (!pitched || !known) return;
+    return whenIdle(() => void prefetchSound(soundId));
+  }, [pitched, known, soundId]);
 
   // The lesson is open: its length, for the practice log, counts from here.
-  useEffect(
-    () =>
-      beginActivity(),
-    [
-      lessonId,
-    ],
-  );
+  useEffect(() => beginActivity(), [lessonId]);
 
   // The store is empty until `load()` runs in the browser (a no-op when the home already loaded it).
   useEffect(() => {
-    if (
-      playable
-    )
-      void useLearnStore
-        .getState()
-        .load();
-  }, [
-    playable,
-  ]);
+    if (playable) void useLearnStore.getState().load();
+  }, [playable]);
 
-  if (
-    !lesson ||
-    !playable
-  ) {
+  if (!lesson || !playable) {
     return (
       <Shell
-        title={t(
-          'lesson-unavailable-title',
-          {
-            defaultValue:
-              'Not available yet',
-          },
-        )}
+        title={t('lesson-unavailable-title', {
+          defaultValue: 'Not available yet',
+        })}
       >
         <div className="rmm-sheet space-y-3 p-5">
           <p className="text-app-text-muted">
-            {t(
-              'lesson-unavailable-body',
-              {
-                defaultValue:
-                  "This lesson isn't ready yet. Pick another one from your learning path.",
-              },
-            )}
+            {t('lesson-unavailable-body', {
+              defaultValue: "This lesson isn't ready yet. Pick another one from your learning path.",
+            })}
           </p>
-          <Link
-            to="/rmhmusic"
-            className={
-              PRIMARY_BUTTON
-            }
-          >
-            {t(
-              'lesson-back-to-path',
-              {
-                defaultValue:
-                  'Back to your lessons',
-              },
-            )}
+          <Link to="/rmhmusic" className={PRIMARY_BUTTON}>
+            {t('lesson-back-to-path', {
+              defaultValue: 'Back to your lessons',
+            })}
           </Link>
         </div>
       </Shell>
@@ -701,379 +393,132 @@ export function LessonScreen({
   }
 
   let body: ReactNode;
-  if (
-    started &&
-    noRange &&
-    needsVoiceRange(
-      lesson,
-    )
-  ) {
+  if (started && noRange && needsVoiceRange(lesson)) {
+    body = (
+      <div className="rmm-sheet space-y-3 p-5">
+        <p className="text-app-text-muted">
+          {t('voice-choose-first', {
+            defaultValue: 'Choose your voice first: this lesson uses the notes you can sing.',
+          })}
+        </p>
+        <button type="button" onClick={() => setSetupOpen(true)} className={PRIMARY_BUTTON}>
+          {t('voice-choose-link', {
+            defaultValue: 'Choose your voice',
+          })}
+        </button>
+      </div>
+    );
+  } else if (started) {
     body =
-      (
-        <div className="rmm-sheet space-y-3 p-5">
-          <p className="text-app-text-muted">
-            {t(
-              'voice-choose-first',
-              {
-                defaultValue:
-                  'Choose your voice first: this lesson uses the notes you can sing.',
-              },
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={() =>
-              setSetupOpen(
-                true,
-              )
-            }
-            className={
-              PRIMARY_BUTTON
-            }
-          >
-            {t(
-              'voice-choose-link',
-              {
-                defaultValue:
-                  'Choose your voice',
-              },
-            )}
-          </button>
-        </div>
-      );
-  } else if (
-    started
-  ) {
-    body =
-      lesson.mode ===
-      'staff-flashcards' ? (
-        <FlashcardLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-          sound={
-            sound
-          }
-        />
-      ) : lesson.mode ===
-          'keyboard-map' ||
-        lesson.mode ===
-          'fretboard' ? (
-        <FindNoteLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-          sound={
-            sound
-          }
-        />
-      ) : lesson.mode ===
-          'match-note' ||
-        lesson.mode ===
-          'sing-interval' ? (
-        <MatchNoteLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-          sound={
-            sound
-          }
-        />
-      ) : lesson.mode ===
-          'ear-interval' ||
-        lesson.mode ===
-          'ear-chord' ? (
-        <EarLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-          sound={
-            sound
-          }
-        />
-      ) : lesson.mode ===
-        'play-chord' ? (
+      lesson.mode === 'staff-flashcards' ? (
+        <FlashcardLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
+      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
+        <FindNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
+      ) : lesson.mode === 'match-note' || lesson.mode === 'sing-interval' ? (
+        <MatchNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
+      ) : lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord' ? (
+        <EarLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
+      ) : lesson.mode === 'play-chord' ? (
         <PlayChordLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-          sound={
-            sound
-          }
-          onChangeInput={() =>
-            setSetupOpen(
-              true,
-            )
-          }
+          key={lesson.id}
+          lessonId={lesson.id}
+          paused={setupOpen}
+          sound={sound}
+          onChangeInput={() => setSetupOpen(true)}
         />
-      ) : lesson.mode ===
-        'rhythm-basics' ? (
-        <RhythmLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-        />
+      ) : lesson.mode === 'rhythm-basics' ? (
+        <RhythmLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
-        <FirstNoteLesson
-          key={
-            lesson.id
-          }
-          lessonId={
-            lesson.id
-          }
-          paused={
-            setupOpen
-          }
-          sound={
-            sound
-          }
-        />
+        <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} sound={sound} />
       );
-  } else if (
-    status ===
-      'error' &&
-    error ===
-      'unauthorized'
-  ) {
-    body =
-      (
-        <div
-          role="alert"
-          className="rmm-sheet space-y-3 p-5"
+  } else if (status === 'error' && error === 'unauthorized') {
+    body = (
+      <div role="alert" className="rmm-sheet space-y-3 p-5">
+        <p className="text-app-text">
+          {t('error-signed-out', {
+            defaultValue: 'Your session ended. Sign in again to continue.',
+          })}
+        </p>
+        <Link
+          to="/login"
+          search={{
+            callbackURL: `/rmhmusic/lesson/${lesson.id}`,
+          }}
+          className={PRIMARY_BUTTON}
         >
-          <p className="text-app-text">
-            {t(
-              'error-signed-out',
-              {
-                defaultValue:
-                  'Your session ended. Sign in again to continue.',
-              },
-            )}
-          </p>
-          <Link
-            to="/login"
-            search={{
-              callbackURL: `/rmhmusic/lesson/${lesson.id}`,
-            }}
-            className={
-              PRIMARY_BUTTON
-            }
-          >
-            {t(
-              'sign-in',
-              {
-                defaultValue:
-                  'Sign in',
-              },
-            )}
-          </Link>
-        </div>
-      );
-  } else if (
-    status ===
-    'error'
-  ) {
-    body =
-      (
-        <div
-          role="alert"
-          className="rmm-sheet space-y-3 p-5"
-        >
-          <p className="text-app-text">
-            {t(
-              'error-lesson-load',
-              {
-                defaultValue:
-                  "Couldn't load this lesson.",
-              },
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={() =>
-              void useLearnStore
-                .getState()
-                .load()
-            }
-            className={
-              PRIMARY_BUTTON
-            }
-          >
-            {t(
-              'retry',
-              {
-                defaultValue:
-                  'Try again',
-              },
-            )}
-          </button>
-        </div>
-      );
+          {t('sign-in', {
+            defaultValue: 'Sign in',
+          })}
+        </Link>
+      </div>
+    );
+  } else if (status === 'error') {
+    body = (
+      <div role="alert" className="rmm-sheet space-y-3 p-5">
+        <p className="text-app-text">
+          {t('error-lesson-load', {
+            defaultValue: "Couldn't load this lesson.",
+          })}
+        </p>
+        <button type="button" onClick={() => void useLearnStore.getState().load()} className={PRIMARY_BUTTON}>
+          {t('retry', {
+            defaultValue: 'Try again',
+          })}
+        </button>
+      </div>
+    );
   } else {
     // Not started yet: the placeholder of exactly the lesson's boxes (the first render after
     // `ready` takes the branch above).
     body =
-      lesson.mode ===
-      'staff-flashcards' ? (
-        <FlashcardSkeleton
-          low={
-            lowCard
-          }
-        />
-      ) : lesson.mode ===
-          'keyboard-map' ||
-        lesson.mode ===
-          'fretboard' ? (
+      lesson.mode === 'staff-flashcards' ? (
+        <FlashcardSkeleton low={lowCard} />
+      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
         <FindNoteSkeleton />
-      ) : lesson.mode ===
-          'match-note' ||
-        lesson.mode ===
-          'sing-interval' ? (
-        <MatchNoteSkeleton
-          low={
-            lowCard
-          }
-        />
-      ) : lesson.mode ===
-          'ear-interval' ||
-        lesson.mode ===
-          'ear-chord' ? (
+      ) : lesson.mode === 'match-note' || lesson.mode === 'sing-interval' ? (
+        <MatchNoteSkeleton low={lowCard} />
+      ) : lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord' ? (
         <EarSkeleton />
-      ) : lesson.mode ===
-        'play-chord' ? (
+      ) : lesson.mode === 'play-chord' ? (
         <PlayChordSkeleton />
-      ) : lesson.mode ===
-        'rhythm-basics' ? (
+      ) : lesson.mode === 'rhythm-basics' ? (
         <RhythmSkeleton />
       ) : (
         <LessonSkeleton />
       );
   }
 
-  const ready =
-    status ===
-    'ready';
+  const ready = status === 'ready';
   return (
     <Shell
-      title={
-        lesson.title
-      }
-      busy={
-        status !==
-          'ready' &&
-        status !==
-          'error'
-      }
+      title={lesson.title}
+      busy={status !== 'ready' && status !== 'error'}
       action={
         // Always in the header so nothing moves when the lesson loads; hidden (and inert) until
         // then. Icon-only under 400px, where the label would crowd the header.
-        <div
-          className={
-            ready
-              ? undefined
-              : 'invisible'
-          }
-          inert={
-            !ready ||
-            undefined
-          }
-        >
+        <div className={ready ? undefined : 'invisible'} inert={!ready || undefined}>
           <button
-            ref={
-              setupButton
-            }
+            ref={setupButton}
             type="button"
-            onClick={() =>
-              setSetupOpen(
-                true,
-              )
-            }
-            aria-label={t(
-              'change-input',
-              {
-                defaultValue:
-                  'Change input',
-              },
-            )}
+            onClick={() => setSetupOpen(true)}
+            aria-label={t('change-input', {
+              defaultValue: 'Change input',
+            })}
             className={`${SECONDARY_BUTTON} min-w-11 max-[399px]:px-0`}
           >
-            <SlidersHorizontal
-              className="h-4 w-4 shrink-0"
-              aria-hidden="true"
-            />
-            <span
-              aria-hidden="true"
-              className="max-[399px]:hidden"
-            >
-              {t(
-                'change-input',
-                {
-                  defaultValue:
-                    'Change input',
-                },
-              )}
+            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span aria-hidden="true" className="max-[399px]:hidden">
+              {t('change-input', {
+                defaultValue: 'Change input',
+              })}
             </span>
           </button>
         </div>
       }
     >
       {/* The lesson title is an English catalogue string for now, localised in a later phase. */}
-      <div
-        className={
-          arrival
-        }
-      >
-        {
-          body
-        }
-      </div>
-      <InputSetup
-        open={
-          setupOpen
-        }
-        onOpenChange={
-          setSetupOpen
-        }
-        returnFocus={
-          setupButton
-        }
-      />
+      <div className={arrival}>{body}</div>
+      <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
     </Shell>
   );
 }

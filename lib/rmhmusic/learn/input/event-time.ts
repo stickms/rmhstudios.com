@@ -12,29 +12,8 @@
 /** How far before now an event's stamp may be and still be trusted. */
 export const EVENT_TIME_TOLERANCE_MS = 1_000;
 
-export function eventTime(
-  stamp:
-    | number
-    | undefined,
-  now: number,
-): number {
-  if (
-    stamp ===
-      undefined ||
-    !Number.isFinite(
-      stamp,
-    ) ||
-    stamp <=
-      0
-  )
-    return now;
-  if (
-    stamp >
-      now ||
-    now -
-      stamp >
-      EVENT_TIME_TOLERANCE_MS
-  )
-    return now;
+export function eventTime(stamp: number | undefined, now: number): number {
+  if (stamp === undefined || !Number.isFinite(stamp) || stamp <= 0) return now;
+  if (stamp > now || now - stamp > EVENT_TIME_TOLERANCE_MS) return now;
   return stamp;
 }

@@ -13,22 +13,13 @@ import type { ProjectConflict, ProjectSession } from '@/components/studio/usePro
 const BUTTON =
   'min-h-9 rounded-app-sm border border-app-border px-3 py-2 text-sm font-medium hover:bg-app-surface-hover pointer-coarse:min-h-11';
 
-export function ProjectConflictDialog({
-  conflict,
-  session,
-}: {
-  conflict: ProjectConflict;
-  session: ProjectSession;
-}) {
+export function ProjectConflictDialog({ conflict, session }: { conflict: ProjectConflict; session: ProjectSession }) {
   const { t } = useTranslation('studio-projects');
   return (
     <DialogPrimitive.Root open onOpenChange={(next) => !next && void session.resolveConflict('cancel')}>
       {/* Into the app root, where the --app-* tokens are defined (a body-level portal would lose them). */}
       <DialogPrimitive.Portal container={appRoot()}>
-        <DialogOverlay
-          className="app-overlay"
-          style={{ background: 'var(--app-scrim)' }}
-        />
+        <DialogOverlay className="app-overlay" style={{ background: 'var(--app-scrim)' }} />
         <DialogPrimitive.Content
           className="app-modal border border-app-border bg-app-surface text-app-text fixed left-1/2 top-1/2 z-50 w-[calc(100dvw-1.5rem)] max-w-md -translate-x-1/2 -translate-y-1/2 p-5 outline-none"
           style={{ borderRadius: 'var(--app-radius-lg)' }}

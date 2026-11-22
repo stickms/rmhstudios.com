@@ -58,21 +58,36 @@ const cases: [string, () => Command][] = [
   ['paste', () => pasteNotes('expert', [n('p1', 2, 1), n('p2', 0.5, 3), n('p3', 9, 0)])],
   [
     'mirror',
-    () => rewriteNotes('mirror', 'Mirror', 'expert', [NOTES[0], NOTES[1]], [
-      { ...NOTES[0], lane: 3, auto: false },
-      { ...NOTES[1], lane: 1, auto: false },
-    ]),
+    () =>
+      rewriteNotes(
+        'mirror',
+        'Mirror',
+        'expert',
+        [NOTES[0], NOTES[1]],
+        [
+          { ...NOTES[0], lane: 3, auto: false },
+          { ...NOTES[1], lane: 1, auto: false },
+        ],
+      ),
   ],
   [
     'quantize',
-    () => rewriteNotes('quantize', 'Quantize', 'expert', [NOTES[2], NOTES[3]], [{ ...NOTES[2], time: 2.25, auto: false }]),
+    () =>
+      rewriteNotes('quantize', 'Quantize', 'expert', [NOTES[2], NOTES[3]], [{ ...NOTES[2], time: 2.25, auto: false }]),
   ],
   [
     'scale',
-    () => rewriteNotes('scale', 'Scale', 'expert', [NOTES[3], NOTES[4]], [
-      { ...NOTES[3], time: 4, auto: false },
-      { ...NOTES[4], time: 6, auto: false },
-    ]),
+    () =>
+      rewriteNotes(
+        'scale',
+        'Scale',
+        'expert',
+        [NOTES[3], NOTES[4]],
+        [
+          { ...NOTES[3], time: 4, auto: false },
+          { ...NOTES[4], time: 6, auto: false },
+        ],
+      ),
   ],
   [
     'shift-time',
@@ -81,10 +96,16 @@ const cases: [string, () => Command][] = [
         const before = fixture()[d].notes.filter((x) => x.time >= 2);
         return { before, after: before.map((x) => ({ ...x, time: x.time + 0.5 })) };
       };
-      return shiftTime('Insert', 2, { easy: tail('easy'), normal: tail('normal'), hard: tail('hard'), expert: tail('expert') }, timing, {
-        timingPoints: timing.timingPoints,
-        svPoints: [{ time: 2.5, multiplier: 2 }],
-      });
+      return shiftTime(
+        'Insert',
+        2,
+        { easy: tail('easy'), normal: tail('normal'), hard: tail('hard'), expert: tail('expert') },
+        timing,
+        {
+          timingPoints: timing.timingPoints,
+          svPoints: [{ time: 2.5, multiplier: 2 }],
+        },
+      );
     },
   ],
   ['composite', () => composite('Both', [placeNote('hard', n('q', 5, 1)), pasteNotes('expert', [n('p', 5, 2)])])],
@@ -100,10 +121,7 @@ describe('every command inverts exactly', () => {
       ...charts,
       // `dirty` is set by any edit and cleared by saving, not by undo.
       ...Object.fromEntries(
-        (['easy', 'normal', 'hard', 'expert'] as const).map((d) => [
-          d,
-          { ...charts[d], dirty: after[d].dirty },
-        ]),
+        (['easy', 'normal', 'hard', 'expert'] as const).map((d) => [d, { ...charts[d], dirty: after[d].dirty }]),
       ),
     });
     // Redo gives the same result as the first apply.

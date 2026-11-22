@@ -14,70 +14,34 @@ export const DEFAULT_WINDOW = 90; // ~1.5s at 60fps
 
 /** Rolling average of frame deltas (ms) over a fixed window. */
 export class FrametimeMonitor {
-  private samples: number[] =
-    [];
+  private samples: number[] = [];
   private sum = 0;
 
-  constructor(
-    private readonly window: number = DEFAULT_WINDOW,
-  ) {}
+  constructor(private readonly window: number = DEFAULT_WINDOW) {}
 
-  push(
-    deltaMs: number,
-  ): void {
-    this.samples.push(
-      deltaMs,
-    );
-    this.sum +=
-      deltaMs;
-    if (
-      this
-        .samples
-        .length >
-      this
-        .window
-    ) {
-      this.sum -=
-        this.samples.shift() as number;
+  push(deltaMs: number): void {
+    this.samples.push(deltaMs);
+    this.sum += deltaMs;
+    if (this.samples.length > this.window) {
+      this.sum -= this.samples.shift() as number;
     }
   }
 
   full(): boolean {
-    return (
-      this
-        .samples
-        .length >=
-      this
-        .window
-    );
+    return this.samples.length >= this.window;
   }
 
   averageMs(): number {
-    return this
-      .samples
-      .length ===
-      0
-      ? 0
-      : this
-          .sum /
-          this
-            .samples
-            .length;
+    return this.samples.length === 0 ? 0 : this.sum / this.samples.length;
   }
 
   fps(): number {
-    const avg =
-      this.averageMs();
-    return avg >
-      0
-      ? 1000 /
-          avg
-      : 0;
+    const avg = this.averageMs();
+    return avg > 0 ? 1000 / avg : 0;
   }
 
   reset(): void {
-    this.samples =
-      [];
+    this.samples = [];
     this.sum = 0;
   }
 }
@@ -87,15 +51,8 @@ export class FrametimeMonitor {
  * budget — i.e. sustainedly below target, not a transient spike (asset decode,
  * GC, tab restore).
  */
-export function shouldDownscale(
-  monitor: FrametimeMonitor,
-  budgetMs: number,
-): boolean {
-  return (
-    monitor.full() &&
-    monitor.averageMs() >
-      budgetMs
-  );
+export function shouldDownscale(monitor: FrametimeMonitor, budgetMs: number): boolean {
+  return monitor.full() && monitor.averageMs() > budgetMs;
 }
 
 /**
@@ -113,30 +70,12 @@ export function shouldDownscale(
 export const MAX_TARGET_REFRESH_HZ = 144;
 export const TARGET_SHARE_OF_REFRESH = 0.8;
 
-export function targetFpsForRefresh(
-  refreshHz: number,
-): number {
-  const hz =
-    Math.min(
-      Math.max(
-        refreshHz,
-        0,
-      ),
-      MAX_TARGET_REFRESH_HZ,
-    );
-  return Math.max(
-    DEFAULT_TARGET_FPS,
-    hz *
-      TARGET_SHARE_OF_REFRESH,
-  );
+export function targetFpsForRefresh(refreshHz: number): number {
+  const hz = Math.min(Math.max(refreshHz, 0), MAX_TARGET_REFRESH_HZ);
+  return Math.max(DEFAULT_TARGET_FPS, hz * TARGET_SHARE_OF_REFRESH);
 }
 
 /** Per-frame budget in ms for a target framerate. */
-export function budgetMsFor(
-  targetFps: number = DEFAULT_TARGET_FPS,
-): number {
-  return (
-    1000 /
-    targetFps
-  );
+export function budgetMsFor(targetFps: number = DEFAULT_TARGET_FPS): number {
+  return 1000 / targetFps;
 }

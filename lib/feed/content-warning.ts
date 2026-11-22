@@ -66,7 +66,9 @@ export function normalizeContentWarning(input: {
   contentWarning?: string | null | undefined;
 }): ContentWarningFields {
   const reason =
-    typeof input.contentWarning === 'string' ? contentWarningOrNull(sanitizeContentWarning(input.contentWarning)) : null;
+    typeof input.contentWarning === 'string'
+      ? contentWarningOrNull(sanitizeContentWarning(input.contentWarning))
+      : null;
   if (input.isSensitive === false) return { isSensitive: false, contentWarning: null };
   if (reason) return { isSensitive: true, contentWarning: reason };
   return { isSensitive: input.isSensitive === true, contentWarning: null };
@@ -86,9 +88,7 @@ export function resolveEditedContentWarning(args: {
   if (nextReason !== undefined) {
     // A reason turns the warning on; removing it leaves the warning as it was (a warning without a reason is valid).
     const next = normalizeContentWarning({ contentWarning: nextReason });
-    return next.contentWarning
-      ? next
-      : { isSensitive: nextSensitive ?? existing.isSensitive, contentWarning: null };
+    return next.contentWarning ? next : { isSensitive: nextSensitive ?? existing.isSensitive, contentWarning: null };
   }
   if (nextSensitive === true) return { isSensitive: true, contentWarning: existing.contentWarning };
   return existing;
@@ -152,9 +152,7 @@ export function contentWarningNotice(reason: string): string {
  * The text of a surface that cannot be revealed (a notification preview, a link-preview description, a card): the
  * reason in place of the text when the post has one, otherwise the text as before.
  */
-export function previewTextFor(
-  post: { content?: string | null; contentWarning?: string | null },
-): string | null {
+export function previewTextFor(post: { content?: string | null; contentWarning?: string | null }): string | null {
   const reason = contentWarningOrNull(post.contentWarning);
   if (reason) return contentWarningNotice(reason);
   return post.content ?? null;
@@ -220,12 +218,15 @@ export const CONTENT_WARNING_READ_PATHS: readonly string[] = [
  * The source scan fails a file that selects a post's `content` and is in neither list.
  */
 export const CONTENT_WARNING_EXEMPT_PATHS: Readonly<Record<string, string>> = {
-  'app/routes/api/rmharks/$id/similar.ts': 'reads one post to find similar ones, and returns them through the feed mapper, which carries the reason',
-  'app/routes/api/rmharks/$id/unlock.ts': 'returns the text to the member who just paid; the card already carries the reason and the client covers it',
+  'app/routes/api/rmharks/$id/similar.ts':
+    'reads one post to find similar ones, and returns them through the feed mapper, which carries the reason',
+  'app/routes/api/rmharks/$id/unlock.ts':
+    'returns the text to the member who just paid; the card already carries the reason and the client covers it',
   'app/routes/api/v1/posts/$id/comments.ts': 'comments, which have no warnings; it reads the post only to check access',
   'lib/admin/lookup.server.ts': 'staff lookup of a member’s own posts',
   'lib/ai/api/ai.bio.server.ts': 'the author’s own posts, summarised for their bio',
-  'lib/ai/api/rmharks.$id.translate.server.ts': 'viewer-requested translation of a post the viewer has opened and revealed',
+  'lib/ai/api/rmharks.$id.translate.server.ts':
+    'viewer-requested translation of a post the viewer has opened and revealed',
   'lib/ai/recap.server.ts': 'the author’s own posts in their own recap',
   'lib/analytics.server.ts': 'the author’s own post analytics',
   'lib/bulk/bulk.server.ts': 'the author’s own bulk actions',
@@ -236,10 +237,12 @@ export const CONTENT_WARNING_EXEMPT_PATHS: Readonly<Record<string, string>> = {
   'lib/feed/api/ai.ask-feed.server.ts': 'a viewer-requested summary of posts the viewer can open',
   'lib/feed/api/rmharks.$id.comment.server.ts': 'comments, which have no warnings',
   'lib/feed/api/rmharks.$id.history.server.ts': 'the edit history dialog, opened on a post the viewer has revealed',
-  'lib/feed/api/rmharks.$id.summary.server.ts': 'a viewer-requested summary of a post the viewer has opened and revealed',
+  'lib/feed/api/rmharks.$id.summary.server.ts':
+    'a viewer-requested summary of a post the viewer has opened and revealed',
   'lib/feed/api/rmharks.ai-generate.server.ts': 'the author’s own drafting assistant',
   'lib/feed/conversation-controls.server.ts': 'reads text only to decide who may reply, returns none',
-  'lib/feeds/feeds.server.ts': 'custom feeds match on text and return posts through the feed mapper, which carries the reason',
+  'lib/feeds/feeds.server.ts':
+    'custom feeds match on text and return posts through the feed mapper, which carries the reason',
   'lib/moderation/content.server.ts': 'moderator queue, where the text is the evidence',
   'lib/moderation/my-reports.server.ts': 'the reporter’s own reports',
   'lib/moderation/triage.server.ts': 'moderator queue, where the text is the evidence',

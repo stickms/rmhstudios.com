@@ -169,9 +169,7 @@ export async function projectedSeeds(
         )
       : new Map<string, number>();
   const shown = method !== 'random' && (method !== 'manual' || canManage);
-  const ordered = shown
-    ? orderEntrants(method, field, ratings, manualOrderOf(field))
-    : field;
+  const ordered = shown ? orderEntrants(method, field, ratings, manualOrderOf(field)) : field;
   return {
     method,
     canManage,

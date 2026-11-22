@@ -45,9 +45,7 @@ export function DayHeatmap({
 
   const { columns, max } = useMemo(() => {
     const first = days[0];
-    const offset = first
-      ? (new Date(`${first.date}T00:00:00Z`).getUTCDay() - firstDayOfWeek(locale) + 7) % 7
-      : 0;
+    const offset = first ? (new Date(`${first.date}T00:00:00Z`).getUTCDay() - firstDayOfWeek(locale) + 7) % 7 : 0;
     const cells: (Day | null)[] = [...Array<null>(offset).fill(null), ...days];
     const cols: (Day | null)[][] = [];
     for (let i = 0; i < cells.length; i += 7) cols.push(cells.slice(i, i + 7));
@@ -55,10 +53,7 @@ export function DayHeatmap({
     return { columns: shown, max: Math.max(0, ...days.map((d) => d.count)) };
   }, [days, weeks, locale]);
 
-  const dateFormat = useMemo(
-    () => new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }),
-    [locale],
-  );
+  const dateFormat = useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }), [locale]);
   const number = useMemo(() => new Intl.NumberFormat(locale), [locale]);
   const formatDate = (key: string) => dateFormat.format(new Date(`${key}T00:00:00Z`));
 

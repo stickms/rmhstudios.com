@@ -32,7 +32,10 @@ export async function ownsFolder(userId: string, folderId: string): Promise<bool
 }
 
 /** The 30-folder cap and the unique name are checked, then the row inserted, under one per-member lock. */
-export async function createFolder(userId: string, rawName: string): Promise<FolderResult<{ folder: DeckFolderSummary }>> {
+export async function createFolder(
+  userId: string,
+  rawName: string,
+): Promise<FolderResult<{ folder: DeckFolderSummary }>> {
   const name = normalizeFolderName(rawName);
   if (!name) return { ok: false, status: 400, error: 'Invalid name' };
   return prisma.$transaction(async (tx) => {

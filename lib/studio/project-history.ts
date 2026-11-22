@@ -60,9 +60,7 @@ export function overflowByBytes(
   cap = MAX_VERSION_BYTES_PER_MEMBER,
   protectedIds: ReadonlySet<string> = new Set(),
 ): string[] {
-  const oldestFirst = [...versions].sort(
-    (a, b) => Number(a.savedAt) - Number(b.savedAt) || (a.id < b.id ? -1 : 1),
-  );
+  const oldestFirst = [...versions].sort((a, b) => Number(a.savedAt) - Number(b.savedAt) || (a.id < b.id ? -1 : 1));
   let total = oldestFirst.reduce((sum, v) => sum + v.sizeBytes, 0);
   const out: string[] = [];
   for (const v of oldestFirst) {

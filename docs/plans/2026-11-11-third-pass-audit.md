@@ -1,209 +1,21 @@
 # Ground-up audit, third pass: the program under the paint (2026-11-11)
 
-> **What
-> this
-> is.**
-> A
-> fresh
-> answer
-> to
-> the
-> original
-> question
-> ("if
-> you
-> rebuilt
-> this
-> site
-> from
-> the
-> ground
-> up,
-> what
-> would
-> you
-> do?"),
-> written
-> against
-> main
-> at
-> `815c63ff`
-> after
-> 32
-> phases
-> of
-> the
-> first
-> audit
-> and
-> after
-> the
-> Broadsheet
-> brief
-> (`2026-11-11-broadsheet-redesign-audit.md`)
-> was
-> merged.
+> **What this is.** A fresh answer to the original question ("if you rebuilt this site from the ground up, what would
+> you do?"), written against main at `815c63ff` after 32 phases of the first audit and after the Broadsheet brief
+> (`2026-11-11-broadsheet-redesign-audit.md`) was merged.
 >
-> **How
-> it
-> differs
-> from
-> the
-> other
-> two.**
-> The
-> first
-> audit
-> reorganised
-> the
-> code
-> under
-> a
-> fixed
-> look.
-> Broadsheet
-> replaces
-> the
-> look
-> and
-> deletes
-> the
-> runtime
-> that
-> drew
-> it.
-> This
-> pass
-> is
-> about
-> what
-> neither
-> changes:
-> the
-> site
-> is
-> about
-> thirty
-> products
-> compiled
-> as
-> one
-> program,
-> and
-> most
-> of
-> the
-> remaining
-> cost
-> comes
-> from
-> that,
-> not
-> from
-> how
-> it
-> looks.
+> **How it differs from the other two.** The first audit reorganised the code under a fixed look. Broadsheet replaces
+> the look and deletes the runtime that drew it. This pass is about what neither changes: the site is about thirty
+> products compiled as one program, and most of the remaining cost comes from that, not from how it looks.
 >
-> **What
-> was
-> measured
-> for
-> this
-> pass.**
-> A
-> production
-> build
-> of
-> `815c63ff`
-> served
-> locally
-> against
-> a
-> small
-> Postgres;
-> sourcemap
-> builds
-> of
-> three
-> trees
-> with
-> every
-> entry
-> byte
-> attributed
-> to
-> its
-> package;
-> counts
-> from
-> the
-> tracked
-> tree.
-> Numbers
-> without
-> a
-> source
-> line
-> were
-> measured
-> here.
-> Numbers
-> taken
-> from
-> Broadsheet
-> say
-> so.
-> Nothing
-> below
-> was
-> measured
-> on
-> the
-> production
-> VPS.
+> **What was measured for this pass.** A production build of `815c63ff` served locally against a small Postgres;
+> sourcemap builds of three trees with every entry byte attributed to its package; counts from the tracked tree. Numbers
+> without a source line were measured here. Numbers taken from Broadsheet say so. Nothing below was measured on the
+> production VPS.
 
-Item
-prefixes:
-**AR**
-architecture
-·
-**RT**
-runtime
-and
-page
-weight
-·
-**DT**
-data
-·
-**OP**
-operations,
-CI,
-deploy
-·
-**QA**
-quality
-·
-**DS**
-design.
-Each
-item
-has
-`evidence`,
-`target`,
-`steps`,
-a
-`stub`
-where
-code
-helps,
-and
-a
-`done-when`
-a
-script
-can
-check.
+Item prefixes: **AR** architecture · **RT** runtime and page weight · **DT** data · **OP** operations, CI, deploy ·
+**QA** quality · **DS** design. Each item has `evidence`, `target`, `steps`, a `stub` where code helps, and a
+`done-when` a script can check.
 
 ## Contents
 
@@ -239,49 +51,9 @@ check.
 |   11 | [OP3](#op3--one-realtime-process-that-can-restart)     | One realtime process with state outside it and a drain                                                                                                    | reliability     |   L    |   L    |
 |   12 | [DS1](#ds1--where-steel-and-this-audit-touch)          | Steel is the identity; its shell phase and the entry diet are one piece of work                                                                           | perf/appearance |   L    |   M    |
 
-**If
-only
-three
-things
-happen:**
-AR1,
-AR2
-and
-RT1.
-The
-first
-makes
-every
-later
-change
-cheaper
-to
-check,
-the
-second
-removes
-the
-largest
-remaining
-source
-of
-duplicated
-code,
-and
-the
-third
-is
-the
-page-weight
-win
-that
-does
-not
-depend
-on
-any
-design
-decision.
+**If only three things happen:** AR1, AR2 and RT1. The first makes every later change cheaper to check, the second
+removes the largest remaining source of duplicated code, and the third is the page-weight win that does not depend on
+any design decision.
 
 ---
 
@@ -289,31 +61,8 @@ decision.
 
 ### 1.1 The server is not the problem
 
-Production
-build
-of
-`815c63ff`,
-one
-Node
-process,
-local
-Postgres
-with
-a
-small
-dataset,
-`curl`
-on
-the
-same
-machine.
-These
-are
-floor
-values,
-not
-production
-latencies.
+Production build of `815c63ff`, one Node process, local Postgres with a small dataset, `curl` on the same machine. These
+are floor values, not production latencies.
 
 | Page              | Signed out, warm TTFB | Document | Cache-Control                                                |
 | ----------------- | --------------------: | -------: | ------------------------------------------------------------ |
@@ -324,98 +73,16 @@ latencies.
 | `/games/slice-it` |                 11 ms |    96 KB | none                                                         |
 | `/` signed in     |                 26 ms |    79 KB | `private, no-cache, max-age=0, must-revalidate`              |
 
-Twenty
-sequential
-renders
-of
-`/`
-took
-0.50
-s.
-Each
-document
-carries
-14–20
-KB
-of
-inline
-script
-(pre-paint,
-dehydrated
-loader
-data,
-JSON-LD).
-Server
-rendering
-is
-quick
-and
-anonymous
-documents
-for
-an
-audited
-allowlist
-(`server/nitro/anon-html-cache.ts`,
-10
-entries)
-are
-already
-marked
-for
-a
-shared
-cache.
+Twenty sequential renders of `/` took 0.50 s. Each document carries 14–20 KB of inline script (pre-paint, dehydrated
+loader data, JSON-LD). Server rendering is quick and anonymous documents for an audited allowlist
+(`server/nitro/anon-html-cache.ts`, 10 entries) are already marked for a shared cache.
 
-**Conclusion:**
-time-to-interactive
-is
-decided
-in
-the
-browser.
-Work
-on
-SSR
-speed
-would
-be
-wasted.
+**Conclusion:** time-to-interactive is decided in the browser. Work on SSR speed would be wasted.
 
 ### 1.2 What the browser must download before any page code
 
-`scripts/check-bundle-budget.ts`
-on
-the
-phase
-31
-tree:
-entry
-537,952
-B
-raw;
-critical
-path
-1,116,833
-B
-raw,
-316,849
-B
-brotli,
-76
-chunks.
-Attribution
-of
-the
-entry
-chunk
-from
-its
-sourcemap
-(`vite build --sourcemap`,
-bytes
-charged
-to
+`scripts/check-bundle-budget.ts` on the phase 31 tree: entry 537,952 B raw; critical path 1,116,833 B raw, 316,849 B
+brotli, 76 chunks. Attribution of the entry chunk from its sourcemap (`vite build --sourcemap`, bytes charged to
 `sources[]`):
 
 | Package                                                                                    |      Raw | Needed for first paint?                                                     |
@@ -432,74 +99,11 @@ to
 | Radix dialog, dismissable-layer, focus-scope, presence, remove-scroll and helpers          |  26.0 KB | no                                                                          |
 | App code in the entry                                                                      |   322 KB | mixed: `routeTree.gen.ts` 37.5 KB, pre-paint 7.2 KB, `Providers.tsx` 5.9 KB |
 
-(The
-package
-rows
-sum
-to
-more
-than
-the
-entry
-because
-the
-per-package
-table
-is
-the
-entry's
-_static
-closure_,
-measured
-by
-`check-entry-composition`;
-the
-app
-row
-is
-the
-entry
-chunk
-alone.)
+(The package rows sum to more than the entry because the per-package table is the entry's _static closure_, measured by
+`check-entry-composition`; the app row is the entry chunk alone.)
 
-About
-190
-KB
-raw
-of
-library
-code
-in
-the
-first-paint
-path
-belongs
-to
-things
-a
-visitor
-has
-not
-asked
-for
-yet.
-That
-is
-independent
-of
-the
-material
-runtime
-Broadsheet
-P1
-deletes,
-and
-it
-survives
-any
-change
-of
-identity.
+About 190 KB raw of library code in the first-paint path belongs to things a visitor has not asked for yet. That is
+independent of the material runtime Broadsheet P1 deletes, and it survives any change of identity.
 
 ### 1.3 The size of the one program
 
@@ -511,735 +115,68 @@ identity.
 | `app/`        | 1,412 |                   135,729 |
 | `server/`     |   176 |                    52,999 |
 
-- `lib/`
-  has
-  182
-  directories
-  and
-  201
-  files
-  at
-  its
-  root.
-- `lib/tf2-game`
-  is
-  138,493
-  lines.
-  With
-  `sp-game`,
-  `csgo-game`,
-  `tf2-hud`
-  and
-  `tf2-loadout`
-  the
-  Source-engine
-  port
-  is
-  about
-  189,000
-  lines:
-  a
-  third
-  of
-  `lib/`,
-  compiled
-  and
-  gated
-  with
-  the
-  social
-  site.
-- `lib/__tests__`
-  is
-  53,616
-  lines
-  of
-  gates.
-- 987
-  API
-  route
-  files;
-  764
-  `endpoint()`
-  declarations
-  in
-  167
-  contract
-  files;
-  425
-  route
-  files
-  call
-  `implement()`;
-  134
-  files
-  call
-  `createServerFn`;
-  23
-  `*.queries.ts`
-  files,
-  12
-  of
-  which
-  say
-  in
-  a
-  comment
-  that
-  they
-  repeat
-  the
-  body
-  of
-  a
-  GET
+- `lib/` has 182 directories and 201 files at its root.
+- `lib/tf2-game` is 138,493 lines. With `sp-game`, `csgo-game`, `tf2-hud` and `tf2-loadout` the Source-engine port is
+  about 189,000 lines: a third of `lib/`, compiled and gated with the social site.
+- `lib/__tests__` is 53,616 lines of gates.
+- 987 API route files; 764 `endpoint()` declarations in 167 contract files; 425 route files call `implement()`; 134
+  files call `createServerFn`; 23 `*.queries.ts` files, 12 of which say in a comment that they repeat the body of a GET
   handler.
-- 493
-  Prisma
-  models
-  in
-  23
-  domain
-  files;
-  277
-  migrations.
-- 119
-  runtime
-  dependencies,
-  45
-  dev
-  dependencies,
-  85
-  package
-  scripts.
-- CI
-  on
-  the
-  phase
-  32
-  pull
-  request:
-  typecheck
-  job
-  5
-  m
-  19
-  s,
-  two
-  test
-  shards
-  about
-  2
-  m
-  each,
-  build
-  3
-  m,
-  candidate
-  image
-  4
-  m;
-  the
-  Balatro
-  engine
-  suite
-  23
-  m
-  when
-  its
-  paths
-  change.
+- 493 Prisma models in 23 domain files; 277 migrations.
+- 119 runtime dependencies, 45 dev dependencies, 85 package scripts.
+- CI on the phase 32 pull request: typecheck job 5 m 19 s, two test shards about 2 m each, build 3 m, candidate image 4
+  m; the Balatro engine suite 23 m when its paths change.
 
 ### 1.4 Two things found while measuring
 
-1. **CSP
-   nonce
-   on
-   cached
-   HTML.**
-   `lib/csp/nonce.server.ts`
-   mints
-   128
-   random
-   bits
-   per
-   request
-   and
-   stamps
-   them
-   on
-   every
-   inline
-   script
-   and
-   in
-   the
-   `Content-Security-Policy-Report-Only`
-   header.
-   The
-   same
-   response
-   is
-   marked
-   `public, s-maxage=30, stale-while-revalidate=120`
-   for
-   signed-out
-   visitors.
-   A
-   shared
-   cache
-   replays
-   header
-   and
-   markup
-   together,
-   so
-   the
-   page
-   works,
-   but
-   the
-   nonce
-   is
-   then
-   the
-   same
-   for
-   every
-   visitor
-   for
-   up
-   to
-   150
-   seconds
-   and
-   anyone
-   can
-   read
-   it.
-   A
-   nonce
-   that
-   an
-   attacker
-   can
-   fetch
-   is
-   not
-   a
-   nonce.
-   This
-   is
-   harmless
-   while
-   the
-   policy
-   is
-   report-only
-   and
-   becomes
-   a
-   real
-   weakness
-   the
-   day
-   it
-   is
-   enforced
-   (first
-   audit
-   F5,
-   Broadsheet
-   B4).
-   `docs/csp.md`
-   already
-   listed
-   this
-   as
-   a
-   known
-   limitation
-   with
-   the
-   decision
-   left
-   open.
-   See
-   RT3.
-2. **A
-   perf
-   assertion
-   failed
-   once
-   and
-   passed
-   on
-   re-run**
-   with
-   no
-   code
-   change
-   between
-   (`perf_spec`:
-   `frame_ratio 1.366 > 1.35`,
-   pull
-   request
-   #1563).
-   The
-   work-based
-   budgets
-   (instructions,
-   draw
-   calls)
-   were
-   in
-   bounds;
-   only
-   the
-   wall-clock
-   backstop
-   was
-   over,
-   in
-   both
-   of
-   the
-   two
-   pairs
-   the
-   spec
-   takes.
-   See
-   OP2.
+1. **CSP nonce on cached HTML.** `lib/csp/nonce.server.ts` mints 128 random bits per request and stamps them on every
+   inline script and in the `Content-Security-Policy-Report-Only` header. The same response is marked
+   `public, s-maxage=30, stale-while-revalidate=120` for signed-out visitors. A shared cache replays header and markup
+   together, so the page works, but the nonce is then the same for every visitor for up to 150 seconds and anyone can
+   read it. A nonce that an attacker can fetch is not a nonce. This is harmless while the policy is report-only and
+   becomes a real weakness the day it is enforced (first audit F5, Broadsheet B4). `docs/csp.md` already listed this as
+   a known limitation with the decision left open. See RT3.
+2. **A perf assertion failed once and passed on re-run** with no code change between (`perf_spec`:
+   `frame_ratio 1.366 > 1.35`, pull request #1563). The work-based budgets (instructions, draw calls) were in bounds;
+   only the wall-clock backstop was over, in both of the two pairs the spec takes. See OP2.
 
 ---
 
 ## 2. Diagnosis
 
-1. **One
-   compile
-   unit.**
-   A
-   change
-   to
-   a
-   settings
-   panel
-   typechecks
-   the
-   Source
-   engine
-   port,
-   a
-   Balatro
-   Lua
-   bridge
-   and
-   30
-   other
-   products.
-   The
-   native
-   compiler
-   needs
-   a
-   memory
-   cap
-   and
-   a
-   single
-   thread
-   to
-   finish
-   on
-   a
-   15
-   GB
-   machine;
-   the
-   commit
-   gate
-   was
-   skipped,
-   with
-   a
-   note,
-   on
-   every
-   commit
-   of
-   phases
-   28–32.
-   A
-   gate
-   nobody
-   can
-   run
-   locally
-   is
-   a
-   CI
-   job,
-   not
-   a
+1. **One compile unit.** A change to a settings panel typechecks the Source engine port, a Balatro Lua bridge and 30
+   other products. The native compiler needs a memory cap and a single thread to finish on a 15 GB machine; the commit
+   gate was skipped, with a note, on every commit of phases 28–32. A gate nobody can run locally is a CI job, not a
    gate.
-2. **Three
-   ways
-   to
-   read
-   the
-   same
-   row.**
-   Phase
-   C1
-   gave
-   every
-   call
-   a
-   typed
-   contract.
-   Phase
-   B4
-   then
-   added
-   a
-   server
-   function
-   next
-   to
-   each
-   GET
-   route
-   so
-   loaders
-   could
-   call
-   it
-   without
-   HTTP.
-   A
-   page's
-   read
-   is
-   now
-   a
-   route
-   file,
-   a
-   contract,
-   a
-   server
-   function
-   and
-   a
-   query-options
-   object,
-   and
-   the
-   two
-   server
-   halves
-   are
-   kept
-   the
-   same
-   by
-   hand.
-   This
-   is
-   the
-   largest
-   duplication
-   left
-   and
-   it
-   grows
-   with
-   every
-   page
-   B4
-   migrates.
-3. **Files
-   as
-   the
-   unit
-   of
-   an
-   endpoint.**
-   987
-   route
-   files
-   exist
-   so
-   the
-   router
-   can
-   find
-   a
-   handler.
-   425
-   of
-   them
-   are
-   one
-   `implement(contract, options, fn)`
-   call.
-   They
-   cost
-   a
-   1.26
-   MB
-   generated
-   route
-   tree,
-   37
-   KB
-   of
-   it
-   in
-   every
-   visitor's
-   entry
-   chunk,
-   and
-   a
-   route-tree
-   regeneration
-   on
-   every
-   API
-   change.
-4. **The
-   first
-   paint
-   pays
-   for
-   the
-   whole
-   session.**
-   Toasts,
-   dialogs,
-   the
-   auth
-   client,
-   passkeys,
-   a
-   motion
-   library
-   and
-   an
-   i18n
-   runtime
-   are
-   in
-   the
-   entry
-   because
-   the
-   root
-   layout
-   imports
-   them,
-   not
-   because
-   the
-   first
-   screen
-   uses
-   them.
-5. **Decisions
-   wait
-   on
-   data
-   that
-   exists
-   but
-   is
-   not
-   read.**
-   The
-   site
-   records
-   playtime
-   and
-   history
-   beats,
-   and
-   C3
-   dropped
-   18
-   tables
-   on
-   evidence.
-   Nothing
-   yet
-   ranks
-   the
-   30
-   products
-   or
-   the
-   493
-   tables
-   by
-   use,
-   so
-   "which
-   of
-   these
-   earns
-   its
-   place
-   in
-   the
-   build"
-   is
-   still
-   answered
-   by
-   opinion.
-6. **The
-   paint
-   and
-   the
-   engine
-   were
-   bundled
-   into
-   one
-   decision.**
-   (Superseded:
-   see
-   Part
-   DS.
-   Steel
-   keeps
-   the
-   globe
-   and
-   replaces
-   its
-   engine.)
-   Broadsheet
-   ties
-   deleting
-   68.5k
-   lines
-   of
-   runtime
-   to
-   adopting
-   a
-   new
-   identity.
-   The
-   deletion
-   is
-   a
-   measurable
-   win
-   on
-   its
-   own
-   and
-   does
-   not
-   need
-   the
-   identity
-   to
-   be
-   right
-   first.
+2. **Three ways to read the same row.** Phase C1 gave every call a typed contract. Phase B4 then added a server function
+   next to each GET route so loaders could call it without HTTP. A page's read is now a route file, a contract, a server
+   function and a query-options object, and the two server halves are kept the same by hand. This is the largest
+   duplication left and it grows with every page B4 migrates.
+3. **Files as the unit of an endpoint.** 987 route files exist so the router can find a handler. 425 of them are one
+   `implement(contract, options, fn)` call. They cost a 1.26 MB generated route tree, 37 KB of it in every visitor's
+   entry chunk, and a route-tree regeneration on every API change.
+4. **The first paint pays for the whole session.** Toasts, dialogs, the auth client, passkeys, a motion library and an
+   i18n runtime are in the entry because the root layout imports them, not because the first screen uses them.
+5. **Decisions wait on data that exists but is not read.** The site records playtime and history beats, and C3 dropped
+   18 tables on evidence. Nothing yet ranks the 30 products or the 493 tables by use, so "which of these earns its place
+   in the build" is still answered by opinion.
+6. **The paint and the engine were bundled into one decision.** (Superseded: see Part DS. Steel keeps the globe and
+   replaces its engine.) Broadsheet ties deleting 68.5k lines of runtime to adopting a new identity. The deletion is a
+   measurable win on its own and does not need the identity to be right first.
 
 Principles:
 
-- **A
-  product
-  is
-  a
-  package.**
-  It
-  can
-  be
-  typechecked,
-  tested,
-  built
-  and
-  removed
-  without
-  touching
-  another.
-- **Write
-  a
-  read
-  once.**
-  The
-  definition
-  is
-  the
-  route,
-  the
-  loader
-  and
-  the
-  client
-  call.
-- **The
-  first
-  screen
-  pays
-  for
-  the
-  first
-  screen.**
-- **A
-  gate
-  runs
-  where
-  the
-  code
-  is
-  written,**
-  in
-  under
-  a
-  minute,
-  or
-  it
-  is
-  not
-  a
-  gate.
-- **Measure
-  before
-  pruning;
-  prune
-  after
-  measuring.**
+- **A product is a package.** It can be typechecked, tested, built and removed without touching another.
+- **Write a read once.** The definition is the route, the loader and the client call.
+- **The first screen pays for the first screen.**
+- **A gate runs where the code is written,** in under a minute, or it is not a gate.
+- **Measure before pruning; prune after measuring.**
 
 ---
 
 ## 3. If this were truly from zero
 
-Worth
-stating
-once,
-because
-it
-sets
-the
-direction
-even
-though
-none
-of
-it
-is
-a
-recommendation
-to
-rewrite:
+Worth stating once, because it sets the direction even though none of it is a recommendation to rewrite:
 
 | Layer                                                     | From zero                                                                                      | From here                                                                                                               |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -1327,93 +264,15 @@ apps/hubs/       server/socket-server, rmhbox, rmhtube
 apps/jobs/       server/jobs and the workers
 ```
 
-Steps,
-each
-shippable:
+Steps, each shippable:
 
-1. `packages/core`
-   first:
-   it
-   has
-   no
-   inbound
-   cycles
-   (first
-   audit
-   A4/A5
-   saw
-   to
-   that).
-   Add
-   `composite: true`,
-   a
-   `references`
-   entry
-   in
-   the
-   root
-   tsconfig,
-   and
-   keep
-   the
-   `@/lib/core/*`
-   alias
-   pointing
-   at
-   it
-   so
-   no
-   import
-   changes.
-2. `packages/engine-source`
-   (AR4).
-   Largest
-   single
-   reduction
-   in
-   what
-   a
-   site
-   change
-   has
-   to
-   typecheck.
-3. One
-   feature
-   at
-   a
-   time,
-   starting
-   with
-   the
-   15
-   already
-   under
-   `features/`.
-   Each
-   gets
-   `tsconfig.json`
-   with
+1. `packages/core` first: it has no inbound cycles (first audit A4/A5 saw to that). Add `composite: true`, a
+   `references` entry in the root tsconfig, and keep the `@/lib/core/*` alias pointing at it so no import changes.
+2. `packages/engine-source` (AR4). Largest single reduction in what a site change has to typecheck.
+3. One feature at a time, starting with the 15 already under `features/`. Each gets `tsconfig.json` with
    `references: [core, ui, platform]`.
-4. `apps/web`
-   last.
-   The
-   root
-   `typecheck`
-   script
-   becomes
-   `tsc -b`.
-5. Boundary
-   rules
-   already
-   exist
-   in
-   `eslint-baseline/boundaries.json`;
-   point
-   them
-   at
-   package
-   names.
+4. `apps/web` last. The root `typecheck` script becomes `tsc -b`.
+5. Boundary rules already exist in `eslint-baseline/boundaries.json`; point them at package names.
 
 ```jsonc
 // features/slice-it/tsconfig.json
@@ -1423,13 +282,7 @@ shippable:
     "composite": true,
     "outDir": "../../.cache/tsc/slice-it",
   },
-  "include": [
-    "engine",
-    "ui",
-    "server",
-    "*.ts",
-    "*.tsx",
-  ],
+  "include": ["engine", "ui", "server", "*.ts", "*.tsx"],
   "references": [
     {
       "path": "../../packages/core",
@@ -1444,47 +297,9 @@ shippable:
 }
 ```
 
-**Done
-when:**
-`pnpm typecheck`
-with
-no
-source
-change
-finishes
-in
-under
-20
-s;
-a
-cold
-run
-fits
-in
-4
-GB
-without
-flags;
-`rm -rf features/<id>`
-plus
-its
-one
-catalogue
-line
-leaves
-`pnpm typecheck && pnpm test`
-green
-for
-three
-features
-picked
-at
-random
-in
-CI
-(the
-_deletability
-test_).
+**Done when:** `pnpm typecheck` with no source change finishes in under 20 s; a cold run fits in 4 GB without flags;
+`rm -rf features/<id>` plus its one catalogue line leaves `pnpm typecheck && pnpm test` green for three features picked
+at random in CI (the _deletability test_).
 
 ### AR2 — One definition per read
 
@@ -1536,10 +351,7 @@ target:
   call
 ```
 
-Today,
-for
-one
-read:
+Today, for one read:
 
 ```
 app/routes/api/admin/flags.ts      implement(listAdminFlagsApi, { auth: 'admin' }, load)
@@ -1552,139 +364,35 @@ After:
 
 ```ts
 // lib/admin/flags.query.ts
-export const adminFlags =
-  defineQuery(
-    {
-      key: [
-        'admin',
-        'flags',
-      ],
-      path: '/api/admin/flags', // still reachable over HTTP, same envelope
-      auth: 'admin',
-      rateLimit:
-        'read',
-      load: async ({
-        userId,
-      }) => ({
-        flags:
-          await prisma.featureFlag.findMany(
-            {
-              orderBy:
-                {
-                  key: 'asc',
-                },
-            },
-          ),
-      }),
-    },
-  );
+export const adminFlags = defineQuery({
+  key: ['admin', 'flags'],
+  path: '/api/admin/flags', // still reachable over HTTP, same envelope
+  auth: 'admin',
+  rateLimit: 'read',
+  load: async ({ userId }) => ({
+    flags: await prisma.featureFlag.findMany({
+      orderBy: {
+        key: 'asc',
+      },
+    }),
+  }),
+});
 
 // route:   export const Route = createFileRoute('/api/admin/flags')({ server: { handlers: { GET: adminFlags.handler } } })
 // loader:  loader: ({ context }) => prefetchRouteQuery(context, adminFlags.options())
 // client:  useQuery(adminFlags.options())
 ```
 
-`defineQuery`
-builds
-the
-contract
-type
-from
-`load`'s
-return,
-wraps
-`load`
-in
-`defineHandler`
-for
-HTTP,
-and
-wraps
-the
-same
-function
-in
-one
-server
-function
-for
-loaders.
-Auth,
-rate
-limit
-and
-validation
-are
-stated
-once
-and
-enforced
-by
-the
-same
-code
-on
-both
-paths.
+`defineQuery` builds the contract type from `load`'s return, wraps `load` in `defineHandler` for HTTP, and wraps the
+same function in one server function for loaders. Auth, rate limit and validation are stated once and enforced by the
+same code on both paths.
 
-Steps:
-write
-`lib/api/define-query.ts`
-over
-the
-existing
-`defineHandler`,
-`endpoint`
-and
-`routeQueryFn`;
-convert
-the
-23
-queries
-files;
-make
-it
-the
-only
-form
-B4
-uses
-from
-then
-on;
-add
-a
-ratchet
-that
-fails
-on
-a
-new
-`createServerFn`
-inside
-a
+Steps: write `lib/api/define-query.ts` over the existing `defineHandler`, `endpoint` and `routeQueryFn`; convert the 23
+queries files; make it the only form B4 uses from then on; add a ratchet that fails on a new `createServerFn` inside a
 `*.queries.ts`.
 
-**Done
-when:**
-no
-`*.queries.ts`
-imports
-`createServerFn`;
-`grep -rl "Same bod" lib`
-is
-empty;
-a
-new
-server-rendered
-read
-is
-one
-file
-plus
-one
-route
-line.
+**Done when:** no `*.queries.ts` imports `createServerFn`; `grep -rl "Same bod" lib` is empty; a new server-rendered
+read is one file plus one route line.
 
 ### AR3 — API routes from a registry
 
@@ -1694,184 +402,39 @@ gain: structure
 impact: L
 effort: M
 risk: med
-depends:
-  [
-    AR2,
-  ]
+depends: [AR2]
 evidence:
-  987
-  files
-  under
-  app/routes/api;
-  425
-  are
-  a
-  single
-  implement()
-  call;
-  app/routeTree.gen.ts
-  is
-  1.26
-  MB
-  and
-  contributes
-  37.5
-  KB
-  to
-  the
-  entry
-  chunk
-target:
-  one
-  dispatcher
-  route;
-  handlers
-  registered
-  next
-  to
-  their
-  domain
-  code;
-  the
-  generated
-  tree
-  lists
-  pages
-  only
+  987 files under app/routes/api; 425 are a single implement() call; app/routeTree.gen.ts is 1.26 MB and contributes
+  37.5 KB to the entry chunk
+target: one dispatcher route; handlers registered next to their domain code; the generated tree lists pages only
 ```
 
 ```ts
 // app/routes/api/$.ts
 import { registry } from '@/lib/api/registry.server'; // built from features/*/api.ts and lib/*/api.ts
-const dispatch =
-  (
-    request: Request,
-  ) =>
-    registry
-      .match(
-        request,
-      )
-      ?.handle(
-        request,
-      ) ??
-    notFound();
-export const Route =
-  createFileRoute(
-    '/api/$',
-  )(
-    {
-      server:
-        {
-          handlers:
-            {
-              GET: dispatch,
-              POST: dispatch,
-              PUT: dispatch,
-              PATCH:
-                dispatch,
-              DELETE:
-                dispatch,
-            },
-        },
+const dispatch = (request: Request) => registry.match(request)?.handle(request) ?? notFound();
+export const Route = createFileRoute('/api/$')({
+  server: {
+    handlers: {
+      GET: dispatch,
+      POST: dispatch,
+      PUT: dispatch,
+      PATCH: dispatch,
+      DELETE: dispatch,
     },
-  );
+  },
+});
 ```
 
-Steps:
-build
-the
-registry
-and
-a
-path
-matcher
-with
-a
-test
-that
-every
-contract
-path
-resolves
-to
-exactly
-one
-handler;
-move
-the
-425
-pure-`implement`
-routes
-(a
-codemod:
-the
-handler
-body
-moves
-beside
-its
-contract,
-the
-route
-file
-is
-deleted);
-keep
-hand-written
-routes
-that
-stream,
-redirect
-or
-serve
-files
-as
-files;
-regenerate
-`docs/site-reference/api.md`
-from
-the
+Steps: build the registry and a path matcher with a test that every contract path resolves to exactly one handler; move
+the 425 pure-`implement` routes (a codemod: the handler body moves beside its contract, the route file is deleted); keep
+hand-written routes that stream, redirect or serve files as files; regenerate `docs/site-reference/api.md` from the
 registry.
 
-`/api/v1/**`
-keeps
-its
-own
-wrapper
-and
-can
-use
-the
-same
-dispatcher.
+`/api/v1/**` keeps its own wrapper and can use the same dispatcher.
 
-**Done
-when:**
-`app/routes/api`
-holds
-fewer
-than
-150
-files;
-`routeTree.gen.ts`
-is
-under
-450
-KB;
-the
-entry's
-share
-of
-it
-is
-under
-15
-KB;
-the
-integration
-suite
-passes
-unchanged.
+**Done when:** `app/routes/api` holds fewer than 150 files; `routeTree.gen.ts` is under 450 KB; the entry's share of it
+is under 15 KB; the integration suite passes unchanged.
 
 ### AR4 — The Source-engine port is its own package
 
@@ -1881,160 +444,25 @@ gain: structure
 impact: L
 effort: M
 risk: low
-depends:
-  [
-    AR1
-    step
-    1,
-  ]
+depends: [AR1 step 1]
 evidence:
-  lib/tf2-game
-  138,493
-  lines;
-  sp-game
-  15,075;
-  csgo-game
-  10,247;
-  tf2-hud
-  15,622;
-  tf2-loadout
-  9,569;
-  it
-  already
-  has
-  its
-  own
-  workflow
-  (tf2-game-tests.yml)
-  and
-  boundary
-  test
-  (tf2-engine-boundaries.test.ts)
-target:
-  packages/engine-source
-  with
-  its
-  own
-  tsconfig,
-  test
-  project
-  and
-  island
-  build
+  lib/tf2-game 138,493 lines; sp-game 15,075; csgo-game 10,247; tf2-hud 15,622; tf2-loadout 9,569; it already has its
+  own workflow (tf2-game-tests.yml) and boundary test (tf2-engine-boundaries.test.ts)
+target: packages/engine-source with its own tsconfig, test project and island build
 ```
 
-First
-audit
-A3
-step
-1,
-promoted:
-it
-is
-the
-cheapest
-large
-cut.
-The
-engine
-imports
-the
-site
-in
-very
-few
-places
-(the
-boundary
-test
-lists
-them);
-those
-become
-the
-package's
-public
-interface.
-The
-site
-imports
-the
-engine
-only
-from
-the
-TF2,
-CS:GO
-and
-HUD-editor
-routes,
-which
-become
-islands.
+First audit A3 step 1, promoted: it is the cheapest large cut. The engine imports the site in very few places (the
+boundary test lists them); those become the package's public interface. The site imports the engine only from the TF2,
+CS:GO and HUD-editor routes, which become islands.
 
-**Done
-when:**
-a
-change
-outside
-`packages/engine-source`
-runs
-none
-of
-its
-125
-test
-files
-and
-typechecks
-none
-of
-its
+**Done when:** a change outside `packages/engine-source` runs none of its 125 test files and typechecks none of its
 files.
 
 ### AR5 — `lib/` has an index
 
-`lib/`
-has
-201
-loose
-files
-and
-182
-directories.
-After
-AR1
-most
-of
-it
-has
-an
-owner.
-What
-stays
-is
-`packages/core`
-and
-`packages/platform`;
-a
-root-level
-`lib/*.ts`
-file
-is
-then
-a
-lint
-error
-(`no-restricted-paths`),
-with
-today's
-201
-as
-a
-baseline
-that
-only
-shrinks.
+`lib/` has 201 loose files and 182 directories. After AR1 most of it has an owner. What stays is `packages/core` and
+`packages/platform`; a root-level `lib/*.ts` file is then a lint error (`no-restricted-paths`), with today's 201 as a
+baseline that only shrinks.
 
 ---
 
@@ -2097,208 +525,34 @@ target:
 | English without i18next                    |      ≈40 KB | For `en`, `t(key, { defaultValue })` is string interpolation. Ship a 2 KB `t` for English and load i18next with the first non-English namespace.                            |
 | tailwind-merge only where classes conflict |      ≈20 KB | `cn()` in shell components becomes a join (already done for the radial loader in phase 27); `twMerge` stays in `components/ui` primitives that take a `className` override. |
 
-Each
-cut
-is
-one
-pull
-request
-with
-the
-entry
-number
-before
-and
-after,
-and
-the
-budget
-lowered
-in
-the
-same
-commit
-so
-the
-saving
-cannot
-be
-spent.
+Each cut is one pull request with the entry number before and after, and the budget lowered in the same commit so the
+saving cannot be spent.
 
 ```ts
 // lib/toast.ts
-type Args =
-  Parameters<
-    typeof import('sonner').toast
-  >;
-let real:
-  | typeof import('sonner').toast
-  | undefined;
-const queue: Args[] =
-  [];
-export function toast(
-  ...args: Args
-) {
-  if (
-    real
-  )
-    return real(
-      ...args,
-    );
-  queue.push(
-    args,
-  );
-  if (
-    queue.length ===
-    1
-  )
-    void import('./toast-host').then(
-      (
-        m,
-      ) => {
-        real =
-          m.mount();
-        queue
-          .splice(
-            0,
-          )
-          .forEach(
-            (
-              a,
-            ) =>
-              real!(
-                ...a,
-              ),
-          );
-      },
-    );
+type Args = Parameters<typeof import('sonner').toast>;
+let real: typeof import('sonner').toast | undefined;
+const queue: Args[] = [];
+export function toast(...args: Args) {
+  if (real) return real(...args);
+  queue.push(args);
+  if (queue.length === 1)
+    void import('./toast-host').then((m) => {
+      real = m.mount();
+      queue.splice(0).forEach((a) => real!(...a));
+    });
 }
 ```
 
-**Done
-when:**
-`check-entry-composition`
-shows
-none
-of
-`sonner`,
-`framer-motion`,
-`motion-dom`,
-`better-auth`,
-`@simplewebauthn/browser`,
-`@radix-ui/react-dialog`
-in
-the
-entry
-closure
-(add
-them
-to
-its
-forbidden
-list
-as
-each
-leaves),
-and
-`entryRaw`
-is
-at
-or
-under
-350,000.
+**Done when:** `check-entry-composition` shows none of `sonner`, `framer-motion`, `motion-dom`, `better-auth`,
+`@simplewebauthn/browser`, `@radix-ui/react-dialog` in the entry closure (add them to its forbidden list as each
+leaves), and `entryRaw` is at or under 350,000.
 
-> **Note,
-> 2026-11-14.**
-> The
-> 350,000
-> figure
-> was
-> written
-> when
-> the
-> entry
-> was
-> one
-> of
-> 52
-> files
-> on
-> the
-> critical
-> path.
-> Since
-> the
-> chunk
-> shaping
-> in
-> `vite.config.ts`
-> (#1620)
-> the
-> whole
-> static
-> graph
-> of
-> the
-> entry
-> is
-> folded
-> into
-> the
-> entry
-> file,
-> so
-> `entryRaw`
-> now
-> measures
-> nearly
-> the
-> entire
-> critical
-> path
-> (685,698
-> B
-> then)
-> and
-> cannot
-> be
-> compared
-> with
-> this
-> number.
-> The
-> package
-> list
-> above
-> is
-> unchanged
-> as
-> the
-> test.
-> For
-> bytes,
-> read
-> the
-> critical-path
-> lines
-> of
-> `scripts/check-bundle-budget.ts`
-> instead;
-> a
-> new
-> byte
-> target
-> for
-> RT1
-> is
-> an
-> owner
-> decision
-> and
-> has
-> not
-> been
-> set.
+> **Note, 2026-11-14.** The 350,000 figure was written when the entry was one of 52 files on the critical path. Since
+> the chunk shaping in `vite.config.ts` (#1620) the whole static graph of the entry is folded into the entry file, so
+> `entryRaw` now measures nearly the entire critical path (685,698 B then) and cannot be compared with this number. The
+> package list above is unchanged as the test. For bytes, read the critical-path lines of
+> `scripts/check-bundle-budget.ts` instead; a new byte target for RT1 is an owner decision and has not been set.
 
 ### RT2 — An edge cache that is measured
 
@@ -2308,146 +562,20 @@ gain: perf
 impact: M
 effort: S
 risk: low
-depends:
-  [
-    RT3,
-  ]
+depends: [RT3]
 evidence:
-  server/nitro/anon-html-cache.ts
-  marks
-  10
-  audited
-  paths
-  public;
-  deploy/apply-cloudflare-cache-rules.sh
-  carries
-  the
-  matching
-  Cloudflare
-  rule
-  and
-  a
-  test
-  holds
-  the
-  two
-  lists
-  together;
-  nothing
-  checks
-  that
-  the
-  edge
-  actually
-  returns
-  a
-  HIT;
-  /explore
-  and
-  /games/<id>
-  send
-  no
-  Cache-Control
-  when
-  signed
-  out
-target:
-  synthetic-perf
-  asserts
-  a
-  HIT;
-  the
-  allowlist
-  covers
-  the
-  busiest
-  signed-out
-  pages
+  server/nitro/anon-html-cache.ts marks 10 audited paths public; deploy/apply-cloudflare-cache-rules.sh carries the
+  matching Cloudflare rule and a test holds the two lists together; nothing checks that the edge actually returns a HIT;
+  /explore and /games/<id> send no Cache-Control when signed out
+target: synthetic-perf asserts a HIT; the allowlist covers the busiest signed-out pages
 ```
 
-Steps:
-add
-a
-`cf-cache-status`
-assertion
-to
-`synthetic-perf.yml`
-(two
-requests
-a
-second
-apart
-to
-`/games`,
-the
-second
-must
-be
-a
-HIT),
-so
-a
-rule
-that
-was
-never
-applied
-or
-has
-drifted
-on
-the
-dashboard
-is
-noticed;
-extend
-the
-allowlist
-and
-the
-rule
-together
-to
-game
-and
-app
-landing
-pages
-and
-`/explore`
-after
-reading
-each
-route
-for
-per-viewer
-content,
-under
-the
-same
-test
-that
-guards
-the
-current
-ten.
+Steps: add a `cf-cache-status` assertion to `synthetic-perf.yml` (two requests a second apart to `/games`, the second
+must be a HIT), so a rule that was never applied or has drifted on the dashboard is noticed; extend the allowlist and
+the rule together to game and app landing pages and `/explore` after reading each route for per-viewer content, under
+the same test that guards the current ten.
 
-**Done
-when:**
-the
-synthetic
-check
-reports
-a
-HIT
-on
-`/games`
-and
-on
-one
-game
-landing
-page.
+**Done when:** the synthetic check reports a HIT on `/games` and on one game landing page.
 
 ### RT3 — CSP nonces and the shared cache
 
@@ -2482,175 +610,24 @@ target:
   nonce
 ```
 
-Options,
-in
-order
-of
-preference:
+Options, in order of preference:
 
-1. **Hashes
-   for
-   cacheable
-   documents.**
-   The
-   inline
-   scripts
-   on
-   an
-   anonymous
-   page
-   are
-   the
-   pre-paint
-   script
-   (static,
-   already
-   hashed
-   by
-   the
-   Nitro
-   hook
-   for
-   non-Start
-   responses)
-   and
-   data.
-   Move
-   dehydrated
-   loader
-   data
-   and
-   JSON-LD
-   into
-   `<script type="application/json">`
-   blocks,
-   which
-   are
-   not
-   executed
-   and
-   need
-   no
-   nonce,
-   and
-   read
-   them
-   from
-   a
-   hashed
-   bootstrap.
-   The
-   cached
-   document
-   then
-   carries
-   a
-   hash-only
-   policy.
-2. **No
-   shared
-   cache
-   for
-   nonce'd
-   responses.**
-   Simplest,
-   and
-   gives
-   up
-   RT2.
+1. **Hashes for cacheable documents.** The inline scripts on an anonymous page are the pre-paint script (static, already
+   hashed by the Nitro hook for non-Start responses) and data. Move dehydrated loader data and JSON-LD into
+   `<script type="application/json">` blocks, which are not executed and need no nonce, and read them from a hashed
+   bootstrap. The cached document then carries a hash-only policy.
+2. **No shared cache for nonce'd responses.** Simplest, and gives up RT2.
 
-Either
-way
-add
-a
-test
-beside
-`anon-html-cache.test.ts`:
-a
-response
-whose
-`Cache-Control`
-contains
-`public`
-must
-not
-contain
-`nonce-`
-in
-any
-header
-or
-attribute.
+Either way add a test beside `anon-html-cache.test.ts`: a response whose `Cache-Control` contains `public` must not
+contain `nonce-` in any header or attribute.
 
-**Done
-when:**
-that
-test
-passes
-and
-the
-enforced
-policy
-(when
-F5
-lands)
-has
-no
-`'unsafe-inline'`
-in
-`script-src`.
+**Done when:** that test passes and the enforced policy (when F5 lands) has no `'unsafe-inline'` in `script-src`.
 
 ### RT4 — Smaller documents
 
-Documents
-are
-73–117
-KB
-with
-14–20
-KB
-of
-inline
-script.
-`/games`
-at
-117
-KB
-is
-the
-catalogue
-rendered
-in
-full.
-Worth
-doing
-only
-after
-RT1:
-paginate
-or
-virtualise
-the
-catalogue
-below
-the
-fold,
-and
-stop
-dehydrating
-data
-the
-HTML
-already
-shows
-where
-the
-query
-is
-not
-refetched
-on
-mount.
+Documents are 73–117 KB with 14–20 KB of inline script. `/games` at 117 KB is the catalogue rendered in full. Worth
+doing only after RT1: paginate or virtualise the catalogue below the fold, and stop dehydrating data the HTML already
+shows where the query is not refetched on mount.
 
 ---
 
@@ -2728,83 +705,15 @@ select relname, n_live_tup, greatest(last_autoanalyze, last_analyze) as last_sta
 from pg_stat_user_tables order by n_live_tup;
 ```
 
-Product
-actives
-come
-from
-the
-playtime
-and
-history
-tables
-grouped
-by
-catalogue
-id.
-The
-job
-writes
-one
-JSON
-row
-per
-month;
-the
-page
-shows
-a
-table
-with
-a
-"quiet
-for
-90
-days"
-filter.
+Product actives come from the playtime and history tables grouped by catalogue id. The job writes one JSON row per
+month; the page shows a table with a "quiet for 90 days" filter.
 
-**Done
-when:**
-the
-page
-exists
-and
-its
-first
-snapshot
-is
-committed
-to
-`docs/_generated/`
-as
-the
-evidence
-file
-for
-DT2
-and
-for
-the
-tiers
-below.
+**Done when:** the page exists and its first snapshot is committed to `docs/_generated/` as the evidence file for DT2
+and for the tiers below.
 
 ### DT2 — Tiers decided by the census
 
-The
-owner
-keeps
-every
-page.
-Tiers
-decide
-what
-engineering
-a
-product
-gets,
-not
-whether
-it
-exists:
+The owner keeps every page. Tiers decide what engineering a product gets, not whether it exists:
 
 | Tier   | Rule                                                   | Treatment                                                                                                |
 | ------ | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
@@ -2812,80 +721,13 @@ exists:
 | Arcade | used, self-contained                                   | own package, island build, its tests run when it changes                                                 |
 | Attic  | quiet for 90 days                                      | frozen: built from a pinned commit of its package, excluded from default gates, banner-free for visitors |
 
-Then
-the
-schema
-work
-the
-first
-audit
-left
-open
-(C3):
-drop
-what
-the
-census
-shows
-is
-dead,
-thin
-`User`,
-and
-move
-each
-domain
-file
-to
-its
-own
-Postgres
-schema
-(`multiSchema`)
-so
-a
-feature's
-tables
-are
-visibly
-its
-own.
+Then the schema work the first audit left open (C3): drop what the census shows is dead, thin `User`, and move each
+domain file to its own Postgres schema (`multiSchema`) so a feature's tables are visibly its own.
 
 ### DT3 — A migration baseline
 
-277
-migrations
-replay
-on
-every
-CI
-database.
-With
-one
-production
-database
-and
-no
-other
-consumers,
-squash
-to
-a
-baseline
-plus
-new
-migrations
-(`prisma migrate resolve --applied`
-on
-the
-VPS).
-Low
-value
-alone;
-do
-it
-with
-DT2.
+277 migrations replay on every CI database. With one production database and no other consumers, squash to a baseline
+plus new migrations (`prisma migrate resolve --applied` on the VPS). Low value alone; do it with DT2.
 
 ---
 
@@ -2946,90 +788,12 @@ target:
   files
 ```
 
-The
-hook
-is
-documented
-as
-fast
-and
-tsc-free,
-yet
-it
-was
-not
-usable
-in
-a
-15
-GB
-container.
-Steps:
-time
-and
-memory-profile
-each
-step
-of
-`--fast`
-on
-a
-typical
-staged
-change;
-cap
-the
-vitest
-step's
-workers
-and
-scope
-it
-to
-gates
-that
-read
-the
-staged
-paths;
-fail
-with
-the
-step's
-name
-when
-a
-step
-is
-killed,
-so
-a
-skip
-names
-the
-cause.
-After
-AR1
-the
-full
-gate
-can
-include
-`tsc -b`.
+The hook is documented as fast and tsc-free, yet it was not usable in a 15 GB container. Steps: time and memory-profile
+each step of `--fast` on a typical staged change; cap the vitest step's workers and scope it to gates that read the
+staged paths; fail with the step's name when a step is killed, so a skip names the cause. After AR1 the full gate can
+include `tsc -b`.
 
-**Done
-when:**
-ten
-consecutive
-agent
-commits
-in
-a
-cloud
-session
-carry
-no
-skip.
+**Done when:** ten consecutive agent commits in a cloud session carry no skip.
 
 ### OP2 — Perf assertions that do not flake
 
@@ -3102,294 +866,34 @@ target:
   pair
 ```
 
-The
-work
-ratios
-are
-the
-budget
-and
-cannot
-be
-moved
-by
-another
-process.
-The
-time
-ratios
-are
-a
-backstop
-for
-cost
-that
-is
-neither
-Lua
-nor
-draw
-calls.
-When
-only
-time
-is
-over,
-take
-up
-to
-three
-pairs
-in
-all
-and
-keep
-the
-lowest
-ratio:
-a
-real
-cost
-is
-over
-in
-every
-pair,
-a
-slow
-runner
-is
-not.
-Report
-every
-pair.
-Keep
-the
-1.45
-and
-1.35
-lines.
+The work ratios are the budget and cannot be moved by another process. The time ratios are a backstop for cost that is
+neither Lua nor draw calls. When only time is over, take up to three pairs in all and keep the lowest ratio: a real cost
+is over in every pair, a slow runner is not. Report every pair. Keep the 1.45 and 1.35 lines.
 
-**Done
-when:**
-20
-consecutive
-runs
-on
-main
-are
-green
-and
-the
-log
-shows
-each
-pair
-taken.
+**Done when:** 20 consecutive runs on main are green and the log shows each pair taken.
 
 ### OP3 — One realtime process that can restart
 
-First
-audit
-D2,
-restated
-with
-numbers:
-three
-hubs,
-17
-handler
-modules,
-about
-400
-module-level
-`Map`/`Set`
-constructions
-across
-hubs
-and
-feature
-servers.
-The
-rmhbox
-durable-lobby
-work
-(phase 20)
-is
-the
-pattern:
-a
-store
-interface,
-coalesced
-saves,
-restore
-before
-listen.
-Apply
-it
-per
-handler
-in
-order
-of
-session
-value
-(casino
-tables
-hold
-coins
-first),
-then
-turn
-on
-the
-Redis
-adapter,
-then
-merge
-the
-three
-processes
-into
-one
-with
-namespaces.
-Each
-step
-is
-behind
-the
-switch
-that
-already
-exists.
+First audit D2, restated with numbers: three hubs, 17 handler modules, about 400 module-level `Map`/`Set` constructions
+across hubs and feature servers. The rmhbox durable-lobby work (phase 20) is the pattern: a store interface, coalesced
+saves, restore before listen. Apply it per handler in order of session value (casino tables hold coins first), then turn
+on the Redis adapter, then merge the three processes into one with namespaces. Each step is behind the switch that
+already exists.
 
-**Done
-when:**
-a
-deploy
-during
-an
-open
-blackjack
-round
-settles
-the
-round
-to
-the
-same
-players
-after
-the
-restart,
-in
-an
-integration
-test.
+**Done when:** a deploy during an open blackjack round settles the round to the same players after the restart, in an
+integration test.
 
 ### OP4 — Errors without a vendor
 
-First
-audit
-D6
-is
-blocked
-on
-choosing
-a
-vendor.
-A
-box-local
-option
-needs
-no
-decision:
-`/api/client-error`
-and
-the
-server
-logger
-already
-produce
-the
-events;
-store
-them
-in
-one
-Postgres
-table
-with
-a
-fingerprint,
-count
-and
-first/last
-seen;
-show
-them
-on
-an
-admin
-page;
-let
-`oncall-watchdog`
-read
-the
-count.
-It
-is
-not
-a
-tracing
-product.
-It
-answers
-"what
-broke
-after
-this
-deploy",
-which
-is
-the
-question
-a
-single-box
-site
-has.
+First audit D6 is blocked on choosing a vendor. A box-local option needs no decision: `/api/client-error` and the server
+logger already produce the events; store them in one Postgres table with a fingerprint, count and first/last seen; show
+them on an admin page; let `oncall-watchdog` read the count. It is not a tracing product. It answers "what broke after
+this deploy", which is the question a single-box site has.
 
 ### OP5 — CI and deploy
 
-Broadsheet
-B1
-(deploy
-time)
-and
-B6
-(workflow
-count)
-cover
-this.
-One
-addition:
-`web-ci`
-should
-use
-AR1's
-project
-graph
-to
-skip
-jobs,
-not
-path
-filters
-kept
-by
-hand.
+Broadsheet B1 (deploy time) and B6 (workflow count) cover this. One addition: `web-ci` should use AR1's project graph to
+skip jobs, not path filters kept by hand.
 
 ---
 
@@ -3397,201 +901,25 @@ hand.
 
 ### QA1 — Gates by kind
 
-`lib/__tests__`
-is
-53,616
-lines.
-Three
-kinds
-live
-there:
-contract
-tests
-(a
-route
-answers
-401
-before
-400),
-ratchets
-(a
-count
-may
-only
-fall),
-and
-source
-scanners
-(a
-file
-must
-not
-contain
-a
-string).
-Broadsheet
-Q1
-turns
-the
-scanners
-into
-lint
-rules;
-agreed.
-Add:
-every
-ratchet
-prints
-the
-command
-that
-lists
-its
-offenders,
-and
-ratchets
-that
-have
-reached
-their
-floor
-(raw
-fetch
-at
-8,
-bare
-sockets
-at 1)
-become
-allowlists
-of
-named
-files,
-which
-read
-better
-than
-a
-number.
+`lib/__tests__` is 53,616 lines. Three kinds live there: contract tests (a route answers 401 before 400), ratchets (a
+count may only fall), and source scanners (a file must not contain a string). Broadsheet Q1 turns the scanners into lint
+rules; agreed. Add: every ratchet prints the command that lists its offenders, and ratchets that have reached their
+floor (raw fetch at 8, bare sockets at 1) become allowlists of named files, which read better than a number.
 
 ### QA2 — Money paths end to end
 
-First
-audit
-F2
-remains
-open:
-checkout,
-coin
-grant,
-gift,
-market
-purchase
-and
-refund,
-in
-a
-browser
-against
-the
-integration
-stack.
-These
-are
-the
-only
-flows
-where
-a
-silent
-regression
-costs
-someone
-money,
-and
-AR2/AR3
-will
-touch
-every
-one
-of
-them.
+First audit F2 remains open: checkout, coin grant, gift, market purchase and refund, in a browser against the
+integration stack. These are the only flows where a silent regression costs someone money, and AR2/AR3 will touch every
+one of them.
 
 ---
 
 ## Part DS — design: Steel
 
-The
-identity
-is
-settled:
-**Steel**
-(`2026-11-11-steel-design-implementation.md`),
-which
-replaced
-Broadsheet's
-Part
-N
-on
-2026-11-11.
-A
-flat
-neutral
-page
-in
-Geist,
-hairline
-rules,
-no
-cards;
-chrome
-in
-three
-places
-(the
-globe,
-the
-toggle
-thumb,
-the
-slider
-thumb),
-each
-a
-ray-traced
-reflection
-of
-the
-page;
-content
-on
-a
-1px
-spine;
-on
-a
-phone
-the
-globe
-is
-the
-only
-navigator.
-This
-audit
-does
-not
-restate
-it.
-This
-part
-says
-how
-the
-two
-plans
-fit
-together.
+The identity is settled: **Steel** (`2026-11-11-steel-design-implementation.md`), which replaced Broadsheet's Part N on
+2026-11-11. A flat neutral page in Geist, hairline rules, no cards; chrome in three places (the globe, the toggle thumb,
+the slider thumb), each a ray-traced reflection of the page; content on a 1px spine; on a phone the globe is the only
+navigator. This audit does not restate it. This part says how the two plans fit together.
 
 ### DS1 — Where Steel and this audit touch
 
@@ -3606,77 +934,15 @@ together.
 | Phase 1 gates (lint rules, design-consistency test)                                                    | OP1 commit gate             | Phase 1 rewrites what the fast gate checks; that is the moment to make it runnable in a 15 GB container.                                                                                                                                                                                |
 | L8: games and apps keep their own look                                                                 | AR4, first audit B1 islands | Unchanged. Islands and the engine package proceed independently of Steel.                                                                                                                                                                                                               |
 
-The
-earlier
-suggestion
-to
-delete
-the
-runtime
-before
-choosing
-the
-paint
-is
-withdrawn:
-Steel
-keeps
-one
-remarkable
-object
-(the
-globe)
-and
-replaces
-its
-engine
-rather
-than
-removing
-it,
-so
-deletion
-follows
-the
-new
-shell
-(phase
-6),
-as
-Steel
-says.
+The earlier suggestion to delete the runtime before choosing the paint is withdrawn: Steel keeps one remarkable object
+(the globe) and replaces its engine rather than removing it, so deletion follows the new shell (phase 6), as Steel says.
 
 ---
 
 ## Order of work
 
-One
-sequence
-for
-both
-plans.
-Each
-line
-is
-a
-pull
-request
-and
-leaves
-main
-shippable.
-"S"
-is
-a
-Steel
-phase;
-the
-rest
-are
-items
-of
-this
-audit.
+One sequence for both plans. Each line is a pull request and leaves main shippable. "S" is a Steel phase; the rest are
+items of this audit.
 
 |   # | Pull request                                        | Items                                                               |
 | --: | --------------------------------------------------- | ------------------------------------------------------------------- |
@@ -3695,34 +961,8 @@ audit.
 |  13 | API registry and dispatcher                         | AR3                                                                 |
 | 14+ | Features as packages; realtime; tiers               | AR1 steps 3–5, OP3, DT2                                             |
 
-S2
-and
-S3
-may
-run
-in
-parallel
-(Steel
-section
-16).
-Lines
-10–11
-do
-not
-touch
-the
-UI
-and
-can
-be
-taken
-whenever
-a
-Steel
-phase
-is
-in
-review.
+S2 and S3 may run in parallel (Steel section 16). Lines 10–11 do not touch the UI and can be taken whenever a Steel
+phase is in review.
 
 ## Ledger
 

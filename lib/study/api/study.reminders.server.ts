@@ -9,9 +9,7 @@ export const route = apiRoute('/api/study/reminders', {
   GET: implement(getReminderApi, { rateLimit: 'read' }, async ({ userId }) => ({
     reminder: await getReminder(userId),
   })),
-  PUT: implement(
-    saveReminderApi,
-    { rateLimit: 'write', body: saveReminderBody },
-    async ({ userId, body }) => ({ reminder: await saveReminder(userId, body) }),
-  ),
+  PUT: implement(saveReminderApi, { rateLimit: 'write', body: saveReminderBody }, async ({ userId, body }) => ({
+    reminder: await saveReminder(userId, body),
+  })),
 });

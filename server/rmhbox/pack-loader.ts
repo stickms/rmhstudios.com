@@ -5,71 +5,29 @@
 import { getPrismaClient } from './prisma-client';
 import { logger } from './logger';
 
-export async function loadPackPrompts(
-  rawCode: string,
-  game: string,
-): Promise<
-  | string[]
-  | null
-> {
+export async function loadPackPrompts(rawCode: string, game: string): Promise<string[] | null> {
   // Codes are issued in upper case; accept what a host types (case, stray spaces)
-  const code =
-    typeof rawCode ===
-    'string'
-      ? rawCode
-          .trim()
-          .toUpperCase()
-      : '';
-  if (
-    !/^[A-Z0-9]{6}$/.test(
-      code,
-    )
-  )
-    return null;
+  const code = typeof rawCode === 'string' ? rawCode.trim().toUpperCase() : '';
+  if (!/^[A-Z0-9]{6}$/.test(code)) return null;
   try {
-    const row =
-      await getPrismaClient().rmhboxPack.findFirst(
-        {
-          where:
-            {
-              code,
-              game,
-              hidden: false,
-            },
-          select:
-            {
-              prompts: true,
-            },
-        },
-      );
-    if (
-      !row ||
-      !Array.isArray(
-        row.prompts,
-      )
-    )
-      return null;
-    return (
-      row.prompts as unknown[]
-    ).filter(
-      (
-        p,
-      ): p is string =>
-        typeof p ===
-        'string',
-    );
-  } catch (err) {
-    logger.error(
-      {
-        event:
-          'pack_load_failed',
+    const row = await getPrismaClient().rmhboxPack.findFirst({
+      where: {
         code,
-        error:
-          String(
-            err,
-          ),
+        game,
+        hidden: false,
       },
-    );
+      select: {
+        prompts: true,
+      },
+    });
+    if (!row || !Array.isArray(row.prompts)) return null;
+    return (row.prompts as unknown[]).filter((p): p is string => typeof p === 'string');
+  } catch (err) {
+    logger.error({
+      event: 'pack_load_failed',
+      code,
+      error: String(err),
+    });
     return null;
   }
 }

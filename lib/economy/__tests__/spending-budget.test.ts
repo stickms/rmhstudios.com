@@ -20,12 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 
 import { AppError, isAppError } from '@/lib/errors/codes';
-import {
-  InsufficientFundsError,
-  creditCoinsOn,
-  debitCoinsOn,
-  transferCoinsOn,
-} from '@/lib/economy/ledger-core';
+import { InsufficientFundsError, creditCoinsOn, debitCoinsOn, transferCoinsOn } from '@/lib/economy/ledger-core';
 import { SPEND_TYPES, monthKey } from '@/lib/economy/spend-budget';
 import { applySpendBudgetChangeOn } from '@/lib/economy/spend-budget.server';
 import { playLimitsChangeSchema } from '@/lib/economy/play-limits-schema';
@@ -76,7 +71,10 @@ function makeDb(initial: Partial<State> = {}, opts: { lockWorks?: boolean } = {}
         const prev = locks.get(key) ?? Promise.resolve();
         let done!: () => void;
         const mine = new Promise<void>((r) => (done = r));
-        locks.set(key, prev.then(() => mine));
+        locks.set(
+          key,
+          prev.then(() => mine),
+        );
         await prev;
         release.push(done);
         return 0;
@@ -281,11 +279,7 @@ describe('what is not spending', () => {
     const db = makeDb({
       limits: limitsWith({ monthlySpendCap: 100 }),
       profiles: new Map([['u1', 100_000]]),
-      txns: [
-        spent('u1', 'WAGER', 50_000),
-        spent('u1', 'ADMIN', 50_000),
-        spent('u1', 'REWARD', 50_000),
-      ],
+      txns: [spent('u1', 'WAGER', 50_000), spent('u1', 'ADMIN', 50_000), spent('u1', 'REWARD', 50_000)],
     });
     await debitCoinsOn(db.client, 'u1', 5000, { type: 'WAGER' });
     await debitCoinsOn(db.client, 'u1', 5000, { type: 'ADMIN' });
@@ -434,9 +428,7 @@ describe('concurrency', () => {
       { limits: limitsWith({ monthlySpendCap: 1000 }), profiles: new Map([['u1', 100_000]]) },
       { lockWorks: false },
     );
-    await Promise.allSettled(
-      Array.from({ length: 6 }, () => debitCoinsOn(db.client, 'u1', 300, { type: 'PURCHASE' })),
-    );
+    await Promise.allSettled(Array.from({ length: 6 }, () => debitCoinsOn(db.client, 'u1', 300, { type: 'PURCHASE' })));
     expect(db.state.txns.reduce((a, t) => a + t.amount, 0)).toBeGreaterThan(1000);
   });
 
@@ -482,9 +474,7 @@ describe('the 80% notice', () => {
 
   it('is sent once even when concurrent spends cross the line together', async () => {
     const db = makeDb({ limits: limitsWith({ monthlySpendCap: 1000 }), profiles: new Map([['u1', 100_000]]) });
-    await Promise.all(
-      Array.from({ length: 3 }, () => debitCoinsOn(db.client, 'u1', 300, { type: 'PURCHASE' })),
-    );
+    await Promise.all(Array.from({ length: 3 }, () => debitCoinsOn(db.client, 'u1', 300, { type: 'PURCHASE' })));
     expect(db.state.notifications).toHaveLength(1);
   });
 

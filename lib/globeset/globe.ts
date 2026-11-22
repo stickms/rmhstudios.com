@@ -59,12 +59,7 @@ export const PITCH_LIMIT = 58;
 const LATITUDE_SPREAD = 0.62;
 
 /** The golden angle — the spiral that keeps successive slots far apart. */
-const GOLDEN_ANGLE =
-  Math.PI *
-  (3 -
-    Math.sqrt(
-      5,
-    ));
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 /**
  * `count` evenly-scattered directions on the sphere, deterministic and stable.
@@ -72,128 +67,47 @@ const GOLDEN_ANGLE =
  * Deterministic matters twice over: the slot a card sits in has to be the same
  * on every render, and the same in two browsers racing the same deal.
  */
-export function slotDirections(
-  count: number = BOARD_SIZE,
-): Vec3[] {
-  const out: Vec3[] =
-    [];
-  for (
-    let i = 0;
-    i <
-    count;
-    i++
-  ) {
-    const y =
-      LATITUDE_SPREAD *
-      (1 -
-        (2 *
-          i +
-          1) /
-          count);
-    const ring =
-      Math.sqrt(
-        Math.max(
-          0,
-          1 -
-            y *
-              y,
-        ),
-      );
-    const theta =
-      i *
-      GOLDEN_ANGLE;
-    out.push(
-      {
-        x:
-          Math.cos(
-            theta,
-          ) *
-          ring,
-        y,
-        z:
-          Math.sin(
-            theta,
-          ) *
-          ring,
-      },
-    );
+export function slotDirections(count: number = BOARD_SIZE): Vec3[] {
+  const out: Vec3[] = [];
+  for (let i = 0; i < count; i++) {
+    const y = LATITUDE_SPREAD * (1 - (2 * i + 1) / count);
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = i * GOLDEN_ANGLE;
+    out.push({
+      x: Math.cos(theta) * ring,
+      y,
+      z: Math.sin(theta) * ring,
+    });
   }
   return out;
 }
 
 /** The seven slots of a full board, computed once. */
-export const SLOT_DIRECTIONS: readonly Vec3[] =
-  slotDirections();
+export const SLOT_DIRECTIONS: readonly Vec3[] = slotDirections();
 
 /**
  * Body space → view space: yaw about the (downward) Y axis, then pitch about X.
  *
  * Exactly the rotation {@link unrotateSphere} undoes, in exactly that order.
  */
-export function rotateToView(
-  n: Vec3,
-  yawDeg: number,
-  pitchDeg: number,
-): Vec3 {
-  const d =
-    Math.PI /
-    180;
-  const cy =
-    Math.cos(
-      yawDeg *
-        d,
-    );
-  const sy =
-    Math.sin(
-      yawDeg *
-        d,
-    );
-  const cp =
-    Math.cos(
-      pitchDeg *
-        d,
-    );
-  const sp =
-    Math.sin(
-      pitchDeg *
-        d,
-    );
-  const x1 =
-    n.x *
-      cy +
-    n.z *
-      sy;
-  const z1 =
-    -n.x *
-      sy +
-    n.z *
-      cy;
+export function rotateToView(n: Vec3, yawDeg: number, pitchDeg: number): Vec3 {
+  const d = Math.PI / 180;
+  const cy = Math.cos(yawDeg * d);
+  const sy = Math.sin(yawDeg * d);
+  const cp = Math.cos(pitchDeg * d);
+  const sp = Math.sin(pitchDeg * d);
+  const x1 = n.x * cy + n.z * sy;
+  const z1 = -n.x * sy + n.z * cy;
   return {
     x: x1,
-    y:
-      n.y *
-        cp -
-      z1 *
-        sp,
-    z:
-      n.y *
-        sp +
-      z1 *
-        cp,
+    y: n.y * cp - z1 * sp,
+    z: n.y * sp + z1 * cp,
   };
 }
 
 /** Foreshortening applied at depth `z`. Near face grows, far face shrinks. */
-export function depthScale(
-  z: number,
-  perspective: number = GLOBE_PERSPECTIVE,
-): number {
-  return (
-    perspective /
-    (perspective -
-      z *
-        0.5)
-  );
+export function depthScale(z: number, perspective: number = GLOBE_PERSPECTIVE): number {
+  return perspective / (perspective - z * 0.5);
 }
 
 export interface Placement {
@@ -207,29 +121,13 @@ export interface Placement {
 }
 
 /** Where a view-space direction lands on a stage of the given radius. */
-export function place(
-  v: Vec3,
-  radius: number,
-  perspective: number = GLOBE_PERSPECTIVE,
-): Placement {
-  const k =
-    depthScale(
-      v.z,
-      perspective,
-    );
+export function place(v: Vec3, radius: number, perspective: number = GLOBE_PERSPECTIVE): Placement {
+  const k = depthScale(v.z, perspective);
   return {
-    left:
-      v.x *
-      radius *
-      k,
-    top:
-      v.y *
-      radius *
-      k,
-    scale:
-      k,
-    depth:
-      v.z,
+    left: v.x * radius * k,
+    top: v.y * radius * k,
+    scale: k,
+    depth: v.z,
   };
 }
 
@@ -240,75 +138,28 @@ export function place(
  * faces you, so the focus ring and the picture agree about which card is being
  * talked about.
  */
-export function faceFrontAngles(
-  n: Vec3,
-): {
+export function faceFrontAngles(n: Vec3): {
   yaw: number;
   pitch: number;
 } {
-  const deg =
-    180 /
-    Math.PI;
+  const deg = 180 / Math.PI;
   // Yaw so the slot's x component vanishes and it sits on the z axis.
-  let yaw =
-    Math.atan2(
-      -n.x,
-      n.z,
-    );
-  const z1 =
-    -n.x *
-      Math.sin(
-        yaw,
-      ) +
-    n.z *
-      Math.cos(
-        yaw,
-      );
+  let yaw = Math.atan2(-n.x, n.z);
+  const z1 = -n.x * Math.sin(yaw) + n.z * Math.cos(yaw);
   // atan2 lands on the axis; a negative z means it landed on the far side.
-  if (
-    z1 <
-    0
-  )
-    yaw +=
-      Math.PI;
-  const z2 =
-    -n.x *
-      Math.sin(
-        yaw,
-      ) +
-    n.z *
-      Math.cos(
-        yaw,
-      );
-  const pitch =
-    Math.atan2(
-      n.y,
-      z2,
-    );
+  if (z1 < 0) yaw += Math.PI;
+  const z2 = -n.x * Math.sin(yaw) + n.z * Math.cos(yaw);
+  const pitch = Math.atan2(n.y, z2);
   return {
-    yaw:
-      yaw *
-      deg,
-    pitch:
-      pitch *
-      deg,
+    yaw: yaw * deg,
+    pitch: pitch * deg,
   };
 }
 
 /** Fold a yaw into −180…180 so a turn past the seam is still the short way round. */
-export function wrapDegrees(
-  a: number,
-): number {
-  const wrapped =
-    (((a +
-      180) %
-      360) +
-      360) %
-    360;
-  return (
-    wrapped -
-    180
-  );
+export function wrapDegrees(a: number): number {
+  const wrapped = (((a + 180) % 360) + 360) % 360;
+  return wrapped - 180;
 }
 
 export { unrotateSphere };

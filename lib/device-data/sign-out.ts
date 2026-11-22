@@ -10,35 +10,18 @@
  * Plain module: the question's wording and its dialog belong to the caller's component (every string goes through
  * `t()` there), so this file only knows the three possible answers.
  */
-import {
-  clearPersonalDeviceData,
-} from './clear';
-import {
-  browserEnv,
-  countUnsentWork,
-  hasUnsentWork,
-  type DeviceEnv,
-  type UnsentCounts,
-} from './inspect';
+import { clearPersonalDeviceData } from './clear';
+import { browserEnv, countUnsentWork, hasUnsentWork, type DeviceEnv, type UnsentCounts } from './inspect';
 import { CLEAR_ON_SIGN_OUT_KEY } from './registry';
 
-export type UnsentChoice =
-  | 'keep'
-  | 'delete'
-  | 'cancel';
+export type UnsentChoice = 'keep' | 'delete' | 'cancel';
 
 /** Asks the member what to do with work that exists only on this device. */
-export type ChooseUnsent = (
-  counts: UnsentCounts,
-) => Promise<UnsentChoice>;
+export type ChooseUnsent = (counts: UnsentCounts) => Promise<UnsentChoice>;
 
-export type SignOutOutcome =
-  | 'signed-out'
-  | 'cancelled';
+export type SignOutOutcome = 'signed-out' | 'cancelled';
 
-export function readClearOnSignOut(
-  env: DeviceEnv = browserEnv(),
-): boolean {
+export function readClearOnSignOut(env: DeviceEnv = browserEnv()): boolean {
   try {
     return env.localStorage?.getItem(CLEAR_ON_SIGN_OUT_KEY) === '1';
   } catch {
@@ -46,10 +29,7 @@ export function readClearOnSignOut(
   }
 }
 
-export function writeClearOnSignOut(
-  on: boolean,
-  env: DeviceEnv = browserEnv(),
-): void {
+export function writeClearOnSignOut(on: boolean, env: DeviceEnv = browserEnv()): void {
   try {
     if (on) env.localStorage?.setItem(CLEAR_ON_SIGN_OUT_KEY, '1');
     else env.localStorage?.removeItem(CLEAR_ON_SIGN_OUT_KEY);
@@ -75,13 +55,9 @@ export interface SignOutOptions {
   env?: DeviceEnv;
 }
 
-export async function signOutAndMaybeClear(
-  options: SignOutOptions,
-): Promise<SignOutOutcome> {
+export async function signOutAndMaybeClear(options: SignOutOptions): Promise<SignOutOutcome> {
   const env = options.env ?? browserEnv();
-  const wantsClear =
-    options.skipClear !== true &&
-    (options.force === true || readClearOnSignOut(env));
+  const wantsClear = options.skipClear !== true && (options.force === true || readClearOnSignOut(env));
   if (wantsClear) {
     let includeUnsent = false;
     try {

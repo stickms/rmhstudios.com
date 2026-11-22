@@ -17,8 +17,7 @@ export const Route = createFileRoute('/_site/tools/cron')({
   head: definePage({
     path: '/tools/cron',
     title: 'Cron Expression Helper | RMH Studios',
-    description:
-      'Check a cron expression field by field and see the next times it runs, in your time zone or UTC.',
+    description: 'Check a cron expression field by field and see the next times it runs, in your time zone or UTC.',
   }),
   validateSearch,
   component: CronRoute,

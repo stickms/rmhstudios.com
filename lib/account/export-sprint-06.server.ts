@@ -13,14 +13,7 @@ import { exportJamFeedback } from '@/lib/competitive/jam-feedback.server';
  * `account.export.server.ts`; each feature adds one property here, under its own
  * anchor line, so no feature edits the route.
  */
-export async function exportSprint06(
-  userId: string,
-): Promise<
-  Record<
-    string,
-    unknown
-  >
-> {
+export async function exportSprint06(userId: string): Promise<Record<string, unknown>> {
   void userId;
   return {
     // Sprint 06 exports (docs/autonomous/sprint-06/plan.md §Anchors)

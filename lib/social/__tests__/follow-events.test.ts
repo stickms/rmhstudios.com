@@ -550,7 +550,7 @@ describe('the audience endpoint', () => {
 });
 
 describe('account deletion', () => {
-  it('erases the member\'s own audience history and de-identifies the rows where they followed', async () => {
+  it("erases the member's own audience history and de-identifies the rows where they followed", async () => {
     await followUser({
       followerId: 'fan',
       followingId: 'creator',
@@ -572,8 +572,6 @@ describe('account deletion', () => {
       `${DELETED_USER_ID}>creator`,
       'x>y',
     ]);
-    expect(h.state.events.some((e) => e.followerId === 'fan' || e.followingId === 'fan')).toBe(
-      false,
-    );
+    expect(h.state.events.some((e) => e.followerId === 'fan' || e.followingId === 'fan')).toBe(false);
   });
 });

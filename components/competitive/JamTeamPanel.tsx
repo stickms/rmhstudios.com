@@ -291,7 +291,10 @@ export function JamTeamPanel({ slug, entryId, state, open, viewerId, onChanged }
   if (state === 'invited') {
     if (!open) return null;
     return (
-      <section aria-label={t('heading', { defaultValue: 'Team' })} className="flex flex-col gap-2 border-t border-site-border pt-3">
+      <section
+        aria-label={t('heading', { defaultValue: 'Team' })}
+        className="flex flex-col gap-2 border-t border-site-border pt-3"
+      >
         <p className="t-body">{t('invited-body', { defaultValue: 'You were added to this entry as a teammate.' })}</p>
         <p className="t-meta">
           {t('accept-rating-note', {
@@ -336,7 +339,10 @@ export function JamTeamPanel({ slug, entryId, state, open, viewerId, onChanged }
       : t('status-invited', { defaultValue: 'Invited' });
 
   return (
-    <section aria-label={t('heading', { defaultValue: 'Team' })} className="flex flex-col gap-3 border-t border-site-border pt-3">
+    <section
+      aria-label={t('heading', { defaultValue: 'Team' })}
+      className="flex flex-col gap-3 border-t border-site-border pt-3"
+    >
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="t-heading">{t('heading', { defaultValue: 'Team' })}</h3>
         {members && (
@@ -357,7 +363,9 @@ export function JamTeamPanel({ slug, entryId, state, open, viewerId, onChanged }
         <div className={arrival}>
           {members.length === 0 ? (
             <p className="t-body text-site-text-muted">
-              {t('empty', { defaultValue: 'No teammates yet. Teammates are credited on this entry and cannot rate it.' })}
+              {t('empty', {
+                defaultValue: 'No teammates yet. Teammates are credited on this entry and cannot rate it.',
+              })}
             </p>
           ) : (
             <ul>
@@ -387,7 +395,9 @@ export function JamTeamPanel({ slug, entryId, state, open, viewerId, onChanged }
             </ul>
           )}
           {!open ? (
-            <p className="t-meta pt-3">{t('frozen', { defaultValue: 'Submissions are closed, so the team is fixed.' })}</p>
+            <p className="t-meta pt-3">
+              {t('frozen', { defaultValue: 'Submissions are closed, so the team is fixed.' })}
+            </p>
           ) : members.length < MAX_TEAMMATES ? (
             <div className="pt-3">
               <TeamInvite

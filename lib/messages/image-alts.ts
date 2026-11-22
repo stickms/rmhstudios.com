@@ -13,92 +13,36 @@ import { MAX_IMAGE_ALT_LENGTH } from '@/lib/rmhark-limits';
 export { MAX_IMAGE_ALT_LENGTH as MAX_MESSAGE_IMAGE_ALT_LENGTH };
 
 /** Descriptions stay editable this long after sending, whatever the 15-minute text window says. */
-export const IMAGE_ALT_EDIT_WINDOW_MS =
-  24 *
-  60 *
-  60_000;
+export const IMAGE_ALT_EDIT_WINDOW_MS = 24 * 60 * 60_000;
 
 /** Both lists, or neither: `alts` may be absent (all undescribed) but never a different length. */
 export function imageAltsAligned(
-  imageUrls:
-    | readonly string[]
-    | null
-    | undefined,
-  imageAlts:
-    | readonly string[]
-    | null
-    | undefined,
+  imageUrls: readonly string[] | null | undefined,
+  imageAlts: readonly string[] | null | undefined,
 ): boolean {
-  if (
-    !imageAlts
-  )
-    return true;
-  return (
-    imageAlts.length ===
-    (imageUrls?.length ??
-      0)
-  );
+  if (!imageAlts) return true;
+  return imageAlts.length === (imageUrls?.length ?? 0);
 }
 
 /** The stored form: trimmed, and padded with empty strings so it is exactly as long as `imageUrls`. */
 export function normalizeImageAlts(
-  imageUrls:
-    | readonly string[]
-    | null
-    | undefined,
-  imageAlts:
-    | readonly string[]
-    | null
-    | undefined,
+  imageUrls: readonly string[] | null | undefined,
+  imageAlts: readonly string[] | null | undefined,
 ): string[] {
-  return (
-    imageUrls ??
-    []
-  ).map(
-    (
-      _,
-      i,
-    ) =>
-      (
-        imageAlts?.[
-          i
-        ] ??
-        ''
-      ).trim(),
-  );
+  return (imageUrls ?? []).map((_, i) => (imageAlts?.[i] ?? '').trim());
 }
 
 export interface DescribableMessage {
   senderId: string;
-  createdAt:
-    | Date
-    | string;
-  deletedAt?:
-    | Date
-    | string
-    | null;
-  imageUrls?:
-    | readonly string[]
-    | null;
+  createdAt: Date | string;
+  deletedAt?: Date | string | null;
+  imageUrls?: readonly string[] | null;
 }
 
-export type AltEditRefusal =
-  | 'not-sender'
-  | 'deleted'
-  | 'no-images'
-  | 'window-expired';
+export type AltEditRefusal = 'not-sender' | 'deleted' | 'no-images' | 'window-expired';
 
-function ms(
-  value:
-    | Date
-    | string,
-): number {
-  return value instanceof
-    Date
-    ? value.getTime()
-    : new Date(
-        value,
-      ).getTime();
+function ms(value: Date | string): number {
+  return value instanceof Date ? value.getTime() : new Date(value).getTime();
 }
 
 /** May `viewerId` change this message's image descriptions right now? */
@@ -114,46 +58,25 @@ export function altEditEligibility(
       ok: false;
       reason: AltEditRefusal;
     } {
-  if (
-    message.senderId !==
-    viewerId
-  )
+  if (message.senderId !== viewerId)
     return {
       ok: false,
-      reason:
-        'not-sender',
+      reason: 'not-sender',
     };
-  if (
-    message.deletedAt
-  )
+  if (message.deletedAt)
     return {
       ok: false,
-      reason:
-        'deleted',
+      reason: 'deleted',
     };
-  if (
-    (message
-      .imageUrls
-      ?.length ??
-      0) ===
-    0
-  )
+  if ((message.imageUrls?.length ?? 0) === 0)
     return {
       ok: false,
-      reason:
-        'no-images',
+      reason: 'no-images',
     };
-  if (
-    ms(
-      message.createdAt,
-    ) +
-      IMAGE_ALT_EDIT_WINDOW_MS <=
-    now
-  ) {
+  if (ms(message.createdAt) + IMAGE_ALT_EDIT_WINDOW_MS <= now) {
     return {
       ok: false,
-      reason:
-        'window-expired',
+      reason: 'window-expired',
     };
   }
   return {
@@ -161,26 +84,13 @@ export function altEditEligibility(
   };
 }
 
-export function canEditImageAlts(
-  message: DescribableMessage,
-  viewerId: string,
-  now: number = Date.now(),
-): boolean {
-  return altEditEligibility(
-    message,
-    viewerId,
-    now,
-  )
-    .ok;
+export function canEditImageAlts(message: DescribableMessage, viewerId: string, now: number = Date.now()): boolean {
+  return altEditEligibility(message, viewerId, now).ok;
 }
 
 /** HTTP status for each refusal. */
-export function altEditStatus(
-  reason: AltEditRefusal,
-): number {
-  switch (
-    reason
-  ) {
+export function altEditStatus(reason: AltEditRefusal): number {
+  switch (reason) {
     case 'deleted':
       return 409;
     case 'no-images':
@@ -190,12 +100,8 @@ export function altEditStatus(
   }
 }
 
-export function altEditMessage(
-  reason: AltEditRefusal,
-): string {
-  switch (
-    reason
-  ) {
+export function altEditMessage(reason: AltEditRefusal): string {
+  switch (reason) {
     case 'not-sender':
       return 'You can only change your own messages.';
     case 'deleted':

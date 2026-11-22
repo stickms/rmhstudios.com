@@ -81,7 +81,10 @@ describe('every read of a post’s text under lib/ and app/routes/', () => {
         !(f in CONTENT_WARNING_EXEMPT_PATHS) &&
         !CONTENT_WARNING_READ_PATHS.includes(f),
     );
-    expect(unaccounted, 'a file reads a post’s text without contentWarning: list it or exempt it with a reason').toEqual([]);
+    expect(
+      unaccounted,
+      'a file reads a post’s text without contentWarning: list it or exempt it with a reason',
+    ).toEqual([]);
   });
 
   it('keeps the exempt list honest: real files that still read post text, each with a reason', () => {
@@ -104,9 +107,13 @@ describe('the surfaces', () => {
   });
 
   it('the feed mappers return the reason beside the flag', () => {
-    expect(read('lib/feed/map-feed-item.server.ts')).toMatch(/isSensitive: r\.isSensitive \?\? false,\s*contentWarning: r\.contentWarning \?\? undefined/);
+    expect(read('lib/feed/map-feed-item.server.ts')).toMatch(
+      /isSensitive: r\.isSensitive \?\? false,\s*contentWarning: r\.contentWarning \?\? undefined/,
+    );
     expect(read('lib/feed/timeline.ts')).toMatch(/contentWarning: isDeleted \? undefined/);
-    expect(read('lib/profile/api/profile.$id.rmharks.server.ts')).toMatch(/contentWarning: r\.contentWarning \?\? undefined/);
+    expect(read('lib/profile/api/profile.$id.rmharks.server.ts')).toMatch(
+      /contentWarning: r\.contentWarning \?\? undefined/,
+    );
   });
 
   it('a cached feed page is re-read for the warning, so a post warned after it was cached is covered at once', () => {

@@ -10,40 +10,23 @@ interface ExportUiState {
   closeImport: () => void;
 }
 
-export const useExportUi =
-  create<ExportUiState>(
-    (
-      set,
-    ) => ({
-      exportOpen: false,
-      importOpen: false,
-      openExport:
-        () =>
-          set(
-            {
-              exportOpen: true,
-            },
-          ),
-      closeExport:
-        () =>
-          set(
-            {
-              exportOpen: false,
-            },
-          ),
-      openImport:
-        () =>
-          set(
-            {
-              importOpen: true,
-            },
-          ),
-      closeImport:
-        () =>
-          set(
-            {
-              importOpen: false,
-            },
-          ),
+export const useExportUi = create<ExportUiState>((set) => ({
+  exportOpen: false,
+  importOpen: false,
+  openExport: () =>
+    set({
+      exportOpen: true,
     }),
-  );
+  closeExport: () =>
+    set({
+      exportOpen: false,
+    }),
+  openImport: () =>
+    set({
+      importOpen: true,
+    }),
+  closeImport: () =>
+    set({
+      importOpen: false,
+    }),
+}));

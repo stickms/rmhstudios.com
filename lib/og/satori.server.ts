@@ -1,10 +1,5 @@
-import {
-  isValidElement,
-  type ReactNode,
-} from 'react';
-import renderSvg, {
-  type SatoriOptions,
-} from 'satori';
+import { isValidElement, type ReactNode } from 'react';
+import renderSvg, { type SatoriOptions } from 'satori';
 
 /**
  * The one way to call satori. Every OG card, the Discord activity images and
@@ -20,86 +15,38 @@ import renderSvg, {
  * A function component is called here, as satori would call it (they are
  * plain functions of their props, without hooks), so its output is covered too.
  */
-export function withBorderBox(
-  node: ReactNode,
-): ReactNode {
-  if (
-    Array.isArray(
-      node,
-    )
-  )
-    return node.map(
-      withBorderBox,
-    );
-  if (
-    !isValidElement(
-      node,
-    )
-  )
-    return node;
-  if (
-    typeof node.type ===
-    'function'
-  ) {
-    return withBorderBox(
-      (
-        node.type as (
-          props: unknown,
-        ) => ReactNode
-      )(
-        node.props,
-      ),
-    );
+export function withBorderBox(node: ReactNode): ReactNode {
+  if (Array.isArray(node)) return node.map(withBorderBox);
+  if (!isValidElement(node)) return node;
+  if (typeof node.type === 'function') {
+    return withBorderBox((node.type as (props: unknown) => ReactNode)(node.props));
   }
-  const props =
-    node.props as {
-      style?: Record<
-        string,
-        unknown
-      >;
-      children?: ReactNode;
-    };
+  const props = node.props as {
+    style?: Record<string, unknown>;
+    children?: ReactNode;
+  };
   const style =
-    props.style &&
-    'boxSizing' in
-      props.style
+    props.style && 'boxSizing' in props.style
       ? props.style
       : {
-          boxSizing:
-            'border-box',
+          boxSizing: 'border-box',
           ...props.style,
         };
-  const children =
-    props.children ===
-    undefined
-      ? undefined
-      : withBorderBox(
-          props.children,
-        );
+  const children = props.children === undefined ? undefined : withBorderBox(props.children);
   return {
     ...node,
-    props:
-      {
-        ...props,
-        style,
-        ...(children ===
-        undefined
-          ? {}
-          : {
-              children,
-            }),
-      },
+    props: {
+      ...props,
+      style,
+      ...(children === undefined
+        ? {}
+        : {
+            children,
+          }),
+    },
   } as ReactNode;
 }
 
-export default function satori(
-  node: ReactNode,
-  options: SatoriOptions,
-): Promise<string> {
-  return renderSvg(
-    withBorderBox(
-      node,
-    ),
-    options,
-  );
+export default function satori(node: ReactNode, options: SatoriOptions): Promise<string> {
+  return renderSvg(withBorderBox(node), options);
 }

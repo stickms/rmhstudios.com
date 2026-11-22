@@ -66,12 +66,19 @@ export function importDndBeyond(json: unknown, d: Dnd5eData): Dnd5eCharacter | n
     c.speciesId = species.id;
     const opt = species.options?.choices.find((o) => slug(asStr(race.fullName)).includes(slug(o.name)));
     if (opt) c.speciesOption = opt.id;
-  } else if (race.fullName) c.custom.push({ id: newId(), name: asStr(race.fullName), text: 'Species from D&D Beyond.', kind: 'Species' });
+  } else if (race.fullName)
+    c.custom.push({ id: newId(), name: asStr(race.fullName), text: 'Species from D&D Beyond.', kind: 'Species' });
 
   const bgDef = isObj(x.background) && isObj(x.background.definition) ? x.background.definition : null;
   const bg = bgDef && matchByName(d.backgrounds, bgDef.name);
   if (bg) c.backgroundId = bg.id;
-  else if (bgDef) c.custom.push({ id: newId(), name: asStr(bgDef.name), text: stripHtml(asStr(bgDef.description)), kind: 'Background' });
+  else if (bgDef)
+    c.custom.push({
+      id: newId(),
+      name: asStr(bgDef.name),
+      text: stripHtml(asStr(bgDef.description)),
+      kind: 'Background',
+    });
 
   const classes = asArr(x.classes).filter(isObj);
   classes.sort((a, b) => Number(b.isStartingClass === true) - Number(a.isStartingClass === true));
@@ -80,7 +87,12 @@ export function importDndBeyond(json: unknown, d: Dnd5eData): Dnd5eCharacter | n
     const klass = matchByName(d.classes, def.name);
     const subDef = isObj(k.subclassDefinition) ? k.subclassDefinition : null;
     if (!klass) {
-      c.custom.push({ id: newId(), name: `${asStr(def.name)} ${asNum(k.level, 1)}`, text: 'Class from D&D Beyond.', kind: 'Class' });
+      c.custom.push({
+        id: newId(),
+        name: `${asStr(def.name)} ${asNum(k.level, 1)}`,
+        text: 'Class from D&D Beyond.',
+        kind: 'Class',
+      });
       continue;
     }
     const sub = subDef && matchByName(klass.subclasses, subDef.name);
@@ -99,16 +111,26 @@ export function importDndBeyond(json: unknown, d: Dnd5eData): Dnd5eCharacter | n
     if (feat?.category === 'origin') c.originFeats.push(feat.id);
     else if (feat?.category === 'fighting-style') c.choices['imported:fighting-style'] = feat.id;
     else if (feat) c.asi.push({ slot: `imported:${feat.id}`, kind: 'feat', featId: feat.id });
-    else c.custom.push({ id: newId(), name: asStr(def.name), text: stripHtml(asStr(def.description)).slice(0, 4000), kind: 'Feat' });
+    else
+      c.custom.push({
+        id: newId(),
+        name: asStr(def.name),
+        text: stripHtml(asStr(def.description)).slice(0, 4000),
+        kind: 'Feat',
+      });
   }
 
   const spellNames: { name: unknown; prepared: boolean }[] = [];
   for (const group of asArr(x.classSpells)) {
     if (!isObj(group)) continue;
-    for (const s of asArr(group.spells)) if (isObj(s) && isObj(s.definition)) spellNames.push({ name: s.definition.name, prepared: s.prepared === true || s.alwaysPrepared === true });
+    for (const s of asArr(group.spells))
+      if (isObj(s) && isObj(s.definition))
+        spellNames.push({ name: s.definition.name, prepared: s.prepared === true || s.alwaysPrepared === true });
   }
   const spellsBySource = isObj(x.spells) ? x.spells : {};
-  for (const list of Object.values(spellsBySource)) for (const s of asArr(list)) if (isObj(s) && isObj(s.definition)) spellNames.push({ name: s.definition.name, prepared: true });
+  for (const list of Object.values(spellsBySource))
+    for (const s of asArr(list))
+      if (isObj(s) && isObj(s.definition)) spellNames.push({ name: s.definition.name, prepared: true });
   for (const { name, prepared } of spellNames) {
     const spell = matchByName(d.spells, name);
     if (!spell) continue;
@@ -121,7 +143,14 @@ export function importDndBeyond(json: unknown, d: Dnd5eData): Dnd5eCharacter | n
     const def = it.definition;
     const ref = matchByName(d.weapons, def.name) ?? matchByName(d.armor, def.name) ?? matchByName(d.gear, def.name);
     const equipped = it.equipped === true;
-    c.inventory.push({ id: newId(), name: asStr(def.name), quantity: Math.max(1, asNum(it.quantity, 1)), weight: asNum(def.weight), equipped, ...(ref ? { refId: ref.id } : {}) });
+    c.inventory.push({
+      id: newId(),
+      name: asStr(def.name),
+      quantity: Math.max(1, asNum(it.quantity, 1)),
+      weight: asNum(def.weight),
+      equipped,
+      ...(ref ? { refId: ref.id } : {}),
+    });
     const armor = d.armor.find((a) => a.id === ref?.id);
     if (armor && equipped) {
       if (armor.category === 'shield') c.shield = true;
@@ -134,9 +163,16 @@ export function importDndBeyond(json: unknown, d: Dnd5eData): Dnd5eCharacter | n
   const notes = isObj(x.notes) ? x.notes : {};
   const traits = isObj(x.traits) ? x.traits : {};
   c.backstory = stripHtml(asStr(notes.backstory));
-  c.notes = [notes.allies, notes.organizations, notes.otherNotes, notes.otherHoldings].map(asStr).filter(Boolean).join('\n\n');
-  c.personality = [traits.personalityTraits, traits.ideals, traits.bonds, traits.flaws].map(asStr).filter(Boolean).join('\n\n');
-  c.appearance = asStr(traits.appearance) || [x.hair, x.eyes, x.skin, x.height, x.weight].map(asStr).filter(Boolean).join(', ');
+  c.notes = [notes.allies, notes.organizations, notes.otherNotes, notes.otherHoldings]
+    .map(asStr)
+    .filter(Boolean)
+    .join('\n\n');
+  c.personality = [traits.personalityTraits, traits.ideals, traits.bonds, traits.flaws]
+    .map(asStr)
+    .filter(Boolean)
+    .join('\n\n');
+  c.appearance =
+    asStr(traits.appearance) || [x.hair, x.eyes, x.skin, x.height, x.weight].map(asStr).filter(Boolean).join(', ');
   c.xp = asNum(x.currentXp);
   c.hp = { current: 0, temp: asNum(x.temporaryHitPoints) };
   c.heroicInspiration = x.inspiration === true;

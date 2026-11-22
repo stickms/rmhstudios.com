@@ -26,27 +26,15 @@ import {
   type RunRow,
 } from '@/lib/rmhtype/progress';
 
-const DAY_MS =
-  24 *
-  60 *
-  60 *
-  1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The match-side filter for a mode: `solo` is one-player runs, `races` is the rest. */
-function matchFilter(
-  mode: ProgressMode,
-): Prisma.RmhTypeMatchWhereInput {
-  if (
-    mode ===
-    'solo'
-  )
+function matchFilter(mode: ProgressMode): Prisma.RmhTypeMatchWhereInput {
+  if (mode === 'solo')
     return {
       isSolo: true,
     };
-  if (
-    mode ===
-    'races'
-  )
+  if (mode === 'races')
     return {
       isSolo: false,
     };
@@ -88,75 +76,36 @@ export async function getProgress(
     tz: string;
   },
 ): Promise<ProgressResult> {
-  const now =
-    Date.now();
-  const days =
-    RANGE_DAYS[
-      range
-    ];
-  const since =
-    days ===
-    null
-      ? null
-      : new Date(
-          now -
-            days *
-              DAY_MS,
-        );
-  const scanFrom =
-    days ===
-    null
-      ? null
-      : new Date(
-          now -
-            2 *
-              days *
-              DAY_MS,
-        );
+  const now = Date.now();
+  const days = RANGE_DAYS[range];
+  const since = days === null ? null : new Date(now - days * DAY_MS);
+  const scanFrom = days === null ? null : new Date(now - 2 * days * DAY_MS);
 
-  const [
-    rows,
-    dailyRows,
-    bestRows,
-  ] =
-    await Promise.all(
-      [
-        // The range and the one before it, for the summary and the change figure.
-        prisma.rmhTypeMatchPlayer.findMany(
-          {
-            where:
-              {
-                userId,
-                ...(scanFrom
-                  ? {
-                      createdAt:
-                        {
-                          gte: scanFrom,
-                        },
-                    }
-                  : {}),
-                match:
-                  matchFilter(
-                    mode,
-                  ),
+  const [rows, dailyRows, bestRows] = await Promise.all([
+    // The range and the one before it, for the summary and the change figure.
+    prisma.rmhTypeMatchPlayer.findMany({
+      where: {
+        userId,
+        ...(scanFrom
+          ? {
+              createdAt: {
+                gte: scanFrom,
               },
-            select:
-              {
-                createdAt: true,
-                wpm: true,
-                accuracy: true,
-              },
-            orderBy:
-              {
-                createdAt:
-                  'desc',
-              },
-            take: MAX_RUN_ROWS,
-          },
-        ),
-        prisma.$queryRaw<
-          DailyRow[]
-        >`
+            }
+          : {}),
+        match: matchFilter(mode),
+      },
+      select: {
+        createdAt: true,
+        wpm: true,
+        accuracy: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: MAX_RUN_ROWS,
+    }),
+    prisma.$queryRaw<DailyRow[]>`
       WITH runs AS (
         SELECT p."createdAt" AS at, p.wpm, p.accuracy
         FROM "rmhtype_match_player" p
@@ -175,9 +124,7 @@ export async function getProgress(
       GROUP BY 1
       ORDER BY 1 ASC
     `,
-        prisma.$queryRaw<
-          BestRow[]
-        >`
+    prisma.$queryRaw<BestRow[]>`
       WITH runs AS (
         SELECT p."createdAt" AS at, p.wpm, p.accuracy, m."passageLength", m.difficulty
         FROM "rmhtype_match_player" p
@@ -191,108 +138,42 @@ export async function getProgress(
       FROM runs
       ORDER BY "passageLength", difficulty, wpm DESC, accuracy DESC, at ASC
     `,
-      ],
-    );
+  ]);
 
-  const inRange =
-    rows.filter(
-      (
-        r,
-      ) =>
-        since ===
-          null ||
-        r.createdAt >=
-          since,
-    );
-  const before =
-    rows.filter(
-      (
-        r,
-      ) =>
-        since !==
-          null &&
-        r.createdAt <
-          since,
-    );
-  const summary =
-    summarizeRuns(
-      inRange.map(
-        (
-          r,
-        ) => ({
-          wpm: r.wpm,
-          accuracy:
-            r.accuracy,
-          at: r.createdAt.toISOString(),
-        }),
-      ),
-      before.map(
-        (
-          r,
-        ) =>
-          r.wpm,
-      ),
-    );
+  const inRange = rows.filter((r) => since === null || r.createdAt >= since);
+  const before = rows.filter((r) => since !== null && r.createdAt < since);
+  const summary = summarizeRuns(
+    inRange.map((r) => ({
+      wpm: r.wpm,
+      accuracy: r.accuracy,
+      at: r.createdAt.toISOString(),
+    })),
+    before.map((r) => r.wpm),
+  );
 
-  const daily: DailyPoint[] =
-    dailyRows.map(
-      (
-        r,
-      ) => ({
-        day: r.day,
-        runs: Number(
-          r.runs,
-        ),
-        wpm:
-          Math.round(
-            r.wpm *
-              10,
-          ) /
-          10,
-        accuracy:
-          Math.round(
-            r.accuracy *
-              10,
-          ) /
-          10,
-      }),
-    );
-  const shown =
-    capPoints(
-      daily,
-    );
+  const daily: DailyPoint[] = dailyRows.map((r) => ({
+    day: r.day,
+    runs: Number(r.runs),
+    wpm: Math.round(r.wpm * 10) / 10,
+    accuracy: Math.round(r.accuracy * 10) / 10,
+  }));
+  const shown = capPoints(daily);
 
   return {
-    daily:
-      shown,
-    truncated:
-      shown.length <
-      daily.length,
-    capped:
-      rows.length >=
-      MAX_RUN_ROWS,
+    daily: shown,
+    truncated: shown.length < daily.length,
+    capped: rows.length >= MAX_RUN_ROWS,
     summary,
-    bests:
-      bestsTable(
-        bestRows.map(
-          (
-            r,
-          ) => ({
-            passageLength:
-              r.passageLength,
-            difficulty:
-              r.difficulty,
-            wpm: r.wpm,
-            accuracy:
-              r.accuracy,
-            at: r.at.toISOString(),
-            cursor:
-              encodeRunCursor(
-                r.at.toISOString(),
-              ),
-          }),
-        ),
-      ),
+    bests: bestsTable(
+      bestRows.map((r) => ({
+        passageLength: r.passageLength,
+        difficulty: r.difficulty,
+        wpm: r.wpm,
+        accuracy: r.accuracy,
+        at: r.at.toISOString(),
+        cursor: encodeRunCursor(r.at.toISOString()),
+      })),
+    ),
   };
 }
 
@@ -304,141 +185,81 @@ export async function getRuns(
     cursor,
   }: {
     mode: ProgressMode;
-    cursor?:
-      | string
-      | undefined;
+    cursor?: string | undefined;
   },
 ): Promise<{
   runs: RunRow[];
-  nextCursor:
-    | string
-    | null;
+  nextCursor: string | null;
 }> {
-  const parsed =
-    cursor
-      ? parseRunCursor(
-          cursor,
-        )
-      : null;
-  const after: Prisma.RmhTypeMatchPlayerWhereInput =
-    parsed
-      ? parsed.id
-        ? {
-            OR: [
-              {
-                createdAt:
-                  {
-                    lt: parsed.at,
-                  },
-              },
-              {
-                createdAt:
-                  parsed.at,
-                id: {
-                  lt: parsed.id,
-                },
-              },
-            ],
-          }
-        : {
-            createdAt:
-              {
-                lte: parsed.at,
-              },
-          }
-      : {};
-
-  const rows =
-    await prisma.rmhTypeMatchPlayer.findMany(
-      {
-        where:
-          {
-            userId,
-            match:
-              matchFilter(
-                mode,
-              ),
-            ...after,
-          },
-        select:
-          {
-            id: true,
-            createdAt: true,
-            wpm: true,
-            accuracy: true,
-            rank: true,
-            match:
-              {
-                select:
-                  {
-                    isSolo: true,
-                    passageLength: true,
-                    difficulty: true,
-                  },
-              },
-          },
-        orderBy:
-          [
+  const parsed = cursor ? parseRunCursor(cursor) : null;
+  const after: Prisma.RmhTypeMatchPlayerWhereInput = parsed
+    ? parsed.id
+      ? {
+          OR: [
             {
-              createdAt:
-                'desc',
+              createdAt: {
+                lt: parsed.at,
+              },
             },
             {
-              id: 'desc',
+              createdAt: parsed.at,
+              id: {
+                lt: parsed.id,
+              },
             },
           ],
-        take:
-          RUNS_PAGE_SIZE +
-          1,
-      },
-    );
+        }
+      : {
+          createdAt: {
+            lte: parsed.at,
+          },
+        }
+    : {};
 
-  const page =
-    rows.slice(
-      0,
-      RUNS_PAGE_SIZE,
-    );
-  const last =
-    page[
-      page.length -
-        1
-    ];
+  const rows = await prisma.rmhTypeMatchPlayer.findMany({
+    where: {
+      userId,
+      match: matchFilter(mode),
+      ...after,
+    },
+    select: {
+      id: true,
+      createdAt: true,
+      wpm: true,
+      accuracy: true,
+      rank: true,
+      match: {
+        select: {
+          isSolo: true,
+          passageLength: true,
+          difficulty: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        createdAt: 'desc',
+      },
+      {
+        id: 'desc',
+      },
+    ],
+    take: RUNS_PAGE_SIZE + 1,
+  });
+
+  const page = rows.slice(0, RUNS_PAGE_SIZE);
+  const last = page[page.length - 1];
   return {
-    runs: page.map(
-      (
-        r,
-      ) => ({
-        id: r.id,
-        at: r.createdAt.toISOString(),
-        solo: r
-          .match
-          .isSolo,
-        passageLength:
-          r
-            .match
-            .passageLength,
-        difficulty:
-          r
-            .match
-            .difficulty,
-        wpm: r.wpm,
-        accuracy:
-          r.accuracy,
-        rank: r
-          .match
-          .isSolo
-          ? null
-          : r.rank,
-      }),
-    ),
-    nextCursor:
-      rows.length >
-        RUNS_PAGE_SIZE &&
-      last
-        ? encodeRunCursor(
-            last.createdAt.toISOString(),
-            last.id,
-          )
-        : null,
+    runs: page.map((r) => ({
+      id: r.id,
+      at: r.createdAt.toISOString(),
+      solo: r.match.isSolo,
+      passageLength: r.match.passageLength,
+      difficulty: r.match.difficulty,
+      wpm: r.wpm,
+      accuracy: r.accuracy,
+      rank: r.match.isSolo ? null : r.rank,
+    })),
+    nextCursor: rows.length > RUNS_PAGE_SIZE && last ? encodeRunCursor(last.createdAt.toISOString(), last.id) : null,
   };
 }

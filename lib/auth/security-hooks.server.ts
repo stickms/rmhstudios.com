@@ -17,10 +17,7 @@
  */
 
 import type { createAuthMiddleware } from 'better-auth/api';
-import {
-  recordSecurityEvent,
-  type RecordSecurityEventInput,
-} from '@/lib/auth/security-log.server';
+import { recordSecurityEvent, type RecordSecurityEventInput } from '@/lib/auth/security-log.server';
 import type { SecurityEventKind } from '@/lib/auth/security-log';
 
 type AuthHookContext = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
@@ -55,10 +52,7 @@ const actors = new WeakMap<Request, Actor | null>();
 export async function captureSecurityActor(ctx: AuthHookContext): Promise<void> {
   try {
     if (!ctx.request || !(ctx.path in AUTH_PATH_EVENTS)) return;
-    const token = await ctx.getSignedCookie(
-      ctx.context.authCookies.sessionToken.name,
-      ctx.context.secret,
-    );
+    const token = await ctx.getSignedCookie(ctx.context.authCookies.sessionToken.name, ctx.context.secret);
     const found = token ? await ctx.context.internalAdapter.findSession(token) : null;
     if (!found) {
       actors.set(ctx.request, null);
@@ -67,10 +61,7 @@ export async function captureSecurityActor(ctx: AuthHookContext): Promise<void> 
     const actor: Actor = { userId: found.user.id, sessionId: found.session.id };
     if (ctx.path === '/revoke-session') {
       const body = ctx.body as { token?: unknown } | undefined;
-      const target =
-        typeof body?.token === 'string'
-          ? await ctx.context.internalAdapter.findSession(body.token)
-          : null;
+      const target = typeof body?.token === 'string' ? await ctx.context.internalAdapter.findSession(body.token) : null;
       if (target && target.session.userId === found.user.id) {
         actor.revokedSessionId = target.session.id;
         actor.revokedDevice = (target.session as { deviceFp?: string | null }).deviceFp ?? null;

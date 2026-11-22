@@ -193,7 +193,11 @@ export function useSavedReplies({
     popover,
     onKeyDown,
     fieldProps: popoverOpen
-      ? { 'aria-expanded': true, 'aria-controls': listboxId, 'aria-activedescendant': `saved-reply-option-${highlight}` }
+      ? {
+          'aria-expanded': true,
+          'aria-controls': listboxId,
+          'aria-activedescendant': `saved-reply-option-${highlight}`,
+        }
       : { 'aria-expanded': false },
   };
 }

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  allowedActions,
-  replayGameTitle,
-  replayKind,
-  visibilityChangeRefusal,
-} from '@/lib/game/replay-library';
+import { allowedActions, replayGameTitle, replayKind, visibilityChangeRefusal } from '@/lib/game/replay-library';
 
 describe('replay kind', () => {
   it('is a speedrun proof whenever a speedrun entry points at it, even a ghost game', () => {

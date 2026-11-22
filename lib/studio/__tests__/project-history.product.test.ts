@@ -60,7 +60,12 @@ describe('overflowByCount', () => {
 describe('overflowByBytes', () => {
   const half = MAX_VERSION_BYTES_PER_MEMBER / 2;
   it('drops nothing under the cap', () => {
-    expect(overflowByBytes([{ id: 'a', sizeBytes: half, savedAt: 1 }, { id: 'b', sizeBytes: half, savedAt: 2 }])).toEqual([]);
+    expect(
+      overflowByBytes([
+        { id: 'a', sizeBytes: half, savedAt: 1 },
+        { id: 'b', sizeBytes: half, savedAt: 2 },
+      ]),
+    ).toEqual([]);
   });
   it('drops the oldest across projects until under the cap', () => {
     const rows = [

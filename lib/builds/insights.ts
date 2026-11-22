@@ -56,7 +56,9 @@ export const EMPTY_COUNTS: BuildDayCounts = { views: 0, likes: 0, comments: 0, u
 
 export function parseRange(value: string | undefined): BuildInsightRange {
   const n = Number(value);
-  return (BUILD_INSIGHT_RANGES as readonly number[]).includes(n) ? (n as BuildInsightRange) : DEFAULT_BUILD_INSIGHT_RANGE;
+  return (BUILD_INSIGHT_RANGES as readonly number[]).includes(n)
+    ? (n as BuildInsightRange)
+    : DEFAULT_BUILD_INSIGHT_RANGE;
 }
 
 /** Per-day counts keyed by UTC day, as the queries return them. */

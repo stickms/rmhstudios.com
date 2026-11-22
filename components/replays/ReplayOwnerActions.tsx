@@ -139,9 +139,7 @@ export function ReplayOwnerActions({
         </p>
       ) : null}
       {actions.lock === 'ghost' ? (
-        <p className="t-meta max-w-prose">
-          {t('lock-ghost', { defaultValue: 'A race ghost is always unlisted.' })}
-        </p>
+        <p className="t-meta max-w-prose">{t('lock-ghost', { defaultValue: 'A race ghost is always unlisted.' })}</p>
       ) : null}
     </div>
   );

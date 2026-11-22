@@ -29,10 +29,7 @@ import {
   type Outcome,
 } from './clipboard';
 import type { GeneratePlan } from './generate';
-import {
-  EMPTY_LINT,
-  type LintResult,
-} from './lint';
+import { EMPTY_LINT, type LintResult } from './lint';
 import { singleTimingPoint } from './types';
 import type {
   Charts,
@@ -55,11 +52,7 @@ export const BASE_PIXELS_PER_SECOND = 260;
 export const MIN_ZOOM = 0.15;
 export const MAX_ZOOM = 6;
 
-export type LoadState =
-  | 'idle'
-  | 'loading'
-  | 'ready'
-  | 'error';
+export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface EditorSong {
   id: string;
@@ -74,15 +67,8 @@ export interface EditorLoadPayload {
   song: EditorSong;
   keys: number;
   charts: Charts;
-  chartIds: Record<
-    Difficulty,
-    | string
-    | null
-  >;
-  chartStatus: Record<
-    Difficulty,
-    string
-  >;
+  chartIds: Record<Difficulty, string | null>;
+  chartStatus: Record<Difficulty, string>;
   timingPoints: TimingPoint[];
   svPoints: SvPoint[];
 }
@@ -91,16 +77,9 @@ interface EditorState {
   /* ── Document ─────────────────────────────────────────────────────────── */
   song: EditorSong | null;
   keys: number;
-  chartIds: Record<
-    Difficulty,
-    | string
-    | null
-  >;
+  chartIds: Record<Difficulty, string | null>;
   /** `'draft' | 'public'` per difficulty — the publish gate's other half (§9). */
-  chartStatus: Record<
-    Difficulty,
-    string
-  >;
+  chartStatus: Record<Difficulty, string>;
   /**
    * All four difficulties, always. The nesting invariant (§7.2) is a
    * cross-difficulty property, so the editor cannot hold one at a time.
@@ -112,13 +91,9 @@ interface EditorState {
 
   /* ── Lifecycle ────────────────────────────────────────────────────────── */
   loadState: LoadState;
-  error:
-    | string
-    | null;
+  error: string | null;
   saving: boolean;
-  lastSavedAt:
-    | number
-    | null;
+  lastSavedAt: number | null;
 
   /* ── View ─────────────────────────────────────────────────────────────── */
   /**
@@ -214,12 +189,8 @@ interface EditorState {
   lastSavedRevision: number;
 
   /* ── Actions ──────────────────────────────────────────────────────────── */
-  load: (
-    payload: EditorLoadPayload,
-  ) => void;
-  fail: (
-    message: string,
-  ) => void;
+  load: (payload: EditorLoadPayload) => void;
+  fail: (message: string) => void;
   apply: (
     command: Command | null,
     options?: {
@@ -228,80 +199,37 @@ interface EditorState {
   ) => void;
   undo: () => void;
   redo: () => void;
-  setActive: (
-    difficulty: Difficulty,
-  ) => void;
-  setPlayhead: (
-    seconds: number,
-  ) => void;
-  setZoom: (
-    zoom: number,
-  ) => void;
-  setPlaying: (
-    playing: boolean,
-  ) => void;
-  setPlaybackRate: (
-    rate: number,
-  ) => void;
+  setActive: (difficulty: Difficulty) => void;
+  setPlayhead: (seconds: number) => void;
+  setZoom: (zoom: number) => void;
+  setPlaying: (playing: boolean) => void;
+  setPlaybackRate: (rate: number) => void;
   setLoop: (
     loop: {
       start: number;
       end: number;
     } | null,
   ) => void;
-  setPlaytesting: (
-    playtesting: boolean,
-  ) => void;
-  setPreview: (
-    preview: GeneratePlan | null,
-  ) => void;
-  setTimingPoints: (
-    points: TimingPoint[],
-  ) => void;
-  setSvPoints: (
-    points: SvPoint[],
-  ) => void;
-  setArtefacts: (
-    artefacts: EditorArtefacts | null,
-  ) => void;
-  setShowGhosts: (
-    show: boolean,
-  ) => void;
-  setLint: (
-    lint: LintResult,
-  ) => void;
+  setPlaytesting: (playtesting: boolean) => void;
+  setPreview: (preview: GeneratePlan | null) => void;
+  setTimingPoints: (points: TimingPoint[]) => void;
+  setSvPoints: (points: SvPoint[]) => void;
+  setArtefacts: (artefacts: EditorArtefacts | null) => void;
+  setShowGhosts: (show: boolean) => void;
+  setLint: (lint: LintResult) => void;
   setLintFocus: (
     focus: {
       code: string;
       time: number;
     } | null,
   ) => void;
-  setChartStatus: (
-    difficulty: Difficulty,
-    status: string,
-  ) => void;
-  setTool: (
-    tool: EditorTool,
-  ) => void;
-  setSnap: (
-    snap: SnapDivision,
-  ) => void;
-  setSnapEnabled: (
-    enabled: boolean,
-  ) => void;
-  setPlaceType: (
-    type: SliceType,
-  ) => void;
-  setNestingMode: (
-    mode: NestingMode,
-  ) => void;
-  setSelection: (
-    ids: readonly string[],
-    mode?:
-      | 'replace'
-      | 'add'
-      | 'toggle',
-  ) => void;
+  setChartStatus: (difficulty: Difficulty, status: string) => void;
+  setTool: (tool: EditorTool) => void;
+  setSnap: (snap: SnapDivision) => void;
+  setSnapEnabled: (enabled: boolean) => void;
+  setPlaceType: (type: SliceType) => void;
+  setNestingMode: (mode: NestingMode) => void;
+  setSelection: (ids: readonly string[], mode?: 'replace' | 'add' | 'toggle') => void;
   clearSelection: () => void;
   selectAll: () => void;
   /**
@@ -317,9 +245,7 @@ interface EditorState {
   scaleTiming: (percent: number) => ClipboardResult;
   insertTime: () => ClipboardResult;
   removeTime: () => ClipboardResult;
-  setSaving: (
-    saving: boolean,
-  ) => void;
+  setSaving: (saving: boolean) => void;
   /**
    * Record that the document as of `revision` reached the server.
    *
@@ -329,990 +255,412 @@ interface EditorState {
    * and clearing its `dirty` flag would drop that edit on the floor: the next
    * autosave would find nothing pending and mark the whole document saved.
    */
-  markSaved: (
-    revision: number,
-    saved: Partial<
-      Record<
-        Difficulty,
-        readonly EditorNote[]
-      >
-    >,
-  ) => void;
+  markSaved: (revision: number, saved: Partial<Record<Difficulty, readonly EditorNote[]>>) => void;
   reset: () => void;
 }
 
-export function emptyChart(
-  difficulty: Difficulty,
-  keys = 2,
-): EditorChart {
+export function emptyChart(difficulty: Difficulty, keys = 2): EditorChart {
   return {
     difficulty,
     keys,
-    name:
-      difficulty
-        .charAt(
-          0,
-        )
-        .toUpperCase() +
-      difficulty.slice(
-        1,
-      ),
-    notes:
-      [],
+    name: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
+    notes: [],
     dirty: false,
-    rating:
-      null,
+    rating: null,
   };
 }
 
-export function emptyCharts(
-  keys = 2,
-): Charts {
+export function emptyCharts(keys = 2): Charts {
   return {
-    easy: emptyChart(
-      'easy',
-      keys,
-    ),
-    normal:
-      emptyChart(
-        'normal',
-        keys,
-      ),
-    hard: emptyChart(
-      'hard',
-      keys,
-    ),
-    expert:
-      emptyChart(
-        'expert',
-        keys,
-      ),
+    easy: emptyChart('easy', keys),
+    normal: emptyChart('normal', keys),
+    hard: emptyChart('hard', keys),
+    expert: emptyChart('expert', keys),
   };
 }
 
-const initial =
-  {
-    song: null,
-    keys: 2,
-    chartIds:
-      {
-        easy: null,
-        normal:
-          null,
-        hard: null,
-        expert:
-          null,
-      } as Record<
-        Difficulty,
-        | string
-        | null
-      >,
-    chartStatus:
-      {
-        easy: 'draft',
-        normal:
-          'draft',
-        hard: 'draft',
-        expert:
-          'draft',
-      } as Record<
-        Difficulty,
-        string
-      >,
-    charts:
-      emptyCharts(),
-    active:
-      'normal' as Difficulty,
-    timingPoints:
-      singleTimingPoint(
-        120,
-      ),
-    svPoints:
-      [] as SvPoint[],
-    loadState:
-      'idle' as LoadState,
-    error:
-      null as
-        | string
-        | null,
-    saving: false,
-    lastSavedAt:
-      null as
-        | number
-        | null,
-    playhead: 0,
-    zoom: 1,
-    playing: false,
-    playbackRate: 1,
-    loop: null,
-    playtesting: false,
-    preview:
-      null as GeneratePlan | null,
-    artefacts:
-      null as EditorArtefacts | null,
-    showGhosts: true,
-    lint: EMPTY_LINT,
-    lintFocus:
-      null as {
-        code: string;
-        time: number;
-      } | null,
-    tool: 'select' as EditorTool,
-    snap: 4 as SnapDivision,
-    snapEnabled: true,
-    placeType:
-      'STANDARD' as SliceType,
-    nestingMode:
-      'cascade' as NestingMode,
-    clipboard:
-      null as ClipboardData | null,
-    undoStack:
-      [] as Command[],
-    redoStack:
-      [] as Command[],
-    revision: 0,
-    lastSavedRevision: 0,
-  };
+const initial = {
+  song: null,
+  keys: 2,
+  chartIds: {
+    easy: null,
+    normal: null,
+    hard: null,
+    expert: null,
+  } as Record<Difficulty, string | null>,
+  chartStatus: {
+    easy: 'draft',
+    normal: 'draft',
+    hard: 'draft',
+    expert: 'draft',
+  } as Record<Difficulty, string>,
+  charts: emptyCharts(),
+  active: 'normal' as Difficulty,
+  timingPoints: singleTimingPoint(120),
+  svPoints: [] as SvPoint[],
+  loadState: 'idle' as LoadState,
+  error: null as string | null,
+  saving: false,
+  lastSavedAt: null as number | null,
+  playhead: 0,
+  zoom: 1,
+  playing: false,
+  playbackRate: 1,
+  loop: null,
+  playtesting: false,
+  preview: null as GeneratePlan | null,
+  artefacts: null as EditorArtefacts | null,
+  showGhosts: true,
+  lint: EMPTY_LINT,
+  lintFocus: null as {
+    code: string;
+    time: number;
+  } | null,
+  tool: 'select' as EditorTool,
+  snap: 4 as SnapDivision,
+  snapEnabled: true,
+  placeType: 'STANDARD' as SliceType,
+  nestingMode: 'cascade' as NestingMode,
+  clipboard: null as ClipboardData | null,
+  undoStack: [] as Command[],
+  redoStack: [] as Command[],
+  revision: 0,
+  lastSavedRevision: 0,
+};
 
 /** Rewrite `selected` across the active chart without touching `dirty`. */
-function reselect(
-  charts: Charts,
-  difficulty: Difficulty,
-  next: (
-    note: EditorNote,
-  ) => boolean,
-): Charts {
-  const chart =
-    charts[
-      difficulty
-    ];
+function reselect(charts: Charts, difficulty: Difficulty, next: (note: EditorNote) => boolean): Charts {
+  const chart = charts[difficulty];
   let changed = false;
-  const notes =
-    chart.notes.map(
-      (
-        note,
-      ) => {
-        const selected =
-          next(
-            note,
-          );
-        if (
-          Boolean(
-            note.selected,
-          ) ===
-          selected
-        )
-          return note;
-        changed = true;
-        return selected
-          ? {
-              ...note,
-              selected: true,
-            }
-          : {
-              ...note,
-              selected: false,
-            };
-      },
-    );
-  if (
-    !changed
-  )
-    return charts;
+  const notes = chart.notes.map((note) => {
+    const selected = next(note);
+    if (Boolean(note.selected) === selected) return note;
+    changed = true;
+    return selected
+      ? {
+          ...note,
+          selected: true,
+        }
+      : {
+          ...note,
+          selected: false,
+        };
+  });
+  if (!changed) return charts;
   // Deliberately NOT `withNotes`: selection is view state. Marking the chart
   // dirty here would make clicking a note schedule an autosave.
   return {
     ...charts,
-    [difficulty]:
-      {
-        ...chart,
-        notes,
-      },
+    [difficulty]: {
+      ...chart,
+      notes,
+    },
   };
 }
 
-export const useEditorStore =
-  create<EditorState>()(
-    (
-      set,
-      get,
-    ) => ({
-      ...initial,
+export const useEditorStore = create<EditorState>()((set, get) => ({
+  ...initial,
 
-      load: (
-        payload,
-      ) =>
-        set(
-          {
-            song: payload.song,
-            keys: payload.keys,
-            charts:
-              payload.charts,
-            chartIds:
-              payload.chartIds,
-            chartStatus:
-              payload.chartStatus,
-            timingPoints:
-              payload
-                .timingPoints
-                .length >
-              0
-                ? payload.timingPoints
-                : singleTimingPoint(
-                    payload
-                      .song
-                      .bpm,
-                  ),
-            svPoints:
-              payload.svPoints,
-            loadState:
-              'ready',
-            error:
-              null,
-            undoStack:
-              [],
-            redoStack:
-              [],
-            revision: 0,
-            lastSavedRevision: 0,
-            playhead: 0,
-            // Revisions restart at 0 for a new document, so a stale result from the
-            // previous one would out-rank every result this document produces and the
-            // panel would show another song's findings forever.
-            lint: EMPTY_LINT,
-            lintFocus:
-              null,
-            artefacts:
-              null,
-          },
-        ),
-
-      fail: (
-        message,
-      ) =>
-        set(
-          {
-            loadState:
-              'error',
-            error:
-              message,
-          },
-        ),
-
-      /**
-       * Every mutation goes through here. Nothing sets `charts` directly.
-       *
-       * That is the whole reason undo works: a command knows how to invert itself,
-       * so the stack holds intentions rather than snapshots. Snapshotting 1200 notes
-       * on every note placement would be 90 KB per keystroke.
-       *
-       * `merge` is what a drag passes. The state still advances by the incremental
-       * command; only the STACK ENTRY is replaced by the merged one, whose inverse
-       * lands back where the gesture started.
-       */
-      apply:
-        (
-          command,
-          options,
-        ) =>
-          set(
-            (
-              state,
-            ) => {
-              if (
-                !command
-              )
-                return state;
-              const charts =
-                command.apply(
-                  state.charts,
-                );
-              const previous =
-                state.undoStack.at(
-                  -1,
-                );
-              const merged =
-                options?.merge &&
-                previous
-                  ? (command.mergeWith?.(
-                      previous,
-                    ) ??
-                    null)
-                  : null;
-              const undoStack =
-                merged
-                  ? [
-                      ...state.undoStack.slice(
-                        0,
-                        -1,
-                      ),
-                      merged,
-                    ]
-                  : [
-                      ...state.undoStack,
-                      command,
-                    ].slice(
-                      -HISTORY_LIMIT,
-                    );
-              // Any edit invalidates a pending preview: the plan was computed against the
-              // chart as it was, so applying it afterwards would silently revert the edit
-              // that has just landed.
-              return {
-                charts,
-                ...timingPatch(
-                  state,
-                  command,
-                  'apply',
-                ),
-                undoStack,
-                redoStack:
-                  [],
-                revision:
-                  state.revision +
-                  1,
-                preview:
-                  null,
-              };
-            },
-          ),
-
-      undo: () =>
-        set(
-          (
-            state,
-          ) => {
-            const command =
-              state.undoStack.at(
-                -1,
-              );
-            if (
-              !command
-            )
-              return state;
-            return {
-              charts:
-                command.invert(
-                  state.charts,
-                ),
-              ...timingPatch(
-                state,
-                command,
-                'invert',
-              ),
-              undoStack:
-                state.undoStack.slice(
-                  0,
-                  -1,
-                ),
-              redoStack:
-                [
-                  ...state.redoStack,
-                  command,
-                ],
-              revision:
-                state.revision +
-                1,
-              preview:
-                null,
-            };
-          },
-        ),
-
-      redo: () =>
-        set(
-          (
-            state,
-          ) => {
-            const command =
-              state.redoStack.at(
-                -1,
-              );
-            if (
-              !command
-            )
-              return state;
-            return {
-              charts:
-                command.apply(
-                  state.charts,
-                ),
-              ...timingPatch(
-                state,
-                command,
-                'apply',
-              ),
-              undoStack:
-                [
-                  ...state.undoStack,
-                  command,
-                ],
-              redoStack:
-                state.redoStack.slice(
-                  0,
-                  -1,
-                ),
-              revision:
-                state.revision +
-                1,
-              preview:
-                null,
-            };
-          },
-        ),
-
-      setActive:
-        (
-          difficulty,
-        ) =>
-          set(
-            {
-              active:
-                difficulty,
-            },
-          ),
-      setPlayhead:
-        (
-          seconds,
-        ) =>
-          set(
-            (
-              state,
-            ) => ({
-              playhead:
-                Math.max(
-                  0,
-                  Math.min(
-                    state
-                      .song
-                      ?.duration ??
-                      Number.MAX_SAFE_INTEGER,
-                    seconds,
-                  ),
-                ),
-            }),
-          ),
-      setZoom:
-        (
-          zoom,
-        ) =>
-          set(
-            {
-              zoom: Math.max(
-                MIN_ZOOM,
-                Math.min(
-                  MAX_ZOOM,
-                  zoom,
-                ),
-              ),
-            },
-          ),
-      setPlaying:
-        (
-          playing,
-        ) =>
-          set(
-            {
-              playing,
-            },
-          ),
-      setPlaybackRate:
-        (
-          rate,
-        ) =>
-          set(
-            {
-              playbackRate:
-                Math.max(
-                  0.25,
-                  Math.min(
-                    2,
-                    rate,
-                  ),
-                ),
-            },
-          ),
-      setLoop:
-        (
-          loop,
-        ) =>
-          set(
-            loop &&
-              loop.end >
-                loop.start
-              ? {
-                  loop: {
-                    start:
-                      loop.start,
-                    end: loop.end,
-                  },
-                }
-              : {
-                  loop: null,
-                },
-          ),
-      setPlaytesting:
-        (
-          playtesting,
-        ) =>
-          set(
-            {
-              playtesting,
-            },
-          ),
-      setPreview:
-        (
-          preview,
-        ) =>
-          set(
-            {
-              preview,
-            },
-          ),
-      /**
-       * Timing and SV edits (§4.2, phase 8).
-       *
-       * They mark every difficulty dirty, not just the open one: the timing map is
-       * a property of the SONG, but it is stored on each `Chart` row, so a change
-       * that only saved the open tier would leave the other three describing a grid
-       * that no longer exists. They deliberately do NOT go through the command
-       * stack — undo operates on notes, and a timing map that could be undone
-       * independently of the notes snapped to it is a chart that silently comes
-       * apart. The request to extend the stack to cover them is in
-       * `docs/_handoff/editor-phase678-requests.md`.
-       */
-      setTimingPoints:
-        (
-          timingPoints,
-        ) =>
-          set(
-            (
-              state,
-            ) => ({
-              timingPoints,
-              charts:
-                markAllDirty(
-                  state.charts,
-                ),
-              revision:
-                state.revision +
-                1,
-            }),
-          ),
-      setSvPoints:
-        (
-          svPoints,
-        ) =>
-          set(
-            (
-              state,
-            ) => ({
-              svPoints,
-              charts:
-                markAllDirty(
-                  state.charts,
-                ),
-              revision:
-                state.revision +
-                1,
-            }),
-          ),
-      setArtefacts:
-        (
-          artefacts,
-        ) =>
-          set(
-            {
-              artefacts,
-            },
-          ),
-      setShowGhosts:
-        (
-          showGhosts,
-        ) =>
-          set(
-            {
-              showGhosts,
-            },
-          ),
-      /**
-       * A result older than the one already held is dropped.
-       *
-       * The runner coalesces, but a worker message and a `flush()` on the main
-       * thread can still cross: without this, clicking Publish (which flushes) and
-       * then receiving the older worker reply would restore the findings the flush
-       * had just superseded, and the button would flicker between enabled and not.
-       */
-      setLint:
-        (
-          lint,
-        ) =>
-          set(
-            (
-              state,
-            ) =>
-              lint.revision <
-              state
-                .lint
-                .revision
-                ? state
-                : {
-                    lint,
-                  },
-          ),
-      setLintFocus:
-        (
-          lintFocus,
-        ) =>
-          set(
-            {
-              lintFocus,
-            },
-          ),
-      setChartStatus:
-        (
-          difficulty,
-          status,
-        ) =>
-          set(
-            (
-              state,
-            ) => ({
-              chartStatus:
-                {
-                  ...state.chartStatus,
-                  [difficulty]:
-                    status,
-                },
-            }),
-          ),
-      setTool:
-        (
-          tool,
-        ) =>
-          set(
-            {
-              tool,
-            },
-          ),
-      setSnap:
-        (
-          snap,
-        ) =>
-          set(
-            {
-              snap,
-            },
-          ),
-      setSnapEnabled:
-        (
-          snapEnabled,
-        ) =>
-          set(
-            {
-              snapEnabled,
-            },
-          ),
-      setPlaceType:
-        (
-          placeType,
-        ) =>
-          set(
-            {
-              placeType,
-            },
-          ),
-      setNestingMode:
-        (
-          nestingMode,
-        ) =>
-          set(
-            {
-              nestingMode,
-            },
-          ),
-
-      setSelection:
-        (
-          ids,
-          mode = 'replace',
-        ) =>
-          set(
-            (
-              state,
-            ) => {
-              const set_ =
-                new Set(
-                  ids,
-                );
-              const predicate =
-                mode ===
-                'replace'
-                  ? (
-                      note: EditorNote,
-                    ) =>
-                      set_.has(
-                        note.id,
-                      )
-                  : mode ===
-                      'add'
-                    ? (
-                        note: EditorNote,
-                      ) =>
-                        set_.has(
-                          note.id,
-                        ) ||
-                        Boolean(
-                          note.selected,
-                        )
-                    : (
-                        note: EditorNote,
-                      ) =>
-                        set_.has(
-                          note.id,
-                        )
-                          ? !note.selected
-                          : Boolean(
-                              note.selected,
-                            );
-              return {
-                charts:
-                  reselect(
-                    state.charts,
-                    state.active,
-                    predicate,
-                  ),
-              };
-            },
-          ),
-
-      clearSelection:
-        () =>
-          set(
-            (
-              state,
-            ) => ({
-              charts:
-                reselect(
-                  state.charts,
-                  state.active,
-                  () =>
-                    false,
-                ),
-            }),
-          ),
-      selectAll:
-        () =>
-          set(
-            (
-              state,
-            ) => ({
-              charts:
-                reselect(
-                  state.charts,
-                  state.active,
-                  () =>
-                    true,
-                ),
-            }),
-          ),
-
-      copy: () => {
-        const state =
-          get();
-        const clip =
-          copySelection(
-            selectionOf(
-              editContext(
-                state,
-              ),
-            ),
-            state.keys,
-          );
-        if (
-          !clip
-        )
-          return {
-            code: 'nothing-selected',
-          };
-        set(
-          {
-            clipboard:
-              clip,
-          },
-        );
-        return {
-          code: 'copied',
-          count:
-            clip
-              .notes
-              .length,
-        };
-      },
-      cut: () => {
-        const outcome =
-          cutSelection(
-            editContext(
-              get(),
-            ),
-          );
-        if (
-          outcome.clipboard
-        )
-          set(
-            {
-              clipboard:
-                outcome.clipboard,
-            },
-          );
-        return commit(
-          get,
-          outcome,
-        );
-      },
-      paste: (
-        mirrored = false,
-      ) => {
-        const state =
-          get();
-        return commit(
-          get,
-          pasteAt(
-            editContext(
-              state,
-            ),
-            state.clipboard,
-            mirrored,
-          ),
-        );
-      },
-      duplicate:
-        () =>
-          commit(
-            get,
-            duplicateSelection(
-              editContext(
-                get(),
-              ),
-            ),
-          ),
-      mirror:
-        () =>
-          commit(
-            get,
-            mirrorLanes(
-              editContext(
-                get(),
-              ),
-            ),
-          ),
-      quantize:
-        () =>
-          commit(
-            get,
-            quantizeSelection(
-              editContext(
-                get(),
-              ),
-            ),
-          ),
-      scaleTiming:
-        (
-          percent,
-        ) =>
-          commit(
-            get,
-            scaleSelection(
-              editContext(
-                get(),
-              ),
-              percent,
-            ),
-          ),
-      insertTime:
-        () =>
-          commit(
-            get,
-            insertTimeOp(
-              editContext(
-                get(),
-              ),
-            ),
-          ),
-      removeTime:
-        () =>
-          commit(
-            get,
-            removeTimeOp(
-              editContext(
-                get(),
-              ),
-            ),
-          ),
-
-      setSaving:
-        (
-          saving,
-        ) =>
-          set(
-            {
-              saving,
-            },
-          ),
-      markSaved:
-        (
-          revision,
-          saved,
-        ) =>
-          set(
-            (
-              state,
-            ) => ({
-              lastSavedRevision:
-                revision,
-              lastSavedAt:
-                Date.now(),
-              saving: false,
-              charts:
-                markClean(
-                  state.charts,
-                  saved,
-                ),
-            }),
-          ),
-
-      reset:
-        () =>
-          set(
-            {
-              ...initial,
-              charts:
-                emptyCharts(),
-            },
-          ),
+  load: (payload) =>
+    set({
+      song: payload.song,
+      keys: payload.keys,
+      charts: payload.charts,
+      chartIds: payload.chartIds,
+      chartStatus: payload.chartStatus,
+      timingPoints: payload.timingPoints.length > 0 ? payload.timingPoints : singleTimingPoint(payload.song.bpm),
+      svPoints: payload.svPoints,
+      loadState: 'ready',
+      error: null,
+      undoStack: [],
+      redoStack: [],
+      revision: 0,
+      lastSavedRevision: 0,
+      playhead: 0,
+      // Revisions restart at 0 for a new document, so a stale result from the
+      // previous one would out-rank every result this document produces and the
+      // panel would show another song's findings forever.
+      lint: EMPTY_LINT,
+      lintFocus: null,
+      artefacts: null,
     }),
-  );
+
+  fail: (message) =>
+    set({
+      loadState: 'error',
+      error: message,
+    }),
+
+  /**
+   * Every mutation goes through here. Nothing sets `charts` directly.
+   *
+   * That is the whole reason undo works: a command knows how to invert itself,
+   * so the stack holds intentions rather than snapshots. Snapshotting 1200 notes
+   * on every note placement would be 90 KB per keystroke.
+   *
+   * `merge` is what a drag passes. The state still advances by the incremental
+   * command; only the STACK ENTRY is replaced by the merged one, whose inverse
+   * lands back where the gesture started.
+   */
+  apply: (command, options) =>
+    set((state) => {
+      if (!command) return state;
+      const charts = command.apply(state.charts);
+      const previous = state.undoStack.at(-1);
+      const merged = options?.merge && previous ? (command.mergeWith?.(previous) ?? null) : null;
+      const undoStack = merged
+        ? [...state.undoStack.slice(0, -1), merged]
+        : [...state.undoStack, command].slice(-HISTORY_LIMIT);
+      // Any edit invalidates a pending preview: the plan was computed against the
+      // chart as it was, so applying it afterwards would silently revert the edit
+      // that has just landed.
+      return {
+        charts,
+        ...timingPatch(state, command, 'apply'),
+        undoStack,
+        redoStack: [],
+        revision: state.revision + 1,
+        preview: null,
+      };
+    }),
+
+  undo: () =>
+    set((state) => {
+      const command = state.undoStack.at(-1);
+      if (!command) return state;
+      return {
+        charts: command.invert(state.charts),
+        ...timingPatch(state, command, 'invert'),
+        undoStack: state.undoStack.slice(0, -1),
+        redoStack: [...state.redoStack, command],
+        revision: state.revision + 1,
+        preview: null,
+      };
+    }),
+
+  redo: () =>
+    set((state) => {
+      const command = state.redoStack.at(-1);
+      if (!command) return state;
+      return {
+        charts: command.apply(state.charts),
+        ...timingPatch(state, command, 'apply'),
+        undoStack: [...state.undoStack, command],
+        redoStack: state.redoStack.slice(0, -1),
+        revision: state.revision + 1,
+        preview: null,
+      };
+    }),
+
+  setActive: (difficulty) =>
+    set({
+      active: difficulty,
+    }),
+  setPlayhead: (seconds) =>
+    set((state) => ({
+      playhead: Math.max(0, Math.min(state.song?.duration ?? Number.MAX_SAFE_INTEGER, seconds)),
+    })),
+  setZoom: (zoom) =>
+    set({
+      zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom)),
+    }),
+  setPlaying: (playing) =>
+    set({
+      playing,
+    }),
+  setPlaybackRate: (rate) =>
+    set({
+      playbackRate: Math.max(0.25, Math.min(2, rate)),
+    }),
+  setLoop: (loop) =>
+    set(
+      loop && loop.end > loop.start
+        ? {
+            loop: {
+              start: loop.start,
+              end: loop.end,
+            },
+          }
+        : {
+            loop: null,
+          },
+    ),
+  setPlaytesting: (playtesting) =>
+    set({
+      playtesting,
+    }),
+  setPreview: (preview) =>
+    set({
+      preview,
+    }),
+  /**
+   * Timing and SV edits (§4.2, phase 8).
+   *
+   * They mark every difficulty dirty, not just the open one: the timing map is
+   * a property of the SONG, but it is stored on each `Chart` row, so a change
+   * that only saved the open tier would leave the other three describing a grid
+   * that no longer exists. They deliberately do NOT go through the command
+   * stack — undo operates on notes, and a timing map that could be undone
+   * independently of the notes snapped to it is a chart that silently comes
+   * apart. The request to extend the stack to cover them is in
+   * `docs/_handoff/editor-phase678-requests.md`.
+   */
+  setTimingPoints: (timingPoints) =>
+    set((state) => ({
+      timingPoints,
+      charts: markAllDirty(state.charts),
+      revision: state.revision + 1,
+    })),
+  setSvPoints: (svPoints) =>
+    set((state) => ({
+      svPoints,
+      charts: markAllDirty(state.charts),
+      revision: state.revision + 1,
+    })),
+  setArtefacts: (artefacts) =>
+    set({
+      artefacts,
+    }),
+  setShowGhosts: (showGhosts) =>
+    set({
+      showGhosts,
+    }),
+  /**
+   * A result older than the one already held is dropped.
+   *
+   * The runner coalesces, but a worker message and a `flush()` on the main
+   * thread can still cross: without this, clicking Publish (which flushes) and
+   * then receiving the older worker reply would restore the findings the flush
+   * had just superseded, and the button would flicker between enabled and not.
+   */
+  setLint: (lint) =>
+    set((state) =>
+      lint.revision < state.lint.revision
+        ? state
+        : {
+            lint,
+          },
+    ),
+  setLintFocus: (lintFocus) =>
+    set({
+      lintFocus,
+    }),
+  setChartStatus: (difficulty, status) =>
+    set((state) => ({
+      chartStatus: {
+        ...state.chartStatus,
+        [difficulty]: status,
+      },
+    })),
+  setTool: (tool) =>
+    set({
+      tool,
+    }),
+  setSnap: (snap) =>
+    set({
+      snap,
+    }),
+  setSnapEnabled: (snapEnabled) =>
+    set({
+      snapEnabled,
+    }),
+  setPlaceType: (placeType) =>
+    set({
+      placeType,
+    }),
+  setNestingMode: (nestingMode) =>
+    set({
+      nestingMode,
+    }),
+
+  setSelection: (ids, mode = 'replace') =>
+    set((state) => {
+      const set_ = new Set(ids);
+      const predicate =
+        mode === 'replace'
+          ? (note: EditorNote) => set_.has(note.id)
+          : mode === 'add'
+            ? (note: EditorNote) => set_.has(note.id) || Boolean(note.selected)
+            : (note: EditorNote) => (set_.has(note.id) ? !note.selected : Boolean(note.selected));
+      return {
+        charts: reselect(state.charts, state.active, predicate),
+      };
+    }),
+
+  clearSelection: () =>
+    set((state) => ({
+      charts: reselect(state.charts, state.active, () => false),
+    })),
+  selectAll: () =>
+    set((state) => ({
+      charts: reselect(state.charts, state.active, () => true),
+    })),
+
+  copy: () => {
+    const state = get();
+    const clip = copySelection(selectionOf(editContext(state)), state.keys);
+    if (!clip)
+      return {
+        code: 'nothing-selected',
+      };
+    set({
+      clipboard: clip,
+    });
+    return {
+      code: 'copied',
+      count: clip.notes.length,
+    };
+  },
+  cut: () => {
+    const outcome = cutSelection(editContext(get()));
+    if (outcome.clipboard)
+      set({
+        clipboard: outcome.clipboard,
+      });
+    return commit(get, outcome);
+  },
+  paste: (mirrored = false) => {
+    const state = get();
+    return commit(get, pasteAt(editContext(state), state.clipboard, mirrored));
+  },
+  duplicate: () => commit(get, duplicateSelection(editContext(get()))),
+  mirror: () => commit(get, mirrorLanes(editContext(get()))),
+  quantize: () => commit(get, quantizeSelection(editContext(get()))),
+  scaleTiming: (percent) => commit(get, scaleSelection(editContext(get()), percent)),
+  insertTime: () => commit(get, insertTimeOp(editContext(get()))),
+  removeTime: () => commit(get, removeTimeOp(editContext(get()))),
+
+  setSaving: (saving) =>
+    set({
+      saving,
+    }),
+  markSaved: (revision, saved) =>
+    set((state) => ({
+      lastSavedRevision: revision,
+      lastSavedAt: Date.now(),
+      saving: false,
+      charts: markClean(state.charts, saved),
+    })),
+
+  reset: () =>
+    set({
+      ...initial,
+      charts: emptyCharts(),
+    }),
+}));
 
 /** What the clipboard operations read from the store. */
-function editContext(
-  state: EditorState,
-): EditContext {
+function editContext(state: EditorState): EditContext {
   return {
-    charts:
-      state.charts,
-    difficulty:
-      state.active,
+    charts: state.charts,
+    difficulty: state.active,
     keys: state.keys,
-    nesting:
-      state.nestingMode,
-    timingPoints:
-      state.timingPoints,
-    svPoints:
-      state.svPoints,
+    nesting: state.nestingMode,
+    timingPoints: state.timingPoints,
+    svPoints: state.svPoints,
     snap: state.snap,
-    snapEnabled:
-      state.snapEnabled,
-    playhead:
-      state.playhead,
+    snapEnabled: state.snapEnabled,
+    playhead: state.playhead,
   };
 }
 
@@ -1321,22 +669,10 @@ function editContext(
  * (paste selects the pasted notes). Selection is view state and not part of the
  * command, so undo does not touch it.
  */
-function commit(
-  get: () => EditorState,
-  outcome: Outcome,
-): ClipboardResult {
-  if (
-    outcome.command
-  ) {
-    get().apply(
-      outcome.command,
-    );
-    if (
-      outcome.select
-    )
-      get().setSelection(
-        outcome.select,
-      );
+function commit(get: () => EditorState, outcome: Outcome): ClipboardResult {
+  if (outcome.command) {
+    get().apply(outcome.command);
+    if (outcome.select) get().setSelection(outcome.select);
   }
   return outcome.result;
 }
@@ -1346,135 +682,57 @@ function commit(
  * Every tier is marked dirty with it, as `setTimingPoints` does: the map is
  * stored on each chart row.
  */
-function timingPatch(
-  state: EditorState,
-  command: Command,
-  direction: 'apply' | 'invert',
-): Partial<EditorState> {
-  if (
-    !command.timing
-  )
-    return {};
-  const map =
-    command
-      .timing[
-      direction
-    ](
-      {
-        timingPoints:
-          state.timingPoints,
-        svPoints:
-          state.svPoints,
-      },
-    );
+function timingPatch(state: EditorState, command: Command, direction: 'apply' | 'invert'): Partial<EditorState> {
+  if (!command.timing) return {};
+  const map = command.timing[direction]({
+    timingPoints: state.timingPoints,
+    svPoints: state.svPoints,
+  });
   return {
-    timingPoints:
-      map.timingPoints,
-    svPoints:
-      map.svPoints,
+    timingPoints: map.timingPoints,
+    svPoints: map.svPoints,
   };
 }
 
 /** Every tier dirty — see `setTimingPoints`. */
-function markAllDirty(
-  charts: Charts,
-): Charts {
-  const out =
-    {
-      ...charts,
-    };
+function markAllDirty(charts: Charts): Charts {
+  const out = {
+    ...charts,
+  };
   for (const difficulty of DIFFICULTIES) {
-    if (
-      !out[
-        difficulty
-      ]
-        .dirty
-    )
-      out[
-        difficulty
-      ] =
-        {
-          ...out[
-            difficulty
-          ],
-          dirty: true,
-        };
+    if (!out[difficulty].dirty)
+      out[difficulty] = {
+        ...out[difficulty],
+        dirty: true,
+      };
   }
   return out;
 }
 
-function markClean(
-  charts: Charts,
-  saved: Partial<
-    Record<
-      Difficulty,
-      readonly EditorNote[]
-    >
-  >,
-): Charts {
-  const out =
-    {
-      ...charts,
-    };
+function markClean(charts: Charts, saved: Partial<Record<Difficulty, readonly EditorNote[]>>): Charts {
+  const out = {
+    ...charts,
+  };
   for (const difficulty of DIFFICULTIES) {
-    const sent =
-      saved[
-        difficulty
-      ];
-    if (
-      !sent
-    )
-      continue;
+    const sent = saved[difficulty];
+    if (!sent) continue;
     // Reference equality, not deep: the command stack replaces the array on
     // every mutation, so an unchanged reference is exactly "nothing landed here
     // since the request left".
-    if (
-      out[
-        difficulty
-      ]
-        .notes !==
-      sent
-    )
-      continue;
-    if (
-      out[
-        difficulty
-      ]
-        .dirty
-    )
-      out[
-        difficulty
-      ] =
-        {
-          ...out[
-            difficulty
-          ],
-          dirty: false,
-        };
+    if (out[difficulty].notes !== sent) continue;
+    if (out[difficulty].dirty)
+      out[difficulty] = {
+        ...out[difficulty],
+        dirty: false,
+      };
   }
   return out;
 }
 
 /** Non-reactive read, matching `sliceItState()` in the game store. */
-export const editorState =
-  () =>
-    useEditorStore.getState();
+export const editorState = () => useEditorStore.getState();
 
 /** The notes currently selected on the active difficulty. */
-export function selectedNotes(
-  state: Pick<
-    EditorState,
-    | 'charts'
-    | 'active'
-  >,
-): EditorNote[] {
-  return state.charts[
-    state
-      .active
-  ].notes.filter(
-    (
-      note,
-    ) =>
-      note.selected,
-  );
+export function selectedNotes(state: Pick<EditorState, 'charts' | 'active'>): EditorNote[] {
+  return state.charts[state.active].notes.filter((note) => note.selected);
 }

@@ -2,13 +2,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { submitPrompt, type PromptOptions } from '@/components/ui/prompt-rule';
@@ -17,13 +11,7 @@ import { submitPrompt, type PromptOptions } from '@/components/ui/prompt-rule';
  * The form inside the dialog. Its own component so it mounts fresh for every prompt (the field
  * starts at `initialValue`, the error clears) and so it renders without the dialog portal.
  */
-export function PromptForm({
-  options,
-  settle,
-}: {
-  options: PromptOptions;
-  settle: (value: string | null) => void;
-}) {
+export function PromptForm({ options, settle }: { options: PromptOptions; settle: (value: string | null) => void }) {
   const { t } = useTranslation('c-ui');
   const ids = React.useId();
   const inputId = `${ids}-input`;

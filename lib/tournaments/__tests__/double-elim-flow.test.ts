@@ -64,7 +64,10 @@ function makeDb() {
     tournamentEntrant: {
       findMany: async ({ where }: any) => state.entrants.filter((e) => matches(e, where)),
       update: async ({ where, data }: any) => {
-        apply(state.entrants.find((e) => e.id === where.id), data);
+        apply(
+          state.entrants.find((e) => e.id === where.id),
+          data,
+        );
       },
     },
     tournamentMatch: {
@@ -84,7 +87,10 @@ function makeDb() {
         return m ? { ...m } : null;
       },
       update: async ({ where, data }: any) => {
-        apply(state.matches.find((m) => m.id === where.id), data);
+        apply(
+          state.matches.find((m) => m.id === where.id),
+          data,
+        );
       },
       updateMany: async ({ where, data }: any) => {
         const rows = state.matches.filter((m) => matches(m, where));
@@ -148,10 +154,7 @@ const entrant = (id: string) => state.entrants.find((e) => e.id === id);
 const at = (round: number, slot = 0) => state.matches.find((m) => m.round === round && m.slot === slot);
 
 async function report(m: any, winnerId: string, db: any) {
-  return reportMatch(
-    { tournamentId: 't1', matchId: m.id, winnerEntrantId: winnerId, reporterId: 'host' },
-    db,
-  );
+  return reportMatch({ tournamentId: 't1', matchId: m.id, winnerEntrantId: winnerId, reporterId: 'host' }, db);
 }
 
 /** The better seed (lower number) wins every open match until the tournament is over. */
@@ -161,9 +164,7 @@ async function playOut(db: any) {
       .filter((m) => m.state === 'READY')
       .sort((a, b) => a.round - b.round || a.slot - b.slot)[0];
     if (!open) throw new Error('no open match but tournament still live');
-    const winner = [open.entrantAId, open.entrantBId].sort(
-      (x, y) => Number(x.slice(1)) - Number(y.slice(1)),
-    )[0];
+    const winner = [open.entrantAId, open.entrantBId].sort((x, y) => Number(x.slice(1)) - Number(y.slice(1)))[0];
     await report(open, winner, db);
   }
 }

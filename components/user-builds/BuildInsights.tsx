@@ -106,7 +106,10 @@ export function BuildInsights({
     : ['likes', 'comments', 'unlocks', 'coins'];
 
   const figure = (key: BuildTotalKey, c: Compared) => (
-    <div key={key} className="flex flex-col gap-0.5 border-b border-site-border py-3 sm:border-b-0 sm:border-l sm:px-4 sm:first:border-l-0 sm:first:pl-0">
+    <div
+      key={key}
+      className="flex flex-col gap-0.5 border-b border-site-border py-3 sm:border-b-0 sm:border-l sm:px-4 sm:first:border-l-0 sm:first:pl-0"
+    >
       <dt className="t-label">{totalLabels[key]}</dt>
       <dd className="t-title m-0">{number.format(c.value)}</dd>
       <dd className="t-meta m-0">
@@ -220,7 +223,10 @@ export function BuildInsights({
             <h3 className="t-label mt-6 mb-1">{t('releases-title', { defaultValue: 'Releases' })}</h3>
             <ul className="m-0 list-none p-0">
               {data.releases.map((r) => (
-                <li key={`${r.day}-${r.version}`} className="t-body flex justify-between gap-4 border-b border-site-border py-2">
+                <li
+                  key={`${r.day}-${r.version}`}
+                  className="t-body flex justify-between gap-4 border-b border-site-border py-2"
+                >
                   <span>{releasedLabel([r.version])}</span>
                   <span className="t-meta">{longDay(r.day)}</span>
                 </li>

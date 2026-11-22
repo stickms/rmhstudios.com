@@ -20,8 +20,7 @@ const findDecks = vi.fn(async (_a: unknown) => []);
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 

@@ -3,51 +3,20 @@
  * the same build instead of each rebuilding it.
  */
 
-import {
-  createContext,
-  useContext,
-  type ReactNode,
-} from 'react';
-import {
-  useScene,
-  type SceneResult,
-} from '@/lib/tf2-hud/use-scene';
+import { createContext, useContext, type ReactNode } from 'react';
+import { useScene, type SceneResult } from '@/lib/tf2-hud/use-scene';
 import { EMPTY_SCHEME } from '@/lib/tf2-hud/scheme/scheme';
 
-const Ctx =
-  createContext<SceneResult>(
-    {
-      scene:
-        null,
-      scheme:
-        EMPTY_SCHEME,
-      page: undefined,
-      loading: true,
-    },
-  );
+const Ctx = createContext<SceneResult>({
+  scene: null,
+  scheme: EMPTY_SCHEME,
+  page: undefined,
+  loading: true,
+});
 
-export function SceneProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const value =
-    useScene();
-  return (
-    <Ctx
-      value={
-        value
-      }
-    >
-      {
-        children
-      }
-    </Ctx>
-  );
+export function SceneProvider({ children }: { children: ReactNode }) {
+  const value = useScene();
+  return <Ctx value={value}>{children}</Ctx>;
 }
 
-export const useSceneContext =
-  (): SceneResult =>
-    useContext(
-      Ctx,
-    );
+export const useSceneContext = (): SceneResult => useContext(Ctx);

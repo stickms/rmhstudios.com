@@ -1,9 +1,4 @@
-import type {
-  ComponentPropsWithoutRef,
-  ComponentPropsWithRef,
-  ElementType,
-  ReactNode,
-} from 'react';
+import type { ComponentPropsWithoutRef, ComponentPropsWithRef, ElementType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import './spine.css';
 
@@ -29,96 +24,32 @@ export function Spine({
 }: {
   children: ReactNode;
   className?: string;
-} & Omit<
-  ComponentPropsWithoutRef<'div'>,
-  | 'children'
-  | 'className'
->) {
+} & Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className'>) {
   return (
-    <div
-      className={cn(
-        'spine',
-        className,
-      )}
-      {...props}
-    >
-      {
-        children
-      }
+    <div className={cn('spine', className)} {...props}>
+      {children}
     </div>
   );
 }
 
-type SpineItemTag =
-  | 'div'
-  | 'article'
-  | 'section';
+type SpineItemTag = 'div' | 'article' | 'section';
 
-export type SpineItemProps<
-  T extends
-    SpineItemTag =
-    'div',
-> =
-  {
-    /** A discrete item (a post, a row, a message from someone else) has a dot; running prose and forms do not (P3). */
-    dot?: boolean;
-    /** The element: `article` for a post (so a `role="feed"` spine is a real feed), `div` otherwise. */
-    as?: T;
-  } & Omit<
-    ComponentPropsWithRef<T>,
-    'as'
-  >;
+export type SpineItemProps<T extends SpineItemTag = 'div'> = {
+  /** A discrete item (a post, a row, a message from someone else) has a dot; running prose and forms do not (P3). */
+  dot?: boolean;
+  /** The element: `article` for a post (so a `role="feed"` spine is a real feed), `div` otherwise. */
+  as?: T;
+} & Omit<ComponentPropsWithRef<T>, 'as'>;
 
-export function SpineItem<
-  T extends
-    SpineItemTag =
-    'div',
->({
-  dot = true,
-  as,
-  className,
-  ...props
-}: SpineItemProps<T>) {
-  const Tag =
-    (as ??
-      'div') as ElementType;
-  return (
-    <Tag
-      className={cn(
-        'spine-item',
-        className,
-      )}
-      data-dot={
-        dot
-          ? undefined
-          : 'false'
-      }
-      {...props}
-    />
-  );
+export function SpineItem<T extends SpineItemTag = 'div'>({ dot = true, as, className, ...props }: SpineItemProps<T>) {
+  const Tag = (as ?? 'div') as ElementType;
+  return <Tag className={cn('spine-item', className)} data-dot={dot ? undefined : 'false'} {...props} />;
 }
 
 /**
  * A section heading on the spine, with a hollow dot. It renders a real `<h2>` so the page outline is correct for screen
  * readers (the page's `<h1>` is its title).
  */
-export function SpineStation({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <h2
-      className={cn(
-        'spine-station t-label',
-        className,
-      )}
-    >
-      {
-        children
-      }
-    </h2>
-  );
+export function SpineStation({ children, className }: { children: ReactNode; className?: string }) {
+  return <h2 className={cn('spine-station t-label', className)}>{children}</h2>;
 }

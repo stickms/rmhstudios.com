@@ -1,95 +1,31 @@
-import {
-  afterEach,
-  describe,
-  expect,
-  it,
-} from 'vitest';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { afterEach, describe, expect, it } from 'vitest';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import {
-  dirname,
-  join,
-  resolve,
-} from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-  recordRelease,
-  promoteRelease,
-  readState,
-} from '../../deploy/release-state.mjs';
+import { recordRelease, promoteRelease, readState } from '../../deploy/release-state.mjs';
 
 // Execute the real orchestrator. Its Git, Docker, HTTP and hotswap boundaries
 // are hermetic executables; no database, daemon or production service is touched.
-const dirs: string[] =
-  [];
-afterEach(
-  () => {
-    for (const dir of dirs.splice(
-      0,
-    ))
-      rmSync(
-        dir,
-        {
-          recursive: true,
-          force: true,
-        },
-      );
-  },
-);
-const shaA =
-    'a'.repeat(
-      40,
-    ),
-  shaB =
-    'b'.repeat(
-      40,
-    ),
-  shaC =
-    'c'.repeat(
-      40,
-    );
-const posix =
-  (
-    value: string,
-  ) =>
-    value
-      .replaceAll(
-        '\\',
-        '/',
-      )
-      .replace(
-        /^([A-Za-z]):/,
-        (
-          _,
-          drive: string,
-        ) =>
-          `/${drive.toLowerCase()}`,
-      );
-const quote =
-  (
-    value: string,
-  ) =>
-    `'${value.replaceAll("'", "'\\''")}'`;
-const bash =
-  process.platform ===
-  'win32'
-    ? 'C:/Program Files/Git/bin/bash.exe'
-    : 'bash';
+const dirs: string[] = [];
+afterEach(() => {
+  for (const dir of dirs.splice(0))
+    rmSync(dir, {
+      recursive: true,
+      force: true,
+    });
+});
+const shaA = 'a'.repeat(40),
+  shaB = 'b'.repeat(40),
+  shaC = 'c'.repeat(40);
+const posix = (value: string) =>
+  value.replaceAll('\\', '/').replace(/^([A-Za-z]):/, (_, drive: string) => `/${drive.toLowerCase()}`);
+const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : 'bash';
 
 function fixture(
-  extra: Record<
-    string,
-    string
-  > = {},
+  extra: Record<string, string> = {},
   options: {
     realFlock?: boolean;
     fakeDisk?: boolean;
@@ -97,68 +33,22 @@ function fixture(
     rmhosSecretValue?: string;
   } = {},
 ) {
-  const dir =
-    mkdtempSync(
-      join(
-        tmpdir(),
-        'rmh-deploy-orchestration-',
-      ),
-    );
-  dirs.push(
-    dir,
-  );
-  mkdirSync(
-    join(
-      dir,
-      'deploy',
-    ),
-  );
-  mkdirSync(
-    join(
-      dir,
-      'bin',
-    ),
-  );
-  copyFileSync(
-    resolve(
-      'deploy.sh',
-    ),
-    join(
-      dir,
-      'deploy.sh',
-    ),
-  );
-  copyFileSync(
-    resolve(
-      'deploy/release-state.mjs',
-    ),
-    join(
-      dir,
-      'deploy/release-state.mjs',
-    ),
-  );
+  const dir = mkdtempSync(join(tmpdir(), 'rmh-deploy-orchestration-'));
+  dirs.push(dir);
+  mkdirSync(join(dir, 'deploy'));
+  mkdirSync(join(dir, 'bin'));
+  copyFileSync(resolve('deploy.sh'), join(dir, 'deploy.sh'));
+  copyFileSync(resolve('deploy/release-state.mjs'), join(dir, 'deploy/release-state.mjs'));
   writeFileSync(
-    join(
-      dir,
-      '.env.production',
-    ),
+    join(dir, '.env.production'),
     'DATABASE_URL=postgresql://fixture:fixture@db:5432/rmh\n' +
       (options.rmhosSecret
         ? `RMHOS_NET_TICKET_SECRET=${options.rmhosSecretValue ?? 'fixture-secret-0123456789abcdefghijklmnop'}\n`
         : ''),
   );
+  writeFileSync(join(dir, 'head'), shaA);
   writeFileSync(
-    join(
-      dir,
-      'head',
-    ),
-    shaA,
-  );
-  writeFileSync(
-    join(
-      dir,
-      'deploy/hotswap-web.sh',
-    ),
+    join(dir, 'deploy/hotswap-web.sh'),
     `#!/bin/bash
 if [ "\${MOCK_LATE_FAILURE:-0}" = 1 ]; then
   while [ ! -s "$HEALTH_RESULT_FILE" ]; do sleep 0.02; done
@@ -169,10 +59,7 @@ echo ::deploy-event::traffic-moved
 `,
   );
   writeFileSync(
-    join(
-      dir,
-      'bin/git',
-    ),
+    join(dir, 'bin/git'),
     `#!/bin/bash
 set -e
 case "$1" in
@@ -199,10 +86,7 @@ esac
     },
   );
   writeFileSync(
-    join(
-      dir,
-      'bin/docker',
-    ),
+    join(dir, 'bin/docker'),
     `#!/bin/bash
 printf '%s\\n' "$*" >> "$MOCK_ROOT/docker.log"
 if [ "$1" = pull ]; then
@@ -240,10 +124,7 @@ esac
     },
   );
   writeFileSync(
-    join(
-      dir,
-      'bin/curl',
-    ),
+    join(dir, 'bin/curl'),
     '#!/bin/bash\nif [ "${MOCK_HUB_UNHEALTHY:-0}" = 1 ] && [[ "$*" == *:7009/health* ]]; then exit 1; fi\nexit 0\n',
     {
       mode: 0o755,
@@ -251,29 +132,15 @@ esac
   );
   // These cases enter with the deployment lock acquired. The stale observer
   // must still check serving identity inside that critical section.
-  if (
-    !options.realFlock
-  )
-    writeFileSync(
-      join(
-        dir,
-        'bin/flock',
-      ),
-      '#!/bin/bash\nexit 0\n',
-      {
-        mode: 0o755,
-      },
-    );
+  if (!options.realFlock)
+    writeFileSync(join(dir, 'bin/flock'), '#!/bin/bash\nexit 0\n', {
+      mode: 0o755,
+    });
   // Disk is the one thing the host really controls: report 1G free until the deploy
   // has cleared the BuildKit cache, then 50G, so the reclaim ladder can be observed.
-  if (
-    options.fakeDisk
-  )
+  if (options.fakeDisk)
     writeFileSync(
-      join(
-        dir,
-        'bin/df',
-      ),
+      join(dir, 'bin/df'),
       `#!/bin/bash
 if [ -f "$MOCK_ROOT/reclaimed" ]; then n=50; else n=1; fi
 case "$*" in *--output=size*) printf 'Size\\n100G\\n' ;; *) printf 'Avail\\n%sG\\n' "$n" ;; esac
@@ -284,10 +151,7 @@ case "$*" in *--output=size*) printf 'Size\\n100G\\n' ;; *) printf 'Avail\\n%sG\
     );
   // A stand-in for the 15-minute watcher: it outlives the deploy, as the real one does.
   writeFileSync(
-    join(
-      dir,
-      'deploy/post-deploy-guard.sh',
-    ),
+    join(dir, 'deploy/post-deploy-guard.sh'),
     '#!/bin/bash\necho $$ > "$MOCK_ROOT/guard.pid"\nexec sleep 30\n',
     {
       mode: 0o755,
@@ -295,888 +159,279 @@ case "$*" in *--output=size*) printf 'Size\\n100G\\n' ;; *) printf 'Avail\\n%sG\
   );
   // The real probe needs a Docker network and a firewall; here it is a stand-in whose
   // verdict the test chooses (see deploy/rmhos-net/__tests__ for the real script).
-  mkdirSync(
-    join(
-      dir,
-      'deploy/rmhos-net',
-    ),
-  );
+  mkdirSync(join(dir, 'deploy/rmhos-net'));
   writeFileSync(
-    join(
-      dir,
-      'deploy/rmhos-net/probe-firewall.sh',
-    ),
+    join(dir, 'deploy/rmhos-net/probe-firewall.sh'),
     '#!/bin/bash\necho probed >> "$MOCK_ROOT/probe.log"\n[ "${MOCK_PROBE:-proven}" = proven ]\n',
     {
       mode: 0o755,
     },
   );
-  const stateDir =
-    join(
-      dir,
-      '.deploy/releases',
-    );
-  recordRelease(
-    stateDir,
-    'release-previous',
-    shaA,
-    'queued',
-  );
-  promoteRelease(
-    stateDir,
-    'release-previous',
-    '',
-  );
-  recordRelease(
-    stateDir,
-    'release-previous',
-    shaA,
-    'success',
-  );
-  const env =
-    {
-      ...process.env,
-      REPO_DIR:
-        posix(
-          dir,
-        ),
-      MOCK_ROOT:
-        posix(
-          dir,
-        ),
-      DEPLOY_STATE_DIR:
-        posix(
-          stateDir,
-        ),
-      DEPLOY_RELEASE_ID:
-        'release-candidate',
-      DEPLOY_LOCKFILE:
-        posix(
-          join(
-            dir,
-            'lock',
-          ),
-        ),
-      DEPLOY_QUEUE_FILE:
-        posix(
-          join(
-            dir,
-            'queue',
-          ),
-        ),
-      DISCORD_WEBHOOK_URL:
-        '',
-      GITHUB_TOKEN:
-        '',
-      INTERNAL_API_SECRET:
-        '',
-      DEPLOY_PULL_RESERVE_GB:
-        '0',
-      DEPLOY_HEADROOM_GB:
-        '0',
-      WORKER_SETTLE_SECONDS:
-        '0',
-      POST_DEPLOY_GUARD:
-        '0',
-      GUARD_LOG:
-        posix(
-          join(
-            dir,
-            'guard.log',
-          ),
-        ),
-      ...extra,
-    };
+  const stateDir = join(dir, '.deploy/releases');
+  recordRelease(stateDir, 'release-previous', shaA, 'queued');
+  promoteRelease(stateDir, 'release-previous', '');
+  recordRelease(stateDir, 'release-previous', shaA, 'success');
+  const env = {
+    ...process.env,
+    REPO_DIR: posix(dir),
+    MOCK_ROOT: posix(dir),
+    DEPLOY_STATE_DIR: posix(stateDir),
+    DEPLOY_RELEASE_ID: 'release-candidate',
+    DEPLOY_LOCKFILE: posix(join(dir, 'lock')),
+    DEPLOY_QUEUE_FILE: posix(join(dir, 'queue')),
+    DISCORD_WEBHOOK_URL: '',
+    GITHUB_TOKEN: '',
+    INTERNAL_API_SECRET: '',
+    DEPLOY_PULL_RESERVE_GB: '0',
+    DEPLOY_HEADROOM_GB: '0',
+    WORKER_SETTLE_SECONDS: '0',
+    POST_DEPLOY_GUARD: '0',
+    GUARD_LOG: posix(join(dir, 'guard.log')),
+    ...extra,
+  };
   const command = `PATH=${quote(posix(join(dir, 'bin')))}:${quote(posix(dirname(process.execPath)))}:"$PATH"; export PATH; exec bash ${quote(posix(join(dir, 'deploy.sh')))} production ${shaB}`;
-  const result =
-    spawnSync(
-      bash,
-      [
-        '--noprofile',
-        '--norc',
-        '-c',
-        command,
-      ],
-      {
-        env,
-        encoding:
-          'utf8',
-        timeout: 20_000,
-      },
-    );
+  const result = spawnSync(bash, ['--noprofile', '--norc', '-c', command], {
+    env,
+    encoding: 'utf8',
+    timeout: 20_000,
+  });
   return {
     dir,
     result,
     stateDir,
-    docker:
-      existsSync(
-        join(
-          dir,
-          'docker.log',
-        ),
-      )
-        ? readFileSync(
-            join(
-              dir,
-              'docker.log',
-            ),
-            'utf8',
-          )
-        : '',
+    docker: existsSync(join(dir, 'docker.log')) ? readFileSync(join(dir, 'docker.log'), 'utf8') : '',
   };
 }
 
 describe('production deploy orchestration', () => {
-  const pulls =
-    (
-      docker: string,
-    ) =>
-      docker
-        .split(
-          '\n',
-        )
-        .filter(
-          (
-            line,
-          ) =>
-            line.startsWith(
-              'pull ',
-            ),
-        );
+  const pulls = (docker: string) => docker.split('\n').filter((line) => line.startsWith('pull '));
   // A pull can outgrow the up-front estimate and die mid-transfer. That is fixable
   // by freeing space, so reclaim and retry once instead of failing the release.
   it('reclaims and retries once when a pull runs out of disk', () => {
-    const {
-      result,
-      docker,
-    } =
-      fixture(
-        {
-          MOCK_PULL_NOSPACE:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'Pull ran out of disk',
-    );
-    expect(
-      pulls(
-        docker,
-      ),
-    ).toHaveLength(
-      4,
-    );
-    expect(
-      docker.indexOf(
-        'builder prune -af',
-      ),
-    ).toBeLessThan(
-      docker.lastIndexOf(
-        'pull ',
-      ),
-    );
+    const { result, docker } = fixture({
+      MOCK_PULL_NOSPACE: '1',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain('Pull ran out of disk');
+    expect(pulls(docker)).toHaveLength(4);
+    expect(docker.indexOf('builder prune -af')).toBeLessThan(docker.lastIndexOf('pull '));
   }, 25_000);
   // Freeing the build cache is cheap and enough here; deleting every unused image
   // would also remove the :rollback image the post-deploy rollback depends on.
   it('stops reclaiming once there is enough room and keeps the rollback images', () => {
-    const {
-      result,
-      docker,
-    } =
-      fixture(
-        {
-          DEPLOY_PULL_RESERVE_GB:
-            '6',
-          DEPLOY_HEADROOM_GB:
-            '2',
-        },
-        {
-          fakeDisk: true,
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
+    const { result, docker } = fixture(
+      {
+        DEPLOY_PULL_RESERVE_GB: '6',
+        DEPLOY_HEADROOM_GB: '2',
+      },
+      {
+        fakeDisk: true,
+      },
     );
-    expect(
-      docker,
-    ).toContain(
-      'builder prune -af',
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'image prune -af',
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'After reclaim: 50G free',
-    );
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(docker).toContain('builder prune -af');
+    expect(docker).not.toContain('image prune -af');
+    expect(result.stdout).toContain('After reclaim: 50G free');
   }, 25_000);
   it('retries a no-space pull only once', () => {
-    const {
-      result,
-      docker,
-      stateDir,
-    } =
-      fixture(
-        {
-          MOCK_PULL_NOSPACE:
-            'always',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).not.toBe(
-      0,
-    );
-    expect(
-      pulls(
-        docker,
-      ),
-    ).toHaveLength(
-      4,
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.sha,
-    ).toBe(
-      shaA,
-    );
+    const { result, docker, stateDir } = fixture({
+      MOCK_PULL_NOSPACE: 'always',
+    });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(pulls(docker)).toHaveLength(4);
+    expect(readState(stateDir, 'live')?.sha).toBe(shaA);
   }, 25_000);
   // The relay hub dials the internet for strangers: it starts only behind a proven firewall,
   // and rmhOS can never fail the site deploy.
   describe('rmhOS relay hub step', () => {
-    const hubUp =
-      (
-        docker: string,
-      ) =>
-        docker
-          .split(
-            '\n',
-          )
-          .some(
-            (
-              l,
-            ) =>
-              / --profile rmhos-net up -d --no-build rmhos-net/.test(
-                l,
-              ),
-          );
-    const hubStop =
-      (
-        docker: string,
-      ) =>
-        docker
-          .split(
-            '\n',
-          )
-          .some(
-            (
-              l,
-            ) =>
-              / --profile rmhos-net stop rmhos-net/.test(
-                l,
-              ),
-          );
+    const hubUp = (docker: string) =>
+      docker.split('\n').some((l) => / --profile rmhos-net up -d --no-build rmhos-net/.test(l));
+    const hubStop = (docker: string) => docker.split('\n').some((l) => / --profile rmhos-net stop rmhos-net/.test(l));
 
     it('starts the hub when the probe proves the firewall', () => {
-      const r =
-        fixture(
-          {},
-          {
-            rmhosSecret: true,
-          },
-        );
-      expect(
-        r
-          .result
-          .status,
-        r
-          .result
-          .stdout +
-          r
-            .result
-            .stderr,
-      ).toBe(
-        0,
+      const r = fixture(
+        {},
+        {
+          rmhosSecret: true,
+        },
       );
-      expect(
-        hubUp(
-          r.docker,
-        ),
-      ).toBe(
-        true,
-      );
-      expect(
-        hubStop(
-          r.docker,
-        ),
-      ).toBe(
-        false,
-      );
-      expect(
-        r
-          .result
-          .stdout,
-      ).not.toContain(
-        'NOT started',
-      );
+      expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+      expect(hubUp(r.docker)).toBe(true);
+      expect(hubStop(r.docker)).toBe(false);
+      expect(r.result.stdout).not.toContain('NOT started');
     }, 40_000);
 
     it('keeps the hub stopped, warns loudly and still succeeds when the probe fails', () => {
-      const r =
-        fixture(
-          {
-            MOCK_PROBE:
-              'open',
-          },
-          {
-            rmhosSecret: true,
-          },
-        );
-      expect(
-        r
-          .result
-          .status,
-        r
-          .result
-          .stdout +
-          r
-            .result
-            .stderr,
-      ).toBe(
-        0,
+      const r = fixture(
+        {
+          MOCK_PROBE: 'open',
+        },
+        {
+          rmhosSecret: true,
+        },
       );
-      expect(
-        hubUp(
-          r.docker,
-        ),
-      ).toBe(
-        false,
-      );
-      expect(
-        hubStop(
-          r.docker,
-        ),
-      ).toBe(
-        true,
-      );
-      expect(
-        r
-          .result
-          .stdout,
-      ).toContain(
-        'rmhOS network relay NOT started',
-      );
-      expect(
-        r
-          .result
-          .stdout,
-      ).toContain(
-        'rmhos-net-firewall.service',
-      );
+      expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+      expect(hubUp(r.docker)).toBe(false);
+      expect(hubStop(r.docker)).toBe(true);
+      expect(r.result.stdout).toContain('rmhOS network relay NOT started');
+      expect(r.result.stdout).toContain('rmhos-net-firewall.service');
     }, 40_000);
 
     it('does not start the hub, probe, or warn at length without a ticket secret', () => {
-      const r =
-        fixture(
-          {
-            MOCK_PROBE:
-              'open',
-          },
-        );
-      expect(
-        r
-          .result
-          .status,
-        r
-          .result
-          .stdout +
-          r
-            .result
-            .stderr,
-      ).toBe(
-        0,
-      );
-      expect(
-        hubUp(
-          r.docker,
-        ),
-      ).toBe(
-        false,
-      );
-      expect(
-        existsSync(
-          join(
-            r.dir,
-            'probe.log',
-          ),
-        ),
-      ).toBe(
-        false,
-      );
-      expect(
-        r
-          .result
-          .stdout,
-      ).toContain(
-        'RMHOS_NET_TICKET_SECRET is not set',
-      );
-      expect(
-        r
-          .result
-          .stdout,
-      ).not.toContain(
-        'NOT started',
-      );
+      const r = fixture({
+        MOCK_PROBE: 'open',
+      });
+      expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+      expect(hubUp(r.docker)).toBe(false);
+      expect(existsSync(join(r.dir, 'probe.log'))).toBe(false);
+      expect(r.result.stdout).toContain('RMHOS_NET_TICKET_SECRET is not set');
+      expect(r.result.stdout).not.toContain('NOT started');
     }, 40_000);
 
     // PORT_RMHOS_NET is defined only in the production case, and the hub block runs under
     // `set -u`; staging is currently disabled (it exits before the block), so this pins the
     // default instead of reaching it.
     it('defaults the hub port wherever the block uses it', () => {
-      const script =
-        readFileSync(
-          resolve(
-            'deploy.sh',
-          ),
-          'utf8',
-        );
-      const uses =
-        script
-          .split(
-            '\n',
-          )
-          .filter(
-            (
-              l,
-            ) =>
-              l.includes(
-                'PORT_RMHOS_NET',
-              ) &&
-              !/^\s*#?\s*PORT_RMHOS_NET=/.test(
-                l,
-              ),
-          );
-      expect(
-        uses.length,
-      ).toBeGreaterThan(
-        0,
-      );
-      for (const l of uses)
-        expect(
-          l,
-        ).not.toMatch(
-          /PORT_RMHOS_NET(?!:-)/,
-        );
+      const script = readFileSync(resolve('deploy.sh'), 'utf8');
+      const uses = script
+        .split('\n')
+        .filter((l) => l.includes('PORT_RMHOS_NET') && !/^\s*#?\s*PORT_RMHOS_NET=/.test(l));
+      expect(uses.length).toBeGreaterThan(0);
+      for (const l of uses) expect(l).not.toMatch(/PORT_RMHOS_NET(?!:-)/);
     });
 
     it('never starts the hub in the fleet `up`', () => {
-      const r =
-        fixture(
-          {},
-          {
-            rmhosSecret: true,
-          },
-        );
-      const fleet =
-        r.docker
-          .split(
-            '\n',
-          )
-          .find(
-            (
-              l,
-            ) =>
-              / up -d --no-build --remove-orphans/.test(
-                l,
-              ),
-          );
-      expect(
-        fleet,
-      ).toBeDefined();
-      expect(
-        fleet,
-      ).not.toContain(
-        'rmhos-net',
+      const r = fixture(
+        {},
+        {
+          rmhosSecret: true,
+        },
       );
+      const fleet = r.docker.split('\n').find((l) => / up -d --no-build --remove-orphans/.test(l));
+      expect(fleet).toBeDefined();
+      expect(fleet).not.toContain('rmhos-net');
     }, 40_000);
 
     // What a deploy does to a hub that is already serving. Recreating it ends every user's network
     // session, so it must happen only when the hub's own bundle or configuration changed.
     describe('recreating the hub', () => {
-      const fingerprint =
-        (
-          bundle: string,
-          cfg: string,
-        ) =>
-          createHash(
-            'sha256',
-          )
-            .update(
-              `${bundle}\ncfg:${cfg}\n`,
-            )
-            .digest(
-              'hex',
-            );
-      const run =
-        (
-          env: Record<
-            string,
-            string
-          >,
-        ) => {
-          const r =
-            fixture(
-              env,
-              {
-                rmhosSecret: true,
-              },
-            );
-          expect(
-            r
-              .result
-              .status,
-            r
-              .result
-              .stdout +
-              r
-                .result
-                .stderr,
-          ).toBe(
-            0,
-          );
-          return r;
-        };
-      const running =
-        (
-          bundle = 'bundleA',
-          cfg = 'A',
-        ) =>
-          `true ${fingerprint(bundle, cfg)}`;
+      const fingerprint = (bundle: string, cfg: string) =>
+        createHash('sha256').update(`${bundle}\ncfg:${cfg}\n`).digest('hex');
+      const run = (env: Record<string, string>) => {
+        const r = fixture(env, {
+          rmhosSecret: true,
+        });
+        expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+        return r;
+      };
+      const running = (bundle = 'bundleA', cfg = 'A') => `true ${fingerprint(bundle, cfg)}`;
 
       it('leaves a running hub alone when neither its bundle nor its configuration changed', () => {
-        const r =
-          run(
-            {
-              MOCK_HUB_STATE:
-                running(),
-            },
-          );
-        expect(
-          hubUp(
-            r.docker,
-          ),
-        ).toBe(
-          false,
-        );
-        expect(
-          hubStop(
-            r.docker,
-          ),
-        ).toBe(
-          false,
-        );
-        expect(
-          r
-            .result
-            .stdout,
-        ).toContain(
-          'rmhOS relay hub unchanged',
-        );
-        expect(
-          r
-            .result
-            .stdout,
-        ).toContain(
-          'network sessions are not interrupted',
-        );
+        const r = run({
+          MOCK_HUB_STATE: running(),
+        });
+        expect(hubUp(r.docker)).toBe(false);
+        expect(hubStop(r.docker)).toBe(false);
+        expect(r.result.stdout).toContain('rmhOS relay hub unchanged');
+        expect(r.result.stdout).toContain('network sessions are not interrupted');
       }, 40_000);
 
       it('recreates the hub when its bundle changed', () => {
-        const r =
-          run(
-            {
-              MOCK_HUB_STATE:
-                running(
-                  'bundleOLD',
-                ),
-              MOCK_HUB_BUNDLE:
-                'bundleA',
-            },
-          );
-        expect(
-          hubUp(
-            r.docker,
-          ),
-        ).toBe(
-          true,
-        );
-        expect(
-          r
-            .result
-            .stdout,
-        ).not.toContain(
-          'rmhOS relay hub unchanged',
-        );
-        expect(
-          r
-            .result
-            .stdout,
-        ).toContain(
-          "Users' network sessions ended",
-        );
+        const r = run({
+          MOCK_HUB_STATE: running('bundleOLD'),
+          MOCK_HUB_BUNDLE: 'bundleA',
+        });
+        expect(hubUp(r.docker)).toBe(true);
+        expect(r.result.stdout).not.toContain('rmhOS relay hub unchanged');
+        expect(r.result.stdout).toContain("Users' network sessions ended");
       }, 40_000);
 
       it('recreates the hub when its configuration changed (any RMHOS_NET_* value)', () => {
-        const r =
-          run(
-            {
-              MOCK_HUB_STATE:
-                running(
-                  'bundleA',
-                  'OLD',
-                ),
-              MOCK_HUB_CFG:
-                'A',
-            },
-          );
-        expect(
-          hubUp(
-            r.docker,
-          ),
-        ).toBe(
-          true,
-        );
+        const r = run({
+          MOCK_HUB_STATE: running('bundleA', 'OLD'),
+          MOCK_HUB_CFG: 'A',
+        });
+        expect(hubUp(r.docker)).toBe(true);
       }, 40_000);
 
-      it.each(
+      it.each([
         [
-          [
-            'compose up fails',
-            {
-              MOCK_HUB_UP_FAIL:
-                '1',
-            },
-          ],
-          [
-            'the hub never answers /health',
-            {
-              MOCK_HUB_UNHEALTHY:
-                '1',
-              HTTP_HEALTH_TRIES:
-                '1',
-            },
-          ],
+          'compose up fails',
+          {
+            MOCK_HUB_UP_FAIL: '1',
+          },
         ],
-      )(
+        [
+          'the hub never answers /health',
+          {
+            MOCK_HUB_UNHEALTHY: '1',
+            HTTP_HEALTH_TRIES: '1',
+          },
+        ],
+      ])(
         'logs the last 20 lines of compose up, stops the hub and still succeeds when %s',
-        (
-          _n,
-          env,
-        ) => {
-          const r =
-            run(
-              {
-                MOCK_HUB_STATE:
-                  running(
-                    'bundleOLD',
-                  ),
-                ...env,
-              },
-            );
-          expect(
-            hubUp(
-              r.docker,
-            ),
-          ).toBe(
-            true,
-          );
-          expect(
-            hubStop(
-              r.docker,
-            ),
-          ).toBe(
-            true,
-          );
-          expect(
-            r
-              .result
-              .stdout,
-          ).toContain(
-            'did not start healthy',
-          );
-          expect(
-            r
-              .result
-              .stdout,
-          ).toContain(
-            'hub-up-line-25',
-          );
-          expect(
-            r
-              .result
-              .stdout,
-          ).toContain(
-            'hub-up-line-6',
-          );
-          expect(
-            r
-              .result
-              .stdout,
-          ).not.toMatch(
-            /hub-up-line-5\b/,
-          );
+        (_n, env) => {
+          const r = run({
+            MOCK_HUB_STATE: running('bundleOLD'),
+            ...env,
+          });
+          expect(hubUp(r.docker)).toBe(true);
+          expect(hubStop(r.docker)).toBe(true);
+          expect(r.result.stdout).toContain('did not start healthy');
+          expect(r.result.stdout).toContain('hub-up-line-25');
+          expect(r.result.stdout).toContain('hub-up-line-6');
+          expect(r.result.stdout).not.toMatch(/hub-up-line-5\b/);
         },
         40_000,
       );
 
       it('starts a hub that is not running even if its label matches', () => {
-        const r =
-          run(
-            {
-              MOCK_HUB_STATE: `false ${fingerprint('bundleA', 'A')}`,
-            },
-          );
-        expect(
-          hubUp(
-            r.docker,
-          ),
-        ).toBe(
-          true,
-        );
+        const r = run({
+          MOCK_HUB_STATE: `false ${fingerprint('bundleA', 'A')}`,
+        });
+        expect(hubUp(r.docker)).toBe(true);
       }, 40_000);
 
       it('recreates when the fingerprint cannot be computed (never skip on doubt)', () => {
-        const r =
-          run(
-            {
-              MOCK_HUB_STATE:
-                'true ',
-              MOCK_HUB_BUNDLE:
-                '',
-            },
-          );
-        expect(
-          hubUp(
-            r.docker,
-          ),
-        ).toBe(
-          true,
-        );
+        const r = run({
+          MOCK_HUB_STATE: 'true ',
+          MOCK_HUB_BUNDLE: '',
+        });
+        expect(hubUp(r.docker)).toBe(true);
       }, 40_000);
 
       it('stops the hub whether or not it changed when the probe fails', () => {
         for (const env of [
           {
-            MOCK_HUB_STATE:
-              running(),
+            MOCK_HUB_STATE: running(),
           },
           {
-            MOCK_HUB_STATE:
-              running(
-                'bundleOLD',
-              ),
+            MOCK_HUB_STATE: running('bundleOLD'),
           },
         ]) {
-          const r =
-            run(
-              {
-                ...env,
-                MOCK_PROBE:
-                  'open',
-              },
-            );
-          expect(
-            hubStop(
-              r.docker,
-            ),
-          ).toBe(
-            true,
-          );
-          expect(
-            hubUp(
-              r.docker,
-            ),
-          ).toBe(
-            false,
-          );
-          expect(
-            r
-              .result
-              .stdout,
-          ).toContain(
-            'rmhOS network relay NOT started',
-          );
+          const r = run({
+            ...env,
+            MOCK_PROBE: 'open',
+          });
+          expect(hubStop(r.docker)).toBe(true);
+          expect(hubUp(r.docker)).toBe(false);
+          expect(r.result.stdout).toContain('rmhOS network relay NOT started');
         }
       }, 60_000);
 
-      it.each(
-        [
-          '',
-          '""',
-          'too-short-secret',
-        ],
-      )(
+      it.each(['', '""', 'too-short-secret'])(
         'does not start the hub for the ticket secret %j',
-        (
-          value,
-        ) => {
-          const r =
-            fixture(
-              {},
-              {
-                rmhosSecret: true,
-                rmhosSecretValue:
-                  value,
-              },
-            );
-          expect(
-            r
-              .result
-              .status,
-            r
-              .result
-              .stdout +
-              r
-                .result
-                .stderr,
-          ).toBe(
-            0,
+        (value) => {
+          const r = fixture(
+            {},
+            {
+              rmhosSecret: true,
+              rmhosSecretValue: value,
+            },
           );
-          expect(
-            hubUp(
-              r.docker,
-            ),
-          ).toBe(
-            false,
-          );
-          expect(
-            r
-              .result
-              .stdout,
-          ).toContain(
-            'RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters)',
-          );
+          expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+          expect(hubUp(r.docker)).toBe(false);
+          expect(r.result.stdout).toContain('RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters)');
         },
         40_000,
       );
@@ -1184,420 +439,106 @@ describe('production deploy orchestration', () => {
   });
 
   it('does not reclaim or retry when a pull fails for another reason', () => {
-    const {
-      result,
-      docker,
-    } =
-      fixture(
-        {
-          MOCK_PULL_FAIL:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).not.toBe(
-      0,
-    );
-    expect(
-      pulls(
-        docker,
-      ),
-    ).toHaveLength(
-      2,
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'builder prune -af',
-    );
-    expect(
-      result.stdout,
-    ).not.toContain(
-      'Pull ran out of disk',
-    );
+    const { result, docker } = fixture({
+      MOCK_PULL_FAIL: '1',
+    });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(pulls(docker)).toHaveLength(2);
+    expect(docker).not.toContain('builder prune -af');
+    expect(result.stdout).not.toContain('Pull ran out of disk');
   }, 25_000);
   // 2026-10-25: the disk filled mid-deploy, took Postgres down, and left containers
   // unable to start. The guard must reclaim the (otherwise never-cleaned) BuildKit
   // cache first and, if there is still not enough room, refuse BEFORE pulling.
   it('reclaims the build cache and refuses to pull when it cannot make room', () => {
-    const {
-      result,
-      docker,
-    } =
-      fixture(
-        {
-          DEPLOY_PULL_RESERVE_GB:
-            '999999',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).not.toBe(
-      0,
-    );
-    expect(
-      docker,
-    ).toContain(
-      'builder prune -af',
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'need ≥',
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'pull ',
-    );
+    const { result, docker } = fixture({
+      DEPLOY_PULL_RESERVE_GB: '999999',
+    });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(docker).toContain('builder prune -af');
+    expect(result.stdout).toContain('need ≥');
+    expect(docker).not.toContain('pull ');
   }, 25_000);
   it('trims only old build cache, and nothing hard, when there is room', () => {
-    const {
-      result,
-      docker,
-    } =
-      fixture();
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      docker,
-    ).toMatch(
-      /builder prune -f --filter until=72h/,
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'builder prune -af',
-    );
+    const { result, docker } = fixture();
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(docker).toMatch(/builder prune -f --filter until=72h/);
+    expect(docker).not.toContain('builder prune -af');
   }, 25_000);
   // The wiki (docs/wiki.md) is built on the host and started after the site is
   // healthy. It is best-effort: nothing about it may fail or roll back a release.
-  const wikiLines =
-    (
-      docker: string,
-    ) =>
-      docker
-        .split(
-          '\n',
-        )
-        .filter(
-          (
-            line,
-          ) =>
-            line.includes(
-              '--profile wiki',
-            ),
-        );
+  const wikiLines = (docker: string) => docker.split('\n').filter((line) => line.includes('--profile wiki'));
   it('brings the wiki up after the site is healthy, building it on a fresh base image', () => {
-    const {
-      result,
-      docker,
-    } =
-      fixture();
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    const wiki =
-      wikiLines(
-        docker,
-      );
-    expect(
-      wiki.findIndex(
-        (
-          l,
-        ) =>
-          l.includes(
-            'build --pull mediawiki',
-          ),
-      ),
-    ).toBe(
-      0,
-    );
-    expect(
-      wiki.some(
-        (
-          l,
-        ) =>
-          l.includes(
-            'up -d mediawiki',
-          ),
-      ),
-    ).toBe(
-      true,
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'Wiki is up',
-    );
+    const { result, docker } = fixture();
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const wiki = wikiLines(docker);
+    expect(wiki.findIndex((l) => l.includes('build --pull mediawiki'))).toBe(0);
+    expect(wiki.some((l) => l.includes('up -d mediawiki'))).toBe(true);
+    expect(result.stdout).toContain('Wiki is up');
     // Never part of the main bring-up or the image pulls.
-    for (const line of docker.split(
-      '\n',
-    )) {
-      if (
-        line.includes(
-          ' up -d ',
-        ) &&
-        !line.includes(
-          '--profile wiki',
-        )
-      )
-        expect(
-          line,
-        ).not.toContain(
-          'mediawiki',
-        );
+    for (const line of docker.split('\n')) {
+      if (line.includes(' up -d ') && !line.includes('--profile wiki')) expect(line).not.toContain('mediawiki');
     }
   }, 25_000);
   it('keeps a release whose wiki will not build, and says so', () => {
-    const {
-      result,
-      docker,
-      stateDir,
-    } =
-      fixture(
-        {
-          MOCK_WIKI_FAIL:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'WARNING: the wiki did not build or start; the site deploy is unaffected.',
-    );
-    expect(
-      wikiLines(
-        docker,
-      ).some(
-        (
-          l,
-        ) =>
-          l.includes(
-            'up -d mediawiki',
-          ),
-      ),
-    ).toBe(
-      false,
-    );
-    expect(
-      readState(
-        stateDir,
-        'last-successful',
-      )
-        ?.sha,
-    ).toBe(
-      shaB,
-    );
+    const { result, docker, stateDir } = fixture({
+      MOCK_WIKI_FAIL: '1',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain('WARNING: the wiki did not build or start; the site deploy is unaffected.');
+    expect(wikiLines(docker).some((l) => l.includes('up -d mediawiki'))).toBe(false);
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
   }, 25_000);
   it('keeps a release whose wiki does not come up healthy, and says so', () => {
-    const {
-      result,
-      stateDir,
-    } =
-      fixture(
-        {
-          MOCK_WIKI_HEALTH:
-            'unhealthy',
-          DEPLOY_WIKI_WAIT_SECONDS:
-            '5',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      "WARNING: the wiki container is 'unhealthy' after 5s",
-    );
-    expect(
-      readState(
-        stateDir,
-        'last-successful',
-      )
-        ?.sha,
-    ).toBe(
-      shaB,
-    );
+    const { result, stateDir } = fixture({
+      MOCK_WIKI_HEALTH: 'unhealthy',
+      DEPLOY_WIKI_WAIT_SECONDS: '5',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain("WARNING: the wiki container is 'unhealthy' after 5s");
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
   }, 25_000);
   // Every journal write goes through node. Without it the release used to die
   // part-way through with only "node: command not found" in the listener log.
-  it.skipIf(
-    process.platform ===
-      'win32',
-  )(
-    'refuses to start when node is not on PATH',
-    () => {
-      const empty =
-        mkdtempSync(
-          join(
-            tmpdir(),
-            'rmh-deploy-nonode-',
-          ),
-        );
-      dirs.push(
-        empty,
-      );
-      const result =
-        spawnSync(
-          '/bin/bash',
-          [
-            resolve(
-              'deploy.sh',
-            ),
-            'production',
-            shaB,
-          ],
-          {
-            env: {
-              PATH: empty,
-            },
-            encoding:
-              'utf8',
-            timeout: 10_000,
-          },
-        );
-      expect(
-        result.status,
-      ).toBe(
-        1,
-      );
-      expect(
-        result.stderr,
-      ).toContain(
-        'node is not on PATH',
-      );
-    },
-  );
+  it.skipIf(process.platform === 'win32')('refuses to start when node is not on PATH', () => {
+    const empty = mkdtempSync(join(tmpdir(), 'rmh-deploy-nonode-'));
+    dirs.push(empty);
+    const result = spawnSync('/bin/bash', [resolve('deploy.sh'), 'production', shaB], {
+      env: {
+        PATH: empty,
+      },
+      encoding: 'utf8',
+      timeout: 10_000,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('node is not on PATH');
+  });
   // Needs the real flock(1): a detached child that inherits the lock descriptor
   // keeps the lock after the deploy exits, so the next push queued behind it.
-  it.skipIf(
-    process.platform ===
-      'win32' ||
-      spawnSync(
-        'flock',
-        [
-          '-V',
-        ],
-      )
-        .error !==
-        undefined,
-  )(
+  it.skipIf(process.platform === 'win32' || spawnSync('flock', ['-V']).error !== undefined)(
     'releases the deployment lock when it hands off to the post-deploy guard',
     async () => {
-      const {
-        dir,
-        result,
-      } =
-        fixture(
-          {
-            POST_DEPLOY_GUARD:
-              '1',
-          },
-          {
-            realFlock: true,
-          },
-        );
-      const pidFile =
-        join(
-          dir,
-          'guard.pid',
-        );
+      const { dir, result } = fixture(
+        {
+          POST_DEPLOY_GUARD: '1',
+        },
+        {
+          realFlock: true,
+        },
+      );
+      const pidFile = join(dir, 'guard.pid');
       try {
-        expect(
-          result.status,
-          result.stdout +
-            result.stderr,
-        ).toBe(
-          0,
-        );
+        expect(result.status, result.stdout + result.stderr).toBe(0);
         // The guard is launched in the background and deploy.sh exits straight
         // away, so on a loaded runner it may not have written its pid yet.
-        for (
-          let i = 0;
-          i <
-            250 &&
-          !existsSync(
-            pidFile,
-          );
-          i++
-        )
-          await new Promise(
-            (
-              done,
-            ) =>
-              setTimeout(
-                done,
-                20,
-              ),
-          );
-        expect(
-          existsSync(
-            pidFile,
-          ),
-          'the guard must have been started',
-        ).toBe(
-          true,
-        );
-        const next =
-          spawnSync(
-            'flock',
-            [
-              '-n',
-              join(
-                dir,
-                'lock',
-              ),
-              'true',
-            ],
-          );
-        expect(
-          next.status,
-          'a following deploy must be able to take the lock',
-        ).toBe(
-          0,
-        );
+        for (let i = 0; i < 250 && !existsSync(pidFile); i++) await new Promise((done) => setTimeout(done, 20));
+        expect(existsSync(pidFile), 'the guard must have been started').toBe(true);
+        const next = spawnSync('flock', ['-n', join(dir, 'lock'), 'true']);
+        expect(next.status, 'a following deploy must be able to take the lock').toBe(0);
       } finally {
-        if (
-          existsSync(
-            pidFile,
-          )
-        ) {
+        if (existsSync(pidFile)) {
           try {
-            process.kill(
-              Number(
-                readFileSync(
-                  pidFile,
-                  'utf8',
-                ),
-              ),
-            );
+            process.kill(Number(readFileSync(pidFile, 'utf8')));
           } catch {
             /* already gone */
           }
@@ -1607,354 +548,79 @@ describe('production deploy orchestration', () => {
     25_000,
   );
   it('assigns a valid release identity to a manual deployment', () => {
-    const {
-      result,
-      stateDir,
-    } =
-      fixture(
-        {
-          DEPLOY_RELEASE_ID:
-            '',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.id,
-    ).toMatch(
-      /^release-\d+-\d+$/,
-    );
-    expect(
-      readState(
-        stateDir,
-        'last-successful',
-      )
-        ?.sha,
-    ).toBe(
-      shaB,
-    );
+    const { result, stateDir } = fixture({
+      DEPLOY_RELEASE_ID: '',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(readState(stateDir, 'live')?.id).toMatch(/^release-\d+-\d+$/);
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
   }, 25_000);
   it('detects a worker crash-loop (two restarts) after the initial parallel checks finish', () => {
-    const {
-      result,
-      stateDir,
-    } =
-      fixture(
-        {
-          MOCK_LATE_FAILURE:
-            '1',
-          MOCK_LATE_RESTARTS:
-            '2',
-        },
-      );
-    expect(
-      result.status,
-      result
-        .error
-        ?.message ||
-        result.stdout +
-          result.stderr,
-    ).toBe(
-      1,
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'Rolling back non-web services',
-    );
-    expect(
-      readState(
-        stateDir,
-        'last-successful',
-      )
-        ?.sha,
-    ).toBe(
-      shaA,
-    );
-    expect(
-      readState(
-        stateDir,
-        'release-candidate',
-      )
-        ?.phase,
-    ).toBe(
-      'rolledback',
-    );
+    const { result, stateDir } = fixture({
+      MOCK_LATE_FAILURE: '1',
+      MOCK_LATE_RESTARTS: '2',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
+    expect(result.stdout).toContain('Rolling back non-web services');
+    expect(readState(stateDir, 'last-successful')?.sha).toBe(shaA);
+    expect(readState(stateDir, 'release-candidate')?.phase).toBe('rolledback');
   }, 25_000);
   it('tolerates ONE worker restart that left it running: warns, does not roll back', () => {
-    const {
-      result,
-      stateDir,
-    } =
-      fixture(
-        {
-          MOCK_LATE_FAILURE:
-            '1',
-          MOCK_LATE_RESTARTS:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result
-        .error
-        ?.message ||
-        result.stdout +
-          result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      result.stdout +
-        result.stderr,
-    ).toContain(
-      'restarted 1x during the deploy window',
-    );
-    expect(
-      result.stdout,
-    ).not.toContain(
-      'Rolling back non-web services',
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.sha,
-    ).toBe(
-      shaB,
-    );
+    const { result, stateDir } = fixture({
+      MOCK_LATE_FAILURE: '1',
+      MOCK_LATE_RESTARTS: '1',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(0);
+    expect(result.stdout + result.stderr).toContain('restarted 1x during the deploy window');
+    expect(result.stdout).not.toContain('Rolling back non-web services');
+    expect(readState(stateDir, 'live')?.sha).toBe(shaB);
   }, 25_000);
   it('WORKER_RESTARTS_TOLERATED=0 restores the strict rule: one restart rolls back', () => {
-    const {
-      result,
-      stateDir,
-    } =
-      fixture(
-        {
-          MOCK_LATE_FAILURE:
-            '1',
-          MOCK_LATE_RESTARTS:
-            '1',
-          WORKER_RESTARTS_TOLERATED:
-            '0',
-        },
-      );
-    expect(
-      result.status,
-      result
-        .error
-        ?.message ||
-        result.stdout +
-          result.stderr,
-    ).toBe(
-      1,
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'Rolling back non-web services',
-    );
-    expect(
-      readState(
-        stateDir,
-        'release-candidate',
-      )
-        ?.phase,
-    ).toBe(
-      'rolledback',
-    );
+    const { result, stateDir } = fixture({
+      MOCK_LATE_FAILURE: '1',
+      MOCK_LATE_RESTARTS: '1',
+      WORKER_RESTARTS_TOLERATED: '0',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
+    expect(result.stdout).toContain('Rolling back non-web services');
+    expect(readState(stateDir, 'release-candidate')?.phase).toBe('rolledback');
   }, 25_000);
   it('preserves the approved SHA through a script self-update while main advances', () => {
-    const {
-      result,
-      stateDir,
-      docker,
-    } =
-      fixture(
-        {
-          MOCK_SELF_UPDATE:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result
-        .error
-        ?.message ||
-        result.stdout +
-          result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.sha,
-    ).toBe(
-      shaB,
-    );
-    expect(
-      docker,
-    ).toContain(
-      `pull ghcr.io/stickms/rmhstudios-app:${shaB}`,
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      `:${shaC}`,
-    );
+    const { result, stateDir, docker } = fixture({
+      MOCK_SELF_UPDATE: '1',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(0);
+    expect(readState(stateDir, 'live')?.sha).toBe(shaB);
+    expect(docker).toContain(`pull ghcr.io/stickms/rmhstudios-app:${shaB}`);
+    expect(docker).not.toContain(`:${shaC}`);
   }, 25_000);
   it('does not mark a partially failed migration rolled back or move traffic', () => {
-    const {
-      dir,
-      result,
-      stateDir,
-      docker,
-    } =
-      fixture(
-        {
-          MOCK_MIGRATION_FAIL:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).not.toBe(
-      0,
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'resolve --rolled-back',
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'P3009',
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.sha,
-    ).toBe(
-      shaA,
-    );
-    expect(
-      readState(
-        stateDir,
-        'release-candidate',
-      )
-        ?.phase,
-    ).toBe(
-      'fail',
-    );
-    expect(
-      existsSync(
-        join(
-          dir,
-          'swaps',
-        ),
-      ),
-    ).toBe(
-      false,
-    );
+    const { dir, result, stateDir, docker } = fixture({
+      MOCK_MIGRATION_FAIL: '1',
+    });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(docker).not.toContain('resolve --rolled-back');
+    expect(result.stdout).toContain('P3009');
+    expect(readState(stateDir, 'live')?.sha).toBe(shaA);
+    expect(readState(stateDir, 'release-candidate')?.phase).toBe('fail');
+    expect(existsSync(join(dir, 'swaps'))).toBe(false);
   }, 25_000);
   it('fails closed when the approved commit cannot be fetched', () => {
-    const {
-      result,
-      stateDir,
-      docker,
-    } =
-      fixture(
-        {
-          MOCK_UNREACHABLE:
-            '1',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).not.toBe(
-      0,
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'pull ',
-    );
-    expect(
-      result.stdout,
-    ).toContain(
-      'Cannot fetch the approved SHA',
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.sha,
-    ).toBe(
-      shaA,
-    );
+    const { result, stateDir, docker } = fixture({
+      MOCK_UNREACHABLE: '1',
+    });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(docker).not.toContain('pull ');
+    expect(result.stdout).toContain('Cannot fetch the approved SHA');
+    expect(readState(stateDir, 'live')?.sha).toBe(shaA);
   }, 25_000);
   it('fences a queued alarm rollback after a newer release takes over', () => {
-    const {
-      result,
-      docker,
-      stateDir,
-    } =
-      fixture(
-        {
-          DEPLOY_EXPECT_LIVE_ID:
-            'release-obsolete',
-        },
-      );
-    expect(
-      result.status,
-      result.stdout +
-        result.stderr,
-    ).toBe(
-      0,
-    );
-    expect(
-      docker,
-    ).not.toContain(
-      'pull ',
-    );
-    expect(
-      readState(
-        stateDir,
-        'release-candidate',
-      )
-        ?.phase,
-    ).toBe(
-      'superseded',
-    );
-    expect(
-      readState(
-        stateDir,
-        'live',
-      )
-        ?.sha,
-    ).toBe(
-      shaA,
-    );
+    const { result, docker, stateDir } = fixture({
+      DEPLOY_EXPECT_LIVE_ID: 'release-obsolete',
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(docker).not.toContain('pull ');
+    expect(readState(stateDir, 'release-candidate')?.phase).toBe('superseded');
+    expect(readState(stateDir, 'live')?.sha).toBe(shaA);
   }, 25_000);
 });

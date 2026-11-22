@@ -24,71 +24,35 @@ export const MAX_SECONDS_PER_REQUEST = 900;
 /** A member's reading time for one day is capped at 24 hours in total. */
 export const DAY_CAP_SECONDS = 86_400;
 /** A listen span with no end event (a stalled engine) counts for at most this long. */
-export const LISTEN_SPAN_MAX_MS =
-  3 *
-  3_600_000;
+export const LISTEN_SPAN_MAX_MS = 3 * 3_600_000;
 
 export const WEEKLY_TARGET_MIN = 10;
 export const WEEKLY_TARGET_MAX = 2000;
 
 /** Milliseconds counted for the gap between two activities. */
-export function accumulate(
-  prev:
-    | number
-    | null,
-  now: number,
-): number {
-  if (
-    prev ===
-      null ||
-    !Number.isFinite(
-      prev,
-    ) ||
-    !Number.isFinite(
-      now,
-    )
-  )
-    return 0;
-  return Math.min(
-    Math.max(
-      now -
-        prev,
-      0,
-    ),
-    GAP_CAP_MS,
-  );
+export function accumulate(prev: number | null, now: number): number {
+  if (prev === null || !Number.isFinite(prev) || !Number.isFinite(now)) return 0;
+  return Math.min(Math.max(now - prev, 0), GAP_CAP_MS);
 }
 
 export interface ClockState {
   /** Timestamp of the last reading activity; null when none yet or the tab was hidden. */
-  last:
-    | number
-    | null;
+  last: number | null;
   /** Counted milliseconds not yet flushed. */
   pendingMs: number;
   /** When speech started playing; null when it is not. */
-  listenFrom:
-    | number
-    | null;
+  listenFrom: number | null;
 }
 
-export const initialClock: ClockState =
-  {
-    last: null,
-    pendingMs: 0,
-    listenFrom:
-      null,
-  };
+export const initialClock: ClockState = {
+  last: null,
+  pendingMs: 0,
+  listenFrom: null,
+};
 
 /** A reading activity at `now`. */
-export function onActivity(
-  s: ClockState,
-  now: number,
-): ClockState {
-  if (
-    s.listenFrom !==
-    null
-  )
+export function onActivity(s: ClockState, now: number): ClockState {
+  if (s.listenFrom !== null)
     return {
       ...s,
       last: now,
@@ -96,113 +60,47 @@ export function onActivity(
   return {
     ...s,
     last: now,
-    pendingMs:
-      s.pendingMs +
-      accumulate(
-        s.last,
-        now,
-      ),
+    pendingMs: s.pendingMs + accumulate(s.last, now),
   };
 }
 
 /** The tab was hidden: close the open gap and stop counting until the next activity. */
-export function onHidden(
-  s: ClockState,
-  now: number,
-): ClockState {
-  const gap =
-    s.listenFrom !==
-    null
-      ? 0
-      : accumulate(
-          s.last,
-          now,
-        );
+export function onHidden(s: ClockState, now: number): ClockState {
+  const gap = s.listenFrom !== null ? 0 : accumulate(s.last, now);
   return {
     ...s,
     last: null,
-    pendingMs:
-      s.pendingMs +
-      gap,
+    pendingMs: s.pendingMs + gap,
   };
 }
 
-function listenMs(
-  s: ClockState,
-  now: number,
-): number {
-  return s.listenFrom ===
-    null
-    ? 0
-    : Math.min(
-        Math.max(
-          now -
-            s.listenFrom,
-          0,
-        ),
-        LISTEN_SPAN_MAX_MS,
-      );
+function listenMs(s: ClockState, now: number): number {
+  return s.listenFrom === null ? 0 : Math.min(Math.max(now - s.listenFrom, 0), LISTEN_SPAN_MAX_MS);
 }
 
 /** Speech started playing. The open activity gap is closed first. */
-export function onListenStart(
-  s: ClockState,
-  now: number,
-): ClockState {
-  if (
-    s.listenFrom !==
-    null
-  )
-    return s;
+export function onListenStart(s: ClockState, now: number): ClockState {
+  if (s.listenFrom !== null) return s;
   return {
     last: now,
-    pendingMs:
-      s.pendingMs +
-      accumulate(
-        s.last,
-        now,
-      ),
-    listenFrom:
-      now,
+    pendingMs: s.pendingMs + accumulate(s.last, now),
+    listenFrom: now,
   };
 }
 
 /** Speech stopped (end, pause or stop): the span counts. */
-export function onListenEnd(
-  s: ClockState,
-  now: number,
-): ClockState {
-  if (
-    s.listenFrom ===
-    null
-  )
-    return s;
+export function onListenEnd(s: ClockState, now: number): ClockState {
+  if (s.listenFrom === null) return s;
   return {
     last: now,
-    pendingMs:
-      s.pendingMs +
-      listenMs(
-        s,
-        now,
-      ),
-    listenFrom:
-      null,
+    pendingMs: s.pendingMs + listenMs(s, now),
+    listenFrom: null,
   };
 }
 
 /** Whole seconds waiting to be sent, counting an open listen span up to `now`. */
-export function pendingSeconds(
-  s: ClockState,
-  now: number,
-): number {
-  return Math.floor(
-    (s.pendingMs +
-      listenMs(
-        s,
-        now,
-      )) /
-      1000,
-  );
+export function pendingSeconds(s: ClockState, now: number): number {
+  return Math.floor((s.pendingMs + listenMs(s, now)) / 1000);
 }
 
 /**
@@ -218,110 +116,50 @@ export function drain(
   state: ClockState;
 } {
   const folded: ClockState =
-    s.listenFrom ===
-    null
+    s.listenFrom === null
       ? s
       : {
           ...s,
-          pendingMs:
-            s.pendingMs +
-            listenMs(
-              s,
-              now,
-            ),
-          listenFrom:
-            now,
+          pendingMs: s.pendingMs + listenMs(s, now),
+          listenFrom: now,
         };
-  const seconds =
-    Math.min(
-      Math.floor(
-        folded.pendingMs /
-          1000,
-      ),
-      MAX_SECONDS_PER_REQUEST,
-    );
+  const seconds = Math.min(Math.floor(folded.pendingMs / 1000), MAX_SECONDS_PER_REQUEST);
   return {
     seconds,
-    state:
-      {
-        ...folded,
-        pendingMs:
-          folded.pendingMs -
-          seconds *
-            1000,
-      },
+    state: {
+      ...folded,
+      pendingMs: folded.pendingMs - seconds * 1000,
+    },
   };
 }
 
 /** True when enough has accumulated to flush from inside an activity handler. */
-export function shouldFlush(
-  s: ClockState,
-  now: number,
-): boolean {
-  return (
-    pendingSeconds(
-      s,
-      now,
-    ) >
-    FLUSH_AFTER_SECONDS
-  );
+export function shouldFlush(s: ClockState, now: number): boolean {
+  return pendingSeconds(s, now) > FLUSH_AFTER_SECONDS;
 }
 
 /** Whole minutes for display; any non-zero time shows as at least one minute. */
-export function minutesOf(
-  seconds: number,
-): number {
-  if (
-    seconds <=
-    0
-  )
-    return 0;
-  return Math.max(
-    1,
-    Math.round(
-      seconds /
-        60,
-    ),
-  );
+export function minutesOf(seconds: number): number {
+  if (seconds <= 0) return 0;
+  return Math.max(1, Math.round(seconds / 60));
 }
 
 /** How many of `seconds` still fit in a day that already holds `used`. */
-export function roomInDay(
-  used: number,
-  seconds: number,
-): number {
-  return Math.max(
-    0,
-    Math.min(
-      seconds,
-      DAY_CAP_SECONDS -
-        used,
-    ),
-  );
+export function roomInDay(used: number, seconds: number): number {
+  return Math.max(0, Math.min(seconds, DAY_CAP_SECONDS - used));
 }
 
 /** The window event Listen mode raises when speech starts or stops (`detail.speaking`). */
-export const LISTEN_EVENT =
-  'rmh:reading-listen';
+export const LISTEN_EVENT = 'rmh:reading-listen';
 
 /** Tell any reading clock on the page that speech is (or is no longer) playing. */
-export function announceListening(
-  speaking: boolean,
-): void {
-  if (
-    typeof window ===
-    'undefined'
-  )
-    return;
+export function announceListening(speaking: boolean): void {
+  if (typeof window === 'undefined') return;
   window.dispatchEvent(
-    new CustomEvent(
-      LISTEN_EVENT,
-      {
-        detail:
-          {
-            speaking,
-          },
+    new CustomEvent(LISTEN_EVENT, {
+      detail: {
+        speaking,
       },
-    ),
+    }),
   );
 }

@@ -88,9 +88,7 @@ export async function scheduleEventReminders(
           eventId: event.id,
           userId,
           offset,
-          ...(original
-            ? { occurrenceAt: original.toISOString(), startsAt: event.startsAt.toISOString() }
-            : {}),
+          ...(original ? { occurrenceAt: original.toISOString(), startsAt: event.startsAt.toISOString() } : {}),
         } satisfies EventReminderJob,
         {
           startAfter: fireAt,
@@ -139,4 +137,3 @@ export async function cancelEventReminders(
     /* best-effort — worker re-checks the RSVP before notifying */
   }
 }
-

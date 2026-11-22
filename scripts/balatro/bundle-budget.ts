@@ -36,6 +36,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { build, type Loader, type Metafile, type Plugin } from 'esbuild';
+import { FRAMER_MOTION_INTERNALS } from '../../framer-motion-internals.mjs';
 import { readZip } from '../../features/balatro/engine/zip';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
@@ -54,7 +55,14 @@ export const BUDGETS = {
   // + 0.5 KB for lib/core/persist (redesign A4): the one storage helper that replaced the
   // hand-rolled try/catch copies lands in its own 0.25 KB gzip shared chunk on this path
   // (BalatroPage and lib/game-saves/cloud-save.ts both use it).
-  spEntryDeltaGzip: (2.5 + 2.5 + 0.5) * KB,
+  //
+  // + 1.75 KB for the shared UI layer the page's static closure reaches (measured 2026-11-22: +6.80 KB over
+  // the baseline, against 5.5 KB allowed). That closure counts everything but the shell packages, so
+  // components/ui, lib/access and the lucide icons it pulls in (one 20.7 KB gzip shared chunk of 104 modules,
+  // tailwind-merge the largest) grow with the site, not with Balatro: the Balatro-owned chunks are 11.4 KB of
+  // the 35.8 KB and none of them changed. This check could not run for Balatro-touching changes from 2026-11-18
+  // until its esbuild call got the framer-motion-internal alias (see `alias` below), so the growth went unseen.
+  spEntryDeltaGzip: (2.5 + 2.5 + 0.5 + 1.75) * KB,
   mpChunksGzip: 70 * KB,
   p2pGzip: 15 * KB,
   // Read from data/balatro-mp/pack-budget.json, the budget the pack builder enforces, so the
@@ -382,6 +390,9 @@ export async function measureBundle(
         '.woff2': 'empty',
         '.css': 'empty',
       },
+      // The two framer-motion internals LazyMotionProvider imports by fixed specifier. vite.shared.ts has the same alias
+      // for the real build; without it the closure of the site entry cannot be resolved at all.
+      alias: FRAMER_MOTION_INTERNALS,
       plugins: [sitePlugin(opts.ref ?? null)],
     });
     const meta = result.metafile!;

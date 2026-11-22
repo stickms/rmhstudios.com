@@ -9,11 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/toast';
 import { rowsFor } from '@/lib/study/card-types';
 import { parseCards, SEPARATORS, type ParsedCard, type RejectReason, type Separator } from '@/lib/study/import';
-import {
-  MAX_DECK_CARDS,
-  MAX_IMPORT_CARDS,
-  MAX_IMPORT_FILE_BYTES,
-} from '@/lib/study/limits';
+import { MAX_DECK_CARDS, MAX_IMPORT_CARDS, MAX_IMPORT_FILE_BYTES } from '@/lib/study/limits';
 
 const PREVIEW_ROWS = 50;
 
@@ -51,10 +47,7 @@ export function ImportPanel({
     [deferred, separator, hasHeader, swap],
   );
 
-  const known = useMemo(
-    () => new Set(existingFronts.map((f) => f.trim().toLowerCase())),
-    [existingFronts],
-  );
+  const known = useMemo(() => new Set(existingFronts.map((f) => f.trim().toLowerCase())), [existingFronts]);
   const { cards, duplicates } = useMemo(() => {
     if (!skipDuplicates) return { cards: parsed.cards, duplicates: 0 };
     const kept = parsed.cards.filter((c) => !known.has(c.front.toLowerCase()));

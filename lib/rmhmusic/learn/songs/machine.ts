@@ -38,12 +38,7 @@ import type { NoteEvent } from '../input/events';
 import type { Machine } from '../machines/runner';
 import { ZERO_MS } from '../scoring/timing';
 import { sameNote } from '../sprint/machine';
-import {
-  notesOf,
-  soundingPitch,
-  type Song,
-  type SongVersion,
-} from './score';
+import { notesOf, soundingPitch, type Song, type SongVersion } from './score';
 import {
   MAX_WRONG,
   MIC_ONSET_MS,
@@ -55,16 +50,8 @@ import {
   type SongSummary,
 } from './scoring';
 
-export type SongSaveOutcome =
-  | 'saved'
-  | 'failed'
-  | 'unauthorized'
-  | 'invalid'
-  | 'unsaved';
-export type StopReason =
-  | 'away'
-  | 'dialog'
-  | 'sound';
+export type SongSaveOutcome = 'saved' | 'failed' | 'unauthorized' | 'invalid' | 'unsaved';
+export type StopReason = 'away' | 'dialog' | 'sound';
 
 interface Run {
   mode: SongMode;
@@ -87,9 +74,7 @@ export type SongState =
       wrong: number;
       counts: readonly number[];
       since: number;
-      lastWrong:
-        | number
-        | null;
+      lastWrong: number | null;
     })
   | (Run & {
       kind: 'counting';
@@ -120,22 +105,12 @@ export type SongState =
       attempt: number;
     })
   | (Run & {
-      kind:
-        | 'saved'
-        | 'signed-out'
-        | 'unsaved';
+      kind: 'saved' | 'signed-out' | 'unsaved';
       summary: SongSummary;
       record: SongRunRecord;
     });
 
-export type SongNoteEvent =
-  Pick<
-    NoteEvent,
-    | 'type'
-    | 'midi'
-    | 'time'
-    | 'source'
-  >;
+export type SongNoteEvent = Pick<NoteEvent, 'type' | 'midi' | 'time' | 'source'>;
 
 export type SongEvent =
   | {
@@ -195,11 +170,10 @@ export type SongEffect =
       summary: SongSummary;
     };
 
-type Step =
-  {
-    state: SongState;
-    effects: SongEffect[];
-  };
+type Step = {
+  state: SongState;
+  effects: SongEffect[];
+};
 
 /** A skipped note is recorded as this many wrong notes: the fewest that score it nothing. */
 export const SKIPPED_WRONG = 2;
@@ -214,61 +188,36 @@ function closeAt(
   >,
   i: number,
 ): number {
-  return (
-    s.t0 +
-    (s
-      .onsets[
-      i
-    ] ??
-      0) *
-      s.beatMs +
-    ZERO_MS +
-    Math.max(
-      0,
-      s.latencyMs,
-    ) +
-    s.micOnsetMs
-  );
+  return s.t0 + (s.onsets[i] ?? 0) * s.beatMs + ZERO_MS + Math.max(0, s.latencyMs) + s.micOnsetMs;
 }
 
-function save(
-  run: Run,
-  record: SongRunRecord,
-  summary: SongSummary,
-  extra: SongEffect[] = [],
-): Step {
+function save(run: Run, record: SongRunRecord, summary: SongSummary, extra: SongEffect[] = []): Step {
   return {
-    state:
+    state: {
+      ...run,
+      kind: 'saving',
+      summary,
+      record,
+      attempt: 1,
+    },
+    effects: [
+      ...extra,
       {
-        ...run,
-        kind: 'saving',
-        summary,
-        record,
+        type: 'save',
         attempt: 1,
+        run: record,
+        summary,
       },
-    effects:
-      [
-        ...extra,
-        {
-          type: 'save',
-          attempt: 1,
-          run: record,
-          summary,
-        },
-      ],
+    ],
   };
 }
 
-function runOf(
-  s: SongState,
-): Run {
+function runOf(s: SongState): Run {
   return {
     mode: s.mode,
     runs: s.runs,
-    pitches:
-      s.pitches,
-    onsets:
-      s.onsets,
+    pitches: s.pitches,
+    onsets: s.onsets,
   };
 }
 
@@ -282,159 +231,57 @@ function advance(
   >,
   at: number,
 ): Step {
-  let cursor =
-    s.cursor;
-  while (
-    cursor +
-      1 <
-      s
-        .onsets
-        .length &&
-    s.t0 +
-      (s
-        .onsets[
-        cursor +
-          1
-      ] ??
-        0) *
-        s.beatMs <=
-      at
-  )
-    cursor++;
-  let notes =
-    s.notes;
-  for (
-    let i = 0;
-    i <
-    notes.length;
-    i++
-  ) {
-    if (
-      notes[
-        i
-      ] ===
-        null &&
-      closeAt(
-        s,
-        i,
-      ) <=
-        at
-    ) {
-      if (
-        notes ===
-        s.notes
-      )
-        notes =
-          [
-            ...s.notes,
-          ];
-      (
-        notes as (PlayNoteResult | null)[]
-      )[
-        i
-      ] =
-        {
-          outcome:
-            'missed',
-          offMs:
-            null,
-        };
+  let cursor = s.cursor;
+  while (cursor + 1 < s.onsets.length && s.t0 + (s.onsets[cursor + 1] ?? 0) * s.beatMs <= at) cursor++;
+  let notes = s.notes;
+  for (let i = 0; i < notes.length; i++) {
+    if (notes[i] === null && closeAt(s, i) <= at) {
+      if (notes === s.notes) notes = [...s.notes];
+      (notes as (PlayNoteResult | null)[])[i] = {
+        outcome: 'missed',
+        offMs: null,
+      };
     }
   }
-  const last =
-    s
-      .onsets
-      .length -
-    1;
-  if (
-    notes.every(
-      (
-        n,
-      ) =>
-        n !==
-        null,
-    ) &&
-    at >=
-      closeAt(
-        s,
-        last,
-      )
-  ) {
-    const done =
-      notes as readonly PlayNoteResult[];
-    const record: SongRunRecord =
+  const last = s.onsets.length - 1;
+  if (notes.every((n) => n !== null) && at >= closeAt(s, last)) {
+    const done = notes as readonly PlayNoteResult[];
+    const record: SongRunRecord = {
+      mode: 'play',
+      notes: done,
+      extras: s.extras,
+    };
+    return save(runOf(s), record, summarizePlay(done, s.extras), [
       {
-        mode: 'play',
-        notes:
-          done,
-        extras:
-          s.extras,
-      };
-    return save(
-      runOf(
-        s,
-      ),
-      record,
-      summarizePlay(
-        done,
-        s.extras,
-      ),
-      [
-        {
-          type: 'halt',
-        },
-      ],
-    );
+        type: 'halt',
+      },
+    ]);
   }
-  if (
-    cursor ===
-      s.cursor &&
-    notes ===
-      s.notes
-  )
+  if (cursor === s.cursor && notes === s.notes)
     return {
-      state:
-        s,
-      effects:
-        [],
+      state: s,
+      effects: [],
     };
   return {
-    state:
-      {
-        ...s,
-        cursor,
-        notes,
-      },
-    effects:
-      [],
+    state: {
+      ...s,
+      cursor,
+      notes,
+    },
+    effects: [],
   };
 }
 
-function stepState(
-  s: SongState,
-  e: SongEvent,
-): Step {
-  const same: Step =
-    {
-      state:
-        s,
-      effects:
-        [],
-    };
-  const run =
-    runOf(
-      s,
-    );
+function stepState(s: SongState, e: SongEvent): Step {
+  const same: Step = {
+    state: s,
+    effects: [],
+  };
+  const run = runOf(s);
 
-  if (
-    e.type ===
-    'again'
-  ) {
+  if (e.type === 'again') {
     const halt: SongEffect[] =
-      s.kind ===
-        'counting' ||
-      s.kind ===
-        'playing'
+      s.kind === 'counting' || s.kind === 'playing'
         ? [
             {
               type: 'halt',
@@ -442,509 +289,229 @@ function stepState(
           ]
         : [];
     return {
-      state:
-        {
-          ...run,
-          kind: 'ready',
-          stopped:
-            null,
-        },
-      effects:
-        halt,
+      state: {
+        ...run,
+        kind: 'ready',
+        stopped: null,
+      },
+      effects: halt,
     };
   }
-  if (
-    e.type ===
-    'stop'
-  ) {
-    if (
-      s.kind !==
-        'counting' &&
-      s.kind !==
-        'playing' &&
-      s.kind !==
-        'waiting'
-    )
-      return same;
+  if (e.type === 'stop') {
+    if (s.kind !== 'counting' && s.kind !== 'playing' && s.kind !== 'waiting') return same;
     return {
-      state:
+      state: {
+        ...run,
+        kind: 'ready',
+        stopped: e.why,
+      },
+      effects: [
         {
-          ...run,
-          kind: 'ready',
-          stopped:
-            e.why,
+          type: 'halt',
         },
-      effects:
-        [
-          {
-            type: 'halt',
-          },
-        ],
+      ],
     };
   }
 
-  switch (
-    s.kind
-  ) {
+  switch (s.kind) {
     case 'ready': {
-      if (
-        e.type !==
-        'start'
-      )
-        return same;
-      const runs =
-        s.runs +
-        1;
-      if (
-        s.mode ===
-        'wait'
-      )
+      if (e.type !== 'start') return same;
+      const runs = s.runs + 1;
+      if (s.mode === 'wait')
         return {
-          state:
-            {
-              ...run,
-              runs,
-              kind: 'waiting',
-              index: 0,
-              wrong: 0,
-              counts:
-                [],
-              since:
-                e.at,
-              lastWrong:
-                null,
-            },
-          effects:
-            [],
-        };
-      return {
-        state:
-          {
+          state: {
             ...run,
             runs,
-            kind: 'counting',
-            token:
-              runs,
+            kind: 'waiting',
+            index: 0,
+            wrong: 0,
+            counts: [],
+            since: e.at,
+            lastWrong: null,
           },
-        effects:
-          [
-            {
-              type: 'prepare',
-              token:
-                runs,
-            },
-          ],
+          effects: [],
+        };
+      return {
+        state: {
+          ...run,
+          runs,
+          kind: 'counting',
+          token: runs,
+        },
+        effects: [
+          {
+            type: 'prepare',
+            token: runs,
+          },
+        ],
       };
     }
 
     case 'waiting': {
-      const skip =
-        e.type ===
-        'skip';
-      if (
-        !skip &&
-        (e.type !==
-          'note' ||
-          e
-            .note
-            .type !==
-            'on' ||
-          e
-            .note
-            .time <
-            s.since)
-      )
-        return same;
-      const want =
-        s
-          .pitches[
-          s
-            .index
-        ];
-      if (
-        want ===
-        undefined
-      )
-        return same;
-      if (
-        !skip &&
-        e.type ===
-          'note' &&
-        !sameNote(
-          e
-            .note
-            .source,
-          e
-            .note
-            .midi,
-          want,
-        )
-      )
+      const skip = e.type === 'skip';
+      if (!skip && (e.type !== 'note' || e.note.type !== 'on' || e.note.time < s.since)) return same;
+      const want = s.pitches[s.index];
+      if (want === undefined) return same;
+      if (!skip && e.type === 'note' && !sameNote(e.note.source, e.note.midi, want))
         return {
-          state:
-            {
-              ...s,
-              wrong:
-                Math.min(
-                  MAX_WRONG,
-                  s.wrong +
-                    1,
-                ),
-              lastWrong:
-                e
-                  .note
-                  .midi,
-            },
-          effects:
-            [],
+          state: {
+            ...s,
+            wrong: Math.min(MAX_WRONG, s.wrong + 1),
+            lastWrong: e.note.midi,
+          },
+          effects: [],
         };
-      const counts =
-        [
-          ...s.counts,
-          skip
-            ? Math.max(
-                SKIPPED_WRONG,
-                s.wrong,
-              )
-            : s.wrong,
-        ];
-      if (
-        counts.length ===
-        s
-          .pitches
-          .length
-      ) {
-        const record: SongRunRecord =
-          {
-            mode: 'wait',
-            wrong:
-              counts,
-          };
-        return save(
-          run,
-          record,
-          summarizeWait(
-            counts,
-          ),
-        );
+      const counts = [...s.counts, skip ? Math.max(SKIPPED_WRONG, s.wrong) : s.wrong];
+      if (counts.length === s.pitches.length) {
+        const record: SongRunRecord = {
+          mode: 'wait',
+          wrong: counts,
+        };
+        return save(run, record, summarizeWait(counts));
       }
       return {
-        state:
-          {
-            ...s,
-            index:
-              s.index +
-              1,
-            wrong: 0,
-            counts,
-            lastWrong:
-              null,
-          },
-        effects:
-          [],
+        state: {
+          ...s,
+          index: s.index + 1,
+          wrong: 0,
+          counts,
+          lastWrong: null,
+        },
+        effects: [],
       };
     }
 
     case 'counting':
-      if (
-        e.type !==
-          'begin' ||
-        e.token !==
-          s.token
-      )
-        return same;
+      if (e.type !== 'begin' || e.token !== s.token) return same;
       return {
-        state:
-          {
-            ...run,
-            kind: 'playing',
-            t0: e.t0,
-            beatMs:
-              e.beatMs,
-            latencyMs:
-              e.latencyMs,
-            micOnsetMs:
-              e.calibrated
-                ? 0
-                : MIC_ONSET_MS,
-            cursor:
-              -1,
-            notes:
-              s.pitches.map(
-                () =>
-                  null,
-              ),
-            extras: 0,
-          },
-        effects:
-          [],
+        state: {
+          ...run,
+          kind: 'playing',
+          t0: e.t0,
+          beatMs: e.beatMs,
+          latencyMs: e.latencyMs,
+          micOnsetMs: e.calibrated ? 0 : MIC_ONSET_MS,
+          cursor: -1,
+          notes: s.pitches.map(() => null),
+          extras: 0,
+        },
+        effects: [],
       };
 
     case 'playing': {
-      if (
-        e.type ===
-        'tick'
-      )
-        return advance(
-          s,
-          e.at,
-        );
-      if (
-        e.type !==
-          'note' ||
-        e
-          .note
-          .type !==
-          'on'
-      )
-        return same;
-      const note =
-        e.note;
-      const t =
-        note.time -
-        s.latencyMs -
-        (note.source ===
-        'mic'
-          ? s.micOnsetMs
-          : 0);
+      if (e.type === 'tick') return advance(s, e.at);
+      if (e.type !== 'note' || e.note.type !== 'on') return same;
+      const note = e.note;
+      const t = note.time - s.latencyMs - (note.source === 'mic' ? s.micOnsetMs : 0);
       // The open note of this pitch whose window holds the note-on, the nearest if several; else the
       // nearest open note (which the note-on then answers wrongly). Overlapping eighths stay apart.
-      let best =
-        -1;
-      let bestOff =
-        Infinity;
+      let best = -1;
+      let bestOff = Infinity;
       let bestRight = false;
-      for (
-        let i = 0;
-        i <
-        s
-          .notes
-          .length;
-        i++
-      ) {
-        if (
-          s
-            .notes[
-            i
-          ] !==
-          null
-        )
-          continue;
-        const off =
-          t -
-          (s.t0 +
-            (s
-              .onsets[
-              i
-            ] ??
-              0) *
-              s.beatMs);
-        if (
-          Math.abs(
-            off,
-          ) >
-          ZERO_MS
-        )
-          continue;
-        const right =
-          sameNote(
-            note.source,
-            note.midi,
-            s
-              .pitches[
-              i
-            ] ??
-              -1,
-          );
-        if (
-          (right &&
-            !bestRight) ||
-          (right ===
-            bestRight &&
-            Math.abs(
-              off,
-            ) <
-              Math.abs(
-                bestOff,
-              ))
-        ) {
-          best =
-            i;
-          bestOff =
-            off;
-          bestRight =
-            right;
+      for (let i = 0; i < s.notes.length; i++) {
+        if (s.notes[i] !== null) continue;
+        const off = t - (s.t0 + (s.onsets[i] ?? 0) * s.beatMs);
+        if (Math.abs(off) > ZERO_MS) continue;
+        const right = sameNote(note.source, note.midi, s.pitches[i] ?? -1);
+        if ((right && !bestRight) || (right === bestRight && Math.abs(off) < Math.abs(bestOff))) {
+          best = i;
+          bestOff = off;
+          bestRight = right;
         }
       }
-      if (
-        best <
-        0
-      ) {
-        const first =
-          s.t0 -
-          ZERO_MS;
-        const last =
-          s.t0 +
-          (s
-            .onsets[
-            s
-              .onsets
-              .length -
-              1
-          ] ??
-            0) *
-            s.beatMs +
-          ZERO_MS;
-        if (
-          t <
-            first ||
-          t >
-            last
-        )
-          return same;
+      if (best < 0) {
+        const first = s.t0 - ZERO_MS;
+        const last = s.t0 + (s.onsets[s.onsets.length - 1] ?? 0) * s.beatMs + ZERO_MS;
+        if (t < first || t > last) return same;
         return {
-          state:
-            {
-              ...s,
-              extras:
-                s.extras +
-                1,
-            },
-          effects:
-            [],
+          state: {
+            ...s,
+            extras: s.extras + 1,
+          },
+          effects: [],
         };
       }
-      const notes =
-        [
-          ...s.notes,
-        ];
-      notes[
-        best
-      ] =
-        {
-          outcome:
-            bestRight
-              ? 'right'
-              : 'wrong',
-          offMs:
-            Math.round(
-              bestOff,
-            ),
-        };
+      const notes = [...s.notes];
+      notes[best] = {
+        outcome: bestRight ? 'right' : 'wrong',
+        offMs: Math.round(bestOff),
+      };
       return {
-        state:
-          {
-            ...s,
-            notes,
-          },
-        effects:
-          [],
+        state: {
+          ...s,
+          notes,
+        },
+        effects: [],
       };
     }
 
     case 'saving':
-      if (
-        e.type !==
-          'answered' ||
-        e.attempt !==
-          s.attempt
-      )
-        return same;
-      switch (
-        e.outcome
-      ) {
+      if (e.type !== 'answered' || e.attempt !== s.attempt) return same;
+      switch (e.outcome) {
         case 'saved':
           return {
-            state:
-              {
-                ...run,
-                kind: 'saved',
-                summary:
-                  s.summary,
-                record:
-                  s.record,
-              },
-            effects:
-              [],
+            state: {
+              ...run,
+              kind: 'saved',
+              summary: s.summary,
+              record: s.record,
+            },
+            effects: [],
           };
         case 'unauthorized':
           return {
-            state:
-              {
-                ...run,
-                kind: 'signed-out',
-                summary:
-                  s.summary,
-                record:
-                  s.record,
-              },
-            effects:
-              [],
+            state: {
+              ...run,
+              kind: 'signed-out',
+              summary: s.summary,
+              record: s.record,
+            },
+            effects: [],
           };
         case 'unsaved':
         case 'invalid':
           return {
-            state:
-              {
-                ...run,
-                kind: 'unsaved',
-                summary:
-                  s.summary,
-                record:
-                  s.record,
-              },
-            effects:
-              [],
+            state: {
+              ...run,
+              kind: 'unsaved',
+              summary: s.summary,
+              record: s.record,
+            },
+            effects: [],
           };
         case 'failed':
           return {
-            state:
-              {
-                ...run,
-                kind: 'failed',
-                summary:
-                  s.summary,
-                record:
-                  s.record,
-                attempt:
-                  s.attempt,
-              },
-            effects:
-              [],
+            state: {
+              ...run,
+              kind: 'failed',
+              summary: s.summary,
+              record: s.record,
+              attempt: s.attempt,
+            },
+            effects: [],
           };
       }
       return same;
 
     case 'failed': {
-      if (
-        e.type !==
-        'retry'
-      )
-        return same;
-      const attempt =
-        s.attempt +
-        1;
+      if (e.type !== 'retry') return same;
+      const attempt = s.attempt + 1;
       return {
-        state:
+        state: {
+          ...run,
+          kind: 'saving',
+          summary: s.summary,
+          record: s.record,
+          attempt,
+        },
+        effects: [
           {
-            ...run,
-            kind: 'saving',
-            summary:
-              s.summary,
-            record:
-              s.record,
+            type: 'save',
             attempt,
+            run: s.record,
+            summary: s.summary,
           },
-        effects:
-          [
-            {
-              type: 'save',
-              attempt,
-              run: s.record,
-              summary:
-                s.summary,
-            },
-          ],
+        ],
       };
     }
 
@@ -961,244 +528,58 @@ export function createSongMachine({
   song: Song;
   version: SongVersion;
   mode: SongMode;
-}): Machine<
-  SongState,
-  SongEvent,
-  SongEffect
-> {
-  const notes =
-    notesOf(
-      song,
-    );
+}): Machine<SongState, SongEvent, SongEffect> {
+  const notes = notesOf(song);
   return {
-    initial:
-      {
-        mode,
-        runs: 0,
-        pitches:
-          notes.map(
-            (
-              n,
-            ) =>
-              soundingPitch(
-                n.written,
-                version,
-              ),
-          ),
-        onsets:
-          notes.map(
-            (
-              n,
-            ) =>
-              n.onset,
-          ),
-        kind: 'ready',
-        stopped:
-          null,
-      },
+    initial: {
+      mode,
+      runs: 0,
+      pitches: notes.map((n) => soundingPitch(n.written, version)),
+      onsets: notes.map((n) => n.onset),
+      kind: 'ready',
+      stopped: null,
+    },
     step: stepState,
   };
 }
 
 /** The note the cursor is on: the one to play (Wait for me) or the latest due (Play along); −1 for none. */
-export function cursorOf(
-  s: SongState,
-): number {
-  if (
-    s.kind ===
-    'waiting'
-  )
-    return s.index;
-  if (
-    s.kind ===
-    'playing'
-  )
-    return s.cursor;
+export function cursorOf(s: SongState): number {
+  if (s.kind === 'waiting') return s.index;
+  if (s.kind === 'playing') return s.cursor;
   return -1;
 }
 
 /** Each note's pencil mark: right, wrong (or missed, or played after a wrong note), or none yet. */
-export function marksOf(
-  s: SongState,
-): (
-  | 'right'
-  | 'wrong'
-  | null
-)[] {
-  const n =
-    s
-      .pitches
-      .length;
-  const out: (
-    | 'right'
-    | 'wrong'
-    | null
-  )[] =
-    new Array<
-      | 'right'
-      | 'wrong'
-      | null
-    >(
-      n,
-    ).fill(
-      null,
-    );
-  const fromWait =
-    (
-      counts: readonly number[],
-    ) =>
-      counts.forEach(
-        (
-          c,
-          i,
-        ) =>
-          (out[
-            i
-          ] =
-            c ===
-            0
-              ? 'right'
-              : 'wrong'),
-      );
-  const fromPlay =
-    (
-      notes: readonly (PlayNoteResult | null)[],
-    ) =>
-      notes.forEach(
-        (
-          r,
-          i,
-        ) =>
-          (out[
-            i
-          ] =
-            r ===
-            null
-              ? null
-              : r.outcome ===
-                  'right'
-                ? 'right'
-                : 'wrong'),
-      );
-  if (
-    s.kind ===
-    'waiting'
-  )
-    fromWait(
-      s.counts,
-    );
-  else if (
-    s.kind ===
-    'playing'
-  )
-    fromPlay(
-      s.notes,
-    );
-  else if (
-    'record' in
-    s
-  ) {
-    if (
-      s
-        .record
-        .mode ===
-      'wait'
-    )
-      fromWait(
-        s
-          .record
-          .wrong,
-      );
-    else
-      fromPlay(
-        s
-          .record
-          .notes,
-      );
+export function marksOf(s: SongState): ('right' | 'wrong' | null)[] {
+  const n = s.pitches.length;
+  const out: ('right' | 'wrong' | null)[] = new Array<'right' | 'wrong' | null>(n).fill(null);
+  const fromWait = (counts: readonly number[]) => counts.forEach((c, i) => (out[i] = c === 0 ? 'right' : 'wrong'));
+  const fromPlay = (notes: readonly (PlayNoteResult | null)[]) =>
+    notes.forEach((r, i) => (out[i] = r === null ? null : r.outcome === 'right' ? 'right' : 'wrong'));
+  if (s.kind === 'waiting') fromWait(s.counts);
+  else if (s.kind === 'playing') fromPlay(s.notes);
+  else if ('record' in s) {
+    if (s.record.mode === 'wait') fromWait(s.record.wrong);
+    else fromPlay(s.record.notes);
   }
   return out;
 }
 
 /** When the screen should next send `tick` (ms, the note events' clock); null when nothing is due. */
-export function nextDue(
-  s: SongState,
-):
-  | number
-  | null {
-  if (
-    s.kind !==
-    'playing'
-  )
-    return null;
-  const next =
-    s.cursor +
-    1;
-  if (
-    next <
-    s
-      .onsets
-      .length
-  )
-    return (
-      s.t0 +
-      (s
-        .onsets[
-        next
-      ] ??
-        0) *
-        s.beatMs
-    );
+export function nextDue(s: SongState): number | null {
+  if (s.kind !== 'playing') return null;
+  const next = s.cursor + 1;
+  if (next < s.onsets.length) return s.t0 + (s.onsets[next] ?? 0) * s.beatMs;
   // After the last onset: when the last open window closes — or, every note answered, when the last
   // note's window would have (a note-on until then may still be an extra), which ends the run.
-  let due =
-    closeAt(
-      s,
-      s
-        .onsets
-        .length -
-        1,
-    );
-  for (
-    let i = 0;
-    i <
-    s
-      .notes
-      .length;
-    i++
-  )
-    if (
-      s
-        .notes[
-        i
-      ] ===
-      null
-    )
-      due =
-        Math.max(
-          due,
-          closeAt(
-            s,
-            i,
-          ),
-        );
+  let due = closeAt(s, s.onsets.length - 1);
+  for (let i = 0; i < s.notes.length; i++) if (s.notes[i] === null) due = Math.max(due, closeAt(s, i));
   return due;
 }
 
 /** Every note's due time in a play-along run (empty before `begin`). */
-export function targetTimes(
-  s: SongState,
-): number[] {
-  if (
-    s.kind !==
-    'playing'
-  )
-    return [];
-  return s.onsets.map(
-    (
-      o,
-    ) =>
-      s.t0 +
-      o *
-        s.beatMs,
-  );
+export function targetTimes(s: SongState): number[] {
+  if (s.kind !== 'playing') return [];
+  return s.onsets.map((o) => s.t0 + o * s.beatMs);
 }

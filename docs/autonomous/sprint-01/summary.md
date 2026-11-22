@@ -1,38 +1,7 @@
 # Sprint 01 — summary
 
-The
-Toolbox
-shipped:
-a
-hub
-at
-`/tools`
-and
-twenty
-private,
-client-side
-utilities,
-each
-with
-its
-own
-route,
-page
-meta,
-sitemap
-entry,
-strings
-in
-the
-`toolbox`
-namespace,
-unit
-tests
-and
-a
-specification
-in
-`features/`.
+The Toolbox shipped: a hub at `/tools` and twenty private, client-side utilities, each with its own route, page meta,
+sitemap entry, strings in the `toolbox` namespace, unit tests and a specification in `features/`.
 
 ## What shipped
 
@@ -59,347 +28,45 @@ in
 | 19  | [Dice roller](features/19-dice.md)              | `/tools/dice`       | 4d6kh3 never keeps the lowest die.                                                                |
 | 20  | [Random picker](features/20-picker.md)          | `/tools/picker`     | Ten people into three teams gives sizes 4, 3, 3.                                                  |
 
-Shared:
-the
-hub
-with
-a
-filter
-(`components/toolbox/ToolboxHub.tsx`),
-the
-page
-frame
-and
-result
-rows
-(`ToolFrame.tsx`),
-unbiased
-crypto
-randomness
-(`lib/toolbox/random.ts`),
-the
-catalog,
-the
-`/tools`
-OG
-section
-card,
-sitemap
-entries
-derived
-from
-the
-catalog,
-a
-Toolbox
-entry
-in
-the
-site's
-destination
-catalog
-(⌘K
-and
-Explore
-find
-it
-by
-any
-tool's
-name),
-and
-a
-separate
-test
-suite
-(`pnpm test:toolbox`,
-`toolbox-tests.yml`).
+Shared: the hub with a filter (`components/toolbox/ToolboxHub.tsx`), the page frame and result rows (`ToolFrame.tsx`),
+unbiased crypto randomness (`lib/toolbox/random.ts`), the catalog, the `/tools` OG section card, sitemap entries derived
+from the catalog, a Toolbox entry in the site's destination catalog (⌘K and Explore find it by any tool's name), and a
+separate test suite (`pnpm test:toolbox`, `toolbox-tests.yml`).
 
 ## Size
 
-`git diff --shortstat origin/main...HEAD`
-for
-the
-squashed
-sprint
-commit:
-**132 files changed, 23371 insertions(+), 12 deletions(-)**.
+`git diff --shortstat origin/main...HEAD` for the squashed sprint commit: **132 files changed, 23371 insertions(+), 12
+deletions(-)**.
 
-By
-area:
-tool
-logic
-and
-tests
-in
-`lib/toolbox/`
-about
-5,100
-lines;
-UI
-in
-`components/toolbox/`
-about
-3,750;
-routes
-about
-330;
-strings
-461
-keys;
-the
-rest
-is
-the
-generated
-route
-tree
-and
-inventories
-and
-these
-documents
-(which
-follow
-the
-repository's
-Prettier
-settings
-for
-Markdown,
-one
-word
-per
-line).
+By area: tool logic and tests in `lib/toolbox/` about 5,100 lines; UI in `components/toolbox/` about 3,750; routes about
+330; strings 461 keys; the rest is the generated route tree and inventories and these documents (which follow the
+repository's Prettier settings for Markdown, one word per line).
 
 ## Verification
 
-- `pnpm check:consistency --base main`:
-  passed
-  (design,
-  strings,
-  routes,
-  eslint,
-  `tsc -b`,
-  generated
-  docs,
-  pre-paint,
+- `pnpm check:consistency --base main`: passed (design, strings, routes, eslint, `tsc -b`, generated docs, pre-paint,
   facts).
-- `pnpm typecheck:strict`:
-  island
-  clean
-  (`lib/toolbox/*.ts`
-  joined
-  it).
-- `pnpm test`
-  (main
-  suite):
-  1,101
-  files,
-  12,739
-  tests
-  passed.
-- `pnpm test:toolbox`:
-  22
-  files,
-  171
-  tests
-  passed.
-- Every
-  route
-  rendered
-  in
-  a
-  real
-  browser
-  (Chromium)
-  in
-  Day
-  and
-  Night
-  at
-  390px
-  and
-  1280px
-  with
-  no
-  page
-  errors,
-  no
-  hydration
-  warnings
-  and
-  no
-  horizontal
-  overflow;
-  a
-  sample
-  was
-  inspected
-  by
-  eye,
-  and
-  two
-  pages
-  in
-  Arabic
-  (RTL).
+- `pnpm typecheck:strict`: island clean (`lib/toolbox/*.ts` joined it).
+- `pnpm test` (main suite): 1,101 files, 12,739 tests passed.
+- `pnpm test:toolbox`: 22 files, 171 tests passed.
+- Every route rendered in a real browser (Chromium) in Day and Night at 390px and 1280px with no page errors, no
+  hydration warnings and no horizontal overflow; a sample was inspected by eye, and two pages in Arabic (RTL).
 
 ## Found and fixed during review
 
-- The
-  bill
-  splitter's
-  name
-  field
-  was
-  cut
-  to
-  about
-  seventy
-  pixels
-  on
-  a
-  phone;
-  the
-  row
-  now
-  wraps
-  below
-  `sm`.
-- The
-  time
-  zone
-  converter
-  had
-  its
-  own
-  formatter
-  cache,
-  which
-  the
-  ad-hoc
-  cache
-  ratchet
-  counted;
-  it
-  now
-  reads
-  wall
-  clocks
-  through
-  `lib/core/zoned-time`.
-- In
-  the
-  Arabic
-  layout,
-  code
-  (diffs,
-  JSON,
-  regex,
-  encodings,
-  IDs)
-  was
-  right-aligned;
-  code
-  fields
-  and
-  lists
-  are
-  now
+- The bill splitter's name field was cut to about seventy pixels on a phone; the row now wraps below `sm`.
+- The time zone converter had its own formatter cache, which the ad-hoc cache ratchet counted; it now reads wall clocks
+  through `lib/core/zoned-time`.
+- In the Arabic layout, code (diffs, JSON, regex, encodings, IDs) was right-aligned; code fields and lists are now
   `dir="ltr"`.
-- SSR
-  safety:
-  everything
-  that
-  depends
-  on
-  the
-  clock,
-  the
-  viewer's
-  time
-  zone,
-  the
-  browser's
-  zone
-  list
-  or
-  randomness
-  renders
-  after
-  hydration.
+- SSR safety: everything that depends on the clock, the viewer's time zone, the browser's zone list or randomness
+  renders after hydration.
 
 ## Process notes
 
-- No
-  subagent
-  tool
-  was
-  available
-  in
-  this
-  session,
-  so
-  design,
-  implementation
-  and
-  review
-  were
-  done
-  in
-  one
-  context;
-  "fresh-eyes"
-  review
-  was
-  replaced
-  by
-  the
-  full
-  gate,
-  the
-  full
-  main
-  suite,
-  and
-  a
-  real-browser
-  pass
-  over
-  every
-  route.
-- Tool
-  tests
-  are
-  not
-  mission-critical
-  by
-  `docs/testing.md`'s
-  rule,
-  so
-  they
-  got
-  their
-  own
-  suite
-  instead
-  of
-  growing
-  the
-  main
-  one.
-- `pnpm i18n:extract`
-  on
-  `main`
-  rewrites
-  about
-  twenty
-  unrelated
-  catalogs
-  (existing
-  drift);
-  only
-  `locales/en/toolbox.json`
-  was
-  kept.
+- No subagent tool was available in this session, so design, implementation and review were done in one context;
+  "fresh-eyes" review was replaced by the full gate, the full main suite, and a real-browser pass over every route.
+- Tool tests are not mission-critical by `docs/testing.md`'s rule, so they got their own suite instead of growing the
+  main one.
+- `pnpm i18n:extract` on `main` rewrites about twenty unrelated catalogs (existing drift); only
+  `locales/en/toolbox.json` was kept.

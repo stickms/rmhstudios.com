@@ -21,21 +21,11 @@
  *   playerName: string — Current player's display name
  */
 
-import {
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  m as motion,
-  AnimatePresence,
-} from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
-import {
-  emitGameInput,
-  useGameSocket,
-} from '@/lib/rmhbox/minigame-client';
+import { emitGameInput, useGameSocket } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
 import QuestionCard from './QuestionCard';
 import PointPotDisplay from './PointPotDisplay';
@@ -45,12 +35,7 @@ import AnswerReveal from './AnswerReveal';
 import type { PlayerResult } from './AnswerReveal';
 import ScoreRibbon from './ScoreRibbon';
 
-type Phase =
-  | 'QUESTION_REVEAL'
-  | 'ANSWER'
-  | 'ANSWER_REVEAL'
-  | 'PAUSE'
-  | 'GAME_OVER';
+type Phase = 'QUESTION_REVEAL' | 'ANSWER' | 'ANSWER_REVEAL' | 'PAUSE' | 'GAME_OVER';
 
 interface QuestionData {
   question: string;
@@ -62,23 +47,11 @@ interface QuestionData {
   correctIndex?: number;
 }
 
-const PHASES: readonly Phase[] =
-  [
-    'QUESTION_REVEAL',
-    'ANSWER',
-    'ANSWER_REVEAL',
-    'PAUSE',
-    'GAME_OVER',
-  ];
+const PHASES: readonly Phase[] = ['QUESTION_REVEAL', 'ANSWER', 'ANSWER_REVEAL', 'PAUSE', 'GAME_OVER'];
 
 /** The server encodes a pass as `selectedIndex: null`; locally a pass is -1. */
-function toLocalAnswer(
-  selectedIndex: unknown,
-): number {
-  return typeof selectedIndex ===
-    'number'
-    ? selectedIndex
-    : -1;
+function toLocalAnswer(selectedIndex: unknown): number {
+  return typeof selectedIndex === 'number' ? selectedIndex : -1;
 }
 
 interface FactOrFrictionGameProps {
@@ -86,1092 +59,457 @@ interface FactOrFrictionGameProps {
   playerName: string;
 }
 
-export default function FactOrFrictionGame({
-  playerId,
-  playerName:
-    _playerName,
-}: FactOrFrictionGameProps) {
+export default function FactOrFrictionGame({ playerId, playerName: _playerName }: FactOrFrictionGameProps) {
   void _playerName; // Consumed by MinigameProps interface; not directly used
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhbox',
-    );
+  const { t } = useTranslation('c-rmhbox');
 
-  const [
-    phase,
-    setPhase,
-  ] =
-    useState<Phase>(
-      'QUESTION_REVEAL',
-    );
-  const [
-    questionData,
-    setQuestionData,
-  ] =
-    useState<QuestionData | null>(
-      null,
-    );
-  const [
-    potValue,
-    setPotValue,
-  ] =
-    useState(
-      () => {
-        const snap =
-          useRMHboxStore.getState()
-            .gameState;
-        return (
-          (snap?.potValue as number) ??
-          0
-        );
-      },
-    );
-  const [
-    potMaxValue,
-    setPotMaxValue,
-  ] =
-    useState(
-      () => {
-        const snap =
-          useRMHboxStore.getState()
-            .gameState;
-        return (
-          (snap?.potValue as number) ??
-          0
-        );
-      },
-    );
-  const [
-    timeRemaining,
-    setTimeRemaining,
-  ] =
-    useState(
-      15,
-    );
-  const [
-    myAnswer,
-    setMyAnswer,
-  ] =
-    useState<
-      | number
-      | null
-    >(
-      null,
-    );
-  const [
-    lockedPotValue,
-    setLockedPotValue,
-  ] =
-    useState<
-      | number
-      | null
-    >(
-      null,
-    );
-  const [
-    playersAnswered,
-    setPlayersAnswered,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    myScore,
-    setMyScore,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    scoreChange,
-    setScoreChange,
-  ] =
-    useState<
-      | number
-      | null
-    >(
-      null,
-    );
-  const [
-    revealData,
-    setRevealData,
-  ] =
-    useState<{
-      correctIndex: number;
-      correctAnswer: string;
-      options: string[];
-      playerResults: PlayerResult[];
-    } | null>(
-      null,
-    );
+  const [phase, setPhase] = useState<Phase>('QUESTION_REVEAL');
+  const [questionData, setQuestionData] = useState<QuestionData | null>(null);
+  const [potValue, setPotValue] = useState(() => {
+    const snap = useRMHboxStore.getState().gameState;
+    return (snap?.potValue as number) ?? 0;
+  });
+  const [potMaxValue, setPotMaxValue] = useState(() => {
+    const snap = useRMHboxStore.getState().gameState;
+    return (snap?.potValue as number) ?? 0;
+  });
+  const [timeRemaining, setTimeRemaining] = useState(15);
+  const [myAnswer, setMyAnswer] = useState<number | null>(null);
+  const [lockedPotValue, setLockedPotValue] = useState<number | null>(null);
+  const [playersAnswered, setPlayersAnswered] = useState(0);
+  const [myScore, setMyScore] = useState(0);
+  const [scoreChange, setScoreChange] = useState<number | null>(null);
+  const [revealData, setRevealData] = useState<{
+    correctIndex: number;
+    correctAnswer: string;
+    options: string[];
+    playerResults: PlayerResult[];
+  } | null>(null);
 
-  const players =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s
-          .lobby
-          ?.players,
-    );
-  const myRole =
-    useRMHboxStore(
-      (
-        s,
-      ) =>
-        s
-          .lobby
-          ?.myRole,
-    );
-  const isSpectator =
-    myRole ===
-    'spectator';
-  const totalPlayers =
-    players?.filter(
-      (
-        p,
-      ) =>
-        p.isConnected,
-    )
-      .length ??
-    0;
+  const players = useRMHboxStore((s) => s.lobby?.players);
+  const myRole = useRMHboxStore((s) => s.lobby?.myRole);
+  const isSpectator = myRole === 'spectator';
+  const totalPlayers = players?.filter((p) => p.isConnected).length ?? 0;
 
   // Handle incoming game actions
-  const handleGameAction =
-    useCallback(
-      (
-        data: Record<
-          string,
-          unknown
-        >,
-      ) => {
-        const actionType =
-          data.type as string;
+  const handleGameAction = useCallback(
+    (data: Record<string, unknown>) => {
+      const actionType = data.type as string;
 
-        switch (
-          actionType
-        ) {
-          case 'FF_QUESTION': {
-            setPhase(
-              'QUESTION_REVEAL',
-            );
-            // Server sends question data as a nested object under `data.question`
-            const qObj =
-              data.question as Record<
-                string,
-                unknown
-              >;
-            const q: QuestionData =
-              {
-                question:
-                  qObj.question as string,
-                category:
-                  qObj.category as string,
-                difficulty:
-                  qObj.difficulty as string,
-                options:
-                  qObj.options as string[],
-                questionIndex:
-                  data.questionIndex as number,
-                totalQuestions:
-                  data.totalQuestions as number,
-              };
-            setQuestionData(
-              q,
-            );
-            // Pot value already includes difficulty scaling from the server
-            setPotValue(
-              (data.potValue as number) ??
-                1000,
-            );
-            setPotMaxValue(
-              (data.potValue as number) ??
-                1000,
-            );
-            setMyAnswer(
-              null,
-            );
-            setLockedPotValue(
-              null,
-            );
-            setPlayersAnswered(
-              0,
-            );
-            setScoreChange(
-              null,
-            );
-            setRevealData(
-              null,
-            );
-            playSound(
-              'swoosh',
-            );
+      switch (actionType) {
+        case 'FF_QUESTION': {
+          setPhase('QUESTION_REVEAL');
+          // Server sends question data as a nested object under `data.question`
+          const qObj = data.question as Record<string, unknown>;
+          const q: QuestionData = {
+            question: qObj.question as string,
+            category: qObj.category as string,
+            difficulty: qObj.difficulty as string,
+            options: qObj.options as string[],
+            questionIndex: data.questionIndex as number,
+            totalQuestions: data.totalQuestions as number,
+          };
+          setQuestionData(q);
+          // Pot value already includes difficulty scaling from the server
+          setPotValue((data.potValue as number) ?? 1000);
+          setPotMaxValue((data.potValue as number) ?? 1000);
+          setMyAnswer(null);
+          setLockedPotValue(null);
+          setPlayersAnswered(0);
+          setScoreChange(null);
+          setRevealData(null);
+          playSound('swoosh');
 
-            // Transition to ANSWER phase after reveal period
-            // (server will send a separate event or we rely on timer)
-            break;
-          }
-          case 'FF_ANSWER_PHASE': {
-            setPhase(
-              'ANSWER',
-            );
-            // Server sends `duration` (total answer time), not `timeRemaining`
-            if (
-              typeof data.duration ===
-              'number'
-            ) {
-              setTimeRemaining(
-                data.duration as number,
-              );
-            }
-            // Update pot value from server (already difficulty-scaled)
-            if (
-              typeof data.potValue ===
-              'number'
-            ) {
-              setPotValue(
-                data.potValue as number,
-              );
-            }
-            break;
-          }
-          case 'FF_POT_TICK': {
-            // Pot value already includes difficulty scaling
-            const newPot =
-              data.potValue as number;
-            if (
-              typeof newPot ===
-              'number'
-            )
-              setPotValue(
-                newPot,
-              );
-            break;
-          }
-          case 'FF_ANSWER_LOCKED': {
-            // Confirmation that our answer was accepted
-            setMyAnswer(
-              toLocalAnswer(
-                data.selectedIndex,
-              ),
-            );
-            const locked =
-              data.potValueAtSubmission as
-                | number
-                | undefined;
-            if (
-              typeof locked ===
-              'number'
-            )
-              setLockedPotValue(
-                locked,
-              );
-            playSound(
-              'click',
-            );
-            break;
-          }
-          case 'FF_ANSWER_REJECTED': {
-            // The server did not take the answer. If it arrived outside the
-            // answer window or malformed, unlock the options again (the next
-            // FF_ANSWER_REVEAL / snapshot moves the phase on if it is over).
-            // Already answered / not a participant: stay locked.
-            const reason =
-              data.reason as
-                | string
-                | undefined;
-            if (
-              reason ===
-                'wrong_phase' ||
-              reason ===
-                'invalid_input'
-            ) {
-              setMyAnswer(
-                null,
-              );
-              setLockedPotValue(
-                null,
-              );
-            }
-            break;
-          }
-          case 'FF_PLAYER_ANSWERED': {
-            // Another player answered — increment count
-            setPlayersAnswered(
-              (
-                prev,
-              ) =>
-                prev +
-                1,
-            );
-            break;
-          }
-          case 'FF_ANSWER_REVEAL': {
-            setPhase(
-              'ANSWER_REVEAL',
-            );
-            const cIdx =
-              data.correctIndex as number;
-            const opts =
-              (data.options as string[]) ??
-              questionData?.options ??
-              [];
-            const results =
-              (data.playerResults as PlayerResult[]) ??
-              [];
-            setRevealData(
-              {
-                correctIndex:
-                  cIdx,
-                correctAnswer:
-                  opts[
-                    cIdx
-                  ] ??
-                  '',
-                options:
-                  opts,
-                playerResults:
-                  results,
-              },
-            );
-
-            // Play sound based on result
-            const myResult =
-              results.find(
-                (
-                  r: PlayerResult,
-                ) =>
-                  r.userId ===
-                  playerId,
-              );
-            if (
-              myResult?.isCorrect
-            ) {
-              playSound(
-                'scoreDing',
-              );
-            } else if (
-              myResult &&
-              !myResult.passed &&
-              !myResult.timedOut
-            ) {
-              playSound(
-                'buzzer',
-              );
-            }
-            break;
-          }
-          case 'FF_SCORE_UPDATE': {
-            const scores =
-              data.scores as
-                | Record<
-                    string,
-                    number
-                  >
-                | undefined;
-            if (
-              scores &&
-              scores[
-                playerId
-              ] !=
-                null
-            ) {
-              const newScore =
-                scores[
-                  playerId
-                ];
-              const delta =
-                newScore -
-                myScore;
-              setMyScore(
-                newScore,
-              );
-              if (
-                delta !==
-                0
-              )
-                setScoreChange(
-                  delta,
-                );
-              // Update live score in the GameShell footer
-              useRMHboxStore.setState(
-                {
-                  liveMinigameScore:
-                    newScore,
-                },
-              );
-            }
-            break;
-          }
-          case 'FF_PAUSE': {
-            setPhase(
-              'PAUSE',
-            );
-            break;
-          }
-          case 'FF_GAME_OVER': {
-            setPhase(
-              'GAME_OVER',
-            );
-            // Clear live score — coordinator handles final score update
-            useRMHboxStore.setState(
-              {
-                liveMinigameScore:
-                  null,
-              },
-            );
-            break;
-          }
-          case 'TIMER_START': {
-            const pl =
-              data.payload as
-                | Record<
-                    string,
-                    unknown
-                  >
-                | undefined;
-            if (
-              pl
-            ) {
-              setTimeRemaining(
-                pl.timeRemaining as number,
-              );
-            }
-            break;
-          }
-          case 'TIMER_TICK': {
-            const pl =
-              data.payload as
-                | Record<
-                    string,
-                    unknown
-                  >
-                | undefined;
-            const remaining =
-              (pl?.timeRemaining ??
-                data.timeRemaining) as number;
-            if (
-              typeof remaining ===
-              'number'
-            ) {
-              setTimeRemaining(
-                remaining,
-              );
-              if (
-                remaining <=
-                  3 &&
-                remaining >
-                  0
-              )
-                playSound(
-                  'countdownBeep',
-                );
-            }
-            break;
-          }
+          // Transition to ANSWER phase after reveal period
+          // (server will send a separate event or we rely on timer)
+          break;
         }
-      },
-      [
-        playerId,
-        myScore,
-        questionData?.options,
-      ],
-    );
+        case 'FF_ANSWER_PHASE': {
+          setPhase('ANSWER');
+          // Server sends `duration` (total answer time), not `timeRemaining`
+          if (typeof data.duration === 'number') {
+            setTimeRemaining(data.duration as number);
+          }
+          // Update pot value from server (already difficulty-scaled)
+          if (typeof data.potValue === 'number') {
+            setPotValue(data.potValue as number);
+          }
+          break;
+        }
+        case 'FF_POT_TICK': {
+          // Pot value already includes difficulty scaling
+          const newPot = data.potValue as number;
+          if (typeof newPot === 'number') setPotValue(newPot);
+          break;
+        }
+        case 'FF_ANSWER_LOCKED': {
+          // Confirmation that our answer was accepted
+          setMyAnswer(toLocalAnswer(data.selectedIndex));
+          const locked = data.potValueAtSubmission as number | undefined;
+          if (typeof locked === 'number') setLockedPotValue(locked);
+          playSound('click');
+          break;
+        }
+        case 'FF_ANSWER_REJECTED': {
+          // The server did not take the answer. If it arrived outside the
+          // answer window or malformed, unlock the options again (the next
+          // FF_ANSWER_REVEAL / snapshot moves the phase on if it is over).
+          // Already answered / not a participant: stay locked.
+          const reason = data.reason as string | undefined;
+          if (reason === 'wrong_phase' || reason === 'invalid_input') {
+            setMyAnswer(null);
+            setLockedPotValue(null);
+          }
+          break;
+        }
+        case 'FF_PLAYER_ANSWERED': {
+          // Another player answered — increment count
+          setPlayersAnswered((prev) => prev + 1);
+          break;
+        }
+        case 'FF_ANSWER_REVEAL': {
+          setPhase('ANSWER_REVEAL');
+          const cIdx = data.correctIndex as number;
+          const opts = (data.options as string[]) ?? questionData?.options ?? [];
+          const results = (data.playerResults as PlayerResult[]) ?? [];
+          setRevealData({
+            correctIndex: cIdx,
+            correctAnswer: opts[cIdx] ?? '',
+            options: opts,
+            playerResults: results,
+          });
+
+          // Play sound based on result
+          const myResult = results.find((r: PlayerResult) => r.userId === playerId);
+          if (myResult?.isCorrect) {
+            playSound('scoreDing');
+          } else if (myResult && !myResult.passed && !myResult.timedOut) {
+            playSound('buzzer');
+          }
+          break;
+        }
+        case 'FF_SCORE_UPDATE': {
+          const scores = data.scores as Record<string, number> | undefined;
+          if (scores && scores[playerId] != null) {
+            const newScore = scores[playerId];
+            const delta = newScore - myScore;
+            setMyScore(newScore);
+            if (delta !== 0) setScoreChange(delta);
+            // Update live score in the GameShell footer
+            useRMHboxStore.setState({
+              liveMinigameScore: newScore,
+            });
+          }
+          break;
+        }
+        case 'FF_PAUSE': {
+          setPhase('PAUSE');
+          break;
+        }
+        case 'FF_GAME_OVER': {
+          setPhase('GAME_OVER');
+          // Clear live score — coordinator handles final score update
+          useRMHboxStore.setState({
+            liveMinigameScore: null,
+          });
+          break;
+        }
+        case 'TIMER_START': {
+          const pl = data.payload as Record<string, unknown> | undefined;
+          if (pl) {
+            setTimeRemaining(pl.timeRemaining as number);
+          }
+          break;
+        }
+        case 'TIMER_TICK': {
+          const pl = data.payload as Record<string, unknown> | undefined;
+          const remaining = (pl?.timeRemaining ?? data.timeRemaining) as number;
+          if (typeof remaining === 'number') {
+            setTimeRemaining(remaining);
+            if (remaining <= 3 && remaining > 0) playSound('countdownBeep');
+          }
+          break;
+        }
+      }
+    },
+    [playerId, myScore, questionData?.options],
+  );
 
   // Listen for GAME_ROUND_RESULTS for game-over
-  const handleRoundResults =
-    useCallback(
-      (
-        _data: Record<
-          string,
-          unknown
-        >,
-      ) => {
-        setPhase(
-          'GAME_OVER',
-        );
-        useRMHboxStore.setState(
-          {
-            liveMinigameScore:
-              null,
-          },
-        );
-      },
-      [],
-    );
+  const handleRoundResults = useCallback((_data: Record<string, unknown>) => {
+    setPhase('GAME_OVER');
+    useRMHboxStore.setState({
+      liveMinigameScore: null,
+    });
+  }, []);
 
   // Hydrate from a full server snapshot (getStateForPlayer): on mount from the
   // store, and on every GAME_STATE_SNAPSHOT (reconnect, late mount). The
   // snapshot is authoritative for the phase, the question, our own answer and
   // the reveal, so nothing from a previous question survives it.
-  const handleStateSnapshot =
-    useCallback(
-      (
-        snapshot: Record<
-          string,
-          unknown
-        >,
-      ) => {
-        const p =
-          snapshot.phase as
-            | Phase
-            | undefined;
-        if (
-          !p ||
-          !PHASES.includes(
-            p,
-          )
-        )
-          return;
-        setPhase(
-          p,
-        );
+  const handleStateSnapshot = useCallback(
+    (snapshot: Record<string, unknown>) => {
+      const p = snapshot.phase as Phase | undefined;
+      if (!p || !PHASES.includes(p)) return;
+      setPhase(p);
 
-        if (
-          typeof snapshot.potValue ===
-          'number'
-        ) {
-          setPotValue(
-            snapshot.potValue,
-          );
-          setPotMaxValue(
-            typeof snapshot.potStartValue ===
-              'number'
-              ? snapshot.potStartValue
-              : snapshot.potValue,
-          );
-        }
+      if (typeof snapshot.potValue === 'number') {
+        setPotValue(snapshot.potValue);
+        setPotMaxValue(typeof snapshot.potStartValue === 'number' ? snapshot.potStartValue : snapshot.potValue);
+      }
 
-        // Countdown: the server's pause-aware seconds, or less if this snapshot
-        // has been sitting in the store since phaseEndsAt was stamped.
-        const serverRemaining =
-          typeof snapshot.timeRemaining ===
-          'number'
-            ? snapshot.timeRemaining
-            : null;
-        const endsAt =
-          typeof snapshot.phaseEndsAt ===
-          'number'
-            ? snapshot.phaseEndsAt
-            : 0;
-        const fromDeadline =
-          endsAt >
-          0
-            ? Math.max(
-                0,
-                Math.ceil(
-                  (endsAt -
-                    Date.now()) /
-                    1000,
-                ),
-              )
-            : null;
-        if (
-          snapshot.paused ===
-            true ||
-          fromDeadline ===
-            null
-        ) {
-          if (
-            serverRemaining !==
-            null
-          )
-            setTimeRemaining(
-              serverRemaining,
-            );
-        } else {
-          setTimeRemaining(
-            serverRemaining !==
-              null
-              ? Math.min(
-                  serverRemaining,
-                  fromDeadline,
-                )
-              : fromDeadline,
-          );
-        }
+      // Countdown: the server's pause-aware seconds, or less if this snapshot
+      // has been sitting in the store since phaseEndsAt was stamped.
+      const serverRemaining = typeof snapshot.timeRemaining === 'number' ? snapshot.timeRemaining : null;
+      const endsAt = typeof snapshot.phaseEndsAt === 'number' ? snapshot.phaseEndsAt : 0;
+      const fromDeadline = endsAt > 0 ? Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)) : null;
+      if (snapshot.paused === true || fromDeadline === null) {
+        if (serverRemaining !== null) setTimeRemaining(serverRemaining);
+      } else {
+        setTimeRemaining(serverRemaining !== null ? Math.min(serverRemaining, fromDeadline) : fromDeadline);
+      }
 
-        // Server sends question as nested object with {question, options, category, difficulty, source, correctIndex?}
-        const qObj =
-          snapshot.question as
-            | Record<
-                string,
-                unknown
-              >
-            | undefined;
-        const options =
-          qObj &&
-          Array.isArray(
-            qObj.options,
-          )
-            ? (qObj.options as string[])
-            : [];
-        if (
-          qObj &&
-          qObj.question
-        ) {
-          setQuestionData(
-            {
-              question:
-                qObj.question as string,
-              category:
-                qObj.category as string,
-              difficulty:
-                qObj.difficulty as string,
-              options,
-              questionIndex:
-                (snapshot.currentQuestionIndex as number) ??
-                0,
-              totalQuestions:
-                (snapshot.totalQuestions as number) ??
-                8,
-              ...(typeof qObj.correctIndex ===
-              'number'
-                ? {
-                    correctIndex:
-                      qObj.correctIndex,
-                  }
-                : {}),
-            },
-          );
-        }
-
-        // Our own answer for this question (null = not answered yet)
-        const mine =
-          snapshot.myAnswer as {
-            selectedIndex:
-              | number
-              | null;
-            potValueAtSubmission?: number;
-          } | null;
-        if (
-          mine
-        ) {
-          setMyAnswer(
-            toLocalAnswer(
-              mine.selectedIndex,
-            ),
-          );
-          setLockedPotValue(
-            typeof mine.potValueAtSubmission ===
-              'number'
-              ? mine.potValueAtSubmission
-              : null,
-          );
-        } else {
-          setMyAnswer(
-            null,
-          );
-          setLockedPotValue(
-            null,
-          );
-        }
-
-        if (
-          Array.isArray(
-            snapshot.answeredPlayerIds,
-          )
-        ) {
-          setPlayersAnswered(
-            snapshot
-              .answeredPlayerIds
-              .length,
-          );
-        }
-
-        // Reveal (ANSWER_REVEAL / PAUSE)
-        const reveal =
-          snapshot.reveal as
-            | {
-                correctIndex: number;
-                playerResults: PlayerResult[];
+      // Server sends question as nested object with {question, options, category, difficulty, source, correctIndex?}
+      const qObj = snapshot.question as Record<string, unknown> | undefined;
+      const options = qObj && Array.isArray(qObj.options) ? (qObj.options as string[]) : [];
+      if (qObj && qObj.question) {
+        setQuestionData({
+          question: qObj.question as string,
+          category: qObj.category as string,
+          difficulty: qObj.difficulty as string,
+          options,
+          questionIndex: (snapshot.currentQuestionIndex as number) ?? 0,
+          totalQuestions: (snapshot.totalQuestions as number) ?? 8,
+          ...(typeof qObj.correctIndex === 'number'
+            ? {
+                correctIndex: qObj.correctIndex,
               }
-            | null
-            | undefined;
-        if (
-          reveal &&
-          typeof reveal.correctIndex ===
-            'number'
-        ) {
-          setRevealData(
-            {
-              correctIndex:
-                reveal.correctIndex,
-              correctAnswer:
-                options[
-                  reveal
-                    .correctIndex
-                ] ??
-                '',
-              options,
-              playerResults:
-                reveal.playerResults ??
-                [],
-            },
-          );
-        } else {
-          setRevealData(
-            null,
-          );
-        }
+            : {}),
+        });
+      }
 
-        // Restore scores
-        if (
-          snapshot.scores
-        ) {
-          const sc =
-            snapshot.scores as Record<
-              string,
-              number
-            >;
-          if (
-            sc[
-              playerId
-            ] !=
-            null
-          ) {
-            setMyScore(
-              sc[
-                playerId
-              ],
-            );
-            // Sync live score to footer
-            useRMHboxStore.setState(
-              {
-                liveMinigameScore:
-                  sc[
-                    playerId
-                  ],
-              },
-            );
+      // Our own answer for this question (null = not answered yet)
+      const mine = snapshot.myAnswer as {
+        selectedIndex: number | null;
+        potValueAtSubmission?: number;
+      } | null;
+      if (mine) {
+        setMyAnswer(toLocalAnswer(mine.selectedIndex));
+        setLockedPotValue(typeof mine.potValueAtSubmission === 'number' ? mine.potValueAtSubmission : null);
+      } else {
+        setMyAnswer(null);
+        setLockedPotValue(null);
+      }
+
+      if (Array.isArray(snapshot.answeredPlayerIds)) {
+        setPlayersAnswered(snapshot.answeredPlayerIds.length);
+      }
+
+      // Reveal (ANSWER_REVEAL / PAUSE)
+      const reveal = snapshot.reveal as
+        | {
+            correctIndex: number;
+            playerResults: PlayerResult[];
           }
+        | null
+        | undefined;
+      if (reveal && typeof reveal.correctIndex === 'number') {
+        setRevealData({
+          correctIndex: reveal.correctIndex,
+          correctAnswer: options[reveal.correctIndex] ?? '',
+          options,
+          playerResults: reveal.playerResults ?? [],
+        });
+      } else {
+        setRevealData(null);
+      }
+
+      // Restore scores
+      if (snapshot.scores) {
+        const sc = snapshot.scores as Record<string, number>;
+        if (sc[playerId] != null) {
+          setMyScore(sc[playerId]);
+          // Sync live score to footer
+          useRMHboxStore.setState({
+            liveMinigameScore: sc[playerId],
+          });
         }
-      },
-      [
-        playerId,
-      ],
-    );
+      }
+    },
+    [playerId],
+  );
 
   // Subscribe to socket events (actions, snapshots, results) and hydrate on mount
-  useGameSocket(
-    {
-      onGameAction:
-        handleGameAction,
-      onStateSnapshot:
-        handleStateSnapshot,
-      onRoundResults:
-        handleRoundResults,
-    },
-  );
+  useGameSocket({
+    onGameAction: handleGameAction,
+    onStateSnapshot: handleStateSnapshot,
+    onRoundResults: handleRoundResults,
+  });
 
   // Clear live score when the minigame unmounts (separate effect to avoid
   // clearing on every handler re-subscription).
   useEffect(() => {
     return () => {
-      useRMHboxStore.setState(
-        {
-          liveMinigameScore:
-            null,
-        },
-      );
+      useRMHboxStore.setState({
+        liveMinigameScore: null,
+      });
     };
   }, []);
 
   // Submit an answer
-  const handleAnswer =
-    useCallback(
-      (
-        selectedIndex: number,
-      ) => {
-        if (
-          isSpectator ||
-          myAnswer !=
-            null
-        )
-          return;
-        setMyAnswer(
-          selectedIndex,
-        );
-        emitGameInput(
-          'SUBMIT_ANSWER',
-          {
-            selectedIndex,
-          },
-        );
-      },
-      [
-        isSpectator,
-        myAnswer,
-      ],
-    );
+  const handleAnswer = useCallback(
+    (selectedIndex: number) => {
+      if (isSpectator || myAnswer != null) return;
+      setMyAnswer(selectedIndex);
+      emitGameInput('SUBMIT_ANSWER', {
+        selectedIndex,
+      });
+    },
+    [isSpectator, myAnswer],
+  );
 
   // Pass on the question
-  const handlePass =
-    useCallback(() => {
-      if (
-        isSpectator ||
-        myAnswer !=
-          null
-      )
-        return;
-      setMyAnswer(
-        -1,
-      ); // -1 = passed
-      emitGameInput(
-        'PASS_QUESTION',
-        {},
-      );
-      playSound(
-        'click',
-      );
-    }, [
-      isSpectator,
-      myAnswer,
-    ]);
+  const handlePass = useCallback(() => {
+    if (isSpectator || myAnswer != null) return;
+    setMyAnswer(-1); // -1 = passed
+    emitGameInput('PASS_QUESTION', {});
+    playSound('click');
+  }, [isSpectator, myAnswer]);
 
   // Compute option states
-  const getOptionState =
-    (
-      index: number,
-    ): OptionState => {
-      if (
-        phase ===
-          'ANSWER_REVEAL' &&
-        revealData
-      ) {
-        if (
-          index ===
-          revealData.correctIndex
-        )
-          return 'correct';
-        if (
-          index ===
-          myAnswer
-        )
-          return 'incorrect';
-        return 'disabled';
-      }
-      if (
-        myAnswer !=
-        null
-      ) {
-        return index ===
-          myAnswer
-          ? 'selected'
-          : 'disabled';
-      }
-      if (
-        isSpectator
-      )
-        return 'disabled';
-      return 'default';
-    };
+  const getOptionState = (index: number): OptionState => {
+    if (phase === 'ANSWER_REVEAL' && revealData) {
+      if (index === revealData.correctIndex) return 'correct';
+      if (index === myAnswer) return 'incorrect';
+      return 'disabled';
+    }
+    if (myAnswer != null) {
+      return index === myAnswer ? 'selected' : 'disabled';
+    }
+    if (isSpectator) return 'disabled';
+    return 'default';
+  };
 
   return (
     <AnimatePresence mode="wait">
       {/* QUESTION_REVEAL — question entrance */}
-      {phase ===
-        'QUESTION_REVEAL' &&
-        questionData && (
-          <motion.div
-            key="question-reveal"
-            initial={{
-              opacity: 0,
-              scale: 0.9,
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              scale: 1.05,
-            }}
-            transition={{
-              duration: 0.4,
-            }}
-            className="flex w-full flex-col items-center justify-center gap-4"
-          >
-            <QuestionCard
-              question={
-                questionData.question
-              }
-              category={
-                questionData.category
-              }
-              difficulty={
-                questionData.difficulty
-              }
-              questionIndex={
-                questionData.questionIndex
-              }
-              totalQuestions={
-                questionData.totalQuestions
-              }
-            />
-          </motion.div>
-        )}
+      {phase === 'QUESTION_REVEAL' && questionData && (
+        <motion.div
+          key="question-reveal"
+          initial={{
+            opacity: 0,
+            scale: 0.9,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+          }}
+          exit={{
+            opacity: 0,
+            scale: 1.05,
+          }}
+          transition={{
+            duration: 0.4,
+          }}
+          className="flex w-full flex-col items-center justify-center gap-4"
+        >
+          <QuestionCard
+            question={questionData.question}
+            category={questionData.category}
+            difficulty={questionData.difficulty}
+            questionIndex={questionData.questionIndex}
+            totalQuestions={questionData.totalQuestions}
+          />
+        </motion.div>
+      )}
 
       {/* ANSWER — main gameplay */}
-      {phase ===
-        'ANSWER' &&
-        questionData && (
-          <motion.div
-            key="answer"
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            exit={{
-              opacity: 0,
-            }}
-            transition={{
-              duration: 0.3,
-            }}
-            className="flex w-full flex-col gap-4"
-          >
-            <QuestionCard
-              question={
-                questionData.question
-              }
-              category={
-                questionData.category
-              }
-              difficulty={
-                questionData.difficulty
-              }
-              questionIndex={
-                questionData.questionIndex
-              }
-              totalQuestions={
-                questionData.totalQuestions
-              }
-            />
+      {phase === 'ANSWER' && questionData && (
+        <motion.div
+          key="answer"
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+          }}
+          exit={{
+            opacity: 0,
+          }}
+          transition={{
+            duration: 0.3,
+          }}
+          className="flex w-full flex-col gap-4"
+        >
+          <QuestionCard
+            question={questionData.question}
+            category={questionData.category}
+            difficulty={questionData.difficulty}
+            questionIndex={questionData.questionIndex}
+            totalQuestions={questionData.totalQuestions}
+          />
 
-            {/* Pot display */}
-            <div className="flex justify-center">
-              <PointPotDisplay
-                potValue={
-                  potValue
-                }
-                maxValue={
-                  potMaxValue
-                }
+          {/* Pot display */}
+          <div className="flex justify-center">
+            <PointPotDisplay potValue={potValue} maxValue={potMaxValue} />
+          </div>
+
+          {/* Option buttons */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {questionData.options.map((opt, i) => (
+              <OptionButton
+                key={i}
+                index={i}
+                text={opt}
+                state={getOptionState(i)}
+                lockedPotValue={myAnswer === i ? (lockedPotValue ?? undefined) : undefined}
+                onClick={() => handleAnswer(i)}
               />
-            </div>
+            ))}
+          </div>
 
-            {/* Option buttons */}
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {questionData.options.map(
-                (
-                  opt,
-                  i,
-                ) => (
-                  <OptionButton
-                    key={
-                      i
-                    }
-                    index={
-                      i
-                    }
-                    text={
-                      opt
-                    }
-                    state={getOptionState(
-                      i,
-                    )}
-                    lockedPotValue={
-                      myAnswer ===
-                      i
-                        ? (lockedPotValue ??
-                          undefined)
-                        : undefined
-                    }
-                    onClick={() =>
-                      handleAnswer(
-                        i,
-                      )
-                    }
-                  />
-                ),
-              )}
-            </div>
-
-            {/* Score ribbon */}
-            <ScoreRibbon
-              score={
-                myScore
-              }
-              scoreChange={
-                scoreChange
-              }
-              playersAnswered={
-                playersAnswered
-              }
-              totalPlayers={
-                totalPlayers
-              }
-              timeRemaining={
-                timeRemaining
-              }
-              canPass={
-                !isSpectator &&
-                myAnswer ==
-                  null
-              }
-              onPass={
-                handlePass
-              }
-            />
-          </motion.div>
-        )}
+          {/* Score ribbon */}
+          <ScoreRibbon
+            score={myScore}
+            scoreChange={scoreChange}
+            playersAnswered={playersAnswered}
+            totalPlayers={totalPlayers}
+            timeRemaining={timeRemaining}
+            canPass={!isSpectator && myAnswer == null}
+            onPass={handlePass}
+          />
+        </motion.div>
+      )}
 
       {/* ANSWER_REVEAL — show correct answer and results */}
-      {phase ===
-        'ANSWER_REVEAL' &&
-        revealData && (
-          <motion.div
-            key="answer-reveal"
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            exit={{
-              opacity: 0,
-            }}
-            transition={{
-              duration: 0.3,
-            }}
-          >
-            <AnswerReveal
-              correctIndex={
-                revealData.correctIndex
-              }
-              correctAnswer={
-                revealData.correctAnswer
-              }
-              options={
-                revealData.options
-              }
-              playerResults={
-                revealData.playerResults
-              }
-              myPlayerId={
-                playerId
-              }
-            />
-          </motion.div>
-        )}
+      {phase === 'ANSWER_REVEAL' && revealData && (
+        <motion.div
+          key="answer-reveal"
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+          }}
+          exit={{
+            opacity: 0,
+          }}
+          transition={{
+            duration: 0.3,
+          }}
+        >
+          <AnswerReveal
+            correctIndex={revealData.correctIndex}
+            correctAnswer={revealData.correctAnswer}
+            options={revealData.options}
+            playerResults={revealData.playerResults}
+            myPlayerId={playerId}
+          />
+        </motion.div>
+      )}
 
       {/* PAUSE — brief transition */}
-      {phase ===
-        'PAUSE' && (
+      {phase === 'PAUSE' && (
         <motion.div
           key="pause"
           initial={{
@@ -1189,20 +527,15 @@ export default function FactOrFrictionGame({
           className="flex items-center justify-center p-8"
         >
           <p className="text-sm text-app-text-muted">
-            {t(
-              'next-question',
-              {
-                defaultValue:
-                  'Next question…',
-              },
-            )}
+            {t('next-question', {
+              defaultValue: 'Next question…',
+            })}
           </p>
         </motion.div>
       )}
 
       {/* GAME_OVER — handled by game coordinator */}
-      {phase ===
-        'GAME_OVER' && (
+      {phase === 'GAME_OVER' && (
         <motion.div
           key="game-over"
           initial={{
@@ -1217,13 +550,9 @@ export default function FactOrFrictionGame({
           className="flex items-center justify-center p-8"
         >
           <p className="text-sm text-app-text-muted">
-            {t(
-              'game-over-calculating',
-              {
-                defaultValue:
-                  'Game over — calculating results…',
-              },
-            )}
+            {t('game-over-calculating', {
+              defaultValue: 'Game over — calculating results…',
+            })}
           </p>
         </motion.div>
       )}

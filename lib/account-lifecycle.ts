@@ -11,27 +11,16 @@ import { DELETED_USER_ID } from '@/lib/account/deleted-user';
  */
 
 /** `user.banReason` written when an account is deleted in place. */
-export const DELETED_ACCOUNT_BAN_REASON =
-  'account_deleted';
+export const DELETED_ACCOUNT_BAN_REASON = 'account_deleted';
 
 /** `user.bannedUntil` for a deleted account — effectively permanent. */
-export const DELETED_ACCOUNT_LOCK_UNTIL =
-  new Date(
-    '9999-12-31T00:00:00.000Z',
-  );
+export const DELETED_ACCOUNT_LOCK_UNTIL = new Date('9999-12-31T00:00:00.000Z');
 
 /** True when the row is a deletion tombstone rather than a live account. */
-export function isDeletedAccount(user: {
-  id?: string;
-  banReason?:
-    | string
-    | null;
-}): boolean {
+export function isDeletedAccount(user: { id?: string; banReason?: string | null }): boolean {
   return (
-    user.banReason ===
-      DELETED_ACCOUNT_BAN_REASON ||
+    user.banReason === DELETED_ACCOUNT_BAN_REASON ||
     // The shared "Deleted user" owner of orphaned vibes (`lib/account/deleted-user.ts`).
-    user.id ===
-      DELETED_USER_ID
+    user.id === DELETED_USER_ID
   );
 }

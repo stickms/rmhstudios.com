@@ -106,7 +106,13 @@ describe('saving a card', () => {
     const r = await addCard('me', 'mine', { kind: 'reversible', front: 'chat', back: 'cat' });
     if (!r.ok) throw new Error();
     const [reverse] = siblingsOf(r.card.id);
-    expect(reverse).toMatchObject({ kind: 'reversible', front: 'cat', back: 'chat', clozeIndex: null, sourceId: r.card.id });
+    expect(reverse).toMatchObject({
+      kind: 'reversible',
+      front: 'cat',
+      back: 'chat',
+      clozeIndex: null,
+      sourceId: r.card.id,
+    });
     expect(reverse.position).toBe(rows().find((c) => c.id === r.card.id)!.position);
   });
 
@@ -493,7 +499,8 @@ describe('statistics', () => {
 
   it('the raw SQL names the real table and quoted camelCase columns, and skips authored cloze rows', async () => {
     expect(flashcardModel).toContain('@@map("flashcard")');
-    for (const column of ['kind', 'sourceId', 'deckId']) expect(flashcardModel).toMatch(new RegExp(`\\n\\s+${column}\\s`));
+    for (const column of ['kind', 'sourceId', 'deckId'])
+      expect(flashcardModel).toMatch(new RegExp(`\\n\\s+${column}\\s`));
 
     await getStudyStats('me', { timeZone: 'UTC' });
     const sql = queryRaw.mock.calls.map((c) => (c as unknown as [TemplateStringsArray])[0].join('?')).join('\n');

@@ -11,13 +11,7 @@
  *
  * Relative imports: the socket hub bundles this file.
  */
-import {
-  addDays,
-  dayKeyInZone,
-  DEFAULT_TIME_ZONE,
-  isValidTimeZone,
-  streaks,
-} from '../study/stats';
+import { addDays, dayKeyInZone, DEFAULT_TIME_ZONE, isValidTimeZone, streaks } from '../study/stats';
 
 const DAY_MS = 86_400_000;
 
@@ -54,8 +48,7 @@ export function nextStudyStreak(
     return { currentStreak: 1, longestStreak: Math.max(previous?.longestStreak ?? 0, 1) };
   }
   const gap = dayGap(studyDayKey(now, timeZone), studyDayKey(previous.lastStudyDate, timeZone));
-  const currentStreak =
-    gap <= 0 ? Math.max(previous.currentStreak, 1) : gap === 1 ? previous.currentStreak + 1 : 1;
+  const currentStreak = gap <= 0 ? Math.max(previous.currentStreak, 1) : gap === 1 ? previous.currentStreak + 1 : 1;
   return { currentStreak, longestStreak: Math.max(previous.longestStreak, currentStreak) };
 }
 

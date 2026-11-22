@@ -34,7 +34,9 @@ export function slashTrigger(draft: string): string | null {
 }
 
 /** Menu order: most recently used first, then most used, then the member's own order. Never mutates. */
-export function byRecency<T extends Pick<SavedReplyRow, 'lastUsedAt' | 'useCount' | 'position'>>(rows: readonly T[]): T[] {
+export function byRecency<T extends Pick<SavedReplyRow, 'lastUsedAt' | 'useCount' | 'position'>>(
+  rows: readonly T[],
+): T[] {
   return [...rows].sort((a, b) => {
     const at = a.lastUsedAt ? Date.parse(a.lastUsedAt) : -1;
     const bt = b.lastUsedAt ? Date.parse(b.lastUsedAt) : -1;
@@ -85,14 +87,25 @@ export interface Insertion {
  * Put `text` at the caret of `value`, replacing the selection `[start, end)` (the emoji picker's insertion, plus the
  * composer's limit). `null` when the result would pass `maxLength`, so a reply is never cut short silently.
  */
-export function insertReplyText(value: string, start: number, end: number, text: string, maxLength: number): Insertion | null {
+export function insertReplyText(
+  value: string,
+  start: number,
+  end: number,
+  text: string,
+  maxLength: number,
+): Insertion | null {
   const { next, caret } = insertAtCaret(value, text, start, end);
   return next.length > maxLength ? null : { value: next, caret };
 }
 
 /** The first non-empty line of a body, for the manage list. */
 export function firstLine(body: string): string {
-  return body.split(/\r?\n/).find((l) => l.trim().length > 0)?.trim() ?? '';
+  return (
+    body
+      .split(/\r?\n/)
+      .find((l) => l.trim().length > 0)
+      ?.trim() ?? ''
+  );
 }
 
 /** The ids of a comma-separated list: 1 to 50 distinct, non-empty ids of at most 64 characters, or `null`. */

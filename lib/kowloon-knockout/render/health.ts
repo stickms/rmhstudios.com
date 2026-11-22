@@ -46,10 +46,7 @@ export const ERROR_WINDOW_MS = 2000;
  *  for first-use shader compilation on a slow GPU, which also draws nothing. */
 export const BLANK_STREAK_LIMIT = 6;
 
-export type RecoveryAction =
-  | 'none'
-  | 'force-webgl'
-  | 'give-up';
+export type RecoveryAction = 'none' | 'force-webgl' | 'give-up';
 
 export function decideRecovery(
   snap: RenderHealthSnapshot,
@@ -60,133 +57,67 @@ export function decideRecovery(
     hidden: boolean;
   },
 ): RecoveryAction {
-  if (
-    ctx.hidden
-  )
-    return 'none';
+  if (ctx.hidden) return 'none';
   const failing =
     snap.fatal ||
-    snap.failStreak >=
-      FAIL_STREAK_LIMIT ||
-    snap.gpuErrors >=
-      GPU_ERROR_LIMIT ||
-    snap.blankStreak >=
-      BLANK_STREAK_LIMIT;
-  const stalled =
-    now -
-      Math.max(
-        snap.lastOkAt,
-        snap.since,
-      ) >=
-    STALL_LIMIT_MS;
-  if (
-    !failing &&
-    !stalled
-  )
-    return 'none';
+    snap.failStreak >= FAIL_STREAK_LIMIT ||
+    snap.gpuErrors >= GPU_ERROR_LIMIT ||
+    snap.blankStreak >= BLANK_STREAK_LIMIT;
+  const stalled = now - Math.max(snap.lastOkAt, snap.since) >= STALL_LIMIT_MS;
+  if (!failing && !stalled) return 'none';
   // The WebGPU backend is the one that fails in ways a WebGL 2 retry fixes.
-  if (
-    ctx.backendIsWebGPU &&
-    !ctx.alreadyForcedWebGL
-  )
-    return 'force-webgl';
+  if (ctx.backendIsWebGPU && !ctx.alreadyForcedWebGL) return 'force-webgl';
   return 'give-up';
 }
 
-const FORCE_KEY =
-  'kk-force-webgl';
+const FORCE_KEY = 'kk-force-webgl';
 
-let state: RenderHealthSnapshot =
-  {
+let state: RenderHealthSnapshot = {
+  ok: 0,
+  failStreak: 0,
+  fatal: false,
+  lastOkAt: 0,
+  since: 0,
+  gpuErrors: 0,
+  blankStreak: 0,
+  probed: 0,
+  painted: false,
+};
+let errorTimes: number[] = [];
+let backendIsWebGPU = false;
+let forceWebGL = false;
+try {
+  if (typeof window !== 'undefined') forceWebGL = window.sessionStorage.getItem(FORCE_KEY) === '1';
+} catch {
+  /* storage can throw in private windows; the in-memory flag still works */
+}
+
+const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+export function resetRenderHealth(isWebGPU = false): void {
+  backendIsWebGPU = isWebGPU;
+  const t = now();
+  state = {
     ok: 0,
     failStreak: 0,
     fatal: false,
-    lastOkAt: 0,
-    since: 0,
+    lastOkAt: t,
+    since: t,
     gpuErrors: 0,
     blankStreak: 0,
     probed: 0,
     painted: false,
   };
-let errorTimes: number[] =
-  [];
-let backendIsWebGPU = false;
-let forceWebGL = false;
-try {
-  if (
-    typeof window !==
-    'undefined'
-  )
-    forceWebGL =
-      window.sessionStorage.getItem(
-        FORCE_KEY,
-      ) ===
-      '1';
-} catch {
-  /* storage can throw in private windows; the in-memory flag still works */
-}
-
-const now =
-  () =>
-    typeof performance !==
-    'undefined'
-      ? performance.now()
-      : Date.now();
-
-export function resetRenderHealth(
-  isWebGPU = false,
-): void {
-  backendIsWebGPU =
-    isWebGPU;
-  const t =
-    now();
-  state =
-    {
-      ok: 0,
-      failStreak: 0,
-      fatal: false,
-      lastOkAt:
-        t,
-      since:
-        t,
-      gpuErrors: 0,
-      blankStreak: 0,
-      probed: 0,
-      painted: false,
-    };
-  errorTimes =
-    [];
+  errorTimes = [];
 }
 
 /** An uncaptured GPU error. Counted in a rolling window instead of as a failed
  *  frame, because the next frame's render() returns normally and would clear it. */
-export function reportGpuError(
-  e?: unknown,
-): void {
-  const t =
-    now();
-  errorTimes.push(
-    t,
-  );
-  if (
-    errorTimes.length >
-    4 *
-      GPU_ERROR_LIMIT
-  )
-    errorTimes.splice(
-      0,
-      errorTimes.length -
-        4 *
-          GPU_ERROR_LIMIT,
-    );
-  if (
-    errorTimes.length ===
-    1
-  )
-    console.warn(
-      '[kowloon] GPU error:',
-      e,
-    );
+export function reportGpuError(e?: unknown): void {
+  const t = now();
+  errorTimes.push(t);
+  if (errorTimes.length > 4 * GPU_ERROR_LIMIT) errorTimes.splice(0, errorTimes.length - 4 * GPU_ERROR_LIMIT);
+  if (errorTimes.length === 1) console.warn('[kowloon] GPU error:', e);
 }
 
 /** Result of a pixel probe of the presented canvas. A painted frame ends the
@@ -196,81 +127,42 @@ export function reportGpuError(
  *  on WebGPU a probe that has never once seen a picture is treated as blind, not
  *  as proof of a blank canvas: only a canvas that WAS readable and then went flat
  *  counts. WebGL 2 reads back reliably (checked in Chromium and WebKit). */
-export function reportProbe(
-  blank:
-    | boolean
-    | null,
-): void {
-  if (
-    blank ===
-    null
-  )
-    return;
+export function reportProbe(blank: boolean | null): void {
+  if (blank === null) return;
   state.probed++;
-  if (
-    !blank
-  ) {
+  if (!blank) {
     state.painted = true;
     state.blankStreak = 0;
     return;
   }
-  if (
-    backendIsWebGPU &&
-    !state.painted
-  )
-    return;
+  if (backendIsWebGPU && !state.painted) return;
   state.blankStreak++;
 }
 
 /** The device is gone. Unlike a failed frame this is never undone by a later
  *  render() call that merely returns without throwing. */
-export function reportFatal(
-  e?: unknown,
-): void {
+export function reportFatal(e?: unknown): void {
   state.fatal = true;
-  console.warn(
-    '[kowloon] GPU device lost:',
-    e,
-  );
+  console.warn('[kowloon] GPU device lost:', e);
 }
 
 export function reportFrameOk(): void {
   state.ok++;
   state.failStreak = 0;
-  state.lastOkAt =
-    now();
+  state.lastOkAt = now();
 }
 
-export function reportFrameFail(
-  e?: unknown,
-): void {
+export function reportFrameFail(e?: unknown): void {
   state.failStreak++;
-  if (
-    state.failStreak ===
-    1
-  )
-    console.warn(
-      '[kowloon] render frame failed:',
-      e,
-    );
+  if (state.failStreak === 1) console.warn('[kowloon] render frame failed:', e);
 }
 
 export function renderHealthSnapshot(): RenderHealthSnapshot {
-  const t =
-    now();
-  errorTimes =
-    errorTimes.filter(
-      (
-        x,
-      ) =>
-        t -
-          x <=
-        ERROR_WINDOW_MS,
-    );
+  const t = now();
+  errorTimes = errorTimes.filter((x) => t - x <= ERROR_WINDOW_MS);
   return {
     ...state,
-    gpuErrors:
-      errorTimes.length,
+    gpuErrors: errorTimes.length,
   };
 }
 
@@ -281,10 +173,7 @@ export function shouldForceWebGL(): boolean {
 export function markForceWebGL(): void {
   forceWebGL = true;
   try {
-    window.sessionStorage.setItem(
-      FORCE_KEY,
-      '1',
-    );
+    window.sessionStorage.setItem(FORCE_KEY, '1');
   } catch {
     /* see above */
   }

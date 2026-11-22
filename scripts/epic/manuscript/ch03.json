@@ -6,10 +6,7 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": [
-      "金菊含秋淚未乾",
-      "玉人對影問誰憐"
-    ],
+    "zh": ["金菊含秋淚未乾", "玉人對影問誰憐"],
     "en": [
       "Golden chrysanthemums hold autumn tears not yet dried",
       "The jade lady faces a shadow and asks — who will pity her?"
@@ -123,12 +120,7 @@
     },
     {
       "type": "verse",
-      "zh": [
-        "朱華苑冷菊初殘，",
-        "玉璽歸塵劍化寒。",
-        "燈火闌珊人散後，",
-        "空庭秋色鎖重關。"
-      ],
+      "zh": ["朱華苑冷菊初殘，", "玉璽歸塵劍化寒。", "燈火闌珊人散後，", "空庭秋色鎖重關。"],
       "en": [
         "The Vermilion Garden grows cold; the chrysanthemums first begin to wither —",
         "The jade seal returns to dust; the sword becomes cold.",

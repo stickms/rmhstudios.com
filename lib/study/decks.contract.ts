@@ -5,11 +5,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  DeckCard,
-  DeckDetail,
-  DecksList,
-} from '@/lib/study.server';
+import type { DeckCard, DeckDetail, DecksList } from '@/lib/study.server';
 import type {
   addCardBody,
   createDeckBody,
@@ -21,208 +17,142 @@ import type {
 } from '@/lib/study/decks-schema';
 
 /** Your decks plus popular public decks (signed-out visitors see only public ones). */
-export const listDecksApi =
-  endpoint<{
-    res: DecksList;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/study/decks',
-    },
-  );
+export const listDecksApi = endpoint<{
+  res: DecksList;
+}>()({
+  method: 'GET',
+  path: '/api/study/decks',
+});
 
 /** 201. `generated` is how many AI-seeded cards were created. */
-export const createDeckApi =
-  endpoint<{
-    body: z.infer<
-      typeof createDeckBody
-    >;
-    res: {
-      success: true;
-      id: string;
-      generated: number;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/study/decks',
-    },
-  );
+export const createDeckApi = endpoint<{
+  body: z.infer<typeof createDeckBody>;
+  res: {
+    success: true;
+    id: string;
+    generated: number;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/study/decks',
+});
 
-export const getDeckApi =
-  endpoint<{
-    res: DeckDetail;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/study/decks/$id',
-    },
-  );
+export const getDeckApi = endpoint<{
+  res: DeckDetail;
+}>()({
+  method: 'GET',
+  path: '/api/study/decks/$id',
+});
 
 /** 201. The route parses the body by hand (a bad card is a plain 400), so it passes no `body` schema. */
-export const addDeckCardApi =
-  endpoint<{
-    body: z.infer<
-      typeof addCardBody
-    >;
-    res: {
-      success: true;
-      card: DeckCard;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/study/decks/$id',
-    },
-  );
+export const addDeckCardApi = endpoint<{
+  body: z.infer<typeof addCardBody>;
+  res: {
+    success: true;
+    card: DeckCard;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/study/decks/$id',
+});
 
-export const deleteDeckApi =
-  endpoint<{
-    res: {
-      success: true;
-    };
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/study/decks/$id',
-    },
-  );
+export const deleteDeckApi = endpoint<{
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/study/decks/$id',
+});
 
 /** The viewer's due cards (at most 50). */
-export const deckReviewQueueApi =
-  endpoint<{
-    res: {
-      due: DeckCard[];
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/study/decks/$id/review',
-    },
-  );
+export const deckReviewQueueApi = endpoint<{
+  res: {
+    due: DeckCard[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/study/decks/$id/review',
+});
 
-export const cloneDeckApi =
-  endpoint<{
-    res: {
-      success: true;
-      id: string;
-      alreadyOwned: boolean;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/study/decks/$id/clone',
-    },
-  );
+export const cloneDeckApi = endpoint<{
+  res: {
+    success: true;
+    id: string;
+    alreadyOwned: boolean;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/study/decks/$id/clone',
+});
 
 /** Submit an SRS grade (0-3) for a card; 400 `Invalid grade`, 404 `Not found`. */
-export const reviewCardApi =
-  endpoint<{
-    body: z.infer<
-      typeof reviewCardBody
-    >;
-    res: {
-      success: true;
-      dueAt: string;
-      intervalDays: number;
-      /** True when this grade was the eighth lapse and the card was set aside. */
-      leech: boolean;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/study/cards/$id/review',
-    },
-  );
+export const reviewCardApi = endpoint<{
+  body: z.infer<typeof reviewCardBody>;
+  res: {
+    success: true;
+    dueAt: string;
+    intervalDays: number;
+    /** True when this grade was the eighth lapse and the card was set aside. */
+    leech: boolean;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/study/cards/$id/review',
+});
 
 /** Owner only; 404 for a foreign or missing deck. */
-export const updateDeckApi =
-  endpoint<{
-    body: z.infer<
-      typeof updateDeckBody
-    >;
-    res: {
-      success: true;
-    };
-  }>()(
-    {
-      method:
-        'PATCH',
-      path: '/api/study/decks/$id',
-    },
-  );
+export const updateDeckApi = endpoint<{
+  body: z.infer<typeof updateDeckBody>;
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'PATCH',
+  path: '/api/study/decks/$id',
+});
 
 /** Edit a card's text. Its review history is kept. Owner only; 404 otherwise. */
-export const updateCardApi =
-  endpoint<{
-    body: z.infer<
-      typeof updateCardBody
-    >;
-    res: {
-      success: true;
-    };
-  }>()(
-    {
-      method:
-        'PATCH',
-      path: '/api/study/cards/$id',
-    },
-  );
+export const updateCardApi = endpoint<{
+  body: z.infer<typeof updateCardBody>;
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'PATCH',
+  path: '/api/study/cards/$id',
+});
 
 /** Delete a card and its reviews. Owner only; 404 otherwise. */
-export const deleteCardApi =
-  endpoint<{
-    res: {
-      success: true;
-    };
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/study/cards/$id',
-    },
-  );
+export const deleteCardApi = endpoint<{
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'DELETE',
+  path: '/api/study/cards/$id',
+});
 
 /** 201. Bulk add (at most 500, all or nothing). 400 when the deck would pass 2,000 cards. */
-export const importCardsApi =
-  endpoint<{
-    body: z.infer<
-      typeof importCardsBody
-    >;
-    res: {
-      success: true;
-      created: number;
-      cardCount: number;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/study/decks/$id/cards',
-    },
-  );
+export const importCardsApi = endpoint<{
+  body: z.infer<typeof importCardsBody>;
+  res: {
+    success: true;
+    created: number;
+    cardCount: number;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/study/decks/$id/cards',
+});
 
 /** `cardIds` must be exactly the deck's cards, in the new order; 400 otherwise. */
-export const reorderCardsApi =
-  endpoint<{
-    body: z.infer<
-      typeof reorderCardsBody
-    >;
-    res: {
-      success: true;
-    };
-  }>()(
-    {
-      method:
-        'PUT',
-      path: '/api/study/decks/$id/order',
-    },
-  );
+export const reorderCardsApi = endpoint<{
+  body: z.infer<typeof reorderCardsBody>;
+  res: {
+    success: true;
+  };
+}>()({
+  method: 'PUT',
+  path: '/api/study/decks/$id/order',
+});

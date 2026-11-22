@@ -44,7 +44,10 @@ describe('addItems (bulk)', () => {
     const res = await addItems('p1', 'dana', [item(1), item(2), item(3), item(2)]);
     expect(m.tx.$executeRaw).toHaveBeenCalledTimes(1);
     expect(res).toEqual({ ok: true, added: 2, duplicates: 2, skipped: 0 });
-    const data = m.tx.playlistItem.createMany.mock.calls[0]?.[0].data as Array<{ position: number; externalId: string }>;
+    const data = m.tx.playlistItem.createMany.mock.calls[0]?.[0].data as Array<{
+      position: number;
+      externalId: string;
+    }>;
     expect(data.map((d) => [d.position, d.externalId])).toEqual([
       [2, 'https://v/2'],
       [3, 'https://v/3'],

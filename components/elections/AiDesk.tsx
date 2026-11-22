@@ -2,31 +2,18 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import {
-  Sparkles,
-  SendHorizontal,
-} from 'lucide-react';
+import { Sparkles, SendHorizontal } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import {
-  timeAgo,
-  useNow,
-} from './hooks';
+import { timeAgo, useNow } from './hooks';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
-import {
-  getElectionSummaryApi,
-  askElectionsApi,
-} from '@/lib/elections/elections.contract';
+import { getElectionSummaryApi, askElectionsApi } from '@/lib/elections/elections.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 interface SummaryResponse {
-  summary:
-    | string
-    | null;
-  generatedAt:
-    | string
-    | null;
+  summary: string | null;
+  generatedAt: string | null;
 }
 
 /**
@@ -35,189 +22,79 @@ interface SummaryResponse {
  * signed-in members. The AI paragraph is labelled as such and never replaces
  * the numbers above it.
  */
-export function AiDesk({
-  cycle,
-  live,
-  bullets,
-}: {
-  cycle: string;
-  live: boolean;
-  bullets: string[];
-}) {
-  const {
-    t,
-    i18n,
-  } =
-    useTranslation(
-      'c-elections',
-    );
-  const {
-    data: session,
-  } =
-    useSession();
-  const now =
-    useNow(
-      30_000,
-    );
-  const [
-    q,
-    setQ,
-  ] =
-    useState(
-      '',
-    );
-  const [
-    busy,
-    setBusy,
-  ] =
-    useState(
-      false,
-    );
-  const [
-    answer,
-    setAnswer,
-  ] =
-    useState<{
-      q: string;
-      a: string;
-    } | null>(
-      null,
-    );
+export function AiDesk({ cycle, live, bullets }: { cycle: string; live: boolean; bullets: string[] }) {
+  const { t, i18n } = useTranslation('c-elections');
+  const { data: session } = useSession();
+  const now = useNow(30_000);
+  const [q, setQ] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [answer, setAnswer] = useState<{
+    q: string;
+    a: string;
+  } | null>(null);
 
-  const {
-    data,
-  } =
-    useQuery<SummaryResponse>(
-      {
-        queryKey:
-          [
-            'elections-summary',
-            cycle,
-          ],
-        queryFn:
-          async ({
-            signal,
-          }) => {
-            return api(
-              getElectionSummaryApi,
-              {
-                query:
-                  {
-                    cycle,
-                  },
-                signal,
-                retries: 0,
-              },
-            );
-          },
-        refetchInterval:
-          live
-            ? 60_000
-            : 10 *
-              60_000,
-        staleTime: 20_000,
-        retry: 1,
-      },
-    );
-  const summaryArrival =
-    useArrival(
-      !!data?.summary,
-    );
+  const { data } = useQuery<SummaryResponse>({
+    queryKey: ['elections-summary', cycle],
+    queryFn: async ({ signal }) => {
+      return api(getElectionSummaryApi, {
+        query: {
+          cycle,
+        },
+        signal,
+        retries: 0,
+      });
+    },
+    refetchInterval: live ? 60_000 : 10 * 60_000,
+    staleTime: 20_000,
+    retry: 1,
+  });
+  const summaryArrival = useArrival(!!data?.summary);
 
-  const ask =
-    async (
-      e: React.FormEvent,
-    ) => {
-      e.preventDefault();
-      const question =
-        q.trim();
-      if (
-        question.length <
-          3 ||
-        busy
-      )
-        return;
-      setBusy(
-        true,
-      );
-      try {
-        const j =
-          await api(
-            askElectionsApi,
-            {
-              body: {
-                question,
-                cycle,
-              },
-            },
-          );
-        setAnswer(
-          {
-            q: question,
-            a: j.answer,
-          },
-        );
-        setQ(
-          '',
-        );
-      } catch (err) {
-        const status =
-          err instanceof
-          HttpError
-            ? err.status
-            : null;
-        if (
-          status ===
-          429
-        ) {
-          setAnswer(
-            {
-              q: question,
-              a: t(
-                'ask.slow',
-                {
-                  defaultValue:
-                    'Easy — too many questions. Try again in a minute.',
-                },
-              ),
-            },
-          );
-        } else if (
-          status ===
-          402
-        ) {
-          setAnswer(
-            {
-              q: question,
-              a: t(
-                'ask.budget',
-                {
-                  defaultValue:
-                    'You have used this month’s AI allowance.',
-                },
-              ),
-            },
-          );
-        } else {
-          setAnswer(
-            {
-              q: question,
-              a: t(
-                'ask.unavailable',
-                {
-                  defaultValue:
-                    'The AI desk is unavailable right now.',
-                },
-              ),
-            },
-          );
-        }
-      } finally {
-        setBusy(
-          false,
-        );
+  const ask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const question = q.trim();
+    if (question.length < 3 || busy) return;
+    setBusy(true);
+    try {
+      const j = await api(askElectionsApi, {
+        body: {
+          question,
+          cycle,
+        },
+      });
+      setAnswer({
+        q: question,
+        a: j.answer,
+      });
+      setQ('');
+    } catch (err) {
+      const status = err instanceof HttpError ? err.status : null;
+      if (status === 429) {
+        setAnswer({
+          q: question,
+          a: t('ask.slow', {
+            defaultValue: 'Easy — too many questions. Try again in a minute.',
+          }),
+        });
+      } else if (status === 402) {
+        setAnswer({
+          q: question,
+          a: t('ask.budget', {
+            defaultValue: 'You have used this month’s AI allowance.',
+          }),
+        });
+      } else {
+        setAnswer({
+          q: question,
+          a: t('ask.unavailable', {
+            defaultValue: 'The AI desk is unavailable right now.',
+          }),
+        });
       }
-    };
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="el-desk">
@@ -230,128 +107,64 @@ export function AiDesk({
         <p
           className="el-eyebrow"
           style={{
-            margin:
-              '0 0 10px',
-            display:
-              'flex',
+            margin: '0 0 10px',
+            display: 'flex',
             gap: 8,
-            alignItems:
-              'center',
+            alignItems: 'center',
           }}
         >
           {data?.summary ? (
             <span className="el-chip el-chip--pink">
               <Sparkles
-                size={
-                  11
-                }
+                size={11}
                 aria-hidden
                 style={{
-                  verticalAlign:
-                    -1,
+                  verticalAlign: -1,
                   marginRight: 4,
                 }}
               />
-              {t(
-                'desk.briefing',
-                {
-                  defaultValue:
-                    'Briefing Room Summary',
-                },
-              )}
+              {t('desk.briefing', {
+                defaultValue: 'Briefing Room Summary',
+              })}
             </span>
           ) : (
             <span className="el-chip el-chip--ink">
-              {t(
-                'desk.briefingEyebrow',
-                {
-                  defaultValue:
-                    'Briefing Room',
-                },
-              )}
+              {t('desk.briefingEyebrow', {
+                defaultValue: 'Briefing Room',
+              })}
             </span>
           )}
-          {data?.generatedAt ? (
-            <span>
-              {timeAgo(
-                data.generatedAt,
-                now,
-                i18n.language,
-              )}
-            </span>
-          ) : null}
+          {data?.generatedAt ? <span>{timeAgo(data.generatedAt, now, i18n.language)}</span> : null}
         </p>
         {data?.summary ? (
           <>
-            <p
-              className={cn(
-                'el-desk__prose',
-                summaryArrival,
-              )}
-              aria-live="polite"
-            >
-              {
-                data.summary
-              }
+            <p className={cn('el-desk__prose', summaryArrival)} aria-live="polite">
+              {data.summary}
             </p>
             <p
-              className={cn(
-                'el-eyebrow',
-                summaryArrival,
-              )}
+              className={cn('el-eyebrow', summaryArrival)}
               style={{
-                margin:
-                  '12px 0 0',
+                margin: '12px 0 0',
               }}
             >
-              {t(
-                'desk.briefingNote',
-                {
-                  defaultValue:
-                    'Generated automatically from the live numbers. Calls are projections, not certified results.',
-                },
-              )}
+              {t('desk.briefingNote', {
+                defaultValue:
+                  'Generated automatically from the live numbers. Calls are projections, not certified results.',
+              })}
             </p>
           </>
         ) : null}
 
-        {(data?.summary
-          ? bullets.slice(
-              1,
-            )
-          : bullets
-        )
-          .length >
-        0 ? (
+        {(data?.summary ? bullets.slice(1) : bullets).length > 0 ? (
           <ul
             className="el-desk__list"
             style={{
-              marginTop:
-                data?.summary
-                  ? 14
-                  : 0,
+              marginTop: data?.summary ? 14 : 0,
             }}
           >
-            {(data?.summary
-              ? bullets.slice(
-                  1,
-                )
-              : bullets
-            ).map(
-              (
-                b,
-              ) => (
-                <li
-                  key={
-                    b
-                  }
-                >
-                  {
-                    b
-                  }
-                </li>
-              ),
-            )}
+            {(data?.summary ? bullets.slice(1) : bullets).map((b) => (
+              <li key={b}>{b}</li>
+            ))}
           </ul>
         ) : null}
       </div>
@@ -368,90 +181,36 @@ export function AiDesk({
             fontSize: 28,
           }}
         >
-          {t(
-            'ask.briefingTitle',
-            {
-              defaultValue:
-                'Ask the Briefing Room',
-            },
-          )}
+          {t('ask.briefingTitle', {
+            defaultValue: 'Ask the Briefing Room',
+          })}
         </h3>
         {session ? (
-          <form
-            onSubmit={
-              ask
-            }
-            className="el-stack"
-          >
-            <label
-              className="el-sr"
-              htmlFor="el-ask"
-            >
-              {t(
-                'ask.label',
-                {
-                  defaultValue:
-                    'Your question about the results',
-                },
-              )}
+          <form onSubmit={ask} className="el-stack">
+            <label className="el-sr" htmlFor="el-ask">
+              {t('ask.label', {
+                defaultValue: 'Your question about the results',
+              })}
             </label>
             <input
               id="el-ask"
               className="el-input"
-              value={
-                q
-              }
-              maxLength={
-                300
-              }
-              onChange={(
-                e,
-              ) =>
-                setQ(
-                  e
-                    .target
-                    .value,
-                )
-              }
-              placeholder={t(
-                'ask.ph',
-                {
-                  defaultValue:
-                    'Who’s ahead in Michigan?',
-                },
-              )}
+              value={q}
+              maxLength={300}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t('ask.ph', {
+                defaultValue: 'Who’s ahead in Michigan?',
+              })}
             />
-            <button
-              type="submit"
-              className="el-btn el-btn--pink"
-              disabled={
-                busy ||
-                q.trim()
-                  .length <
-                  3
-              }
-            >
-              <SendHorizontal
-                size={
-                  16
-                }
-                aria-hidden
-              />
+            <button type="submit" className="el-btn el-btn--pink" disabled={busy || q.trim().length < 3}>
+              <SendHorizontal size={16} aria-hidden />
               {busy
-                ? t(
-                    'ask.thinking',
-                    {
-                      defaultValue:
-                        'Thinking…',
-                    },
-                  )
-                : t(
-                    'ask.send',
-                    {
-                      defaultValue:
-                        'Ask',
-                    },
-                  )}
+                ? t('ask.thinking', {
+                    defaultValue: 'Thinking…',
+                  })
+                : t('ask.send', {
+                    defaultValue: 'Ask',
+                  })}
             </button>
           </form>
         ) : (
@@ -459,29 +218,19 @@ export function AiDesk({
             <Link
               to="/login"
               search={{
-                callbackURL:
-                  '/elections',
+                callbackURL: '/elections',
               }}
               style={{
-                textDecoration:
-                  'underline',
+                textDecoration: 'underline',
               }}
             >
-              {t(
-                'ask.signin',
-                {
-                  defaultValue:
-                    'Sign in',
-                },
-              )}
+              {t('ask.signin', {
+                defaultValue: 'Sign in',
+              })}
             </Link>{' '}
-            {t(
-              'ask.signinRest',
-              {
-                defaultValue:
-                  'to ask questions about any race.',
-              },
-            )}
+            {t('ask.signinRest', {
+              defaultValue: 'to ask questions about any race.',
+            })}
           </p>
         )}
         {answer ? (
@@ -491,20 +240,14 @@ export function AiDesk({
             }}
             aria-live="polite"
           >
-            <p className="el-eyebrow">
-              {
-                answer.q
-              }
-            </p>
+            <p className="el-eyebrow">{answer.q}</p>
             <p
               className="el-desk__prose"
               style={{
                 marginTop: 6,
               }}
             >
-              {
-                answer.a
-              }
+              {answer.a}
             </p>
           </div>
         ) : null}

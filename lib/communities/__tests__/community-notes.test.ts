@@ -76,10 +76,8 @@ vi.mock('@/lib/prisma.server', () => {
         live()
           .filter((n) => matches(n, where))
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-      findFirst: async ({ where }: { where: Record<string, unknown> }) =>
-        live().find((n) => matches(n, where)) ?? null,
-      count: async ({ where }: { where: Record<string, unknown> }) =>
-        live().filter((n) => matches(n, where)).length,
+      findFirst: async ({ where }: { where: Record<string, unknown> }) => live().find((n) => matches(n, where)) ?? null,
+      count: async ({ where }: { where: Record<string, unknown> }) => live().filter((n) => matches(n, where)).length,
       create: async ({ data }: { data: Partial<Note> }) => {
         h.calls.push('create');
         const row = {
@@ -144,7 +142,12 @@ const { route: itemRoute } = await import('@/lib/communities/api/communities.$sl
 const { route: countsRoute } = await import('@/lib/communities/api/communities.$slug.notes.counts.server');
 
 const call = (
-  r: { handlers: Record<string, ((a: { request: Request; params: Record<string, string> }) => Promise<Response> | Response) | undefined> },
+  r: {
+    handlers: Record<
+      string,
+      ((a: { request: Request; params: Record<string, string> }) => Promise<Response> | Response) | undefined
+    >;
+  },
   method: string,
   params: Record<string, string>,
   opts: { body?: unknown; qs?: string } = {},
@@ -234,7 +237,12 @@ describe('another community', () => {
   it('a moderator of community B gets 404 for a note id of community A, on edit and delete', async () => {
     const note = seedNote({ authorId: 'mod-c' });
     h.userId = 'mod-c';
-    const edit = await call(itemRoute, 'PATCH', { slug: 'b', userId: 'member-1', noteId: note.id }, { body: { body: 'x' } });
+    const edit = await call(
+      itemRoute,
+      'PATCH',
+      { slug: 'b', userId: 'member-1', noteId: note.id },
+      { body: { body: 'x' } },
+    );
     const del = await call(itemRoute, 'DELETE', { slug: 'b', userId: 'member-1', noteId: note.id });
     expect(edit.status).toBe(404);
     expect(del.status).toBe(404);
@@ -275,7 +283,12 @@ describe('the cap', () => {
 describe('editing', () => {
   it('the author edits inside 15 minutes and the note is marked edited', async () => {
     const note = seedNote({ createdAt: new Date(h.now - 14 * 60_000) });
-    const res = await call(itemRoute, 'PATCH', { slug: 'a', userId: 'member-1', noteId: note.id }, { body: { body: 'fixed' } });
+    const res = await call(
+      itemRoute,
+      'PATCH',
+      { slug: 'a', userId: 'member-1', noteId: note.id },
+      { body: { body: 'fixed' } },
+    );
     expect(res.status).toBe(200);
     expect(note.body).toBe('fixed');
     expect(note.editedAt).not.toBeNull();
@@ -283,7 +296,12 @@ describe('editing', () => {
 
   it('after 15 minutes the edit is refused (409) and the text is unchanged', async () => {
     const note = seedNote({ createdAt: new Date(h.now - 16 * 60_000) });
-    const res = await call(itemRoute, 'PATCH', { slug: 'a', userId: 'member-1', noteId: note.id }, { body: { body: 'late' } });
+    const res = await call(
+      itemRoute,
+      'PATCH',
+      { slug: 'a', userId: 'member-1', noteId: note.id },
+      { body: { body: 'late' } },
+    );
     expect(res.status).toBe(409);
     expect(note.body).toBe('warned about spoilers');
   });
@@ -291,7 +309,12 @@ describe('editing', () => {
   it('another moderator cannot edit the note (403), even inside the window', async () => {
     const note = seedNote();
     h.userId = 'mod-b';
-    const res = await call(itemRoute, 'PATCH', { slug: 'a', userId: 'member-1', noteId: note.id }, { body: { body: 'mine now' } });
+    const res = await call(
+      itemRoute,
+      'PATCH',
+      { slug: 'a', userId: 'member-1', noteId: note.id },
+      { body: { body: 'mine now' } },
+    );
     expect(res.status).toBe(403);
     expect(note.body).toBe('warned about spoilers');
   });

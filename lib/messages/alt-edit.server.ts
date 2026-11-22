@@ -14,10 +14,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import {
-  getChatAccess,
-  publishChatUpdate,
-} from '@/lib/chat-plus/access.server';
+import { getChatAccess, publishChatUpdate } from '@/lib/chat-plus/access.server';
 import {
   altEditEligibility,
   altEditMessage,
@@ -38,15 +35,11 @@ export type EditAltsResult =
       error: string;
     };
 
-const fail =
-  (
-    status: number,
-    error: string,
-  ): EditAltsResult => ({
-    ok: false,
-    status,
-    error,
-  });
+const fail = (status: number, error: string): EditAltsResult => ({
+  ok: false,
+  status,
+  error,
+});
 
 export async function editMessageImageAlts(args: {
   chatId: string;
@@ -55,155 +48,72 @@ export async function editMessageImageAlts(args: {
   imageAlts: string[];
   now?: Date;
 }): Promise<EditAltsResult> {
-  const now =
-    args.now ??
-    new Date();
+  const now = args.now ?? new Date();
   const access =
-    (await getChatAccess(
-      'dm',
-      args.chatId,
-      args.userId,
-    )) ??
-    (await getChatAccess(
-      'group',
-      args.chatId,
-      args.userId,
-    ));
-  if (
-    !access
-  )
-    return fail(
-      404,
-      'Conversation not found',
-    );
+    (await getChatAccess('dm', args.chatId, args.userId)) ?? (await getChatAccess('group', args.chatId, args.userId));
+  if (!access) return fail(404, 'Conversation not found');
 
-  const existing =
-    await prisma.chatMessage.findFirst(
-      {
-        where:
-          {
-            id: args.messageId,
-            chatId:
-              args.chatId,
-          },
-        select:
-          {
-            id: true,
-            senderId: true,
-            createdAt: true,
-            deletedAt: true,
-            imageUrls: true,
-            imageAlts: true,
-            content: true,
-            editedAt: true,
-            gifUrl: true,
-            deletedBy: true,
-            audioUrl: true,
-          },
-      },
-    );
-  if (
-    !existing
-  )
-    return fail(
-      404,
-      'Message not found',
-    );
+  const existing = await prisma.chatMessage.findFirst({
+    where: {
+      id: args.messageId,
+      chatId: args.chatId,
+    },
+    select: {
+      id: true,
+      senderId: true,
+      createdAt: true,
+      deletedAt: true,
+      imageUrls: true,
+      imageAlts: true,
+      content: true,
+      editedAt: true,
+      gifUrl: true,
+      deletedBy: true,
+      audioUrl: true,
+    },
+  });
+  if (!existing) return fail(404, 'Message not found');
 
-  const eligible =
-    altEditEligibility(
-      existing,
-      args.userId,
-      now.getTime(),
-    );
-  if (
-    !eligible.ok
-  )
-    return fail(
-      altEditStatus(
-        eligible.reason,
-      ),
-      altEditMessage(
-        eligible.reason,
-      ),
-    );
-  if (
-    !imageAltsAligned(
-      existing.imageUrls,
-      args.imageAlts,
-    )
-  ) {
-    return fail(
-      400,
-      'Provide exactly one description per image',
-    );
+  const eligible = altEditEligibility(existing, args.userId, now.getTime());
+  if (!eligible.ok) return fail(altEditStatus(eligible.reason), altEditMessage(eligible.reason));
+  if (!imageAltsAligned(existing.imageUrls, args.imageAlts)) {
+    return fail(400, 'Provide exactly one description per image');
   }
 
-  const imageAlts =
-    normalizeImageAlts(
-      existing.imageUrls,
-      args.imageAlts,
-    );
-  await prisma.chatMessage.update(
-    {
-      where:
-        {
-          id: existing.id,
-        },
-      data: {
-        imageAlts,
-        altsEditedAt:
-          now,
-      },
+  const imageAlts = normalizeImageAlts(existing.imageUrls, args.imageAlts);
+  await prisma.chatMessage.update({
+    where: {
+      id: existing.id,
     },
-  );
+    data: {
+      imageAlts,
+      altsEditedAt: now,
+    },
+  });
 
-  if (
-    access.kind ===
-    'dm'
-  ) {
-    const [
-      one,
-      two,
-    ] =
-      access.participants ?? [
-        args.userId,
-        args.userId,
-      ];
-    await publishMutation(
-      'message-edited',
-      {
-        conversation:
-          {
-            participantOneId:
-              one,
-            participantTwoId:
-              two,
-          },
-        actorId:
-          args.userId,
-        imageAlts,
-        row: {
-          ...existing,
-          imageAlts,
-          conversationId:
-            args.chatId,
-        },
+  if (access.kind === 'dm') {
+    const [one, two] = access.participants ?? [args.userId, args.userId];
+    await publishMutation('message-edited', {
+      conversation: {
+        participantOneId: one,
+        participantTwoId: two,
       },
-    );
+      actorId: args.userId,
+      imageAlts,
+      row: {
+        ...existing,
+        imageAlts,
+        conversationId: args.chatId,
+      },
+    });
   } else {
-    publishChatUpdate(
-      access,
-      {
-        kind: 'group',
-        chatId:
-          args.chatId,
-        op: 'alts',
-        messageId:
-          existing.id,
-        imageAlts,
-      },
-    );
+    publishChatUpdate(access, {
+      kind: 'group',
+      chatId: args.chatId,
+      op: 'alts',
+      messageId: existing.id,
+      imageAlts,
+    });
   }
   return {
     ok: true,

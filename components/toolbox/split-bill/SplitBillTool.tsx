@@ -16,20 +16,20 @@ interface Row {
 
 const MAX_PEOPLE = 50;
 
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const id = useId();
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="number" inputMode="decimal" min={0} step="any" value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step="any"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
@@ -68,7 +68,11 @@ export function SplitBillTool() {
   return (
     <ToolFrame slug="split-bill">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label={t('split-subtotal', { defaultValue: 'Bill before tax' })} value={subtotal} onChange={setSubtotal} />
+        <Field
+          label={t('split-subtotal', { defaultValue: 'Bill before tax' })}
+          value={subtotal}
+          onChange={setSubtotal}
+        />
         <Field label={t('split-tax', { defaultValue: 'Tax (%)' })} value={tax} onChange={setTax} />
         <Field label={t('split-tip', { defaultValue: 'Tip (%)' })} value={tip} onChange={setTip} />
       </div>

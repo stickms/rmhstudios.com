@@ -4,24 +4,9 @@
  */
 import { z } from 'zod';
 
-export const extendPollSchema =
-  z
-    .object(
-      {
-        // The numbers are spelled out rather than built from POLL_EXTEND_DAYS so the inferred type stays a literal union.
-        days: z.union(
-          [
-            z.literal(
-              1,
-            ),
-            z.literal(
-              3,
-            ),
-            z.literal(
-              7,
-            ),
-          ],
-        ),
-      },
-    )
-    .strict();
+export const extendPollSchema = z
+  .object({
+    // The numbers are spelled out rather than built from POLL_EXTEND_DAYS so the inferred type stays a literal union.
+    days: z.union([z.literal(1), z.literal(3), z.literal(7)]),
+  })
+  .strict();

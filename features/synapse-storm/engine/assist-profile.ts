@@ -32,136 +32,67 @@ export interface SynapseAssistFlags {
   holdToPress: boolean;
 }
 
-export const NO_ASSIST_FLAGS: SynapseAssistFlags =
-  {
-    active: false,
-    clockScale: 1,
-    frozenTimers: false,
-    calm: false,
-    colorSafe: false,
-    holdToPress: false,
-  };
+export const NO_ASSIST_FLAGS: SynapseAssistFlags = {
+  active: false,
+  clockScale: 1,
+  frozenTimers: false,
+  calm: false,
+  colorSafe: false,
+  holdToPress: false,
+};
 
 /** Minimum gap between changes of the one full-screen colour state under calm visuals. */
 export const CALM_COLOR_GAP_MS = 1000;
 
 /** A ranked profile (or none) is the plain game. */
-export function synapseAssistFlags(
-  profile:
-    | AssistProfile
-    | null
-    | undefined,
-): SynapseAssistFlags {
-  if (
-    !profile ||
-    profile.ranked
-  )
-    return NO_ASSIST_FLAGS;
+export function synapseAssistFlags(profile: AssistProfile | null | undefined): SynapseAssistFlags {
+  if (!profile || profile.ranked) return NO_ASSIST_FLAGS;
   return {
     active: true,
-    clockScale:
-      Math.min(
-        1,
-        Math.max(
-          0.5,
-          profile.speedFloor,
-        ),
-      ),
-    frozenTimers:
-      profile.noTimedInput,
+    clockScale: Math.min(1, Math.max(0.5, profile.speedFloor)),
+    frozenTimers: profile.noTimedInput,
     calm: profile.calmVisuals,
-    colorSafe:
-      profile.colorSafe,
-    holdToPress:
-      profile.holdToPress,
+    colorSafe: profile.colorSafe,
+    holdToPress: profile.holdToPress,
   };
 }
 
 /** Seconds a puzzle timer drains this tick, given the wall-clock seconds that passed. */
-export function puzzleDrainSeconds(
-  rawDt: number,
-  flags: SynapseAssistFlags,
-): number {
-  if (
-    flags.frozenTimers
-  )
-    return 0;
-  return (
-    rawDt *
-    flags.clockScale
-  );
+export function puzzleDrainSeconds(rawDt: number, flags: SynapseAssistFlags): number {
+  if (flags.frozenTimers) return 0;
+  return rawDt * flags.clockScale;
 }
 
 /** The wait before the next spawn: a slower clock spaces puzzles further apart. */
-export function spawnDelayMs(
-  ms: number,
-  flags: SynapseAssistFlags,
-): number {
-  return (
-    ms /
-    flags.clockScale
-  );
+export function spawnDelayMs(ms: number, flags: SynapseAssistFlags): number {
+  return ms / flags.clockScale;
 }
 
 /** The seconds of the run that count toward the difficulty ramp. */
-export function rampSeconds(
-  wallSeconds: number,
-  flags: SynapseAssistFlags,
-): number {
-  return (
-    wallSeconds *
-    flags.clockScale
-  );
+export function rampSeconds(wallSeconds: number, flags: SynapseAssistFlags): number {
+  return wallSeconds * flags.clockScale;
 }
 
 /**
  * Whether a full-screen colour state may change now. Under calm visuals it may
  * change at most once per `CALM_COLOR_GAP_MS`; otherwise always.
  */
-export function mayChangeScreenColor(
-  lastChangeAt: number,
-  now: number,
-  flags: SynapseAssistFlags,
-): boolean {
-  if (
-    !flags.calm
-  )
-    return true;
-  return (
-    now -
-      lastChangeAt >=
-    CALM_COLOR_GAP_MS
-  );
+export function mayChangeScreenColor(lastChangeAt: number, now: number, flags: SynapseAssistFlags): boolean {
+  if (!flags.calm) return true;
+  return now - lastChangeAt >= CALM_COLOR_GAP_MS;
 }
 
 /** The colours the colour puzzles use, each with a letter that survives without hue. */
-const COLOR_GLYPHS: Record<
-  string,
-  string
-> =
-  {
-    '#ff5252':
-      'R',
-    '#00e5ff':
-      'C',
-    '#76ff03':
-      'G',
-    '#ffab00':
-      'A',
-    '#b388ff':
-      'V',
-    '#ff6ec7':
-      'P',
-  };
+const COLOR_GLYPHS: Record<string, string> = {
+  '#ff5252': 'R',
+  '#00e5ff': 'C',
+  '#76ff03': 'G',
+  '#ffab00': 'A',
+  '#b388ff': 'V',
+  '#ff6ec7': 'P',
+};
 
 /** A glyph for a puzzle colour, or an empty string for a colour the game does not use. */
-export function colorGlyph(
-  hex: string,
-): string {
-  return (
-    COLOR_GLYPHS[
-      hex.toLowerCase()
-    ] ??
-    ''
-  );
+export function colorGlyph(hex: string): string {
+  return COLOR_GLYPHS[hex.toLowerCase()] ?? '';
 }

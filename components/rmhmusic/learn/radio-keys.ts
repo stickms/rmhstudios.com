@@ -13,37 +13,20 @@ export type RadioKeyAction =
       kind: 'select';
     };
 
-export function radioKey(
-  key: string,
-  index: number,
-  count: number,
-): RadioKeyAction | null {
-  if (
-    count <=
-    0
-  )
-    return null;
-  switch (
-    key
-  ) {
+export function radioKey(key: string, index: number, count: number): RadioKeyAction | null {
+  if (count <= 0) return null;
+  switch (key) {
     case 'ArrowDown':
     case 'ArrowRight':
       return {
         kind: 'move',
-        index:
-          (index +
-            1) %
-          count,
+        index: (index + 1) % count,
       };
     case 'ArrowUp':
     case 'ArrowLeft':
       return {
         kind: 'move',
-        index:
-          (index -
-            1 +
-            count) %
-          count,
+        index: (index - 1 + count) % count,
       };
     case 'Home':
       return {
@@ -53,9 +36,7 @@ export function radioKey(
     case 'End':
       return {
         kind: 'move',
-        index:
-          count -
-          1,
+        index: count - 1,
       };
     case ' ':
     case 'Enter':

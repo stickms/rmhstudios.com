@@ -33,36 +33,29 @@ export interface Runtime {
   lastView: ViewKind;
 }
 
-export function createRuntime(spawn: {
-  x: number;
-  z: number;
-}): Runtime {
+export function createRuntime(spawn: { x: number; z: number }): Runtime {
   return {
     progress: 0,
-    avatar:
-      {
-        x: spawn.x,
-        z: spawn.z,
-        yaw: 0.8,
-        speed: 0,
-      },
+    avatar: {
+      x: spawn.x,
+      z: spawn.z,
+      yaw: 0.8,
+      speed: 0,
+    },
     avatarY: 0,
-    isoCenter:
-      {
-        x: spawn.x,
-        z: spawn.z,
-      },
+    isoCenter: {
+      x: spawn.x,
+      z: spawn.z,
+    },
     isoDistance: 150,
     camYaw: 0.8,
-    input:
-      {
-        forward: 0,
-        right: 0,
-        run: false,
-      },
+    input: {
+      forward: 0,
+      right: 0,
+      run: false,
+    },
     gaitPhase: 0,
-    lastView:
-      'iso',
+    lastView: 'iso',
   };
 }
 
@@ -77,41 +70,13 @@ export function cameraRelativeMove(
   x: number;
   z: number;
 } {
-  const f =
-    Number.isFinite(
-      input.forward,
-    )
-      ? input.forward
-      : 0;
-  const r =
-    Number.isFinite(
-      input.right,
-    )
-      ? input.right
-      : 0;
-  const fx =
-    Math.sin(
-      camYaw,
-    );
-  const fz =
-    Math.cos(
-      camYaw,
-    );
+  const f = Number.isFinite(input.forward) ? input.forward : 0;
+  const r = Number.isFinite(input.right) ? input.right : 0;
+  const fx = Math.sin(camYaw);
+  const fz = Math.cos(camYaw);
   // right = forward × up
   return {
-    x:
-      fx *
-        f -
-      Math.cos(
-        camYaw,
-      ) *
-        r,
-    z:
-      fz *
-        f +
-      Math.sin(
-        camYaw,
-      ) *
-        r,
+    x: fx * f - Math.cos(camYaw) * r,
+    z: fz * f + Math.sin(camYaw) * r,
   };
 }

@@ -29,10 +29,7 @@ export const REPORT_OUTCOME_ENTITY_TYPE = 'report_outcome';
 /** Where the notification points: the Security page, whose "Your reports" panel lists the report. */
 export const MY_REPORTS_LINK = '/settings/security#your-reports';
 
-export function reporterStatus(row: {
-  status: StoredReportStatus;
-  withdrawnAt: Date | string | null;
-}): ReporterStatus {
+export function reporterStatus(row: { status: StoredReportStatus; withdrawnAt: Date | string | null }): ReporterStatus {
   switch (row.status) {
     case 'PENDING':
       return 'WAITING';

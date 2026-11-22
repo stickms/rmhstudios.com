@@ -6,9 +6,7 @@ import { bulkRemoveFollowers } from '@/lib/social/follow-manager.server';
 
 /** POST /api/follows/remove: remove followers (one or many). Not a block; they are not told. */
 export const route = apiRoute('/api/follows/remove', {
-  POST: implement(
-    removeFollowersApi,
-    { rateLimit: 'write', body: removeFollowersBody },
-    async ({ userId, body }) => bulkRemoveFollowers(userId, body.followerIds),
+  POST: implement(removeFollowersApi, { rateLimit: 'write', body: removeFollowersBody }, async ({ userId, body }) =>
+    bulkRemoveFollowers(userId, body.followerIds),
   ),
 });

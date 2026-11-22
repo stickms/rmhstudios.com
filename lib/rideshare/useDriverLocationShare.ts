@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/contract/client';
 import { shareDriverLocationApi } from '@/lib/rideshare/rideshare.contract';
 
@@ -12,116 +9,49 @@ import { shareDriverLocationApi } from '@/lib/rideshare/rideshare.contract';
  *
  * Returns the permission/availability state so the UI can prompt the driver.
  */
-export function useDriverLocationShare(
-  active: boolean,
-):
-  | 'idle'
-  | 'sharing'
-  | 'denied'
-  | 'unavailable' {
-  const [
-    state,
-    setState,
-  ] =
-    useState<
-      | 'idle'
-      | 'sharing'
-      | 'denied'
-      | 'unavailable'
-    >(
-      'idle',
-    );
+export function useDriverLocationShare(active: boolean): 'idle' | 'sharing' | 'denied' | 'unavailable' {
+  const [state, setState] = useState<'idle' | 'sharing' | 'denied' | 'unavailable'>('idle');
 
   useEffect(() => {
-    if (
-      !active
-    ) {
-      setState(
-        'idle',
-      );
+    if (!active) {
+      setState('idle');
       return;
     }
-    if (
-      typeof navigator ===
-        'undefined' ||
-      !navigator.geolocation
-    ) {
-      setState(
-        'unavailable',
-      );
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setState('unavailable');
       return;
     }
 
     let lastSent = 0;
-    const send =
-      (
-        lat: number,
-        lng: number,
-      ) => {
-        const now =
-          Date.now();
-        if (
-          now -
-            lastSent <
-          8000
-        )
-          return;
-        lastSent =
-          now;
-        api(
-          shareDriverLocationApi,
-          {
-            body: {
-              lat,
-              lng,
-            },
-          },
-        ).catch(
-          () => {},
-        );
-      };
+    const send = (lat: number, lng: number) => {
+      const now = Date.now();
+      if (now - lastSent < 8000) return;
+      lastSent = now;
+      api(shareDriverLocationApi, {
+        body: {
+          lat,
+          lng,
+        },
+      }).catch(() => {});
+    };
 
-    const watchId =
-      navigator.geolocation.watchPosition(
-        (
-          pos,
-        ) => {
-          setState(
-            'sharing',
-          );
-          send(
-            pos
-              .coords
-              .latitude,
-            pos
-              .coords
-              .longitude,
-          );
-        },
-        (
-          err,
-        ) => {
-          setState(
-            err.code ===
-              err.PERMISSION_DENIED
-              ? 'denied'
-              : 'unavailable',
-          );
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 5000,
-          timeout: 20000,
-        },
-      );
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setState('sharing');
+        send(pos.coords.latitude, pos.coords.longitude);
+      },
+      (err) => {
+        setState(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable');
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 20000,
+      },
+    );
 
-    return () =>
-      navigator.geolocation.clearWatch(
-        watchId,
-      );
-  }, [
-    active,
-  ]);
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [active]);
 
   return state;
 }

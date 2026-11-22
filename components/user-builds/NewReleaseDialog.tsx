@@ -20,13 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
-import {
-  CHANGELOG_MAX,
-  VERSION_MAX,
-  isValidCommitHash,
-  isValidVersion,
-  type ReleaseView,
-} from '@/lib/builds/releases';
+import { CHANGELOG_MAX, VERSION_MAX, isValidCommitHash, isValidVersion, type ReleaseView } from '@/lib/builds/releases';
 import { createReleaseApi } from '@/lib/builds/releases.contract';
 
 interface Props {

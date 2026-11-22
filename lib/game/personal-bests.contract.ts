@@ -4,35 +4,20 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  clearedPersonalBestsSchema,
-  personalBestsSchema,
-} from '@/lib/game/personal-bests-schema';
+import type { clearedPersonalBestsSchema, personalBestsSchema } from '@/lib/game/personal-bests-schema';
 
 /** The caller's own record history in one game, newest first. */
-export const getPersonalBestsApi =
-  endpoint<{
-    res: z.infer<
-      typeof personalBestsSchema
-    >;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/games/$id/personal-bests',
-    },
-  );
+export const getPersonalBestsApi = endpoint<{
+  res: z.infer<typeof personalBestsSchema>;
+}>()({
+  method: 'GET',
+  path: '/api/games/$id/personal-bests',
+});
 
 /** Clear the caller's history in one game. The best on the board is not touched. */
-export const clearPersonalBestsApi =
-  endpoint<{
-    res: z.infer<
-      typeof clearedPersonalBestsSchema
-    >;
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/games/$id/personal-bests',
-    },
-  );
+export const clearPersonalBestsApi = endpoint<{
+  res: z.infer<typeof clearedPersonalBestsSchema>;
+}>()({
+  method: 'DELETE',
+  path: '/api/games/$id/personal-bests',
+});

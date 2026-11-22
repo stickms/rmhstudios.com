@@ -13,40 +13,15 @@ import {
  * QueryClientProvider; this is the one place that owns a query client. A follow made while the margin was not
  * mounted (a narrow window) is caught on mount, against when the cached list was fetched.
  */
-export function useMarginRefreshOnFollow(
-  viewerId:
-    | string
-    | null
-    | undefined,
-) {
-  const queryClient =
-    useQueryClient();
+export function useMarginRefreshOnFollow(viewerId: string | null | undefined) {
+  const queryClient = useQueryClient();
   useEffect(() => {
-    const updatedAt =
-      queryClient.getQueryState(
-        marginExploreKey(
-          viewerId,
-        ),
-      )?.dataUpdatedAt;
-    if (
-      updatedAt &&
-      followChangedSince(
-        updatedAt,
-      )
-    ) {
-      void invalidateMarginExplore(
-        queryClient,
-      );
+    const updatedAt = queryClient.getQueryState(marginExploreKey(viewerId))?.dataUpdatedAt;
+    if (updatedAt && followChangedSince(updatedAt)) {
+      void invalidateMarginExplore(queryClient);
     }
-    return subscribeFollowChanged(
-      () => {
-        void invalidateMarginExplore(
-          queryClient,
-        );
-      },
-    );
-  }, [
-    queryClient,
-    viewerId,
-  ]);
+    return subscribeFollowChanged(() => {
+      void invalidateMarginExplore(queryClient);
+    });
+  }, [queryClient, viewerId]);
 }

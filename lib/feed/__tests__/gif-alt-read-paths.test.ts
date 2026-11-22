@@ -55,9 +55,7 @@ describe('every gifUrl read under lib/ and app/routes/', () => {
   });
 
   it('returns gifAlt with it, or is exempt with a reason', () => {
-    const unaccounted = files.filter(
-      (f) => !read(f).includes('gifAlt') && !(f in GIF_ALT_EXEMPT_PATHS),
-    );
+    const unaccounted = files.filter((f) => !read(f).includes('gifAlt') && !(f in GIF_ALT_EXEMPT_PATHS));
     expect(unaccounted, 'a file reads gifUrl without gifAlt: list it or exempt it with a reason').toEqual([]);
   });
 

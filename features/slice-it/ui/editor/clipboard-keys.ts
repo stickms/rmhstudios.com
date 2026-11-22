@@ -23,10 +23,7 @@ export function keyTargetIsOwned(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
   if (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return true;
-  return (
-    typeof el.closest === 'function' &&
-    !!el.closest('[role="dialog"], [role="alertdialog"], [role="menu"]')
-  );
+  return typeof el.closest === 'function' && !!el.closest('[role="dialog"], [role="alertdialog"], [role="menu"]');
 }
 
 /** The operation a key press asks for, or null when it is not one of ours. */

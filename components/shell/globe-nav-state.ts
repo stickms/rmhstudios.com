@@ -30,55 +30,30 @@ interface KeyInput {
  * Escape closes. Tab never leaves: past either end it wraps, and from outside the nav it comes back to the nearest
  * end. Everything else, and everything while closed, is left to the browser.
  */
-export function globeKeyAction({
-  key,
-  shiftKey,
-  open,
-  stops,
-  active,
-}: KeyInput): GlobeKeyAction {
-  if (
-    !open
-  )
+export function globeKeyAction({ key, shiftKey, open, stops, active }: KeyInput): GlobeKeyAction {
+  if (!open)
     return {
       type: 'none',
     };
-  if (
-    key ===
-    'Escape'
-  )
+  if (key === 'Escape')
     return {
       type: 'close',
     };
-  if (
-    key !==
-      'Tab' ||
-    stops ===
-      0
-  )
+  if (key !== 'Tab' || stops === 0)
     return {
       type: 'none',
     };
-  const last =
-    stops -
-    1;
-  if (
-    shiftKey
-  )
-    return active <=
-      0
+  const last = stops - 1;
+  if (shiftKey)
+    return active <= 0
       ? {
           type: 'focus',
-          index:
-            last,
+          index: last,
         }
       : {
           type: 'none',
         };
-  return active ===
-    -1 ||
-    active ===
-      last
+  return active === -1 || active === last
     ? {
         type: 'focus',
         index: 0,

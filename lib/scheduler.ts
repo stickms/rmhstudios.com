@@ -47,23 +47,10 @@ interface SchedulerYieldHost {
  *     and the bookkeeping begins — usually once.
  */
 export function yieldToMain(): Promise<void> {
-  const host =
-    globalThis as SchedulerYieldHost;
-  const scheduler =
-    host.scheduler;
-  if (
-    typeof scheduler?.yield ===
-    'function'
-  )
-    return scheduler.yield();
-  return new Promise<void>(
-    (
-      resolve,
-    ) => {
-      setTimeout(
-        resolve,
-        0,
-      );
-    },
-  );
+  const host = globalThis as SchedulerYieldHost;
+  const scheduler = host.scheduler;
+  if (typeof scheduler?.yield === 'function') return scheduler.yield();
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }

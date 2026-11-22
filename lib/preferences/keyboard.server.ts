@@ -1,10 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { SITE_SHORTCUTS } from '@/lib/shortcuts/registry';
-import {
-  DEFAULT_KEYBOARD_PREFS,
-  sanitizePrefs,
-  type KeyboardPrefs,
-} from '@/lib/shortcuts/bindings';
+import { DEFAULT_KEYBOARD_PREFS, sanitizePrefs, type KeyboardPrefs } from '@/lib/shortcuts/bindings';
 
 const KNOWN_IDS: ReadonlySet<string> = new Set(SITE_SHORTCUTS.map((s) => s.id));
 
@@ -31,10 +27,7 @@ export async function getKeyboardPrefs(userId: string): Promise<KeyboardPrefs> {
   return parseKeyboardRow(row);
 }
 
-export async function saveKeyboardPrefs(
-  userId: string,
-  prefs: KeyboardPrefs,
-): Promise<KeyboardPrefs> {
+export async function saveKeyboardPrefs(userId: string, prefs: KeyboardPrefs): Promise<KeyboardPrefs> {
   const data = {
     singleKeys: prefs.singleKeys,
     overrides: prefs.overrides,

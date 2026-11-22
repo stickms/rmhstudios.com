@@ -89,7 +89,9 @@ describe('listBlocked / listMuted', () => {
     h.blocks = Array.from({ length: BLOCKED_MUTED_PAGE_SIZE + 1 }, (_, i) => block(i + 1));
     const page = await listBlocked('me');
     expect(page.items).toHaveLength(BLOCKED_MUTED_PAGE_SIZE);
-    expect(page.nextCursor).toBe(encodeCursor(h.blocks[BLOCKED_MUTED_PAGE_SIZE - 1]!.createdAt as Date, `b${BLOCKED_MUTED_PAGE_SIZE}`));
+    expect(page.nextCursor).toBe(
+      encodeCursor(h.blocks[BLOCKED_MUTED_PAGE_SIZE - 1]!.createdAt as Date, `b${BLOCKED_MUTED_PAGE_SIZE}`),
+    );
     expect((h.calls[0]!.args as { take: number }).take).toBe(BLOCKED_MUTED_PAGE_SIZE + 1);
 
     h.blocks = [block(60)];

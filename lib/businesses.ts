@@ -26,9 +26,7 @@ export interface Business {
 }
 
 /** A business whose name and page come from its vertical. */
-function fromVertical<
-  const Id extends string,
->(
+function fromVertical<const Id extends string>(
   id: Id,
   mark: string,
 ): {
@@ -37,20 +35,8 @@ function fromVertical<
   mark: string;
   href: string;
 } {
-  const vertical =
-    VERTICALS.find(
-      (
-        v,
-      ) =>
-        v.id ===
-        id,
-    );
-  if (
-    !vertical
-  )
-    throw new Error(
-      `lib/businesses: no vertical "${id}"`,
-    );
+  const vertical = VERTICALS.find((v) => v.id === id);
+  if (!vertical) throw new Error(`lib/businesses: no vertical "${id}"`);
   return {
     id,
     name: vertical.name,
@@ -59,86 +45,36 @@ function fromVertical<
   };
 }
 
-export const BUSINESSES =
-  [
-    {
-      id: 'rmh-studios',
-      name: 'RMH Studios',
-      mark: 'RMH',
-      href: '/',
-    },
-    fromVertical(
-      'rmh-capital',
-      'RC',
-    ),
-    fromVertical(
-      'adaptive-intelligence',
-      'AI',
-    ),
-    fromVertical(
-      'rmh-research',
-      'RR',
-    ),
-    {
-      id: 'rmh-designs',
-      name: 'RMH Designs',
-      mark: 'RD',
-      href: '/rmh-designs/',
-    },
-    fromVertical(
-      'rmh-pmc',
-      'PMC',
-    ),
-  ] as const satisfies readonly Business[];
+export const BUSINESSES = [
+  {
+    id: 'rmh-studios',
+    name: 'RMH Studios',
+    mark: 'RMH',
+    href: '/',
+  },
+  fromVertical('rmh-capital', 'RC'),
+  fromVertical('adaptive-intelligence', 'AI'),
+  fromVertical('rmh-research', 'RR'),
+  {
+    id: 'rmh-designs',
+    name: 'RMH Designs',
+    mark: 'RD',
+    href: '/rmh-designs/',
+  },
+  fromVertical('rmh-pmc', 'PMC'),
+] as const satisfies readonly Business[];
 
-export type BusinessId =
-  (typeof BUSINESSES)[number]['id'];
+export type BusinessId = (typeof BUSINESSES)[number]['id'];
 
-export const DEFAULT_BUSINESS_ID: BusinessId =
-  'rmh-studios';
+export const DEFAULT_BUSINESS_ID: BusinessId = 'rmh-studios';
 
-export const BUSINESS_IDS =
-  BUSINESSES.map(
-    (
-      b,
-    ) =>
-      b.id,
-  ) as [
-    BusinessId,
-    ...BusinessId[],
-  ];
+export const BUSINESS_IDS = BUSINESSES.map((b) => b.id) as [BusinessId, ...BusinessId[]];
 
-export function isBusinessId(
-  value: unknown,
-): value is BusinessId {
-  return (
-    typeof value ===
-      'string' &&
-    BUSINESSES.some(
-      (
-        b,
-      ) =>
-        b.id ===
-        value,
-    )
-  );
+export function isBusinessId(value: unknown): value is BusinessId {
+  return typeof value === 'string' && BUSINESSES.some((b) => b.id === value);
 }
 
 /** Look up a business; unknown/legacy ids fall back to RMH Studios. */
-export function getBusiness(
-  id:
-    | string
-    | null
-    | undefined,
-): Business {
-  return (
-    BUSINESSES.find(
-      (
-        b,
-      ) =>
-        b.id ===
-        id,
-    ) ??
-    BUSINESSES[0]
-  );
+export function getBusiness(id: string | null | undefined): Business {
+  return BUSINESSES.find((b) => b.id === id) ?? BUSINESSES[0];
 }

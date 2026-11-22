@@ -12,27 +12,14 @@
 import { useRef } from 'react';
 import { Outlet } from '@tanstack/react-router';
 import { useChromePointer } from '@/hooks/useChromePointer';
-import {
-  TopNav,
-  SiteFooter,
-} from './shared';
+import { TopNav, SiteFooter } from './shared';
 
 export default function RmhCapitalLayout() {
-  const root =
-    useRef<HTMLDivElement>(
-      null,
-    );
-  useChromePointer(
-    root,
-  );
+  const root = useRef<HTMLDivElement>(null);
+  useChromePointer(root);
 
   return (
-    <div
-      className="rmhc-root"
-      ref={
-        root
-      }
-    >
+    <div className="rmhc-root" ref={root}>
       <TopNav />
       <main>
         <Outlet />

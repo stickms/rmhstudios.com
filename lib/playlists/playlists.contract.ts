@@ -5,11 +5,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type {
-  CollaboratorView,
-  PlaylistDetail,
-  PlaylistSummary,
-} from '@/lib/playlists.server';
+import type { CollaboratorView, PlaylistDetail, PlaylistSummary } from '@/lib/playlists.server';
 import type {
   addCollaboratorBody,
   addPlaylistItemBody,
@@ -18,159 +14,104 @@ import type {
   renamePlaylistBody,
 } from '@/lib/playlists/playlists-schema';
 
-type Ok =
-  {
-    success: true;
-  };
+type Ok = {
+  success: true;
+};
 
 /** The caller's playlists (owned and shared). A `?kind=` param is ignored by the server. */
-export const listPlaylistsApi =
-  endpoint<{
-    res: {
-      playlists: PlaylistSummary[];
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/playlists',
-    },
-  );
+export const listPlaylistsApi = endpoint<{
+  res: {
+    playlists: PlaylistSummary[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/playlists',
+});
 
 /** 201 with the new playlist's id. */
-export const createPlaylistApi =
-  endpoint<{
-    body: z.infer<
-      typeof createPlaylistBody
-    >;
-    res: Ok & {
-      id: string;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/playlists',
-    },
-  );
+export const createPlaylistApi = endpoint<{
+  body: z.infer<typeof createPlaylistBody>;
+  res: Ok & {
+    id: string;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/playlists',
+});
 
-export const getPlaylistApi =
-  endpoint<{
-    res: PlaylistDetail;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/playlists/$id',
-    },
-  );
+export const getPlaylistApi = endpoint<{
+  res: PlaylistDetail;
+}>()({
+  method: 'GET',
+  path: '/api/playlists/$id',
+});
 
-export const renamePlaylistApi =
-  endpoint<{
-    body: z.infer<
-      typeof renamePlaylistBody
-    >;
-    res: Ok;
-  }>()(
-    {
-      method:
-        'PATCH',
-      path: '/api/playlists/$id',
-    },
-  );
+export const renamePlaylistApi = endpoint<{
+  body: z.infer<typeof renamePlaylistBody>;
+  res: Ok;
+}>()({
+  method: 'PATCH',
+  path: '/api/playlists/$id',
+});
 
-export const deletePlaylistApi =
-  endpoint<{
-    res: Ok;
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/playlists/$id',
-    },
-  );
+export const deletePlaylistApi = endpoint<{
+  res: Ok;
+}>()({
+  method: 'DELETE',
+  path: '/api/playlists/$id',
+});
 
-export const listPlaylistCollaboratorsApi =
-  endpoint<{
-    res: {
-      collaborators: CollaboratorView[];
-    };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/playlists/$id/collaborators',
-    },
-  );
+export const listPlaylistCollaboratorsApi = endpoint<{
+  res: {
+    collaborators: CollaboratorView[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/playlists/$id/collaborators',
+});
 
 /** 201. */
-export const addPlaylistCollaboratorApi =
-  endpoint<{
-    body: z.infer<
-      typeof addCollaboratorBody
-    >;
-    res: Ok;
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/playlists/$id/collaborators',
-    },
-  );
+export const addPlaylistCollaboratorApi = endpoint<{
+  body: z.infer<typeof addCollaboratorBody>;
+  res: Ok;
+}>()({
+  method: 'POST',
+  path: '/api/playlists/$id/collaborators',
+});
 
-export const removePlaylistCollaboratorApi =
-  endpoint<{
-    res: Ok;
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/playlists/$id/collaborators/$userId',
-    },
-  );
+export const removePlaylistCollaboratorApi = endpoint<{
+  res: Ok;
+}>()({
+  method: 'DELETE',
+  path: '/api/playlists/$id/collaborators/$userId',
+});
 
-export const addPlaylistItemApi =
-  endpoint<{
-    body: z.infer<
-      typeof addPlaylistItemBody
-    >;
-    res: Ok & {
-      duplicate: boolean;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/playlists/$id/items',
-    },
-  );
+export const addPlaylistItemApi = endpoint<{
+  body: z.infer<typeof addPlaylistItemBody>;
+  res: Ok & {
+    duplicate: boolean;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/playlists/$id/items',
+});
 
-export const removePlaylistItemApi =
-  endpoint<{
-    res: Ok;
-  }>()(
-    {
-      method:
-        'DELETE',
-      path: '/api/playlists/$id/items/$itemId',
-    },
-  );
+export const removePlaylistItemApi = endpoint<{
+  res: Ok;
+}>()({
+  method: 'DELETE',
+  path: '/api/playlists/$id/items/$itemId',
+});
 
 /** Append up to 200 items in one call; the response says what was added, repeated or over the cap. */
-export const addPlaylistItemsBulkApi =
-  endpoint<{
-    body: z.infer<
-      typeof addPlaylistItemsBulkBody
-    >;
-    res: Ok & {
-      added: number;
-      duplicates: number;
-      skipped: number;
-    };
-  }>()(
-    {
-      method:
-        'POST',
-      path: '/api/playlists/$id/items/bulk',
-    },
-  );
+export const addPlaylistItemsBulkApi = endpoint<{
+  body: z.infer<typeof addPlaylistItemsBulkBody>;
+  res: Ok & {
+    added: number;
+    duplicates: number;
+    skipped: number;
+  };
+}>()({
+  method: 'POST',
+  path: '/api/playlists/$id/items/bulk',
+});

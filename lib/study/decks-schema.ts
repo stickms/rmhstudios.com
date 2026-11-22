@@ -6,55 +6,17 @@ import { z } from 'zod';
 import { CARD_KINDS, validateCard } from '@/lib/study/card-types';
 import { CARD_SIDE_MAX, CLOZE_TEXT_MAX, MAX_DECK_CARDS, MAX_IMPORT_CARDS } from '@/lib/study/limits';
 
-export const createDeckBody =
-  z.object(
-    {
-      title:
-        z
-          .string()
-          .min(
-            1,
-          )
-          .max(
-            100,
-          ),
-      description:
-        z
-          .string()
-          .max(
-            500,
-          )
-          .optional(),
-      isPublic:
-        z
-          .boolean()
-          .optional(),
-      // Optional AI seed: generate starter cards for this topic.
-      generateTopic:
-        z
-          .string()
-          .max(
-            200,
-          )
-          .optional(),
-    },
-  );
+export const createDeckBody = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  isPublic: z.boolean().optional(),
+  // Optional AI seed: generate starter cards for this topic.
+  generateTopic: z.string().max(200).optional(),
+});
 
-export const reviewCardBody =
-  z.object(
-    {
-      grade:
-        z
-          .number()
-          .int()
-          .min(
-            0,
-          )
-          .max(
-            3,
-          ),
-    },
-  );
+export const reviewCardBody = z.object({
+  grade: z.number().int().min(0).max(3),
+});
 
 /**
  * A card as authored: its kind (basic when absent), a front (a cloze card's whole text, up to
@@ -86,10 +48,7 @@ export const updateDeckBody = z
   })
   .refine(
     (b) =>
-      b.title !== undefined ||
-      b.description !== undefined ||
-      b.isPublic !== undefined ||
-      b.notifyUpdates !== undefined,
+      b.title !== undefined || b.description !== undefined || b.isPublic !== undefined || b.notifyUpdates !== undefined,
   );
 
 /** PATCH a card: any of its kind and sides; the review history stays. The merged card is checked by the server. */

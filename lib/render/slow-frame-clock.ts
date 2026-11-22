@@ -20,59 +20,15 @@ export class SlowFrameClock {
   }
 
   /** Feed one frame interval (ms); true once the average has been over `budgetMs` for {@link SLOW_FOR_MS}. */
-  over(
-    dtMs: number,
-    budgetMs: number,
-  ): boolean {
-    if (
-      dtMs <=
-      0
-    )
-      return false;
-    if (
-      dtMs >
-        STALL_MS &&
-      this
-        .avg >
-        0 &&
-      dtMs >
-        this
-          .avg *
-          6
-    )
-      return false;
-    this.avg =
-      this
-        .avg ===
-      0
-        ? dtMs
-        : this
-            .avg +
-          (dtMs -
-            this
-              .avg) *
-            (1 -
-              Math.exp(
-                -dtMs /
-                  TAU_MS,
-              ));
-    if (
-      this
-        .avg <=
-      budgetMs
-    ) {
+  over(dtMs: number, budgetMs: number): boolean {
+    if (dtMs <= 0) return false;
+    if (dtMs > STALL_MS && this.avg > 0 && dtMs > this.avg * 6) return false;
+    this.avg = this.avg === 0 ? dtMs : this.avg + (dtMs - this.avg) * (1 - Math.exp(-dtMs / TAU_MS));
+    if (this.avg <= budgetMs) {
       this.overMs = 0;
       return false;
     }
-    this.overMs +=
-      Math.min(
-        dtMs,
-        STALL_MS,
-      );
-    return (
-      this
-        .overMs >=
-      SLOW_FOR_MS
-    );
+    this.overMs += Math.min(dtMs, STALL_MS);
+    return this.overMs >= SLOW_FOR_MS;
   }
 }

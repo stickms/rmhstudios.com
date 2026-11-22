@@ -16,10 +16,7 @@ function refusal(error: unknown): Response | null {
     );
   }
   if (error.code === 'GHOST') {
-    return Response.json(
-      { error: 'A race ghost is always unlisted.', reason: 'ghost' },
-      { status: 409 },
-    );
+    return Response.json({ error: 'A race ghost is always unlisted.', reason: 'ghost' }, { status: 409 });
   }
   return null;
 }

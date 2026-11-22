@@ -65,7 +65,9 @@ describe('"Hosted by A with B and C"', () => {
       { name: 'C', handle: null },
     ]);
     expect(new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(labels)).toBe('B and C');
-    expect(new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format([...labels, 'D'])).toBe('B, C, and D');
+    expect(new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format([...labels, 'D'])).toBe(
+      'B, C, and D',
+    );
     expect(new Intl.ListFormat('ar', { style: 'long', type: 'conjunction' }).format(labels)).not.toBe('B and C');
   });
 });

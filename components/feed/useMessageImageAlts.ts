@@ -1,8 +1,4 @@
-import {
-  useCallback,
-  useMemo,
-  useState,
-} from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRequireAltText } from '@/components/feed/AltTextNotice';
 import { missingAltIndexes } from '@/lib/feed/alt-text';
 
@@ -18,96 +14,22 @@ import { missingAltIndexes } from '@/lib/feed/alt-text';
  * the check on when it answers that, so a setting changed in another tab is
  * handled the same way.
  */
-export function useMessageImageAlts(
-  imageUrls: string[],
-) {
-  const [
-    byUrl,
-    setByUrl,
-  ] =
-    useState<
-      Record<
-        string,
-        string
-      >
-    >(
-      {},
-    );
-  const [
-    forced,
-    setForced,
-  ] =
-    useState(
-      false,
-    );
-  const requireSetting =
-    useRequireAltText(
-      imageUrls.length >
-        0,
-    );
-  const required =
-    requireSetting ||
-    forced;
+export function useMessageImageAlts(imageUrls: string[]) {
+  const [byUrl, setByUrl] = useState<Record<string, string>>({});
+  const [forced, setForced] = useState(false);
+  const requireSetting = useRequireAltText(imageUrls.length > 0);
+  const required = requireSetting || forced;
 
-  const alts =
-    useMemo(
-      () =>
-        imageUrls.map(
-          (
-            url,
-          ) =>
-            byUrl[
-              url
-            ] ??
-            '',
-        ),
-      [
-        imageUrls,
-        byUrl,
-      ],
-    );
-  const missing =
-    useMemo(
-      () =>
-        required
-          ? missingAltIndexes(
-              imageUrls,
-              alts,
-            )
-          : [],
-      [
-        required,
-        imageUrls,
-        alts,
-      ],
-    );
+  const alts = useMemo(() => imageUrls.map((url) => byUrl[url] ?? ''), [imageUrls, byUrl]);
+  const missing = useMemo(() => (required ? missingAltIndexes(imageUrls, alts) : []), [required, imageUrls, alts]);
 
-  const setAlt =
-    useCallback(
-      (
-        url: string,
-        value: string,
-      ) => {
-        setByUrl(
-          (
-            prev,
-          ) => ({
-            ...prev,
-            [url]:
-              value,
-          }),
-        );
-      },
-      [],
-    );
-  const markRequired =
-    useCallback(
-      () =>
-        setForced(
-          true,
-        ),
-      [],
-    );
+  const setAlt = useCallback((url: string, value: string) => {
+    setByUrl((prev) => ({
+      ...prev,
+      [url]: value,
+    }));
+  }, []);
+  const markRequired = useCallback(() => setForced(true), []);
 
   return {
     alts,
@@ -117,7 +39,4 @@ export function useMessageImageAlts(
   };
 }
 
-export type MessageImageAlts =
-  ReturnType<
-    typeof useMessageImageAlts
-  >;
+export type MessageImageAlts = ReturnType<typeof useMessageImageAlts>;

@@ -24,9 +24,7 @@ export interface UnsentWorkDialogProps {
   cancelLabel: string;
   keepLabel: string;
   deleteLabel: string;
-  onChoose: (
-    choice: UnsentChoice,
-  ) => void;
+  onChoose: (choice: UnsentChoice) => void;
 }
 
 export default function UnsentWorkDialog({
@@ -38,103 +36,42 @@ export default function UnsentWorkDialog({
   deleteLabel,
   onChoose,
 }: UnsentWorkDialogProps) {
-  const keepRef =
-    useRef<HTMLButtonElement | null>(
-      null,
-    );
+  const keepRef = useRef<HTMLButtonElement | null>(null);
   return (
     <Dialog
       open
-      onOpenChange={(
-        open,
-      ) => {
-        if (
-          !open
-        )
-          onChoose(
-            'cancel',
-          );
+      onOpenChange={(open) => {
+        if (!open) onChoose('cancel');
       }}
     >
       <DialogContent
         className="max-w-sm"
-        onOpenAutoFocus={(
-          e,
-        ) => {
+        onOpenAutoFocus={(e) => {
           e.preventDefault();
           keepRef.current?.focus();
         }}
       >
         <DialogHeader>
-          <DialogTitle>
-            {
-              title
-            }
-          </DialogTitle>
-          <DialogDescription>
-            {
-              intro
-            }
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{intro}</DialogDescription>
         </DialogHeader>
         <ul className="t-body border-t border-site-border">
-          {lines.map(
-            (
-              line,
-            ) => (
-              <li
-                key={
-                  line
-                }
-                className="border-b border-site-border py-2"
-              >
-                {
-                  line
-                }
-              </li>
-            ),
-          )}
+          {lines.map((line) => (
+            <li key={line} className="border-b border-site-border py-2">
+              {line}
+            </li>
+          ))}
         </ul>
         {/* Three labelled actions do not fit a row in a small dialog: they stack at every width, as on a phone. */}
         <DialogFooter className="sm:flex-col-reverse sm:justify-start">
-          <Button
-            variant="default"
-            onClick={() =>
-              onChoose(
-                'cancel',
-              )
-            }
-          >
-            {
-              cancelLabel
-            }
+          <Button variant="default" onClick={() => onChoose('cancel')}>
+            {cancelLabel}
           </Button>
-          <Button
-            variant="danger"
-            onClick={() =>
-              onChoose(
-                'delete',
-              )
-            }
-          >
-            {
-              deleteLabel
-            }
+          <Button variant="danger" onClick={() => onChoose('delete')}>
+            {deleteLabel}
           </Button>
-          <Button
-            ref={
-              keepRef
-            }
-            variant="default"
-            onClick={() =>
-              onChoose(
-                'keep',
-              )
-            }
-          >
-            {
-              keepLabel
-            }
+          <Button ref={keepRef} variant="default" onClick={() => onChoose('keep')}>
+            {keepLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

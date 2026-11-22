@@ -91,7 +91,8 @@ const tx = {
   },
   communityHandover: {
     findMany: async ({ where }: { where: Row }) => db.handovers.filter((h) => matches(h, where)),
-    findFirst: async ({ where }: { where: Row }) => withUsers([...db.handovers].reverse().find((h) => matches(h, where))),
+    findFirst: async ({ where }: { where: Row }) =>
+      withUsers([...db.handovers].reverse().find((h) => matches(h, where))),
     create: async ({ data }: { data: Row }) => {
       const row = { id: `h${++db.seq}`, status: 'pending', createdAt: new Date(), decidedAt: null, ...data };
       db.handovers.push(row);
@@ -138,9 +139,8 @@ vi.mock('@/lib/notifications.server', () => ({
   },
 }));
 
-const { offerHandover, cancelHandover, respondHandover, assignOwnerAsAdmin, getHandoverStatus } = await import(
-  '@/lib/communities/handover.server'
-);
+const { offerHandover, cancelHandover, respondHandover, assignOwnerAsAdmin, getHandoverStatus } =
+  await import('@/lib/communities/handover.server');
 
 prismaMock.current = {
   ...tx,
@@ -388,10 +388,13 @@ describe('after the transfer', () => {
 
 describe('site admin assignment', () => {
   const asDeleted = () =>
-    Object.assign(db.users.find((u) => u.id === 'owner')!, {
-      banReason: DELETED_ACCOUNT_BAN_REASON,
-      bannedUntil: new Date('9999-12-31T00:00:00Z'),
-    });
+    Object.assign(
+      db.users.find((u) => u.id === 'owner')!,
+      {
+        banReason: DELETED_ACCOUNT_BAN_REASON,
+        bannedUntil: new Date('9999-12-31T00:00:00Z'),
+      },
+    );
 
   it('is refused while the owner is an active account', async () => {
     expect(await assignOwnerAsAdmin({ community, adminId: 'admin', toId: 'mod', now: NOW })).toEqual({

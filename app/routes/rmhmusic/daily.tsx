@@ -11,94 +11,39 @@ import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { DailyBoard } from '@/components/rmhmusic/learn/social/DailyBoard';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
-import {
-  boardDate,
-  type BoardDay,
-} from '@/lib/rmhmusic/social/board-day';
+import { boardDate, type BoardDay } from '@/lib/rmhmusic/social/board-day';
 import { dailyBoardQuery } from '@/lib/rmhmusic/social/social.queries';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/daily',
-  )(
-    {
-      validateSearch:
-        (
-          search: Record<
-            string,
-            unknown
-          >,
-        ): {
-          day?: 'yesterday';
-        } =>
-          search.day ===
-          'yesterday'
-            ? {
-                day: 'yesterday',
-              }
-            : {},
-      loaderDeps:
-        ({
-          search,
-        }) => ({
-          day: search.day,
-        }),
-      loader:
-        ({
-          context,
-          deps,
-        }) =>
-          prefetchRouteQuery(
-            context.queryClient,
-            dailyBoardQuery(
-              boardDate(
-                boardDayOf(
-                  deps.day,
-                ),
-                Date.now(),
-              ),
-              'everyone',
-            ),
-          ),
-      head: () =>
-        noindexHead(
-          'RMHMusic Daily board',
-        ),
-      component:
-        DailyRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/daily')({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    day?: 'yesterday';
+  } =>
+    search.day === 'yesterday'
+      ? {
+          day: 'yesterday',
+        }
+      : {},
+  loaderDeps: ({ search }) => ({
+    day: search.day,
+  }),
+  loader: ({ context, deps }) =>
+    prefetchRouteQuery(context.queryClient, dailyBoardQuery(boardDate(boardDayOf(deps.day), Date.now()), 'everyone')),
+  head: () => noindexHead('RMHMusic Daily board'),
+  component: DailyRoute,
+});
 
 function DailyRoute() {
-  const {
-    day,
-  } =
-    Route.useSearch();
-  const which =
-    boardDayOf(
-      day,
-    );
+  const { day } = Route.useSearch();
+  const which = boardDayOf(day);
   return (
     <GameErrorBoundary gameName="RMH Music">
-      <DailyBoard
-        key={
-          which
-        }
-        day={
-          which
-        }
-      />
+      <DailyBoard key={which} day={which} />
     </GameErrorBoundary>
   );
 }
 
-function boardDayOf(
-  day:
-    | 'yesterday'
-    | undefined,
-): BoardDay {
-  return day ===
-    'yesterday'
-    ? 'yesterday'
-    : 'today';
+function boardDayOf(day: 'yesterday' | undefined): BoardDay {
+  return day === 'yesterday' ? 'yesterday' : 'today';
 }

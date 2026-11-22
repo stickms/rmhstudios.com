@@ -34,7 +34,11 @@ export type Term = DiceTerm | ConstantTerm;
 
 export type DiceParse =
   | { ok: true; terms: Term[] }
-  | { ok: false; error: 'empty' | 'syntax' | 'too-many-dice' | 'too-many-sides' | 'too-many-terms' | 'bad-keep'; at?: string };
+  | {
+      ok: false;
+      error: 'empty' | 'syntax' | 'too-many-dice' | 'too-many-sides' | 'too-many-terms' | 'bad-keep';
+      at?: string;
+    };
 
 const TERM = /^(\d*)d(\d+|%)((?:kh|kl|dh|dl)\d+)?(!)?$|^(\d+)$/;
 

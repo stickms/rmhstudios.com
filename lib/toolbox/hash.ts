@@ -91,7 +91,11 @@ export async function digestAll(data: Uint8Array): Promise<Record<HashAlgorithm,
 
 /** Lowercase hex with spaces, colons and a leading `0x` removed, or `null` when it is not hex. */
 export function normaliseHash(input: string): string | null {
-  const clean = input.trim().toLowerCase().replace(/^0x/, '').replace(/[\s:]+/g, '');
+  const clean = input
+    .trim()
+    .toLowerCase()
+    .replace(/^0x/, '')
+    .replace(/[\s:]+/g, '');
   return /^[0-9a-f]+$/.test(clean) ? clean : null;
 }
 

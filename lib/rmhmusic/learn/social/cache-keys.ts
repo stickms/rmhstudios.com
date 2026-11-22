@@ -4,15 +4,11 @@
  */
 
 /** The Everyone board of one UTC date: its sorted, filtered list (`board.server.ts`). */
-export function boardCacheKey(
-  date: string,
-): string {
+export function boardCacheKey(date: string): string {
   return `rmhmusic:board:${date}`;
 }
 
 /** A viewer's mutual follows who share something (`board.server.ts`, friends' progress). */
-export function friendsCacheKey(
-  userId: string,
-): string {
+export function friendsCacheKey(userId: string): string {
   return `rmhmusic:friends:${userId}`;
 }

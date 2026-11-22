@@ -413,9 +413,9 @@ describe('size and shape', () => {
     expect(
       (await call(listRoute, 'POST', { body: { id: 'p1', name: 'x'.repeat(81), data: project('p1') } })).status,
     ).toBe(400);
-    expect(
-      (await call(listRoute, 'POST', { body: { id: 'p1', name: 'Ok', data: project('different') } })).status,
-    ).toBe(400);
+    expect((await call(listRoute, 'POST', { body: { id: 'p1', name: 'Ok', data: project('different') } })).status).toBe(
+      400,
+    );
     expect(db.rows.size).toBe(0);
   });
 });

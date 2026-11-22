@@ -7,50 +7,29 @@ import { sendScheduledNow } from '@/lib/messages/scheduled.server';
  * POST /api/messages/scheduled/$id/send-now - deliver a pending message now,
  * through the same send function (and so the same checks) as the cron.
  */
-export const route =
-  apiRoute(
-    '/api/messages/scheduled/$id/send-now',
+export const route = apiRoute('/api/messages/scheduled/$id/send-now', {
+  POST: implement(
+    sendScheduledMessageNowApi,
     {
-      POST: implement(
-        sendScheduledMessageNowApi,
-        {
-          rateLimit:
-            'write',
-        },
-        async ({
-          userId,
-          params,
-        }) => {
-          const result =
-            await sendScheduledNow(
-              userId,
-              params.id,
-            );
-          if (
-            !result.ok
-          ) {
-            return Response.json(
-              {
-                error:
-                  result.error,
-                code:
-                  result.code ??
-                  null,
-              },
-              {
-                status:
-                  result.status,
-              },
-            );
-          }
-          return Response.json(
-            {
-              success: true,
-              message:
-                result.message,
-            },
-          );
-        },
-      ),
+      rateLimit: 'write',
     },
-  );
+    async ({ userId, params }) => {
+      const result = await sendScheduledNow(userId, params.id);
+      if (!result.ok) {
+        return Response.json(
+          {
+            error: result.error,
+            code: result.code ?? null,
+          },
+          {
+            status: result.status,
+          },
+        );
+      }
+      return Response.json({
+        success: true,
+        message: result.message,
+      });
+    },
+  ),
+});

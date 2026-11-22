@@ -18,7 +18,9 @@ on:
         type: boolean
         default: true
       theme:
-        description: Also shoot with this official bought theme applied (a gradient wash), e.g. paper, sundial, aurora. "none" skips.
+        description:
+          Also shoot with this official bought theme applied (a gradient wash), e.g. paper, sundial, aurora. "none"
+          skips.
         default: paper
       runner:
         description: macOS runner label (needs Xcode with an iOS simulator runtime)

@@ -10,16 +10,12 @@ import { withdrawReportApi } from '@/lib/moderation/my-reports.contract';
 import { withdrawReport } from '@/lib/moderation/my-reports.server';
 
 export const route = apiRoute('/api/account/reports/$id/withdraw', {
-  POST: implement(
-    withdrawReportApi,
-    { rateLimit: 'write' },
-    async ({ session, params }) => {
-      const result = await withdrawReport(session.user.id, params.id);
-      if (result === 'not_found') return Response.json({ error: 'Report not found' }, { status: 404 });
-      if (result === 'not_pending') {
-        return Response.json({ error: 'A moderator has already picked this report up' }, { status: 409 });
-      }
-      return { success: true as const };
-    },
-  ),
+  POST: implement(withdrawReportApi, { rateLimit: 'write' }, async ({ session, params }) => {
+    const result = await withdrawReport(session.user.id, params.id);
+    if (result === 'not_found') return Response.json({ error: 'Report not found' }, { status: 404 });
+    if (result === 'not_pending') {
+      return Response.json({ error: 'A moderator has already picked this report up' }, { status: 409 });
+    }
+    return { success: true as const };
+  }),
 });

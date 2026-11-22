@@ -19,8 +19,7 @@ export interface WaitlistEntry {
 export function orderWaitlist<T extends WaitlistEntry>(entries: readonly T[]): T[] {
   return [...entries].sort(
     (a, b) =>
-      a.waitlistedAt.getTime() - b.waitlistedAt.getTime() ||
-      (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0),
+      a.waitlistedAt.getTime() - b.waitlistedAt.getTime() || (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0),
   );
 }
 
@@ -54,11 +53,7 @@ export function waitlistPosition(waitlist: readonly WaitlistEntry[], userId: str
 }
 
 /** Whether a member may still join: the event has not started and the queue has room. */
-export function canJoinWaitlist(input: {
-  startsAt: Date;
-  now: Date;
-  waiting: number;
-}): 'ok' | 'closed' | 'full' {
+export function canJoinWaitlist(input: { startsAt: Date; now: Date; waiting: number }): 'ok' | 'closed' | 'full' {
   if (input.now.getTime() >= input.startsAt.getTime()) return 'closed';
   return input.waiting >= MAX_WAITLIST ? 'full' : 'ok';
 }

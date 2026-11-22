@@ -66,8 +66,7 @@ export async function listReleases(
 }
 
 export type CreateReleaseResult =
-  | { ok: true; release: ReleaseView }
-  | { ok: false; status: 403 | 404 | 409; error: string };
+  { ok: true; release: ReleaseView } | { ok: false; status: 403 | 404 | 409; error: string };
 
 /** Publish a release. Owner only; a version the build already has is a conflict. Does not notify: see `notifyRelease`. */
 export async function createRelease(

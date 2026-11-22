@@ -17,9 +17,10 @@ const h = vi.hoisted(() => ({
 vi.mock('@/lib/prisma.server', () => {
   const model = (name: string) =>
     new Proxy({}, { get: (_t, method: string) => (args: unknown) => ({ model: name, method, args }) });
-  const db = () => h.fake!.db as unknown as Record<string, unknown> & {
-    $transaction: (fn: unknown) => Promise<unknown>;
-  };
+  const db = () =>
+    h.fake!.db as unknown as Record<string, unknown> & {
+      $transaction: (fn: unknown) => Promise<unknown>;
+    };
   return {
     prisma: new Proxy({} as Record<string, unknown>, {
       get: (_t, key: string) => {

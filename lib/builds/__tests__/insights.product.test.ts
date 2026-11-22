@@ -53,13 +53,19 @@ describe('fillDays', () => {
 
 describe('period comparison', () => {
   it('has no fraction against a zero baseline, and the change is the whole value', () => {
-    const t = totalsOf({ views: 12, likes: 0, comments: 0, unlocks: 0, coins: 0 }, { views: 0, likes: 0, comments: 0, unlocks: 0, coins: 0 });
+    const t = totalsOf(
+      { views: 12, likes: 0, comments: 0, unlocks: 0, coins: 0 },
+      { views: 0, likes: 0, comments: 0, unlocks: 0, coins: 0 },
+    );
     expect(t.views).toEqual({ value: 12, previous: 0, change: 12, fraction: null });
     expect(t.likes).toEqual({ value: 0, previous: 0, change: 0, fraction: null });
   });
 
   it('reports a drop as a negative change', () => {
-    const t = totalsOf({ views: 3, likes: 0, comments: 0, unlocks: 0, coins: 0 }, { views: 12, likes: 0, comments: 0, unlocks: 0, coins: 0 });
+    const t = totalsOf(
+      { views: 3, likes: 0, comments: 0, unlocks: 0, coins: 0 },
+      { views: 12, likes: 0, comments: 0, unlocks: 0, coins: 0 },
+    );
     expect(t.views).toMatchObject({ change: -9, fraction: -0.75 });
   });
 
@@ -110,7 +116,14 @@ describe('biggestDays', () => {
   });
 
   it('carries the releases of the day', () => {
-    const out = biggestDays(days, [{ day: '2026-12-02', version: '1.2' }, { day: '2026-12-02', version: '1.2.1' }], true);
+    const out = biggestDays(
+      days,
+      [
+        { day: '2026-12-02', version: '1.2' },
+        { day: '2026-12-02', version: '1.2.1' },
+      ],
+      true,
+    );
     expect(out[0]!.releases).toEqual(['1.2', '1.2.1']);
     expect(out[1]!.releases).toEqual([]);
   });

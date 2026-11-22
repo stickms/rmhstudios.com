@@ -36,9 +36,7 @@ describe('sign handling', () => {
 
   it('writes the sign and the reason into the member’s notification', () => {
     expect(notificationPreview(500, 'goodwill')).toBe('RMH Studios added 500 coins: goodwill');
-    expect(notificationPreview(-1500, 'exploit_clawback')).toBe(
-      'RMH Studios removed 1,500 coins: exploit clawback',
-    );
+    expect(notificationPreview(-1500, 'exploit_clawback')).toBe('RMH Studios removed 1,500 coins: exploit clawback');
   });
 
   it('labels the statement row from the reason', () => {

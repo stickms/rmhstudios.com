@@ -30,9 +30,7 @@ describe('toTsv', () => {
 
 describe('toCsv', () => {
   it('writes a header, CRLF rows and RFC 4180 quoting', () => {
-    expect(toCsv([{ front: 'a, b', back: 'say "hi"' }])).toBe(
-      'front,back\r\n"a, b","say ""hi"""\r\n',
-    );
+    expect(toCsv([{ front: 'a, b', back: 'say "hi"' }])).toBe('front,back\r\n"a, b","say ""hi"""\r\n');
   });
 
   it('prefixes formula-looking cells with an apostrophe', () => {
@@ -57,9 +55,7 @@ describe('toCsv', () => {
 
 describe('toJson', () => {
   it('has title, description and cards with only front and back', () => {
-    const out = JSON.parse(
-      toJson({ title: 'T', description: null, cards: [{ front: 'a', back: 'b' }] }),
-    );
+    const out = JSON.parse(toJson({ title: 'T', description: null, cards: [{ front: 'a', back: 'b' }] }));
     expect(out).toEqual({ title: 'T', description: '', cards: [{ front: 'a', back: 'b' }] });
   });
 });

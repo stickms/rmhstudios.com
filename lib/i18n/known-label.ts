@@ -8,9 +8,6 @@
  * `Object.hasOwn` keeps a value like `constructor` from matching the object's
  * prototype. The caller shows the raw value when this returns `undefined`.
  */
-export function knownLabel(
-  labels: Readonly<Record<string, string>>,
-  value: string,
-): string | undefined {
+export function knownLabel(labels: Readonly<Record<string, string>>, value: string): string | undefined {
   return Object.hasOwn(labels, value) ? labels[value] : undefined;
 }

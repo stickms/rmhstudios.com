@@ -22,7 +22,9 @@ vi.mock('@/lib/rate-limit.server', async (orig) => ({
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     flashcardDeck: {
-      findUnique: vi.fn(async ({ where }: { where: { id: string } }) => db.decks.find((d) => d.id === where.id) ?? null),
+      findUnique: vi.fn(
+        async ({ where }: { where: { id: string } }) => db.decks.find((d) => d.id === where.id) ?? null,
+      ),
     },
     flashcard: {
       count: vi.fn(
@@ -103,7 +105,7 @@ beforeEach(() => {
 });
 
 describe('POST /api/study/decks/$id/tests', () => {
-  it('records a result on the viewer\'s own deck and never touches SM-2 state', async () => {
+  it("records a result on the viewer's own deck and never touches SM-2 state", async () => {
     const res = await post('mine', valid);
     expect(res.status).toBe(201);
     expect(db.results).toHaveLength(1);
@@ -171,7 +173,7 @@ describe('GET /api/study/decks/$id/tests', () => {
     expect((await get('theirs-private')).status).toBe(404);
   });
 
-  it('returns only the viewer\'s own results, newest first, as plain data', async () => {
+  it("returns only the viewer's own results, newest first, as plain data", async () => {
     await post('mine', valid);
     await post('mine', { ...valid, correct: 9, missedCardIds: ['k1'] });
     signIn('u2');

@@ -9,18 +9,6 @@ export { BLOG_COMMENT_MAX_LENGTH };
 /** Most comments one read returns; a longer discussion shows the oldest ones. */
 export const BLOG_COMMENTS_PAGE_SIZE = 200;
 
-export const createBlogCommentSchema =
-  z.object(
-    {
-      content:
-        z
-          .string()
-          .trim()
-          .min(
-            1,
-          )
-          .max(
-            BLOG_COMMENT_MAX_LENGTH,
-          ),
-    },
-  );
+export const createBlogCommentSchema = z.object({
+  content: z.string().trim().min(1).max(BLOG_COMMENT_MAX_LENGTH),
+});

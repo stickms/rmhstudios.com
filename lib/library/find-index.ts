@@ -13,20 +13,12 @@
  */
 
 import { whenIdle } from '@/lib/shared/platform';
-import {
-  findNormalised,
-  normalise,
-  prepareQuery,
-  type FindOptions,
-  type MatchRange,
-} from './find';
+import { findNormalised, normalise, prepareQuery, type FindOptions, type MatchRange } from './find';
 
 /** Where a document's text comes from. Units are numbered from 1. */
 export interface FindSource {
   count: number;
-  load: (
-    unit: number,
-  ) => Promise<string>;
+  load: (unit: number) => Promise<string>;
 }
 
 export interface UnitMatches {
@@ -37,14 +29,9 @@ export interface UnitMatches {
 export interface SearchHooks {
   signal: AbortSignal;
   /** Called after each unit is searched. */
-  onProgress?: (
-    done: number,
-    total: number,
-  ) => void;
+  onProgress?: (done: number, total: number) => void;
   /** Called, in unit order, for every unit that has at least one match. */
-  onMatches?: (
-    matches: UnitMatches,
-  ) => void;
+  onMatches?: (matches: UnitMatches) => void;
 }
 
 export interface SearchSummary {
@@ -58,16 +45,8 @@ export interface SearchSummary {
 export interface FindIndex {
   readonly count: number;
   /** The extracted text of a unit, once it has been loaded. */
-  textOf: (
-    unit: number,
-  ) =>
-    | string
-    | undefined;
-  search: (
-    query: string,
-    options: FindOptions,
-    hooks: SearchHooks,
-  ) => Promise<SearchSummary>;
+  textOf: (unit: number) => string | undefined;
+  search: (query: string, options: FindOptions, hooks: SearchHooks) => Promise<SearchSummary>;
 }
 
 export interface FindIndexOptions {
@@ -83,226 +62,84 @@ const SLICE_MS = 12;
 const IDLE_TIMEOUT_MS = 50;
 
 function idleYield(): Promise<void> {
-  return new Promise(
-    (
-      resolve,
-    ) => {
-      if (
-        typeof requestIdleCallback ===
-        'function'
-      )
-        whenIdle(
-          resolve,
-          IDLE_TIMEOUT_MS,
-        );
-      else
-        setTimeout(
-          resolve,
-          0,
-        );
-    },
-  );
+  return new Promise((resolve) => {
+    if (typeof requestIdleCallback === 'function') whenIdle(resolve, IDLE_TIMEOUT_MS);
+    else setTimeout(resolve, 0);
+  });
 }
 
-function hasText(
-  text: string,
-): boolean {
-  return (
-    text.replace(
-      /\s/g,
-      '',
-    )
-      .length >=
-    MIN_TEXT
-  );
+function hasText(text: string): boolean {
+  return text.replace(/\s/g, '').length >= MIN_TEXT;
 }
 
-export function createFindIndex(
-  source: FindSource,
-  opts: FindIndexOptions = {},
-): FindIndex {
-  const yieldToMain =
-    opts.yieldToMain ??
-    idleYield;
-  const sliceMs =
-    opts.sliceMs ??
-    SLICE_MS;
-  const texts =
-    new Map<
-      number,
-      string
-    >();
-  const pending =
-    new Map<
-      number,
-      Promise<string>
-    >();
+export function createFindIndex(source: FindSource, opts: FindIndexOptions = {}): FindIndex {
+  const yieldToMain = opts.yieldToMain ?? idleYield;
+  const sliceMs = opts.sliceMs ?? SLICE_MS;
+  const texts = new Map<number, string>();
+  const pending = new Map<number, Promise<string>>();
 
   // One extraction per unit, shared by overlapping searches. A failed unit is
   // treated as empty rather than failing the whole search.
-  function extract(
-    unit: number,
-  ): Promise<string> {
-    const inflight =
-      pending.get(
-        unit,
-      );
-    if (
-      inflight
-    )
-      return inflight;
-    const run =
-      source
-        .load(
-          unit,
-        )
-        .catch(
-          () =>
-            '',
-        )
-        .then(
-          (
-            text,
-          ) => {
-            texts.set(
-              unit,
-              text,
-            );
-            pending.delete(
-              unit,
-            );
-            return text;
-          },
-        );
-    pending.set(
-      unit,
-      run,
-    );
+  function extract(unit: number): Promise<string> {
+    const inflight = pending.get(unit);
+    if (inflight) return inflight;
+    const run = source
+      .load(unit)
+      .catch(() => '')
+      .then((text) => {
+        texts.set(unit, text);
+        pending.delete(unit);
+        return text;
+      });
+    pending.set(unit, run);
     return run;
   }
 
-  async function search(
-    query: string,
-    options: FindOptions,
-    hooks: SearchHooks,
-  ): Promise<SearchSummary> {
-    const {
-      signal,
-    } =
-      hooks;
-    const summary: SearchSummary =
-      {
-        aborted: false,
-        matches: 0,
-        units: 0,
-        searchable: false,
-      };
-    const prepared =
-      prepareQuery(
-        query,
-        options,
-      );
-    let sliceStart =
-      performance.now();
+  async function search(query: string, options: FindOptions, hooks: SearchHooks): Promise<SearchSummary> {
+    const { signal } = hooks;
+    const summary: SearchSummary = {
+      aborted: false,
+      matches: 0,
+      units: 0,
+      searchable: false,
+    };
+    const prepared = prepareQuery(query, options);
+    let sliceStart = performance.now();
 
-    for (
-      let unit = 1;
-      unit <=
-      source.count;
-      unit++
-    ) {
-      if (
-        signal.aborted
-      )
-        break;
-      let text =
-        texts.get(
-          unit,
-        );
-      if (
-        text ===
-        undefined
-      ) {
-        text =
-          await extract(
-            unit,
-          );
-        if (
-          signal.aborted
-        )
-          break;
+    for (let unit = 1; unit <= source.count; unit++) {
+      if (signal.aborted) break;
+      let text = texts.get(unit);
+      if (text === undefined) {
+        text = await extract(unit);
+        if (signal.aborted) break;
         await yieldToMain();
-        sliceStart =
-          performance.now();
-        if (
-          signal.aborted
-        )
-          break;
-      } else if (
-        performance.now() -
-          sliceStart >=
-        sliceMs
-      ) {
+        sliceStart = performance.now();
+        if (signal.aborted) break;
+      } else if (performance.now() - sliceStart >= sliceMs) {
         await yieldToMain();
-        sliceStart =
-          performance.now();
-        if (
-          signal.aborted
-        )
-          break;
+        sliceStart = performance.now();
+        if (signal.aborted) break;
       }
-      if (
-        hasText(
-          text,
-        )
-      )
-        summary.searchable = true;
-      const ranges =
-        prepared
-          ? findNormalised(
-              normalise(
-                text,
-                options,
-              ),
-              prepared,
-              options.wholeWords,
-            )
-          : [];
-      if (
-        ranges.length >
-        0
-      ) {
-        summary.matches +=
-          ranges.length;
+      if (hasText(text)) summary.searchable = true;
+      const ranges = prepared ? findNormalised(normalise(text, options), prepared, options.wholeWords) : [];
+      if (ranges.length > 0) {
+        summary.matches += ranges.length;
         summary.units += 1;
-        hooks.onMatches?.(
-          {
-            unit,
-            ranges,
-          },
-        );
+        hooks.onMatches?.({
+          unit,
+          ranges,
+        });
       }
-      hooks.onProgress?.(
-        unit,
-        source.count,
-      );
+      hooks.onProgress?.(unit, source.count);
     }
 
-    summary.aborted =
-      signal.aborted;
+    summary.aborted = signal.aborted;
     return summary;
   }
 
   return {
-    count:
-      source.count,
-    textOf:
-      (
-        unit,
-      ) =>
-        texts.get(
-          unit,
-        ),
+    count: source.count,
+    textOf: (unit) => texts.get(unit),
     search,
   };
 }

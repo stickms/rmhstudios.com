@@ -51,7 +51,9 @@ export function PasswordTool() {
   const checkId = useId();
   const [mode, setMode] = useState<Mode>('password');
   const [length, setLength] = useState(20);
-  const [sets, setSets] = useState<Set<CharsetName>>(() => new Set<CharsetName>(['lower', 'upper', 'digits', 'symbols']));
+  const [sets, setSets] = useState<Set<CharsetName>>(
+    () => new Set<CharsetName>(['lower', 'upper', 'digits', 'symbols']),
+  );
   const [excludeAmbiguous, setExcludeAmbiguous] = useState(true);
   const [words, setWords] = useState(6);
   const [separator, setSeparator] = useState('-');
@@ -62,7 +64,8 @@ export function PasswordTool() {
 
   const passwordOpts = { length, sets: [...sets], excludeAmbiguous };
   const phraseOpts = { words, separator, capitalize, addDigit };
-  const bits = mode === 'password' ? passwordEntropy(passwordOpts) : passphraseEntropy(phraseOpts, PASSPHRASE_WORDS.length);
+  const bits =
+    mode === 'password' ? passwordEntropy(passwordOpts) : passphraseEntropy(phraseOpts, PASSPHRASE_WORDS.length);
 
   const regenerate = useCallback(() => {
     if (mode === 'password') {

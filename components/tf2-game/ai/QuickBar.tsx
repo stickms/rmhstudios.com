@@ -6,22 +6,10 @@
  * d-pad reach them (components/tf2-game/menu-nav.ts).
  */
 
-import {
-  LoaderCircle,
-  Lock,
-  Send,
-  Sparkles,
-  X,
-} from 'lucide-react';
-import {
-  useId,
-  type ReactNode,
-} from 'react';
+import { LoaderCircle, Lock, Send, Sparkles, X } from 'lucide-react';
+import { useId, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Btn,
-  TextField,
-} from '@/components/tf2-hud/ui';
+import { Btn, TextField } from '@/components/tf2-hud/ui';
 import { cn } from '@/lib/utils';
 
 /** A double tap or a chip pressed right after Enter is one request, not two. */
@@ -39,9 +27,7 @@ export function QuickPrompt({
   locked,
 }: {
   value: string;
-  onChange: (
-    v: string,
-  ) => void;
+  onChange: (v: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
   busy: boolean;
@@ -52,36 +38,18 @@ export function QuickPrompt({
   /** Signed out: the field works, Ask explains that the AI needs an account. */
   locked?: boolean;
 }) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-tf2-game',
-    );
-  const id =
-    useId();
+  const { t } = useTranslation('c-tf2-game');
+  const id = useId();
   return (
     <form
       className="flex items-center gap-2"
-      onSubmit={(
-        e,
-      ) => {
+      onSubmit={(e) => {
         e.preventDefault();
-        if (
-          !busy
-        )
-          onSubmit();
+        if (!busy) onSubmit();
       }}
     >
-      <label
-        htmlFor={
-          id
-        }
-        className="sr-only"
-      >
-        {
-          label
-        }
+      <label htmlFor={id} className="sr-only">
+        {label}
       </label>
       <span className="relative min-w-0 flex-1">
         <Sparkles
@@ -89,89 +57,43 @@ export function QuickPrompt({
           aria-hidden
         />
         <TextField
-          id={
-            id
-          }
+          id={id}
           data-menu-item
-          value={
-            value
-          }
-          onChange={(
-            e,
-          ) =>
-            onChange(
-              e
-                .target
-                .value,
-            )
-          }
-          onKeyDown={(
-            e,
-          ) => {
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
             // Esc cancels a request in flight; otherwise it belongs to the menu (back).
-            if (
-              e.key ===
-                'Escape' &&
-              busy
-            ) {
+            if (e.key === 'Escape' && busy) {
               e.preventDefault();
               e.stopPropagation();
               onCancel();
             }
           }}
-          maxLength={
-            maxLength
-          }
-          placeholder={
-            placeholder
-          }
+          maxLength={maxLength}
+          placeholder={placeholder}
           enterKeyHint="send"
           autoComplete="off"
           className="ps-8"
         />
       </span>
       {busy ? (
-        <Btn
-          size="sm"
-          variant="secondary"
-          icon={
-            X
-          }
-          data-menu-item
-          onClick={
-            onCancel
-          }
-        >
-          {t(
-            'ai_cancel',
-            {
-              defaultValue:
-                'Cancel',
-            },
-          )}
+        <Btn size="sm" variant="secondary" icon={X} data-menu-item onClick={onCancel}>
+          {t('ai_cancel', {
+            defaultValue: 'Cancel',
+          })}
         </Btn>
       ) : (
         <Btn
           size="sm"
           type="submit"
           variant="primary"
-          icon={
-            locked
-              ? Lock
-              : Send
-          }
+          icon={locked ? Lock : Send}
           data-menu-item
-          disabled={
-            !value.trim()
-          }
+          disabled={!value.trim()}
         >
-          {t(
-            'ai_ask',
-            {
-              defaultValue:
-                'Ask AI',
-            },
-          )}
+          {t('ai_ask', {
+            defaultValue: 'Ask AI',
+          })}
         </Btn>
       )}
     </form>
@@ -186,81 +108,35 @@ export interface ChipItem {
   onPick: () => void;
 }
 
-export function ChipRow({
-  chips,
-  disabled,
-  label,
-}: {
-  chips: ChipItem[];
-  disabled: boolean;
-  label: string;
-}) {
-  if (
-    !chips.length
-  )
-    return null;
+export function ChipRow({ chips, disabled, label }: { chips: ChipItem[]; disabled: boolean; label: string }) {
+  if (!chips.length) return null;
   return (
-    <ul
-      className="flex flex-wrap gap-1.5"
-      aria-label={
-        label
-      }
-    >
-      {chips.map(
-        (
-          c,
-        ) => (
-          <li
-            key={
-              c.key
-            }
+    <ul className="flex flex-wrap gap-1.5" aria-label={label}>
+      {chips.map((c) => (
+        <li key={c.key}>
+          <Btn
+            size="xs"
+            variant="secondary"
+            data-menu-item
+            disabled={disabled}
+            onClick={c.onPick}
+            aria-label={c.hint ? `${c.label} (${c.hint})` : undefined}
+            className="font-medium"
           >
-            <Btn
-              size="xs"
-              variant="secondary"
-              data-menu-item
-              disabled={
-                disabled
-              }
-              onClick={
-                c.onPick
-              }
-              aria-label={
-                c.hint
-                  ? `${c.label} (${c.hint})`
-                  : undefined
-              }
-              className="font-medium"
-            >
-              {
-                c.label
-              }
-            </Btn>
-          </li>
-        ),
-      )}
+            {c.label}
+          </Btn>
+        </li>
+      ))}
     </ul>
   );
 }
 
 /** "Working out the changes…" with a spinner, as a status message. */
-export function Progress({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function Progress({ children }: { children: ReactNode }) {
   return (
-    <p
-      role="status"
-      className="flex items-center gap-2 text-xs text-app-text-muted"
-    >
-      <LoaderCircle
-        className="size-4 shrink-0 animate-spin text-app-accent-text"
-        aria-hidden
-      />
-      {
-        children
-      }
+    <p role="status" className="flex items-center gap-2 text-xs text-app-text-muted">
+      <LoaderCircle className="size-4 shrink-0 animate-spin text-app-accent-text" aria-hidden />
+      {children}
     </p>
   );
 }
@@ -270,11 +146,7 @@ export function Note({
   children,
   className,
 }: {
-  tone?:
-    | 'muted'
-    | 'warning'
-    | 'danger'
-    | 'success';
+  tone?: 'muted' | 'warning' | 'danger' | 'success';
   children: ReactNode;
   className?: string;
 }) {
@@ -282,43 +154,23 @@ export function Note({
     <p
       className={cn(
         'text-xs',
-        tone ===
-          'muted' &&
-          'text-app-text-muted',
-        tone ===
-          'warning' &&
-          'text-app-warning',
-        tone ===
-          'danger' &&
-          'text-app-danger',
-        tone ===
-          'success' &&
-          'text-app-success',
+        tone === 'muted' && 'text-app-text-muted',
+        tone === 'warning' && 'text-app-warning',
+        tone === 'danger' && 'text-app-danger',
+        tone === 'success' && 'text-app-success',
         className,
       )}
     >
-      {
-        children
-      }
+      {children}
     </p>
   );
 }
 
 /** Screen-reader announcements of results (visually hidden; the same words are on screen). */
-export function LiveRegion({
-  text,
-}: {
-  text: string;
-}) {
+export function LiveRegion({ text }: { text: string }) {
   return (
-    <p
-      className="sr-only"
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      {
-        text
-      }
+    <p className="sr-only" aria-live="polite" aria-atomic="true">
+      {text}
     </p>
   );
 }
@@ -333,35 +185,23 @@ export function QuickBarFrame({
   children: ReactNode;
   className?: string;
 }) {
-  const id =
-    useId();
+  const id = useId();
   return (
     <section
-      aria-labelledby={
-        id
-      }
+      aria-labelledby={id}
       className={cn(
         'flex min-w-0 flex-col gap-2 rounded-app-sm border border-app-border bg-app-bg-subtle p-2.5',
         className,
       )}
     >
       <h3
-        id={
-          id
-        }
+        id={id}
         className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-app-text-dim"
       >
-        <Sparkles
-          className="size-3.5 shrink-0 text-app-accent-text"
-          aria-hidden
-        />
-        {
-          title
-        }
+        <Sparkles className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
+        {title}
       </h3>
-      {
-        children
-      }
+      {children}
     </section>
   );
 }

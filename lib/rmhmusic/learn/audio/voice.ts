@@ -20,11 +20,7 @@
 import { getAudioContext } from '@/lib/shared/platform';
 import { midiToFreq } from '../pitch/notes';
 import { INSTRUMENT_CATALOG } from './instruments/catalog';
-import {
-  currentSession,
-  instrumentFor,
-  onInstrumentChange,
-} from './instruments/engine';
+import { currentSession, instrumentFor, onInstrumentChange } from './instruments/engine';
 import type { InstrumentId } from './instruments/types';
 import { resumeAudio } from './resume';
 
@@ -34,9 +30,7 @@ const RELEASE_S = 0.25;
  * How long a released SYNTH note keeps sounding (ms). A sampled instrument has its own release, so
  * code that needs the number for the sound actually in use asks {@link soundReleaseMs}.
  */
-export const RELEASE_MS =
-  RELEASE_S *
-  1000;
+export const RELEASE_MS = RELEASE_S * 1000;
 /** Peak gain at full velocity; low enough that a six-note chord does not clip. */
 const PEAK = 0.18;
 /**
@@ -54,33 +48,11 @@ const SYNTH_VOICES = 6;
  * a note out of their range takes the synth). The mic echo guard asks this at every note, so it
  * follows the session rather than the value at mount.
  */
-export function soundReleaseMs(
-  opts: PlayOptions = {},
-): number {
-  if (
-    !opts.instrument
-  )
-    return RELEASE_MS;
-  const s =
-    currentSession();
-  if (
-    s &&
-    s.id ===
-      opts.instrument &&
-    s
-      .choice
-      .kind ===
-      'synth'
-  )
-    return RELEASE_MS;
-  return Math.max(
-    RELEASE_MS,
-    INSTRUMENT_CATALOG[
-      opts
-        .instrument
-    ]
-      .releaseMs,
-  );
+export function soundReleaseMs(opts: PlayOptions = {}): number {
+  if (!opts.instrument) return RELEASE_MS;
+  const s = currentSession();
+  if (s && s.id === opts.instrument && s.choice.kind === 'synth') return RELEASE_MS;
+  return Math.max(RELEASE_MS, INSTRUMENT_CATALOG[opts.instrument].releaseMs);
 }
 
 interface Voice {
@@ -113,33 +85,13 @@ export interface PlayOptions {
  * `failed` is part of the type for the lessons' rows, but the engine never reports it: samples that
  * fail hand the session to the synth, which is `ready`.
  */
-export type SoundStatus =
-  | 'ready'
-  | 'asleep'
-  | 'none'
-  | 'loading'
-  | 'failed';
+export type SoundStatus = 'ready' | 'asleep' | 'none' | 'loading' | 'failed';
 
 export function soundStatus(): SoundStatus {
-  const ctx =
-    getAudioContext();
-  if (
-    !ctx ||
-    ctx.state ===
-      'closed'
-  )
-    return 'none';
-  if (
-    ctx.state !==
-    'running'
-  )
-    return 'asleep';
-  return currentSession()
-    ?.choice
-    .kind ===
-    'pending'
-    ? 'loading'
-    : 'ready';
+  const ctx = getAudioContext();
+  if (!ctx || ctx.state === 'closed') return 'none';
+  if (ctx.state !== 'running') return 'asleep';
+  return currentSession()?.choice.kind === 'pending' ? 'loading' : 'ready';
 }
 
 /**
@@ -147,342 +99,129 @@ export function soundStatus(): SoundStatus {
  * the context never resumed in time). Call inside the gesture.
  */
 export async function wakeSound(): Promise<boolean> {
-  const ctx =
-    getAudioContext();
-  if (
-    !ctx
-  )
-    return false;
-  return resumeAudio(
-    ctx,
-  );
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+  return resumeAudio(ctx);
 }
 
 /**
  * Run `fn` when sound becomes ready or asleep again, or a lesson's samples arrive or are given up
  * on; returns the unsubscribe.
  */
-export function onSoundChange(
-  fn: () => void,
-): () => void {
-  const off =
-    onInstrumentChange(
-      fn,
-    );
-  const ctx =
-    getAudioContext();
-  if (
-    !ctx
-  )
-    return off;
-  ctx.addEventListener(
-    'statechange',
-    fn,
-  );
+export function onSoundChange(fn: () => void): () => void {
+  const off = onInstrumentChange(fn);
+  const ctx = getAudioContext();
+  if (!ctx) return off;
+  ctx.addEventListener('statechange', fn);
   return () => {
     off();
-    ctx.removeEventListener(
-      'statechange',
-      fn,
-    );
+    ctx.removeEventListener('statechange', fn);
   };
 }
 
-const voices: Voice[] =
-  [];
-const noop =
-  () => {};
+const voices: Voice[] = [];
+const noop = () => {};
 
 /**
  * Start a note; returns a function that releases it (safe to call twice).
  * `velocity` (0..1) may be given alone or in `opts`.
  */
-export function playNote(
-  midi: number,
-  opts:
-    | number
-    | PlayOptions = {},
-): () => void {
+export function playNote(midi: number, opts: number | PlayOptions = {}): () => void {
   const o: PlayOptions =
-    typeof opts ===
-    'number'
+    typeof opts === 'number'
       ? {
-          velocity:
-            opts,
+          velocity: opts,
         }
       : opts;
-  const velocity =
-    o.velocity ??
-    0.8;
-  const ctx =
-    getAudioContext();
-  if (
-    !ctx ||
-    !Number.isFinite(
-      midi,
-    )
-  )
-    return noop;
+  const velocity = o.velocity ?? 0.8;
+  const ctx = getAudioContext();
+  if (!ctx || !Number.isFinite(midi)) return noop;
   // A context starts suspended until a user gesture; notes come from one.
-  if (
-    ctx.state ===
-    'suspended'
-  )
-    void ctx
-      .resume()
-      .catch(
-        () => {},
-      );
-  if (
-    ctx.state ===
-    'closed'
-  )
-    return noop;
-  const delayS =
-    Math.max(
-      0,
-      o.delayS ??
-        0,
-    );
+  if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
+  if (ctx.state === 'closed') return noop;
+  const delayS = Math.max(0, o.delayS ?? 0);
 
-  const route =
-    instrumentFor(
-      o.instrument,
-      midi,
-    );
+  const route = instrumentFor(o.instrument, midi);
   // The lesson's session has not settled on the samples or the synth yet: the note is dropped, so
   // the timbre never changes mid-lesson and nothing counts as heard (`onStart` never fires).
-  if (
-    route.kind ===
-    'pending'
-  )
-    return noop;
-  if (
-    route.kind ===
-    'instrument'
-  ) {
-    const handle =
-      route.inst.play(
-        midi,
-        {
-          velocity,
-          chordOf:
-            o.chordOf,
-          when:
-            ctx.currentTime +
-            delayS,
-        },
-      );
+  if (route.kind === 'pending') return noop;
+  if (route.kind === 'instrument') {
+    const handle = route.inst.play(midi, {
+      velocity,
+      chordOf: o.chordOf,
+      when: ctx.currentTime + delayS,
+    });
     let released = false;
-    let timer: ReturnType<
-      typeof setTimeout
-    > | null =
-      null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     // The sample starts on the audio clock at `when`: report it then, not before.
-    if (
-      o.onStart
-    ) {
-      if (
-        delayS >
-        0
-      )
-        timer =
-          setTimeout(
-            () => {
-              timer =
-                null;
-              if (
-                !released
-              )
-                o.onStart?.();
-            },
-            delayS *
-              1000,
-          );
-      else
-        o.onStart();
+    if (o.onStart) {
+      if (delayS > 0)
+        timer = setTimeout(() => {
+          timer = null;
+          if (!released) o.onStart?.();
+        }, delayS * 1000);
+      else o.onStart();
     }
     return () => {
-      if (
-        released
-      )
-        return;
+      if (released) return;
       released = true;
-      if (
-        timer
-      )
-        clearTimeout(
-          timer,
-        );
+      if (timer) clearTimeout(timer);
       handle.stop();
     };
   }
 
-  while (
-    voices.length >=
-    SYNTH_VOICES
-  )
-    voices[0].release();
+  while (voices.length >= SYNTH_VOICES) voices[0].release();
 
-  const now =
-    ctx.currentTime +
-    delayS;
-  const osc =
-    ctx.createOscillator();
-  const gain =
-    ctx.createGain();
-  osc.type =
-    'triangle';
-  osc.frequency.value =
-    midiToFreq(
-      midi,
-    );
-  const chord =
-    o.chordOf &&
-    o.chordOf >
-      1
-      ? 1 /
-        Math.sqrt(
-          o.chordOf /
-            3,
-        )
-      : 1;
-  const peak =
-    PEAK *
-    Math.min(
-      1,
-      Math.max(
-        0.05,
-        velocity,
-      ),
-    ) *
-    Math.min(
-      1,
-      chord,
-    );
-  gain.gain.setValueAtTime(
-    0,
-    now,
-  );
-  gain.gain.linearRampToValueAtTime(
-    peak,
-    now +
-      ATTACK_S,
-  );
-  osc.connect(
-    gain,
-  );
-  gain.connect(
-    ctx.destination,
-  );
-  osc.start(
-    now,
-  );
+  const now = ctx.currentTime + delayS;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = midiToFreq(midi);
+  const chord = o.chordOf && o.chordOf > 1 ? 1 / Math.sqrt(o.chordOf / 3) : 1;
+  const peak = PEAK * Math.min(1, Math.max(0.05, velocity)) * Math.min(1, chord);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(peak, now + ATTACK_S);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
 
   let released = false;
-  let timer: ReturnType<
-    typeof setTimeout
-  > | null =
-    null;
-  const voice: Voice =
-    {
-      release() {
-        if (
-          released
-        )
-          return;
-        released = true;
-        if (
-          timer
-        )
-          clearTimeout(
-            timer,
-          );
-        const i =
-          voices.indexOf(
-            voice,
-          );
-        if (
-          i >=
-          0
-        )
-          voices.splice(
-            i,
-            1,
-          );
-        const t =
-          ctx.currentTime;
-        osc.onended =
-          () => {
-            osc.disconnect();
-            gain.disconnect();
-          };
-        // Released before it starts (a strum cancelled mid-way): it never sounds.
-        if (
-          t <
-          now
-        ) {
-          osc.stop(
-            t,
-          );
-          return;
-        }
-        // Hold the level the attack has reached (computed: the param's `value` lags its
-        // automation), then fall exponentially-ish to silence.
-        const level =
-          t >=
-          now +
-            ATTACK_S
-            ? peak
-            : (peak *
-                (t -
-                  now)) /
-              ATTACK_S;
-        gain.gain.cancelScheduledValues(
-          t,
-        );
-        gain.gain.setValueAtTime(
-          level,
-          t,
-        );
-        gain.gain.setTargetAtTime(
-          0,
-          t,
-          RELEASE_S /
-            4,
-        );
-        osc.stop(
-          t +
-            RELEASE_S,
-        );
-      },
-    };
-  voices.push(
-    voice,
-  );
-  if (
-    o.onStart
-  ) {
-    if (
-      delayS >
-      0
-    )
-      timer =
-        setTimeout(
-          () => {
-            timer =
-              null;
-            if (
-              !released
-            )
-              o.onStart?.();
-          },
-          delayS *
-            1000,
-        );
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const voice: Voice = {
+    release() {
+      if (released) return;
+      released = true;
+      if (timer) clearTimeout(timer);
+      const i = voices.indexOf(voice);
+      if (i >= 0) voices.splice(i, 1);
+      const t = ctx.currentTime;
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
+      // Released before it starts (a strum cancelled mid-way): it never sounds.
+      if (t < now) {
+        osc.stop(t);
+        return;
+      }
+      // Hold the level the attack has reached (computed: the param's `value` lags its
+      // automation), then fall exponentially-ish to silence.
+      const level = t >= now + ATTACK_S ? peak : (peak * (t - now)) / ATTACK_S;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(level, t);
+      gain.gain.setTargetAtTime(0, t, RELEASE_S / 4);
+      osc.stop(t + RELEASE_S);
+    },
+  };
+  voices.push(voice);
+  if (o.onStart) {
+    if (delayS > 0)
+      timer = setTimeout(() => {
+        timer = null;
+        if (!released) o.onStart?.();
+      }, delayS * 1000);
     // The synth sounds as it is asked.
-    else
-      o.onStart();
+    else o.onStart();
   }
   return voice.release;
 }

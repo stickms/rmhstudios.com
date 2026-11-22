@@ -8,145 +8,52 @@
 import http from 'node:http';
 import { readFileSync } from 'node:fs';
 
-const [
-  target,
-  listen,
-  file,
-] =
-  process.argv.slice(
-    2,
-  );
-const blob =
-  readFileSync(
-    file,
-    'utf8',
-  );
+const [target, listen, file] = process.argv.slice(2);
+const blob = readFileSync(file, 'utf8');
 const inject = `<script>try{localStorage.setItem('rmh-user-theme',${JSON.stringify(blob)})}catch(e){}</script>`;
 
 http
-  .createServer(
-    (
-      req,
-      res,
-    ) => {
-      const headers =
-        {
-          ...req.headers,
-          host: `localhost:${target}`,
-        };
-      delete headers[
-        'accept-encoding'
-      ]; // so the HTML arrives uncompressed and can be edited
-      const up =
-        http.request(
-          {
-            host: 'localhost',
-            port: target,
-            path: req.url,
-            method:
-              req.method,
-            headers,
-          },
-          (
-            r,
-          ) => {
-            const type =
-              String(
-                r
-                  .headers[
-                  'content-type'
-                ] ??
-                  '',
-              );
-            if (
-              !type.includes(
-                'text/html',
-              )
-            ) {
-              res.writeHead(
-                r.statusCode ??
-                  502,
-                r.headers,
-              );
-              r.pipe(
-                res,
-              );
-              return;
-            }
-            const chunks =
-              [];
-            r.on(
-              'data',
-              (
-                c,
-              ) =>
-                chunks.push(
-                  c,
-                ),
-            );
-            r.on(
-              'end',
-              () => {
-                const html =
-                  Buffer.concat(
-                    chunks,
-                  )
-                    .toString(
-                      'utf8',
-                    )
-                    .replace(
-                      /<head([^>]*)>/i,
-                      (
-                        m,
-                      ) =>
-                        m +
-                        inject,
-                    );
-                const out =
-                  {
-                    ...r.headers,
-                    'content-length':
-                      Buffer.byteLength(
-                        html,
-                      ),
-                  };
-                delete out[
-                  'transfer-encoding'
-                ];
-                res.writeHead(
-                  r.statusCode ??
-                    502,
-                  out,
-                );
-                res.end(
-                  html,
-                );
-              },
-            );
-          },
-        );
-      up.on(
-        'error',
-        () => {
-          res.writeHead(
-            502,
-          );
-          res.end(
-            'proxy error',
-          );
-        },
-      );
-      req.pipe(
-        up,
-      );
-    },
-  )
-  .listen(
-    Number(
-      listen,
-    ),
-    () =>
-      console.warn(
-        `theme proxy :${listen} -> :${target}`,
-      ),
-  );
+  .createServer((req, res) => {
+    const headers = {
+      ...req.headers,
+      host: `localhost:${target}`,
+    };
+    delete headers['accept-encoding']; // so the HTML arrives uncompressed and can be edited
+    const up = http.request(
+      {
+        host: 'localhost',
+        port: target,
+        path: req.url,
+        method: req.method,
+        headers,
+      },
+      (r) => {
+        const type = String(r.headers['content-type'] ?? '');
+        if (!type.includes('text/html')) {
+          res.writeHead(r.statusCode ?? 502, r.headers);
+          r.pipe(res);
+          return;
+        }
+        const chunks = [];
+        r.on('data', (c) => chunks.push(c));
+        r.on('end', () => {
+          const html = Buffer.concat(chunks)
+            .toString('utf8')
+            .replace(/<head([^>]*)>/i, (m) => m + inject);
+          const out = {
+            ...r.headers,
+            'content-length': Buffer.byteLength(html),
+          };
+          delete out['transfer-encoding'];
+          res.writeHead(r.statusCode ?? 502, out);
+          res.end(html);
+        });
+      },
+    );
+    up.on('error', () => {
+      res.writeHead(502);
+      res.end('proxy error');
+    });
+    req.pipe(up);
+  })
+  .listen(Number(listen), () => console.warn(`theme proxy :${listen} -> :${target}`));

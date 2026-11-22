@@ -16,90 +16,42 @@
  * pair by hand before this existed.
  */
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
-export type DebouncedCallback<
-  A extends unknown[],
-> = ((
-  ...args: A
-) => void) & {
+export type DebouncedCallback<A extends unknown[]> = ((...args: A) => void) & {
   cancel: () => void;
 };
 
-export function useDebouncedCallback<
-  A extends unknown[],
->(
-  fn: (
-    ...args: A
-  ) => unknown,
+export function useDebouncedCallback<A extends unknown[]>(
+  fn: (...args: A) => unknown,
   delayMs: number,
 ): DebouncedCallback<A> {
-  const fnRef =
-    useRef(
-      fn,
-    );
+  const fnRef = useRef(fn);
   useEffect(() => {
-    fnRef.current =
-      fn;
+    fnRef.current = fn;
   });
 
-  const debounced =
-    useMemo(() => {
-      let timer: ReturnType<
-        typeof setTimeout
-      > | null =
-        null;
-      const cancel =
-        () => {
-          if (
-            timer !==
-            null
-          ) {
-            clearTimeout(
-              timer,
-            );
-            timer =
-              null;
-          }
-        };
-      const call =
-        (
-          ...args: A
-        ) => {
-          cancel();
-          timer =
-            setTimeout(
-              () => {
-                timer =
-                  null;
-                void fnRef.current(
-                  ...args,
-                );
-              },
-              delayMs,
-            );
-        };
-      return Object.assign(
-        call,
-        {
-          cancel,
-        },
-      );
-    }, [
-      delayMs,
-    ]);
+  const debounced = useMemo(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const cancel = () => {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
+    const call = (...args: A) => {
+      cancel();
+      timer = setTimeout(() => {
+        timer = null;
+        void fnRef.current(...args);
+      }, delayMs);
+    };
+    return Object.assign(call, {
+      cancel,
+    });
+  }, [delayMs]);
 
-  useEffect(
-    () =>
-      debounced.cancel,
-    [
-      debounced,
-    ],
-  );
+  useEffect(() => debounced.cancel, [debounced]);
 
   return debounced;
 }

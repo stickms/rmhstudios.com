@@ -1,14 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  withDeveloperApi,
-  apiOptions,
-} from '@/lib/api/with-developer-api.server';
+import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { shelvesQuery } from '@/lib/api/v1/reading-schema';
-import {
-  listMyShelvesForKey,
-  queryOf,
-  readInput,
-} from '@/lib/api/v1/reading.server';
+import { listMyShelvesForKey, queryOf, readInput } from '@/lib/api/v1/reading.server';
 
 /** GET /api/v1/me/shelves — your shelf entries (want, reading, read), most recently changed first. */
 export const Route = createFileRoute('/api/v1/me/shelves')({

@@ -17,8 +17,7 @@ const conversationPrefFindMany = vi.fn(async (_args: unknown) => [{ scopeKey: 'p
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 
@@ -46,7 +45,9 @@ vi.mock('@/lib/moderation/my-reports.server', () => ({ exportMyReports: vi.fn(as
 vi.mock('@/lib/messages/scheduled.server', () => ({ exportScheduledMessages: vi.fn(async () => [{ id: 'm1' }]) }));
 vi.mock('@/lib/rmhladder/offers.server', () => ({ exportLadderOffers: vi.fn(async () => [{ id: 'o1' }]) }));
 vi.mock('@/lib/rmhtube/parties.server', () => ({ exportWatchPartyRsvps: vi.fn(async () => [{ roomId: 'ABC123' }]) }));
-vi.mock('@/lib/events/waitlist.server', () => ({ exportEventRsvps: vi.fn(async () => [{ eventId: 'e1', status: 'waitlist' }]) }));
+vi.mock('@/lib/events/waitlist.server', () => ({
+  exportEventRsvps: vi.fn(async () => [{ eventId: 'e1', status: 'waitlist' }]),
+}));
 vi.mock('@/lib/arcade/updates.server', () => ({ exportGameFollows: vi.fn(async () => [{ gameId: 'altair' }]) }));
 
 const { route } = await import('@/lib/account/api/account.export.server');

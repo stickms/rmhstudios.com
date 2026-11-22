@@ -1,21 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { FeedbackForm } from '@/components/feedback/FeedbackForm';
 
 /** The shake sheet: a phone shake opens the shared feedback form (also reachable from Help and Settings). */
-export function FeedbackSheet({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+export function FeedbackSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation('f-access');
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

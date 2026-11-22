@@ -27,5 +27,12 @@ export function Mercury({
     if (!el) return;
     return mountMercury(el, { mode, seed, blobs });
   }, [mode, seed, blobs]);
-  return <div ref={host} className={`obj-mercury obj-mercury--${mode} ${className}`.trim()} style={style} aria-hidden="true" />;
+  return (
+    <div
+      ref={host}
+      className={`obj-mercury obj-mercury--${mode} ${className}`.trim()}
+      style={style}
+      aria-hidden="true"
+    />
+  );
 }

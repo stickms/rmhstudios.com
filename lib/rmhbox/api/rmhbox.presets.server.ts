@@ -13,7 +13,10 @@ export const route = apiRoute('/api/rmhbox/presets', {
     listRmhboxPresetsApi,
     { rateLimit: 'read', query: listPresetsQuerySchema },
     async ({ userId, query }) =>
-      Response.json({ presets: await listPresets(userId, query.minigame) }, { headers: { 'Cache-Control': 'private, no-store' } }),
+      Response.json(
+        { presets: await listPresets(userId, query.minigame) },
+        { headers: { 'Cache-Control': 'private, no-store' } },
+      ),
   ),
   POST: implement(createRmhboxPresetApi, { rateLimit: 'write', body: createPresetSchema }, async ({ userId, body }) => {
     const r = await createPreset(userId, body);

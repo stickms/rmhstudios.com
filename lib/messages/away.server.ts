@@ -176,7 +176,10 @@ export async function afterDirectMessage(input: {
     if (!away || !isAwayActive(away, now)) return { sent: false, reason: 'not-away' };
 
     // Bots and banned members get no reply: a bot would only answer back, and a ban should not be a conversation.
-    const sender = await prisma.user.findUnique({ where: { id: senderId }, select: { isBot: true, bannedUntil: true } });
+    const sender = await prisma.user.findUnique({
+      where: { id: senderId },
+      select: { isBot: true, bannedUntil: true },
+    });
     if (!sender || sender.isBot || (sender.bannedUntil && sender.bannedUntil.getTime() > now.getTime())) {
       return { sent: false, reason: 'sender-excluded' };
     }

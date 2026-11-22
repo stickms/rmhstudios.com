@@ -9,29 +9,14 @@ import { listReportGroups } from '@/lib/moderation/triage.server';
  * GET /api/admin/reports/groups — the moderation queue grouped by reported target. Admin only.
  * Query: status, reasons (comma list), entityType, min, sort (most | oldest | newest), cursor.
  */
-export const route =
-  apiRoute(
-    '/api/admin/reports/groups',
+export const route = apiRoute('/api/admin/reports/groups', {
+  GET: implement(
+    listReportGroupsApi,
     {
-      GET: implement(
-        listReportGroupsApi,
-        {
-          auth: 'admin',
-          rateLimit:
-            'read',
-          query:
-            triageQuery,
-        },
-        async ({
-          query,
-        }) =>
-          Response.json(
-            await listReportGroups(
-              parseTriageFilters(
-                query,
-              ),
-            ),
-          ),
-      ),
+      auth: 'admin',
+      rateLimit: 'read',
+      query: triageQuery,
     },
-  );
+    async ({ query }) => Response.json(await listReportGroups(parseTriageFilters(query))),
+  ),
+});

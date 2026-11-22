@@ -4661,7 +4661,7 @@ checks:
 
 | Budget                              | Limit                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------- |
-| Single-player route chunk (gzip)    | baseline + 5 KB (2.5 KB for MP's hooks + 2.5 KB of later SP features)     |
+| Single-player route chunk (gzip)    | baseline + 7.25 KB (2.5 KB MP hooks, 2.5 KB later SP features, 0.5 KB persist, 1.75 KB shared UI) |
 | MP lazy chunks (gzip, summed)       | 70 KB, of which `lib/shared/p2p` ≤ 15 KB                                  |
 | Static closure of `BalatroPage.tsx` | no module under `features/balatro/engine/mp/` or `lib/shared/p2p/`        |
 | Test surface                        | no `__balatroMp` in any output without `VITE_BALATRO_MP_TEST`             |

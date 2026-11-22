@@ -21,16 +21,9 @@
  * Client-only (touches `indexedDB`); import it from components, never the server.
  */
 
-import {
-  openDB,
-  type IDBPDatabase,
-} from 'idb';
+import { openDB, type IDBPDatabase } from 'idb';
 import { api } from '@/lib/contract/client';
-import {
-  deleteReaderMarksApi,
-  getReaderMarksApi,
-  putReaderMarksApi,
-} from '@/lib/library/reader-sync.contract';
+import { deleteReaderMarksApi, getReaderMarksApi, putReaderMarksApi } from '@/lib/library/reader-sync.contract';
 import { recordHistoryBeatApi } from '@/lib/history/history.contract';
 import { HISTORY_BEAT_INTERVAL_MS } from '@/lib/history/constants';
 import {
@@ -51,120 +44,79 @@ import {
   tombstoneOf,
   type MarkRecord,
 } from '@/lib/library/reader-sync';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** A saved place in a book. `label` is a short human caption (chapter or "Page N"). */
-export type Bookmark =
-  {
-    id: string;
-    page: number;
-    label: string;
-    createdAt: number;
-    /** Last edit; absent on bookmarks saved before sync existed (then `createdAt`). */
-    updatedAt?: number;
-  };
+export type Bookmark = {
+  id: string;
+  page: number;
+  label: string;
+  createdAt: number;
+  /** Last edit; absent on bookmarks saved before sync existed (then `createdAt`). */
+  updatedAt?: number;
+};
 
 /** A reader's note pinned to a 1-based page. */
-export type Note =
-  {
-    id: string;
-    page: number;
-    text: string;
-    color: string;
-    createdAt: number;
-    updatedAt: number;
-  };
+export type Note = {
+  id: string;
+  page: number;
+  text: string;
+  color: string;
+  createdAt: number;
+  updatedAt: number;
+};
 
 /** Everything we persist for one book, for one reader, on this device. */
-export type BookState =
-  {
-    slug: string;
-    /** 1-based page last viewed. 0 = never opened (so we don't "resume" to page 0). */
-    page: number;
-    /**
-     * Optional fine-grained location string the reader interprets (EPUB uses
-     * "chapter:pageInChapter" for exact resume; PDFs leave it unset and use `page`).
-     */
-    loc?: string;
-    /** When the place above was last moved (ms); the merge keeps the newer place. */
-    placeAt?: number;
-    bookmarks: Bookmark[];
-    notes: Note[];
-    /** Deleted bookmarks and notes, remembered so the deletion can still reach the server. */
-    tombstones?: MarkRecord[];
-    updatedAt: number;
-  };
+export type BookState = {
+  slug: string;
+  /** 1-based page last viewed. 0 = never opened (so we don't "resume" to page 0). */
+  page: number;
+  /**
+   * Optional fine-grained location string the reader interprets (EPUB uses
+   * "chapter:pageInChapter" for exact resume; PDFs leave it unset and use `page`).
+   */
+  loc?: string;
+  /** When the place above was last moved (ms); the merge keeps the newer place. */
+  placeAt?: number;
+  bookmarks: Bookmark[];
+  notes: Note[];
+  /** Deleted bookmarks and notes, remembered so the deletion can still reach the server. */
+  tombstones?: MarkRecord[];
+  updatedAt: number;
+};
 
-const DB_NAME =
-  'rmh-library-reader';
+const DB_NAME = 'rmh-library-reader';
 const DB_VERSION = 1;
-const STORE =
-  'books';
+const STORE = 'books';
 /** How long after the last page change before the position is flushed to disk. */
 const PROGRESS_DEBOUNCE_MS = 600;
 
-let dbPromise: Promise<IDBPDatabase> | null =
-  null;
+let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function getDB(): Promise<IDBPDatabase> {
-  if (
-    !dbPromise
-  ) {
-    dbPromise =
-      openDB(
-        DB_NAME,
-        DB_VERSION,
-        {
-          // Clearing this device (/settings/device) deletes the database; let it go instead of holding the delete.
-          blocking() {
-            const open =
-              dbPromise;
-            dbPromise =
-              null;
-            void open?.then(
-              (
-                db,
-              ) =>
-                db.close(),
-            );
-          },
-          upgrade(
-            db,
-          ) {
-            if (
-              !db.objectStoreNames.contains(
-                STORE,
-              )
-            ) {
-              db.createObjectStore(
-                STORE,
-                {
-                  keyPath:
-                    'slug',
-                },
-              );
-            }
-          },
-        },
-      );
+  if (!dbPromise) {
+    dbPromise = openDB(DB_NAME, DB_VERSION, {
+      // Clearing this device (/settings/device) deletes the database; let it go instead of holding the delete.
+      blocking() {
+        const open = dbPromise;
+        dbPromise = null;
+        void open?.then((db) => db.close());
+      },
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, {
+            keyPath: 'slug',
+          });
+        }
+      },
+    });
   }
   return dbPromise;
 }
 
 function genId(): string {
   try {
-    if (
-      typeof crypto !==
-        'undefined' &&
-      'randomUUID' in
-        crypto
-    )
-      return crypto.randomUUID();
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   } catch {
     /* fall through */
   }
@@ -173,106 +125,51 @@ function genId(): string {
 }
 
 /** Add deletions to the remembered ones; a newer deletion of the same id replaces the older. */
-function withTombstones(
-  existing: MarkRecord[] | undefined,
-  added: MarkRecord[],
-): MarkRecord[] {
-  if (
-    added.length ===
-    0
-  )
-    return (
-      existing ??
-      []
-    );
-  const ids =
-    new Set(
-      added.map(
-        (
-          t,
-        ) =>
-          t.id,
-      ),
-    );
-  return [
-    ...(existing ??
-      []).filter(
-      (
-        t,
-      ) =>
-        !ids.has(
-          t.id,
-        ),
-    ),
-    ...added,
-  ];
+function withTombstones(existing: MarkRecord[] | undefined, added: MarkRecord[]): MarkRecord[] {
+  if (added.length === 0) return existing ?? [];
+  const ids = new Set(added.map((t) => t.id));
+  return [...(existing ?? []).filter((t) => !ids.has(t.id)), ...added];
 }
 
-export function emptyState(
-  slug: string,
-): BookState {
+export function emptyState(slug: string): BookState {
   return {
     slug,
     page: 0,
-    bookmarks:
-      [],
-    notes:
-      [],
+    bookmarks: [],
+    notes: [],
     updatedAt: 0,
   };
 }
 
 /** Read a book's saved state, or empty state if none / storage unavailable. */
-export async function loadBookState(
-  slug: string,
-): Promise<BookState> {
+export async function loadBookState(slug: string): Promise<BookState> {
   try {
-    const db =
-      await getDB();
-    const row =
-      (await db.get(
-        STORE,
-        slug,
-      )) as
-        | BookState
-        | undefined;
+    const db = await getDB();
+    const row = (await db.get(STORE, slug)) as BookState | undefined;
     // Merge over a fresh empty so older records missing a newer field stay valid.
     return row
       ? prepareForSync(
           {
-            ...emptyState(
-              slug,
-            ),
+            ...emptyState(slug),
             ...row,
           },
           genId,
           Date.now(),
         )
-      : emptyState(
-          slug,
-        );
+      : emptyState(slug);
   } catch {
-    return emptyState(
-      slug,
-    );
+    return emptyState(slug);
   }
 }
 
 /** Persist a book's state (best-effort; swallows quota / private-mode failures). */
-export async function saveBookState(
-  state: BookState,
-): Promise<void> {
+export async function saveBookState(state: BookState): Promise<void> {
   try {
-    const db =
-      await getDB();
-    await db.put(
-      STORE,
-      {
-        ...state,
-        updatedAt:
-          Date.now(),
-      },
-    );
+    const db = await getDB();
+    await db.put(STORE, {
+      ...state,
+      updatedAt: Date.now(),
+    });
   } catch {
     /* storage unavailable — reading continues, just without persistence */
   }
@@ -287,516 +184,185 @@ export async function saveBookState(
  * never lost to a reload. State is mirrored in a ref so the mutators stay stable and
  * always operate on the freshest value without stale-closure bugs.
  */
-export function useBookState(
-  slug: string,
-) {
-  const [
-    state,
-    setState,
-  ] =
-    useState<BookState>(
-      () =>
-        emptyState(
-          slug,
-        ),
-    );
-  const [
-    ready,
-    setReady,
-  ] =
-    useState(
-      false,
-    );
-  const ref =
-    useRef(
-      state,
-    );
-  ref.current =
-    state;
-  const timer =
-    useRef<ReturnType<
-      typeof setTimeout
-    > | null>(
-      null,
-    );
+export function useBookState(slug: string) {
+  const [state, setState] = useState<BookState>(() => emptyState(slug));
+  const [ready, setReady] = useState(false);
+  const ref = useRef(state);
+  ref.current = state;
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let alive = true;
-    setReady(
-      false,
-    );
-    setState(
-      emptyState(
-        slug,
-      ),
-    );
-    void loadBookState(
-      slug,
-    ).then(
-      (
-        s,
-      ) => {
-        if (
-          !alive
-        )
-          return;
-        ref.current =
-          s;
-        setState(
-          s,
-        );
-        setReady(
-          true,
-        );
-      },
-    );
+    setReady(false);
+    setState(emptyState(slug));
+    void loadBookState(slug).then((s) => {
+      if (!alive) return;
+      ref.current = s;
+      setState(s);
+      setReady(true);
+    });
     return () => {
       alive = false;
-      if (
-        timer.current
-      ) {
-        clearTimeout(
-          timer.current,
-        );
+      if (timer.current) {
+        clearTimeout(timer.current);
         // Flush whatever we were holding so a quick navigate-away still saves.
-        void saveBookState(
-          ref.current,
-        );
-        timer.current =
-          null;
+        void saveBookState(ref.current);
+        timer.current = null;
       }
     };
-  }, [
-    slug,
-  ]);
+  }, [slug]);
 
-  const commit =
-    useCallback(
-      (
-        next: BookState,
-        debounce = false,
-      ) => {
-        ref.current =
-          next;
-        setState(
-          next,
-        );
-        if (
-          timer.current
-        )
-          clearTimeout(
-            timer.current,
-          );
-        if (
-          debounce
-        ) {
-          timer.current =
-            setTimeout(
-              () => {
-                timer.current =
-                  null;
-                void saveBookState(
-                  ref.current,
-                );
-              },
-              PROGRESS_DEBOUNCE_MS,
-            );
-        } else {
-          void saveBookState(
-            next,
-          );
-        }
-      },
-      [],
-    );
+  const commit = useCallback((next: BookState, debounce = false) => {
+    ref.current = next;
+    setState(next);
+    if (timer.current) clearTimeout(timer.current);
+    if (debounce) {
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        void saveBookState(ref.current);
+      }, PROGRESS_DEBOUNCE_MS);
+    } else {
+      void saveBookState(next);
+    }
+  }, []);
 
-  const setPage =
-    useCallback(
-      (
-        page: number,
-      ) => {
-        if (
-          !Number.isFinite(
-            page,
-          ) ||
-          page <
-            1 ||
-          ref
-            .current
-            .page ===
-            page
-        )
-          return;
-        commit(
-          {
-            ...ref.current,
-            page,
-            placeAt:
-              Date.now(),
-          },
-          true,
-        );
-      },
-      [
-        commit,
-      ],
-    );
+  const setPage = useCallback(
+    (page: number) => {
+      if (!Number.isFinite(page) || page < 1 || ref.current.page === page) return;
+      commit(
+        {
+          ...ref.current,
+          page,
+          placeAt: Date.now(),
+        },
+        true,
+      );
+    },
+    [commit],
+  );
 
   // EPUB position: a fine location string plus the chapter-level `page` for display,
   // bookmarks and the scrubber. Both persist together (debounced).
-  const setLoc =
-    useCallback(
-      (
-        loc: string,
-        page: number,
-      ) => {
-        if (
-          ref
-            .current
-            .loc ===
-            loc &&
-          ref
-            .current
-            .page ===
-            page
-        )
-          return;
-        commit(
-          {
-            ...ref.current,
-            loc,
-            page: Math.max(
-              1,
+  const setLoc = useCallback(
+    (loc: string, page: number) => {
+      if (ref.current.loc === loc && ref.current.page === page) return;
+      commit(
+        {
+          ...ref.current,
+          loc,
+          page: Math.max(1, page),
+          placeAt: Date.now(),
+        },
+        true,
+      );
+    },
+    [commit],
+  );
+
+  const toggleBookmark = useCallback(
+    (page: number, label: string) => {
+      const cur = ref.current.bookmarks;
+      const has = cur.some((b) => b.page === page);
+      const now = Date.now();
+      const gone = cur.filter((b) => b.page === page).map((b) => tombstoneOf(bookmarkRecord(b), now));
+      const bookmarks = has
+        ? cur.filter((b) => b.page !== page)
+        : [
+            ...cur,
+            {
+              id: genId(),
               page,
-            ),
-            placeAt:
-              Date.now(),
-          },
-          true,
-        );
-      },
-      [
-        commit,
-      ],
-    );
+              label,
+              createdAt: now,
+              updatedAt: now,
+            },
+          ].sort((a, b) => a.page - b.page);
+      commit({
+        ...ref.current,
+        bookmarks,
+        tombstones: withTombstones(ref.current.tombstones, gone),
+      });
+    },
+    [commit],
+  );
 
-  const toggleBookmark =
-    useCallback(
-      (
-        page: number,
-        label: string,
-      ) => {
-        const cur =
-          ref
-            .current
-            .bookmarks;
-        const has =
-          cur.some(
-            (
-              b,
-            ) =>
-              b.page ===
-              page,
-          );
-        const now =
-          Date.now();
-        const gone =
-          cur
-            .filter(
-              (
-                b,
-              ) =>
-                b.page ===
-                page,
-            )
-            .map(
-              (
-                b,
-              ) =>
-                tombstoneOf(
-                  bookmarkRecord(
-                    b,
-                  ),
-                  now,
-                ),
-            );
-        const bookmarks =
-          has
-            ? cur.filter(
-                (
-                  b,
-                ) =>
-                  b.page !==
-                  page,
-              )
-            : [
-                ...cur,
-                {
-                  id: genId(),
-                  page,
-                  label,
-                  createdAt:
-                    now,
-                  updatedAt:
-                    now,
-                },
-              ].sort(
-                (
-                  a,
-                  b,
-                ) =>
-                  a.page -
-                  b.page,
-              );
-        commit(
-          {
-            ...ref.current,
-            bookmarks,
-            tombstones:
-              withTombstones(
-                ref.current.tombstones,
-                gone,
-              ),
-          },
-        );
-      },
-      [
-        commit,
-      ],
-    );
+  const removeBookmark = useCallback(
+    (id: string) => {
+      const gone = ref.current.bookmarks.find((b) => b.id === id);
+      commit({
+        ...ref.current,
+        bookmarks: ref.current.bookmarks.filter((b) => b.id !== id),
+        tombstones: withTombstones(ref.current.tombstones, gone ? [tombstoneOf(bookmarkRecord(gone), Date.now())] : []),
+      });
+    },
+    [commit],
+  );
 
-  const removeBookmark =
-    useCallback(
-      (
-        id: string,
-      ) => {
-        const gone =
-          ref.current.bookmarks.find(
-            (
-              b,
-            ) =>
-              b.id ===
-              id,
-          );
-        commit(
-          {
-            ...ref.current,
-            bookmarks:
-              ref.current.bookmarks.filter(
-                (
-                  b,
-                ) =>
-                  b.id !==
-                  id,
-              ),
-            tombstones:
-              withTombstones(
-                ref.current.tombstones,
-                gone
-                  ? [
-                      tombstoneOf(
-                        bookmarkRecord(
-                          gone,
-                        ),
-                        Date.now(),
-                      ),
-                    ]
-                  : [],
-              ),
-          },
-        );
-      },
-      [
-        commit,
-      ],
-    );
+  const addNote = useCallback(
+    (page: number, text: string, color = '#ffd479') => {
+      const body = text.trim();
+      if (!body) return;
+      const now = Date.now();
+      const note: Note = {
+        id: genId(),
+        page,
+        text: body,
+        color,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const notes = [...ref.current.notes, note].sort((a, b) => a.page - b.page || a.createdAt - b.createdAt);
+      commit({
+        ...ref.current,
+        notes,
+      });
+    },
+    [commit],
+  );
 
-  const addNote =
-    useCallback(
-      (
-        page: number,
-        text: string,
-        color = '#ffd479',
-      ) => {
-        const body =
-          text.trim();
-        if (
-          !body
-        )
-          return;
-        const now =
-          Date.now();
-        const note: Note =
-          {
-            id: genId(),
-            page,
-            text: body,
-            color,
-            createdAt:
-              now,
-            updatedAt:
-              now,
-          };
-        const notes =
-          [
-            ...ref
-              .current
-              .notes,
-            note,
-          ].sort(
-            (
-              a,
-              b,
-            ) =>
-              a.page -
-                b.page ||
-              a.createdAt -
-                b.createdAt,
-          );
-        commit(
-          {
-            ...ref.current,
-            notes,
-          },
-        );
-      },
-      [
-        commit,
-      ],
-    );
+  const updateNote = useCallback(
+    (id: string, text: string) => {
+      const body = text.trim();
+      const old = ref.current.notes.find((n) => n.id === id);
+      const notes = body
+        ? ref.current.notes.map((n) =>
+            n.id === id
+              ? {
+                  ...n,
+                  text: body,
+                  updatedAt: Date.now(),
+                }
+              : n,
+          )
+        : ref.current.notes.filter((n) => n.id !== id); // emptying a note deletes it
+      commit({
+        ...ref.current,
+        notes,
+        tombstones: withTombstones(
+          ref.current.tombstones,
+          !body && old ? [tombstoneOf(noteRecord(old), Date.now())] : [],
+        ),
+      });
+    },
+    [commit],
+  );
 
-  const updateNote =
-    useCallback(
-      (
-        id: string,
-        text: string,
-      ) => {
-        const body =
-          text.trim();
-        const old =
-          ref.current.notes.find(
-            (
-              n,
-            ) =>
-              n.id ===
-              id,
-          );
-        const notes =
-          body
-            ? ref.current.notes.map(
-                (
-                  n,
-                ) =>
-                  n.id ===
-                  id
-                    ? {
-                        ...n,
-                        text: body,
-                        updatedAt:
-                          Date.now(),
-                      }
-                    : n,
-              )
-            : ref.current.notes.filter(
-                (
-                  n,
-                ) =>
-                  n.id !==
-                  id,
-              ); // emptying a note deletes it
-        commit(
-          {
-            ...ref.current,
-            notes,
-            tombstones:
-              withTombstones(
-                ref.current.tombstones,
-                !body &&
-                  old
-                  ? [
-                      tombstoneOf(
-                        noteRecord(
-                          old,
-                        ),
-                        Date.now(),
-                      ),
-                    ]
-                  : [],
-              ),
-          },
-        );
-      },
-      [
-        commit,
-      ],
-    );
-
-  const removeNote =
-    useCallback(
-      (
-        id: string,
-      ) => {
-        const gone =
-          ref.current.notes.find(
-            (
-              n,
-            ) =>
-              n.id ===
-              id,
-          );
-        commit(
-          {
-            ...ref.current,
-            notes:
-              ref.current.notes.filter(
-                (
-                  n,
-                ) =>
-                  n.id !==
-                  id,
-              ),
-            tombstones:
-              withTombstones(
-                ref.current.tombstones,
-                gone
-                  ? [
-                      tombstoneOf(
-                        noteRecord(
-                          gone,
-                        ),
-                        Date.now(),
-                      ),
-                    ]
-                  : [],
-              ),
-          },
-        );
-      },
-      [
-        commit,
-      ],
-    );
+  const removeNote = useCallback(
+    (id: string) => {
+      const gone = ref.current.notes.find((n) => n.id === id);
+      commit({
+        ...ref.current,
+        notes: ref.current.notes.filter((n) => n.id !== id),
+        tombstones: withTombstones(ref.current.tombstones, gone ? [tombstoneOf(noteRecord(gone), Date.now())] : []),
+      });
+    },
+    [commit],
+  );
 
   // Replace the state with what the sync merged in. Saved to disk at once; the place
   // and edit times are the merge's, so they are not bumped.
-  const adopt =
-    useCallback(
-      (
-        next: BookState,
-      ) =>
-        commit(
-          next,
-        ),
-      [
-        commit,
-      ],
-    );
-  const getState =
-    useCallback(
-      () =>
-        ref.current,
-      [],
-    );
+  const adopt = useCallback((next: BookState) => commit(next), [commit]);
+  const getState = useCallback(() => ref.current, []);
 
   return {
     state,
@@ -865,10 +431,7 @@ export interface ReaderSyncControls {
  * write is simply sent again with the next one. Signed out, or "this device only", sends
  * nothing and opens at once.
  */
-export function useSyncedBookState(
-  slug: string,
-  opts: { signedIn: boolean; pages: number },
-) {
+export function useSyncedBookState(slug: string, opts: { signedIn: boolean; pages: number }) {
   const marks = useBookState(slug);
   const { getState, adopt } = marks;
   const [off, setOffState] = useState<boolean | null>(null);
@@ -927,9 +490,7 @@ export function useSyncedBookState(
       const sent = pendingRecords(stateToRecords(st), s.acked).slice(0, MAX_BATCH);
       const placeDue = withPlace && st.page > 0 && (st.placeAt ?? 0) > s.placeAckAt;
       if (sent.length === 0 && !placeDue) return;
-      const place = placeDue
-        ? { page: st.page, location: st.loc ?? null, updatedAt: st.placeAt ?? 0 }
-        : undefined;
+      const place = placeDue ? { page: st.page, location: st.loc ?? null, updatedAt: st.placeAt ?? 0 } : undefined;
       const body = place ? { place, marks: sent } : { marks: sent };
       inFlight = true;
       void api(putReaderMarksApi, {

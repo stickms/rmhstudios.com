@@ -30,21 +30,15 @@ import {
 import type { Tier } from '@/lib/entitlements/tiers';
 
 /** Narrow an arbitrary failed-response body to the upgrade envelope. */
-export function isUpgradeRequired(
-  body: unknown,
-): body is UpgradeRequiredBody {
+export function isUpgradeRequired(body: unknown): body is UpgradeRequiredBody {
   return (
-    typeof body ===
-      'object' &&
-    body !==
-      null &&
+    typeof body === 'object' &&
+    body !== null &&
     (
       body as {
         error?: unknown;
       }
-    )
-      .error ===
-      'upgrade_required'
+    ).error === 'upgrade_required'
   );
 }
 
@@ -53,27 +47,13 @@ export function isUpgradeRequired(
  * envelope. Returns null for anything else so callers can fall through to
  * their normal error handling.
  */
-export async function upgradeEnvelopeFrom(
-  res: Response,
-): Promise<UpgradeRequiredBody | null> {
-  if (
-    res.status !==
-    402
-  )
-    return null;
-  const body =
-    await res
-      .clone()
-      .json()
-      .catch(
-        () =>
-          null,
-      );
-  return isUpgradeRequired(
-    body,
-  )
-    ? body
-    : null;
+export async function upgradeEnvelopeFrom(res: Response): Promise<UpgradeRequiredBody | null> {
+  if (res.status !== 402) return null;
+  const body = await res
+    .clone()
+    .json()
+    .catch(() => null);
+  return isUpgradeRequired(body) ? body : null;
 }
 
 /**
@@ -85,59 +65,31 @@ export async function upgradeEnvelopeFrom(
  * the feature id so the page can highlight what they came for.
  */
 export function toastUpgrade(
-  envelope: Pick<
-    UpgradeRequiredBody,
-    | 'feature'
-    | 'requiredTierLabel'
-    | 'upgradeHref'
-  >,
-  navigate: (
-    href: string,
-  ) => void,
+  envelope: Pick<UpgradeRequiredBody, 'feature' | 'requiredTierLabel' | 'upgradeHref'>,
+  navigate: (href: string) => void,
   t: (
     key: string,
     opts: {
       defaultValue: string;
-      [
-        k: string
-      ]: unknown;
+      [k: string]: unknown;
     },
   ) => string,
 ): void {
-  const def =
-    featureDef(
-      envelope.feature,
-    );
+  const def = featureDef(envelope.feature);
   toast(
-    t(
-      'upsell-title',
-      {
-        defaultValue:
-          '{{feature}} is a {{tier}} feature',
-        feature:
-          def.label,
-        tier: envelope.requiredTierLabel,
-      },
-    ),
+    t('upsell-title', {
+      defaultValue: '{{feature}} is a {{tier}} feature',
+      feature: def.label,
+      tier: envelope.requiredTierLabel,
+    }),
     {
-      description:
-        def.blurb,
-      action:
-        {
-          label:
-            t(
-              'upsell-cta',
-              {
-                defaultValue:
-                  'See plans',
-              },
-            ),
-          onClick:
-            () =>
-              navigate(
-                envelope.upgradeHref,
-              ),
-        },
+      description: def.blurb,
+      action: {
+        label: t('upsell-cta', {
+          defaultValue: 'See plans',
+        }),
+        onClick: () => navigate(envelope.upgradeHref),
+      },
     },
   );
 }
@@ -167,67 +119,36 @@ export function useFeature(
     key: string,
     opts: {
       defaultValue: string;
-      [
-        k: string
-      ]: unknown;
+      [k: string]: unknown;
     },
   ) => string,
 ): FeatureState {
-  const router =
-    useRouter();
-  const def =
-    featureDef(
-      feature,
-    );
-  const href =
-    upgradeHref(
-      feature,
-    );
-  const requiredTierLabel =
-    TIER_LABELS[
-      def
-        .minTier
-    ];
+  const router = useRouter();
+  const def = featureDef(feature);
+  const href = upgradeHref(feature);
+  const requiredTierLabel = TIER_LABELS[def.minTier];
 
-  const promptUpgrade =
-    useCallback(() => {
-      toastUpgrade(
-        {
-          feature,
-          requiredTierLabel,
-          upgradeHref:
-            href,
-        },
-        (
+  const promptUpgrade = useCallback(() => {
+    toastUpgrade(
+      {
+        feature,
+        requiredTierLabel,
+        upgradeHref: href,
+      },
+      (to) =>
+        void router.navigate({
           to,
-        ) =>
-          void router.navigate(
-            {
-              to,
-            },
-          ),
-        t,
-      );
-    }, [
-      feature,
-      requiredTierLabel,
-      href,
-      router,
+        }),
       t,
-    ]);
+    );
+  }, [feature, requiredTierLabel, href, router, t]);
 
   return {
-    allowed:
-      canUse(
-        tier,
-        feature,
-      ),
+    allowed: canUse(tier, feature),
     requiredTierLabel,
     href,
-    label:
-      def.label,
-    blurb:
-      def.blurb,
+    label: def.label,
+    blurb: def.blurb,
     promptUpgrade,
   };
 }

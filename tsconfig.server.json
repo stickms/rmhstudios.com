@@ -8,12 +8,8 @@
     "noEmit": false,
     "isolatedModules": false,
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@features/*": [
-        "./features/*"
-      ]
+      "@/*": ["./*"],
+      "@features/*": ["./features/*"]
     }
   },
   "include": [

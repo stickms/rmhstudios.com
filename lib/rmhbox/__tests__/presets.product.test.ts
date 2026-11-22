@@ -36,7 +36,10 @@ describe('normalizePresetValues', () => {
 
   it('treats a non-object as an empty preset', () => {
     for (const raw of [null, 'x', 7, [1, 2]]) {
-      expect(normalizePresetValues(schema, raw)).toEqual({ values: { rounds: 3, bonus: true, mode: 'easy' }, reset: true });
+      expect(normalizePresetValues(schema, raw)).toEqual({
+        values: { rounds: 3, bonus: true, mode: 'easy' },
+        reset: true,
+      });
     }
   });
 });

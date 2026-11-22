@@ -124,14 +124,7 @@ vi.mock('@/lib/db/advisory-lock.server', () => ({
   },
 }));
 
-import {
-  createFolder,
-  deleteFolder,
-  moveDeck,
-  moveFolder,
-  ownsFolder,
-  renameFolder,
-} from '@/lib/study/folders.server';
+import { createFolder, deleteFolder, moveDeck, moveFolder, ownsFolder, renameFolder } from '@/lib/study/folders.server';
 import { reviewQueue } from '@/lib/study/queue.server';
 import { getDeck, listMarketplaceDecks } from '@/lib/study.server';
 
@@ -149,7 +142,14 @@ beforeEach(() => {
 
 function seedFolders(userId: string, n: number) {
   for (let i = 0; i < n; i++) {
-    state.folders.push({ id: `${userId}-seed${i}`, userId, name: `Folder ${i}`, position: i, collapsed: false, createdAt: new Date() });
+    state.folders.push({
+      id: `${userId}-seed${i}`,
+      userId,
+      name: `Folder ${i}`,
+      position: i,
+      collapsed: false,
+      createdAt: new Date(),
+    });
   }
 }
 
@@ -230,7 +230,9 @@ describe('moving a deck', () => {
 
   it('relies on a database rule that sets the deck’s folder to null on delete', () => {
     const schema = readFileSync(join(ROOT, 'prisma/schema/rmhstudy.prisma'), 'utf8');
-    expect(schema).toMatch(/folder\s+DeckFolder\?\s+@relation\(fields: \[folderId\], references: \[id\], onDelete: SetNull\)/);
+    expect(schema).toMatch(
+      /folder\s+DeckFolder\?\s+@relation\(fields: \[folderId\], references: \[id\], onDelete: SetNull\)/,
+    );
     expect(schema).toMatch(/@@index\(\[userId, folderId\]\)/);
     expect(schema).toMatch(/@@map\("deck_folder"\)/);
   });
@@ -253,14 +255,19 @@ describe('a folder never appears in a public payload', () => {
   it('does not select it in the marketplace, and no developer API file mentions it', async () => {
     await listMarketplaceDecks(null, null);
     const src = readFileSync(join(ROOT, 'lib/study.server.ts'), 'utf8');
-    const market = src.slice(src.indexOf('export async function listMarketplaceDecks'), src.indexOf('export async function listMarketplaceDecks') + 2500);
+    const market = src.slice(
+      src.indexOf('export async function listMarketplaceDecks'),
+      src.indexOf('export async function listMarketplaceDecks') + 2500,
+    );
     expect(market).not.toContain('folderId');
     for (const file of ['lib/api/openapi.ts', 'lib/study/api/study.marketplace.server.ts']) {
       expect(readFileSync(join(ROOT, file), 'utf8'), file).not.toMatch(/folderId|deckFolder/);
     }
     const v1 = join(ROOT, 'app/routes/api/v1');
     const walk = (dir: string): string[] =>
-      readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)],
+      );
     for (const f of walk(v1)) expect(readFileSync(f, 'utf8'), f).not.toMatch(/folderId|deckFolder/);
   });
 });

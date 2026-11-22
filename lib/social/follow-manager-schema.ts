@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import {
-  FOLLOW_FILTERS,
-  FOLLOW_SORTS,
-  FOLLOW_TABS,
-  MAX_BULK_IDS,
-  MAX_QUERY_LENGTH,
-} from '@/lib/social/follow-filters';
+import { FOLLOW_FILTERS, FOLLOW_SORTS, FOLLOW_TABS, MAX_BULK_IDS, MAX_QUERY_LENGTH } from '@/lib/social/follow-filters';
 
 const idList = z.string().min(1).max(64);
 

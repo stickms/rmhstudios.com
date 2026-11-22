@@ -142,8 +142,7 @@ function sentence(t: TFunction, item: SecurityActivityItem): string {
       return t('event-deletion-cancelled', { defaultValue: 'Account deletion cancelled' });
     case 'account_secured_by_admin':
       return t('event-account-secured-by-admin', {
-        defaultValue:
-          'Staff signed this account out everywhere and revoked its API keys, tokens and webhooks',
+        defaultValue: 'Staff signed this account out everywhere and revoked its API keys, tokens and webhooks',
       });
   }
 }
@@ -169,7 +168,8 @@ function notYouLine(text: string): ReactNode[] {
   return out;
 }
 
-function ActivityTime({ iso }: { iso: string }) { const fmt = useLocaleFormat(); 
+function ActivityTime({ iso }: { iso: string }) {
+  const fmt = useLocaleFormat();
   const now = useLiveNow();
   const ms = new Date(iso).getTime();
   if (Number.isNaN(ms)) return null;
@@ -270,19 +270,14 @@ export function SecurityActivityPanel() {
             const Icon = ICONS[item.kind];
             const unfamiliar = isUnfamiliarEvent(item.kind, item.thisDevice);
             return (
-              <li
-                key={item.id}
-                className={cn('border-b border-site-border py-3', arrived(item.id) && ARRIVE)}
-              >
+              <li key={item.id} className={cn('border-b border-site-border py-3', arrived(item.id) && ARRIVE)}>
                 <div className="flex items-start gap-3">
                   <Icon className="mt-0.5 size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <div className="min-w-0 flex-1">
                     <p className="t-body text-site-text">
                       {sentence(t, item)}
                       {item.thisDevice ? (
-                        <span className="t-label ms-2">
-                          {t('this-device', { defaultValue: 'This device' })}
-                        </span>
+                        <span className="t-label ms-2">{t('this-device', { defaultValue: 'This device' })}</span>
                       ) : null}
                     </p>
                     <p className="t-meta text-site-text-muted">
@@ -316,11 +311,7 @@ export function SecurityActivityPanel() {
 
       {query.hasNextPage ? (
         <div className="pt-3">
-          <Button
-            variant="default"
-            loading={query.isFetchingNextPage}
-            onClick={() => void query.fetchNextPage()}
-          >
+          <Button variant="default" loading={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
             {t('load-more', { defaultValue: 'Show more' })}
           </Button>
         </div>

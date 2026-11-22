@@ -16,28 +16,13 @@ export async function emitPersonalBestCreated(
   input: {
     gameId: string;
     score: number;
-    previous:
-      | number
-      | null
-      | undefined;
+    previous: number | null | undefined;
   },
 ): Promise<void> {
   try {
-    await emitWebhookEvent(
-      userId,
-      PERSONAL_BEST_EVENT,
-      buildPersonalBestData(
-        input,
-      ),
-    );
+    await emitWebhookEvent(userId, PERSONAL_BEST_EVENT, buildPersonalBestData(input));
   } catch (e) {
-    console.error(
-      '[webhooks] personal best emit failed:',
-      (
-        e as Error
-      )
-        .message,
-    );
+    console.error('[webhooks] personal best emit failed:', (e as Error).message);
   }
 }
 
@@ -46,26 +31,12 @@ export async function emitAchievementUnlocked(
   input: {
     achievementId: string;
     name: string;
-    group?:
-      | string
-      | undefined;
+    group?: string | undefined;
   },
 ): Promise<void> {
   try {
-    await emitWebhookEvent(
-      userId,
-      ACHIEVEMENT_EVENT,
-      buildAchievementData(
-        input,
-      ),
-    );
+    await emitWebhookEvent(userId, ACHIEVEMENT_EVENT, buildAchievementData(input));
   } catch (e) {
-    console.error(
-      '[webhooks] achievement emit failed:',
-      (
-        e as Error
-      )
-        .message,
-    );
+    console.error('[webhooks] achievement emit failed:', (e as Error).message);
   }
 }

@@ -121,9 +121,7 @@ async function moveCoins(
     entityId: opts.adjustmentId,
     idempotencyKey: opts.key,
   };
-  return delta > 0
-    ? creditCoins(userId, delta, ledgerOpts)
-    : debitCoins(userId, -delta, ledgerOpts);
+  return delta > 0 ? creditCoins(userId, delta, ledgerOpts) : debitCoins(userId, -delta, ledgerOpts);
 }
 
 /** The audit row, written inside the money transaction: if it fails, the movement rolls back. */

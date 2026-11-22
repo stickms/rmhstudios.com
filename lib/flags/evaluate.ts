@@ -20,24 +20,9 @@ export { FLAG_KEY_PATTERN } from './key';
  * every flag's first 10%, and stable across processes and deploys so a user does
  * not flicker in and out of a rollout.
  */
-export function bucketFor(
-  key: string,
-  userId: string,
-): number {
-  const digest =
-    createHash(
-      'sha256',
-    )
-      .update(
-        `${key}:${userId}`,
-      )
-      .digest();
-  return (
-    digest.readUInt32BE(
-      0,
-    ) %
-    100
-  );
+export function bucketFor(key: string, userId: string): number {
+  const digest = createHash('sha256').update(`${key}:${userId}`).digest();
+  return digest.readUInt32BE(0) % 100;
 }
 
 /**
@@ -92,10 +77,6 @@ export function explainFlag(
  * Whether the flag is on for this caller. An anonymous caller has no stable identity to bucket (or to
  * target), so they only see a flag that is fully rolled out.
  */
-export function evaluateFlag(
-  flag: FlagRecord | undefined,
-  userId?: string | null,
-  targeting?: FlagTargeting,
-): boolean {
+export function evaluateFlag(flag: FlagRecord | undefined, userId?: string | null, targeting?: FlagTargeting): boolean {
   return explainFlag(flag, userId, targeting).on;
 }

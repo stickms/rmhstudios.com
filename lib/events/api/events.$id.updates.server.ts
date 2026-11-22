@@ -21,7 +21,12 @@ export const route = apiRoute('/api/events/$id/updates', {
       try {
         const update = await postUpdate(params.id, userId, isAdmin, {
           body: body.body,
-          occurrenceAt: body.occurrenceAt === undefined ? undefined : body.occurrenceAt === null ? null : new Date(body.occurrenceAt),
+          occurrenceAt:
+            body.occurrenceAt === undefined
+              ? undefined
+              : body.occurrenceAt === null
+                ? null
+                : new Date(body.occurrenceAt),
         });
         return { update };
       } catch (error) {

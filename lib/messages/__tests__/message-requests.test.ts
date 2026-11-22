@@ -126,12 +126,7 @@ vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn(async (
 
 import { guardDirect, sendDirectMessage } from '@/lib/messages/send.server';
 import { canDirectMessage } from '@/lib/chat-plus/dm-privacy.server';
-import {
-  decideRequest,
-  openRequest,
-  requestGate,
-  requestWriteRefusal,
-} from '@/lib/messages/requests.server';
+import { decideRequest, openRequest, requestGate, requestWriteRefusal } from '@/lib/messages/requests.server';
 import { createNotification } from '@/lib/notifications.server';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -194,9 +189,9 @@ describe('requestGate against the database', () => {
       outcome: 'refused',
       reason: 'FOLLOWERS',
     });
-    expect(
-      (await requestGate('sender', 'recipient', { now: NOW, request: declined(31 * DAY) })).outcome,
-    ).toBe('request');
+    expect((await requestGate('sender', 'recipient', { now: NOW, request: declined(31 * DAY) })).outcome).toBe(
+      'request',
+    );
   });
 
   it('refuses a 21st request in a day', async () => {
@@ -238,7 +233,9 @@ describe('every DM write path applies the gate', () => {
     expect(h.created).toHaveLength(1);
     expect(h.created[0]).toMatchObject({ content: 'hello', read: true });
     expect(h.requestWrites[0]).toMatchObject({ op: 'create' });
-    expect(h.requestWrites[0]!.args).toMatchObject({ data: { status: 'pending', senderId: 'sender', recipientId: 'recipient' } });
+    expect(h.requestWrites[0]!.args).toMatchObject({
+      data: { status: 'pending', senderId: 'sender', recipientId: 'recipient' },
+    });
     expect(h.notifyUser).not.toHaveBeenCalled();
     expect(h.adjust).not.toHaveBeenCalled();
     if (r.ok) expect(r.value.message.read).toBe(false);
@@ -352,27 +349,41 @@ describe('opening a request', () => {
   });
 
   it('resets a declined request past its cooldown to pending, and refuses inside it', async () => {
-    h.request = { senderId: 'sender', recipientId: 'recipient', status: 'declined', decidedAt: new Date(Date.now() - 31 * DAY) };
+    h.request = {
+      senderId: 'sender',
+      recipientId: 'recipient',
+      status: 'declined',
+      decidedAt: new Date(Date.now() - 31 * DAY),
+    };
     const ok = await openRequest({ senderId: 'sender', chatId: 'chat1', privacy: 'NONE', message: async () => 1 });
     expect(ok).toEqual({ ok: true, value: 1 });
     expect(h.requestWrites[0]).toMatchObject({ op: 'update' });
     expect(h.requestWrites[0]!.args).toMatchObject({ data: { status: 'pending', decidedAt: null } });
 
     h.requestWrites = [];
-    h.request = { senderId: 'sender', recipientId: 'recipient', status: 'declined', decidedAt: new Date(Date.now() - DAY) };
-    expect(await openRequest({ senderId: 'sender', chatId: 'chat1', privacy: 'NONE', message: async () => 1 })).toEqual({
-      ok: false,
-      reason: 'NONE',
-    });
+    h.request = {
+      senderId: 'sender',
+      recipientId: 'recipient',
+      status: 'declined',
+      decidedAt: new Date(Date.now() - DAY),
+    };
+    expect(await openRequest({ senderId: 'sender', chatId: 'chat1', privacy: 'NONE', message: async () => 1 })).toEqual(
+      {
+        ok: false,
+        reason: 'NONE',
+      },
+    );
     expect(h.requestWrites).toHaveLength(0);
   });
 
   it('refuses a second request on a chat whose request is pending', async () => {
     h.request = { senderId: 'sender', recipientId: 'recipient', status: 'pending', decidedAt: null };
-    expect(await openRequest({ senderId: 'sender', chatId: 'chat1', privacy: 'NONE', message: async () => 1 })).toEqual({
-      ok: false,
-      reason: 'pending',
-    });
+    expect(await openRequest({ senderId: 'sender', chatId: 'chat1', privacy: 'NONE', message: async () => 1 })).toEqual(
+      {
+        ok: false,
+        reason: 'pending',
+      },
+    );
   });
 });
 

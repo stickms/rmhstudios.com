@@ -21,9 +21,7 @@ export function ToolboxHub() {
       category,
       tools: TOOLS.filter((tool) => tool.category === category)
         .map((tool) => ({ tool, copy: toolCopy(t, tool.slug) }))
-        .filter(({ tool, copy }) =>
-          matchesToolQuery([copy.name, copy.description, ...tool.keywords].join(' '), query),
-        ),
+        .filter(({ tool, copy }) => matchesToolQuery([copy.name, copy.description, ...tool.keywords].join(' '), query)),
     })).filter((group) => group.tools.length > 0);
   }, [t, query]);
 
@@ -31,7 +29,8 @@ export function ToolboxHub() {
     <PageLayout
       title={t('hub-title', { defaultValue: 'Toolbox' })}
       description={t('hub-description', {
-        defaultValue: 'Small, private utilities. Everything runs on your device and nothing you enter is sent anywhere.',
+        defaultValue:
+          'Small, private utilities. Everything runs on your device and nothing you enter is sent anywhere.',
       })}
     >
       <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-4 pb-12">

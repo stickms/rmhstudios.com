@@ -37,9 +37,15 @@ describe('commit hash', () => {
 describe('commit link', () => {
   const hash = '3F2A9C1D4E5B6A7988776655443322110FEDCBA9';
   it('links a GitHub repository to the commit, lower-cased', () => {
-    expect(commitLink('https://github.com/rmh/studio', hash)).toBe(`https://github.com/rmh/studio/commit/${hash.toLowerCase()}`);
-    expect(commitLink('https://github.com/rmh/studio.git', 'abc1234')).toBe('https://github.com/rmh/studio/commit/abc1234');
-    expect(commitLink('http://www.github.com/rmh/studio/tree/main', 'abc1234')).toBe('https://github.com/rmh/studio/commit/abc1234');
+    expect(commitLink('https://github.com/rmh/studio', hash)).toBe(
+      `https://github.com/rmh/studio/commit/${hash.toLowerCase()}`,
+    );
+    expect(commitLink('https://github.com/rmh/studio.git', 'abc1234')).toBe(
+      'https://github.com/rmh/studio/commit/abc1234',
+    );
+    expect(commitLink('http://www.github.com/rmh/studio/tree/main', 'abc1234')).toBe(
+      'https://github.com/rmh/studio/commit/abc1234',
+    );
   });
   it('gives no link for another host, a look-alike, a bare owner or no repository', () => {
     for (const url of [
@@ -94,7 +100,9 @@ describe('create body', () => {
 
 describe('rmhcode release arguments', () => {
   it('reads every option, spaced or with an equals sign', () => {
-    expect(parseReleaseArgs(['--version', '1.2', '--notes=CHANGES.md', '--commit', 'abc1234', '--build', 'my-build'])).toEqual({
+    expect(
+      parseReleaseArgs(['--version', '1.2', '--notes=CHANGES.md', '--commit', 'abc1234', '--build', 'my-build']),
+    ).toEqual({
       version: '1.2',
       notes: 'CHANGES.md',
       commit: 'abc1234',
@@ -108,7 +116,9 @@ describe('rmhcode release arguments', () => {
     expect(() => parseReleaseArgs(['--version', '--notes', 'f'])).toThrow(/needs a value/);
   });
   it('takes the commit from git only when it is a full hash', () => {
-    expect(commitFromGit('3F2A9C1D4E5B6A7988776655443322110FEDCBA9\n')).toBe('3f2a9c1d4e5b6a7988776655443322110fedcba9');
+    expect(commitFromGit('3F2A9C1D4E5B6A7988776655443322110FEDCBA9\n')).toBe(
+      '3f2a9c1d4e5b6a7988776655443322110fedcba9',
+    );
     expect(commitFromGit('HEAD\n')).toBeUndefined();
     expect(commitFromGit('')).toBeUndefined();
   });

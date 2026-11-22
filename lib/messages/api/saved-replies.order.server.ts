@@ -10,9 +10,17 @@ import { reorderSavedReplies } from '@/lib/messages/saved-replies.server';
  * after them. One transaction; an id that is not the caller's is a 404 and nothing is written.
  */
 export const route = apiRoute('/api/saved-replies/order', {
-  PUT: implement(reorderSavedRepliesApi, { rateLimit: 'write', body: reorderSavedRepliesBody }, async ({ userId, body }) => {
-    const result = await reorderSavedReplies(userId, parseIdList(body.ids) ?? []);
-    if (!result.ok) return Response.json({ error: result.error, ...(result.code ? { code: result.code } : {}) }, { status: result.status });
-    return { replies: result.value };
-  }),
+  PUT: implement(
+    reorderSavedRepliesApi,
+    { rateLimit: 'write', body: reorderSavedRepliesBody },
+    async ({ userId, body }) => {
+      const result = await reorderSavedReplies(userId, parseIdList(body.ids) ?? []);
+      if (!result.ok)
+        return Response.json(
+          { error: result.error, ...(result.code ? { code: result.code } : {}) },
+          { status: result.status },
+        );
+      return { replies: result.value };
+    },
+  ),
 });

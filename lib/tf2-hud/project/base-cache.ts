@@ -7,5 +7,4 @@
 
 import { BaseCache } from './base';
 
-export const baseCache =
-  new BaseCache();
+export const baseCache = new BaseCache();

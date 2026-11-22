@@ -3,18 +3,14 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { StripAchievement } from '@/lib/achievements/strip';
 
 /** 404 `{ error }` for an unknown member. */
-export const getUserAchievementsApi =
-  endpoint<{
-    res: {
-      stats: {
-        unlocked: number;
-      };
-      achievements: StripAchievement[];
+export const getUserAchievementsApi = endpoint<{
+  res: {
+    stats: {
+      unlocked: number;
     };
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/achievements/$userId',
-    },
-  );
+    achievements: StripAchievement[];
+  };
+}>()({
+  method: 'GET',
+  path: '/api/achievements/$userId',
+});

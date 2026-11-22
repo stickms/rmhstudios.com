@@ -7,19 +7,10 @@ import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import DailyPage from '@/components/rmhtype/DailyPage';
 
-export const Route =
-  createFileRoute(
-    '/rmhtype/daily',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'Daily Typing Challenge',
-        ),
-      component:
-        DailyRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhtype/daily')({
+  head: () => noindexHead('Daily Typing Challenge'),
+  component: DailyRoute,
+});
 
 function DailyRoute() {
   return (

@@ -9,19 +9,10 @@ import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { SoundCredits } from '@/components/rmhmusic/learn/SoundCredits';
 
-export const Route =
-  createFileRoute(
-    '/rmhmusic/credits',
-  )(
-    {
-      head: () =>
-        noindexHead(
-          'RMHMusic Sound credits',
-        ),
-      component:
-        CreditsRoute,
-    },
-  );
+export const Route = createFileRoute('/rmhmusic/credits')({
+  head: () => noindexHead('RMHMusic Sound credits'),
+  component: CreditsRoute,
+});
 
 function CreditsRoute() {
   return (

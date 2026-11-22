@@ -7,16 +7,12 @@ import type { CompareResponse } from '@/lib/achievements/compare';
  * unknown member, a blocked pair in either direction, a banned or deleted member and the caller themselves, all with
  * the same body. The response is private and never cached.
  */
-export const compareAchievementsApi =
-  endpoint<{
-    query: {
-      with: string;
-    };
-    res: CompareResponse;
-  }>()(
-    {
-      method:
-        'GET',
-      path: '/api/achievements/compare',
-    },
-  );
+export const compareAchievementsApi = endpoint<{
+  query: {
+    with: string;
+  };
+  res: CompareResponse;
+}>()({
+  method: 'GET',
+  path: '/api/achievements/compare',
+});

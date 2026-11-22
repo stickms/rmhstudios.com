@@ -22,7 +22,14 @@ describe('splitCents', () => {
 
 describe('splitBill', () => {
   it('adds tax, then tip on the pre-tax amount', () => {
-    const r = splitBill({ subtotal: 80, taxPercent: 10, tipPercent: 20, tipOn: 'pre-tax', people: people(4), roundUpTo: 0 });
+    const r = splitBill({
+      subtotal: 80,
+      taxPercent: 10,
+      tipPercent: 20,
+      tipOn: 'pre-tax',
+      people: people(4),
+      roundUpTo: 0,
+    });
     expect(r).toEqual({
       tax: 8,
       tip: 16,
@@ -38,11 +45,21 @@ describe('splitBill', () => {
   });
 
   it('can tip on the amount after tax', () => {
-    expect(splitBill({ subtotal: 100, taxPercent: 10, tipPercent: 10, tipOn: 'post-tax', people: people(1), roundUpTo: 0 }).tip).toBe(11);
+    expect(
+      splitBill({ subtotal: 100, taxPercent: 10, tipPercent: 10, tipOn: 'post-tax', people: people(1), roundUpTo: 0 })
+        .tip,
+    ).toBe(11);
   });
 
   it('rounds shares up for cash and reports the surplus', () => {
-    const r = splitBill({ subtotal: 100, taxPercent: 0, tipPercent: 0, tipOn: 'pre-tax', people: people(3), roundUpTo: 100 });
+    const r = splitBill({
+      subtotal: 100,
+      taxPercent: 0,
+      tipPercent: 0,
+      tipOn: 'pre-tax',
+      people: people(3),
+      roundUpTo: 100,
+    });
     expect(r.shares.map((s) => s.amount)).toEqual([34, 34, 34]);
     expect(r.surplus).toBe(2);
   });

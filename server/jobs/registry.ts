@@ -17,29 +17,15 @@
 
 /** What a registration needs from the logger (the `createLogger` shape). */
 export interface RegistryLogger {
-  info(
-    fields: Record<
-      string,
-      unknown
-    >,
-  ): void;
-  error(
-    fields: Record<
-      string,
-      unknown
-    >,
-  ): void;
+  info(fields: Record<string, unknown>): void;
+  error(fields: Record<string, unknown>): void;
 }
 
-export interface Registration<
-  B,
-> {
+export interface Registration<B> {
   /** The queue (or the group of queues) this entry stands for; the `queue` field of the log events. */
   queue: string;
   /** Create the queue(s), schedule the cron(s) and attach the worker(s). */
-  register: (
-    boss: B,
-  ) => Promise<unknown>;
+  register: (boss: B) => Promise<unknown>;
 }
 
 export interface RegistrationResult {
@@ -54,61 +40,33 @@ export interface RegistrationResult {
  * advisory locks around queue creation, and the order is part of the boot log
  * operators read.
  */
-export async function registerAll<
-  B,
->(
+export async function registerAll<B>(
   boss: B,
-  entries: ReadonlyArray<
-    Registration<B>
-  >,
+  entries: ReadonlyArray<Registration<B>>,
   log: RegistryLogger,
   /** Return true to stop early (a shutdown signal arrived mid-boot). */
-  shouldStop: () => boolean = () =>
-    false,
+  shouldStop: () => boolean = () => false,
 ): Promise<RegistrationResult> {
-  const result: RegistrationResult =
-    {
-      started:
-        [],
-      failed:
-        [],
-    };
+  const result: RegistrationResult = {
+    started: [],
+    failed: [],
+  };
   for (const entry of entries) {
-    if (
-      shouldStop()
-    )
-      break;
+    if (shouldStop()) break;
     try {
-      await entry.register(
-        boss,
-      );
-      result.started.push(
-        entry.queue,
-      );
-      log.info(
-        {
-          event:
-            'jobs.started',
-          queue:
-            entry.queue,
-        },
-      );
+      await entry.register(boss);
+      result.started.push(entry.queue);
+      log.info({
+        event: 'jobs.started',
+        queue: entry.queue,
+      });
     } catch (e) {
-      result.failed.push(
-        entry.queue,
-      );
-      log.error(
-        {
-          event:
-            'jobs.register_failed',
-          queue:
-            entry.queue,
-          err: (
-            e as Error
-          )
-            ?.message,
-        },
-      );
+      result.failed.push(entry.queue);
+      log.error({
+        event: 'jobs.register_failed',
+        queue: entry.queue,
+        err: (e as Error)?.message,
+      });
     }
   }
   return result;
@@ -119,27 +77,14 @@ export async function registerAll<
  * and later caller shares that one promise. A failed load is NOT cached, so the
  * next job retries the import instead of failing for the life of the process.
  */
-export function once<
-  T,
->(
-  load: () => Promise<T>,
-): () => Promise<T> {
-  let pending: Promise<T> | null =
-    null;
+export function once<T>(load: () => Promise<T>): () => Promise<T> {
+  let pending: Promise<T> | null = null;
   return () => {
-    if (
-      !pending
-    ) {
-      pending =
-        load().catch(
-          (
-            e,
-          ) => {
-            pending =
-              null;
-            throw e;
-          },
-        );
+    if (!pending) {
+      pending = load().catch((e) => {
+        pending = null;
+        throw e;
+      });
     }
     return pending;
   };
@@ -147,12 +92,8 @@ export function once<
 
 /** What {@link retireQueues} needs from pg-boss (v12: `unschedule`, `deleteQueue`). */
 export interface RetiringBoss {
-  unschedule(
-    name: string,
-  ): Promise<unknown>;
-  deleteQueue(
-    name: string,
-  ): Promise<unknown>;
+  unschedule(name: string): Promise<unknown>;
+  deleteQueue(name: string): Promise<unknown>;
 }
 
 /**
@@ -172,41 +113,23 @@ export async function retireQueues(
   boss: RetiringBoss,
   names: ReadonlyArray<string>,
   log: RegistryLogger,
-): Promise<
-  string[]
-> {
-  const retired: string[] =
-    [];
+): Promise<string[]> {
+  const retired: string[] = [];
   for (const queue of names) {
     try {
-      await boss.unschedule(
+      await boss.unschedule(queue);
+      await boss.deleteQueue(queue);
+      retired.push(queue);
+      log.info({
+        event: 'jobs.retired',
         queue,
-      );
-      await boss.deleteQueue(
-        queue,
-      );
-      retired.push(
-        queue,
-      );
-      log.info(
-        {
-          event:
-            'jobs.retired',
-          queue,
-        },
-      );
+      });
     } catch (e) {
-      log.error(
-        {
-          event:
-            'jobs.retire_failed',
-          queue,
-          err: (
-            e as Error
-          )
-            ?.message,
-        },
-      );
+      log.error({
+        event: 'jobs.retire_failed',
+        queue,
+        err: (e as Error)?.message,
+      });
     }
   }
   return retired;

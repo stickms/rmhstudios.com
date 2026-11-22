@@ -3,20 +3,11 @@
  * "Edited" marker), an "Add note" field with the section's one ink primary, edit (author, 15 minutes) and
  * delete (any moderator). Moderators only; the member never sees any of it. Rows on rules, dates `t-meta`.
  */
-import {
-  useId,
-  useState,
-} from 'react';
-import {
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useId, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import {
-  api,
-  apiQuery,
-} from '@/lib/contract/client';
+import { api, apiQuery } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,24 +17,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useArrival } from '@/components/ui/arrive';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
-import {
-  addNoteApi,
-  deleteNoteApi,
-  editNoteApi,
-  listNotesApi,
-} from '@/lib/communities/member-notes.contract';
-import {
-  NOTE_MAX_LENGTH,
-  type NoteDTO,
-} from '@/lib/communities/member-notes';
+import { addNoteApi, deleteNoteApi, editNoteApi, listNotesApi } from '@/lib/communities/member-notes.contract';
+import { NOTE_MAX_LENGTH, type NoteDTO } from '@/lib/communities/member-notes';
 
 export interface NotesMember {
   id: string;
@@ -81,15 +58,9 @@ export function MemberNotesDialog({
     retry: false,
   });
   // `null` while loading; a failed read shows the error line over an empty list.
-  const notes: NoteDTO[] | null = listQuery.data
-    ? listQuery.data.notes
-    : listQuery.isError
-      ? []
-      : null;
+  const notes: NoteDTO[] | null = listQuery.data ? listQuery.data.notes : listQuery.isError ? [] : null;
   const failed = listQuery.isError;
-  const setNotes = (
-    next: NoteDTO[] | ((prev: NoteDTO[] | null) => NoteDTO[] | null),
-  ) =>
+  const setNotes = (next: NoteDTO[] | ((prev: NoteDTO[] | null) => NoteDTO[] | null)) =>
     queryClient.setQueryData(listOptions.queryKey, (old: { notes: NoteDTO[] } | undefined) => {
       const value = typeof next === 'function' ? next(old?.notes ?? null) : next;
       return value ? { ...old, notes: value } : old;
@@ -99,25 +70,15 @@ export function MemberNotesDialog({
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const arrival = useArrival(notes !== null);
-  const name =
-    member.name ??
-    (member.handle
-      ? `@${member.handle}`
-      : t('someone', { defaultValue: 'this member' }));
+  const name = member.name ?? (member.handle ? `@${member.handle}` : t('someone', { defaultValue: 'this member' }));
 
   const authorName = (n: NoteDTO) =>
     n.author
-      ? (n.author.name ??
-        (n.author.handle
-          ? `@${n.author.handle}`
-          : t('moderator', { defaultValue: 'A moderator' })))
+      ? (n.author.name ?? (n.author.handle ? `@${n.author.handle}` : t('moderator', { defaultValue: 'A moderator' })))
       : t('former-moderator', { defaultValue: 'A former moderator' });
 
   const fail = (err: unknown) =>
-    toast.error(
-      serverError(err) ||
-        t('action-failed', { defaultValue: 'Could not save that' }),
-    );
+    toast.error(serverError(err) || t('action-failed', { defaultValue: 'Could not save that' }));
 
   const save = async () => {
     const body = draft.trim();
@@ -183,21 +144,16 @@ export function MemberNotesDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {t('title', { name, defaultValue: 'Notes about {{name}}' })}
-          </DialogTitle>
+          <DialogTitle>{t('title', { name, defaultValue: 'Notes about {{name}}' })}</DialogTitle>
           <DialogDescription>
             {t('hint', {
-              defaultValue:
-                'Only this community’s moderators can see these. The member never does.',
+              defaultValue: 'Only this community’s moderators can see these. The member never does.',
             })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`${ids}-new`}>
-            {t('add-label', { defaultValue: 'Add note' })}
-          </Label>
+          <Label htmlFor={`${ids}-new`}>{t('add-label', { defaultValue: 'Add note' })}</Label>
           <Textarea
             id={`${ids}-new`}
             value={draft}
@@ -213,11 +169,7 @@ export function MemberNotesDialog({
             })}
           </p>
           <div className="flex justify-end">
-            <Button
-              variant="primary"
-              onClick={() => void save()}
-              disabled={busy || !draft.trim()}
-            >
+            <Button variant="primary" onClick={() => void save()} disabled={busy || !draft.trim()}>
               {t('save', { defaultValue: 'Save note' })}
             </Button>
           </div>
@@ -314,21 +266,9 @@ export function MemberNotesDialog({
 /**
  * The "Notes (n)" control on a member row. Its accessible name carries the member and the count.
  */
-export function NotesButton({
-  member,
-  count,
-  onClick,
-}: {
-  member: NotesMember;
-  count: number;
-  onClick: () => void;
-}) {
+export function NotesButton({ member, count, onClick }: { member: NotesMember; count: number; onClick: () => void }) {
   const { t } = useTranslation('community-notes');
-  const name =
-    member.name ??
-    (member.handle
-      ? `@${member.handle}`
-      : t('someone', { defaultValue: 'this member' }));
+  const name = member.name ?? (member.handle ? `@${member.handle}` : t('someone', { defaultValue: 'this member' }));
   return (
     <Button
       variant="ghost"

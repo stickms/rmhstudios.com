@@ -23,11 +23,7 @@
  * promise settles with run `run`", and `answer(run, …)` settles them. Pure.
  */
 
-export type Phase =
-  | 'idle'
-  | 'starting'
-  | 'active'
-  | 'stopping';
+export type Phase = 'idle' | 'starting' | 'active' | 'stopping';
 
 export type State =
   | {
@@ -46,9 +42,7 @@ export type State =
       kind: 'cancelling';
       seq: number;
       run: number;
-      restart:
-        | number
-        | null;
+      restart: number | null;
       error: Error | null;
     }
   | {
@@ -104,60 +98,36 @@ export type Effect =
       error: Error | null;
     };
 
-export const initial: State =
-  {
-    kind: 'idle',
-    seq: 0,
-    error:
-      null,
-  };
+export const initial: State = {
+  kind: 'idle',
+  seq: 0,
+  error: null,
+};
 
 /** What the outside world sees: a cancelled start with a fresh one queued is still "starting". */
-export function phase(
-  s: State,
-): Phase {
-  switch (
-    s.kind
-  ) {
+export function phase(s: State): Phase {
+  switch (s.kind) {
     case 'idle':
       return 'idle';
     case 'starting':
       return 'starting';
     case 'cancelling':
-      return s.restart ===
-        null
-        ? 'stopping'
-        : 'starting';
+      return s.restart === null ? 'stopping' : 'starting';
     case 'active':
       return 'active';
     default:
-      return unreachable(
-        s,
-      );
+      return unreachable(s);
   }
 }
 
 /** The error the last real (uncancelled) start failed with, until a start succeeds. */
-export function lastError(
-  s: State,
-): Error | null {
-  return s.kind ===
-    'active'
-    ? null
-    : s.error;
+export function lastError(s: State): Error | null {
+  return s.kind === 'active' ? null : s.error;
 }
 
 /** True while `run` is the start the user still wants (an adapter checks this after each await). */
-export function isWanted(
-  s: State,
-  run: number,
-): boolean {
-  return (
-    s.kind ===
-      'starting' &&
-    s.run ===
-      run
-  );
+export function isWanted(s: State, run: number): boolean {
+  return s.kind === 'starting' && s.run === run;
 }
 
 export interface Step {
@@ -166,148 +136,110 @@ export interface Step {
 }
 
 /** The next state and the effects the shell must perform, in order. Total and pure. */
-export function step(
-  s: State,
-  e: Event,
-): Step {
-  switch (
-    e.type
-  ) {
+export function step(s: State, e: Event): Step {
+  switch (e.type) {
     case 'start':
-      switch (
-        s.kind
-      ) {
+      switch (s.kind) {
         case 'idle': {
-          const run =
-            s.seq +
-            1;
+          const run = s.seq + 1;
           return {
-            state:
+            state: {
+              kind: 'starting',
+              seq: run,
+              run,
+              error: s.error,
+            },
+            effects: [
               {
-                kind: 'starting',
-                seq: run,
+                type: 'launch',
                 run,
-                error:
-                  s.error,
               },
-            effects:
-              [
-                {
-                  type: 'launch',
-                  run,
-                },
-                {
-                  type: 'join',
-                  run,
-                },
-              ],
+              {
+                type: 'join',
+                run,
+              },
+            ],
           };
         }
         case 'starting':
           return {
-            state:
-              s,
-            effects:
-              [
-                {
-                  type: 'join',
-                  run: s.run,
-                },
-              ],
+            state: s,
+            effects: [
+              {
+                type: 'join',
+                run: s.run,
+              },
+            ],
           };
         case 'cancelling': {
-          if (
-            s.restart !==
-            null
-          )
+          if (s.restart !== null)
             return {
-              state:
-                s,
-              effects:
-                [
-                  {
-                    type: 'join',
-                    run: s.restart,
-                  },
-                ],
-            };
-          const restart =
-            s.seq +
-            1;
-          return {
-            state:
-              {
-                ...s,
-                seq: restart,
-                restart,
-              },
-            effects:
-              [
+              state: s,
+              effects: [
                 {
                   type: 'join',
-                  run: restart,
+                  run: s.restart,
                 },
               ],
+            };
+          const restart = s.seq + 1;
+          return {
+            state: {
+              ...s,
+              seq: restart,
+              restart,
+            },
+            effects: [
+              {
+                type: 'join',
+                run: restart,
+              },
+            ],
           };
         }
         case 'active':
           return {
-            state:
-              s,
-            effects:
-              [
-                {
-                  type: 'answer-now',
-                },
-              ],
+            state: s,
+            effects: [
+              {
+                type: 'answer-now',
+              },
+            ],
           };
         default:
-          return unreachable(
-            s,
-          );
+          return unreachable(s);
       }
 
     case 'stop':
-      switch (
-        s.kind
-      ) {
+      switch (s.kind) {
         case 'idle':
           return {
-            state:
-              s,
-            effects:
-              [],
+            state: s,
+            effects: [],
           };
         case 'starting':
           return {
-            state:
+            state: {
+              kind: 'cancelling',
+              seq: s.seq,
+              run: s.run,
+              restart: null,
+              error: s.error,
+            },
+            effects: [
               {
-                kind: 'cancelling',
-                seq: s.seq,
-                run: s.run,
-                restart:
-                  null,
-                error:
-                  s.error,
+                type: 'stop-device',
               },
-            effects:
-              [
-                {
-                  type: 'stop-device',
-                },
-              ],
+            ],
           };
         case 'cancelling':
           return {
-            state:
-              {
-                ...s,
-                restart:
-                  null,
-              },
+            state: {
+              ...s,
+              restart: null,
+            },
             effects:
-              s.restart ===
-              null
+              s.restart === null
                 ? [
                     {
                       type: 'stop-device',
@@ -320,103 +252,76 @@ export function step(
                     {
                       type: 'answer',
                       run: s.restart,
-                      error:
-                        null,
+                      error: null,
                     },
                   ],
           };
         case 'active':
           // Stop before unsubscribing: stopping releases held notes, and those `off` events must still be heard.
           return {
-            state:
+            state: {
+              kind: 'idle',
+              seq: s.seq,
+              error: null,
+            },
+            effects: [
               {
-                kind: 'idle',
-                seq: s.seq,
-                error:
-                  null,
+                type: 'stop-device',
               },
-            effects:
-              [
-                {
-                  type: 'stop-device',
-                },
-                {
-                  type: 'unsubscribe',
-                },
-              ],
+              {
+                type: 'unsubscribe',
+              },
+            ],
           };
         default:
-          return unreachable(
-            s,
-          );
+          return unreachable(s);
       }
 
     case 'started':
     case 'failed': {
-      if (
-        (s.kind !==
-          'starting' &&
-          s.kind !==
-            'cancelling') ||
-        s.run !==
-          e.run
-      ) {
+      if ((s.kind !== 'starting' && s.kind !== 'cancelling') || s.run !== e.run) {
         return {
-          state:
-            s,
-          effects:
-            [],
+          state: s,
+          effects: [],
         };
       }
-      if (
-        s.kind ===
-        'starting'
-      ) {
-        return e.type ===
-          'started'
+      if (s.kind === 'starting') {
+        return e.type === 'started'
           ? {
-              state:
+              state: {
+                kind: 'active',
+                seq: s.seq,
+                run: s.run,
+              },
+              effects: [
                 {
-                  kind: 'active',
-                  seq: s.seq,
+                  type: 'answer',
                   run: s.run,
+                  error: null,
                 },
-              effects:
-                [
-                  {
-                    type: 'answer',
-                    run: s.run,
-                    error:
-                      null,
-                  },
-                ],
+              ],
             }
           : {
-              state:
+              state: {
+                kind: 'idle',
+                seq: s.seq,
+                error: e.error,
+              },
+              effects: [
                 {
-                  kind: 'idle',
-                  seq: s.seq,
-                  error:
-                    e.error,
+                  type: 'unsubscribe',
                 },
-              effects:
-                [
-                  {
-                    type: 'unsubscribe',
-                  },
-                  {
-                    type: 'answer',
-                    run: s.run,
-                    error:
-                      e.error,
-                  },
-                ],
+                {
+                  type: 'answer',
+                  run: s.run,
+                  error: e.error,
+                },
+              ],
             };
       }
       // Cancelling: the device acquired (or failed to acquire) what nobody wants any more.
       const unwind: Effect[] =
-        e.type ===
-        'started'
+        e.type === 'started'
           ? [
               {
                 type: 'stop-device',
@@ -430,86 +335,53 @@ export function step(
                 type: 'unsubscribe',
               },
             ];
-      unwind.push(
-        {
-          type: 'answer',
-          run: s.run,
-          error:
-            null,
-        },
-      );
-      if (
-        s.restart ===
-        null
-      ) {
+      unwind.push({
+        type: 'answer',
+        run: s.run,
+        error: null,
+      });
+      if (s.restart === null) {
         return {
-          state:
-            {
-              kind: 'idle',
-              seq: s.seq,
-              error:
-                s.error,
-            },
-          effects:
-            unwind,
+          state: {
+            kind: 'idle',
+            seq: s.seq,
+            error: s.error,
+          },
+          effects: unwind,
         };
       }
       return {
-        state:
+        state: {
+          kind: 'starting',
+          seq: s.seq,
+          run: s.restart,
+          error: s.error,
+        },
+        effects: [
+          ...unwind,
           {
-            kind: 'starting',
-            seq: s.seq,
+            type: 'launch',
             run: s.restart,
-            error:
-              s.error,
           },
-        effects:
-          [
-            ...unwind,
-            {
-              type: 'launch',
-              run: s.restart,
-            },
-          ],
+        ],
       };
     }
 
     default:
-      return unreachable(
-        e,
-      );
+      return unreachable(e);
   }
 }
 
 /** The next state alone. */
-export function transition(
-  s: State,
-  e: Event,
-): State {
-  return step(
-    s,
-    e,
-  )
-    .state;
+export function transition(s: State, e: Event): State {
+  return step(s, e).state;
 }
 
 /** The effects of taking `e` from `prev` (`next` is implied by the pair; kept for the shared machine shape). */
-export function effects(
-  prev: State,
-  _next: State,
-  e: Event,
-): Effect[] {
-  return step(
-    prev,
-    e,
-  )
-    .effects;
+export function effects(prev: State, _next: State, e: Event): Effect[] {
+  return step(prev, e).effects;
 }
 
-function unreachable(
-  x: never,
-): never {
-  throw new Error(
-    `device-lifecycle: unhandled ${JSON.stringify(x)}`,
-  );
+function unreachable(x: never): never {
+  throw new Error(`device-lifecycle: unhandled ${JSON.stringify(x)}`);
 }

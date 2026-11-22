@@ -1,23 +1,8 @@
-import type {
-  BuildingId,
-  CropId,
-  ItemId,
-} from '../content';
+import type { BuildingId, CropId, ItemId } from '../content';
 import type { Mover } from '../nav/mover';
 import type { SkinId } from '../skins';
-import type {
-  Arms,
-  CrimeCommand,
-  CrimeEvent,
-  CrimeReject,
-  Officer,
-} from './crime-types';
-import type {
-  CityCommand,
-  CityEvent,
-  CityReject,
-  CityState,
-} from './city-types';
+import type { Arms, CrimeCommand, CrimeEvent, CrimeReject, Officer } from './crime-types';
+import type { CityCommand, CityEvent, CityReject, CityState } from './city-types';
 
 /** One simulation tick is 50 ms of game time (20 Hz — the rate the P2P layer will stream at). */
 export const TICK_MS = 50;
@@ -33,17 +18,8 @@ export const WATER_LEVEL = 1;
 /** Level of the flat starting meadow. */
 export const MEADOW_LEVEL = 3;
 
-export type TerrainKind =
-  | 'water'
-  | 'sand'
-  | 'grass'
-  | 'forest'
-  | 'rock';
-export type Rot =
-  | 0
-  | 1
-  | 2
-  | 3;
+export type TerrainKind = 'water' | 'sand' | 'grass' | 'forest' | 'rock';
+export type Rot = 0 | 1 | 2 | 3;
 
 export interface Building {
   id: number;
@@ -52,19 +28,11 @@ export interface Building {
   z: number;
   rot: Rot;
   /** Machines (the harvester) keep what they gather here until a player collects it. */
-  storage?: Partial<
-    Record<
-      ItemId,
-      number
-    >
-  >;
+  storage?: Partial<Record<ItemId, number>>;
 }
 
 /** Where a customer is in their visit: walking to the stall, standing at it, or walking back to where they came from. */
-export type CustomerMode =
-  | 'arriving'
-  | 'waiting'
-  | 'leaving';
+export type CustomerMode = 'arriving' | 'waiting' | 'leaving';
 
 /** A customer: a `Mover` (position, route, facing) plus what they came for. */
 export interface Npc extends Mover {
@@ -89,16 +57,10 @@ export interface Npc extends Mover {
 }
 
 /** A farmhand's day: resting at the cottage, walking to a job, doing it, walking back. */
-export type WorkerState =
-  | 'home'
-  | 'toWork'
-  | 'working'
-  | 'toHome';
+export type WorkerState = 'home' | 'toWork' | 'working' | 'toHome';
 
 export interface WorkerTask {
-  kind:
-    | 'harvest'
-    | 'plant';
+  kind: 'harvest' | 'plant';
   x: number;
   z: number;
 }
@@ -142,12 +104,7 @@ export interface PlayerState {
   z: number;
   /** In-game money, whole units only. */
   money: number;
-  inventory: Partial<
-    Record<
-      ItemId,
-      number
-    >
-  >;
+  inventory: Partial<Record<ItemId, number>>;
   /** The skin currently worn. Always one of `ownedSkins`. */
   skin: SkinId;
   ownedSkins: SkinId[];
@@ -176,17 +133,11 @@ export interface World {
   height: number[];
   buildings: Building[];
   crops: Crop[];
-  players: Record<
-    string,
-    PlayerState
-  >;
+  players: Record<string, PlayerState>;
   /** The police on the island (world/police.ts). */
   officers: Officer[];
   /** Forest tiles that have been picked clean: tile index → tick they are ready again. */
-  foraged: Record<
-    string,
-    number
-  >;
+  foraged: Record<string, number>;
   npcs: Npc[];
   workers: Worker[];
   /** The city layer: roads, zones, utilities, population and milestones (world/city.ts). */
@@ -356,12 +307,7 @@ export type WorldEvent =
   | {
       type: 'collected';
       playerId: string;
-      items: Partial<
-        Record<
-          ItemId,
-          number
-        >
-      >;
+      items: Partial<Record<ItemId, number>>;
     }
   | {
       type: 'hired';
@@ -370,9 +316,7 @@ export type WorldEvent =
   | {
       type: 'workerQuit';
       workerId: number;
-      reason:
-        | 'unpaid'
-        | 'fired';
+      reason: 'unpaid' | 'fired';
     }
   | {
       type: 'skinBought';

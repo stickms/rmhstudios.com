@@ -5,23 +5,17 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const findMany = vi.hoisted(() =>
-  vi.fn(async (_args: unknown) => [
-    { communityId: 'c1', community: { name: 'Quiet Group' } },
-  ]),
+  vi.fn(async (_args: unknown) => [{ communityId: 'c1', community: { name: 'Quiet Group' } }]),
 );
 const emptyModel = new Proxy(
   {},
   {
-    get: (_t, method: string) =>
-      vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
+    get: (_t, method: string) => vi.fn(async () => (method === 'findUnique' || method === 'findFirst' ? null : [])),
   },
 );
 
 vi.mock('@/lib/prisma.server', () => ({
-  prisma: new Proxy(
-    {},
-    { get: (_t, model: string) => (model === 'communityMember' ? { findMany } : emptyModel) },
-  ),
+  prisma: new Proxy({}, { get: (_t, model: string) => (model === 'communityMember' ? { findMany } : emptyModel) }),
 }));
 vi.mock('@/lib/auth', () => ({
   auth: { api: { getSession: vi.fn(async () => ({ user: { id: 'u1' }, session: { id: 's1', userId: 'u1' } })) } },
@@ -40,9 +34,7 @@ describe('account export: community post alerts', () => {
     const res = await route.handlers.GET!({ request, params: {} });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { postAlerts: Record<string, unknown>[] };
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 'u1', postAlerts: 'all' } }),
-    );
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 'u1', postAlerts: 'all' } }));
     expect(body.postAlerts).toEqual([{ communityId: 'c1', communityName: 'Quiet Group', level: 'all' }]);
   });
 });

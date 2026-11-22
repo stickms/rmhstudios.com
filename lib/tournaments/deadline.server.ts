@@ -14,76 +14,41 @@
 import type { Prisma } from '@prisma/client';
 import { deadlineFor } from '@/lib/tournaments/scheduling';
 
-type Tx =
-  Prisma.TransactionClient;
+type Tx = Prisma.TransactionClient;
 
 /** Stamp one match that has just become ready. Answers whether a deadline was written. */
-export async function stampDeadline(
-  tx: Tx,
-  matchId: string,
-  now: Date = new Date(),
-): Promise<boolean> {
-  const match =
-    await tx.tournamentMatch.findUnique(
-      {
-        where:
-          {
-            id: matchId,
-          },
-        select:
-          {
-            id: true,
-            tournamentId: true,
-          },
-      },
-    );
-  if (
-    !match
-  )
-    return false;
-  const t =
-    await tx.tournament.findUnique(
-      {
-        where:
-          {
-            id: match.tournamentId,
-          },
-        select:
-          {
-            matchDeadlineHours: true,
-          },
-      },
-    );
-  const at =
-    deadlineFor(
-      now,
-      t?.matchDeadlineHours,
-    );
-  if (
-    !at
-  )
-    return false;
-  const stamped =
-    await tx.tournamentMatch.updateMany(
-      {
-        where:
-          {
-            id: match.id,
-            state:
-              'READY',
-            deadlineAt:
-              null,
-          },
-        data: {
-          deadlineAt:
-            at,
-        },
-      },
-    );
-  return (
-    stamped.count >
-    0
-  );
+export async function stampDeadline(tx: Tx, matchId: string, now: Date = new Date()): Promise<boolean> {
+  const match = await tx.tournamentMatch.findUnique({
+    where: {
+      id: matchId,
+    },
+    select: {
+      id: true,
+      tournamentId: true,
+    },
+  });
+  if (!match) return false;
+  const t = await tx.tournament.findUnique({
+    where: {
+      id: match.tournamentId,
+    },
+    select: {
+      matchDeadlineHours: true,
+    },
+  });
+  const at = deadlineFor(now, t?.matchDeadlineHours);
+  if (!at) return false;
+  const stamped = await tx.tournamentMatch.updateMany({
+    where: {
+      id: match.id,
+      state: 'READY',
+      deadlineAt: null,
+    },
+    data: {
+      deadlineAt: at,
+    },
+  });
+  return stamped.count > 0;
 }
 
 /**
@@ -99,52 +64,30 @@ export async function stampTournamentDeadlines(
     now?: Date;
   } = {},
 ): Promise<number> {
-  const t =
-    await tx.tournament.findUnique(
-      {
-        where:
-          {
-            id: tournamentId,
-          },
-        select:
-          {
-            matchDeadlineHours: true,
-          },
-      },
-    );
-  const at =
-    deadlineFor(
-      opts.now ??
-        new Date(),
-      t?.matchDeadlineHours,
-    );
-  if (
-    !at
-  )
-    return 0;
-  const stamped =
-    await tx.tournamentMatch.updateMany(
-      {
-        where:
-          {
-            tournamentId,
-            state:
-              'READY',
-            deadlineAt:
-              null,
-            ...(opts.round !=
-            null
-              ? {
-                  round:
-                    opts.round,
-                }
-              : {}),
-          },
-        data: {
-          deadlineAt:
-            at,
-        },
-      },
-    );
+  const t = await tx.tournament.findUnique({
+    where: {
+      id: tournamentId,
+    },
+    select: {
+      matchDeadlineHours: true,
+    },
+  });
+  const at = deadlineFor(opts.now ?? new Date(), t?.matchDeadlineHours);
+  if (!at) return 0;
+  const stamped = await tx.tournamentMatch.updateMany({
+    where: {
+      tournamentId,
+      state: 'READY',
+      deadlineAt: null,
+      ...(opts.round != null
+        ? {
+            round: opts.round,
+          }
+        : {}),
+    },
+    data: {
+      deadlineAt: at,
+    },
+  });
   return stamped.count;
 }

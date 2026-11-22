@@ -10,12 +10,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".cache/tsc/site.tsbuildinfo"
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.mts",
-    "app/routeTree.gen.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],
   "exclude": [
     "node_modules",
     "bazel-*",

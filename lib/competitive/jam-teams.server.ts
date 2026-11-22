@@ -23,9 +23,7 @@ import {
   type TeamRefusal,
 } from '@/lib/competitive/jam-teams';
 
-export type TeamResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; code: TeamRefusal; entryTitle?: string };
+export type TeamResult<T> = { ok: true; value: T } | { ok: false; code: TeamRefusal; entryTitle?: string };
 
 const refuse = (code: TeamRefusal, entryTitle?: string): { ok: false; code: TeamRefusal; entryTitle?: string } =>
   entryTitle === undefined ? { ok: false, code } : { ok: false, code, entryTitle };
@@ -96,7 +94,11 @@ export async function placementsOf(
   ];
 }
 
-async function blockedEitherWay(tx: Pick<Prisma.TransactionClient, 'userBlock'>, a: string, b: string): Promise<boolean> {
+async function blockedEitherWay(
+  tx: Pick<Prisma.TransactionClient, 'userBlock'>,
+  a: string,
+  b: string,
+): Promise<boolean> {
   const hit = await tx.userBlock.findFirst({
     where: {
       OR: [
@@ -166,27 +168,29 @@ export async function inviteTeammate(input: {
   if (entry.userId !== input.actorId) return refuse('not-owner');
   if (input.userId === entry.userId) return refuse('self');
 
-  const outcome = await prisma.$transaction(async (tx): Promise<Refused | { entry: TeamEntryDTO; created: boolean }> => {
-    await lockKey(tx, memberLockName(entry.jamId, input.userId));
-    await lockKey(tx, entryLockName(entry.id));
-    if (!isOpen(entry.jam)) return { code: 'closed' as const };
-    const existing = await tx.gameJamTeamMember.findUnique({
-      where: { entryId_userId: { entryId: entry.id, userId: input.userId } },
-      select: rowSelect,
-    });
-    if (existing) return { entry: toEntry(existing), created: false };
-    const refused = await ineligibility(tx, entry, input.userId, new Date());
-    if (refused) return { code: refused };
-    const placed = conflictingPlacement(await placementsOf(tx, entry.jamId, input.userId), entry.id);
-    if (placed) return { code: 'already-on-entry' as const, entryTitle: placed.title };
-    const rows = await tx.gameJamTeamMember.count({ where: { entryId: entry.id } });
-    if (!hasTeamRoom(rows)) return { code: 'full' as const };
-    const created = await tx.gameJamTeamMember.create({
-      data: { entryId: entry.id, userId: input.userId, jamId: entry.jamId, status: 'invited' },
-      select: rowSelect,
-    });
-    return { entry: toEntry(created), created: true };
-  });
+  const outcome = await prisma.$transaction(
+    async (tx): Promise<Refused | { entry: TeamEntryDTO; created: boolean }> => {
+      await lockKey(tx, memberLockName(entry.jamId, input.userId));
+      await lockKey(tx, entryLockName(entry.id));
+      if (!isOpen(entry.jam)) return { code: 'closed' as const };
+      const existing = await tx.gameJamTeamMember.findUnique({
+        where: { entryId_userId: { entryId: entry.id, userId: input.userId } },
+        select: rowSelect,
+      });
+      if (existing) return { entry: toEntry(existing), created: false };
+      const refused = await ineligibility(tx, entry, input.userId, new Date());
+      if (refused) return { code: refused };
+      const placed = conflictingPlacement(await placementsOf(tx, entry.jamId, input.userId), entry.id);
+      if (placed) return { code: 'already-on-entry' as const, entryTitle: placed.title };
+      const rows = await tx.gameJamTeamMember.count({ where: { entryId: entry.id } });
+      if (!hasTeamRoom(rows)) return { code: 'full' as const };
+      const created = await tx.gameJamTeamMember.create({
+        data: { entryId: entry.id, userId: input.userId, jamId: entry.jamId, status: 'invited' },
+        select: rowSelect,
+      });
+      return { entry: toEntry(created), created: true };
+    },
+  );
   if ('code' in outcome) return refuse(outcome.code, outcome.entryTitle);
 
   if (outcome.created) {

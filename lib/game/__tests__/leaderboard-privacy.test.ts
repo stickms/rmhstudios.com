@@ -50,7 +50,10 @@ type Where = {
 };
 
 /** Just enough of Prisma's where to read the fragments the privacy helpers produce. */
-function matches(where: Where | undefined, row: { userId: string | null; highScore?: number; score?: number }): boolean {
+function matches(
+  where: Where | undefined,
+  row: { userId: string | null; highScore?: number; score?: number },
+): boolean {
   if (!where) return true;
   if (where.userId?.in && (row.userId === null || !where.userId.in.includes(row.userId))) return false;
   if (where.userId?.notIn && row.userId !== null && where.userId.notIn.includes(row.userId)) return false;
@@ -79,13 +82,17 @@ vi.mock('@/lib/prisma.server', () => {
       },
       findMany: async ({ where }: { where: { hideFromLeaderboards: boolean } }) => {
         db.calls.profile++;
-        return db.profiles.filter((p) => p.hideFromLeaderboards === where.hideFromLeaderboards).map((p) => ({ userId: p.userId }));
+        return db.profiles
+          .filter((p) => p.hideFromLeaderboards === where.hideFromLeaderboards)
+          .map((p) => ({ userId: p.userId }));
       },
     },
     user: {
       findMany: async ({ where }: { where: { bannedUntil: { gt: Date } } }) => {
         db.calls.user++;
-        return db.users.filter((u) => u.bannedUntil !== null && u.bannedUntil > where.bannedUntil.gt).map((u) => ({ id: u.id }));
+        return db.users
+          .filter((u) => u.bannedUntil !== null && u.bannedUntil > where.bannedUntil.gt)
+          .map((u) => ({ id: u.id }));
       },
     },
     voidBreakerPlayer: {
@@ -200,7 +207,12 @@ describe('the switch', () => {
   it('only touches the caller’s own row', async () => {
     await setLeaderboardHidden('a', true);
     expect(db.profiles.find((p) => p.userId === 'hider')?.hideFromLeaderboards).toBe(true);
-    expect(db.profiles.filter((p) => p.hideFromLeaderboards).map((p) => p.userId).sort()).toEqual(['a', 'hider']);
+    expect(
+      db.profiles
+        .filter((p) => p.hideFromLeaderboards)
+        .map((p) => p.userId)
+        .sort(),
+    ).toEqual(['a', 'hider']);
   });
 });
 

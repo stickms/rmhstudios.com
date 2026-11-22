@@ -103,11 +103,23 @@ export function Stepper({
     'inline-flex size-8 items-center justify-center rounded-app-sm border border-app-border bg-app-surface text-app-text hover:bg-app-surface-hover disabled:opacity-45 pointer-coarse:size-11';
   return (
     <div className="inline-flex items-center gap-1" role="group" aria-label={label}>
-      <button type="button" className={btn} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))} aria-label={t('stepper.less', { defaultValue: 'Decrease {{label}}', label })}>
+      <button
+        type="button"
+        className={btn}
+        disabled={value <= min}
+        onClick={() => onChange(Math.max(min, value - 1))}
+        aria-label={t('stepper.less', { defaultValue: 'Decrease {{label}}', label })}
+      >
         <Minus className="size-3.5" aria-hidden />
       </button>
       <span className="min-w-8 text-center font-mono text-sm tabular-nums">{value}</span>
-      <button type="button" className={btn} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))} aria-label={t('stepper.more', { defaultValue: 'Increase {{label}}', label })}>
+      <button
+        type="button"
+        className={btn}
+        disabled={value >= max}
+        onClick={() => onChange(Math.min(max, value + 1))}
+        aria-label={t('stepper.more', { defaultValue: 'Increase {{label}}', label })}
+      >
         <Plus className="size-3.5" aria-hidden />
       </button>
     </div>
@@ -154,7 +166,12 @@ export function Picker({
   const full = limit !== undefined && selected.length >= limit;
   return (
     <div className="flex flex-col gap-2">
-      <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={placeholder} aria-label={placeholder} />
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+      />
       <ul className="rmhc-list rounded-app-sm border border-app-border">
         {shown.length === 0 ? <li className="p-3 text-sm text-app-text-muted">{emptyText}</li> : null}
         {shown.map((item) => {
@@ -172,7 +189,11 @@ export function Picker({
                     'inline-flex size-8 shrink-0 items-center justify-center rounded-app-sm border pointer-coarse:size-11 disabled:opacity-45',
                     on ? 'border-app-accent bg-app-accent text-app-accent-fg' : 'border-app-border bg-app-surface',
                   )}
-                  aria-label={on ? t('picker.remove', { defaultValue: 'Remove {{name}}', name: item.name }) : t('picker.add', { defaultValue: 'Add {{name}}', name: item.name })}
+                  aria-label={
+                    on
+                      ? t('picker.remove', { defaultValue: 'Remove {{name}}', name: item.name })
+                      : t('picker.add', { defaultValue: 'Add {{name}}', name: item.name })
+                  }
                 >
                   {on ? <Check className="size-4" aria-hidden /> : <Plus className="size-4" aria-hidden />}
                 </button>
@@ -186,7 +207,9 @@ export function Picker({
                   {item.meta ? <span className="font-mono text-xs text-app-text-muted">{item.meta}</span> : null}
                 </button>
               </div>
-              {open === item.id && item.text ? <p className="rmhc-prose px-12 pb-3 text-sm text-app-text-muted">{item.text}</p> : null}
+              {open === item.id && item.text ? (
+                <p className="rmhc-prose px-12 pb-3 text-sm text-app-text-muted">{item.text}</p>
+              ) : null}
             </li>
           );
         })}

@@ -1,9 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
-import {
-  getLeaderboardPrivacyApi,
-  setLeaderboardPrivacyApi,
-} from '@/lib/game/leaderboard-privacy.contract';
+import { getLeaderboardPrivacyApi, setLeaderboardPrivacyApi } from '@/lib/game/leaderboard-privacy.contract';
 import { setLeaderboardPrivacyBody } from '@/lib/game/leaderboard-privacy-schema';
 import { getLeaderboardPrivacy, setLeaderboardHidden } from '@/lib/game/leaderboard-privacy-settings.server';
 

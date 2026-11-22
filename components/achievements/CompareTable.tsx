@@ -16,7 +16,8 @@ const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
 /** Rarity as a percentage ("4%"); under a tenth of a percent it is "<0.1%". */
 function formatShare(share: number, locale?: string): string {
   const percent = share * 100;
-  if (percent < 0.1) return `<${new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(0.001)}`;
+  if (percent < 0.1)
+    return `<${new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(0.001)}`;
   return new Intl.NumberFormat(locale, {
     style: 'percent',
     maximumFractionDigits: percent < 10 ? 1 : 0,
@@ -28,9 +29,7 @@ function StateText({ side, target }: { side: SideState; target: number }) {
   const { t } = useTranslation('achievement-compare');
   const lf = useLocaleFormat();
   if (side.unlocked) {
-    const date = side.unlockedAt
-      ? lf.date(new Date(side.unlockedAt), { dateStyle: 'medium' })
-      : null;
+    const date = side.unlockedAt ? lf.date(new Date(side.unlockedAt), { dateStyle: 'medium' }) : null;
     return (
       <>
         <span className="font-medium text-site-text">{t('state-unlocked', { defaultValue: 'Unlocked' })}</span>

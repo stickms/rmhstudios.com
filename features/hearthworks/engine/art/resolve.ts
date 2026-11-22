@@ -1,17 +1,7 @@
-import {
-  PROCEDURAL_MODELS,
-  type ModelId,
-  type ModelSpec,
-} from './models';
+import { PROCEDURAL_MODELS, type ModelId, type ModelSpec } from './models';
 
 /** Models that have a Source-engine counterpart in the asset channels. Empty until Phase 2's characters land. */
-export const SOURCE_MODEL_MAP: Partial<
-  Record<
-    ModelId,
-    string
-  >
-> =
-  {};
+export const SOURCE_MODEL_MAP: Partial<Record<ModelId, string>> = {};
 
 export type ResolvedModel =
   | {
@@ -25,19 +15,9 @@ export type ResolvedModel =
     };
 
 /** Fetches a model from the Valve-derived asset channels (`/api/*-game/assets/`). Rejects if unreachable. */
-export async function loadSourceModel(
-  path: string,
-): Promise<unknown> {
-  const res =
-    await fetch(
-      `/api/hl2-game/assets/${path}`,
-    );
-  if (
-    !res.ok
-  )
-    throw new Error(
-      `source asset unavailable: ${path} (${res.status})`,
-    );
+export async function loadSourceModel(path: string): Promise<unknown> {
+  const res = await fetch(`/api/hl2-game/assets/${path}`);
+  if (!res.ok) throw new Error(`source asset unavailable: ${path} (${res.status})`);
   return res.arrayBuffer();
 }
 
@@ -48,36 +28,17 @@ export async function loadSourceModel(
 export async function resolveModel(
   id: ModelId,
   opts: {
-    loader?: (
-      path: string,
-    ) => Promise<unknown>;
-    sourceMap?: Partial<
-      Record<
-        ModelId,
-        string
-      >
-    >;
+    loader?: (path: string) => Promise<unknown>;
+    sourceMap?: Partial<Record<ModelId, string>>;
   } = {},
 ): Promise<ResolvedModel> {
-  const path =
-    (opts.sourceMap ??
-      SOURCE_MODEL_MAP)[
-      id
-    ];
-  if (
-    path
-  ) {
+  const path = (opts.sourceMap ?? SOURCE_MODEL_MAP)[id];
+  if (path) {
     try {
       return {
         kind: 'source',
         path,
-        payload:
-          await (
-            opts.loader ??
-            loadSourceModel
-          )(
-            path,
-          ),
+        payload: await (opts.loader ?? loadSourceModel)(path),
       };
     } catch {
       // fall through to the procedural model
@@ -85,8 +46,6 @@ export async function resolveModel(
   }
   return {
     kind: 'procedural',
-    spec: PROCEDURAL_MODELS[
-      id
-    ],
+    spec: PROCEDURAL_MODELS[id],
   };
 }

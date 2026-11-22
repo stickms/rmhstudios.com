@@ -10,11 +10,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useArrival } from '@/components/ui/arrive';
 import { api, apiQuery } from '@/lib/contract/client';
 import { errorField } from '@/lib/http';
-import {
-  cancelHandoverApi,
-  getHandoverApi,
-  offerHandoverApi,
-} from '@/lib/communities/handover.contract';
+import { cancelHandoverApi, getHandoverApi, offerHandoverApi } from '@/lib/communities/handover.contract';
 import { handoverDaysLeft, type HandoverUserDTO } from '@/lib/communities/handover';
 
 const who = (u: HandoverUserDTO): string => (u.handle ? `@${u.handle}` : (u.name ?? ''));
@@ -38,9 +34,7 @@ export function HandoverPanel({ slug }: { slug: string }) {
     if (code === 'pending-exists') {
       toast.error(t('error-pending', { defaultValue: 'There is already a pending offer.' }));
     } else if (code === 'not-moderator' || code === 'recipient-banned' || code === 'blocked') {
-      toast.error(
-        t('error-recipient', { defaultValue: "That member can't be offered ownership." }),
-      );
+      toast.error(t('error-recipient', { defaultValue: "That member can't be offered ownership." }));
     } else {
       toast.error(t('error-generic', { defaultValue: 'Something went wrong. Try again.' }));
     }

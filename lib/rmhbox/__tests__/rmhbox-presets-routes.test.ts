@@ -59,7 +59,10 @@ vi.mock('@/lib/prisma.server', () => {
       return row;
     },
     update: async ({ where, data }: { where: { id: string }; data: Partial<Row> }) =>
-      Object.assign(db.rows.find((r) => r.id === where.id)!, data),
+      Object.assign(
+        db.rows.find((r) => r.id === where.id)!,
+        data,
+      ),
     updateMany: async ({ where, data }: { where: Where; data: Partial<Row> }) => {
       const hit = db.rows.filter((r) => match(r, where));
       hit.forEach((r) => Object.assign(r, data));
@@ -119,7 +122,10 @@ describe('POST /api/rmhbox/presets', () => {
     ['an empty name', { ...valid, name: '   ' }],
     ['a name over 40 characters', { ...valid, name: 'x'.repeat(41) }],
     ['values that are not flat', { ...valid, values: { totalRounds: { deep: 1 } } }],
-    ['values over 4 KB', { ...valid, values: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`k${i}`, 'y'.repeat(200)])) }],
+    [
+      'values over 4 KB',
+      { ...valid, values: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`k${i}`, 'y'.repeat(200)])) },
+    ],
     ['a missing minigame', { name: 'x', values: {} }],
   ])('answers 400 for %s', async (_label, body) => {
     expect((await post(body)).status).toBe(400);

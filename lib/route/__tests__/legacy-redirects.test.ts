@@ -13,9 +13,7 @@ const ROOT = join(__dirname, '../../..');
 const routeTree = readFileSync(join(ROOT, 'app/routeTree.gen.ts'), 'utf8');
 
 /** Every `fullPath` the generated route tree declares. */
-const fullPaths = new Set(
-  [...routeTree.matchAll(/fullPath: '([^']+)'/g)].map((m) => m[1]!.replace(/(.)\/$/, '$1')),
-);
+const fullPaths = new Set([...routeTree.matchAll(/fullPath: '([^']+)'/g)].map((m) => m[1]!.replace(/(.)\/$/, '$1')));
 
 describe('legacy redirects', () => {
   it('match with or without a trailing slash, and only exact paths', () => {

@@ -31,12 +31,15 @@ vi.mock('@/lib/prisma.server', () => {
       if (k === 'OR') {
         if (!(v as Record<string, unknown>[]).some((alt) => where(row, alt))) return false;
       } else if (v && typeof v === 'object' && 'in' in (v as object)) {
-        if (!((v as { in: unknown[] }).in).includes((row as unknown as Record<string, unknown>)[k])) return false;
+        if (!(v as { in: unknown[] }).in.includes((row as unknown as Record<string, unknown>)[k])) return false;
       } else if ((row as unknown as Record<string, unknown>)[k] !== v) return false;
     }
     return true;
   };
-  const withUser = (r: Cohost) => ({ ...r, user: h.users.get(r.userId) ?? { id: r.userId, name: null, handle: null, image: null } });
+  const withUser = (r: Cohost) => ({
+    ...r,
+    user: h.users.get(r.userId) ?? { id: r.userId, name: null, handle: null, image: null },
+  });
   const eventCohost = {
     async findUnique({ where: w }: { where: { eventId_userId: { eventId: string; userId: string } } }) {
       await tick();
@@ -289,25 +292,40 @@ describe('inviting', () => {
   it('refuses a non-member of the community on a community event', async () => {
     setupEvent({ owner: 'COMMUNITY', communityId: 'c1' });
     h.role.mockImplementation(async (_c, u) => (u === 'a' ? null : 'MEMBER'));
-    expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'a' })).toEqual({ ok: false, code: 'not-member' });
+    expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'a' })).toEqual({
+      ok: false,
+      code: 'not-member',
+    });
     expect((await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'b' })).ok).toBe(true);
   });
 
   it('refuses the host themself, a canceled event, an unknown member and a non-host', async () => {
     expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'host' })).toEqual({ ok: false, code: 'self' });
-    expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'nobody' })).toEqual({ ok: false, code: 'user-not-found' });
+    expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'nobody' })).toEqual({
+      ok: false,
+      code: 'user-not-found',
+    });
     addRow('a', 'accepted');
     expect(await inviteCohost({ eventId: 'e1', actorId: 'a', userId: 'b' })).toEqual({ ok: false, code: 'not-host' });
-    expect(await inviteCohost({ eventId: 'e1', actorId: 'stranger', userId: 'b' })).toEqual({ ok: false, code: 'not-found' });
+    expect(await inviteCohost({ eventId: 'e1', actorId: 'stranger', userId: 'b' })).toEqual({
+      ok: false,
+      code: 'not-found',
+    });
     setupEvent({ canceledAt: new Date() });
-    expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'b' })).toEqual({ ok: false, code: 'canceled' });
+    expect(await inviteCohost({ eventId: 'e1', actorId: 'host', userId: 'b' })).toEqual({
+      ok: false,
+      code: 'canceled',
+    });
   });
 });
 
 describe('answering an invitation', () => {
   it('accepting makes them a co-host and tells the host once', async () => {
     addRow('a', 'invited');
-    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'a', accept: true })).toEqual({ ok: true, value: { accept: true } });
+    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'a', accept: true })).toEqual({
+      ok: true,
+      value: { accept: true },
+    });
     expect(statusOf('a')).toBe('accepted');
     expect(h.notify).toHaveBeenCalledTimes(1);
     expect(h.notify.mock.calls[0]![0]).toMatchObject({ userId: 'host', entityType: 'event_cohost' });
@@ -337,16 +355,28 @@ describe('answering an invitation', () => {
     addRow('b', 'invited');
     h.blocks.push({ blockerId: 'a', blockedId: 'host' });
     user('b', { bannedUntil: new Date(Date.now() + 86_400_000) });
-    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'a', accept: true })).toEqual({ ok: false, code: 'blocked' });
-    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'b', accept: true })).toEqual({ ok: false, code: 'banned' });
+    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'a', accept: true })).toEqual({
+      ok: false,
+      code: 'blocked',
+    });
+    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'b', accept: true })).toEqual({
+      ok: false,
+      code: 'banned',
+    });
     expect(statusOf('a')).toBe('invited');
     expect(h.notify).not.toHaveBeenCalled();
   });
 
   it('there is nothing to answer without an invitation, and a co-host cannot decline', async () => {
-    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'stranger', accept: true })).toEqual({ ok: false, code: 'no-invite' });
+    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'stranger', accept: true })).toEqual({
+      ok: false,
+      code: 'no-invite',
+    });
     addRow('a', 'accepted');
-    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'a', accept: false })).toEqual({ ok: false, code: 'already-accepted' });
+    expect(await respondToCohostInvite({ eventId: 'e1', userId: 'a', accept: false })).toEqual({
+      ok: false,
+      code: 'already-accepted',
+    });
     expect(statusOf('a')).toBe('accepted');
   });
 });
@@ -401,7 +431,10 @@ describe('removing and listing', () => {
   it('the host removes a co-host or an invitation, and nobody is told; a stranger is told nothing exists', async () => {
     addRow('a', 'accepted');
     addRow('b', 'invited');
-    expect(await removeCohost({ eventId: 'e1', actorId: 'stranger', userId: 'a' })).toEqual({ ok: false, code: 'not-found' });
+    expect(await removeCohost({ eventId: 'e1', actorId: 'stranger', userId: 'a' })).toEqual({
+      ok: false,
+      code: 'not-found',
+    });
     expect((await removeCohost({ eventId: 'e1', actorId: 'host', userId: 'a' })).ok).toBe(true);
     expect((await removeCohost({ eventId: 'e1', actorId: 'host', userId: 'b' })).ok).toBe(true);
     expect((await removeCohost({ eventId: 'e1', actorId: 'host', userId: 'b' })).ok).toBe(true);

@@ -12,17 +12,10 @@
  */
 
 /** Discord's own status vocabulary, which the page maps to Discord's colours. */
-export type DiscordStatus =
-  | 'online'
-  | 'idle'
-  | 'dnd'
-  | 'offline';
+export type DiscordStatus = 'online' | 'idle' | 'dnd' | 'offline';
 
 /** The three periods the summarizer writes for. */
-export type SummaryPeriod =
-  | 'day'
-  | 'week'
-  | 'month';
+export type SummaryPeriod = 'day' | 'week' | 'month';
 
 /** A DeepSeek-written write-up of one period. */
 export interface WatchSummaryDTO {
@@ -31,13 +24,9 @@ export interface WatchSummaryDTO {
   periodKey: string;
   headline: string;
   summary: string;
-  verdict:
-    | string
-    | null;
+  verdict: string | null;
   /** One lowercase word, used for the calendar cell's tint. */
-  mood:
-    | string
-    | null;
+  mood: string | null;
   topics: string[];
   generatedAt: string;
 }
@@ -106,33 +95,19 @@ export interface WatchDayDTO {
 
   gamingSec: number;
   gameSessions: number;
-  topGame:
-    | string
-    | null;
+  topGame: string | null;
   topGameSec: number;
 
-  topChannel:
-    | string
-    | null;
+  topChannel: string | null;
   topChannelMessages: number;
 
   /** 24 entries, index 0 = local midnight. Null when the day predates them. */
-  hourlyMessages:
-    | number[]
-    | null;
-  hourlyVoiceSec:
-    | number[]
-    | null;
-  hourlyGamingSec:
-    | number[]
-    | null;
+  hourlyMessages: number[] | null;
+  hourlyVoiceSec: number[] | null;
+  hourlyGamingSec: number[] | null;
 
-  firstSeenAt:
-    | string
-    | null;
-  lastSeenAt:
-    | string
-    | null;
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
 
   summary: WatchSummaryDTO | null;
 }
@@ -148,19 +123,11 @@ export interface WatchActivityDTO {
   name: string;
   /** 0 playing · 1 streaming · 2 listening · 3 watching · 5 competing. */
   type: number;
-  details:
-    | string
-    | null;
-  state:
-    | string
-    | null;
-  startedAt:
-    | string
-    | null;
+  details: string | null;
+  state: string | null;
+  startedAt: string | null;
   /** Seconds since `startedAt`, or null when Discord did not report a start. */
-  durationSec:
-    | number
-    | null;
+  durationSec: number | null;
 }
 
 /** What he is doing at this exact moment — the profile card's contents. */
@@ -169,13 +136,9 @@ export interface WatchLiveDTO {
   /** How long the status has held, in seconds. */
   statusForSec: number;
   displayName: string;
-  username:
-    | string
-    | null;
+  username: string | null;
   /** Fully-built CDN URL, or null for the default avatar. */
-  avatarUrl:
-    | string
-    | null;
+  avatarUrl: string | null;
 
   /**
    * Which clients he is signed in on right now. Discord shows a phone badge for
@@ -190,9 +153,7 @@ export interface WatchLiveDTO {
 
   /** Present only while he is actually in a voice channel. */
   voice: {
-    channelName:
-      | string
-      | null;
+    channelName: string | null;
     joinedAt: string;
     /** Live: measured to the moment the response was built. */
     durationSec: number;
@@ -217,28 +178,20 @@ export interface WatchLiveDTO {
    * `activities`: it is not an activity and never accrues time.
    */
   customStatus: {
-    text:
-      | string
-      | null;
-    emoji:
-      | string
-      | null;
+    text: string | null;
+    emoji: string | null;
   } | null;
 
   /** The last thing he said, if anything is still within retention. */
   lastMessage: {
     sentAt: string;
-    channelName:
-      | string
-      | null;
+    channelName: string | null;
     /** Seconds since it was sent. */
     agoSec: number;
   } | null;
 
   /** Latest of any tracked activity, or null if he has never been seen. */
-  lastSeenAt:
-    | string
-    | null;
+  lastSeenAt: string | null;
 }
 
 /** Lifetime figures across every tracked day. */
@@ -283,35 +236,23 @@ export interface WatchTotalsDTO {
    * differently ("not once in 120 days") because "120" and "at least 120" are
    * not the same claim.
    */
-  daysSinceJobMention:
-    | number
-    | null;
+  daysSinceJobMention: number | null;
   /** The dateKey it last came up on, for the link. */
-  lastJobMentionDateKey:
-    | string
-    | null;
+  lastJobMentionDateKey: string | null;
 
   typingStarts: number;
   typingAbandoned: number;
   typingAbandonedSec: number;
   /** The single biggest day, for the "personal best" line. */
   peakVoiceSec: number;
-  peakVoiceDateKey:
-    | string
-    | null;
+  peakVoiceDateKey: string | null;
   /** Consecutive days ending today with any voice time. */
   currentStreak: number;
   longestStreak: number;
-  topGame:
-    | string
-    | null;
+  topGame: string | null;
   topGameSec: number;
-  topChannel:
-    | string
-    | null;
-  firstTrackedDateKey:
-    | string
-    | null;
+  topChannel: string | null;
+  firstTrackedDateKey: string | null;
 }
 
 /** Everything the page renders, in one response. */

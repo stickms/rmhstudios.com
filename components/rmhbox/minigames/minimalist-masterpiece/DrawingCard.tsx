@@ -26,21 +26,9 @@ interface DrawingCardProps {
   className?: string;
 }
 
-function strokeToPath(
-  stroke: MMStroke,
-): string {
-  if (
-    stroke
-      .points
-      .length ===
-    0
-  )
-    return '';
-  const [
-    first,
-    ...rest
-  ] =
-    stroke.points;
+function strokeToPath(stroke: MMStroke): string {
+  if (stroke.points.length === 0) return '';
+  const [first, ...rest] = stroke.points;
   let d = `M ${first.x} ${first.y}`;
   for (const pt of rest) {
     d += ` L ${pt.x} ${pt.y}`;
@@ -48,16 +36,9 @@ function strokeToPath(
   return d;
 }
 
-export default function DrawingCard({
-  strokes,
-  backgroundColor = '#ffffff',
-  label,
-  className = '',
-}: DrawingCardProps) {
+export default function DrawingCard({ strokes, backgroundColor = '#ffffff', label, className = '' }: DrawingCardProps) {
   return (
-    <div
-      className={`flex flex-col items-center gap-1 ${className}`}
-    >
+    <div className={`flex flex-col items-center gap-1 ${className}`}>
       <div className="aspect-square rounded-app-sm border border-app-border overflow-hidden max-w-48">
         <svg
           viewBox="0 0 300 300"
@@ -67,38 +48,20 @@ export default function DrawingCard({
             backgroundColor,
           }}
         >
-          {strokes.map(
-            (
-              stroke,
-            ) => (
-              <path
-                key={
-                  stroke.id
-                }
-                d={strokeToPath(
-                  stroke,
-                )}
-                stroke={
-                  stroke.color
-                }
-                strokeWidth={
-                  stroke.width
-                }
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            ),
-          )}
+          {strokes.map((stroke) => (
+            <path
+              key={stroke.id}
+              d={strokeToPath(stroke)}
+              stroke={stroke.color}
+              strokeWidth={stroke.width}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          ))}
         </svg>
       </div>
-      {label && (
-        <span className="text-xs text-app-text-muted">
-          {
-            label
-          }
-        </span>
-      )}
+      {label && <span className="text-xs text-app-text-muted">{label}</span>}
     </div>
   );
 }

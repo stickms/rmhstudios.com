@@ -22,6 +22,10 @@ export const recordTestBody = z
       .refine((k) => new Set(k).size === k.length),
     durationMs: z.number().finite().min(0),
     missedCardIds: z.array(z.string().min(1).max(64)).max(MAX_TEST_POINTS),
-    seed: z.number().int().min(0).max(2 ** 31 - 1),
+    seed: z
+      .number()
+      .int()
+      .min(0)
+      .max(2 ** 31 - 1),
   })
   .refine((b) => b.correct <= b.total, { path: ['correct'] });
