@@ -185,7 +185,7 @@ export function CensusPanel() {
     {
       id: 'quiet',
       header: t('census-col-quiet', {
-        defaultValue: '{{days}} days',
+        count: Number(census?.quietDays ?? CENSUS_QUIET_DAYS), defaultValue_one: '{{days}} day', defaultValue: '{{days}} days',
         days: census?.quietDays ?? CENSUS_QUIET_DAYS,
       }),
       render: (r) => (
@@ -276,7 +276,7 @@ export function CensusPanel() {
     {
       id: 'quiet',
       header: t('census-col-quiet', {
-        defaultValue: '{{days}} days',
+        count: Number(census?.quietDays ?? CENSUS_QUIET_DAYS), defaultValue_one: '{{days}} day', defaultValue: '{{days}} days',
         days: census?.quietDays ?? CENSUS_QUIET_DAYS,
       }),
       render: (r) => (
@@ -377,7 +377,7 @@ export function CensusPanel() {
           <option value="all">{t('census-filter-all', { defaultValue: 'All' })}</option>
           <option value="quiet">
             {t('census-filter-quiet', {
-              defaultValue: 'Quiet for {{days}} days',
+              count: Number(CENSUS_QUIET_DAYS), defaultValue_one: 'Quiet for {{days}} day', defaultValue: 'Quiet for {{days}} days',
               days: CENSUS_QUIET_DAYS,
             })}
           </option>
@@ -555,7 +555,7 @@ export function CensusPanel() {
                 <ul className="mt-2 max-w-2xl space-y-2 t-body text-site-text-muted">
                   <li>
                     {t('census-note-actives', {
-                      defaultValue:
+                      count: Number(census.activeDays), defaultValue_one: 'Actives are distinct signed-in users in the last {{days}} day. Signed-out visitors are not counted anywhere.', defaultValue:
                         'Actives are distinct signed-in users in the last {{days}} days. Signed-out visitors are not counted anywhere.',
                       days: census.activeDays,
                     })}

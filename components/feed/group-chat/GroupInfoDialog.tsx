@@ -456,6 +456,7 @@ function AddPeople({ group, onChanged }: { group: Group; onChanged: () => void |
         <p className="t-meta">
           {t('batch-full', {
             count: ADD_BATCH_MAX,
+            defaultValue_one: 'You can add up to {{count}} person at a time.',
             defaultValue: 'You can add up to {{count}} people at a time.',
           })}
         </p>

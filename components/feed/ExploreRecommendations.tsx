@@ -251,7 +251,7 @@ export function ExploreRecommendations({
                     <span className="t-meta block truncate">
                       {t('follower-count', {
                         count: u.followerCount,
-                        defaultValue: '{{count}} followers',
+                        defaultValue_one: '{{count}} follower', defaultValue: '{{count}} followers',
                       })}
                     </span>
                   </span>

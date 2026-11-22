@@ -103,7 +103,7 @@ function factorValue(factor: CreditFactor, t: TFunction): string {
       });
     case 'age':
       return t('credit.value.age', {
-        defaultValue: '{{years}} years on file',
+        count: Number(factor.value.toFixed(1)), defaultValue_one: '{{years}} year on file', defaultValue: '{{years}} years on file',
         years: factor.value.toFixed(1),
       });
     case 'mix':
@@ -492,7 +492,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) { const fmt = 
                 <span className="text-site-text-muted">{factorValue(factor, t)}</span>
                 <span className="shrink-0 font-medium text-site-text tabular-nums">
                   {t('credit.penalty', {
-                    defaultValue: '−{{points}} pts',
+                    count: Number(Math.round(factor.penaltyPoints)), defaultValue_one: '−{{points}} pt', defaultValue: '−{{points}} pts',
                     points: Math.round(factor.penaltyPoints),
                   })}
                 </span>

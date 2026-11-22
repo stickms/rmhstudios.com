@@ -218,6 +218,7 @@ export function AccountStandingPanel() {
             </dt>
             <dd className="text-lg font-semibold text-site-text">
               {t('standing-appeal-days', {
+                defaultValue_one: '{{count}} day',
                 defaultValue: '{{count}} days',
                 count: standing.appealWindowDays,
               })}

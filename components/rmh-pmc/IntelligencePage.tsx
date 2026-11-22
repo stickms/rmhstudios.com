@@ -154,7 +154,7 @@ export default function IntelligencePage() {
             ))}
           </div>
           <p className="meta" role="status" aria-live="polite" style={{ margin: '20px 0 16px' }}>
-            {t('manifest-count', { defaultValue: '{{shown}} of {{total}} dispatches', shown: visible.length, total: DISPATCHES.length })}
+            {t('manifest-count', { count: Number(DISPATCHES.length), defaultValue_one: '{{shown}} of {{total}} dispatch', defaultValue: '{{shown}} of {{total}} dispatches', shown: visible.length, total: DISPATCHES.length })}
           </p>
           <div className="rows">
             {visible.map((d) => (

@@ -29,7 +29,7 @@
   "retention-mature": "Mature cards (21 days or more)",
   "retention-note": "Reviews not graded Again, on cards already scheduled at that age.",
   "retention-too-few": "Not enough reviews yet",
-  "retention-value_one": "{{rate}} of {{count}} reviews",
+  "retention-value_one": "{{rate}} of {{count}} review",
   "retention-value_other": "{{rate}} of {{count}} reviews",
   "retention-young": "Young cards (1 to 20 days)",
   "retry": "Try again",

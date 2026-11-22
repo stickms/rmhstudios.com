@@ -18,7 +18,7 @@
   "dead-rest": "Everything else",
   "dead-since": "Counting since {{date}}.",
   "errors-count": "{{count}} events",
-  "errors-count_one": "{{count}} events",
+  "errors-count_one": "{{count}} event",
   "errors-count_other": "{{count}} events",
   "errors-empty": "No client errors recorded yet.",
   "errors-regressed": "Regressed",

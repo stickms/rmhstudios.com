@@ -20,6 +20,6 @@
   "sort-popular": "Popular",
   "sort-recent": "Recent",
   "submit": "Submit",
-  "views-count_one": "{{count}} views",
+  "views-count_one": "{{count}} view",
   "views-count_other": "{{count}} views"
 }

@@ -70,6 +70,8 @@ export function AutoDeleteSetting() {
     }
     const ok = await confirm({
       title: t('autodelete-confirm-title', {
+        count: Number(next),
+        defaultValue_one: 'Auto-delete posts older than {{n}} month?',
         defaultValue: 'Auto-delete posts older than {{n}} months?',
         n: next,
       }),
@@ -129,6 +131,8 @@ export function AutoDeleteSetting() {
         {AUTO_DELETE_MONTHS.map((m) => (
           <option key={m} value={String(m)}>
             {t('autodelete-option', {
+              count: Number(m),
+              defaultValue_one: 'Older than {{n}} month',
               defaultValue: 'Older than {{n}} months',
               n: m,
             })}

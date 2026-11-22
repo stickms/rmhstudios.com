@@ -36,6 +36,8 @@ function errorReason(t: TFunction, error: JsonError): string {
     case 'too-deep':
       return t('json-error-deep', {
         ns: 'toolbox',
+        count: Number(MAX_JSON_DEPTH),
+        defaultValue_one: 'The document nests more than {{max}} level deep.',
         defaultValue: 'The document nests more than {{max}} levels deep.',
         max: MAX_JSON_DEPTH,
       });
@@ -123,6 +125,7 @@ export function JsonTool() {
                 <ResultRow
                   label={t('json-stats-size', { defaultValue: 'Size, formatted' })}
                   value={t('json-bytes', {
+                    defaultValue_one: '{{count}} byte',
                     defaultValue: '{{count}} bytes',
                     count: new TextEncoder().encode(result.text).length,
                   })}

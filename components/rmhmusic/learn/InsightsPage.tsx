@@ -91,7 +91,12 @@ function Loaded({ insights }: { insights: Insights }) {
     const days = Math.max(1, Math.round(s.stability));
     return days === 1
       ? t('insights-holds-one', { defaultValue: 'holds for about a day' })
-      : t('insights-holds', { days, defaultValue: 'holds for about {{days}} days' });
+      : t('insights-holds', {
+          days,
+          count: Number(days),
+          defaultValue_one: 'holds for about {{days}} day',
+          defaultValue: 'holds for about {{days}} days',
+        });
   };
   const hasWeak = FAMILIES.some((f) => insights.weakest[f].length > 0);
   const hasStrong = FAMILIES.some((f) => insights.strongest[f].length > 0);

@@ -35,6 +35,8 @@ export function TrackedStrip({
         <p className="t-body border-t border-b border-site-border py-3 text-site-text-muted">
           {t('tracked-empty', {
             max,
+            count: Number(max),
+            defaultValue_one: 'Track up to {{max}} achievement to follow them here.',
             defaultValue: 'Track up to {{max}} achievements to follow them here.',
           })}
         </p>

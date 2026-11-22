@@ -114,6 +114,7 @@ export function DifficultyTabs() {
           <AlertTriangle className="h-4 w-4 text-site-warning" aria-hidden />
           <span>
             {t('editor-nesting-violations', {
+              defaultValue_one: '{{count}} note breaks Easy ⊆ Normal ⊆ Hard ⊆ Expert',
               defaultValue: '{{count}} notes break Easy ⊆ Normal ⊆ Hard ⊆ Expert',
               count: violations.length,
             })}

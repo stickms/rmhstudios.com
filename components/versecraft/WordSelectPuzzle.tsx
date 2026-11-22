@@ -519,6 +519,7 @@ export function WordSelectPuzzle() {
           }}
         >
           {t('select-words-prompt', {
+            defaultValue_one: 'Select {{count}} word to compose your poem',
             defaultValue: 'Select {{count}} words to compose your poem',
             count: puzzle.requiredWordCount,
           })}

@@ -108,7 +108,7 @@ export default function MarketResultsScreen({
                     {sb.overbidPenalty > 0 && (
                       <span className="text-app-danger">{t("penalty-value", { defaultValue: "Penalty: -{{value}}", value: sb.overbidPenalty })}</span>
                     )}
-                    <span className="font-bold text-app-accent">{t("total-score-pts", { defaultValue: "{{score}} pts", score: sb.totalScore })}</span>
+                    <span className="font-bold text-app-accent">{t("total-score-pts", { count: Number(sb.totalScore), defaultValue_one: "{{score}} pt", defaultValue: "{{score}} pts", score: sb.totalScore })}</span>
                   </div>
                 </div>
               ))}

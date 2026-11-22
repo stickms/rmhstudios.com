@@ -493,7 +493,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                   size="icon-sm"
                   variant={(grid.myRating ?? 0) >= n ? 'default' : 'default'}
                   onClick={() => void rate(n)}
-                  aria-label={t('stars', { defaultValue: '{{n}} stars', n })}
+                  aria-label={t('stars', { count: Number(n), defaultValue_one: '{{n}} star', defaultValue: '{{n}} stars', n })}
                 >
                   <Star aria-hidden />
                 </Button>
@@ -509,7 +509,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
         {grid.rating != null ? (
           <p className="text-center text-xs text-site-text-muted">
             {t('stats-line', {
-              defaultValue: '{{rating}} stars from {{n}} ratings · {{plays}} plays',
+              count: Number(grid.ratingCount), defaultValue_one: '{{rating}} stars from {{n}} rating · {{plays}} plays', defaultValue: '{{rating}} stars from {{n}} ratings · {{plays}} plays',
               rating: grid.rating,
               n: grid.ratingCount,
               plays: grid.plays,

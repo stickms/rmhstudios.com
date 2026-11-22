@@ -211,6 +211,7 @@ export function TearOff({ today }: { today: string }) {
         setTorn((n) => n + 1);
       }}
       aria-label={t('cal-gadget', {
+        defaultValue_one: '{{count}} day until Dunesday',
         defaultValue: '{{count}} days until Dunesday',
         count: left,
       })}

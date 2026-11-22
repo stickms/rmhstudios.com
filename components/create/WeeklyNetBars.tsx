@@ -42,6 +42,8 @@ export function WeeklyNetBars({
         defaultValue: 'Net follower change per week',
       })}
       summary={t('weekly-summary', {
+        count: Number(weeks.length),
+        defaultValue_one: 'Net change per week over {{weeks}} week, {{total}} in all.',
         defaultValue: 'Net change per week over {{weeks}} weeks, {{total}} in all.',
         weeks: weeks.length,
         total: number.format(total),

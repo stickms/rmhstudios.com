@@ -79,7 +79,7 @@ export function HoldemControls() {
   const rebuyButton = isBusted ? (
     <Button onClick={() => emit(C2S.REBUY)}
       className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
-      {t("rebuy-coins", { defaultValue: "Rebuy ({{count}} coins)", count: roomInfo?.buyIn ?? 0 })}
+      {t("rebuy-coins", { defaultValue_one: "Rebuy ({{count}} coin)", defaultValue: "Rebuy ({{count}} coins)", count: roomInfo?.buyIn ?? 0 })}
     </Button>
   ) : null;
 

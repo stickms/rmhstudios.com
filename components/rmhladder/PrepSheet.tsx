@@ -159,6 +159,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
             <p className="flex flex-wrap items-center gap-2 text-sm text-site-text">
               <CalendarClock className="size-4 text-site-accent" aria-hidden />
               {t('ladder.prepCountdown', {
+                defaultValue_one: '{{count}} day until your interview',
                 defaultValue: '{{count}} days until your interview',
                 count: sheet.daysUntilInterview,
               })}

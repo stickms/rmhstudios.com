@@ -96,6 +96,7 @@ export function ProjectionCard({ days, todayKey }: { days: WatchDayDTO[]; todayK
         <p className="stk-chart__note">
           {t('project-remaining', {
             count: projection.daysRemaining,
+            defaultValue_one: '{{count}} day to January 1st, 2030',
             defaultValue: '{{count}} days to January 1st, 2030',
           })}
         </p>
@@ -128,6 +129,8 @@ export function ProjectionCard({ days, todayKey }: { days: WatchDayDTO[]; todayK
       <p className="stk-chart__readout">
         {t('project-caveat', {
           count: projection.sampleDays,
+          defaultValue_one:
+            'A flat carry-forward of the last {{count}} day, quiet ones included. Not a forecast — a statement of what this rate adds up to.',
           defaultValue:
             'A flat carry-forward of the last {{count}} days, quiet ones included. Not a forecast — a statement of what this rate adds up to.',
         })}{' '}

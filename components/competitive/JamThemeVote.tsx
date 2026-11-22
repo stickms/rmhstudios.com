@@ -93,6 +93,8 @@ export function JamThemeVote({ slug, signedIn }: { slug: string; signedIn: boole
       </p>
       <p id="jam-theme-vote-hint" className="sr-only" aria-live="polite">
         {t('vote-hint', {
+          count: Number(MAX_THEME_MARKS),
+          defaultValue_one: 'Mark up to {{max}} theme. {{n}} marked.',
           defaultValue: 'Mark up to {{max}} themes. {{n}} marked.',
           max: MAX_THEME_MARKS,
           n: marks.length,

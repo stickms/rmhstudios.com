@@ -156,6 +156,8 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
                 })
               : t('forward-note', {
                   max: limit,
+                  count: Number(limit),
+                  defaultValue_one: 'Choose up to {{max}} chat.',
                   defaultValue: 'Choose up to {{max}} chats.',
                 })}
           </SheetDescription>

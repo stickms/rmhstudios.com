@@ -112,6 +112,8 @@ export function PlayLimitsPanel() {
   async function exclude(days: number) {
     const ok = await confirm({
       title: t('play-limits-exclude-confirm-title', {
+        count: Number(days),
+        defaultValue_one: 'Exclude yourself for {{days}} day?',
         defaultValue: 'Exclude yourself for {{days}} days?',
         days,
       }),
@@ -270,6 +272,7 @@ export function PlayLimitsPanel() {
           {[30, 90, 365].map((days) => (
             <Button key={days} variant="default" onClick={() => void exclude(days)} disabled={saving}>
               {t('play-limits-exclude-days', {
+                defaultValue_one: '{{count}} day',
                 defaultValue: '{{count}} days',
                 count: days,
               })}

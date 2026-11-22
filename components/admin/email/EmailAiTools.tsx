@@ -143,6 +143,8 @@ export function EmailImages({
           {t('email-image-count', {
             n: images.length,
             max: MAX_EMAIL_IMAGES,
+            count: Number(MAX_EMAIL_IMAGES),
+            defaultValue_one: '{{n}} of {{max}} picture',
             defaultValue: '{{n}} of {{max}} pictures',
           })}
         </span>

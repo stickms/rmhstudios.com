@@ -12,7 +12,7 @@ function formatCooldown(ms: number, t: TFunction<'feed'>): string {
   if (days <= 1) {
     return t('cooldown-less-than-a-day', { defaultValue: 'less than a day' });
   }
-  return t('cooldown-days', { days, defaultValue: '{{days}} days' });
+  return t('cooldown-days', { days, count: Number(days), defaultValue_one: '{{days}} day', defaultValue: '{{days}} days' });
 }
 
 export function HandleField({

@@ -591,7 +591,7 @@ export function CommentItem({
           </div>
           {viewCount > 0 && (
             <span className="feed-actions__views t-meta">
-              {t('post-views', { n: formatCount(viewCount), defaultValue: '{{n}} views' })}
+              {t('post-views', { n: formatCount(viewCount), count: Number(formatCount(viewCount)), defaultValue_one: '{{n}} view', defaultValue: '{{n}} views' })}
             </span>
           )}
         </div>

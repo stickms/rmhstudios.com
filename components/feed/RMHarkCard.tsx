@@ -9,7 +9,7 @@ import { toast } from '@/lib/toast';
 import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
 import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
-import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
+import { RMHarkContent } from './RMHarkContent';
 import { ProfileHoverCard } from './ProfileHoverCard';
 import { PollDisplay } from './PollDisplay';
 import { TakeMeterLazy } from './TakeMeterLazy';
@@ -19,6 +19,7 @@ import { VibeEmbedCardLazy } from '@/components/rmhvibe/VibeEmbedCardLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadgesLazy';
 import { GifEmbed } from './GifEmbedLazy';
 import { LinkPreview } from './LinkPreview';
+import { postLinkPreviewUrl } from '@/lib/feed/first-link';
 import { PostImageGrid } from './PostImageGrid';
 import { SensitiveMedia } from './SensitiveMedia';
 import { postMediaVTName } from '@/lib/view-transition';
@@ -145,11 +146,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
   };
 
-  const linkPreviewUrl = useMemo(() => {
-    if (item.poll || item.gifUrl || (item.imageUrls && item.imageUrls.length > 0) || !item.content)
-      return null;
-    return extractFirstUrl(item.content);
-  }, [item.poll, item.gifUrl, item.imageUrls, item.content]);
+  // One regex over the post body: cheap enough to run per render.
+  const linkPreviewUrl = postLinkPreviewUrl(item);
 
   // Track view when the card actually scrolls into (near) the viewport. Skip
   // optimistic (pending) posts — their temp id isn't a real post yet.

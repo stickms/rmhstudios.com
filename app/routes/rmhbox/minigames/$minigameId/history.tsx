@@ -403,7 +403,7 @@ function MinigameHistoryPage() { const fmt = useLocaleFormat();
                           <span className="text-app-text-muted">·</span>
                           <span className="text-app-text">
                             {t('player-count', {
-                              defaultValue: '{{count}} players',
+                              defaultValue_one: '{{count}} player', defaultValue: '{{count}} players',
                               count: match.playerCount,
                             })}
                           </span>

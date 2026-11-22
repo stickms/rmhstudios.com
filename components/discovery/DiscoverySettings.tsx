@@ -140,6 +140,9 @@ export function DiscoverySettings({
         })}
         description={t('alerts-desc', {
           max: MAX_ALERTS,
+          count: Number(MAX_ALERTS),
+          defaultValue_one:
+            'Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alert.',
           defaultValue:
             'Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alerts.',
         })}

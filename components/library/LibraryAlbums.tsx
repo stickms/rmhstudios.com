@@ -147,6 +147,8 @@ function AlbumCard({ album }: { album: Album }) {
             <Images size={13} aria-hidden="true" />
             {t('album-item-count', {
               total,
+              count: Number(total),
+              defaultValue_one: '{{total}} item',
               defaultValue: '{{total}} items',
             })}
           </span>

@@ -217,6 +217,7 @@ export function MarketColumn({
                     low: history.low != null ? fmt.number(history.low) : undefined,
                     high: history.high != null ? fmt.number(history.high) : undefined,
                     avg: history.average != null ? fmt.number(history.average) : undefined,
+                    defaultValue_one: '{{count}} sale · low {{low}} · avg {{avg}} · high {{high}}',
                     defaultValue: '{{count}} sales · low {{low}} · avg {{avg}} · high {{high}}',
                   })}
                 </p>

@@ -1039,7 +1039,7 @@ function Row({
                     {ts(
                       'ranked-charts-chip',
                       {
-                        defaultValue:
+                        defaultValue_one: '{{count}} chart', defaultValue:
                           '{{count}} charts',
                         count:
                           entry.rankedPlays,

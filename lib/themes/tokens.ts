@@ -172,6 +172,19 @@ export function effectiveTextBackdrop(t: ThemeTokens): string {
  * AA, so the gradient can never cost a button its legibility. With no user theme neither variable is set and the
  * consumers fall back to the flat page.
  */
+/**
+ * The hover fill and picture placeholder. It used to be 8% of the tint over the canvas, and every light theme's tint
+ * is white: on Paper, Mint, Sundial, Latte and Newsprint it came out at 1.01:1 against the page, so a ghost button had
+ * no visible hover and a placeholder no edge. 5% ink over the canvas is the step Steel's own editions take (Day
+ * #fafafa -> #f0f2f4, Night #0b0d10 -> #161a1f) and always shows, because the ink contrasts the canvas (A1). Whichever
+ * of the two stands further from the canvas wins, so a dark theme whose tint already showed keeps its fill.
+ */
+function bgSubtle(t: ThemeTokens): string {
+  const fromTint = over(t.tint, 0.08, t.canvasBase);
+  const fromInk = over(t.text, 0.05, t.canvasBase);
+  return contrastRatio(fromTint, t.canvasBase) >= contrastRatio(fromInk, t.canvasBase) ? fromTint : fromInk;
+}
+
 export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
   const t = tokens;
 
@@ -183,7 +196,7 @@ export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
 
   return {
     '--site-bg': t.canvasBase,
-    '--site-bg-subtle': over(t.tint, 0.08, t.canvasBase),
+    '--site-bg-subtle': bgSubtle(t),
     '--site-surface': surface,
     '--site-surface-hover': surfaceHover,
     '--site-surface-active': surfaceActive,

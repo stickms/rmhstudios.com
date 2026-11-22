@@ -270,6 +270,8 @@ export default function WatchStatsPanel() {
               }))}
               label={chartLabel}
               summary={t('chart-summary', {
+                count: Number(number.format(windowMinutes)),
+                defaultValue_one: '{{minutes}} minute watched in the last 30 days, as bars.',
                 defaultValue: '{{minutes}} minutes watched in the last 30 days, as bars.',
                 minutes: number.format(windowMinutes),
               })}

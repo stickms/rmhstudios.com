@@ -107,7 +107,7 @@ export default function ResultsScreen({
               >
                 {player.userName}
               </Link>
-              <span className="text-xs text-app-text-muted">{t("score-pts", { defaultValue: "{{score}} pts", score: player.score })}</span>
+              <span className="text-xs text-app-text-muted">{t("score-pts", { count: Number(player.score), defaultValue_one: "{{score}} pt", defaultValue: "{{score}} pts", score: player.score })}</span>
               <div
                 className={`${PODIUM_HEIGHTS[podiumIndex]} w-20 rounded-t-app-sm bg-app-accent`}
                 style={{ opacity: 1 - podiumIndex * 0.2 }}

@@ -239,7 +239,7 @@ function GoalCard({
             {fmt.number(g.targetCoins)} ({pct}%)
           </span>
           <span>
-            {t('cg-pledgers', { defaultValue: '{{n}} pledgers', n: fmt.number(g.pledgers) })}
+            {t('cg-pledgers', { count: Number(fmt.number(g.pledgers)), defaultValue_one: '{{n}} pledger', defaultValue: '{{n}} pledgers', n: fmt.number(g.pledgers) })}
             {' · '}
             {g.status === 'OPEN'
               ? t('cg-deadline', {
@@ -254,7 +254,7 @@ function GoalCard({
       {g.myPledge > 0 ? (
         <p className="text-xs font-semibold text-site-text">
           {t('cg-mine', {
-            defaultValue: 'Your pledge: {{n}} coins',
+            count: Number(fmt.number(g.myPledge)), defaultValue_one: 'Your pledge: {{n}} coin', defaultValue: 'Your pledge: {{n}} coins',
             n: fmt.number(g.myPledge),
           })}
         </p>
@@ -262,7 +262,7 @@ function GoalCard({
       {g.myRefunded > 0 ? (
         <p className="text-xs text-site-text-muted">
           {t('cg-refunded', {
-            defaultValue: 'Refunded to you: {{n}} coins',
+            count: Number(fmt.number(g.myRefunded)), defaultValue_one: 'Refunded to you: {{n}} coin', defaultValue: 'Refunded to you: {{n}} coins',
             n: fmt.number(g.myRefunded),
           })}
         </p>

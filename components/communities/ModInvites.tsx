@@ -224,6 +224,8 @@ export function ModInvites({ slug }: { slug: string }) {
                       : t('invite-uses-limited', {
                           uses: i.uses,
                           max: i.maxUses,
+                          count: Number(i.maxUses),
+                          defaultValue_one: '{{uses}} of {{max}} use',
                           defaultValue: '{{uses}} of {{max}} uses',
                         })}
                   </span>

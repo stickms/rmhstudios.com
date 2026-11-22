@@ -703,7 +703,7 @@ export default function UndercoverEditorGame({
 
                 {/* Sentence progress indicator */}
                 <p className="text-xs text-app-text-muted text-center">
-                  {t("ue-sentences-revealed", { defaultValue: "{{revealed}} / {{total}} sentences revealed", revealed: readingSentenceIndex, total: currentReadingStory.sentenceCount })}
+                  {t("ue-sentences-revealed", { count: Number(currentReadingStory.sentenceCount), defaultValue_one: "{{revealed}} / {{total}} sentence revealed", defaultValue: "{{revealed}} / {{total}} sentences revealed", revealed: readingSentenceIndex, total: currentReadingStory.sentenceCount })}
                 </p>
               </div>
             )}

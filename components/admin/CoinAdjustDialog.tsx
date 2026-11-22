@@ -155,6 +155,8 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
       title: t('reverse-title', { defaultValue: 'Reverse this adjustment?' }),
       description: t('reverse-body', {
         amount: signed.format(-row.delta),
+        count: Number(signed.format(-row.delta)),
+        defaultValue_one: 'This applies {{amount}} coin to the member and cannot be undone.',
         defaultValue: 'This applies {{amount}} coins to the member and cannot be undone.',
       }),
       confirmLabel: t('reverse', { defaultValue: 'Reverse' }),
@@ -190,7 +192,12 @@ function CoinAdjustDialog({ userId, userName, open, onOpenChange, onBalanceChang
         ) : (
           <div className={cn('space-y-1', arrival)}>
             <p className="t-heading">
-              {t('balance', { amount: nf.format(data.balance), defaultValue: 'Balance: {{amount}} coins' })}
+              {t('balance', {
+                amount: nf.format(data.balance),
+                count: Number(nf.format(data.balance)),
+                defaultValue_one: 'Balance: {{amount}} coin',
+                defaultValue: 'Balance: {{amount}} coins',
+              })}
             </p>
             <p className="t-meta">
               {data.reconciliation.ok

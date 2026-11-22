@@ -388,6 +388,8 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
       total: BEATS,
       early: state.result.early,
       late: state.result.late,
+      count: Number(BEATS),
+      defaultValue_one: '{{hits}} of {{total}} beat on time. {{early}} early, {{late}} late.',
       defaultValue: '{{hits}} of {{total}} beats on time. {{early}} early, {{late}} late.',
     });
   }

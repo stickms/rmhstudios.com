@@ -165,6 +165,7 @@ export function ModQueue({
                     <span>
                       {tr('queue-reporters', {
                         count: i.reporters,
+                        defaultValue_one: '{{count}} member reported this',
                         defaultValue: '{{count}} members reported this',
                       })}
                     </span>

@@ -189,6 +189,7 @@ export function TrashPanel() {
         <p className="mt-1 text-sm text-site-text-muted">
           {t('trash-window-note', {
             count: windowDays,
+            defaultValue_one: 'Posts and comments you delete stay here for {{count}} day, then go for good.',
             defaultValue: 'Posts and comments you delete stay here for {{count}} days, then go for good.',
           })}
         </p>

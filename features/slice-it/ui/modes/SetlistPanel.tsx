@@ -392,7 +392,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) { co
               <div className="text-[10px] font-bold uppercase tracking-widest text-slice-text-muted">
                 {index?.liked
                   ? t('setlist-liked-count', {
-                      defaultValue: '{{count}} tracks',
+                      defaultValue_one: '{{count}} track', defaultValue: '{{count}} tracks',
                       count: index.liked.songCount,
                     })
                   : t('setlist-liked-hint', { defaultValue: 'Like songs to fill this' })}

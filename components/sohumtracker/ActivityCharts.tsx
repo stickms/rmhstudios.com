@@ -202,6 +202,7 @@ function TrendChart({ days, metric }: { days: WatchDayDTO[]; metric: TrendMetric
         setActive={setActive}
         label={t('chart-trend-alt', {
           count: days.length,
+          defaultValue_one: 'Bar chart of activity across the last {{count}} day',
           defaultValue: 'Bar chart of activity across the last {{count}} days',
         })}
       >

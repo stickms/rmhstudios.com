@@ -83,7 +83,11 @@ export function DraftEditFields({
           onChange={(e) => onChange({ ...form, content: e.target.value })}
         />
         <p className="t-meta" aria-live="off">
-          {t('characters-left', { count: remaining, defaultValue: '{{count}} characters left' })}
+          {t('characters-left', {
+            count: remaining,
+            defaultValue_one: '{{count}} character left',
+            defaultValue: '{{count}} characters left',
+          })}
         </p>
       </div>
 
@@ -148,6 +152,8 @@ export function DraftEditFields({
           <p id={warningErrId} role="alert" className="t-meta text-site-danger">
             {t('error-warning', {
               max: MAX_CONTENT_WARNING_LENGTH,
+              count: Number(MAX_CONTENT_WARNING_LENGTH),
+              defaultValue_one: 'A reason is at most {{max}} character on one line',
               defaultValue: 'A reason is at most {{max}} characters on one line',
             })}
           </p>

@@ -389,7 +389,7 @@
   "rhythm-half-beat": "half a beat",
   "rhythm-meter-choices": "Beats in a bar",
   "rhythm-meter-hint": "Listen for the accent, then pick how many beats are in each bar.",
-  "rhythm-meter-right-sr_one": "Right: {{count}} beats in a bar.",
+  "rhythm-meter-right-sr_one": "Right: {{count}} beat in a bar.",
   "rhythm-meter-right-sr_other": "Right: {{count}} beats in a bar.",
   "rhythm-meter-score": "You got {{correct}} of {{total}} right.",
   "rhythm-meter-was_one": "That bar had {{count}} beat.",

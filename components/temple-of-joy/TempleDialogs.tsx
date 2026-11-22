@@ -78,7 +78,7 @@ function VigilDialog() {
               <span>
                 {t('vigil-sinners', {
                   count: vigil.sinners,
-                  defaultValue: '{{count}} Sinners, holding',
+                  defaultValue_one: '{{count}} Sinner, holding', defaultValue: '{{count}} Sinners, holding',
                 })}
               </span>
               <strong>{vigil.sinnerText}</strong>

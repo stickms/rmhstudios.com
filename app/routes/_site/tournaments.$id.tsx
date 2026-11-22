@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { plural } from '@/lib/core/format';
 import { createServerFn } from '@tanstack/react-start';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -86,7 +87,7 @@ export const Route = createFileRoute('/_site/tournaments/$id')({
     return {
       meta: buildMeta({
         title: `${loaderData.name} — ${game} tournament | RMH Studios`,
-        description: `A ${game} tournament on RMH Studios: ${loaderData.playerCount} of ${loaderData.maxPlayers} players, ${loaderData.prizePoolCoins} coins in the prize pool.`,
+        description: `A ${game} tournament on RMH Studios: ${loaderData.playerCount} of ${loaderData.maxPlayers} ${plural(loaderData.maxPlayers, 'player', 'players')}, ${loaderData.prizePoolCoins} ${plural(loaderData.prizePoolCoins, 'coin', 'coins')} in the prize pool.`,
         path,
       }),
       links: [buildCanonical(path)],
@@ -251,7 +252,7 @@ function TournamentDetailPage() {
             </div>
             <div className="font-medium">
               {tourney.entryFeeCoins > 0
-                ? t('n-coins', { defaultValue: '{{n}} coins', n: tourney.entryFeeCoins })
+                ? t('n-coins', { count: Number(tourney.entryFeeCoins), defaultValue_one: '{{n}} coin', defaultValue: '{{n}} coins', n: tourney.entryFeeCoins })
                 : t('free', { defaultValue: 'Free' })}
             </div>
           </div>

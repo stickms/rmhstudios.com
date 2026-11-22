@@ -38,7 +38,7 @@ export function PollView({ poll, onVote }: { poll: Poll; onVote: (idx: number) =
         })}
       </div>
       <p className="mt-2 text-xs text-site-text-muted">
-        {t('poll-votes', { count: poll.totalVotes, defaultValue: '{{count}} votes' })}
+        {t('poll-votes', { count: poll.totalVotes, defaultValue_one: '{{count}} vote', defaultValue: '{{count}} votes' })}
       </p>
     </div>
   );

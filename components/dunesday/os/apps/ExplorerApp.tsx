@@ -361,7 +361,7 @@ export default function ExplorerApp({ win }: AppProps) {
       if (!selItems.length) return;
       setConfirm({
         text: t('confirm-purge', {
-          defaultValue: 'Are you sure you want to permanently delete these {{count}} items?',
+          defaultValue_one: 'Are you sure you want to permanently delete this {{count}} item?', defaultValue: 'Are you sure you want to permanently delete these {{count}} items?',
           count: selItems.length,
         }),
         run: () => {
@@ -401,7 +401,7 @@ export default function ExplorerApp({ win }: AppProps) {
     if (!count) return;
     setConfirm({
       text: t('confirm-empty', {
-        defaultValue: 'Are you sure you want to permanently delete these {{count}} items?',
+        defaultValue_one: 'Are you sure you want to permanently delete this {{count}} item?', defaultValue: 'Are you sure you want to permanently delete these {{count}} items?',
         count,
       }),
       run: () => {
@@ -534,7 +534,7 @@ export default function ExplorerApp({ win }: AppProps) {
     const nodes = chosen.filter((i) => i.node && !i.node.system).map((i) => i.node!.id);
     const label =
       chosen.length > 1
-        ? t('n-items', { defaultValue: '{{count}} items', count: chosen.length })
+        ? t('n-items', { defaultValue_one: '{{count}} item', defaultValue: '{{count}} items', count: chosen.length })
         : it.name;
     if (titles.length) beginDrag(e, { kind: 'title', ids: titles }, label);
     else if (nodes.length) beginDrag(e, { kind: 'node', ids: nodes }, label);
@@ -1175,10 +1175,10 @@ export default function ExplorerApp({ win }: AppProps) {
           <span>
             {selItems.length > 1
               ? t('n-selected', {
-                  defaultValue: '{{count}} items selected',
+                  defaultValue_one: '{{count}} item selected', defaultValue: '{{count}} items selected',
                   count: selItems.length,
                 })
-              : t('n-items', { defaultValue: '{{count}} items', count: items.length })}
+              : t('n-items', { defaultValue_one: '{{count}} item', defaultValue: '{{count}} items', count: items.length })}
           </span>
         )}
       </div>

@@ -356,7 +356,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                         </Button>
                     </div>
                     <p className="text-center text-xs text-site-text-muted">
-                        {t("chain-length-info", { defaultValue: "Chain length: {{length}} words · Par: {{par}} · Score if submitted: {{score}} pts", length: chainLength, par: puzzle.parLinks, score: computeChainlinkScore(chainLength) })}
+                        {t("chain-length-info", { count: Number(computeChainlinkScore(chainLength)), defaultValue_one: "Chain length: {{length}} words · Par: {{par}} · Score if submitted: {{score}} pt", defaultValue: "Chain length: {{length}} words · Par: {{par}} · Score if submitted: {{score}} pts", length: chainLength, par: puzzle.parLinks, score: computeChainlinkScore(chainLength) })}
                     </p>
                 </div>
             )}

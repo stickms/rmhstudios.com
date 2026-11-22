@@ -546,6 +546,7 @@ function ClockFlyout({ now, onClose }: { now: Date; onClose: () => void }) {
       <p className="ds-flyout-foot">
         {left > 0
           ? t('flyout-countdown', {
+              defaultValue_one: '{{count}} day until Dunesday (18 December)',
               defaultValue: '{{count}} days until Dunesday (18 December)',
               count: left,
             })

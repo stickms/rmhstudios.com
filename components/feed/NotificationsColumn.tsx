@@ -605,7 +605,7 @@ export function NotificationsColumn({
               ? t('grouped-actors', {
                   name: firstName,
                   count: g.count - 1,
-                  defaultValue: '{{name}} and {{count}} others',
+                  defaultValue_one: '{{name}} and {{count}} other', defaultValue: '{{name}} and {{count}} others',
                 })
               : firstName;
             const snooze = () =>

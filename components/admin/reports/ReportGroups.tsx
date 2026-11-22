@@ -337,6 +337,8 @@ export function ReportGroups({
                         {t('group-reliability', {
                           reliable: g.reliability.reliable,
                           known: g.reliability.known,
+                          count: Number(g.reliability.known),
+                          defaultValue_one: '{{reliable}} of {{known}} reporter usually report things that are upheld',
                           defaultValue: '{{reliable}} of {{known}} reporters usually report things that are upheld',
                         })}
                       </span>

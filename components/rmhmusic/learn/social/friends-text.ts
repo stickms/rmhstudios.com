@@ -40,6 +40,8 @@ export function friendUnitsLine(t: T, units: FriendProgress['units']): string {
         ns: 'c-rmhmusic',
         finished: units.finished,
         total: units.total,
+        count: Number(units.total),
+        defaultValue_one: '{{finished}} of {{total}} unit finished',
         defaultValue: '{{finished}} of {{total}} units finished',
       })
     : t('friends-units-last', {
@@ -47,6 +49,8 @@ export function friendUnitsLine(t: T, units: FriendProgress['units']): string {
         finished: units.finished,
         total: units.total,
         last: units.last,
+        count: Number(units.total),
+        defaultValue_one: '{{finished}} of {{total}} unit finished, last {{last}}',
         defaultValue: '{{finished}} of {{total}} units finished, last {{last}}',
       });
 }

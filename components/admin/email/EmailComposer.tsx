@@ -243,6 +243,9 @@ export function EmailComposer() {
           : ignoreFrequencyCap
             ? t('email-confirm-override', {
                 hours: BULK_MIN_GAP_HOURS,
+                count: Number(BULK_MIN_GAP_HOURS),
+                defaultValue_one:
+                  'This goes to people who had an email in the last {{hours}} hour too. An email cannot be recalled once sent.',
                 defaultValue:
                   'This goes to people who had an email in the last {{hours}} hours too. An email cannot be recalled once sent.',
               })
@@ -503,6 +506,8 @@ export function EmailComposer() {
               {ignoreFrequencyCap
                 ? ` ${t('email-preview-override', {
                     hours: BULK_MIN_GAP_HOURS,
+                    count: Number(BULK_MIN_GAP_HOURS),
+                    defaultValue_one: 'Includes people who had an email in the last {{hours}} hour.',
                     defaultValue: 'Includes people who had an email in the last {{hours}} hours.',
                   })}`
                 : ''}
@@ -512,6 +517,8 @@ export function EmailComposer() {
                 <span id="email-override-cap" className="t-body text-site-text">
                   {t('email-override-cap', {
                     hours: BULK_MIN_GAP_HOURS,
+                    count: Number(BULK_MIN_GAP_HOURS),
+                    defaultValue_one: 'Also send to people emailed in the last {{hours}} hour',
                     defaultValue: 'Also send to people emailed in the last {{hours}} hours',
                   })}
                 </span>

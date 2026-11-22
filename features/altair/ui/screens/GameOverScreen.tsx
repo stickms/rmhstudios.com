@@ -268,6 +268,7 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
               </span>
               <span className="text-(--altair-warning)">
                 {t('total-coins', {
+                  defaultValue_one: '{{count}} coin',
                   defaultValue: '{{count}} coins',
                   count: finalCoins,
                 })}

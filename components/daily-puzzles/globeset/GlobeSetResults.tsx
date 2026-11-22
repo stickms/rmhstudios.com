@@ -97,6 +97,8 @@ export function GlobeSetResults({
             <li key={entry.size}>
               <span aria-hidden>{entry.emoji}</span>{' '}
               {t('globeset-legend-cards', {
+                count: Number(entry.size),
+                defaultValue_one: '{{n}} card',
                 defaultValue: '{{n}} cards',
                 n: entry.size,
               })}

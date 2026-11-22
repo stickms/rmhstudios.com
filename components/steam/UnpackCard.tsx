@@ -28,6 +28,8 @@ export function UnpackCard({ gameId, cardIndex, foil }: { gameId: string; cardIn
       });
       toast.success(
         t('steam-gems-unpacked', {
+          count: Number(gems),
+          defaultValue_one: 'Turned into {{n}} gem.',
           defaultValue: 'Turned into {{n}} gems.',
           n: gems,
         }),
@@ -54,6 +56,8 @@ export function UnpackCard({ gameId, cardIndex, foil }: { gameId: string; cardIn
     <span className="stm-sell-actions">
       <button type="button" className="stm-btn stm-btn-blue" disabled={busy} onClick={() => void go()}>
         {t('steam-gems-confirm', {
+          count: Number(gems),
+          defaultValue_one: '+{{n}} gem',
           defaultValue: '+{{n}} gems',
           n: gems,
         })}

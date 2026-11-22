@@ -231,7 +231,7 @@ export function UploadModal({
       const allowMany = isAdmin;
       const room = allowMany ? MAX_BATCH - itemsRef.current.length : 1;
       if (room <= 0) {
-        setError(t('error-too-many', { max: MAX_BATCH, defaultValue: 'You can upload up to {{max}} files at once.' }));
+        setError(t('error-too-many', { max: MAX_BATCH, count: Number(MAX_BATCH), defaultValue_one: 'You can upload up to {{max}} file at once.', defaultValue: 'You can upload up to {{max}} files at once.' }));
         return;
       }
       const accepted: UploadItem[] = [];

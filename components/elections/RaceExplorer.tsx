@@ -209,6 +209,8 @@ export function RaceExplorer({
 
       <p className="el-eyebrow" aria-live="polite">
         {t('races.count', {
+          count: Number(filtered.length),
+          defaultValue_one: '{{shown}} of {{total}} race',
           defaultValue: '{{shown}} of {{total}} races',
           shown: visible.length,
           total: filtered.length,

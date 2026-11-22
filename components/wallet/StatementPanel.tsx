@@ -181,7 +181,7 @@ export default function StatementPanel() {
           {data.rowCount > STATEMENT_CSV_MAX_ROWS ? (
             <p className={cn('px-1 text-xs text-site-text-muted', arrival)}>
               {t('stmt-truncated', {
-                defaultValue:
+                count: Number(n(STATEMENT_CSV_MAX_ROWS)), defaultValue_one: 'This month has more than {{max}} entry; the CSV contains the first {{max}}.', defaultValue:
                   'This month has more than {{max}} entries; the CSV contains the first {{max}}.',
                 max: n(STATEMENT_CSV_MAX_ROWS),
               })}

@@ -42,6 +42,8 @@ function cidrErrorText(t: TFunction, e: AllowlistError): string {
       });
     case 'too_many':
       return t('error-too-many', {
+        count: Number(e.max),
+        defaultValue_one: 'Line {{line}}: at most {{max}} address are allowed.',
         defaultValue: 'Line {{line}}: at most {{max}} addresses are allowed.',
         line: e.line,
         max: e.max,

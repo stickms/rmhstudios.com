@@ -128,6 +128,8 @@ export function LookupBatch({
             {tooMany
               ? t('too-many', {
                   max: MAX_BATCH_ITEMS,
+                  count: Number(MAX_BATCH_ITEMS),
+                  defaultValue_one: 'At most {{max}} item',
                   defaultValue: 'At most {{max}} items',
                 })
               : t('item-count', {

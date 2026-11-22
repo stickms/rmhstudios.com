@@ -216,7 +216,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
           <Section title={t('rules-table-title', { defaultValue: 'The table' })}>
             <p>
               {t('rules-table-1', {
-                defaultValue:
+                count: Number(MAX_PLAYERS), defaultValue_one: '{{min}} to {{max}} player. Everyone can see how many cards everyone else is holding — that is the score, and hiding it would hide the race. What is in those hands is private.', defaultValue:
                   '{{min}} to {{max}} players. Everyone can see how many cards everyone else is holding — that is the score, and hiding it would hide the race. What is in those hands is private.',
                 min: MIN_PLAYERS,
                 max: MAX_PLAYERS,
@@ -258,7 +258,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
           <Section title={t('rules-away-title', { defaultValue: 'If you drop out' })}>
             <p>
               {t('rules-away-1', {
-                defaultValue:
+                count: Number(Math.round(RECONNECT_GRACE_MS / 1000)), defaultValue_one: 'Losing signal does not lose you the game. Your seat, your cards and your place in the order are held for about {{seconds}} second, and coming back — reconnecting, or reloading the page — puts you straight back in them.', defaultValue:
                   'Losing signal does not lose you the game. Your seat, your cards and your place in the order are held for about {{seconds}} seconds, and coming back — reconnecting, or reloading the page — puts you straight back in them.',
                 seconds: Math.round(RECONNECT_GRACE_MS / 1000),
               })}

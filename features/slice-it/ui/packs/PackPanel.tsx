@@ -289,7 +289,7 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
                   </span>
                   <span className="block text-[11px] text-slice-text-light">
                     {t('pack-track-count', {
-                      defaultValue: '{{count}} tracks',
+                      defaultValue_one: '{{count}} track', defaultValue: '{{count}} tracks',
                       count: pack.songCount,
                     })}
                     {!pack.isPublic && ` • ${t('pack-draft', { defaultValue: 'Draft' })}`}

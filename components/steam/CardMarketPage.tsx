@@ -113,6 +113,8 @@ export function CardMarketPage({ data }: { data: CardMarketData }) {
               <p className="stm-balance">
                 <Coins aria-hidden size={16} />
                 {t('steam-market-balance', {
+                  count: Number(data.balance),
+                  defaultValue_one: '{{n}} coin',
                   defaultValue: '{{n}} coins',
                   n: data.balance,
                 })}
@@ -186,6 +188,8 @@ export function CardMarketPage({ data }: { data: CardMarketData }) {
                   <li key={l.id} className="stm-market-row">
                     <span className="stm-market-price">
                       {t('steam-market-price', {
+                        count: Number(l.priceCoins),
+                        defaultValue_one: '{{n}} coin',
                         defaultValue: '{{n}} coins',
                         n: l.priceCoins,
                       })}
@@ -245,6 +249,8 @@ export function CardMarketPage({ data }: { data: CardMarketData }) {
                   <li key={`${o.priceCoins}-${i}`} className="stm-market-row">
                     <span className="stm-market-price">
                       {t('steam-cm-bid', {
+                        count: Number(o.priceCoins),
+                        defaultValue_one: 'Up to {{n}} coin',
                         defaultValue: 'Up to {{n}} coins',
                         n: o.priceCoins,
                       })}
@@ -265,6 +271,8 @@ export function CardMarketPage({ data }: { data: CardMarketData }) {
                 <div className="stm-web-pad stm-order-mine">
                   <span>
                     {t('steam-cm-my-order', {
+                      count: Number(data.myOrder.priceCoins),
+                      defaultValue_one: 'Your order: up to {{n}} coin',
                       defaultValue: 'Your order: up to {{n}} coins',
                       n: data.myOrder.priceCoins,
                     })}

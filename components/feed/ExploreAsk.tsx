@@ -248,7 +248,7 @@ function AskAboutQuery({ query }: { query: string }) {
               <p className="mt-2 text-xs text-site-text-muted">
                 {t('ai-based-on', {
                   count: sourceCount,
-                  defaultValue: 'Based on {{count}} results below',
+                  defaultValue_one: 'Based on {{count}} result below', defaultValue: 'Based on {{count}} results below',
                 })}
               </p>
             ) : null

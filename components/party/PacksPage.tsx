@@ -161,6 +161,7 @@ export function PacksPage() {
           <h3 className="truncate font-semibold text-site-text">{p.name}</h3>
           <p className="text-xs text-site-text-muted">
             {t('pack-meta', {
+              defaultValue_one: '{{count}} prompt by {{author}}',
               defaultValue: '{{count}} prompts by {{author}}',
               count: p.promptCount,
               author: p.author?.name ?? p.author?.handle ?? '?',
@@ -293,6 +294,7 @@ export function PacksPage() {
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-site-text-muted">
                 {t('prompt-count', {
+                  defaultValue_one: '{{count}} prompt (need {{min}} to {{max}})',
                   defaultValue: '{{count}} prompts (need {{min}} to {{max}})',
                   count: prompts.length,
                   min: PACK_MIN_PROMPTS,

@@ -103,7 +103,7 @@ function AdminRedemptionsPage() { const fmt = useLocaleFormat();
                         <div className="truncate t-heading text-site-text">
                           {r.kind === 'SUB_CREDIT'
                             ? t('sub-summary', {
-                                defaultValue: '{{months}} months of {{tier}}',
+                                count: Number(r.monthsGranted ?? 1), defaultValue_one: '{{months}} month of {{tier}}', defaultValue: '{{months}} months of {{tier}}',
                                 months: r.monthsGranted ?? 1,
                                 tier: r.tierGranted ?? '',
                               })

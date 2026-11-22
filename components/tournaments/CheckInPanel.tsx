@@ -167,6 +167,7 @@ export function CheckInWindowField({ id, value, hasStart, disabled, onChange, cl
         {CHECK_IN_MINUTES.map((m) => (
           <option key={m} value={m}>
             {t('window-minutes', {
+              defaultValue_one: '{{count}} minute before the start',
               defaultValue: '{{count}} minutes before the start',
               count: m,
             })}

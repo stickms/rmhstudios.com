@@ -213,6 +213,8 @@ export function ListingDialog({
           <Button variant="primary" loading={busy} disabled={held || short > 0} onClick={buy}>
             {t('market-buy-for', {
               price: fmt.number(shown.priceCoins),
+              count: Number(fmt.number(shown.priceCoins)),
+              defaultValue_one: 'Buy for {{price}} coin',
               defaultValue: 'Buy for {{price}} coins',
             })}
           </Button>

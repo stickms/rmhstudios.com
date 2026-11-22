@@ -262,7 +262,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                             <div className="text-white font-semibold group-hover:text-amber-400 transition-colors">{t("daily-puzzle-lights-out-discord-activity", { defaultValue: "Daily Puzzle" })}</div>
                             <div className="text-[#b5bac1] text-sm">
                                 {alreadyCompleted
-                                    ? t("daily-completed-summary", { defaultValue: "Completed — {{emoji}} {{moves}} moves", emoji: alreadyCompleted.ratingEmoji, moves: alreadyCompleted.moves })
+                                    ? t("daily-completed-summary", { count: Number(alreadyCompleted.moves), defaultValue_one: "Completed — {{emoji}} {{moves}} move", defaultValue: "Completed — {{emoji}} {{moves}} moves", emoji: alreadyCompleted.ratingEmoji, moves: alreadyCompleted.moves })
                                     : t("daily-puzzle-subtitle", { defaultValue: "Today's puzzle — same for everyone worldwide" })}
                             </div>
                         </div>
@@ -290,7 +290,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                 {discord.participants.length > 1 && (
                     <div className="flex items-center justify-center gap-2 text-[#b5bac1] text-xs">
                         <Users className="w-3.5 h-3.5" />
-                        <span>{t("players-in-activity", { defaultValue: "{{count}} players in activity", count: discord.participants.length })}</span>
+                        <span>{t("players-in-activity", { defaultValue_one: "{{count}} player in activity", defaultValue: "{{count}} players in activity", count: discord.participants.length })}</span>
                     </div>
                 )}
             </div>

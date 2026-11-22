@@ -275,7 +275,7 @@ export function SteamReviews({
                       <div className="stm-collmenu-panel">
                         {AWARD_CATALOG.map((a) => (
                           <button key={a.id} type="button" className="stm-btn" onClick={() => void award(r, a.id)}>
-                            <span aria-hidden>{a.emoji}</span> {a.name} · {t('steam-market-price', { defaultValue: '{{n}} coins', n: a.priceCoins })}
+                            <span aria-hidden>{a.emoji}</span> {a.name} · {t('steam-market-price', { count: Number(a.priceCoins), defaultValue_one: '{{n}} coin', defaultValue: '{{n}} coins', n: a.priceCoins })}
                           </button>
                         ))}
                       </div>

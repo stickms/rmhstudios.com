@@ -371,6 +371,8 @@ export function ReviewAll({
           <p role="status" className="t-meta border-b border-site-border pb-2">
             {t('leech-line', {
               count: LEECH_THRESHOLD,
+              defaultValue_one:
+                'Set aside: you have missed this card {{count}} time. Edit it or unsuspend it from the deck.',
               defaultValue:
                 'Set aside: you have missed this card {{count}} times. Edit it or unsuspend it from the deck.',
             })}

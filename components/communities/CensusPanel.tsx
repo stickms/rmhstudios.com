@@ -326,7 +326,7 @@ export default function CensusPanel({
         <p className="mt-2 text-xs text-site-text-muted">
           {t('census-responses', {
             n: census.responseCount,
-            defaultValue: '{{n}} responses so far',
+            count: Number(census.responseCount), defaultValue_one: '{{n}} response so far', defaultValue: '{{n}} responses so far',
           })}
           {census.closesAt && !census.closed
             ? ` · ${t('census-closes-at', {
@@ -363,7 +363,7 @@ export default function CensusPanel({
         <p className="p-4 text-sm text-site-text-muted">
           {t('census-withheld', {
             n: census.minResponses,
-            defaultValue:
+            count: Number(census.minResponses), defaultValue_one: 'This census closed with fewer than {{n}} response, so results are not published to protect privacy.', defaultValue:
               'This census closed with fewer than {{n}} responses, so results are not published to protect privacy.',
           })}
         </p>

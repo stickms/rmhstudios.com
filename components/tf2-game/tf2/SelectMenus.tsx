@@ -50,6 +50,8 @@ export function TeamMenu({
       {team >= 2 ? (
         <span className="tf2g-team-card-count">
           {t('team_count', {
+            count: Number(count(team)),
+            defaultValue_one: '{{n}} player',
             defaultValue: '{{n}} players',
             n: count(team),
           })}

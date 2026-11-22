@@ -241,7 +241,7 @@ export function Desktop({ compact }: { compact: boolean }) {
     beginDrag(
       e,
       { kind: 'node', ids: movingSystem ? [] : dragIds.length ? dragIds : [it.id] },
-      sel.size > 1 ? t('n-items', { defaultValue: '{{count}} items', count: sel.size }) : it.name,
+      sel.size > 1 ? t('n-items', { defaultValue_one: '{{count}} item', defaultValue: '{{count}} items', count: sel.size }) : it.name,
       ({ target, x, y }) => {
         if (target !== 'desktop' && !(movingSystem && target === 'recycle'))
           return movingSystem ? true : false;

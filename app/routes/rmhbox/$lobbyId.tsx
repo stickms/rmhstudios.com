@@ -395,7 +395,7 @@ function LobbyPage() {
                   <div key={m.matchId} className="flex items-center justify-between rounded-app-sm bg-app-bg px-4 py-2 text-sm">
                     <div>
                       <span className="font-semibold">{m.minigameDisplayName}</span>
-                      <span className="ml-2 text-app-text-muted">· {t("player-count", { defaultValue: "{{count}} players", count: m.playerCount })}</span>
+                      <span className="ml-2 text-app-text-muted">· {t("player-count", { defaultValue_one: "{{count}} player", defaultValue: "{{count}} players", count: m.playerCount })}</span>
                     </div>
                     <span className="text-app-success flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {m.winnerUserName ?? 'N/A'}</span>
                   </div>

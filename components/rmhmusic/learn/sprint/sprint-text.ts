@@ -305,11 +305,15 @@ export function missSentences(t: T, language: string, facts: SprintMissFacts): s
       ? t('flash-miss-above', {
           ns: 'c-rmhmusic',
           n: facts.steps,
+          count: Number(facts.steps),
+          defaultValue_one: '{{n}} step above the right note.',
           defaultValue: '{{n}} steps above the right note.',
         })
       : t('flash-miss-below', {
           ns: 'c-rmhmusic',
           n: facts.steps,
+          count: Number(facts.steps),
+          defaultValue_one: '{{n}} step below the right note.',
           defaultValue: '{{n}} steps below the right note.',
         });
   }

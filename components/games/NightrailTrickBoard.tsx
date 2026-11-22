@@ -24,6 +24,8 @@ function TrickLine({ trick }: { trick: TrickView }) {
       <p className="truncate text-sm font-semibold text-site-text">{trick.chain.join(' → ')}</p>
       <p className="truncate text-xs text-site-text-muted">
         {t('trick-line', {
+          count: Number(fmt.number(trick.score)),
+          defaultValue_one: '{{name}} · {{points}} point · ×{{mult}} · Line {{level}}',
           defaultValue: '{{name}} · {{points}} points · ×{{mult}} · Line {{level}}',
           name:
             trick.author ??

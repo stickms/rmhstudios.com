@@ -93,7 +93,7 @@ function PackCard({
 
       <p className="text-xs text-site-text-muted">
         {t('pack-counts', {
-          defaultValue: '{{items}} items · {{subs}} installs',
+          count: Number(pack.itemCount), defaultValue_one: '{{items}} item · {{subs}} installs', defaultValue: '{{items}} items · {{subs}} installs',
           items: pack.itemCount,
           subs: pack.subscriberCount,
         })}

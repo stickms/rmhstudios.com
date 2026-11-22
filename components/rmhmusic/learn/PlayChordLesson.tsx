@@ -176,6 +176,8 @@ export function PlayChordLesson({
     line = t('chord-score', {
       correct: lesson.correct,
       total,
+      count: Number(total),
+      defaultValue_one: 'You played {{correct}} of {{total}} chord.',
       defaultValue: 'You played {{correct}} of {{total}} chords.',
     });
   }

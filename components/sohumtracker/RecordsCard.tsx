@@ -108,6 +108,7 @@ export function RecordsCard({ days, todayKey }: { days: WatchDayDTO[]; todayKey:
           <p className="stk-chart__note">
             {t('records-note', {
               count: days.length,
+              defaultValue_one: 'across the tracked {{count}} day',
               defaultValue: 'across the tracked {{count}} days',
             })}
           </p>
@@ -148,6 +149,7 @@ export function RecordsCard({ days, todayKey }: { days: WatchDayDTO[]; todayKey:
           <p className="stk-chart__note">
             {t('trend-note', {
               count: comparison.elapsedDays,
+              defaultValue_one: 'first {{count}} day of each',
               defaultValue: 'first {{count}} days of each',
             })}
           </p>

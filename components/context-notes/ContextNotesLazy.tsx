@@ -15,7 +15,7 @@ export function ContextNotesLazy({ postId, hasNote }: { postId: string; hasNote?
   const [open, setOpen] = useState(!!hasNote);
   if (!open) {
     return (
-      <Button size="xs" variant="ghost" className="mt-2" onClick={() => setOpen(true)}>
+      <Button size="xs" variant="default" className="mt-2" onClick={() => setOpen(true)}>
         <StickyNote />
         {t('notes-open', {
           defaultValue: 'Context notes',

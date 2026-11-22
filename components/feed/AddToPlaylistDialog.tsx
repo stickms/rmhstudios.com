@@ -158,7 +158,7 @@ export function AddToPlaylistDialog({
  <span className="min-w-0 flex-1">
  <span className="block truncate text-sm text-site-text">{pl.name}</span>
  <span className="block text-xs text-site-text-muted">
- {t('playlist-item-count', { defaultValue:'{{n}} items', n: pl.itemCount })}
+ {t('playlist-item-count', { count: Number(pl.itemCount), defaultValue_one: '{{n}} item', defaultValue:'{{n}} items', n: pl.itemCount })}
  </span>
  </span>
  {addedId === pl.id && <Check className="h-4 w-4 shrink-0 text-site-success"aria-hidden />}

@@ -465,6 +465,8 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
                 <span className="flex items-center gap-1 text-xs font-bold text-(--altair-warning)">
                   <Coins size={12} />
                   {t('unlock-cost-coins', {
+                    count: Number(cls.unlockCost),
+                    defaultValue_one: '{{cost}} coin',
                     defaultValue: '{{cost}} coins',
                     cost: cls.unlockCost,
                   })}

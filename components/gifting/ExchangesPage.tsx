@@ -236,6 +236,7 @@ export default function ExchangesPage() {
                   </span>
                   <span className="flex shrink-0 items-center gap-2 text-xs text-site-text-muted">
                     {t('list-members', {
+                      defaultValue_one: '{{count}} member',
                       defaultValue: '{{count}} members',
                       count: e.memberCount,
                     })}

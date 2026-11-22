@@ -283,7 +283,7 @@ function CollectionTile({
   const revealRef = useReveal();
   const menu = useContextMenu();
   const count = c.books.length;
-  const countLabel = t('book-count', { count, defaultValue: '{{count}} books' });
+  const countLabel = t('book-count', { count, defaultValue_one: '{{count}} book', defaultValue: '{{count}} books' });
 
   const items: MenuItem[] = [
     { type: 'label', label: c.title },

@@ -124,7 +124,7 @@ export function FeedPage({ id }: { id: string }) {
               ...feed.keywords,
             ].join(' · ')}
             {feed.peopleCount
-              ? ` · ${t('feeds-people', { count: feed.peopleCount, defaultValue: '{{count}} people' })}`
+              ? ` · ${t('feeds-people', { count: feed.peopleCount, defaultValue_one: '{{count}} person', defaultValue: '{{count}} people' })}`
               : ''}
           </p>
           {!feed.isOwner && session && (

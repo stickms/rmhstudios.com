@@ -1,7 +1,7 @@
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-limits';
 import { bumpCount } from '@/lib/feed/quiet-counts';
-import { extractFirstUrl } from '../RMHarkContent';
+import { postLinkPreviewUrl as firstLinkOf } from '@/lib/feed/first-link';
 import type { Comment } from '../CommentItem';
 import { currentDocumentLocale, formatDate } from '@/lib/core/format';
 
@@ -26,8 +26,7 @@ export function canSubmitReply(draft: string, submitting: boolean): boolean {
  * (no poll, GIF or image, and not empty).
  */
 export function postLinkPreviewUrl(post: FeedItem | null): string | null {
-  if (!post || post.poll || post.gifUrl || (post.imageUrls && post.imageUrls.length > 0) || !post.content) return null;
-  return extractFirstUrl(post.content);
+  return firstLinkOf(post);
 }
 
 /** Every user a post body mentions (author, reposter, quoted author). */

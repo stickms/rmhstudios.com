@@ -177,6 +177,7 @@ function DiagnosticsSection() {
             hint={
               db
                 ? t('diag-commits', {
+                    defaultValue_one: '{{count}} commit',
                     defaultValue: '{{count}} commits',
                     count: num(db.xact_commit),
                   })

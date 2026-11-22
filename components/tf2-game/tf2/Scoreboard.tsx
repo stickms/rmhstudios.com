@@ -42,6 +42,8 @@ function TeamTable({
           {teams[team]}{' '}
           <small>
             {t('scores_players', {
+              count: Number(rows.length),
+              defaultValue_one: '{{n}} player',
               defaultValue: '{{n}} players',
               n: rows.length,
             })}

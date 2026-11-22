@@ -87,6 +87,8 @@ export function SellSheet({
         t('market-price-bounds', {
           min: floor,
           max: fmt.number(MAX_PRICE),
+          count: Number(fmt.number(MAX_PRICE)),
+          defaultValue_one: 'Enter a whole number between {{min}} and {{max}} coin',
           defaultValue: 'Enter a whole number between {{min}} and {{max}} coins',
         }),
       );

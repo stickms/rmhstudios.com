@@ -79,6 +79,7 @@ export function ThreadChip({
       <MessageSquareText className="size-3.5" aria-hidden />
       {t('thread-replies', {
         count,
+        defaultValue_one: '{{count}} reply',
         defaultValue: '{{count}} replies',
       })}
     </button>

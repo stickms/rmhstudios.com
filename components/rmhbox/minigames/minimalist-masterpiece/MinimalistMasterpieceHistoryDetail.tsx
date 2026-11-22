@@ -171,7 +171,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                 return (
                   <div key={userId} className="flex items-center justify-between rounded-app-sm bg-app-surface px-3 py-1.5 text-sm">
                     <span className="text-app-text">#{i + 1} {player?.userName ?? 'Unknown'}</span>
-                    <span className="font-medium text-app-accent">{t("score-pts", { score, defaultValue: "{{score}} pts" })}</span>
+                    <span className="font-medium text-app-accent">{t("score-pts", { score, count: Number(score), defaultValue_one: "{{score}} pt", defaultValue: "{{score}} pts" })}</span>
                   </div>
                 );
               })}

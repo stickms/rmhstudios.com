@@ -136,6 +136,7 @@ export const GIF_ALT_EXEMPT_PATHS: Readonly<Record<string, string>> = {
   'lib/communities/automod.ts': 'classifies a post kind from whether it has a GIF; no GIF is shown',
   'lib/posts-plus/capsules.server.ts': 'a capsule row says it has a GIF (hasGif); the GIF is not shown until it opens',
   'lib/og/post-image.server.tsx': 'OG cards do not change (the card draws the picture, not an alt)',
+  'lib/feed/first-link.ts': 'reads whether a post has a GIF to skip its link card; no GIF is shown or returned',
   'lib/og/api/og.post.$id.server.ts': 'OG cards do not change (the card draws the picture, not an alt)',
   'lib/messages.server.ts': 'the inbox row shows the "GIF" preview label for a last message, never the GIF',
   'lib/messages/api/messages.search.server.ts': 'the inbox search row shows the "GIF" preview label, never the GIF',

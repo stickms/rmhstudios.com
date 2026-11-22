@@ -328,7 +328,7 @@ export default function StudyPlanner() { const lfmt = useLocaleFormat();
               {plan.shortfallHours > 0 && (
                 <p role="status" className="surface-card rounded-app p-3 text-sm">
                   {t('plan-shortfall', {
-                    defaultValue:
+                    count: Number(plan.shortfallHours), defaultValue_one: 'This does not fit: you are {{hours}} hour short. Add study time or cut a topic.', defaultValue:
                       'This does not fit: you are {{hours}} hours short. Add study time or cut a topic.',
                     hours: plan.shortfallHours,
                   })}

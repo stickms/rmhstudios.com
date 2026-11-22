@@ -449,6 +449,8 @@ export default function SpiderApp({ win }: AppProps) {
       cards: backs,
       slot: 'none',
       label: t('sp-stock-label', {
+        count: Number(deals),
+        defaultValue_one: 'Stock, {{n}} deal left',
         defaultValue: 'Stock, {{n}} deals left',
         n: deals,
       }),
@@ -978,6 +980,8 @@ export default function SpiderApp({ win }: AppProps) {
         >
           <p>
             {t('cards-won-body', {
+              count: Number(g.moves),
+              defaultValue_one: 'Score {{score}} in {{time}}, {{moves}} move.',
               defaultValue: 'Score {{score}} in {{time}}, {{moves}} moves.',
               score: g.score,
               time: formatTime(seconds),

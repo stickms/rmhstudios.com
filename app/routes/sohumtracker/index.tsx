@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { plural } from '@/lib/core/format';
 import { createServerFn } from '@tanstack/react-start';
 import { SohumTrackerPage } from '@/components/sohumtracker/SohumTrackerPage';
 import sohumtrackerCss from '@/components/sohumtracker/sohumtracker.css?url';
@@ -41,16 +42,16 @@ function describeState(state: WatchStateDTO | undefined): string {
     return (
       `In voice right now — ${formatDuration(state.live.voice.durationSec)} and counting. ` +
       `${formatDuration(state.totals.presenceSec)} signed in and ` +
-      `${formatDuration(state.totals.voiceSec)} in voice over the last ${state.totals.days} days.`
+      `${formatDuration(state.totals.voiceSec)} in voice over the last ${state.totals.days} ${plural(state.totals.days, 'day', 'days')}.`
     );
   }
   const since =
     state.totals.daysSinceJobMention === null
-      ? `Work has not come up once in ${state.totals.days} days.`
-      : `${state.totals.daysSinceJobMention} days since he mentioned looking for work.`;
+      ? `Work has not come up once in ${state.totals.days} ${plural(state.totals.days, 'day', 'days')}.`
+      : `${state.totals.daysSinceJobMention} ${plural(state.totals.daysSinceJobMention, 'day', 'days')} since he mentioned looking for work.`;
   return (
     `${formatDuration(state.totals.presenceSec)} signed in to Discord over the last ` +
-    `${state.totals.days} days — ${formatDuration(state.totals.mobileSec)} of it on his phone, ` +
+    `${state.totals.days} ${plural(state.totals.days, 'day', 'days')} — ${formatDuration(state.totals.mobileSec)} of it on his phone, ` +
     `${formatDuration(state.totals.voiceSec)} in voice and ` +
     `${formatCount(state.totals.messages)} messages. ${since}`
   );

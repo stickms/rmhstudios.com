@@ -643,7 +643,7 @@ export function HighlightsSection({
             'popular-legend',
             {
               n: MIN_READERS_TO_SHOW,
-              defaultValue:
+              count: Number(MIN_READERS_TO_SHOW), defaultValue_one: 'Dotted underlines mark passages at least {{n}} reader highlighted.', defaultValue:
                 'Dotted underlines mark passages at least {{n}} readers highlighted.',
             },
           )}

@@ -243,3 +243,18 @@ describe('unfurl()', () => {
     expect(out?.title).toBe('Capped');
   });
 });
+
+describe('siteIconUrl (link card picture without og:image)', () => {
+  it('prefers apple-touch-icon, resolved against the page', async () => {
+    const { siteIconUrl } = await import('@/lib/unfurl/parse');
+    const html = `<link rel="icon" href="/favicon.png"><link rel='apple-touch-icon' href='/touch.png'>`;
+    expect(siteIconUrl(html, 'https://a.test/post/1')).toBe('https://a.test/touch.png');
+  });
+
+  it('skips .ico (the image proxy cannot decode it) and falls back to a PNG service', async () => {
+    const { siteIconUrl } = await import('@/lib/unfurl/parse');
+    expect(siteIconUrl('<link rel="shortcut icon" href="/favicon.ico">', 'https://b.test/')).toBe(
+      'https://www.google.com/s2/favicons?domain=b.test&sz=64',
+    );
+  });
+});

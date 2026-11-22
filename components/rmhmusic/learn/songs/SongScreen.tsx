@@ -1354,6 +1354,8 @@ function describe(
           ? t('song-result-wait', {
               right: s.right,
               total: s.total,
+              count: Number(s.total),
+              defaultValue_one: 'Right first time: {{right}} of {{total}} note.',
               defaultValue: 'Right first time: {{right}} of {{total}} notes.',
             })
           : t('song-result-play', {

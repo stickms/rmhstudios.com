@@ -65,6 +65,8 @@ export function JamThemeFormFields({
         <div className="space-y-3">
           <p className="t-meta">
             {t('form-hint', {
+              count: Number(MAX_THEME_CANDIDATES),
+              defaultValue_one: 'Offer {{min}} to {{max}} theme. The first one wins a tie.',
               defaultValue: 'Offer {{min}} to {{max}} themes. The first one wins a tie.',
               min: MIN_THEME_CANDIDATES,
               max: MAX_THEME_CANDIDATES,

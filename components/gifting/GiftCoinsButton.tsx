@@ -83,7 +83,7 @@ export function GiftCoinsButton({
       if (data.ok) {
         toast.success(
           t('gift-coins-success', {
-            defaultValue: 'Sent {{amount}} coins{{recipient}} 🎁',
+            count: Number(amount), defaultValue_one: 'Sent {{amount}} coin{{recipient}} 🎁', defaultValue: 'Sent {{amount}} coins{{recipient}} 🎁',
             amount,
             recipient: recipientName ? ` to ${recipientName}` : '',
           }),

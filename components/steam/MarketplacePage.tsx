@@ -95,7 +95,7 @@ export function MarketplacePage({
                         className="stm-btn stm-btn-blue"
                         disabled={busy === l.id}
                         aria-label={t('steam-shop-buy-aria', {
-                          defaultValue: 'Buy {{name}} for {{price}} coins',
+                          count: Number(l.priceCoins), defaultValue_one: 'Buy {{name}} for {{price}} coin', defaultValue: 'Buy {{name}} for {{price}} coins',
                           name,
                           price: l.priceCoins,
                         })}

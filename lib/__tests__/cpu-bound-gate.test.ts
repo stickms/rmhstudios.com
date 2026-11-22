@@ -100,19 +100,16 @@ describe('postStoryCacheKey', () => {
     ).not.toBe(k);
   });
 
-  it('keys on the drawn text, not a raw prefix that emoji stripping shifts', () => {
-    // 400 emoji are stripped before drawing, so the drawn body is the tail.
+  it('keys on the drawn text: emoji are drawn now, and a difference past the cut is not', () => {
+    // Emoji used to be stripped before drawing; satori now draws them (lib/og/fallback-glyphs.server),
+    // so they are part of the drawn body and of the key.
+    expect(postStoryCacheKey({ ...base, content: '😀 first' })).not.toBe(
+      postStoryCacheKey({ ...base, content: '😀 second' }),
+    );
+    // Past the truncation point nothing differs on the card, so the key does not either.
     const pad = '😀'.repeat(400);
-    expect(
-      postStoryCacheKey({
-        ...base,
-        content: `${pad} first`,
-      }),
-    ).not.toBe(
-      postStoryCacheKey({
-        ...base,
-        content: `${pad} second`,
-      }),
+    expect(postStoryCacheKey({ ...base, content: `${pad} first` })).toBe(
+      postStoryCacheKey({ ...base, content: `${pad} second` }),
     );
   });
 });
