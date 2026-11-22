@@ -89,8 +89,8 @@ export async function setFaviconDot(on: boolean): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.drawImage(img, 0, 0, size, size);
-  // The theme's accent, read once per redraw (which only happens on 0 ↔ n).
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--site-accent').trim();
+  // The fixed notify pink, never the theme's accent (it is the same in every theme; the literal is the fallback).
+  const notify = getComputedStyle(document.documentElement).getPropertyValue('--site-notify').trim() || '#ff5c7a';
   const r = size * 0.22;
   ctx.beginPath();
   ctx.arc(size - r - 2, r + 2, r + 3, 0, Math.PI * 2);
@@ -98,7 +98,7 @@ export async function setFaviconDot(on: boolean): Promise<void> {
   ctx.fill();
   ctx.beginPath();
   ctx.arc(size - r - 2, r + 2, r, 0, Math.PI * 2);
-  ctx.fillStyle = accent || 'currentColor';
+  ctx.fillStyle = notify;
   ctx.fill();
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) return;

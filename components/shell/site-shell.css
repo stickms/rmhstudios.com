@@ -213,14 +213,13 @@
   color: var(--site-text);
   font-weight: 600;
 }
+/* Unread is a dot, in the fixed notify pink in every theme; the count is the sr-only text inside. */
 .site-sidebar__count {
-  padding: 0 4px;
-  border-radius: var(--site-radius-sm);
-  color: var(--site-notify-fg);
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
   background: var(--site-notify);
-  font-family: var(--site-font-mono);
-  font-size: 12px;
-  font-weight: 600;
 }
 .site-sidebar__write {
   flex: none;

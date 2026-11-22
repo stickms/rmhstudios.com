@@ -175,7 +175,6 @@ export function Sidebar() {
                     {label}
                     {count > 0 && (
                       <span className="site-sidebar__count">
-                        <span aria-hidden>{count > 99 ? '99+' : count}</span>
                         <span className="sr-only">
                           {t('shell-unread-count', {
                             count,
