@@ -62,7 +62,7 @@ export function ContinueReading() {
   });
 
   return (
-    <section aria-labelledby="continue-reading-heading" className="mx-auto mb-6 w-full max-w-3xl px-4">
+    <section aria-labelledby="continue-reading-heading" className="mb-6 w-full">
       <h2 id="continue-reading-heading" className="t-heading">
         {t('continue-heading', {
           defaultValue: 'Continue reading',
