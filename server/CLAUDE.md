@@ -253,10 +253,20 @@ Consequences:
   `MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS` (150). With no `DEEPSEEK_API_KEY` AI is not configured: extraction stores
   nothing and keeps its cursors, the live tick queues no backfill, startup warns, and the interviews job still runs. The
   real provider's `AiUsage` insert opens at most one extra connection through `lib/prisma.server`, inside the
-  `DATABASE_POOL_SIZE=3` slack, so the compose value is unchanged. (6) **Alias keys (D6):** SDN is a multi-key source: a
-  school holds one alias per thread stem plus a `summary:<CODE>/<slug>` key; a key owned by another school is skipped,
-  never moved. Unmapped keys land on `/admin/medschools` like Admit's. (7) **Permission and Content-Signal:** the SDN
-  owners gave written permission on 2026-11-20 for all data provided it is anonymized. `studentdoctor.net` sends
+  `DATABASE_POOL_SIZE=3` slack, so the compose value is unchanged. **AI cost.** (a) Extraction runs on `DEEPSEEK_FLASH`
+  with thinking off, temperature 0. (b) The system message is byte-identical on every call
+  (`systemFor(MEDSCHOOLS_EXTRACT)`: no date, school, cycle or count; all of that is in the user turn), so DeepSeek's
+  prompt cache hits on the prefix; `extract.test.ts` holds it. (c) AI runs off-peak only: a non-manual `sdn-live` at
+  peak makes no request (`outcome: 'paused-peak'`), the backfill refuses at peak, and a manual run's model calls are
+  refused at peak too. `sdn-live` and `sdn-backfill` also skip a non-manual run when a real (non-manual, OK or PARTIAL,
+  not a zero-work skip) run started within 20 h (`lastRealRunWithin`, read from `MedSourceRun`;
+  `outcome: 'skipped-min-interval'`), so duplicate triggers, restarts and a mistyped cron cannot run them more than
+  about daily. Schedules are pg-boss rows, so a deploy does not fire a run early. (d) The monthly cap
+  (`MEDSCHOOLS_AI_MONTHLY_USD`) is summed from `AiUsage` in the database, so it survives restarts; the backfill stops at
+  80% of it. (6) **Alias keys (D6):** SDN is a multi-key source: a school holds one alias per thread stem plus a
+  `summary:<CODE>/<slug>` key; a key owned by another school is skipped, never moved. Unmapped keys land on
+  `/admin/medschools` like Admit's. (7) **Permission and Content-Signal:** the SDN owners gave written permission on
+  2026-11-20 for all data provided it is anonymized. `studentdoctor.net` sends
   `Content-Signal: search=yes, ai-input=yes, ai-train=no`: RMH trains no model, and sending text to a hosted model for
   extraction is input, not training. Robots allow `/forums/` and `/threads/` and disallow `/members/`, `/goto/`,
   `/search/` and `/find-threads/`; the connector never logs in and never touches a disallowed path. Endpoint facts:

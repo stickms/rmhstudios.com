@@ -19,7 +19,14 @@ import {
 } from './adapters/sdn';
 import { SourceHaltedError, type PoliteClient, type PoliteHost } from './http';
 import { rollupEventCounts, type TouchedCell } from './rollup-events';
-import { brief, closeStaleRuns, recordAliasMiss } from './run-support';
+import {
+  SDN_MIN_INTERVAL_MS,
+  brief,
+  closeStaleRuns,
+  lastRealRunWithin,
+  recordAliasMiss,
+  type SdnRunOutcome,
+} from './run-support';
 import type { BudgetGate } from './sdn/budget';
 import type { SdnAi } from './sdn/extract';
 import { repairBackfillRollups } from './sdn/rollup-pending';
@@ -75,6 +82,9 @@ export interface SdnLiveSummary {
   staleForumConfig: boolean;
   aiConfigured: boolean;
   budgetPaused: boolean;
+  /** The run stopped calling the model (or never started) because DeepSeek peak hours began or were on. */
+  peakPaused: boolean;
+  outcome: SdnRunOutcome;
   requests: number;
   durationMs: number;
   discovered: boolean;
@@ -135,6 +145,8 @@ export async function runSdnLive(
     staleForumConfig: false,
     aiConfigured: true,
     budgetPaused: false,
+    peakPaused: false,
+    outcome: 'ran',
     requests: 0,
     durationMs: 0,
     discovered: false,
@@ -187,6 +199,36 @@ export async function runSdnLive(
   const state = {
     pages: 0,
     llmCalls: 0,
+  };
+
+  // Off-peak only and about once a day (unless a person asked): nothing is fetched and nothing reaches the model.
+  if (opts.trigger !== 'MANUAL') {
+    if (isDeepseekPeak(now())) {
+      summary.outcome = 'paused-peak';
+      summary.peakPaused = true;
+      return await close('OK');
+    }
+    let recent = true; // a ledger read error fails closed: a background job spends unattended
+    try {
+      recent = await lastRealRunWithin(prisma, 'SDN', 'sdn-live', SDN_MIN_INTERVAL_MS, now());
+    } catch (e) {
+      log.warn(`sdn-live: could not read the last run: ${brief(e)}`);
+    }
+    if (recent) {
+      summary.outcome = 'skipped-min-interval';
+      return await close('OK');
+    }
+  }
+  // Even a manual run's model calls (and a run that crosses into peak) are refused at peak.
+  let peakHit = false;
+  const budget: BudgetGate = {
+    async allow(kind) {
+      if (isDeepseekPeak(now())) {
+        peakHit = true;
+        return false;
+      }
+      return deps.budget.allow(kind);
+    },
   };
 
   try {
@@ -514,7 +556,7 @@ export async function runSdnLive(
         prisma,
         client: session,
         ai: deps.ai,
-        budget: deps.budget,
+        budget,
         kind: 'live',
         secret: deps.secret,
         now,
@@ -592,7 +634,11 @@ export async function runSdnLive(
           summary.halted = true;
           error = brief(session.lastFailure ?? 'source halted');
         }
-        if (res.outcome === 'paused-budget') summary.budgetPaused = true;
+        if (res.outcome === 'paused-budget') {
+          // Work was done this run, so the outcome stays 'ran' and the interval window counts it.
+          if (peakHit) summary.peakPaused = true;
+          else summary.budgetPaused = true;
+        }
         break; // stopped, ai-unavailable, paused-*, halted end the walk
       }
     }
@@ -714,6 +760,7 @@ const BACKFILL_BACKOFF_CAP_MS = 24 * 3_600_000;
  */
 export async function sdnBackfillOwed(prisma: MedPrisma, now: Date, aiConfigured = true): Promise<boolean> {
   if (!aiConfigured) return false;
+  if (isDeepseekPeak(now)) return false; // nothing is queued at peak
   const recent = await prisma.medSourceRun.findMany({
     where: {
       source: 'SDN',

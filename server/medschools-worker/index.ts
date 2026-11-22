@@ -473,12 +473,12 @@ const sdnLiveTick = guarded('sdn-live', async (data) => {
     { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
   );
   log.info(
-    `sdn-live run complete [${r.runId}] — status=${r.status} feeds=${r.feedsPolled} known=${r.threadsKnown} changed=${r.threadsChanged} pending=${r.pending} processed=${r.processed} pages=${r.pages} llmCalls=${r.llmCalls} events=${r.eventsCreated} questions=${r.questionsCreated} misses=${r.misses} rolledUp=${r.rolledUp} aiConfigured=${r.aiConfigured} budgetPaused=${r.budgetPaused} halted=${r.halted} requests=${r.requests}`,
+    `sdn-live run complete [${r.runId}] — status=${r.status} feeds=${r.feedsPolled} known=${r.threadsKnown} changed=${r.threadsChanged} pending=${r.pending} processed=${r.processed} pages=${r.pages} llmCalls=${r.llmCalls} events=${r.eventsCreated} questions=${r.questionsCreated} misses=${r.misses} rolledUp=${r.rolledUp} aiConfigured=${r.aiConfigured} budgetPaused=${r.budgetPaused} peakPaused=${r.peakPaused} outcome=${r.outcome} halted=${r.halted} requests=${r.requests}`,
   );
   // The walk owed since the last run resumes here, without waiting for the monthly cron. The queue is exclusive and the
   // backfill tick guarded, so a second queueing is a no-op; sdnBackfillOwed already rules out budget, peak and back-off
   // pauses and an AI-less worker. The queued run carries no manual marker, so the flag still governs it.
-  if (!stopping && !sdnBackfillInFlight && SDN_ENABLED) {
+  if (!stopping && !sdnBackfillInFlight && SDN_ENABLED && r.outcome === 'ran') {
     try {
       if (await sdnBackfillOwed(medPrisma, new Date(), sdnAi.configured())) {
         log.info('sdn-live: backfill owed — queueing it');

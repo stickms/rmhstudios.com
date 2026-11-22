@@ -12,7 +12,14 @@ import { parseThreadTitle } from '../engine/sdn-title';
 import { SdnPageError, assertPage, forumListingUrl, parseForumListing } from './adapters/sdn';
 import { SourceHaltedError } from './http';
 import { rollupEventCounts, type TouchedCell } from './rollup-events';
-import { brief, closeStaleRuns, recordAliasMiss } from './run-support';
+import {
+  SDN_MIN_INTERVAL_MS,
+  brief,
+  closeStaleRuns,
+  lastRealRunWithin,
+  recordAliasMiss,
+  type SdnRunOutcome,
+} from './run-support';
 import type { SdnForumsFile } from './run-sdn-live';
 import { SOURCES } from './sources';
 import type { BudgetGate } from './sdn/budget';
@@ -83,6 +90,7 @@ export interface SdnBackfillSummary {
   aiConfigured: boolean;
   budgetPaused: boolean;
   peakPaused: boolean;
+  outcome: SdnRunOutcome;
   /** UTC `YYYY-MM` the monthly budget refused in; `sdnBackfillOwed` reads it. */
   pausedMonth: string | null;
   /** True when every unfinished archive thread is parked (404 or repeated failures); not `done`, not failing. */
@@ -180,6 +188,7 @@ export async function runSdnBackfill(
     aiConfigured: true,
     budgetPaused: false,
     peakPaused: false,
+    outcome: 'ran',
     pausedMonth: null,
     waitingOnParked: false,
     parkedUntil: null,
@@ -196,6 +205,23 @@ export async function runSdnBackfill(
   if (deps.secret.length < 16) {
     log.error('sdn-backfill: MEDSCHOOLS_DEDUPE_SECRET is missing or shorter than 16 characters; run skipped');
     return finish();
+  }
+
+  // About once a day unless a person asked. No run row is written for a skip: the walk resumes from the newest
+  // row that carries a cursor, and a skip has none. A ledger read error fails closed (unattended spend).
+  if (opts.trigger !== 'MANUAL') {
+    let recent = true;
+    try {
+      recent = await lastRealRunWithin(prisma, 'SDN', JOB, SDN_MIN_INTERVAL_MS, now());
+    } catch (e) {
+      log.warn(`sdn-backfill: could not read the last run: ${brief(e)}`);
+    }
+    if (recent) {
+      summary.outcome = 'skipped-min-interval';
+      summary.status = 'OK';
+      log.info('sdn-backfill: skipped, a run started within the last 20 h');
+      return finish();
+    }
   }
 
   await closeStaleRuns(prisma, 'SDN', JOB, now, log);

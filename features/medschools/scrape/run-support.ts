@@ -90,3 +90,36 @@ export async function recordAliasMiss(
   });
   return true;
 }
+
+/** Outcomes that did no work (zero requests); they never extend the minimum-interval window. */
+export type SdnRunOutcome = 'ran' | 'paused-peak' | 'skipped-min-interval';
+const ZERO_WORK_OUTCOMES: readonly string[] = ['paused-peak', 'skipped-min-interval'];
+
+/** The AI-backed SDN jobs run at most about once a day: a non-manual run inside this window is skipped. */
+export const SDN_MIN_INTERVAL_MS = 20 * 3_600_000;
+
+/**
+ * True when a non-manual run of this source and job started within `ms` of `now` and finished OK or PARTIAL.
+ * Read from `MedSourceRun`, so it survives restarts and deploys. Benign zero-work rows (`paused-peak`,
+ * `skipped-min-interval`, a backfill peak pause that made no request) are ignored so they do not extend the window.
+ */
+export async function lastRealRunWithin(
+  prisma: MedPrisma,
+  source: MedSource,
+  job: string,
+  ms: number,
+  now: Date,
+): Promise<boolean> {
+  const rows = await prisma.medSourceRun.findMany({
+    where: { source, job, startedAt: { gte: new Date(now.getTime() - ms) } },
+  });
+  return rows.some((r) => {
+    if (r.trigger === 'MANUAL') return false;
+    if (r.status !== 'OK' && r.status !== 'PARTIAL') return false;
+    if (r.startedAt.getTime() < now.getTime() - ms) return false;
+    const st = r.stats !== null && typeof r.stats === 'object' ? (r.stats as Record<string, unknown>) : {};
+    if (typeof st.outcome === 'string' && ZERO_WORK_OUTCOMES.includes(st.outcome)) return false;
+    if (st.peakPaused === true && (st.requests === 0 || st.requests === undefined)) return false;
+    return true;
+  });
+}
