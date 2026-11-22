@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1263 endpoints across 202 groups: 157 route files under `app/routes/api` and 1106 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1270 endpoints across 203 groups: 157 route files under `app/routes/api` and 1113 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1284,6 +1284,19 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/market/listings/:id` | `DELETE` | `lib/market/api/market.listings.$id.server.ts` |
 | `/api/market/listings/:id/buy` | `POST` | `lib/market/api/market.listings.$id.buy.server.ts` |
 
+## `/api/medschools`
+
+6 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/medschools/live` | `GET` | `features/medschools/api/medschools.live.server.ts` |
+| `/api/medschools/schools` | `GET` | `features/medschools/api/medschools.schools.server.ts` |
+| `/api/medschools/schools/:slug` | `GET` | `features/medschools/api/medschools.schools.$slug.server.ts` |
+| `/api/medschools/schools/:slug/activity` | `GET` | `features/medschools/api/medschools.schools.$slug.activity.server.ts` |
+| `/api/medschools/schools/:slug/history` | `GET` | `features/medschools/api/medschools.schools.$slug.history.server.ts` |
+| `/api/medschools/today` | `GET` | `features/medschools/api/medschools.today.server.ts` |
+
 ## `/api/memory`
 
 1 route.
@@ -1422,7 +1435,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/og`
 
-18 routes.
+19 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1433,6 +1446,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/og/elections` | `GET` | `lib/og/api/og.elections.server.ts` |
 | `/api/og/game/:gameId` | `GET` | `lib/og/api/og.game.$gameId.server.ts` |
 | `/api/og/job/:jobId` | `GET` | `lib/og/api/og.job.$jobId.server.ts` |
+| `/api/og/med-school/:slug` | `GET` | `lib/og/api/og.med-school.$slug.server.ts` |
 | `/api/og/moment/:id` | `GET` | `lib/og/api/og.moment.$id.server.ts` |
 | `/api/og/music/:token` | `GET` | `lib/og/api/og.music.$token.server.ts` |
 | `/api/og/post/:id` | `GET` | `lib/og/api/og.post.$id.server.ts` |
