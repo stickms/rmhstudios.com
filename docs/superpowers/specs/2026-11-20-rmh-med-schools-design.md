@@ -292,6 +292,8 @@ Pages (`app/routes/_site/rmh-medschool/`, Steel, `PageLayout`, per-route `head()
 - `tracker.tsx` (signed-in) — my cycle: schools, milestones, the sharing switch, my conditional chances.
 - `ask.tsx` — AI Q&A (also embedded as a panel on the school page).
 
+School crests (owner, 2026-11-22): Admit.org's school crests, fetched by `scripts/medschools/fetch-admit-crests.ts` into static 96×96 WebPs under `public/images/medschools/crests/<slug>.webp` (listed in `data/medschools/crests.json`, kept out of the image-variant manifest), drawn by `ui/SchoolCrest.tsx` with an empty alt because the school name is always beside it.
+
 Charts: SVG drawn with `d3-scale`/`d3-shape` in a small `ui/charts/` set (daily bars, cumulative line with forecast
 band, cycle-over-cycle overlay), coloured only with `--site-text`, `--site-text-muted`, `--site-border`; rendered on the
 server so they appear without scripting. Not chart.js (canvas, its own palette).

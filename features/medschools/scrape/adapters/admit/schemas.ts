@@ -108,3 +108,17 @@ export const schoolStatsData = z.object({
     }),
   ),
 });
+
+/** School fields only (the cycle-results row's user_* fields are never selected). A row without a slug is dropped. */
+export const crestSchool = z.object({
+  slug: z.string().min(1),
+  name: z.string(),
+  shorthand_name: z.string().nullable(),
+  state: z.string().nullable(),
+  city: z.string().nullable(),
+  crest_url: z.string().nullable(),
+});
+
+export const schoolCrestsData = z.object({
+  getAllCycleResults: z.array(z.object({ school: crestSchool.nullable() })),
+});

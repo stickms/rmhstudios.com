@@ -24,6 +24,8 @@ export interface PoliteResult {
   ok: boolean;
   status: number;
   body: string;
+  /** The response `content-type` header, when there was a response. */
+  contentType?: string;
   notModified?: boolean;
 }
 
@@ -137,7 +139,7 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
         if (res.status === 304)
           return { result: { ok: true, status: 304, body: '', notModified: true }, transportFailure: false };
         const text = await res.text().catch(() => '');
-        last = { ok: res.ok, status: res.status, body: text };
+        last = { ok: res.ok, status: res.status, body: text, contentType: res.headers.get('content-type') ?? '' };
         const retryable = res.status === 429 || res.status >= 500;
         if (!retryable) return { result: last, transportFailure: false };
       }

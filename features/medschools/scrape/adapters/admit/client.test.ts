@@ -14,6 +14,7 @@ import {
   INTERVIEW_SCHOOLS,
   PROFILE_FLAG,
   RECENT_UPDATES,
+  SCHOOL_CRESTS,
   SCHOOL_STATS,
   type AdmitOperation,
 } from './queries';
@@ -860,5 +861,26 @@ describe('interviews', () => {
     const posts = requestedPosts.length;
     expect(client.isCached(items[0]!.lookup)).toBe(true);
     expect(requestedPosts.length).toBe(posts);
+  });
+});
+
+describe('listSchoolCrests', () => {
+  const crestRow = (slug: string, crest: string | null) => ({
+    school: { slug, name: slug, shorthand_name: null, state: 'MA', city: 'Boston', crest_url: crest },
+  });
+  const page = (offset: number) =>
+    key(SCHOOL_CRESTS, { ...SCHOOL_CRESTS.variables, limit: 100, offset });
+
+  it('selects school fields only and pages until a short page', async () => {
+    const rows = Array.from({ length: 100 }, (_, i) => crestRow(`s${i}`, `https://x.example/${i}.svg`));
+    const { client, requestedPosts } = setup({
+      [page(0)]: JSON.stringify({ data: { getAllCycleResults: rows } }),
+      [page(100)]: JSON.stringify({ data: { getAllCycleResults: [crestRow('last', null)] } }),
+    });
+    const out = await client.listSchoolCrests();
+    expect(out).toHaveLength(101);
+    expect(out.at(-1)).toMatchObject({ slug: 'last', crestUrl: null, shortName: '' });
+    expect(requestedPosts).toHaveLength(2);
+    expect(SCHOOL_CRESTS.query).not.toMatch(/user_|display_name|profile_image/);
   });
 });

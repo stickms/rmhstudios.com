@@ -75,8 +75,11 @@ const SOURCE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp']);
  * `site-history/` holds ~120 small screenshots (about 32 KB each) for one page. Every manifest row ships in the
  * client entry, because OptimizedImage imports the manifest and the shell imports OptimizedImage: listing them put
  * 11 KB on every page's critical path and over the bundle budget. The page draws them with a plain lazy <img>.
+ *
+ * `medschools/` holds the school crests: 96x96 WebPs that are already final size (shown at 20-40 px), one per school,
+ * drawn by a plain lazy <img>; ~230 manifest rows would only bloat the client entry.
  */
-const EXCLUDED = ['_variants', 'og', 'social', 'icons', 'brand', 'site-history'];
+const EXCLUDED = ['_variants', 'og', 'social', 'icons', 'brand', 'site-history', 'medschools'];
 
 /** A source small enough that a 320w variant would not save anything. */
 const MIN_SOURCE_WIDTH = 400;

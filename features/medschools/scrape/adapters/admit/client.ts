@@ -16,6 +16,7 @@ import {
   INTERVIEW_SCHOOLS,
   PROFILE_FLAG,
   RECENT_UPDATES,
+  SCHOOL_CRESTS,
   SCHOOL_STATS,
   type AdmitOperation,
 } from './queries';
@@ -27,12 +28,14 @@ import {
   interviewSchoolsData,
   profileFlagData,
   questionsData,
+  schoolCrestsData,
   schoolStatsData,
 } from './schemas';
 import { mapStatus } from './statuses';
 import {
   mintLookupToken,
   redeemLookupToken,
+  type AdmitSchoolCrest,
   type AdmitSchoolRef,
   type FeedItem,
   type LookupToken,
@@ -78,6 +81,8 @@ export interface AdmitClient {
   /** `null` = Admit answered without the question list (unavailable); `[]` is an explicit empty list. */
   fetchQuestions(slug: string): Promise<NormalizedAdmitQuestion[] | null>;
   fetchSchoolStats(filter: MedResidence): Promise<NormalizedAdmitStats[]>;
+  /** Every school with a result row, with its crest URL. Schools only: no user field is requested. */
+  listSchoolCrests(): Promise<AdmitSchoolCrest[]>;
 }
 
 const DAY_MS = 86_400_000;
@@ -356,6 +361,36 @@ export function createAdmitClient(
         });
       }
       return out;
+    },
+
+    async listSchoolCrests() {
+      const bySlug = new Map<string, AdmitSchoolCrest>();
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const data = await run(
+          SCHOOL_CRESTS,
+          {
+            ...SCHOOL_CRESTS.variables,
+            limit: SCHOOLS_PAGE,
+            offset: page * SCHOOLS_PAGE,
+          },
+          schoolCrestsData,
+        );
+        const rows = data.getAllCycleResults;
+        for (const r of rows) {
+          const s = r.school;
+          if (!s) continue;
+          bySlug.set(s.slug, {
+            slug: s.slug,
+            name: s.name,
+            shortName: s.shorthand_name ?? '',
+            city: s.city ?? '',
+            state: s.state ?? '',
+            crestUrl: s.crest_url,
+          });
+        }
+        if (rows.length < SCHOOLS_PAGE) break;
+      }
+      return [...bySlug.values()];
     },
 
     async fetchSchoolStats(filter) {
