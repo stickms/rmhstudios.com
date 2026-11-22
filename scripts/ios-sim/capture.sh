@@ -60,6 +60,17 @@ xcrun simctl bootstatus "$UDID" -b >/dev/null
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 \
   --cellularMode active --cellularBars 4 --wifiBars 3 || true
 
+# `simctl openurl` times out when the runner is busy (3 cores shared with the server and Postgres): try again, and skip a
+# page that never opens rather than ending the whole run.
+open_url() {
+  for attempt in 1 2 3; do
+    xcrun simctl openurl "$UDID" "$1" && return 0
+    echo "openurl $1 failed (attempt $attempt), retrying"
+    sleep 15
+  done
+  return 1
+}
+
 shoot() { # name
   xcrun simctl io "$UDID" screenshot --type=png "$OUT/${NAME_PREFIX}$1.png" >/dev/null
   echo "wrote $OUT/${NAME_PREFIX}$1.png"
@@ -88,10 +99,11 @@ print(int(d.get("width_points", 402)), int(d.get("height_points", 874)))
 first=1
 for appearance in $APPEARANCES; do
   xcrun simctl ui "$UDID" appearance "$appearance"
+  sleep 5
   IFS=',' read -ra paths <<<"$ROUTES"
   for path in "${paths[@]}"; do
     slug=$(echo "${path:-/}" | sed 's#^/##; s#/#_#g'); slug="${slug:-home}"
-    xcrun simctl openurl "$UDID" "${BASE%/}${path}"
+    open_url "${BASE%/}${path}" || { echo "could not open ${path}, skipping it"; continue; }
     sleep "$SETTLE"
     if [ "$first" = "1" ] && [ -n "$IDB" ]; then
       # Safari's one-time "View Bookmarks, Share Menu, and Open Tabs" popup: its close button is at about 90% x 71% y.
