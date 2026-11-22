@@ -59,6 +59,8 @@ const SHORT_HANDLE_STOPLIST: ReadonlySet<string> = new Set([
 
 const URL_RE = /(?:https?:\/\/|www\.)[^\s<>"')\]]+/gi;
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
+/** US phone numbers: optional +1, optional parentheses, dot/dash/space separators, 10 digits (Q24). */
+const PHONE_REDACT_RE = /(?<![\w+])(?:\+?1[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-]?)\d{3}[\s.-]?\d{4}(?!\w)/g;
 const MENTION_RE = /@\w(?:[\w.-]*\w)?/g;
 
 function escapeRe(s: string): string {
@@ -92,9 +94,13 @@ function handleMatchers(handles: Iterable<string>): RegExp[] {
   return out;
 }
 
-/** Replaces URLs with [link], emails with [email], @mentions and any page handle with [user]. */
+/** Replaces URLs with [link], emails with [email], phone numbers with [phone], @mentions and any page handle with [user]. */
 export function redactForModel(text: string, handles: Iterable<string> = []): string {
-  let out = text.replace(URL_RE, '[link]').replace(EMAIL_RE, '[email]').replace(MENTION_RE, '[user]');
+  let out = text
+    .replace(URL_RE, '[link]')
+    .replace(EMAIL_RE, '[email]')
+    .replace(PHONE_REDACT_RE, '[phone]')
+    .replace(MENTION_RE, '[user]');
   for (const re of handleMatchers(handles)) out = out.replace(re, '[user]');
   return out;
 }

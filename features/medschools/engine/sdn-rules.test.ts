@@ -16,6 +16,23 @@ describe('sdn-rules', () => {
     const out = redactForModel('mail a.b@x.org see https://x.org/p?q=1 @bob_1, and Alice-77 said hi', ['alice-77']);
     expect(out).toBe('mail [email] see [link] [user], and [user] said hi');
   });
+  it.each([
+    '555-010-7731',
+    '(555) 010-7731',
+    '555.010.7731',
+    '555 010 7731',
+    '5550107731',
+    '+1 555-010-7731',
+    '1-555-010-7731',
+    '+1 (555) 010-7731',
+  ])('redacts the phone number %s (Q24)', (n) => {
+    expect(redactForModel(`call me at ${n} tonight`)).toBe('call me at [phone] tonight');
+    expect(redactForModel(`${n}.`)).toBe('[phone].');
+  });
+  it('leaves dates, scores and short numbers alone (Q24)', () => {
+    const t = 'II 11/3, secondary 7/15, 11/3/2026, LM 76.8, MCAT 515, GPA 3.9, 3.87, 2026-11-03, 510 520 in 2024';
+    expect(redactForModel(t)).toBe(t);
+  });
   it('matches handles on word boundaries only', () => {
     expect(redactForModel('mikey went', ['mike'])).toBe('mikey went');
     expect(containsHandle('thanks MIKE!', ['mike'])).toBe(true);
