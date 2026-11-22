@@ -31,6 +31,12 @@ describe('parseThreadPage', () => {
     expect(post?.eventKey('INTERVIEW', '2026-11-04')).not.toBe(post?.eventKey('INTERVIEW', '2026-11-03'));
     expect(post?.eventKey('ACCEPTANCE', '2026-11-03')).not.toBe(post?.eventKey('INTERVIEW', '2026-11-03'));
   });
+  it('a link-unfurl card (a member page title or snippet) never reaches the text, which keeps the words around it', () => {
+    const plain = hostile().posts[3];
+    expect(plain?.text).toBe('Accepted on 11/10, so happy.');
+    expect(JSON.stringify(hostile())).not.toContain('unfurled_member_zq');
+    expect(readFixture('thread-hostile.html')).toContain('bbCodeBlock--unfurl');
+  });
   it('blockquote is stripped before anything, nested too', () => {
     const [, quoted, nested, plain] = hostile().posts;
     expect(quoted?.text).toBe('');

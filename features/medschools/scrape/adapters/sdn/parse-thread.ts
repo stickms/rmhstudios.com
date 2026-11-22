@@ -1,6 +1,6 @@
 /**
  * Thread page parser. This is the anonymization boundary for forum posts: quotes are removed first, the text is
- * redacted with the page's own author handles, and the raw post id leaves only through `hashPostId`.
+ * link-unfurl cards are dropped, the text is redacted with the page's own author handles, and the raw post id leaves only through `hashPostId`.
  * data-author, usernames, avatars, profile links, signatures and edit notes are never read into the result.
  */
 import { parse } from 'node-html-parser';
@@ -89,6 +89,8 @@ export function parseThreadPage(html: string, hashPostId: (postId: string) => st
     if (!id || !postedAt || !wrapper) continue;
     // Quotes first, so quoted words (and nested quotes) never reach the text.
     for (const q of wrapper.querySelectorAll('blockquote')) q.remove();
+    // A link unfurl is the linked page's own title and snippet (a member page carries a handle), not the poster's words.
+    for (const u of wrapper.querySelectorAll('.bbCodeBlock--unfurl, .js-unfurl, [data-unfurl]')) u.remove();
     posts.push({
       id,
       postedAt,
