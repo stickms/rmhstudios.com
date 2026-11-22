@@ -236,7 +236,7 @@ function IntervalSession({
             aria-disabled={!asking || undefined}
             onClick={() => answer({ name })}
             className={cn(
-              'rmm-display flex h-11 min-w-0 items-center justify-center rounded-app-sm border px-2 text-center text-base leading-5 transition-colors',
+              'rmm-display flex h-9 min-w-0 items-center justify-center rounded-app-sm border px-2 text-center text-base leading-5 transition-colors',
               asking
                 ? 'border-app-border-bright text-app-text'
                 : card && card.answer === name

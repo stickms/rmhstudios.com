@@ -1,6 +1,6 @@
 /**
  * SprintGame — `/rmhmusic/sprint`, the sight reading game. Notes appear on the staff and the
- * learner plays them as fast as they can. Two ways to play, switched with the sanctioned `<Tabs>`:
+ * learner plays them as fast as they can. Two ways to play, switched with the sanctioned `<Tabs dense>`:
  * **Freeplay** (pick a level from plain text rows; a 20-prompt run) and the **Daily challenge** (the
  * same 30 prompts for everyone on a UTC day; the first finished run is the scored one, later runs
  * that day are practice). A game beside the path: it completes no lesson and gates nothing.
@@ -285,6 +285,7 @@ export function SprintGame({
     body = (
       <div className={loading ? 'space-y-4' : `space-y-4 ${arrival}`}>
         <Tabs
+          dense
           tabs={[
             {
               id: 'freeplay',

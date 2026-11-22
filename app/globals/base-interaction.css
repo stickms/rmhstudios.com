@@ -303,7 +303,7 @@ body {
 @media (pointer: coarse) {
   [data-slot='button'],
   [data-slot='select'],
-  [role='tab'] {
+  [role='tab']:not([data-tab-dense] *) {
     min-block-size: var(--site-touch-target);
     min-inline-size: var(--site-touch-target);
   }

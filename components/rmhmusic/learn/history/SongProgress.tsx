@@ -114,6 +114,7 @@ export function SongProgress({ songId }: { songId: string }) {
           })}
         </h2>
         <Tabs
+          dense
           idBase={TABS_ID}
           tabs={[
             {

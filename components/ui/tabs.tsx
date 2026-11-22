@@ -117,6 +117,12 @@ interface TabsProps {
    */
   iconOnly?: boolean;
   /**
+   * App tier only: a shorter strip (32px segments, 36px with its track on a touch device too). For the full-screen
+   * apps whose controls sit in a dense column (a dialog, a lesson's mode switch) where the 44px touch floor made a
+   * three-word switch taller than the line of text it sits under. Off by default; the site tier ignores it.
+   */
+  dense?: boolean;
+  /**
    * Tablist-mode ARIA panel wiring (§16.2). When set, each tab gets a stable dom
    * id `${idBase}-tab-${id}` (instead of the useId-scoped default) and
    * `aria-controls="${idBase}-panel-${id}"`, so the caller can render matching
@@ -143,6 +149,7 @@ export function Tabs({
   className,
   sheet = true,
   iconOnly = false,
+  dense = false,
   idBase,
   renderTab,
   'aria-label': ariaLabel,
@@ -204,9 +211,11 @@ export function Tabs({
   // where Apple's segmented controls sit. Same resulting heights, evenly
   // distributed, and `pointer-coarse:min-h-11` keeps the 44px touch floor.
   const pad =
-    size === 'sm'
-      ? 'min-h-9 pointer-coarse:min-h-11 px-3.5 py-2 text-xs'
-      : 'min-h-10 pointer-coarse:min-h-11 px-4.5 py-2.5 text-sm';
+    dense && appTier
+      ? cn('min-h-8 pointer-coarse:min-h-8 py-1', size === 'sm' ? 'px-3 text-xs' : 'px-4 text-sm')
+      : size === 'sm'
+        ? 'min-h-9 pointer-coarse:min-h-11 px-3.5 py-2 text-xs'
+        : 'min-h-10 pointer-coarse:min-h-11 px-4.5 py-2.5 text-sm';
 
   const equal = appTier && tabs.length <= EQUAL_SEGMENT_MAX;
 
@@ -464,6 +473,7 @@ export function Tabs({
     'data-tab-fit': equal ? 'equal' : 'content',
     'data-tab-appearance': appTier ? 'thumb' : 'rule',
     'data-tab-icon-only': appTier && iconOnly ? '' : undefined,
+    'data-tab-dense': dense && appTier ? '' : undefined,
     'data-fade-start': 'false',
     'data-fade-end': 'false',
     className: innerClass,

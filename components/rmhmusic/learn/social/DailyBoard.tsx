@@ -199,6 +199,7 @@ export function DailyBoard({ day }: { day: BoardDay }) {
       </section>
 
       <Tabs
+        dense
         tabs={[
           {
             id: 'everyone',

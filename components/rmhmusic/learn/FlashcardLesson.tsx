@@ -418,7 +418,7 @@ export function FlashcardSession({
                   })
                 }
                 className={cn(
-                  'rmm-display flex h-full min-h-11 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
+                  'rmm-display flex h-full min-h-9 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
                   asking
                     ? 'border-app-border-bright text-app-text'
                     : isCorrect
@@ -460,7 +460,7 @@ export function FlashcardSession({
                   aria-disabled={!asking || undefined}
                   onClick={() => choose(value)}
                   className={cn(
-                    'rmm-display flex h-full min-h-11 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
+                    'rmm-display flex h-full min-h-9 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
                     asking
                       ? picked
                         ? 'border-app-accent text-app-accent'
