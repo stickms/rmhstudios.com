@@ -13,7 +13,7 @@
  *   medschools.admit-live   every 5 min — the Admit.org live decisions feed (needs the dedupe secret).
  *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
  *
- *   medschools.sdn-live       every 10 min — Student Doctor Network RSS feeds, then the changed threads, with the
+ *   medschools.sdn-live       daily (12:20 UTC) — Student Doctor Network RSS feeds, then the changed threads, with the
  *                             posts read by the extraction model (needs the dedupe secret; AI optional).
  *   medschools.sdn-backfill   monthly safety net, and queued by the live tick while the prior-year walk is owed
  *                             (own queue: its own cadence, budget share and back-off).
@@ -473,12 +473,12 @@ const sdnLiveTick = guarded('sdn-live', async (data) => {
     { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
   );
   log.info(
-    `sdn-live run complete [${r.runId}] — status=${r.status} feeds=${r.feedsPolled} known=${r.threadsKnown} changed=${r.threadsChanged} pending=${r.pending} processed=${r.processed} pages=${r.pages} llmCalls=${r.llmCalls} events=${r.eventsCreated} questions=${r.questionsCreated} misses=${r.misses} rolledUp=${r.rolledUp} aiConfigured=${r.aiConfigured} budgetPaused=${r.budgetPaused} halted=${r.halted} requests=${r.requests}`,
+    `sdn-live run complete [${r.runId}] — status=${r.status} feeds=${r.feedsPolled} known=${r.threadsKnown} changed=${r.threadsChanged} pending=${r.pending} processed=${r.processed} pages=${r.pages} llmCalls=${r.llmCalls} events=${r.eventsCreated} questions=${r.questionsCreated} misses=${r.misses} rolledUp=${r.rolledUp} aiConfigured=${r.aiConfigured} budgetPaused=${r.budgetPaused} peakPaused=${r.peakPaused} outcome=${r.outcome} halted=${r.halted} requests=${r.requests}`,
   );
   // The walk owed since the last run resumes here, without waiting for the monthly cron. The queue is exclusive and the
   // backfill tick guarded, so a second queueing is a no-op; sdnBackfillOwed already rules out budget, peak and back-off
   // pauses and an AI-less worker. The queued run carries no manual marker, so the flag still governs it.
-  if (!stopping && !sdnBackfillInFlight && SDN_ENABLED) {
+  if (!stopping && !sdnBackfillInFlight && SDN_ENABLED && r.outcome === 'ran') {
     try {
       if (await sdnBackfillOwed(medPrisma, new Date(), sdnAi.configured())) {
         log.info('sdn-live: backfill owed — queueing it');
@@ -628,7 +628,7 @@ const interviewsCron =
 const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
-const sdnLiveCron = process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '*/10 * * * *';
+const sdnLiveCron = process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '20 12 * * *';
 // Monthly safety net: the live tick queues the real walk, this one covers a missed tick and the budget reset (1st, UTC).
 const sdnBackfillCron = process.env.MEDSCHOOLS_SDN_BACKFILL_CRON?.trim() || '15 0 1 * *';
 // Monday just before DeepSeek's 06:00 UTC peak; the job uses no model anyway.

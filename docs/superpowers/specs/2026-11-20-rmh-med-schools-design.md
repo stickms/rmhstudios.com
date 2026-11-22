@@ -197,7 +197,7 @@ per source, cron env overrides. Bootstrap on first start: seed the school regist
 | Queue                   | Cron (UTC)                    | What                                                                                                                                                                                                     |
 | ----------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `medschools.admit-live` | every 5 min                   | Admit `getRecentSchoolCycleUpdates(allSchools)`; insert unseen events by hash. The live feed.                                                                                                            |
-| `medschools.sdn-live`   | every 10 min                  | Poll the two current-cycle forum RSS feeds; for threads whose activity changed, fetch only the new last page(s); extract (§9).                                                                           |
+| `medschools.sdn-live`   | daily (12:20 UTC)             | Poll the two current-cycle forum RSS feeds; for threads whose activity changed, fetch only the new last page(s); extract (§9).                                                                           |
 | `medschools.cycletrack` | hourly at :20                 | CycleTrack regenerates hourly; per school, fetch the explorer page / its summary JSON; upsert daily counts, stats, first-dates. Walk schools sequentially, ~1 req/s.                                     |
 | `medschools.interviews` | daily                         | Admit interview overview/questions/feedback per school.                                                                                                                                                  |
 | `medschools.aggregate`  | every 15 min                  | Roll `MedCycleEvent` into `MedCycleCount`; refresh the materialized "today" view.                                                                                                                        |
@@ -309,12 +309,12 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    anonymization tests.
 2. Admit.org adapter (live + backfill + interviews; phase 2a, shipped with the alias-miss admin page) and SDN adapter
    (RSS live, prior-year backfill, LLM extraction). Phase 2b (SDN) shipped as three queues in the medschools worker:
-   `medschools.sdn-live` (10 min), `medschools.sdn-backfill` (its own queue rather than the shared backfill queue,
-   queued by the live tick while owed, no bootstrap trigger) and `medschools.sdn-interviews` (weekly). Program is MD
-   unless MD-PhD, DO-PhD or MSTP is stated (section 4a SDN paragraph); extraction is capped by
-   `MEDSCHOOLS_AI_MONTHLY_USD` (20, backfill 80%), pauses in DeepSeek peak hours and backs off after failed runs; phone
-   numbers and email addresses are redacted before the model, names may reach the model but are never stored. Detail:
-   `server/CLAUDE.md`.
+   `medschools.sdn-live` (daily, owner 2026-11-22: SDN forum activity is slow), `medschools.sdn-backfill` (its own queue
+   rather than the shared backfill queue, queued by the live tick while owed, no bootstrap trigger) and
+   `medschools.sdn-interviews` (weekly). Program is MD unless MD-PhD, DO-PhD or MSTP is stated (section 4a SDN
+   paragraph); extraction is capped by `MEDSCHOOLS_AI_MONTHLY_USD` (20, backfill 80%), pauses in DeepSeek peak hours and
+   backs off after failed runs; phone numbers and email addresses are redacted before the model, names may reach the
+   model but are never stored. Detail: `server/CLAUDE.md`.
 3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n.
 4. Private tracker with anonymous sharing.
 5. Statistics + forecast tab + personal conditional chance.

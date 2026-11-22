@@ -378,6 +378,21 @@ describe('runSdnBackfill', () => {
     expect(r2.status).toBe('OK');
   });
 
+  it('a CRON run within 20 h of a real run is skipped with zero requests and no run row; MANUAL is not', async () => {
+    const s = setup(archiveRoutes());
+    const r1 = await s.run({ trigger: 'CRON' });
+    expect(r1.outcome).toBe('ran');
+    const rows = s.tables.medSourceRun!.length;
+    const before = s.requested.length;
+    s.clock.t = new Date('2026-11-20T23:00:00Z');
+    const r2 = await s.run({ trigger: 'CRON' });
+    expect(r2.outcome).toBe('skipped-min-interval');
+    expect(s.requested.length).toBe(before);
+    expect(s.tables.medSourceRun!.length).toBe(rows);
+    const r3 = await s.run({ trigger: 'MANUAL' });
+    expect(r3.outcome).toBe('ran');
+  });
+
   it('peak hour: PARTIAL peakPaused with zero requests; off-peak proceeds', async () => {
     const s = setup(archiveRoutes());
     s.clock.t = new Date('2026-11-20T07:00:00Z');

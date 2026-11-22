@@ -180,7 +180,7 @@ function setup(
       return answer(user);
     },
   };
-  const run = () =>
+  const run = (trigger: 'CRON' | 'MANUAL' = 'MANUAL') =>
     runSdnLive(
       {
         prisma: fake.prisma,
@@ -197,7 +197,7 @@ function setup(
         ...over,
       },
       {
-        trigger: 'MANUAL',
+        trigger,
       },
     );
   const tables = fake.tables as Record<string, Array<Record<string, unknown>>>;
@@ -221,6 +221,64 @@ const feedRoutes = (md: T[], doItems: T[] = []) => ({
   '/forums/1199/': listing(doItems),
   [`/threads/${A.slug}.${A.id}/`]: threadPage([1, 2], 1),
   [`/threads/${B.slug}.${B.id}/`]: threadPage([3], 1),
+});
+
+describe('runSdnLive: off-peak and minimum interval', () => {
+  const routes = () => ({
+    '/forums/1198/index.rss': rss([A]),
+    '/forums/1199/index.rss': rss([]),
+    [`/threads/${A.slug}.${A.id}/`]: threadPage([1011], 1),
+  });
+  it('a CRON run at peak makes zero requests and records paused-peak; owed is false at peak', async () => {
+    const s = setup(routes());
+    s.clock.t = new Date('2026-11-20T07:00:00Z');
+    const r = await s.run('CRON');
+    expect(r.outcome).toBe('paused-peak');
+    expect(r.peakPaused).toBe(true);
+    expect(r.status).toBe('OK');
+    expect(s.requested).toEqual([]);
+    expect(s.calls.n).toBe(0);
+    expect(await sdnBackfillOwed(s.prisma, s.clock.t, true)).toBe(false);
+    const row = s.tables.medSourceRun!.find((x) => x.id === r.runId)!;
+    expect((row.stats as Record<string, unknown>).outcome).toBe('paused-peak');
+  });
+  it('a MANUAL run at peak fetches but never calls the model', async () => {
+    const s = setup(routes());
+    s.clock.t = new Date('2026-11-20T07:00:00Z');
+    const r = await s.run('MANUAL');
+    expect(s.requested.length).toBeGreaterThan(0);
+    expect(s.calls.n).toBe(0);
+    expect(r.peakPaused).toBe(true);
+    expect(r.budgetPaused).toBe(false);
+  });
+  it('a run crossing into peak stops calling the model', async () => {
+    const s = setup(routes());
+    // off-peak at the start; peak once the first thread page has been fetched, just before the model gate
+    Object.defineProperty(s.clock, 't', {
+      get: () =>
+        s.requested.some((p) => p.startsWith('/threads/'))
+          ? new Date('2026-11-20T07:00:00Z')
+          : new Date('2026-11-20T18:00:00Z'),
+    });
+    const r = await s.run('CRON');
+    expect(s.calls.n).toBe(0);
+    expect(r.peakPaused).toBe(true);
+  });
+  it('a second CRON run inside 20 h is skipped with zero requests; MANUAL still runs; peak pauses do not extend it', async () => {
+    const s = setup(routes());
+    const first = await s.run('CRON');
+    expect(first.outcome).toBe('ran');
+    const before = s.requested.length;
+    s.clock.t = new Date('2026-11-20T23:00:00Z');
+    const second = await s.run('CRON');
+    expect(second.outcome).toBe('skipped-min-interval');
+    expect(s.requested.length).toBe(before);
+    const manual = await s.run('MANUAL');
+    expect(manual.outcome).toBe('ran');
+    expect(s.requested.length).toBeGreaterThan(before);
+    s.clock.t = new Date('2026-11-21T15:00:00Z'); // 21 h after the first run, off-peak
+    expect((await s.run('CRON')).outcome).toBe('ran');
+  });
 });
 
 describe('runSdnLive', () => {

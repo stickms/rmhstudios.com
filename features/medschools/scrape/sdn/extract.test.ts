@@ -395,3 +395,23 @@ describe('chunkPosts', () => {
       expect(MEDSCHOOLS_EXTRACT.instructions).toContain(placeholder);
   });
 });
+
+describe('prompt caching: stable system prefix', () => {
+  it('the system message is byte-identical across calls for different posts and schools', async () => {
+    const ai = fakeAi(answer(), answer());
+    const c1: ExtractContext = { cycleYear: 2027, containsHandle: () => false };
+    const c2: ExtractContext = { cycleYear: 2024, containsHandle: () => false };
+    await extractBatch(ai, [post('Harvard Medical School interview invite 2026-11-18')], c1, async () => true);
+    await extractBatch(
+      ai,
+      [post('Yale rejection', new Date('2024-01-05T00:00:00Z')), post('another one')],
+      c2,
+      async () => true,
+    );
+    expect(ai.calls).toHaveLength(2);
+    expect(ai.calls[0]!.system).toBe(ai.calls[1]!.system);
+    expect(ai.calls[0]!.user).not.toBe(ai.calls[1]!.user);
+    // Nothing variable lives in the system turn: no year, school or count.
+    expect(ai.calls[0]!.system).not.toMatch(/Harvard|Yale|2027|2024|2026-11/);
+  });
+});
