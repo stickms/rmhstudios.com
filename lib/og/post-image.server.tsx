@@ -47,7 +47,7 @@ import {
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
-  stripEmoji,
+  cardText,
   truncate,
 } from '@/lib/og/shared.server';
 import {
@@ -82,7 +82,12 @@ const PNG_MAX = 100;
    it — see the arithmetic in `renderPostOgImage`. satori does not clip, so an
    overlong body paints straight over the rows around it. */
 const PANE_PAD = 22 * SCALE;
-const AVATAR = 30 * SCALE;
+/* The author is the first thing a reader looks for in an unfurl shown at ~500px, so
+   the avatar and name are sized against the body, not as a caption above it. */
+const AVATAR = 44 * SCALE;
+const NAME_SIZE = 23 * SCALE;
+const BYLINE_SIZE = 16 * SCALE;
+const BODY_LINE_HEIGHT = 1.28;
 const GAP = 12 * SCALE;
 /** The attachment / poll chip line, when it stands in for pictures. */
 const CHIP_ROW = 34 * SCALE;
@@ -285,7 +290,7 @@ function pollGrid(options: string[], width: number): React.ReactElement {
                       color: INK,
                     }}
                   >
-                    {truncate(stripEmoji(option), Math.max(8, Math.floor(cellWidth / 14)))}
+                    {truncate(cardText(option), Math.max(8, Math.floor(cellWidth / 14)))}
                   </span>
                 ),
               })}
@@ -299,9 +304,9 @@ function pollGrid(options: string[], width: number): React.ReactElement {
 
 /** The quoted post, as the recessed block it is on the site. */
 function quoteBlock(quote: PostOgQuote, width: number): React.ReactElement {
-  const name = truncate(stripEmoji(quote.authorName || 'Someone'), 24);
+  const name = truncate(cardText(quote.authorName || 'Someone'), 24);
   const handle = quote.authorHandle ? `@${quote.authorHandle}` : '';
-  const body = truncate(stripEmoji(quote.content || ''), Math.max(20, Math.floor(width / 9)));
+  const body = truncate(cardText(quote.content || ''), Math.max(20, Math.floor(width / 9)));
   return inset({
     style: {
       width,
@@ -371,9 +376,11 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.authorImage);
-  const initial = (data.authorName || data.authorHandle || 'R')[0]?.toUpperCase() ?? 'R';
-  const text = stripEmoji(data.content || '').trim();
-  const question = data.pollQuestion ? stripEmoji(data.pollQuestion).trim() : '';
+  // The first letter or digit: a name that opens with "☆" or an emoji still gets a letter in the disc.
+  const initial =
+    `${data.authorName ?? ''} ${data.authorHandle ?? ''}`.match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() ?? 'R';
+  const text = cardText(data.content || '').trim();
+  const question = data.pollQuestion ? cardText(data.pollQuestion).trim() : '';
   const pollOptions = (data.pollOptions ?? []).filter(Boolean).slice(0, 4);
 
   // The pane's own content box. The rim is subtracted as well as the padding —
@@ -426,8 +433,12 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
   const bodySize = fitText(body, {
     width: textWidth,
     height: paneHeight - AVATAR - GAP - extraBand,
-    steps: hasMedia ? [46, 40, 34, 28, 23] : [60, 50, 42, 34, 28],
+    steps: hasMedia ? [40, 36, 32, 28, 24] : [48, 42, 38, 34, 30],
+    lineHeight: BODY_LINE_HEIGHT,
   });
+  // The fitter estimates; this is the hard stop. Whatever does not fit in the band at
+  // the size chosen ends in an ellipsis instead of painting over the rows below it.
+  const bodyLines = Math.max(1, Math.floor((paneHeight - AVATAR - GAP - extraBand) / (bodySize * BODY_LINE_HEIGHT)));
 
   // A null count is withheld, not zero: the card is drawn without that figure at all.
   const stats: Stat[] =
@@ -467,7 +478,7 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12 * SCALE,
+          gap: 14 * SCALE,
         }}
       >
         {avatarDisc(avatar, initial, AVATAR)}
@@ -475,6 +486,9 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
           style={{
             display: 'flex',
             flexDirection: 'column',
+            minWidth: 0,
+            flex: 1,
+            gap: 2 * SCALE,
           }}
         >
           <div
@@ -486,20 +500,20 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
           >
             <span
               style={{
-                fontSize: 17 * SCALE,
+                fontSize: NAME_SIZE,
                 fontWeight: 600,
                 letterSpacing: '-0.022em',
                 color: INK,
               }}
             >
-              {truncate(stripEmoji(data.authorName), hasMedia ? 20 : 28)}
+              {truncate(cardText(data.authorName), hasMedia ? 22 : 32)}
             </span>
-            {data.authorVerified ? verifiedBadge(15 * SCALE) : null}
+            {data.authorVerified ? verifiedBadge(20 * SCALE) : null}
           </div>
           {byline ? (
             <span
               style={{
-                fontSize: 13 * SCALE,
+                fontSize: BYLINE_SIZE,
                 color: MUTED,
               }}
             >
@@ -519,8 +533,12 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
       >
         <span
           style={{
+            // satori clamps only a block box: lineClamp draws the ellipsis on the last line.
+            display: 'block',
+            lineClamp: bodyLines,
+            width: textWidth,
             fontSize: bodySize,
-            lineHeight: 1.28,
+            lineHeight: BODY_LINE_HEIGHT,
             letterSpacing: displayTracking(bodySize),
             fontWeight: body ? 500 : 400,
             color: body ? INK : MUTED,
@@ -585,7 +603,7 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
 
   const element = cardFrame({
     ...LANDSCAPE,
-    eyebrow: data.community ? `Post · ${truncate(stripEmoji(data.community), 24)}` : 'Post',
+    eyebrow: data.community ? `Post · ${truncate(cardText(data.community), 24)}` : 'Post',
     children: pane({
       style: {
         flex: 1,
@@ -616,11 +634,12 @@ async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
         column
       ),
     }),
-    footerLeft: statChips(stats),
+    // The footer is reference, not content: smaller than the byline.
+    footerLeft: statChips(stats, 0.8),
     footerRight: (
       <span
         style={{
-          fontSize: 13 * SCALE,
+          fontSize: 11 * SCALE,
           fontWeight: 500,
           color: DIM,
         }}

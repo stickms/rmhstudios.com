@@ -25,13 +25,13 @@ import {
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
-  stripEmoji,
+  cardText,
   truncate as sharedTruncate,
 } from '@/lib/og/shared.server';
 import { LANDSCAPE, avatarDisc, cardFrame, displayTracking, fitText, frameMetrics, pane } from '@/lib/og/chrome.server';
 import { qrSvgDataUri } from '@/lib/profile/qr';
 
-const truncate = (s: string, n: number) => sharedTruncate(stripEmoji(s), n);
+const truncate = (s: string, n: number) => sharedTruncate(cardText(s), n);
 
 const cache = new Map<
   string,

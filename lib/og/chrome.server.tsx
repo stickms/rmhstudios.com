@@ -26,7 +26,7 @@
  *    why every helper here takes `React.ReactNode` and every caller hands it a
  *    literal array.
  * 2. **There is no emoji font.** Anything pictographic renders as tofu. Run user
- *    text through `stripEmoji`, and label figures with words ("replies") rather
+ *    text through `cardText`, and label figures with words ("replies") rather
  *    than glyphs.
  */
 

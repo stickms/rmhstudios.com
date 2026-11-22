@@ -74,19 +74,26 @@ export async function fetchAvatarDataUri(url: string | null | undefined): Promis
 /* -------------------------------------------------------------------------- */
 
 /**
- * satori has no emoji font loaded, so emoji render as tofu — drop them, along
- * with the variation selectors and ZWJs that glue sequences together, then
- * collapse the whitespace the removal leaves behind.
+ * Member text as a card draws it. Emoji and non-Latin text used to be stripped
+ * here because satori had no face for them; `satori.server` now loads Twemoji and
+ * Noto for whatever Geist lacks (`fallback-glyphs.server`), so this only collapses
+ * runs of whitespace (a card line has no use for a blank line or a tab).
  */
-export function stripEmoji(s: string): string {
-  return s
-    .replace(/[\p{Extended_Pictographic}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
-    .replace(/\s{2,}/g, ' ');
+export function cardText(s: string): string {
+  return s.replace(/\s{2,}/g, ' ');
 }
 
+const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' });
+
+/**
+ * At most `n` characters, ending in an ellipsis when cut. Counted in graphemes, so
+ * a cut never splits an emoji (a ZWJ family, a flag) or a surrogate pair into a box.
+ */
 export function truncate(s: string, n: number): string {
   const t = s.trim();
-  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+  if (t.length <= n) return t;
+  const parts = Array.from(graphemes.segment(t), (g) => g.segment);
+  return parts.length > n ? `${parts.slice(0, n - 1).join('').trimEnd()}…` : t;
 }
 
 /* -------------------------------------------------------------------------- */

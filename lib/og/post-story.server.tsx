@@ -21,7 +21,7 @@ import {
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
-  stripEmoji,
+  cardText,
   truncate as sharedTruncate,
 } from '@/lib/og/shared.server';
 import {
@@ -37,7 +37,7 @@ import {
 
 /** This card strips emoji before truncating (satori renders them as tofu). */
 function truncate(s: string, n: number): string {
-  return sharedTruncate(stripEmoji(s), n);
+  return sharedTruncate(cardText(s), n);
 }
 
 const pngCache = new Map<

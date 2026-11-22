@@ -47,6 +47,16 @@ export function withBorderBox(node: ReactNode): ReactNode {
   } as ReactNode;
 }
 
+/**
+ * Glyphs Geist does not have — emoji, symbols, non-Latin scripts — are fetched on
+ * demand (`./fallback-glyphs.server`). Imported at the first miss, so a render
+ * that is all Latin (the PWA icons, most cards) never loads the cache module.
+ */
+const loadAdditionalAsset: NonNullable<SatoriOptions['loadAdditionalAsset']> = async (code, segment) => {
+  const { loadFallbackAsset } = await import('./fallback-glyphs.server');
+  return loadFallbackAsset(code, segment) as ReturnType<NonNullable<SatoriOptions['loadAdditionalAsset']>>;
+};
+
 export default function satori(node: ReactNode, options: SatoriOptions): Promise<string> {
-  return renderSvg(withBorderBox(node), options);
+  return renderSvg(withBorderBox(node), { loadAdditionalAsset, ...options });
 }
