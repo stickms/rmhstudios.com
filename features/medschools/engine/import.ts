@@ -138,7 +138,8 @@ export function rawSupportsDate(raw: string, day: { y: number; m: number; d: num
   if (years4.length > 0 && !years4.includes(day.y)) return null;
   const twoDigit = /(?<!\d)\d{1,2}\s*[/.-]\s*\d{1,2}\s*[/.-]\s*(\d{2})(?!\d)/.exec(text);
   const yearWritten = years4.includes(day.y) || (twoDigit !== null && Number(twoDigit[1]) === day.y % 100);
-  const numeric = /(?<!\d)(\d{1,2})\s*[/.-]\s*(\d{1,2})(?!\d)/.exec(text);
+  // A year-first date (2026-10-09) reads one way only: take it out before looking for a numeric month and day.
+  const numeric = /(?<!\d)(\d{1,2})\s*[/.-]\s*(\d{1,2})(?!\d)/.exec(text.replace(/(?<!\d)\d{4}\s*[/.-]\s*\d{1,2}\s*[/.-]\s*\d{1,2}(?!\d)/g, ' '));
   const ambiguous =
     named.size === 0 && numeric !== null && Number(numeric[1]) <= 12 && Number(numeric[2]) <= 12 && numeric[1] !== numeric[2];
   return { yearWritten, ambiguous };

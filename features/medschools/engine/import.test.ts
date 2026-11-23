@@ -30,6 +30,8 @@ describe('rawSupportsDate', () => {
   const d = (y: number, m: number, day: number) => ({ y, m, d: day });
   it('needs both the month and the day in the quote', () => {
     expect(rawSupportsDate('2026-07-15', d(2026, 7, 15))).toEqual({ yearWritten: true, ambiguous: false });
+    // A year-first date is never ambiguous, even when its month and day could swap.
+    expect(rawSupportsDate('2026-10-09', d(2026, 10, 9))).toEqual({ yearWritten: true, ambiguous: false });
     expect(rawSupportsDate('July 15th', d(2026, 7, 15))).toEqual({ yearWritten: false, ambiguous: false });
     expect(rawSupportsDate('15 Jul 2026', d(2026, 7, 15))?.yearWritten).toBe(true);
     expect(rawSupportsDate('Sept 3', d(2026, 9, 3))).not.toBeNull();

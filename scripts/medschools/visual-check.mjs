@@ -457,6 +457,173 @@ const ASK_PAGES = [
 ];
 PAGES.push(...ASK_PAGES);
 
+/* ------------------------------ the tracker import view ------------------------------ */
+
+/**
+ * The import against the seeded tracker (needs `--fake-ai`): Duke already holds a submitted date (the same one is "already
+ * there") and a complete date (a different one is a conflict), Harvard holds none, and one school is not in the directory.
+ * The fake reads the pasted text back the way a grounded model would: every date is quoted from the text.
+ */
+const agoDay = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+const monthDay = (n) =>
+  new Date(Date.now() - n * 86_400_000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const IMPORT_DATES = { sameDuke: agoDay(55), conflictDuke: agoDay(45), newDuke: agoDay(10), harvard: agoDay(50), noYear: monthDay(18) };
+const nameOf = async (slug) => (await ai.pool.query('select name from med_school where slug = $1', [slug])).rows[0]?.name;
+const importText = async () => {
+  const [duke, harvard] = [await nameOf('duke'), await nameOf('harvard')];
+  return {
+    duke,
+    harvard,
+    text: [
+      `${duke} | submitted | ${IMPORT_DATES.sameDuke} | complete | ${IMPORT_DATES.conflictDuke} | interview | ${IMPORT_DATES.newDuke}`,
+      `${harvard} | submitted | ${IMPORT_DATES.harvard} | complete | ${IMPORT_DATES.noYear}`,
+      `Nowhere Medical Academy | submitted | ${IMPORT_DATES.harvard}`,
+    ].join('\n'),
+  };
+};
+const importScript = (names) => (call) => {
+  if (call.kind !== 'other') return { rows: [] };
+  const m = (type, date) => ({ type, date, raw: date });
+  return {
+    rows: [
+      {
+        schoolName: names.duke,
+        milestones: [
+          m('SUBMITTED', IMPORT_DATES.sameDuke),
+          m('COMPLETE', IMPORT_DATES.conflictDuke),
+          m('INTERVIEW', IMPORT_DATES.newDuke),
+        ],
+      },
+      {
+        schoolName: names.harvard,
+        milestones: [
+          m('SUBMITTED', IMPORT_DATES.harvard),
+          // The year is not written: the cycle rules choose it and the view flags it.
+          { type: 'COMPLETE', date: `${new Date().getUTCFullYear()}-${agoDay(18).slice(5)}`, raw: IMPORT_DATES.noYear },
+        ],
+      },
+      { schoolName: 'Nowhere Medical Academy', milestones: [m('SUBMITTED', IMPORT_DATES.harvard)] },
+    ],
+    cycleHint: null,
+  };
+};
+/** Harvard has no dates in the seed: anything an earlier pass saved there goes, so every pass starts the same. */
+const resetImport = () =>
+  ai.pool?.query(
+    `delete from med_tracker_milestone where "applicationId" in (
+       select a.id from med_tracker_application a join med_tracker_cycle c on c.id = a."cycleId"
+       join med_school s on s.id = a."schoolId" where c."userId" = $1 and s.slug = 'harvard')`,
+    [ai.userId],
+  );
+/** The day's count is the `medschools-qa-ask` rows; an import reserves one like a question does. */
+const plantAsk = (n) =>
+  ai.pool?.query(
+    `insert into ai_usage ("userId", task, provider, model, "promptId", "promptVer", "inTokens", "outTokens", "costMicros", ok)
+     select $1, 'medschools-qa', 'deepseek', 'fake', 'medschools-qa-ask', 1, 1, 1, 0, true from generate_series(1, $2)`,
+    [ai.userId, n],
+  );
+const openImport = async (p) => {
+  const open = p.getByRole('button', { name: 'Import from a file', exact: true });
+  await open.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await open.click();
+  await p.getByRole('button', { name: 'Read my dates' }).waitFor({ timeout: 15_000 });
+};
+const readImport = async (p) => {
+  const names = await importText();
+  ai.fake.setScript(importScript(names));
+  await openImport(p);
+  await p.getByLabel('Or paste the text').fill(names.text);
+  const read = p.getByRole('button', { name: 'Read my dates' });
+  await read.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await read.click();
+  await p.getByRole('button', { name: 'Add to my tracker' }).waitFor({ timeout: 25_000 });
+  return names;
+};
+const IMPORT_PAGES = [
+  [
+    'import-open',
+    '/rmh-medschool/tracker',
+    true,
+    openImport,
+    {
+      ...FLAT,
+      ai: true,
+      before: async () => {
+        await clearLedger();
+        await resetImport();
+      },
+      text: [/Import from a file/, /sent to our AI provider/, /does not keep the file/, /Choose a file/, /Read my dates/],
+      present: ['textarea'],
+    },
+  ],
+  [
+    'import-preview',
+    '/rmh-medschool/tracker',
+    true,
+    readImport,
+    {
+      ...FLAT,
+      ai: true,
+      before: resetImport,
+      text: [
+        /Add to my tracker/,
+        /Could not match this school/,
+        /Already on your tracker with this date/,
+        /Your tracker has .* Tick to replace it/,
+        /The file had no year/,
+        /dates for \d+ schools will be added/,
+      ],
+    },
+  ],
+  [
+    'import-saved',
+    '/rmh-medschool/tracker',
+    true,
+    async (p) => {
+      const names = await readImport(p);
+      // Leave Duke alone: only Harvard's dates are written, so the seeded tracker is what the next pass starts from.
+      await p.getByLabel(`Include ${names.duke}`).uncheck();
+      const add = p.getByRole('button', { name: 'Add to my tracker' });
+      await add.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+      await add.click();
+      await p.getByRole('button', { name: 'Back to my tracker' }).waitFor({ timeout: 15_000 });
+    },
+    { ...FLAT, ai: true, before: resetImport, text: [/Added \d+ dates and replaced 0/] },
+  ],
+  [
+    'import-cap-refused',
+    '/rmh-medschool/tracker',
+    true,
+    async (p) => {
+      const names = await importText();
+      ai.fake.setScript(importScript(names));
+      await openImport(p);
+      await p.getByLabel('Or paste the text').fill(names.text);
+      // The day is spent by the time the request lands: the server's 429 is what shows.
+      await plantAsk(25);
+      const read = p.getByRole('button', { name: 'Read my dates' });
+      await read.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+      await read.click();
+      await p.waitForSelector('[role=alert]', { timeout: 20_000 });
+    },
+    { ...FLAT, ai: true, before: resetImport, text: [/used today's questions/] },
+  ],
+  [
+    'import-unsupported',
+    '/rmh-medschool/tracker',
+    true,
+    async (p) => {
+      await openImport(p);
+      await p
+        .locator('input[type=file]')
+        .setInputFiles({ name: 'tool.exe', mimeType: 'application/x-msdownload', buffer: Buffer.from('MZ') });
+      await p.waitForSelector('[role=alert]', { timeout: 10_000 });
+    },
+    { ...FLAT, ai: true, before: resetImport, text: [/could not be read/] },
+  ],
+];
+PAGES.push(...IMPORT_PAGES);
+
 /* ------------------------------ the member ------------------------------ */
 
 const jsonHeaders = (cookie) => ({ 'content-type': 'application/json', origin: BASE, ...(cookie ? { cookie } : {}) });
@@ -625,10 +792,12 @@ function measure({ touch, narrow, forecast, flat, absent, present }) {
         ),
       ]
         .filter(visible)
-        .filter((e) => e.getBoundingClientRect().height < 44 && e.type !== 'hidden')
+        // A checkbox's target is the label that wraps it (the drawn box is 20px and the whole row presses it).
+        .map((e) => [e, e.type === 'checkbox' ? (e.closest('label') ?? e) : e])
+        .filter(([e, box]) => box.getBoundingClientRect().height < 44 && e.type !== 'hidden')
         .map(
-          (e) =>
-            `${(e.getAttribute('aria-label') || e.textContent || e.tagName).trim().slice(0, 28)}:${Math.round(e.getBoundingClientRect().height)}`,
+          ([e, box]) =>
+            `${(e.getAttribute('aria-label') || e.textContent || e.tagName).trim().slice(0, 28)}:${Math.round(box.getBoundingClientRect().height)}`,
         )
     : [];
   // SVG text is drawn in viewBox units: its size on the glass is the font size times the CTM scale.
