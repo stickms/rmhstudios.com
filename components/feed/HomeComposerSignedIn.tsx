@@ -345,7 +345,7 @@ export default function HomeComposerSignedIn({ arrival }: { arrival?: string }) 
             post={
               <>
                 {remaining <= 20 && <span className={`t-meta me-3 ${counterToneClass(remaining)}`}>{remaining}</span>}
-                <Button type="button" variant="primary" disabled={!canSubmit} onClick={() => void handleSubmit()}>
+                <Button type="button" variant="primary" size="compact" disabled={!canSubmit} onClick={() => void handleSubmit()}>
                   {t('post-button', {
                     defaultValue: 'Post',
                   })}

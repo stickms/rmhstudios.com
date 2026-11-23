@@ -7,7 +7,7 @@
  *
  *   1. a big rotating HERO banner (one spotlighted item, landscape art + CTA),
  *   2. a horizontally-scrollable SPOTLIGHT rail of a few featured items, and
- *   3. a varied catalog MOSAIC where some cards are wide and some are narrow.
+ *   3. the catalog GRID, the same tile size as the rail (storefront.css).
  *
  * The storefront never reorders what it is given. The caller's list arrives ranked
  * (`lib/ranking/best.ts`: Best by default), so the first item is the hero, the next
@@ -62,17 +62,6 @@ export type StoreItem = {
 function fallbackMark(item: StoreItem): string {
   if (item.emoji) return item.emoji;
   return item.title.slice(0, 1).toUpperCase();
-}
-
-// ── Layout ───────────────────────────────────────────────────────────────────
-
-/**
- * Which mosaic tiles are wide (span two columns): the third, and then every fifth.
- * A fixed function of position, so a list lays out the same way on every visit, and
- * never two wide tiles in a row, which keeps the dense grid from leaving holes.
- */
-export function isWideTile(index: number): boolean {
-  return index % 5 === 2;
 }
 
 // ── Cards ────────────────────────────────────────────────────────────────────
@@ -139,11 +128,11 @@ function variantSrcSet(src: string): string | undefined {
 }
 
 /**
- * The grid is 2 columns below 720px, then 3, 4 and 5 as it widens, inside a
- * 1400px container (see storefront.css) — so a card tops out around 280px. The
- * hero spans the full container and passes its own `sizes`.
+ * The grid is one column on a phone and two or three tiles of at least 344px
+ * otherwise, inside a 1400px container (see storefront.css), so a card tops out
+ * around 450px. The hero spans the full container and passes its own `sizes`.
  */
-const CARD_SIZES = '(max-width: 719px) 48vw, (max-width: 1100px) 33vw, 300px';
+const CARD_SIZES = '(max-width: 719px) 100vw, 460px';
 
 function Art({
   item,
@@ -290,17 +279,17 @@ function SpotlightCard({ item }: { item: StoreItem }) {
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
         </div>
         <div className="store-spot__body">
-          <p className="store-spot__title">{item.title}</p>
-          {item.description && <p className="store-spot__desc">{item.description}</p>}
-          {item.meta && <p className="store-spot__meta">{item.meta}</p>}
+          <p className="store-spot__title t-heading">{item.title}</p>
+          {item.description && <p className="store-spot__desc t-body">{item.description}</p>}
+          {item.meta && <p className="store-spot__meta t-meta">{item.meta}</p>}
         </div>
       </PrimaryWrapper>
     </div>
   );
 }
 
-/** A catalog tile — `wide` ones span two columns and show their description. */
-function MosaicCard({ item, wide, className }: { item: StoreItem; wide: boolean; className?: string | undefined }) {
+/** A catalog tile: picture, title, description and meta line, the same size as every other tile. */
+function MosaicCard({ item, className }: { item: StoreItem; className?: string | undefined }) {
   const { t } = useTranslation('feed');
   const detailsLabel =
     item.detailsLabel ??
@@ -308,16 +297,16 @@ function MosaicCard({ item, wide, className }: { item: StoreItem; wide: boolean;
       defaultValue: 'Details',
     });
   return (
-    <div className={cn('store-card', wide && 'is-wide', className)}>
+    <div className={cn('store-card', className)}>
       <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
         <div className="store-art store-card__art">
           <Art item={item} {...coverFor(item)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
         </div>
         <div className="store-card__body">
-          <p className="store-card__title">{item.title}</p>
-          {wide && item.description && <p className="store-card__desc">{item.description}</p>}
-          {item.meta && <p className="store-card__meta">{item.meta}</p>}
+          <p className="store-card__title t-heading">{item.title}</p>
+          {item.description && <p className="store-card__desc t-body">{item.description}</p>}
+          {item.meta && <p className="store-card__meta t-meta">{item.meta}</p>}
         </div>
       </PrimaryWrapper>
       {item.detailsTo && (
@@ -410,13 +399,8 @@ export function Storefront({
               has painted rather than inside the same commit. */}
           <DeferOnNavigate enabled={Boolean(hero)} minHeight="60vh">
             <div className={cn('store-mosaic', arrival)}>
-              {mosaic.map((item, i) => (
-                <MosaicCard
-                  key={item.id}
-                  item={item}
-                  wide={isWideTile(i)}
-                  className={isNew(item.id) ? ARRIVE : undefined}
-                />
+              {mosaic.map((item) => (
+                <MosaicCard key={item.id} item={item} className={isNew(item.id) ? ARRIVE : undefined} />
               ))}
             </div>
           </DeferOnNavigate>

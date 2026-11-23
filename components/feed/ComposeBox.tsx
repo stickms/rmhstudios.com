@@ -766,7 +766,7 @@ export function ComposeBox({
             {remaining <= 20 && (
               <span className={`t-meta me-3 ${counterToneClass(remaining)}`}>{remaining}</span>
             )}
-            <Button type="button" variant="primary" disabled={!canSubmit} onClick={handleSubmit}>
+            <Button type="button" variant="primary" size="compact" disabled={!canSubmit} onClick={handleSubmit}>
               {t('post-button', { defaultValue: 'Post' })}
             </Button>
           </>
@@ -865,7 +865,7 @@ export function ComposeBox({
               {/* Plus button — image upload, GIF, poll, draft, schedule. */}
               {menu}
 
-              <Button variant="default" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
+              <Button variant="default" size="compact" disabled={!canSubmit} onClick={handleSubmit}>
                 {submitting
                   ? t('posting', { defaultValue: 'Posting…' })
                   : t('post-button', { defaultValue: 'Post' })}

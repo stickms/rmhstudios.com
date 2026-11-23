@@ -1,6 +1,7 @@
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Radio, Send, Pin, PinOff, Users } from 'lucide-react';
+import { ArrowLeft, Radio, Send, Pin, PinOff, Users } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
@@ -22,6 +23,8 @@ import { ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { AdminModerateButton } from '@/components/moderation/moderation-ui';
 import { VoiceRoomBanner } from '@/components/groupcall/VoiceRoomBanner';
+import { NoGlobe } from '@/components/shell/NoGlobe';
+import '@/components/feed/conversation/conversation.css';
 
 interface LiveMessage {
   id: string;
@@ -92,7 +95,7 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
         ? t('space-pinned-post', { defaultValue: 'Pinned post' })
         : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
-    <div className="relative mx-4 mt-3 rounded-site px-4 py-3">
+    <div className="relative mx-4 mt-3 shrink-0 rounded-site px-4 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
         <Pin className="size-3.5" aria-hidden />
         {label}
@@ -332,9 +335,29 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
   const isEnded = status === 'ENDED';
 
+  // Laid out like a DM thread (ConversationView): `.conversation` is exactly as tall as the window leaves it
+  // (conversation.css), so the header rows keep their natural height, the message list is the one scroller and the
+  // reactions, slow mode and composer are the bottom of the column. <NoGlobe /> takes the docked globe off a phone so
+  // that bottom is the bottom of the window; the back link above the title is the way out there.
+  const community = initialSpace.community;
   return (
-    <div className="relative flex min-h-[calc(100dvh-var(--dock-height,0px))] flex-col">
+    <div className="conversation relative">
+      <NoGlobe />
+      <div className="page-heading__meta shrink-0">
+        {community ? (
+          <Link to="/c/$slug" params={{ slug: community.slug }} className="page-heading__back">
+            <ArrowLeft aria-hidden />
+            <span>{community.name}</span>
+          </Link>
+        ) : (
+          <Link to="/" className="page-heading__back">
+            <ArrowLeft aria-hidden />
+            <span>{t('space-back', { defaultValue: 'Back' })}</span>
+          </Link>
+        )}
+      </div>
       <ColumnHeader
+        className="shrink-0"
         icon={Radio}
         title={initialSpace.title}
         actions={
@@ -358,7 +381,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Host pin controls (live only) */}
       {isHost && status === 'LIVE' && (
-        <div className="mx-4 mt-3 flex items-center gap-2">
+        <div className="mx-4 mt-3 flex shrink-0 items-center gap-2">
           <Input
             value={pinDraft}
             onChange={(e) => setPinDraft(e.target.value)}
@@ -388,7 +411,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       )}
 
       {/* Audience strip */}
-      <div className="flex items-center gap-2 px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 px-4 py-3">
         <Users className="size-4 text-site-text-muted" aria-hidden />
         <span className="text-sm text-site-text-muted">{audienceCount ?? audience.length}</span>
         <div className="flex -space-x-2">
@@ -404,14 +427,14 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
         <VoiceRoomBanner
           origin={initialSpace.communityId ? 'community' : 'profile'}
           originId={initialSpace.communityId ?? initialSpace.id}
-          className="border-y border-site-border px-4 py-3"
+          className="shrink-0 border-y border-site-border px-4 py-3"
         />
       )}
 
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-3 overflow-y-auto px-4 py-3"
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3"
         aria-live="polite"
       >
         {isEnded ? (
@@ -464,7 +487,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Composer + reactions (live only) */}
       {status === 'LIVE' && (
-        <div className="relative mx-4 mb-4 space-y-3 rounded-site px-4 py-3">
+        <div className="relative shrink-0 space-y-3 border-t border-site-border px-4 pt-3">
           <div className="flex flex-wrap gap-2">
             {REACTIONS.map((emoji) => (
               <Button
