@@ -43,6 +43,7 @@ import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import { FONT_ASSETS } from '@/lib/appearance/font-assets.gen';
+import { useThemeStore } from '@/stores/themeStore';
 import {
   DEFAULT_FONTS,
   FONT_CATALOGUE,
@@ -236,6 +237,8 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // The device's font choice, as ONLY its own cookie pair: loader data is serialized into the page, and the full
   // header carries the session token.
   const fontsCookie = fontsCookiePair(request.headers.get('cookie'));
+  // This device's sync switch as the server sees it: what Settings shows before the store has read storage.
+  const appearanceSyncOffCookie = appearanceSyncOff(request.headers.get('cookie'));
   // en is bundled on the client and needs nothing here. For non-en we lazily load
   // ONLY the active language's bundle (its own async chunk) — the server no longer
   // imports all 32 catalogs at boot (cold-start win; see lib/i18n/resources.server.ts)
@@ -246,15 +249,15 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // so we await it here. The other namespaces load client-side on demand
   // (perf audit B6; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
-  if (locale === DEFAULT_LOCALE) return { locale, resources: null, saveData, fontsCookie };
+  if (locale === DEFAULT_LOCALE) return { locale, resources: null, saveData, fontsCookie, appearanceSyncOff: appearanceSyncOffCookie };
   try {
     await preloadLocale(locale);
-    return { locale, resources: localeCoreResources(locale), saveData, fontsCookie };
+    return { locale, resources: localeCoreResources(locale), saveData, fontsCookie, appearanceSyncOff: appearanceSyncOffCookie };
   } catch {
     // A failed locale chunk load must not take the whole document down with a
     // 500 / "Something went wrong": render English (the always-available
     // defaultValues) and let the client load the real locale's namespaces on demand.
-    return { locale: DEFAULT_LOCALE, resources: null, saveData, fontsCookie };
+    return { locale: DEFAULT_LOCALE, resources: null, saveData, fontsCookie, appearanceSyncOff: appearanceSyncOffCookie };
   }
 });
 
@@ -270,7 +273,13 @@ function fontsCookiePair(cookieHeader: string | null | undefined): string | null
   return m?.[1] ?? null;
 }
 
-function i18nFallback(): { locale: Locale; resources: null; saveData: boolean; fontsCookie: string | null } {
+function i18nFallback(): {
+  locale: Locale;
+  resources: null;
+  saveData: boolean;
+  fontsCookie: string | null;
+  appearanceSyncOff: boolean;
+} {
   let locale: Locale = DEFAULT_LOCALE;
   if (typeof document !== 'undefined') {
     const lang = document.documentElement.lang as Locale;
@@ -283,6 +292,7 @@ function i18nFallback(): { locale: Locale; resources: null; saveData: boolean; f
     resources: null,
     saveData: false,
     fontsCookie: typeof document === 'undefined' ? null : fontsCookiePair(document.cookie),
+    appearanceSyncOff: typeof document !== 'undefined' && appearanceSyncOff(document.cookie),
   };
 }
 
@@ -391,6 +401,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       saveData: i18n.saveData,
       // The faces this page is set in: the account's (sync on) over the device's cookie over the defaults.
       fonts: resolveRequestFonts({ row: user.accountFonts, cookieHeader: i18n.fontsCookie }).choice,
+      appearanceSyncOff: i18n.appearanceSyncOff,
     };
   },
   head: (ctx) => {
@@ -414,6 +425,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ? appTierCss
         : siteTierCss;
 
+    // Computed before the Discord branch: that head stamps the same data-font-* attributes, so it links the faces too
+    // (all same-origin, so nothing leaves Discord's URL-mapping proxy).
+    const fonts = (ctx.loaderData as { fonts?: FontChoice } | undefined)?.fonts ?? DEFAULT_FONTS;
+    const fontLinks = fontHeadLinks(fonts);
+
     if (discord) {
       // Minimal head for a Discord Activity: no external fonts, no preconnects,
       // no JSON-LD — nothing that leaves the origin, because
@@ -436,13 +452,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
           { title: 'RMHBox' },
         ],
-        links: [{ rel: 'stylesheet', href: appCss }],
+        links: [{ rel: 'stylesheet', href: appCss }, ...fontLinks.sheets],
         scripts: prepaintHeadScripts({ discord: true, notFound: globalNotFound, seed }),
       };
     }
 
-    const fonts = (ctx.loaderData as { fonts?: FontChoice } | undefined)?.fonts ?? DEFAULT_FONTS;
-    const fontLinks = fontHeadLinks(fonts);
     hintDocumentAssets(appCss, FONT_ASSETS[fonts.main].latin);
 
     return {
@@ -484,10 +498,13 @@ function RootDocument({ children }: { children: ReactNode }) {
   const staticDocument = useIsStaticDocument();
   let locale: Locale = 'en';
   let fonts: FontChoice = DEFAULT_FONTS;
+  // Once the store has read this device's appearance, it is the truth for <html data-font-*>: a later client re-run of
+  // this loader answers from the account, which a save that failed silently would leave on the older face.
+  const storeFonts = useThemeStore((s) => (s.appearanceHydrated ? s.fonts : null));
   try {
     const data = Route.useLoaderData();
     locale = (data?.locale ?? 'en') as Locale;
-    fonts = data?.fonts ?? DEFAULT_FONTS;
+    fonts = storeFonts ?? data?.fonts ?? DEFAULT_FONTS;
   } catch {
     // shell component cannot access loader data — inline guard handles correction
   }

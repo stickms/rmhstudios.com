@@ -234,6 +234,18 @@ async function main(): Promise<void> {
       'audit: the run left no orphan event, no missing event and no mismatched cell behind',
       { before: auditBefore, after: audit },
     );
+    // Q&A (phase 6) keeps no text: there is nothing of a question or an answer to erase. The schema holds no column
+    // that could carry one outside the scraped, anonymised interview questions.
+    const qaColumns = await prisma.$queryRaw<{ table_name: string; column_name: string }[]>`
+      select table_name, column_name from information_schema.columns
+      where table_schema = 'public' and table_name like 'med\_%'
+        and table_name <> 'med_interview_question'
+        and column_name ~* 'question|answer|prompt|query|chat|transcript'`;
+    check(
+      qaColumns.length === 0,
+      'no Q&A text exists to erase: no med_* column holds a question or an answer',
+      qaColumns,
+    );
   } finally {
     await cleanup().catch((e) => console.error('verify-erasure: cleanup failed', e));
     await prisma.$disconnect();

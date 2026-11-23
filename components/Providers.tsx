@@ -189,6 +189,7 @@ export function Providers({
   const jellyMotion = useThemeStore((s) => s.jellyMotion);
   const fonts = useThemeStore((s) => s.fonts);
   const appearanceSync = useThemeStore((s) => s.appearanceSync);
+  const appearanceHydrated = useThemeStore((s) => s.appearanceHydrated);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -341,6 +342,7 @@ export function Providers({
       if (isFontFor(slot, v)) st.setFont(slot, v as never);
     }
     if (readString(APPEARANCE_SYNC_KEY) === '0') st.setAppearanceSync(false);
+    st.markAppearanceHydrated();
     const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
     const jm = readString(JELLY_MOTION_KEY);
@@ -506,24 +508,16 @@ export function Providers({
   // ── The reader's fonts (lib/appearance/fonts.ts) ─────────────────────────
   // Stamped on <html> (choice-rules.css maps the attributes), cached in localStorage for the pre-paint step and in the
   // `rmh-fonts` cookie so the server renders the same faces next time, and each face in use links its own sheet. The
-  // first run is skipped: the server and the pre-paint step already rendered this, and the store still holds the
-  // defaults until the hydration effect above has run.
-  const fontsFirstRun = useRef(true);
+  // store holds the defaults until the hydration effect above has read storage, so nothing is written before then.
+  // (A flag, not a first-run ref: React's dev double effects would run a ref-skipped effect with the defaults.)
   useEffect(() => {
-    if (fontsFirstRun.current) {
-      fontsFirstRun.current = false;
-      return;
-    }
+    if (!appearanceHydrated) return;
     applyFonts(fonts);
-  }, [fonts]);
+  }, [fonts, appearanceHydrated]);
 
   // This device's appearance sync switch, mirrored to a cookie so the server skips the account's appearance for it.
-  const syncFirstRun = useRef(true);
   useEffect(() => {
-    if (syncFirstRun.current) {
-      syncFirstRun.current = false;
-      return;
-    }
+    if (!appearanceHydrated) return;
     if (appearanceSync) {
       removeKey(APPEARANCE_SYNC_KEY);
       document.cookie = `${APPEARANCE_SYNC_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
@@ -531,7 +525,7 @@ export function Providers({
       writeString(APPEARANCE_SYNC_KEY, '0');
       document.cookie = `${APPEARANCE_SYNC_COOKIE}=0; Max-Age=31536000; Path=/; SameSite=Lax`;
     }
-  }, [appearanceSync]);
+  }, [appearanceSync, appearanceHydrated]);
 
   // ── Account sync ─────────────────────────────────────────────────────────
   // Appearance follows the signed-in user across devices. On sign-in we pull the

@@ -16,7 +16,7 @@
  *     pnpm docs:site --check
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -49,6 +49,38 @@ function emit(path: string, content: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, content);
 }
+
+/**
+ * The inventories are split into one file per first letter of the URL segment (`pages/a.md`,
+ * `api/s.md`): a PR that adds a page or an endpoint edits the one small file for its own area,
+ * where a single `pages.md` / `api.md` was edited by every such PR and conflicted. The index
+ * (`pages.md`, `api.md`) carries no counts for the same reason.
+ */
+const bucketOf = (url: string): string => {
+  const first = (url.split('/')[url.startsWith('/api/') ? 2 : 1] ?? '').replace(/^[:*]/, '')[0]?.toLowerCase() ?? '';
+  return /[a-z]/.test(first) ? first : 'other';
+};
+
+/** Writes every file of a split inventory and removes the files of buckets that no longer exist. */
+function emitSplit(dir: string, files: Map<string, string>): void {
+  for (const [name, content] of files) emit(join(dir, `${name}.md`), content);
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir)) {
+    if (!entry.endsWith('.md') || files.has(entry.slice(0, -3))) continue;
+    if (CHECK) stale.push(relative(ROOT, join(dir, entry)));
+    else rmSync(join(dir, entry));
+  }
+}
+
+const toctree = (names: string[]): string[] => [
+  '```{toctree}',
+  ':hidden:',
+  ':maxdepth: 1',
+  '',
+  ...names,
+  '```',
+  '',
+];
 
 function cell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\n+/g, ' ').trim();
@@ -268,7 +300,7 @@ function titleOf(file: string): string {
 
 /* ── page inventory ──────────────────────────────────────────────────────── */
 
-function renderPages(routes: RouteFile[]): string {
+function renderPages(routes: RouteFile[]): { index: string; files: Map<string, string> } {
   const byId = new Map(routes.map((r) => [r.id, r]));
   const pages = routes
     .filter((r) => !r.isApi)
@@ -279,31 +311,15 @@ function renderPages(routes: RouteFile[]): string {
     .map((r) => ({ ...r, gate: effectiveGate(r.id, byId) }))
     .sort((a, b) => a.url.localeCompare(b.url));
 
-  // `_site/` pages get the sidebar shell; top-level routes are full-screen.
-  const shelled = pages.filter((p) => p.id.startsWith('_site'));
-  const fullScreen = pages.filter((p) => !p.id.startsWith('_site'));
+  const buckets = new Map<string, typeof pages>();
+  for (const p of pages) {
+    const key = bucketOf(p.url);
+    buckets.set(key, [...(buckets.get(key) ?? []), p]);
+  }
+  const names = [...buckets.keys()].sort();
 
-  const out: string[] = [GENERATED_HEADER];
-  out.push('# Page routes');
-  out.push('');
-  out.push(
-    `Every page the site serves — ${pages.length} routes. ` +
-      `${shelled.length} render inside the standard site shell (sidebar, nav, context rail); ` +
-      `${fullScreen.length} are full-screen, which is how games, the login page and the legal pages are meant to render. ` +
-      'Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.',
-  );
-  out.push('');
-  out.push('Params appear as `:name`; `*` is a catch-all splat.');
-  out.push('');
-  out.push(
-    '**Access** is derived from the route file and every layout above it: `admin` (bounced unless ' +
-      '`isAdmin`), `sign-in` (redirected to `/login`), or `public`. `public` describes the *route*, ' +
-      'not necessarily everything on it — several public pages render a sign-in prompt in place of ' +
-      'their content rather than redirecting, `/developer` being one.',
-  );
-  out.push('');
-
-  const section = (title: string, rows: typeof pages, note: string) => {
+  const table = (out: string[], title: string, rows: typeof pages, note: string) => {
+    if (rows.length === 0) return;
     out.push(`## ${title}`);
     out.push('');
     out.push(note);
@@ -319,14 +335,60 @@ function renderPages(routes: RouteFile[]): string {
     out.push('');
   };
 
-  section('Site shell', shelled, 'Standard pages, rendered inside the sidebar shell.');
-  section(
-    'Full-screen',
-    fullScreen,
-    'Games, apps and standalone pages that intentionally render without the site shell.',
-  );
+  const files = new Map<string, string>();
+  for (const name of names) {
+    const rows = buckets.get(name)!;
+    const out: string[] = [GENERATED_HEADER];
+    out.push(name === 'other' ? '# Page routes: other' : `# Page routes: ${name.toUpperCase()}`);
+    out.push('');
+    // No per-file count: a count line changes with every added row, so two PRs adding a page
+    // under the same letter would conflict on it even when their rows do not touch.
+    out.push(
+      (name === 'other'
+        ? 'The home page and URLs that do not start with a letter.'
+        : `Routes whose URL starts with \`${name}\`.`) +
+        ' See the [page inventory](../pages.md) for how to read the columns.',
+    );
+    out.push('');
+    // `_site/` pages get the sidebar shell; top-level routes are full-screen.
+    table(
+      out,
+      'Site shell',
+      rows.filter((p) => p.id.startsWith('_site')),
+      'Standard pages, rendered inside the sidebar shell.',
+    );
+    table(
+      out,
+      'Full-screen',
+      rows.filter((p) => !p.id.startsWith('_site')),
+      'Games, apps and standalone pages that intentionally render without the site shell.',
+    );
+    files.set(name, out.join('\n'));
+  }
 
-  return out.join('\n');
+  const out: string[] = [GENERATED_HEADER];
+  out.push('# Page routes');
+  out.push('');
+  out.push(
+    'Every page the site serves, split by the first letter of its URL so that adding a page edits one small file. ' +
+      'Each table is divided into the pages that render inside the standard site shell (sidebar, nav, context rail) ' +
+      'and the full-screen ones, which is how games, the login page and the legal pages are meant to render. ' +
+      'Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not. ' +
+      'Counts are in `docs/_generated/facts/routes.json`.',
+  );
+  out.push('');
+  out.push('Params appear as `:name`; `*` is a catch-all splat.');
+  out.push('');
+  out.push(
+    '**Access** is derived from the route file and every layout above it: `admin` (bounced unless ' +
+      '`isAdmin`), `sign-in` (redirected to `/login`), or `public`. `public` describes the *route*, ' +
+      'not necessarily everything on it — several public pages render a sign-in prompt in place of ' +
+      'their content rather than redirecting, `/developer` being one.',
+  );
+  out.push('');
+  out.push(...names.map((n) => `- [${n === 'other' ? 'Other' : n.toUpperCase()}](./pages/${n}.md)`), '');
+  out.push(...toctree(names.map((n) => `pages/${n}`)));
+  return { index: out.join('\n'), files };
 }
 
 /* ── API inventory ───────────────────────────────────────────────────────── */
@@ -349,7 +411,7 @@ function registeredApiRows(): Array<{ url: string; methods: string[]; file: stri
     }));
 }
 
-function renderApi(routes: RouteFile[]): string {
+function renderApi(routes: RouteFile[]): { index: string; files: Map<string, string> } {
   const fileRows = routes
     .filter((r) => r.isApi && r.id !== API_DISPATCHER_ID)
     .map((r) => ({ url: toUrl(r.id).url, methods: methodsOf(r.file), file: r.file }));
@@ -364,17 +426,49 @@ function renderApi(routes: RouteFile[]): string {
     groups.get(group)!.push(route);
   }
 
+  // One file per first letter of the group, so a PR that adds an endpoint edits one small file.
+  const buckets = new Map<string, string[]>();
+  for (const group of [...groups.keys()].sort()) {
+    const key = bucketOf(`/api/${group}`);
+    buckets.set(key, [...(buckets.get(key) ?? []), group]);
+  }
+  const names = [...buckets.keys()].sort();
+
+  const files = new Map<string, string>();
+  for (const name of names) {
+    const out: string[] = [GENERATED_HEADER];
+    out.push(name === 'other' ? '# API routes: other' : `# API routes: ${name.toUpperCase()}`);
+    out.push('');
+    out.push('See the [API inventory](../api.md) for how to read the tables.');
+    out.push('');
+    for (const group of buckets.get(name)!) {
+      const rows = groups.get(group)!;
+      out.push(`## \`/api/${group}\``);
+      out.push('');
+      out.push('| Route | Methods | Source |');
+      out.push('| ----- | ------- | ------ |');
+      for (const r of rows) {
+        out.push(
+          `| \`${r.url}\` | ${r.methods.length ? r.methods.map((m) => `\`${m}\``).join(' ') : '—'} | \`${r.file}\` |`,
+        );
+      }
+      out.push('');
+    }
+    files.set(name, out.join('\n'));
+  }
+
   const out: string[] = [GENERATED_HEADER];
   out.push('# API routes');
   out.push('');
   out.push(
-    `Every server route in the app tier — ${api.length} endpoints across ${groups.size} groups: ` +
-      `${fileRows.length} route files under \`app/routes/api\` and ${registeredRows.length} registered ` +
+    'Every server route in the app tier: the route files under `app/routes/api` and the registered ' +
       'modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). ' +
+      'The inventory is split by the first letter of the group (`/api/<group>`) so that adding an endpoint edits one small file. ' +
       'This is the whole internal surface, not just the public developer API: ' +
       'the public, versioned, key-authenticated subset is `/api/v1/*`, documented in ' +
       '[the developer API reference](../developer-api/endpoints/index.md). ' +
-      'Everything else is session-authenticated and internal — treat it as unstable.',
+      'Everything else is session-authenticated and internal — treat it as unstable. ' +
+      'Counts are in `docs/_generated/facts/routes.json`.',
   );
   out.push('');
   out.push(
@@ -383,24 +477,9 @@ function renderApi(routes: RouteFile[]): string {
       'exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).',
   );
   out.push('');
-
-  for (const group of [...groups.keys()].sort()) {
-    const rows = groups.get(group)!;
-    out.push(`## \`/api/${group}\``);
-    out.push('');
-    out.push(`${rows.length} route${rows.length === 1 ? '' : 's'}.`);
-    out.push('');
-    out.push('| Route | Methods | Source |');
-    out.push('| ----- | ------- | ------ |');
-    for (const r of rows) {
-      out.push(
-        `| \`${r.url}\` | ${r.methods.length ? r.methods.map((m) => `\`${m}\``).join(' ') : '—'} | \`${r.file}\` |`,
-      );
-    }
-    out.push('');
-  }
-
-  return out.join('\n');
+  out.push(...names.map((n) => `- [${n === 'other' ? 'Other' : n.toUpperCase()}](./api/${n}.md)`), '');
+  out.push(...toctree(names.map((n) => `api/${n}`)));
+  return { index: out.join('\n'), files };
 }
 
 /* ── catalogs ────────────────────────────────────────────────────────────── */
@@ -492,8 +571,12 @@ function renderCatalog(
 
 const routes = walk(ROUTES);
 
-emit(join(OUT, 'pages.md'), renderPages(routes));
-emit(join(OUT, 'api.md'), renderApi(routes));
+const pageDocs = renderPages(routes);
+emit(join(OUT, 'pages.md'), pageDocs.index);
+emitSplit(join(OUT, 'pages'), pageDocs.files);
+const apiDocs = renderApi(routes);
+emit(join(OUT, 'api.md'), apiDocs.index);
+emitSplit(join(OUT, 'api'), apiDocs.files);
 emit(
   join(OUT, 'games.md'),
   renderCatalog(

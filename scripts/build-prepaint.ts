@@ -5,7 +5,9 @@
  * GENERATED module lib/prepaint/generated.ts.
  *
  *     pnpm prepaint:build     # regenerate
- *     pnpm prepaint:check     # regenerate in memory and diff (CI + commit gate)
+ *     pnpm gen                # this, the route tree and the facts; install/dev/build/typecheck/test run it
+ *
+ * The output is not tracked in git (.gitignore): one minified line, it conflicted on every merge.
  *
  * Why generated rather than built by Vite: `app/routes/__root.tsx` emits the
  * string as inline <script> text during SSR and needs the exact bytes (and their
@@ -44,8 +46,10 @@ export async function generate(): Promise<string> {
   const head = await bundle('entry.ts');
   const body = await bundle('body-entry.ts');
   return `// GENERATED FILE — do not edit by hand.
-// Source: lib/prepaint/*.ts (entry.ts, body-entry.ts). Regenerate with \`pnpm prepaint:build\`;
-// \`pnpm prepaint:check\` (commit gate + CI) fails when this file is stale.
+// Source: lib/prepaint/*.ts (entry.ts, body-entry.ts). Regenerate with \`pnpm prepaint:build\`
+// (\`pnpm gen\` does, and so do install, dev, build, typecheck and the test run).
+// This file is NOT tracked: it is a function of lib/prepaint/*.ts, and committed it conflicted on
+// every merge (one minified line).
 //
 // PREPAINT_CODE is the ONE inline <script> the root document runs before first
 // paint; PREPAINT_BODY_CODE is the tiny <body>-top companion. The hashes are
@@ -57,6 +61,14 @@ export const PREPAINT_SHA256 = ${JSON.stringify(sha256(head))};
 export const PREPAINT_BODY_CODE = ${JSON.stringify(body)};
 export const PREPAINT_BODY_SHA256 = ${JSON.stringify(sha256(body))};
 `;
+}
+
+/** Writes `lib/prepaint/generated.ts`; leaves the file (and its mtime) alone when it is current. */
+export async function writePrepaint(): Promise<boolean> {
+  const next = await generate();
+  if (existsSync(OUT) && readFileSync(OUT, 'utf8') === next) return false;
+  writeFileSync(OUT, next);
+  return true;
 }
 
 async function main() {

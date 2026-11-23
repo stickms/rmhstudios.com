@@ -4,8 +4,9 @@ import { getAllNewsArticles } from '@/lib/news';
 import { renderRssFeed, type RssItem } from '@/lib/rss';
 
 /**
- * /news/rss.xml — RSS 2.0 feed of published news articles. Cached for an hour
- * at the edge (stale-while-revalidate a day).
+ * /news/rss.xml — RSS 2.0 feed of the newest 60 RMH News articles (headlines from public feeds, and anything the
+ * site writes). Each item links to its RMH News page, which carries the summary and the link to the source. Cached
+ * for an hour at the edge (stale-while-revalidate a day).
  */
 export const Route = createFileRoute('/news/rss.xml')({
   server: {
@@ -18,7 +19,7 @@ export const Route = createFileRoute('/news/rss.xml')({
             link: `${SITE_URL}/news/${a.slug}`,
             guid: `${SITE_URL}/news/${a.slug}`,
             description: a.description,
-            pubDate: a.date ? new Date(a.date) : undefined,
+            pubDate: a.publishedAt,
             categories: a.category ? [a.category] : undefined,
             imageUrl: a.image
               ? a.image.startsWith('http')
@@ -28,10 +29,10 @@ export const Route = createFileRoute('/news/rss.xml')({
           }));
 
           const xml = renderRssFeed({
-            title: 'RMH Studios — News',
+            title: 'RMH News',
             link: `${SITE_URL}/news`,
             feedUrl: `${SITE_URL}/news/rss.xml`,
-            description: 'The latest news curated and published by RMH Studios.',
+            description: 'Headlines from public news feeds, sorted by topic, with AI summaries on RMH Studios.',
             items,
           });
 

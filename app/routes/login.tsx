@@ -21,11 +21,15 @@ import {
   XIcon,
 } from '@/components/ui/brand-icons';
 import type { SignInProviderId } from '@/lib/auth/providers';
-import { getSignInProviders } from '@/lib/auth/sign-in-providers.functions';
+import { getLoginConfig } from '@/lib/auth/sign-in-providers.functions';
+import { CAPTCHA_HEADER } from '@/lib/auth/turnstile';
 import { safeInternalPath } from '@/lib/auth/redirect';
 import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
+import { TwoFactorSetup } from '@/components/settings/TwoFactorSetup';
+import { Switch } from '@/components/ui/switch';
+import { TurnstileWidget, type TurnstileHandle } from '@/components/site/TurnstileWidget';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -51,7 +55,7 @@ export const Route = createFileRoute('/login')({
   }),
   // Which provider buttons to draw depends on which providers this deploy has
   // credentials for (lib/auth/provider-config.server.ts).
-  loader: () => getSignInProviders(),
+  loader: () => getLoginConfig(),
   component: LoginPage,
 });
 
@@ -62,7 +66,10 @@ function LoginPage() {
   const isCard = useMediaQuery('(min-width: 640px)');
   const { t } = useTranslation('pages');
   const { callbackURL: rawCallback, error: linkError } = Route.useSearch();
-  const enabledProviders = Route.useLoaderData();
+  const { providers: enabledProviders, turnstileSiteKey } = Route.useLoaderData();
+  // Cloudflare Turnstile on sign-up and "Forgot password?", when the server has keys for it (null otherwise).
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstile = useRef<TurnstileHandle>(null);
 
   const [callbackURL, setCallbackURL] = useState(() => safeInternalPath(rawCallback));
 
@@ -80,13 +87,24 @@ function LoginPage() {
   }, [rawCallback]);
 
   const { data: session, isPending } = useSession();
-  const arrival = useArrival(!(isPending || session?.user));
+  // Right after an email sign-up the page stays (signed in) to offer two-step verification once: `hold` from the
+  // moment the code is sent until the answer is known, then `offer` or `setup`. Optional; "Not now" moves on.
+  const [offer2fa, setOffer2fa] = useState<'hold' | 'offer' | 'setup' | null>(null);
+  const forwarding = (isPending || !!session?.user) && offer2fa === null;
+  const arrival = useArrival(!forwarding);
 
   useEffect(() => {
-    if (!isPending && session?.user) {
+    if (!isPending && session?.user && offer2fa === null) {
       window.location.href = callbackURL;
     }
-  }, [isPending, session, callbackURL]);
+  }, [isPending, session, callbackURL, offer2fa]);
+
+  // Two-step verification: a correct password on an account with it on asks for a code next (`backup` when the
+  // person uses one of their backup codes instead of the app).
+  const [twoFactor, setTwoFactor] = useState<{ backup: boolean } | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [trustDevice, setTrustDevice] = useState(false);
+  const [verifyingTwoFactor, setVerifyingTwoFactor] = useState(false);
 
   const [isSignUp, setIsSignUp] = useState(false);
   // Progressive disclosure: on sign-in the email form is hidden behind a button
@@ -236,9 +254,13 @@ function LoginPage() {
     }
     setVerifying(true);
     setError(null);
+    const afterSignUp = awaitingEmail.after === 'sign-up';
+    // The code signs the new account in; keep the page here for the two-step offer instead of forwarding.
+    if (afterSignUp) setOffer2fa('hold');
     try {
       const res = await authClient.emailOtp.verifyEmail({ email: awaitingEmail.email, otp: value });
       if (res.error) {
+        if (afterSignUp) setOffer2fa(null);
         setError(
           res.error.code === 'OTP_EXPIRED' || res.error.code === 'TOO_MANY_ATTEMPTS'
             ? t('code-expired', { defaultValue: 'That code has expired. Send a new one.' })
@@ -256,11 +278,28 @@ function LoginPage() {
           // The account is confirmed; the picture is best-effort.
         }
       }
+      if (afterSignUp) {
+        setVerifying(false);
+        setOffer2fa('offer');
+        return;
+      }
       window.location.href = callbackURL;
     } catch {
+      if (afterSignUp) setOffer2fa(null);
       setError(t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
       setVerifying(false);
     }
+  };
+
+  /**
+   * The bot-check header for a protected request, or null (and a message) while the check has not finished.
+   * Without Turnstile configured it is an empty set of headers.
+   */
+  const captchaHeaders = (): Record<string, string> | null => {
+    if (!turnstileSiteKey) return {};
+    if (captchaToken) return { [CAPTCHA_HEADER]: captchaToken };
+    setError(t('captcha-wait', { defaultValue: 'Checking your browser. Try again in a moment.' }));
+    return null;
   };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
@@ -271,9 +310,15 @@ function LoginPage() {
       setError(t('validation-email', { defaultValue: 'Enter a valid email address.' }));
       return;
     }
+    const headers = captchaHeaders();
+    if (!headers) return;
     setSendingReset(true);
     try {
-      const res = await authClient.requestPasswordReset({ email: trimmedEmail, redirectTo: '/reset-password' });
+      const res = await authClient.requestPasswordReset({
+        email: trimmedEmail,
+        redirectTo: '/reset-password',
+        fetchOptions: { headers },
+      });
       if (res.error) {
         setError(res.error.message ?? t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
       } else {
@@ -283,6 +328,7 @@ function LoginPage() {
       setError(t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
     } finally {
       setSendingReset(false);
+      turnstile.current?.reset();
     }
   };
 
@@ -343,10 +389,14 @@ function LoginPage() {
       return;
     }
 
+    const headers = isSignUp ? captchaHeaders() : {};
+    if (!headers) return;
     setPending('email');
 
     try {
       if (isSignUp) {
+        // Without email confirmation the sign-up signs in at once: hold the page for the two-step offer.
+        setOffer2fa('hold');
         await authClient.signUp.email(
           {
             email,
@@ -357,10 +407,13 @@ function LoginPage() {
             callbackURL: returnHere,
           },
           {
+            headers,
+            onResponse: () => turnstile.current?.reset(),
             onSuccess: async (ctx) => {
               // No session yet means the address has to be confirmed first.
               if (!(ctx.data as { token?: string | null } | null)?.token) {
                 setPending(null);
+                setOffer2fa(null);
                 setAwaitingEmail({ email: email.trim(), after: 'sign-up' });
                 return;
               }
@@ -373,10 +426,12 @@ function LoginPage() {
                   // Account creation succeeded; avatar upload is best-effort.
                 }
               }
-              window.location.href = callbackURL;
+              setPending(null);
+              setOffer2fa('offer');
             },
             onError: (ctx) => {
               setPending(null);
+              setOffer2fa(null);
               setError(ctx.error.message);
             },
           },
@@ -385,7 +440,14 @@ function LoginPage() {
         await authClient.signIn.email(
           { email, password, callbackURL: returnHere },
           {
-            onSuccess: () => {
+            onSuccess: (ctx) => {
+              // Two-step verification is on for this account: the password was right, now the code.
+              if ((ctx.data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) {
+                setPending(null);
+                setTwoFactorCode('');
+                setTwoFactor({ backup: false });
+                return;
+              }
               window.location.href = callbackURL;
             },
             onError: (ctx) => {
@@ -402,11 +464,64 @@ function LoginPage() {
       }
     } catch {
       setPending(null);
+      setOffer2fa(null);
       setError(t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
     }
   };
 
-  if (isPending || session?.user) {
+  /** The second step of a password sign-in: a code from the app, or a backup code. */
+  const verifyTwoFactor = async (value: string) => {
+    if (!twoFactor || verifyingTwoFactor) return;
+    const clean = twoFactor.backup ? value.trim() : value.replace(/\D/g, '');
+    if (!twoFactor.backup && !/^\d{6}$/.test(clean)) {
+      setError(t('two-factor-code-format', { defaultValue: 'Enter the 6-digit code from your app.' }));
+      return;
+    }
+    if (twoFactor.backup && clean.length < 10) {
+      setError(t('two-factor-backup-format', { defaultValue: 'Enter one of your backup codes, like abcde-12345.' }));
+      return;
+    }
+    setVerifyingTwoFactor(true);
+    setError(null);
+    try {
+      const res = twoFactor.backup
+        ? await authClient.twoFactor.verifyBackupCode({ code: clean, trustDevice })
+        : await authClient.twoFactor.verifyTotp({ code: clean, trustDevice });
+      if (res.error) {
+        const c = res.error.code;
+        if (c === 'INVALID_TWO_FACTOR_COOKIE' || c === 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE') {
+          // The challenge is over (ten minutes passed, or five wrong codes): start again from the password.
+          setTwoFactor(null);
+          setPassword('');
+          setError(
+            t('two-factor-restart', {
+              defaultValue: 'That sign-in timed out or had too many wrong codes. Sign in again.',
+            }),
+          );
+        } else if (c === 'ACCOUNT_TEMPORARILY_LOCKED') {
+          setError(t('two-factor-locked', { defaultValue: 'Too many wrong codes. Try again in 15 minutes.' }));
+        } else {
+          setError(
+            twoFactor.backup
+              ? t('two-factor-backup-wrong', { defaultValue: 'That backup code is not right, or it was already used.' })
+              : t('two-factor-sign-in-wrong', { defaultValue: 'That code is not right. Try the newest code in your app.' }),
+          );
+        }
+        setVerifyingTwoFactor(false);
+        return;
+      }
+      window.location.href = callbackURL;
+    } catch {
+      setVerifyingTwoFactor(false);
+      setError(t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
+    }
+  };
+
+  const finishSignUp = () => {
+    window.location.href = callbackURL;
+  };
+
+  if (forwarding) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
         <Spinner label={t('loading', { defaultValue: 'Loading…' })} />
@@ -567,6 +682,10 @@ function LoginPage() {
         </div>
       )}
 
+      {isSignUp && turnstileSiteKey ? (
+        <TurnstileWidget ref={turnstile} siteKey={turnstileSiteKey} action="sign-up" onToken={setCaptchaToken} />
+      ) : null}
+
       {error && (
         <div
           id="login-error"
@@ -611,9 +730,7 @@ function LoginPage() {
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="surface-field mb-3 flex size-12 items-center justify-center rounded-site">
-            <span className="font-display text-lg font-bold tracking-tight text-site-text">R</span>
-          </div>
+          <img src="/favicon.svg" alt="" width={48} height={48} className="mb-3 size-12" />
           <p className="site-kicker">RMH Studios</p>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-site-text">
             {isSignUp
@@ -633,7 +750,135 @@ function LoginPage() {
           </p>
         ) : null}
 
-        {forgot ? (
+        {offer2fa === 'offer' || offer2fa === 'setup' ? (
+          <div className="space-y-3">
+            <h2 className="t-heading text-center">
+              {t('two-factor-offer-title', { defaultValue: 'Add two-step verification?' })}
+            </h2>
+            {offer2fa === 'offer' ? (
+              <>
+                <p className="text-center text-sm text-site-text-muted">
+                  {t('two-factor-offer-body', {
+                    defaultValue:
+                      'When you sign in with your password, we also ask for a code from an authenticator app on your phone. It is optional, and you can turn it on later in Settings, Security.',
+                  })}
+                </p>
+                <Button type="button" variant="primary" size="lg" className="w-full" onClick={() => setOffer2fa('setup')}>
+                  {t('two-factor-offer-set-up', { defaultValue: 'Set up' })}
+                </Button>
+                <Button type="button" size="lg" className="w-full" onClick={finishSignUp}>
+                  {t('two-factor-offer-skip', { defaultValue: 'Not now' })}
+                </Button>
+              </>
+            ) : (
+              <TwoFactorSetup
+                password={password}
+                onDone={finishSignUp}
+                onCancel={finishSignUp}
+                cancelLabel={t('two-factor-offer-skip', { defaultValue: 'Not now' })}
+                layout="page"
+              />
+            )}
+          </div>
+        ) : twoFactor ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void verifyTwoFactor(twoFactorCode);
+            }}
+            noValidate
+            className="space-y-3 text-center"
+          >
+            <h2 className="t-heading">
+              {twoFactor.backup
+                ? t('two-factor-backup-title', { defaultValue: 'Enter a backup code' })
+                : t('two-factor-code-title', { defaultValue: 'Enter your code' })}
+            </h2>
+            <p className="text-sm text-site-text-muted">
+              {twoFactor.backup
+                ? t('two-factor-backup-body', {
+                    defaultValue: 'Use one of the backup codes you saved when you turned on two-step verification. Each works once.',
+                  })
+                : t('two-factor-code-body', {
+                    defaultValue: 'Open your authenticator app and enter the 6-digit code for RMH Studios.',
+                  })}
+            </p>
+            <label htmlFor="two-factor-code" className="sr-only">
+              {twoFactor.backup
+                ? t('two-factor-backup-label', { defaultValue: 'Backup code' })
+                : t('two-factor-code-label', { defaultValue: 'Authenticator code' })}
+            </label>
+            <Input
+              id="two-factor-code"
+              name={twoFactor.backup ? 'backup-code' : 'otp'}
+              type="text"
+              inputMode={twoFactor.backup ? 'text' : 'numeric'}
+              autoComplete={twoFactor.backup ? 'off' : 'one-time-code'}
+              autoCapitalize="off"
+              spellCheck={false}
+              maxLength={twoFactor.backup ? 11 : 6}
+              autoFocus
+              value={twoFactorCode}
+              onChange={(e) => {
+                if (twoFactor.backup) {
+                  setTwoFactorCode(e.target.value.slice(0, 11));
+                  return;
+                }
+                // Six digits submit on their own, as the email code does.
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setTwoFactorCode(digits);
+                if (digits.length === 6) void verifyTwoFactor(digits);
+              }}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'two-factor-error' : undefined}
+              className="h-12 text-center font-mono text-lg tracking-[0.3em]"
+            />
+            {error && (
+              <p id="two-factor-error" role="alert" className="text-sm text-site-danger">
+                {error}
+              </p>
+            )}
+            <div className="flex items-center justify-center gap-3">
+              <Switch
+                checked={trustDevice}
+                onCheckedChange={setTrustDevice}
+                aria-labelledby="trust-device-label"
+              />
+              <span id="trust-device-label" className="text-sm text-site-text">
+                {t('two-factor-trust', { defaultValue: 'Trust this device for 30 days' })}
+              </span>
+            </div>
+            <Button type="submit" variant="primary" size="lg" loading={verifyingTwoFactor} className="w-full">
+              {t('two-factor-verify', { defaultValue: 'Verify' })}
+            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-x-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setTwoFactor({ backup: !twoFactor.backup });
+                  setTwoFactorCode('');
+                  setError(null);
+                }}
+                className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted underline underline-offset-4 hover:text-site-text"
+              >
+                {twoFactor.backup
+                  ? t('two-factor-use-app', { defaultValue: 'Use your authenticator app' })
+                  : t('two-factor-use-backup', { defaultValue: 'Use a backup code' })}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTwoFactor(null);
+                  setTwoFactorCode('');
+                  setError(null);
+                }}
+                className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted hover:text-site-text"
+              >
+                {t('check-inbox-back', { defaultValue: 'Back to sign in' })}
+              </button>
+            </div>
+          </form>
+        ) : forgot ? (
           forgot === 'sent' ? (
             <div className="space-y-3 text-center">
               <h2 className="t-heading">{t('check-inbox-title', { defaultValue: 'Check your inbox' })}</h2>
@@ -685,6 +930,14 @@ function LoginPage() {
                   {error}
                 </p>
               )}
+              {turnstileSiteKey ? (
+                <TurnstileWidget
+                  ref={turnstile}
+                  siteKey={turnstileSiteKey}
+                  action="password-reset"
+                  onToken={setCaptchaToken}
+                />
+              ) : null}
               <Button type="submit" variant="primary" size="lg" loading={sendingReset} className="w-full">
                 {t('forgot-submit', { defaultValue: 'Send reset link' })}
               </Button>

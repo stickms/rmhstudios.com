@@ -550,6 +550,42 @@ export function noticeText(
         defaultValue: 'An admin granted you {{months}} month(s) of {{tier}}!',
         ...values,
       });
+    case 'medschools-qa-limit-approved':
+      return t('notice-medschools-qa-limit-approved', {
+        ns: 'notice-language',
+        defaultValue: 'Your request for a higher Q&A limit was approved',
+        ...values,
+      });
+    case 'medschools-qa-limit-approved-note':
+      return t('notice-medschools-qa-limit-approved-note', {
+        ns: 'notice-language',
+        defaultValue: 'Your request for a higher Q&A limit was approved: {{note}}',
+        ...values,
+      });
+    case 'medschools-qa-limit-declined':
+      return t('notice-medschools-qa-limit-declined', {
+        ns: 'notice-language',
+        defaultValue: 'Your request for a higher Q&A limit was declined',
+        ...values,
+      });
+    case 'medschools-qa-limit-declined-note':
+      return t('notice-medschools-qa-limit-declined-note', {
+        ns: 'notice-language',
+        defaultValue: 'Your request for a higher Q&A limit was declined: {{note}}',
+        ...values,
+      });
+    case 'medschools-qa-limit-revoked':
+      return t('notice-medschools-qa-limit-revoked', {
+        ns: 'notice-language',
+        defaultValue: 'Your higher Q&A limit was withdrawn',
+        ...values,
+      });
+    case 'medschools-qa-limit-revoked-note':
+      return t('notice-medschools-qa-limit-revoked-note', {
+        ns: 'notice-language',
+        defaultValue: 'Your higher Q&A limit was withdrawn: {{note}}',
+        ...values,
+      });
     case 'memory-one-year':
       return t('notice-memory-one-year', {
         ns: 'notice-language',

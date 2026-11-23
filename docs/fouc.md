@@ -230,8 +230,9 @@ step reads).
 `pnpm prepaint:build` (`scripts/build-prepaint.ts`) bundles `lib/prepaint/entry.ts` with esbuild (IIFE, minified,
 ES2017) into the GENERATED `lib/prepaint/generated.ts`: `PREPAINT_CODE`, its base64 sha256 `PREPAINT_SHA256` (the CSP
 `'sha256-…'` source, redesign F5), and the tiny `<body>`-top companion `PREPAINT_BODY_CODE` (it needs `document.body`,
-so it cannot fold into the head script). Never edit the generated file; `pnpm prepaint:check` (commit gate + CI "Docs
-freshness") and `lib/prepaint/__tests__/generated.test.ts` fail when it is stale.
+so it cannot fold into the head script). Never edit the generated file. It is not in git (one minified line, it
+conflicted on every merge): `pnpm gen` writes it, and `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm typecheck`,
+`pnpm lint` and the vitest run do too. `lib/prepaint/__tests__/generated.test.ts` fails if it is stale.
 
 There is exactly ONE code string. What varies is **data**, in a `<script type="application/json" id="rmh-prepaint">`
 block the root emits just before it (`lib/prepaint/config.ts`): `nf` (a global 404 is a site page whatever the URL),

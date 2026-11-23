@@ -48,6 +48,8 @@ const maxWorkers = Math.min(12, Math.max(2, Math.ceil(availableParallelism() * 1
 
 export default defineConfig({
   test: {
+    // Brings the untracked generated modules (route tree, pre-paint script) up to date first.
+    globalSetup: ['scripts/vitest-global-gen.ts'],
     // No persistent module cache on CI. CI restores node_modules (where the cache lives) from a
     // lockfile-keyed actions cache, so a transformed `lib/__tests__/api-handler-modules.ts` keeps
     // a stale `import.meta.glob` expansion and misses API files added since. Local runs keep it.

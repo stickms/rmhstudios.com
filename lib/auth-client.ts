@@ -1,7 +1,7 @@
 import { createAuthClient } from 'better-auth/react';
 import { stripeClient } from '@better-auth/stripe/client';
 import { passkeyClient } from '@better-auth/passkey/client';
-import { customSessionClient, emailOTPClient } from 'better-auth/client/plugins';
+import { customSessionClient, emailOTPClient, twoFactorClient } from 'better-auth/client/plugins';
 import type { auth } from '@/lib/auth';
 import { refreshLiveSession } from '@/lib/session/live-session';
 
@@ -12,6 +12,9 @@ export const authClient = createAuthClient({
     }),
     passkeyClient(),
     emailOTPClient(),
+    // Optional two-step verification. No redirect callback: /login reads `twoFactorRedirect` from the
+    // sign-in response itself and shows the code step in place.
+    twoFactorClient(),
     customSessionClient<typeof auth>(),
   ],
 });

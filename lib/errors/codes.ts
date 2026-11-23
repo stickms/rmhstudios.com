@@ -1000,6 +1000,37 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsStaleOrder',
     text: 'Your lists changed in another tab. Reload to see them',
   },
+  // --- med schools Q&A (phase 6) ----------------------------------------------------
+  MEDSCHOOLS_QA_DAILY_CAP: {
+    http: 429,
+    i18n: 'errors:medschoolsQaDailyCap',
+    text: "You have used today's questions. Try again tomorrow",
+  },
+  MEDSCHOOLS_QA_BUSY: {
+    http: 429,
+    i18n: 'errors:medschoolsQaBusy',
+    text: 'Your last question is still being answered. Try again in a minute',
+  },
+  MEDSCHOOLS_QA_PAUSED: {
+    http: 503,
+    i18n: 'errors:medschoolsQaPaused',
+    text: 'Questions are paused right now',
+  },
+  MEDSCHOOLS_QA_LIMIT_PENDING: {
+    http: 409,
+    i18n: 'errors:medschoolsQaLimitPending',
+    text: 'You already have a request waiting for review',
+  },
+  MEDSCHOOLS_QA_LIMIT_WAIT: {
+    http: 409,
+    i18n: 'errors:medschoolsQaLimitWait',
+    text: 'A recent request was declined. You can ask again after the date shown on the page',
+  },
+  MEDSCHOOLS_QA_LIMIT_NOT_NEEDED: {
+    http: 409,
+    i18n: 'errors:medschoolsQaLimitNotNeeded',
+    text: 'Your account already has a higher limit than a request can give',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

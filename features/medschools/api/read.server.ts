@@ -153,6 +153,9 @@ const setOf = (q: { programs?: string | undefined; degree?: MedDegreeId | undefi
   (q.programs ? parsePrograms(q.programs) : undefined) ??
   programsFromLegacy(q.degree, q.program === 'REG' || q.program === 'PHD' ? q.program : 'ALL');
 
+/** The site's current cycle as the readers resolve it; the Q&A retrieval clamps a question's cycle against it. */
+export const siteCycleYear = siteCycle;
+
 export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): Promise<ListMedSchoolsRes> {
   const set: ProgramKey[] = setOf(q);
   const program = legacyOf(set).programFilter;

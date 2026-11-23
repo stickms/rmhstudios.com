@@ -67,6 +67,7 @@ import { liveQuery, listsQuery, prefsQuery, resolveLiveFilters, schoolsQuery } f
 import type { LiveEventDto, MedListDto, MedSchoolListItemDto } from '../medschools.contract';
 import type { Prefs } from '../engine/prefs';
 import { programsQueryValue } from '../engine/programs';
+import { parseAskSearch } from '../engine/search';
 
 const root = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const squash = (s: string) => s.replace(/\s+/g, '').replace(/,\)/g, ')').replace(/,}/g, '}');
@@ -243,6 +244,7 @@ describe('IndexPage', () => {
     expect(signedIn.match(/aria-label="Save [a-z]+ University School of Medicine to a list"/g)).toHaveLength(2);
     expect(signedIn).toContain('href="/rmh-medschool/tracker"');
     expect(signedIn).toContain('href="/rmh-medschool/lists"');
+    expect(signedIn).toContain('href="/rmh-medschool/ask"');
     h.session = null;
     const out = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
     expect(out).not.toContain('to a list');
@@ -378,8 +380,25 @@ describe('route files', () => {
   });
 
   it('/tracker and /lists have their own route files next to $slug', () => {
-    for (const f of ['tracker', 'lists', '$slug']) {
+    for (const f of ['tracker', 'lists', 'ask', '$slug']) {
       expect(() => root(`../../../app/routes/_site/rmh-medschool/${f}.tsx`)).not.toThrow();
     }
+  });
+});
+
+describe('/rmh-medschool/ask', () => {
+  it('is a noindex route that is in no sitemap list and no Services hub', () => {
+    const route = root('../../../app/routes/_site/rmh-medschool/ask.tsx');
+    expect(route).toContain('noIndex: true');
+    expect(route).toContain('definePage');
+    expect(root('../../../lib/sitemap.ts')).toContain("'/rmh-medschool/ask': 'personal'");
+    expect(root('../../../app/routes/_site/services/index.tsx')).not.toContain('/rmh-medschool/ask');
+  });
+
+  it('parseAskSearch fills but never submits: a clean q of at most 400 characters', () => {
+    expect(parseAskSearch({ q: '  hello\u0000 there  ' })).toEqual({ q: 'hello  there' });
+    expect(parseAskSearch({ q: 'x'.repeat(900) }).q).toHaveLength(400);
+    expect(parseAskSearch({})).toEqual({});
+    expect(parseAskSearch({ q: 5 }).q).toBe('5');
   });
 });

@@ -14,6 +14,7 @@ import { accountStandingQuery } from '@/lib/moderation/standing.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PasskeyManager } from '@/components/site/PasskeyManager';
 import { SignInMethodsPanel } from '@/components/settings/SignInMethodsPanel';
+import { TwoFactorPanel } from '@/components/settings/TwoFactorPanel';
 import { SessionManager } from '@/components/site/SessionManager';
 import { SecurityActivityPanel } from '@/components/settings/SecurityActivityPanel';
 import { AccountStandingPanel } from '@/components/moderation/AccountStandingPanel';
@@ -73,6 +74,7 @@ function SecuritySettingsPage() {
         ) : (
           <>
             <SignInMethodsPanel linkError={linkError} />
+            <TwoFactorPanel />
             <PasskeyManager />
             <SessionManager />
             <SecurityActivityPanel />
