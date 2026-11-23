@@ -264,7 +264,10 @@ Consequences:
   phone numbers are redacted (`[phone]`); names cannot be redacted reliably, so a name in post text MAY reach the model,
   but it is never stored: every interview question is rewritten and scrubbed (`scrubQuestion`) before it is written. (5)
   **AI budget (D5):** `MEDSCHOOLS_AI_MONTHLY_USD` (default 20) is the UTC-month ceiling on `medschools-extract` spend,
-  read from `AiUsage.costMicros` before every call (a ledger read error fails closed). Live may use all of it; the
+  read from `AiUsage.costMicros` before every call (a ledger read error fails closed). **Phase 6 split:** the member-facing
+  Q&A (`medschools-qa`) reserves `MEDSCHOOLS_QA_AI_SHARE` of that cap (default 0.25, `features/medschools/ai-budget.ts`) and
+  the worker hands both scrape gates the remainder (`scrapeCapUsd`) as THEIR cap, so the percentages below (the backfill's
+  80%, the forums' 40%) apply inside the smaller cap: with the defaults the scrape has $15 and Q&A $5 of the $20. Live may use all of it; the
   backfill stops at 80% (`BACKFILL_SHARE`), pauses during DeepSeek peak hours (`isDeepseekPeak`, Mon-Fri UTC 01-04 and
   06-10) and backs off after failed runs: 1 h, doubling per consecutive failed run, capped at 24 h (Q23; budget, peak,
   cap and AI-off pauses are benign and never back off). Per-run caps: `MEDSCHOOLS_SDN_MAX_LLM_CALLS` (40) and
