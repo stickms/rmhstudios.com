@@ -15,6 +15,32 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medSdnThread: ['threadId'],
   medInterviewQuestion: ['dedupeHash'],
   medInterviewProfile: ['schoolId', 'source'],
+  medTrackerCycle: ['userId', 'cycleYear'],
+  medTrackerApplication: ['cycleId', 'schoolId', 'program'],
+  medTrackerMilestone: ['applicationId', 'type'],
+};
+
+/** `onDelete: Cascade` edges: deleting a row of the key removes the child rows whose `fk` equals its id. */
+const CASCADES: Record<string, { child: string; fk: string }[]> = {
+  user: [
+    { child: 'medTrackerCycle', fk: 'userId' },
+    { child: 'medSchoolList', fk: 'userId' },
+    { child: 'medUserPrefs', fk: 'userId' },
+  ],
+  medSchool: [
+    { child: 'medSchoolAlias', fk: 'schoolId' },
+    { child: 'medCycleCount', fk: 'schoolId' },
+    { child: 'medCycleEvent', fk: 'schoolId' },
+    { child: 'medSchoolStats', fk: 'schoolId' },
+    { child: 'medInterviewQuestion', fk: 'schoolId' },
+    { child: 'medInterviewProfile', fk: 'schoolId' },
+    { child: 'medSdnThread', fk: 'schoolId' },
+    { child: 'medTrackerApplication', fk: 'schoolId' },
+    { child: 'medSchoolListItem', fk: 'schoolId' },
+  ],
+  medTrackerCycle: [{ child: 'medTrackerApplication', fk: 'cycleId' }],
+  medTrackerApplication: [{ child: 'medTrackerMilestone', fk: 'applicationId' }],
+  medSchoolList: [{ child: 'medSchoolListItem', fk: 'listId' }],
 };
 
 const eq = (a: unknown, b: unknown): boolean =>
@@ -81,12 +107,20 @@ function matches(row: Row, where: Row | undefined): boolean {
   });
 }
 
-export function createFakePrisma(): {
+export interface FakePrismaOptions {
+  /** Awaited at the start of every delegate call, so concurrent transactions interleave (seeded by the test). */
+  jitter?: () => Promise<void>;
+}
+
+export function createFakePrisma(options: FakePrismaOptions = {}): {
   prisma: MedPrisma;
   writes: unknown[];
   tables: Record<string, unknown[]>;
+  /** One entry per transaction, in start order: the advisory-lock keys it acquired, in acquisition order. */
+  lockLog: string[][];
 } {
   const writes: unknown[] = [];
+  const lockLog: string[][] = [];
   const tables: Record<string, Row[]> = {};
   let seq = 0;
 
@@ -113,6 +147,17 @@ export function createFakePrisma(): {
     };
     t.push(row);
     return row;
+  }
+
+  /** Remove the rows matching `pred` from `name` and, like the database, everything that cascades from them. */
+  function removeWhere(name: string, pred: (r: Row) => boolean): Row[] {
+    const gone = table(name).filter(pred);
+    tables[name] = table(name).filter((r) => !pred(r));
+    for (const { child, fk } of CASCADES[name] ?? []) {
+      const ids = new Set(gone.map((r) => r.id));
+      removeWhere(child, (r) => ids.has(r[fk]));
+    }
+    return gone;
   }
 
   function delegate(name: string): Record<string, (args?: never) => Promise<unknown>> {
@@ -186,6 +231,12 @@ export function createFakePrisma(): {
           ...hit,
         };
       },
+      async updateMany(args: { where?: Row; data: Row }) {
+        writes.push(args);
+        const hits = t().filter((r) => matches(r, args.where));
+        for (const r of hits) applyUpdate(r, args.data);
+        return { count: hits.length };
+      },
       async upsert(args: { where: Row; create: Row; update: Row }) {
         writes.push(args);
         const hit = t().find((r) => matches(r, args.where));
@@ -210,20 +261,41 @@ export function createFakePrisma(): {
       },
       async delete(args: { where: Row }) {
         writes.push(args);
-        const i = t().findIndex((r) => matches(r, args.where));
-        if (i < 0) throw new Error(`Record not found in ${name}`);
-        return t().splice(i, 1)[0];
+        const hit = t().find((r) => matches(r, args.where));
+        if (!hit) throw new Error(`Record not found in ${name}`);
+        removeWhere(name, (r) => r === hit);
+        return hit;
       },
       async deleteMany(args: { where: Row }) {
         writes.push(args);
-        const keep = t().filter((r) => !matches(r, args.where));
-        const count = t().length - keep.length;
-        tables[name] = keep;
+        const count = removeWhere(name, (r) => matches(r, args.where)).length;
         return {
           count,
         };
       },
+      /** `groupBy({ by, where, _count: { _all: true } })` only: the grouping the RMH roll-up needs. */
+      async groupBy(args: { by: string[]; where?: Row; _count?: unknown }) {
+        const groups = new Map<string, { key: Row; n: number }>();
+        for (const r of t().filter((x) => matches(x, args.where))) {
+          const key = Object.fromEntries(args.by.map((c) => [c, r[c]]));
+          const id = JSON.stringify(args.by.map((c) => (r[c] instanceof Date ? (r[c] as Date).toISOString() : r[c])));
+          const g = groups.get(id) ?? { key, n: 0 };
+          g.n += 1;
+          groups.set(id, g);
+        }
+        return [...groups.values()].map((g) => ({ ...g.key, _count: { _all: g.n } }));
+      },
     };
+    if (options.jitter) {
+      const jitter = options.jitter;
+      for (const k of Object.keys(api) as (keyof typeof api)[]) {
+        const fn = api[k] as (a?: never) => Promise<unknown>;
+        (api as Record<string, unknown>)[k] = async (a?: never) => {
+          await jitter();
+          return fn(a);
+        };
+      }
+    }
     return api as unknown as Record<string, (args?: never) => Promise<unknown>>;
   }
 
@@ -239,20 +311,66 @@ export function createFakePrisma(): {
     'medSchoolStats',
     'medSourceRun',
     'medSdnThread',
+    'medTrackerCycle',
+    'medTrackerApplication',
+    'medTrackerMilestone',
+    'medSchoolList',
+    'medSchoolListItem',
+    'medUserPrefs',
+    'user',
     'aiUsage',
   ];
   const prisma = Object.fromEntries(names.map((n) => [n, delegate(n)])) as unknown as MedPrisma;
-  // A transaction runs against the same fake; a throw restores every table and the write log.
+  // A transaction runs against the same fake (READ COMMITTED: no snapshot isolation). `$executeRaw` is the advisory
+  // lock the real code takes (`pg_advisory_xact_lock(hashtextextended(key, 0))`): a recorded mutex, one owner per key,
+  // reentrant within a transaction, released when it ends. Outside a transaction it throws, as a lock would be useless.
+  // A throw restores every table and the write log, but only when no other transaction was running (a snapshot restore
+  // would otherwise clobber its writes), so tests that throw run their transactions one at a time.
+  const owner = new Map<string, symbol>();
+  const waiters = new Map<string, (() => void)[]>();
+  let active = 0;
+  const acquire = async (key: string, me: symbol, log: string[]): Promise<void> => {
+    if (owner.get(key) === me) return;
+    while (owner.has(key)) await new Promise<void>((res) => waiters.set(key, [...(waiters.get(key) ?? []), res]));
+    owner.set(key, me);
+    log.push(key);
+  };
+  const release = (me: symbol): void => {
+    for (const [key, who] of [...owner]) {
+      if (who !== me) continue;
+      owner.delete(key);
+      const next = waiters.get(key)?.shift();
+      next?.();
+    }
+  };
+  (prisma as unknown as Record<string, unknown>).$executeRaw = async () => {
+    throw new Error('advisory lock taken outside a transaction');
+  };
   (prisma as unknown as Record<string, unknown>).$transaction = async (fn: (tx: MedPrisma) => Promise<unknown>) => {
+    const me = Symbol('tx');
+    const log: string[] = [];
+    lockLog.push(log);
+    const tx = Object.create(prisma) as Record<string, unknown>;
+    tx.$executeRaw = async (_strings: TemplateStringsArray, key: unknown) => {
+      if (options.jitter) await options.jitter();
+      await acquire(String(key), me, log);
+      return 1;
+    };
     const snapshot = Object.fromEntries(Object.entries(tables).map(([k, rows]) => [k, rows.map((r) => ({ ...r }))]));
     const writeCount = writes.length;
+    active += 1;
     try {
-      return await fn(prisma);
+      return await fn(tx as unknown as MedPrisma);
     } catch (err) {
-      for (const k of Object.keys(tables)) delete tables[k];
-      Object.assign(tables, snapshot);
-      writes.length = writeCount;
+      if (active === 1) {
+        for (const k of Object.keys(tables)) delete tables[k];
+        Object.assign(tables, snapshot);
+        writes.length = writeCount;
+      }
       throw err;
+    } finally {
+      active -= 1;
+      release(me);
     }
   };
   const view = new Proxy(tables, {
@@ -262,6 +380,7 @@ export function createFakePrisma(): {
     prisma,
     writes,
     tables: view as unknown as Record<string, unknown[]>,
+    lockLog,
   };
 }
 
