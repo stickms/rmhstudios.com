@@ -5,7 +5,7 @@
  * "Do not round, substitute or improve them": a value in this file is the value in the document. Change both or neither.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contrastRatio } from '@/lib/appearance/contrast';
 import { readCss } from './css-source';
@@ -43,6 +43,13 @@ const TABLE: Record<string, [day: string, night: string]> = {
   '--site-danger': ['#c40016', '#f2555a'],
   '--site-success': ['#167d3a', '#3fb26b'],
   '--chrome-flat': ['#737c87', '#6b7480'],
+  // Owner O7 (2026-11-23), an exception to R1 for the RMH Med Schools charts only (Steel section 18 D13): the first
+  // five slots of the dataviz reference palette, validated against the chart card (--site-surface) in each edition.
+  '--site-chart-1': ['#2a78d6', '#3987e5'],
+  '--site-chart-2': ['#eb6834', '#d95926'],
+  '--site-chart-3': ['#1baf7a', '#199e70'],
+  '--site-chart-4': ['#eda100', '#c98500'],
+  '--site-chart-5': ['#e87ba4', '#d55181'],
   '--chrome-1': ['#fff', '#aab4bf'],
   '--chrome-2': ['#dfe5ea', '#55606c'],
   '--chrome-3': ['#8e99a6', '#1c222a'],
@@ -136,6 +143,41 @@ describe('Steel T1 and A1: every text pair holds 4.5:1 in both editions', () => 
     expect(contrastRatio(DAY['--site-text-muted'] as string, DAY['--site-bg'] as string)).toBeGreaterThanOrEqual(5.4);
     expect(contrastRatio(NIGHT['--site-text-muted'] as string, NIGHT['--site-bg'] as string)).toBeGreaterThanOrEqual(
       5.5,
+    );
+  });
+});
+
+describe('Owner O7: the chart palette (charts only, tokens only)', () => {
+  const NAMES = ['--site-chart-1', '--site-chart-2', '--site-chart-3', '--site-chart-4', '--site-chart-5'];
+  for (const [edition, t] of [
+    ['Day', DAY],
+    ['Night', { ...DAY, ...NIGHT }],
+  ] as const) {
+    it(`${edition}: five distinct solid colours, each at least 2:1 on the chart card`, () => {
+      const hexes = NAMES.map((n) => t[n] as string);
+      expect(new Set(hexes).size).toBe(5);
+      for (const h of hexes) {
+        expect(h).toMatch(/^#[0-9a-f]{6}$/);
+        // The relief rule: under 3:1 is legal only with a legend, a dash cue and a data table, which every chart has.
+        expect(contrastRatio(h, t['--site-surface'] as string), `${edition} ${h}`).toBeGreaterThanOrEqual(2);
+      }
+    });
+  }
+
+  it('Night values hold 3:1 on the chart card (the dark band of the validator)', () => {
+    for (const n of NAMES) {
+      expect(contrastRatio(NIGHT[n] as string, NIGHT['--site-surface'] as string), n).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('only the medschools charts read the chart tokens', () => {
+    const users = [...globSync('{app,components,features,lib}/**/*.{ts,tsx,css}')]
+      .map(String)
+      .filter((f) => !/\.test\.|__tests__/.test(f))
+      .filter((f) => readFileSync(join(ROOT, f), 'utf8').includes('--site-chart-'))
+      .sort();
+    expect(users.every((f) => f.startsWith('features/medschools/') || f === 'app/globals/tokens-themes.css')).toBe(
+      true,
     );
   });
 });

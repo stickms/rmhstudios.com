@@ -1,9 +1,10 @@
 import { lazy, useId, type FormEvent } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { takeoverFor } from './margin-takeover';
 import { useMarginSlotRef } from './margin-slot';
 
 /** The lists are their own chunk, fetched only where the margin is displayed. */
@@ -23,6 +24,7 @@ export function MarginColumn() {
   const setSlot = useMarginSlotRef();
   // The margin is displayed from 1280px (site-shell.css); below it the lists would be fetched for nobody.
   const displayed = useMediaQuery('(min-width: 1280px)');
+  const takeover = takeoverFor(useRouterState({ select: (s) => s.location.pathname }));
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     const q = String(new FormData(event.currentTarget).get('q') ?? '').trim();
@@ -35,6 +37,21 @@ export function MarginColumn() {
       },
     });
   };
+
+  if (takeover) {
+    // A section's own rail replaces the search and the lists; it is not rendered (or fetched) below 1280px.
+    const { Rail } = takeover;
+    return (
+      <aside className="site-margin" aria-label={t('shell-margin-label-medschools', { defaultValue: 'Live activity' })}>
+        {displayed && (
+          <ArrivalSuspense>
+            <Rail />
+          </ArrivalSuspense>
+        )}
+        <div ref={setSlot} className="site-margin__page" />
+      </aside>
+    );
+  }
 
   return (
     <aside

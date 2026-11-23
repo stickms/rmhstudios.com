@@ -18,11 +18,22 @@ const m = vi.hoisted(() => {
     medSdnThread: d(),
     medSchoolAlias: d(),
     medCycle: d(),
+    $queryRaw: vi.fn(async (..._a: unknown[]): Promise<unknown[]> => []),
   };
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: m }));
+type Delegate = typeof m.medSchool;
 
-import { getActivity, getCardData, getHistory, getLive, getSchool, getToday, listSchools } from './read.server';
+import {
+  getActivity,
+  getArrivals,
+  getCardData,
+  getHistory,
+  getLive,
+  getSchool,
+  getToday,
+  listSchools,
+} from './read.server';
 
 const NOW = new Date('2027-11-21T00:30:00Z');
 const school = {
@@ -37,11 +48,16 @@ const school = {
   interviewFormat: null,
   interviewType: null,
 };
-const FLOOR = { OR: [{ source: { not: 'RMH' } }, { contributors: { gte: 3 } }] };
 const d = (s: string) => new Date(`${s}T00:00:00Z`);
+// The k floor plus Q2: an RMH cell is public through its daily snapshot only, needs 3 published contributors AND a date
+// before today UTC (NOW is 2027-11-21). The live `contributors` never gates a public read.
+const FLOOR = {
+  OR: [{ source: { not: 'RMH' } }, { source: 'RMH', publishedContributors: { gte: 3 }, date: { lt: d('2027-11-21') } }],
+};
 
 beforeEach(() => {
-  for (const delegate of Object.values(m)) {
+  m.$queryRaw.mockReset().mockResolvedValue([]);
+  for (const delegate of Object.values(m).filter((x) => 'findMany' in x) as Delegate[]) {
     delegate.findMany.mockReset().mockResolvedValue([]);
     delegate.groupBy.mockReset().mockResolvedValue([]);
     delegate.findFirst.mockReset().mockResolvedValue(null);
@@ -71,7 +87,7 @@ describe('anonymity of queries', () => {
     await getHistory('duke', {}, NOW);
     await getLive({}, NOW);
     await getToday({}, NOW);
-    for (const [name, delegate] of Object.entries(m)) {
+    for (const [name, delegate] of Object.entries(m).filter(([, x]) => 'findMany' in x) as [string, Delegate][]) {
       for (const fn of [delegate.findMany, delegate.findFirst, delegate.findUnique]) {
         for (const [args] of fn.mock.calls) {
           const a = args as { select?: unknown };
@@ -130,12 +146,22 @@ describe('getLive', () => {
 });
 
 describe('getActivity', () => {
-  const c = (source: string, date: string, eventType: string, count: number, contributors: number | null = null) => ({
+  // An RMH row's published figures mirror the live ones unless a test says otherwise (`published`).
+  const c = (
+    source: string,
+    date: string,
+    eventType: string,
+    count: number,
+    contributors: number | null = null,
+    published?: { count: number | null; contributors: number | null },
+  ) => ({
     source,
     date: d(date),
     eventType,
     count,
     contributors,
+    publishedCount: source === 'RMH' ? (published ? published.count : count) : null,
+    publishedContributors: source === 'RMH' ? (published ? published.contributors : contributors) : null,
   });
 
   it('returns five types, sums REG+PHD within a source, floors RMH, never names RMH', async () => {
@@ -204,6 +230,47 @@ describe('getActivity', () => {
     expect(iv.sources).toEqual([{ source: 'RMH', days: [{ date: '2026-11-11', count: 10 }], total: 10 }]);
   });
 
+  it("holds back today's RMH cells (Q2): today and later are dropped, yesterday is kept, other sources are not held", async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findMany.mockResolvedValue([
+      c('RMH', '2027-11-20', 'INTERVIEW', 5, 5), // yesterday (UTC): shown
+      c('RMH', '2027-11-21', 'INTERVIEW', 6, 6), // today (UTC): held back
+      c('RMH', '2027-11-22', 'INTERVIEW', 7, 7), // tomorrow (a milestone may be dated a day ahead): held back
+      c('ADMIT', '2027-11-21', 'INTERVIEW', 2, null), // another source's today stays
+    ]);
+    const iv = (await getActivity('duke', {}, NOW))!.types[0]!;
+    const rmh = iv.sources.find((s) => s.source === 'RMH');
+    expect(rmh?.days).toEqual([{ date: '2027-11-20', count: 5 }]);
+    expect(iv.sources.find((s) => s.source === 'ADMIT')?.days).toEqual([{ date: '2027-11-21', count: 2 }]);
+    // One minute into the next UTC day the held-back cell is public.
+    const next = (await getActivity('duke', {}, new Date('2027-11-22T00:01:00Z')))!.types[0]!;
+    expect(next.sources.find((s) => s.source === 'RMH')?.days.map((x) => x.date)).toEqual(['2027-11-20', '2027-11-21']);
+  });
+
+  it('an RMH figure is the published one: live counts never show, and a row never published is absent (Q2 snapshot)', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findMany.mockResolvedValue([
+      // Live 9 on 5 (someone just back-dated milestones into this cell), published still 3 on 3: the public sees 3.
+      c('RMH', '2027-11-18', 'INTERVIEW', 9, 5, { count: 3, contributors: 3 }),
+      // Live now 3, published 2 on 2: under the floor, hidden.
+      c('RMH', '2027-11-19', 'INTERVIEW', 3, 3, { count: 2, contributors: 2 }),
+      // Never published (created since the last snapshot): absent whatever the live count.
+      c('RMH', '2027-11-17', 'INTERVIEW', 50, 50, { count: null, contributors: null }),
+    ]);
+    const iv = (await getActivity('duke', {}, NOW))!.types[0]!;
+    expect(iv.sources).toEqual([{ source: 'RMH', days: [{ date: '2027-11-18', count: 3 }], total: 3 }]);
+  });
+
+  it('history reads the published figure too', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findMany.mockResolvedValueOnce([{ cycleYear: 2027 }]).mockResolvedValueOnce([
+      { cycleYear: 2027, ...c('RMH', '2027-11-18', 'INTERVIEW', 9, 5, { count: 4, contributors: 4 }) },
+      { cycleYear: 2027, ...c('RMH', '2027-11-19', 'INTERVIEW', 8, 8, { count: null, contributors: null }) },
+    ]);
+    const res = (await getHistory('duke', {}, NOW))!;
+    expect(res.cycles[0]!.sources).toEqual([{ source: 'RMH', points: expect.any(Array), total: 4 }]);
+  });
+
   it('reads one program when asked and 404s unknown slugs', async () => {
     m.medSchool.findFirst.mockResolvedValueOnce(null);
     expect(await getActivity('nope', {}, NOW)).toBeNull();
@@ -250,6 +317,8 @@ describe('getActivity other totals', () => {
       eventType,
       count,
       contributors,
+      publishedCount: source === 'RMH' ? count : null,
+      publishedContributors: source === 'RMH' ? contributors : null,
     });
     m.medCycleCount.findMany.mockResolvedValue([
       row('ADMIT', 'WITHDRAWN', 2),
@@ -443,6 +512,101 @@ describe('listSchools', () => {
   });
 });
 
+describe('the program set on the list and the live feed (owner 2026-11-23)', () => {
+  const doSchool = { ...school, id: 's2', slug: 'tx', name: 'Texas', shortName: 'TX', degree: 'DO', state: 'TX' };
+
+  it("lists only schools of the set's degrees and counts only the set's programs of each school's own degree", async () => {
+    m.medSchool.findMany.mockResolvedValue([school, doSchool]);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    m.medCycleCount.groupBy.mockResolvedValue([
+      { schoolId: 's1', source: 'ADMIT', program: 'REG', _sum: { count: 5 } },
+      { schoolId: 's1', source: 'ADMIT', program: 'PHD', _sum: { count: 2 } },
+      { schoolId: 's2', source: 'ADMIT', program: 'PHD', _sum: { count: 9 } },
+    ]);
+    const mdPhd = await listSchools({ programs: 'md-phd,do' }, NOW);
+    expect(mdPhd.schools.map((x) => [x.slug, x.reported?.count ?? null])).toEqual([
+      ['duke', 2],
+      ['tx', null],
+    ]);
+    const doOnly = await listSchools({ programs: 'do-phd' }, NOW);
+    expect(doOnly.schools.map((x) => [x.slug, x.reported?.count])).toEqual([['tx', 9]]);
+    const grouped = m.medCycleCount.groupBy.mock.calls[0]![0] as { where: { program: { in: string[] } } };
+    expect([...grouped.where.program.in].sort()).toEqual(['PHD', 'REG']);
+  });
+
+  it('the older degree and program parameters mean the same set', async () => {
+    m.medSchool.findMany.mockResolvedValue([school, doSchool]);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    expect((await listSchools({ degree: 'DO' }, NOW)).schools.map((x) => x.slug)).toEqual(['tx']);
+    expect((await listSchools({ program: 'PHD' }, NOW)).program).toBe('PHD');
+  });
+
+  it('the live feed filters by (degree, program) pairs and drops unreported programs unless every program is on', async () => {
+    await getLive({ programs: 'md,do-phd' }, NOW);
+    const sub = m.medCycleEvent.findMany.mock.calls[0]![0] as { where: { AND?: unknown[]; program?: unknown } };
+    expect(sub.where.AND).toEqual([
+      {
+        OR: [
+          { program: 'REG', school: { degree: 'MD' } },
+          { program: 'PHD', school: { degree: 'DO' } },
+        ],
+      },
+    ]);
+    await getLive({ programs: 'md,md-phd,do,do-phd' }, NOW);
+    const all = m.medCycleEvent.findMany.mock.calls[1]![0] as { where: { AND?: unknown[]; program?: unknown } };
+    expect(all.where.AND).toBeUndefined();
+    expect(all.where.program).toBeUndefined();
+  });
+
+  it('searches school name, short name and an exact state code; filters state and several event types', async () => {
+    await getLive({ q: 'Duk', state: 'NC', types: 'acceptance,rejection' }, NOW);
+    const a = m.medCycleEvent.findMany.mock.calls[0]![0] as {
+      where: { eventType: unknown; school: unknown; AND: unknown[] };
+    };
+    expect(a.where.eventType).toEqual({ in: ['ACCEPTANCE', 'REJECTION'] });
+    expect(a.where.school).toEqual({ active: true, state: 'NC' });
+    expect(a.where.AND).toEqual([
+      {
+        school: {
+          OR: [
+            { name: { contains: 'Duk', mode: 'insensitive' } },
+            { shortName: { contains: 'Duk', mode: 'insensitive' } },
+          ],
+        },
+      },
+    ]);
+    await getLive({ q: 'nc' }, NOW);
+    const b = m.medCycleEvent.findMany.mock.calls[1]![0] as { where: { AND: { school: { OR: unknown[] } }[] } };
+    expect(b.where.AND[0]!.school.OR).toContainEqual({ state: 'NC' });
+  });
+});
+
+describe('RMH totals use the published figure (Q2 snapshot)', () => {
+  it('listSchools, getCardData and getToday sum publishedCount for RMH, never the live count', async () => {
+    m.medSchool.findMany.mockResolvedValue([school]);
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027, date: d('2027-11-20') });
+    m.medCycleCount.groupBy.mockResolvedValue([
+      { schoolId: 's1', source: 'RMH', _sum: { count: 40, publishedCount: 6 } },
+    ]);
+    const list = await listSchools({}, NOW);
+    expect(list.schools[0]!.reported).toEqual({ source: 'RMH', count: 6 });
+    expect((await getCardData('duke', NOW))!.reported).toEqual({ source: 'RMH', count: 6 });
+    const grouped = m.medCycleCount.groupBy.mock.calls[0]![0] as { _sum: Record<string, boolean> };
+    expect(grouped._sum).toEqual({ count: true, publishedCount: true });
+    m.medCycleCount.findMany.mockResolvedValue([
+      {
+        schoolId: 's1',
+        source: 'RMH',
+        count: 40,
+        publishedCount: 6,
+        school: { slug: 'duke', shortName: 'Duke', name: 'Duke', city: 'Durham', state: 'NC' },
+      },
+    ]);
+    expect((await getToday({}, NOW)).schools[0]).toMatchObject({ source: 'RMH', count: 6 });
+  });
+});
+
 describe('getToday', () => {
   it('says whether the latest day is today', async () => {
     m.medCycleCount.findFirst
@@ -500,10 +664,11 @@ describe('the k floor reaches every count read', () => {
     expect((m.medCycleCount.groupBy.mock.calls[0]![0] as { where: unknown }).where).toMatchObject(FLOOR);
     m.medCycleCount.findFirst.mockReset().mockResolvedValue({ cycleYear: 2027, date: d('2027-11-20') });
     await getToday({}, NOW);
-    for (const [a] of m.medCycleCount.findFirst.mock.calls) {
-      expect((a as { where: unknown }).where).toMatchObject(FLOOR);
-    }
-    expect((m.medCycleCount.findMany.mock.calls[0]![0] as { where: unknown }).where).toMatchObject(FLOOR);
+    // getToday ANDs the floor with "positive on the public figure" (published count for RMH), each an OR of its own.
+    const andOf = (a: unknown) => (a as { where: { AND: unknown[] } }).where.AND;
+    expect(andOf(m.medCycleCount.findFirst.mock.calls.at(-1)![0])[0]).toEqual(FLOOR);
+    expect(andOf(m.medCycleCount.findMany.mock.calls[0]![0])[0]).toEqual(FLOOR);
+    expect(JSON.stringify(andOf(m.medCycleCount.findMany.mock.calls[0]![0])[1])).toContain('publishedCount');
   });
 
   it('history picks its four newest cycles from floored rows', async () => {
@@ -526,8 +691,8 @@ describe('getCardData', () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
     m.medCycleCount.groupBy.mockResolvedValue([
-      { source: 'ADMIT', _sum: { count: 5 } },
-      { source: 'CYCLETRACK', _sum: { count: 9 } },
+      { source: 'ADMIT', _sum: { count: 5, publishedCount: null } },
+      { source: 'CYCLETRACK', _sum: { count: 9, publishedCount: null } },
     ]);
     expect(await getCardData('duke', NOW)).toEqual({
       name: 'Duke',
@@ -551,5 +716,50 @@ describe('getCardData', () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     const card = await getCardData('duke', NOW);
     expect(card?.reported).toBeNull();
+  });
+});
+
+describe('getArrivals (when results arrive)', () => {
+  const sql = (call: number) => (m.$queryRaw.mock.calls[call]![0] as string[]).join('?');
+
+  it('is a 404 for an unknown school', async () => {
+    m.medSchool.findFirst.mockResolvedValue(null);
+    expect(await getArrivals('nope', {})).toBeNull();
+    expect(m.$queryRaw).not.toHaveBeenCalled();
+  });
+
+  it('aggregates in SQL: ADMIT and SDN only, Eastern time, no day-only ADMIT or SDN event, no individual timestamp selected', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    await getArrivals('duke', { program: 'PHD', type: 'ACCEPTANCE' });
+    expect(m.$queryRaw).toHaveBeenCalledTimes(2);
+    for (const i of [0, 1]) {
+      const q = sql(i);
+      expect(q).toContain('IN (\'ADMIT\'::"MedSource", \'SDN\'::"MedSource")');
+      expect(q).toContain('AT TIME ZONE');
+      expect(q).toContain('NOT ("source" IN (\'ADMIT\'::"MedSource", \'SDN\'::"MedSource") AND');
+      expect(q).toContain("TIME '00:00:00'");
+      expect(q).not.toMatch(/SELECT\s+"occurredAt"/);
+    }
+    expect(sql(0)).toContain('GROUP BY 1, 2');
+    expect(sql(1)).toContain('HAVING COUNT(*) >=');
+  });
+
+  it('under ten events the arrays are empty, from ten they are the shaped counts', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.$queryRaw.mockResolvedValueOnce([{ dow: 2, hr: 9, n: 9 }]).mockResolvedValueOnce([]);
+    const few = (await getArrivals('duke', {}))!;
+    expect(few).toMatchObject({ total: 9, weekdays: [], hours: [], cycles: [], zone: 'America/New_York' });
+    m.$queryRaw
+      .mockResolvedValueOnce([
+        { dow: 2, hr: 9, n: 8 },
+        { dow: 5, hr: 17, n: 4 },
+      ])
+      .mockResolvedValueOnce([{ cycleYear: 2026, n: 12, firstOn: '2025-11-03', medianOn: '2025-12-02' }]);
+    const many = (await getArrivals('duke', { type: 'INTERVIEW' }))!;
+    expect(many.total).toBe(12);
+    expect(many.weekdays).toEqual([0, 8, 0, 0, 4, 0, 0]);
+    expect(many.hours[9]).toBe(8);
+    expect(many.cycles).toEqual([{ cycleYear: 2026, count: 12, firstOn: '2025-11-03', medianOn: '2025-12-02' }]);
+    expect(Object.keys(many).sort()).toEqual(['cycles', 'eventType', 'hours', 'program', 'total', 'weekdays', 'zone']);
   });
 });

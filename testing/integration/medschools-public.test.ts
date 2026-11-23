@@ -84,6 +84,33 @@ describe('RMH Med Schools, public and anonymous', () => {
     for (const f of FORBIDDEN) expect(JSON.stringify(res.body)).not.toContain(f);
   });
 
+  it('filters the live feed and the index by the program set (programs=md,do-phd)', async () => {
+    const live = async (programs: string) =>
+      (await anon.get(`/api/medschools/live?school=${SLUG}&programs=${programs}&limit=100`)).body.events as Array<{
+        program: string | null;
+      }>;
+    // The fixture is an MD school: MD is REG, MD-PhD is PHD, and a DO-only set matches none of its events.
+    const md = await live('md');
+    expect(md.length).toBeGreaterThan(0);
+    expect(md.every((e) => e.program === 'REG')).toBe(true);
+    const phd = await live('md-phd');
+    expect(phd.length).toBeGreaterThan(0);
+    expect(phd.every((e) => e.program === 'PHD')).toBe(true);
+    expect(await live('do')).toEqual([]);
+    // All four on is no filter at all, and the only set that includes events with no program reported.
+    const all = await live('md,md-phd,do,do-phd');
+    expect(all.some((e) => e.program === null)).toBe(true);
+
+    const only = async (programs: string) =>
+      (await anon.get(`/api/medschools/schools?programs=${programs}`)).body.schools as Array<{ degree: string }>;
+    expect((await only('do')).every((s) => s.degree === 'DO')).toBe(true);
+    expect((await only('md,md-phd')).every((s) => s.degree === 'MD')).toBe(true);
+    for (const bad of ['programs=md,xx', 'programs=md,md,md,md,md', 'programs=']) {
+      const res = await anon.get(`/api/medschools/schools?${bad}`);
+      expect(res.status, bad).toBeLessThan(500);
+    }
+  });
+
   it('answers hostile input with a 4xx or an empty list, never a 500', async () => {
     for (const path of [
       '/api/medschools/schools/NOPE%00',
@@ -114,6 +141,8 @@ describe('RMH Med Schools, public and anonymous', () => {
       const res = await anon.get(path);
       expect(res.status, path).toBe(200);
       expect(String(res.body)).toContain('<html');
+      // The "interview invites reported today" block was removed; the live page and the rail carry that now.
+      expect(String(res.body), path).not.toMatch(/invites reported today/i);
     }
   });
 

@@ -1,126 +1,153 @@
-import { linePath, niceMax, spreadLabels, xTicks, yTicksFor } from '../../engine/chart-geometry';
+import {
+  calendarDate,
+  type ChartGeometry,
+  cycleCalendarPoints,
+  linePath,
+  niceMax,
+  plotX,
+  plotY,
+  xTicks,
+  yTicksTween,
+} from '../../engine/chart-geometry';
+import { cycleLabelIsolated } from '../../engine/cycle';
+import { formatUtcDay } from '../../engine/public-read';
+import { cycleColor, cycleDash } from './chartColors';
 import {
   ChartFrame,
+  ChartLegend,
   DataTable,
   EmptyNote,
-  EndLabel,
+  PlotClip,
   ResponsivePlot,
   XAxis,
   YAxis,
-  carried,
+  valueAt,
   type ChartLabels,
+  type Probe,
 } from './ChartFrame';
-
-/** Prior cycles are muted with their own dash, so no two lines are told apart by colour. */
-const PRIOR_DASH: (string | undefined)[] = [undefined, '6 3', '2 3'];
+import { useTween } from './useTween';
 
 /**
- * Cumulative reported events by day of the cycle, one line per cycle, from ONE source (D4: never cross-source). The
- * cycles are different years, so the axis is the day of the cycle ("Days since cycle start"), not a date. The line of
- * the current cycle, if it has data, is solid ink 2px; every other is muted 1.5px. Each line ends in its cycle year.
+ * Cumulative reported events by calendar date, one line per cycle, from ONE source (D4: never cross-source). Owner O7:
+ * the cycles are aligned by month and day, so June 1 of every cycle lines up and the axis reads "Jun 1", "Aug 15"
+ * (no year, never "days since cycle start"); a series is named by its cycle ("2026–2027"). `cycles` are newest
+ * first: the newest is the solid 2px line (blue), earlier cycles are 2px too (a dash reads too faint thinner) with their own dash and colour, in fixed
+ * order. Every line rises from 0 on its own first day.
  */
 export function CycleOverlay(p: {
-  cycles: { cycleYear: number; points: { day: number; cumulative: number }[] }[];
+  cycles: { cycleYear: number; dayZeroOn: string; points: { day: number; cumulative: number }[] }[];
   sourceName: string;
-  /** The site's current cycle: only its line is the solid ink one; every other line is prior-style. */
-  currentCycleYear: number;
   labels: ChartLabels;
 }) {
   const { labels } = p;
   const nf = new Intl.NumberFormat(labels.locale);
-  const year = new Intl.NumberFormat(labels.locale, { useGrouping: false });
-  const withData = p.cycles.filter((c) => c.points.length > 0);
+  const dateLabel = (x: number) => formatUtcDay(calendarDate(x), labels.locale);
+  const lines = p.cycles.map((c, rank) => ({
+    c,
+    rank,
+    name: cycleLabelIsolated(c.cycleYear),
+    color: cycleColor(rank),
+    dash: cycleDash(rank),
+    width: 2,
+    pts: cycleCalendarPoints(c.points, c.dayZeroOn, c.cycleYear),
+  }));
+  const withData = lines.filter((l) => l.pts.length > 0);
   const hasData = withData.length > 0;
-  const allDays = p.cycles.flatMap((c) => c.points.map((q) => q.day));
-  const domain: [number, number] = [Math.min(0, ...allDays), Math.max(0, ...allDays)];
-  const yMax = niceMax(Math.max(0, ...withData.map((c) => c.points[c.points.length - 1]!.cumulative)));
+  const allX = withData.flatMap((l) => l.pts.map((q) => q.x));
+  const domain: [number, number] = [Math.min(0, ...allX), Math.max(0, ...allX)];
+  const target = niceMax(Math.max(0, ...withData.map((l) => l.pts[l.pts.length - 1]!.y)));
+  const tween = useTween(target);
 
-  const days = [...new Set(allDays)].sort((a, b) => a - b);
-  const rows = days.map((d) => [
-    nf.format(d),
-    ...p.cycles.map((c) => {
-      const v = carried(c.points, d);
-      return v === null ? '' : nf.format(v);
-    }),
-  ]);
+  const xs = [...new Set(allX)].sort((a, b) => a - b);
+  // Blank where a cycle has no report to read: before it starts or after its last one (it may still be running).
+  const cell = (pts: { x: number; y: number }[], x: number) => {
+    const last = pts[pts.length - 1];
+    return last && x <= last.x ? nf.format(valueAt(pts, x) ?? 0) : '';
+  };
+  const rows = xs.map((x) => [dateLabel(x), ...lines.map((l) => cell(l.pts, x))]);
+
+  const probe: Probe | undefined = hasData
+    ? {
+        count: domain[1] - domain[0] + 1,
+        x: (g, i) => plotX(domain[0] + i, domain, g),
+        at: (i) => {
+          const x = domain[0] + i;
+          return {
+            label: dateLabel(x),
+            rows: withData.map((l) => {
+              // A line ends at its last report: past it there is no value to read (the cycle may still be running).
+              const over = x > l.pts[l.pts.length - 1]!.x;
+              const v = over ? null : (valueAt(l.pts, x) ?? 0);
+              return {
+                key: String(l.c.cycleYear),
+                name: l.name,
+                color: l.color,
+                dash: l.dash,
+                text: v === null ? '\u2013' : nf.format(v),
+                y: (g: ChartGeometry) => (v === null ? null : plotY(v, tween.value, g)),
+              };
+            }),
+          };
+        },
+      }
+    : undefined;
 
   return (
     <ChartFrame
       title={labels.title}
       unit={labels.unitCumulative}
       sourcesLine={labels.sourcesLine({ primary: p.sourceName, comparison: [] })}
-      summary={labels.summary({
-        lines: withData.map((c) => ({
-          name: year.format(c.cycleYear),
-          total: c.points[c.points.length - 1]!.cumulative,
-        })),
-      })}
+      legend={
+        <ChartLegend
+          items={lines.map((l) => ({ key: String(l.c.cycleYear), label: l.name, color: l.color, dash: l.dash }))}
+        />
+      }
       tableLabel={labels.showData}
-      table={<DataTable head={[labels.day, ...p.cycles.map((c) => year.format(c.cycleYear))]} rows={rows} />}
+      table={<DataTable head={[labels.date, ...lines.map((l) => l.name)]} rows={rows} />}
     >
       <ResponsivePlot
-        xTitle={hasData ? labels.daysSinceStart : undefined}
-        render={(g) => {
-          let priors = 0;
-          const drawn = p.cycles
-            .map((c) => {
-              const current = c.cycleYear === p.currentCycleYear;
-              return { c, current, dash: current ? undefined : PRIOR_DASH[priors++ % PRIOR_DASH.length] };
-            })
-            .map((l) => ({
-              ...l,
-              ...linePath(
-                l.c.points.map((q) => ({ x: q.day, y: q.cumulative })),
-                domain,
-                yMax,
-                true,
-                g,
-              ),
-            }));
-          const ends = drawn.filter((l) => l.end);
-          const labelYs = spreadLabels(
-            ends.map((l) => l.end!.y),
-            g.labelGap,
-            [g.plot.top + 4, g.plot.bottom],
-          );
-          return (
-            <>
-              <YAxis g={g} ticks={yTicksFor(yMax, g)} format={(v) => nf.format(v)} />
-              <XAxis
-                g={g}
-                ticks={hasData ? xTicks(domain, g.xTickCount, g).map((t) => ({ x: t.x, label: nf.format(t.v) })) : []}
-              />
-              {hasData ? (
-                <g>
-                  {drawn.map((l) =>
-                    l.d ? (
-                      <path
-                        key={l.c.cycleYear}
-                        d={l.d}
-                        fill="none"
-                        stroke={l.current ? 'var(--site-text)' : 'var(--site-text-muted)'}
-                        strokeWidth={l.current ? 2 : 1.5}
-                        strokeDasharray={l.dash}
-                      />
-                    ) : null,
-                  )}
-                  {ends.map((l, i) => (
-                    <EndLabel
+        summary={labels.summary({
+          lines: withData.map((l) => ({ name: l.name, total: l.pts[l.pts.length - 1]!.y })),
+        })}
+        hint={labels.hint}
+        probe={probe}
+        render={(g, clipId) => (
+          <>
+            <defs>
+              <PlotClip id={clipId} g={g} />
+            </defs>
+            <YAxis
+              g={g}
+              ticks={yTicksTween(tween.from, tween.to, tween.p, tween.value, g)}
+              format={(v) => nf.format(v)}
+            />
+            <XAxis
+              g={g}
+              ticks={hasData ? xTicks(domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateLabel(t.v) })) : []}
+            />
+            {hasData ? (
+              <g clipPath={`url(#${clipId})`}>
+                {/* Oldest first, so the newest cycle is drawn on top. */}
+                {[...withData].reverse().map((l) => {
+                  const { d } = linePath(l.pts, domain, tween.value, true, g);
+                  return d ? (
+                    <path
                       key={l.c.cycleYear}
-                      g={g}
-                      x={l.end!.x}
-                      y={labelYs[i]!}
-                      text={year.format(l.c.cycleYear)}
-                      ink={l.current ? 'ink' : 'muted'}
+                      d={d}
+                      fill="none"
+                      stroke={l.color}
+                      strokeWidth={l.width}
+                      strokeDasharray={l.dash}
+                      strokeLinejoin="round"
                     />
-                  ))}
-                </g>
-              ) : (
-                <EmptyNote g={g} text={labels.empty} />
-              )}
-            </>
-          );
-        }}
+                  ) : null;
+                })}
+              </g>
+            ) : (
+              <EmptyNote g={g} text={labels.empty} />
+            )}
+          </>
+        )}
       />
     </ChartFrame>
   );

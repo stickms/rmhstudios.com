@@ -191,8 +191,10 @@ The single rule: **no identifier of a person crosses the adapter boundary.**
   with the account (`onDelete: Cascade` on the user), never an input to any public figure.
   - `MedSchoolList` (id, userId, name ≤ 60 chars, position, createdAt, updatedAt): a user's named lists ("Applying",
     "Reach", "Maybe"). One list, "My schools", is created on first use; at most 20 lists per user.
-  - `MedSchoolListItem` (id, listId, schoolId, program `MedProgram?` (null = either), position, note ≤ 500 chars,
-    addedAt; unique `[listId, schoolId, program]`; at most 200 items per list).
+  - `MedSchoolListItem` (id, listId, schoolId, program `ANY|REG|PHD` (non-null enum `MedListProgram`, `ANY` = either;
+    not a nullable `MedProgram`, so the unique key is a plain unique, since Postgres treats NULLs as distinct; phase 4
+    ruling Q10, 2026-11-23), position, note ≤ 500 chars, addedAt; unique `[listId, schoolId, program]`; at most 200
+    items per list).
   - `MedUserPrefs` (userId as the id, program filter `ALL|REG|PHD`, degree `MD|DO|null`, homeState `String?`, chart
     categories `MedEventType[]` (the Activity toggles), updatedAt).
   - Behaviour: signed-in users get "Save to list" on the school page and on index rows (a menu of their lists plus "New
@@ -210,15 +212,21 @@ The single rule: **no identifier of a person crosses the adapter boundary.**
 `installProcessGuards`, one `startScheduledConsumer` per queue, overlap guard, graceful shutdown, `MEDSCHOOLS_*_ENABLED`
 per source, cron env overrides. Bootstrap on first start: seed the school registry, then queue the backfills.
 
-| Queue                   | Cron (UTC)                    | What                                                                                                                                                                                                     |
-| ----------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `medschools.admit-live` | every 5 min                   | Admit `getRecentSchoolCycleUpdates(allSchools)`; insert unseen events by hash. The live feed.                                                                                                            |
-| `medschools.sdn-live`   | daily (12:20 UTC)             | Poll the two current-cycle forum RSS feeds; for threads whose activity changed, fetch only the new last page(s); extract (§9).                                                                           |
-| `medschools.cycletrack` | hourly at :20                 | CycleTrack regenerates hourly; per school, fetch the explorer page / its summary JSON; upsert daily counts, stats, first-dates. Walk schools sequentially, ~1 req/s.                                     |
-| `medschools.interviews` | daily                         | Admit interview overview/questions/feedback per school.                                                                                                                                                  |
-| `medschools.aggregate`  | every 15 min                  | Roll `MedCycleEvent` into `MedCycleCount`; refresh the materialized "today" view.                                                                                                                        |
-| `medschools.forecast`   | daily 06:40                   | Recompute `MedForecast` for every school × event type (§10).                                                                                                                                             |
-| `medschools.backfill`   | manual (`runNow`) + bootstrap | Resumable, cursor-in-`MedSourceRun`: MDApplicants archive, CycleTrack `?view=historical`, Admit `getAllCycleResults` offset paging, SDN prior-year forums (nodes 962/603). Runs at the polite rate only. |
+| Queue                      | Cron (UTC)                    | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `medschools.admit-live`    | every 5 min                   | Admit `getRecentSchoolCycleUpdates(allSchools)`; insert unseen events by hash. The live feed.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `medschools.sdn-live`      | daily (12:20 UTC)             | Poll the two current-cycle forum RSS feeds; for threads whose activity changed, fetch only the new last page(s); extract (§9).                                                                                                                                                                                                                                                                                                                                                                     |
+| `medschools.cycletrack`    | hourly at :20                 | CycleTrack regenerates hourly; per school, fetch the explorer page / its summary JSON; upsert daily counts, stats, first-dates. Walk schools sequentially, ~1 req/s.                                                                                                                                                                                                                                                                                                                               |
+| `medschools.interviews`    | daily                         | Admit interview overview/questions/feedback per school.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `medschools.admit-history` | daily 03:10 + once at start   | Admit profile-history backfill (owner 2026-11-23): members from `getAllCycleResults`, each unseen member's `getCycleTrackProfileByUserId` history mapped to member-keyed events (`hash(admit:author:<user>:<school>:<cycle>:<type>)`, shared with the live feed so one member counts once; earliest date kept). Progress is a hashed-member table. Its first step is a one-time guarded re-key that deletes the old per-update ADMIT events and cells. 3 s + jitter between requests, daily quota. |
+| `medschools.admit-forums`  | every 3 hours (`0 */3 * * *`) | Admit school forums (owner 2026-11-23, §9a): a persisted per-school cursor, only posts past it, SDN-mirrored posts skipped, member-keyed events; fetched at any hour, extracted off-peak only, on its own share of the AI budget.                                                                                                                                                                                                                                                                  |
+| `medschools.aggregate`     | every 15 min                  | Roll `MedCycleEvent` into `MedCycleCount`; refresh the materialized "today" view.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `medschools.forecast`      | daily 06:40                   | Recompute `MedForecast` for every school × event type (§10).                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `medschools.backfill`      | manual (`runNow`) + bootstrap | Resumable, cursor-in-`MedSourceRun`: MDApplicants archive, CycleTrack `?view=historical`, Admit `getAllCycleResults` offset paging, SDN prior-year forums (nodes 962/603). Runs at the polite rate only.                                                                                                                                                                                                                                                                                           |
+
+**Daily budgets (owner 2026-11-23).** Every source host also has a persisted per-UTC-day request budget shared by every
+job on it (`MedRequestBudget`; retries and robots.txt count); a spent budget halts the sessions and the jobs end PARTIAL
+until the next day. Backfill and forum requests are at least 3 s apart plus 0-1 s of random jitter.
 
 Politeness, every adapter: one request at a time per host, ≥1 s spacing (backfill ≥2 s), a stable descriptive User-Agent
 naming RMH Studios and a contact URL (no personal address), honour `Retry-After`/429 with exponential backoff,
@@ -248,6 +256,42 @@ when the month's budget is spent, extraction pauses and resumes next month from 
 threads per cycle × a few hundred posts, ~40% surviving the prefilter, a few hundred tokens each — tens of millions of
 tokens for the full prior-year backfill, a few dollars at DeepSeek prices — so the full backfill is in scope, newest
 cycles first.
+
+## 9a. Admit school forums (owner 2026-11-23)
+
+Admit's school forums (`med.admit.org/school-forums/<slug>`) are far more active than SDN's, so
+`medschools.admit-forums` reads them eight times a day (cron `0 */3 * * *` UTC, `MEDSCHOOLS_ADMIT_FORUMS_CRON`), the
+same way §9 reads SDN. The endpoint facts are in the endpoint inventory (a native thread per school per cycle, GraphQL
+`getAllSchoolThreads` and `getSchoolThread`, oldest post first, offset paging).
+
+- **Only what is new.** One summary call (three pages) gives every school's post count. `MedAdmitForumThread` (school,
+  cycle, `remoteCount`, `cursorOffset`, `cursorPostHash`, counters; no text, author or post id) is the cursor: a thread
+  is visited only when its count is past the cursor, and read from one post before the cursor (the anchor, compared by
+  keyed hash). A missing anchor steps back two pages, then re-reads the thread; the member keys make the repeat
+  harmless.
+- **No duplicates.** A post that is a copy of an SDN post is skipped before extraction (`isSdnMirror`; see the
+  inventory: Admit exposes no source field, so this is a conservative content-and-shape check that fails closed). A
+  native post's events key on `hash(admit:author:<user id>:<schoolId>:<cycleYear>:<type>)`, built by one function
+  (`adapters/admit/member-key.ts`) shared with the tracker feed and the history backfill, so one member counts once per
+  type per school per cycle whichever source saw them (first report wins, earliest date kept). A post with no author id
+  (anonymous or deleted) falls back to a per-post key. Program: the SDN text rule (an event is MD unless the post states
+  MD-PhD), because a profile lookup per author would cost a request each.
+- **Anonymization, as §6 and SDN.** Quotes and unfurls are stripped first, text is redacted with the page's own handles,
+  the user id lives only in the key closure, the post id leaves only as a keyed hash, nothing person-shaped is stored,
+  returned or logged (`forum.ts` is the boundary; `run-admit-forums.test.ts` hunts for needles in writes, logs and what
+  the model is sent).
+- **Fetch anytime, model off-peak only.** At DeepSeek peak (`isDeepseekPeak`: the 03, 06 and 09 weekday runs) the run
+  still lists the threads and persists each count; the count past the cursor IS the held state, no post text is kept and
+  no post is fetched, because posts are fetched only when extraction can follow at once. The next off-peak run reads the
+  held range. A run that crosses into peak stops calling the model at its last committed chunk.
+- **Own budget share.** Calls carry `promptId = medschools-extract:admit-forums`; the gate allows a call only while the
+  month's total `medschools-extract` spend is under `MEDSCHOOLS_AI_MONTHLY_USD` and the forums' own spend is under
+  `MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE` (default 0.4) of it, so SDN keeps at least 60% and the total never passes the cap.
+- **Politeness.** One session on the shared Admit host at the backfill spacing (3 s plus 0-1 s jitter), 80 requests per
+  run, a daily quota of its own (`ADMIT:forums`, 600, a share of the host budget which went from 3000 to 3500 for it),
+  `Retry-After` with exponential backoff and the three-strike halt from `http.ts`, and a persisted 2.5 h minimum
+  interval (`lastRealRunWithin`) so a deploy or a mistyped cron cannot fire extra runs.
+- Events roll up into ADMIT count cells with the existing roll-up.
 
 Event dedupe is author-scoped: the parser keys each event by
 `HMAC(author:<member id or lower-cased handle>:<school>:<cycle>:<type>)`, held in memory only, so one forum member
@@ -351,7 +395,22 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    O5 program filter All / MD / MD-PhD (or DO); O6 visual checks across phone and odd viewports. Also shipped: school
    crests (static 96x96 WebP from Admit, committed, never fetched at request time); SDN events reported the same day
    carry the post's time; one SDN member counts once per event type per school per cycle.
-4. Private tracker with anonymous sharing, saved school lists and preferences (section 7).
+4. Private tracker with anonymous sharing, saved school lists and preferences (section 7). Phase 4 shipped at
+   `/rmh-medschool/tracker` and `/rmh-medschool/lists`, with a "Save to list" menu on the index and school pages.
+   Decisions: D1 one writer for sharing (`share-sync.server.ts`); D2 the event hash is recomputed from the milestone id
+   and the server secret, never stored; D3 random UUID ids, `ingestedAt = occurredAt`, no home state; D4 `contributors`
+   is exact; D5 reconcile, never patch; D9 shared events leave at the deletion request and again before erasure; D13 and
+   D14 preferences apply only where the URL is silent, and `?program=ALL` is an explicit choice. Facilitator rulings
+   Q1-Q12 (per-day cells at k 3; **tracker figures publish once a day** through `medschools.rmh-publish`, so turning
+   sharing off removes the event at once and the public total at the next run; sharing needs an account 7 days old; the
+   secret is `MEDSCHOOLS_DEDUPE_SECRET`; `SUBMITTED` and `COMPLETE` never leave the private tables). Owner revisions the
+   same day: O7 colour charts with cards, a legend, a y-scale tween, a hover and keyboard probe, calendar dates and
+   button groups; the program set (MD, MD-PhD, DO, DO-PhD) end to end; an activity rail in the shell margin on every med
+   schools page; the "when results arrive" chart; Interviews sub-tabs; the "today" block removed. Admit work shipped
+   with it: one member counts once per event type per school per cycle (member-keyed dedupe, a one-time re-key of old
+   Admit rows, the whole-cycle profile-history backfill), the Admit school forums every three hours, persisted daily
+   request budgets and a static contact user agent. Black-box tests and the audit scripts:
+   `features/medschools/CLAUDE.md`.
 5. Statistics + forecast tab + personal conditional chance.
 6. AI Q&A.
 7. Follow a school + wave notifications.

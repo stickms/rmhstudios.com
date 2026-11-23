@@ -14,6 +14,7 @@ import {
   INTERVIEW_SCHOOLS,
   PROFILE_FLAG,
   RECENT_UPDATES,
+  RESULT_USERS,
   SCHOOL_CRESTS,
   SCHOOL_STATS,
   type AdmitOperation,
@@ -109,14 +110,15 @@ describe('fetchFeed', () => {
     expect(items.length).toBeGreaterThan(0);
   });
 
-  it('a feed item exposes only event and lookup', async () => {
+  it('a feed item exposes only event, lookup and the key closure', async () => {
     const { client } = setup({
       [key(RECENT_UPDATES, feedVars('allSchools'))]: fx('recent-updates-hostile'),
     });
     const { items } = await client.fetchFeed();
     expect(items.length).toBe(2);
     for (const item of items) {
-      expect(Object.keys(item)).toEqual(['event', 'lookup']);
+      expect(Object.keys(item).sort()).toEqual(['event', 'keyFor', 'lookup']);
+      expect(typeof item.keyFor).toBe('function');
       const dump = JSON.stringify(item);
       for (const n of NEEDLES) expect(dump).not.toContain(n);
       expect(dump).not.toContain('user-hostile');
@@ -868,8 +870,7 @@ describe('listSchoolCrests', () => {
   const crestRow = (slug: string, crest: string | null) => ({
     school: { slug, name: slug, shorthand_name: null, state: 'MA', city: 'Boston', crest_url: crest },
   });
-  const page = (offset: number) =>
-    key(SCHOOL_CRESTS, { ...SCHOOL_CRESTS.variables, limit: 100, offset });
+  const page = (offset: number) => key(SCHOOL_CRESTS, { ...SCHOOL_CRESTS.variables, limit: 100, offset });
 
   it('selects school fields only and pages until a short page', async () => {
     const rows = Array.from({ length: 100 }, (_, i) => crestRow(`s${i}`, `https://x.example/${i}.svg`));
@@ -882,5 +883,188 @@ describe('listSchoolCrests', () => {
     expect(out.at(-1)).toMatchObject({ slug: 'last', crestUrl: null, shortName: '' });
     expect(requestedPosts).toHaveLength(2);
     expect(SCHOOL_CRESTS.query).not.toMatch(/user_|display_name|profile_image/);
+  });
+});
+
+describe('member-scoped keys (owner 2026-11-23)', () => {
+  const memberKey = (user: string, school: string, cycle: number, type: string) =>
+    dedupeHash(SECRET, 'ADMIT', `author:${user}:${school}:${cycle}:${type}`);
+
+  it('a feed item keys on member, school, cycle and type, not on the update id', async () => {
+    const { client } = setup(
+      feedRoute([
+        row({ cycle_update_id: 'upd-1' }),
+        row({ cycle_update_id: 'upd-2', current_status_date: '2026-11-18T12:00:00.000Z' }),
+        row({ cycle_update_id: 'upd-3', user_id: 'u-2' }),
+        row({ cycle_update_id: 'upd-4', current_status: 'INTERVIEW' }),
+      ]),
+    );
+    const { items } = await client.fetchFeed();
+    const k = items.map((i) => i.keyFor('s1'));
+    expect(k[0]).toBe(memberKey('u-1', 's1', 2027, 'ACCEPTANCE'));
+    expect(k[1]).toBe(k[0]);
+    expect(k[2]).toBe(memberKey('u-2', 's1', 2027, 'ACCEPTANCE'));
+    expect(k[3]).toBe(memberKey('u-1', 's1', 2027, 'INTERVIEW'));
+    expect(items[0]!.keyFor('s2')).not.toBe(k[0]);
+    // The old per-update hash is still on the event, for authorless rows only.
+    expect(items[0]!.event.dedupeHash).toBe(dedupeHash(SECRET, 'ADMIT', 'upd-1'));
+  });
+
+  it('a row with no author falls back to the per-update key', async () => {
+    const { client } = setup(feedRoute([row({ user_id: null, cycle_update_id: 'upd-9' })]));
+    const { items } = await client.fetchFeed();
+    expect(items[0]!.keyFor('s1')).toBe(dedupeHash(SECRET, 'ADMIT', 'upd-9'));
+  });
+
+  it('memberHashOf is a keyed hash that is not the user id and not an event key', async () => {
+    const { client } = setup(feedRoute([row()]));
+    const { items } = await client.fetchFeed();
+    const h = client.memberHashOf(items[0]!.lookup)!;
+    expect(h).toMatch(/^[0-9a-f]{64}$/);
+    expect(h).toBe(dedupeHash(SECRET, 'ADMIT', 'member:u-1'));
+    expect(h).not.toBe(items[0]!.keyFor('s1'));
+    expect(client.memberHashOf(null)).toBeNull();
+  });
+});
+
+describe('profile history', () => {
+  const profileBody = (history: unknown[] | null, mdPhd: boolean | null = false) =>
+    JSON.stringify({ data: { getCycleTrackProfileByUserId: { md_phd: mdPhd, history } } });
+  const ent = (over: Record<string, unknown> = {}) => ({
+    school: { slug: 'harvard-medical-school' },
+    secondary_submitted: null,
+    interview_received: null,
+    decision_date: null,
+    decision: null,
+    ...over,
+  });
+  const tokenFor = async (routes: Record<string, string | null>) => {
+    const t = setup({ ...feedRoute([row()]), ...routes });
+    const { items } = await t.client.fetchFeed();
+    return { ...t, token: items[0]!.lookup };
+  };
+
+  it('maps secondary, interview and decision entries to typed, dated events with their cycle year', async () => {
+    const { client, token } = await tokenFor({
+      [flagKey('u-1')]: profileBody([
+        ent({
+          secondary_submitted: '2026-07-12T16:00:00.000Z',
+          interview_received: '2026-10-02T16:00:00.000Z',
+          decision_date: '2026-11-10T16:00:00.000Z',
+          decision: 'ACCEPTED',
+        }),
+        ent({ school: { slug: 'yale' }, decision_date: '2026-08-20T16:00:00.000Z', decision: 'WAITLISTED' }),
+        ent({ school: { slug: 'duke' }, decision_date: '2026-09-02T16:00:00.000Z', decision: 'HOLD' }),
+      ]),
+    });
+    const p = await client.profileOf(token);
+    if (p === 'FAILED') throw new Error('failed');
+    expect(p.flag).toBe('REG');
+    expect(
+      p.history.map((h) => [h.schoolKey, h.eventType, h.occurredAt.toISOString().slice(0, 10), h.cycleYear]),
+    ).toEqual([
+      ['harvard-medical-school', 'SECONDARY', '2026-07-12', 2027],
+      ['harvard-medical-school', 'INTERVIEW', '2026-10-02', 2027],
+      ['harvard-medical-school', 'ACCEPTANCE', '2026-11-10', 2027],
+      // a summer decision belongs to that August's class; September 1 rolls over
+      ['yale', 'WAITLIST', '2026-08-20', 2026],
+      ['duke', 'HOLD', '2026-09-02', 2027],
+    ]);
+    // day-only: stored at UTC midnight, never the form's 16:00Z
+    expect(p.history.every((h) => h.occurredAt.getTime() % 86_400_000 === 0)).toBe(true);
+    expect(p.history[0]!.keyFor('s1')).toBe(dedupeHash(SECRET, 'ADMIT', 'author:u-1:s1:2027:SECONDARY'));
+    // the same key the feed builds for the same member, school, cycle and type
+    const { items } = await client.fetchFeed();
+    expect(p.history[2]!.keyFor('s1')).toBe(items[0]!.keyFor('s1'));
+  });
+
+  it('entries that cannot be dated are counted, never guessed', async () => {
+    const { client, token } = await tokenFor({
+      [flagKey('u-1')]: profileBody([
+        ent({ decision: 'ACCEPTED' }),
+        ent({ decision_date: '2026-11-10T00:00:00.000Z', decision: 'MAYBE' }),
+        ent({ secondary_submitted: 'not a date' }),
+        ent({ interview_received: '2030-01-01T00:00:00.000Z' }),
+        { school: null },
+      ]),
+    });
+    const p = await client.profileOf(token);
+    if (p === 'FAILED') throw new Error('failed');
+    expect(p.history).toEqual([]);
+    expect(p.skipped).toEqual({ unknownDecision: 1, badDate: 3, malformedEntries: 1 });
+  });
+
+  it('a missing history is empty; a missing profile is UNREADABLE with no history', async () => {
+    const a = await tokenFor({ [flagKey('u-1')]: profileBody(null) });
+    expect(await a.client.profileOf(a.token)).toMatchObject({ flag: 'REG', history: [] });
+    const b = await tokenFor({
+      [flagKey('u-1')]: JSON.stringify({ data: { getCycleTrackProfileByUserId: null } }),
+    });
+    expect(await b.client.profileOf(b.token)).toMatchObject({ flag: 'UNREADABLE', history: [] });
+  });
+
+  it('the profile request selects md_phd and the history dates only', () => {
+    expect(PROFILE_FLAG.query).toContain('md_phd');
+    expect(PROFILE_FLAG.query).toContain('secondary_submitted');
+    for (const f of ['display_name', 'avatar', 'profile_image', 'gpa', 'mcat', 'user_id', 'date_joined'])
+      expect(PROFILE_FLAG.query).not.toContain(f);
+  });
+
+  it('hostile profile fixture: no person field or id appears in any returned value', async () => {
+    const { client, token } = await tokenFor({ [flagKey('u-1')]: fx('profile-history-hostile') });
+    const p = await client.profileOf(token);
+    const dump = JSON.stringify(p);
+    for (const n of [...NEEDLES, '3.987', '527', 'u-1']) expect(dump).not.toContain(n);
+    if (p === 'FAILED') throw new Error('failed');
+    expect(p.flag).toBe('PHD');
+    expect(p.history).toHaveLength(5);
+  });
+
+  it('programOf and profileOf share one request per user', async () => {
+    const { client, token, requestedPosts } = await tokenFor({ [flagKey('u-1')]: profileBody([]) });
+    await client.programOf(token);
+    await client.profileOf(token);
+    expect(requestedPosts.filter((p) => p.op === PROFILE_FLAG.operationName)).toHaveLength(1);
+  });
+});
+
+describe('discoverMembers', () => {
+  const vars = (status: string, offset = 0) => ({ ...RESULT_USERS.variables, status: [status], limit: 100, offset });
+  const body = (ids: Array<string | null>) =>
+    JSON.stringify({ data: { getAllCycleResults: ids.map((user_id) => ({ user_id })) } });
+  const STATUSES = ['INTERVIEW', 'ACCEPTED', 'WITHDRAWN', 'REJECTED', 'WAITLISTED', 'HOLD'];
+
+  it('walks every status, pages to a short page, and returns each member once', async () => {
+    const page0 = Array.from({ length: 100 }, (_, i) => `u${i}`);
+    const routes: Record<string, string> = {};
+    for (const st of STATUSES) routes[key(RESULT_USERS, vars(st))] = body(['shared', null, 'u-' + st]);
+    routes[key(RESULT_USERS, vars('INTERVIEW'))] = body(page0);
+    routes[key(RESULT_USERS, vars('INTERVIEW', 100))] = body(['u100', 'shared']);
+    const { client, requestedPosts } = setup(routes);
+    const found = await client.discoverMembers();
+    expect(found.pages).toBe(7);
+    expect(found.failedStatuses).toBe(0);
+    // 102 from interview, 'shared' once, five other statuses one extra each
+    expect(found.tokens).toHaveLength(101 + 1 + 5);
+    expect(requestedPosts.every((p) => p.op === RESULT_USERS.operationName)).toBe(true);
+    expect(JSON.stringify(found)).not.toContain('u100');
+  });
+
+  it('selects the user id and nothing else', () => {
+    expect(RESULT_USERS.query).toContain('user_id');
+    for (const f of ['display_name', 'profile_image', 'crest_url', 'school {', 'current_status'])
+      expect(RESULT_USERS.query).not.toContain(f);
+  });
+
+  it('a status whose request fails is counted and skipped; a halt throws', async () => {
+    const routes: Record<string, string | null> = {};
+    for (const st of STATUSES) routes[key(RESULT_USERS, vars(st))] = body(['u-' + st]);
+    routes[key(RESULT_USERS, vars('ACCEPTED'))] = JSON.stringify({ errors: [{ message: 'x' }], data: null });
+    const ok = await setup(routes).client.discoverMembers();
+    expect(ok.failedStatuses).toBe(1);
+    expect(ok.tokens).toHaveLength(5);
+    const halted = createFakeHost({}, 1);
+    const client = createAdmitClient(halted.host.session(), { secret: SECRET, now: () => NOW });
+    await expect(client.discoverMembers()).rejects.toBeInstanceOf(SourceHaltedError);
   });
 });

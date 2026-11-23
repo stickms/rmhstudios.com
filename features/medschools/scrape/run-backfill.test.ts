@@ -125,6 +125,7 @@ describe('runBackfill', () => {
     expect(sessions).toEqual([
       {
         spacingMs: 2000,
+        jitterMs: 0,
       },
     ]);
   });

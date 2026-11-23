@@ -63,7 +63,11 @@ const feedBody = (rows: Row[]) =>
       getRecentSchoolCycleUpdates: rows,
     },
   });
-const hash = (id: string) => dedupeHash(SECRET, 'ADMIT', id);
+/** The member key (owner 2026-11-23): one member, one school, one cycle, one event type. */
+const mk = (user: string, schoolId: string, cycleYear: number, type: string) =>
+  dedupeHash(SECRET, 'ADMIT', `author:${user}:${schoolId}:${cycleYear}:${type}`);
+/** The default feed row: an acceptance on 2026-11-20 at school s1 (cycle 2027). */
+const ACC = (user: string, schoolId = 's1') => mk(user, schoolId, 2027, 'ACCEPTANCE');
 
 function setup(routes: Record<string, string | null>, deps: Partial<AdmitLiveDeps> = {}, fail = 3) {
   const fake = createFakePrisma();
@@ -160,15 +164,15 @@ describe('runAdmitLive', () => {
       deferred: 0,
     });
     const byHash = new Map(t.events().map((e) => [e.dedupeHash, e]));
-    expect(byHash.get(hash('c1'))).toMatchObject({
+    expect(byHash.get(ACC('u-phd'))).toMatchObject({
       program: 'PHD',
       schoolId: 's1',
       eventType: 'ACCEPTANCE',
       source: 'ADMIT',
       inState: null,
     });
-    expect(byHash.get(hash('c2'))!.program).toBe('REG');
-    expect(byHash.get(hash('c3'))!.program).toBeNull();
+    expect(byHash.get(ACC('u-reg'))!.program).toBe('REG');
+    expect(byHash.get(ACC('u-gone'))!.program).toBeNull();
     // only program-labelled events are counted: one PHD and one REG row, none for the null event
     expect(
       t
@@ -259,7 +263,7 @@ describe('runAdmitLive', () => {
       deferred: 1,
       created: 1,
     });
-    expect(t.events().map((e) => e.dedupeHash)).toEqual([hash('c2')]);
+    expect(t.events().map((e) => e.dedupeHash)).toEqual([ACC('u2')]);
     t.live.routes[flagKey('u1')] = flagBody(true);
     const second = await t.run();
     expect(second).toMatchObject({
@@ -268,7 +272,7 @@ describe('runAdmitLive', () => {
       alreadyStored: 1,
       deferred: 0,
     });
-    expect(t.events().find((e) => e.dedupeHash === hash('c1'))!.program).toBe('PHD');
+    expect(t.events().find((e) => e.dedupeHash === ACC('u1'))!.program).toBe('PHD');
     expect(t.counts().find((c) => c.program === 'PHD')!.count).toBe(1);
   });
 
@@ -452,7 +456,7 @@ describe('runAdmitLive', () => {
       deferred: 1,
       lookups: 2,
     });
-    expect(t.events().some((e) => e.dedupeHash === hash('c4'))).toBe(false);
+    expect(t.events().some((e) => e.dedupeHash === ACC('u4'))).toBe(false);
   });
 
   it('GraphQL errors on the feed fail the run and insert nothing', async () => {
@@ -462,7 +466,7 @@ describe('runAdmitLive', () => {
     const s = await t.run();
     expect(s.status).toBe('FAILED');
     expect(t.events()).toHaveLength(0);
-    expect(t.tables.medSourceRun![0]).toMatchObject({
+    expect(t.tables.medSourceRun!.find((r) => (r as { job: string }).job === 'admit-live')).toMatchObject({
       status: 'FAILED',
     });
   });
@@ -484,7 +488,7 @@ describe('runAdmitLive', () => {
       created: 1,
       deferred: 2,
     });
-    expect(t.events().map((e) => e.dedupeHash)).toEqual([hash('c1')]);
+    expect(t.events().map((e) => e.dedupeHash)).toEqual([ACC('u1')]);
     expect(t.requestedPosts.some((p) => JSON.stringify(p.variables).includes('u3'))).toBe(false);
   });
 
@@ -652,7 +656,7 @@ describe('runAdmitLive', () => {
       [flagKey('u1')]: flagBody(true),
     });
     const s = await t.run();
-    const rec = t.tables.medSourceRun![0] as {
+    const rec = t.tables.medSourceRun!.find((r) => (r as { job: string }).job === 'admit-live') as {
       status: string;
       stats: Record<string, unknown>;
       source: string;
@@ -675,6 +679,9 @@ describe('runAdmitLive', () => {
         'malformedRows',
         'aliasMissErrors',
         'misses',
+        'moved',
+        'membersIngested',
+        'historyEvents',
         'programNull',
         'requests',
         'rolledUp',
@@ -703,5 +710,71 @@ describe('runAdmitLive', () => {
         }
       ).status,
     ).toBe('FAILED');
+  });
+
+  it('one member reporting the same status twice counts once, at the earliest date seen', async () => {
+    const t = setup({
+      [FEED_KEY]: feedBody([
+        row('c1', 'u1', { current_status_date: '2026-11-20T10:00:00.000Z' }),
+        row('c2', 'u1', { current_status_date: '2026-11-19T10:00:00.000Z' }),
+      ]),
+      [flagKey('u1')]: flagBody(false),
+    });
+    const s = await t.run();
+    expect(s).toMatchObject({ status: 'OK', fetched: 2, created: 1 });
+    expect(t.events()).toHaveLength(1);
+    expect((t.events()[0]!.occurredAt as Date).toISOString()).toBe('2026-11-19T10:00:00.000Z');
+    expect(t.events()[0]!.dedupeHash).toBe(ACC('u1'));
+  });
+
+  it('a first-seen member brings their history from the same lookup; a settled member does not again', async () => {
+    const profile = (history: unknown[]) =>
+      JSON.stringify({ data: { getCycleTrackProfileByUserId: { md_phd: true, history } } });
+    const hist = [
+      {
+        school: { slug: 'yale-school-of-medicine' },
+        secondary_submitted: '2026-07-12T16:00:00.000Z',
+        interview_received: null,
+        decision_date: null,
+        decision: null,
+      },
+    ];
+    const t = setup({
+      [FEED_KEY]: feedBody([row('c1', 'u1')]),
+      [flagKey('u1')]: profile(hist),
+    });
+    const s = await t.run();
+    expect(s).toMatchObject({ status: 'OK', created: 2, membersIngested: 1, historyEvents: 1, lookups: 1 });
+    expect(
+      t
+        .events()
+        .map((e) => e.dedupeHash)
+        .sort(),
+    ).toEqual([ACC('u1'), mk('u1', 's2', 2027, 'SECONDARY')].sort());
+    expect(t.tables.medAdmitMember).toEqual([
+      expect.objectContaining({ memberHash: dedupeHash(SECRET, 'ADMIT', 'member:u1'), state: 'DONE' }),
+    ]);
+    // the same member reports a new status later: the program is looked up, the settled history is not re-read
+    t.live.routes[FEED_KEY] = feedBody([row('c1', 'u1'), row('c9', 'u1', { current_status: 'INTERVIEW' })]);
+    t.live.routes[flagKey('u1')] = profile([...hist, { ...hist[0]!, school: { slug: 'harvard-medical-school' } }]);
+    const second = await t.run();
+    expect(second).toMatchObject({ status: 'OK', created: 1, membersIngested: 0, historyEvents: 0 });
+    expect(t.events()).toHaveLength(3);
+  });
+
+  it('refuses to write until the one-time re-key has run, and runs it first', async () => {
+    const t = setup({ [FEED_KEY]: feedBody([row('c1', 'u1')]), [flagKey('u1')]: flagBody(true) });
+    t.tables.medCycleEvent!.push({
+      id: 'old',
+      schoolId: 's1',
+      source: 'ADMIT',
+      dedupeHash: 'per-update',
+      program: 'REG',
+      cycleYear: 2027,
+      eventType: 'ACCEPTANCE',
+      occurredAt: NOW,
+    });
+    await t.run();
+    expect(t.events().map((e) => e.dedupeHash)).toEqual([ACC('u1')]);
   });
 });

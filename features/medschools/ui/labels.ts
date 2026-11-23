@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import { programPair, type ProgramKey } from '../engine/programs';
 import { SOURCE_NAMES } from '../engine/public-read';
+import type { MilestoneType } from '../engine/tracker';
 import type {
   MedDegreeId,
   MedEventTypeId,
@@ -34,6 +36,18 @@ export function useMedLabels() {
     }
   };
 
+  /** A tracker milestone: the seven shareable types read as their event, plus the two that never leave the tracker. */
+  const milestoneLabel = (type: MilestoneType): string => {
+    switch (type) {
+      case 'SUBMITTED':
+        return t('tracker-milestone-submitted', { defaultValue: 'Application submitted' });
+      case 'COMPLETE':
+        return t('tracker-milestone-complete', { defaultValue: 'Application complete' });
+      default:
+        return eventLabel(type);
+    }
+  };
+
   /** Where the full label does not fit (chart end labels on a phone). */
   const eventShortLabel = (type: MedEventTypeId): string =>
     type === 'INTERVIEW' ? t('event-interview-short', { defaultValue: 'Interview' }) : eventLabel(type);
@@ -60,7 +74,21 @@ export function useMedLabels() {
   const programLabel = (p: MedProgramId | null, degree?: MedDegreeId): string =>
     programFilterLabel(p ?? 'NONE', degree);
 
+  /** One of the four program toggles: "MD", "MD-PhD", "DO", "DO-PhD". */
+  const programKeyLabel = (k: ProgramKey): string => {
+    const p = programPair(k);
+    return programFilterLabel(p.program, p.degree);
+  };
+
   const sourceName = (s: MedSourceId): string => SOURCE_NAMES[s];
 
-  return { eventLabel, eventShortLabel, programLabel, programFilterLabel, sourceName };
+  return {
+    eventLabel,
+    milestoneLabel,
+    eventShortLabel,
+    programLabel,
+    programFilterLabel,
+    programKeyLabel,
+    sourceName,
+  };
 }

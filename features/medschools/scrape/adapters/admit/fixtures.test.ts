@@ -6,7 +6,12 @@ import { ADMIT_HOSTILE_NEEDLES } from '../../test-support';
 const DIR = join(__dirname, '__fixtures__');
 const files = readdirSync(DIR);
 const read = (f: string) => readFileSync(join(DIR, f), 'utf8');
-const HOSTILE = new Set(['recent-updates-hostile.json', 'profile-flag-hostile.json']);
+const HOSTILE = new Set([
+  'recent-updates-hostile.json',
+  'profile-flag-hostile.json',
+  'profile-history-hostile.json',
+  'cycle-results-users-hostile.json',
+]);
 const REQUIRED = [
   'robots.json',
   'recent-updates-all.json',

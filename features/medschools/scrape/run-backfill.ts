@@ -270,6 +270,7 @@ export async function runBackfill(
     const schoolIdByKey = new Map(targets.map((t) => [t.sourceKey, t.schoolId]));
     const session = deps.cycletrack.session({
       spacingMs: SOURCES.CYCLETRACK.backfillSpacingMs,
+      jitterMs: SOURCES.CYCLETRACK.backfillJitterMs ?? SOURCES.CYCLETRACK.jitterMs ?? 0,
     });
     client = session;
 

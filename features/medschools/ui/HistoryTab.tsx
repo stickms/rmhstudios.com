@@ -3,14 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Select } from '@/components/ui/select';
 import { CHARTED_TYPES, PRIMARY_ORDER, overlaySource } from '../engine/public-read';
 import { historyQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
 import { CycleOverlay } from './charts/CycleOverlay';
 import { useChartLabels } from './chartLabels';
 import { useMedLabels } from './labels';
+import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
+import { ArrivalsSection } from './ArrivalsSection';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
 
@@ -26,7 +27,7 @@ export function HistoryTab({
   detail: MedSchoolDetailDto;
   search: SchoolSearch;
   setSearch: SetSchoolSearch;
-  /** The school page's program select: one controls row with the category and source selects. */
+  /** The school page's program toggles: one controls row with the category and source groups. */
   programControl: ReactNode;
 }) {
   const { t } = useTranslation('medschools');
@@ -52,7 +53,9 @@ export function HistoryTab({
   const lines = chosen
     ? cycles.flatMap((c) => {
         const s = c.sources.find((x) => x.source === chosen);
-        return s ? [{ cycleYear: c.cycleYear, points: s.points, estimated: c.dayZeroEstimated }] : [];
+        return s
+          ? [{ cycleYear: c.cycleYear, dayZeroOn: c.dayZeroOn, points: s.points, estimated: c.dayZeroEstimated }]
+          : [];
       })
     : [];
   const sharedLinks = detail.links.filter((l) => l.cycleYear === null);
@@ -60,33 +63,24 @@ export function HistoryTab({
   return (
     <SkeletonSwap ready={!!query.data} skeleton={<ChartSkeleton />}>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
           {programControl}
-          <Select
-            controlSize="sm"
-            aria-label={t('school-type-label', { defaultValue: 'Category' })}
+          <OptionGroup
+            label={t('school-type-label', { defaultValue: 'Category' })}
             value={type}
-            onChange={(e) => setSearch({ type: e.target.value as MedChartedTypeId })}
-          >
-            {CHARTED_TYPES.map((ty) => (
-              <option key={ty} value={ty}>
-                {eventLabel(ty as MedChartedTypeId)}
-              </option>
-            ))}
-          </Select>
+            options={CHARTED_TYPES.map((ty) => ({
+              value: ty as MedChartedTypeId,
+              label: eventLabel(ty as MedChartedTypeId),
+            }))}
+            onChange={(next) => setSearch({ type: next })}
+          />
           {options.length > 1 && chosen ? (
-            <Select
-              controlSize="sm"
-              aria-label={t('school-source-label', { defaultValue: 'Source' })}
+            <OptionGroup
+              label={t('school-source-label', { defaultValue: 'Source' })}
               value={chosen}
-              onChange={(e) => setSearch({ source: e.target.value as MedSourceId })}
-            >
-              {options.map((s) => (
-                <option key={s} value={s}>
-                  {sourceName(s)}
-                </option>
-              ))}
-            </Select>
+              options={options.map((s) => ({ value: s, label: sourceName(s) }))}
+              onChange={(source) => setSearch({ source })}
+            />
           ) : null}
         </div>
         {lines.length === 0 || !chosen ? (
@@ -96,7 +90,6 @@ export function HistoryTab({
             <CycleOverlay
               cycles={lines.slice(0, 4)}
               sourceName={sourceName(chosen)}
-              currentCycleYear={detail.cycleYear}
               labels={chartLabels(
                 t('school-history-title', {
                   defaultValue: '{{type}} by cycle',
@@ -123,6 +116,7 @@ export function HistoryTab({
             </div>
           </>
         )}
+        <ArrivalsSection slug={slug} type={type} program={search.program} />
       </div>
     </SkeletonSwap>
   );

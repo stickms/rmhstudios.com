@@ -123,3 +123,9 @@ export async function lastRealRunWithin(
     return true;
   });
 }
+
+/**
+ * The Admit forums job runs every 3 hours (8 times a day); a non-manual run inside this window of a real run is
+ * skipped, so a restart, a duplicate trigger or a mistyped cron cannot run it more often than about every 2.5 hours.
+ */
+export const ADMIT_FORUMS_MIN_INTERVAL_MS = 2.5 * 3_600_000;

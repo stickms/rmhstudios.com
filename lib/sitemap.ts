@@ -521,6 +521,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/drafts': 'personal',
   '/follows': 'personal',
   '/study/stats': 'personal', // the member's own review statistics
+  '/rmh-medschool/tracker': 'personal', // the member's private application tracker (noindex)
+  '/rmh-medschool/lists': 'personal', // the member's private saved lists and preferences (noindex)
   '/connections/new': 'personal', // signed-in authoring form
   '/games/trades': 'personal', // the viewer's own offers
   '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on

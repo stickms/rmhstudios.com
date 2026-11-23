@@ -8,6 +8,7 @@ import {
   SCHOOL_TABS,
   pickPrimary,
   applyKFloor,
+  publicCell,
   floorSplit,
   buildTypeSeries,
   resolveCycleYear,
@@ -50,6 +51,29 @@ describe('pickPrimary', () => {
     expect(pickPrimary(['SDN', 'ADMIT'])).toBe('ADMIT');
     expect(pickPrimary(['RMH', 'SDN'])).toBe('SDN');
     expect(pickPrimary([])).toBeNull();
+  });
+});
+
+describe('applyKFloor holds back today (Q2)', () => {
+  const rows = [
+    cell('RMH', '2026-11-19', 4, 4),
+    cell('RMH', '2026-11-20', 4, 4),
+    cell('RMH', '2026-11-21', 4, 4),
+    cell('CYCLETRACK', '2026-11-20', 4, null),
+  ];
+  it('drops RMH rows dated today or later, whatever the count', () => {
+    expect(applyKFloor(rows, '2026-11-20').map((r) => `${r.source}${r.date}`)).toEqual([
+      'RMH2026-11-19',
+      'CYCLETRACK2026-11-20',
+    ]);
+    expect(applyKFloor(rows, '2026-11-22').filter((r) => r.source === 'RMH')).toHaveLength(3);
+  });
+  it('a held-back RMH day can never be primary or appear', () => {
+    const s = buildTypeSeries([cell('RMH', '2026-11-20', 9, 9)], '2026-11-20');
+    expect(s).toEqual({ primary: null, sources: [] });
+  });
+  it('with no day given it uses the clock: a row dated far in the future is held back', () => {
+    expect(applyKFloor([cell('RMH', '2999-01-01', 9, 9)])).toEqual([]);
   });
 });
 
@@ -214,5 +238,46 @@ describe('dates', () => {
     const s = formatUtcDay('2026-11-20', 'en-US');
     expect(s).toContain('Nov');
     expect(s).toContain('20');
+  });
+});
+
+describe('publicCell (the daily snapshot is the only RMH figure the public sees)', () => {
+  const row = (over: Record<string, unknown> = {}) => ({
+    source: 'RMH' as const,
+    date: '2026-11-10',
+    eventType: 'INTERVIEW' as const,
+    count: 9,
+    contributors: 9,
+    publishedCount: 3,
+    publishedContributors: 3,
+    ...over,
+  });
+
+  it('swaps the live figures for the published ones and drops the published keys', () => {
+    expect(publicCell(row())).toEqual({
+      source: 'RMH',
+      date: '2026-11-10',
+      eventType: 'INTERVIEW',
+      count: 3,
+      contributors: 3,
+    });
+  });
+
+  it('is absent when never published, whatever the live count', () => {
+    expect(publicCell(row({ publishedCount: null, publishedContributors: null }))).toBeNull();
+    expect(publicCell(row({ publishedCount: undefined }))).toBeNull();
+  });
+
+  it('passes other sources through untouched by their (null) published columns', () => {
+    expect(publicCell(row({ source: 'ADMIT', count: 5, contributors: null, publishedCount: null }))).toMatchObject({
+      source: 'ADMIT',
+      count: 5,
+      contributors: null,
+    });
+  });
+
+  it('then the floor applies to the published contributors', () => {
+    const cells = [row({ publishedContributors: 2 }), row({ date: '2026-11-11' })].flatMap((r) => publicCell(r) ?? []);
+    expect(applyKFloor(cells, '2026-11-20').map((c) => c.date)).toEqual(['2026-11-11']);
   });
 });

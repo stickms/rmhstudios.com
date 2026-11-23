@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { dedupeHash } from '../../../engine/dedupe';
 import { cycleYearOf } from '../../../engine/cycle';
-import type { MedResidence } from '../../../engine/types';
+import type { MedEventType, MedResidence } from '../../../engine/types';
 import type { PoliteClient } from '../../http';
 import { ADMIT_GRAPHQL_PATH } from '../../sources';
 import {
@@ -16,6 +16,8 @@ import {
   INTERVIEW_SCHOOLS,
   PROFILE_FLAG,
   RECENT_UPDATES,
+  RESULT_STATUSES,
+  RESULT_USERS,
   SCHOOL_CRESTS,
   SCHOOL_STATS,
   type AdmitOperation,
@@ -23,21 +25,26 @@ import {
 import {
   feedData,
   feedRow,
+  historyEntry,
   interviewFeedbackData,
   interviewOverviewData,
   interviewSchoolsData,
   profileFlagData,
   questionsData,
+  resultUsersData,
   schoolCrestsData,
   schoolStatsData,
 } from './schemas';
+import { admitMemberKey } from './member-key';
 import { mapStatus } from './statuses';
 import {
   mintLookupToken,
   redeemLookupToken,
+  type AdmitProfile,
   type AdmitSchoolCrest,
   type AdmitSchoolRef,
   type FeedItem,
+  type HistoryEvent,
   type LookupToken,
   type NormalizedAdmitProfile,
   type NormalizedAdmitQuestion,
@@ -70,6 +77,15 @@ export interface AdmitClient {
   }>;
   /** One request per distinct user per client, cached for the client's life. */
   programOf(token: LookupToken | null): Promise<ProgramFlag | 'FAILED'>;
+  /** The same cached request, read for the flag and the member's history events. */
+  profileOf(token: LookupToken | null): Promise<AdmitProfile | 'FAILED'>;
+  /** Keyed hash of the member behind a token (`null` for no token): a progress marker that is not the user id. */
+  memberHashOf(token: LookupToken | null): string | null;
+  /**
+   * Distinct members from `getAllCycleResults`, one status filter after another, paged until a short page. A status
+   * whose request fails is counted and skipped; a halted source throws. Tokens carry the ids in memory only.
+   */
+  discoverMembers(): Promise<{ tokens: LookupToken[]; pages: number; failedStatuses: number }>;
   readonly lookups: number;
   /** True when this token's user already has a flag this run, so `programOf` costs no request. */
   isCached(token: LookupToken | null): boolean;
@@ -102,7 +118,54 @@ export function createAdmitClient(
   },
 ): AdmitClient {
   const now = opts.now ?? (() => new Date());
-  const flags = new Map<string, Promise<ProgramFlag | 'FAILED'>>();
+  const flags = new Map<string, Promise<AdmitProfile | 'FAILED'>>();
+  /** Member-scoped key (owner 2026-11-23): one member counts once per type per school per cycle, feed or history. */
+  const memberKey = (userId: string, schoolId: string, cycleYear: number, type: MedEventType): string =>
+    admitMemberKey(opts.secret, userId, schoolId, cycleYear, type);
+
+  /** A history entry's dates and decision become events; entries that cannot be dated are counted, never guessed. */
+  function mapHistory(userId: string, raw: unknown[] | null | undefined): Pick<AdmitProfile, 'history' | 'skipped'> {
+    const skipped = { unknownDecision: 0, badDate: 0, malformedEntries: 0 };
+    const history: HistoryEvent[] = [];
+    const latest = now().getTime() + DAY_MS;
+    for (const r of raw ?? []) {
+      const parsed = historyEntry.safeParse(r);
+      if (!parsed.success) {
+        skipped.malformedEntries++;
+        continue;
+      }
+      const e = parsed.data;
+      const take = (type: MedEventType | null, date: string | null | undefined, present: boolean) => {
+        if (!present) return;
+        if (type === null) {
+          skipped.unknownDecision++;
+          return;
+        }
+        const parsedAt = date ? new Date(date) : null;
+        if (parsedAt === null || Number.isNaN(parsedAt.getTime()) || parsedAt.getTime() > latest) {
+          skipped.badDate++;
+          return;
+        }
+        // A profile-history date is a day picked on a form (the API sends it at a fixed hour, e.g. 16:00Z), not a
+        // time of day. Stored at UTC midnight it is recognisably day-only, so arrivals leave it out and it never
+        // displaces an exact live-feed time (`replacesTime` in scrape/admit-events.ts).
+        const at = new Date(Date.UTC(parsedAt.getUTCFullYear(), parsedAt.getUTCMonth(), parsedAt.getUTCDate()));
+        const cycleYear = cycleYearOf(at, type);
+        history.push({
+          schoolKey: e.school.slug,
+          cycleYear,
+          eventType: type,
+          occurredAt: at,
+          keyFor: (schoolId) => memberKey(userId, schoolId, cycleYear, type),
+        });
+      };
+      take('SECONDARY', e.secondary_submitted, Boolean(e.secondary_submitted));
+      take('INTERVIEW', e.interview_received, Boolean(e.interview_received));
+      const decision = e.decision?.trim() ?? '';
+      take(decision === '' ? null : mapStatus(decision), e.decision_date, decision !== '');
+    }
+    return { history, skipped };
+  }
   let lookups = 0;
   let errorStreak = 0;
   let lookupsStopped = false;
@@ -161,7 +224,7 @@ export function createAdmitClient(
     ).data;
   }
 
-  async function lookupFlag(userId: string): Promise<ProgramFlag | 'FAILED'> {
+  async function lookupProfile(userId: string): Promise<AdmitProfile | 'FAILED'> {
     try {
       const data = await run(
         PROFILE_FLAG,
@@ -174,10 +237,14 @@ export function createAdmitClient(
       const profile = data.getCycleTrackProfileByUserId;
       if (profile === null) {
         errorStreak = 0;
-        return 'UNREADABLE';
+        return {
+          flag: 'UNREADABLE',
+          history: [],
+          skipped: { unknownDecision: 0, badDate: 0, malformedEntries: 0 },
+        };
       }
       errorStreak = 0;
-      return profile.md_phd === true ? 'PHD' : 'REG';
+      return { flag: profile.md_phd === true ? 'PHD' : 'REG', ...mapHistory(userId, profile.history) };
     } catch (e) {
       if (e instanceof AdmitLookupErrorsReply) {
         // A few hidden profiles are normal, but a streak means the lookup endpoint itself is broken: stop asking
@@ -231,15 +298,19 @@ export function createAdmitClient(
           skipped.badDate++;
           continue;
         }
+        const cycleYear = cycleYearOf(occurredAt, eventType);
+        const updateKey = dedupeHash(opts.secret, 'ADMIT', row.cycle_update_id);
+        const authorId = row.user_id ? row.user_id : null;
         items.push({
+          keyFor: (schoolId) => (authorId === null ? updateKey : memberKey(authorId, schoolId, cycleYear, eventType)),
           event: {
             source: 'ADMIT',
             schoolKey: row.school.slug,
-            cycleYear: cycleYearOf(occurredAt, eventType),
+            cycleYear,
             program: null,
             eventType,
             occurredAt,
-            dedupeHash: dedupeHash(opts.secret, 'ADMIT', row.cycle_update_id),
+            dedupeHash: updateKey,
             inState: null,
           },
           lookup: row.user_id ? mintLookupToken(row.user_id) : null,
@@ -260,17 +331,57 @@ export function createAdmitClient(
       return flags.has(redeemLookupToken(token));
     },
 
-    programOf(token) {
-      if (token === null) return Promise.resolve('UNREADABLE');
+    profileOf(token) {
+      if (token === null)
+        return Promise.resolve({
+          flag: 'UNREADABLE',
+          history: [],
+          skipped: { unknownDecision: 0, badDate: 0, malformedEntries: 0 },
+        });
       const userId = redeemLookupToken(token);
-      let flag = flags.get(userId);
-      if (!flag) {
+      let profile = flags.get(userId);
+      if (!profile) {
         if (lookupsStopped) return Promise.resolve('FAILED');
         lookups++;
-        flag = lookupFlag(userId);
-        flags.set(userId, flag);
+        profile = lookupProfile(userId);
+        flags.set(userId, profile);
       }
-      return flag;
+      return profile;
+    },
+
+    async programOf(token) {
+      const p = await this.profileOf(token);
+      return p === 'FAILED' ? 'FAILED' : p.flag;
+    },
+
+    memberHashOf(token) {
+      return token === null ? null : dedupeHash(opts.secret, 'ADMIT', `member:${redeemLookupToken(token)}`);
+    },
+
+    async discoverMembers() {
+      const byId = new Map<string, LookupToken>();
+      let pages = 0;
+      let failedStatuses = 0;
+      for (const status of RESULT_STATUSES) {
+        try {
+          for (let page = 0; page < MAX_PAGES; page++) {
+            const data = await run(
+              RESULT_USERS,
+              { ...RESULT_USERS.variables, status: [status], limit: SCHOOLS_PAGE, offset: page * SCHOOLS_PAGE },
+              resultUsersData,
+            );
+            pages++;
+            const rows = data.getAllCycleResults;
+            for (const r of rows)
+              if (r.user_id && !byId.has(r.user_id)) byId.set(r.user_id, mintLookupToken(r.user_id));
+            if (rows.length < SCHOOLS_PAGE) break;
+          }
+        } catch (e) {
+          if (!(e instanceof AdmitResponseError)) throw e;
+          failedStatuses++;
+        }
+      }
+      return { tokens: [...byId.values()], pages, failedStatuses };
     },
 
     async listInterviewSchools() {

@@ -45,9 +45,49 @@ export function pickPrimary(present: Iterable<MedSource>): MedSource | null {
   return PRIMARY_ORDER.find((s) => set.has(s)) ?? null;
 }
 
-/** RMH tracker counts rest on contributors; fewer than K_FLOOR (or unknown) is suppressed. Other sources show as published. */
-export function applyKFloor(rows: readonly CountCell[]): CountCell[] {
-  return rows.filter((r) => !(r.source === 'RMH' && (r.contributors === null || r.contributors < K_FLOOR)));
+/** The UTC calendar day of `now`, `YYYY-MM-DD`. */
+export const utcDayOf = (now: Date): string => now.toISOString().slice(0, 10);
+
+/** A stored count row as the readers select it: the live figures and, for RMH only, the daily snapshot. */
+export interface StoredCountRow {
+  source: MedSource;
+  /** YYYY-MM-DD */
+  date: string;
+  eventType: MedEventType;
+  count: number;
+  contributors: number | null;
+  publishedCount?: number | null;
+  publishedContributors?: number | null;
+}
+
+/**
+ * The row as a public figure (Q2). An RMH row is public only through its daily snapshot: `publishedCount` and
+ * `publishedContributors` stand in for `count` and `contributors`, and a row never published (null) is absent. The live
+ * columns follow the tracker minute by minute and are never shown, so a back-dated milestone cannot move a public figure
+ * until the next snapshot. Other sources pass through unchanged.
+ */
+export function publicCell<T extends StoredCountRow>(
+  r: T,
+): (Omit<T, 'publishedCount' | 'publishedContributors'> & CountCell) | null {
+  const { publishedCount, publishedContributors, ...rest } = r;
+  if (r.source !== 'RMH') return rest as Omit<T, 'publishedCount' | 'publishedContributors'> & CountCell;
+  if (publishedCount === null || publishedCount === undefined) return null;
+  return { ...rest, count: publishedCount, contributors: publishedContributors ?? null };
+}
+
+/**
+ * RMH tracker counts rest on contributors; fewer than K_FLOOR (or unknown) is suppressed. Other sources show as published.
+ *
+ * Q2 (phase 4): the rows are already the PUBLISHED figures (`publicCell`: the once-a-day snapshot, never the live
+ * count), so `contributors` here is `publishedContributors`. RMH cells dated TODAY (UTC) or later are held back too,
+ * whatever their count. The snapshot is what stops a back-dated milestone moving a past cell in real time; the date
+ * hold-back covers a cell that is itself still filling. `today` defaults to the clock (fail closed); pass the
+ * request's own `now` so a body is a function of its inputs.
+ */
+export function applyKFloor(rows: readonly CountCell[], today: string = utcDayOf(new Date())): CountCell[] {
+  return rows.filter(
+    (r) => !(r.source === 'RMH' && (r.contributors === null || r.contributors < K_FLOOR || r.date >= today)),
+  );
 }
 
 /** The in-state split is shown only when both halves clear the floor, independent of the total. */
@@ -60,8 +100,8 @@ export function floorSplit(
   return { inState, outOfState };
 }
 
-export function buildTypeSeries(rows: readonly CountCell[]): TypeSeries {
-  const visible = applyKFloor(rows); // floor first: a suppressed source can never be primary
+export function buildTypeSeries(rows: readonly CountCell[], today?: string): TypeSeries {
+  const visible = applyKFloor(rows, today); // floor first: a suppressed source can never be primary
   const bySource = new Map<MedSource, CountCell[]>();
   for (const r of visible) {
     const list = bySource.get(r.source);

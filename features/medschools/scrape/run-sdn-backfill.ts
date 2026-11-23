@@ -306,6 +306,7 @@ export async function runSdnBackfill(
 
   const session = host.session({
     spacingMs: SOURCES.SDN_FORUMS.backfillSpacingMs,
+    jitterMs: SOURCES.SDN_FORUMS.backfillJitterMs ?? SOURCES.SDN_FORUMS.jitterMs ?? 0,
   });
   let error: string | null = null;
   let incomplete = false;

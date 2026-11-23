@@ -1,0 +1,16 @@
+{
+  "data": {
+    "getAllCycleResults": [
+      {
+        "user_id": "user-hostile-9931",
+        "user_display_name": "drsmith42",
+        "user_profile_image_url": "https://cdn.example/avatars/jd.png"
+      },
+      {
+        "user_id": null,
+        "user_display_name": "jane_doe_md",
+        "user_profile_image_url": "https://cdn.example/avatars/jd.png"
+      }
+    ]
+  }
+}

@@ -34,6 +34,12 @@ export interface SortableListProps<T extends SortableItem> {
   /** Accessible label prefix for the move buttons, e.g. the item's name. */
   itemLabel?: (item: T) => string;
   className?: string;
+  /** Extra classes for each row (its padding, say), merged after the default `px-3 py-2`. */
+  rowClassName?: string;
+  /** Extra classes for the drag handle (a page that is cramped on a phone hides it; the move buttons remain). */
+  handleClassName?: string;
+  /** Extra classes for the move buttons' wrapper (a phone stacks them to give the row's content the width). */
+  controlsClassName?: string;
 }
 
 export function SortableList<T extends SortableItem>({
@@ -42,6 +48,9 @@ export function SortableList<T extends SortableItem>({
   renderItem,
   itemLabel,
   className,
+  rowClassName,
+  handleClassName,
+  controlsClassName,
 }: SortableListProps<T>) {
   const move = React.useCallback(
     (from: number, to: number) => {
@@ -64,6 +73,9 @@ export function SortableList<T extends SortableItem>({
           count={items.length}
           onMove={move}
           label={itemLabel?.(item)}
+          rowClassName={rowClassName}
+          handleClassName={handleClassName}
+          controlsClassName={controlsClassName}
         >
           {renderItem(item, index)}
         </SortableRow>
@@ -78,6 +90,9 @@ function SortableRow<T extends SortableItem>({
   count,
   onMove,
   label,
+  rowClassName,
+  handleClassName,
+  controlsClassName,
   children,
 }: {
   item: T;
@@ -85,6 +100,9 @@ function SortableRow<T extends SortableItem>({
   count: number;
   onMove: (from: number, to: number) => void;
   label?: string;
+  rowClassName?: string | undefined;
+  handleClassName?: string | undefined;
+  controlsClassName?: string | undefined;
   children: React.ReactNode;
 }) {
   const controls = useDragControls();
@@ -98,7 +116,7 @@ function SortableRow<T extends SortableItem>({
       dragControls={controls}
       transition={transition}
       // L1 . row — cheap, unlimited, matches list surfaces.
-      className="flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
+      className={cn('flex items-center gap-2 rounded-site px-3 py-2 text-site-text', rowClassName)}
     >
       {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
       <span
@@ -109,7 +127,7 @@ function SortableRow<T extends SortableItem>({
         // in the same flex line. Guarding the handle is enough to stop it: a
         // selection that never starts cannot be extended.
         data-gesture=""
-        className="cursor-grab touch-none text-site-text-muted active:cursor-grabbing"
+        className={cn('cursor-grab touch-none text-site-text-muted active:cursor-grabbing', handleClassName)}
         aria-hidden
       >
         <GripVertical className="h-4 w-4" />
@@ -117,7 +135,7 @@ function SortableRow<T extends SortableItem>({
 
       <div className="min-w-0 flex-1">{children}</div>
 
-      <div className="flex shrink-0 items-center">
+      <div className={cn('flex shrink-0 items-center', controlsClassName)}>
         <IconButton
           icon={ChevronUp}
           size="icon-sm"

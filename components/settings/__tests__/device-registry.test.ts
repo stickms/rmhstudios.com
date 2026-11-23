@@ -25,6 +25,8 @@ const NOT_BROWSER_STORAGE: ReadonlySet<string> = new Set([
   'rmh_test_',
   'jam-feedback',
   'allow-scripts',
+  // A `MedSourceRun.job` name in the med schools worker (`ADMIT_REKEY_JOB`), a database value.
+  'admit-rekey',
   // Redis keys in the casino hub (`features/casino/server/`), skipped by path below as well.
   'casino:table:',
   'casino:tables:',

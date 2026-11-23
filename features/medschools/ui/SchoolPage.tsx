@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
@@ -7,14 +8,16 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { TabItem } from '@/components/ui/tabs';
 import { SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
-import type { MedEventType } from '../engine/types';
-import { parseSchoolSearch, showParam } from '../engine/search';
+import { patchSearch, type ViewPatch } from '../engine/prefs';
+import { parseSchoolSearch } from '../engine/search';
 import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
+import { PrefsNote } from './PrefsNote';
+import { useEffectiveView } from './useEffectiveView';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
-import { ProgramSelect } from './ProgramSelect';
-import { ReportedNote } from './ReportedNote';
+import { ProgramToggles } from './ProgramToggles';
+import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
 import { SkeletonSwap } from './skeletons';
@@ -25,24 +28,31 @@ export function SchoolPage() {
   const { t } = useTranslation('medschools');
   const navigate = useNavigate();
   const { slug } = useParams({ strict: false }) as { slug: string };
-  const search = parseSchoolSearch(useSearch({ strict: false }) as Record<string, unknown>);
+  const parsed = parseSchoolSearch(useSearch({ strict: false }) as Record<string, unknown>);
+  const { data: session } = useSession();
   const detailQuery = useQuery(schoolQuery(slug));
   const detail = detailQuery.data;
 
-  const routeSearch = (m: Omit<SchoolSearch, 'show'> & { show: readonly MedEventType[] }) => ({
-    tab: m.tab,
-    program: m.program,
-    type: m.type,
-    show: showParam(m.show),
-    ...(m.source ? { source: m.source } : {}),
-    ...(m.cycle !== undefined ? { cycle: m.cycle } : {}),
-  });
+  // The URL where it speaks, the viewer's preferences where it is silent. A school has its own degree.
+  const { view, prefs } = useEffectiveView('school', parsed, detail ? { schoolDegree: detail.school.degree } : {});
+  const search: SchoolSearch = {
+    ...parsed,
+    program: view.program,
+    show: view.show,
+  };
+
   const setSearch = (patch: SchoolSearchPatch) => {
+    const { program, show, ...rest } = patch;
+    const viewPatch: ViewPatch = { ...(program ? { program } : {}), ...(show ? { show } : {}) };
+    const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     void navigate({
       to: '/rmh-medschool/$slug',
       params: { slug },
-      // Defaults are stripped by the route's search middleware, so a default never reaches the URL.
-      search: () => routeSearch({ ...search, ...patch }),
+      // Only the keys the viewer changed are rewritten; `tab` and `type` defaults are stripped by the route.
+      search: ((prev: Record<string, unknown>) => ({
+        ...patchSearch('school', prev, view, viewPatch, prefs),
+        ...own,
+      })) as never,
       replace: true,
       resetScroll: false,
     });
@@ -61,7 +71,7 @@ export function SchoolPage() {
   const tabs: TabItem[] = SCHOOL_TABS.map((id) => ({ id, label: tabLabel(id) }));
 
   const programControl = detail ? (
-    <ProgramSelect
+    <ProgramToggles
       degree={detail.school.degree}
       value={search.program}
       onChange={(program) => setSearch({ program })}
@@ -105,7 +115,18 @@ export function SchoolPage() {
                 </p>
               </div>
               <SchoolFacts school={detail.school} />
-              <ReportedNote />
+              {session ? (
+                <p className="t-meta m-0 flex flex-wrap items-center gap-x-3">
+                  <SaveToList school={{ slug, name: detail.school.name }} program={search.program} />
+                  <Link to="/rmh-medschool/tracker" className="underline">
+                    {t('school-my-tracker', { defaultValue: 'My tracker' })}
+                  </Link>
+                  <Link to="/rmh-medschool/lists" className="underline">
+                    {t('school-my-lists', { defaultValue: 'My lists' })}
+                  </Link>
+                </p>
+              ) : null}
+              <PrefsNote fromPrefs={view.fromPrefs} />
             </div>
             <div>
               <PageTabs
@@ -116,7 +137,7 @@ export function SchoolPage() {
                   <Link
                     to="/rmh-medschool/$slug"
                     params={{ slug }}
-                    search={routeSearch({ ...search, tab: tab.id as SchoolTab })}
+                    search={((prev: Record<string, unknown>) => ({ ...prev, tab: tab.id })) as never}
                     replace
                     resetScroll={false}
                     id={props.id}
@@ -142,7 +163,7 @@ export function SchoolPage() {
                 {search.tab === 'activity' ? (
                   <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
                 ) : (
-                  <InterviewsTab detail={detail} search={search} />
+                  <InterviewsTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
                 )}
               </>
             )}

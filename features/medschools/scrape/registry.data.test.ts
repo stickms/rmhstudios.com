@@ -34,6 +34,12 @@ describe('data/medschools/schools.json', () => {
     for (const k of ['Toronto', 'Alberta']) expect(keys.has(k), k).toBe(false);
   });
 
+  it('no school slug collides with a static /rmh-medschool route', () => {
+    // `/rmh-medschool/$slug` is a param route; `live` is a page now and `tracker`, `lists`, `ask` are coming.
+    const reserved = new Set(['tracker', 'lists', 'live', 'ask']);
+    expect(file.schools.filter((s) => reserved.has(s.slug)).map((s) => s.slug)).toEqual([]);
+  });
+
   it('is the expected size', () => {
     expect(file.schools.length).toBeGreaterThanOrEqual(180);
     expect(file.schools.length).toBeLessThanOrEqual(238);

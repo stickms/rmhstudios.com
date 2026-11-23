@@ -232,7 +232,7 @@ describe('runSdnBackfill', () => {
     expect(r.unlabelled).toBe(1);
     expect(s.tables.medSdnThread!.map((t) => t.archive)).toEqual([true, true]);
     expect(s.tables.medSchoolAliasMiss!.length).toBe(1);
-    expect(s.sessions[0]!.spacingMs).toBe(2000);
+    expect(s.sessions[0]).toEqual({ spacingMs: 3000, jitterMs: 1000 });
     expect(r.cursor.stage).toBe('done');
   });
 

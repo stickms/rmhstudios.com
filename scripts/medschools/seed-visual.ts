@@ -23,7 +23,9 @@ function guard(): string {
   }
   const db = u.pathname.replace(/^\//, '');
   if (!['localhost', '127.0.0.1'].includes(u.hostname) || !db.includes('scratch'))
-    throw new Error(`seed-visual: refusing ${u.hostname}/${db}: needs a localhost host and a database name with "scratch"`);
+    throw new Error(
+      `seed-visual: refusing ${u.hostname}/${db}: needs a localhost host and a database name with "scratch"`,
+    );
   return url;
 }
 
@@ -45,7 +47,6 @@ function rng(seed: number): () => number {
 const DAY = 86_400_000;
 const NOW = new Date();
 const TODAY = Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), NOW.getUTCDate());
-const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
 const SLUGS = {
   MD: ['harvard', 'duke', 'michigan', 'johns-hopkins', 'stanford'],
@@ -111,18 +112,54 @@ async function main() {
           const base = Math.round(rate * scale * bump * (rand() < 0.55 ? 1 : 0));
           if (base <= 0) continue;
           const date = new Date(zero + d * DAY);
-          counts.push({ schoolId: s.id, program: 'REG', cycleYear, date, eventType: type, source: 'CYCLETRACK', count: base, contributors: null });
+          counts.push({
+            schoolId: s.id,
+            program: 'REG',
+            cycleYear,
+            date,
+            eventType: type,
+            source: 'CYCLETRACK',
+            count: base,
+            contributors: null,
+          });
           if (rand() < 0.7)
-            counts.push({ schoolId: s.id, program: 'REG', cycleYear, date, eventType: type, source: 'ADMIT', count: Math.max(1, Math.round(base * (0.5 + rand()))), contributors: null });
+            counts.push({
+              schoolId: s.id,
+              program: 'REG',
+              cycleYear,
+              date,
+              eventType: type,
+              source: 'ADMIT',
+              count: Math.max(1, Math.round(base * (0.5 + rand()))),
+              contributors: null,
+            });
           if (rand() < 0.5)
-            counts.push({ schoolId: s.id, program: 'REG', cycleYear, date, eventType: type, source: 'SDN', count: Math.max(1, Math.round(base * (0.3 + rand() * 0.6))), contributors: null });
+            counts.push({
+              schoolId: s.id,
+              program: 'REG',
+              cycleYear,
+              date,
+              eventType: type,
+              source: 'SDN',
+              count: Math.max(1, Math.round(base * (0.3 + rand() * 0.6))),
+              contributors: null,
+            });
           if (type === 'INTERVIEW' && rand() < 0.15)
-            counts.push({ schoolId: s.id, program: 'PHD', cycleYear, date, eventType: type, source: 'CYCLETRACK', count: 1 + Math.floor(rand() * 2), contributors: null });
+            counts.push({
+              schoolId: s.id,
+              program: 'PHD',
+              cycleYear,
+              date,
+              eventType: type,
+              source: 'CYCLETRACK',
+              count: 1 + Math.floor(rand() * 2),
+              contributors: null,
+            });
         }
       }
     }
   }
-  // FIXTURE: today's interview invites, so the "today" block shows (CycleTrack primary, one tie, one Admit-only school).
+  // FIXTURE: today's interview invites (the `today` endpoint; CycleTrack primary, one tie, one Admit-only school).
   const todayCounts: Array<[string, 'CYCLETRACK' | 'ADMIT', number]> = [
     ['harvard', 'CYCLETRACK', 9],
     ['duke', 'CYCLETRACK', 6],
@@ -134,19 +171,53 @@ async function main() {
   for (const [slug, source, count] of todayCounts) {
     const schoolId = byslug.get(slug)!.id;
     const i = counts.findIndex(
-      (c) => c.schoolId === schoolId && c.cycleYear === 2027 && c.eventType === 'INTERVIEW' && c.source === source && c.program === 'REG' && c.date.getTime() === TODAY,
+      (c) =>
+        c.schoolId === schoolId &&
+        c.cycleYear === 2027 &&
+        c.eventType === 'INTERVIEW' &&
+        c.source === source &&
+        c.program === 'REG' &&
+        c.date.getTime() === TODAY,
     );
     if (i >= 0) counts.splice(i, 1);
-    counts.push({ schoolId, program: 'REG', cycleYear: 2027, date: new Date(TODAY), eventType: 'INTERVIEW', source, count, contributors: null });
+    counts.push({
+      schoolId,
+      program: 'REG',
+      cycleYear: 2027,
+      date: new Date(TODAY),
+      eventType: 'INTERVIEW',
+      source,
+      count,
+      contributors: null,
+    });
   }
   // FIXTURE: an RMH row with contributors: 2, under the k floor, which must stay invisible.
-  counts.push({ schoolId: byslug.get('harvard')!.id, program: 'REG', cycleYear: 2027, date: new Date(TODAY), eventType: 'INTERVIEW', source: 'RMH', count: 99, contributors: 2 });
+  counts.push({
+    schoolId: byslug.get('harvard')!.id,
+    program: 'REG',
+    cycleYear: 2027,
+    date: new Date(TODAY),
+    eventType: 'INTERVIEW',
+    source: 'RMH',
+    count: 99,
+    contributors: 2,
+  });
   await prisma.medCycleCount.createMany({ data: counts, skipDuplicates: true });
   console.log('counts', counts.length);
 
   // ---- live feed: ~40 events over three days, null-program ones, several sharing one occurredAt ----
   const rand = rng(99);
-  const kinds = ['INTERVIEW', 'INTERVIEW', 'INTERVIEW', 'SECONDARY', 'ACCEPTANCE', 'WAITLIST', 'REJECTION', 'WITHDRAWN', 'HOLD'] as const;
+  const kinds = [
+    'INTERVIEW',
+    'INTERVIEW',
+    'INTERVIEW',
+    'SECONDARY',
+    'ACCEPTANCE',
+    'WAITLIST',
+    'REJECTION',
+    'WITHDRAWN',
+    'HOLD',
+  ] as const;
   const events: Array<{
     schoolId: string;
     cycleYear: number;
@@ -177,6 +248,35 @@ async function main() {
   await prisma.medCycleEvent.createMany({ data: events, skipDuplicates: true });
   console.log('events', events.length, 'null-program', events.filter((e) => e.program === null).length);
 
+  // FIXTURE: timed Admit interview reports at Harvard across three cycles, so "when results arrive" has enough events to
+  // draw (the chart needs 10 in all and 3 in a cycle; the live feed above is only a few hours deep). Weekday and hour are
+  // skewed the way real invites are (weekday afternoons) so the bars are not flat.
+  const arrivals: typeof events = [];
+  const arand = rng(2027);
+  for (const [cycleYear, count] of [
+    [2027, 40],
+    [2026, 55],
+    [2025, 45],
+  ] as const) {
+    for (let i = 0; i < count; i++) {
+      const day = Math.floor(arand() * 60);
+      let at = Date.UTC(cycleYear - 1, 9, 1 + day, 14 + Math.floor(arand() * 6), Math.floor(arand() * 60));
+      if (cycleYear === 2027 && at > NOW.getTime()) at = NOW.getTime() - Math.floor(arand() * 20) * 3_600_000;
+      arrivals.push({
+        schoolId: byslug.get('harvard')!.id,
+        cycleYear,
+        program: 'REG',
+        eventType: 'INTERVIEW',
+        occurredAt: new Date(at),
+        source: 'ADMIT',
+        dedupeHash: `fixture-arrival-${cycleYear}-${i}`,
+        inState: null,
+      });
+    }
+  }
+  await prisma.medCycleEvent.createMany({ data: arrivals, skipDuplicates: true });
+  console.log('arrival events', arrivals.length);
+
   // ---- stats, profiles, questions, threads ----
   for (const s of schools) {
     const r = rng(s.slug.length * 31);
@@ -187,7 +287,7 @@ async function main() {
       cycleYear: 2027,
       gpaMedian: +gpa.toFixed(2),
       gpaLow: +(gpa - 0.25).toFixed(2),
-      gpaHigh: +(Math.min(4, gpa + 0.2)).toFixed(2),
+      gpaHigh: +Math.min(4, gpa + 0.2).toFixed(2),
       mcatMedian: mcat,
       mcatLow: mcat - 6,
       mcatHigh: mcat + 5,
@@ -226,7 +326,16 @@ async function main() {
           inStateCount: 5,
           outOfStateCount: 2,
         },
-        { schoolId: s.id, source: 'SDN', interviewCount: 28, feedbackPositive: [], feedbackNegative: [], feedbackBefore: [], fetchedAt: NOW, avgImpression: 0.62 },
+        {
+          schoolId: s.id,
+          source: 'SDN',
+          interviewCount: 28,
+          feedbackPositive: [],
+          feedbackNegative: [],
+          feedbackBefore: [],
+          fetchedAt: NOW,
+          avgImpression: 0.62,
+        },
       ],
       skipDuplicates: true,
     });

@@ -1,25 +1,34 @@
-import { SHORT_SOURCE_NAMES, SOURCE_NAMES, formatUtcDay } from '../../engine/public-read';
-import { barsGeometry, fillDays, spreadLabels } from '../../engine/chart-geometry';
+import { SOURCE_NAMES, formatUtcDay } from '../../engine/public-read';
+import { barsGeometry, fillDays, yTicksTween, type ChartGeometry } from '../../engine/chart-geometry';
 import type { ActivityTypeDto } from '../../medschools.contract';
 import {
   ChartFrame,
   DataTable,
   EmptyNote,
-  EndLabel,
+  PlotClip,
   ResponsivePlot,
   XAxis,
   YAxis,
   type ChartLabels,
+  type Probe,
 } from './ChartFrame';
+import { useTween } from './useTween';
 
 type ActivitySeries = ActivityTypeDto['sources'][number];
 
 /**
- * Daily reported events for one event type, from the primary source only, as thin ink bars. The other sources are
- * compared in the cumulative chart below; drawing them here as well put a dashed spike on every day. The y axis
- * starts at 0.
+ * Daily reported events for one event type, from the primary source only, as thin bars in the category's colour (O7;
+ * `color` is a `--site-chart-*` var from `chartColors.ts`). One series, so there is no legend: the title names the
+ * category and the caption the source. The other sources are compared in the cumulative chart below. The y axis
+ * starts at 0 and tweens when the data changes.
  */
-export function DailyBars(p: { primary: ActivitySeries; from: string; to: string; labels: ChartLabels }) {
+export function DailyBars(p: {
+  primary: ActivitySeries;
+  from: string;
+  to: string;
+  color: string;
+  labels: ChartLabels;
+}) {
   const { labels } = p;
   const nf = new Intl.NumberFormat(labels.locale);
   const days = fillDays(p.primary.days, p.from, p.to);
@@ -29,6 +38,8 @@ export function DailyBars(p: { primary: ActivitySeries; from: string; to: string
     if (n < 2) return n === 1 ? [0] : [];
     return [...new Set(Array.from({ length: count }, (_, i) => Math.round(((n - 1) * i) / (count - 1))))];
   };
+  const target = barsGeometry(hasData ? days : [], 0).top;
+  const tween = useTween(target);
 
   const dates = [...p.primary.days].map((d) => d.date).sort();
   const counts = new Map(p.primary.days.map((d) => [d.date, d.count]));
@@ -36,23 +47,54 @@ export function DailyBars(p: { primary: ActivitySeries; from: string; to: string
     formatUtcDay(date, labels.locale, { month: 'short', day: 'numeric', year: 'numeric' }),
     nf.format(counts.get(date) ?? 0),
   ]);
+  const name = SOURCE_NAMES[p.primary.source];
+  // One geometry per drawing per frame: the probe asks for every bar's x on each pointer move.
+  const geos = new Map<string, ReturnType<typeof barsGeometry>>();
+  const geoOf = (g: ChartGeometry) => {
+    let geo = geos.get(g.id);
+    if (!geo) geos.set(g.id, (geo = barsGeometry(hasData ? days : [], 0, g, tween.value)));
+    return geo;
+  };
+
+  const probe: Probe | undefined = hasData
+    ? {
+        count: n,
+        x: (g, i) => {
+          const b = geoOf(g).bars[i]!;
+          return b.x + b.w / 2;
+        },
+        at: (i) => {
+          const d = days[i]!;
+          return {
+            label: formatUtcDay(d.date, labels.locale, { month: 'short', day: 'numeric', year: 'numeric' }),
+            rows: [
+              {
+                key: p.primary.source,
+                name,
+                color: p.color,
+                text: nf.format(d.count),
+                y: (g) => geoOf(g).bars[i]!.y,
+              },
+            ],
+          };
+        },
+      }
+    : undefined;
 
   return (
     <ChartFrame
       title={labels.title}
       unit={labels.unitDaily}
-      sourcesLine={labels.sourcesLine({ primary: SOURCE_NAMES[p.primary.source], comparison: [] })}
-      summary={labels.summary({
-        lines: [{ name: SOURCE_NAMES[p.primary.source], total: p.primary.days.reduce((t, d) => t + d.count, 0) }],
-      })}
+      sourcesLine={labels.sourcesLine({ primary: name, comparison: [] })}
       tableLabel={labels.showData}
-      table={<DataTable head={[labels.date, SOURCE_NAMES[p.primary.source]]} rows={rows} />}
+      table={<DataTable head={[labels.date, name]} rows={rows} />}
     >
       <ResponsivePlot
-        render={(g) => {
-          const geo = barsGeometry(hasData ? days : [], 0, g);
-          const lastBar = geo.bars[geo.bars.length - 1];
-          const [labelY] = spreadLabels(lastBar ? [lastBar.y] : [], g.labelGap, [g.plot.top + 4, g.plot.bottom]);
+        summary={labels.summary({ lines: [{ name, total: p.primary.days.reduce((t, d) => t + d.count, 0) }] })}
+        hint={labels.hint}
+        probe={probe}
+        render={(g, clipId) => {
+          const geo = geoOf(g);
           const xs = hasData
             ? tickIdx(g.xTickCount).map((i) => {
                 const b = geo.bars[i]!;
@@ -61,22 +103,20 @@ export function DailyBars(p: { primary: ActivitySeries; from: string; to: string
             : [];
           return (
             <>
-              <YAxis g={g} ticks={geo.yTicks} format={(v) => nf.format(v)} />
+              <defs>
+                <PlotClip id={clipId} g={g} />
+              </defs>
+              <YAxis
+                g={g}
+                ticks={yTicksTween(tween.from, tween.to, tween.p, tween.value, g)}
+                format={(v) => nf.format(v)}
+              />
               <XAxis g={g} ticks={xs} />
               {hasData ? (
-                <g>
+                <g clipPath={`url(#${clipId})`}>
                   {geo.bars.map((b, i) => (
-                    <rect key={days[i]!.date} x={b.x} y={b.y} width={b.w} height={b.h} fill="var(--site-text)" />
+                    <rect key={days[i]!.date} x={b.x} y={b.y} width={b.w} height={b.h} fill={p.color} />
                   ))}
-                  {lastBar && labelY !== undefined ? (
-                    <EndLabel
-                      g={g}
-                      x={lastBar.x + lastBar.w}
-                      y={labelY}
-                      text={g.shortLabels ? SHORT_SOURCE_NAMES[p.primary.source] : SOURCE_NAMES[p.primary.source]}
-                      ink="ink"
-                    />
-                  ) : null}
                 </g>
               ) : (
                 <EmptyNote g={g} text={labels.empty} />

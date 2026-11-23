@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1307 endpoints across 203 groups: 169 route files under `app/routes/api` and 1138 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1321 endpoints across 203 groups: 169 route files under `app/routes/api` and 1152 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1299,14 +1299,28 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/medschools`
 
-6 routes.
+20 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/medschools/live` | `GET` | `features/medschools/api/medschools.live.server.ts` |
+| `/api/medschools/me/list-items` | `POST` | `features/medschools/api/medschools.me.list-items.server.ts` |
+| `/api/medschools/me/list-order` | `PUT` | `features/medschools/api/medschools.me.list-order.server.ts` |
+| `/api/medschools/me/lists` | `GET` `POST` | `features/medschools/api/medschools.me.lists.server.ts` |
+| `/api/medschools/me/lists/:id` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.lists.$id.server.ts` |
+| `/api/medschools/me/lists/:id/add-to-tracker` | `POST` | `features/medschools/api/medschools.me.lists.$id.add-to-tracker.server.ts` |
+| `/api/medschools/me/lists/:id/item-order` | `PUT` | `features/medschools/api/medschools.me.lists.$id.item-order.server.ts` |
+| `/api/medschools/me/lists/:id/items/:itemId` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.lists.$id.items.$itemId.server.ts` |
+| `/api/medschools/me/prefs` | `GET` `PUT` | `features/medschools/api/medschools.me.prefs.server.ts` |
+| `/api/medschools/me/tracker` | `GET` | `features/medschools/api/medschools.me.tracker.server.ts` |
+| `/api/medschools/me/tracker/applications` | `POST` | `features/medschools/api/medschools.me.tracker.applications.server.ts` |
+| `/api/medschools/me/tracker/applications/:id` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.tracker.applications.$id.server.ts` |
+| `/api/medschools/me/tracker/applications/:id/milestones/:type` | `DELETE` `PUT` | `features/medschools/api/medschools.me.tracker.applications.$id.milestones.$type.server.ts` |
+| `/api/medschools/me/tracker/cycle` | `DELETE` `PUT` | `features/medschools/api/medschools.me.tracker.cycle.server.ts` |
 | `/api/medschools/schools` | `GET` | `features/medschools/api/medschools.schools.server.ts` |
 | `/api/medschools/schools/:slug` | `GET` | `features/medschools/api/medschools.schools.$slug.server.ts` |
 | `/api/medschools/schools/:slug/activity` | `GET` | `features/medschools/api/medschools.schools.$slug.activity.server.ts` |
+| `/api/medschools/schools/:slug/arrivals` | `GET` | `features/medschools/api/medschools.schools.$slug.arrivals.server.ts` |
 | `/api/medschools/schools/:slug/history` | `GET` | `features/medschools/api/medschools.schools.$slug.history.server.ts` |
 | `/api/medschools/today` | `GET` | `features/medschools/api/medschools.today.server.ts` |
 

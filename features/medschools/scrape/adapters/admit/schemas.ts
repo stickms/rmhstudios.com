@@ -20,13 +20,28 @@ export const feedData = z.object({
   getRecentSchoolCycleUpdates: z.array(z.unknown()),
 });
 
-/** Selects md_phd and nothing else. */
+/** One history entry, validated on its own so a malformed entry drops only itself. */
+export const historyEntry = z.object({
+  school: z.object({ slug: z.string().min(1) }),
+  secondary_submitted: z.string().nullish(),
+  interview_received: z.string().nullish(),
+  decision_date: z.string().nullish(),
+  decision: z.string().nullish(),
+});
+
+/** Selects md_phd and the history (school slug and dates only). */
 export const profileFlagData = z.object({
   getCycleTrackProfileByUserId: z
     .object({
       md_phd: z.boolean().nullable(),
+      history: z.array(z.unknown()).nullish(),
     })
     .nullable(),
+});
+
+/** Member discovery rows: the user id only. */
+export const resultUsersData = z.object({
+  getAllCycleResults: z.array(z.object({ user_id: z.string().nullish() })),
 });
 
 export const interviewSchoolsData = z.object({

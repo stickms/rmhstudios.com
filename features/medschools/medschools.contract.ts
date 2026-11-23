@@ -1,7 +1,26 @@
 /**
  * Contracts for the med schools admin endpoints. Client-safe: no zod, no server imports.
  */
+import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
+import type { Prefs } from './engine/prefs';
+import type { MilestoneType } from './engine/tracker';
+import type {
+  addApplicationBody,
+  addListToTrackerBody,
+  createListBody,
+  deleteCycleQuery,
+  getTrackerQuery,
+  patchApplicationBody,
+  patchListBody,
+  patchListItemBody,
+  putCycleBody,
+  putItemOrderBody,
+  putListOrderBody,
+  putMilestoneBody,
+  putPrefsBody,
+  saveListItemBody,
+} from './api/me-schemas';
 import type { MedEventType, MedProgram, MedSource } from './engine/types';
 
 export interface AliasMissDto {
@@ -161,6 +180,8 @@ export interface ActivityTypeDto {
 
 export interface HistoryCycleDto {
   cycleYear: number;
+  /** The cycle's day zero (`YYYY-MM-DD`): the History overlay aligns cycles by calendar date from it (O7). */
+  dayZeroOn: string;
   dayZeroEstimated: boolean;
   sources: { source: MedSourceId; points: { day: number; cumulative: number }[]; total: number }[];
 }
@@ -202,6 +223,21 @@ export interface MedSchoolHistoryRes {
   cycles: HistoryCycleDto[];
 }
 
+export interface MedArrivalsRes {
+  program: MedProgramFilter;
+  eventType: MedChartedTypeId;
+  /** The zone the weekdays and hours are in (`America/New_York`); the chart names it. */
+  zone: string;
+  /** Events counted (ADMIT and SDN with an exact time). Under 10 the arrays are empty and the chart is hidden. */
+  total: number;
+  /** Monday first, seven counts. */
+  weekdays: number[];
+  /** Eastern hour 0 to 23, 24 counts. */
+  hours: number[];
+  /** Newest cycle first. `firstOn` and `medianOn` are Eastern calendar days, `YYYY-MM-DD`: aggregates, not a timestamp. */
+  cycles: { cycleYear: number; count: number; firstOn: string; medianOn: string }[];
+}
+
 export interface MedLiveRes {
   events: LiveEventDto[];
   nextCursor: string | null;
@@ -229,6 +265,8 @@ export const listMedSchoolsApi = endpoint<{
     degree?: MedDegreeId | undefined;
     state?: string | undefined;
     program?: MedProgramFilter | undefined;
+    /** The program set as a comma list (`md,do-phd`, see `engine/programs.ts`); omitted when every program is on. */
+    programs?: string | undefined;
   };
   res: ListMedSchoolsRes;
 }>()({ method: 'GET', path: '/api/medschools/schools' });
@@ -249,12 +287,24 @@ export const getMedSchoolHistoryApi = endpoint<{
   res: MedSchoolHistoryRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/history' });
 
+export const getMedSchoolArrivalsApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
+  res: MedArrivalsRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/arrivals' });
+
 export const getMedLiveApi = endpoint<{
   query: {
     type?: MedEventTypeId | undefined;
     school?: string | undefined;
     degree?: MedDegreeId | undefined;
     program?: MedLiveProgramFilter | undefined;
+    /** The program set (see `listMedSchoolsApi`); with it `degree` and `program` are ignored. */
+    programs?: string | undefined;
+    /** The activity rail's search: school name or short name, or a state code. */
+    q?: string | undefined;
+    state?: string | undefined;
+    /** Several event types as a comma list (`acceptance,rejection`); `type` names one. */
+    types?: string | undefined;
     cursor?: string | undefined;
     limit?: number | undefined;
   };
@@ -265,3 +315,164 @@ export const getMedTodayApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; degree?: MedDegreeId | undefined };
   res: MedTodayRes;
 }>()({ method: 'GET', path: '/api/medschools/today' });
+
+/* ------------------------- private tracker (me/**) ------------------------- */
+/* Signed-in only, never publicly cached. No DTO carries a user id, a cycle id or an event hash (spec §6). */
+
+export interface TrackerSchoolDto {
+  slug: string;
+  name: string;
+  shortName: string;
+  degree: MedDegreeId;
+  state: string;
+  /** False for a deactivated school: the row stays, the link degrades to plain text. */
+  active: boolean;
+}
+
+export interface TrackerApplicationDto {
+  id: string;
+  school: TrackerSchoolDto;
+  program: 'REG' | 'PHD';
+  notes: string | null;
+  /** Ordered by date, then by `MILESTONE_TYPES`. `date` is a calendar day, `YYYY-MM-DD`. */
+  milestones: { type: MilestoneType; date: string }[];
+}
+
+export interface TrackerCycleDto {
+  cycleYear: number;
+  homeState: string | null;
+  shareAnonymously: boolean;
+  applications: TrackerApplicationDto[];
+}
+
+export interface TrackerDto {
+  /** False when the server secret is unset: the switch is disabled, the tracker still works unshared. */
+  sharingAvailable: boolean;
+  /** The user's cycle years, newest first. */
+  cycles: number[];
+  cycle: TrackerCycleDto | null;
+}
+
+export const getMedTrackerApi = endpoint<{ query: z.infer<typeof getTrackerQuery>; res: TrackerDto }>()({
+  method: 'GET',
+  path: '/api/medschools/me/tracker',
+});
+
+export const putMedTrackerCycleApi = endpoint<{ body: z.infer<typeof putCycleBody>; res: TrackerDto }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/tracker/cycle',
+});
+
+export const deleteMedTrackerCycleApi = endpoint<{ query: z.infer<typeof deleteCycleQuery>; res: { ok: true } }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/tracker/cycle',
+});
+
+export const addMedApplicationApi = endpoint<{
+  body: z.infer<typeof addApplicationBody>;
+  res: TrackerApplicationDto;
+}>()({ method: 'POST', path: '/api/medschools/me/tracker/applications' });
+
+export const patchMedApplicationApi = endpoint<{
+  body: z.infer<typeof patchApplicationBody>;
+  res: TrackerApplicationDto;
+}>()({ method: 'PATCH', path: '/api/medschools/me/tracker/applications/$id' });
+
+export const deleteMedApplicationApi = endpoint<{ res: { ok: true } }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/tracker/applications/$id',
+});
+
+export const putMedMilestoneApi = endpoint<{
+  body: z.infer<typeof putMilestoneBody>;
+  res: TrackerApplicationDto;
+}>()({ method: 'PUT', path: '/api/medschools/me/tracker/applications/$id/milestones/$type' });
+
+export const deleteMedMilestoneApi = endpoint<{ res: TrackerApplicationDto }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/tracker/applications/$id/milestones/$type',
+});
+
+/* ------------------------- saved lists and preferences (me/**) ------------------------- */
+
+/** `ANY` is "either program": a list item that does not pick one (spec section 4a). */
+export type MedListProgramId = 'ANY' | 'REG' | 'PHD';
+
+export interface MedListItemDto {
+  id: string;
+  school: TrackerSchoolDto;
+  program: MedListProgramId;
+  note: string | null;
+  position: number;
+}
+
+/** No `userId`. `GET me/lists` returns at most 20 lists and 4,000 items, the one query every list surface shares. */
+export interface MedListDto {
+  id: string;
+  name: string;
+  position: number;
+  items: MedListItemDto[];
+}
+
+/** The preferences, the defaults when the user has no row (`ALL`, null, null, `[]`). */
+export type MedPrefsDto = Prefs;
+
+export const getMedListsApi = endpoint<{ res: { lists: MedListDto[] } }>()({
+  method: 'GET',
+  path: '/api/medschools/me/lists',
+});
+
+export const createMedListApi = endpoint<{ body: z.infer<typeof createListBody>; res: MedListDto }>()({
+  method: 'POST',
+  path: '/api/medschools/me/lists',
+});
+
+export const patchMedListApi = endpoint<{ body: z.infer<typeof patchListBody>; res: MedListDto }>()({
+  method: 'PATCH',
+  path: '/api/medschools/me/lists/$id',
+});
+
+export const deleteMedListApi = endpoint<{ res: { ok: true } }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/lists/$id',
+});
+
+export const putMedListOrderApi = endpoint<{ body: z.infer<typeof putListOrderBody>; res: { lists: MedListDto[] } }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/list-order',
+});
+
+export const saveMedListItemApi = endpoint<{ body: z.infer<typeof saveListItemBody>; res: MedListDto }>()({
+  method: 'POST',
+  path: '/api/medschools/me/list-items',
+});
+
+export const patchMedListItemApi = endpoint<{ body: z.infer<typeof patchListItemBody>; res: MedListDto }>()({
+  method: 'PATCH',
+  path: '/api/medschools/me/lists/$id/items/$itemId',
+});
+
+export const deleteMedListItemApi = endpoint<{ res: MedListDto }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/lists/$id/items/$itemId',
+});
+
+export const putMedListItemOrderApi = endpoint<{ body: z.infer<typeof putItemOrderBody>; res: MedListDto }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/lists/$id/item-order',
+});
+
+export const addMedListToTrackerApi = endpoint<{
+  body: z.infer<typeof addListToTrackerBody>;
+  res: { cycleYear: number; added: number; skipped: number };
+}>()({ method: 'POST', path: '/api/medschools/me/lists/$id/add-to-tracker' });
+
+export const getMedPrefsApi = endpoint<{ res: MedPrefsDto }>()({
+  method: 'GET',
+  path: '/api/medschools/me/prefs',
+});
+
+export const putMedPrefsApi = endpoint<{ body: z.infer<typeof putPrefsBody>; res: MedPrefsDto }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/prefs',
+});

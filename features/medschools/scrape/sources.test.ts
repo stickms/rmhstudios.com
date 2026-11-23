@@ -3,7 +3,7 @@ import { ADMIT_GRAPHQL_PATH, MEDSCHOOLS_USER_AGENT, SOURCES } from './sources';
 
 describe('medschools sources', () => {
   it('identifies itself with the agreed user agent', () => {
-    expect(MEDSCHOOLS_USER_AGENT).toBe('RMHStudiosMedSchools/1.0 (+https://rmhstudios.com/rmh-medschool)');
+    expect(MEDSCHOOLS_USER_AGENT).toBe('MarlonJack/1.0 (contact: admin@rmhstudios.com)');
   });
 
   it('configures CycleTrack politeness', () => {
@@ -22,7 +22,8 @@ describe('medschools sources', () => {
   it('ADMIT politeness matches spec §8', () => {
     expect(SOURCES.ADMIT.origin).toBe('https://api.admit.org');
     expect(SOURCES.ADMIT.spacingMs).toBe(1000);
-    expect(SOURCES.ADMIT.backfillSpacingMs).toBe(2000);
+    expect(SOURCES.ADMIT.backfillSpacingMs).toBe(3000);
+    expect(SOURCES.ADMIT.backfillJitterMs).toBe(1000);
     expect(SOURCES.ADMIT.maxConsecutiveFailures).toBe(3);
     expect(SOURCES.ADMIT.userAgent).toBe(MEDSCHOOLS_USER_AGENT);
     expect(SOURCES.ADMIT.headers?.origin).toBe('https://med.admit.org');
@@ -35,8 +36,10 @@ describe('medschools sources', () => {
 
   it('SDN_FORUMS politeness matches the plan', () => {
     expect(SOURCES.SDN_FORUMS.origin).toBe('https://forums.studentdoctor.net');
-    expect(SOURCES.SDN_FORUMS.spacingMs).toBeGreaterThanOrEqual(1500);
-    expect(SOURCES.SDN_FORUMS.backfillSpacingMs).toBeGreaterThanOrEqual(2000);
+    expect(SOURCES.SDN_FORUMS.spacingMs).toBeGreaterThanOrEqual(3000);
+    expect(SOURCES.SDN_FORUMS.jitterMs).toBeGreaterThan(0);
+    expect(SOURCES.SDN_FORUMS.backfillSpacingMs).toBeGreaterThanOrEqual(3000);
+    expect(SOURCES.SDN_FORUMS.backfillJitterMs).toBeGreaterThan(0);
     expect(SOURCES.SDN_FORUMS.maxConsecutiveFailures).toBe(3);
     expect(SOURCES.SDN_FORUMS.userAgent).toBe(MEDSCHOOLS_USER_AGENT);
     expect(SOURCES.SDN_FORUMS.headers).toBeUndefined();

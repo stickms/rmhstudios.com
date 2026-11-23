@@ -110,6 +110,7 @@ export async function runSdnInterviews(
 
   const session = host.session({
     spacingMs: SOURCES.SDN_WWW.backfillSpacingMs,
+    jitterMs: SOURCES.SDN_WWW.backfillJitterMs ?? SOURCES.SDN_WWW.jitterMs ?? 0,
   });
   let error: string | null = null;
   let incomplete = false;

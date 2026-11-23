@@ -12,7 +12,6 @@ export function useChartLabels(): (title: string) => ChartLabels {
     unit: t('chart-unit', { defaultValue: 'Reported events' }),
     unitDaily: t('chart-unit-daily', { defaultValue: 'Reported events per day' }),
     unitCumulative: t('chart-unit-cumulative', { defaultValue: 'Reported events, running total' }),
-    daysSinceStart: t('chart-days-since-start', { defaultValue: 'Days since cycle start' }),
     sourcesLine: ({ primary, comparison }) =>
       comparison.length > 0
         ? t('chart-sources-with-others', {
@@ -25,11 +24,13 @@ export function useChartLabels(): (title: string) => ChartLabels {
     primary: t('chart-primary', { defaultValue: 'Primary' }),
     comparison: t('chart-comparison', { defaultValue: 'Comparison' }),
     date: t('chart-date', { defaultValue: 'Date' }),
-    day: t('chart-day', { defaultValue: 'Day of cycle' }),
     count: t('chart-count', { defaultValue: 'Reported events' }),
     cumulative: t('chart-cumulative', { defaultValue: 'cumulative' }),
     empty: t('chart-empty', { defaultValue: 'No reported events yet' }),
     showData: t('chart-show-data', { defaultValue: 'Show data' }),
+    hint: t('chart-hint', {
+      defaultValue: 'Use the left and right arrow keys to read the values by date.',
+    }),
     summary: ({ lines }) =>
       t('chart-summary', {
         defaultValue: 'Chart of reported events: {{lines}}',

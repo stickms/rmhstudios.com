@@ -306,6 +306,14 @@
 .site-margin__page {
   margin-block-start: 26px;
 }
+/* A section's activity rail (margin-takeover.ts): it stays in view 16px off the top and scrolls inside itself, so
+   "load more on scroll" works however short the page is. */
+.site-margin__rail {
+  position: sticky;
+  inset-block-start: 16px;
+  max-block-size: calc(100dvh - 32px);
+  overflow-y: auto;
+}
 
 /* /sections: rows on rules (S2). */
 .sections-list {

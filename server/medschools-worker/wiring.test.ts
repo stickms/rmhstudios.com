@@ -65,6 +65,13 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_ADMIT_ENABLED',
       'MEDSCHOOLS_ADMIT_LIVE_CRON',
       'MEDSCHOOLS_INTERVIEWS_CRON',
+      'MEDSCHOOLS_ADMIT_HISTORY_CRON',
+      'MEDSCHOOLS_ADMIT_HISTORY_MAX_PROFILES',
+      'MEDSCHOOLS_ADMIT_HISTORY_DAILY_PROFILES',
+      'MEDSCHOOLS_ADMIT_DAILY_REQUESTS',
+      'MEDSCHOOLS_SDN_FORUMS_DAILY_REQUESTS',
+      'MEDSCHOOLS_SDN_WWW_DAILY_REQUESTS',
+      'MEDSCHOOLS_CYCLETRACK_DAILY_REQUESTS',
       'MEDSCHOOLS_SDN_ENABLED',
       'MEDSCHOOLS_SDN_LIVE_CRON',
       'MEDSCHOOLS_SDN_BACKFILL_CRON',
@@ -72,6 +79,12 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_SDN_MAX_LLM_CALLS',
       'MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS',
       'MEDSCHOOLS_AI_MONTHLY_USD',
+      'MEDSCHOOLS_ADMIT_FORUMS_ENABLED',
+      'MEDSCHOOLS_ADMIT_FORUMS_CRON',
+      'MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS',
+      'MEDSCHOOLS_ADMIT_FORUMS_MAX_LLM_CALLS',
+      'MEDSCHOOLS_ADMIT_FORUMS_DAILY_REQUESTS',
+      'MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE',
     ]) {
       expect(env, name).toContain(name);
     }
@@ -122,12 +135,14 @@ describe('medschools-worker wiring', () => {
     expect(src).toContain("process.env.MEDSCHOOLS_INTERVIEWS_CRON?.trim() || '35 4 * * *'");
     const live = slice(src, 'admitLiveConsumer = await startScheduledConsumer', 'interviewsConsumer = await');
     expect(live).toContain('queue: ADMIT_LIVE_QUEUE');
-    expect(live).toContain('expireInSeconds: 20 * 60');
+    expect(live).toContain('expireInSeconds: ADMIT_LIVE_EXPIRY_S');
+    expect(src).toContain('const ADMIT_LIVE_EXPIRY_S = 20 * 60');
     expect(live).toContain('retryLimit: 0');
     expect(live).toContain('handler: admitLiveTick');
     const iv = slice(src, 'interviewsConsumer = await startScheduledConsumer', 'Started');
     expect(iv).toContain('queue: INTERVIEWS_QUEUE');
-    expect(iv).toContain('expireInSeconds: 3 * 60 * 60');
+    expect(iv).toContain('expireInSeconds: INTERVIEWS_EXPIRY_S');
+    expect(src).toContain('const INTERVIEWS_EXPIRY_S = 3 * 60 * 60');
     expect(iv).toContain('retryLimit: 0');
     expect(iv).toContain('handler: interviewsTick');
   });
@@ -221,17 +236,17 @@ describe('medschools-worker wiring', () => {
     expect(src).toContain("process.env.MEDSCHOOLS_SDN_INTERVIEWS_CRON?.trim() || '50 5 * * 1'");
     const live = slice(src, 'sdnLiveConsumer = await startScheduledConsumer', 'sdnBackfillConsumer = await');
     expect(live).toContain('queue: SDN_LIVE_QUEUE');
-    expect(live).toContain('expireInSeconds: 25 * 60');
+    expect(live).toContain('expireInSeconds: SDN_LIVE_EXPIRY_S');
     expect(live).toContain('retryLimit: 0');
     expect(live).toContain('handler: sdnLiveTick');
     const bf = slice(src, 'sdnBackfillConsumer = await startScheduledConsumer', 'sdnInterviewsConsumer = await');
     expect(bf).toContain('queue: SDN_BACKFILL_QUEUE');
-    expect(bf).toContain('expireInSeconds: 3 * 60 * 60');
+    expect(bf).toContain('expireInSeconds: SDN_BACKFILL_EXPIRY_S');
     expect(bf).toContain('retryLimit: 0');
     expect(bf).toContain('handler: sdnBackfillTick');
     const iv = slice(src, 'sdnInterviewsConsumer = await startScheduledConsumer', 'Started');
     expect(iv).toContain('queue: SDN_INTERVIEWS_QUEUE');
-    expect(iv).toContain('expireInSeconds: 60 * 60');
+    expect(iv).toContain('expireInSeconds: SDN_INTERVIEWS_EXPIRY_S');
     expect(iv).toContain('retryLimit: 0');
     expect(iv).toContain('handler: sdnInterviewsTick');
   });
@@ -339,5 +354,127 @@ describe('medschools-worker wiring', () => {
     const src = flat();
     const sd = src.slice(src.indexOf('async function shutdown'));
     expect(sd.match(/\.stop\(\)/g)).toHaveLength(1);
+  });
+
+  it('registers medschools.rmh-publish (the daily public snapshot) as an exclusive pg-boss queue, off its own tick', () => {
+    const src = flat();
+    expect(src).toContain("const RMH_PUBLISH_QUEUE = 'medschools.rmh-publish'");
+    expect(src).toContain('queue: RMH_PUBLISH_QUEUE, cron: RMH_PUBLISH_CRON');
+    expect(src).toContain('handler: rmhPublishTick');
+    expect(src).toContain('rmhPublishConsumer?.pause()');
+    expect(read('features/medschools/scrape/run-rmh-publish.ts')).toContain("RMH_PUBLISH_CRON = '5 0 * * *'");
+  });
+
+  it('registers medschools.admit-history as its own exclusive queue with a daily off-peak cron, behind the Admit gate', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_HISTORY_QUEUE = 'medschools.admit-history'");
+    expect(src).toContain("process.env.MEDSCHOOLS_ADMIT_HISTORY_CRON?.trim() || '10 3 * * *'");
+    expect(src).toContain('const ADMIT_HISTORY_EXPIRY_S = 3 * 60 * 60');
+    const reg = slice(src, 'admitHistoryConsumer = await startScheduledConsumer', 'sdnLiveConsumer = await');
+    expect(reg).toContain('queue: ADMIT_HISTORY_QUEUE');
+    expect(reg).toContain('expireInSeconds: ADMIT_HISTORY_EXPIRY_S');
+    expect(reg).toContain('retryLimit: 0');
+    expect(reg).toContain('handler: admitHistoryTick');
+    const tick = slice(src, 'const admitHistoryTick', 'const sdnLiveTick');
+    expect(tick).toContain("guarded( 'admit-history'");
+    expect(tick).toContain('host: admitHost');
+    expect(tick.indexOf("admitGate('admit-history'")).toBeLessThan(tick.indexOf('runAdmitHistory('));
+    expect(tick).toContain('ADMIT_HISTORY_EXPIRY_S * 1000');
+    // it is paused at shutdown with the others
+    expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitHistoryConsumer?.pause()');
+  });
+
+  it('the history backfill is queued at start while it is owed, only when Admit is enabled and the secret is set', () => {
+    const src = flat();
+    const main = src.slice(src.indexOf('async function main()'));
+    const at = main.indexOf('admitHistoryOwed(');
+    expect(at).toBeGreaterThan(-1);
+    const before = main.slice(Math.max(0, at - 160), at);
+    expect(before).toContain('ADMIT_ENABLED && secretOk()');
+    expect(main.slice(at, at + 260)).toContain('admitHistoryConsumer.runNow(');
+    const boot = slice(src, 'async function bootstrap()', '// ─── Scheduler');
+    expect(boot).not.toContain('admitHistoryConsumer');
+  });
+
+  it('the Admit ticks use the shared overlap guard with their queue expiry as the hang limit; the run ends itself earlier', () => {
+    const src = flat();
+    expect(src).toContain("import { createGuard } from './guard'");
+    expect(src).toContain('const guarded = createGuard(');
+    expect(slice(src, 'const admitLiveTick', 'const interviewsTick')).toContain('ADMIT_LIVE_EXPIRY_S * 1000');
+    expect(slice(src, 'const interviewsTick', 'const admitHistoryTick')).toContain('INTERVIEWS_EXPIRY_S * 1000');
+    expect(slice(src, 'const interviewsTick', 'const admitHistoryTick')).toContain(
+      'shouldStop: stopAfter(INTERVIEWS_RUN_DEADLINE_MS)',
+    );
+    // 150 min run deadline < 180 min expiry
+    expect(src).toContain('const INTERVIEWS_RUN_DEADLINE_MS = 150 * 60_000');
+  });
+
+  it('the interviews tick logs when it starts, before the gate', () => {
+    const iv = slice(flat(), 'const interviewsTick', 'const admitHistoryTick');
+    expect(iv.indexOf('interviews tick starting')).toBeGreaterThan(-1);
+    expect(iv.indexOf('interviews tick starting')).toBeLessThan(iv.indexOf("admitGate('interviews'"));
+  });
+
+  it('every polite host gets a persisted daily budget; the Admit jobs share one host and the history job has its own quota', () => {
+    const src = flat();
+    expect(src).toContain('createDailyBudget(medPrisma, host,');
+    for (const h of ['CYCLETRACK', 'ADMIT', 'SDN_FORUMS', 'SDN_WWW'])
+      expect(src, h).toContain(`SOURCES.${h}, { budget: hostBudget('${h}') }`);
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+    expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:history'");
+    expect(slice(src, 'const admitHistoryTick', 'const sdnLiveTick')).toContain('quota: admitHistoryQuota');
+  });
+
+  it('registers medschools.admit-forums as its own exclusive queue, every 3 hours, behind the Admit gate and its own flag', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_FORUMS_QUEUE = 'medschools.admit-forums'");
+    expect(src).toContain("process.env.MEDSCHOOLS_ADMIT_FORUMS_CRON?.trim() || '0 */3 * * *'");
+    expect(src).toContain('const ADMIT_FORUMS_EXPIRY_S = 40 * 60');
+    const reg = slice(src, 'admitForumsConsumer = await startScheduledConsumer', 'log.info( `Started');
+    expect(reg).toContain('queue: ADMIT_FORUMS_QUEUE');
+    expect(reg).toContain('expireInSeconds: ADMIT_FORUMS_EXPIRY_S');
+    expect(reg).toContain('retryLimit: 0');
+    expect(reg).toContain('handler: admitForumsTick');
+    const tick = slice(src, 'const admitForumsTick', 'const sdnLiveTick');
+    expect(tick).toContain("guarded( 'admit-forums'");
+    expect(tick).toContain('host: admitHost');
+    expect(tick).toContain('ADMIT_FORUMS_ENABLED && data.manual !== true');
+    expect(tick.indexOf("admitGate('admit-forums'")).toBeLessThan(tick.indexOf('runAdmitForums('));
+    expect(tick).toContain('ADMIT_FORUMS_EXPIRY_S * 1000');
+    expect(tick).toContain('quota: admitForumsQuota');
+    // the run ends itself (30 min) before its queue expires (40 min)
+    expect(tick).toContain('stopAfter(ADMIT_FORUMS_RUN_DEADLINE_MS)');
+    expect(src).toContain('const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000');
+    expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitForumsConsumer?.pause()');
+  });
+
+  it('the forums job keeps its own model budget share and its own request quota on the shared Admit host', () => {
+    const src = flat();
+    expect(src).toContain('createSdnAi(ADMIT_FORUMS_PROMPT_ID)');
+    expect(src).toContain('createForumsBudgetGate(');
+    expect(src).toContain('forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE');
+    expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:forums'");
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+  });
+
+  it('every tick whose queue expires gets a guard max runtime equal to that expiry', () => {
+    const src = read('server/medschools-worker/index.ts');
+    const ticks: Array<[string, string]> = [
+      ['sdn-live', 'SDN_LIVE_EXPIRY_S'],
+      ['sdn-backfill', 'SDN_BACKFILL_EXPIRY_S'],
+      ['sdn-interviews', 'SDN_INTERVIEWS_EXPIRY_S'],
+      ['rmh-publish', 'RMH_PUBLISH_EXPIRY_S'],
+    ];
+    for (const [name, constant] of ticks) {
+      expect(src, name).toMatch(new RegExp(`\\},\\s*${constant} \\* 1000,?\\s*\\);`));
+      expect(src, `${name} queue`).toMatch(new RegExp(`expireInSeconds:\\s*${constant}\\b`));
+    }
+    for (const c of [
+      'SDN_LIVE_EXPIRY_S = 25 * 60',
+      'SDN_BACKFILL_EXPIRY_S = 3 * 60 * 60',
+      'SDN_INTERVIEWS_EXPIRY_S = 60 * 60',
+      'RMH_PUBLISH_EXPIRY_S = 10 * 60',
+    ])
+      expect(src).toContain(`const ${c};`);
   });
 });

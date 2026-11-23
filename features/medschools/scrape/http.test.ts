@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createPoliteHost, SourceHaltedError } from './http';
+import { BudgetExhaustedError, createPoliteHost, SourceHaltedError, type PoliteHostDeps } from './http';
+import { createDailyBudget } from './request-budget';
+import { createFakePrisma } from './test-support';
 import { MEDSCHOOLS_USER_AGENT, SOURCES } from './sources';
 
 type Handler = (url: string, init: RequestInit, n: number) => Response | Promise<Response> | Error;
@@ -71,7 +73,7 @@ describe('createPoliteHost', () => {
     for (const c of h.calls) {
       expect(c.headers['user-agent']).toBe(MEDSCHOOLS_USER_AGENT);
     }
-    expect(MEDSCHOOLS_USER_AGENT).toBe('RMHStudiosMedSchools/1.0 (+https://rmhstudios.com/rmh-medschool)');
+    expect(MEDSCHOOLS_USER_AGENT).toBe('MarlonJack/1.0 (contact: admin@rmhstudios.com)');
   });
 
   it('spaces consecutive requests by at least 1000 ms (2000 with a session override)', async () => {
@@ -324,5 +326,130 @@ describe('createPoliteHost', () => {
       expect(s.halted).toBe(true);
       await expect(s.post(GQL, BODY)).rejects.toBeInstanceOf(SourceHaltedError);
     });
+  });
+});
+
+describe('jitter and the daily budget (fake clock)', () => {
+  function rig(over: Partial<PoliteHostDeps> = {}, config = SOURCES.ADMIT) {
+    let t = Date.UTC(2026, 10, 23, 3, 0, 0);
+    const sleeps: number[] = [];
+    const at: number[] = [];
+    const fetchImpl = (async (input: string | URL | Request) => {
+      const url = String(input);
+      if (!url.endsWith('/robots.txt')) at.push(t);
+      return url.endsWith('/robots.txt')
+        ? new Response('User-agent: *\nAllow: /', { status: 200 })
+        : new Response('{}');
+    }) as typeof fetch;
+    const host = createPoliteHost(config, {
+      fetchImpl,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+        t += ms;
+      },
+      now: () => t,
+      ...over,
+    });
+    return { host, at, sleeps, clock: () => t, advance: (ms: number) => (t += ms) };
+  }
+  const gaps = (at: number[]) => at.slice(1).map((x, i) => x - at[i]!);
+
+  it('the backfill session waits at least 3 s plus 0..1 s between requests', async () => {
+    for (const r of [0, 0.5, 0.999999]) {
+      const h = rig({ random: () => r });
+      const s = h.host.session({
+        spacingMs: SOURCES.ADMIT.backfillSpacingMs,
+        jitterMs: SOURCES.ADMIT.backfillJitterMs,
+      });
+      await s.post('/graphql', '{}');
+      await s.post('/graphql', '{}');
+      await s.post('/graphql', '{}');
+      for (const g of gaps(h.at)) {
+        expect(g).toBeGreaterThanOrEqual(3000);
+        expect(g).toBeLessThanOrEqual(4000);
+      }
+      expect(gaps(h.at)[0]).toBe(3000 + Math.floor(r * 1001));
+    }
+  });
+
+  it('the live session keeps its plain spacing: no jitter unless asked', async () => {
+    const h = rig({ random: () => 0.9 });
+    const s = h.host.session();
+    await s.post('/graphql', '{}');
+    await s.post('/graphql', '{}');
+    expect(gaps(h.at)).toEqual([SOURCES.ADMIT.spacingMs]);
+  });
+
+  it('the SDN forums host spaces every session at 3 s plus jitter, live included', async () => {
+    const h = rig({ random: () => 0.5 }, SOURCES.SDN_FORUMS);
+    const s = h.host.session();
+    await s.get('/forums/a');
+    await s.get('/forums/b');
+    expect(gaps(h.at)).toEqual([3000 + 500]);
+  });
+
+  it('a different jitter draw per request', async () => {
+    const draws = [0, 1 - 1e-9, 0.25];
+    let i = 0;
+    const h = rig({ random: () => draws[i++ % draws.length]! });
+    const s = h.host.session({ spacingMs: 3000, jitterMs: 1000 });
+    for (let n = 0; n < 4; n++) await s.post('/graphql', '{}');
+    // the first draw went to robots.txt, the next three to the requests
+    expect(new Set(gaps(h.at)).size).toBeGreaterThan(1);
+  });
+
+  it('every attempt spends the budget; when it is spent the session halts and no request is made', async () => {
+    const fake = createFakePrisma();
+    let t = Date.UTC(2026, 10, 23, 3, 0, 0);
+    const budget = createDailyBudget(
+      fake.prisma,
+      'ADMIT',
+      () => 3,
+      () => new Date(t),
+    );
+    const h = rig({ budget, now: () => t });
+    const s = h.host.session({ spacingMs: 10 });
+    // robots.txt (1) + two requests (2) = the budget of 3
+    await s.post('/graphql', '{}');
+    await s.post('/graphql', '{}');
+    expect(h.at).toHaveLength(2);
+    await expect(s.post('/graphql', '{}')).rejects.toBeInstanceOf(BudgetExhaustedError);
+    expect(h.at).toHaveLength(2);
+    expect(s.halted).toBe(true);
+    expect(s.lastFailure).toMatch(/daily request budget/);
+    await expect(s.post('/graphql', '{}')).rejects.toBeInstanceOf(SourceHaltedError);
+    expect(h.at).toHaveLength(2);
+    void t;
+  });
+
+  it('retries spend the budget too', async () => {
+    const fake = createFakePrisma();
+    const budget = createDailyBudget(
+      fake.prisma,
+      'ADMIT',
+      () => 3,
+      () => new Date(Date.UTC(2026, 10, 23)),
+    );
+    let n = 0;
+    const fetchImpl = (async (input: string | URL | Request) => {
+      n++;
+      return String(input).endsWith('/robots.txt')
+        ? new Response('User-agent: *\nAllow: /', { status: 200 })
+        : new Response('', { status: 503 });
+    }) as typeof fetch;
+    const host = createPoliteHost(SOURCES.ADMIT, { fetchImpl, sleep: async () => undefined, budget });
+    await expect(host.session().post('/graphql', '{}')).rejects.toBeInstanceOf(BudgetExhaustedError);
+    expect(n).toBe(3); // robots.txt, then two 503 attempts, then the budget said no
+  });
+
+  it('the static user agent is matched by robots.txt: its own group wins, otherwise the * group', async () => {
+    const { isPathAllowed } = await import('@/lib/rmhladder/adapters/robots');
+    const robots = 'User-agent: *\nDisallow: /members/\n\nUser-agent: MarlonJack\nDisallow: /private/\n';
+    expect(isPathAllowed(robots, MEDSCHOOLS_USER_AGENT, '/private/x')).toBe(false);
+    expect(isPathAllowed(robots, MEDSCHOOLS_USER_AGENT, '/members/x')).toBe(true); // its own group replaces *
+    const star = 'User-agent: *\nDisallow: /members/\n';
+    expect(isPathAllowed(star, MEDSCHOOLS_USER_AGENT, '/members/x')).toBe(false);
+    expect(isPathAllowed(star, MEDSCHOOLS_USER_AGENT, '/threads/x')).toBe(true);
+    expect(MEDSCHOOLS_USER_AGENT).not.toMatch(/https?:|rmhstudios\.com\/|mozilla/i);
   });
 });

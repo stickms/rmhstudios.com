@@ -39,6 +39,12 @@ vi.mock('@/lib/prisma.server', () => ({
   prisma: prismaMock,
 }));
 
+// The med schools pre-step runs its own transaction; this file records the erasure batch, so the pre-step is stubbed
+// (its behaviour is held by `medschools-erasure.test.ts`).
+vi.mock('@features/medschools/api/share-sync.server', () => ({
+  eraseSharedMedEvents: vi.fn(async () => ({ events: 0 })),
+}));
+
 import { anonymizeAccount } from '@/lib/account/deletion.server';
 import { ERASURE_REGISTRY, TODO_CEILING } from '@/lib/account/erasure-registry';
 

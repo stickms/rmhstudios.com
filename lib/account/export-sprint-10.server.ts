@@ -20,5 +20,7 @@ export async function exportSprint10(userId: string): Promise<Record<string, unk
     rmhTypeTexts: await (await import('@/lib/rmhtype/texts.server')).exportRmhTypeTexts(userId),
     // s10-09 build-issues
     buildIssues: await (await import('@/lib/builds/issues.server')).exportBuildIssues(userId),
+    // RMH Med Schools (phase 4): the private tracker, saved lists and preferences
+    medschools: await (await import('@features/medschools/api/export.server')).exportMedschools(userId),
   };
 }

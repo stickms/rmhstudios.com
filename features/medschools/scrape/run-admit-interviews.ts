@@ -26,6 +26,8 @@ export interface AdmitInterviewsDeps {
   shouldStop(): boolean;
   log: Logger;
   now?: () => Date;
+  /** Wall-clock budget for the run (default 2.5 h, inside the queue's 3 h expiry); the run stops cleanly when spent. */
+  deadlineMs?: number;
 }
 
 export interface AdmitInterviewsSummary {
@@ -58,6 +60,7 @@ const RESIDENCE_BY_TYPE: Record<string, MedResidence> = {
   out_of_state: 'OUT_OF_STATE',
 };
 const FRESH_MS = 6 * 86_400_000;
+const DEFAULT_DEADLINE_MS = 150 * 60_000;
 
 type Row = Record<string, unknown>;
 
@@ -90,6 +93,7 @@ export async function runAdmitInterviews(
     return summary;
   };
 
+  log.info(`interviews: run starting (trigger=${opts.trigger})`);
   if (deps.secret.length < 16) {
     log.error('interviews: MEDSCHOOLS_DEDUPE_SECRET is missing or shorter than 16 characters; run skipped');
     return finish();
@@ -117,6 +121,7 @@ export async function runAdmitInterviews(
     const aliases = await prisma.medSchoolAlias.findMany({ where: { source: 'ADMIT' } });
     const active = new Set((await prisma.medSchool.findMany({ where: { active: true } })).map((s) => s.id));
     const schoolBySlug = new Map(aliases.map((a) => [a.sourceKey, a.schoolId]));
+    log.info(`interviews: ${aliases.length} Admit aliases, ${active.size} active schools`);
     const missed = new Set<string>();
     /** Known active school for a slug; an unknown slug is one miss per slug per run (D8). */
     const resolve = async (slug: string): Promise<string | null> => {
@@ -130,13 +135,28 @@ export async function runAdmitInterviews(
       }
       return active.has(schoolId) ? schoolId : null;
     };
-    const stopped = () => deps.shouldStop() || session.halted;
+    const deadlineAt = t0 + (deps.deadlineMs ?? DEFAULT_DEADLINE_MS);
+    let deadlineLogged = false;
+    const stopped = () => {
+      if (now().getTime() >= deadlineAt) {
+        if (!deadlineLogged) log.error('interviews: run deadline reached; stopping with the work left for tomorrow');
+        deadlineLogged = true;
+        return true;
+      }
+      return deps.shouldStop() || session.halted;
+    };
 
     // Phase 1: school stats.
     const cycleYear = cycleYearOf(now(), 'INTERVIEW');
     for (const filter of FILTERS) {
       if (stopped()) {
         incomplete = true;
+        // A halted source is loud: it is the usual reason a deployment ends up with no stats at all.
+        if (session.halted)
+          log.error(
+            `interviews: stats fetching halted before ${filter}: ${brief(session.lastFailure ?? 'source halted')}`,
+          );
+        else log.warn(`interviews: stopping before stats ${filter}`);
         break;
       }
       let rows: NormalizedAdmitStats[];
@@ -144,10 +164,17 @@ export async function runAdmitInterviews(
         rows = await client.fetchSchoolStats(filter);
       } catch (e) {
         incomplete = true;
-        if (e instanceof SourceHaltedError) break;
+        if (e instanceof SourceHaltedError) {
+          // Loud: a halt here is why a deployment can have no stats at all.
+          log.error(
+            `interviews: stats fetching halted at ${filter}: ${brief(e)} (last failure: ${brief(session.lastFailure ?? 'none')})`,
+          );
+          break;
+        }
         log.warn(`interviews: stats ${filter} failed: ${brief(e)}`);
         continue;
       }
+      log.info(`interviews: stats ${filter} fetched ${rows.length} rows`);
       const seen = new Set<string>();
       for (const r of rows) {
         const mapped = r.residenceType === null ? undefined : RESIDENCE_BY_TYPE[r.residenceType];

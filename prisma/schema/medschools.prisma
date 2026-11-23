@@ -4,8 +4,11 @@
 // models. No username, display name, avatar, source user id, author or post text.
 // Source dedupe keys are stored only as an HMAC (`MedCycleEvent.dedupeHash`).
 // `features/medschools/engine/schema.test.ts` fails on any column named like
-// `user*name|author|avatar|display`. (Private tracker models, added in a later
-// phase, may carry their owner's `userId`; public endpoints never read them.)
+// `user*name|author|avatar|display`. Exactly three models carry their owner's
+// `userId`: `MedTrackerCycle`, `MedSchoolList` and `MedUserPrefs` (phase 4; public
+// endpoints never read them). `MedTrackerApplication`, `MedTrackerMilestone` and
+// `MedSchoolListItem` reach their owner only through a parent, and an anonymous
+// `MedCycleEvent` (source RMH) has no column that points at any of them.
 //
 // CYCLE YEAR is the ENTRY year, CycleTrack's convention: the 2026-2027 cycle is 2027.
 
@@ -15,6 +18,33 @@ enum MedDegree {
 }
 
 enum MedProgram {
+  REG
+  PHD
+}
+
+/// A step in a private tracker application. Only the seven public event types are ever shared.
+enum MedMilestoneType {
+  SUBMITTED
+  COMPLETE
+  SECONDARY
+  INTERVIEW
+  WAITLIST
+  REJECTION
+  ACCEPTANCE
+  WITHDRAWN
+  HOLD
+}
+
+/// A saved program preference: degree-neutral, `ALL` = every program.
+enum MedProgramFilter {
+  ALL
+  REG
+  PHD
+}
+
+/// A school list item's program. `ANY` = either; a plain value so the unique key is a plain unique.
+enum MedListProgram {
+  ANY
   REG
   PHD
 }
@@ -77,13 +107,16 @@ model MedSchool {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  aliases            MedSchoolAlias[]
-  counts             MedCycleCount[]
-  events             MedCycleEvent[]
-  stats              MedSchoolStats[]
-  interviewQuestions MedInterviewQuestion[]
-  interviewProfiles  MedInterviewProfile[]
-  sdnThreads         MedSdnThread[]
+  aliases             MedSchoolAlias[]
+  counts              MedCycleCount[]
+  events              MedCycleEvent[]
+  stats               MedSchoolStats[]
+  interviewQuestions  MedInterviewQuestion[]
+  interviewProfiles   MedInterviewProfile[]
+  sdnThreads          MedSdnThread[]
+  admitForumThreads   MedAdmitForumThread[]
+  trackerApplications MedTrackerApplication[]
+  listItems           MedSchoolListItem[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -152,6 +185,11 @@ model MedCycleCount {
   count        Int
   /// Distinct-reporter count where known; null for CycleTrack (suppressed upstream).
   contributors Int?
+  /// RMH rows only: the figures the PUBLIC pages show, copied from `count` / `contributors` once a day by the
+  /// `medschools.rmh-publish` job and touched by nothing else. `count` / `contributors` follow the tracker live; a public
+  /// reader that read them would show who shared a moment ago. Null (never published) = absent from every public read.
+  publishedCount        Int?
+  publishedContributors Int?
 
   school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
@@ -317,4 +355,168 @@ model MedSourceRun {
 
   @@index([source, job, startedAt])
   @@map("med_source_run")
+}
+
+// ─── Private tracker, school lists, preferences (phase 4) ──────────────────────
+// Owner only, never read by a public endpoint, never an input to a public figure
+// except through `features/medschools/api/share-sync.server.ts`, the one writer.
+
+/// One applicant's cycle. `shareAnonymously` defaults OFF everywhere it is created.
+model MedTrackerCycle {
+  id               String   @id @default(cuid())
+  userId           String
+  /// Entry year (2026-2027 → 2027).
+  cycleYear        Int
+  homeState        String?  @db.VarChar(2)
+  shareAnonymously Boolean  @default(false)
+  /// Set when sharing is first switched on, never cleared. A cycle that never shared cannot own an event, so a delete
+  /// there needs no secret (share-sync `rmhEventInPossibleCells` is skipped).
+  everShared       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User                    @relation("UserMedTrackerCycles", fields: [userId], references: [id], onDelete: Cascade)
+  applications MedTrackerApplication[]
+
+  @@unique([userId, cycleYear])
+  @@index([userId])
+  @@map("med_tracker_cycle")
+}
+
+/// A school applied to in a cycle. School and program never change (remove and add instead).
+model MedTrackerApplication {
+  id        String     @id @default(cuid())
+  cycleId   String
+  schoolId  String
+  program   MedProgram
+  notes     String?    @db.VarChar(1000)
+  createdAt DateTime   @default(now())
+
+  cycle      MedTrackerCycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  school     MedSchool             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  milestones MedTrackerMilestone[]
+
+  @@unique([cycleId, schoolId, program])
+  @@index([schoolId])
+  @@map("med_tracker_application")
+}
+
+/// One dated step. No column links it to its shared event: the event's hash is recomputed from the server secret.
+model MedTrackerMilestone {
+  id            String           @id @default(cuid())
+  applicationId String
+  type          MedMilestoneType
+  /// A UTC calendar day.
+  date          DateTime         @db.Date
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  application MedTrackerApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, type])
+  @@map("med_tracker_milestone")
+}
+
+/// A named school list. One, "My schools", is created on first use; at most 20 per user.
+model MedSchoolList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(60)
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User                @relation("UserMedSchoolLists", fields: [userId], references: [id], onDelete: Cascade)
+  items MedSchoolListItem[]
+
+  @@index([userId, position])
+  @@map("med_school_list")
+}
+
+model MedSchoolListItem {
+  id       String         @id @default(cuid())
+  listId   String
+  schoolId String
+  program  MedListProgram @default(ANY)
+  position Int
+  note     String?        @db.VarChar(500)
+  addedAt  DateTime       @default(now())
+
+  list   MedSchoolList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  school MedSchool     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, schoolId, program])
+  @@index([listId, position])
+  @@index([schoolId])
+  @@map("med_school_list_item")
+}
+
+/// Defaults that fill in only where the URL is silent.
+model MedUserPrefs {
+  userId          String           @id
+  programFilter   MedProgramFilter @default(ALL)
+  degree          MedDegree?
+  homeState       String?          @db.VarChar(2)
+  chartCategories MedEventType[]   @default([])
+  /// The program set (owner 2026-11-23): any of 'md', 'md-phd', 'do', 'do-phd'; empty means "not chosen", so the older
+  /// `programFilter` and `degree` columns above still answer for rows written before this column existed.
+  programs        String[]         @default([])
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation("UserMedPrefs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("med_user_prefs")
+}
+
+/// Admit.org members whose profile history has been ingested (or who could not be read), keyed by a hash only.
+/// `memberHash` is HMAC(MEDSCHOOLS_DEDUPE_SECRET, 'ADMIT:member:' + user id), a different input from every event key, so
+/// nothing here joins to `med_cycle_event`. The raw id lives in memory for one run and is never stored. State DONE =
+/// history ingested or no profile; FAILED = the lookup failed (attempts counts them; the discovery skips a member at 3
+/// until a week passes). Rows older than 400 days are pruned by the history job.
+model MedAdmitMember {
+  memberHash String   @id
+  state      String   @default("DONE")
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([updatedAt])
+  @@map("med_admit_member")
+}
+
+/// One Admit school-forum thread (a school's thread for one cycle on med.admit.org): a school and a cycle, never a person.
+/// `cursorPostHash` is an HMAC of the last processed post's id, never the id; `cursorOffset` counts the posts consumed
+/// (the next read starts one before it, so the anchor post is checked); `remoteCount` is the thread's post count at the
+/// last look, so `remoteCount > cursorOffset` is the persisted "held" state while the model is paused. No post text,
+/// author, username or avatar is stored anywhere.
+model MedAdmitForumThread {
+  id             String    @id @default(cuid())
+  schoolId       String
+  cycleYear      Int
+  remoteCount    Int       @default(0)
+  cursorOffset   Int       @default(0)
+  cursorPostHash String?
+  postsProcessed Int       @default(0)
+  lastPostAt     DateTime?
+  parkedAt       DateTime?
+  failCount      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, cycleYear])
+  @@index([cycleYear])
+  @@map("med_admit_forum_thread")
+}
+
+/// Requests made to one source host (or one job's daily quota) on one UTC day, so a restart or a deploy does not reset
+/// the day's budget. `key` is a host name ('ADMIT', 'SDN_FORUMS', ...) or a job quota ('ADMIT:history'); no person data.
+model MedRequestBudget {
+  key      String
+  day      DateTime @db.Date
+  requests Int      @default(0)
+
+  @@id([key, day])
+  @@map("med_request_budget")
 }

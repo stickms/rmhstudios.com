@@ -28,14 +28,47 @@ export const RECENT_UPDATES: AdmitOperation = {
   variables: { filterOwnSchools: false, slug: ALL_SCHOOLS_SLUG },
 };
 
+/**
+ * One profile lookup answers two questions: the MD/PhD flag (spec 4a) and the applicant's dated history, which reaches
+ * back to their cycle start. It selects md_phd and the history entries' school slug and four dates/decision, never a
+ * display name, avatar, GPA, MCAT, user id or any other profile field. The history is read only to be turned into
+ * anonymous events keyed by member inside the adapter.
+ */
 export const PROFILE_FLAG: AdmitOperation = {
   operationName: 'getCycleTrackProfileByUserId',
   query: `query getCycleTrackProfileByUserId($userId: String!) {
   getCycleTrackProfileByUserId(userId: $userId) {
     md_phd
+    history {
+      school {
+        slug
+      }
+      secondary_submitted
+      interview_received
+      decision_date
+      decision
+    }
   }
 }`,
 };
+
+/**
+ * Member discovery for the history backfill: the user id of each row of `getAllCycleResults`, one status at a time
+ * (a status filter returns the latest update of that status per school). Nothing else is selected. `$limit`/`$offset`
+ * are `Float!`, `limit` at most 100.
+ */
+export const RESULT_USERS: AdmitOperation = {
+  operationName: 'getAllCycleResults',
+  query: `query getAllCycleResults($status: [ApplicationTrackerStatusEnum!], $filterOwnSchools: Boolean!, $limit: Float!, $offset: Float!) {
+  getAllCycleResults(status: $status, filterOwnSchools: $filterOwnSchools, limit: $limit, offset: $offset) {
+    user_id
+  }
+}`,
+  variables: { filterOwnSchools: false, limit: 100, offset: 0 },
+};
+
+/** The status filters the discovery walks, one request series each. */
+export const RESULT_STATUSES = ['INTERVIEW', 'ACCEPTED', 'WITHDRAWN', 'REJECTED', 'WAITLISTED', 'HOLD'] as const;
 
 export const INTERVIEW_SCHOOLS: AdmitOperation = {
   operationName: 'GetMedicalInterviewSchoolsOverview',
@@ -146,4 +179,51 @@ export const SCHOOL_CRESTS: AdmitOperation = {
     limit: 100,
     offset: 0,
   },
+};
+
+/**
+ * School-forum thread summaries (med.admit.org /school-forums): one row per school with the thread's `comment_count`
+ * and the date of its latest post, for one cycle year (`year` is the entry year minus one: 2026 is the 2026-2027
+ * cycle). Selects ONLY the school slug, the count and the date; `latest_user` exists and is never requested.
+ * `$limit`/`$offset` are `Float!` here, `limit` at most 100 (about 240 schools, so three pages).
+ */
+export const FORUM_THREADS: AdmitOperation = {
+  operationName: 'getAllSchoolThreads',
+  query: `query getAllSchoolThreads($filterOwnSchools: Boolean!, $year: Float!, $limit: Float!, $offset: Float!) {
+  getAllSchoolThreads(filterOwnSchools: $filterOwnSchools, year: $year, limit: $limit, offset: $offset) {
+    comment_count
+    latest_post_date
+    school {
+      slug
+    }
+  }
+}`,
+  variables: { filterOwnSchools: false, limit: 100, offset: 0 },
+};
+
+/**
+ * One page of a school's cycle thread, oldest post first, `limit` at most 100 (`offset` counts posts). A post is its
+ * own opaque 7-character id, its HTML `content` and `created_at`; the author is requested for exactly two in-memory
+ * uses: `id` keys the event on the member (`member-key.ts`, the same key the tracker feed writes) and
+ * `public_display_name` is a handle the redaction removes from the text. `roles` is read only to recognise a post
+ * that is not the poster's own. Avatars, message counts and join dates exist and are never requested, and nothing here
+ * is stored or logged.
+ */
+export const FORUM_THREAD: AdmitOperation = {
+  operationName: 'getSchoolThread',
+  query: `query getSchoolThread($slug: String!, $year: Float!, $limit: Float!, $offset: Float!) {
+  getSchoolThread(slug: $slug, year: $year, limit: $limit, offset: $offset) {
+    comment_count
+    posts {
+      id
+      content
+      created_at
+      user {
+        id
+        public_display_name
+        roles
+      }
+    }
+  }
+}`,
 };
