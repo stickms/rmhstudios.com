@@ -236,17 +236,17 @@ describe('medschools-worker wiring', () => {
     expect(src).toContain("process.env.MEDSCHOOLS_SDN_INTERVIEWS_CRON?.trim() || '50 5 * * 1'");
     const live = slice(src, 'sdnLiveConsumer = await startScheduledConsumer', 'sdnBackfillConsumer = await');
     expect(live).toContain('queue: SDN_LIVE_QUEUE');
-    expect(live).toContain('expireInSeconds: 25 * 60');
+    expect(live).toContain('expireInSeconds: SDN_LIVE_EXPIRY_S');
     expect(live).toContain('retryLimit: 0');
     expect(live).toContain('handler: sdnLiveTick');
     const bf = slice(src, 'sdnBackfillConsumer = await startScheduledConsumer', 'sdnInterviewsConsumer = await');
     expect(bf).toContain('queue: SDN_BACKFILL_QUEUE');
-    expect(bf).toContain('expireInSeconds: 3 * 60 * 60');
+    expect(bf).toContain('expireInSeconds: SDN_BACKFILL_EXPIRY_S');
     expect(bf).toContain('retryLimit: 0');
     expect(bf).toContain('handler: sdnBackfillTick');
     const iv = slice(src, 'sdnInterviewsConsumer = await startScheduledConsumer', 'Started');
     expect(iv).toContain('queue: SDN_INTERVIEWS_QUEUE');
-    expect(iv).toContain('expireInSeconds: 60 * 60');
+    expect(iv).toContain('expireInSeconds: SDN_INTERVIEWS_EXPIRY_S');
     expect(iv).toContain('retryLimit: 0');
     expect(iv).toContain('handler: sdnInterviewsTick');
   });
@@ -455,5 +455,26 @@ describe('medschools-worker wiring', () => {
     expect(src).toContain('forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE');
     expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:forums'");
     expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+  });
+
+  it('every tick whose queue expires gets a guard max runtime equal to that expiry', () => {
+    const src = read('server/medschools-worker/index.ts');
+    const ticks: Array<[string, string]> = [
+      ['sdn-live', 'SDN_LIVE_EXPIRY_S'],
+      ['sdn-backfill', 'SDN_BACKFILL_EXPIRY_S'],
+      ['sdn-interviews', 'SDN_INTERVIEWS_EXPIRY_S'],
+      ['rmh-publish', 'RMH_PUBLISH_EXPIRY_S'],
+    ];
+    for (const [name, constant] of ticks) {
+      expect(src, name).toMatch(new RegExp(`\\},\\s*${constant} \\* 1000,?\\s*\\);`));
+      expect(src, `${name} queue`).toMatch(new RegExp(`expireInSeconds:\\s*${constant}\\b`));
+    }
+    for (const c of [
+      'SDN_LIVE_EXPIRY_S = 25 * 60',
+      'SDN_BACKFILL_EXPIRY_S = 3 * 60 * 60',
+      'SDN_INTERVIEWS_EXPIRY_S = 60 * 60',
+      'RMH_PUBLISH_EXPIRY_S = 10 * 60',
+    ])
+      expect(src).toContain(`const ${c};`);
   });
 });

@@ -205,7 +205,8 @@ Consequences:
   whole cycle from each member's profile history (`features/medschools/scrape/run-admit-history.ts`), and is queued once
   at start while `admitHistoryOwed` (no run has completed). Both Admit event jobs first run the one-time guarded ADMIT
   re-key (`admit-rekey`, see `features/medschools/CLAUDE.md`). Hardening: `guard.ts` (the overlap guard) now treats a
-  run in flight longer than its queue's expiry as hung, logs loudly and lets the next tick start; the interviews and
+  run in flight longer than its queue's expiry as hung (every expiring tick passes it: the Admit, SDN and rmh-publish
+  ticks use their queue's `*_EXPIRY_S` constant, pinned by `wiring.test.ts`; cycletrack and its backfill pass none), logs loudly and lets the next tick start; the interviews and
   history runs end themselves at a 150 min deadline; the interviews tick and run log when they start, what they will
   work on, and when stats fetching halts (with the failure). Every polite host has a persisted daily request budget
   shared by its jobs (`MEDSCHOOLS_ADMIT_DAILY_REQUESTS` 3000, `MEDSCHOOLS_SDN_FORUMS_DAILY_REQUESTS` 2000,

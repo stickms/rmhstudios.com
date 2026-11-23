@@ -174,6 +174,10 @@ const INTERVIEWS_RUN_DEADLINE_MS = 150 * 60_000;
 const ADMIT_HISTORY_RUN_DEADLINE_MS = 150 * 60_000;
 const SDN_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_MAX_LLM_CALLS', 40);
 const SDN_BACKFILL_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS', 150);
+const SDN_LIVE_EXPIRY_S = 25 * 60;
+const SDN_BACKFILL_EXPIRY_S = 3 * 60 * 60;
+const SDN_INTERVIEWS_EXPIRY_S = 60 * 60;
+const RMH_PUBLISH_EXPIRY_S = 10 * 60;
 const ADMIT_FORUMS_EXPIRY_S = 40 * 60;
 const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000;
 const ADMIT_FORUMS_MAX_REQUESTS = intEnv('MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS', 80);
@@ -561,7 +565,7 @@ const sdnLiveTick = guarded('sdn-live', async (data) => {
       log.warn(`sdn-live: backfill check failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
-});
+}, SDN_LIVE_EXPIRY_S * 1000);
 
 const sdnBackfillTick = guarded('sdn-backfill', async (data) => {
   if (!sdnGate('sdn-backfill', data)) return;
@@ -587,7 +591,7 @@ const sdnBackfillTick = guarded('sdn-backfill', async (data) => {
   } finally {
     sdnBackfillInFlight = false;
   }
-});
+}, SDN_BACKFILL_EXPIRY_S * 1000);
 
 // The daily public snapshot of the RMH tracker counts (Q2). Needs no dedupe secret and is not behind a source flag: it
 // copies figures already in the database, and without it a tracker count never becomes public.
@@ -596,7 +600,7 @@ const rmhPublishTick = guarded('rmh-publish', async (data) => {
     { prisma: medPrisma, db: prisma, log },
     { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
   );
-});
+}, RMH_PUBLISH_EXPIRY_S * 1000);
 
 const sdnInterviewsTick = guarded('sdn-interviews', async (data) => {
   if (!sdnGate('sdn-interviews', data)) return;
@@ -613,7 +617,7 @@ const sdnInterviewsTick = guarded('sdn-interviews', async (data) => {
   log.info(
     `sdn-interviews run complete [${r.runId}] — status=${r.status} schools=${r.schools} skipped=${r.skipped} fetched=${r.fetched} unavailable=${r.unavailable} failed=${r.failed} profiles=${r.profiles} questionsCreated=${r.questionsCreated} questionsRejected=${r.questionsRejected} duplicateKeys=${r.duplicateKeys} requests=${r.requests}`,
   );
-});
+}, SDN_INTERVIEWS_EXPIRY_S * 1000);
 
 // ─── Startup bootstrap ──────────────────────────────────────────
 // A fresh database has no schools and no history, and the first hourly tick can be most of an hour
@@ -890,7 +894,7 @@ async function main() {
   sdnLiveConsumer = await startScheduledConsumer({
     queue: SDN_LIVE_QUEUE,
     cron: sdnLiveCron,
-    expireInSeconds: 25 * 60,
+    expireInSeconds: SDN_LIVE_EXPIRY_S,
     retryLimit: 0,
     handler: sdnLiveTick,
     shouldStop: () => stopping,
@@ -904,7 +908,7 @@ async function main() {
   sdnBackfillConsumer = await startScheduledConsumer({
     queue: SDN_BACKFILL_QUEUE,
     cron: sdnBackfillCron,
-    expireInSeconds: 3 * 60 * 60,
+    expireInSeconds: SDN_BACKFILL_EXPIRY_S,
     retryLimit: 0,
     handler: sdnBackfillTick,
     shouldStop: () => stopping,
@@ -918,7 +922,7 @@ async function main() {
   sdnInterviewsConsumer = await startScheduledConsumer({
     queue: SDN_INTERVIEWS_QUEUE,
     cron: sdnInterviewsCron,
-    expireInSeconds: 60 * 60,
+    expireInSeconds: SDN_INTERVIEWS_EXPIRY_S,
     retryLimit: 0,
     handler: sdnInterviewsTick,
     shouldStop: () => stopping,
@@ -932,7 +936,7 @@ async function main() {
   rmhPublishConsumer = await startScheduledConsumer({
     queue: RMH_PUBLISH_QUEUE,
     cron: RMH_PUBLISH_CRON,
-    expireInSeconds: 10 * 60,
+    expireInSeconds: RMH_PUBLISH_EXPIRY_S,
     retryLimit: 0,
     handler: rmhPublishTick,
     shouldStop: () => stopping,
