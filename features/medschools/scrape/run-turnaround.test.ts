@@ -88,7 +88,7 @@ describe('runTurnaround', () => {
     f.tables.medSecondaryTurnaround as Record<string, unknown>[];
 
   it('stores counts and whole-day quantiles only: no member, date or application survives', async () => {
-    const s = setup(() => members(22));
+    const s = setup(() => members(23));
     expect(await s.run()).toEqual({ figures: 1, removed: 0, kept: 0 });
     const rows = stored(s.f);
     expect(rows).toHaveLength(1);
@@ -101,18 +101,40 @@ describe('runTurnaround', () => {
   });
 
   it('keeps the stored figure when the count moved by under 3, replaces it at 3, and removes it under the floor', async () => {
-    let n = 22;
+    let n = 23;
     const s = setup(() => members(n));
     await s.run();
-    n = 24;
-    expect(await s.run()).toMatchObject({ kept: 1 });
-    expect(stored(s.f)[0]?.members).toBe(22);
     n = 25;
+    expect(await s.run()).toMatchObject({ kept: 1 });
+    expect(stored(s.f)[0]?.members).toBe(23);
+    n = 26;
     await s.run();
-    expect(stored(s.f)[0]?.members).toBe(25);
+    expect(stored(s.f)[0]?.members).toBe(26);
     n = 19;
     expect(await s.run()).toMatchObject({ figures: 0, removed: 1 });
     expect(stored(s.f)).toHaveLength(0);
+  });
+
+  it('delete below 20 then recreate at 20 cannot give a figure one member away: creation needs 23 (hysteresis)', async () => {
+    let n = 24;
+    const s = setup(() => members(n));
+    await s.run();
+    expect(stored(s.f)[0]?.members).toBe(24);
+    n = 19;
+    expect(await s.run()).toMatchObject({ figures: 0, removed: 1 });
+    n = 20;
+    expect(await s.run()).toMatchObject({ figures: 1, removed: 0, kept: 0 });
+    expect(stored(s.f)).toHaveLength(0);
+    n = 22;
+    await s.run();
+    expect(stored(s.f)).toHaveLength(0);
+    n = 23;
+    await s.run();
+    expect(stored(s.f)[0]?.members).toBe(23);
+    // With a row, 21 members is within the delta of 23: kept, and 20 is not removed (the floor is 20).
+    n = 21;
+    expect(await s.run()).toMatchObject({ kept: 1 });
+    expect(stored(s.f)[0]?.members).toBe(23);
   });
 
   it('a failing query is a fixed message that carries nothing from the database', async () => {

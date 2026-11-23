@@ -9,13 +9,20 @@
  *  - what is stored is a member count and three whole-day quantiles (25th, median, 75th, nearest rank): no date, row,
  *    member or application of any one contribution survives this module, and `SECONDARY_SUBMITTED` is never an event;
  *  - a stored figure is replaced only when the member count moved by at least `TURNAROUND_REFRESH_DELTA` (3), so one
- *    new member never shows as a changed figure the next day; a pair that fell under the floor loses its row at once.
+ *    new member never shows as a changed figure the next day; a pair that fell under the floor loses its row at once;
+ *  - hysteresis: a figure is CREATED only at `TURNAROUND_CREATE_MEMBERS` (23, the floor plus the refresh delta) while it
+ *    is deleted below 20, so delete-then-recreate cannot produce a new figure one member away from the last one.
  *
  * The user id in a row lives in memory for one run and is never logged, stored or thrown; a failing query is reported
  * with a fixed message because a database error can carry bound values.
  */
 import type { PrismaClient } from '@prisma/client';
-import { TURNAROUND_MAX_DAYS, TURNAROUND_MIN_MEMBERS, TURNAROUND_REFRESH_DELTA } from '../engine/stats/constants';
+import {
+  TURNAROUND_CREATE_MEMBERS,
+  TURNAROUND_MAX_DAYS,
+  TURNAROUND_MIN_MEMBERS,
+  TURNAROUND_REFRESH_DELTA,
+} from '../engine/stats/constants';
 import { dayIndex } from '../engine/stats/days';
 import type { Logger, MedPrisma } from './types';
 
@@ -102,6 +109,11 @@ export function buildTurnarounds(rows: readonly TurnaroundRow[]): TurnaroundResu
   return out;
 }
 
+/** A new figure (no stored row) needs the floor plus the refresh delta; a stored one follows `worthRefreshing`. */
+export function worthCreating(next: { members: number }): boolean {
+  return next.members >= TURNAROUND_CREATE_MEMBERS;
+}
+
 export function worthRefreshing(stored: { members: number }, next: { members: number }): boolean {
   return Math.abs(next.members - stored.members) >= TURNAROUND_REFRESH_DELTA;
 }
@@ -124,6 +136,7 @@ export async function runTurnaround(deps: {
       let keptRows = 0;
       for (const f of figures) {
         const old = had.get(`${f.schoolId}|${f.program}`);
+        if (!old && !worthCreating(f)) continue; // over the floor, not yet over the creation margin: no row
         if (old && !worthRefreshing(old, f)) {
           keptRows += 1; // unchanged on purpose: the stored figure stays exactly as the members last saw it
           continue;

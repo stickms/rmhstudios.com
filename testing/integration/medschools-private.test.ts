@@ -718,8 +718,9 @@ describe('the personal invite chance (me/chances)', () => {
       const app = await addApp(m, PRIVATE_DO_SLUG, 'REG');
       expect((await putMilestone(m, app, 'COMPLETE', dayAgo(ago))).status).toBe(200);
     }
-    // 19 other members who share, at the same school and program: one under the floor of 20.
-    memberDates = await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 19);
+    // 22 other members who share, at the same school and program: over the floor of 20 but one under the creation margin
+    // of 23 (hysteresis, R13), so no curve is stored yet.
+    memberDates = await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 22);
     await runForecastJob();
   });
 
@@ -744,18 +745,18 @@ describe('the personal invite chance (me/chances)', () => {
     expect(one.completeOn).toBe(dayAgo(40));
   });
 
-  it('is thin with 19 sharing members and an estimate with 20 (the floor counts distinct members)', async () => {
+  it('is thin with 22 sharing members and an estimate with 23 (a curve is created one refresh delta above the floor of 20)', async () => {
     const thin = (await chances(a)).body.chances[0];
     expect(thin.status).toBe('thin');
     expect(thin.points).toEqual([]);
     expect(thin.basis).toBeNull();
     expect(await waitCurveRow(PRIVATE_DO_ID)).toBeNull();
 
-    memberDates = [...memberDates, ...(await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 1, 19))];
+    memberDates = [...memberDates, ...(await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 1, 22))];
     await runForecastJob();
     const est = (await chances(a)).body.chances[0];
     expect(est.status).toBe('estimate');
-    expect(est.basis).toBe(20);
+    expect(est.basis).toBe(20); // 23 members, shown rounded down to a multiple of 10
     expect(est.asOf).toBe(dayAgo(1));
     expect(est.points.length).toBeGreaterThan(0);
     let prev = -1;
@@ -802,15 +803,16 @@ describe('the personal invite chance (me/chances)', () => {
     // Weekly bins (R13): every step sits on a multiple of 7, whatever days the members completed on.
     for (const t of (row!.curve as { t: number[] }).t) expect(t % 7).toBe(0);
     expect(row!.invited as number).toBeGreaterThanOrEqual(10);
-    expect(row!.members).toBe(20);
+    expect(row!.members).toBe(23);
   });
 
-  it('drops back to thin when one member turns sharing off and the job runs again', async () => {
-    await setSharerSharing(0, false);
+  it('drops back to thin when the pair falls under the floor of 20 and the job runs again', async () => {
+    // 23 members: one leaving (22) leaves the stored row alone (a change under 3); four leaving (19) deletes it at once.
+    for (const i of [0, 1, 2, 3]) await setSharerSharing(i, false);
     await runForecastJob();
     expect((await chances(a)).body.chances[0].status).toBe('thin');
     expect(await waitCurveRow(PRIVATE_DO_ID)).toBeNull();
-    await setSharerSharing(0, true);
+    for (const i of [0, 1, 2, 3]) await setSharerSharing(i, true);
   });
 
   it('says nothing for a closed application and "invited" for one that has its invite', async () => {
@@ -827,7 +829,7 @@ describe('the personal invite chance (me/chances)', () => {
 
   describe('what a curve may reveal (R13)', () => {
     const rebuild = async () => {
-      await setSharerSharing(0, true);
+      for (const i of [0, 1, 2, 3]) await setSharerSharing(i, true);
       await runForecastJob();
     };
     const sharerInvites = () =>
@@ -839,25 +841,25 @@ describe('the personal invite chance (me/chances)', () => {
       await rebuild();
       const first = await waitCurveRow(PRIVATE_DO_ID);
       expect(first).not.toBeNull();
-      expect(first!.members).toBe(20);
-      // Sharer 20 would be invited (20 % 3 = 2 waits, so the fixture leaves them waiting): +1 member, no new invite.
-      await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 1, 20);
+      expect(first!.members).toBe(23);
+      // Sharer 23 would be invited (23 % 3 = 2 waits, so the fixture leaves them waiting): +1 member, no new invite.
+      await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 1, 23);
       await runForecastJob();
       const same = await waitCurveRow(PRIVATE_DO_ID);
-      expect(same!.members).toBe(20);
+      expect(same!.members).toBe(23);
       expect(same!.curve).toEqual(first!.curve);
       expect(same!.computedAt).toEqual(first!.computedAt);
-      // Two more: members 23, a difference of 3 from the stored row, so it is rebuilt.
-      await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 2, 21);
+      // Two more: members 26, a difference of 3 from the stored row, so it is rebuilt.
+      await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 2, 24);
       await runForecastJob();
-      expect((await waitCurveRow(PRIVATE_DO_ID))!.members).toBe(23);
+      expect((await waitCurveRow(PRIVATE_DO_ID))!.members).toBe(26);
     });
 
     it('needs at least 10 invites on top of the members: with fewer, the curve is deleted at once', async () => {
       expect(await waitCurveRow(PRIVATE_DO_ID)).not.toBeNull();
       const before = (await sharerInvites()).rows[0].n as number;
       expect(before).toBeGreaterThanOrEqual(10);
-      // Take the sharers' invites away until 9 remain: 23 members, 9 invites.
+      // Take the sharers' invites away until 9 remain: 26 members, 9 invites.
       await db().query(
         `delete from med_tracker_milestone where id in (
            select id from med_tracker_milestone where type = 'INTERVIEW' and id like 'it-medschools-sharer-%' order by id limit $1)`,
@@ -970,21 +972,21 @@ describe('secondary turnaround', () => {
     await removeTurnaroundMembers();
   });
 
-  it('shows no figure under 20 sharing members and one at 20, with counts and whole days only', async () => {
-    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 19);
+  it('shows no figure under 23 sharing members (20 is the floor, 23 the creation margin) and one at 23, with counts and whole days only', async () => {
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 22);
     await runForecastJob();
     expect(await turnaroundRows(PRIVATE_MD_ID)).toHaveLength(0);
     expect(await publicTurnaround()).toEqual([]);
 
-    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 1, 19);
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 1, 22);
     await runForecastJob();
     const rows = await turnaroundRows(PRIVATE_MD_ID);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ program: 'REG', members: 20 });
+    expect(rows[0]).toMatchObject({ program: 'REG', members: 23 });
     const shown = await publicTurnaround();
     expect(shown).toHaveLength(1);
     expect(Object.keys(shown[0]!).sort()).toEqual(['asOf', 'medianDays', 'members', 'p25Days', 'p75Days', 'program']);
-    expect(shown[0]!.members).toBe(20);
+    expect(shown[0]!.members).toBe(23);
     for (const k of ['medianDays', 'p25Days', 'p75Days']) expect(Number.isInteger(shown[0]![k])).toBe(true);
     expect(shown[0]!.medianDays as number).toBeGreaterThanOrEqual(3);
     expect(shown[0]!.medianDays as number).toBeLessThanOrEqual(11);
@@ -1009,18 +1011,18 @@ describe('secondary turnaround', () => {
 
   it('refreshes only after at least 3 more members: two new ones change nothing, three do', async () => {
     const before = (await turnaroundRows(PRIVATE_MD_ID))[0]!;
-    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 2, 20);
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 2, 23);
     await runForecastJob();
     const same = (await turnaroundRows(PRIVATE_MD_ID))[0]!;
-    expect(same.members).toBe(20);
+    expect(same.members).toBe(23);
     expect(same.computedAt).toEqual(before.computedAt);
-    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 1, 22);
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 1, 25);
     await runForecastJob();
-    expect((await turnaroundRows(PRIVATE_MD_ID))[0]!.members).toBe(23);
+    expect((await turnaroundRows(PRIVATE_MD_ID))[0]!.members).toBe(26);
   });
 
   it('removes the figure at once when members turn sharing off and the count falls under 20', async () => {
-    for (const i of [0, 1, 2, 3, 4]) await setTurnaroundSharing(i, false);
+    for (const i of [0, 1, 2, 3, 4, 5, 6]) await setTurnaroundSharing(i, false);
     await runForecastJob();
     expect(await turnaroundRows(PRIVATE_MD_ID)).toHaveLength(0);
     expect(await publicTurnaround()).toEqual([]);
