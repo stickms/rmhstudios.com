@@ -42,7 +42,6 @@ import {
   HAIRLINE_W,
   INK,
   MUTED,
-  RADIUS_SM,
   SCALE,
   fetchAvatarDataUri,
   loadFonts,
@@ -57,16 +56,15 @@ import {
   displayTracking,
   fitText,
   frameMetrics,
-  framedImage,
   inset,
-  mediaTag,
   pane,
   statChips,
   verifiedBadge,
   type Stat,
 } from '@/lib/og/chrome.server';
-import { MAX_COLLAGE_TILES, collageTiles, type CollageBox, type TileBox } from '@/lib/og/collage';
-import { encodeOgImage, readImageSources, type OgImage } from '@/lib/og/media.server';
+import { MAX_COLLAGE_TILES, type CollageBox } from '@/lib/og/collage';
+import { collage, encodeTiles } from '@/lib/og/collage-render.server';
+import { readImageSources } from '@/lib/og/media.server';
 
 const pngCache = new Map<
   string,
@@ -93,8 +91,6 @@ const GAP = 12 * SCALE;
 const CHIP_ROW = 34 * SCALE;
 /** Between the text column and the media column. */
 const COL_GAP = 20 * SCALE;
-/** Between tiles of the collage. */
-const TILE_GAP = 4 * SCALE;
 /** One poll option row, and the space between two of them. */
 const POLL_ROW = 24 * SCALE;
 const POLL_GAP = 6 * SCALE;
@@ -144,11 +140,6 @@ export interface PostOgData {
   quote?: PostOgQuote | null;
 }
 
-interface Tile {
-  image: OgImage;
-  box: TileBox;
-}
-
 function compact(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
@@ -174,70 +165,6 @@ function attachmentLine(imageCount: number, hasGif: boolean, pollOptions: number
   if (hasGif) parts.push('GIF');
   if (pollOptions) parts.push(`Poll · ${pollOptions} options`);
   return parts.length ? parts.join('  ·  ') : null;
-}
-
-/**
- * Encode the attachments into the grid for however many of them actually
- * resolved.
- *
- * The second attempt is not paranoia: a post's attachments outlive nothing —
- * media sweeps, storage moves and truncated uploads all happen — and a tile
- * that decodes but won't encode would otherwise leave a hole in a grid that was
- * measured for one more picture than it has.
- */
-async function encodeTiles(buffers: Buffer[], box: CollageBox): Promise<Tile[]> {
-  let list = buffers;
-  for (let attempt = 0; attempt < 2 && list.length > 0; attempt++) {
-    const boxes = collageTiles(list.length, box, TILE_GAP);
-    const encoded = await Promise.all(
-      list.map((bytes, i) =>
-        encodeOgImage(bytes, {
-          width: boxes[i].width,
-          height: boxes[i].height,
-          fit: 'cover',
-        }),
-      ),
-    );
-    const survivors = list.filter((_, i) => encoded[i]);
-    if (survivors.length === list.length) {
-      return boxes.map((tileBox, i) => ({
-        box: tileBox,
-        image: encoded[i]!,
-      }));
-    }
-    list = survivors;
-  }
-  return [];
-}
-
-function collage(tiles: Tile[], box: CollageBox, gifTag: boolean): React.ReactElement {
-  // A lone picture takes the pane's own radius; tiles in a grid take a tighter
-  // one, so four of them don't read as four separate cards.
-  const radius = tiles.length === 1 ? RADIUS_SM : Math.round(RADIUS_SM * 0.6);
-  return (
-    <div
-      style={{
-        display: 'flex',
-        position: 'relative',
-        width: box.width,
-        height: box.height,
-      }}
-    >
-      {tiles.map((tile, i) => (
-        <div
-          key={`tile${i}`}
-          style={{
-            display: 'flex',
-            position: 'absolute',
-            left: tile.box.left,
-            top: tile.box.top,
-          }}
-        >
-          {framedImage(tile.image, radius, i === 0 && gifTag ? mediaTag('GIF', 8 * SCALE) : undefined)}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 /** The poll's options as a two-up grid — the shape they have on the post. */
