@@ -79,7 +79,6 @@ import type { AppInfo, GameInfo } from './types';
 // ── Entries owned by a feature (features/<id>/catalog.ts, named by the manifest's `catalog`) ──
 import altair from '@features/altair/catalog';
 import doctrine from '@features/doctrine/catalog';
-import rmhos from '@features/rmhos/catalog';
 import rmhcharacters from '@features/rmhcharacters/catalog';
 import dreamRift from '@features/dream-rift/catalog';
 import gabrielsHorn from '@features/gabriels-horn/catalog';
@@ -146,7 +145,6 @@ const GAME_MODULES: readonly GameInfo[] = [
 const APP_MODULES: readonly AppInfo[] = [
   // feature-owned
   doctrine,
-  rmhos,
   rmhcharacters,
   // hand-kept
   dunesday,

@@ -60,7 +60,7 @@ export const STATIC_CARDS: StaticCard[] = [
         lead: true,
       },
       {
-        value: '16',
+        value: '15',
         label: 'apps',
       },
       {
@@ -91,7 +91,7 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle: 'Watch parties, music, typing, study, code, ladders — full apps, not demos, all on one account.',
     stats: [
       {
-        value: '16',
+        value: '15',
         label: 'apps',
         lead: true,
       },

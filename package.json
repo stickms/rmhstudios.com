@@ -8,7 +8,7 @@
     "node": ">=26.13.0 <27"
   },
   "scripts": {
-    "dev": "pnpm run i18n:pull && pnpm run images:variants && concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run rmhos-net-server\" \"pnpm run ladder-worker:dev\" \"pnpm run homes-worker:dev\" \"pnpm run medschools-worker:dev\" \"pnpm run jobs:dev\"",
+    "dev": "pnpm run i18n:pull && pnpm run images:variants && concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run ladder-worker:dev\" \"pnpm run homes-worker:dev\" \"pnpm run medschools-worker:dev\" \"pnpm run jobs:dev\"",
     "build-vibe-packages": "pnpm exec tsx scripts/build-vibe-packages.ts",
     "images:variants": "pnpm exec tsx scripts/gen-image-variants.ts",
     "images:variants:check": "pnpm exec tsx scripts/gen-image-variants.ts --check",
@@ -24,11 +24,10 @@
     "hooks:install": "git config core.hooksPath .githooks && echo 'commit gate installed (.githooks/pre-commit)'",
     "check:bundle-budget": "pnpm exec tsx scripts/check-bundle-budget.ts",
     "check:entry-composition": "pnpm exec tsx scripts/check-entry-composition.ts",
-    "build": "pnpm run build-vibe-packages && pnpm run images:variants && pnpm run build:islands && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts server/rmhos-net/index.ts server/ladder-worker/index.ts server/homes-worker/index.ts server/medschools-worker/index.ts server/jobs/index.ts features/slice-it/engine/beatmap/stft.worker.ts --bundle --platform=node --target=node26 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
-    "start": "concurrently \"node .output/server/index.mjs\" \"node dist-server/server/socket-server/index.cjs\" \"node dist-server/server/rmhbox/index.cjs\" \"node dist-server/server/rmhtube/index.cjs\" \"node dist-server/server/rmhos-net/index.cjs\" \"node dist-server/server/ladder-worker/index.cjs\" \"node dist-server/server/homes-worker/index.cjs\" \"node dist-server/server/medschools-worker/index.cjs\" \"node dist-server/server/jobs/index.cjs\"",
+    "build": "pnpm run build-vibe-packages && pnpm run images:variants && pnpm run build:islands && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts server/ladder-worker/index.ts server/homes-worker/index.ts server/medschools-worker/index.ts server/jobs/index.ts features/slice-it/engine/beatmap/stft.worker.ts --bundle --platform=node --target=node26 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
+    "start": "concurrently \"node .output/server/index.mjs\" \"node dist-server/server/socket-server/index.cjs\" \"node dist-server/server/rmhbox/index.cjs\" \"node dist-server/server/rmhtube/index.cjs\" \"node dist-server/server/ladder-worker/index.cjs\" \"node dist-server/server/homes-worker/index.cjs\" \"node dist-server/server/medschools-worker/index.cjs\" \"node dist-server/server/jobs/index.cjs\"",
     "socket-server": "pnpm exec tsx watch --include \"server/socket-server/**/*\" --include \"server/shared/**/*\" server/socket-server/index.ts",
     "rmhbox-server": "pnpm exec tsx watch --include \"server/rmhbox/**/*\" --include \"server/shared/**/*\" server/rmhbox/index.ts",
-    "rmhos-net-server": "pnpm exec tsx watch --env-file-if-exists=.env --include \"server/rmhos-net/**/*\" --include \"features/rmhos/engine/**/*\" server/rmhos-net/index.ts",
     "rmhtube-server": "pnpm exec tsx watch --include \"server/rmhtube/**/*\" --include \"server/shared/**/*\" server/rmhtube/index.ts",
     "ladder-worker:dev": "pnpm exec tsx watch --include \"server/ladder-worker/**/*\" --include \"lib/rmhladder/**/*\" server/ladder-worker/index.ts",
     "homes-worker:dev": "pnpm exec tsx watch --include \"server/homes-worker/**/*\" --include \"lib/homes/**/*\" server/homes-worker/index.ts",
@@ -98,12 +97,7 @@
     "slice-it:hit-sounds": "pnpm exec tsx scripts/gen-slice-it-hit-sounds.ts",
     "typecheck": "node node_modules/typescript-native/bin/tsc -b",
     "typecheck:engine": "node node_modules/typescript-native/bin/tsc -b tsconfig.engine.json",
-    "typecheck:strict": "node scripts/typecheck-strict.mjs",
-    "rmhos:image": "bash scripts/rmhos/build.sh",
-    "rmhos:smoke": "node scripts/rmhos/smoke.mjs",
-    "rmhos:snapshot": "node scripts/rmhos/snapshot.mjs",
-    "rmhos:manifest": "node scripts/rmhos/write-manifest.mjs",
-    "rmhos:selftest": "node scripts/rmhos/meta-selftest.mjs"
+    "typecheck:strict": "node scripts/typecheck-strict.mjs"
   },
   "dependencies": {
     "7.css": "0.21.1",
@@ -236,7 +230,6 @@
     "tone": "^15.1.22",
     "undici": "^8.12.4",
     "uuid": "^14.0.3",
-    "v86": "0.5.473",
     "web-push": "^4.0.0",
     "web-vitals": "^6.2.3",
     "ws": "^8.23.0",
@@ -292,8 +285,7 @@
     "typescript-eslint": "^8.73.0",
     "typescript-native": "npm:typescript@^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.1",
-    "yaml": "^2.9.1"
+    "vitest": "^5.1.1"
   },
   "pnpm": {
     "overrides": {

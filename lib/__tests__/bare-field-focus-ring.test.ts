@@ -39,7 +39,6 @@ const BASELINE: Record<string, number> = {
   'components/tf2-game/tf2-game.css': 1,
   'components/tf2-hud/tf2-hud.css': 1,
   'features/balatro/ui/balatro.css': 1,
-  'features/rmhos/ui/rmhos.css': 1,
   'features/synapse-storm/ui/SynapseStorm.css': 1,
 };
 

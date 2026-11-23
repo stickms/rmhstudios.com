@@ -1,4 +1,0 @@
-prog "Files" - pcmanfm
-prog "Terminal" - xterm
-prog "Web" - netsurf-gtk3
-prog "Editor" - mousepad

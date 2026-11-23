@@ -1,6 +1,0 @@
-#!/bin/sh
-# Installed over /sbin/poweroff, /sbin/reboot and /sbin/halt by the image build (they are busybox
-# applets otherwise): whoever shuts the guest down, from a shell, doas, the IceWM menu, Ctrl-Alt-Del
-# or the agent's SHUTDOWN, the home folder is saved into the share first and the host is told.
-/usr/local/bin/rmhos-poweroff-save
-exec /bin/busybox "${0##*/}" "$@"

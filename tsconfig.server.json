@@ -21,9 +21,6 @@
     "features/casino/engine/blackjack/logic.ts",
     "lib/lights-out/**/*.ts",
     "features/dream-rift/engine/net/events.ts",
-    "features/*/server/**/*.ts",
-    "server/rmhos-net/**/*.ts",
-    "features/rmhos/engine/constants.ts",
-    "features/rmhos/engine/net-ticket.server.ts"
+    "features/*/server/**/*.ts"
   ]
 }
