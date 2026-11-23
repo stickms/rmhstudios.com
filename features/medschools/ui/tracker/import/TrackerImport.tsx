@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { api } from '@/lib/contract/client';
@@ -20,6 +22,7 @@ import {
 } from '../../../medschools.contract';
 import { ME_KEY, trackerQuery } from '../../../medschools.queries';
 import { ImportPreview } from './ImportPreview';
+import { useAbortOnUnmount } from './useAbortOnUnmount';
 import {
   cycleChoices,
   existingIndex,
@@ -82,13 +85,14 @@ export default function TrackerImport({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<MedImportSaveRes | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const abort = useRef<AbortController | null>(null);
-  useEffect(() => () => abort.current?.abort(), []);
+  const abort = useAbortOnUnmount();
 
   const tracker = useQuery({ ...trackerQuery(cycle), enabled: stage === 'preview' });
   const index = useMemo(() => existingIndex(tracker.data, cycle), [tracker.data, cycle]);
   const existingOf = (slug: string, program: 'REG' | 'PHD') => index.get(`${slug}|${program}`);
   const totals = summarize(rows, existingOf, cycle, now);
+  // The rows replace the skeleton once the tracker has answered: they fade in (M9).
+  const rowsArrival = useArrival(stage === 'preview' && tracker.isSuccess);
   const choices = useMemo(() => {
     const all = cycleChoices(now);
     return all.includes(cycle) ? all : [cycle, ...all];
@@ -297,7 +301,9 @@ export default function TrackerImport({
               </Button>
             </div>
           ) : (
-            <ImportPreview rows={rows} existingOf={existingOf} cycleYear={cycle} now={now} onRows={setRows} />
+            <div className={cn(rowsArrival)}>
+              <ImportPreview rows={rows} existingOf={existingOf} cycleYear={cycle} now={now} onRows={setRows} />
+            </div>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button

@@ -507,14 +507,15 @@ const importScript = (names) => (call) => {
     cycleHint: null,
   };
 };
-/** Harvard has no dates in the seed: anything an earlier pass saved there goes, so every pass starts the same. */
-const resetImport = () =>
-  ai.pool?.query(
-    `delete from med_tracker_milestone where "applicationId" in (
-       select a.id from med_tracker_application a join med_tracker_cycle c on c.id = a."cycleId"
-       join med_school s on s.id = a."schoolId" where c."userId" = $1 and s.slug = 'harvard')`,
-    [ai.userId],
-  );
+/** Harvard has no dates in the seed: anything an earlier pass saved there is removed through the API, so every pass starts the same. */
+const importMember = { cookies: null };
+const resetImport = async () => {
+  const headers = { origin: BASE, cookie: cookieHeader(importMember.cookies ?? []) };
+  const tracker = await (await fetch(`${BASE}/api/medschools/me/tracker`, { headers })).json();
+  const app = tracker.cycle?.applications?.find((a) => a.school.slug === 'harvard');
+  for (const m of app?.milestones ?? [])
+    await fetch(`${BASE}/api/medschools/me/tracker/applications/${app.id}/milestones/${m.type}`, { method: 'DELETE', headers });
+};
 /** The day's count is the `medschools-qa-ask` rows; an import reserves one like a question does. */
 const plantAsk = (n) =>
   ai.pool?.query(
@@ -861,6 +862,7 @@ function measure({ touch, narrow, forecast, flat, absent, present }) {
 
 async function main() {
   const user = await setup();
+  importMember.cookies = user.cookies;
   if (FAKE_AI) {
     const fakeUrl = pathToFileURL(join(ROOT, 'testing/integration/lib/fake-deepseek.ts')).href;
     const { startFakeDeepseek, userJson } = await import(fakeUrl);
