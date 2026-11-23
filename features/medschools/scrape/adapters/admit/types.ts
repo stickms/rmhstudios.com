@@ -7,7 +7,7 @@
  * a token is `redeemLookupToken`, which `client.ts` calls to build the md_phd request. Nothing here is re-exported by
  * `index.ts` except the types.
  */
-import type { MedProgram, MedResidence, NormalizedEvent } from '../../../engine/types';
+import type { MedEventType, MedProgram, MedResidence, NormalizedEvent } from '../../../engine/types';
 
 declare const lookupTokenBrand: unique symbol;
 
@@ -20,9 +20,34 @@ export type LookupToken = Readonly<{
 export type ProgramFlag = 'PHD' | 'REG' | 'UNREADABLE';
 
 export interface FeedItem {
+  /** `event.dedupeHash` is the per-update key, used only for a row with no author (see `keyFor`). */
   event: NormalizedEvent;
   /** `null` when the row carries no author: its program is unreadable and no lookup is made. */
   lookup: LookupToken | null;
+  /**
+   * The event's dedupe key once its school is resolved: `hash(admit:author:<user id>:<schoolId>:<cycleYear>:<type>)`,
+   * so one member counts once per event type per school per cycle across the live feed and the history backfill. The
+   * user id is captured here, in the adapter, and never leaves it; a row with no author falls back to the per-update key.
+   */
+  keyFor(schoolId: string): string;
+}
+
+/** One dated event from a member's profile history, anonymous like a feed event. */
+export interface HistoryEvent {
+  schoolKey: string;
+  cycleYear: number;
+  eventType: MedEventType;
+  occurredAt: Date;
+  /** Same member key as `FeedItem.keyFor`, so the feed and the history never count one report twice. */
+  keyFor(schoolId: string): string;
+}
+
+/** What one profile lookup yields: the program flag and the member's history events. */
+export interface AdmitProfile {
+  flag: ProgramFlag;
+  history: HistoryEvent[];
+  /** History entries dropped: unknown decision, missing or bad date, future date. */
+  skipped: { unknownDecision: number; badDate: number; malformedEntries: number };
 }
 
 export interface AdmitSchoolRef {

@@ -1,0 +1,31 @@
+{
+  "data": {
+    "getCycleTrackProfileByUserId": {
+      "md_phd": true,
+      "gpa": 3.987,
+      "mcat": 527,
+      "display_name": "drsmith42",
+      "user_id": "user-hostile-9931",
+      "history": [
+        {
+          "school": { "slug": "harvard-medical-school", "name": "jane_doe_md" },
+          "secondary_submitted": "2026-07-12T16:00:00.000Z",
+          "interview_received": "2026-10-02T16:00:00.000Z",
+          "decision_date": "2026-11-10T16:00:00.000Z",
+          "decision": "ACCEPTED",
+          "last_updated": "2026-11-10T14:58:46.038Z",
+          "user_display_name": "drsmith42",
+          "user_profile_image_url": "https://cdn.example/avatars/jd.png"
+        },
+        {
+          "school": { "slug": "yale-school-of-medicine" },
+          "secondary_submitted": "2026-07-20T16:00:00.000Z",
+          "interview_received": null,
+          "decision_date": "2026-09-15T16:00:00.000Z",
+          "decision": "REJECTED",
+          "last_updated": "2026-09-15T14:58:46.038Z"
+        }
+      ]
+    }
+  }
+}

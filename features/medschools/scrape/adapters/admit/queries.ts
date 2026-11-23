@@ -28,14 +28,47 @@ export const RECENT_UPDATES: AdmitOperation = {
   variables: { filterOwnSchools: false, slug: ALL_SCHOOLS_SLUG },
 };
 
+/**
+ * One profile lookup answers two questions: the MD/PhD flag (spec 4a) and the applicant's dated history, which reaches
+ * back to their cycle start. It selects md_phd and the history entries' school slug and four dates/decision, never a
+ * display name, avatar, GPA, MCAT, user id or any other profile field. The history is read only to be turned into
+ * anonymous events keyed by member inside the adapter.
+ */
 export const PROFILE_FLAG: AdmitOperation = {
   operationName: 'getCycleTrackProfileByUserId',
   query: `query getCycleTrackProfileByUserId($userId: String!) {
   getCycleTrackProfileByUserId(userId: $userId) {
     md_phd
+    history {
+      school {
+        slug
+      }
+      secondary_submitted
+      interview_received
+      decision_date
+      decision
+    }
   }
 }`,
 };
+
+/**
+ * Member discovery for the history backfill: the user id of each row of `getAllCycleResults`, one status at a time
+ * (a status filter returns the latest update of that status per school). Nothing else is selected. `$limit`/`$offset`
+ * are `Float!`, `limit` at most 100.
+ */
+export const RESULT_USERS: AdmitOperation = {
+  operationName: 'getAllCycleResults',
+  query: `query getAllCycleResults($status: [ApplicationTrackerStatusEnum!], $filterOwnSchools: Boolean!, $limit: Float!, $offset: Float!) {
+  getAllCycleResults(status: $status, filterOwnSchools: $filterOwnSchools, limit: $limit, offset: $offset) {
+    user_id
+  }
+}`,
+  variables: { filterOwnSchools: false, limit: 100, offset: 0 },
+};
+
+/** The status filters the discovery walks, one request series each. */
+export const RESULT_STATUSES = ['INTERVIEW', 'ACCEPTED', 'WITHDRAWN', 'REJECTED', 'WAITLISTED', 'HOLD'] as const;
 
 export const INTERVIEW_SCHOOLS: AdmitOperation = {
   operationName: 'GetMedicalInterviewSchoolsOverview',

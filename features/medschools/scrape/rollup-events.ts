@@ -21,8 +21,30 @@ const dayOf = (d: Date): string => d.toISOString().slice(0, 10);
 const cellKey = (c: { schoolId: string; program: MedProgram; cycleYear: number; date: string }): string =>
   `${c.schoolId}|${c.program}|${c.cycleYear}|${c.date}`;
 
-/** Returns the number of count rows created plus updated. */
-export async function rollupEventCounts(
+/**
+ * One roll-up at a time per source in this process: the live feed and the history backfill both roll up ADMIT cells
+ * from stored events, and two interleaved recomputes could write a stale count over a fresh one.
+ */
+const chains = new Map<MedSource, Promise<unknown>>();
+
+/**
+ * Returns the number of count rows created, updated plus deleted. A cell in the touched region whose events are gone
+ * (an event that moved to another day) is deleted, so a moved event is never counted on both days.
+ */
+export function rollupEventCounts(
+  prisma: MedPrisma,
+  args: {
+    source: MedSource;
+    touched: TouchedCell[];
+  },
+): Promise<number> {
+  const prev = chains.get(args.source) ?? Promise.resolve();
+  const next = prev.catch(() => undefined).then(() => rollupUnlocked(prisma, args));
+  chains.set(args.source, next);
+  return next;
+}
+
+async function rollupUnlocked(
   prisma: MedPrisma,
   args: {
     source: MedSource;
@@ -121,7 +143,7 @@ export async function rollupEventCounts(
         eventType: r.eventType,
         count: r.count,
       }));
-    const { toCreate, toUpdate } = diffCounts(prior, [...(incoming.get(schoolId)?.values() ?? [])]);
+    const { toCreate, toUpdate, toDelete } = diffCounts(prior, [...(incoming.get(schoolId)?.values() ?? [])]);
     if (toCreate.length > 0) {
       await prisma.medCycleCount.createMany({
         data: toCreate.map((r) => ({
@@ -137,6 +159,10 @@ export async function rollupEventCounts(
         skipDuplicates: true,
       });
       written += toCreate.length;
+    }
+    if (toDelete.length > 0) {
+      const res = await prisma.medCycleCount.deleteMany({ where: { id: { in: toDelete } } });
+      written += res.count;
     }
     for (const r of toUpdate) {
       await prisma.medCycleCount.update({

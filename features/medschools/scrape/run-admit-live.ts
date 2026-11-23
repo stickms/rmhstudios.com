@@ -1,7 +1,8 @@
 /**
  * The `medschools.admit-live` job: poll Admit's recent-updates feed, resolve each unseen event's program
  * (MD vs MD-PhD) with one profile lookup per distinct author, store the anonymous event and roll the touched
- * days up into `MedCycleCount` (spec §4a).
+ * days up into `MedCycleCount` (spec §4a). Events key on the member (`admit-events.ts`), and the same lookup's
+ * profile history is ingested the first time a member is seen, so the live feed seeds the backfill too.
  *
  * Never throws. The author handle never leaves `client.programOf`; nothing person-shaped reaches a write or a
  * log line, and `MedSourceRun.stats` holds counters only.
@@ -9,8 +10,16 @@
 import { createAdmitClient, flagToProgram } from './adapters/admit';
 import { SourceHaltedError, type PoliteHost } from './http';
 import { brief, closeStaleRuns, recordAliasMiss } from './run-support';
-import { rollupEventCounts, type TouchedCell } from './rollup-events';
-import type { MedProgram } from '../engine/types';
+import {
+  commitAdmitEvents,
+  findStoredEvents,
+  loadMemberStates,
+  markMember,
+  memberSettled,
+  type AdmitCandidate,
+} from './admit-events';
+import { ensureAdmitRekey } from './admit-rekey';
+import { rollupEventCounts } from './rollup-events';
 import type { Logger, MedPrisma } from './types';
 
 export interface AdmitLiveDeps {
@@ -41,6 +50,12 @@ export interface AdmitLiveSummary {
   aliasMissErrors: number;
   lookups: number;
   rolledUp: number;
+  /** Stored events whose date moved earlier because a later sighting was older (never a second event). */
+  moved: number;
+  /** Members seen for the first time, whose profile history this run ingested from the lookup it already made. */
+  membersIngested: number;
+  /** History events produced by those lookups (before the member-key dedupe). */
+  historyEvents: number;
   requests: number;
   durationMs: number;
 }
@@ -72,6 +87,9 @@ export async function runAdmitLive(
     aliasMissErrors: 0,
     lookups: 0,
     rolledUp: 0,
+    moved: 0,
+    membersIngested: 0,
+    historyEvents: 0,
     requests: 0,
     durationMs: 0,
   };
@@ -82,6 +100,12 @@ export async function runAdmitLive(
 
   if (deps.secret.length < 16) {
     log.error('admit-live: MEDSCHOOLS_DEDUPE_SECRET is missing or shorter than 16 characters; run skipped');
+    return finish();
+  }
+
+  // The one-time move from per-update keys to member keys must precede the first write under the new key.
+  if (!(await ensureAdmitRekey(prisma, log, now))) {
+    log.error('admit-live: the one-time Admit re-key has not completed; run skipped');
     return finish();
   }
 
@@ -136,15 +160,9 @@ export async function runAdmitLive(
     );
     const schoolBySlug = new Map(aliases.map((a) => [a.sourceKey, a.schoolId]));
 
-    // Resolve schools; an unknown slug is skipped and recorded once per run (D8: not when ignored).
+    // Resolve a slug to an active school; an unknown slug is skipped and recorded once per run (D8: not when ignored).
     const missed = new Set<string>();
-    const resolved: Array<{
-      item: (typeof items)[number];
-      schoolId: string;
-    }> = [];
-    const seenHashes = new Set<string>();
-    for (const item of items) {
-      const slug = item.event.schoolKey;
+    const resolveSlug = async (slug: string): Promise<string | null> => {
       const schoolId = schoolBySlug.get(slug);
       if (schoolId === undefined) {
         if (!missed.has(slug)) {
@@ -157,61 +175,61 @@ export async function runAdmitLive(
             log.warn(`admit-live: alias miss write failed: ${brief(e)}`);
           }
         }
+        return null;
+      }
+      return active.has(schoolId) ? schoolId : null;
+    };
+
+    // One entry per member key: the same member reporting a status twice (or at two times) counts once, at the
+    // earliest date seen.
+    const resolved = new Map<
+      string,
+      {
+        item: (typeof items)[number];
+        schoolId: string;
+        hash: string;
+        occurredAt: Date;
+      }
+    >();
+    for (const item of items) {
+      const schoolId = await resolveSlug(item.event.schoolKey);
+      if (schoolId === null) continue;
+      const hash = item.keyFor(schoolId);
+      const dup = resolved.get(hash);
+      if (dup) {
+        if (item.event.occurredAt < dup.occurredAt) dup.occurredAt = item.event.occurredAt;
         continue;
       }
-      if (!active.has(schoolId)) continue;
-      if (seenHashes.has(item.event.dedupeHash)) continue;
-      seenHashes.add(item.event.dedupeHash);
-      resolved.push({
-        item,
-        schoolId,
-      });
+      resolved.set(hash, { item, schoolId, hash, occurredAt: item.event.occurredAt });
     }
 
     // Stored events are read back with their labels: their cells are rolled up again, so a roll-up that failed
     // after an earlier insert is repaired by the next run.
-    const stored = new Map<
-      string,
-      {
-        schoolId: string;
-        program: MedProgram | null;
-        cycleYear: number;
-        occurredAt: Date;
-      }
-    >();
-    if (resolved.length > 0) {
-      const found = await prisma.medCycleEvent.findMany({
-        where: {
-          dedupeHash: {
-            in: resolved.map((r) => r.item.event.dedupeHash),
-          },
-        },
-        select: {
-          dedupeHash: true,
-          schoolId: true,
-          program: true,
-          cycleYear: true,
-          occurredAt: true,
-        },
-      });
-      for (const e of found) stored.set(e.dedupeHash, e);
-    }
+    const stored = await findStoredEvents(prisma, [...resolved.keys()]);
+    // Members whose whole history was already ingested need no history again; the lookup that gives the program also
+    // returns the history, so a new member's history costs no extra request.
+    const memberOf = new Map<(typeof items)[number], string | null>();
+    for (const { item } of resolved.values()) memberOf.set(item, client.memberHashOf(item.lookup));
+    const memberStates = await loadMemberStates(prisma, [
+      ...new Set([...memberOf.values()].filter((h): h is string => h !== null)),
+    ]);
+    const ingested = new Set<string>();
 
-    const rows: Array<Record<string, unknown>> = [];
-    const touched: TouchedCell[] = [];
+    const candidates: AdmitCandidate[] = [];
     let stop = false;
-    for (const { item, schoolId } of resolved) {
+    for (const { item, schoolId, hash, occurredAt } of resolved.values()) {
       const ev = item.event;
-      const prior = stored.get(ev.dedupeHash);
+      const prior = stored.get(hash);
       if (prior) {
         summary.alreadyStored++;
-        if (prior.program !== null)
-          touched.push({
-            schoolId: prior.schoolId,
-            program: prior.program,
-            cycleYear: prior.cycleYear,
-            date: prior.occurredAt.toISOString().slice(0, 10),
-          });
+        candidates.push({
+          schoolId: prior.schoolId,
+          cycleYear: prior.cycleYear,
+          program: prior.program,
+          eventType: ev.eventType,
+          occurredAt,
+          dedupeHash: hash,
+        });
         continue;
       }
       if (stop || deps.shouldStop() || session.halted) {
@@ -223,56 +241,63 @@ export async function runAdmitLive(
         summary.deferred++;
         continue;
       }
-      let flag;
+      let profile;
       try {
-        flag = await client.programOf(item.lookup);
+        profile = await client.profileOf(item.lookup);
       } catch (e) {
         if (!(e instanceof SourceHaltedError)) throw e;
         stop = true;
         summary.deferred++;
         continue;
       }
-      if (flag === 'FAILED') {
+      if (profile === 'FAILED') {
         summary.deferred++;
         continue;
       }
-      const program = flagToProgram(flag);
+      const program = flagToProgram(profile.flag);
       if (program === null) summary.programNull++;
-      rows.push({
+      candidates.push({
         schoolId,
         cycleYear: ev.cycleYear,
         program,
         eventType: ev.eventType,
-        occurredAt: ev.occurredAt,
-        source: ev.source,
-        dedupeHash: ev.dedupeHash,
-        inState: null,
+        occurredAt,
+        dedupeHash: hash,
       });
-      if (program !== null) {
-        touched.push({
-          schoolId,
-          program,
-          cycleYear: ev.cycleYear,
-          date: ev.occurredAt.toISOString().slice(0, 10),
-        });
+      // A member seen for the first time: the history this lookup already returned is ingested too.
+      const member = memberOf.get(item) ?? null;
+      if (member !== null && !ingested.has(member) && !memberSettled(memberStates.get(member), now())) {
+        ingested.add(member);
+        for (const h of profile.history) {
+          const histSchool = await resolveSlug(h.schoolKey);
+          if (histSchool === null) continue;
+          candidates.push({
+            schoolId: histSchool,
+            cycleYear: h.cycleYear,
+            program,
+            eventType: h.eventType,
+            occurredAt: h.occurredAt,
+            dedupeHash: h.keyFor(histSchool),
+          });
+          summary.historyEvents++;
+        }
       }
     }
     summary.lookups = client.lookups;
     if (summary.deferred > 0 || client.lookupsStopped) incomplete = true;
 
-    if (rows.length > 0) {
-      const res = await prisma.medCycleEvent.createMany({
-        data: rows,
-        skipDuplicates: true,
-      });
-      summary.created = res.count;
-    }
     // Diffing against the stored counts makes unchanged cells a no-op, so this is safe on every run.
-    if (touched.length > 0)
+    const res = await commitAdmitEvents(prisma, candidates, stored);
+    summary.created = res.created;
+    summary.moved = res.moved;
+    if (res.touched.length > 0)
       summary.rolledUp = await rollupEventCounts(prisma, {
         source: 'ADMIT',
-        touched,
+        touched: res.touched,
       });
+    // Marked only after the events and cells are written, so a failed write re-ingests the member next time.
+    for (const member of ingested) await markMember(prisma, member, 'DONE', now());
+    summary.membersIngested = ingested.size;
     if (stop && session.halted) error = brief(session.lastFailure ?? 'source halted');
   } catch (e) {
     error = brief(e);
