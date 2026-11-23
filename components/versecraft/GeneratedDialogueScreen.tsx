@@ -1149,7 +1149,7 @@ export function GeneratedDialogueScreen() {
               // thought is italic serif — so "talking" never looks like "thinking".
               fontFamily:
                 isSpeech
-                  ? 'var(--font-geist), system-ui, sans-serif'
+                  ? 'var(--site-font-body)'
                   : 'var(--font-eb-garamond, serif)',
               color:
                 isMC

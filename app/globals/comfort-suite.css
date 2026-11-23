@@ -73,6 +73,13 @@ html [data-sonner-toast] {
 /* High-legibility body font. Bundling a dedicated face (Atkinson Hyperlegible /
    OpenDyslexic) is a follow-up; this legible system stack + loosened tracking
    works with zero network cost today. Headings keep the theme display face. */
+/* It also wins over a chosen main or reading face (lib/appearance/fonts.ts): an accessibility setting outranks a taste
+   one. Same specificity as the `html[data-font-*]` rules in app/fonts/choice-rules.css and later in the cascade
+   (globals.css imports that file first), so this one applies. */
+html.readable-font {
+  --site-font-body: 'Atkinson Hyperlegible', Verdana, Tahoma, system-ui, sans-serif;
+  --site-font-reading: 'Atkinson Hyperlegible', Verdana, Tahoma, system-ui, sans-serif;
+}
 html.readable-font body {
   font-family: 'Atkinson Hyperlegible', Verdana, Tahoma, system-ui, sans-serif;
   letter-spacing: 0.012em;

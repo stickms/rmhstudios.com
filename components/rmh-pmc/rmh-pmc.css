@@ -47,8 +47,8 @@
   --st-4: var(--c5);
   --st-sheen: rgba(255, 255, 255, 0.6);
 
-  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
-  --mono: 'Geist Mono', ui-monospace, monospace;
+  --sans: var(--site-font-body);
+  --mono: var(--site-font-mono);
   --maxw: 1200px;
   --pad: clamp(20px, 4.2vw, 56px);
   --gap: clamp(20px, 2.6vw, 40px);

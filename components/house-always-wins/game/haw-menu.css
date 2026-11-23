@@ -32,7 +32,7 @@
   --haw-plate-top: #3d0d19;
   --haw-plate-bot: #230610;
   --haw-serif: ui-serif, Georgia, 'Times New Roman', serif;
-  --haw-mono: var(--font-geist-mono, ui-monospace, 'SFMono-Regular', Menlo, monospace);
+  --haw-mono: var(--site-font-mono, ui-monospace, 'SFMono-Regular', Menlo, monospace);
 }
 
 /* ── Stage: the shared geometry every layer reads ─────────────────────────── */

@@ -599,7 +599,10 @@ describe('FOUC contract: fonts', () => {
 
   it('every generated face is font-display: optional', () => {
     const dir = join(REPO, 'app/fonts');
-    for (const file of readdirSync(dir).filter((f) => f.endsWith('.css'))) {
+    // `choice-rules.css` maps the reader's chosen faces to variables and declares none; the faces themselves live in
+    // app/fonts/choice/ (not scanned here) and are `swap` behind a metric-matched fallback by design (owner,
+    // 2026-11-23): lib/__tests__/font-choice-assets.test.ts holds that contract.
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.css') && f !== 'choice-rules.css')) {
       const css = readFileSync(join(dir, file), 'utf8');
       const faces = css.match(/@font-face\s*\{[^}]*\}/g) ?? [];
       expect(faces.length, `${file} declares no faces`).toBeGreaterThan(0);

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import RmhCapitalLayout from '@/components/rmh-capital/Layout';
 import rmhCapitalCss from '@/components/rmh-capital/rmh-capital.css?url';
-// Geist and Geist Mono are the site's own self-hosted faces and set the whole
+// The site's own faces (DM Sans and DM Mono, or the reader's choice) are self-hosted and set the whole
 // microsite. Spectral (self-hosted, `font-display: optional`, app/fonts/) sets
 // only the deal tombstones, which are announced in serif as tombstones are; its
 // Latin 500 — the weight of the party names — is preloaded. See

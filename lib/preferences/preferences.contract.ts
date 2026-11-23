@@ -24,6 +24,12 @@ export interface AppearancePrefs {
   readableFont: boolean;
   colorVision: string | null;
   jellyMotion: string | null;
+  /** The reader's fonts (lib/appearance/fonts.ts); null = never chosen. */
+  fontMain: string | null;
+  fontReading: string | null;
+  fontMono: string | null;
+  /** ISO time of the account's last appearance change; null when there is no row. */
+  updatedAt: string | null;
 }
 
 /** Partial upsert: a field left out is unchanged, an explicit null clears it. */
