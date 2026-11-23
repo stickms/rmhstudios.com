@@ -66,6 +66,8 @@ describe('getSchoolSecondaries', () => {
       obs('p1', 2027, 'SDN'),
       obs('p2', 2026, 'ADMIT', { limitKind: 'CHARS', limitValue: 1500, optional: true }),
     );
+    // Admit's page was read this cycle, and the prompt is no longer on it.
+    f.tables.medSecondaryCheck.push({ id: 'c0', schoolId: 's1', source: 'ADMIT', checkedAt: CHECKED, status: 'OK', promptCount: 1 });
     const r = await getSchoolSecondaries('duke', {});
     expect(Object.keys(r!).sort()).toEqual([...KEYS].sort());
     expect(r!.cycleYear).toBe(2027);
@@ -109,6 +111,39 @@ describe('getSchoolSecondaries', () => {
     expect(r!.cycleYear).toBe(2027);
     expect(r!.groups[0]).toMatchObject({ shownCycle: 2027, comparedWith: 2026, state: 'current' });
     expect(r!.groups[0]!.prompts[0]).toMatchObject({ status: 'same', cycles: [2026, 2027] });
+  });
+
+  it('one forum sighting does not mark the SDN page\'s other prompts "gone"', async () => {
+    const THREAD = 'https://forums.studentdoctor.net/threads/duke-secondaries.1234/';
+    f.tables.medSecondaryPrompt.push(
+      prompt('p1', 'Describe a challenge you faced and how you responded to it.'),
+      prompt('p2', 'Why is our school the right place for your training?'),
+      prompt('p3', 'Tell us about a time you worked on a team to solve a problem.'),
+    );
+    f.tables.medSecondaryObservation.push(
+      // The SDN page listed p1 and p2 last cycle; this cycle only a forum thread has said anything (p3).
+      obs('p1', 2026, 'SDN', { sourceRef: 'https://www.studentdoctor.net/schools-database/medical-school/essay-questions/DUKE/duke' }),
+      obs('p2', 2026, 'SDN', { sourceRef: 'https://www.studentdoctor.net/schools-database/medical-school/essay-questions/DUKE/duke' }),
+      obs('p3', 2027, 'SDN', { sourceRef: THREAD }),
+    );
+    // The SDN page was not read this cycle (the old check is from last year).
+    f.tables.medSecondaryCheck.push({ id: 'c1', schoolId: 's1', source: 'SDN', checkedAt: new Date('2026-05-01T00:00:00Z'), status: 'OK', promptCount: 2 });
+    const r = await getSchoolSecondaries('duke', {});
+    const statuses = Object.fromEntries(r!.groups[0]!.prompts.map((p) => [p.id, p.status]));
+    expect(statuses.p1).toBeUndefined();
+    expect(statuses.p2).toBeUndefined();
+    expect(statuses.p3).toBe('new');
+  });
+
+  it('a page that was read this cycle still marks what it dropped', async () => {
+    f.tables.medSecondaryPrompt.push(
+      prompt('p1', 'Describe a challenge you faced and how you responded to it.'),
+      prompt('p2', 'Why is our school the right place for your training?'),
+    );
+    f.tables.medSecondaryObservation.push(obs('p1', 2026, 'SDN'), obs('p2', 2026, 'SDN'), obs('p1', 2027, 'SDN'));
+    f.tables.medSecondaryCheck.push({ id: 'c1', schoolId: 's1', source: 'SDN', checkedAt: CHECKED, status: 'OK', promptCount: 1 });
+    const r = await getSchoolSecondaries('duke', {});
+    expect(Object.fromEntries(r!.groups[0]!.prompts.map((p) => [p.id, p.status]))).toEqual({ p1: 'same', p2: 'gone' });
   });
 
   it('filters by program and shows only the programs that have prompts (no empty PHD heading)', async () => {

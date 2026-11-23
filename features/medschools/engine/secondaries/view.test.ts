@@ -189,3 +189,20 @@ describe('buildSchoolView', () => {
     expect(() => buildSchoolView(input, CUR)).not.toThrow();
   });
 });
+
+describe('buildSchoolView: which sources can say a prompt is gone', () => {
+  const THREAD = 'https://forums.studentdoctor.net/threads/duke-secondaries.1234/';
+  const prompts = () => [
+    prompt('page', WHY, [obs(2026, 'SDN')]),
+    prompt('forum', CHALLENGE, [obs(2027, 'SDN', { sourceRef: THREAD })]),
+  ];
+  it('a forum sighting does not make SDN comparable, so the page prompt is not "gone"', () => {
+    const v = reg(buildSchoolView(prompts(), CUR));
+    expect(v?.prompts.map((p) => [p.id, p.status])).toEqual([['forum', 'new']]);
+  });
+  it('a source with no OK check this cycle is not comparable even if it saw something', () => {
+    const p = [prompt('a', WHY, [obs(2026)]), prompt('b', CHALLENGE, [obs(2027)])];
+    expect(reg(buildSchoolView(p, CUR, { readSources: new Set() }))?.prompts.map((x) => x.status)).toEqual(['new']);
+    expect(reg(buildSchoolView(p, CUR, { readSources: new Set(['ADMIT']) }))?.prompts.map((x) => x.status)).toEqual(['new', 'gone']);
+  });
+});

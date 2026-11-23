@@ -102,7 +102,23 @@ function order(a: PromptView, b: PromptView): number {
   return ai - bi || a.text.localeCompare(b.text) || a.id.localeCompare(b.id);
 }
 
-function buildProgram(all: readonly StoredPrompt[], program: MedProgram, currentCycle: number): ProgramView | null {
+/** A forum thread, not a source's own page: a sighting there says a prompt exists, never that a page still lists it. */
+export const isForumRef = (ref: string | null): boolean => ref !== null && /^https:\/\/[^/]+\/threads\//.test(ref);
+
+export interface ViewOptions {
+  /**
+   * The sources whose page was read (a check with status OK) this cycle. A source is compared for "gone" only if it is in
+   * this set; left out, only the forum rule below applies (a bare unit test of the marks).
+   */
+  readSources?: ReadonlySet<PromptSource>;
+}
+
+function buildProgram(
+  all: readonly StoredPrompt[],
+  program: MedProgram,
+  currentCycle: number,
+  opts: ViewOptions = {},
+): ProgramView | null {
   const prompts = all.filter((p) => p.program === program && cyclesOf(p, currentCycle).length > 0);
   if (prompts.length === 0) return null;
 
@@ -134,7 +150,15 @@ function buildProgram(all: readonly StoredPrompt[], program: MedProgram, current
 
   // Compare only on the sources that have seen something this cycle: a source that has not been read yet is not evidence
   // that a school dropped a prompt (Review Focus 1).
-  const comparable = new Set(current.flatMap((p) => observedIn(p, currentCycle).map((o) => o.source)));
+  // A forum sighting never makes a source comparable (one thread post would otherwise mark every other prompt of that
+  // source "not seen this cycle"), and a source whose page was not read this cycle is not evidence either.
+  const comparable = new Set(
+    current.flatMap((p) =>
+      observedIn(p, currentCycle)
+        .filter((o) => !isForumRef(o.sourceRef) && (opts.readSources === undefined || opts.readSources.has(o.source)))
+        .map((o) => o.source),
+    ),
+  );
   const views: PromptView[] = [];
   const unmatchedCurrent: StoredPrompt[] = [];
   for (const p of current) {
@@ -170,10 +194,10 @@ function buildProgram(all: readonly StoredPrompt[], program: MedProgram, current
 }
 
 /** REG then PHD; only programs that have any observed prompt. */
-export function buildSchoolView(prompts: readonly StoredPrompt[], currentCycle: number): ProgramView[] {
+export function buildSchoolView(prompts: readonly StoredPrompt[], currentCycle: number, opts: ViewOptions = {}): ProgramView[] {
   const out: ProgramView[] = [];
   for (const program of PROGRAMS) {
-    const v = buildProgram(prompts, program, currentCycle);
+    const v = buildProgram(prompts, program, currentCycle, opts);
     if (v) out.push(v);
   }
   return out;

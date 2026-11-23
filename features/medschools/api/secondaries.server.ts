@@ -16,7 +16,7 @@ import type {
   MedSecondaryTurnaroundDto,
 } from '../medschools.contract';
 import { buildSchoolView, type ProgramView, type PromptView, type StoredPrompt } from '../engine/secondaries/view';
-import { SOURCE_PRIORITY } from '../engine/secondaries/types';
+import { SOURCE_PRIORITY, type PromptSource } from '../engine/secondaries/types';
 import { parseSummaryKey } from '../engine/sdn-title';
 import { essayQuestionsUrl } from '../scrape/adapters/sdn/urls';
 import { ADMIT_SECONDARY_URL } from '../scrape/sources';
@@ -55,6 +55,18 @@ export async function getSchoolViews(
             lastCheckedAt: true,
           },
         });
+  // Which sources' pages were read this cycle, per school: only those can say a prompt is gone.
+  const cycleStart = new Date(Date.UTC(currentCycle - 1, 5, 1));
+  const checks = await prisma.medSecondaryCheck.findMany({
+    where: { schoolId: { in: [...schoolIds] }, status: 'OK', checkedAt: { gte: cycleStart } },
+    select: { schoolId: true, source: true },
+  });
+  const readBy = new Map<string, Set<PromptSource>>();
+  for (const c of checks) {
+    const set = readBy.get(c.schoolId) ?? new Set<PromptSource>();
+    set.add(c.source);
+    readBy.set(c.schoolId, set);
+  }
   const obsBy = new Map<string, StoredPrompt['observations']>();
   for (const o of observations) {
     const list = obsBy.get(o.promptId) ?? [];
@@ -76,7 +88,7 @@ export async function getSchoolViews(
   }
   for (const id of schoolIds) {
     const stored = bySchool.get(id) ?? [];
-    out.set(id, { view: buildSchoolView(stored, currentCycle), prompts: stored });
+    out.set(id, { view: buildSchoolView(stored, currentCycle, { readSources: readBy.get(id) ?? new Set() }), prompts: stored });
   }
   return out;
 }
