@@ -8,6 +8,11 @@
  *   PLAYWRIGHT_MODULE=/opt/node22/lib/node_modules/playwright/index.mjs \
  *     node scripts/medschools/visual-check.mjs --base http://localhost:7005 --out /tmp/medschools-shots
  *
+ * Phase 5 adds the Forecast tab (interview, acceptance, an empty PhD one, the signed-in one under the chart), the Activity
+ * wave tick, the live feed's "Part of a wave" row and the tracker's invite chance (an estimate and a thin line). A page may
+ * declare `expect.text` (regexes the page must show) and `expect.forecast` (its charts must draw no fill-opacity, gradient
+ * or filter: Steel R1). Seed with seed-visual.ts first: it writes the wave, 24 sharing members at Duke and runs the forecast.
+ *
  * Options: --size 390x844 (one size), --mode day|night, --page <substring>, --lang ar (only the `ar` pass; `ar` always
  * runs at 390 and 1280 unless --size is given), --skip-setup (reuse the user in <out>/user.json).
  *
@@ -60,7 +65,7 @@ const AR_SIZES = [
 const SCHOOL = '/rmh-medschool/harvard';
 const PAGES = [
   ['index', '/rmh-medschool', false, async () => {}],
-  ['live', '/rmh-medschool/live', false, async () => {}],
+  ['live', '/rmh-medschool/live', false, async () => {}, { text: [/Part of a wave/] }],
   [
     'harvard-activity-tooltip',
     SCHOOL,
@@ -72,6 +77,39 @@ const PAGES = [
       if (box) await p.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.5);
       await p.waitForTimeout(500);
     },
+  ],
+  [
+    'harvard-activity-waves',
+    SCHOOL,
+    false,
+    async (p) => {
+      // Interview is on in the visual member's chart preferences, so the wave day carries its tick; the plot is the shot.
+      const plot = p.locator('[role="group"][tabindex="0"]:visible').first();
+      await plot.scrollIntoViewIfNeeded().catch(() => {});
+    },
+    { text: [/wave/i] },
+  ],
+  [
+    'harvard-forecast-interview',
+    `${SCHOOL}?tab=forecast`,
+    false,
+    async () => {},
+    { forecast: true, text: [/forecast/i] },
+  ],
+  ['harvard-forecast-acceptance', `${SCHOOL}?tab=forecast&type=ACCEPTANCE`, false, async () => {}, { forecast: true }],
+  [
+    'harvard-forecast-phd-empty',
+    `${SCHOOL}?tab=forecast&program=PHD&type=ACCEPTANCE`,
+    false,
+    async () => {},
+    { forecast: true, text: [/No reported events yet|do not have enough/] },
+  ],
+  [
+    'duke-forecast-signed-in',
+    '/rmh-medschool/duke?tab=forecast',
+    true,
+    async () => {},
+    { forecast: true, text: [/Your estimate/, /chance of an interview invite/] },
   ],
   ['harvard-history', `${SCHOOL}?tab=history`, false, async () => {}],
   ['harvard-interviews-overview', `${SCHOOL}?tab=interviews`, false, async () => {}],
@@ -91,7 +129,13 @@ const PAGES = [
       await p.waitForTimeout(500);
     },
   ],
-  ['tracker', '/rmh-medschool/tracker', true, async () => {}],
+  [
+    'tracker',
+    '/rmh-medschool/tracker',
+    true,
+    async () => {},
+    { text: [/chance of an interview invite/, /Not enough data yet for an estimate/] },
+  ],
   ['lists', '/rmh-medschool/lists', true, async () => {}],
 ];
 
@@ -194,6 +238,21 @@ async function setup() {
         notes: 'Visited in October. Ask about the research track.',
       });
   }
+  // A waiting application at Duke, where seed-visual.ts put 24 sharing members: the chance shows its estimate state. The
+  // PhD one above sits at a school with no curve, so it shows the thin line.
+  const waiting = await call('POST', '/api/medschools/me/tracker/applications', {
+    cycleYear: cycle,
+    schoolSlug: 'duke',
+    program: 'REG',
+  });
+  if (waiting.id) {
+    const ago = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+    for (const [type, date] of [
+      ['SUBMITTED', ago(55)],
+      ['COMPLETE', ago(40)],
+    ])
+      await call('PUT', `/api/medschools/me/tracker/applications/${waiting.id}/milestones/${type}`, { date });
+  }
   const sharing = await call('PUT', '/api/medschools/me/tracker/cycle', { cycleYear: cycle, shareAnonymously: true });
   if (sharing?.cycle?.shareAnonymously !== true)
     console.log('setup: sharing stayed off (secret unset or the account is too new)');
@@ -209,7 +268,7 @@ const REL = /CURRENT_RELEASE: Release = \{\s*id: '([^']+)'/.exec(
 )?.[1];
 
 /** Everything measured in the page, as plain data. */
-function measure({ touch, narrow }) {
+function measure({ touch, narrow, forecast }) {
   const de = document.documentElement;
   const lum = (rgb) => {
     const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(rgb);
@@ -252,7 +311,23 @@ function measure({ touch, narrow }) {
     : [];
   // A modal's scrim left over the page (a first-run dialog nobody dismissed) dims everything behind it in the shot.
   const scrims = [...document.querySelectorAll('.glass-scrim, [data-slot=dialog-overlay]')].filter(visible).length;
+  // The forecast chart draws no fill-opacity, gradient or filter (Steel R1): the range is two dotted boundaries.
+  const translucent = forecast
+    ? [...document.querySelectorAll('main svg *')].filter((e) => {
+        const cs = getComputedStyle(e);
+        return (
+          /gradient/i.test(e.tagName) ||
+          e.hasAttribute('fill-opacity') ||
+          e.hasAttribute('filter') ||
+          (cs.fillOpacity !== '1' && cs.fill !== 'none') ||
+          (cs.filter && cs.filter !== 'none')
+        );
+      }).length
+    : 0;
+  const text = document.body.innerText;
   return {
+    translucent,
+    text,
     scrims,
     scrollWidth: de.scrollWidth,
     clientWidth: de.clientWidth,
@@ -276,7 +351,7 @@ async function main() {
     if (ONLY_MODE && ONLY_MODE !== mode) continue;
     if (ONLY_LANG && ONLY_LANG !== lang) continue;
     const touch = w < 800;
-    for (const [name, path, signedIn, act] of PAGES) {
+    for (const [name, path, signedIn, act, expect = {}] of PAGES) {
       if (ONLY_PAGE && !name.includes(ONLY_PAGE)) continue;
       const ctx = await browser.newContext({
         viewport: { width: w, height: h },
@@ -323,7 +398,7 @@ async function main() {
         await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 60_000 }).catch(() => {});
         await act(page);
         await page.waitForTimeout(700);
-        const r = await page.evaluate(measure, { touch, narrow: w < 1024 });
+        const r = await page.evaluate(measure, { touch, narrow: w < 1024, forecast: !!expect.forecast });
         const found = [];
         if (r.scrollWidth > r.clientWidth) found.push(`sideways scroll ${r.scrollWidth}>${r.clientWidth}`);
         // The edition that was asked for must be the one painted (Day is light, Night is dark).
@@ -332,6 +407,9 @@ async function main() {
         if (mode === 'day' && !(r.bodyLum !== null && r.bodyLum > 0.8))
           found.push(`Day painted dark (body luminance ${r.bodyLum}, html "${r.htmlClass}")`);
         if (lang === 'ar' && r.dir !== 'rtl') found.push(`ar is not right to left (dir "${r.dir}")`);
+        if (r.translucent) found.push(`${r.translucent} translucent or filtered chart element(s)`);
+        // Copy is English; in `ar` only the structure is asserted.
+        if (lang === 'en') for (const re of expect.text ?? []) if (!re.test(r.text)) found.push(`page lacks ${re}`);
         if (r.scrims) found.push(`${r.scrims} modal scrim(s) over the page`);
         if (r.chartText.length)
           found.push(

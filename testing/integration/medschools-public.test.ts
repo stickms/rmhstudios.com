@@ -9,17 +9,24 @@
  *
  *   INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration -- testing/integration/medschools-public.test.ts
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Client, closeDb } from './lib/client';
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
+import { Client, closeDb, db } from './lib/client';
 import { MEDSCHOOL_FIXTURE_SLUG, removeMedSchoolsFixture, seedMedSchoolsFixture } from './lib/medschools-fixture';
 
 const anon = new Client();
 const SLUG = MEDSCHOOL_FIXTURE_SLUG;
+const INACTIVE_SLUG = 'it-medschools-fixture-inactive';
 
 beforeAll(async () => {
   await seedMedSchoolsFixture();
+  await db().query(
+    `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
+     values ($1, $1, 'Inactive Fixture', 'Inactive', 'MD', 'Durham', 'NC', false, now())`,
+    [INACTIVE_SLUG],
+  );
 });
 afterAll(async () => {
+  await db().query('delete from med_school where id = $1', [INACTIVE_SLUG]);
   await removeMedSchoolsFixture();
   await closeDb();
 });
@@ -161,5 +168,151 @@ describe('RMH Med Schools, public and anonymous', () => {
     expect(chunk.status).toBe(200);
     const xml = String(chunk.body);
     expect(xml).toContain(`/rmh-medschool/${SLUG}`);
+  });
+});
+
+/* ---------------------------- phase 5: waves and the forecast ---------------------------- */
+
+const FORECAST_KEYS = [
+  'asOf',
+  'band',
+  'basis',
+  'cycleYear',
+  'dayZeroEstimated',
+  'dayZeroOn',
+  'endOn',
+  'eventType',
+  'observed',
+  'program',
+  'source',
+  'status',
+  'summary',
+];
+const forecastUrl = (slug = SLUG, query = '') => `/api/medschools/schools/${slug}/forecast${query}`;
+
+/** Run the daily forecast job's function directly (a manual run: no minimum interval), as the `jobs` worker would. */
+async function runForecastJob() {
+  const [{ prisma }, { runForecast }] = await Promise.all([
+    import('../../lib/prisma.server'),
+    import('../../features/medschools/scrape/run-forecast'),
+  ]);
+  const log = { info: () => {}, warn: () => {}, error: (m: string) => console.error(m) };
+  const summary = await runForecast({ prisma: prisma as never, db: prisma, log }, { trigger: 'MANUAL' });
+  expect(summary?.status).toBe('OK');
+  return summary;
+}
+
+describe('waves on the Activity response and the live feed', () => {
+  it('marks the spike days on the Activity response with the pinned keys', async () => {
+    const res = await anon.get(`/api/medschools/schools/${SLUG}/activity`);
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body)).toContain('waves');
+    expect(res.body.waves.length).toBeGreaterThanOrEqual(2);
+    for (const w of res.body.waves) {
+      expect(Object.keys(w).sort()).toEqual(['baseline', 'count', 'date']);
+      expect(w.count).toBeGreaterThan(3 * w.baseline);
+      expect(w.count).toBeGreaterThanOrEqual(5);
+    }
+    expect(res.body.waves.map((w: { count: number }) => w.count)).toContain(30);
+  });
+
+  it('marks a live invite of a wave day and not one of a quiet day', async () => {
+    const res = await anon.get(`/api/medschools/live?school=${SLUG}&limit=100`);
+    expect(res.status).toBe(200);
+    const invites = res.body.events.filter((e: { eventType: string }) => e.eventType === 'INTERVIEW');
+    expect(invites.length).toBeGreaterThan(0);
+    for (const e of res.body.events) expect(typeof e.wave).toBe('boolean');
+    // Yesterday (a wave) carries one fixture invite; today's two are on a day that is not a wave.
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const on = (d: string) => invites.filter((e: { occurredAt: string }) => e.occurredAt.slice(0, 10) === d);
+    expect(on(yesterday).length).toBeGreaterThan(0);
+    expect(on(yesterday).every((e: { wave: boolean }) => e.wave)).toBe(true);
+    expect(on(today).every((e: { wave: boolean }) => !e.wave)).toBe(true);
+    // Only an invite can be part of a wave.
+    expect(
+      res.body.events.filter((e: { eventType: string; wave: boolean }) => e.eventType !== 'INTERVIEW' && e.wave),
+    ).toEqual([]);
+  });
+});
+
+describe('the public forecast', () => {
+  it('is pending, with the observed line only, before the job has run', async () => {
+    const res = await anon.get(forecastUrl());
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body).sort()).toEqual(FORECAST_KEYS);
+    expect(res.body.status).toBe('pending');
+    expect(res.body.band).toEqual([]);
+    expect(res.body.summary).toBeNull();
+    expect(res.body.observed.length).toBeGreaterThan(0);
+  });
+
+  it('is ready after the job, with the band starting at the last observed value', async () => {
+    await runForecastJob();
+    const res = await anon.get(forecastUrl(SLUG, `?cb=${Date.now()}`));
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body).sort()).toEqual(FORECAST_KEYS);
+    expect(res.body.status).toBe('ready');
+    expect(res.body.program).toBe('REG');
+    expect(res.body.eventType).toBe('INTERVIEW');
+    expect(res.body.source).toBe('CYCLETRACK');
+    const last = res.body.observed[res.body.observed.length - 1];
+    const first = res.body.band[0];
+    expect(first.p50).toBe(last.cumulative);
+    expect(first.p10).toBeLessThanOrEqual(first.p50);
+    expect(first.p90).toBeGreaterThanOrEqual(first.p50);
+    // The band widens and never runs backwards.
+    for (let i = 1; i < res.body.band.length; i += 1) {
+      expect(res.body.band[i].p50).toBeGreaterThanOrEqual(res.body.band[i - 1].p50);
+      expect(res.body.band[i].p10).toBeLessThanOrEqual(res.body.band[i].p50);
+      expect(res.body.band[i].p90).toBeGreaterThanOrEqual(res.body.band[i].p50);
+    }
+    expect(Object.keys(res.body.summary).sort()).toEqual(['halfOn', 'total']);
+    expect(res.headers.get('cache-control')).toMatch(/public/);
+  });
+
+  it('carries no person, no hash and no RMH figure while the RMH cells sit below the floor', async () => {
+    const res = await anon.get(forecastUrl(SLUG, `?cb=${Date.now()}`));
+    const text = JSON.stringify(res.body);
+    for (const f of [...FORBIDDEN, 'contributors', 'publishedCount', 'userId', 'dedupeHash', 'RMH', '"count":99'])
+      expect(text, f).not.toContain(f);
+    expect(res.body.source).not.toBe('RMH');
+  });
+
+  it('is byte-identical with and without a session (it never depends on the viewer)', async () => {
+    const member = new Client(inject('alice').cookies);
+    const url = forecastUrl(SLUG, '?cb=viewer');
+    const without = await anon.get(url);
+    const withSession = await member.get(url);
+    expect(withSession.status).toBe(200);
+    expect(JSON.stringify(withSession.body)).toBe(JSON.stringify(without.body));
+    expect(withSession.headers.get('cache-control')).toMatch(/public/);
+  });
+
+  it('reads PHD and a category with no reports as an empty answer, never an error', async () => {
+    const phd = await anon.get(forecastUrl(SLUG, '?program=PHD&type=ACCEPTANCE'));
+    expect(phd.status).toBe(200);
+    expect(phd.body.program).toBe('PHD');
+    expect(['no-data', 'no-history', 'pending']).toContain(phd.body.status);
+    expect(phd.body.band).toEqual([]);
+    // ALL is not a forecast of its own: the regular program answers.
+    const all = await anon.get(forecastUrl(SLUG, '?program=ALL'));
+    expect(all.body.program).toBe('REG');
+  });
+
+  it('answers an unknown and an inactive school with a 404 and a bad parameter with a 4xx', async () => {
+    expect((await anon.get(forecastUrl('does-not-exist'))).status).toBe(404);
+    expect((await anon.get(forecastUrl(INACTIVE_SLUG))).status).toBe(404);
+    expect((await anon.get(forecastUrl(SLUG, '?type=NONSENSE'))).status).toBeLessThan(500);
+  });
+
+  it('server-renders the Forecast tab with the chart and its legend, no script needed', async () => {
+    const res = await anon.get(`/rmh-medschool/${SLUG}?tab=forecast`);
+    expect(res.status).toBe(200);
+    const html = String(res.body);
+    expect(html).toContain('<svg');
+    expect(html).toContain('Median forecast');
+    expect(html).toContain('10th to 90th percentile');
+    for (const f of FORBIDDEN) expect(html, f).not.toContain(f);
   });
 });

@@ -76,7 +76,7 @@ export function ChanceLine({ chance }: { chance: ChanceDto | undefined }) {
       {horizons.length > 0 ? (
         <ul className="m-0 mt-1 list-none p-0">
           {horizons.map((h) => (
-            <li key={h} className="t-body border-b border-site-border py-1 last:border-b-0">
+            <li key={h} className="t-body border-b border-site-border py-1">
               {h}
             </li>
           ))}

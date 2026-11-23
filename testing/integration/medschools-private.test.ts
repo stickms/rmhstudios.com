@@ -27,13 +27,18 @@ import {
   PRIVATE_DO_SLUG,
   PRIVATE_MD_ID,
   PRIVATE_MD_SLUG,
+  removeSharingMembers,
   removeTrackerFixture,
   rmhCountRows,
   rmhEventCount,
   rmhRecompute,
   seedFillerSchools,
+  seedSharingMembers,
+  setSharerSharing,
   seedMedSchoolsFixture,
   seedTrackerFixture,
+  waitCurveColumns,
+  waitCurveRow,
 } from './lib/medschools-fixture';
 
 const SECRET = process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '';
@@ -71,6 +76,7 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   const ids = [a?.id, b?.id, c?.id].filter((x): x is string => !!x);
+  await removeSharingMembers();
   await removeTrackerFixture(ids);
   for (const [id, createdAt] of originalCreated)
     await db().query('update "user" set "createdAt" = $2 where id = $1', [id, createdAt]);
@@ -143,6 +149,7 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['DELETE', '/api/medschools/me/lists/x/items/y'],
   ['PUT', '/api/medschools/me/lists/x/item-order', { ids: [] }],
   ['POST', '/api/medschools/me/lists/x/add-to-tracker', {}],
+  ['GET', '/api/medschools/me/chances'],
   ['GET', '/api/medschools/me/prefs'],
   ['PUT', '/api/medschools/me/prefs', { chartCategories: [] }],
 ];
@@ -622,7 +629,15 @@ describe('the public arrivals and live endpoints', () => {
       expect(res.status, query).toBe(200);
       expect(Object.keys(res.body).sort(), query).toEqual(['asOf', 'events', 'nextCursor']);
       for (const e of res.body.events) {
-        expect(Object.keys(e).sort(), query).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source', 'wave']);
+        expect(Object.keys(e).sort(), query).toEqual([
+          'eventType',
+          'id',
+          'occurredAt',
+          'program',
+          'school',
+          'source',
+          'wave',
+        ]);
         expect(Object.keys(e.school).sort(), query).toEqual(['city', 'degree', 'name', 'shortName', 'slug', 'state']);
         expect(['ADMIT', 'SDN']).toContain(e.source);
       }
@@ -638,5 +653,153 @@ describe('the public arrivals and live endpoints', () => {
     for (const bad of ['q=' + 'x'.repeat(200), 'types=nonsense', 'programs=md,xx', 'state=zz']) {
       expect((await anon.get(fresh(`/api/medschools/live?${bad}`))).status, bad).toBeLessThan(500);
     }
+  });
+});
+
+/* --------------------------- phase 5: the personal invite chance --------------------------- */
+
+async function runForecastJob() {
+  const [{ prisma }, { runForecast }] = await Promise.all([
+    import('../../lib/prisma.server'),
+    import('../../features/medschools/scrape/run-forecast'),
+  ]);
+  const log = { info: () => {}, warn: () => {}, error: (m: string) => console.error(m) };
+  const summary = await runForecast({ prisma: prisma as never, db: prisma, log }, { trigger: 'MANUAL' });
+  expect(summary?.status).toBe('OK');
+  return summary;
+}
+
+const CHANCE_KEYS = [
+  'applicationId',
+  'asOf',
+  'basis',
+  'completeOn',
+  'invitedOn',
+  'points',
+  'program',
+  'school',
+  'status',
+];
+
+describe('the personal invite chance (me/chances)', () => {
+  let memberDates: string[] = [];
+  const chances = async (m: Member) => {
+    const res = await m.client.get('/api/medschools/me/chances');
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    return res;
+  };
+
+  beforeAll(async () => {
+    // Start from empty trackers for the three members (earlier sections left cycles behind), then give alice and bob a
+    // waiting application at the DO fixture school; neither shares, so neither feeds the curve.
+    for (const m of [a, b, c]) await m.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
+    for (const [m, ago] of [
+      [a, 40],
+      [b, 33],
+    ] as const) {
+      expect((await putCycle(m, false)).status).toBe(200);
+      const app = await addApp(m, PRIVATE_DO_SLUG, 'REG');
+      expect((await putMilestone(m, app, 'COMPLETE', dayAgo(ago))).status).toBe(200);
+    }
+    // 19 other members who share, at the same school and program: one under the floor of 20.
+    memberDates = await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 19);
+    await runForecastJob();
+  });
+
+  it('is 401 for a signed-out visitor with no public cache header', async () => {
+    const res = await anon.get('/api/medschools/me/chances');
+    expect(res.status).toBe(401);
+    expect(res.headers.get('cache-control') ?? '').not.toMatch(/public|s-maxage/i);
+    expect(res.headers.get('etag')).toBeNull();
+  });
+
+  it('answers a signed-in read privately, with the pinned key sets', async () => {
+    const res = await chances(a);
+    const cc = res.headers.get('cache-control') ?? '';
+    expect(cc).not.toMatch(/public|s-maxage/i);
+    expect(res.headers.get('etag')).toBeNull();
+    expect(Object.keys(res.body).sort()).toEqual(['chances', 'cycleYear']);
+    expect(res.body.cycleYear).toBe(CYCLE);
+    expect(res.body.chances).toHaveLength(1);
+    const [one] = res.body.chances;
+    expect(Object.keys(one).sort()).toEqual(CHANCE_KEYS);
+    expect(Object.keys(one.school).sort()).toEqual(['active', 'name', 'shortName', 'slug']);
+    expect(one.completeOn).toBe(dayAgo(40));
+  });
+
+  it('is thin with 19 sharing members and an estimate with 20 (the floor counts distinct members)', async () => {
+    const thin = (await chances(a)).body.chances[0];
+    expect(thin.status).toBe('thin');
+    expect(thin.points).toEqual([]);
+    expect(thin.basis).toBeNull();
+    expect(await waitCurveRow(PRIVATE_DO_ID)).toBeNull();
+
+    memberDates = [...memberDates, ...(await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 1, 19))];
+    await runForecastJob();
+    const est = (await chances(a)).body.chances[0];
+    expect(est.status).toBe('estimate');
+    expect(est.basis).toBe(20);
+    expect(est.asOf).toBe(dayAgo(1));
+    expect(est.points.length).toBeGreaterThan(0);
+    let prev = -1;
+    for (const p of est.points) {
+      expect(Object.keys(p).sort()).toEqual(['on', 'percent']);
+      expect(Number.isInteger(p.percent)).toBe(true);
+      expect(p.percent).toBeGreaterThanOrEqual(0);
+      expect(p.percent).toBeLessThanOrEqual(100);
+      expect(p.percent).toBeGreaterThanOrEqual(prev);
+      expect(p.on > dayAgo(0)).toBe(true);
+      prev = p.percent;
+    }
+    // Late invites exist in the fixture past alice's 39 days, so the chance does rise.
+    expect(est.points[est.points.length - 1].percent).toBeGreaterThan(0);
+  });
+
+  it("never carries another member's dates: bob sees his own and not alice's, and nobody sees a sharer's", async () => {
+    const [mine, theirs] = [await chances(a), await chances(b)];
+    expect(theirs.body.chances[0].completeOn).toBe(dayAgo(33));
+    expect(JSON.stringify(theirs.body)).not.toContain(dayAgo(40));
+    expect(JSON.stringify(mine.body)).not.toContain(dayAgo(33));
+    for (const res of [mine, theirs]) {
+      const text = JSON.stringify(res.body);
+      for (const d of memberDates) expect(text, d).not.toContain(d);
+      expect(text).not.toMatch(/it-medschools-sharer|userId|dedupeHash|members"/);
+    }
+    // carol has no application: an empty answer, not an error.
+    expect((await chances(c)).body.chances).toEqual([]);
+    // A school filter naming a school she did not apply to answers empty, for any member.
+    const other = await a.client.get(`/api/medschools/me/chances?school=${PRIVATE_MD_SLUG}`);
+    expect(other.status).toBe(200);
+    expect(other.body.chances).toEqual([]);
+  });
+
+  it('stores a curve with no column that could hold a person, only t and s', async () => {
+    const cols = await waitCurveColumns();
+    expect(cols).toEqual(['id', 'schoolId', 'program', 'asOf', 'computedAt', 'members', 'invited', 'maxDay', 'curve']);
+    expect(cols.join(' ')).not.toMatch(/user|member_?id|email|application/i);
+    const row = await waitCurveRow(PRIVATE_DO_ID);
+    expect(row).not.toBeNull();
+    expect(Object.keys(row!.curve as object).sort()).toEqual(['s', 't']);
+    expect(row!.members).toBe(20);
+  });
+
+  it('drops back to thin when one member turns sharing off and the job runs again', async () => {
+    await setSharerSharing(0, false);
+    await runForecastJob();
+    expect((await chances(a)).body.chances[0].status).toBe('thin');
+    expect(await waitCurveRow(PRIVATE_DO_ID)).toBeNull();
+    await setSharerSharing(0, true);
+  });
+
+  it('says nothing for a closed application and "invited" for one that has its invite', async () => {
+    const app = (await a.client.get('/api/medschools/me/tracker')).body.cycle.applications[0].id as string;
+    expect((await putMilestone(a, app, 'INTERVIEW', dayAgo(5))).status).toBe(200);
+    const invited = (await chances(a)).body.chances[0];
+    expect(invited.status).toBe('invited');
+    expect(invited.invitedOn).toBe(dayAgo(5));
+    // A rejection with no invite closes the application: bob's gets no line at all.
+    const bobApp = (await b.client.get('/api/medschools/me/tracker')).body.cycle.applications[0].id as string;
+    expect((await putMilestone(b, bobApp, 'REJECTION', dayAgo(2))).status).toBe(200);
+    expect((await chances(b)).body.chances[0].status).toBe('closed');
   });
 });
