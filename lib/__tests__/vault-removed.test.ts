@@ -63,13 +63,10 @@ describe('the Vault is removed', () => {
     }
   });
 
-  it('vault redirects cover every old path', () => {
-    expect(LEGACY_REDIRECTS['/secret']).toBe('/games');
-    expect(LEGACY_REDIRECTS['/secret/vega']).toBe('/vega');
-    expect(LEGACY_REDIRECTS['/secret/signal-forge']).toBe('/signal-forge');
-    expect(LEGACY_REDIRECTS['/secret/cursed-logic']).toBe('/cursed-logic');
-    // A trailing slash (the old nested route's own spelling) forwards too.
-    expect(legacyRedirectFor('/secret/')).toBe('/games');
-    expect(legacyRedirectFor('/secret/cursed-logic/')).toBe('/cursed-logic');
+  it('keeps no redirect from the old /secret paths (the route is gone, not forwarded)', () => {
+    expect(Object.keys(LEGACY_REDIRECTS).filter((k) => k === '/secret' || k.startsWith('/secret/'))).toEqual([]);
+    for (const p of ['/secret', '/secret/', '/secret/vega', '/secret/signal-forge', '/secret/cursed-logic']) {
+      expect(legacyRedirectFor(p), p).toBeNull();
+    }
   });
 });
