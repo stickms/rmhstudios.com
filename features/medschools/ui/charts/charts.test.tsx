@@ -7,6 +7,7 @@ import { CategoryLines } from './CategoryLines';
 import { CATEGORY_COLOR, CATEGORY_STYLE, SOURCE_COLOR, cycleColor } from './chartColors';
 import type { ChartLabels } from './ChartFrame';
 import { CumulativeLine } from './CumulativeLine';
+import { ArrivalBars } from './ArrivalBars';
 import { CycleOverlay } from './CycleOverlay';
 import { DailyBars } from './DailyBars';
 
@@ -270,9 +271,10 @@ describe('CycleOverlay', () => {
     expect(jul).toEqual(['Jul 11', '', '9']);
     expect(rows.find((r) => r[0] === 'Jun 4')).toEqual(['Jun 4', '4', '0']);
   });
-  it('only the newest cycle is the thick line', () => {
+  it('every cycle is a 2px line (a dash reads too faint thinner), none 1.5px', () => {
     const html = renderToString(<CycleOverlay cycles={cycles} sourceName="CycleTrack" labels={labels} />);
-    expect(phone(html).match(/stroke-width="2"/g)).toHaveLength(1);
+    expect(phone(html)).not.toMatch(/stroke-width="1\.5"/);
+    expect(phone(html).match(/stroke-width="2"/g)!.length).toBeGreaterThanOrEqual(cycles.length);
   });
   it('no cycles or all-empty cycles are safe', () => {
     expectBasics(renderToString(<CycleOverlay cycles={[]} sourceName="CycleTrack" labels={labels} />), true);
@@ -295,6 +297,7 @@ describe('static rules', () => {
   const ROOT = path.resolve(dir, '../../../..');
   it('has the chart files', () => {
     expect(files.sort()).toEqual([
+      'ArrivalBars.tsx',
       'CategoryLines.tsx',
       'ChartFrame.tsx',
       'CumulativeLine.tsx',
@@ -342,5 +345,43 @@ describe('static rules', () => {
     walk(path.join(ROOT, 'app/routes'));
     walk(path.join(ROOT, 'features/medschools/api'));
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('ArrivalBars (when results arrive)', () => {
+  const items = [
+    { key: 'd0', label: 'Monday', tick: 'Mon', count: 6 },
+    { key: 'd1', label: 'Tuesday', tick: 'Tue', count: 0 },
+    { key: 'd2', label: 'Wednesday', tick: null, count: 3 },
+  ];
+  const render = (data = items) =>
+    renderToString(
+      <ArrivalBars
+        items={data}
+        color="var(--site-chart-3)"
+        title="Acceptance by day of the week"
+        unit="Reported events, US Eastern time"
+        sourcesLine="Sources: Admit.org, Student Doctor Network"
+        head={['Day', 'Reported events']}
+        labels={labels}
+      />,
+    );
+  it('is a chart card with one bar per item in the category colour, a labelled zone and a data table', () => {
+    const html = render();
+    expect(html).toContain('US Eastern time');
+    expect(html.match(/<rect/g)!.length).toBeGreaterThanOrEqual(items.length);
+    expect(html).toContain('fill="var(--site-chart-3)"');
+    expect(html).toContain('<table');
+    expect(html).toContain('>Monday<');
+    expect(html).toContain('role="group"');
+  });
+  it('labels only the ticks it was given', () => {
+    const html = render();
+    expect(html).toContain('>Mon<');
+    expect(html).not.toContain('>Wed<');
+  });
+  it('an all-zero histogram says there is nothing, and draws no bars', () => {
+    const html = render(items.map((i) => ({ ...i, count: 0 })));
+    expect(html).toContain(labels.empty);
   });
 });

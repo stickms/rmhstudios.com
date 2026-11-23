@@ -31,7 +31,7 @@ import { useTween } from './useTween';
  * Cumulative reported events by calendar date, one line per cycle, from ONE source (D4: never cross-source). Owner O7:
  * the cycles are aligned by month and day, so June 1 of every cycle lines up and the axis reads "Jun 1", "Aug 15"
  * (no year, never "days since cycle start"); a series is named by its cycle ("2026–2027"). `cycles` are newest
- * first: the newest is the solid 2px line (blue), earlier cycles are 1.5px with their own dash and colour, in fixed
+ * first: the newest is the solid 2px line (blue), earlier cycles are 2px too (a dash reads too faint thinner) with their own dash and colour, in fixed
  * order. Every line rises from 0 on its own first day.
  */
 export function CycleOverlay(p: {
@@ -48,7 +48,7 @@ export function CycleOverlay(p: {
     name: cycleLabel(c.cycleYear),
     color: cycleColor(rank),
     dash: cycleDash(rank),
-    width: rank === 0 ? 2 : 1.5,
+    width: 2,
     pts: cycleCalendarPoints(c.points, c.dayZeroOn, c.cycleYear),
   }));
   const withData = lines.filter((l) => l.pts.length > 0);

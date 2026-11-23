@@ -61,7 +61,7 @@ export function CumulativeLine(p: {
   const style = (s: ActivitySeries) => ({
     color: SOURCE_COLOR[s.source],
     dash: SOURCE_DASH[s.source],
-    width: s === p.primary ? 2 : 1.5,
+    width: 2,
   });
 
   const days = [...new Set(cum.flatMap((c) => c.map((q) => q.x)))].sort((a, b) => a - b);

@@ -11,6 +11,7 @@ import { useChartLabels } from './chartLabels';
 import { useMedLabels } from './labels';
 import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
+import { ArrivalsSection } from './ArrivalsSection';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
 
@@ -115,6 +116,7 @@ export function HistoryTab({
             </div>
           </>
         )}
+        <ArrivalsSection slug={slug} type={type} program={search.program} />
       </div>
     </SkeletonSwap>
   );
