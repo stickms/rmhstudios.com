@@ -197,11 +197,25 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
 - The SDN live queue runs daily (SDN forum activity is slow); AI extraction is capped monthly. Detail:
   `server/CLAUDE.md`.
 
-## Adding the Forecast tab (phase 5)
+## The Forecast tab, waves and the personal chance (phase 5, UI and endpoints)
 
-Add `'forecast'` to `SCHOOL_TABS` between `history` and `interviews` in `engine/public-read.ts`, one query factory in
-`medschools.queries.ts`, and one tab component in `ui/`; `SchoolPage` renders tabs from `SCHOOL_TABS` and needs no other
-change. Keep the chart rules and the floor above.
+A school tab is four edits, not one: the id in `SCHOOL_TABS` (`engine/public-read.ts`, which `parseSchoolSearch` reads),
+a query factory and the loader's prefetch branch in `medschools.queries.ts` (so the chart is in the server HTML), a
+label and a branch of the switch in `ui/SchoolPage.tsx` (the strip comes from `SCHOOL_TABS`, the body does not), and the
+tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts/ForecastBand.tsx`.
+
+- **Endpoints.** Public `GET schools/$slug/forecast` (`getForecast` in `api/read.server.ts`: the stored `MedForecast`
+  row plus the floored observed series cumulated through the row's `asOf`; `ALL` reads REG; status `ready | early |
+  no-history | no-data | pending`). Private `GET me/chances` (`api/chances.server.ts`: the caller's own applications
+  from `getTracker`, one `MedWaitCurve` row per school x program, no id parameter, never cached).
+- **Chart.** The observed line is the category's colour, solid 2px; the median is dashed 2px; the 10th and 90th
+  percentiles are 1px dotted boundaries; nothing is filled or translucent (R1). The x axis is calendar dates, the y
+  axis starts at 0 and tweens. `ui/charts/charts.test.tsx` holds the markup.
+- **Waves.** `waves` on the Activity response and `wave` on live rows come from `engine/stats/waves.ts` (server only).
+  Ticks sit on `CategoryLines` (only while Interview is on) and `DailyBars` (Interview only); `WaveNote` is the
+  non-visual reading; a live row says "Part of a wave".
+- **The chance** shows on the tracker (`tracker/ChanceLine.tsx`, one query for the cycle under `ME_KEY`) and under the
+  Forecast chart (`SchoolChances.tsx`). It is an addition: signed out, loading or failed, the page is whole without it.
 
 ## Testing and verification
 
