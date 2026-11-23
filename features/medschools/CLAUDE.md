@@ -356,6 +356,14 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   follows a Day pass paints Day on the tracker and lists pages unless the account is set first
   (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they are ordinary
   `_site` pages and `lib/prepaint/theme-routes.ts` does not exclude them.
+- **Ask pages in the visual pass (phase 6).** `visual-check.mjs --fake-ai` also shoots the Ask page (signed out, idle,
+  answered, partial, declined, my-chance, the wait, the cap reached and the 429 refusal) and the school page's panel (idle,
+  answered). It hosts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` itself, so the app must be started
+  with `DEEPSEEK_API_KEY=integration-fake DEEPSEEK_BASE_URL=http://127.0.0.1:7798/v1` and `RATE_LIMIT_MULTIPLIER=50`, and
+  `DATABASE_URL` must name the scratch database (it clears and plants the member's `ai_usage` rows). It asserts no
+  sideways scroll, 44 px controls, and Steel R1 on the page content (no shadow, gradient, filter or backdrop filter).
+  Without the flag only the signed-out and idle pages run. It found that the grounding validator dropped every sentence
+  naming "Admit.org" (a domain-shaped source name); a domain is now allowed when it is in our own fact text.
 - i18n: namespace `medschools`; new keys carry a prefix (`index-`, `live-`, `school-`, `chart-`, `event-`, `program-`,
   `source-`); the hub row's two strings are `nav-rmh-medschools` and `services-medschools-desc` in `feed`.
 

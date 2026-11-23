@@ -13,7 +13,16 @@
  * declare `expect.text` (regexes the page must show) and `expect.forecast` (its charts must draw no fill-opacity, gradient
  * or filter: Steel R1). Seed with seed-visual.ts first: it writes the wave, 24 sharing members at Duke and runs the forecast.
  *
- * Options: --size 390x844 (one size), --mode day|night, --page <substring>, --lang ar (only the `ar` pass; `ar` always
+ * Phase 6 adds the Ask page and the school page's Ask panel: signed out (the sign-in prompt), idle, answered with citations,
+ * partial (the removed-statement notice), declined, a "my chance" answer with the member's own estimate, the cap reached
+ * (an idle page with no questions left, and the 429 refusal), and the wait. The answered states need a model, so
+ * `--fake-ai` starts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` in this process (`--fake-port`, default
+ * 7798) and the APP must be started with the matching `DEEPSEEK_API_KEY=integration-fake DEEPSEEK_BASE_URL=http://127.0.0.1:7798/v1`
+ * (and `RATE_LIMIT_MULTIPLIER=50`: one pass asks a few dozen questions inside a minute). `DATABASE_URL` must name the scratch
+ * database too: the script clears the member's `ai_usage` rows between pages and plants the cap's rows. Without `--fake-ai`
+ * the pages that need a model are skipped; the signed-out and idle ones still run.
+ *
+ * Options: --fake-ai, --fake-port 7798, --size 390x844 (one size), --mode day|night, --page <substring>, --lang ar (only the `ar` pass; `ar` always
  * runs at 390 and 1280 unless --size is given), --skip-setup (reuse the user in <out>/user.json).
  *
  * It signs up ONE member (the sign-up limit is 10 a minute), backdates the account when DATABASE_URL names a scratch
@@ -31,7 +40,7 @@
 /* global localStorage -- used inside the pages' init script, which runs in the browser. */
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -47,6 +56,8 @@ const ONLY_SIZE = opt('size');
 const ONLY_MODE = opt('mode');
 const ONLY_PAGE = opt('page');
 const ONLY_LANG = opt('lang');
+const FAKE_AI = args.includes('--fake-ai');
+const FAKE_PORT = Number(opt('fake-port', '7798'));
 
 const SIZES = [
   [320, 568],
@@ -138,6 +149,201 @@ const PAGES = [
   ],
   ['lists', '/rmh-medschool/lists', true, async () => {}],
 ];
+
+/* ------------------------------ the Ask pages (phase 6) ------------------------------ */
+
+const ASK_PAGE = '/rmh-medschool/ask';
+const DUKE = '/rmh-medschool/duke';
+/** What the page must NOT draw: the signed-out Ask page has no field, and no page here draws a stray form control twice. */
+const FLAT = { flat: true };
+
+/** The fake provider and the scratch database, set up by `main()` when `--fake-ai` is given. */
+const ai = { fake: null, userJson: null, pool: null, userId: null };
+const factsOf = (call) => ai.userJson(call.user)?.facts ?? [];
+const route = (intent, school = 'Duke') => ({
+  intent,
+  schools: [school],
+  cycle: null,
+  filters: { state: null, format: null },
+});
+/** Segments a grounded model would write: the retrieved sentences themselves (every number in one is in its fact). */
+const grounded = (call, n = 3) =>
+  factsOf(call)
+    .filter((f) => !f.untrusted && /\d/.test(f.text))
+    .sort((a, b) => Number(b.label === 'Reported events') - Number(a.label === 'Reported events'))
+    .slice(0, n)
+    .map((f) => ({ text: f.text.slice(0, 380), cites: [f.ref] }));
+const SCRIPTS = {
+  answered: (call) => (call.kind === 'route' ? route('facts') : { segments: grounded(call, 3), thin: false }),
+  partial: (call) =>
+    call.kind === 'route'
+      ? route('facts')
+      : {
+          segments: [
+            ...grounded(call, 2),
+            { text: 'Duke has 987654 reported interview events.', cites: [factsOf(call)[0]?.ref ?? 'f1'] },
+          ],
+          thin: false,
+        },
+  declined: (call) =>
+    call.kind === 'route' ? { intent: 'other', schools: [], cycle: null, filters: {} } : { segments: [] },
+  mine: (call) => (call.kind === 'route' ? route('my-chance') : { segments: grounded(call, 1), thin: false }),
+  slow: async (call) => {
+    if (call.kind === 'route') await new Promise((r) => setTimeout(r, 6000));
+    return SCRIPTS.answered(call);
+  },
+};
+const clearLedger = () =>
+  ai.pool?.query(`delete from ai_usage where task = 'medschools-qa' and ("userId" = $1 or "userId" is null)`, [
+    ai.userId,
+  ]);
+const plantRows = (n) =>
+  ai.pool?.query(
+    `insert into ai_usage ("userId", task, provider, model, "promptId", "promptVer", "inTokens", "outTokens", "costMicros", ok)
+     select $1, 'medschools-qa', 'deepseek', 'fake', 'medschools-qa-route', 1, 1, 1, 0, true from generate_series(1, $2)`,
+    [ai.userId, n],
+  );
+/** Fill the field, press Ask and (unless `wait` is false) wait for the answer. */
+const asking =
+  (script, question, { wait = true, before, clear = true } = {}) =>
+  async (p) => {
+    ai.fake.setScript(script);
+    if (clear) await clearLedger();
+    await before?.(p);
+    await p.getByLabel('Your question').fill(question);
+    const button = p.getByRole('button', { name: 'Ask', exact: true });
+    // The docked globe floats over the bottom of a phone viewport: bring the button to the middle before pressing it.
+    await button.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await button.click();
+    if (wait) {
+      await p.waitForSelector('[data-testid=ask-answer], [role=alert]', { timeout: 20_000 });
+      await p
+        .locator('[data-testid=ask-answer], [role=alert]')
+        .first()
+        .scrollIntoViewIfNeeded()
+        .catch(() => {});
+    }
+  };
+
+/** Pages that need `--fake-ai` carry `ai: true` in their expectations. */
+const ASK_PAGES = [
+  [
+    'ask-signed-out',
+    ASK_PAGE,
+    false,
+    async () => {},
+    { ...FLAT, text: [/Sign in to ask a question/], absent: ['textarea'] },
+  ],
+  [
+    'ask-idle',
+    ASK_PAGE,
+    true,
+    async () => {},
+    {
+      ...FLAT,
+      text: [/Your question/, /questions left today/, /RMH does not keep it/, /Try one/],
+      present: ['textarea'],
+    },
+  ],
+  [
+    'ask-answered',
+    ASK_PAGE,
+    true,
+    asking(SCRIPTS.answered, 'How many interviews has Duke reported this cycle?'),
+    {
+      ...FLAT,
+      ai: true,
+      text: [/Sources/, /reported interview events/, /Open on RMH/, /source refreshed|update time unknown/],
+    },
+  ],
+  [
+    'ask-partial',
+    ASK_PAGE,
+    true,
+    asking(SCRIPTS.partial, 'How many interviews has Duke reported this cycle?'),
+    { ...FLAT, ai: true, text: [/Some statements were removed because their figures could not be matched/] },
+  ],
+  [
+    'ask-declined',
+    ASK_PAGE,
+    true,
+    asking(SCRIPTS.declined, 'What are my chances of getting into Duke?'),
+    { ...FLAT, ai: true, text: [/cannot estimate your chance of admission/] },
+  ],
+  [
+    'ask-my-chance',
+    ASK_PAGE,
+    true,
+    asking(SCRIPTS.mine, 'When will I hear from Duke?'),
+    { ...FLAT, ai: true, text: [/Your estimate/, /chance of an interview invite|Not enough data yet|Add the date/] },
+  ],
+  [
+    'ask-pending',
+    ASK_PAGE,
+    true,
+    asking(SCRIPTS.slow, 'How many interviews has Duke reported this cycle?', { wait: false }),
+    { ...FLAT, ai: true, text: [/Checking the data/, /Cancel/] },
+  ],
+  [
+    'ask-cap-reached',
+    ASK_PAGE,
+    true,
+    async (p) => {
+      await p
+        .getByLabel('Your question')
+        .fill('How many interviews has Duke reported this cycle?')
+        .catch(() => {});
+    },
+    {
+      ...FLAT,
+      ai: true,
+      before: async () => {
+        await clearLedger();
+        await plantRows(15);
+      },
+      text: [/0 of 15 questions left today/],
+    },
+  ],
+  [
+    'ask-cap-refused',
+    ASK_PAGE,
+    true,
+    async (p) => {
+      // One question left on the page's own count, none by the time the request lands: the server's 429 is what shows.
+      await plantRows(1);
+      await asking(SCRIPTS.answered, 'How many interviews has Duke reported this cycle?', { clear: false })(p);
+    },
+    {
+      ...FLAT,
+      ai: true,
+      before: async () => {
+        await clearLedger();
+        await plantRows(14);
+      },
+      text: [/used today's questions/, /00:00 UTC/],
+    },
+  ],
+  [
+    'school-ask-idle',
+    DUKE,
+    true,
+    async (p) => {
+      await p
+        .getByLabel('Your question')
+        .scrollIntoViewIfNeeded()
+        .catch(() => {});
+    },
+    { ...FLAT, text: [/Ask about /, /questions left today/], present: ['textarea'] },
+  ],
+  [
+    'school-ask-answered',
+    DUKE,
+    true,
+    asking(SCRIPTS.answered, 'What are the MCAT and GPA medians?'),
+    { ...FLAT, ai: true, text: [/Ask about /, /Sources/] },
+  ],
+];
+PAGES.push(...ASK_PAGES);
 
 /* ------------------------------ the member ------------------------------ */
 
@@ -268,7 +474,7 @@ const REL = /CURRENT_RELEASE: Release = \{\s*id: '([^']+)'/.exec(
 )?.[1];
 
 /** Everything measured in the page, as plain data. */
-function measure({ touch, narrow, forecast }) {
+function measure({ touch, narrow, forecast, flat, absent, present }) {
   const de = document.documentElement;
   const lum = (rgb) => {
     const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(rgb);
@@ -324,8 +530,27 @@ function measure({ touch, narrow, forecast }) {
         );
       }).length
     : 0;
+  // Steel R1: nothing in the page's content draws a shadow, gradient, filter or backdrop filter.
+  const unflat = flat
+    ? [...document.querySelectorAll('main *')]
+        .filter((e) => {
+          const cs = getComputedStyle(e);
+          return (
+            (cs.boxShadow && cs.boxShadow !== 'none') ||
+            /gradient/i.test(cs.backgroundImage) ||
+            (cs.filter && cs.filter !== 'none') ||
+            (cs.backdropFilter && cs.backdropFilter !== 'none')
+          );
+        })
+        .map((e) => `${e.tagName.toLowerCase()}.${String(e.className).slice(0, 40)}`)
+    : [];
+  const selectorsFound = (list) => (list ?? []).filter((sel) => document.querySelector(sel));
+  const selectorsMissing = (list) => (list ?? []).filter((sel) => !document.querySelector(sel));
   const text = document.body.innerText;
   return {
+    unflat,
+    unexpected: selectorsFound(absent),
+    missing: selectorsMissing(present),
     translucent,
     text,
     scrims,
@@ -341,6 +566,20 @@ function measure({ touch, narrow, forecast }) {
 
 async function main() {
   const user = await setup();
+  if (FAKE_AI) {
+    const fakeUrl = pathToFileURL(join(ROOT, 'testing/integration/lib/fake-deepseek.ts')).href;
+    const { startFakeDeepseek, userJson } = await import(fakeUrl);
+    ai.userJson = userJson;
+    ai.fake = await startFakeDeepseek(FAKE_PORT, SCRIPTS.answered);
+    const url = process.env.DATABASE_URL;
+    if (!(url && /scratch/.test(url) && /127\.0\.0\.1|localhost/.test(url)))
+      throw new Error('--fake-ai needs DATABASE_URL on a local scratch database');
+    const { default: pg } = await import('pg');
+    ai.pool = new pg.Pool({ connectionString: url, max: 2 });
+    ai.userId = (await ai.pool.query('select id from "user" where email = $1', [user.email])).rows[0]?.id;
+    if (!ai.userId) throw new Error(`no user row for ${user.email}`);
+    await clearLedger();
+  }
   const browser = await chromium.launch();
   const problems = [];
   const passes = [];
@@ -353,6 +592,7 @@ async function main() {
     const touch = w < 800;
     for (const [name, path, signedIn, act, expect = {}] of PAGES) {
       if (ONLY_PAGE && !name.includes(ONLY_PAGE)) continue;
+      if (expect.ai && !FAKE_AI) continue;
       const ctx = await browser.newContext({
         viewport: { width: w, height: h },
         deviceScaleFactor: 1,
@@ -392,13 +632,23 @@ async function main() {
       // "Realtime URL is not configured" is the calls hub, absent from a local run; every signed-in page logs it.
       page.on(
         'pageerror',
-        (e) => !/Realtime URL is not configured/.test(String(e)) && errors.push(String(e).slice(0, 160)),
+        (e) => !/Realtime URL is not configured/.test(String(e)) && errors.push(String(e).slice(0, 700)),
       );
       try {
+        // Every page starts with the member's day at zero, so the page's own count is what a member sees on a fresh day.
+        await clearLedger();
+        await expect.before?.();
         await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 60_000 }).catch(() => {});
         await act(page);
         await page.waitForTimeout(700);
-        const r = await page.evaluate(measure, { touch, narrow: w < 1024, forecast: !!expect.forecast });
+        const r = await page.evaluate(measure, {
+          touch,
+          narrow: w < 1024,
+          forecast: !!expect.forecast,
+          flat: !!expect.flat,
+          absent: expect.absent,
+          present: expect.present,
+        });
         const found = [];
         if (r.scrollWidth > r.clientWidth) found.push(`sideways scroll ${r.scrollWidth}>${r.clientWidth}`);
         // The edition that was asked for must be the one painted (Day is light, Night is dark).
@@ -407,9 +657,14 @@ async function main() {
         if (mode === 'day' && !(r.bodyLum !== null && r.bodyLum > 0.8))
           found.push(`Day painted dark (body luminance ${r.bodyLum}, html "${r.htmlClass}")`);
         if (lang === 'ar' && r.dir !== 'rtl') found.push(`ar is not right to left (dir "${r.dir}")`);
+        if (r.unflat.length) found.push(`not flat (R1): ${r.unflat.slice(0, 3).join(', ')}`);
+        if (r.unexpected.length) found.push(`unexpected ${r.unexpected.join(', ')}`);
+        if (r.missing.length) found.push(`missing ${r.missing.join(', ')}`);
         if (r.translucent) found.push(`${r.translucent} translucent or filtered chart element(s)`);
         // Copy is English; in `ar` only the structure is asserted.
-        if (lang === 'en') for (const re of expect.text ?? []) if (!re.test(r.text)) found.push(`page lacks ${re}`);
+        if (lang === 'en')
+          for (const re of expect.text ?? [])
+            if (!re.test(r.text.replace(/[\u2066-\u2069]/g, ''))) found.push(`page lacks ${re}`);
         if (r.scrims) found.push(`${r.scrims} modal scrim(s) over the page`);
         if (r.chartText.length)
           found.push(
@@ -433,13 +688,18 @@ async function main() {
         console.log(`${found.length ? 'FAIL' : 'ok  '} ${label}${found.length ? `  ${found.join('; ')}` : ''}`);
         for (const f of found) problems.push(`${label}: ${f}`);
       } catch (e) {
-        console.log(`FAIL ${label}  ${String(e).slice(0, 160)}`);
-        problems.push(`${label}: ${String(e).slice(0, 160)}`);
+        console.log(`FAIL ${label}  ${String(e).slice(0, 700)}`);
+        problems.push(`${label}: ${String(e).slice(0, 700)}`);
       }
       await ctx.close();
     }
   }
   await browser.close();
+  if (ai.pool) {
+    await clearLedger();
+    await ai.pool.end();
+  }
+  await ai.fake?.close();
   console.log(problems.length ? `\n${problems.length} problem(s)` : '\nno problems');
   process.exit(problems.length ? 1 : 0);
 }

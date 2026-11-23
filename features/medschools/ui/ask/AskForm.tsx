@@ -7,6 +7,9 @@ import { suggestionsFor } from './suggestions';
 export const QUESTION_MAX = 400;
 export const QUESTION_MIN = 3;
 
+/** A number in a first-strong isolate, so a right-to-left sentence keeps it where the translator put it. */
+const iso = (n: number) => `\u2068${n}\u2069`;
+
 /**
  * The question field, its counter and the one ink button (R4). Suggestions fill the field and never submit. While a
  * question is in flight the button is busy and Cancel (a bordered-less ghost button) takes the request back. The
@@ -39,6 +42,28 @@ export function AskForm({
 }) {
   const { t } = useTranslation('medschools');
   const id = useId();
+  const suggestionText = (key: string): string => {
+    switch (key) {
+      case 'ask-suggest-interviews':
+        return t('ask-suggest-interviews', {
+          defaultValue: 'How many interviews has this school reported this cycle?',
+        });
+      case 'ask-suggest-stats':
+        return t('ask-suggest-stats', { defaultValue: 'What are the MCAT and GPA medians?' });
+      case 'ask-suggest-timing':
+        return t('ask-suggest-timing', { defaultValue: 'When do interview invitations usually go out?' });
+      case 'ask-suggest-page-interviews':
+        return t('ask-suggest-page-interviews', { defaultValue: 'How many interviews has Duke reported this cycle?' });
+      case 'ask-suggest-page-stats':
+        return t('ask-suggest-page-stats', { defaultValue: 'What are the MCAT and GPA medians at Emory?' });
+      case 'ask-suggest-page-timing':
+        return t('ask-suggest-page-timing', { defaultValue: 'When do interview invitations usually go out at Duke?' });
+      case 'ask-suggest-compare':
+        return t('ask-suggest-compare', { defaultValue: 'Compare reported interviews at Duke and Emory.' });
+      default:
+        return t('ask-suggest-format', { defaultValue: 'Which Texas schools use MMI interviews?' });
+    }
+  };
   const trimmed = question.trim();
   const used = remaining === 0;
   const canAsk = configured && !used && trimmed.length >= QUESTION_MIN && !pending;
@@ -76,8 +101,8 @@ export function AskForm({
         <p id={`${id}-count`} className="t-meta m-0 ms-auto">
           {t('ask-char-count', {
             defaultValue: '{{n}} of {{max}}',
-            n: question.length,
-            max: QUESTION_MAX,
+            n: iso(question.length),
+            max: iso(QUESTION_MAX),
           })}
         </p>
       </div>
@@ -85,8 +110,8 @@ export function AskForm({
         <p className="t-meta m-0" data-testid="ask-remaining">
           {t('ask-remaining', {
             defaultValue: '{{n}} of {{cap}} questions left today',
-            n: remaining,
-            cap,
+            n: iso(remaining),
+            cap: iso(cap),
           })}
         </p>
       ) : null}
@@ -105,7 +130,7 @@ export function AskForm({
           <p className="t-label m-0 mt-2">{t('ask-suggest-heading', { defaultValue: 'Try one' })}</p>
           <ul className="m-0 mt-1 list-none border-t border-site-border p-0">
             {suggestionsFor(pinned).map((s) => {
-              const text = t(s.key, { defaultValue: s.defaultValue });
+              const text = suggestionText(s.key);
               return (
                 <li key={s.key} className="border-b border-site-border">
                   <button

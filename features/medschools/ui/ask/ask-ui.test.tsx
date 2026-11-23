@@ -30,7 +30,7 @@ vi.mock('@/components/errors/useRefusalText', () => ({
 import { AskPanel } from './AskPanel';
 import { AnswerView } from './AnswerView';
 import { AskForm } from './AskForm';
-import { SUGGESTIONS, suggestionsFor } from './suggestions';
+import { suggestionsFor } from './suggestions';
 import { createAskRun, type AskSnapshot } from './askRun';
 import { askStatusQuery } from '../../medschools.queries';
 import type { ChanceDto, MedAskRes } from '../../medschools.contract';
@@ -77,11 +77,12 @@ function panel(
 ) {
   const qc = new QueryClient();
   qc.setQueryData(askStatusQuery().queryKey, status);
+  // Numbers sit in bidi isolates (for `ar`); the text a reader sees has none.
   return renderToString(
     <QueryClientProvider client={qc}>
       <AskPanel {...props} />
     </QueryClientProvider>,
-  );
+  ).replace(/[\u2066-\u2069]/g, '');
 }
 
 describe('AskPanel', () => {
@@ -102,7 +103,7 @@ describe('AskPanel', () => {
     expect(html.match(/bg-site-accent/g)?.length).toBe(1);
     expect(html).toContain('>Ask</span>');
     // Suggestion rows fill, never submit.
-    expect(html.match(/type="button"/g)?.length).toBe(SUGGESTIONS.length);
+    expect(html.match(/type="button"/g)?.length).toBe(suggestionsFor(false).length);
   });
 
   it('a pinned panel offers three suggestions and a school heading', () => {
