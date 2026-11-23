@@ -188,6 +188,41 @@ export interface MedForecastRow {
   summary: unknown;
 }
 
+/** A school's secondary prompt (institutional text, no person column). */
+export interface MedSecondaryPromptRow {
+  id: string;
+  schoolId: string;
+  program: MedProgram;
+  key: string;
+  text: string;
+  themes: string[];
+  themesVersion: number;
+}
+
+/** A prompt seen in one cycle by one source. `sourceRef` is a school page or thread URL, never a post. */
+export interface MedSecondaryObservationRow {
+  id: string;
+  promptId: string;
+  cycleYear: number;
+  source: 'ADMIT' | 'SDN' | 'SCHOOL';
+  limitKind: 'WORDS' | 'CHARS' | null;
+  limitValue: number | null;
+  optional: boolean;
+  sourceRef: string | null;
+  firstSeenAt: Date;
+  lastCheckedAt: Date;
+}
+
+/** When a school's page on one source was last read and what it gave. */
+export interface MedSecondaryCheckRow {
+  id: string;
+  schoolId: string;
+  source: 'ADMIT' | 'SDN' | 'SCHOOL';
+  checkedAt: Date;
+  status: 'OK' | 'EMPTY' | 'UNAVAILABLE';
+  promptCount: number;
+}
+
 export interface MedPrisma {
   medSchool: {
     count(args?: { where?: Where }): Promise<number>;
@@ -341,6 +376,20 @@ export interface MedPrisma {
     findMany(args?: { where?: Where; select?: Record<string, boolean>; orderBy?: unknown }): Promise<MedSdnThreadRow[]>;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSdnThreadRow>;
     update(args: { where: Where; data: Data }): Promise<MedSdnThreadRow>;
+  };
+  medSecondaryPrompt: {
+    findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedSecondaryPromptRow[]>;
+    create(args: { data: Data }): Promise<MedSecondaryPromptRow>;
+    update(args: { where: Where; data: Data }): Promise<MedSecondaryPromptRow>;
+  };
+  medSecondaryObservation: {
+    findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedSecondaryObservationRow[]>;
+    create(args: { data: Data }): Promise<MedSecondaryObservationRow>;
+    update(args: { where: Where; data: Data }): Promise<MedSecondaryObservationRow>;
+  };
+  medSecondaryCheck: {
+    findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedSecondaryCheckRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSecondaryCheckRow>;
   };
   aiUsage: {
     aggregate(args: {
