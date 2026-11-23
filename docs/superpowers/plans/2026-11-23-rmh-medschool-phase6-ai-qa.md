@@ -215,6 +215,34 @@ school that does not resolve ends the question (`no-school`), pinned page or not
 declines. A failed read of the member's own estimate is `mine: null` with `notice: 'mine-unavailable'`; `[]` stays "no
 application". Sign-in returns to `/rmh-medschool/<slug>#ask` from a school page and to the Ask page with `?q=`.
 
+**R19. Limit tiers, an admin bypass and limit requests (owner, 2026-11-23).** Supersedes R9 and R10 where they speak of
+one cap. *Admins bypass every per-user limit:* no daily cap, no per-minute rate limit (`rateLimitExemptAdmin` on the
+handler: the wrapper skips the limiter only for a session whose `isAdmin` is true), no in-flight lease, and not the
+member's own monthly allowance (`assertAiBudget`). Admins still go through the shared monthly Q&A pause (R11, R18), so
+the scrape budget stays protected. An admin's reservation writes no ledger row; `GET me/ask` returns
+`{ tier: 'admin', dailyCap: null, remainingToday: null }` and the page says "Admin: no daily limit". *Tiers, by daily
+cap:* free 25 (`MEDSCHOOLS_QA_DAILY_CAP`, default changed from 15), approved 40 (`MEDSCHOOLS_QA_DAILY_CAP_APPROVED`),
+member 100 (`MEDSCHOOLS_QA_DAILY_CAP_MEMBER`); each read like the first (blank is the default, anything but a
+non-negative integer closes that tier at 0 and logs once). The tier is resolved on the server per request
+(`resolveQaTier`): admin is the session's `isAdmin`; member is `getUserTier(userId) !== 'free'` (the Stripe subscription
+and gift memberships, the one source `assertAiBudget` and the `feature` gate use), applied automatically and outranking
+a grant; approved is an `APPROVED` row in `MedQaLimitRequest`; otherwise free. A failed lookup falls to the next lower
+tier, never a higher one. *Limit requests* (`MedQaLimitRequest`, `api/qa-limit.server.ts`, the pattern of the library's
+upload-quota appeals): one PENDING per member and one APPROVED per member (partial unique indexes in the migration, so
+two simultaneous submissions end with one row); an optional reason of at most 500 characters (never a question); a
+decline, or a revoked approval, blocks a new request for 30 days (the page says the day); an admin or a paying member
+cannot file one (409 `MEDSCHOOLS_QA_LIMIT_NOT_NEEDED`), nor can a member who is already approved. The admin decision is a
+compare-and-set on the status, so two admins leave one decision; approve, decline and revoke are audited
+(`medschools.qa-limit.*`) and carry an optional note (500 characters) the member sees. Member endpoint `GET/POST
+/api/medschools/me/qa-limit-request` (signed in, `write` limit, never cached); admin endpoint `GET/POST
+/api/admin/medschools/qa-limit-requests` (`auth: 'admin'`), shown as the "Q&A limits" tab of `/admin/medschools`, beside
+Aliases, as `/admin/library` has its upload-appeals tab. Requests are erased with the account (`medschoolsErasureOps`;
+an admin who decided others' requests has `decidedBy` nulled) and hold no question text. *Deviations from the brief,
+chosen on purpose:* a fourth status `REVOKED` (the brief names three but a revoke needs to be distinguishable from a
+decline, and it starts the same 30-day wait); no applicant notification, because the library flow this mirrors sends
+none (the Ask page shows the state and the admin's note instead); the schema test that forbade any `MedQa*` model now
+names `MedQaLimitRequest` and its exact columns.
+
 ## Review Focus
 
 Failure modes the spec implies but no obvious task test reaches; each has its test in the named task.

@@ -274,7 +274,7 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
 ## AI Q&A (phase 6)
 
 `/rmh-medschool/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt
-and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md` (rulings R1-R16).
+and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md` (rulings R1-R19).
 `POST/GET /api/medschools/me/ask` (`api/medschools.me.ask.server.ts`), never cached.
 
 - **Two model calls, one task (R2, R3).** `runTaskJson` under the `medschools-qa` `AiTask` (`lib/ai/provider.server.ts`,
@@ -313,24 +313,39 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   `MEDSCHOOLS_QA_AI_SHARE`, default 0.25, of `MEDSCHOOLS_AI_MONTHLY_USD`; the scrape gates get the rest,
   `features/medschools/ai-budget.ts`); `assertAiBudget` (402); then the atomic reservation (`reserveQuestion` in
   `api/qa/budget.server.ts`): one transaction under `pg_advisory_xact_lock` on the member writes a `medschools-qa-ask`
-  row (the day's count, `MEDSCHOOLS_QA_DAILY_CAP`, default 15, since UTC midnight: 429 `MEDSCHOOLS_QA_DAILY_CAP`) and a
+  row (the day's count, the tier's cap since UTC midnight, below: 429 `MEDSCHOOLS_QA_DAILY_CAP`) and a
   `medschools-qa-lock` row (the in-flight lease, 60 s, deleted when the question ends: 429 `MEDSCHOOLS_QA_BUSY`).
   Both are zero-token, zero-cost, text-free `AiUsage` rows, so the cap and the lease hold across every web process and do
   not depend on the provider's metering write. Any ledger error fails closed (503 paused, unavailable). The one thing a
   lost provider metering write can still do is under-count spend (it is logged by `meter`); the daily count cannot slip.
   The whole question has a 50 s deadline (`QA_DEADLINE_MS`, under the client's 60 s `AI_TIMEOUT_MS`) plus the request's
   own `signal`; both model calls take it and never retry. The web tier needs `DEEPSEEK_API_KEY`.
+- **Limit tiers, the admin bypass and limit requests (R19).** The daily cap depends on the caller's tier, resolved on the
+  server per request by `resolveQaTier` (`api/qa/budget.server.ts`): **admin** is the session's `isAdmin` (the
+  `defineHandler` ctx field, the same flag `auth: 'admin'` checks), **member** is `getUserTier(userId) !== 'free'` (the
+  Stripe subscription or a gift membership, the source `assertAiBudget` uses; automatic, highest after admin), **approved**
+  is an `APPROVED` `MedQaLimitRequest` row, else **free**. Caps: free 25 `MEDSCHOOLS_QA_DAILY_CAP`, approved 40
+  `..._APPROVED`, member 100 `..._MEMBER` (invalid closes that tier). An admin skips the daily cap, the one-in-flight
+  lease, the 6 per minute rate limit (`rateLimitExemptAdmin: true` on the ask `POST`) and the member's own monthly
+  allowance, and writes no reservation row; the shared monthly pause (R11) still applies. `GET me/ask` returns
+  `{ tier, remainingToday, dailyCap }`, null and null for an admin ("Admin: no daily limit"). Limit requests
+  (`MedQaLimitRequest`, `api/qa-limit.server.ts`, outside `api/qa/` so the privacy pins on that folder stay literal): one
+  PENDING and one APPROVED per member (partial unique indexes in the migration), reason at most 500 characters, a decline
+  or revoke blocks a new request for 30 days, admins and paying members never see the form (`LimitRequest.tsx`, under the
+  Ask form, not an ink button). Endpoints `me/qa-limit-request` (GET, POST) and `admin/medschools/qa-limit-requests`
+  (GET, POST: approve, decline, revoke with an optional note), reviewed in the "Q&A limits" tab of `/admin/medschools`.
+  Erased with the account; the schema test pins the model's exact columns, none of which can hold a question.
 - **What is and is not kept (R12).** The question and the answer exist in memory for the call. No table, no cache, no
   response micro-cache, no log line holds them (logs carry intent, counts and status). The only trace is the `AiUsage`
   row every AI call already writes (user id, task, prompt id, tokens, cost, time; no text), kept under that table's
-  existing erasure decision (`lib/account/erasure-registry.ts`). So no erasure operation was added. Pinned by
+  existing erasure decision (`lib/account/erasure-registry.ts`). So no erasure operation was added for it (the limit request of R19 is its own model with its own erasure op). Pinned by
   `engine/schema.test.ts` (no `Med*` column can hold a question), `api/qa/privacy.server.test.ts` (no writes, no caches,
   no logging of text) and `scripts/medschools/verify-erasure.ts`. The provider receives the question text; the form says
   so in one line.
 - **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
   `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
   (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
-  Not streamed (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
+  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
 - **Tests.** Unit:
   `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
   `testing/integration/medschools-ask.test.ts` with `testing/integration/lib/fake-deepseek.ts` (the app is started with
