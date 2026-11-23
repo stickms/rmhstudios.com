@@ -12,6 +12,7 @@ import { patchSearch, type ViewPatch } from '../engine/prefs';
 import { parseSchoolSearch } from '../engine/search';
 import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
+import { AskPanel } from './ask/AskPanel';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
 import { ForecastTab } from './ForecastTab';
@@ -124,6 +125,9 @@ export function SchoolPage() {
                   <Link to="/rmh-medschool/tracker" className="underline">
                     {t('school-my-tracker', { defaultValue: 'My tracker' })}
                   </Link>
+                  <Link to="/rmh-medschool/ask" className="underline">
+                    {t('school-ask-link', { defaultValue: 'Ask' })}
+                  </Link>
                   <Link to="/rmh-medschool/lists" className="underline">
                     {t('school-my-lists', { defaultValue: 'My lists' })}
                   </Link>
@@ -178,6 +182,11 @@ export function SchoolPage() {
                 )}
               </>
             )}
+            {session ? (
+              <div className="mt-4 border-t border-site-border pt-4">
+                <AskPanel slug={slug} schoolName={detail.school.name} heading="section" />
+              </div>
+            ) : null}
           </div>
         ) : null}
       </SkeletonSwap>

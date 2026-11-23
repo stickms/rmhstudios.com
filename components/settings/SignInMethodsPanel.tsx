@@ -21,6 +21,7 @@ import { ProviderIcon } from '@/components/ui/brand-icons';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { useArrival } from '@/components/ui/arrive';
 import { getSignInProviders } from '@/lib/auth/sign-in-providers.functions';
+import { ChangePasswordForm } from '@/components/settings/ChangePasswordForm';
 import {
   CREDENTIAL_PROVIDER_ID,
   PROVIDER_NAMES,
@@ -75,6 +76,7 @@ export function SignInMethodsPanel({ linkError }: { linkError?: string | undefin
   const [needsFreshSignIn, setNeedsFreshSignIn] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [editingPassword, setEditingPassword] = useState(false);
   const arrival = useArrival(!loading);
 
   const email = user?.email ?? null;
@@ -463,8 +465,16 @@ export function SignInMethodsPanel({ linkError }: { linkError?: string | undefin
                   })}
                 </p>
               </div>
+              {!editingPassword ? (
+                <Button onClick={() => setEditingPassword(true)} disabled={busy !== null}>
+                  {t('password-change-open', {
+                    defaultValue: 'Change password',
+                  })}
+                </Button>
+              ) : null}
             </div>
           ) : null}
+          {credential && editingPassword ? <ChangePasswordForm onDone={() => setEditingPassword(false)} /> : null}
 
           {/* Each provider this site offers. */}
           {providers.map((provider) => {

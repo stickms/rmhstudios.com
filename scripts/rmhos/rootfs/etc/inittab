@@ -1,9 +1,0 @@
-# rmhOS: the desktop owns tty1 (started by rmhos-agent). There is no login console: root is locked
-# and the visitor's account is created per session without a password, so a getty could not be
-# used by anyone. The serial0 log (rmhos-agent lines, Xorg errors) is what explains a failed start.
-::sysinit:/sbin/openrc sysinit
-::sysinit:/sbin/openrc boot
-::wait:/sbin/openrc default
-
-::ctrlaltdel:/sbin/reboot
-::shutdown:/sbin/openrc shutdown

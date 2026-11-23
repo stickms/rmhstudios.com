@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Pagination } from '../pagination';
 import { RsvpButton } from '@/components/events/RsvpButton';
-import { NewsCategoryTabs } from '@/components/news/NewsCategoryTabs';
 import { SelectionBar } from '../selection-bar';
 import { ModelToggle } from '@/components/rmhcalculator/ModelToggle';
 
@@ -19,14 +18,6 @@ describe('related controls are plain Buttons in a labelled group', () => {
     const html = renderToStaticMarkup(<RsvpButton eventId="e1" status="maybe" goingCount={1} capacity={null} />);
     expect(html).toContain('role="group"');
     expect(buttons(html)).toBe(2);
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
-  });
-
-  it('NewsCategoryTabs: the category chips are toggles', () => {
-    const html = renderToStaticMarkup(
-      <NewsCategoryTabs activeCategory="Tech" onCategoryChange={() => {}} availableCategories={['Tech', 'Art']} />,
-    );
-    expect(buttons(html)).toBe(3); // All + 2 categories
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
   });
 

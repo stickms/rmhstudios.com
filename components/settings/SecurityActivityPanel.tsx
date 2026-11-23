@@ -17,6 +17,8 @@ import {
   LogOut,
   Merge,
   ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
   Trash2,
   UserRound,
   type LucideIcon,
@@ -59,6 +61,9 @@ const ICONS: Record<SecurityEventKind, LucideIcon> = {
   deletion_scheduled: Trash2,
   deletion_cancelled: Trash2,
   account_secured_by_admin: ShieldAlert,
+  two_factor_enabled: ShieldCheck,
+  two_factor_disabled: ShieldOff,
+  backup_codes_regenerated: KeyRound,
 };
 
 function providerLabel(id: string | undefined): string {
@@ -144,6 +149,12 @@ function sentence(t: TFunction, item: SecurityActivityItem): string {
       return t('event-account-secured-by-admin', {
         defaultValue: 'Staff signed this account out everywhere and revoked its API keys, tokens and webhooks',
       });
+    case 'two_factor_enabled':
+      return t('event-two-factor-enabled', { defaultValue: 'Two-step verification turned on' });
+    case 'two_factor_disabled':
+      return t('event-two-factor-disabled', { defaultValue: 'Two-step verification turned off' });
+    case 'backup_codes_regenerated':
+      return t('event-backup-codes-regenerated', { defaultValue: 'New backup codes made. The old ones no longer work' });
   }
 }
 

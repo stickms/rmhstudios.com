@@ -32,7 +32,7 @@ function parseModels(schemaText: string): Parsed[] {
  * The only models that may carry their owner's `userId`. A name list, not a prefix: `MedTrackerApplication`,
  * `MedTrackerMilestone` and `MedSchoolListItem` reach their owner only through a parent.
  */
-const USER_OWNED = new Set(['MedTrackerCycle', 'MedSchoolList', 'MedUserPrefs', 'MedSchoolFollow']);
+const USER_OWNED = new Set(['MedTrackerCycle', 'MedSchoolList', 'MedUserPrefs', 'MedSchoolFollow', 'MedQaLimitRequest']);
 
 /** `Model.field` for every column that could hold a person identifier. */
 function forbiddenColumns(schemaText: string): string[] {
@@ -260,7 +260,7 @@ model MedTrackerApplication {
               .map((x) => x.trim()) ?? [],
         );
 
-    it('only the three owner models (and the phase 7 follow) carry userId', () => {
+    it('only the three owner models (and the phase 7 follow and the phase 6 limit request) carry userId', () => {
       for (const m of parseModels(schema())) {
         const has = m.fields.includes('userId');
         expect(has, m.model).toBe(USER_OWNED.has(m.model) && m.model !== 'MedSchoolFollow');
@@ -385,6 +385,37 @@ model MedTrackerApplication {
       expect(sql).toContain('CREATE TABLE "med_wait_curve"');
       expect(sql).toContain('CREATE TYPE "MedForecastMode"');
       expect(sql).not.toMatch(/\bDROP\b/i);
+    });
+  });
+
+  describe('phase 6: Q&A keeps nothing', () => {
+    it('has no MedAsk or MedQa model, except the limit request (R19: a reason and a reply, no question)', () => {
+      const names = parseModels(schema())
+        .filter((m) => /^Med(Ask|Qa|Qna|Chat|Conversation)/i.test(m.model))
+        .map((m) => m.model);
+      expect(names).toEqual(['MedQaLimitRequest']);
+      expect(parseModels(schema()).find((m) => m.model === 'MedQaLimitRequest')?.fields.sort()).toEqual([
+        'adminNote',
+        'createdAt',
+        'decidedAt',
+        'decidedBy',
+        'id',
+        'note',
+        'revokeNote',
+        'revokedAt',
+        'revokedBy',
+        'status',
+        'userId',
+      ]);
+    });
+
+    it('no Med model has a column that could hold a question or an answer (the scraped, anonymised interview questions excepted)', () => {
+      const hits: string[] = [];
+      for (const { model, fields } of parseModels(schema())) {
+        if (model === 'MedInterviewQuestion') continue;
+        for (const f of fields) if (/question|answer|prompt|query|chat|transcript/i.test(f)) hits.push(`${model}.${f}`);
+      }
+      expect(hits).toEqual([]);
     });
   });
 });

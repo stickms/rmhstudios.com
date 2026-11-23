@@ -1,13 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AliasMissesPanel } from '@features/medschools/ui/AliasMissesPanel';
+import { AdminMedSchoolsPage } from '@features/medschools/ui/AdminMedSchoolsPage';
+import { parseAdminSearch } from '@features/medschools/engine/admin-search';
 
 export const Route = createFileRoute('/_site/admin/medschools')({
   head: () => ({
     meta: [
       {
-        title: 'Med Schools aliases | Admin | RMH Studios',
+        title: 'Med Schools | Admin | RMH Studios',
       },
     ],
   }),
-  component: AliasMissesPanel,
+  validateSearch: parseAdminSearch,
+  component: AdminPage,
 });
+
+function AdminPage() {
+  const { tab } = Route.useSearch();
+  return <AdminMedSchoolsPage {...(tab ? { tab } : {})} />;
+}

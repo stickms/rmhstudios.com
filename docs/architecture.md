@@ -22,8 +22,6 @@
    │                                                   │
    │    (jobs also holds the Discord bot's gateway)    │
    │                                                   │
-   │  rmhos-net:7009 (Node, /rmhos-net/; sandboxed,    │
-   │     off until its egress firewall is proven)      │
    │  status:7008 (Go)   assets:7007 (Go)              │
    │  redis / redis-state (infra; minio = local-s3)    │
    ▼                                                   ▼
@@ -99,7 +97,6 @@ flowchart LR
       SOCK["socket :7001<br/>games"]
       BOX["rmhbox :7676<br/>party games"]
       TUBE["rmhtube :7003<br/>watch-together"]
-      NETHUB["rmhos-net :7009<br/>rmhOS relay · own network · profile"]
       JOBS["jobs<br/>pg-boss queues<br/>+ Discord bot gateway"]
       LAD["ladder-worker<br/>pg-boss consumer"]
       HOM["homes-worker<br/>pg-boss consumer"]
@@ -264,7 +261,7 @@ live origin policy lacks permission; JavaScript remains the fallback. See
 
 ## 4. CI
 
-The workflows (count: `workflows` in [`_generated/facts.json`](./_generated/facts.json)) live in `.github/workflows/` —
+The workflows (count: `workflows` in `_generated/facts/ci.json`) live in `.github/workflows/` —
 the fleet was consolidated in the rewrite, and this table used to describe the ~45-workflow one that preceded it
 (`typecheck-server.yml`, `vitest-coverage.yml`, `codeql.yml` and the granular linter/scanner set are all gone).
 `ls .github/workflows/` is the truth; this is what each one gates:
@@ -293,7 +290,6 @@ changed-file subset of all three. Test suites and what gates them: [`testing.md`
 | 7001      | socket-server (games)                              | Node    | Apache `/socket/`                                                                                                                                                                                   |
 | 7676      | rmhbox                                             | Node    | Apache `/rmhbox-ws/`                                                                                                                                                                                |
 | 7003      | rmhtube                                            | Node    | Apache `/rmhtube-ws/`                                                                                                                                                                               |
-| 7009      | rmhos-net (rmhOS relay hub)                        | Node    | Apache `/rmhos-net/` (WebSocket, DoH, status); sandboxed container on its own `rmhos-egress` network, started by `deploy.sh` only once its egress firewall is proven (see [`rmhos.md`](./rmhos.md)) |
 | 7007      | assets                                             | Go      | internal (Apache off-disk CDN path)                                                                                                                                                                 |
 | 7008      | status                                             | Go      | dashboard                                                                                                                                                                                           |
 | 6379      | redis (LRU cache) · redis-state (durable, dormant) | infra   | internal                                                                                                                                                                                            |
@@ -317,7 +313,7 @@ changed-file subset of all three. Test suites and what gates them: [`testing.md`
 ## 7. Data & media
 
 - **PostgreSQL** via Prisma 7 (`@prisma/adapter-pg`) in Node and raw pgx in Go — one shared schema (`prisma/schema/`
-  (per-domain files), model count in [`_generated/facts.json`](./_generated/facts.json)). Go models mirror Prisma column
+  (per-domain files), model count in `_generated/facts/prisma.json`). Go models mirror Prisma column
   casing verbatim.
 - **Media:** R2/S3 via `lib/storage/` (local-FS fallback for dev); MinIO provides the bucket locally; the Go `assets`
   service streams `/library /music /models /sprites` range-aware (main user path still goes through web/Apache under

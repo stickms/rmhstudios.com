@@ -79,6 +79,10 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_SDN_MAX_LLM_CALLS',
       'MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS',
       'MEDSCHOOLS_AI_MONTHLY_USD',
+      'MEDSCHOOLS_QA_AI_SHARE',
+      'MEDSCHOOLS_QA_DAILY_CAP',
+      'MEDSCHOOLS_QA_DAILY_CAP_APPROVED',
+      'MEDSCHOOLS_QA_DAILY_CAP_MEMBER',
       'MEDSCHOOLS_ADMIT_FORUMS_ENABLED',
       'MEDSCHOOLS_ADMIT_FORUMS_CRON',
       'MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS',
@@ -464,6 +468,17 @@ describe('medschools-worker wiring', () => {
     expect(tick).toContain('stopAfter(ADMIT_FORUMS_RUN_DEADLINE_MS)');
     expect(src).toContain('const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000');
     expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitForumsConsumer?.pause()');
+  });
+
+  it('the scrape gates are built from the cap left after the Q&A share, never the raw monthly cap', () => {
+    const src = flat();
+    expect(src).toContain('scrapeCapUsd(');
+    expect(src).toContain('qaShare(process.env.MEDSCHOOLS_QA_AI_SHARE');
+    expect(src).toContain('const scrapeCap = scrapeCapUsd(totalAiCap,');
+    expect(src).toMatch(/createBudgetGate\(medPrisma, \(\) => new Date\(\), scrapeCap\)/);
+    expect(src).toMatch(/createForumsBudgetGate\( medPrisma, \(\) => new Date\(\), scrapeCap,/);
+    // Only the total's own definition reads the raw variable.
+    expect(src.match(/monthlyCapUsd\(process\.env\.MEDSCHOOLS_AI_MONTHLY_USD/g)).toHaveLength(1);
   });
 
   it('the forums job keeps its own model budget share and its own request quota on the shared Admit host', () => {

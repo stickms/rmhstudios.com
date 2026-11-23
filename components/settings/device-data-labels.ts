@@ -48,10 +48,6 @@ export function deviceStoreText(t: TFunction): Record<string, DeviceStoreText> {
         defaultValue: 'Game files downloaded once so Balatro starts faster',
       }),
     },
-    'rmhos-home': {
-      label: t('store-rmhos-home', { ns: 'device-data', defaultValue: 'rmhOS home folder' }),
-      hint: t('store-rmhos-home-hint', { ns: 'device-data', defaultValue: 'Files in your rmhOS home folder' }),
-    },
     'hearthworks-saves': {
       label: t('store-hearthworks-saves', { ns: 'device-data', defaultValue: 'Hearthworks worlds' }),
       hint: t('store-hearthworks-saves-hint', { ns: 'device-data', defaultValue: 'Saved Hearthworks worlds' }),

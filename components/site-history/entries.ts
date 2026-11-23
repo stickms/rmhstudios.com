@@ -899,22 +899,6 @@ export function historyEntries(t: TFunction<'site-history'>): HistoryEntry[] {
       }),
     },
     {
-      id: 'rmhos',
-      date: '2026-11-14',
-      kind: 'app',
-      commit: '6802a1db6',
-      pr: 1634,
-      shot: 'live-rmhos',
-      shotIsCurrent: true,
-      live: '/games/rmhos',
-      title: t('e.rmhos.title', {
-        defaultValue: 'rmhOS',
-      }),
-      body: t('e.rmhos.body', {
-        defaultValue: 'A Linux desktop that runs in the browser, with a stored home folder that follows your account.',
-      }),
-    },
-    {
       id: 'rmh-capital',
       date: '2026-11-14',
       kind: 'app',

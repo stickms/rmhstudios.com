@@ -108,7 +108,7 @@ export default function GameCanvas() {
     { type: 'ECHO', label: 'ECHO', key: '4', desc: 'Buff/Support' },
   ];
 
-  const { isPaused, level, unlockedTowers } = useGameStore();
+  const { level, unlockedTowers } = useGameStore();
   const { t } = useTranslation("c-vega");
 
   return (

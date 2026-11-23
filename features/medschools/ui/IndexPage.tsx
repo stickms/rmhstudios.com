@@ -77,6 +77,10 @@ export function IndexPage() {
             {t('index-my-tracker', { defaultValue: 'My tracker' })}
           </Link>
           {' · '}
+          <Link to="/rmh-medschool/ask" className="underline">
+            {t('index-ask', { defaultValue: 'Ask' })}
+          </Link>
+          {' · '}
           <Link to="/rmh-medschool/lists" className="underline">
             {t('index-my-lists', { defaultValue: 'My lists' })}
           </Link>

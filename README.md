@@ -111,7 +111,7 @@ streams from locally.
 ├── hooks/                # Custom React hooks
 ├── prisma/               # Database schema (234 models) and migrations
 ├── data/                 # Static JSON (RMHBox content packs, library metadata)
-├── scripts/              # Utility scripts (seeding, i18n pipeline, OG/icon gen, ladder/news pipelines)
+├── scripts/              # Utility scripts (seeding, i18n pipeline, OG/icon gen, ladder pipeline)
 ├── public/               # Static assets (images, sprites, music)
 ├── deploy/               # Apache vhosts, blue/green hotswap, Postgres/backups, Terraform DNS, runbooks
 ├── testing/              # Vitest test files

@@ -6,14 +6,14 @@ Everything published *to* the site rather than posted *in* the feed: editorial c
 
 | Route | What it is |
 | ----- | ---------- |
-| `/news`, `/news/:slug` | News articles. |
+| `/news`, `/news/:slug` | RMH News: headlines from public feeds by topic, and an article page with a cached AI summary. In the sidebar. |
 | `/news/rss.xml` | News RSS feed. |
 | `/blog/:slug` | A devlog post. |
 | `/blog/rss.xml` | Blog RSS feed. |
 | `/library`, `/library/:slug` | The document library. `/blog` and `/playlists` both redirect here. |
 | `/library/albums/:albumId` | An album. |
 
-`lib/news.ts`, `lib/news-categories.ts` and `lib/news-approval.server.ts` back news (including its review step); `lib/blog.ts` backs the devlog; `lib/library/` and `lib/albums*.ts` back the library. `lib/rss.ts` generates both feeds.
+`lib/news.ts` reads news and `lib/news-wire/` fills it: the jobs worker's `news.ingest` cron reads the public feeds in `sources.ts` every 20 minutes, `categorize.ts` sorts each headline into one of twelve topics by keyword, and `summary.server.ts` writes a DeepSeek summary the first time a reader opens an article (`POST /api/news/summary`) and caches it on the row. Wire headlines are `noindex`, left out of the sitemap and of reading-subscription notifications, and pruned after 21 days. The old AI-written pipeline and its Discord approval step are gone; `lib/blog.ts` backs the devlog; `lib/library/` and `lib/albums*.ts` back the library. `lib/rss.ts` generates both feeds.
 
 Article pages are **top-level, not under `_site/`** — `blog.$slug.tsx`, `news.$slug.tsx`, `library.$slug.tsx` — so they render full-screen rather than in the sidebar shell. That is deliberate, and it is also why their `head()` blocks carry their own canonical and JSON-LD via `buildMeta`/`buildCanonical` from `lib/seo.ts` and `jsonLdScript()` from `lib/schema.ts`.
 

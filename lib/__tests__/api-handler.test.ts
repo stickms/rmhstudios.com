@@ -214,6 +214,29 @@ describe('rate limiting', () => {
     await expect(last.json()).resolves.toEqual({ error: 'Too many requests' });
   });
 
+  it('skips the limit for an admin only when the route opts in, and never for a member', async () => {
+    const drive = async (exempt: boolean, session: unknown, ip: string) => {
+      getSession.mockResolvedValue(session);
+      const h = defineHandler(
+        {
+          rateLimit: { limit: 1, windowMs: 60_000, prefix: `t-${Math.random()}` },
+          ...(exempt ? { rateLimitExemptAdmin: true } : {}),
+        },
+        async () => Response.json({ ok: true }),
+      );
+      let last = 200;
+      for (let i = 0; i < 12; i++) {
+        last = (
+          await h({ params: {}, request: new Request('https://x.dev/api/t', { headers: { 'cf-connecting-ip': ip, cookie: 'better-auth.session_token=t' } }) })
+        ).status;
+      }
+      return last;
+    };
+    expect(await drive(true, ADMIN, 'ip-admin-exempt')).toBe(200);
+    expect(await drive(false, ADMIN, 'ip-admin-plain')).toBe(429);
+    expect(await drive(true, SIGNED_IN, 'ip-member-exempt')).toBe(429);
+  });
+
   it('runs the session check before the rate limiter', async () => {
     getSession.mockResolvedValue(null);
     const h = defineHandler(
