@@ -35,6 +35,7 @@ import {
   appRouteGround,
   paintDocumentGround,
   editionForBackground,
+  withoutStamp,
 } from '@/stores/themeStore';
 import { clearThemeTokens, isStaleAppliedTheme, type AppliedUserTheme } from '@/lib/themes/tokens';
 import {
@@ -49,6 +50,8 @@ import {
   isJellyMotion,
   applyJellyMotion,
 } from '@/lib/appearance/prefs';
+import { APPEARANCE_SYNC_COOKIE, APPEARANCE_SYNC_KEY, FONT_KEYS, isFontFor } from '@/lib/appearance/fonts';
+import { applyFonts } from '@/lib/appearance/apply-fonts';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useSoftRenderSettle } from '@/hooks/useSoftRenderSettle';
 import { syncNativeMaterialClass } from '@/lib/native-material-routes';
@@ -71,6 +74,7 @@ import { installSwapReveal } from '@/lib/swap-reveal';
 import { HttpError } from '@/lib/http';
 import {
   getAppearancePrefsApi,
+  type AppearancePrefs,
   setAppearancePrefsApi,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
@@ -183,6 +187,9 @@ export function Providers({
   const readableFont = useThemeStore((s) => s.readableFont);
   const colorVision = useThemeStore((s) => s.colorVision);
   const jellyMotion = useThemeStore((s) => s.jellyMotion);
+  const fonts = useThemeStore((s) => s.fonts);
+  const appearanceSync = useThemeStore((s) => s.appearanceSync);
+  const appearanceHydrated = useThemeStore((s) => s.appearanceHydrated);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -317,7 +324,7 @@ export function Providers({
   // Hydrate style from localStorage on mount. A stored edition is a choice and is kept. With none (or a retired id,
   // which is dropped) the visitor follows the device, live, and nothing is written (DEFAULT_STYLE in
   // stores/themeStore.ts): the pre-paint step already painted the same edition.
-  useEffect(() => {
+  useEffect(() => withoutStamp(() => {
     const stored = readString('rmh-style');
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
       useThemeStore.getState().setStyle(stored as SiteStyle);
@@ -328,6 +335,14 @@ export function Providers({
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
     if (readString(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
+    // The reader's fonts and this device's sync switch (lib/appearance/fonts.ts); the server and the pre-paint step
+    // already rendered the same faces.
+    for (const slot of ['main', 'reading', 'mono'] as const) {
+      const v = readString(FONT_KEYS[slot]);
+      if (isFontFor(slot, v)) st.setFont(slot, v as never);
+    }
+    if (readString(APPEARANCE_SYNC_KEY) === '0') st.setAppearanceSync(false);
+    st.markAppearanceHydrated();
     const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
     const jm = readString(JELLY_MOTION_KEY);
@@ -359,7 +374,7 @@ export function Providers({
         void import('@/lib/themes/refresh-applied').then((m) => m.refreshAppliedTheme(parsed.id));
       }
     }
-  }, []);
+  }), []);
 
   // Follow the device's light/dark setting live while nothing is chosen, so flipping it with the tab open moves the
   // page too. A media-query listener: it fires only on that change and costs nothing at rest (B3).
@@ -490,6 +505,28 @@ export function Providers({
     userThemePreview,
   ]);
 
+  // ── The reader's fonts (lib/appearance/fonts.ts) ─────────────────────────
+  // Stamped on <html> (choice-rules.css maps the attributes), cached in localStorage for the pre-paint step and in the
+  // `rmh-fonts` cookie so the server renders the same faces next time, and each face in use links its own sheet. The
+  // store holds the defaults until the hydration effect above has read storage, so nothing is written before then.
+  // (A flag, not a first-run ref: React's dev double effects would run a ref-skipped effect with the defaults.)
+  useEffect(() => {
+    if (!appearanceHydrated) return;
+    applyFonts(fonts);
+  }, [fonts, appearanceHydrated]);
+
+  // This device's appearance sync switch, mirrored to a cookie so the server skips the account's appearance for it.
+  useEffect(() => {
+    if (!appearanceHydrated) return;
+    if (appearanceSync) {
+      removeKey(APPEARANCE_SYNC_KEY);
+      document.cookie = `${APPEARANCE_SYNC_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+    } else {
+      writeString(APPEARANCE_SYNC_KEY, '0');
+      document.cookie = `${APPEARANCE_SYNC_COOKIE}=0; Max-Age=31536000; Path=/; SameSite=Lax`;
+    }
+  }, [appearanceSync, appearanceHydrated]);
+
   // ── Account sync ─────────────────────────────────────────────────────────
   // Appearance follows the signed-in user across devices. On sign-in we pull the
   // saved theme; the account wins when it has a value, otherwise the
@@ -508,8 +545,42 @@ export function Providers({
     });
   }, []);
 
+  // The account's appearance applied to this device: the account wins where it has a value (null = never chosen, the
+  // device's own stands). Callers wrap it in withoutStamp: applying the account is not the user changing anything.
+  const applyRemoteAppearance = useCallback(
+    (remote: AppearancePrefs) => {
+      const store = useThemeStore.getState();
+      // The account wins where it has a saved edition. Otherwise a choice made on this device is saved up, and a
+      // device that only follows its OS scheme leaves the account empty, so it keeps following everywhere.
+      const remoteStyle =
+        remote.style && SITE_STYLES.some((s) => s.id === remote.style) ? (remote.style as SiteStyle) : null;
+      if (remoteStyle) {
+        lastSavedAppearanceRef.current = { style: remoteStyle };
+        store.setStyle(remoteStyle);
+      } else if (!store.styleFromDevice) {
+        saveAppearance({ style: store.style });
+      } else {
+        lastSavedAppearanceRef.current = { style: null };
+      }
+      // Comfort suite (§13): apply account values on this device (account wins where set; the settings panel
+      // persists device changes).
+      if (typeof remote.readableFont === 'boolean') store.setReadableFont(remote.readableFont);
+      if (isColorVisionMode(remote.colorVision)) store.setColorVision(remote.colorVision);
+      if (isJellyMotion(remote.jellyMotion)) store.setJellyMotion(remote.jellyMotion);
+      // The reader's fonts: an explicit id on the account (defaults included) wins; null leaves the device's own.
+      const columns = { main: remote.fontMain, reading: remote.fontReading, mono: remote.fontMono } as const;
+      for (const slot of ['main', 'reading', 'mono'] as const) {
+        const v = columns[slot];
+        if (isFontFor(slot, v)) store.setFont(slot, v as never);
+      }
+    },
+    [saveAppearance],
+  );
+
   useEffect(() => {
-    if (!userId) {
+    // Signed out, or appearance sync off on this device (owner, 2026-11-23): neither pull nor push appearance. Turning
+    // it back on settles "most recent wins" first (components/settings/AppearancePanel.tsx), then this pulls.
+    if (!userId || !appearanceSync) {
       appearanceSyncedRef.current = false;
       lastSavedAppearanceRef.current = null;
       return;
@@ -531,48 +602,26 @@ export function Providers({
       })
       .then((remote) => {
         if (cancelled || !remote) return;
-        const store = useThemeStore.getState();
-        // The account wins where it has a saved edition. Otherwise a choice made on this device is saved up, and a
-        // device that only follows its OS scheme leaves the account empty, so it keeps following everywhere.
-        const remoteStyle =
-          remote.style && SITE_STYLES.some((s) => s.id === remote.style)
-            ? (remote.style as SiteStyle)
-            : null;
-        if (remoteStyle) {
-          lastSavedAppearanceRef.current = { style: remoteStyle };
-          store.setStyle(remoteStyle);
-        } else if (!store.styleFromDevice) {
-          saveAppearance({ style: store.style });
-        } else {
-          lastSavedAppearanceRef.current = { style: null };
-        }
-        // Comfort suite (§13): apply account values on this device (account
-        // wins where set; the settings panel persists device changes).
-        const r = remote as typeof remote & {
-          readableFont?: boolean | null;
-          colorVision?: string | null;
-          jellyMotion?: string | null;
-        };
-        if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
-        if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
-        if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
+        // Applying the account's values is not this device's user changing them (lib/appearance/sync-merge.ts).
+        withoutStamp(() => applyRemoteAppearance(remote));
         appearanceSyncedRef.current = true;
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [userId, idleReady, saveAppearance]);
+  }, [userId, idleReady, appearanceSync, applyRemoteAppearance]);
+
 
   // Persist later appearance changes (the theme picker, the command
   // palette) for signed-in users. Guarded so it never fires before the initial
   // sync and never re-saves a value we just pulled from the server.
   useEffect(() => {
-    if (!userId || !appearanceSyncedRef.current || styleFromDevice) return;
+    if (!userId || !appearanceSync || !appearanceSyncedRef.current || styleFromDevice) return;
     const last = lastSavedAppearanceRef.current;
     if (last && last.style === style) return;
     saveAppearance({ style });
-  }, [style, styleFromDevice, userId, saveAppearance]);
+  }, [style, styleFromDevice, userId, appearanceSync, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>

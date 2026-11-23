@@ -994,6 +994,10 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'erase',
     reason: 'Every way to authenticate as the account is destroyed first, so a tombstone can never sign in.',
   },
+  TwoFactor: {
+    decision: 'erase',
+    reason: 'The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys.',
+  },
   PhotoNomination: {
     decision: 'keep',
     reason:

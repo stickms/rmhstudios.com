@@ -200,32 +200,47 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
     />
   );
 
+  // The announcement and the composer keep their place whatever the posts below them are doing. A tab switch empties
+  // the store and refetches; drawing the skeleton as a whole new column then unmounted both and built them again, so
+  // the announcement vanished and came back and the composer lost its state (owner, 2026-11-23: "switching between
+  // for you/following tab also resets announcements ... and the compose box"). Only the posts area changes.
+  let posts: React.ReactNode;
   if (entries.length === 0) {
     if (error && initialized) {
-      return (
-        <Spine>
-          {pinned}
-          <HomeComposer />
-          <SpineItem dot={false}>
-            <p className="t-body">{t('feed-error', { defaultValue: 'Could not load the feed.' })}</p>
-            <Button className="mt-3" onClick={() => retry()}>
-              {t('retry', { defaultValue: 'Try again' })}
-            </Button>
-          </SpineItem>
-        </Spine>
+      posts = (
+        <SpineItem dot={false}>
+          <p className="t-body">{t('feed-error', { defaultValue: 'Could not load the feed.' })}</p>
+          <Button className="mt-3" onClick={() => retry()}>
+            {t('retry', { defaultValue: 'Try again' })}
+          </Button>
+        </SpineItem>
       );
-    }
-    if (initialized && !loading) {
+    } else if (initialized && !loading) {
       // An empty timeline: the composer is the first move.
-      return (
-        <Spine>
-          {pinned}
-          <HomeComposer />
-          <ResumeRail />
-        </Spine>
-      );
+      posts = null;
+    } else {
+      posts = <FeedSkeletonRows />;
     }
-    return <FeedSkeleton />;
+  } else {
+    posts = (
+      <>
+        {/* A virtual item (the question card, the fortune, the caught-up row) renders its own spine item, or nothing. */}
+        {/* The server's class stays through hydration, which renders without the streamed fallback. */}
+        <div role="feed" aria-label={label} className={feedArrival} suppressHydrationWarning>
+          {shown.map((entry) =>
+            arrived(entry.id) ? (
+              <div key={entry.id} className="arrive-group">
+                {entry.node}
+              </div>
+            ) : (
+              <Fragment key={entry.id}>{entry.node}</Fragment>
+            ),
+          )}
+        </div>
+        <div ref={sentinelRef} aria-hidden />
+        {!ready && <div aria-hidden data-slot="defer-placeholder" style={{ minHeight: '100vh' }} />}
+      </>
+    );
   }
 
   return (
@@ -233,21 +248,7 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
       {pinned}
       <HomeComposer />
       <ResumeRail />
-      {/* A virtual item (the question card, the fortune, the caught-up row) renders its own spine item, or nothing. */}
-      {/* The server's class stays through hydration, which renders without the streamed fallback. */}
-      <div role="feed" aria-label={label} className={feedArrival} suppressHydrationWarning>
-        {shown.map((entry) =>
-          arrived(entry.id) ? (
-            <div key={entry.id} className="arrive-group">
-              {entry.node}
-            </div>
-          ) : (
-            <Fragment key={entry.id}>{entry.node}</Fragment>
-          ),
-        )}
-      </div>
-      <div ref={sentinelRef} aria-hidden />
-      {!ready && <div aria-hidden data-slot="defer-placeholder" style={{ minHeight: '100vh' }} />}
+      {posts}
     </Spine>
   );
 }
@@ -257,10 +258,19 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
  * `--site-bg-subtle` block (M6): nothing shimmers.
  */
 function FeedSkeleton() {
+  return (
+    <Spine>
+      <HomeComposer />
+      <FeedSkeletonRows />
+    </Spine>
+  );
+}
+
+/** The skeleton's rows alone: what stands in for the posts while a tab switch refetches them. */
+function FeedSkeletonRows() {
   const { t } = useTranslation('feed');
   return (
-    <Spine aria-busy="true" aria-label={t('loading-feed', { defaultValue: 'Loading feed' })}>
-      <HomeComposer />
+    <div aria-busy="true" aria-label={t('loading-feed', { defaultValue: 'Loading feed' })} className="contents">
       {[0, 1, 2].map((i) => (
         <SpineItem key={i} aria-hidden>
           <div className="flex items-center gap-2.5">
@@ -275,7 +285,7 @@ function FeedSkeleton() {
           <Skeleton className="mt-2 h-3.5 w-2/3" />
         </SpineItem>
       ))}
-    </Spine>
+    </div>
   );
 }
 

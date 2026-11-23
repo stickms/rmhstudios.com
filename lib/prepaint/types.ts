@@ -42,6 +42,11 @@ export interface PrepaintConfig {
   /** Signed-in account appearance as localStorage writes (null = remove). */
   seed?: Record<string, string | null>;
   theme?: PrepaintTheme;
+  /**
+   * The reader's font catalogue as the fonts step needs it (lib/prepaint/fonts.ts): face id → its sheet URL, `t` for
+   * main/reading faces and `m` for mono, `''` for a default that lives in the site sheet. Absent on the Discord head.
+   */
+  fonts?: { t: Record<string, string>; m: Record<string, string> };
 }
 
 export interface PrepaintCtx {

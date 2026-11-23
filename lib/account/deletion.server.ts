@@ -303,6 +303,8 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.session.deleteMany({ where: { userId } }),
     prisma.account.deleteMany({ where: { userId } }),
     prisma.passkey.deleteMany({ where: { userId } }),
+    //    Two-step verification: the encrypted authenticator secret and backup codes.
+    prisma.twoFactor.deleteMany({ where: { userId } }),
     prisma.pushSubscription.deleteMany({ where: { userId } }),
     // 1b. Credentials and outbound access that live in their own tables. The user row is anonymised,
     //     not removed, so their `onDelete: Cascade` never fires and each of these would otherwise stay

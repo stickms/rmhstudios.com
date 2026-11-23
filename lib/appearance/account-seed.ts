@@ -49,6 +49,7 @@ import {
   isJellyMotion,
 } from '@/lib/appearance/prefs';
 import { SITE_STYLES } from '@/stores/themeStore';
+import { DEFAULT_FONTS, FONT_KEYS, isFontFor, type FontSlot } from '@/lib/appearance/fonts';
 
 /** The `rmh-style` key, as `themeScript` and `Providers` both read it. */
 export const STYLE_STORAGE_KEY = 'rmh-style';
@@ -61,6 +62,9 @@ export interface AccountAppearanceRow {
   readableFont?: boolean | null;
   colorVision?: string | null;
   jellyMotion?: string | null;
+  fontMain?: string | null;
+  fontReading?: string | null;
+  fontMono?: string | null;
 }
 
 /**
@@ -108,6 +112,19 @@ export function accountAppearanceSeed(row: AccountAppearanceRow | null | undefin
   // account never chose, so the device's value stands.
   if (isJellyMotion(row.jellyMotion)) {
     seed[JELLY_MOTION_KEY] = row.jellyMotion === DEFAULT_JELLY_MOTION ? null : row.jellyMotion;
+  }
+
+  // The reader's fonts (lib/appearance/fonts.ts): a chosen face is written, a default (or `same`) is expressed by
+  // absence, and a never-chosen column (null) leaves the device's value alone, as for every field above.
+  const fontColumns: Record<FontSlot, string | null | undefined> = {
+    main: row.fontMain,
+    reading: row.fontReading,
+    mono: row.fontMono,
+  };
+  for (const slot of ['main', 'reading', 'mono'] as const) {
+    const v = fontColumns[slot];
+    if (v == null) continue;
+    seed[FONT_KEYS[slot]] = isFontFor(slot, v) && v !== DEFAULT_FONTS[slot] ? v : null;
   }
 
   return seed;

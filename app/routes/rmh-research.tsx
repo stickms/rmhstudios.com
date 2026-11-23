@@ -9,7 +9,7 @@ import rIndexCss from '@/components/rmh-research/pages/r-index.css?url';
 import psychologyCss from '@/components/rmh-research/pages/psychology.css?url';
 
 // RMH Research is a full-screen microsite in the /rmh-pmc and /rmh-capital
-// tradition, but in the site's own Steel look: Geist and Geist Mono (the site's
+// tradition, but in the site's own Steel look: the site's own faces (DM Sans and DM Mono or the reader's choice; the site's
 // self-hosted faces), the `--site-*` tokens, and so the Day and Night editions,
 // with no `theme-color`. The foundation sheet and every page sheet are linked
 // here so in-site navigation never waits for a stylesheet.

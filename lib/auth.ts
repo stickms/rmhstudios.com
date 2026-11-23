@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { generateHandle } from '@/lib/handle.server';
 import Stripe from 'stripe';
 import { stripe } from '@better-auth/stripe';
-import { customSession, emailOTP } from 'better-auth/plugins';
+import { captcha, customSession, emailOTP, twoFactor } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { getUserTier, invalidateUserTier } from '@/lib/entitlements';
 import { sendEmail } from '@/lib/email/send.server';
@@ -26,6 +26,23 @@ import {
 } from '@/lib/auth/security-hooks.server';
 import { sendExistingAccountNotice } from '@/lib/auth/existing-account-notice.server';
 import { startRecoveryHold } from '@/lib/recovery/hold.server';
+import {
+  RESET_IDENTIFIER_PREFIX,
+  RESET_LINK_TTL_SECONDS,
+  hashResetIdentifier,
+  onResetRequested,
+  revokeResetLinks,
+} from '@/lib/auth/password-reset.server';
+import {
+  TWO_FACTOR_DISABLED_PATHS,
+  TWO_FACTOR_OPTIONS,
+  classifyNewSession,
+  completedPasswordSignIn,
+  noteTwoFactorVerifier,
+} from '@/lib/auth/two-factor.server';
+import { assertSignInAllowed, clearSignInFailures, recordSignInFailure } from '@/lib/auth/sign-in-throttle.server';
+import { TURNSTILE_ENDPOINTS } from '@/lib/auth/turnstile';
+import { turnstileSecretKey } from '@/lib/auth/turnstile.server';
 import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
@@ -104,6 +121,21 @@ function codeEmail(code: string): { subject: string; html: string; text: string 
   };
 }
 
+/**
+ * What this site does when someone signs in: the security log row and the new-device alert (B11), and
+ * cancelling a scheduled deletion (B12, signing back in is the cancel flow). Called once per real sign-in:
+ * from the session-created hook, or, for a password sign-in, once the second factor is settled
+ * (`lib/auth/two-factor.server.ts`). Neither may sit in front of the response, and both swallow their errors.
+ */
+function onSignedIn(session: { id: string; userId: string }, request: Request): void {
+  // The security log records the sign-in from the same chain, as `sign_in_new_device` when the alert was
+  // sent and `sign_in` otherwise.
+  trackSignIn(session, request);
+  void import('@/lib/account/deletion.server')
+    .then((m) => m.cancelDeletion(session.userId))
+    .catch((err) => console.error('[auth] deletion cancel failed:', err));
+}
+
 export const auth = betterAuth({
   // The email-OTP plugin brings passwordless sign-in, its own password reset and email change along with the
   // verification code. Only the code is wanted (verification by code, owner 2026-11-19): the rest would be a second
@@ -116,8 +148,17 @@ export const auth = betterAuth({
     '/email-otp/request-email-change',
     '/email-otp/change-email',
     '/email-otp/check-verification-otp',
+    ...TWO_FACTOR_DISABLED_PATHS,
   ],
   baseURL: process.env.BETTER_AUTH_URL,
+  // Password-reset tokens are stored hashed (lib/auth/password-reset.server.ts), so a leaked database or backup holds
+  // no working reset link. Only that prefix: the other verification rows keep their own storage.
+  verification: {
+    storeIdentifier: {
+      default: 'plain',
+      overrides: { [RESET_IDENTIFIER_PREFIX]: { hash: hashResetIdentifier } },
+    },
+  },
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
@@ -174,6 +215,10 @@ export const auth = betterAuth({
       '/change-email': { window: 300, max: 5 },
       '/link-social': { window: 60, max: 10 },
       '/unlink-account': { window: 60, max: 10 },
+      // Each checks the current password. Per account the two-factor plugin also locks code entry after 10
+      // wrong codes; per address, wrong passwords lock sign-in (lib/auth/sign-in-throttle.server.ts).
+      '/change-password': { window: 60, max: 5 },
+      '/two-factor/*': { window: 60, max: 10 },
     },
   },
   // Google sign-in is switched off (repeated problems with it, 2026-10). Nothing was deleted: existing `account` rows with
@@ -199,12 +244,18 @@ export const auth = betterAuth({
     },
     // A reset signs the account out everywhere: whoever had the old password, or a stolen session, is cut off.
     revokeSessionsOnPasswordReset: true,
+    // One hour, as the login page and the email say. A link works once (Better Auth consumes it atomically).
+    resetPasswordTokenExpiresIn: RESET_LINK_TTL_SECONDS,
     // A reset by email is how an account is recovered, so it starts the 72-hour economy hold (no tips, gifts or
     // redemptions) and tells the inbox it happened. Neither may fail the reset itself.
     // Also logged for the member (their security log, "Not you?"). Only the account and the request's device and
     // network are stored: never the token. The record never throws and is not awaited.
     onPasswordReset: async ({ user }, request) => {
       void recordSecurityEvent({ userId: user.id, kind: 'password_reset_completed', request });
+      // Any other link still outstanding for the account stops working too, and the inbox owner is no longer
+      // held behind someone else's wrong passwords.
+      await revokeResetLinks(user.id);
+      void clearSignInFailures(user.email);
       await startRecoveryHold(user.id, 'password reset by email').catch((err) =>
         console.error('[auth] recovery hold failed:', err),
       );
@@ -219,26 +270,13 @@ export const auth = betterAuth({
         text: 'The password for your RMH Studios account was just reset. If this was not you, reset it again now and review your security settings.',
       });
     },
-    // Make self-service password reset operable (the `/request-password-reset` and
-    // `/reset-password` rate rules above previously had no transport behind them).
-    // Not awaited (nor the verification email below): Better Auth answers a
-    // reset for an unknown address without sending, so waiting on the send
-    // would make a real address answer slower and give it away. sendEmail
-    // never throws, so nothing is lost by not waiting.
-    // The request is logged for the member the same way (existing accounts only, since this hook runs only for
-    // them): fire-and-forget, with no URL or token stored.
-    sendResetPassword: async ({ user, url }, request) => {
-      void recordSecurityEvent({ userId: user.id, kind: 'password_reset_requested', request });
-      void sendEmail({
-        to: user.email,
-        subject: 'Reset your RMH Studios password',
-        html: emailShell(
-          'Reset your password',
-          'We received a request to reset the password for your RMH Studios account. This link expires shortly. If you did not request this, you can safely ignore this email.',
-          { label: 'Reset password', url },
-        ),
-        text: `Reset your RMH Studios password: ${url}`,
-      });
+    // The reset email goes through Resend (`sendEmail`). Better Auth calls this only for an address that has an
+    // account, so `onResetRequested` returns at once and works in the background: waiting on it would make a real
+    // address answer slower than an unknown one and give it away. It decides whether this account may be sent a
+    // link at all, holds the account to an hourly allowance whatever the number of IPs asking, revokes the earlier
+    // links, logs the request for the member (never the URL or token) and sends.
+    sendResetPassword: async (data, request) => {
+      onResetRequested(data, request);
     },
   },
   emailVerification: {
@@ -348,6 +386,9 @@ export const auth = betterAuth({
     before: createAuthMiddleware(async (ctx) => {
       // Security log: remember who is acting before sign-out / revoke deletes the session.
       await captureSecurityActor(ctx);
+      await noteTwoFactorVerifier(ctx);
+      // Per-address limit on wrong passwords, whatever the number of IPs guessing.
+      if (ctx.path === '/sign-in/email') await assertSignInAllowed((ctx.body as { email?: unknown } | undefined)?.email);
       if (ctx.path !== '/sign-up/email' && ctx.path !== '/change-email') return;
       const body = ctx.body as { email?: unknown; newEmail?: unknown } | undefined;
       const claimed = ctx.path === '/sign-up/email' ? body?.email : body?.newEmail;
@@ -358,6 +399,23 @@ export const auth = betterAuth({
     // Security log: passkeys, sessions, sign-out, password and email changes, once they have succeeded.
     after: createAuthMiddleware(async (ctx) => {
       await recordSecurityAfter(ctx);
+      if (ctx.path === '/sign-in/email') {
+        const email = (ctx.body as { email?: unknown } | undefined)?.email;
+        const returned = (ctx.context as { returned?: unknown }).returned;
+        // Only a wrong password counts against the address (not an unconfirmed email or a refusal).
+        if ((returned as { body?: { code?: unknown } } | undefined)?.body?.code === 'INVALID_EMAIL_OR_PASSWORD') {
+          void recordSignInFailure(email);
+        } else if (!(returned instanceof Error)) {
+          void clearSignInFailures(email);
+          const session = await completedPasswordSignIn(ctx);
+          if (session && ctx.request) onSignedIn(session, ctx.request);
+        }
+      }
+      // A password changed from Settings retires any reset link still outstanding for the account.
+      if (ctx.path === '/change-password' && !((ctx.context as { returned?: unknown }).returned instanceof Error)) {
+        const userId = ctx.context.session?.user.id;
+        if (userId) void revokeResetLinks(userId);
+      }
     }),
   },
   databaseHooks: {
@@ -426,27 +484,10 @@ export const auth = betterAuth({
         after: async (session, ctx) => {
           const request = ctx?.request;
           if (!request) return;
-
-          // Both are deliberately un-awaited. Neither may sit in front of the
-          // sign-in response: a slow email send or a stray database hiccup
-          // would turn "sign in" into "sign in, eventually". Both swallow their
-          // own errors, so a rejection here can never surface as a failed
-          // login.
-
-          // B11 — fingerprint the device and alert the owner the first time an
-          // unfamiliar one signs in. Sessions were listable but never
-          // announced, which only helps someone who already suspects a problem.
-          //
-          // The security log records the sign-in from the same chain, as `sign_in_new_device`
-          // when that alert was sent and `sign_in` otherwise.
-          trackSignIn(session, request);
-
-          // B12 — signing back in is the cancel flow for a scheduled deletion.
-          // It is the only one users reliably find, so it has to be the one
-          // that works.
-          void import('@/lib/account/deletion.server')
-            .then((m) => m.cancelDeletion(session.userId))
-            .catch((err) => console.error('[auth] deletion cancel failed:', err));
+          // A password sign-in waits for the two-factor plugin (the after-hook above runs it), and enabling or
+          // disabling 2FA replaces the session without anyone signing in.
+          if (classifyNewSession(ctx?.path, request) !== 'sign-in') return;
+          onSignedIn(session, request);
         },
       },
     },
@@ -472,6 +513,12 @@ export const auth = betterAuth({
     steam({ apiKey: steamApiKey }),
     // Recent-sign-in rule and the empty-account merge (account-merge/*).
     consolidation(),
+    // Optional two-step verification: an authenticator app plus ten backup codes, for email-and-password
+    // sign-in (lib/auth/two-factor.server.ts). Never required.
+    twoFactor(TWO_FACTOR_OPTIONS),
+    // Cloudflare Turnstile in front of the two endpoints a bot uses to make accounts or send email, only when a
+    // secret is configured (lib/auth/turnstile.ts). Sign-in is guarded by the per-address limit instead.
+    ...(turnstileSecretKey() ? [captcha({ provider: 'cloudflare-turnstile', secretKey: turnstileSecretKey()!, endpoints: [...TURNSTILE_ENDPOINTS] })] : []),
     // WebAuthn/passkey sign-in. rpID/origin default from baseURL; override
     // via env when serving from multiple hostnames (e.g. www + apex).
     passkey({

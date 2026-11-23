@@ -510,4 +510,51 @@ function main(): void {
   );
 }
 
-main();
+/**
+ * `--choice`: measure every text face of the reader's font catalogue (lib/appearance/fonts.ts) against a local sans
+ * (Liberation Sans ≈ Arial) or serif (Liberation Serif ≈ Times New Roman) and write
+ * `app/fonts/choice-fallbacks.json`, which scripts/gen-self-hosted-fonts.ts turns into one metric-matched
+ * `'<Family> Fallback'` face per sheet. Committed, so `fonts:check` never needs the fallback fonts installed.
+ */
+const SERIF_FALLBACK_CANDIDATES = [
+  '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
+  '/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf',
+  '/Library/Fonts/Times New Roman.ttf',
+  '/System/Library/Fonts/Supplemental/Times New Roman.ttf',
+  'C:/Windows/Fonts/times.ttf',
+];
+const SERIF_LOCAL_SOURCES = ['Times New Roman', 'Times', 'Liberation Serif', 'Tinos'];
+
+async function writeChoice(): Promise<void> {
+  const { writeFileSync, readdirSync } = await import('node:fs');
+  const { FONT_CATALOGUE } = await import('../lib/appearance/fonts');
+  const { CHOICE_SOURCES } = await import('./font-choice-sources');
+  const sansPath = FALLBACK_CANDIDATES.find((p) => existsSync(p));
+  const serifPath = SERIF_FALLBACK_CANDIDATES.find((p) => existsSync(p));
+  if (!sansPath || !serifPath) throw new Error('Install `fonts-liberation` (Liberation Sans and Serif) first.');
+  const sans = readMetrics(sansPath);
+  const serif = readMetrics(serifPath);
+  const out: Record<string, { local: string[]; sizeAdjust: string; ascent: string; descent: string; lineGap: string }> = {};
+  for (const f of FONT_CATALOGUE) {
+    if (f.kind === 'mono') continue;
+    const pkg = CHOICE_SOURCES[f.id].pkg;
+    const files = readdirSync(resolve(process.cwd(), 'node_modules', pkg, 'files'));
+    const latin = files.find((n) => /-latin-(wght|400)-normal\.woff2$/.test(n));
+    if (!latin) throw new Error(`${pkg}: no Latin woff2`);
+    const real = readMetrics(resolve(process.cwd(), 'node_modules', pkg, 'files', latin));
+    const fb = f.kind === 'serif' ? serif : sans;
+    const sizeAdjust = real.xWidthAvg / real.unitsPerEm / (fb.xWidthAvg / fb.unitsPerEm);
+    out[f.id] = {
+      local: f.kind === 'serif' ? SERIF_LOCAL_SOURCES : LOCAL_SOURCES,
+      sizeAdjust: pct(sizeAdjust),
+      ascent: pct(real.ascent / (real.unitsPerEm * sizeAdjust)),
+      descent: pct(Math.abs(real.descent) / (real.unitsPerEm * sizeAdjust)),
+      lineGap: pct(real.lineGap / (real.unitsPerEm * sizeAdjust)),
+    };
+  }
+  writeFileSync(resolve(process.cwd(), 'app/fonts/choice-fallbacks.json'), JSON.stringify(out, null, 2) + '\n');
+  process.stdout.write(`wrote app/fonts/choice-fallbacks.json (${Object.keys(out).length} faces)\n`);
+}
+
+if (process.argv.includes('--choice')) void writeChoice();
+else main();

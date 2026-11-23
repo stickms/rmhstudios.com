@@ -8,7 +8,7 @@
   --accent-dim:#9A9A9A;        /* mid grey */
   --line:rgba(244,244,244,.12);
   --serif:'Fraunces',Georgia,serif;
-  --mono:'Geist Mono',ui-monospace,monospace;
+  --mono:var(--site-font-mono);
 
   position:relative;
   background:var(--bg);color:var(--ink);

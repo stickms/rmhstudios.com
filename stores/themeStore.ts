@@ -9,6 +9,25 @@ import {
   type JellyMotion,
 } from '@/lib/appearance/prefs';
 import { colorSchemeForBackground } from '@/lib/appearance/contrast';
+import { DEFAULT_FONTS, isFontFor, type FontChoice, type FontSlot } from '@/lib/appearance/fonts';
+import { markAppearanceChanged } from '@/lib/appearance/sync-merge';
+
+/**
+ * Values applied by hydration or by the account pull are not the user changing their appearance, so they must not
+ * move this device's "last changed" time (the most-recent-wins merge, lib/appearance/sync-merge.ts). Wrap those calls.
+ */
+let stampSuppressed = 0;
+export function withoutStamp(fn: () => void): void {
+  stampSuppressed++;
+  try {
+    fn();
+  } finally {
+    stampSuppressed--;
+  }
+}
+function stamp(): void {
+  if (stampSuppressed === 0) markAppearanceChanged();
+}
 
 // Each theme carries its document background color (`bg`) alongside its catalog
 // metadata so there is ONE source of truth for the theme→background map. Both the
@@ -354,6 +373,22 @@ interface ThemeStore {
    */
   jellyMotion: JellyMotion;
   setJellyMotion: (value: JellyMotion) => void;
+  /**
+   * The reader's fonts (lib/appearance/fonts.ts): main, reading and mono. Stamped on <html> as `data-font-*` (absent
+   * for a default), cached in localStorage and the `rmh-fonts` cookie, and synced to the account while sync is on.
+   */
+  fonts: FontChoice;
+  setFont: <S extends FontSlot>(slot: S, id: FontChoice[S]) => void;
+  /** Appearance sync for THIS device (owner, 2026-11-23): off = neither pull nor push appearance. */
+  appearanceSync: boolean;
+  setAppearanceSync: (on: boolean) => void;
+  /**
+   * True once Providers has read this device's stored appearance into the store. Until then the store holds defaults,
+   * so effects that write appearance back (fonts, the sync switch) and readers that prefer the store over the server's
+   * render wait for it. A flag rather than a first-run skip: React's dev double effects defeat a first-run ref.
+   */
+  appearanceHydrated: boolean;
+  markAppearanceHydrated: () => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -377,7 +412,10 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   style: DEFAULT_STYLE,
   // Committing a built-in style clears any user-theme preview (they are mutually
   // exclusive site looks) but keeps a committed user theme until removed.
-  setStyle: (style) => set({ style, styleFromDevice: false, userThemePreview: null }),
+  setStyle: (style) => {
+    stamp();
+    set({ style, styleFromDevice: false, userThemePreview: null });
+  },
   styleFromDevice: true,
   followDeviceStyle: (style) => set({ style, styleFromDevice: true }),
   fontScale: null,
@@ -385,11 +423,31 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   density: null,
   setDensity: (density) => set({ density }),
   readableFont: false,
-  setReadableFont: (readableFont) => set({ readableFont }),
+  setReadableFont: (readableFont) => {
+    stamp();
+    set({ readableFont });
+  },
   colorVision: DEFAULT_COLOR_VISION,
-  setColorVision: (colorVision) => set({ colorVision }),
+  setColorVision: (colorVision) => {
+    stamp();
+    set({ colorVision });
+  },
   jellyMotion: DEFAULT_JELLY_MOTION,
-  setJellyMotion: (jellyMotion) => set({ jellyMotion: resolveJellyMotion(jellyMotion) }),
+  setJellyMotion: (jellyMotion) => {
+    stamp();
+    set({ jellyMotion: resolveJellyMotion(jellyMotion) });
+  },
+  fonts: DEFAULT_FONTS,
+  setFont: (slot, id) => {
+    if (!isFontFor(slot, id)) return;
+    if (useThemeStore.getState().fonts[slot] === id) return;
+    stamp();
+    set((st) => ({ fonts: { ...st.fonts, [slot]: id } }));
+  },
+  appearanceSync: true,
+  setAppearanceSync: (appearanceSync) => set({ appearanceSync }),
+  appearanceHydrated: false,
+  markAppearanceHydrated: () => set({ appearanceHydrated: true }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

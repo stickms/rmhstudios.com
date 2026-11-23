@@ -79,6 +79,14 @@ model AppearancePreference {
   /// 'calm' (the retired middle level) reads as 'lively'. A new column on purpose: the retired `reduceMotion` holds
   /// stale values with different semantics. Nullable with no backfill.
   jellyMotion        String? @db.VarChar(8)
+  /// The reader's fonts (owner, 2026-11-23; ids from lib/appearance/fonts.ts). Always an explicit id once chosen, the
+  /// defaults ('dm-sans', 'dm-mono') and 'same' (reading follows main) included; null = never chosen, so the device's
+  /// own value stands.
+  fontMain           String? @db.VarChar(32)
+  fontReading        String? @db.VarChar(32)
+  fontMono           String? @db.VarChar(32)
+  /// When the account's appearance last changed: the "most recent wins" merge when a device turns sync back on.
+  updatedAt          DateTime @default(now()) @updatedAt
   /// Retired (Steel phase 6): the click-arc mode, kept for database compatibility, never read or written.
   electricArcs       String? @db.VarChar(8)
 

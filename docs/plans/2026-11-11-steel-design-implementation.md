@@ -74,8 +74,10 @@ Notes:
 
 ## 3. Type
 
-One family: **Geist** (already self-hosted, `--site-font-body`). **Geist Mono** (`--site-font-mono`) for timestamps,
-counts and small data. `--site-font-display` is set to the same stack as body; there is no display face.
+One family: **DM Sans** by default (self-hosted, `--site-font-body`). **DM Mono** (`--site-font-mono`) for timestamps,
+counts and small data. (Owner, 2026-11-23: Geist replaced by DM Sans, and readers may choose their own main, reading
+and mono faces from `lib/appearance/fonts.ts`; post and article text use `--site-font-reading`. Design:
+`docs/superpowers/specs/2026-11-23-font-choice-and-appearance-sync-design.md`.) `--site-font-display` is set to the same stack as body; there is no display face.
 
 | Class       | Size / line    | Weight     | Tracking | Use                                  |
 | ----------- | -------------- | ---------- | -------- | ------------------------------------ |
@@ -88,6 +90,9 @@ counts and small data. `--site-font-display` is set to the same stack as body; t
 | `t-meta`    | 12 / 1.3, mono | 400, muted | 0        | Time, kind, handle metadata          |
 
 - Y1. Weights used: 400, 500 (controls), 600. Never 700 or above.
+  One named exception (owner, 2026-11-23): Charter, a face a reader may choose (`lib/appearance/fonts.ts`), is set from
+  Charis SIL, which has no 600; its bold answers 600 (`font-weight: 600 700` in `app/fonts/choice/charter.css`), so a
+  reader who picks Charter sees headings at its 700. The site never asks for 700.
 - Y2. No letterspaced capitals anywhere. Labels are sentence case.
 - Y3. Links inside running text are underlined. Navigation words are not.
 
@@ -646,7 +651,9 @@ Each recipe says what the spine means on that page and what the one primary is.
   IntersectionObserver/ResizeObserver it tracks link positions with, because a faster navigation is worth that cost. It
   loads at idle after `load`, never on the critical path, and still requests animation frames only from input. No
   `requestAnimationFrame` callback is pending while the page is at rest.
-- B4. Fonts: Geist and Geist Mono only, self-hosted as today. Remove any other face from the site tier.
+- B4. Fonts: DM Sans and DM Mono are the only faces in the site tier's sheet (owner, 2026-11-23, replacing Geist). A
+  face a reader chose (`lib/appearance/fonts.ts`) is its own stylesheet, linked by the root only for that reader; no other
+  face enters the site tier.
 - B5. The site-tier CSS should get smaller in every phase. Record the built `globals` stylesheet size before phase 1 and
   after each phase in the ledger (section 17).
 - B6. Deleting the glass, jelly, arc and liquid-globe code is part of the work, not a follow-up (section 15.3).
