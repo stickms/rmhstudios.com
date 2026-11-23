@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // createNotification() is the path almost every notifier takes (likes, follows, replies, tips…). The settings grid's
 // Push column and quiet hours were read only by dispatch(), so for these they did nothing. These hold the rule:
@@ -40,6 +40,16 @@ const { createNotification } = await import('@/lib/notifications.server');
 
 const ON = { likes: true, comments: true, follows: true, mentions: true, reposts: true, system: true };
 const ALL_DAY = { quietStart: 0, quietEnd: 1439, tz: 'UTC' };
+
+// The quiet window used here (0 to 1439, end exclusive) leaves out the last minute of the UTC day, so a run during
+// 23:59 UTC saw no quiet hours and failed. Pin the clock to midday so the result does not depend on when CI runs.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-22T12:00:00Z'));
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(() => {
   prefsRow.current = null;
