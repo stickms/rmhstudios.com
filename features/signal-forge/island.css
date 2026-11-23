@@ -17,7 +17,6 @@
 @source "../../components/motion/LazyMotionProvider.tsx";
 @source "../../components/shared/GameErrorBoundary.tsx";
 @source "../../components/shared/GameLoadingFallback.tsx";
-@source "../../components/ui/button.tsx";
 @source "../../components/ui/site-toaster.tsx";
 @source "../../components/ui/toast-host.tsx";
 @source "../../components/ui/TwemojiProvider.tsx";

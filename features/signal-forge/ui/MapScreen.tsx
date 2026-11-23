@@ -46,7 +46,7 @@ export function MapScreen({ run, act }: { run: RunState; act: (a: Action) => voi
       elite: t('node.elite', { defaultValue: 'Elite' }),
       event: t('node.event', { defaultValue: 'Event' }),
       shop: t('node.shop', { defaultValue: 'Shop' }),
-      rest: t('node.rest', { defaultValue: 'Cooling Bay' }),
+      rest: t('node.rest-short', { defaultValue: 'Rest' }),
       boss: t('node.boss', { defaultValue: 'Act boss' }),
       treasure: t('node.treasure', { defaultValue: 'Cache' }),
     })[k];
