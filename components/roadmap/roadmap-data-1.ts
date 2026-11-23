@@ -14,10 +14,6 @@ export const ROADMAP_YEARS_1: YearSection[] = [
         body: 'Full launch of the casino metroidvania.',
       },
       {
-        title: "Satan's Library",
-        body: 'Steam push and release prep for the survival horror title.',
-      },
-      {
         title: 'Resoundings of Calamity',
         body: 'Begin development on our first FPS—blistering movement, adaptive arsenal, post-apocalyptic world—alongside other new titles.',
       },
@@ -39,10 +35,6 @@ export const ROADMAP_YEARS_1: YearSection[] = [
     year: 'Year 2',
     tagline: 'Scale & variety',
     milestones: [
-      {
-        title: "Satan's Library",
-        body: 'Steam release.',
-      },
       {
         title: 'Catalog updates',
         body: 'Major content updates across the web catalog and ongoing support for House Always Wins, Altair, and others.',

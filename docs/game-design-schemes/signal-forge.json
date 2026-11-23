@@ -1,0 +1,40 @@
+{
+  "id": "signal-forge",
+  "mood": "A signal being forged: a cold cyan oscilloscope trace hammered white-hot on an anvil, in a soot-black foundry wired with copper.",
+  "palette": {
+    "bg": "#0E0B09",
+    "bgAlt": "#1A1410",
+    "surface": "#17110D",
+    "surfaceHover": "#241A13",
+    "ink": "#F6E7D2",
+    "inkMuted": "#C2A888",
+    "accent": "#FF8A2A",
+    "accent2": "#3FD6F0",
+    "danger": "#FF4D3D",
+    "border": "#5A3A22",
+    "copper": "#B8743A",
+    "phosphor": "#A6E86A",
+    "waveforms": { "pulse": "#FFA436", "sine": "#46D8F2", "saw": "#FF6B5A", "noise": "#A6E86A" }
+  },
+  "fonts": {
+    "display": "Audiowide",
+    "body": "Barlow Condensed",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "none: chamfered plates (8 px corner cuts on controls, 14 px on panels), hex nuts for cost and energy",
+    "borderStyle": "1px oxidised-copper rule; amber top bar on panels; cyan for anything on the beat",
+    "texture": "charred steel with rivets, a phosphor oscilloscope graticule, faint scanlines, copper PCB traces with solder pads"
+  },
+  "motifs": [
+    "the four waveforms as shape-coded glyphs (square pulse, sine, sawtooth, noise)",
+    "cold cyan signal turning to molten amber across an anvil",
+    "crucible heat gauge",
+    "hex-nut cost and energy",
+    "circuit-board act map with chips for nodes",
+    "riveted, chamfered steel plates"
+  ],
+  "buttonStyle": "Primary is a molten-amber chamfered plate with near-black Audiowide text; secondary is charred steel with a copper hairline; on-beat actions (Vent, the tutorial) are arc-cyan.",
+  "backdrop": "Per act: soot-black foundry, blued coil halls or the white-hot heart; a far oscilloscope trace on a graticule, factory silhouettes, the forge's glow from below, copper traces across the floor plate, slow embers that stop under Globe motion: Still.",
+  "motion": "Responses to input only, all under 450 ms: damage numbers rise, a hit machine jolts, a destroyed one sinks and cools, a Forge Burst sends one amber ring across the line. The timed mode's beat sweep is the rhythm itself (Steady mode has none). Nothing flashes; ambient embers stop for reduced motion."
+}

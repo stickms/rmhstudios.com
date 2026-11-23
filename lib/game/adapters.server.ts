@@ -30,6 +30,7 @@ import {
   type OwnedRow,
 } from '@/lib/game/leaderboard-privacy';
 import { leaderboardHiddenUserIds } from '@/lib/game/leaderboard-privacy.server';
+import { cursedLogicAdapter } from '@features/cursed-logic/api/score-adapter.server';
 
 /** One row as the unified leaderboard renders it. */
 export interface LeaderboardRow {
@@ -518,6 +519,8 @@ const ADAPTERS: Record<string, GameAdapter> = {
   vega,
   'laundry-sort': laundrySort,
   'slice-it': sliceIt,
+  // Stored in GameStat; the adapter keeps only its own meta keys (features/cursed-logic/api/score-adapter.server.ts).
+  'cursed-logic': cursedLogicAdapter,
 };
 
 /**

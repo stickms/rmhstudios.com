@@ -2,9 +2,26 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { submitVegaScoreApi } from '@features/vega/engine/vega.contract';
 import { vegaScoreBody } from '@features/vega/engine/score-schema';
+import { maxScoreThrough } from '@features/vega/engine/scoring';
+import { plausibleFacts, vegaAchievementsFor, type VegaRunFacts } from '@features/vega/engine/achievements';
+import type { TowerType } from '@features/vega/engine/data';
+import { validateScore } from '@/lib/game/registry';
+import { grantAchievement } from '@/lib/achievements/engine.server';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 
+/**
+ * Record a finished Project Vega run.
+ *
+ * Storage: the VegaPlayer row predates the rework, so its columns are reused rather than migrated:
+ * `highestLevel` holds the best run score and `highestLoop` the best wave cleared (the generic adapter in
+ * lib/game/adapters.server.ts already reads them as score and progress). Rows written by the old game keep their
+ * small loop/level numbers and simply rank below any reworked run.
+ *
+ * Checks, in order: the catalog rules (ceiling, wave cap, score per second, minimum duration), the score formula's
+ * bound for the waves cleared on that map, and the consistency of the achievement facts. A run that fails the
+ * first two is refused; implausible facts only withhold the achievements.
+ */
 export const route = apiRoute('/api/vega/score', {
   POST: implement(
     submitVegaScoreApi,
@@ -14,46 +31,47 @@ export const route = apiRoute('/api/vega/score', {
       invalid: () => Response.json({ error: 'Invalid data' }, { status: 400 }),
     },
     async ({ session, body }) => {
-      const { highestLoop, highestLevel } = body;
+      const { score, cleared, map, durationMs, facts } = body;
 
-      // Find existing profile
-      const existingProfile = await prisma.vegaPlayer.findUnique({
-        where: { userId: session.user.id },
-      });
-
-      if (existingProfile) {
-        // Update if better
-        // Primary metric: Loop. Secondary: Level.
-        const isBetter =
-          highestLoop > existingProfile.highestLoop ||
-          (highestLoop === existingProfile.highestLoop &&
-            highestLevel > existingProfile.highestLevel);
-
-        const updated = await prisma.vegaPlayer.update({
-          where: { userId: session.user.id },
-          data: {
-            highestLoop: Math.max(existingProfile.highestLoop, highestLoop),
-            highestLevel: Math.max(existingProfile.highestLevel, highestLevel),
-            gamesPlayed: { increment: 1 },
-            username: session.user.name || session.user.email || 'Anonymous', // Update username if changed
-          },
-        });
-        await recordGamePlay(session.user.id);
-        return Response.json({ success: true, profile: updated, isRecord: isBetter });
-      } else {
-        // Create new
-        const newProfile = await prisma.vegaPlayer.create({
-          data: {
-            userId: session.user.id,
-            username: session.user.name || session.user.email || 'Anonymous',
-            highestLoop,
-            highestLevel,
-            gamesPlayed: 1,
-          },
-        });
-        await recordGamePlay(session.user.id);
-        return Response.json({ success: true, profile: newProfile, isRecord: true });
+      const verdict = validateScore('vega', { score, durationMs, progress: cleared });
+      if (!verdict.ok || score > maxScoreThrough(cleared, map)) {
+        return Response.json({ error: 'Invalid data' }, { status: 400 });
       }
+
+      const userId = session.user.id;
+      const username = session.user.name || session.user.email || 'Anonymous';
+      const existing = await prisma.vegaPlayer.findUnique({ where: { userId } });
+      const isRecord = !existing || score > existing.highestLevel;
+      const row = existing
+        ? await prisma.vegaPlayer.update({
+            where: { userId },
+            data: {
+              highestLevel: Math.max(existing.highestLevel, score),
+              highestLoop: Math.max(existing.highestLoop, cleared),
+              gamesPlayed: { increment: 1 },
+              username,
+            },
+          })
+        : await prisma.vegaPlayer.create({
+            data: { userId, username, highestLevel: score, highestLoop: cleared, gamesPlayed: 1 },
+          });
+      await recordGamePlay(userId);
+
+      const runFacts: VegaRunFacts = { map, cleared, ...facts, typesBuilt: facts.typesBuilt as TowerType[] };
+      const unlocked: string[] = [];
+      if (plausibleFacts(runFacts)) {
+        for (const id of vegaAchievementsFor(runFacts)) {
+          if (await grantAchievement(userId, id)) unlocked.push(id);
+        }
+      }
+
+      return Response.json({
+        success: true,
+        isRecord,
+        bestScore: row.highestLevel,
+        bestWave: row.highestLoop,
+        unlocked,
+      });
     },
   ),
 });

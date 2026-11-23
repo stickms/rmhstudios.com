@@ -3,12 +3,14 @@
  *
  * It is what the phone globe's button links to with scripting off, so it is markup and links only: no data loader, no
  * client behaviour on the page's own content. The five sections come first, in the order of the globe and the sidebar,
- * then the destinations the five words do not name (the old navigation's other entries), then the account links.
+ * then the destinations the five words do not name (the old navigation's other entries), then the reference pages the
+ * margin's foot carries (`FOOT_LINKS`), then the account links.
  */
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useDeviceSignOut } from '@/components/settings/useDeviceSignOut';
+import { FOOT_LINKS } from '@/components/shell/foot-links';
 import { NoMargin } from '@/components/shell/NoMargin';
 import { SECTIONS, viewerPathFor } from '@/components/shell/sections';
 import { useSectionLabels } from '@/components/shell/use-section-labels';
@@ -76,6 +78,19 @@ function SectionsPage() {
           <li key={leaf.id}>
             <Link to={leaf.href} className="sections-list__row t-body">
               {t(leaf.tKey, { defaultValue: leaf.label })}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <h2 className="t-label sections-list__group">
+        {t('shell-sections-foot', { defaultValue: 'More pages' })}
+      </h2>
+      <ul className="sections-list">
+        {FOOT_LINKS.map((link) => (
+          <li key={link.to}>
+            <Link to={link.to} className="sections-list__row t-body">
+              {t(link.tKey, { defaultValue: link.label })}
             </Link>
           </li>
         ))}

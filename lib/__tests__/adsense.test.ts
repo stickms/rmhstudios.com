@@ -157,7 +157,6 @@ describe('adsAllowed', () => {
     '/discord/rmhbox',
     '/embed/post/1',
     '/offline',
-    '/secret/thing',
     '/api/og/post/1',
   ])('is off on %s', (pathname) => {
     expect(

@@ -228,7 +228,6 @@ export const USER_TEXT_EXEMPT: Readonly<Record<string, string>> = {
   'components/tf2-game/': 'app tier',
   'components/dunesday/': 'app-tier game',
   'components/kowloon-knockout/': 'app-tier game',
-  'components/cursed-logic/': 'app-tier game',
   'components/house-always-wins/': 'app-tier game',
   'components/temple-of-joy/': 'app-tier game',
   'components/rideshare/': 'app-tier game',

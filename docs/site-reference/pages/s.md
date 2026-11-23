@@ -59,12 +59,9 @@ Games, apps and standalone pages that intentionally render without the site shel
 
 | URL | Title | Access | Source |
 | --- | ----- | ------ | ------ |
-| `/secret` | Secret | public | `app/routes/secret/index.tsx` |
-| `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |
-| `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |
-| `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
 | `/services/rebar-rutabaga` | Rebar & Rutabaga | public | `app/routes/services.rebar-rutabaga.tsx` |
+| `/signal-forge` | — | public | `app/routes/signal-forge.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
 | `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
 | `/slice-it` | Slice It! | public | `app/routes/slice-it/index.tsx` |

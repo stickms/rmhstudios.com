@@ -280,7 +280,6 @@ export const NAMESPACES = [
   "r-kowloon-knockout",
   "r-rmhbox",
   "r-rmhcode",
-  "r-secret",
   "r-slice-it",
   "r-sohumbum",
   "r-sohumtracker",

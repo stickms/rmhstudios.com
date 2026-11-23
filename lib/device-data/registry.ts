@@ -167,6 +167,17 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'gh:table-code',
       'velum.playerName',
       'rmh-kaikai-debt',
+      // Cursed Logic: an unfinished run and the training-duel flag; the retired fragment wallet is removed on load.
+      'rmh:cursed-logic:run',
+      'rmh:cursed-logic:tutorial-done',
+      'cursed-logic-shop',
+      // Project Vega: the run saved between waves, the tutorial flag and the specimens this device has catalogued.
+      'rmh:vega:run',
+      'rmh:vega:tutorial-done',
+      'rmh:vega:catalogued',
+      // Signal Forge: this device's copy of the progression (ascension, wins) and the tutorial flag.
+      'rmh:signal-forge:meta',
+      'rmh:signal-forge:tutorial-done',
     ],
     personal: true,
   },
@@ -232,7 +243,7 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
     kind: 'localstorage-prefix',
     names: [
       'vb-',
-      'vega_volume',
+      'rmh:vega:audio',
       'haw-music-',
       'haw-sfx-',
       'kk-',
@@ -243,6 +254,10 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-globeset-shapes',
       'rmh-globeset-view',
       'synapse-storm-settings',
+      'rmh:cursed-logic:settings',
+      // Signal Forge: sound on/off and the rhythm mode (Timed or Steady).
+      'rmh:signal-forge:muted',
+      'rmh:signal-forge:mode',
       'rmh:tf2-game:settings:',
     ],
     personal: false,

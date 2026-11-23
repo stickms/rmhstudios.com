@@ -21,7 +21,7 @@ export const route = apiRoute('/api/vega/leaderboard', {
         const leaderboard = await prisma.vegaPlayer.findMany({
           where: notHiddenWhere(hidden),
           take: 10,
-          orderBy: [{ highestLoop: 'desc' }, { highestLevel: 'desc' }],
+          orderBy: [{ highestLevel: 'desc' }, { highestLoop: 'desc' }],
           select: {
             username: true,
             highestLoop: true,

@@ -221,3 +221,10 @@ See the [API inventory](../api.md) for how to read the tables.
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/csp-report` | `POST` | `lib/api/routes/csp-report.server.ts` |
+
+## `/api/cursed-logic`
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/cursed-logic/leaderboard` | `GET` | `features/cursed-logic/api/cursed-logic.leaderboard.server.ts` |
+| `/api/cursed-logic/score` | `POST` | `features/cursed-logic/api/cursed-logic.score.server.ts` |

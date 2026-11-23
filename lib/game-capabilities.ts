@@ -400,6 +400,52 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     // Neon signage, bloom, drift sparks and the crash burst all strobe.
     descriptors: ['flashing'],
   },
+  // The three former Vault games (design: docs/superpowers/specs/2026-11-23-vault-games-migration-design.md). These are
+  // the stub claims of the migration plumbing, true of the code today; each game's own build revisits them.
+  vega: {
+    genre: ['strategy'],
+    players: ['single', 'async-leaderboard'],
+    // Pointer events place and select (a touch previews on the first tap and places on the second); the whole
+    // game is also playable from the keyboard alone (board cursor, digits, Space), so no one input is required.
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    // A run to containment (wave 40) is 30-60 minutes; a lost run is often 10-20.
+    sessionMinutes: [15, 60],
+    engine: '2d-canvas',
+    demanding: false,
+    // Best score and wave ride the player's own VegaPlayer row; the run in progress is kept in localStorage
+    // between waves (resume from the menu).
+    save: 'own-table',
+    accessibility: [],
+    // Clinical body horror: specimens burst and stain the board when they die.
+    descriptors: ['violence'],
+  },
+  'signal-forge': {
+    genre: ['card', 'strategy'],
+    players: ['single', 'async-leaderboard'],
+    // DOM buttons and SVG (the 2026-11-23 rework): click, tap or keys (1-9, V, E, Q, Tab/Enter) all play.
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    sessionMinutes: [20, 50],
+    engine: 'dom',
+    demanding: false,
+    // Cloud saves of a run in progress and the ascension progress, on the game's own table and routes.
+    save: 'own-table',
+    // Steady mode removes the beat: every on-phrase card counts as Good, no timed input anywhere. Waveforms are
+    // shape-coded glyphs as well as colours. Nothing strobes (the old canvas title and glow effects are gone).
+    accessibility: ['no-timed-input', 'colorblind-safe'],
+  },
+  'cursed-logic': {
+    genre: ['strategy', 'card'],
+    players: ['single'],
+    // Turn-based with tap targets of 44 px+; the clash minigames take a tap or a hold, and can be turned off.
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    sessionMinutes: [8, 25],
+    engine: 'dom',
+    demanding: false,
+    // An unfinished run and the tutorial flag live in localStorage; scores go to the board through the score route.
+    save: 'local-only',
+    // Turn-based throughout; the only timed inputs are the clash minigames, which the menu turns off.
+    accessibility: ['no-timed-input'],
+  },
 };
 
 export function capabilitiesFor(gameId: string): GameCapabilities | undefined {

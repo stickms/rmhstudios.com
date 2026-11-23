@@ -25,6 +25,9 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable | required | `Multiplayer` `Physics` `3D` |
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
+| **Project Vega** | [`/vega`](https://rmhstudios.com/vega) | Playable | required | `Strategy` `Tower Defense` `Horror` `Single-player` |
+| **Signal Forge** | [`/signal-forge`](https://rmhstudios.com/signal-forge) | Playable | required | `Roguelike` `Deckbuilder` `Rhythm` `Strategy` |
+| **Cursed Logic** | [`/cursed-logic`](https://rmhstudios.com/cursed-logic) | Playable | required | `Strategy` `Duel` `Roguelite` `Mind Games` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
@@ -112,6 +115,24 @@ Survive waves of enemies in a dark arena. Collect void shards that orbit you as 
 Step into the neon-lit rooftops of Kowloon, 1997, and brawl in a fully animated 3D arena with a retro pixel-art filter. Pick from nine fighter classes and choose your look: the animated Y-Bot or a Source-engine character from Team Fortress 2, Counter-Strike or Half-Life 2, all moving with the same boxing animations. Master devastating combos and counter-strikes, then battle the CPU solo or take up to four players online in free-for-all or 2v2 teams — built for phones too, with touch controls and a layout that fits any screen.
 
 **Route:** `/kowloon-knockout` · **Catalog id:** `kowloon-knockout` · **Sign-in:** not required
+
+### Project Vega
+
+Specimens crawl a corridor of tissue toward the containment door. Between waves the board waits while you place and upgrade eight instruments, from the Synapse and the Suppressor to the Lobotomizer and the Biobank, each with three tiers. Every wave brings a mix of specimens that armour, cloak, shield, regenerate, split and heal, and every fifth wave a boss. Three wards to hold, a score built from waves cleared, clean holds and early calls, and an overtime that runs to wave 100 for the ones who reach containment.
+
+**Route:** `/vega` · **Catalog id:** `vega` · **Status:** Playable · **Sign-in:** required
+
+### Signal Forge
+
+Climb three acts of a living forge with a deck of waveform cards. Every turn the signal plays a short phrase: cards that land on it hit harder and build Heat, and finishing the phrase fires a Forge Burst at everything in the room. Bank Heat for a bigger Burst or vent it for Block. Play to a beat in Timed mode, or take your time in Steady mode. Over a hundred cards, elites and two bosses per act, relics, events, ten Ascension levels, achievements and a leaderboard.
+
+**Route:** `/signal-forge` · **Catalog id:** `signal-forge` · **Status:** Playable · **Sign-in:** required
+
+### Cursed Logic
+
+Something has got into the terminal. Seven rogue Protocols stand between you and NULL//ROOT, each with its own habits: the Warden blocks, the Mimic copies you, the Liar’s tells point the wrong way, the Oracle counters whatever you do most. Each round you pick one of three stances and a command (Strike, Block, Prepare or Probe) while the Protocol commits in secret and shows a tell that may be a bluff. A run is nine duels across five sectors with your Integrity carried between them, a free script and a black market after each sector, round mutations, clash minigames and optional Pacts that raise your score. Starts with a short training duel.
+
+**Route:** `/cursed-logic` · **Catalog id:** `cursed-logic` · **Status:** Playable · **Sign-in:** required
 
 ### House Always Wins
 

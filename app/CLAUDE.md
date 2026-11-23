@@ -46,7 +46,7 @@ the feature-sliced games in `features/`; a feature's route file stays here and s
 | `[.]`          | escaped literal character                                                    | `sitemap[.]xml.ts`                                                      |
 
 **Placement decides chrome:** files under `_site/` get the sidebar shell;
-top-level files render full-screen. Games, `/login`, `secret/*`, `discord/*`,
+top-level files render full-screen. Games, `/login`, `discord/*`,
 and the legal pages are intentionally top-level — don't move them.
 
 After adding/renaming a route file, run the dev server or a build once —
@@ -232,7 +232,7 @@ rest yourself:
 
 - [ ] **Placement decides chrome.** `_site/` for a standard page (the Steel shell,
       `PageLayout`), top level for a full-screen experience. Games, `/login`,
-      `secret/*`, `discord/*` and the legal pages are intentionally top-level.
+      `discord/*` and the legal pages are intentionally top-level.
 - [ ] **`head()` on every page** — at minimum `meta: [{ title: "X | RMH
       Studios" }]`; public pages use `buildMeta()` + `buildCanonical()` and let
       `buildMeta` own the whole `og:*` block; content pages add JSON-LD via

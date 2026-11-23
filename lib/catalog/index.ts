@@ -78,6 +78,7 @@ import type { AppInfo, GameInfo } from './types';
 
 // ── Entries owned by a feature (features/<id>/catalog.ts, named by the manifest's `catalog`) ──
 import altair from '@features/altair/catalog';
+import cursedLogic from '@features/cursed-logic/catalog';
 import doctrine from '@features/doctrine/catalog';
 import rmhcharacters from '@features/rmhcharacters/catalog';
 import dreamRift from '@features/dream-rift/catalog';
@@ -85,8 +86,10 @@ import gabrielsHorn from '@features/gabriels-horn/catalog';
 import hearthworks from '@features/hearthworks/catalog';
 import laundrySort from '@features/laundry-sort/catalog';
 import nightrail from '@features/nightrail/catalog';
+import signalForge from '@features/signal-forge/catalog';
 import sliceIt from '@features/slice-it/catalog';
 import synapseStorm from '@features/synapse-storm/catalog';
+import vega from '@features/vega/catalog';
 import voidBreaker from '@features/void-breaker/catalog';
 
 // ── Games not yet in a feature folder ─────────────────────────────────────
@@ -120,9 +123,12 @@ import studio from './apps/studio';
 const GAME_MODULES: readonly GameInfo[] = [
   // feature-owned
   altair,
+  cursedLogic,
   hearthworks,
   nightrail,
+  signalForge,
   sliceIt,
+  vega,
   voidBreaker,
   // hand-kept
   dailyPuzzles,

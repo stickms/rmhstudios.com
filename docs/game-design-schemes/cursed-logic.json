@@ -1,0 +1,37 @@
+{
+  "id": "cursed-logic",
+  "mood": "A corrupted terminal that something has got into: phosphor acid green on a violet-black void, cursed sigils drawn on a logic-gate grid, and opponents that lie.",
+  "palette": {
+    "bg": "#06040A",
+    "bgAlt": "#0F0A18",
+    "surface": "#120C1D",
+    "surfaceHover": "#1C1330",
+    "ink": "#E8FFD2",
+    "inkMuted": "#A9C49A",
+    "accent": "#B6FF3C",
+    "accent2": "#A970FF",
+    "danger": "#FF4F6E",
+    "border": "#3B2A5C"
+  },
+  "fonts": {
+    "display": "Silkscreen",
+    "body": "IBM Plex Mono",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "none: notched corners (8 px chamfers on windows, a 10 px clipped corner on stance cards, chamfered meter cells)",
+    "borderStyle": "1px deep-violet hairline on terminal windows with a violet title bar marked by an acid diamond; commands are 1px acid boxes wrapped in violet [ ] brackets",
+    "texture": "static scanlines over a violet radial wash, orthogonal circuit traces, frozen columns of glyphs down the edges"
+  },
+  "motifs": [
+    "sigils on a 3x3 logic-gate node grid (one per stance)",
+    "the seven-node logic heptagram with gate symbols at its points",
+    "16x16 pixel-mask portraits with a violet chromatic ghost and scanlines",
+    "horizontal tears that knock a slice of the picture sideways",
+    "bracketed terminal commands and > prompts",
+    "segmented core and Integrity cells, diamond Charge pips"
+  ],
+  "buttonStyle": "Primary is a solid acid-green box with void-black Silkscreen text inside black [ ] brackets; secondary is a void box with a 1px acid border and violet brackets; ghost is a violet-bordered box with phosphor text. Hover fills 14% acid in 90 ms; focus is a 2 px acid outline offset 2 px.",
+  "backdrop": "Void black under a violet radial wash and static scanlines; a large faint seven-node logic sigil behind the arena whose tint moves from acid (sectors 1-2) through violet (3-4) to danger red at the root; frozen glyph columns down both edges on wide screens. Nothing in the backdrop moves.",
+  "motion": "Only answers to input: action flips and results fade in 160 ms; a hit tears the target into three offset slices for 280 ms and throws glyph shrapnel for 340 ms; a Block slams brackets shut in 180 ms; a Probe sweeps one scan line in 320 ms; a terminated Protocol drops out line by line in 360 ms. The one ambient motion is the containment ring around a portrait (one turn a minute), which stops under Globe motion: Still. Nothing flashes or pulses."
+}

@@ -8,14 +8,17 @@
 /** Catalog title id -> the achievement catalog `group` label. */
 export const ACHIEVEMENT_GROUP_BY_GAME_ID: Record<string, string> = {
   altair: 'Altair',
+  'cursed-logic': 'Cursed Logic',
   'daily-puzzles': 'Daily Puzzles',
   rmhbox: 'RMHBox',
   rmhstudy: 'RMHStudy',
   rmhtube: 'RMHTube',
   rmhtype: 'RMHType',
+  'signal-forge': 'Signal Forge',
   'slice-it': 'Slice It!',
   'synapse-storm': 'Synapse Storm',
   'temple-of-joy': 'Temple of Joy',
+  vega: 'Project Vega',
 };
 
 /**

@@ -331,6 +331,8 @@ import { route as r_lib_creator_api_creator_redeem } from '@/lib/creator/api/cre
 import { route as r_lib_creator_api_creator_studio_overview } from '@/lib/creator/api/creator.studio-overview.server';
 import { route as r_lib_creator_api_creators_id_join } from '@/lib/creator/api/creators.$id.join.server';
 import { route as r_lib_api_routes_csp_report } from '@/lib/api/routes/csp-report.server';
+import { route as r_features_cursed_logic_api_cursed_logic_leaderboard } from '@/features/cursed-logic/api/cursed-logic.leaderboard.server';
+import { route as r_features_cursed_logic_api_cursed_logic_score } from '@/features/cursed-logic/api/cursed-logic.score.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_leaderboard } from '@/lib/daily-puzzles/api/daily-puzzles.leaderboard.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_puzzle } from '@/lib/daily-puzzles/api/daily-puzzles.puzzle.server';
 import { route as r_lib_daily_puzzles_api_daily_puzzles_results } from '@/lib/daily-puzzles/api/daily-puzzles.results.server';
@@ -1501,6 +1503,8 @@ const API_ROUTES_C: readonly ApiRoute[] = [
   r_lib_creator_api_creator_studio_overview, // /api/creator/studio-overview
   r_lib_creator_api_creators_id_join, // /api/creators/$id/join
   r_lib_api_routes_csp_report, // /api/csp-report
+  r_features_cursed_logic_api_cursed_logic_leaderboard, // /api/cursed-logic/leaderboard
+  r_features_cursed_logic_api_cursed_logic_score, // /api/cursed-logic/score
 ];
 
 const API_ROUTES_D: readonly ApiRoute[] = [

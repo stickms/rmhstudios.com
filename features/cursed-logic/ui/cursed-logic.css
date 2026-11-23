@@ -1,0 +1,559 @@
+/**
+ * Cursed Logic — "Corrupted Terminal" theme.
+ *
+ * A dead terminal that something has got into: phosphor acid green on a violet-black void, cursed sigils drawn on a
+ * 3x3 logic-gate grid, bracketed commands, static scanlines and a chromatic tear on every hit. Source of truth for
+ * the palette, fonts and motifs: docs/game-design-schemes/cursed-logic.json. Silkscreen (pixel caps) for display,
+ * IBM Plex Mono for everything you read; both self-hosted by fonts.css.
+ *
+ * Motion: every effect is a one-shot response to a clash and ends within 360 ms; the only ambient motion (the slow
+ * containment ring, one turn a minute) stops under `html[data-jelly-motion='still']`. Nothing flashes.
+ */
+@import '../../../components/shared/game-fonts/fonts.css';
+
+.cl-theme {
+  --cl-bg: #06040a;
+  --cl-bg-alt: #0f0a18;
+  --cl-surface: #120c1d;
+  --cl-surface-hover: #1c1330;
+  --cl-ink: #e8ffd2;
+  --cl-ink-muted: #a9c49a;
+  --cl-acid: #b6ff3c;
+  --cl-acid-dim: rgba(182, 255, 60, 0.14);
+  --cl-violet: #a970ff;
+  --cl-violet-dim: rgba(169, 112, 255, 0.16);
+  --cl-danger: #ff4f6e;
+  --cl-danger-dim: rgba(255, 79, 110, 0.16);
+  --cl-border: #3b2a5c;
+  --cl-border-bright: #5d4590;
+  --cl-font-display: 'Silkscreen', 'IBM Plex Mono', monospace;
+  --cl-font-body: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* The app-tier contract, so shared primitives (dialogs, toasts) inside the game read the theme. */
+  --app-bg: var(--cl-bg);
+  --app-surface: var(--cl-surface);
+  --app-border: var(--cl-border);
+  --app-text: var(--cl-ink);
+  --app-text-muted: var(--cl-ink-muted);
+  --app-accent: var(--cl-acid);
+  --app-accent-fg: var(--cl-bg);
+
+  background-color: var(--cl-bg);
+  color: var(--cl-ink);
+  font-family: var(--cl-font-body);
+  font-synthesis-weight: none;
+}
+
+/* ─── Ground: violet circuitry under static scanlines ─────────────────────────────── */
+
+.cl-ground {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 80% at 50% 0%, #170d29 0%, var(--cl-bg) 62%);
+}
+
+.cl-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(182, 255, 60, 0.035) 0 1px, transparent 1px 4px);
+  mix-blend-mode: screen;
+}
+
+/* ─── Type ──────────────────────────────────────────────────────────────────────────── */
+
+.cl-display {
+  font-family: var(--cl-font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+
+/* The chromatic offset on titles: violet one way, acid the other. Static. */
+.cl-chroma {
+  text-shadow:
+    -2px 0 0 var(--cl-violet),
+    2px 0 0 rgba(182, 255, 60, 0.55);
+}
+
+.cl-muted {
+  color: var(--cl-ink-muted);
+}
+
+.cl-acid {
+  color: var(--cl-acid);
+}
+
+.cl-violet {
+  color: var(--cl-violet);
+}
+
+.cl-danger {
+  color: var(--cl-danger);
+}
+
+.cl-prompt::before {
+  content: '> ';
+  color: var(--cl-acid);
+}
+
+/* ─── Terminal windows ───────────────────────────────────────────────────────────── */
+
+.cl-window {
+  position: relative;
+  background: rgba(18, 12, 29, 0.92);
+  border: 1px solid var(--cl-border);
+  clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.cl-window-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--cl-border);
+  font-family: var(--cl-font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--cl-violet);
+}
+
+.cl-window-title::before {
+  content: '◆';
+  color: var(--cl-acid);
+  font-size: 0.6rem;
+}
+
+/* ─── Commands (buttons) ─────────────────────────────────────────────────────────── */
+
+.cl-cmd {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  font-family: var(--cl-font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  color: var(--cl-acid);
+  background: var(--cl-bg-alt);
+  border: 1px solid var(--cl-acid);
+  cursor: pointer;
+  transition:
+    background-color 90ms linear,
+    color 90ms linear;
+}
+
+.cl-cmd::before {
+  content: '[';
+  color: var(--cl-violet);
+}
+
+.cl-cmd::after {
+  content: ']';
+  color: var(--cl-violet);
+}
+
+.cl-cmd:hover:not(:disabled) {
+  background: var(--cl-acid-dim);
+}
+
+.cl-cmd:focus-visible,
+.cl-card:focus-visible,
+.cl-action:focus-visible,
+.cl-chip:focus-visible,
+.cl-link:focus-visible {
+  outline: 2px solid var(--cl-acid);
+  outline-offset: 2px;
+}
+
+.cl-cmd:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cl-cmd-primary {
+  background: var(--cl-acid);
+  color: var(--cl-bg);
+}
+
+.cl-cmd-primary::before,
+.cl-cmd-primary::after {
+  color: var(--cl-bg);
+}
+
+.cl-cmd-primary:hover:not(:disabled) {
+  background: #cbff6e;
+}
+
+.cl-cmd-ghost {
+  border-color: var(--cl-border-bright);
+  color: var(--cl-ink);
+}
+
+.cl-key {
+  font-family: var(--cl-font-body);
+  font-size: 0.65rem;
+  padding: 0 0.3rem;
+  border: 1px solid currentColor;
+  opacity: 0.7;
+}
+
+.cl-link {
+  color: var(--cl-ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  min-height: 44px;
+}
+
+.cl-link:hover {
+  color: var(--cl-acid);
+}
+
+/* ─── Stance cards and action keys ───────────────────────────────────────────────── */
+
+.cl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.4rem 0.7rem;
+  min-height: 132px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  color: var(--cl-ink);
+  cursor: pointer;
+  text-align: center;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition:
+    background-color 90ms linear,
+    border-color 90ms linear;
+}
+
+.cl-card:hover:not(:disabled) {
+  background: var(--cl-surface-hover);
+  border-color: var(--cl-acid);
+}
+
+.cl-card[aria-pressed='true'],
+.cl-card[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--cl-acid);
+  color: var(--cl-bg);
+  border-color: var(--cl-acid);
+}
+
+.cl-card[aria-pressed='true'] .cl-card-rule {
+  color: var(--cl-bg);
+}
+
+.cl-card-name {
+  font-family: var(--cl-font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+.cl-card-rule {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--cl-ink-muted);
+}
+
+.cl-action {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 56px;
+  padding: 0.5rem 0.75rem;
+  background: var(--cl-bg-alt);
+  border: 1px solid var(--cl-border-bright);
+  color: var(--cl-ink);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 90ms linear,
+    border-color 90ms linear;
+}
+
+.cl-action:hover:not(:disabled) {
+  border-color: var(--cl-acid);
+  background: var(--cl-acid-dim);
+}
+
+.cl-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cl-action-name {
+  font-family: var(--cl-font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: var(--cl-acid);
+}
+
+.cl-action-cost {
+  font-size: 0.68rem;
+  color: var(--cl-ink-muted);
+}
+
+/* The tutorial's spotlight: the one control the step waits for. */
+.cl-spot {
+  border-color: var(--cl-acid) !important;
+  box-shadow:
+    0 0 0 2px var(--cl-bg),
+    0 0 0 4px var(--cl-acid);
+}
+
+.cl-inert {
+  opacity: 0.35;
+}
+
+.cl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  border: 1px solid var(--cl-border-bright);
+  color: var(--cl-ink);
+  background: var(--cl-bg-alt);
+}
+
+.cl-chip-acid {
+  border-color: var(--cl-acid);
+  color: var(--cl-acid);
+}
+
+.cl-chip-violet {
+  border-color: var(--cl-violet);
+  color: var(--cl-violet);
+}
+
+.cl-chip-danger {
+  border-color: var(--cl-danger);
+  color: var(--cl-danger);
+}
+
+/* ─── Meters: segmented cells ────────────────────────────────────────────────────── */
+
+.cl-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.cl-cell {
+  width: 9px;
+  height: 14px;
+  background: var(--cl-acid);
+  clip-path: polygon(0 2px, 2px 0, 100% 0, 100% calc(100% - 2px), calc(100% - 2px) 100%, 0 100%);
+}
+
+.cl-cell-empty {
+  background: #241838;
+}
+
+.cl-cell-foe {
+  background: var(--cl-violet);
+}
+
+.cl-cell-lost {
+  background: var(--cl-danger);
+  animation: cl-cell-corrupt 320ms steps(4, end) forwards;
+}
+
+.cl-pip {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--cl-acid);
+  transform: rotate(45deg);
+}
+
+.cl-pip-on {
+  background: var(--cl-acid);
+}
+
+@keyframes cl-cell-corrupt {
+  0% {
+    background: var(--cl-danger);
+  }
+
+  100% {
+    background: #241838;
+  }
+}
+
+/* ─── The containment ring around a portrait (the one ambient motion) ────────────── */
+
+.cl-ring {
+  animation: cl-spin 60s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes cl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+html[data-jelly-motion='still'] .cl-theme .cl-ring {
+  animation: none;
+}
+
+/* ─── One-shot clash effects (all <= 360 ms) ─────────────────────────────────────── */
+
+/* The tear: the portrait or the HUD splits into three offset slices for a moment. */
+.cl-tear {
+  animation: cl-tear 280ms steps(3, end) 1;
+}
+
+@keyframes cl-tear {
+  0% {
+    transform: translateX(0);
+    clip-path: inset(0 0 0 0);
+  }
+
+  33% {
+    transform: translateX(-6px);
+    clip-path: inset(10% 0 55% 0);
+  }
+
+  66% {
+    transform: translateX(5px);
+    clip-path: inset(50% 0 12% 0);
+  }
+
+  100% {
+    transform: translateX(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Glyph shrapnel flying off a hit. */
+.cl-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-family: var(--cl-font-display);
+  font-size: 0.9rem;
+  pointer-events: none;
+  animation: cl-shard 340ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes cl-shard {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6);
+    opacity: 0;
+  }
+}
+
+/* A Block: brackets slam shut. */
+.cl-slam {
+  animation: cl-slam 180ms cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
+}
+
+@keyframes cl-slam {
+  0% {
+    transform: scaleX(1.6);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* A Probe: one scan line crosses the target. */
+.cl-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cl-acid);
+  animation: cl-sweep 320ms linear forwards;
+  pointer-events: none;
+}
+
+@keyframes cl-sweep {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0.2;
+  }
+}
+
+/* Content that arrives (a reveal, a result line): fade in. */
+.cl-arrive {
+  animation: cl-arrive 160ms linear both;
+}
+
+@keyframes cl-arrive {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* A terminated process: the portrait drops out line by line. */
+.cl-terminate {
+  animation: cl-terminate 360ms steps(6, end) forwards;
+}
+
+@keyframes cl-terminate {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+/* ─── Misc ───────────────────────────────────────────────────────────────────────── */
+
+.cl-rule {
+  border: 0;
+  border-top: 1px dashed var(--cl-border);
+}
+
+.cl-log li {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--cl-ink-muted);
+}
+
+.cl-log li:first-child {
+  color: var(--cl-ink);
+}
+
+.cl-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cl-scroll::-webkit-scrollbar-thumb {
+  background: var(--cl-border-bright);
+}

@@ -25,7 +25,6 @@ import {
   Highlighter,
   ListVideo,
   Newspaper,
-  Rotate3d,
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -56,7 +55,6 @@ import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { suppressNextScrollReset } from '@/hooks/useScrollRestoration';
 import { UploadModal } from '@/components/library/UploadModal';
-import { Book3DViewer } from '@/components/library/Book3DViewer';
 import { BookContextMenu, LibraryEditModal } from '@/components/library/LibraryEditControls';
 import { useContextMenu } from '@/components/library/LibraryContextMenu';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
@@ -319,8 +317,6 @@ function Library() {
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryBook | null>(null);
-  // The book currently being turned over in the 3D viewer, if any.
-  const [inspecting, setInspecting] = useState<LibraryBook | null>(null);
   const [migrating, setMigrating] = useState(false);
 
   // Admins load the full list (including hidden books) so they can manage
@@ -462,9 +458,7 @@ function Library() {
           // The page's one control, in the shared header's action slot. It used to
           // sit in a bespoke `.lib-head` bar above a full-width hero slab; the bar
           // and the hero are gone so this page opens exactly like every other one.
-          // The playground, the explorer and the shelves below are untouched — and
-          // so is the per-book 3D inspect button, which is where turning a volume
-          // over with the phone lives now.
+          // The playground, the explorer and the shelves below are untouched.
           //
           // The shared `Button`, labelled at every width. It was a bespoke
           // `.lib-upload__open` pill whose label collapsed below 640px, which left
@@ -643,7 +637,6 @@ function Library() {
                       books={curated}
                       isAdmin={isAdmin}
                       onEdit={setEditing}
-                      onInspect={setInspecting}
                       onMove={(book, dir) => move(curated, book, dir)}
                       onReorder={(draggedId, targetId) =>
                         reorderWithin(curated, draggedId, targetId)
@@ -655,7 +648,6 @@ function Library() {
                       books={community}
                       isAdmin={isAdmin}
                       onEdit={setEditing}
-                      onInspect={setInspecting}
                       onMove={(book, dir) => move(community, book, dir)}
                       onReorder={(draggedId, targetId) =>
                         reorderWithin(community, draggedId, targetId)
@@ -682,7 +674,6 @@ function Library() {
         {editing && (
           <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />
         )}
-        {inspecting && <Book3DViewer book={inspecting} onClose={() => setInspecting(null)} />}
       </PageLayout>
     </>
   );
@@ -705,7 +696,6 @@ function Section({
   books,
   isAdmin,
   onEdit,
-  onInspect,
   onMove,
   onReorder,
   onChanged,
@@ -715,7 +705,6 @@ function Section({
   books: LibraryBook[];
   isAdmin: boolean;
   onEdit: (book: LibraryBook) => void;
-  onInspect: (book: LibraryBook) => void;
   onMove: (book: LibraryBook, dir: -1 | 1) => void;
   onReorder: (draggedId: string, targetId: string) => void;
   onChanged: () => void;
@@ -772,7 +761,6 @@ function Section({
               canMoveDown={managedIdx >= 0 && managedIdx < managed.length - 1}
               onMove={(dir) => onMove(book, dir)}
               onEdit={() => onEdit(book)}
-              onInspect={() => onInspect(book)}
               onChanged={onChanged}
               dnd={dndFor(book)}
             />
@@ -791,7 +779,6 @@ function BookSpine({
   canMoveDown,
   onMove,
   onEdit,
-  onInspect,
   onChanged,
   dnd,
 }: {
@@ -802,7 +789,6 @@ function BookSpine({
   canMoveDown: boolean;
   onMove: (dir: -1 | 1) => void;
   onEdit: () => void;
-  onInspect: () => void;
   onChanged: () => void;
   dnd?: BookDnd;
 }) { const fmt = useLocaleFormat(); 
@@ -881,9 +867,6 @@ function BookSpine({
             ) : (
               <span className="lib-book__title">{book.title}</span>
             )}
-            {book.pages > 0 && (
-              <span className="lib-book__pages-badge">{fmt.number(book.pages)} pp</span>
-            )}
             {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
             {book.reported && isAdmin && (
               <span
@@ -921,17 +904,6 @@ function BookSpine({
           )}
         </div>
       </Link>
-      {/* A sibling of the Link, not a child: a button inside an anchor is
-          invalid, and this has to be reachable on a phone where the card's own
-          hover 3D never fires. */}
-      <button
-        type="button"
-        className="lib-book__inspect"
-        onClick={onInspect}
-        aria-label={t('book3d-open', { title: book.title, defaultValue: 'View {{title}} in 3D' })}
-      >
-        <Rotate3d size={15} aria-hidden="true" />
-      </button>
       {isAdmin && (
         <BookContextMenu
           book={book}

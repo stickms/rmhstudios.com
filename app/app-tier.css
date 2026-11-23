@@ -23,6 +23,8 @@
 @source not "../public/vibe-packages";
 
 /* Islands (separately built, separately styled). */
+@source not "../features/cursed-logic/engine";
+@source not "../features/cursed-logic/ui";
 @source not "../features/nightrail/engine";
 @source not "../features/nightrail/ui";
 @source not "../features/signal-forge/engine";

@@ -4,6 +4,10 @@ import { abandonSignalForgeRunApi } from '@features/signal-forge/engine/signal-f
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 
+/**
+ * POST /api/signal-forge/abandon: drop the run in progress. A v2 blob keeps its progression (`meta`: the
+ * ascension unlocked, wins, the tutorial flag); anything older is cleared outright.
+ */
 export const route = apiRoute('/api/signal-forge/abandon', {
   POST: implement(
     abandonSignalForgeRunApi,
@@ -11,12 +15,15 @@ export const route = apiRoute('/api/signal-forge/abandon', {
     async ({ session }) => {
       const profile = await prisma.signalForgePlayer.findUnique({
         where: { userId: session.user.id },
+        select: { savedRunState: true },
       });
 
       if (profile) {
+        const saved = profile.savedRunState as Record<string, unknown> | null;
+        const keep = saved && typeof saved === 'object' && saved.v === 2 && saved.meta ? { v: 2, run: null, meta: saved.meta } : null;
         await prisma.signalForgePlayer.update({
           where: { userId: session.user.id },
-          data: { savedRunState: Prisma.DbNull },
+          data: { savedRunState: keep ? (keep as Prisma.InputJsonValue) : Prisma.DbNull },
         });
       }
 
