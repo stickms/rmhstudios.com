@@ -13,8 +13,8 @@ import { prisma } from '@/lib/prisma.server';
  * The anonymous shared events (`MedCycleEvent`, source RMH) and the count rows built from them are NOT reachable from
  * here: an event is found only by recomputing its hash from a milestone id and the server secret, and the milestone
  * ids must be read before the rows go. `eraseSharedMedEvents` (`features/medschools/api/share-sync.server.ts`) does
- * that in a pre-step before the erasure transaction. It is wired in with the request-time erasure step (plan Task 6);
- * until the tracker UI exists no shared event can exist.
+ * that: at the deletion request (`scheduleDeletion`, plan Q3) and again as the first step of `anonymizeAccount` before
+ * the erasure transaction, so a finalisation can never cascade-orphan an event. Both runs are idempotent.
  */
 export function medschoolsErasureOps(userId: string) {
   return [

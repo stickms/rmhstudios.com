@@ -74,6 +74,7 @@ import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
 import { privateDataErasureOps } from '@/lib/account/erasure-private.server';
 import { listsErasureOps } from '@/lib/account/erasure-lists.server';
 import { medschoolsErasureOps } from '@/lib/account/erasure-medschools.server';
+import { eraseSharedMedEvents } from '@features/medschools/api/share-sync.server';
 import { gameProgressErasureOps } from '@/lib/account/erasure-games.server';
 import { boardsErasureOps } from '@/lib/account/erasure-boards.server';
 import {
@@ -108,6 +109,14 @@ export async function scheduleDeletion(userId: string, now: Date = new Date()): 
     select: { deletionScheduledAt: true },
   });
   if (existing?.deletionScheduledAt) return existing.deletionScheduledAt;
+
+  // RMH Med Schools (plan Q3): a member's anonymous shared events leave the public figures at the moment of the
+  // request, not 30 days later, and sharing is switched off (a cancelled deletion does not restore it). Best effort
+  // here, so a missing server secret cannot stop someone deleting their account: `anonymizeAccount` runs the same
+  // idempotent step again and refuses to finalise until it succeeds.
+  await eraseSharedMedEvents(userId).catch((err) =>
+    console.error(`[account] could not remove shared med school events at the deletion request for ${userId}:`, err),
+  );
 
   const scheduledAt = new Date(now.getTime() + DELETION_GRACE_MS);
   // CAS on "not yet scheduled" so a double-submit cannot push the date out, and
@@ -282,6 +291,10 @@ export async function anonymizeAccount(userId: string): Promise<void> {
   await removeMemberFromFlagLists(userId);
   // s10-19 erasure-follows (counter reads before the transaction)
   const listingImageUrls = await readListingImageUrls(userId);
+  // RMH Med Schools: the anonymous events of the member's shared milestones are found only through the milestone ids,
+  // which the transaction below deletes, so they go first (idempotent; they usually went at the request). A throw
+  // here (the server secret is unset while events exist) leaves the account scheduled, to be retried by the next sweep.
+  await eraseSharedMedEvents(userId);
 
   await prisma.$transaction([
     // 1. Destroy every way to authenticate as this account. Re-run safe: by the
