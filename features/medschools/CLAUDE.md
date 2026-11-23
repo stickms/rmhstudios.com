@@ -25,6 +25,11 @@ rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`,
 `medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
 in the server HTML with scripting off.
 
+**The public endpoints stay user-independent (phase 4).** Nothing under `/api/medschools/schools*` or `live` reads a
+session, a preference or a list; a signed-in member's preferences are applied in the route loader, which prefetches the
+same public queries with explicit parameters, so the public cache keys and bodies are what any anonymous caller can type
+(`medschools-private.test.ts` holds that a session changes no public byte).
+
 **Placement (owner O1):** listed in the Services hub (`app/routes/_site/services/index.tsx`) and site search
 (`lib/search/catalog.ts`), **not** in the games/apps catalog. There is no `catalog.ts`, no card art, no image manifest
 row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts` pins this. `/rmh-medschool` and
@@ -195,11 +200,36 @@ change. Keep the chart rules and the floor above.
 
 - Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds Steel, i18n
   and bundle rules for every ui file and the three routes.
-- Black box: `testing/integration/medschools-public.test.ts` (pinned key sets, no RMH or `contributors` in responses, no
-  hashes in the HTML, 404 for unknown slugs, sitemap). It reads a seeded database.
+- Black box, public: `testing/integration/medschools-public.test.ts` (pinned key sets, no RMH or `contributors` in
+  responses, no hashes in the HTML, the `programs` set on the index and live feed, the removed "today" block, 404 for
+  unknown slugs, sitemap). It writes its own fixture school; CI's database is empty.
+- Black box, private: `testing/integration/medschools-private.test.ts` (two schools of its own and the global cast's
+  alice, bob and carol; needs `MEDSCHOOLS_DEDUPE_SECRET` in the app and in the test, `ci-checks.yml` sets both).
+  Anonymous 401 on every `me/**` route with no public cache header; foreign ids 404; sharing through the publish job
+  (run directly with `runRmhPublish`) and only at 3; off removes the event at once and the figure at the next publish;
+  edits, deletes and 20 mixed requests from two clients end equal to a recompute; nothing person-shaped in the event
+  row; list caps, default-list race and preference round trip; the arrivals and live (`q`, `state`, `types`, `programs`)
+  key sets.
+- **Erasure and audit scripts (scratch or read-only).** `scripts/medschools/verify-erasure.ts` (scratch database only)
+  seeds three members, kills the erasure pre-step midway through a failing database wrapper (injected in the script, not
+  in the product), re-runs it, runs the real `anonymizeAccount` and checks events, counts, rows and `auditRmh`.
+  `scripts/medschools/check-rmh-events.ts` runs `auditRmh` against any database, read-only, and prints `orphanEvents`,
+  `mismatchedCells` and `missingEvents` (exit 1 unless all are zero). **Run it after rotating
+  `MEDSCHOOLS_DEDUPE_SECRET`** (every event reads as an orphan until the hashes are recomputed; see Private, below).
 - Seed: `scripts/medschools/seed-visual.ts` writes **FIXTURE** rows (never real figures) into a scratch Postgres (it
-  refuses any database whose name lacks `scratch` or whose host is not localhost). Use it for screenshots (O6: 10
-  viewport sizes, Day and Night, plus `ar`) and `pnpm audit:pages --routes …`.
+  refuses any database whose name lacks `scratch` or whose host is not localhost). Use it for screenshots and
+  `pnpm audit:pages --routes …`.
+- **Visual pass (O6): `scripts/medschools/visual-check.mjs`** signs up one member, fills a tracker, two lists and
+  preferences through the real endpoints, and shoots index, live, a school (activity with a tooltip open, history with
+  arrivals, the three Interviews sub-tabs), a DO school's program toggles, the tracker and the lists page at 320x568,
+  390x844, 844x390, 768x1024, 1024x600, 1280x800, 1920x1080 and 2560x1080 in Day and Night, plus `ar` at 390 and 1280.
+  It asserts no sideways scroll, that the edition asked for is the edition painted, chart text of at least 11 px below
+  1024, 44 px controls on touch and `dir=rtl` in `ar`. **Night and a signed-in page:** the pre-paint script reads
+  `localStorage['rmh-style']` (`graphite` is Night), but a signed-in visit paints the ACCOUNT's saved edition over the
+  device's (`lib/prepaint/account-seed.ts`), and the idle sync saves whatever the last visit used, so a Night pass that
+  follows a Day pass paints Day on the tracker and lists pages unless the account is set first
+  (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they are ordinary
+  `_site` pages and `lib/prepaint/theme-routes.ts` does not exclude them.
 - i18n: namespace `medschools`; new keys carry a prefix (`index-`, `live-`, `school-`, `chart-`, `event-`, `program-`,
   `source-`); the hub row's two strings are `nav-rmh-medschools` and `services-medschools-desc` in `feed`.
 
@@ -208,9 +238,9 @@ change. Keep the chart rules and the floor above.
 - **Program set.** `engine/programs.ts` is the one definition: four keys (`md`, `md-phd`, `do`, `do-phd`), the URL param
   `programs=md,do-phd` (canonical order; the old `degree` and `program` links still parse onto it), the preference
   (`MedUserPrefs.programs`, text[]; empty means "not chosen" and the older `programFilter` and `degree` columns still
-  answer for old rows), and the three public readers (`programs` on the list, live and rail queries). All four on is
-  no filter and the only set that includes events with no program reported. The index, live page, rail and
-  preferences use `ProgramSetToggles`; the school page keeps `ProgramToggles` for its own degree (`ALL | REG | PHD`).
+  answer for old rows), and the three public readers (`programs` on the list, live and rail queries). All four on is no
+  filter and the only set that includes events with no program reported. The index, live page, rail and preferences use
+  `ProgramSetToggles`; the school page keeps `ProgramToggles` for its own degree (`ALL | REG | PHD`).
 - **Preferences and lists on the public pages (plan task 12).** Each route loader awaits `loadPrefs` first, then
   prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
   preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/rmh-medschool/lists` holds
@@ -220,8 +250,43 @@ change. Keep the chart rules and the floor above.
   `useLiveFeed` (60 s head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to
   load older pages: data loading only, so B3's no-decorative-observer rule is untouched. Server side it is the live
   endpoint with `q` (name, short name or an exact state code), `state` and `types`.
-- **When results arrive.** `GET /schools/$slug/arrivals`: weekday and Eastern-hour counts and per-cycle first and
-  median report days, aggregated in SQL from ADMIT and SDN events with an exact time (SDN midnights are day-only and
-  excluded). Aggregates only; a cycle needs 3 events; the arrays are empty (and the section hidden) under 10 events.
-- **Interviews** has `?itab=overview|questions|format`; Overview compares reported invites with Admit's yearly
-  interview count (labelled "Source: Admit.org", hidden when unknown) and keeps the floored stats.
+- **When results arrive.** `GET /schools/$slug/arrivals`: weekday and Eastern-hour counts and per-cycle first and median
+  report days, aggregated in SQL from ADMIT and SDN events with an exact time (SDN midnights are day-only and excluded).
+  Aggregates only; a cycle needs 3 events; the arrays are empty (and the section hidden) under 10 events.
+- **Interviews** has `?itab=overview|questions|format`; Overview compares reported invites with Admit's yearly interview
+  count (labelled "Source: Admit.org", hidden when unknown) and keeps the floored stats.
+
+## Private: the tracker, sharing, lists and preferences (phase 4)
+
+Pages `/rmh-medschool/tracker` and `/rmh-medschool/lists` (signed out they show a sign-in prompt, `noindex`; neither is
+a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO with a user, cycle or event id:
+`me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
+DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),
+`me/list-order`, `me/list-items` (save a school, creating "My schools" on first use), `me/lists/$id/items/$itemId`,
+`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/prefs` (GET, PUT). Another member's id is a 404, never
+a 403.
+
+- **One writer (D1).** `api/share-sync.server.ts` is the only module that writes the tracker rows or an RMH event or
+  count (`share-ratchet.test.ts`). The database cascade deletes milestones without application code seeing it, and an
+  event is found only through a milestone id, so every delete path reads the ids first.
+- **The hash is recomputed, never stored (D2, D3).** `dedupeHash(secret, 'RMH', 'milestone:<id>')`; storing it on the
+  milestone would let a database dump join events to the tracker without the secret. An event's id and a RMH count row's
+  id are random UUIDs (a cuid carries its minute), `ingestedAt = occurredAt`, `inState` null, program the application's.
+- **`contributors` is exact (D4):** a cell's count is its events, and the schema's uniques (milestone per application
+  and type, application per cycle, school and program, cycle per user and year) make them distinct people.
+- **Reconcile, do not patch (D5).** Every write that can change shared state runs `reconcileShared`: the user lock, read
+  the flag and milestones, compute the wanted events, school locks in sorted order, write, recompute the touched cells.
+  Rapid toggles and two tabs end equal to the final flag and milestones.
+- **What is shared:** the school, the program, the type (secondary, interview, waitlist, rejection, acceptance,
+  withdrawn, hold) and the calendar day. Never submitted or complete dates, home state, notes, or any link to the
+  member. Sharing needs an account at least 7 days old and `MEDSCHOOLS_DEDUPE_SECRET` set (503
+  `MEDSCHOOLS_SHARING_UNAVAILABLE` otherwise; the tracker still works). Public tracker figures update once a day (see
+  the read rules above).
+- **Account deletion (D9, Q3).** `eraseSharedMedEvents` runs at the deletion request and again before the erasure
+  transaction (idempotent; a missing secret with events present fails loudly and leaves the account scheduled);
+  `medschoolsErasureOps` deletes the three user-keyed models, children by cascade. `pnpm docs:deletion` lists them.
+- **Preferences (D13, D14).** They apply only where the URL is silent, decided in the route loader; `?program=ALL` is an
+  explicit choice and beats a stored `PHD`. A page whose defaults came from preferences says so in one line.
+- **Rotating `MEDSCHOOLS_DEDUPE_SECRET` orphans every shared event** (the hashes are keyed by the old secret). Do it
+  deliberately: set the new value on the web and `jobs` tiers, then run `check-rmh-events.ts`; expect `orphanEvents` to
+  equal the number of shared events, and delete them (or re-share) before the next daily publish.

@@ -395,7 +395,22 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    O5 program filter All / MD / MD-PhD (or DO); O6 visual checks across phone and odd viewports. Also shipped: school
    crests (static 96x96 WebP from Admit, committed, never fetched at request time); SDN events reported the same day
    carry the post's time; one SDN member counts once per event type per school per cycle.
-4. Private tracker with anonymous sharing, saved school lists and preferences (section 7).
+4. Private tracker with anonymous sharing, saved school lists and preferences (section 7). Phase 4 shipped at
+   `/rmh-medschool/tracker` and `/rmh-medschool/lists`, with a "Save to list" menu on the index and school pages.
+   Decisions: D1 one writer for sharing (`share-sync.server.ts`); D2 the event hash is recomputed from the milestone id
+   and the server secret, never stored; D3 random UUID ids, `ingestedAt = occurredAt`, no home state; D4 `contributors`
+   is exact; D5 reconcile, never patch; D9 shared events leave at the deletion request and again before erasure; D13 and
+   D14 preferences apply only where the URL is silent, and `?program=ALL` is an explicit choice. Facilitator rulings
+   Q1-Q12 (per-day cells at k 3; **tracker figures publish once a day** through `medschools.rmh-publish`, so turning
+   sharing off removes the event at once and the public total at the next run; sharing needs an account 7 days old; the
+   secret is `MEDSCHOOLS_DEDUPE_SECRET`; `SUBMITTED` and `COMPLETE` never leave the private tables). Owner revisions the
+   same day: O7 colour charts with cards, a legend, a y-scale tween, a hover and keyboard probe, calendar dates and
+   button groups; the program set (MD, MD-PhD, DO, DO-PhD) end to end; an activity rail in the shell margin on every med
+   schools page; the "when results arrive" chart; Interviews sub-tabs; the "today" block removed. Admit work shipped
+   with it: one member counts once per event type per school per cycle (member-keyed dedupe, a one-time re-key of old
+   Admit rows, the whole-cycle profile-history backfill), the Admit school forums every three hours, persisted daily
+   request budgets and a static contact user agent. Black-box tests and the audit scripts:
+   `features/medschools/CLAUDE.md`.
 5. Statistics + forecast tab + personal conditional chance.
 6. AI Q&A.
 7. Follow a school + wave notifications.
