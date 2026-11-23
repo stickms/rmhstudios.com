@@ -156,6 +156,8 @@ describe('themeCssVars (v2 derivation)', () => {
         '--site-theme-wash',
         '--site-theme-edge',
         '--site-theme-ground',
+        '--site-theme-ramp-top',
+        '--site-theme-ramp-bottom',
         '--site-accent-fill',
       ].sort(),
     );

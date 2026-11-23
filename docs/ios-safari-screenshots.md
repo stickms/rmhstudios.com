@@ -56,13 +56,23 @@ reads the root's or body's background colour; `fixed-edge-gradient` shows whethe
 Safari extend its pixels (so a gradient could continue into the strip) or reduce it to one flat colour. Add a probe by
 adding a stylesheet.
 
-**What they showed (iOS 26.5 simulator, 2026-11-22):** the strips are painted opaque over the page in ONE flat colour,
-and that colour is `<body>`'s `background-color` (`body-blue` turned both strips blue); with a transparent body it is
-the root's (`root-red-body-clear` turned them red); a root colour under an opaque body does nothing (`html-red`). A thin
-fixed gradient at each edge (`fixed-edge-gradient`) was not visible at all, so no layer can carry a gradient into a
-strip. The gradient cannot continue there; the only lever is that one colour, which is why `--site-theme-edge` exists
-(`lib/themes/tokens.ts`): body's `background-color` on iOS is the wash's own edge average, over a ground layer so the
-page stays `--site-bg`.
+**What they showed (iOS 26.5 simulator, 2026-11-22):**
+
+- At rest the strips behind the status bar and the floating tab bar are OUTSIDE the document. A block at the very top of
+  the document (`doc-edge-blocks`) starts at the strip's bottom edge, not at the screen edge; so does a fixed `top: 0`
+  strip (`fixed-edge-gradient`), and a fixed layer placed above or below the page area (`fixed-into-zone`) is not drawn
+  at all. Nothing we paint can reach a strip.
+- Safari fills a strip with ONE flat colour, `<body>`'s `background-color` (`body-blue` turned both strips blue); with a
+  transparent body it is the root's (`root-red-body-clear`); a root colour under an opaque body does nothing
+  (`html-red`).
+- Scrolled content does pass under both bars, unblurred (the mid-scroll shots), so the gradient shows there as itself.
+  Only at the two ends of the page, where nothing is above the first row or below the last, is a strip a flat colour.
+
+So the gradient cannot start at the very screen edge at rest. What the theme does instead (`lib/themes/tokens.ts`,
+`app/globals/base-interaction.css`): `--site-theme-edge`, the wash's own edge average, is body's `background-color` on
+iOS (so the strip is a colour from inside the gradient, not plain ground); a ground layer keeps the page `--site-bg`;
+and `--site-theme-ramp-top` / `-bottom` start the document's first and last 48px at exactly that colour and ramp into
+the wash, so the page meets each strip with no line.
 
 ## Reading the pictures
 

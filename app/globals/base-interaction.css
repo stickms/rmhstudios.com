@@ -114,17 +114,24 @@ html:not(.app-route) body {
 }
 html.ios-webkit:not(.app-route) body {
   background-attachment: scroll;
-  /* Safari paints the strips behind the status bar and the floating tab bar opaque, in ONE flat colour taken from
-     body's background-color; the wash cannot run into them (probes: scripts/ios-sim/probes). So that colour is the wash's
-     own edge average (`--site-theme-edge`, lib/themes/tokens.ts), not the plain ground, and the wash runs full strength
-     to the edge. The visible page ground stays `--site-bg` through the ground layer under the wash, so only the strips
-     take the edge colour. Without a theme the vars are unset and this is the ground. */
+  /* At rest the strips behind the status bar and the floating tab bar are OUTSIDE the document and Safari fills them with
+     ONE flat colour taken from body's background-color; the wash cannot be painted there (probes: scripts/ios-sim/probes).
+     So body's colour is the wash's own edge average (`--site-theme-edge`, lib/themes/tokens.ts), a ground layer keeps the
+     page itself `--site-bg`, and the document's first and last 48px ramp from the edge colour into the wash, so the page
+     meets each strip with no line. Scrolled content passes under the bars as itself, so the ramps only matter at the
+     two ends. Without a theme the vars are unset and this is the plain ground. */
   background-color: var(--site-theme-edge, var(--site-bg));
-  background-image: var(--site-theme-wash, none), var(--site-theme-ground, none);
+  background-image:
+    var(--site-theme-ramp-top, none), var(--site-theme-ramp-bottom, none), var(--site-theme-wash, none),
+    var(--site-theme-ground, none);
   background-size:
+    100% 48px,
+    100% 48px,
     100% 100%,
     100% 100%;
   background-position:
+    0 0,
+    0 100%,
     0 0,
     0 0;
 }

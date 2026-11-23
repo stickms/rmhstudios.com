@@ -212,6 +212,8 @@ export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
     '--site-accent-fill': accentFill(t),
     '--site-theme-edge': themeEdge(t),
     '--site-theme-ground': `linear-gradient(${t.canvasBase}, ${t.canvasBase})`,
+    '--site-theme-ramp-top': `linear-gradient(to bottom, ${themeEdge(t)}, transparent)`,
+    '--site-theme-ramp-bottom': `linear-gradient(to top, ${themeEdge(t)}, transparent)`,
   };
 }
 
@@ -225,12 +227,15 @@ function themeWash(t: ThemeTokens): string {
 }
 
 /**
- * The ONE flat colour for Safari's strips, iOS only (base-interaction.css). The probes in scripts/ios-sim/probes showed
- * the strips behind the status bar and the floating tab bar are painted opaque over the page, in a single colour taken
- * from <body>'s background-color (no gradient, and not even a fixed layer at the edge shows through). So the wash cannot
- * run into them, but the colour can be chosen: the average of the wash along the top edge (glow1 and glow2 corners) and
- * the bottom edge (glow3 centre), so the strips read as part of the gradient instead of a band of plain ground.
- * Alphas are the wash's own (`themeWash`) averaged over the edge: each glow falls linearly to zero at 70% of its radius.
+ * The ONE flat colour for Safari's strips, iOS only (base-interaction.css), and the colour the page's first and last rows
+ * ramp from. At rest the strips behind the status bar and the floating tab bar are OUTSIDE the document (the probes in
+ * scripts/ios-sim/probes: the document's first row sits at the strip's edge, a fixed layer cannot reach into the strip),
+ * and Safari fills them with a single flat colour taken from <body>'s background-color; only scrolled content passes
+ * under the bars. So the gradient cannot reach the strips at rest. This colour is the average of the wash along the top
+ * edge (glow1 and glow2 corners) and the bottom edge (glow3 centre), so it sits inside the gradient's range, and
+ * `--site-theme-ramp-top` / `-bottom` start the document's first and last rows at exactly this colour and ramp into the
+ * wash, so there is no line where the page meets the strip. Alphas are the wash's own (`themeWash`) averaged over the
+ * edge: each glow falls linearly to zero at 70% of its radius.
  */
 function themeEdge(t: ThemeTokens): string {
   const top = over(t.glow2, 0.18 * 0.5 * 0.7 * 0.55, over(t.glow1, 0.22 * 0.5 * 0.7 * 0.6, t.canvasBase));
@@ -267,7 +272,7 @@ export interface AppliedUserTheme {
 }
 
 /** Bump when `themeCssVars` changes what it emits, so every cached applied theme is re-derived once. */
-export const THEME_DERIVATION_VERSION = 5;
+export const THEME_DERIVATION_VERSION = 6;
 
 /** True when a cached applied theme was derived by an older (or unstamped) derivation. */
 export function isStaleAppliedTheme(theme: AppliedUserTheme): boolean {
