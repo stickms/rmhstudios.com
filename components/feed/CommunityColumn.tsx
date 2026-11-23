@@ -38,6 +38,8 @@ import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';
 import { WatchControl } from'@/components/discovery/WatchControl';
 import { FindATimeLink } from'@/components/calendar/FindATimeLink';
+import { RssLink } from '@/components/feed/RssLink';
+import { WikiRow } from '@/components/communities/wiki/WikiRow';
 import { api } from '@/lib/contract/client';
 import {
  communityFeedApi,
@@ -237,30 +239,32 @@ export function CommunityColumn({
  >
  <ArrowLeft className="h-5 w-5"/>
  </Link>
- <h1 dir="auto" className="truncate text-lg font-semibold text-site-text">{community.name}</h1>
+ <h1 dir="auto" className="t-heading truncate text-site-text">{community.name}</h1>
  </header>
 
- <div className="border-b border-site-border p-4">
+ {/* The identity (icon, name, counts), what it is about, then one row of actions that wraps. The actions used to
+ sit beside the name with shrink-0, so a moderator's six controls crushed the name into a column and ran over it. */}
+ <div className="border-b border-site-border px-4 py-4">
  <div className="flex items-start gap-3">
  <div
- className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-2xl"
- style={{ background: (community.color ||'var(--site-accent)') +'22'}}
+ aria-hidden
+ className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site border border-site-border bg-site-bg-subtle text-2xl"
  >
  {community.icon ||'👥'}
  </div>
  <div className="min-w-0 flex-1">
- <h2 dir="auto" className="text-xl font-semibold text-site-text">{community.name}</h2>
- <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-site-text-muted">
- <span className="inline-flex items-center gap-1">
- <Users className="h-3.5 w-3.5"/>{''}
+ <h2 dir="auto" className="t-title break-words text-site-text">{community.name}</h2>
+ <div className="t-meta mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+ <span className="inline-flex items-center gap-1 whitespace-nowrap">
+ <Users className="h-3.5 w-3.5" aria-hidden />
  {t('members-stat', {
  count: community.memberCount,
  formatted: community.memberCount,
  defaultValue:'{{formatted}} members',
  })}
  </span>
- <span className="inline-flex items-center gap-1">
- <MessageSquare className="h-3.5 w-3.5"/>{''}
+ <span className="inline-flex items-center gap-1 whitespace-nowrap">
+ <MessageSquare className="h-3.5 w-3.5" aria-hidden />
  {t('posts-stat', {
  count: community.postCount,
  formatted: community.postCount,
@@ -282,7 +286,11 @@ export function CommunityColumn({
  )}
  </div>
  </div>
- <div className="flex shrink-0 items-center gap-2">
+ </div>
+ {community.description && (
+ <p dir="auto" className="t-body mt-3 text-site-text-muted">{community.description}</p>
+ )}
+ <div className="mt-3 flex flex-wrap items-center gap-2">
  {session && community.joined && (
  <FindATimeLink communityId={community.id} variant="button"/>
  )}
@@ -314,12 +322,12 @@ export function CommunityColumn({
  else window.location.reload();
  }}
  />
- </div>
- </div>
- {community.description && (
- <p dir="auto" className="mt-2 text-sm text-site-text-muted">{community.description}</p>
+ {!community.isPrivate && (
+ <RssLink href={`/c/${slug}/rss.xml`} className="t-label ms-auto min-h-9 text-site-text-muted hover:text-site-text [@media(pointer:coarse)]:min-h-11" />
  )}
  </div>
+ </div>
+ <WikiRow slug={slug} />
 
  {community.joined && (
  <VoiceRoomBanner
@@ -331,7 +339,7 @@ export function CommunityColumn({
 
  {/* Pinned announcements */}
  {(community.announcements.length > 0 || isMod) && (
- <div className="border-b border-site-border bg-site-bg-subtle/30 p-4">
+ <div className="border-b border-site-border p-4">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Megaphone className="h-4 w-4 text-site-accent"/>{''}
@@ -348,11 +356,11 @@ export function CommunityColumn({
  {t('no-announcements', { defaultValue:'No announcements yet.'})}
  </p>
  ) : (
- <ul className="flex flex-col gap-2">
+ <ul className="divide-y divide-site-border">
  {community.announcements.map((a) => (
  <li
  key={a.id}
- className="rounded-site relative p-4"
+ className="relative py-3"
  >
  <div className="flex items-start gap-2">
  <UserAvatar

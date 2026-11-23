@@ -5,8 +5,6 @@ import { createServerFn } from '@tanstack/react-start';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
 import { LockedCommunityPreview } from '@/components/communities/LockedCommunity';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { RssLink } from '@/components/feed/RssLink';
-import { WikiRow } from '@/components/communities/wiki/WikiRow';
 import { SITE_URL, buildCanonical, buildMeta } from '@/lib/seo';
 import {
   getCommunity,
@@ -117,12 +115,6 @@ function CommunityPage() {
   }
   return (
     <PageFrame>
-      {community && !community.isPrivate && (
-        <div className="flex justify-end px-4 pt-3">
-          <RssLink href={`/c/${slug}/rss.xml`} />
-        </div>
-      )}
-      {community && <WikiRow slug={slug} />}
       <CommunityColumn
         slug={slug}
         initialCommunity={community}
