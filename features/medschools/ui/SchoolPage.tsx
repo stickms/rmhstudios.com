@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
@@ -16,7 +17,7 @@ import { useEffectiveView } from './useEffectiveView';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ProgramToggles } from './ProgramToggles';
-import { ReportedNote } from './ReportedNote';
+import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
 import { SkeletonSwap } from './skeletons';
@@ -28,6 +29,7 @@ export function SchoolPage() {
   const navigate = useNavigate();
   const { slug } = useParams({ strict: false }) as { slug: string };
   const parsed = parseSchoolSearch(useSearch({ strict: false }) as Record<string, unknown>);
+  const { data: session } = useSession();
   const detailQuery = useQuery(schoolQuery(slug));
   const detail = detailQuery.data;
 
@@ -113,7 +115,17 @@ export function SchoolPage() {
                 </p>
               </div>
               <SchoolFacts school={detail.school} />
-              <ReportedNote />
+              {session ? (
+                <p className="t-meta m-0 flex flex-wrap items-center gap-x-3">
+                  <SaveToList school={{ slug, name: detail.school.name }} program={search.program} />
+                  <Link to="/rmh-medschool/tracker" className="underline">
+                    {t('school-my-tracker', { defaultValue: 'My tracker' })}
+                  </Link>
+                  <Link to="/rmh-medschool/lists" className="underline">
+                    {t('school-my-lists', { defaultValue: 'My lists' })}
+                  </Link>
+                </p>
+              ) : null}
               <PrefsNote fromPrefs={view.fromPrefs} />
             </div>
             <div>
@@ -151,7 +163,7 @@ export function SchoolPage() {
                 {search.tab === 'activity' ? (
                   <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
                 ) : (
-                  <InterviewsTab detail={detail} search={search} />
+                  <InterviewsTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
                 )}
               </>
             )}

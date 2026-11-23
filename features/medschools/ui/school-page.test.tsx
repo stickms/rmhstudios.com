@@ -362,49 +362,59 @@ describe('SchoolPage', () => {
     expect(html.match(/<path/g)).toHaveLength(2 * 3);
   });
 
-  it('Interviews shows the split only when present, and labels Admit all-cycles stats', () => {
+  const profile = {
+    source: 'SDN' as const,
+    format: 'MMI',
+    fileType: null,
+    avgDifficulty: 3,
+    avgStress: null,
+    avgImpression: null,
+    interviewCount: 40,
+    interviewStyle: null,
+    interviewLength: null,
+    feedbackPositive: [],
+    feedbackNegative: [],
+    feedbackBefore: [],
+  };
+  const stat = {
+    source: 'ADMIT' as const,
+    program: null,
+    cycleYear: 2026,
+    residence: 'GLOBAL' as const,
+    allCycles: true,
+    gpaMedian: 3.9,
+    gpaLow: 3.7,
+    gpaHigh: 4,
+    mcatMedian: 520,
+    mcatLow: null,
+    mcatHigh: null,
+    interviewToAcceptancePct: null,
+    applicationToInterviewPct: null,
+    applicationCount: null,
+    interviewCount: null,
+    admittedCount: null,
+    researchHours: null,
+    clinicalHours: null,
+    nonClinicalHours: null,
+  };
+  const EMPTY = 'No interview data has been collected for this school yet.';
+
+  it('Interviews has three sub-tabs in a radio group, Overview first, and no School info tab', () => {
     h.search = { tab: 'interviews' };
-    const profile = {
-      source: 'SDN' as const,
-      format: 'MMI',
-      fileType: null,
-      avgDifficulty: 3,
-      avgStress: null,
-      avgImpression: null,
-      interviewCount: 40,
-      interviewStyle: null,
-      interviewLength: null,
-      feedbackPositive: [],
-      feedbackNegative: [],
-      feedbackBefore: [],
-    };
-    const stat = {
-      source: 'ADMIT' as const,
-      program: null,
-      cycleYear: 2026,
-      residence: 'GLOBAL' as const,
-      allCycles: true,
-      gpaMedian: 3.9,
-      gpaLow: 3.7,
-      gpaHigh: 4,
-      mcatMedian: 520,
-      mcatLow: null,
-      mcatHigh: null,
-      interviewToAcceptancePct: null,
-      applicationToInterviewPct: null,
-      applicationCount: null,
-      interviewCount: null,
-      admittedCount: null,
-      researchHours: null,
-      clinicalHours: null,
-      nonClinicalHours: null,
-    };
+    const html = render((qc) => qc.setQueryData(schoolQuery('duke').queryKey, detail()));
+    expect(html).toContain('aria-label="Interview sections"');
+    expect(html).toContain('>Overview<');
+    expect(html).toContain('>Questions<');
+    expect(html).toContain('>Format and feedback<');
+    expect(html).not.toContain('School info');
+  });
+
+  it('Format and feedback shows the split only when present', () => {
+    h.search = { tab: 'interviews', itab: 'format' };
     const without = render((qc) =>
-      qc.setQueryData(schoolQuery('duke').queryKey, detail({ profiles: [{ ...profile, split: null }], stats: [stat] })),
+      qc.setQueryData(schoolQuery('duke').queryKey, detail({ profiles: [{ ...profile, split: null }] })),
     );
     expect(without).not.toMatch(/In-state/);
-    expect(without).toContain('Admit.org, all reported cycles');
-    expect(without).toContain('GPA median');
     const withSplit = render((qc) =>
       qc.setQueryData(
         schoolQuery('duke').queryKey,
@@ -416,9 +426,57 @@ describe('SchoolPage', () => {
     expect(withSplit).toContain('>28<');
   });
 
-  it('Interviews with nothing reported renders the empty state', () => {
+  it('Overview labels Admit all-cycles stats and compares reported invites with the yearly figure', () => {
     h.search = { tab: 'interviews' };
-    const html = render((qc) => qc.setQueryData(schoolQuery('duke').queryKey, detail()));
-    expect(html).toContain('No interview details reported yet.');
+    const html = render((qc) => {
+      qc.setQueryData(schoolQuery('duke').queryKey, detail({ stats: [{ ...stat, interviewCount: 200 }] }));
+      qc.setQueryData(activityQuery('duke', { program: 'ALL', cycle: undefined }).queryKey, activity());
+    });
+    expect(html).toContain('Admit.org, all reported cycles');
+    expect(html).toContain('GPA median');
+    expect(html).toContain('7 reported interview invites this cycle');
+    expect(html).toContain('About 200 interviews a year');
+    expect(html).toContain('Source: Admit.org');
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain('aria-valuemax="200"');
+    expect(html).toContain('width:4%'.replace('width', 'inline-size'));
+  });
+
+  it('Overview hides the comparison when the yearly figure is unknown', () => {
+    h.search = { tab: 'interviews' };
+    const html = render((qc) => {
+      qc.setQueryData(schoolQuery('duke').queryKey, detail({ stats: [stat] }));
+      qc.setQueryData(activityQuery('duke', { program: 'ALL', cycle: undefined }).queryKey, activity());
+    });
+    expect(html).toContain('7 reported interview invites this cycle');
+    expect(html).not.toContain('interviews a year');
+    expect(html).not.toContain('role="progressbar"');
+  });
+
+  it('each sub-tab says plainly when there is nothing', () => {
+    for (const itab of ['overview', 'questions', 'format'] as const) {
+      h.search = { tab: 'interviews', itab };
+      const html = render((qc) => qc.setQueryData(schoolQuery('duke').queryKey, detail()));
+      expect(html, itab).toContain(EMPTY);
+    }
+  });
+
+  it('Questions are searchable and show votes and cycle', () => {
+    h.search = { tab: 'interviews', itab: 'questions' };
+    const html = render((qc) =>
+      qc.setQueryData(
+        schoolQuery('duke').queryKey,
+        detail({ questions: [{ text: 'Why medicine?', source: 'ADMIT', votes: 5, cycleYear: 2026 }] }),
+      ),
+    );
+    expect(html).toContain('type="search"');
+    expect(html).toContain('Why medicine?');
+    expect(html).toContain('5 votes');
+  });
+
+  it('History carries the When results arrive section, under the overlay and hidden without enough events', () => {
+    const src = root('./HistoryTab.tsx');
+    expect(src).toContain('ArrivalsSection');
+    expect(root('./ArrivalsSection.tsx')).toContain('enoughArrivals');
   });
 });

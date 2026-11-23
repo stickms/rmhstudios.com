@@ -2,7 +2,7 @@ import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
 import { breadcrumbSchema } from '@/lib/schema';
 import { SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch } from '@features/medschools/engine/search';
-import { loadSchoolHead, type SchoolHead } from '@features/medschools/medschools.queries';
+import { loadPrefs, loadSchoolHead, type SchoolHead } from '@features/medschools/medschools.queries';
 import { SchoolPage } from '@features/medschools/ui/SchoolPage';
 
 type SchoolHeadData = SchoolHead | null;
@@ -15,13 +15,16 @@ export const Route = createFileRoute('/_site/rmh-medschool/$slug')({
   search: { middlewares: [stripSearchParams(SCHOOL_SEARCH_DEFAULTS)] },
   loaderDeps: ({ search }) => ({
     tab: search.tab,
-    // Signed-out view; the loader reads the viewer's preferences in a later task (phase 4 task 12).
-    program: search.program ?? 'ALL',
+    program: search.program,
     type: search.type,
     cycle: search.cycle,
   }),
-  loader: ({ context, params, deps }): Promise<SchoolHeadData> =>
-    loadSchoolHead(context.queryClient, params.slug, deps),
+  // Preferences first (private, quiet when signed out), then the school and its tab with explicit parameters (D13).
+  // `head()` reads only the school, so a preference never changes the title, canonical or card.
+  loader: async ({ context, params, deps }): Promise<SchoolHeadData> => {
+    const prefs = await loadPrefs(context.queryClient);
+    return loadSchoolHead(context.queryClient, params.slug, deps, prefs);
+  },
   head: definePage<SchoolHeadData, SchoolParams>({
     path: ({ params }) => `/rmh-medschool/${params.slug}`,
     title: ({ loaderData }) => `${loaderData?.name ?? 'Med school'} | RMH Med Schools | RMH Studios`,

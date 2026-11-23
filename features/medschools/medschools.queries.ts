@@ -9,15 +9,17 @@ import {
   getMedPrefsApi,
   getMedSchoolActivityApi,
   getMedSchoolApi,
+  getMedSchoolArrivalsApi,
   getMedSchoolHistoryApi,
-  getMedTodayApi,
   getMedTrackerApi,
   listMedSchoolsApi,
   type MedChartedTypeId,
   type MedDegreeId,
   type MedProgramFilter,
 } from './medschools.contract';
-import type { LiveProgramFilter, ProgramFilter } from './engine/search';
+import { programPair, programsQueryValue, type ProgramKey } from './engine/programs';
+import { applyPrefs, type Prefs } from './engine/prefs';
+import type { ProgramFilter } from './engine/search';
 import type { SchoolTab } from './engine/public-read';
 
 /** Client-safe option factories for the public pages. No server functions here (queries-server-fn-ratchet). */
@@ -27,14 +29,6 @@ export type LiveFilters = QueryOf<typeof getMedLiveApi>;
 
 export const schoolsQuery = (q: IndexQuery) =>
   contractQuery(['medschools', 'schools', q], listMedSchoolsApi, { query: q }, { staleTime: 60_000 });
-
-export const todayQuery = (program: MedProgramFilter, degree?: MedDegreeId) =>
-  contractQuery(
-    ['medschools', 'today', program, degree ?? null],
-    getMedTodayApi,
-    { query: { program, degree } },
-    { staleTime: 60_000 },
-  );
 
 export const schoolQuery = (slug: string) =>
   contractQuery(['medschools', 'school', slug], getMedSchoolApi, { params: { slug } }, { staleTime: 60_000 });
@@ -55,6 +49,14 @@ export const historyQuery = (slug: string, q: { program: MedProgramFilter; type:
     { staleTime: 60_000 },
   );
 
+export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
+  contractQuery(
+    ['medschools', 'arrivals', slug, q],
+    getMedSchoolArrivalsApi,
+    { params: { slug }, query: q },
+    { staleTime: 5 * 60_000 },
+  );
+
 export const liveQuery = (q: LiveFilters) =>
   contractQuery(['medschools', 'live', q], getMedLiveApi, { query: q }, { staleTime: 0 });
 
@@ -70,6 +72,16 @@ export const listsQuery = () =>
 export const prefsQuery = () =>
   contractQuery([...ME_KEY, 'prefs'] as const, getMedPrefsApi, undefined, { staleTime: 5 * 60_000 });
 
+/**
+ * A route loader's first step (plan D13): await the private prefs query into the cache, then read what landed. Signed
+ * out, or on any failure, nothing lands and the page is exactly what an anonymous request gets. The public queries
+ * that follow carry the resulting view as explicit parameters, so their cache keys are the ones anyone could type.
+ */
+export async function loadPrefs(queryClient: QueryClient): Promise<Prefs | null> {
+  await prefetchRouteQuery(queryClient, prefsQuery());
+  return queryClient.getQueryData(prefsQuery().queryKey) ?? null;
+}
+
 /** The tracker for one cycle year, or the newest the user has when `cycle` is omitted. Never cached by the server. */
 export const trackerQuery = (cycle?: number) =>
   contractQuery(
@@ -82,39 +94,47 @@ export const trackerQuery = (cycle?: number) =>
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(
   search: { q?: string | undefined; state?: string | undefined },
-  view: { degree?: MedDegreeId | undefined; program: LiveProgramFilter },
+  view: { programs: readonly ProgramKey[] },
 ): IndexQuery {
+  const programs = programsQueryValue(view.programs);
   return {
     ...(search.q ? { q: search.q } : {}),
-    ...(view.degree ? { degree: view.degree } : {}),
     ...(search.state ? { state: search.state } : {}),
-    program: view.program === 'NONE' ? 'ALL' : view.program,
+    ...(programs ? { programs } : {}),
   };
 }
 
-/** The live loader's search from the parsed URL and the effective view (`degree=ALL` is already resolved away). */
+export type LiveSearch = {
+  type?: LiveFilters['type'];
+  school?: string;
+  programs: readonly ProgramKey[];
+};
+
+/** The live loader's search from the parsed URL and the effective view. */
 export function liveSearchOf(
   search: { type?: LiveFilters['type']; school?: string | undefined },
-  view: { degree?: MedDegreeId | undefined; program: LiveProgramFilter },
-): { type?: LiveFilters['type']; school?: string; degree?: MedDegreeId; program: LiveProgramFilter } {
+  view: { programs: readonly ProgramKey[] },
+): LiveSearch {
   return {
     ...(search.type ? { type: search.type } : {}),
     ...(search.school ? { school: search.school } : {}),
-    ...(view.degree ? { degree: view.degree } : {}),
-    program: view.program,
+    programs: view.programs,
   };
 }
 
-/** What the live feed asks the API for, given the page's search and the school list (O5). */
-export function resolveLiveFilters(
-  search: { type?: LiveFilters['type']; school?: string; degree?: MedDegreeId; program: LiveProgramFilter },
-  schoolDegree: MedDegreeId | undefined,
-): LiveFilters {
-  // A degree that contradicts the one school the feed is filtered to is dropped.
-  const degree = schoolDegree && search.degree !== schoolDegree ? undefined : search.degree;
-  // A program belongs to a degree (MD-PhD): with no degree left, only "program not reported" can still filter.
-  const program = degree || search.program === 'NONE' ? search.program : 'ALL';
-  return { type: search.type, school: search.school, degree, program };
+/**
+ * What the live feed asks the API for, given the page's search and the school list (O5). With one school selected, the
+ * set is narrowed to that school's own degree; a set with nothing of its degree is dropped (the feed shows the school).
+ */
+export function resolveLiveFilters(search: LiveSearch, schoolDegree: MedDegreeId | undefined): LiveFilters {
+  let set = [...search.programs];
+  if (schoolDegree) set = set.filter((k) => programPair(k).degree === schoolDegree);
+  const programs = set.length > 0 ? programsQueryValue(set) : undefined;
+  return {
+    ...(search.type ? { type: search.type } : {}),
+    ...(search.school ? { school: search.school } : {}),
+    ...(programs ? { programs } : {}),
+  };
 }
 
 /** The degree of the school the live feed is filtered to, read from the (cached) school list. */
@@ -123,10 +143,7 @@ export function schoolDegreeOf(schools: { slug: string; degree: MedDegreeId }[] 
 }
 
 /** Live route loader: the school list first (it decides the degree filter), then the first page of events. */
-export async function prefetchLivePage(
-  queryClient: QueryClient,
-  search: { type?: LiveFilters['type']; school?: string; degree?: MedDegreeId; program: LiveProgramFilter },
-): Promise<undefined> {
+export async function prefetchLivePage(queryClient: QueryClient, search: LiveSearch): Promise<undefined> {
   await prefetchRouteQuery(queryClient, schoolsQuery({}));
   const list = queryClient.getQueryData(schoolsQuery({}).queryKey);
   return prefetchRouteQuery(
@@ -152,7 +169,8 @@ export interface SchoolHead {
 export async function loadSchoolHead(
   queryClient: QueryClient,
   slug: string,
-  deps: { tab: SchoolTab; program: ProgramFilter; type: string; cycle?: number | undefined },
+  deps: { tab: SchoolTab; program?: ProgramFilter | undefined; type: string; cycle?: number | undefined },
+  prefs: Prefs | null = null,
 ): Promise<SchoolHead | null> {
   let detail;
   try {
@@ -161,13 +179,14 @@ export async function loadSchoolHead(
     if (e instanceof HttpError && e.status === 404) throw notFound();
     return null;
   }
+  // The URL's program where it speaks, the viewer's preference through the school's own degree where it is silent.
+  const program = applyPrefs('school', { program: deps.program }, prefs, {
+    schoolDegree: detail.school.degree,
+  }).program;
   if (deps.tab === 'activity') {
-    await prefetchRouteQuery(queryClient, activityQuery(slug, { program: deps.program, cycle: deps.cycle }));
+    await prefetchRouteQuery(queryClient, activityQuery(slug, { program, cycle: deps.cycle }));
   } else if (deps.tab === 'history') {
-    await prefetchRouteQuery(
-      queryClient,
-      historyQuery(slug, { program: deps.program, type: deps.type as MedChartedTypeId }),
-    );
+    await prefetchRouteQuery(queryClient, historyQuery(slug, { program, type: deps.type as MedChartedTypeId }));
   }
   const { school } = detail;
   return {

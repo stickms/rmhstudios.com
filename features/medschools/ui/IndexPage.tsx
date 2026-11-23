@@ -9,14 +9,15 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { formatUtcDay } from '../engine/public-read';
+import { schoolProgramOf } from '../engine/programs';
 import { Q_MAX, SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
-import { indexQuery, schoolsQuery, todayQuery } from '../medschools.queries';
+import { indexQuery, listsQuery, schoolsQuery } from '../medschools.queries';
+import { useSession } from '@/components/session/session-context';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
-import { DegreeProgramSelect } from './ProgramSelect';
+import { ProgramSetToggles } from './ProgramSetToggles';
+import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
-import { ReportedNote } from './ReportedNote';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
 
@@ -35,19 +36,22 @@ export function IndexPage() {
 
   // The URL where it speaks, the viewer's preferences where it is silent (D13/D14).
   const { view, setSearch: setView } = useEffectiveView('index', search);
-  const program = view.program === 'NONE' ? 'ALL' : view.program;
   const schools = useQuery(schoolsQuery(indexQuery(search, view)));
-  const today = useQuery(todayQuery(program, view.degree));
+  const { data: session } = useSession();
+  const signedIn = !!session;
+  const lists = useQuery({ ...listsQuery(), enabled: signedIn });
+  const myLists = signedIn ? (lists.data?.lists ?? []) : [];
 
-  const setSearch = (next: { q?: string | undefined; state?: string | undefined }) => {
+  const setSearch = (next: { q?: string | undefined; state?: string | undefined; list?: string | undefined }) => {
     const merged = { ...search, ...next };
     void navigate({
       to: '/rmh-medschool',
-      // The preference keys (`program`, `degree`) stay as the URL had them; only the page's own keys are rebuilt.
+      // The preference key (`programs`) stays as the URL had it; only the page's own keys are rebuilt.
       search: ((prev: Record<string, unknown>) => ({
         ...prev,
         q: merged.q || undefined,
         state: merged.state || undefined,
+        list: merged.list || undefined,
       })) as never,
       replace: true,
       resetScroll: false,
@@ -55,58 +59,28 @@ export function IndexPage() {
   };
   const pushQuery = useDebouncedCallback((q: string) => setSearch({ q: q.trim() || undefined }), 250);
 
-  const day = today.data?.date ?? null;
-  const topRows = today.data?.schools ?? [];
+  // "Show my lists only" (D15): a client filter over the schools the public endpoint already returned, so the public
+  // cache key does not change. A signed-out viewer of a `?list=` link sees the unfiltered index and is told why.
+  const listSlugs = (() => {
+    if (!search.list || !signedIn || myLists.length === 0) return null;
+    const chosen = search.list === 'all' ? myLists : myLists.filter((l) => l.id === search.list);
+    if (chosen.length === 0 && search.list !== 'all') return null;
+    return new Set(chosen.flatMap((l) => l.items.map((i) => i.school.slug)));
+  })();
+  const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
 
   return (
     <PageLayout title={t('index-title', { defaultValue: 'RMH Med Schools' })}>
-      <ReportedNote />
-
-      {day && topRows.length > 0 ? (
-        <section className="mt-6" aria-labelledby="medschools-latest-day">
-          <h2 id="medschools-latest-day" className="t-heading m-0">
-            {today.data?.isToday
-              ? t('index-today-heading', { defaultValue: 'Interview invites reported today' })
-              : t('index-day-heading', {
-                  defaultValue: 'Interview invites reported on {{date}}',
-                  date: formatUtcDay(day, locale),
-                })}
-          </h2>
-          <ul className="m-0 list-none p-0">
-            {topRows.map((r) => (
-              <li key={r.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-site-border py-3">
-                <SchoolCrest slug={r.slug} name={r.shortName} size={24} />
-                <div className="min-w-44 flex-1">
-                  <Link
-                    to="/rmh-medschool/$slug"
-                    params={{ slug: r.slug }}
-                    search={SCHOOL_SEARCH_DEFAULTS}
-                    className="t-body"
-                  >
-                    {r.shortName}
-                  </Link>
-                  <p className="t-meta m-0">
-                    {t('index-today-place', {
-                      defaultValue: '{{city}}, {{state}}',
-                      city: r.city,
-                      state: r.state,
-                    })}
-                  </p>
-                </div>
-                <span className="t-meta ps-9 sm:ps-0">
-                  {t('index-day-invites', {
-                    count: r.count,
-                    n: nf.format(r.count),
-                    defaultValue_one: '{{n}} invite · {{source}}',
-                    defaultValue_other: '{{n}} invites · {{source}}',
-                    defaultValue: '{{n}} invites · {{source}}',
-                    source: sourceName(r.source),
-                  })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {signedIn ? (
+        <p className="t-meta m-0">
+          <Link to="/rmh-medschool/tracker" className="underline">
+            {t('index-my-tracker', { defaultValue: 'My tracker' })}
+          </Link>
+          {' · '}
+          <Link to="/rmh-medschool/lists" className="underline">
+            {t('index-my-lists', { defaultValue: 'My lists' })}
+          </Link>
+        </p>
       ) : null}
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -120,15 +94,6 @@ export function IndexPage() {
             setText(v);
             pushQuery(v);
           }}
-        />
-        <DegreeProgramSelect
-          value={{ degree: view.degree, program }}
-          onChange={(v) =>
-            setView({
-              degree: v.degree,
-              program: v.program === 'REG' || v.program === 'PHD' ? v.program : 'ALL',
-            })
-          }
         />
         <Select
           controlSize="sm"
@@ -144,6 +109,32 @@ export function IndexPage() {
           ))}
         </Select>
       </div>
+      <ProgramSetToggles className="mt-3" value={view.programs} onChange={(programs) => setView({ programs })} />
+      {myLists.length > 0 ? (
+        <div className="mt-3">
+          <Select
+            controlSize="sm"
+            aria-label={t('index-list-label', { defaultValue: 'My lists' })}
+            value={listSlugs || search.list === 'all' ? (search.list ?? '') : ''}
+            onChange={(e) => setSearch({ list: e.target.value || undefined })}
+          >
+            <option value="">{t('index-list-none', { defaultValue: 'All schools' })}</option>
+            <option value="all">{t('index-list-all', { defaultValue: 'All my lists' })}</option>
+            {myLists.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
+      {search.list && !signedIn ? (
+        <p className="t-meta m-0 mt-3">
+          {t('index-list-signed-out', {
+            defaultValue: 'This link filters to a saved list. Sign in to see your lists; all schools are shown.',
+          })}
+        </p>
+      ) : null}
       <PrefsNote fromPrefs={view.fromPrefs} />
 
       <div className="mt-4">
@@ -154,11 +145,11 @@ export function IndexPage() {
           />
         ) : (
           <SkeletonSwap ready={!!schools.data}>
-            {schools.data && schools.data.schools.length === 0 ? (
+            {schools.data && rows.length === 0 ? (
               <EmptyState title={t('index-empty', { defaultValue: 'No schools match.' })} />
             ) : (
               <ul className="m-0 list-none p-0">
-                {(schools.data?.schools ?? []).map((s) => (
+                {rows.map((s) => (
                   <li
                     key={s.slug}
                     className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-site-border py-3"
@@ -194,6 +185,10 @@ export function IndexPage() {
                         })}
                       </span>
                     ) : null}
+                    <SaveToList
+                      school={{ slug: s.slug, name: s.name }}
+                      program={schoolProgramOf(view.programs, s.degree)}
+                    />
                   </li>
                 ))}
               </ul>
