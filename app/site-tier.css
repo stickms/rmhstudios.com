@@ -93,7 +93,7 @@
 @source not "../components/blm";
 @source not "../components/covid";
 @source not "../components/elections";
-@source not "../components/cursed-logic";
+@source not "../features/cursed-logic/ui";
 @source not "../components/daily-puzzles";
 @source not "../components/design";
 @source not "../features/dream-rift/ui";
@@ -153,7 +153,7 @@
 @source not "../features/void-breaker/ui";
 @source not "../lib/cards";
 @source not "../lib/controller";
-@source not "../lib/cursed-logic";
+@source not "../features/cursed-logic/engine";
 @source not "../lib/daily-puzzles";
 @source not "../features/dream-rift/engine";
 @source not "../lib/elections";

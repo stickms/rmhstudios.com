@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { MinigameKind } from '@/lib/cursed-logic/types';
+import type { MinigameKind } from '@features/cursed-logic/engine/types';
 
 const BAR_MS = 950;
 const ZONE_START = 0.41;

@@ -8,7 +8,7 @@ import {
   VARIANT_UNLOCKS,
   type RunModifierId,
   type VariantUnlockId,
-} from '@/lib/cursed-logic/shopState';
+} from '@features/cursed-logic/engine/shopState';
 
 interface ShopModalProps {
   open: boolean;

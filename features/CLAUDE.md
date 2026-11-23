@@ -53,7 +53,7 @@ Rules:
   that granularity.
 
 Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker`
-and `nightrail` (engine, ui), `vega` and `signal-forge` (engine, ui; unlisted secret games), `dream-rift`,
+and `nightrail` (engine, ui), `vega` and `signal-forge` (engine, ui; unlisted secret games), `cursed-logic` (engine, ui; unlisted), `dream-rift`,
 `gabriels-horn`, `synapse-storm` and `laundry-sort` (engine, ui, server, catalog); `rmhos` (engine, ui, api; its relay
 hub is `server/rmhos-net/`, see `docs/rmhos.md`); `medschools` (engine, ui, api, scrape; a Services-hub app with no
 catalog card, see `features/medschools/CLAUDE.md`). A feature whose disconnect handler was guarded by

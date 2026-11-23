@@ -620,10 +620,10 @@ lib/prepaint/generated.ts
 /components/csgo-game/CsMainMenu.tsx
 /components/csgo-game/cs-hud.css
 /components/csgo-game/cs-menu.css
-/components/cursed-logic/CursedLogicGame.tsx
-/components/cursed-logic/HowToPlayModal.tsx
-/components/cursed-logic/ShopModal.tsx
-/components/cursed-logic/cursed-logic.css
+/features/cursed-logic/ui/CursedLogicGame.tsx
+/features/cursed-logic/ui/HowToPlayModal.tsx
+/features/cursed-logic/ui/ShopModal.tsx
+/features/cursed-logic/ui/cursed-logic.css
 /components/daily-puzzles/AlibiGame.tsx
 /components/daily-puzzles/ChainlinkGame.tsx
 /components/daily-puzzles/DailyPuzzlesHub.tsx

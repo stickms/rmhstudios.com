@@ -8,10 +8,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, HelpCircle, ShoppingBag } from 'lucide-react';
-import { CursedLogicGame } from '@/components/cursed-logic/CursedLogicGame';
-import { HowToPlayModal } from '@/components/cursed-logic/HowToPlayModal';
-import { ShopModal } from '@/components/cursed-logic/ShopModal';
-import { useShopStore } from '@/lib/cursed-logic/shopState';
+import { CursedLogicGame } from '@features/cursed-logic/ui/CursedLogicGame';
+import { HowToPlayModal } from '@features/cursed-logic/ui/HowToPlayModal';
+import { ShopModal } from '@features/cursed-logic/ui/ShopModal';
+import { useShopStore } from '@features/cursed-logic/engine/shopState';
 
 export const Route = createFileRoute('/secret/cursed-logic/')({
   head: () => noindexHead('Cursed Logic'),

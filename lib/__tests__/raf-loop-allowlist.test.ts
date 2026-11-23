@@ -162,7 +162,7 @@ const ALLOW = new Set<string>([
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
   'components/canvas/CanvasReplay.tsx', // P19 Z5: stops at the last pixel; cancelled on unmount/pause
-  'components/cursed-logic/MinigameOverlay.tsx',
+  'features/cursed-logic/ui/MinigameOverlay.tsx',
   // GlobeSet's globe: the seven cards of the daily deal pinned to a sphere you
   // turn. Idle-at-rest, which is the standard this has to meet because /daily
   // is a game surface a player leaves open. A frame is scheduled only while a

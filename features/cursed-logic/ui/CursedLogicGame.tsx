@@ -2,14 +2,14 @@ import './cursed-logic.css';
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCursedLogicStore } from '@/lib/cursed-logic/gameState';
-import { getProtocolAction } from '@/lib/cursed-logic/protocol';
-import { resolveRound, chargeAfterSpend } from '@/lib/cursed-logic/resolution';
-import { getMinigameForRound } from '@/lib/cursed-logic/minigame';
-import { rollMutation, getModifierLabel } from '@/lib/cursed-logic/mutations';
-import * as sounds from '@/lib/cursed-logic/sounds';
-import { useShopStore } from '@/lib/cursed-logic/shopState';
-import type { RoundState, ProtocolAction } from '@/lib/cursed-logic/types';
+import { useCursedLogicStore } from '@features/cursed-logic/engine/gameState';
+import { getProtocolAction } from '@features/cursed-logic/engine/protocol';
+import { resolveRound, chargeAfterSpend } from '@features/cursed-logic/engine/resolution';
+import { getMinigameForRound } from '@features/cursed-logic/engine/minigame';
+import { rollMutation, getModifierLabel } from '@features/cursed-logic/engine/mutations';
+import * as sounds from '@features/cursed-logic/engine/sounds';
+import { useShopStore } from '@features/cursed-logic/engine/shopState';
+import type { RoundState, ProtocolAction } from '@features/cursed-logic/engine/types';
 import {
   PROTOCOL_VARIANT_NAMES,
   RUN_UPGRADE_LABELS,
@@ -17,7 +17,7 @@ import {
   getStanceHint,
   getStanceEffect,
   PROTOCOL_MODE_LABELS,
-} from '@/lib/cursed-logic/types';
+} from '@features/cursed-logic/engine/types';
 import { MinigameOverlay } from './MinigameOverlay';
 
 function buildRoundState(s: ReturnType<typeof useCursedLogicStore.getState>): RoundState {
