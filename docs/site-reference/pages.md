@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 417 routes. 222 render inside the standard site shell (sidebar, nav, context rail); 195 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 420 routes. 225 render inside the standard site shell (sidebar, nav, context rail); 195 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -153,6 +153,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmh-datacenter/network` | — | public | `app/routes/_site/rmh-datacenter/network.tsx` |
 | `/rmh-datacenter/platform` | — | public | `app/routes/_site/rmh-datacenter/platform.tsx` |
 | `/rmh-datacenter/power` | — | public | `app/routes/_site/rmh-datacenter/power.tsx` |
+| `/rmh-medschool` | RMH Med Schools | public | `app/routes/_site/rmh-medschool/index.tsx` |
+| `/rmh-medschool/:slug` | — | public | `app/routes/_site/rmh-medschool/$slug.tsx` |
+| `/rmh-medschool/live` | Live reported events \| RMH Med Schools | public | `app/routes/_site/rmh-medschool/live.tsx` |
 | `/rmhbox-packs` | RMHBox Prompt Packs | public | `app/routes/_site/rmhbox-packs.tsx` |
 | `/rmhladder` | RMH Ladder \| Verified Early-Career Jobs | public | `app/routes/_site/rmhladder/index.tsx` |
 | `/rmhladder/alerts` | — | sign-in | `app/routes/_site/rmhladder/alerts.tsx` |

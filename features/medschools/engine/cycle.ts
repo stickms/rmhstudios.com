@@ -46,3 +46,13 @@ export function cycleYearOf(date: Date, type: MedEventType): number {
   const year = date.getUTCFullYear();
   return date.getUTCMonth() < NEXT_CYCLE_FROM_MONTH[type] ? year : year + 1;
 }
+
+/** "2026–2027" for entry year 2027, the way a cycle is named on the pages and cards. */
+export function cycleLabel(cycleYear: number): string {
+  return `${cycleYear - 1}\u2013${cycleYear}`;
+}
+
+/** Last UTC day of the cycle (the day before the next cycle's default start). */
+export function cycleEndOn(cycleYear: number): string {
+  return `${cycleYear}-05-31`;
+}

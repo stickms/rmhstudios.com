@@ -153,6 +153,17 @@ export const STATIC_ROUTES: SitemapEntry[] = [
     changefreq: 'weekly',
     priority: 0.4,
   },
+  // RMH Med Schools lives under the Services hub, not the catalog, so both pages are listed here permanently (owner O1).
+  {
+    loc: '/rmh-medschool',
+    changefreq: 'daily',
+    priority: 0.7,
+  },
+  {
+    loc: '/rmh-medschool/live',
+    changefreq: 'hourly',
+    priority: 0.5,
+  },
   // `/rmhladder`, `/homes` and `/rmhcode` are apps, so `catalogRoutes()`
   // already emits them — listing them here too would put the same URL in the
   // sitemap twice, which Search Console reports as a warning.
@@ -803,6 +814,7 @@ export const SITEMAP_SECTION_NAMES = [
   'community',
   'homes',
   'jobs',
+  'medschools',
 ] as const;
 
 export type SitemapSectionName = (typeof SITEMAP_SECTION_NAMES)[number];
@@ -850,6 +862,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/jams/$slug': 'community',
   '/homes/listing/$id': 'homes',
   '/rmhladder/jobs/$jobId': 'jobs',
+  '/rmh-medschool/$slug': 'medschools',
 
   // Slice It's two public per-entity pages (L15, X12). Dynamic and deliberately
   // unlisted rather than sectioned: both are unbounded in the library's own

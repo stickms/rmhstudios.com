@@ -32,7 +32,7 @@ const SCENE_GRAPH_SUSPENSE: Record<string, string> = {
 };
 
 const ARRIVAL_TOOLS =
-  /\b(useArrival|ArrivalSuspense|useSuspenseArrival|useArrivingKeys|useStableListMotion|markRouteArrival|ARRIVE)\b|['"`]arrive(-group)?['"`]|\barrive-group\b/;
+  /\b(useArrival|SkeletonSwap|ArrivalSuspense|useSuspenseArrival|useArrivingKeys|useStableListMotion|markRouteArrival|ARRIVE)\b|['"`]arrive(-group)?['"`]|\barrive-group\b/;
 
 function sources(): string[] {
   return globSync('{app/routes,components,features}/**/*.tsx', {

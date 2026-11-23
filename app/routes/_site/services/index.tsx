@@ -5,6 +5,7 @@ import {
   Briefcase,
   Car,
   CarFront,
+  GraduationCap,
   Shirt,
   UtensilsCrossed,
   type LucideIcon,
@@ -38,7 +39,7 @@ type ServiceTab = (typeof SERVICE_TABS)[number];
 
 /** What every service row has. */
 interface ServiceBase {
-  id: ServiceTab;
+  id: ServiceTab | 'medschools';
   icon: LucideIcon;
   /** English default for the label. */
   name: string;
@@ -102,6 +103,16 @@ const SERVICES: ServiceDef[] = [
     name: 'Rebar & Rutabaga',
     descKey: 'services-restaurant-desc',
     desc: 'A molecular-gastronomy restaurant in a decommissioned Göteborg rebar foundry — nine spherified courses, read off a glass globe you turn with a finger.',
+  },
+  {
+    id: 'medschools',
+    panel: 'summary',
+    icon: GraduationCap,
+    href: '/rmh-medschool',
+    navKey: 'nav-rmh-medschools',
+    name: 'RMH Med Schools',
+    descKey: 'services-medschools-desc',
+    desc: 'Med school application cycles by school: reported interview invites and decisions, past cycles and interview questions.',
   },
   {
     id: 'cars',
@@ -178,14 +189,22 @@ function ServiceRow({ service }: { service: ServiceDef }) {
   const name =
     service.id === 'restaurant'
       ? t('services-restaurant-name', { defaultValue: 'Rebar & Rutabaga' })
-      : service.panel === 'summary'
+      : service.id === 'medschools'
+        ? t('nav-rmh-medschools', { ns: 'feed', defaultValue: 'RMH Med Schools' })
+        : service.panel === 'summary'
         ? t(service.navKey, { ns: 'feed', defaultValue: service.name })
         : service.panel === 'cars'
           ? t('services-cars-tab', { defaultValue: 'RMH Cars' })
           : t('services-fashion-tab', { defaultValue: 'RMH Fashion' });
 
   const desc =
-    service.panel === 'summary'
+    service.id === 'medschools'
+      ? t('services-medschools-desc', {
+          ns: 'feed',
+          defaultValue:
+            'Med school application cycles by school: reported interview invites and decisions, past cycles and interview questions.',
+        })
+      : service.panel === 'summary'
       ? t(service.descKey, { defaultValue: service.desc })
       : service.panel === 'cars'
         ? t('services-cars-desc', {

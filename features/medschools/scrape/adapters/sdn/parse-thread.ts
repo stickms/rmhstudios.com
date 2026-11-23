@@ -1,7 +1,7 @@
 /**
  * Thread page parser. This is the anonymization boundary for forum posts: quotes are removed first, the text is
  * link-unfurl cards are dropped, the text is redacted with the page's own author handles, and the raw post id leaves only through `hashPostId`.
- * data-author, usernames, avatars, profile links, signatures and edit notes are never read into the result.
+ * data-author and the member id are read only to key events (inside a closure); usernames, avatars, profile links, signatures and edit notes are never read into the result.
  */
 import { parse } from 'node-html-parser';
 import type { MedEventType } from '../../../engine/types';
@@ -13,8 +13,12 @@ export interface SdnPost {
   postedAt: Date;
   /** Quote-stripped, plain, redacted. */
   text: string;
-  /** hashPostId(id + ':' + type + ':' + day): keys an event without the caller holding the post id. */
-  eventKey(type: MedEventType, day: string): string;
+  /**
+   * Keys an event without the caller holding the post id or the author. With a member id on the post it is
+   * hashPostId(`author:${member}:${scope}:${type}`): one member counts once per event type per scope (the caller
+   * passes school and cycle), whatever the post or day. Without one it is hashPostId(`${id}:${type}:${day}`).
+   */
+  eventKey(type: MedEventType, scope: string, day: string): string;
 }
 
 export interface ParsedThreadPage {
@@ -77,6 +81,8 @@ export function parseThreadPage(html: string, hashPostId: (postId: string) => st
     id: string;
     postedAt: Date;
     text: string;
+    /** Numeric member id (else lower-cased handle). In memory only: it appears solely inside eventKey's closure. */
+    author: string | null;
   }> = [];
   for (const art of articles) {
     const id =
@@ -91,9 +97,16 @@ export function parseThreadPage(html: string, hashPostId: (postId: string) => st
     for (const q of wrapper.querySelectorAll('blockquote')) q.remove();
     // A link unfurl is the linked page's own title and snippet (a member page carries a handle), not the poster's words.
     for (const u of wrapper.querySelectorAll('.bbCodeBlock--unfurl, .js-unfurl, [data-unfurl]')) u.remove();
+    // The member's own link in the post header (never a mention inside the body, which is a different member).
+    const uid = art
+      .querySelector('.message-user [data-user-id], .message-name [data-user-id]')
+      ?.getAttribute('data-user-id')
+      ?.trim();
+    const handle = art.getAttribute('data-author')?.trim().toLowerCase();
     posts.push({
       id,
       postedAt,
+      author: uid && /^\d+$/.test(uid) ? `u${uid}` : handle ? `h${handle}` : null,
       text: bodyText(wrapper.innerHTML),
     });
   }
@@ -104,7 +117,8 @@ export function parseThreadPage(html: string, hashPostId: (postId: string) => st
       postHash: hashPostId(p.id),
       postedAt: p.postedAt,
       text: redactForModel(p.text, handles),
-      eventKey: (type, day) => hashPostId(`${p.id}:${type}:${day}`),
+      eventKey: (type, scope, day) =>
+        hashPostId(p.author ? `author:${p.author}:${scope}:${type}` : `${p.id}:${type}:${day}`),
     })),
     lastPage: lastPageOf(root),
     containsHandle: (text) => containsHandle(text, handles),

@@ -47,6 +47,7 @@ const CAPS = {
   community: 50_000,
   jobs: 50_000,
   homes: 50_000,
+  medschools: 1_000,
 } as const;
 
 /** Rows per query for the sections that are large enough to need `batch`. */
@@ -497,6 +498,27 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
           changefreq: 'daily' as const,
           priority: 0.6,
         }));
+    },
+  },
+
+  /** Active med schools: a few hundred rows at most, so one page. */
+  medschools: {
+    cap: CAPS.medschools,
+    count: () => prisma.medSchool.count({ where: { active: true } }),
+    page: async (skip, take) => {
+      const rows = await prisma.medSchool.findMany({
+        where: { active: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { slug: 'asc' },
+        skip,
+        take,
+      });
+      return rows.map((s) => ({
+        loc: `/rmh-medschool/${s.slug}`,
+        lastmod: s.updatedAt,
+        changefreq: 'daily' as const,
+        priority: 0.5,
+      }));
     },
   },
 };

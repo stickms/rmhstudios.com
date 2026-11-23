@@ -138,7 +138,9 @@ function validateParsed(
       eventKeys.add(key);
       events.push({
         type: e.type,
-        occurredAt,
+        // Posted, not received: an event dated the post's own day ("got an II today") takes the post's
+        // timestamp; an earlier date stays a UTC day, because that is all the poster said.
+        occurredAt: e.date === isoDay(post.postedAt) ? post.postedAt : occurredAt,
         program: programGuard(e.program, post.text),
         inState: inStateGuard(e.inState, post.text),
       });

@@ -130,6 +130,15 @@ describe('validateExtraction', () => {
       inState: true,
     });
   });
+  it('an event dated the day it was posted takes the exact post time', () => {
+    const out = validateExtraction(
+      answer({ postRef: 0, events: [ev({ date: '2026-11-20' })] }),
+      posts,
+      ctx,
+    );
+    expect(out.byRef.get(0)!.events[0]!.occurredAt.toISOString()).toBe(POSTED.toISOString());
+  });
+
   it('rejects a future date and one 401 days before the post', () => {
     const later = [post('II', new Date('2027-08-31T12:00:00Z'))];
     const raw = answer({

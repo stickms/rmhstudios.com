@@ -19,6 +19,13 @@ export interface SourceConfig {
 /** Path of the one GraphQL endpoint on the Admit API origin. */
 export const ADMIT_GRAPHQL_PATH = '/graphql';
 
+/**
+ * Public school-page URL on med.admit.org for an alias key. Deliberately undefined: the page pattern is not recorded
+ * anywhere in the repo and must be read off the live site (phase 3 plan, Facts 1) before it is invented here.
+ * `buildSourceLinks` emits no Admit link while this is undefined.
+ */
+export const ADMIT_SCHOOL_URL: ((aliasKey: string) => string) | undefined = undefined;
+
 export const SOURCES: {
   CYCLETRACK: SourceConfig;
   ADMIT: SourceConfig;

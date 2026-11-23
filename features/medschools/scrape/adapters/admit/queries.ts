@@ -120,3 +120,30 @@ export const SCHOOL_STATS: AdmitOperation = {
 }`,
   variables: { filterOwnSchools: false, filterBy: 'GLOBAL', sortOrder: 'ASC', sortBy: 'RANK', page: 1, pageSize: 999 },
 };
+
+/**
+ * School crests: the school object of `getAllCycleResults` (latest update per school, so one row per school that has
+ * one), selecting ONLY school fields. The row also carries user_display_name, user_profile_image_url and user_id;
+ * none is requested. `$limit`/`$offset` are `Float!`, `limit` at most 100.
+ */
+export const SCHOOL_CRESTS: AdmitOperation = {
+  operationName: 'getAllCycleResults',
+  query: `query getAllCycleResults($status: [ApplicationTrackerStatusEnum!], $filterOwnSchools: Boolean!, $limit: Float!, $offset: Float!) {
+  getAllCycleResults(status: $status, filterOwnSchools: $filterOwnSchools, limit: $limit, offset: $offset) {
+    school {
+      slug
+      name
+      shorthand_name
+      state
+      city
+      crest_url
+    }
+  }
+}`,
+  variables: {
+    status: ['INTERVIEW', 'ACCEPTED', 'WITHDRAWN', 'REJECTED', 'WAITLISTED', 'HOLD'],
+    filterOwnSchools: false,
+    limit: 100,
+    offset: 0,
+  },
+};

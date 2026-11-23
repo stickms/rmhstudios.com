@@ -29,6 +29,7 @@ const prismaMock = {
   tournament: { count: vi.fn(), findMany: vi.fn() },
   homeListing: { count: vi.fn(), findMany: vi.fn() },
   ladderJob: { count: vi.fn(), findMany: vi.fn() },
+  medSchool: { count: vi.fn(), findMany: vi.fn() },
 };
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
@@ -428,6 +429,12 @@ describe('visibility predicates', () => {
     const { SITEMAP_SECTIONS } = await import('@/lib/sitemap.server');
     await SITEMAP_SECTIONS.homes.page(0, 10);
     expect(prismaMock.homeListing.findMany.mock.calls[0][0].where).toEqual({ status: 'ACTIVE' });
+  });
+
+  it('lists only active med schools', async () => {
+    const { SITEMAP_SECTIONS } = await import('@/lib/sitemap.server');
+    await SITEMAP_SECTIONS.medschools.page(0, 10);
+    expect(prismaMock.medSchool.findMany.mock.calls[0][0].where).toEqual({ active: true });
   });
 
   it('never queries a table without a visibility filter', async () => {

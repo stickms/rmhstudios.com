@@ -212,6 +212,20 @@ export const STATIC_CARDS: StaticCard[] = [
     title: 'The rest of the portfolio.',
     subtitle: 'What RMH Studios runs beyond the platform itself.',
   },
+  {
+    path: '/rmh-medschool',
+    file: 'rmh-medschool',
+    eyebrow: 'RMH Med Schools',
+    title: 'Med school cycles, reported daily.',
+    subtitle: 'Interview invites and decisions by school and day, from CycleTrack, Admit.org and SDN.',
+  },
+  {
+    path: '/rmh-medschool/live',
+    file: 'rmh-medschool-live',
+    eyebrow: 'RMH Med Schools',
+    title: 'Live reported events.',
+    subtitle: 'The latest interview invites and decisions reported across schools, with no names.',
+  },
 
   // ── Sections that used to unfurl as the home card ───────────────────────────────────────────────────────────
   // Every entry below answers for a page that had no card of its own, so a link to `/tf2/workshop` and a link to

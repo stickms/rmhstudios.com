@@ -403,6 +403,15 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     description: 'Request a ride or sign up to drive.',
   },
   {
+    id: 'rmh-medschool',
+    title: 'RMH Med Schools',
+    href: '/rmh-medschool',
+    iconName: 'GraduationCap',
+    keywords:
+      'med school medical school md do phd mstp admissions amcas aacomas interview secondary waitlist cycle sdn cycletrack admit',
+    description: 'Med school application cycles by school.',
+  },
+  {
     id: 'cars',
     title: 'RMH Cars',
     href: '/services/cars',

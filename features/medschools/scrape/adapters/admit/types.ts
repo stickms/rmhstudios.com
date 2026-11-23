@@ -90,3 +90,13 @@ export function redeemLookupToken(token: LookupToken): string {
   if (id === undefined) throw new Error('unknown lookup token');
   return id;
 }
+
+/** An Admit school with the URL of its crest image (null when Admit has none). */
+export interface AdmitSchoolCrest {
+  slug: string;
+  name: string;
+  shortName: string;
+  city: string;
+  state: string;
+  crestUrl: string | null;
+}

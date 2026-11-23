@@ -187,6 +187,22 @@ The single rule: **no identifier of a person crosses the adapter boundary.**
   `SUBMITTED`/`COMPLETE`, date). Owner only; sharing writes an anonymous `MedCycleEvent` (source `RMH`) per milestone
   and deletes it if sharing is turned off.
 - `MedSchoolFollow` (userId, schoolId) — phase 7.
+- **School lists and preferences (owner, 2026-11-22; phase 4, with the tracker).** Owner only, never public, deleted
+  with the account (`onDelete: Cascade` on the user), never an input to any public figure.
+  - `MedSchoolList` (id, userId, name ≤ 60 chars, position, createdAt, updatedAt): a user's named lists ("Applying",
+    "Reach", "Maybe"). One list, "My schools", is created on first use; at most 20 lists per user.
+  - `MedSchoolListItem` (id, listId, schoolId, program `MedProgram?` (null = either), position, note ≤ 500 chars,
+    addedAt; unique `[listId, schoolId, program]`; at most 200 items per list).
+  - `MedUserPrefs` (userId as the id, program filter `ALL|REG|PHD`, degree `MD|DO|null`, homeState `String?`, chart
+    categories `MedEventType[]` (the Activity toggles), updatedAt).
+  - Behaviour: signed-in users get "Save to list" on the school page and on index rows (a menu of their lists plus "New
+    list"), a lists view under `/rmh-medschool/lists` (rename, reorder, notes, remove), "Show my lists only" on the
+    index, and "Add this list to my tracker" (creates `MedTrackerApplication` rows; the two stay separate records).
+    Preferences fill in a page's defaults only when the URL does not say otherwise (a URL parameter always wins, so
+    shared links read the same for everyone); the public read endpoints stay user-independent and publicly cached, and
+    lists and preferences come from their own `auth: 'required'` endpoints that are never cached publicly.
+  - The anonymization schema test allows `userId` on `MedSchoolList` and `MedUserPrefs` (owner-only models) as it does
+    on `MedTracker*`; `MedSchoolListItem` has no `userId` (it reaches its owner through the list).
 
 ## 8. The worker and its jobs
 
@@ -233,6 +249,11 @@ threads per cycle × a few hundred posts, ~40% surviving the prefilter, a few hu
 tokens for the full prior-year backfill, a few dollars at DeepSeek prices — so the full backfill is in scope, newest
 cycles first.
 
+Event dedupe is author-scoped: the parser keys each event by
+`HMAC(author:<member id or lower-cased handle>:<school>:<cycle>:<type>)`, held in memory only, so one forum member
+counts at most once per event type per school per cycle (first post wins), with the per-post `postId:type:day` key as
+the fallback when a post carries no member id.
+
 ## 10. Statistics and forecasting
 
 Day-of-cycle `d` = days since the cycle's AMCAS/AACOMAS submission opening (stored per cycle). For each school × program
@@ -276,6 +297,11 @@ Pages (`app/routes/_site/rmh-medschool/`, Steel, `PageLayout`, per-route `head()
 - `tracker.tsx` (signed-in) — my cycle: schools, milestones, the sharing switch, my conditional chances.
 - `ask.tsx` — AI Q&A (also embedded as a panel on the school page).
 
+School crests (owner, 2026-11-22): Admit.org's school crests, fetched by `scripts/medschools/fetch-admit-crests.ts` into
+static 96×96 WebPs under `public/images/medschools/crests/<slug>.webp` (listed in `data/medschools/crests.json`, kept
+out of the image-variant manifest), drawn by `ui/SchoolCrest.tsx` with an empty alt because the school name is always
+beside it.
+
 Charts: SVG drawn with `d3-scale`/`d3-shape` in a small `ui/charts/` set (daily bars, cumulative line with forecast
 band, cycle-over-cycle overlay), coloured only with `--site-text`, `--site-text-muted`, `--site-border`; rendered on the
 server so they appear without scripting. Not chart.js (canvas, its own palette).
@@ -315,8 +341,17 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    paragraph); extraction is capped by `MEDSCHOOLS_AI_MONTHLY_USD` (20, backfill 80%), pauses in DeepSeek peak hours and
    backs off after failed runs; phone numbers and email addresses are redacted before the model, names may reach the
    model but are never stored. Detail: `server/CLAUDE.md`.
-3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n.
-4. Private tracker with anonymous sharing.
+3. Public pages: index, live, school page Activity/History/Interviews, OG, i18n. Phase 3 shipped at `/rmh-medschool`,
+   `/rmh-medschool/live` and `/rmh-medschool/$slug`, listed under RMH Services and site search, not the games/apps
+   catalog (O1). Decisions: D4 primary series by `PRIMARY_ORDER` after the floor; D5 k floor (RMH rows need 3
+   contributors, splits need both sides at 3, live feed excludes RMH); D6 null-program events in no series; D7 charted
+   types; D8 live row privacy (minute precision, opaque id); D9 `today` endpoint; D10 current cycle; D11 source
+   attribution wording; D13 charts keep a left-to-right axis in `ar`; D14 index as rows on rules. Owner revisions: O1
+   Services placement; O2 chart style approved for these pages; O3 attribution approved; O4 toggleable category lines;
+   O5 program filter All / MD / MD-PhD (or DO); O6 visual checks across phone and odd viewports. Also shipped: school
+   crests (static 96x96 WebP from Admit, committed, never fetched at request time); SDN events reported the same day
+   carry the post's time; one SDN member counts once per event type per school per cycle.
+4. Private tracker with anonymous sharing, saved school lists and preferences (section 7).
 5. Statistics + forecast tab + personal conditional chance.
 6. AI Q&A.
 7. Follow a school + wave notifications.

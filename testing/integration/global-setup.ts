@@ -6,7 +6,8 @@
  * own, and the budget stays well under the limit.
  */
 import type { TestProject } from 'vitest/node';
-import { BASE_URL, signUp, type TestUser } from './lib/client';
+import { BASE_URL, closeDb, signUp, type TestUser } from './lib/client';
+import { removeMedSchoolsFixture, seedMedSchoolsFixture } from './lib/medschools-fixture';
 
 declare module 'vitest' {
   export interface ProvidedContext {
@@ -36,4 +37,13 @@ export default async function setup(project: TestProject) {
     const { client: _client, ...user } = await signUp(label);
     project.provide(label, user);
   }
+
+  // The med schools fixture goes in BEFORE any file runs, not only in its own beforeAll: the sitemap index caches each
+  // section's count for ten minutes, and an earlier file fetching /sitemap.xml against an empty database would cache a
+  // count of 0 and hide the medschools chunk from the test that follows.
+  await seedMedSchoolsFixture();
+  return async () => {
+    await removeMedSchoolsFixture();
+    await closeDb();
+  };
 }

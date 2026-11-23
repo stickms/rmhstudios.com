@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // A converted SYSTEM notice stores its key and params for the inbox and keeps the English sentence as `preview`, which
 // push (live and held) carries; the string form every other caller uses is unchanged.
@@ -41,6 +41,16 @@ const { createNotification } = await import('@/lib/notifications.server');
 const { notice } = await import('@/lib/notifications/notice-keys');
 
 const ENDS = new Date('2026-12-01T14:30:00.000Z');
+
+// The quiet window used here (0 to 1439, end exclusive) leaves out the last minute of the UTC day, so a run during
+// 23:59 UTC saw no quiet hours and failed. Pin the clock to midday so the result does not depend on when CI runs.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-22T12:00:00Z'));
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(() => {
   prefsRow.current = null;

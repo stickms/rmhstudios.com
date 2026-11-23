@@ -45,6 +45,8 @@ export const STATIC_CARD_INDEX: readonly (readonly [string, string])[] = [
   ['/rmh-research', 'rmh-research'],
   ['/rmh-pmc', 'rmh-pmc'],
   ['/ventures', 'ventures'],
+  ['/rmh-medschool', 'rmh-medschool'],
+  ['/rmh-medschool/live', 'rmh-medschool-live'],
   ['/communities', 'communities'],
   ['/groups', 'groups'],
   ['/create/builds', 'user-builds'],
