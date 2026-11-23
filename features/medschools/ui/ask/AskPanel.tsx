@@ -10,6 +10,7 @@ import { errorField } from '@/lib/http';
 import { askStatusQuery } from '../../medschools.queries';
 import { AnswerView } from './AnswerView';
 import { AskForm } from './AskForm';
+import { LimitRequest } from './LimitRequest';
 import { useAsk } from './useAsk';
 
 /** The wait: a labelled status line and still blocks the shape of an answer (no pulse; M6). */
@@ -118,9 +119,11 @@ export function AskPanel({
         configured={configured}
         remaining={remaining}
         cap={cap}
+        admin={status.data?.tier === 'admin'}
         pinned={!!slug}
         showSuggestions={run.state === 'idle' || run.state === 'error'}
       />
+      <LimitRequest tier={status.data?.tier ?? null} />
       {run.state === 'pending' ? <PendingView /> : null}
       {errorText ? (
         <p className="t-body m-0 border-t border-site-border pt-3" role="alert">

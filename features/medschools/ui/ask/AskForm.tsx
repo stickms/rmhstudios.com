@@ -24,6 +24,7 @@ export function AskForm({
   configured,
   remaining,
   cap,
+  admin = false,
   pinned,
   showSuggestions = true,
 }: {
@@ -36,6 +37,8 @@ export function AskForm({
   /** `null` while the status query has not answered. */
   remaining: number | null;
   cap: number | null;
+  /** An admin has no daily limit (plan R19): the line says so instead of a count. */
+  admin?: boolean;
   pinned: boolean;
   /** False while a question is in flight or answered: the answer, not a list of starters, is what the page is about. */
   showSuggestions?: boolean;
@@ -106,7 +109,11 @@ export function AskForm({
           })}
         </p>
       </div>
-      {remaining !== null && cap !== null ? (
+      {admin ? (
+        <p className="t-meta m-0" data-testid="ask-remaining">
+          {t('ask-admin-unlimited', { defaultValue: 'Admin: no daily limit' })}
+        </p>
+      ) : remaining !== null && cap !== null ? (
         <p className="t-meta m-0" data-testid="ask-remaining">
           {t('ask-remaining', {
             defaultValue: '{{n}} of {{cap}} questions left today',

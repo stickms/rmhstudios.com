@@ -32,8 +32,13 @@ import { AnswerView } from './AnswerView';
 import { AskForm } from './AskForm';
 import { suggestionsFor } from './suggestions';
 import { createAskRun, type AskSnapshot } from './askRun';
-import { askStatusQuery } from '../../medschools.queries';
-import type { ChanceDto, MedAskRes } from '../../medschools.contract';
+import { askStatusQuery, qaLimitRequestQuery } from '../../medschools.queries';
+import type {
+  ChanceDto,
+  MedAskRes,
+  MedAskStatusRes,
+  MedQaLimitRequestStateRes,
+} from '../../medschools.contract';
 
 const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
   status: 'answered',
@@ -66,6 +71,7 @@ const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
   schools: [{ slug: 'duke', shortName: 'Duke' }],
   cycleYear: 2027,
   mine: null,
+  tier: 'free',
   remainingToday: 12,
   dailyCap: 15,
   ...over,
@@ -73,10 +79,12 @@ const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
 
 function panel(
   props: Parameters<typeof AskPanel>[0] = {},
-  status = { configured: true, remainingToday: 12, dailyCap: 15 },
+  status: MedAskStatusRes = { configured: true, tier: 'free', remainingToday: 12, dailyCap: 15 },
+  limit?: MedQaLimitRequestStateRes,
 ) {
   const qc = new QueryClient();
   qc.setQueryData(askStatusQuery().queryKey, status);
+  if (limit) qc.setQueryData(qaLimitRequestQuery().queryKey, limit);
   // Numbers sit in bidi isolates (for `ar`); the text a reader sees has none.
   return renderToString(
     <QueryClientProvider client={qc}>
@@ -118,7 +126,7 @@ describe('AskPanel', () => {
     h.session = { user: { id: 'u1' } };
     const html = panel(
       { initialQuestion: 'What is the median?' },
-      { configured: true, remainingToday: 0, dailyCap: 15 },
+      { configured: true, tier: 'free', remainingToday: 0, dailyCap: 15 },
     );
     expect(html).toMatch(/<button[^>]*disabled[^>]*>[^<]*(<[^>]+>)*Ask/);
     expect(html).toContain('0 of 15 questions left today');
@@ -126,7 +134,55 @@ describe('AskPanel', () => {
 
   it('an unconfigured site says so', () => {
     h.session = { user: { id: 'u1' } };
-    expect(panel({}, { configured: false, remainingToday: 0, dailyCap: 15 })).toContain('Questions are not available');
+    expect(panel({}, { configured: false, tier: 'free', remainingToday: 0, dailyCap: 15 })).toContain('Questions are not available');
+  });
+});
+
+const LIMIT = (over: Partial<MedQaLimitRequestStateRes> = {}): MedQaLimitRequestStateRes => ({
+  state: 'none',
+  tier: 'free',
+  requestedAt: null,
+  decidedAt: null,
+  adminNote: '',
+  reapplyOn: null,
+  ...over,
+});
+const FREE: MedAskStatusRes = { configured: true, tier: 'free', remainingToday: 25, dailyCap: 25 };
+
+describe('limit tiers on the Ask page (R19)', () => {
+  it('an admin sees "Admin: no daily limit", no count and no request form', () => {
+    h.session = { user: { id: 'a1' } };
+    const html = panel({}, { configured: true, tier: 'admin', remainingToday: null, dailyCap: null }, LIMIT({ state: 'not-needed', tier: 'admin' }));
+    expect(html).toContain('Admin: no daily limit');
+    expect(html).not.toContain('questions left today');
+    expect(html).not.toContain('Request a higher limit');
+  });
+  it('a paying member sees the count and no form', () => {
+    h.session = { user: { id: 'm1' } };
+    const html = panel({}, { configured: true, tier: 'member', remainingToday: 90, dailyCap: 100 }, LIMIT({ state: 'not-needed', tier: 'member' }));
+    expect(html).toContain('90 of 100 questions left today');
+    expect(html).not.toContain('Request a higher limit');
+  });
+  it('a free member sees the form: optional note, Submit, and still exactly one ink button', () => {
+    h.session = { user: { id: 'u1' } };
+    const html = panel({}, FREE, LIMIT());
+    expect(html).toContain('Need more questions? Request a higher limit');
+    expect(html).toContain('maxLength="500"');
+    expect(html).toContain('>Submit</span>');
+    expect(html.match(/bg-site-accent/g)?.length).toBe(1);
+  });
+  it('shows pending, approved and declined-with-date instead of the form', () => {
+    h.session = { user: { id: 'u1' } };
+    const pending = panel({}, FREE, LIMIT({ state: 'pending' }));
+    expect(pending).toContain('waiting for review');
+    expect(pending).not.toContain('>Submit</span>');
+    const ok = panel({}, { ...FREE, tier: 'approved', dailyCap: 40, remainingToday: 40 }, LIMIT({ state: 'approved', tier: 'approved', adminNote: 'Good luck' }));
+    expect(ok).toContain('Your higher limit is on.');
+    expect(ok).toContain('Reply: Good luck');
+    const no = panel({}, FREE, LIMIT({ state: 'declined', reapplyOn: '2026-12-23T12:00:00.000Z' }));
+    expect(no).toContain('not approved. You can ask again on');
+    expect(no).toMatch(/Dec(ember)? 23, 2026|12\/23\/2026/);
+    expect(no).not.toContain('>Submit</span>');
   });
 });
 

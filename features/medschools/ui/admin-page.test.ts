@@ -6,17 +6,19 @@ const read = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const squash = (s: string) => s.replace(/\s+/g, '').replace(/,\)/g, ')').replace(/,}/g, '}');
 const route = read('../../../app/routes/_site/admin/medschools.tsx');
 const panel = read('./AliasMissesPanel.tsx');
+const page = read('./AdminMedSchoolsPage.tsx');
+const limits = read('./QaLimitRequestsPanel.tsx');
 const link = read('./AdminMedSchoolsLink.tsx');
 
 describe('medschools admin page', () => {
   it('route file registers /_site/admin/medschools with the panel', () => {
     expect(squash(route)).toContain("createFileRoute('/_site/admin/medschools')");
-    expect(squash(route)).toContain('component:AliasMissesPanel');
-    expect(route).toContain('Med Schools aliases | Admin | RMH Studios');
+    expect(squash(route)).toContain('<AdminMedSchoolsPage');
+    expect(route).toContain('Med Schools | Admin | RMH Studios');
   });
 
   it('panel strings all go through t() with the medschools namespace', () => {
-    for (const src of [panel, link]) {
+    for (const src of [panel, link, page, limits]) {
       expect(squash(src)).toContain("useTranslation('medschools')");
       // No JSX text literal: prose between a tag and the next tag.
       const literals = [...src.matchAll(/<\/?[A-Za-z][^<>]*[\w"'}/]>([^<>{}()=?:;]*[A-Za-z][^<>{}()=?:;]*)</g)].map(
@@ -35,5 +37,12 @@ describe('medschools admin page', () => {
   it('calls the API through contracts, not raw fetch', () => {
     expect(panel).not.toMatch(/\bfetch\(/);
     expect(squash(panel)).toContain('api(mapAliasMissApi');
+  });
+
+  it('the Q&A limits tab calls the API through contracts and offers approve, decline and revoke', () => {
+    expect(limits).not.toMatch(/\bfetch\(/);
+    expect(squash(limits)).toContain('api(decideMedQaLimitRequestApi');
+    for (const a of ['approve', 'decline', 'revoke']) expect(limits).toContain(`'${a}'`);
+    expect(squash(page)).toContain("ADMIN_TABS=['aliases','limits']");
   });
 });

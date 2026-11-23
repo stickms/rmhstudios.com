@@ -7,6 +7,7 @@ import {
   getMedListsApi,
   getMedLiveApi,
   getMedAskStatusApi,
+  getMedQaLimitRequestApi,
   getMedChancesApi,
   getMedPrefsApi,
   getMedSchoolActivityApi,
@@ -114,6 +115,10 @@ export const chancesQuery = (q: { school?: string; cycle?: number } = {}) =>
 /** Whether Q&A is on and the caller's questions left today. Under `ME_KEY`; refetched after each question. */
 export const askStatusQuery = () =>
   contractQuery([...ME_KEY, 'ask-status'] as const, getMedAskStatusApi, {}, { staleTime: 0 });
+
+/** Where the caller stands on a higher Q&A limit (plan R19). Under `ME_KEY`; refreshed after a request. */
+export const qaLimitRequestQuery = () =>
+  contractQuery([...ME_KEY, 'qa-limit-request'] as const, getMedQaLimitRequestApi, {}, { staleTime: 0 });
 
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(
