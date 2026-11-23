@@ -9,6 +9,7 @@ const panel = read('./AliasMissesPanel.tsx');
 const page = read('./AdminMedSchoolsPage.tsx');
 const limits = read('./QaLimitRequestsPanel.tsx');
 const link = read('./AdminMedSchoolsLink.tsx');
+const adminSearch = read('../engine/admin-search.ts');
 
 describe('medschools admin page', () => {
   it('route file registers /_site/admin/medschools with the panel', () => {
@@ -43,6 +44,11 @@ describe('medschools admin page', () => {
     expect(limits).not.toMatch(/\bfetch\(/);
     expect(squash(limits)).toContain('api(decideMedQaLimitRequestApi');
     for (const a of ['approve', 'decline', 'revoke']) expect(limits).toContain(`'${a}'`);
-    expect(squash(page)).toContain("ADMIN_TABS=['aliases','limits']");
+    expect(squash(adminSearch)).toContain("ADMIN_TABS=['aliases','limits']");
+  });
+
+  it('the route imports its search validator from the engine, not the page (validateSearch is not code-split)', () => {
+    expect(route).toContain("from '@features/medschools/engine/admin-search'");
+    expect(route).not.toMatch(/parseAdminSearch[^\n]*ui\/AdminMedSchoolsPage/);
   });
 });

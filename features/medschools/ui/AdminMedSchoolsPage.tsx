@@ -7,13 +7,9 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import type { TabItem } from '@/components/ui/tabs';
 import { AliasMissesPanel } from './AliasMissesPanel';
 import { QaLimitRequestsPanel } from './QaLimitRequestsPanel';
+import { ADMIN_TABS, type AdminTab } from '../engine/admin-search';
 
-export const ADMIN_TABS = ['aliases', 'limits'] as const;
-export type AdminTab = (typeof ADMIN_TABS)[number];
-
-/** Search validator of /admin/medschools (hand-rolled like the other med schools routes: no zod in the entry). */
-export const parseAdminSearch = (search: Record<string, unknown>): { tab?: AdminTab } =>
-  ADMIN_TABS.includes(search.tab as AdminTab) ? { tab: search.tab as AdminTab } : {};
+export { ADMIN_TABS, parseAdminSearch, type AdminTab } from '../engine/admin-search';
 
 /**
  * /admin/medschools: two jobs on one page, as /admin/library has two (`?tab=`). Aliases map the names a source used that

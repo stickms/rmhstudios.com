@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AdminMedSchoolsPage, parseAdminSearch } from '@features/medschools/ui/AdminMedSchoolsPage';
+import { AdminMedSchoolsPage } from '@features/medschools/ui/AdminMedSchoolsPage';
+import { parseAdminSearch } from '@features/medschools/engine/admin-search';
 
 export const Route = createFileRoute('/_site/admin/medschools')({
   head: () => ({
