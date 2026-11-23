@@ -34,7 +34,13 @@ import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { timedAiFetch } from './timed-fetch.server';
 import type { VibeLedgerTask } from './vibe-tasks';
-import { DEEPSEEK_FLASH, DEEPSEEK_PRO_MODEL, DEEPSEEK_REASONING, deepseekThinking } from './deepseek-models';
+import {
+  DEEPSEEK_FLASH,
+  DEEPSEEK_PRO_MODEL,
+  DEEPSEEK_REASONING,
+  deepseekThinking,
+  type DeepseekProfile,
+} from './deepseek-models';
 import type { MeteredFeature } from './metered-fetch.server';
 
 /* -------------------------------------------------------------------------- */
@@ -287,6 +293,12 @@ export interface RunOptions {
   thinking?: boolean;
   /** Per-request HTTP timeout override; a thinking call outlives the client's 45 s. */
   timeoutMs?: number;
+  /**
+   * Pin the DeepSeek model and thinking switch for this call (primary and fallback alike), whatever the task's route
+   * says, and over `thinking`. For a caller whose cost must not move when a route is retuned: RMH News summaries
+   * run on a public, signed-out endpoint and pin `DEEPSEEK_FLASH` (thinking off).
+   */
+  profile?: DeepseekProfile;
 }
 
 /**
@@ -383,6 +395,11 @@ export function estimateTokens(chars: number): number {
 /* Run                                                                        */
 /* -------------------------------------------------------------------------- */
 
+/** The profile a call is pinned to: `opts.profile`, else the reasoning profile for `thinking`, else none (the route's). */
+function callProfile(opts: RunOptions): DeepseekProfile | null {
+  return opts.profile ?? (opts.thinking ? DEEPSEEK_REASONING : null);
+}
+
 async function invoke(
   route: Omit<Route, 'fallback'>,
   task: AiTask,
@@ -390,7 +407,10 @@ async function invoke(
   user: string,
   opts: RunOptions,
 ): Promise<string> {
-  const model = opts.thinking ? DEEPSEEK_REASONING.model : route.model;
+  // A pinned profile wins; otherwise `thinking` picks the reasoning model; otherwise the route's thinking-off model.
+  const profile = callProfile(opts);
+  const model = profile?.model ?? route.model;
+  const thinkingOn = (profile ?? DEEPSEEK_FLASH).thinking.type === 'enabled';
   const res = await client().chat.completions.create({
     model,
     messages: [
@@ -398,8 +418,8 @@ async function invoke(
       { role: 'user', content: user },
     ],
     max_tokens: opts.maxTokens ?? route.maxTokens,
-    ...(opts.thinking ? {} : { temperature: opts.temperature ?? route.temperature }),
-    ...deepseekThinking(opts.thinking ? DEEPSEEK_REASONING : DEEPSEEK_FLASH),
+    ...(thinkingOn ? {} : { temperature: opts.temperature ?? route.temperature }),
+    ...deepseekThinking(profile ?? DEEPSEEK_FLASH),
     stream: false,
     ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
   }, {
@@ -446,7 +466,7 @@ export async function runTask(
       void meter({
         userId: opts.userId,
         task,
-        model: route.model,
+        model: callProfile(opts)?.model ?? route.model,
         promptId: opts.promptId,
         promptVer: opts.promptVer,
         inTokens: 0,
@@ -463,7 +483,7 @@ export async function runTask(
       void meter({
         userId: opts.userId,
         task,
-        model: route.fallback.model,
+        model: callProfile(opts)?.model ?? route.fallback.model,
         promptId: opts.promptId,
         promptVer: opts.promptVer,
         inTokens: 0,

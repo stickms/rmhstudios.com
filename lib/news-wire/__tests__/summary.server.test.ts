@@ -23,6 +23,7 @@ vi.mock('@/lib/ai/provider.server', () => ({
 vi.mock('../fetch.server', () => ({ fetchArticlePage: page.fetchArticlePage }));
 
 import { getOrCreateSummary } from '../summary.server';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 
 const NOW = new Date('2026-11-23T12:00:00Z');
 const STORY = `<html><head><meta property="og:image" content="https://img.example.com/a.jpg"></head><body><article>${'<p>The council voted on Monday to approve the new transit plan after a long public debate over costs.</p>'.repeat(8)}</article></body></html>`;
@@ -89,6 +90,9 @@ describe('getOrCreateSummary', () => {
     expect(ai.runTaskJson).toHaveBeenCalledTimes(1);
     expect(ai.runTaskJson.mock.calls[0]?.[2]).toContain('<user-content>');
     expect(ai.runTaskJson.mock.calls[0]?.[2]).toContain('approve the new transit plan');
+    // Pinned to DeepSeek Flash with thinking off, never whatever the shared route says.
+    expect(ai.runTaskJson.mock.calls[0]?.[4]).toMatchObject({ profile: DEEPSEEK_FLASH });
+    expect(DEEPSEEK_FLASH.thinking.type).toBe('disabled');
     expect(db.updateMany).toHaveBeenCalledWith({
       where: { id: 'n1', OR: [{ summary: null }, { summary: '' }] },
       data: expect.objectContaining({ image: 'https://img.example.com/a.jpg', summarizedAt: NOW }),
