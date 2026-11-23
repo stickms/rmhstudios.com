@@ -25,5 +25,6 @@ export function medschoolsErasureOps(userId: string) {
     // (no question text is in them). Where this member decided others' requests as an admin, the reference is nulled.
     prisma.medQaLimitRequest.deleteMany({ where: { userId } }),
     prisma.medQaLimitRequest.updateMany({ where: { decidedBy: userId }, data: { decidedBy: null } }),
+    prisma.medQaLimitRequest.updateMany({ where: { revokedBy: userId }, data: { revokedBy: null } }),
   ];
 }

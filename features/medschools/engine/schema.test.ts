@@ -401,6 +401,9 @@ model MedTrackerApplication {
         'decidedBy',
         'id',
         'note',
+        'revokeNote',
+        'revokedAt',
+        'revokedBy',
         'status',
         'userId',
       ]);

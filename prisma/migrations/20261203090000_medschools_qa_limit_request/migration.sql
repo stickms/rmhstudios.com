@@ -11,6 +11,9 @@ CREATE TABLE "med_qa_limit_request" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "decidedAt" TIMESTAMP(3),
     "decidedBy" TEXT,
+    "revokedAt" TIMESTAMP(3),
+    "revokedBy" TEXT,
+    "revokeNote" VARCHAR(500) NOT NULL DEFAULT '',
 
     CONSTRAINT "med_qa_limit_request_pkey" PRIMARY KEY ("id")
 );

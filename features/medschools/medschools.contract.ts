@@ -571,12 +571,15 @@ export interface MedQaLimitRequestRowDto {
   adminNote: string;
   createdAt: string;
   decidedAt: string | null;
+  /** Set when an approval was revoked; the approval's own `decidedAt` and `adminNote` stay as they were. */
+  revokedAt: string | null;
+  revokeNote: string;
   user: { id: string; handle: string | null; name: string | null };
 }
 
-/** Admin: every pending request (oldest first) and the 50 most recently decided. */
+/** Admin: every pending request (oldest first), every approval in force, and the 50 most recent declines and revokes. */
 export const listMedQaLimitRequestsApi = endpoint<{
-  res: { pending: MedQaLimitRequestRowDto[]; recent: MedQaLimitRequestRowDto[] };
+  res: { pending: MedQaLimitRequestRowDto[]; active: MedQaLimitRequestRowDto[]; recent: MedQaLimitRequestRowDto[] };
 }>()({
   method: 'GET',
   path: '/api/admin/medschools/qa-limit-requests',

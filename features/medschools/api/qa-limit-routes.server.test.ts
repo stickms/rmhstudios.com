@@ -41,7 +41,7 @@ beforeEach(() => {
   mocks.session.mockResolvedValue({ user: { id: 'u1', isAdmin: false } });
   mocks.state.mockResolvedValue(STATE);
   mocks.submit.mockResolvedValue({ ...STATE, state: 'pending' });
-  mocks.list.mockResolvedValue({ pending: [], recent: [] });
+  mocks.list.mockResolvedValue({ pending: [], active: [], recent: [] });
   mocks.decide.mockResolvedValue(undefined);
 });
 
@@ -96,7 +96,7 @@ describe('admin/medschools/qa-limit-requests', () => {
   });
   it('lets an admin list and decide, validating the action and the note', async () => {
     mocks.session.mockResolvedValue({ user: { id: 'a1', isAdmin: true } });
-    expect(await (await call(adminRoute, 'GET')).json()).toEqual({ pending: [], recent: [] });
+    expect(await (await call(adminRoute, 'GET')).json()).toEqual({ pending: [], active: [], recent: [] });
     expect((await call(adminRoute, 'POST', { id: 'r1', action: 'delete' })).status).toBe(400);
     expect((await call(adminRoute, 'POST', { id: 'r1', action: 'decline', adminNote: 'x'.repeat(501) })).status).toBe(400);
     const res = await call(adminRoute, 'POST', { id: 'r1', action: 'decline', adminNote: 'later' });

@@ -612,6 +612,12 @@ model MedQaLimitRequest {
   decidedAt DateTime?
   /// The deciding admin's user id, nulled when that admin's account is erased.
   decidedBy String?
+  /// A revoke leaves the approval above intact and is recorded here; the 30-day wait starts from `revokedAt`.
+  revokedAt  DateTime?
+  /// The revoking admin's user id, nulled when that admin's account is erased.
+  revokedBy  String?
+  /// The revoking admin's optional reply, shown to the applicant.
+  revokeNote String    @default("") @db.VarChar(500)
 
   user User @relation("UserMedQaLimitRequests", fields: [userId], references: [id], onDelete: Cascade)
 

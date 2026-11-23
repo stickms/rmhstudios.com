@@ -217,9 +217,13 @@ application". Sign-in returns to `/rmh-medschool/<slug>#ask` from a school page 
 
 **R19. Limit tiers, an admin bypass and limit requests (owner, 2026-11-23).** Supersedes R9 and R10 where they speak of
 one cap. *Admins bypass every per-user limit:* no daily cap, no per-minute rate limit (`rateLimitExemptAdmin` on the
-handler: the wrapper skips the limiter only for a session whose `isAdmin` is true), no in-flight lease, and not the
-member's own monthly allowance (`assertAiBudget`). Admins still go through the shared monthly Q&A pause (R11, R18), so
-the scrape budget stays protected. An admin's reservation writes no ledger row; `GET me/ask` returns
+handler: the wrapper skips the limiter only for a session whose `isAdmin` is true), no one-at-a-time lease, and not the
+member's own monthly per-member AI allowance (`assertAiBudget`: "admins bypass limits" covers that too). Admins still
+go through the shared monthly Q&A pause (R11, R18), so the scrape budget stays protected, and through a concurrency
+ceiling: at most 3 questions in flight per admin (`QA_ADMIN_MAX_IN_FLIGHT`), counted across processes under an advisory
+lock keyed on the admin, as the member lease is (429 `MEDSCHOOLS_QA_BUSY` over it; leases are `medschools-qa-admin-lock`
+rows, deleted when the question ends or after 60 s), so parallel admin questions cannot all pass the shared pause before
+any spend is metered. An admin's reservation writes no daily-count row, only that lease; `GET me/ask` returns
 `{ tier: 'admin', dailyCap: null, remainingToday: null }` and the page says "Admin: no daily limit". *Tiers, by daily
 cap:* free 25 (`MEDSCHOOLS_QA_DAILY_CAP`, default changed from 15), approved 40 (`MEDSCHOOLS_QA_DAILY_CAP_APPROVED`),
 member 100 (`MEDSCHOOLS_QA_DAILY_CAP_MEMBER`); each read like the first (blank is the default, anything but a
@@ -236,11 +240,17 @@ compare-and-set on the status, so two admins leave one decision; approve, declin
 (`medschools.qa-limit.*`) and carry an optional note (500 characters) the member sees. Member endpoint `GET/POST
 /api/medschools/me/qa-limit-request` (signed in, `write` limit, never cached); admin endpoint `GET/POST
 /api/admin/medschools/qa-limit-requests` (`auth: 'admin'`), shown as the "Q&A limits" tab of `/admin/medschools`, beside
-Aliases, as `/admin/library` has its upload-appeals tab. Requests are erased with the account (`medschoolsErasureOps`;
-an admin who decided others' requests has `decidedBy` nulled) and hold no question text. *Deviations from the brief,
+Aliases, as `/admin/library` has its upload-appeals tab. A revoke does not overwrite the approval:
+`revokedAt`, `revokedBy` and `revokeNote` are recorded beside it, `decidedAt`, `decidedBy` and `adminNote` stay as the
+approval left them, and the 30-day wait starts from `revokedAt`; the status becomes `REVOKED`, so the partial unique
+index on `APPROVED` stops counting the row. The admin list is `{ pending, active, recent }`: every approval in force is
+always listed (so none can become unrevokable), plus the 50 most recent declines and revokes. Requests are erased with
+the account (`medschoolsErasureOps`; an admin who decided or revoked others' requests has `decidedBy` and `revokedBy`
+nulled) and hold no question text. *Deviations from the brief,
 chosen on purpose:* a fourth status `REVOKED` (the brief names three but a revoke needs to be distinguishable from a
-decline, and it starts the same 30-day wait); no applicant notification, because the library flow this mirrors sends
-none (the Ask page shows the state and the admin's note instead); the schema test that forbade any `MedQa*` model now
+decline, and it starts the same 30-day wait); the Ask page shows the state and the admin's note, and (owner's rule: a decision notifies the applicant) every approve,
+decline and revoke also sends an in-app `SYSTEM` notice (`medschools-qa-limit-*`, with the note when there is one, link
+`/rmh-medschool/ask`), best-effort so a failed notice never undoes the decision; the schema test that forbade any `MedQa*` model now
 names `MedQaLimitRequest` and its exact columns.
 
 ## Review Focus

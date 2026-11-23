@@ -37,7 +37,8 @@ interface LimitState {
 }
 interface AdminList {
   pending: { id: string; note: string; user: { id: string } }[];
-  recent: { id: string; status: string; adminNote: string; user: { id: string } }[];
+  active: { id: string; status: string; adminNote: string; user: { id: string } }[];
+  recent: { id: string; status: string; adminNote: string; revokeNote: string; user: { id: string } }[];
 }
 
 let admin: Member;
@@ -175,10 +176,13 @@ describe('limit tiers and requests: no model needed', () => {
 
   it('a revoke takes the member back to 25 and starts the 30-day wait', async () => {
     const list = (await admin.client.get<AdminList>(ADMIN_REQ)).body;
-    const granted = list.recent.find((r) => r.user.id === free.id && r.status === 'APPROVED');
+    const granted = list.active.find((r) => r.user.id === free.id && r.status === 'APPROVED');
     expect(granted).toBeDefined();
     expect((await decide(granted!.id, 'revoke', 'Misuse')).status).toBe(200);
     expect(await status(free)).toMatchObject({ tier: 'free', dailyCap: 25 });
+    const after = (await admin.client.get<AdminList>(ADMIN_REQ)).body;
+    expect(after.active.find((r) => r.id === granted!.id)).toBeUndefined();
+    expect(after.recent.find((r) => r.id === granted!.id)).toMatchObject({ status: 'REVOKED', revokeNote: 'Misuse' });
     const s = await state(free);
     expect(s.state).toBe('declined');
     expect(Date.parse(s.reapplyOn!) - Date.now()).toBeGreaterThan(29 * DAY);
@@ -240,11 +244,20 @@ describe.skipIf(!PORT)('limit tiers with the fake provider', () => {
     await removeMedSchoolsFixture();
   });
 
-  it('an admin passes the daily cap, the lease and the per-minute limit, and no reservation is written', async () => {
+  it('an admin passes the daily cap, the lease and the per-minute limit, one after another, and no reservation is written', async () => {
     await insertRows(admin.id, 200); // far past every cap
+    const serial: number[] = [];
+    for (let i = 0; i < 12; i++) serial.push((await ask(admin)).status);
+    expect(serial).toEqual(Array(12).fill(200));
+    // Parallel is bounded: at most 3 in flight, so a burst of 30 is some 200s and the rest the busy refusal, never a 5xx.
     const burst = await Promise.all(Array.from({ length: 30 }, () => ask(admin)));
-    expect(burst.map((r) => r.status)).toEqual(Array(30).fill(200));
-    expect(burst[0]!.body).toMatchObject({ tier: 'admin', dailyCap: null, remainingToday: null });
+    const ok = burst.filter((r) => r.status === 200);
+    expect(ok.length).toBeGreaterThanOrEqual(1);
+    expect(ok[0]!.body).toMatchObject({ tier: 'admin', dailyCap: null, remainingToday: null });
+    for (const r of burst.filter((x) => x.status !== 200)) {
+      expect(r.status).toBe(429);
+      expect(r.body.code).toBe('MEDSCHOOLS_QA_BUSY');
+    }
     // The 200 planted rows are all there is: the admin's questions reserved nothing.
     await new Promise((r) => setTimeout(r, 500));
     expect(await askRows(admin.id)).toBe(200);

@@ -22,8 +22,9 @@ type Action = 'approve' | 'decline' | 'revoke';
 
 /**
  * The Q&A limit queue of /admin/medschools (plan R19), the sibling of the library's upload appeals: pending requests,
- * oldest first, each with Approve and Decline and the optional note the member sees; below them the recent decisions,
- * where an approval can be revoked. Rows on rules, no boxes. An approval puts the member in the approved tier.
+ * oldest first, each with Approve and Decline and the optional note the member sees; then every approval still in force, each
+ * revocable however old it is; then the recent declines and revokes. Rows on rules, no boxes. No ink primary (R4): the
+ * row actions are all the same weight, and the page has no single action that outranks the rest. An approval puts the member in the approved tier.
  */
 export function QaLimitRequestsPanel() {
   const { t } = useTranslation('medschools');
@@ -91,7 +92,7 @@ export function QaLimitRequestsPanel() {
   }
 
   const who = (r: MedQaLimitRequestRowDto) => (r.user.handle ? `@${r.user.handle}` : (r.user.name ?? r.user.id));
-  const { pending, recent } = query.data;
+  const { pending, active, recent } = query.data;
   const busy = decide.isPending;
 
   return (
@@ -117,10 +118,40 @@ export function QaLimitRequestsPanel() {
                   <Button size="sm" disabled={busy} onClick={() => void act(r, 'decline')}>
                     <X aria-hidden /> {t('limits-decline', { defaultValue: 'Decline' })}
                   </Button>
-                  <Button size="sm" variant="primary" disabled={busy} onClick={() => void act(r, 'approve')}>
+                  <Button size="sm" disabled={busy} onClick={() => void act(r, 'approve')}>
                     <Check aria-hidden /> {t('limits-approve', { defaultValue: 'Approve' })}
                   </Button>
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section aria-labelledby="qa-limits-active" className="flex flex-col gap-2">
+        <h2 id="qa-limits-active" className="t-heading m-0">
+          {t('limits-active-heading', { defaultValue: 'Active approvals' })}
+        </h2>
+        {active.length === 0 ? (
+          <p className="t-body m-0 text-site-text-muted">
+            {t('limits-active-none', { defaultValue: 'No approvals in force.' })}
+          </p>
+        ) : (
+          <ul className="m-0 list-none border-t border-site-border p-0">
+            {active.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-start justify-between gap-3 border-b border-site-border py-3">
+                <div className="min-w-0">
+                  <p className="t-body m-0 break-words">{who(r)}</p>
+                  {r.note ? <p className="t-meta m-0 mt-1 whitespace-pre-wrap break-words">{r.note}</p> : null}
+                  {r.adminNote ? (
+                    <p className="t-meta m-0 mt-1 whitespace-pre-wrap break-words">
+                      {t('limits-your-note', { defaultValue: 'Note: {{note}}', note: r.adminNote })}
+                    </p>
+                  ) : null}
+                  <p className="t-meta m-0 mt-1">{r.decidedAt ? fmt.relative(new Date(r.decidedAt)) : ''}</p>
+                </div>
+                <Button size="sm" disabled={busy} onClick={() => void act(r, 'revoke')}>
+                  {t('limits-revoke', { defaultValue: 'Revoke' })}
+                </Button>
               </li>
             ))}
           </ul>
@@ -140,25 +171,25 @@ export function QaLimitRequestsPanel() {
                   <p className="t-body m-0 break-words">
                     {who(r)}
                     {' · '}
-                    {r.status === 'APPROVED'
-                      ? t('limits-status-approved', { defaultValue: 'Approved' })
-                      : r.status === 'DECLINED'
-                        ? t('limits-status-declined', { defaultValue: 'Declined' })
-                        : t('limits-status-revoked', { defaultValue: 'Revoked' })}
+                    {r.status === 'DECLINED'
+                      ? t('limits-status-declined', { defaultValue: 'Declined' })
+                      : t('limits-status-revoked', { defaultValue: 'Revoked' })}
                   </p>
                   {r.note ? <p className="t-meta m-0 mt-1 whitespace-pre-wrap break-words">{r.note}</p> : null}
-                  {r.adminNote ? (
+                  {(r.status === 'REVOKED' ? r.revokeNote : r.adminNote) ? (
                     <p className="t-meta m-0 mt-1 whitespace-pre-wrap break-words">
-                      {t('limits-your-note', { defaultValue: 'Note: {{note}}', note: r.adminNote })}
+                      {t('limits-your-note', {
+                        defaultValue: 'Note: {{note}}',
+                        note: r.status === 'REVOKED' ? r.revokeNote : r.adminNote,
+                      })}
                     </p>
                   ) : null}
-                  <p className="t-meta m-0 mt-1">{r.decidedAt ? fmt.relative(new Date(r.decidedAt)) : ''}</p>
+                  <p className="t-meta m-0 mt-1">
+                    {(r.status === 'REVOKED' ? r.revokedAt : r.decidedAt)
+                      ? fmt.relative(new Date((r.status === 'REVOKED' ? r.revokedAt : r.decidedAt) as string))
+                      : ''}
+                  </p>
                 </div>
-                {r.status === 'APPROVED' ? (
-                  <Button size="sm" disabled={busy} onClick={() => void act(r, 'revoke')}>
-                    {t('limits-revoke', { defaultValue: 'Revoke' })}
-                  </Button>
-                ) : null}
               </li>
             ))}
           </ul>

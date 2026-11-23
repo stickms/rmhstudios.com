@@ -327,7 +327,7 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   is an `APPROVED` `MedQaLimitRequest` row, else **free**. Caps: free 25 `MEDSCHOOLS_QA_DAILY_CAP`, approved 40
   `..._APPROVED`, member 100 `..._MEMBER` (invalid closes that tier). An admin skips the daily cap, the one-in-flight
   lease, the 6 per minute rate limit (`rateLimitExemptAdmin: true` on the ask `POST`) and the member's own monthly
-  allowance, and writes no reservation row; the shared monthly pause (R11) still applies. `GET me/ask` returns
+  allowance, and writes no daily-count row; the shared monthly pause (R11) still applies, and so does a ceiling of 3 questions in flight per admin (`QA_ADMIN_MAX_IN_FLIGHT`, `medschools-qa-admin-lock` leases under an advisory lock keyed on the admin; 429 `MEDSCHOOLS_QA_BUSY`). A decision (approve, decline, revoke) sends the applicant a notice; a revoke is recorded in `revokedAt/By/Note` and leaves the approval fields alone; the admin list always includes every `APPROVED` row as `active`. `GET me/ask` returns
   `{ tier, remainingToday, dailyCap }`, null and null for an admin ("Admin: no daily limit"). Limit requests
   (`MedQaLimitRequest`, `api/qa-limit.server.ts`, outside `api/qa/` so the privacy pins on that folder stay literal): one
   PENDING and one APPROVED per member (partial unique indexes in the migration), reason at most 500 characters, a decline
@@ -448,7 +448,7 @@ a 403.
   the read rules above).
 - **Account deletion (D9, Q3).** `eraseSharedMedEvents` runs at the deletion request and again before the erasure
   transaction (idempotent; a missing secret with events present fails loudly and leaves the account scheduled);
-  `medschoolsErasureOps` deletes the three user-keyed models, children by cascade. `pnpm docs:deletion` lists them.
+  `medschoolsErasureOps` deletes the four user-keyed models (`MedTrackerCycle`, `MedSchoolList`, `MedUserPrefs`, `MedQaLimitRequest`), children by cascade, and nulls `decidedBy` and `revokedBy` on the limit requests the member decided or revoked as an admin. `pnpm docs:deletion` lists them.
 - **Preferences (D13, D14).** They apply only where the URL is silent, decided in the route loader; `?program=ALL` is an
   explicit choice and beats a stored `PHD`. A page whose defaults came from preferences says so in one line.
 - **Rotating `MEDSCHOOLS_DEDUPE_SECRET` orphans every shared event** (the hashes are keyed by the old secret). Do it
