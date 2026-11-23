@@ -31,9 +31,12 @@ export const QA_DEADLINE_MS = 50_000;
  * gets whatever the route call and retrieval left. The client's per-call timeout for that endpoint stays above it
  * (`QA_THINK_CLIENT_TIMEOUT_MS`).
  */
-export const QA_THINK_DEADLINE_MS = 120_000;
-/** The client's timeout for a thinking question: above `QA_THINK_DEADLINE_MS`, so the server's refusal arrives first. */
-export const QA_THINK_CLIENT_TIMEOUT_MS = 135_000;
+export const QA_THINK_DEADLINE_MS = 90_000;
+/**
+ * The client's timeout for a thinking question: above `QA_THINK_DEADLINE_MS`, so the server's refusal arrives first, and
+ * under Cloudflare's 100 s cut of a proxied request (a 524), which is also why the deadline is 90 s and not more.
+ */
+export const QA_THINK_CLIENT_TIMEOUT_MS = 97_000;
 /** How far past the longest deadline the in-flight lease runs, for a clock or a pause the deadline did not see. */
 export const QA_LEASE_MARGIN_MS = 30_000;
 /**

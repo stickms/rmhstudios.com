@@ -230,7 +230,7 @@ describe('Think it through (R20)', () => {
     expect(form({})).not.toContain('Think it through');
     const html = form({ thinkingAvailable: true, think: true });
     expect(html).toContain('Think it through');
-    expect(html).toContain('Slower, more careful answer. Can take up to two minutes.');
+    expect(html).toContain('Slower, more careful answer. Can take up to a minute and a half.');
     expect(html).toContain('role="switch"');
     expect(html).toContain('aria-checked="true"');
   });

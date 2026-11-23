@@ -8,7 +8,7 @@ import { IDLE, createAskRun, type AskQuestion, type AskSnapshot, type AskState }
 
 /**
  * The Ask panel's one question at a time. A model call is slower than the client's default timeout, so it takes the
- * AI ceiling; a thinking question (plan R20) runs up to two minutes on the server, so its call alone takes a longer
+ * AI ceiling; a thinking question (plan R20) runs up to 90 s on the server, so its call alone takes a longer
  * timeout, above the server's deadline (`QA_THINK_CLIENT_TIMEOUT_MS`), and the global ceiling stays as it was. The status query (the questions left today) is refetched after every question, answered or refused,
  * because the day's count moves on the server whichever way it ended.
  */

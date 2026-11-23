@@ -27,7 +27,7 @@ describe('aiRunner thinking (R20)', () => {
     await aiRunner.answer('s', 'u', 'u1', undefined, { think: true });
     const [task, , , o] = runTask.mock.calls[2]!;
     expect(task).toBe('medschools-qa');
-    expect(o).toMatchObject({ thinking: true, json: true, maxRetries: 0, timeoutMs: 120_000 });
+    expect(o).toMatchObject({ thinking: true, json: true, maxRetries: 0, timeoutMs: 90_000 });
     expect((o as { maxTokens: number }).maxTokens).toBeGreaterThan(900);
   });
   it('parses the thinking answer as the same segments JSON', async () => {

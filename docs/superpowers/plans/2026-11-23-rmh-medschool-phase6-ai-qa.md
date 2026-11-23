@@ -260,17 +260,17 @@ temperature, JSON mode kept, `max_tokens` 8,000 because thinking tokens count in
 task label stays `medschools-qa`, so spend is metered and counted against the same Q&A share and the member's allowance.
 The grounding validator is untouched. *The reasoning text is never shown, stored or logged:* the provider reads only
 `message.content` (`reasoning_content` is dropped there), the response carries `thinking: boolean`, and the page shows
-"Thought for N s". *Deadlines:* with think on, the question's deadline is 120 s (`QA_THINK_DEADLINE_MS`; the answer call
-runs on the shared signal, so it gets what the route call and retrieval left, with a 120 s request timeout); the client's
-timeout for that call alone is 135 s (`QA_THINK_CLIENT_TIMEOUT_MS`, per-call `timeoutMs`; `AI_TIMEOUT_MS` is unchanged);
-`QA_LEASE_MS` becomes 150 s (think deadline + 30 s margin) for the member and the admin lease, so a live thinking question
+"Thought for N s". *Deadlines:* with think on, the question's deadline is 90 s (`QA_THINK_DEADLINE_MS`; the answer call
+runs on the shared signal, so it gets what the route call and retrieval left, with a 90 s request timeout); the client's
+timeout for that call alone is 97 s (`QA_THINK_CLIENT_TIMEOUT_MS`, per-call `timeoutMs`; `AI_TIMEOUT_MS` is unchanged);
+`QA_LEASE_MS` becomes 120 s (think deadline + 30 s margin) for the member and the admin lease, so a live thinking question
 is never counted as gone; `request.signal` still aborts. *Cost and limits:* a thinking question is 1 against the daily
 cap; its larger spend comes out of the member's allowance and the Q&A share as metered. `MEDSCHOOLS_QA_THINKING` (`on`
 default; `off` or invalid hides the switch and the server ignores `think`); `GET me/ask` returns `thinkingAvailable`.
-*UI:* a "Think it through" switch (`components/ui/switch`) with "Slower, more careful answer. Can take up to two minutes.",
+*UI:* a "Think it through" switch (`components/ui/switch`) with "Slower, more careful answer. Can take up to a minute and a half.",
 remembered per device in localStorage; the wait says "Thinking… N s"; `t-meta` "Thought for N s" under the answer.
-*Known risk:* a request behind Cloudflare is cut at 100 s (524) while the deadline is 120 s; a question that thinks past
-100 s on the production path reaches the member as a failed request (the lease and the work still end by themselves).
+*Cloudflare:* a proxied request is cut at 100 s (524), so the think deadline is 90 s and the client's 97 s (facilitator,
+2026-11-23, after the first cut said 120 s): a long think ends in the app's own `AI_UNAVAILABLE`, never a 524.
 
 ## Review Focus
 

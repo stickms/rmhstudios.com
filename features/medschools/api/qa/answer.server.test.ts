@@ -502,7 +502,7 @@ describe('thinking (R20)', () => {
   it('uses the long deadline only when thinking', async () => {
     const spy = vi.spyOn(AbortSignal, 'timeout');
     await askThink(fakeRunner(route(), goodAnswer).runner, true);
-    expect(spy).toHaveBeenLastCalledWith(120_000);
+    expect(spy).toHaveBeenLastCalledWith(90_000);
     await askThink(fakeRunner(route(), goodAnswer).runner, false);
     expect(spy).toHaveBeenLastCalledWith(50_000);
     vi.stubEnv('MEDSCHOOLS_QA_THINKING', 'off');

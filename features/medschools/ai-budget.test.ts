@@ -116,7 +116,7 @@ describe('thinking (R20)', () => {
     expect(qaDeadlineMs(false)).toBe(QA_DEADLINE_MS);
     expect(qaDeadlineMs(true)).toBe(QA_THINK_DEADLINE_MS);
     expect(QA_DEADLINE_MS).toBeLessThan(60_000);
-    expect(QA_THINK_DEADLINE_MS).toBe(120_000);
+    expect(QA_THINK_DEADLINE_MS).toBe(90_000);
     expect(QA_THINK_CLIENT_TIMEOUT_MS).toBeGreaterThan(QA_THINK_DEADLINE_MS);
     expect(QA_LEASE_MS).toBeGreaterThanOrEqual(QA_THINK_DEADLINE_MS + 30_000);
   });

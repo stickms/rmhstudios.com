@@ -115,7 +115,7 @@ export function AskForm({
               {t('ask-think-label', { defaultValue: 'Think it through' })}
             </span>
             <span id={`${id}-think-help`} className="t-meta">
-              {t('ask-think-help', { defaultValue: 'Slower, more careful answer. Can take up to two minutes.' })}
+              {t('ask-think-help-90s', { defaultValue: 'Slower, more careful answer. Can take up to a minute and a half.' })}
             </span>
           </div>
         </div>
