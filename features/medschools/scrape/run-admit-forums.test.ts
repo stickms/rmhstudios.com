@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { admitForumCursorHash, admitForumPostKey, admitMemberKey } from './adapters/admit/member-key';
-import { runAdmitForums, type AdmitForumsDeps } from './run-admit-forums';
+import { forumYearsFor, runAdmitForums, type AdmitForumsDeps } from './run-admit-forums';
 import { ADMIT_GRAPHQL_PATH } from './sources';
 import { assertNoLeak, createFakeHost, createFakePrisma } from './test-support';
 import type { SdnAi } from './sdn/extract';
@@ -153,6 +153,39 @@ function setup(w: ReturnType<typeof world>, deps: Partial<AdmitForumsDeps> = {})
 }
 
 const HARVARD = 'harvard-medical-school';
+
+describe('forumYearsFor: which forum years a run reads', () => {
+  const at = (iso: string) => forumYearsFor(new Date(`${iso}T00:00:00.000Z`));
+  it('reads one year until June 1, then the previous cycle too until decisions roll over on September 1', () => {
+    expect(at('2027-05-31')).toEqual([2026]);
+    expect(at('2027-06-01')).toEqual([2027, 2026]);
+    expect(at('2027-08-31')).toEqual([2027, 2026]);
+    expect(at('2027-09-01')).toEqual([2027]);
+    expect(at('2026-11-23')).toEqual([2026]);
+    expect(at('2028-01-01')).toEqual([2027]);
+  });
+});
+
+describe('runAdmitForums: summer overlap of two cycles', () => {
+  it('lists and tracks the previous cycle thread as well as the new one between June 1 and August 31', async () => {
+    const w = world({ [HARVARD]: [post('hello everyone', 'one')] });
+    const s = setup(w);
+    s.clock.t = new Date('2027-07-15T12:00:00.000Z');
+    const r = await s.run();
+    expect(r.forumYear).toBe(2027);
+    expect(r.threadsListed).toBe(2);
+    const cycles = (s.tables.medAdmitForumThread! as Array<{ cycleYear: number }>).map((t) => t.cycleYear).sort();
+    expect(cycles).toEqual([2027, 2028]);
+  });
+
+  it('reads only the current cycle in the autumn', async () => {
+    const w = world({ [HARVARD]: [post('hello everyone', 'one')] });
+    const s = setup(w);
+    const r = await s.run();
+    expect(r.threadsListed).toBe(1);
+    expect((s.tables.medAdmitForumThread! as unknown[]).length).toBe(1);
+  });
+});
 
 describe('runAdmitForums: reading only what is new', () => {
   it('first run reads from the start, writes member-keyed events, a hashed cursor, and rolls the days up', async () => {

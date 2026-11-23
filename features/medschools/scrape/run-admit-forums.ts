@@ -106,6 +106,17 @@ const ANCHOR_STEP_BACKS = 2;
 
 const isoDay = (d: Date): string => d.toISOString().slice(0, 10);
 
+/**
+ * Forum years (Admit names a thread by its start year) this run reads, current first. The current one is the entry year
+ * of the cycle by the secondary rule (June 1) minus one. The previous cycle's threads are still read until the latest
+ * rollover of the event types, decisions on September 1, so from June 1 through August 31 both are listed: summer
+ * decisions and waitlist movement belong to the class that ends that August. Both share the run's one request cap.
+ */
+export function forumYearsFor(at: Date): number[] {
+  const current = cycleYearOf(at, 'SECONDARY') - 1;
+  return cycleYearOf(at, 'ACCEPTANCE') <= current ? [current, current - 1] : [current];
+}
+
 type ThreadOutcome =
   'caught-up' | 'paused-budget' | 'paused-cap' | 'paused-requests' | 'ai-unavailable' | 'failed' | 'stopped' | 'halted';
 
@@ -132,8 +143,8 @@ export async function runAdmitForums(
   const maxRequests = deps.maxRequests ?? DEFAULT_MAX_REQUESTS;
   const maxLlmCalls = deps.maxLlmCalls ?? DEFAULT_MAX_LLM_CALLS;
   const t0 = now().getTime();
-  // Entry year of the current cycle by the secondary rule (June 1), minus one: Admit names a thread by its start year.
-  const forumYear = cycleYearOf(now(), 'SECONDARY') - 1;
+  const forumYears = forumYearsFor(now());
+  const forumYear = forumYears[0]!;
   const summary: AdmitForumsSummary = {
     runId: '',
     status: 'FAILED',
@@ -253,53 +264,58 @@ export async function runAdmitForums(
     const missed = new Set<string>();
 
     // 1. The summary: every school's thread and post count (about three requests), at any hour.
-    const listing = await client.listThreads(forumYear);
-    summary.threadsListed = listing.threads.length;
-    summary.malformed += listing.malformed;
-    if (listing.malformed > 0) incomplete = true;
-
-    const cycleYear = forumYear + 1;
-    const rows = await prisma.medAdmitForumThread.findMany({ where: { cycleYear } });
-    const bySchool = new Map<string, MedAdmitForumThreadRow>(rows.map((r) => [r.schoolId, r]));
-    for (const t of listing.threads) {
-      const schoolId = schoolBySlug.get(t.slug);
-      if (schoolId === undefined) {
-        if (!missed.has(t.slug)) {
-          missed.add(t.slug);
-          try {
-            if (await recordAliasMiss(prisma, 'ADMIT', t.slug, now)) summary.misses++;
-          } catch (e) {
-            summary.aliasMissErrors++;
-            log.warn(`admit-forums: alias miss write failed: ${brief(e)}`);
+    // Keyed by school and cycle: from June 1 to August 31 a school has two threads in play.
+    const rows = await prisma.medAdmitForumThread.findMany({
+      where: { cycleYear: { in: forumYears.map((y) => y + 1) } },
+    });
+    const bySchool = new Map<string, MedAdmitForumThreadRow>(rows.map((r) => [`${r.schoolId}:${r.cycleYear}`, r]));
+    for (const year of forumYears) {
+      const listing = await client.listThreads(year);
+      summary.threadsListed += listing.threads.length;
+      summary.malformed += listing.malformed;
+      if (listing.malformed > 0) incomplete = true;
+      const cycleYear = year + 1;
+      for (const t of listing.threads) {
+        const schoolId = schoolBySlug.get(t.slug);
+        if (schoolId === undefined) {
+          if (!missed.has(t.slug)) {
+            missed.add(t.slug);
+            try {
+              if (await recordAliasMiss(prisma, 'ADMIT', t.slug, now)) summary.misses++;
+            } catch (e) {
+              summary.aliasMissErrors++;
+              log.warn(`admit-forums: alias miss write failed: ${brief(e)}`);
+            }
           }
+          continue;
         }
-        continue;
-      }
-      if (!active.has(schoolId)) continue;
-      const prior = bySchool.get(schoolId);
-      if (!prior) {
-        if (t.commentCount === 0) continue;
-        const row = await prisma.medAdmitForumThread.create({
-          data: {
-            schoolId,
-            cycleYear,
-            remoteCount: t.commentCount,
-            cursorOffset: 0,
-            cursorPostHash: null,
-            postsProcessed: 0,
-            failCount: 0,
-          },
-        });
-        bySchool.set(schoolId, row);
-        summary.threadsNew++;
-        continue;
-      }
-      if (prior.remoteCount !== t.commentCount) {
-        const row = await prisma.medAdmitForumThread.update({
-          where: { id: prior.id },
-          data: { remoteCount: t.commentCount },
-        });
-        bySchool.set(schoolId, { ...prior, ...row, remoteCount: t.commentCount });
+        if (!active.has(schoolId)) continue;
+        const key = `${schoolId}:${cycleYear}`;
+        const prior = bySchool.get(key);
+        if (!prior) {
+          if (t.commentCount === 0) continue;
+          const row = await prisma.medAdmitForumThread.create({
+            data: {
+              schoolId,
+              cycleYear,
+              remoteCount: t.commentCount,
+              cursorOffset: 0,
+              cursorPostHash: null,
+              postsProcessed: 0,
+              failCount: 0,
+            },
+          });
+          bySchool.set(key, row);
+          summary.threadsNew++;
+          continue;
+        }
+        if (prior.remoteCount !== t.commentCount) {
+          const row = await prisma.medAdmitForumThread.update({
+            where: { id: prior.id },
+            data: { remoteCount: t.commentCount },
+          });
+          bySchool.set(key, { ...prior, ...row, remoteCount: t.commentCount });
+        }
       }
     }
 
@@ -349,7 +365,7 @@ export async function runAdmitForums(
           ai: deps.ai,
           budget,
           secret: deps.secret,
-          forumYear,
+          forumYear: thread.cycleYear - 1,
           maxLlmCalls,
           requestsLeft: () => maxRequests - made,
           shouldStop: deps.shouldStop,
