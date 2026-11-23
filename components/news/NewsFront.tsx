@@ -70,13 +70,7 @@ export function NewsFront({ data, search }: { data: NewsFrontData; search: NewsF
   });
 
   return (
-    <PageLayout
-      title={t('rmh-news-title', { defaultValue: 'RMH News' })}
-      description={t('rmh-news-description', {
-        defaultValue: 'Headlines from public news feeds, sorted by topic and updated every 20 minutes.',
-      })}
-      wide
-    >
+    <PageLayout title={t('rmh-news-title', { defaultValue: 'RMH News' })} wide>
       <PageTabs
         tabs={tabs}
         value={search.category ?? 'all'}
@@ -128,15 +122,16 @@ export function NewsFront({ data, search }: { data: NewsFrontData; search: NewsF
       {lead ? (
         // The lead and its four neighbours sit side by side only where the column is wide enough for both (a container
         // query: the shell's margin column takes the room a viewport breakpoint would assume); otherwise they stack.
+        // Stacked, a rule divides the lead from the rows under it (R3); side by side, the vertical rule does.
         <section aria-label={t('top-stories-label', { defaultValue: 'Top stories' })} className="@container">
           <div className="border-b border-site-border pb-6 @3xl:grid @3xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @3xl:gap-6">
-            <Link to="/news/$slug" params={{ slug: lead.slug }} className="group block space-y-3 pt-4">
+            <Link to="/news/$slug" params={{ slug: lead.slug }} className="group block space-y-3 pt-4 pb-6 @3xl:pb-0">
               <NewsPicture src={lead.image} className="aspect-[16/9] w-full" eager />
               <NewsMeta category={lead.category} publisher={lead.sourcePublisher} publishedAt={lead.publishedAt} />
               <h2 className="t-heading text-site-text group-hover:underline">{lead.title}</h2>
               {lead.description ? <p className="t-post text-site-text-muted">{lead.description}</p> : null}
             </Link>
-            <ul className="mt-2 @3xl:mt-0 @3xl:border-s @3xl:border-site-border @3xl:ps-6">
+            <ul className="border-t border-site-border @3xl:border-t-0 @3xl:border-s @3xl:ps-6">
               {beside.map((story) => (
                 <NewsStoryRow key={story.slug} story={story} compact />
               ))}
