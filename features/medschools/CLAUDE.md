@@ -65,13 +65,54 @@ row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts`
 
 ## Charts (`engine/chart-geometry.ts`, `ui/charts/`)
 
-React SVG, server-rendered, no animation, no fills (O2: approved for these pages only; Steel §18 D10 stays open for the
-rest of the site). Series are told apart by dash pattern and weight, never colour, with direct end labels placed by
-`spreadLabels`; only `--site-text`, `--site-text-muted` and `--site-border` are used. The first Activity chart is
-`CategoryLines` with `CategoryToggles` (O4: `?show=`, at least one stays on, `aria-pressed` buttons in a
-`role="group"`); then `DailyBars` for one chosen type, then a native `<details>` table as the text alternative. The
-chart is wrapped in `dir="ltr"` so the time axis stays left to right in `ar`. Each width gets its own viewBox (phone,
-mid, wide), all rendered, CSS shows one.
+React SVG, server-rendered (the charts are in the HTML with scripting off). **Owner O7 (2026-11-23)** supersedes O2's
+ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays open for the rest of the site.
+
+- **Colour (O7.1).** `--site-chart-1`..`-5` in `app/globals/tokens-themes.css` (Day and Night, exact values pinned in
+  `lib/__tests__/steel-tokens.test.ts`, which also holds that only this feature reads them). The slots are the first
+  five of the dataviz skill's reference palette, validated with its `validate_palette.js` against `--site-surface` (the
+  chart card) in each edition: adjacent CVD 9.1 Day / 8.4 Night, normal-vision 19.6 / 19.3; all five are at least 3:1 in
+  Night, and three (aqua, yellow, magenta) are 2.2-2.8:1 in Day, which the relief rule allows because every chart has a
+  legend, a dash cue and a data table. The mappings are fixed in `ui/charts/chartColors.ts` and never depend on rank or
+  on what is switched on: Interview 1 (blue), Rejection 2, Acceptance 3, Secondary 4, Waitlist 5; sources (per-type
+  charts) CycleTrack 1, Admit 2, SDN 3, RMH 4, MDApplicants 5; History cycles newest first 1..5. A component writes
+  `var(--site-chart-n)` through those maps, never a hex or a raw palette class. Dash and weight stay as the secondary
+  cue. Text is always `--site-text` / `--site-text-muted`, never a series colour. A bought theme does not restyle the
+  chart tokens (they follow the edition).
+- **Card and legend (O7.2).** `ChartFrame` is a card: `--site-surface`, 1px `--site-border`, `rounded-site`, `p-3`
+  (phone) / `sm:p-4`; caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per
+  series) is present for two or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as
+  `legend`: aria-pressed buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one
+  stays on). There are no end labels. The daily bars are one series, named by the title and the sources line.
+- **Tween (O7.3).** `tween.ts` (pure, injected scheduler) and `useTween.ts`: the y scale moves from the old to the new
+  top in 280 ms, ease-out (`easeOutCubic`), when a toggle, program or source changes it. Lines, bars and gridlines
+  follow the animated scale (`yTicksTween`: shared ticks stay, new ones fade in, old ones fade out); an interrupted
+  tween continues from where it is drawn. The server render and first client render return the target as is, one frame
+  is requested at a time and the last requests none (the `useTween.ts` entry in
+  `lib/__tests__/raf-loop-allowlist.test.ts`), and `prefers-reduced-motion: reduce` makes it instant, which is M7's rule
+  applied to this tween and nothing more. A clip keeps a mid-tween line inside the plot.
+- **Zero start (O7.4).** `withZeroStart` prepends a 0 at the cycle's first day (or the first report, if earlier) to
+  every cumulative series, History included.
+- **Probe (O7.5).** Hover, touch or focus on the plot (`ResponsivePlot` in `ChartFrame.tsx`): a crosshair at the nearest
+  stop (`nearestIndex`), a dot per series, and a tooltip with the date and each visible series' value and swatch on
+  `surface-overlay` (it flips and stays inside the card). The plot is a focusable `role="group"` named by the summary;
+  Left/Right (and Home, End, PageUp, PageDown, Escape) move the crosshair, and the tooltip is a `role="status"` while
+  the keys drive it. Touch scrubs horizontally (`touch-pan-y`) and a tap outside clears it.
+- **Dates (O7.6).** History aligns cycles by calendar: `calendarX` maps a date to days after June 1 on a reference
+  calendar (so Jun 1 of every cycle is x 0, equal month-days agree across leap years, earlier days are negative), the
+  axis prints "Jun 1", "Aug 15" (no year), and a series is named by its cycle ("2026\u20132027").
+  `HistoryCycleDto.dayZeroOn` carries each cycle's own day zero. There is no "days since cycle start" anywhere.
+- **Button groups (O7.7).** `OptionGroup` is a single-select `role="radiogroup"` of `role="radio"` buttons (roving
+  tabindex, arrows move and select and wrap, left and right swap in RTL, wraps on a phone, `Button` styles so 44px on
+  touch): Activity's category, History's category and source. It filters, it does not navigate, so it is not `Tabs`;
+  `design-consistency.test.ts` did not need to change for it. `ProgramToggles` is the school page's program control, a
+  multi-select pair for the school's own degree; the URL param stays `ALL | REG | PHD`. `ProgramSelect` and
+  `DegreeProgramSelect` remain for the index and live pages.
+
+The first Activity chart is `CategoryLines` with `CategoryToggles` (O4: `?show=`); then `DailyBars` for one chosen type
+(in that type's colour), `CumulativeLine` (per-source colours), then a native `<details>` table. Each chart is wrapped
+in `dir="ltr"` so the time axis stays left to right in `ar`. Each width gets its own viewBox (phone 252, mid 420, wide
+640 units: the phone one is sized so a 320 px phone shows it at about 1:1 inside the card), all rendered, CSS shows one.
 
 **d3 containment:** only `engine/chart-geometry.ts` imports `d3-scale` / `d3-shape`; only `ui/charts/*` imports that;
 only page components import `ui/charts`. Route files must not (`ui-rules.test.ts`), so d3, zod and the charts stay in

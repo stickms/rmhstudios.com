@@ -216,24 +216,34 @@ describe('SchoolPage', () => {
       cycles: [
         {
           cycleYear: 2026,
+          dayZeroOn: '2025-06-01',
           dayZeroEstimated: false,
           sources: [
             { source: 'CYCLETRACK', points: pts, total: 3 },
             { source: 'ADMIT', points: pts, total: 3 },
           ],
         },
-        { cycleYear: 2025, dayZeroEstimated: false, sources: [{ source: 'CYCLETRACK', points: pts, total: 3 }] },
+        {
+          cycleYear: 2025,
+          dayZeroOn: '2024-06-01',
+          dayZeroEstimated: false,
+          sources: [{ source: 'CYCLETRACK', points: pts, total: 3 }],
+        },
       ],
     };
     const html = render((qc) => {
       qc.setQueryData(schoolQuery('duke').queryKey, detail());
       qc.setQueryData(historyQuery('duke', { program: 'ALL', type: 'INTERVIEW' }).queryKey, hist);
     });
-    const row = html.slice(html.indexOf('flex flex-wrap items-center gap-2'));
-    const end = row.indexOf('Days since cycle start') > 0 ? row.indexOf('<figure') : row.length;
-    const head = row.slice(0, end);
-    for (const label of ['Program', 'Category', 'Source']) expect(head).toContain(`aria-label="${label}"`);
-    expect(html).toContain('Days since cycle start');
+    const row = html.slice(html.indexOf('flex flex-wrap gap-x-6 gap-y-3'));
+    const head = row.slice(0, row.indexOf('<figure'));
+    // The program toggles (a group), then the category and source single-select groups (O7).
+    expect(head).toContain('aria-label="Programs"');
+    for (const label of ['Category', 'Source']) expect(head).toContain(`role="radiogroup" aria-label="${label}"`);
+    expect(head).not.toContain('<select');
+    expect(html).not.toMatch(/days since/i);
+    expect(html).toContain('>Jun 1<');
+    expect(html).toContain('2025\u20132026');
   });
 
   it('Activity toggles are the first thing, a labelled group, and `show` limits the drawn categories', () => {
@@ -241,7 +251,10 @@ describe('SchoolPage', () => {
     const html = render(seedActivity(activity()));
     expect(html.indexOf('role="group"')).toBeGreaterThan(-1);
     expect(html.indexOf('role="group"')).toBeLessThan(html.indexOf('<svg'));
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(2);
+    const cats = html.slice(html.indexOf('aria-label="Show categories"'));
+    // The toggles are the legend: inside the chart card, above the drawing.
+    expect(html.indexOf('<figure')).toBeLessThan(html.indexOf('aria-label="Show categories"'));
+    expect(cats.slice(0, cats.indexOf('<svg viewBox')).match(/aria-pressed="true"/g)).toHaveLength(2);
   });
 
   it('Activity with only Admit data names Admit primary and never CycleTrack', () => {
@@ -296,14 +309,19 @@ describe('SchoolPage', () => {
     expect(html.match(/>9</g)).toBeNull();
   });
 
-  it('program select on a DO school offers All programs, DO and DO-PhD only', () => {
+  it('the program control on a DO school is two toggles, DO and DO-PhD, never MD (O5, O7)', () => {
     h.search = {};
     const html = render(seedActivity(activity(), detail({}, 'DO')));
-    expect(html).toContain('>All programs</option>');
-    expect(html).toContain('>DO</option>');
-    expect(html).toContain('>DO-PhD</option>');
-    expect(html).not.toContain('>MD</option>');
-    expect(html).not.toContain('>MD-PhD</option>');
+    const group = html.slice(
+      html.indexOf('aria-label="Programs"'),
+      html.indexOf('</div>', html.indexOf('aria-label="Programs"')),
+    );
+    expect(group.match(/<button/g)).toHaveLength(2);
+    expect(group).toContain('>DO</span>');
+    expect(group).toContain('>DO-PhD</span>');
+    expect(group).not.toContain('MD');
+    // The default program is All: both toggles are on.
+    expect(group.match(/aria-pressed="true"/g)).toHaveLength(2);
   });
 
   it('History draws one source: never a cross-source line', () => {
@@ -318,13 +336,19 @@ describe('SchoolPage', () => {
       cycles: [
         {
           cycleYear: 2026,
+          dayZeroOn: '2025-06-01',
           dayZeroEstimated: false,
           sources: [
             { source: 'CYCLETRACK', points: pts, total: 7 },
             { source: 'ADMIT', points: pts, total: 7 },
           ],
         },
-        { cycleYear: 2025, dayZeroEstimated: true, sources: [{ source: 'CYCLETRACK', points: pts, total: 7 }] },
+        {
+          cycleYear: 2025,
+          dayZeroOn: '2024-06-01',
+          dayZeroEstimated: true,
+          sources: [{ source: 'CYCLETRACK', points: pts, total: 7 }],
+        },
       ],
     };
     const html = render((qc) => {

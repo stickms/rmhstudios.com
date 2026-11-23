@@ -115,6 +115,43 @@ carry over), phase 1 `…phase1-foundation.md` (migration conventions).
 - **O1 Placement** is unchanged (Services hub, not the catalog). Nothing in this phase adds a hub or search entry; the
   two new pages are reached from links on the med schools pages (Task 12) and, signed out, from the sign-in prompt.
 
+## Owner revisions (charts, 2026-11-23)
+
+**O7 Charts get colour, cards, a legend, a tween, a probe and dates (owner, 2026-11-23).** It supersedes O2's ink-only
+style for the RMH Med Schools charts only; Steel §18 D10 (dashboards and data tables) stays open. Where O2 above says
+"approved for the phase 3 pages only", read it as "O2's style, as revised by O7". The chart tasks of this phase use the
+O7 style; the pages and rules that carry it are in `features/medschools/CLAUDE.md` (Charts).
+
+1. **Colour.** `--site-chart-1`..`-5` (Day and Night values in `app/globals/tokens-themes.css`, pinned by
+   `lib/__tests__/steel-tokens.test.ts`), the first five slots of the dataviz reference palette, validated with its
+   validator against `--site-surface`: lightness band, chroma floor, adjacent CVD (worst 9.1 Day, 8.4 Night) and
+   normal-vision separation (19.6 and 19.3) pass in both editions. Aqua, yellow and magenta are under 3:1 on white in
+   Day, so the relief rule applies and every chart carries a legend, a dash cue and a data table. Fixed mappings
+   (`ui/charts/chartColors.ts`): Interview 1, Rejection 2, Acceptance 3, Secondary 4, Waitlist 5; sources CycleTrack 1,
+   Admit 2, SDN 3, RMH 4, MDApplicants 5; History cycles newest first 1..5. Tokens only: no hex and no raw palette class
+   in a component.
+2. **Chart cards and legend.** A chart is a card (`--site-surface`, 1px `--site-border`, 8px radius, 12 px padding on a
+   phone and 16 px from `sm`), the legend above the plot; the category legend is the toggle row (each toggle carries its
+   swatch). End-of-line labels are gone: a legend names every multi-series chart, and the single-series daily bars are
+   named by the title and the sources line.
+3. **Animation on toggle.** The y scale tweens (one tween, 280 ms, ease-out) when a toggle, program or source changes
+   it; lines, bars and gridlines move together, tick labels cross-fade. A response to input only: the first paint and
+   the server render never animate, one frame is requested at a time and the last requests none (the rAF file allowlist
+   entry says why). `prefers-reduced-motion: reduce` makes it instant (M7's rule applied to this tween, no setting and
+   no other override).
+4. **Cumulative charts start at 0** on the cycle's first day (`withZeroStart`); History overlays too.
+5. **Hover, touch and keyboard probe.** A crosshair at the nearest date and a tooltip (`surface-overlay`) with the date
+   and each visible series' value and swatch. The plot is focusable; the arrow keys move the crosshair. The native
+   `<details>` table stays.
+6. **Always dates.** The History overlay aligns cycles by month and day (June 1 of every cycle lines up), labels the
+   axis "Jun 1", "Aug 15" with no year, and names a series by its cycle ("2026–2027"). `HistoryCycleDto` gains
+   `dayZeroOn` for this.
+7. **Small-option dropdowns are button groups.** The Activity category, History's category and source: a horizontal
+   single-select `role="radiogroup"` (`ui/OptionGroup.tsx`). The school page's program control is a **multi-select**:
+   two toggles for the school's own degree ("MD", "MD-PhD"; DO: "DO", "DO-PhD"), at least one stays on, both on is
+   `ALL`, one is `REG` or `PHD`; the URL's `program` param is unchanged (`ui/ProgramToggles.tsx`). `ProgramSelect` stays
+   for the index and live pages until their own task replaces it.
+
 ## Decisions made in this plan (owner may override; items the owner must answer are the Open Questions at the end)
 
 - **D1 One writer for sharing.** `api/share-sync.server.ts` is the only module that writes `medTrackerCycle`,

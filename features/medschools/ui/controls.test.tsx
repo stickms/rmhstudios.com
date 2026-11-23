@@ -27,8 +27,10 @@ import {
   degreeProgramToValue,
   programOptions,
 } from './ProgramSelect';
+import { OptionGroup, nextOptionIndex } from './OptionGroup';
+import { ProgramToggles, programFromOn, programToOn, toggleProgram } from './ProgramToggles';
 import { ReportedNote } from './ReportedNote';
-import { CATEGORY_STYLE } from './charts/CategoryLines';
+import { CATEGORY_STYLE } from './charts/chartColors';
 
 const noop = () => undefined;
 
@@ -52,10 +54,12 @@ describe('CategoryToggles', () => {
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(4);
   });
-  it('draws a line sample per button from CATEGORY_STYLE', () => {
+  it('is the legend too: a swatch per button in its category colour, dimmed when off', () => {
     expect(html.match(/<svg/g)).toHaveLength(5);
+    for (const s of Object.values(CATEGORY_STYLE)) expect(html).toContain(`stroke="${s.color}"`);
     expect(html).toContain(`stroke-dasharray="${CATEGORY_STYLE.REJECTION.dash}"`);
-    expect(html).toContain(`stroke-width="${CATEGORY_STYLE.INTERVIEW.width}"`);
+    expect(html.match(/opacity="0.45"/g)).toHaveLength(4);
+    expect(html.match(/opacity="1"/g)).toHaveLength(1);
   });
   it('marks only the last pressed button as not turn-off-able', () => {
     expect(html.match(/aria-disabled="true"/g)).toHaveLength(1);
@@ -138,5 +142,76 @@ describe('ReportedNote', () => {
     const html = renderToString(<ReportedNote />);
     expect(html).toContain('Reported events, not applicants.');
     expect(html).toContain('never added together');
+  });
+});
+
+describe('OptionGroup (owner O7: a horizontal single-select button group)', () => {
+  const options = [
+    { value: 'a', label: 'Alpha' },
+    { value: 'b', label: 'Beta' },
+    { value: 'c', label: 'Gamma' },
+  ] as const;
+  const html = renderToString(<OptionGroup label="Pick" value="b" options={options} onChange={noop} />);
+  it('is a radiogroup of radios with aria-checked, not a tab strip', () => {
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain('aria-label="Pick"');
+    expect(html.match(/role="radio"/g)).toHaveLength(3);
+    expect(html.match(/aria-checked="true"/g)).toHaveLength(1);
+    expect(html.match(/aria-checked="false"/g)).toHaveLength(2);
+    expect(html).not.toContain('role="tab');
+    expect(html).not.toContain('<select');
+  });
+  it('has one tab stop (roving tabindex) on the checked option', () => {
+    expect(html.match(/tabindex="0"/g)).toHaveLength(1);
+    expect(html.match(/tabindex="-1"/g)).toHaveLength(2);
+    const beta = /<button[^>]*>(?:(?!<\/button>).)*Beta/.exec(html)![0];
+    expect(beta).toContain('tabindex="0"');
+  });
+  it('wraps on a phone and uses the Button primitive (44px on touch)', () => {
+    expect(html).toContain('flex-wrap');
+    expect(html).toContain('pointer-coarse:h-11');
+  });
+  it('arrow keys move and wrap, left and right swap in a right-to-left row', () => {
+    expect(nextOptionIndex('ArrowRight', 1, 3, false)).toBe(2);
+    expect(nextOptionIndex('ArrowRight', 2, 3, false)).toBe(0);
+    expect(nextOptionIndex('ArrowLeft', 0, 3, false)).toBe(2);
+    expect(nextOptionIndex('ArrowLeft', 1, 3, true)).toBe(2);
+    expect(nextOptionIndex('ArrowRight', 1, 3, true)).toBe(0);
+    expect(nextOptionIndex('Home', 2, 3, false)).toBe(0);
+    expect(nextOptionIndex('End', 0, 3, false)).toBe(2);
+    expect(nextOptionIndex('a', 0, 3, false)).toBeNull();
+  });
+});
+
+describe('ProgramToggles (school page: MD / MD-PhD multi-select, O7)', () => {
+  it('maps the URL value to two toggles and back; both on is All', () => {
+    expect(programToOn('ALL')).toEqual({ reg: true, phd: true });
+    expect(programToOn('REG')).toEqual({ reg: true, phd: false });
+    expect(programToOn('PHD')).toEqual({ reg: false, phd: true });
+    expect(programFromOn({ reg: true, phd: true })).toBe('ALL');
+    expect(programFromOn({ reg: true, phd: false })).toBe('REG');
+    expect(programFromOn({ reg: false, phd: true })).toBe('PHD');
+  });
+  it('toggles, and the last one that is on stays on', () => {
+    expect(toggleProgram('ALL', 'phd')).toBe('REG');
+    expect(toggleProgram('ALL', 'reg')).toBe('PHD');
+    expect(toggleProgram('REG', 'phd')).toBe('ALL');
+    expect(toggleProgram('REG', 'reg')).toBe('REG');
+    expect(toggleProgram('PHD', 'phd')).toBe('PHD');
+  });
+  it('is a labelled group of two aria-pressed buttons for the school degree', () => {
+    const md = renderToString(<ProgramToggles degree="MD" value="REG" onChange={noop} />);
+    expect(md).toContain('role="group"');
+    expect(md.match(/<button/g)).toHaveLength(2);
+    expect(md).toContain('>MD<');
+    expect(md).toContain('>MD-PhD<');
+    expect(md.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(md.match(/aria-disabled="true"/g)).toHaveLength(1);
+    const doHtml = renderToString(<ProgramToggles degree="DO" value="ALL" onChange={noop} />);
+    expect(doHtml).toContain('>DO<');
+    expect(doHtml).toContain('>DO-PhD<');
+    expect(doHtml).not.toContain('MD');
+    expect(doHtml.match(/aria-pressed="true"/g)).toHaveLength(2);
+    expect(doHtml).not.toContain('aria-disabled');
   });
 });

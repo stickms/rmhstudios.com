@@ -180,6 +180,8 @@ export interface ActivityTypeDto {
 
 export interface HistoryCycleDto {
   cycleYear: number;
+  /** The cycle's day zero (`YYYY-MM-DD`): the History overlay aligns cycles by calendar date from it (O7). */
+  dayZeroOn: string;
   dayZeroEstimated: boolean;
   sources: { source: MedSourceId; points: { day: number; cumulative: number }[]; total: number }[];
 }

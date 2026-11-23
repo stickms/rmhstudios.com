@@ -121,6 +121,13 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores', 'features'];
 const ALLOW = new Set<string>([
   // Altair co-op match: the draw loop is cancelled in the effect cleanup (unmount); it only draws.
   'features/altair/ui/multiplayer/MultiplayerGameScreen.tsx',
+  // RMH Med Schools charts (owner O7, 2026-11-23): the y-scale tween when a toggle, program or source changes the
+  // scale. Not a loop and not idle: nothing is requested until the target scale differs, ONE frame is requested at a
+  // time, the frame that reaches 280 ms (inside R5's 360) requests no successor, and the hook's cleanup cancels the
+  // pending frame on unmount. `prefers-reduced-motion` skips it entirely (M7). Settle proven in
+  // features/medschools/ui/charts/tween.test.ts ("then requests no further frame"). The server render and the first
+  // client render never animate.
+  'features/medschools/ui/charts/useTween.ts',
   // Altair main-menu backdrop (pixel-art corridor). Bounded by MOUNT and by visibility: the effect
   // cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it, and it
   // is capped at 30 fps with a fixed-size buffer (no per-frame canvas reallocation).

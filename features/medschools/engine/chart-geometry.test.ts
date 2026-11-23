@@ -4,8 +4,19 @@ import {
   MID,
   PHONE,
   WIDE,
+  REFERENCE_DAY_ZERO,
+  TICK_FADE,
   addUtcDays,
   barsGeometry,
+  calendarDate,
+  calendarX,
+  cycleCalendarPoints,
+  easeOutCubic,
+  nearestIndex,
+  plotX,
+  plotY,
+  withZeroStart,
+  yTicksTween,
   extendStep,
   fillDays,
   heightOf,
@@ -194,21 +205,23 @@ describe('spreadLabels', () => {
 });
 
 describe('geometries', () => {
-  it('there is one per width, narrowest first, each plot inside its viewBox with room for end labels and ticks', () => {
+  it('there is one per width, narrowest first, each plot inside its viewBox with room for ticks', () => {
     expect(GEOMETRIES.map((g) => g.id)).toEqual(['phone', 'mid', 'wide']);
     for (const g of GEOMETRIES) {
       expect(g.plot.left).toBeGreaterThan(0);
       expect(g.plot.right).toBeGreaterThan(g.plot.left);
       expect(g.plot.bottom).toBeGreaterThan(g.plot.top);
-      // A 12-unit tick label under the plot, and at least 70 units to the right for a short end label.
+      // A 12-unit tick label under the plot; no end labels (O7), so only a small right margin.
       expect(g.h - g.plot.bottom).toBeGreaterThanOrEqual(20);
-      expect(g.w - g.plot.right).toBeGreaterThanOrEqual(70);
+      expect(g.w - g.plot.right).toBeGreaterThanOrEqual(8);
+      expect(g.w - g.plot.right).toBeLessThanOrEqual(20);
       expect(g.labelGap).toBeGreaterThanOrEqual(g.font);
     }
   });
   it('the phone viewBox is no wider than a 320px phone content box, so its text is not scaled down', () => {
-    // A 320 px phone has about 274 px of content: 12 units at that scale must stay at or above 11 px.
-    expect((PHONE.font * 274) / PHONE.w).toBeGreaterThanOrEqual(11);
+    // A 320 px phone has about 274 px of content, 248 inside the chart card (1px border, 12px padding): 12 units at
+    // that scale must stay at or above 11 px.
+    expect((PHONE.font * 248) / PHONE.w).toBeGreaterThanOrEqual(11);
     expect(PHONE.font).toBeGreaterThanOrEqual(11);
     expect(MID.w).toBeLessThan(WIDE.w);
     expect(PHONE.xTickCount).toBeLessThan(WIDE.xTickCount);
@@ -265,5 +278,150 @@ describe('addUtcDays', () => {
     expect(addUtcDays('2025-12-30', 3)).toBe('2026-01-02');
     expect(addUtcDays('2026-03-07', 2)).toBe('2026-03-09');
     expect(addUtcDays('2026-06-10', -9)).toBe('2026-06-01');
+  });
+});
+
+describe('withZeroStart (O7: a cumulative line rises from 0 on the first day)', () => {
+  it('prepends a zero at the start day when the first report is later', () => {
+    expect(
+      withZeroStart(
+        [
+          { x: 12, y: 3 },
+          { x: 20, y: 5 },
+        ],
+        0,
+      ),
+    ).toEqual([
+      { x: 0, y: 0 },
+      { x: 12, y: 3 },
+      { x: 20, y: 5 },
+    ]);
+  });
+  it('prepends the zero on the first day of a report too, so the step rises from 0', () => {
+    expect(withZeroStart([{ x: 0, y: 4 }], 0)).toEqual([
+      { x: 0, y: 0 },
+      { x: 0, y: 4 },
+    ]);
+  });
+  it('starts at the earlier of the start day and the first report (a report before day zero)', () => {
+    expect(withZeroStart([{ x: -3, y: 1 }], 0)[0]).toEqual({ x: -3, y: 0 });
+  });
+  it('leaves an empty series empty', () => {
+    expect(withZeroStart([], 0)).toEqual([]);
+  });
+});
+
+describe('calendar alignment of cycles (O7: always dates)', () => {
+  it('puts June 1 of every cycle at the same x, whatever the cycle year', () => {
+    expect(calendarX('2025-06-01', 2025)).toBe(0);
+    expect(calendarX('2026-06-01', 2026)).toBe(0);
+    expect(calendarX('2028-06-01', 2028)).toBe(0);
+  });
+  it('puts equal month-days at equal x, across a leap year', () => {
+    // 2027-2028 has Feb 29 (2028); Mar 1 still lines up with Mar 1 of 2025-2026.
+    expect(calendarX('2028-03-01', 2027)).toBe(calendarX('2026-03-01', 2025));
+    expect(calendarX('2026-01-15', 2025)).toBe(calendarX('2027-01-15', 2026));
+  });
+  it('keeps days before June 1 negative and later days increasing', () => {
+    expect(calendarX('2025-05-25', 2025)).toBe(-7);
+    expect(calendarX('2025-06-02', 2025)).toBe(1);
+    expect(calendarX('2026-05-31', 2025)).toBeGreaterThan(calendarX('2026-05-30', 2025));
+  });
+  it('turns an x back into a month-day on the reference calendar', () => {
+    expect(calendarDate(0)).toBe(REFERENCE_DAY_ZERO);
+    expect(calendarDate(75)).toBe('2023-08-15');
+  });
+  it('maps cycle points to calendar x from their own day zero and starts the line at 0', () => {
+    const pts = cycleCalendarPoints([{ day: 10, cumulative: 4 }], '2025-06-05', 2026);
+    // day 10 after 2025-06-05 is 2025-06-15 -> x 14; the zero sits on the cycle's own first day, x 4.
+    expect(pts).toEqual([
+      { x: 4, y: 0 },
+      { x: 14, y: 4 },
+    ]);
+    const later = cycleCalendarPoints([{ day: 10, cumulative: 4 }], '2026-06-05', 2027);
+    expect(later.map((p) => p.x)).toEqual([4, 14]);
+  });
+});
+
+describe('nearestIndex', () => {
+  it('finds the closest position, ties to the earlier', () => {
+    expect(nearestIndex([10, 20, 40], 26)).toBe(1);
+    expect(nearestIndex([10, 20, 40], 31)).toBe(2);
+    expect(nearestIndex([10, 20, 40], 30)).toBe(1);
+    expect(nearestIndex([10, 20, 40], -50)).toBe(0);
+    expect(nearestIndex([10, 20, 40], 900)).toBe(2);
+  });
+  it('is -1 for nothing', () => {
+    expect(nearestIndex([], 5)).toBe(-1);
+  });
+});
+
+describe('tweening', () => {
+  it('ease-out runs from 0 to 1, fast first and clamped', () => {
+    expect(easeOutCubic(0)).toBe(0);
+    expect(easeOutCubic(1)).toBe(1);
+    expect(easeOutCubic(0.5)).toBeGreaterThan(0.5);
+    expect(easeOutCubic(-1)).toBe(0);
+    expect(easeOutCubic(2)).toBe(1);
+  });
+  it('yTicksTween: ticks of both scales, the shared ones solid, the others fading, all inside the plot', () => {
+    const start = yTicksTween(10, 100, 0, 10, WIDE);
+    const byV = new Map(start.map((t) => [t.v, t]));
+    expect(byV.get(0)!.opacity).toBe(1);
+    // A tick only the old scale has is fully visible at the start and gone at the end.
+    const oldOnly = yTicksFor(10, WIDE).find((t) => !yTicksFor(100, WIDE).some((u) => u.v === t.v));
+    if (oldOnly) expect(byV.get(oldOnly.v)!.opacity).toBe(1);
+    const end = yTicksTween(10, 100, 1, 100, WIDE);
+    expect(end.map((t) => t.v)).toEqual(yTicksFor(100, WIDE).map((t) => t.v));
+    for (const t of end) expect(t.opacity).toBe(1);
+    // Midway at a scale of 55: every tick is inside the plot or within the fade margin, opacity is in (0, 1].
+    const margin = (WIDE.plot.bottom - WIDE.plot.top) * TICK_FADE;
+    for (const t of yTicksTween(10, 100, 0.5, 55, WIDE)) {
+      expect(t.y).toBeGreaterThanOrEqual(WIDE.plot.top - margin);
+      expect(t.y).toBeLessThanOrEqual(WIDE.plot.bottom + margin);
+      expect(t.opacity).toBeGreaterThan(0);
+      expect(t.opacity).toBeGreaterThanOrEqual(0);
+      expect(t.opacity).toBeLessThanOrEqual(1);
+    }
+  });
+  it('a tick the shrinking scale pushes past the top fades out and is gone beyond the margin', () => {
+    // Scale 400 -> 300: the 400 tick is on the top edge at the start, just past it a frame later, gone soon after.
+    const at = (now: number) => yTicksTween(400, 300, 0.2, now, WIDE).find((t) => t.v === 400);
+    expect(at(400)!.opacity).toBeGreaterThan(0.5);
+    const near = at(390);
+    expect(near === undefined || near.opacity < at(400)!.opacity).toBe(true);
+    expect(at(330)).toBeUndefined();
+    expect(yTicksTween(400, 300, 0.2, 330, WIDE).find((t) => t.v === 300)!.opacity).toBe(1);
+  });
+  it('yTicksTween with equal scales is just the ticks', () => {
+    expect(yTicksTween(40, 40, 1, 40, MID).map((t) => t.v)).toEqual(yTicksFor(40, MID).map((t) => t.v));
+  });
+});
+
+describe('plot scales', () => {
+  it('plotX and plotY put the domain ends on the plot edges', () => {
+    expect(plotX(0, [0, 100], WIDE)).toBeCloseTo(WIDE.plot.left, 5);
+    expect(plotX(100, [0, 100], WIDE)).toBeCloseTo(WIDE.plot.right, 5);
+    expect(plotY(0, 50, WIDE)).toBeCloseTo(WIDE.plot.bottom, 5);
+    expect(plotY(50, 50, WIDE)).toBeCloseTo(WIDE.plot.top, 5);
+  });
+  it('a one-point domain is centred', () => {
+    expect(plotX(5, [5, 5], WIDE)).toBeCloseTo((WIDE.plot.left + WIDE.plot.right) / 2, 5);
+  });
+});
+
+describe('barsGeometry with a forced top (the tween frame)', () => {
+  const days = [
+    { date: '2026-06-01', count: 5 },
+    { date: '2026-06-02', count: 10 },
+  ];
+  it('reports the nice top and draws against the forced one', () => {
+    const rest = barsGeometry(days, 0, WIDE);
+    const forced = barsGeometry(days, 0, WIDE, 40);
+    expect(rest.top).toBe(10);
+    expect(forced.top).toBe(10);
+    // Against a larger forced top the same bar is shorter.
+    expect(forced.bars[1]!.h).toBeLessThan(rest.bars[1]!.h);
+    expect(forced.bars[1]!.h).toBeCloseTo((WIDE.plot.bottom - WIDE.plot.top) / 4, 1);
   });
 });

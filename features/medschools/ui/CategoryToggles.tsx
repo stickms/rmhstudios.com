@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { MedChartedTypeId, MedEventTypeId } from '../medschools.contract';
-import { CATEGORY_STYLE } from './charts/CategoryLines';
+import { CATEGORY_STYLE } from './charts/chartColors';
+import { Swatch } from './charts/ChartFrame';
 import { useMedLabels } from './labels';
 
 /** Canonical order, the order the chart and the table use. */
@@ -20,26 +21,10 @@ export function toggleCategory(value: readonly MedEventTypeId[], type: MedCharte
   return ORDER.filter((c) => on.has(c));
 }
 
-function Sample({ type }: { type: MedChartedTypeId }) {
-  const s = CATEGORY_STYLE[type];
-  return (
-    <svg width="24" height="8" viewBox="0 0 24 8" aria-hidden="true" focusable="false">
-      <line
-        x1="0"
-        x2="24"
-        y1="4"
-        y2="4"
-        stroke={s.stroke === 'ink' ? 'var(--site-text)' : 'var(--site-text-muted)'}
-        strokeWidth={s.width}
-        strokeDasharray={s.dash}
-      />
-    </svg>
-  );
-}
-
 /**
- * One aria-pressed button per charted category, each with a sample of its line (O4). A labelled group, not a tab
- * strip. The caller keeps the value in the URL; this only reports the next list.
+ * The category legend and the toggle row in one (O7): one aria-pressed button per charted category, each with a swatch
+ * of its line in the category's fixed colour (`chartColors.ts`). A labelled group, not a tab strip. The caller keeps
+ * the value in the URL; this only reports the next list.
  */
 export function CategoryToggles({
   value,
@@ -66,7 +51,8 @@ export function CategoryToggles({
             variant="ghost"
             size="xs"
             aria-pressed={pressed}
-            // Pressed is an ink border and weight, unpressed a rule and muted text: state is never colour alone (A2).
+            // Pressed is an ink border and weight, unpressed a rule, muted text and a dimmed swatch: state is never
+            // colour alone (A2).
             className={cn(
               'border',
               pressed ? 'border-site-text font-semibold' : 'border-site-border text-site-text-muted',
@@ -74,7 +60,7 @@ export function CategoryToggles({
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
             onClick={() => onChange(toggleCategory(value, type))}
           >
-            <Sample type={type} />
+            <Swatch {...CATEGORY_STYLE[type]} dim={!pressed} />
             {eventLabel(type)}
           </Button>
         );

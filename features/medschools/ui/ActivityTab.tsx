@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Select } from '@/components/ui/select';
 import { CHARTED_TYPES, SHORT_SOURCE_NAMES, formatUtcDay, toCumulativeByDay } from '../engine/public-read';
 import { cycleEndOn, cycleLabel } from '../engine/cycle';
 import { buildTotalsMatrix } from '../engine/totals';
@@ -11,10 +10,12 @@ import { activityQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
 import { CategoryToggles } from './CategoryToggles';
 import { CategoryLines } from './charts/CategoryLines';
+import { CATEGORY_COLOR } from './charts/chartColors';
 import { CumulativeLine } from './charts/CumulativeLine';
 import { DailyBars } from './charts/DailyBars';
 import { useChartLabels } from './chartLabels';
 import { useMedLabels } from './labels';
+import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
@@ -35,7 +36,7 @@ export function ActivityTab({
   setSearch: SetSchoolSearch;
 }) {
   const { t } = useTranslation('medschools');
-  const { eventLabel, eventShortLabel, sourceName } = useMedLabels();
+  const { eventLabel, sourceName } = useMedLabels();
   const chartLabels = useChartLabels();
   const { locale } = useLocaleFormat();
   const nf = new Intl.NumberFormat(locale);
@@ -88,8 +89,8 @@ export function ActivityTab({
             className="flex flex-col gap-3"
             aria-label={t('school-categories-section', { defaultValue: 'Categories' })}
           >
-            <CategoryToggles value={search.show} onChange={(show) => setSearch({ show })} />
             <CategoryLines
+              legend={<CategoryToggles value={search.show} onChange={(show) => setSearch({ show })} />}
               labels={chartLabels(
                 t('school-categories-title', { defaultValue: 'Cumulative reported events by category' }),
               )}
@@ -110,7 +111,6 @@ export function ActivityTab({
                       {
                         eventType: ty.eventType,
                         label: eventLabel(ty.eventType),
-                        shortLabel: eventShortLabel(ty.eventType),
                         points: toCumulativeByDay(src.days, data.dayZeroOn),
                       },
                     ]
@@ -125,18 +125,15 @@ export function ActivityTab({
           >
             <div className="flex flex-wrap items-center gap-2">
               <span className="t-label">{t('school-type-visible-label', { defaultValue: 'Category' })}</span>
-              <Select
-                controlSize="sm"
-                aria-label={t('school-type-label', { defaultValue: 'Category' })}
+              <OptionGroup
+                label={t('school-type-label', { defaultValue: 'Category' })}
                 value={search.type}
-                onChange={(e) => setSearch({ type: e.target.value as MedChartedTypeId })}
-              >
-                {CHARTED_TYPES.map((ty) => (
-                  <option key={ty} value={ty}>
-                    {eventLabel(ty as MedChartedTypeId)}
-                  </option>
-                ))}
-              </Select>
+                options={CHARTED_TYPES.map((ty) => ({
+                  value: ty as MedChartedTypeId,
+                  label: eventLabel(ty as MedChartedTypeId),
+                }))}
+                onChange={(type) => setSearch({ type })}
+              />
             </div>
             {chosenPrimary ? (
               <>
@@ -144,6 +141,7 @@ export function ActivityTab({
                   primary={chosenPrimary}
                   from={data.dayZeroOn}
                   to={to}
+                  color={CATEGORY_COLOR[search.type]}
                   labels={chartLabels(
                     t('school-daily-title', {
                       defaultValue: '{{type}} by day',

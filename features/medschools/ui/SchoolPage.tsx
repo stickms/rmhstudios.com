@@ -15,7 +15,7 @@ import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
-import { ProgramSelect } from './ProgramSelect';
+import { ProgramToggles } from './ProgramToggles';
 import { ReportedNote } from './ReportedNote';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
@@ -69,7 +69,7 @@ export function SchoolPage() {
   const tabs: TabItem[] = SCHOOL_TABS.map((id) => ({ id, label: tabLabel(id) }));
 
   const programControl = detail ? (
-    <ProgramSelect
+    <ProgramToggles
       degree={detail.school.degree}
       value={search.program}
       onChange={(program) => setSearch({ program })}

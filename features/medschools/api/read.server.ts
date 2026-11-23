@@ -459,6 +459,7 @@ export async function getHistory(
     if (series.sources.length === 0) continue;
     out.push({
       cycleYear,
+      dayZeroOn,
       dayZeroEstimated: cy ? cy.dateEstimated : true,
       sources: series.sources.map((s) => ({
         source: s.source,
