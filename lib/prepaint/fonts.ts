@@ -16,7 +16,8 @@ export function fontsStep({ doc, html, cfg }: PrepaintCtx): void {
   const ls = localStorage;
   const pick = (key: string, valid: Record<string, string>, def: string, same?: boolean): string => {
     const v = ls.getItem(key);
-    return v && (v in valid || (same && v === 'same')) ? v : def;
+    // Own keys only: `in` would also accept `toString`, `__proto__` and the rest of Object's prototype.
+    return v && (Object.prototype.hasOwnProperty.call(valid, v) || (same && v === 'same')) ? v : def;
   };
   const main = pick('rmh-font-main', f.t, 'dm-sans');
   const reading = pick('rmh-font-reading', f.t, 'same', true);

@@ -53,3 +53,19 @@ describe('theme store: fonts and appearance sync', () => {
     expect(localStorage.getItem(APPEARANCE_CHANGED_AT_KEY)).not.toBeNull();
   });
 });
+
+describe('theme store: hydration flag and no-op font sets (final review minors)', () => {
+  it('choosing the face a slot already has changes nothing and records nothing', () => {
+    const before = useThemeStore.getState().fonts;
+    useThemeStore.getState().setFont('main', 'dm-sans');
+    expect(useThemeStore.getState().fonts).toBe(before);
+    expect(localStorage.getItem(APPEARANCE_CHANGED_AT_KEY)).toBeNull();
+  });
+
+  it('starts unhydrated and is marked once storage has been read', () => {
+    useThemeStore.setState({ appearanceHydrated: false });
+    expect(useThemeStore.getState().appearanceHydrated).toBe(false);
+    useThemeStore.getState().markAppearanceHydrated();
+    expect(useThemeStore.getState().appearanceHydrated).toBe(true);
+  });
+});

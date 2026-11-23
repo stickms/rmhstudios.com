@@ -64,6 +64,13 @@ describe('pre-paint fonts step', () => {
     expect(cookie).toMatch(/^rmh-fonts=inter\.literata\.jetbrains-mono;/);
   });
 
+  it('a name inherited from Object (toString, __proto__) is not a face', () => {
+    run({ 'rmh-font-main': 'toString', 'rmh-font-mono': '__proto__' });
+    expect(attrs.size).toBe(0);
+    expect(links).toEqual([]);
+    expect(cookie).toBe('');
+  });
+
   it('storage agrees with what the server rendered: nothing is appended or written', () => {
     run({ 'rmh-font-main': 'inter' }, { 'data-font-main': 'inter' });
     expect(links).toEqual([]);

@@ -836,22 +836,22 @@ describe('data-saver requests are never shared-cacheable', () => {
  * A reader's chosen fonts (lib/appearance/fonts.ts) are rendered into the page by the server, like a locale, so a
  * request carrying them must not be served the default page from the edge, nor become it (owner, 2026-11-23, option A).
  */
-describe('a chosen font or a device with appearance sync off is never shared-cacheable', () => {
+describe('a chosen font is never shared-cacheable', () => {
   it('a font cookie leaves the page origin-rendered', () => {
     expect(decideCacheControl('/', 'theme=dark; rmh-fonts=inter.same.dm-mono')).toBeNull();
   });
 
-  it('a device with appearance sync off is origin-rendered too', () => {
-    expect(decideCacheControl('/', 'rmh-appearance-sync=0')).toBeNull();
+  it('the sync switch alone does not: a signed-out page never reads it (signed-in pages skip the cache anyway)', () => {
+    expect(decideCacheControl('/', 'rmh-appearance-sync=0')?.shared).toBe(true);
   });
 
   it('neither cookie: the anonymous page stays shareable', () => {
     expect(decideCacheControl('/', 'theme=dark')?.shared).toBe(true);
   });
 
-  it('the Cloudflare rule bypasses the same two cookies', () => {
+  it('the Cloudflare rule bypasses the font cookie, and only it', () => {
     const script = readFileSync(join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'), 'utf8');
     expect(script).toContain('not (http.cookie contains \\"rmh-fonts=\\")');
-    expect(script).toContain('not (http.cookie contains \\"rmh-appearance-sync=0\\")');
+    expect(script).not.toContain('rmh-appearance-sync=0\\"');
   });
 });
