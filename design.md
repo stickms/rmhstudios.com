@@ -68,8 +68,10 @@ plan). Every text pair holds 4.5:1 in both editions. Do not introduce a lighter 
 
 ## 3. Type
 
-One family, **Geist**, with **Geist Mono** for timestamps, counts and small data. There is no display face
-(`--site-font-display` is the body stack). Seven classes carry every size (`app/styles/steel-type.css`):
+One family, **DM Sans** by default, with **DM Mono** for timestamps, counts and small data (owner, 2026-11-23,
+replacing Geist). A reader may choose their own main, reading and mono faces from the fixed catalogue in
+`lib/appearance/fonts.ts`; post and article text (`t-post`, `t-prose`) is set in `--site-font-reading`, which follows the
+main face unless they split them. There is no display face (`--site-font-display` is the body stack). Seven classes carry every size (`app/styles/steel-type.css`):
 
 | Class       | Size / line    | Weight     | Tracking | Use                                  |
 | ----------- | -------------- | ---------- | -------- | ------------------------------------ |
@@ -131,7 +133,7 @@ page, so its Open Graph data is part of the page's design, not metadata to fill 
   shared publicly; they set `noindex` instead.
 
 - **Drawn in Steel.** A card is this design on a 1200×630 page: flat `--site-bg`, the favicon as the mark, 1px rules
-  between the brand row, body and footer, Geist at 400/500/600, a picture in a bordered `--site-bg-subtle` box. The
+  between the brand row, body and footer, DM Sans at 400/500/600, a picture in a bordered `--site-bg-subtle` box. The
   renderers share one frame (`lib/og/chrome.server.tsx`), so a card type never improvises its own look.
 
 `lib/__tests__/og-page-coverage.test.ts` holds this for every route the sitemap lists as public, with a backlog that

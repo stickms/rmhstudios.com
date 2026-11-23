@@ -1,6 +1,8 @@
 /* Steel type (docs/plans/2026-11-11-steel-design-implementation.md section 3, Y1 to Y3).
 
-   One family, Geist (`--site-font-body`), with Geist Mono (`--site-font-mono`) for timestamps, counts and small data.
+   One family, DM Sans by default (`--site-font-body`; the reader may choose another, lib/appearance/fonts.ts), with
+   DM Mono (`--site-font-mono`) for timestamps, counts and small data. Post and article text (t-post, t-prose) is set in
+   `--site-font-reading`, which follows the main face unless the reader chose a separate reading face.
    There is no display face: `--site-font-display` is the body stack. Seven classes carry every size, weight and
    tracking value, so a page never re-types a clamp or a letter-spacing:
 
@@ -34,12 +36,14 @@
   letter-spacing: 0;
 }
 @utility t-post {
+  font-family: var(--site-font-reading);
   font-size: 15px;
   line-height: 1.5;
   font-weight: 400;
   letter-spacing: 0;
 }
 @utility t-prose {
+  font-family: var(--site-font-reading);
   font-size: 16px;
   line-height: 1.6;
   font-weight: 400;

@@ -211,6 +211,9 @@ describe('Steel section 3: the seven type classes', () => {
     expect(decl('t-label', 'color')).toBe('var(--site-text-muted)');
     expect(decl('t-meta', 'color')).toBe('var(--site-text-muted)');
     expect(decl('t-meta', 'font-family')).toBe('var(--site-font-mono)');
+    // Post and article text is the reader's reading face (owner, 2026-11-23; lib/appearance/fonts.ts).
+    expect(decl('t-post', 'font-family')).toBe('var(--site-font-reading)');
+    expect(decl('t-prose', 'font-family')).toBe('var(--site-font-reading)');
   });
 
   it('Y1: no weight of 700 or above, and Y2: no uppercase, anywhere in the type sheet', () => {

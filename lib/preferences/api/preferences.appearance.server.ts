@@ -43,6 +43,10 @@ export const route = apiRoute('/api/preferences/appearance', {
       readableFont: row?.readableFont ?? false,
       colorVision: row?.colorVision ?? null,
       jellyMotion: row?.jellyMotion ?? null,
+      fontMain: row?.fontMain ?? null,
+      fontReading: row?.fontReading ?? null,
+      fontMono: row?.fontMono ?? null,
+      updatedAt: row?.updatedAt ? row.updatedAt.toISOString() : null,
     });
   }),
 
@@ -50,13 +54,16 @@ export const route = apiRoute('/api/preferences/appearance', {
     setAppearancePrefsApi,
     { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'appearance-prefs' }, body: schema },
     async ({ session, body }) => {
-      const { style, fontScale, density, readableFont, colorVision, jellyMotion } = body;
+      const { style, fontScale, density, readableFont, colorVision, jellyMotion, fontMain, fontReading, fontMono } = body;
 
       const comfort = {
         ...(fontScale !== undefined ? { fontScale } : {}),
         ...(density !== undefined ? { density } : {}),
         ...(readableFont !== undefined ? { readableFont } : {}),
         ...(jellyMotion !== undefined ? { jellyMotion } : {}),
+        ...(fontMain !== undefined ? { fontMain } : {}),
+        ...(fontReading !== undefined ? { fontReading } : {}),
+        ...(fontMono !== undefined ? { fontMono } : {}),
         // 'none' is stored as null so the column means "no override".
         ...(colorVision !== undefined
           ? { colorVision: colorVision === 'none' ? null : colorVision }
@@ -83,6 +90,10 @@ export const route = apiRoute('/api/preferences/appearance', {
         readableFont: row.readableFont ?? false,
         colorVision: row.colorVision ?? null,
         jellyMotion: row.jellyMotion ?? null,
+        fontMain: row.fontMain ?? null,
+        fontReading: row.fontReading ?? null,
+        fontMono: row.fontMono ?? null,
+        updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
       });
     },
   ),

@@ -15,6 +15,7 @@
     "lib/core/**/*.ts",
     "lib/contract/**/*.ts",
     "lib/toast.ts",
+    "lib/appearance/fonts.ts",
     "lib/auth/providers.ts",
     "lib/auth/steam-openid.ts",
     "lib/auth/merge-rules.ts",

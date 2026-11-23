@@ -14,13 +14,18 @@
  *    not bubble, but they do capture). It marks each image `data-loaded` as it
  *    finishes — server-rendered, hydrated, lazy and client-inserted alike —
  *    and stamps `html.media-reveal` to say the marking is live.
- *  - globals.css keeps an unmarked image at opacity 0 and fades it to 1 when the
- *    mark lands. Opacity only: it never changes layout, so it cannot shift
- *    anything (images reserve their box with width/height or aspect-ratio).
+ *  - page-motion.css hides an image that is still unmarked 100ms after it
+ *    appears, and the script marks that one `data-loaded="reveal"`, which fades
+ *    it in with the M9 arrival (160ms). An image that loads inside the 100ms —
+ *    anything already in the cache, so every remount of a picture the reader
+ *    has seen — is never hidden and never fades: hiding it at once made each
+ *    remounted avatar blink out and fade back (owner, 2026-11-23). Opacity
+ *    only: it never changes layout, so it cannot shift anything (images
+ *    reserve their box with width/height or aspect-ratio).
  *
  * Fails open, everywhere: no JavaScript → no `media-reveal` class → images show
  * normally. `error` marks too, so a broken image still shows its alt text.
- * Reduced motion (OS or the site setting) → no hiding at all. The page's LCP
+ * The page's LCP
  * image (`fetchpriority="high"`) is never hidden. An image with no `src` (which
  * would never fire `load`) is never hidden. Any image can opt out with
  * `data-no-reveal`.

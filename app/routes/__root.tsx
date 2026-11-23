@@ -42,7 +42,16 @@ import appTierCss from '@/app/app-tier.css?url';
 import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
-import geistLatinWoff2 from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
+import { FONT_ASSETS } from '@/lib/appearance/font-assets.gen';
+import {
+  DEFAULT_FONTS,
+  FONT_CATALOGUE,
+  FONTS_COOKIE,
+  appearanceSyncOff,
+  fontsInUse,
+  type FontChoice,
+} from '@/lib/appearance/fonts';
+import { resolveRequestFonts, type AccountFontsRow } from '@/lib/appearance/fonts-request';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
 import { dataSaverFromRequest } from '@/lib/data-saver-request';
 import { dirFor, DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/config';
@@ -105,7 +114,10 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     const session = await getRequestSession();
     const u = session?.user;
     // `resolved: true` = we asked and got an answer, whatever it was.
-    if (!u) return { user: null, resolved: true, appearanceSeed: null };
+    if (!u) return { user: null, resolved: true, appearanceSeed: null, accountFonts: null };
+    // Appearance sync is per device (owner, 2026-11-23): with it off, this device neither takes the account's theme
+    // nor its fonts, so neither the seed nor the account's font columns reach the page.
+    const syncOff = appearanceSyncOff(getRequest().headers.get('cookie'));
     // The account's saved appearance, merged with the account-sync's own rules
     // and expressed as the localStorage writes the theme step reads — see
     // lib/appearance/account-seed.ts. One indexed lookup on a session we have
@@ -128,6 +140,9 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
             readableFont: true,
             colorVision: true,
             jellyMotion: true,
+            fontMain: true,
+            fontReading: true,
+            fontMono: true,
           },
         }),
       ).catch(() => null),
@@ -135,7 +150,10 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
       null,
     );
     return {
-      appearanceSeed: appearanceRow ? accountAppearanceSeed(appearanceRow) : null,
+      appearanceSeed: appearanceRow && !syncOff ? accountAppearanceSeed(appearanceRow) : null,
+      accountFonts: (appearanceRow && !syncOff
+        ? { fontMain: appearanceRow.fontMain, fontReading: appearanceRow.fontReading, fontMono: appearanceRow.fontMono }
+        : null) as AccountFontsRow | null,
       user: {
         id: u.id,
         name: u.name ?? null,
@@ -163,7 +181,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // post RMHarks" — under load, which invites a duplicate login and reads as
     // having been logged out. The shell renders a neutral pending state for
     // `resolved: false` instead, and the client session backfills the truth.
-    return { user: null, resolved: false, appearanceSeed: null };
+    return { user: null, resolved: false, appearanceSeed: null, accountFonts: null };
   }
 });
 
@@ -215,6 +233,9 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // a client refetch. It shapes the first page's images, and the client reads the
   // same value while hydrating (lib/data-saver-request.ts, hooks/useDataSaver).
   const saveData = dataSaverFromRequest(request.headers.get('cookie'), request.headers.get('save-data'));
+  // The device's font choice, as ONLY its own cookie pair: loader data is serialized into the page, and the full
+  // header carries the session token.
+  const fontsCookie = fontsCookiePair(request.headers.get('cookie'));
   // en is bundled on the client and needs nothing here. For non-en we lazily load
   // ONLY the active language's bundle (its own async chunk) — the server no longer
   // imports all 32 catalogs at boot (cold-start win; see lib/i18n/resources.server.ts)
@@ -225,15 +246,15 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // so we await it here. The other namespaces load client-side on demand
   // (perf audit B6; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
-  if (locale === DEFAULT_LOCALE) return { locale, resources: null, saveData };
+  if (locale === DEFAULT_LOCALE) return { locale, resources: null, saveData, fontsCookie };
   try {
     await preloadLocale(locale);
-    return { locale, resources: localeCoreResources(locale), saveData };
+    return { locale, resources: localeCoreResources(locale), saveData, fontsCookie };
   } catch {
     // A failed locale chunk load must not take the whole document down with a
     // 500 / "Something went wrong": render English (the always-available
     // defaultValues) and let the client load the real locale's namespaces on demand.
-    return { locale: DEFAULT_LOCALE, resources: null, saveData };
+    return { locale: DEFAULT_LOCALE, resources: null, saveData, fontsCookie };
   }
 });
 
@@ -243,7 +264,13 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
  * tab already holds the active locale's resources, so keep `<html lang>`'s
  * locale and send no new bundle rather than throwing the root loader.
  */
-function i18nFallback(): { locale: Locale; resources: null; saveData: boolean } {
+/** The `rmh-fonts=…` pair from a Cookie header, or null: the one piece of it the page may carry. */
+function fontsCookiePair(cookieHeader: string | null | undefined): string | null {
+  const m = cookieHeader?.match(new RegExp(`(?:^|;\\s*)(${FONTS_COOKIE}=[^;]*)`));
+  return m?.[1] ?? null;
+}
+
+function i18nFallback(): { locale: Locale; resources: null; saveData: boolean; fontsCookie: string | null } {
   let locale: Locale = DEFAULT_LOCALE;
   if (typeof document !== 'undefined') {
     const lang = document.documentElement.lang as Locale;
@@ -251,7 +278,48 @@ function i18nFallback(): { locale: Locale; resources: null; saveData: boolean } 
   }
   // Data saver only matters to a render that is hydrating server HTML, which a
   // client refetch never is: `false` changes nothing on screen.
-  return { locale, resources: null, saveData: false };
+  return {
+    locale,
+    resources: null,
+    saveData: false,
+    fontsCookie: typeof document === 'undefined' ? null : fontsCookiePair(document.cookie),
+  };
+}
+
+/**
+ * The reader's faces for this page (lib/appearance/fonts.ts). The text faces in use get their Latin subset preloaded,
+ * requested in parallel with the stylesheet rather than after it: a font declared inside a stylesheet is not
+ * discoverable until that sheet has been downloaded AND parsed, and `font-display: swap` pays for the wait with a
+ * fallback-to-webfont swap. Only the Latin subset is preloaded; the other subsets stay behind their `unicode-range`.
+ * `crossOrigin` is REQUIRED even same-origin: fonts are fetched in CORS mode, and a preload without it is a second,
+ * uncredentialed fetch instead of a warm cache hit. Mono faces are `optional` and not preloaded, as Geist Mono was not.
+ *
+ * DM Sans and DM Mono live in the site sheet; every other face in use links its own sheet, so a visitor fetches only
+ * the faces they chose (owner, 2026-11-23).
+ */
+/** The catalogue as the pre-paint fonts step reads it: face → sheet URL, `''` for a default in the site sheet. */
+const PREPAINT_FONTS = {
+  t: Object.fromEntries(
+    FONT_CATALOGUE.filter((f) => f.kind !== 'mono').map((f) => [f.id, f.id === 'dm-sans' ? '' : FONT_ASSETS[f.id].sheet]),
+  ),
+  m: Object.fromEntries(
+    FONT_CATALOGUE.filter((f) => f.kind === 'mono').map((f) => [f.id, f.id === 'dm-mono' ? '' : FONT_ASSETS[f.id].sheet]),
+  ),
+};
+
+function fontHeadLinks(fonts: FontChoice) {
+  const reading = fonts.reading === 'same' ? fonts.main : fonts.reading;
+  const text = [...new Set([fonts.main, reading])];
+  return {
+    preloads: text.map((id) => ({
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: FONT_ASSETS[id].latin,
+      crossOrigin: 'anonymous' as const,
+    })),
+    sheets: fontsInUse(fonts).map((id) => ({ rel: 'stylesheet', href: FONT_ASSETS[id].sheet })),
+  };
 }
 
 /**
@@ -310,6 +378,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         user: null,
         resolved: false,
         appearanceSeed: null,
+        accountFonts: null,
       }),
       getInitialI18n().catch(i18nFallback),
     ]);
@@ -320,6 +389,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       i18nResources: i18n.resources,
       appearanceSeed: user.appearanceSeed,
       saveData: i18n.saveData,
+      // The faces this page is set in: the account's (sync on) over the device's cookie over the defaults.
+      fonts: resolveRequestFonts({ row: user.accountFonts, cookieHeader: i18n.fontsCookie }).choice,
     };
   },
   head: (ctx) => {
@@ -370,38 +441,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       };
     }
 
-    hintDocumentAssets(appCss, geistLatinWoff2);
+    const fonts = (ctx.loaderData as { fonts?: FontChoice } | undefined)?.fonts ?? DEFAULT_FONTS;
+    const fontLinks = fontHeadLinks(fonts);
+    hintDocumentAssets(appCss, FONT_ASSETS[fonts.main].latin);
 
     return {
       meta: ROOT_META,
       links: [
         ...ROOT_LINKS,
-        // Geist's Latin subset, requested in parallel with the stylesheet rather
-        // than after it. A font declared inside a stylesheet is not discoverable
-        // until that sheet has been downloaded AND parsed, and the entry sheet
-        // is ~315 KB on a site page — so the 47 KB font that renders essentially
-        // all of the page's text used to start on the far side of that, and `font-display: swap`
-        // paid for it with a visible fallback-to-webfont reflow. Only the Latin
-        // subset is preloaded: the other six (Cyrillic, Greek, Vietnamese, …)
-        // stay behind their `unicode-range` so a Latin-script visitor never
-        // fetches them. `crossOrigin` is REQUIRED even same-origin — fonts are
-        // fetched in CORS mode, and a preload without it is a second,
-        // uncredentialed fetch instead of a warm cache hit.
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/woff2',
-          href: geistLatinWoff2,
-          crossOrigin: 'anonymous',
-        },
+        ...fontLinks.preloads,
         { rel: 'stylesheet', href: appCss },
+        ...fontLinks.sheets,
       ],
       scripts: [
         // The whole pre-paint stack: the `rmh-prepaint` data block (global-404 flag,
         // the signed-in account's appearance seed, theme tables) and the one generated
         // script that reads it — lib/prepaint. The account seed is applied before the
         // theme step reads localStorage, inside that script.
-        ...prepaintHeadScripts({ notFound: globalNotFound, seed }),
+        ...prepaintHeadScripts({ notFound: globalNotFound, seed, fonts: PREPAINT_FONTS }),
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),
       ],
@@ -426,14 +483,24 @@ function RootDocument({ children }: { children: ReactNode }) {
   // A static document's first load ships no client JavaScript (lib/static-document.ts).
   const staticDocument = useIsStaticDocument();
   let locale: Locale = 'en';
+  let fonts: FontChoice = DEFAULT_FONTS;
   try {
     const data = Route.useLoaderData();
     locale = (data?.locale ?? 'en') as Locale;
+    fonts = data?.fonts ?? DEFAULT_FONTS;
   } catch {
     // shell component cannot access loader data — inline guard handles correction
   }
   return (
-    <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={dirFor(locale)}
+      // The reader's faces (app/fonts/choice-rules.css maps these to --site-font-*); a default is expressed by absence.
+      data-font-main={fonts.main === DEFAULT_FONTS.main ? undefined : fonts.main}
+      data-font-reading={fonts.reading === DEFAULT_FONTS.reading ? undefined : fonts.reading}
+      data-font-mono={fonts.mono === DEFAULT_FONTS.mono ? undefined : fonts.mono}
+      suppressHydrationWarning
+    >
       <head>
         <SiteHeadContent />
         {/* Reveals are now pure CSS (`animation-timeline: view()`), and their

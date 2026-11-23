@@ -229,7 +229,7 @@ historical. **Values are exact: do not round, substitute or improve them. Sectio
 are still open — do not resolve them by assumption; ask.**
 
 **Identity: a professional tool that happens to have one remarkable object in it.** A flat, neutral page in one typeface
-(Geist; Geist Mono for timestamps, counts and small data), divided by hairline rules. Two editions, Day (`:root`,
+(DM Sans; DM Mono for timestamps, counts and small data; a reader may choose their own from `lib/appearance/fonts.ts`), divided by hairline rules. Two editions, Day (`:root`,
 `.style-default`) and Night (`.style-graphite`), one set of `--site-*` names. No accent colour: the accent is the ink.
 Content hangs on the spine, a 1px vertical line (arrives in phase 4). Copy is short and literal; no exclamation marks,
 no emoji in site chrome, a verb or a verb and a noun on a button; every string through `t()`.
@@ -311,7 +311,8 @@ the globe veil or a theme wash should be looked at that way before it is called 
 chrome renderer, loaded at idle. The site tier creates exactly one WebGL context (the chrome renderer) and no worker,
 `MutationObserver` or decorative `ResizeObserver`, except the predictive link prefetcher (`lib/foresight-prefetch.ts`,
 ForesightJS; owner exception of 2026-11-15, B3), and no `requestAnimationFrame` callback is pending at rest (B3). Fonts
-are Geist and Geist Mono only, self-hosted. **The site-tier CSS gets smaller in every phase (B5):** the ledger in
+are DM Sans and DM Mono in the site sheet, self-hosted; a face a reader chose is its own sheet, linked only for them
+(owner, 2026-11-23). **The site-tier CSS gets smaller in every phase (B5):** the ledger in
 section 17 of the plan records the built `site-tier-*.css` and the critical-path JavaScript for `/` before phase 1 and
 after each phase; `pnpm -s exec tsx scripts/check-bundle-budget.ts` must pass. The one ambient clock is the chrome
 globe's idle drift (a 15 Hz tick, 7 on handhelds), bounded by `testing/e2e/steel-rest.mjs`.
