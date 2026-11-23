@@ -73,6 +73,7 @@ import { bulkErasureOps } from '@/lib/bulk/bulk.server';
 import { coverageErasureOps } from '@/lib/account/erasure-coverage.server';
 import { privateDataErasureOps } from '@/lib/account/erasure-private.server';
 import { listsErasureOps } from '@/lib/account/erasure-lists.server';
+import { medschoolsErasureOps } from '@/lib/account/erasure-medschools.server';
 import { gameProgressErasureOps } from '@/lib/account/erasure-games.server';
 import { boardsErasureOps } from '@/lib/account/erasure-boards.server';
 import {
@@ -653,6 +654,9 @@ export async function anonymizeAccount(userId: string): Promise<void> {
 
     // s10-19 erasure-follows
     ...followsErasureOps(userId),
+
+    // med-schools-phase-4 tracker, lists, preferences (the shared anonymous events go in a pre-step, plan Task 6)
+    ...medschoolsErasureOps(userId),
 
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({

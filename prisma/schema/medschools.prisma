@@ -4,8 +4,11 @@
 // models. No username, display name, avatar, source user id, author or post text.
 // Source dedupe keys are stored only as an HMAC (`MedCycleEvent.dedupeHash`).
 // `features/medschools/engine/schema.test.ts` fails on any column named like
-// `user*name|author|avatar|display`. (Private tracker models, added in a later
-// phase, may carry their owner's `userId`; public endpoints never read them.)
+// `user*name|author|avatar|display`. Exactly three models carry their owner's
+// `userId`: `MedTrackerCycle`, `MedSchoolList` and `MedUserPrefs` (phase 4; public
+// endpoints never read them). `MedTrackerApplication`, `MedTrackerMilestone` and
+// `MedSchoolListItem` reach their owner only through a parent, and an anonymous
+// `MedCycleEvent` (source RMH) has no column that points at any of them.
 //
 // CYCLE YEAR is the ENTRY year, CycleTrack's convention: the 2026-2027 cycle is 2027.
 
@@ -15,6 +18,33 @@ enum MedDegree {
 }
 
 enum MedProgram {
+  REG
+  PHD
+}
+
+/// A step in a private tracker application. Only the seven public event types are ever shared.
+enum MedMilestoneType {
+  SUBMITTED
+  COMPLETE
+  SECONDARY
+  INTERVIEW
+  WAITLIST
+  REJECTION
+  ACCEPTANCE
+  WITHDRAWN
+  HOLD
+}
+
+/// A saved program preference: degree-neutral, `ALL` = every program.
+enum MedProgramFilter {
+  ALL
+  REG
+  PHD
+}
+
+/// A school list item's program. `ANY` = either; a plain value so the unique key is a plain unique.
+enum MedListProgram {
+  ANY
   REG
   PHD
 }
@@ -77,13 +107,15 @@ model MedSchool {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  aliases            MedSchoolAlias[]
-  counts             MedCycleCount[]
-  events             MedCycleEvent[]
-  stats              MedSchoolStats[]
-  interviewQuestions MedInterviewQuestion[]
-  interviewProfiles  MedInterviewProfile[]
-  sdnThreads         MedSdnThread[]
+  aliases             MedSchoolAlias[]
+  counts              MedCycleCount[]
+  events              MedCycleEvent[]
+  stats               MedSchoolStats[]
+  interviewQuestions  MedInterviewQuestion[]
+  interviewProfiles   MedInterviewProfile[]
+  sdnThreads          MedSdnThread[]
+  trackerApplications MedTrackerApplication[]
+  listItems           MedSchoolListItem[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -317,4 +349,109 @@ model MedSourceRun {
 
   @@index([source, job, startedAt])
   @@map("med_source_run")
+}
+
+// ─── Private tracker, school lists, preferences (phase 4) ──────────────────────
+// Owner only, never read by a public endpoint, never an input to a public figure
+// except through `features/medschools/api/share-sync.server.ts`, the one writer.
+
+/// One applicant's cycle. `shareAnonymously` defaults OFF everywhere it is created.
+model MedTrackerCycle {
+  id               String   @id @default(cuid())
+  userId           String
+  /// Entry year (2026-2027 → 2027).
+  cycleYear        Int
+  homeState        String?  @db.VarChar(2)
+  shareAnonymously Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User                    @relation("UserMedTrackerCycles", fields: [userId], references: [id], onDelete: Cascade)
+  applications MedTrackerApplication[]
+
+  @@unique([userId, cycleYear])
+  @@index([userId])
+  @@map("med_tracker_cycle")
+}
+
+/// A school applied to in a cycle. School and program never change (remove and add instead).
+model MedTrackerApplication {
+  id        String     @id @default(cuid())
+  cycleId   String
+  schoolId  String
+  program   MedProgram
+  notes     String?    @db.VarChar(1000)
+  createdAt DateTime   @default(now())
+
+  cycle      MedTrackerCycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  school     MedSchool             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  milestones MedTrackerMilestone[]
+
+  @@unique([cycleId, schoolId, program])
+  @@index([schoolId])
+  @@map("med_tracker_application")
+}
+
+/// One dated step. No column links it to its shared event: the event's hash is recomputed from the server secret.
+model MedTrackerMilestone {
+  id            String           @id @default(cuid())
+  applicationId String
+  type          MedMilestoneType
+  /// A UTC calendar day.
+  date          DateTime         @db.Date
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  application MedTrackerApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, type])
+  @@map("med_tracker_milestone")
+}
+
+/// A named school list. One, "My schools", is created on first use; at most 20 per user.
+model MedSchoolList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(60)
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User                @relation("UserMedSchoolLists", fields: [userId], references: [id], onDelete: Cascade)
+  items MedSchoolListItem[]
+
+  @@index([userId, position])
+  @@map("med_school_list")
+}
+
+model MedSchoolListItem {
+  id       String         @id @default(cuid())
+  listId   String
+  schoolId String
+  program  MedListProgram @default(ANY)
+  position Int
+  note     String?        @db.VarChar(500)
+  addedAt  DateTime       @default(now())
+
+  list   MedSchoolList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  school MedSchool     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, schoolId, program])
+  @@index([listId, position])
+  @@index([schoolId])
+  @@map("med_school_list_item")
+}
+
+/// Defaults that fill in only where the URL is silent.
+model MedUserPrefs {
+  userId          String           @id
+  programFilter   MedProgramFilter @default(ALL)
+  degree          MedDegree?
+  homeState       String?          @db.VarChar(2)
+  chartCategories MedEventType[]   @default([])
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation("UserMedPrefs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("med_user_prefs")
 }

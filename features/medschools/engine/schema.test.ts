@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const PERSON_LIKE = /user.*name|author|avatar|display/i;
@@ -28,11 +28,17 @@ function parseModels(schemaText: string): Parsed[] {
   return out;
 }
 
+/**
+ * The only models that may carry their owner's `userId`. A name list, not a prefix: `MedTrackerApplication`,
+ * `MedTrackerMilestone` and `MedSchoolListItem` reach their owner only through a parent.
+ */
+const USER_OWNED = new Set(['MedTrackerCycle', 'MedSchoolList', 'MedUserPrefs', 'MedSchoolFollow']);
+
 /** `Model.field` for every column that could hold a person identifier. */
 function forbiddenColumns(schemaText: string): string[] {
   const hits: string[] = [];
   for (const { model, fields } of parseModels(schemaText)) {
-    const allowsUserId = model.startsWith('MedTracker') || model === 'MedSchoolFollow';
+    const allowsUserId = USER_OWNED.has(model);
     for (const f of fields) {
       if (PERSON_LIKE.test(f) || (f === 'userId' && !allowsUserId)) hits.push(`${model}.${f}`);
     }
@@ -61,6 +67,25 @@ model MedTrackerCycle {
   id String @id
   userId String
 }
+model MedSchoolList {
+  id String @id
+  userId String
+}
+model MedUserPrefs {
+  userId String @id
+}
+model MedSchoolListItem {
+  id String @id
+  userId String
+}
+model MedTrackerMilestone {
+  id String @id
+  userId String
+}
+model MedTrackerApplication {
+  id String @id
+  userId String
+}
 `;
     const hits = forbiddenColumns(bad);
     expect(hits).toEqual([
@@ -69,8 +94,13 @@ model MedTrackerCycle {
       'MedCycleEvent.avatarUrl',
       'MedCycleEvent.displayName',
       'MedCycleEvent.userId',
+      'MedSchoolListItem.userId',
+      'MedTrackerMilestone.userId',
+      'MedTrackerApplication.userId',
     ]);
     expect(hits).not.toContain('MedTrackerCycle.userId');
+    expect(hits).not.toContain('MedSchoolList.userId');
+    expect(hits).not.toContain('MedUserPrefs.userId');
   });
 
   it("MedCycleEvent has exactly the spec's columns", () => {
@@ -185,5 +215,88 @@ model MedTrackerCycle {
 
   it('no MedInterviewDate model exists', () => {
     expect(schema()).not.toMatch(/model\s+MedInterviewDate\b/);
+  });
+
+  describe('phase 4: private tracker, lists and preferences', () => {
+    const model = (name: string) => parseModels(schema()).find((x) => x.model === name);
+    const uniques = (name: string) =>
+      (model(name)?.body.split('\n') ?? [])
+        .filter((l) => l.includes('@@unique'))
+        .map(
+          (l) =>
+            /\[([^\]]+)\]/
+              .exec(l)?.[1]
+              ?.split(',')
+              .map((x) => x.trim()) ?? [],
+        );
+
+    it('only the three owner models (and the phase 7 follow) carry userId', () => {
+      for (const m of parseModels(schema())) {
+        const has = m.fields.includes('userId');
+        expect(has, m.model).toBe(USER_OWNED.has(m.model) && m.model !== 'MedSchoolFollow');
+      }
+      for (const name of ['MedTrackerApplication', 'MedTrackerMilestone', 'MedSchoolListItem']) {
+        expect(model(name)?.fields, name).not.toContain('userId');
+      }
+    });
+
+    it('pins the uniques the contributors = count maths rests on (D4)', () => {
+      expect(uniques('MedTrackerCycle')).toContainEqual(['userId', 'cycleYear']);
+      expect(uniques('MedTrackerApplication')).toContainEqual(['cycleId', 'schoolId', 'program']);
+      expect(uniques('MedTrackerMilestone')).toContainEqual(['applicationId', 'type']);
+    });
+
+    it('a tracker application always has a program', () => {
+      expect(model('MedTrackerApplication')?.body).toMatch(/\bprogram\s+MedProgram\s/);
+      expect(model('MedTrackerApplication')?.body).not.toMatch(/\bprogram\s+MedProgram\?/);
+    });
+
+    it('sharing defaults off', () => {
+      expect(model('MedTrackerCycle')?.body).toMatch(/shareAnonymously\s+Boolean\s+@default\(false\)/);
+    });
+
+    it('a list item program is a non-null ANY | REG | PHD enum with a plain unique (Q10)', () => {
+      const body = /enum MedListProgram \{([\s\S]*?)\}/.exec(schema())?.[1] ?? '';
+      expect(
+        body
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean),
+      ).toEqual(['ANY', 'REG', 'PHD']);
+      expect(model('MedSchoolListItem')?.body).toMatch(/\bprogram\s+MedListProgram\s/);
+      expect(uniques('MedSchoolListItem')).toContainEqual(['listId', 'schoolId', 'program']);
+    });
+
+    it('MedProgramFilter is ALL | REG | PHD and MedMilestoneType has the nine types', () => {
+      const vals = (e: string) =>
+        (new RegExp(`enum ${e} \\{([\\s\\S]*?)\\}`).exec(schema())?.[1] ?? '').split(/\s+/).filter(Boolean);
+      expect(vals('MedProgramFilter')).toEqual(['ALL', 'REG', 'PHD']);
+      expect(vals('MedMilestoneType')).toEqual([
+        'SUBMITTED',
+        'COMPLETE',
+        'SECONDARY',
+        'INTERVIEW',
+        'WAITLIST',
+        'REJECTION',
+        'ACCEPTANCE',
+        'WITHDRAWN',
+        'HOLD',
+      ]);
+    });
+
+    it('MedCycleEvent gains no column for the tracker (no link back to a milestone)', () => {
+      expect(model('MedCycleEvent')?.fields.some((f) => /milestone|tracker|user/i.test(f))).toBe(false);
+      expect(model('MedTrackerMilestone')?.fields.some((f) => /hash|event/i.test(f))).toBe(false);
+    });
+
+    it('the migration is additive and has no partial index (Q10)', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_tracker'));
+      expect(dir).toBeDefined();
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+      expect(sql).toContain('CREATE TABLE "med_tracker_cycle"');
+      expect(sql).toContain('CREATE TABLE "med_school_list_item"');
+      expect(sql).not.toMatch(/WHERE\s+"program"/i);
+      expect(sql).not.toMatch(/\bDROP\b/i);
+    });
   });
 });

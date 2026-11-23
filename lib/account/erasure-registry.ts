@@ -914,6 +914,16 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove. The exception is the member\'s own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it.',
   },
+  MedSchoolList: {
+    decision: 'erase',
+    reason: "The member's saved school lists; list items go by the database cascade.",
+  },
+  MedTrackerCycle: {
+    decision: 'erase',
+    reason:
+      'The private tracker; cascades to applications and milestones. The shared anonymous events are removed by `eraseSharedMedEvents` before this runs (plan Task 6), because only a milestone id plus the server secret finds them.',
+  },
+  MedUserPrefs: { decision: 'erase', reason: "The member's med schools display defaults; no child rows." },
   MemberMemory: {
     decision: 'erase',
     reason: 'Private memories; the table has no child rows.',

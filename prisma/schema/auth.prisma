@@ -303,6 +303,11 @@ model User {
   homeFavorites HomeFavorite[]
   homeWatches   HomeWatch[]
 
+  // ─── RMH Med Schools private tracker, lists, preferences (phase 4) ──
+  medTrackerCycles MedTrackerCycle[] @relation("UserMedTrackerCycles")
+  medSchoolLists   MedSchoolList[]   @relation("UserMedSchoolLists")
+  medUserPrefs     MedUserPrefs?     @relation("UserMedPrefs")
+
   media Media[]
 
   // WebAuthn passkeys (@better-auth/passkey)

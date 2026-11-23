@@ -191,8 +191,10 @@ The single rule: **no identifier of a person crosses the adapter boundary.**
   with the account (`onDelete: Cascade` on the user), never an input to any public figure.
   - `MedSchoolList` (id, userId, name ≤ 60 chars, position, createdAt, updatedAt): a user's named lists ("Applying",
     "Reach", "Maybe"). One list, "My schools", is created on first use; at most 20 lists per user.
-  - `MedSchoolListItem` (id, listId, schoolId, program `MedProgram?` (null = either), position, note ≤ 500 chars,
-    addedAt; unique `[listId, schoolId, program]`; at most 200 items per list).
+  - `MedSchoolListItem` (id, listId, schoolId, program `ANY|REG|PHD` (non-null enum `MedListProgram`, `ANY` = either;
+    not a nullable `MedProgram`, so the unique key is a plain unique, since Postgres treats NULLs as distinct; phase 4
+    ruling Q10, 2026-11-23), position, note ≤ 500 chars, addedAt; unique `[listId, schoolId, program]`; at most 200
+    items per list).
   - `MedUserPrefs` (userId as the id, program filter `ALL|REG|PHD`, degree `MD|DO|null`, homeState `String?`, chart
     categories `MedEventType[]` (the Activity toggles), updatedAt).
   - Behaviour: signed-in users get "Save to list" on the school page and on index rows (a menu of their lists plus "New
