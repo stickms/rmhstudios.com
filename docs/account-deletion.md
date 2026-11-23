@@ -186,6 +186,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `NotificationPreference` | erase | Rule 1: settings only the member sees. |
 | `OfficeHoursConfig` | erase | Availability settings (windows go by cascade); bookings others made have their own entry. |
 | `Passkey` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
+| `TwoFactor` | erase | The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys. |
 | `Player` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `PostAutoDelete` | erase | The member's own auto-delete rule. |
 | `PostSeriesFollow` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `PostSeries.followCount` is decremented (floored) in the same transaction. |

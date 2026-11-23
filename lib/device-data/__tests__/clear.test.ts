@@ -30,7 +30,7 @@ describe('inspecting the device', () => {
     const ids = report.stores.map((s) => s.id);
     expect(ids).toContain('studio');
     expect(ids).toContain('offline-caches');
-    expect(ids).not.toContain('rmhos-home');
+    expect(ids).not.toContain('hearthworks-saves');
     const studio = report.stores.find((s) => s.id === 'studio');
     expect(studio?.parts).toMatchObject({ projects: 2, samples: 1, presets: 0 });
     expect(studio?.bytes).toBeGreaterThanOrEqual(2048);

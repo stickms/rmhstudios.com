@@ -8,6 +8,8 @@
   "error-title": "Could not load activity.",
   "event-account-merged": "Another account was merged in",
   "event-account-merged-providers": "Another account was merged in: {{providers}}",
+  "event-account-secured-by-admin": "Staff signed this account out everywhere and revoked its API keys, tokens and webhooks",
+  "event-backup-codes-regenerated": "New backup codes made. The old ones no longer work",
   "event-deletion-cancelled": "Account deletion cancelled",
   "event-deletion-scheduled": "Account deletion scheduled",
   "event-email-changed": "Email change requested",
@@ -31,6 +33,8 @@
   "event-sign-in-new-device-device": "Signed in from a new device: {{device}}",
   "event-sign-out": "Signed out",
   "event-sign-out-device": "Signed out on {{device}}",
+  "event-two-factor-disabled": "Two-step verification turned off",
+  "event-two-factor-enabled": "Two-step verification turned on",
   "filter-account": "Account",
   "filter-all": "All",
   "filter-label": "Filter activity",
@@ -42,6 +46,5 @@
   "retry": "Try again",
   "same-network": "Same network as this device",
   "this-device": "This device",
-  "title": "Recent activity",
-  "event-account-secured-by-admin": "Staff signed this account out everywhere and revoked its API keys, tokens and webhooks"
+  "title": "Recent activity"
 }

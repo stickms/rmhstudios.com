@@ -66,7 +66,7 @@ export const NAMESPACES = [
   "c-news", "c-nightrail", "c-predictions", "c-profile-modules", "c-rideshare",
   "c-rmh-capital", "c-rmh-datacenter", "c-rmh-pmc", "c-rmh-research", "c-rmhbox", "c-rmhcalculator", "c-rmhcharacters",
   "c-rmhcode",
-  "c-rebar-rutabaga", "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhos", "c-rmhstudy",
+  "c-rebar-rutabaga", "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhstudy",
   "c-rmhtech", "c-rmhtube",
   "c-rmhtype", "c-rmhvibe", "c-roadmap", "c-saves", "c-signal-forge",
   "c-status", "c-studio", "c-synapse-storm", "c-temple-of-joy", "c-tf2-game", "c-tf2-hud",

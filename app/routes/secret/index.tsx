@@ -10,7 +10,6 @@ import {
   Swords,
   BrainCircuit,
   Zap,
-  Map,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,10 +35,6 @@ const secretGames: SecretItem[] = [
   { id: 'vega', name: 'Project Vega', desc: 'Clinical horror tower defense', icon: BrainCircuit, accent: '#16a34a', href: '/secret/vega' },
   { id: 'cursed-logic', name: 'Cursed Logic', desc: 'Psychological duel vs. rogue AI', icon: Swords, accent: '#ca8a04', href: '/secret/cursed-logic' },
   { id: 'signal-forge', name: 'Signal Forge', desc: 'Rhythmic roguelike deckbuilder', icon: Zap, accent: '#06b6d4', href: '/secret/signal-forge' },
-];
-
-const secretPages: SecretItem[] = [
-  { id: 'roadmap', name: 'Roadmap', desc: "What's next for RMH Studios", icon: Map, accent: '#10b981', href: '/roadmap' },
 ];
 
 function ItemCard({ item }: { item: SecretItem }) {
@@ -107,19 +102,10 @@ function SecretPage() {
           <p className="text-white/60">{t("vault-subtitle", { defaultValue: "Experimental projects. Enter at your own risk." })}</p>
         </div>
 
-        <section className="mb-12">
+        <section>
           <h2 className="mb-4 text-lg font-semibold text-white/70">{t("section-games", { defaultValue: "Games" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretGames.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-white/70">{t("section-pages", { defaultValue: "Pages" })}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {secretPages.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
           </div>

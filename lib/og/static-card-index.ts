@@ -22,9 +22,10 @@
  * URL, often for weeks, so a card redrawn under the same URL keeps unfurling
  * in the old design. Bump this when the look of the cards changes (not when
  * one card's content does: the renderers key that themselves) and every page's
- * og:image becomes a new URL. `steel` is the Steel redesign of 2026-11-15.
+ * og:image becomes a new URL. `steel` is the Steel redesign of 2026-11-15; `steel-2` (2026-11-23) draws the mark
+ * larger and as a vector, and sets every footer at the post card's size.
  */
-export const OG_CARD_VERSION = 'steel';
+export const OG_CARD_VERSION = 'steel-2';
 
 /** `[path prefix, card file]`, in `STATIC_CARDS` order. */
 export const STATIC_CARD_INDEX: readonly (readonly [string, string])[] = [

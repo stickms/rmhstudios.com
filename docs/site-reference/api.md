@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1322 endpoints across 203 groups: 167 route files under `app/routes/api` and 1155 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1321 endpoints across 202 groups: 167 route files under `app/routes/api` and 1154 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1945,14 +1945,6 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/rmhmusic/sprint/daily` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts` |
 | `/api/rmhmusic/sprint/daily-start` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily-start.server.ts` |
 | `/api/rmhmusic/sprint/freeplay` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.freeplay.server.ts` |
-
-## `/api/rmhos`
-
-1 route.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/rmhos/session` | `GET` | `features/rmhos/api/rmhos.session.server.ts` |
 
 ## `/api/rmhstudy`
 

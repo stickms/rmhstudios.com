@@ -382,6 +382,13 @@ interface ThemeStore {
   /** Appearance sync for THIS device (owner, 2026-11-23): off = neither pull nor push appearance. */
   appearanceSync: boolean;
   setAppearanceSync: (on: boolean) => void;
+  /**
+   * True once Providers has read this device's stored appearance into the store. Until then the store holds defaults,
+   * so effects that write appearance back (fonts, the sync switch) and readers that prefer the store over the server's
+   * render wait for it. A flag rather than a first-run skip: React's dev double effects defeat a first-run ref.
+   */
+  appearanceHydrated: boolean;
+  markAppearanceHydrated: () => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -433,11 +440,14 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   fonts: DEFAULT_FONTS,
   setFont: (slot, id) => {
     if (!isFontFor(slot, id)) return;
+    if (useThemeStore.getState().fonts[slot] === id) return;
     stamp();
     set((st) => ({ fonts: { ...st.fonts, [slot]: id } }));
   },
   appearanceSync: true,
   setAppearanceSync: (appearanceSync) => set({ appearanceSync }),
+  appearanceHydrated: false,
+  markAppearanceHydrated: () => set({ appearanceHydrated: true }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

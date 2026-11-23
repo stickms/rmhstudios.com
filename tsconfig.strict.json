@@ -45,7 +45,6 @@
     "lib/sitewide-announcement.contract.ts",
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts",
-    "features/rmhos/engine/*.ts",
     "lib/rmhmusic/learn/sprint/*.ts",
     "lib/rmhmusic/learn/tuner/*.ts",
     "lib/rmhmusic/learn/songs/*.ts",
@@ -57,5 +56,5 @@
     "lib/streaks/*.ts",
     "lib/toolbox/*.ts"
   ],
-  "exclude": ["node_modules", "features/rmhos/engine/vm.ts", "**/__tests__/**", "**/*.test.ts"]
+  "exclude": ["node_modules", "**/__tests__/**", "**/*.test.ts"]
 }
