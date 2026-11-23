@@ -1,0 +1,22 @@
+/* Is the page painted under the strips at all? A lime block at the very top of the DOCUMENT and a magenta one at the very bottom (absolute, so they scroll with the page, not fixed). At scroll top and at the end, lime / magenta showing in the strip rows means the strip is see-through and our wash simply is not painted there; the strip staying flat means Safari paints over the page. */
+body {
+  position: relative !important;
+}
+body::before,
+body::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+body::before {
+  top: 0;
+  background: #00ff00;
+}
+body::after {
+  bottom: 0;
+  background: #ff00ff;
+}

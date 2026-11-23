@@ -11,6 +11,7 @@
 #   DEVICE       simulator name to prefer, default "iPhone 17 Pro" (falls back to the newest iPhone)
 #   OPEN_GLOBE   "1" taps the docked globe and shoots again (needs `idb`, best effort)
 #   SCROLL_BOTTOM "1" (default) also swipes to the bottom of the page and shoots it (needs `idb`); SWIPES caps the swipes (25)
+#   MID_SWIPES   swipes up before an extra mid-scroll shot (`-mid`, needs `idb`); 0 (default) skips it
 #   NAME_PREFIX  prefix for the file names, default "" (the themed run uses "theme-")
 #   SETTLE       seconds to wait after a page opens, default 8
 #
@@ -114,6 +115,17 @@ for appearance in $APPEARANCES; do
       first=0
     fi
     shoot "${slug}-${appearance}"
+    if [ "${MID_SWIPES:-0}" -gt 0 ] && [ -n "$IDB" ]; then
+      # Mid-scroll: content passes under the bars here, so this is the picture of what shows through them.
+      read -r W H < <(screen_points)
+      for _ in $(seq 1 "$MID_SWIPES"); do
+        "$IDB" ui swipe --udid "$UDID" $((W / 2)) $((H * 75 / 100)) $((W / 2)) $((H * 20 / 100)) --duration 0.15 >/dev/null 2>&1 || break
+      done
+      sleep 2
+      shoot "${slug}-${appearance}-mid"
+      open_url "${BASE%/}${path}" || true
+      sleep "$SETTLE"
+    fi
     if [ "${SCROLL_BOTTOM:-1}" = "1" ] && [ -n "$IDB" ]; then
       # The bottom of the page: the strip behind Safari's tab bar is outside the document, so a wash that stops at the
       # document's end shows as a seam there. Swipe up until the page stops moving (SWIPES at most), then shoot.

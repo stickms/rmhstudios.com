@@ -24,8 +24,8 @@ on:
         default: paper
       probes:
         description:
-          Space-separated names from scripts/ios-sim/probes (html-red body-blue root-red-body-clear fixed-edge-gradient)
-          to shoot, to learn what colours Safari's strips. Empty skips.
+          Space-separated names from scripts/ios-sim/probes (html-red body-blue root-red-body-clear fixed-edge-gradient
+          doc-edge-blocks) to shoot, to learn what colours Safari's strips. Empty skips.
         default: ''
       only_probes:
         description: Skip the standard and themed captures and run only the probes
@@ -137,6 +137,7 @@ jobs:
           APPEARANCES: light
           OPEN_GLOBE: '0'
           SCROLL_BOTTOM: '1'
+          MID_SWIPES: '4'
         run: |
           port=7010
           for probe in ${{ inputs.probes }}; do
