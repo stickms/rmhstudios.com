@@ -15,7 +15,7 @@ export function WikiRow({ slug }: { slug: string }) {
   // The list is a 404 for anyone who may not read it (a private community, a banned member): no row then.
   if (pages.isError || pages.data === undefined) return null;
   return (
-    <div className="border-y border-site-border px-4">
+    <div className="border-b border-site-border px-4">
       <Link to={`/c/${slug}/wiki` as string} className="flex items-baseline justify-between gap-3 py-3">
         <span className="t-body font-medium">{t('row-title', { defaultValue: 'Wiki' })}</span>
         <span className="t-meta">

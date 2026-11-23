@@ -32,6 +32,12 @@ const buttonVariants = cva(
         'icon-xs': "size-7 pointer-coarse:size-11 [&_svg:not([class*='size-'])]:size-3",
         'icon-sm': 'size-9 pointer-coarse:size-11',
         'icon-lg': 'size-9 pointer-coarse:size-11',
+        // A dense toolbar (the composer's quick actions and Post; owner, 2026-11-23: "make the 'post' button (and
+        // other compose box buttons) shorter"): 32px visible on every pointer. On touch the 44px target (A3) is the
+        // `hit-slop` overlay rather than the painted box, and the icon size keeps 6px of margin on each side so
+        // neighbouring targets never overlap. base-interaction.css exempts these two sizes from the coarse min size.
+        compact: 'hit-slop h-8 gap-1.5 px-4 has-[>svg]:px-3',
+        'icon-compact': 'hit-slop size-8 pointer-coarse:mx-1.5',
       },
     },
     defaultVariants: {

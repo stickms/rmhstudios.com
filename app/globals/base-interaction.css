@@ -299,7 +299,8 @@ body {
    is used inside a toolbar. The glyph/pill styling stays compact; only the
    interactive box grows, which also gives adjacent controls reliable air. */
 @media (pointer: coarse) {
-  [data-slot='button'],
+  /* The `compact` and `icon-compact` button sizes stay 32px painted and reach 44px through `.hit-slop` below. */
+  [data-slot='button']:not([data-size$='compact']),
   [data-slot='select'],
   [role='tab']:not([data-tab-dense] *) {
     min-block-size: var(--site-touch-target);
