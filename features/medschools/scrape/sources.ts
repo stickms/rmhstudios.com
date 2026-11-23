@@ -35,9 +35,16 @@ export const ADMIT_GRAPHQL_PATH = '/graphql';
  */
 export const ADMIT_SCHOOL_URL: ((aliasKey: string) => string) | undefined = undefined;
 
+/**
+ * Admit's public secondary-essays page for an alias key (secondaries tab). The path comes from the endpoint inventory
+ * (`/secondary-essays/<slug>`); that the slug equals the Admit alias key is UNVERIFIED (secondaries plan, Facts 1).
+ */
+export const ADMIT_SECONDARY_URL = (slug: string): string => `${SOURCES.ADMIT_WEB.origin}/secondary-essays/${slug}`;
+
 export const SOURCES: {
   CYCLETRACK: SourceConfig;
   ADMIT: SourceConfig;
+  ADMIT_WEB: SourceConfig;
   SDN_FORUMS: SourceConfig;
   SDN_WWW: SourceConfig;
 } = {
@@ -63,6 +70,20 @@ export const SOURCES: {
     retryAfterCapMs: 120_000,
     timeoutMs: 15_000,
     headers: { origin: 'https://med.admit.org' },
+  },
+  // med.admit.org: Admit's public WEBSITE (HTML pages), a different origin from the API above and its own politeness
+  // domain. Only the secondaries job reads it (owner 2026-11-23: at least 3 s between requests plus 0-1 s of jitter).
+  ADMIT_WEB: {
+    origin: 'https://med.admit.org',
+    userAgent: MEDSCHOOLS_USER_AGENT,
+    spacingMs: 3000,
+    jitterMs: 1000,
+    backfillSpacingMs: 3000,
+    backfillJitterMs: 1000,
+    maxConsecutiveFailures: 3,
+    maxRetries: 3,
+    retryAfterCapMs: 120_000,
+    timeoutMs: 20_000,
   },
   // Student Doctor Network. The owners gave written permission (2026-11-20) for all data provided it is
   // anonymized, which is why nothing person-shaped crosses the adapter boundary. www.studentdoctor.net sends
@@ -95,13 +116,16 @@ export const SOURCES: {
 };
 
 /** Default per-host DAILY request budgets (UTC day, all jobs on the host together; env overrides in the worker). */
-export const DAILY_REQUEST_BUDGETS: Record<'CYCLETRACK' | 'ADMIT' | 'SDN_FORUMS' | 'SDN_WWW', number> = {
+export const DAILY_REQUEST_BUDGETS: Record<'CYCLETRACK' | 'ADMIT' | 'ADMIT_WEB' | 'SDN_FORUMS' | 'SDN_WWW', number> = {
   // The hourly diff of ~238 schools is about 5,700 a day and the resumable backfill rides on top: this is a runaway
   // guard well above that, not a throttle (the existing 1-2 s spacing is the throttle).
   CYCLETRACK: 20_000,
   // Live (~300 feed polls and a few lookups), interviews (~650) and history (<= 600) come to about 2,000, and the school
   // forums (owner 2026-11-23, <= 600 a day by their own quota) bring it to about 2,600: raised from 3,000 to leave headroom.
   ADMIT: 3500,
+  // The secondaries job (two runs a week, one page per school: about 240 pages, plus robots.txt and retries) is the only
+  // reader of med.admit.org. 700 is about three times one full run: a runaway guard, not a throttle (the 3 s spacing is).
+  ADMIT_WEB: 700,
   SDN_FORUMS: 2000,
   SDN_WWW: 1500,
 };

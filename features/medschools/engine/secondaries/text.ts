@@ -106,3 +106,37 @@ export const PHD_RE =
 export function classifyProgram(text: string, heading?: string): MedProgram {
   return PHD_RE.test(text) || (heading !== undefined && PHD_RE.test(heading)) ? 'PHD' : 'REG';
 }
+
+/** More prompts than this under one cycle heading is a page we misread, not a school with that many essays. */
+export const MAX_PER_SECTION = 40;
+/** The oldest entry year a page label may name (the cycle table starts later; this only rejects typos). */
+export const MIN_CYCLE_YEAR = 2005;
+
+const RANGE_LABEL_RE = /^(\d{4})\s*[-‐-―/]\s*(\d{2}|\d{4})$/;
+const YEAR_LABEL_RE = /^(\d{4})$/;
+
+/**
+ * Entry year from a cycle label as a source writes it: "2024-2025", "2024–2025" and "2024-25" are 2025 (the
+ * 2024–2025 cycle, entry year 2025); a bare "2025" is read as the entry year as written (secondaries plan, Facts 2:
+ * UNVERIFIED against a live page). Null for anything else, for a range whose second year is not the first plus one, for a
+ * year below 2005 and, when `currentCycle` is given, for a year after it (a cycle that has not begun).
+ */
+export function cycleLabelToEntryYear(label: string, currentCycle?: number): number | null {
+  const t = label.normalize('NFKC').trim();
+  let year: number;
+  const range = RANGE_LABEL_RE.exec(t);
+  if (range) {
+    const first = Number(range[1]);
+    const rawSecond = range[2] ?? '';
+    const second = rawSecond.length === 2 ? Math.floor(first / 100) * 100 + Number(rawSecond) : Number(rawSecond);
+    if (second !== first + 1) return null;
+    year = second;
+  } else {
+    const bare = YEAR_LABEL_RE.exec(t);
+    if (!bare) return null;
+    year = Number(bare[1]);
+  }
+  if (year < MIN_CYCLE_YEAR) return null;
+  if (currentCycle !== undefined && year > currentCycle) return null;
+  return year;
+}

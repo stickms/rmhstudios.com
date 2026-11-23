@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_KEY, MAX_TEXT, classifyProgram, parsePromptText, secondaryKey } from './text';
+import { MAX_KEY, MAX_TEXT, classifyProgram, cycleLabelToEntryYear, parsePromptText, secondaryKey } from './text';
 
 describe('parsePromptText', () => {
   it('pulls the list number and a bracketed word limit out of the text', () => {
@@ -113,5 +113,28 @@ describe('classifyProgram', () => {
     expect(classifyProgram('Why this school?')).toBe('REG');
     expect(classifyProgram('Tell us about a PhD in economics you considered.')).toBe('REG');
     expect(classifyProgram('Why this school?', 'All applicants')).toBe('REG');
+  });
+});
+
+describe('cycleLabelToEntryYear', () => {
+  it.each(['2024-2025', '2024\u20132025', '2024-25', ' 2024 - 2025 ', '2024\u201325'])('reads %j as the entry year 2025', (label) => {
+    expect(cycleLabelToEntryYear(label)).toBe(2025);
+  });
+
+  it('reads a bare year as the entry year as written (unverified, plan Facts 2)', () => {
+    expect(cycleLabelToEntryYear('2025')).toBe(2025);
+  });
+
+  it.each(['Spring 2025', '', '1999-2000', '2024-2026', '2024-26', '2025-2024', 'cycle', '2024-2025 prompts'])(
+    'is null for %j',
+    (label) => {
+      expect(cycleLabelToEntryYear(label)).toBeNull();
+    },
+  );
+
+  it('is null for a cycle after the current one, and the current one itself stands', () => {
+    expect(cycleLabelToEntryYear('2027-2028', 2027)).toBeNull();
+    expect(cycleLabelToEntryYear('2026-2027', 2027)).toBe(2027);
+    expect(cycleLabelToEntryYear('2028', 2027)).toBeNull();
   });
 });
