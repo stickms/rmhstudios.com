@@ -69,10 +69,13 @@ adding a stylesheet.
   Only at the two ends of the page, where nothing is above the first row or below the last, is a strip a flat colour.
 
 So the gradient cannot start at the very screen edge at rest. What the theme does instead (`lib/themes/tokens.ts`,
-`app/globals/base-interaction.css`): `--site-theme-edge`, the wash's own edge average, is body's `background-color` on
-iOS (so the strip is a colour from inside the gradient, not plain ground); a ground layer keeps the page `--site-bg`;
-and `--site-theme-ramp-top` / `-bottom` start the document's first and last 48px at exactly that colour and ramp into
-the wash, so the page meets each strip with no line.
+`app/globals/base-interaction.css`, `components/shell/site-shell.css`): `--site-theme-edge`, the wash's own edge
+average, is body's `background-color` on iOS (so the strip is a colour from inside the gradient, not plain ground); the
+shell, which covers the document, carries the page ground as its background-COLOR plus the wash and two 48px end ramps
+(`--site-theme-ramp-top` / `-bottom`) that start the document's first and last rows at exactly the strip colour, so the
+page meets each strip with no line. Do not put the ground as an image layer under the ramps: a ground image under 48px
+layers painted only inside the ramps (the page showed the strip colour everywhere else, with a hard edge where the
+bottom ramp began), which is how this was found.
 
 ## Reading the pictures
 

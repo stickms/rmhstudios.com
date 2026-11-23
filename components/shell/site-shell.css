@@ -14,9 +14,28 @@
 
 .site-shell {
   min-block-size: 100dvh;
-  /* No background of its own: the ground and a bought theme's glow wash are painted on <body> (base-interaction.css),
-     which spans the document, so they reach the screen edges and the iOS safe areas, not just this box. */
+  /* No background of its own except on iOS (below): elsewhere the ground and a bought theme's glow wash are painted on <body>
+     (base-interaction.css), which spans the document. */
   color: var(--site-text);
+}
+/* iOS only: the page's ground, a bought theme's wash and the two end ramps (lib/themes/tokens.ts `themeEdge`). At rest the
+   strips behind the status bar and the floating tab bar are outside the document, so Safari paints each in ONE flat colour
+   (body's background-color, `--site-theme-edge`). The shell starts and ends the document, so its first and last 48px
+   ramp from exactly that colour into the wash and the page meets each strip with no line. The ground is the shell's
+   background-COLOR, not an image layer: a ground image under the 48px ramp layers painted only inside the ramps.
+   Without a theme the vars are unset and this is the plain ground. */
+html.ios-webkit .site-shell {
+  background-color: var(--site-bg);
+  background-image: var(--site-theme-ramp-top, none), var(--site-theme-ramp-bottom, none), var(--site-theme-wash, none);
+  background-size:
+    100% 48px,
+    100% 48px,
+    100% 100%;
+  background-position:
+    0 0,
+    0 100%,
+    0 0;
+  background-repeat: no-repeat;
 }
 
 /* The ink primary's sheen under a bought theme (R1 amendment, `accentFill` in lib/themes/tokens.ts). Kept here, beside

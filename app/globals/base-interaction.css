@@ -115,25 +115,12 @@ html:not(.app-route) body {
 html.ios-webkit:not(.app-route) body {
   background-attachment: scroll;
   /* At rest the strips behind the status bar and the floating tab bar are OUTSIDE the document and Safari fills them with
-     ONE flat colour taken from body's background-color; the wash cannot be painted there (probes: scripts/ios-sim/probes).
-     So body's colour is the wash's own edge average (`--site-theme-edge`, lib/themes/tokens.ts), a ground layer keeps the
-     page itself `--site-bg`, and the document's first and last 48px ramp from the edge colour into the wash, so the page
-     meets each strip with no line. Scrolled content passes under the bars as itself, so the ramps only matter at the
-     two ends. Without a theme the vars are unset and this is the plain ground. */
+     ONE flat colour taken from body's background-color; nothing can be painted there (probes: scripts/ios-sim/probes). So
+     body carries only that colour: the wash's own edge average (`--site-theme-edge`, lib/themes/tokens.ts). The page's
+     own ground, the wash and the end ramps are on `.site-shell` (components/shell/site-shell.css), which covers the
+     document: layering a ground image under the 48px ramps on body itself painted the ground only inside the ramps. */
   background-color: var(--site-theme-edge, var(--site-bg));
-  background-image:
-    var(--site-theme-ramp-top, none), var(--site-theme-ramp-bottom, none), var(--site-theme-wash, none),
-    var(--site-theme-ground, none);
-  background-size:
-    100% 48px,
-    100% 48px,
-    100% 100%,
-    100% 100%;
-  background-position:
-    0 0,
-    0 100%,
-    0 0,
-    0 0;
+  background-image: none;
 }
 
 /* App/game routes are excluded above because they do not scroll the document —

@@ -211,7 +211,6 @@ export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
     '--site-theme-wash': themeWash(t),
     '--site-accent-fill': accentFill(t),
     '--site-theme-edge': themeEdge(t),
-    '--site-theme-ground': `linear-gradient(${t.canvasBase}, ${t.canvasBase})`,
     '--site-theme-ramp-top': `linear-gradient(to bottom, ${themeEdge(t)}, transparent)`,
     '--site-theme-ramp-bottom': `linear-gradient(to top, ${themeEdge(t)}, transparent)`,
   };
@@ -272,7 +271,7 @@ export interface AppliedUserTheme {
 }
 
 /** Bump when `themeCssVars` changes what it emits, so every cached applied theme is re-derived once. */
-export const THEME_DERIVATION_VERSION = 6;
+export const THEME_DERIVATION_VERSION = 7;
 
 /** True when a cached applied theme was derived by an older (or unstamped) derivation. */
 export function isStaleAppliedTheme(theme: AppliedUserTheme): boolean {
