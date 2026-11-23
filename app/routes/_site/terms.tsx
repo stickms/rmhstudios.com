@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LegalSummaryBox } from '@/components/access/LegalSummaryBox';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
-export const Route = createFileRoute('/terms')({
+export const Route = createFileRoute('/_site/terms')({
   // Static text: the first load ships no JavaScript (lib/static-document.ts).
   staticData: { staticDocument: true },
   head: () => ({

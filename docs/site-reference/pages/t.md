@@ -15,6 +15,7 @@ Standard pages, rendered inside the sidebar shell.
 | URL | Title | Access | Source |
 | --- | ----- | ------ | ------ |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
+| `/terms` | Terms of Use | public | `app/routes/_site/terms.tsx` |
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
 | `/tools` | Toolbox | public | `app/routes/_site/tools/index.tsx` |
 | `/tools/base` | Number Base Converter | public | `app/routes/_site/tools/base.tsx` |
@@ -49,7 +50,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | --- | ----- | ------ | ------ |
 | `/tag/:tag/rss.xml` | — | public | `app/routes/tag.$tag.rss[.]xml.ts` |
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
-| `/terms` | Terms of Use | public | `app/routes/terms.tsx` |
 | `/tf2` | — | public | `app/routes/tf2/index.tsx` |
 | `/tf2/hud-editor` | TF2 HUD Editor | public | `app/routes/tf2/hud-editor/index.tsx` |
 | `/tf2/hud-editor/editor` | — | public | `app/routes/tf2/hud-editor/editor.tsx` |

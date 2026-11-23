@@ -72,7 +72,7 @@ export function LegalSummaryBox({ kind }: { kind: Kind }) {
 
   return (
     <aside
-      className="surface-card not-prose rounded-site p-5"
+      className="not-prose mb-8 border-y border-site-border py-4"
       aria-label={t('sum-label', {
         defaultValue: 'Plain-language summary',
       })}

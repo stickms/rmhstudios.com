@@ -18,6 +18,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
 | `/sections` | Sections | public | `app/routes/_site/sections.tsx` |
+| `/security` | Security | public | `app/routes/_site/security.tsx` |
 | `/series` | Series | public | `app/routes/_site/series.index.tsx` |
 | `/series/:id` | Series | public | `app/routes/_site/series.$id.tsx` |
 | `/services` | redirects to `/services/cars` | public | `app/routes/_site/services/index.tsx` |
@@ -59,7 +60,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 
 | URL | Title | Access | Source |
 | --- | ----- | ------ | ------ |
-| `/security` | Security | public | `app/routes/security.tsx` |
 | `/services/rebar-rutabaga` | Rebar & Rutabaga | public | `app/routes/services.rebar-rutabaga.tsx` |
 | `/signal-forge` | — | public | `app/routes/signal-forge.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |

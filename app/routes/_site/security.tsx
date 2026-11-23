@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { SecurityPage } from '@/components/security/SecurityPage';
 
-export const Route = createFileRoute('/security')({
+export const Route = createFileRoute('/_site/security')({
   head: () => ({
     meta: [
       { title: 'Security | RMH Studios' },

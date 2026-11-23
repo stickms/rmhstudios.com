@@ -132,7 +132,7 @@ no new type or lint warnings versus the base branch, and a message that explains
 ## Cross-cutting conventions (the ones agents break most)
 
 1. **Routing:** add files under `app/routes/`; the route tree regenerates on dev/build. Pages under `_site/` get the
-   Steel shell (`components/shell/SiteShell.tsx`); top-level routes are full-screen (games, login, legal — intentional).
+   Steel shell (`components/shell/SiteShell.tsx`); top-level routes are full-screen (games, login — intentional). The legal pages (`/terms`, `/privacy`, `/cookies`, `/copyright`, `/security`) are `_site` pages and use the shell.
    Never edit `routeTree.gen.ts`.
 2. **Server-only code:** `lib/**/*.server.ts` is stubbed out of the client bundle by a Vite plugin. Never import
    `.server` modules from client code.

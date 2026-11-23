@@ -315,7 +315,7 @@ export function ConciergePanel({ className }: { className?: string }) {
               placeholder={t('concierge-placeholder', {
                 defaultValue: 'Ask about RMH Studios…',
               })}
-              className="min-h-11 max-h-32 resize-none rounded-site"
+              className="h-9 min-h-0 resize-none rounded-site py-[7px] leading-5 pointer-coarse:h-11 pointer-coarse:py-[11px]"
               aria-label={t('concierge-input-label', {
                 defaultValue: 'Your question for the concierge',
               })}
@@ -332,12 +332,6 @@ export function ConciergePanel({ className }: { className?: string }) {
               {loading ? <Spinner size={16} /> : <Send className="size-4" aria-hidden />}
             </Button>
           </form>
-          <p className="mt-2 text-center text-xs text-site-text-muted">
-            {t('concierge-disclaimer', {
-              defaultValue:
-                'The concierge answers questions about RMH Studios. It can be wrong — verify anything important.',
-            })}
-          </p>
         </div>
       </div>
     </div>

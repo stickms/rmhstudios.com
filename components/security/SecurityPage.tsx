@@ -296,7 +296,7 @@ const SECURITY_FAQ: Faq[] = [
 
 export function SecurityPage() {
   return (
-    <LegalLayout title="Security" bare>
+    <LegalLayout title="Security" wide>
       <section aria-label="Overview" className="flex flex-col gap-4">
         <p className="text-lg leading-relaxed text-site-text-muted">
           You trust us with your account, your work, and sometimes your payment details. We treat

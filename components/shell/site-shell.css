@@ -308,22 +308,25 @@
 .site-margin__page {
   margin-block-start: 26px;
 }
-/* The foot: reference pages on one wrapping line of `t-meta` links. On a short page it sits at the bottom of the column;
-   on a long one it stays in view 16px off the bottom edge of the window (never flush: iOS edge contract, like the
-   sidebar's 16px off the top) on the page ground, so a list scrolling behind it is covered, not overprinted. */
+/* The foot: reference pages in two fixed columns of `t-meta` links, so it wraps the same way on every page. On a short
+   page it sits at the bottom of the column; on a long one it stays in view above the bottom edge of the window, on the
+   page ground so a list scrolling behind it is covered, not overprinted. The sticky offset is the column's own 22px
+   bottom padding, so the foot is in the same place in both cases and does not jump between pages. It is never flush
+   with the edge (iOS edge contract), like the sidebar's 16px off the top. */
 .site-margin__foot {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 14px;
   margin-block-start: auto;
   padding-block: 14px 8px;
   position: sticky;
-  inset-block-end: 16px;
+  inset-block-end: 22px;
   background: var(--site-bg);
 }
 .site-margin__foot-link {
   color: var(--site-text-muted);
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 .site-margin__foot-link:hover {
   color: var(--site-text);

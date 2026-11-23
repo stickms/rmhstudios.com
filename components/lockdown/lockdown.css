@@ -1,35 +1,16 @@
-/* ─── Legal document frame ────────────────────────────────────────────────────
+/* ─── Legal document body ─────────────────────────────────────────────────────
    /terms, /privacy, /cookies, /copyright and /security share one frame
-   (LegalLayout.tsx). It is layout-by-utility; this file holds only what a
-   utility cannot say: the skip link and the typography of the document body.
+   (LegalLayout.tsx), which is a page of the Steel shell. This file holds what
+   a utility cannot say: the typography of the document body.
 
-   Everything is a --site-* token, so every theme — including High contrast and
-   the reduced-transparency fallback, where `.surface-panel` collapses to the
-   opaque surface — keeps the ink/surface pairing. Nothing here is hard-coded.
+   Everything is a --site-* token, so every theme keeps the ink/surface pairing.
+   Nothing here is hard-coded.
 
    Body rules live in `@layer components` (below Tailwind's `utilities` layer)
    and under `:where()`, so a utility class on an element inside the body — the
-   plain-language summary box, a section card on /security — always wins over
+   plain-language summary, a section on /security — always wins over
    the document defaults. Unlayered rules would beat every utility.
    ───────────────────────────────────────────────────────────────────────────── */
-
-.legal-skip {
-  position: absolute;
-  inset-inline-start: 1rem;
-  top: 0.75rem;
-  z-index: var(--z-skip);
-  transform: translateY(-200%);
-  padding: 0.5rem 1rem;
-  border-radius: var(--site-radius-sm);
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-.legal-skip:focus-visible {
-  transform: translateY(0);
-}
 
 @layer components {
   /* Document typography. 1rem / 1.7 body at ≤ 65–75 characters per line (the
@@ -70,6 +51,10 @@
     color: var(--site-accent);
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+  /* A button that happens to be a link keeps its own look. */
+  :where(.legal-content__body) a[data-slot='button'] {
+    text-decoration: none;
   }
   :where(.legal-content__body) :where(a:hover) {
     text-decoration-thickness: 2px;

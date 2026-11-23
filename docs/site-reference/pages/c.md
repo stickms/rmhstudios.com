@@ -24,6 +24,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/compete` | Compete | public | `app/routes/_site/compete.tsx` |
 | `/connections/new` | Make a Connections Grid | public | `app/routes/_site/connections.new.tsx` |
 | `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
+| `/cookies` | Cookie Policy | public | `app/routes/_site/cookies.tsx` |
+| `/copyright` | Copyright | public | `app/routes/_site/copyright.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
 | `/create/builds/:slug/insights` | Build insights | public | `app/routes/_site/create_.builds.$slug.insights.tsx` |
@@ -40,7 +42,5 @@ Games, apps and standalone pages that intentionally render without the site shel
 | --- | ----- | ------ | ------ |
 | `/c/:slug/rss.xml` | — | public | `app/routes/c.$slug.rss[.]xml.ts` |
 | `/controller/:code` | Phone Controller | public | `app/routes/controller.$code.tsx` |
-| `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
-| `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/csgo` | — | public | `app/routes/csgo.tsx` |
 | `/cursed-logic` | — | public | `app/routes/cursed-logic.tsx` |
