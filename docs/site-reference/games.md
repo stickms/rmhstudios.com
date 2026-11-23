@@ -25,6 +25,9 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable | required | `Multiplayer` `Physics` `3D` |
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
+| **Project Vega** | [`/vega`](https://rmhstudios.com/vega) | Playable | required | `Strategy` `Tower Defense` `Horror` |
+| **Signal Forge** | [`/signal-forge`](https://rmhstudios.com/signal-forge) | Playable | required | `Roguelike` `Deckbuilder` `Rhythm` |
+| **Cursed Logic** | [`/cursed-logic`](https://rmhstudios.com/cursed-logic) | Playable | required | `Strategy` `Duel` `Mind Games` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
@@ -112,6 +115,24 @@ Survive waves of enemies in a dark arena. Collect void shards that orbit you as 
 Step into the neon-lit rooftops of Kowloon, 1997, and brawl in a fully animated 3D arena with a retro pixel-art filter. Pick from nine fighter classes and choose your look: the animated Y-Bot or a Source-engine character from Team Fortress 2, Counter-Strike or Half-Life 2, all moving with the same boxing animations. Master devastating combos and counter-strikes, then battle the CPU solo or take up to four players online in free-for-all or 2v2 teams — built for phones too, with touch controls and a layout that fits any screen.
 
 **Route:** `/kowloon-knockout` · **Catalog id:** `kowloon-knockout` · **Sign-in:** not required
+
+### Project Vega
+
+The Recursion Defense System is the last thing standing between the specimen and the rest of the facility. Build towers along the corridor, hold each wave, and watch what the scan turns up in the next one. Every loop the defense survives makes the next one worse.
+
+**Route:** `/vega` · **Catalog id:** `vega` · **Status:** Playable · **Sign-in:** required
+
+### Signal Forge
+
+Climb floor after floor of the Forge with a deck you build as you go. Every card is played on the beat of the signal, so the best hand is the one you can land in time. Pick up relics, face elites and bosses, and bank a score and a place on the leaderboard when the run ends.
+
+**Route:** `/signal-forge` · **Catalog id:** `signal-forge` · **Status:** Playable · **Sign-in:** required
+
+### Cursed Logic
+
+The Protocol has gone unstable, and the only way to shut it down is to out-think it. Each round you pick a stance and an action while it picks its own in secret: strike, block, prepare or probe. Spend fragments in the shop between runs, survive the minigames it throws at you, and learn what its next move is before it lands.
+
+**Route:** `/cursed-logic` · **Catalog id:** `cursed-logic` · **Status:** Playable · **Sign-in:** required
 
 ### House Always Wins
 

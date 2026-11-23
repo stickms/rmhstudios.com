@@ -43,3 +43,4 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/csgo` | — | public | `app/routes/csgo.tsx` |
+| `/cursed-logic` | — | public | `app/routes/cursed-logic.tsx` |
