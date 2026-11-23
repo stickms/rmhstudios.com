@@ -622,7 +622,7 @@ describe('the public arrivals and live endpoints', () => {
       expect(res.status, query).toBe(200);
       expect(Object.keys(res.body).sort(), query).toEqual(['asOf', 'events', 'nextCursor']);
       for (const e of res.body.events) {
-        expect(Object.keys(e).sort(), query).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source']);
+        expect(Object.keys(e).sort(), query).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source', 'wave']);
         expect(Object.keys(e.school).sort(), query).toEqual(['city', 'degree', 'name', 'shortName', 'slug', 'state']);
         expect(['ADMIT', 'SDN']).toContain(e.source);
       }

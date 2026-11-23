@@ -119,7 +119,7 @@ describe('getLive', () => {
     expect(args.where.source).toEqual({ in: ['ADMIT', 'SDN'] });
     const e = res.events[0]!;
     expect(e.program).toBeNull();
-    expect(Object.keys(e).sort()).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source']);
+    expect(Object.keys(e).sort()).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source', 'wave']);
     expect(Object.keys(e.school).sort()).toEqual(['city', 'degree', 'name', 'shortName', 'slug', 'state']);
     expect(e.occurredAt).toBe('2026-11-20T10:15:00.000Z');
   });
@@ -896,5 +896,85 @@ describe('getForecast', () => {
     expect(await getForecast('DUKE', {}, NOW)).toBeNull();
     m.medSchool.findFirst.mockResolvedValue(null);
     expect(await getForecast('nope', {}, NOW)).toBeNull();
+  });
+});
+
+describe('waves (D10)', () => {
+  const cnt = (source: string, date: string, count: number) => ({
+    source,
+    date: d(date),
+    eventType: 'INTERVIEW',
+    count,
+    contributors: null,
+    publishedCount: null,
+    publishedContributors: null,
+  });
+  const dayN = (n: number) => `2027-11-${String(n).padStart(2, '0')}`;
+  const quiet = (source: string, spike?: number) =>
+    Array.from({ length: 20 }, (_, i) => cnt(source, dayN(i + 1), i + 1 === spike ? 12 : 2));
+
+  it('getActivity: 2 a day with 12 on one day is one wave, on the primary series, as a calendar date', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    m.medCycleCount.findMany.mockResolvedValue(quiet('ADMIT', 15));
+    const res = (await getActivity('duke', {}, NOW))!;
+    expect(res.waves).toEqual([{ date: '2027-11-15', count: 12, baseline: 2 }]);
+  });
+
+  it('getActivity: a wave in a source that is not primary is ignored; no INTERVIEW series is no waves', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    m.medCycleCount.findMany.mockResolvedValue([...quiet('ADMIT'), ...quiet('SDN', 15)]);
+    expect((await getActivity('duke', {}, NOW))!.waves).toEqual([]);
+    m.medCycleCount.findMany.mockResolvedValue([]);
+    expect((await getActivity('duke', {}, NOW))!.waves).toEqual([]);
+  });
+
+  it('getActivity: an RMH-only series with sub-k cells has no waves', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    m.medCycleCount.findMany.mockResolvedValue(
+      quiet('RMH', 15).map((r) => ({ ...r, publishedCount: r.count, publishedContributors: 2 })),
+    );
+    expect((await getActivity('duke', {}, NOW))!.waves).toEqual([]);
+  });
+
+  describe('getLive', () => {
+    const ev = (id: string, eventType: string, at: string, slug = 'duke') => ({
+      id,
+      eventType,
+      program: 'REG',
+      source: 'ADMIT',
+      occurredAt: new Date(at),
+      school: { slug, shortName: 'Duke', name: 'Duke', degree: 'MD', city: 'Durham', state: 'NC' },
+    });
+    const withSchool = (rows: ReturnType<typeof quiet>) => rows.map((r) => ({ ...r, school: { slug: 'duke' } }));
+
+    it('flags an INTERVIEW row on the wave day only, with one batched read for the page', async () => {
+      m.medCycleEvent.findMany.mockResolvedValue([
+        ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z'),
+        ev('b', 'INTERVIEW', '2027-11-18T10:00:00Z'),
+        ev('c', 'SECONDARY', '2027-11-15T10:00:00Z'),
+        ev('e', 'INTERVIEW', '2027-11-15T12:00:00Z', 'unc'),
+      ]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool(quiet('ADMIT', 15)));
+      const res = await getLive({}, NOW);
+      expect(res.events.map((e) => [e.id, e.wave])).toEqual([
+        ['a', true],
+        ['b', false],
+        ['c', false],
+        ['e', false],
+      ]);
+      expect(m.medCycleCount.findMany).toHaveBeenCalledTimes(1);
+      const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+      expect(args.where).toMatchObject({ eventType: 'INTERVIEW', ...{ OR: FLOOR.OR } });
+    });
+
+    it('a page with no INTERVIEW row reads no counts', async () => {
+      m.medCycleEvent.findMany.mockResolvedValue([ev('c', 'SECONDARY', '2027-11-15T10:00:00Z')]);
+      const res = await getLive({}, NOW);
+      expect(res.events[0]!.wave).toBe(false);
+      expect(m.medCycleCount.findMany).not.toHaveBeenCalled();
+    });
   });
 });

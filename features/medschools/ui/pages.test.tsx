@@ -264,6 +264,7 @@ const ev = (id: string, o: Partial<LiveEventDto> = {}): LiveEventDto => ({
   },
   occurredAt: '2026-11-20T15:04:00.000Z',
   source: 'ADMIT',
+  wave: false,
   ...o,
 });
 

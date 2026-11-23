@@ -25,7 +25,7 @@ afterAll(async () => {
 });
 
 /** The pinned public key sets: a new key on any of these is a privacy review, not a drive-by. */
-const LIVE_EVENT_KEYS = ['eventType', 'id', 'occurredAt', 'program', 'school', 'source'];
+const LIVE_EVENT_KEYS = ['eventType', 'id', 'occurredAt', 'program', 'school', 'source', 'wave'];
 const LIVE_SCHOOL_KEYS = ['city', 'degree', 'name', 'shortName', 'slug', 'state'];
 /** Fields that identify a post or a person, or are internal. None may appear in any page or response. */
 const FORBIDDEN = ['dedupeHash', 'cursorPostHash', 'ingestedAt', 'fixture-q-', 'fixture-event-', '"contributors"'];

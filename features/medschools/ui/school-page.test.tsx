@@ -109,6 +109,7 @@ const activity = (
   otherTotals: [],
   unreportedProgram: 0,
   unreportedProgramSource: null,
+  waves: [],
   ...o,
 });
 

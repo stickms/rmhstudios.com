@@ -20,7 +20,8 @@ import { floorWhere, publicSum } from '../engine/floor';
 import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
 import { cycleEndOn, defaultDayZero } from '../engine/cycle';
 import { addDays } from '../engine/stats/days';
-import { primarySeriesOf, seriesOfSource } from '../engine/stats/input';
+import { detectWaves } from '../engine/stats/waves';
+import { primarySeriesOf, seriesOfSource, toDayCounts } from '../engine/stats/input';
 import {
   isAllPrograms,
   legacyOf,
@@ -46,6 +47,7 @@ import type {
   MedSchoolForecastRes,
   MedSchoolHistoryRes,
   MedTodayRes,
+  WaveDto,
 } from '../medschools.contract';
 import type {
   ActivityQuery,
@@ -367,6 +369,20 @@ async function unreportedFor(
   return { count: 0, source: null };
 }
 
+/**
+ * Waves (D10) on the INTERVIEW primary series that is already floored and summed (REG + PHD within the source). No new
+ * read: the response's own series. Dates are calendar days, today's partial count included.
+ */
+function wavesOf(interview: ActivityTypeDto | undefined, dayZeroOn: string): WaveDto[] {
+  const primary = interview?.sources.find((s) => s.source === interview.primary);
+  if (!primary) return [];
+  return detectWaves(toDayCounts(primary.days, dayZeroOn)).map((w) => ({
+    date: addDays(dayZeroOn, w.day),
+    count: w.count,
+    baseline: w.baseline,
+  }));
+}
+
 export async function getActivity(
   slug: string,
   q: ActivityQuery,
@@ -419,15 +435,17 @@ export async function getActivity(
     );
     return { eventType, primary: s.primary, sources: s.sources };
   });
+  const dayZeroOn = cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear);
   return {
     cycleYear,
     program,
-    dayZeroOn: cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear),
+    dayZeroOn,
     dayZeroEstimated: cycle ? cycle.dateEstimated : true,
     types,
     otherTotals,
     unreportedProgram: unreported.count,
     unreportedProgramSource: unreported.source,
+    waves: wavesOf(types[0], dayZeroOn),
   };
 }
 
@@ -663,6 +681,56 @@ export async function getArrivals(slug: string, q: ArrivalsQuery): Promise<MedAr
   };
 }
 
+/**
+ * Which UTC days each school of this page had a wave of invites (D10), keyed by slug. One batched read for the whole
+ * page: the INTERVIEW count rows of the page's schools from 15 days before the oldest INTERVIEW row to its newest day,
+ * through the same floor and primary-source rule as the Activity chart. A page with no INTERVIEW row reads nothing.
+ */
+async function liveWaveDays(
+  page: readonly { eventType: MedEventType; occurredAt: Date; school: { slug: string } }[],
+  now: Date,
+): Promise<Map<string, Set<string>>> {
+  const out = new Map<string, Set<string>>();
+  const invites = page.filter((r) => r.eventType === 'INTERVIEW');
+  if (invites.length === 0) return out;
+  const days = invites.map((r) => day(r.occurredAt)).sort();
+  const lo = addDays(days[0] ?? day(now), -15);
+  const hi = days[days.length - 1] ?? day(now);
+  const slugs = [...new Set(invites.map((r) => r.school.slug))];
+  const rows = await prisma.medCycleCount.findMany({
+    where: {
+      eventType: 'INTERVIEW',
+      school: { slug: { in: slugs }, active: true },
+      date: { gte: new Date(`${lo}T00:00:00Z`), lte: new Date(`${hi}T00:00:00Z`) },
+      ...floorWhere(now),
+    },
+    select: {
+      source: true,
+      date: true,
+      eventType: true,
+      count: true,
+      contributors: true,
+      publishedCount: true,
+      publishedContributors: true,
+      school: { select: { slug: true } },
+    },
+  });
+  for (const slug of slugs) {
+    const cells = sumPrograms(
+      rows
+        .filter((r) => r.school.slug === slug)
+        .flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
+      utcDayOf(now),
+    );
+    const series = buildTypeSeries(cells, utcDayOf(now));
+    const primary = series.sources.find((s) => s.source === series.primary);
+    if (!primary) continue;
+    const found = detectWaves(toDayCounts(primary.days, lo)).map((w) => addDays(lo, w.day));
+    out.set(slug, new Set(found));
+  }
+  return out;
+}
+
 export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<MedLiveRes> {
   const limit = q.limit ?? 50;
   const cursor = q.cursor ? decodeLiveCursor(q.cursor) : null;
@@ -735,6 +803,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
   });
   const page = rows.slice(0, limit);
   const last = page[page.length - 1];
+  const waveDays = await liveWaveDays(page, now);
   return {
     events: page.map((r) => ({
       id: r.id,
@@ -750,6 +819,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
       },
       occurredAt: truncateToMinute(r.occurredAt),
       source: r.source as 'ADMIT' | 'SDN',
+      wave: r.eventType === 'INTERVIEW' && (waveDays.get(r.school.slug)?.has(day(r.occurredAt)) ?? false),
     })),
     nextCursor: rows.length > limit && last ? encodeLiveCursor({ occurredAt: last.occurredAt, id: last.id }) : null,
     asOf: now.toISOString(),

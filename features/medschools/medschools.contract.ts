@@ -194,6 +194,15 @@ export interface LiveEventDto {
   /** ISO, truncated to the minute. */
   occurredAt: string;
   source: 'ADMIT' | 'SDN';
+  /** INTERVIEW rows only: the school had a wave of invites on this row's UTC day (D10). False for every other row. */
+  wave: boolean;
+}
+
+/** A day with far more invites than the trailing 14-day median (D10). `date` is a UTC calendar day. */
+export interface WaveDto {
+  date: string;
+  count: number;
+  baseline: number;
 }
 
 export interface ListMedSchoolsRes {
@@ -215,6 +224,8 @@ export interface MedSchoolActivityRes {
   /** Null-program events of the charted types for one source (never a sum across sources). */
   unreportedProgram: number;
   unreportedProgramSource: 'ADMIT' | 'SDN' | null;
+  /** Waves on the INTERVIEW primary series of this response's program filter (D10); empty when none. */
+  waves: WaveDto[];
 }
 
 /** The public forecast of one school x program x event type for the site's current cycle (phase 5). */
