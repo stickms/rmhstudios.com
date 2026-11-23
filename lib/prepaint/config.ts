@@ -32,6 +32,8 @@ export interface PrepaintVariant {
   discord?: boolean;
   /** The signed-in account's appearance seed, if any. */
   seed?: Record<string, string | null> | null;
+  /** The font catalogue's sheet URLs for the fonts step (lib/prepaint/fonts.ts); omitted on the Discord head. */
+  fonts?: PrepaintConfig['fonts'];
 }
 
 export function buildPrepaintConfig(v: PrepaintVariant = {}): PrepaintConfig {
@@ -48,6 +50,7 @@ export function buildPrepaintConfig(v: PrepaintVariant = {}): PrepaintConfig {
   if (v.notFound) cfg.nf = true;
   if (v.discord) cfg.discord = true;
   if (v.seed && Object.keys(v.seed).length) cfg.seed = v.seed;
+  if (v.fonts) cfg.fonts = v.fonts;
   return cfg;
 }
 

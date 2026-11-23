@@ -43,7 +43,14 @@ import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import { FONT_ASSETS } from '@/lib/appearance/font-assets.gen';
-import { DEFAULT_FONTS, FONTS_COOKIE, appearanceSyncOff, fontsInUse, type FontChoice } from '@/lib/appearance/fonts';
+import {
+  DEFAULT_FONTS,
+  FONT_CATALOGUE,
+  FONTS_COOKIE,
+  appearanceSyncOff,
+  fontsInUse,
+  type FontChoice,
+} from '@/lib/appearance/fonts';
 import { resolveRequestFonts, type AccountFontsRow } from '@/lib/appearance/fonts-request';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
 import { dataSaverFromRequest } from '@/lib/data-saver-request';
@@ -290,6 +297,16 @@ function i18nFallback(): { locale: Locale; resources: null; saveData: boolean; f
  * DM Sans and DM Mono live in the site sheet; every other face in use links its own sheet, so a visitor fetches only
  * the faces they chose (owner, 2026-11-23).
  */
+/** The catalogue as the pre-paint fonts step reads it: face → sheet URL, `''` for a default in the site sheet. */
+const PREPAINT_FONTS = {
+  t: Object.fromEntries(
+    FONT_CATALOGUE.filter((f) => f.kind !== 'mono').map((f) => [f.id, f.id === 'dm-sans' ? '' : FONT_ASSETS[f.id].sheet]),
+  ),
+  m: Object.fromEntries(
+    FONT_CATALOGUE.filter((f) => f.kind === 'mono').map((f) => [f.id, f.id === 'dm-mono' ? '' : FONT_ASSETS[f.id].sheet]),
+  ),
+};
+
 function fontHeadLinks(fonts: FontChoice) {
   const reading = fonts.reading === 'same' ? fonts.main : fonts.reading;
   const text = [...new Set([fonts.main, reading])];
@@ -441,7 +458,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // the signed-in account's appearance seed, theme tables) and the one generated
         // script that reads it — lib/prepaint. The account seed is applied before the
         // theme step reads localStorage, inside that script.
-        ...prepaintHeadScripts({ notFound: globalNotFound, seed }),
+        ...prepaintHeadScripts({ notFound: globalNotFound, seed, fonts: PREPAINT_FONTS }),
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),
       ],

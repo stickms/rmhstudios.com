@@ -22,6 +22,7 @@ import { accessStep } from './access';
 import { accountSeedStep } from './account-seed';
 import { cookieConsentStep } from './cookie-consent';
 import { delightStep } from './delight';
+import { fontsStep } from './fonts';
 import { localeStep } from './locale';
 import { mediaRevealStep } from './media-reveal';
 import { platformStep } from './platform';
@@ -37,6 +38,8 @@ export const PREPAINT_STEPS: ReadonlyArray<{ name: string; run: PrepaintStep; di
     // Must precede every <img>.
     { name: 'media-reveal', run: mediaRevealStep, discord: false },
     { name: 'account-seed', run: accountSeedStep, discord: true },
+    // After account-seed, which writes the account's fonts into storage when sync is on.
+    { name: 'fonts', run: fontsStep, discord: false },
     { name: 'theme', run: themeStep, discord: true },
     { name: 'access', run: accessStep, discord: true },
     { name: 'delight', run: delightStep, discord: true },
