@@ -1,36 +1,36 @@
 import type { GameInfo } from '@/lib/catalog/types';
 
-// Stub written by the Vault migration (docs/superpowers/plans/2026-11-23-vault-games-migration.md, Task 2):
-// the art is the game's old card; the scoring rule is the one this game already had in lib/game/registry.ts.
-// The game's own build replaces the copy and the art (card, banner, logo).
+// Signal Forge's library card (the Vault migration, docs/superpowers/plans/2026-11-23-vault-games-migration.md, Task 4).
+// Art: scripts/game-art/signal-forge.mjs. Scoring: the ceiling is engine/balance.ts `maxPossibleScore()` (80,750 at
+// Ascension 10) rounded up; engine/__tests__/balance.test.ts holds that the ceiling covers it.
 const entry: GameInfo = {
   id: 'signal-forge',
   order: 132,
   title: 'Signal Forge',
-  description: 'A rhythmic roguelike deckbuilder. Build a deck, ride the signal, climb the forge.',
+  description: 'A rhythmic roguelike deckbuilder. Land your cards on the phrase, bank the heat, fire the Forge Burst.',
   longDescription:
-    'Climb floor after floor of the Forge with a deck you build as you go. Every card is played on the beat of the signal, so the best hand is the one you can land in time. Pick up relics, face elites and bosses, and bank a score and a place on the leaderboard when the run ends.',
+    'Climb three acts of a living forge with a deck of waveform cards. Every turn the signal plays a short phrase: cards that land on it hit harder and build Heat, and finishing the phrase fires a Forge Burst at everything in the room. Bank Heat for a bigger Burst or vent it for Block. Play to a beat in Timed mode, or take your time in Steady mode. Over a hundred cards, elites and two bosses per act, relics, events, ten Ascension levels, achievements and a leaderboard.',
   href: '/signal-forge',
   status: 'Playable',
   cta: 'Enter the Forge',
   isSteam: false,
-  gradient: 'from-cyan-400 to-fuchsia-500',
-  iconName: 'Zap',
-  color: 'from-cyan-400/20 to-fuchsia-500/20 hover:border-cyan-400/50',
-  tags: ['Roguelike', 'Deckbuilder', 'Rhythm'],
-  imagePath: '/images/games/signal_forge.webp',
-  // Placeholders: lib/__tests__/catalog.test.ts requires a banner and a logo for every listed entry. The game's
-  // own build draws real ones (1920x620 banner, transparent wordmark).
-  bannerPath: '/images/games/signal_forge.webp',
-  logoPath: '/images/games/signal_forge.webp',
+  gradient: 'from-orange-400 to-cyan-400',
+  iconName: 'AudioWaveform',
+  color: 'from-orange-400/20 to-cyan-400/20 hover:border-orange-400/50',
+  tags: ['Roguelike', 'Deckbuilder', 'Rhythm', 'Strategy'],
+  imagePath: '/images/games/signal-forge.webp',
+  bannerPath: '/images/games/banners/signal-forge.webp',
+  logoPath: '/images/games/logos/signal-forge.webp',
   authGate: true,
   scoring: {
-    maxScore: 5_000_000,
-    maxScorePerSecond: 3_000,
+    maxScore: 100_000,
+    // A full Ascension 10 run takes well over eight minutes; 1,000 a second is far above any honest pace.
+    maxScorePerSecond: 1_000,
     minDurationMs: 3_000,
     direction: 'higher-is-better',
     progressLabel: 'Floor',
-    maxProgress: 500,
+    // Three acts of eight nodes. Pre-rework rows (endless floors) keep their stored value; this bounds new runs.
+    maxProgress: 24,
   },
 };
 

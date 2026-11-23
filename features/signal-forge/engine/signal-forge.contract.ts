@@ -1,10 +1,10 @@
 /**
- * Contracts for the Signal Forge reads (redesign audit C1, batch 8): the public
- * leaderboard and the caller's saved run, plus `score` and `abandon` (batch 10).
- * `save` answers 413 before it checks the session, so it stays a raw route.
+ * Contracts for the Signal Forge routes: the public leaderboard, the caller's saved run (load / save /
+ * abandon) and score submission. `save` answers 413 before it checks the session, so it stays a raw route.
  * Client-safe.
  */
 import { endpoint } from '@/lib/contract/endpoint';
+import type { SignalForgeRunFacts } from './achievements';
 
 export interface SignalForgeLeaderboardRow {
   username: string;
@@ -19,27 +19,24 @@ export const getSignalForgeLeaderboardApi = endpoint<{
   res: SignalForgeLeaderboardRow[];
 }>()({ method: 'GET', path: '/api/signal-forge/leaderboard' });
 
-/** The caller's saved run, if any. 401 when signed out. */
+/** The caller's saved blob, if any (a v2 `{ v, run, meta }`, or a pre-rework flat state to retire). 401 when signed out. */
 export const loadSignalForgeRunApi = endpoint<{
   res: { hasSavedRun: false } | { hasSavedRun: true; runState: Record<string, unknown> };
 }>()({ method: 'GET', path: '/api/signal-forge/load' });
 
-/** Submit a finished run's score. 401 when signed out; 400 `Invalid score` / `Invalid floor`. */
+/** Submit a finished run's score (through the shared score pipeline) and its achievement facts. */
 export const submitSignalForgeScoreApi = endpoint<{
-  body: { score: number; floorReached: number };
-  res: { success: true; profile: Record<string, unknown>; isRecord: boolean };
+  body: { score: number; floorReached: number; durationMs?: number; facts?: SignalForgeRunFacts };
+  res: { success: true; ranked: boolean; isRecord: boolean; achievements: string[] };
 }>()({ method: 'POST', path: '/api/signal-forge/score' });
 
-/**
- * Save the in-progress run. The route answers 413 before it checks the session, so it stays
- * hand-parsed; the call site treats any answer as sent, as the raw fetch did.
- */
+/** Save the in-progress run and progression. */
 export const saveSignalForgeRunApi = endpoint<{
   body: { runState: Record<string, unknown> };
   res: { success: true };
 }>()({ method: 'POST', path: '/api/signal-forge/save' });
 
-/** Drop the caller's saved run. */
+/** Drop the caller's run in progress (progression is kept). */
 export const abandonSignalForgeRunApi = endpoint<{
   res: { success: true };
 }>()({ method: 'POST', path: '/api/signal-forge/abandon' });

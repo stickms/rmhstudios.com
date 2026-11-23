@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 422 routes. 227 render inside the standard site shell (sidebar, nav, context rail); 195 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 421 routes. 227 render inside the standard site shell (sidebar, nav, context rail); 194 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -267,6 +267,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/csgo` | — | public | `app/routes/csgo.tsx` |
+| `/cursed-logic` | — | public | `app/routes/cursed-logic.tsx` |
 | `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | Alibi \| Daily Puzzles | public | `app/routes/daily/alibi.tsx` |
 | `/daily/chainlink` | Chainlink \| Daily Puzzles | public | `app/routes/daily/chainlink.tsx` |
@@ -393,12 +394,9 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhtype/progress` | — | sign-in | `app/routes/rmhtype/progress.tsx` |
 | `/rmhtype/solo` | — | sign-in | `app/routes/rmhtype/solo.tsx` |
 | `/rmhtype/texts` | — | sign-in | `app/routes/rmhtype/texts.tsx` |
-| `/secret` | Secret | public | `app/routes/secret/index.tsx` |
-| `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |
-| `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |
-| `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
 | `/services/rebar-rutabaga` | Rebar & Rutabaga | public | `app/routes/services.rebar-rutabaga.tsx` |
+| `/signal-forge` | — | public | `app/routes/signal-forge.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
 | `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
 | `/slice-it` | Slice It! | public | `app/routes/slice-it/index.tsx` |
@@ -443,6 +441,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/create` | public | `app/routes/v.new.tsx` |
+| `/vega` | — | public | `app/routes/vega.tsx` |
 | `/velum2099` | — | public | `app/routes/velum2099.tsx` |
 | `/versecraft` | — | public | `app/routes/versecraft/index.tsx` |
 | `/vibe-frame` | — | public | `app/routes/vibe-frame.ts` |
