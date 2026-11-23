@@ -193,6 +193,7 @@
   "import-tracker-failed": "Could not check your tracker for dates already there.",
   "import-truncated": "The file was long, so only the first part was read.",
   "import-unmatched": "Could not match this school. Pick it below.",
+  "import-unrecognised-school": "Unrecognised school",
   "import-year-inferred": "The file had no year; {{year}} was chosen. Check it.",
   "index-ask": "Ask",
   "index-day-count": "{{n}}, {{source}}",

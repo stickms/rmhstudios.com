@@ -142,6 +142,18 @@ describe('validateImport: the year a file leaves out', () => {
   });
 });
 
+describe('validateImport: a quote must say this month and day', () => {
+  it('drops a swapped day and unrelated numbers', () => {
+    const swapped = run([{ schoolName: 'Harvard Medical School', milestones: [ms('SUBMITTED', '2026-09-10', '2026-10-09')] }]);
+    expect(swapped.rows).toEqual([]);
+    expect(swapped.dropped).toBe(1);
+    const stats = run([{ schoolName: 'Duke', milestones: [ms('INTERVIEW', '2027-03-12', '3 | 12 interviews')] }], {
+      text: 'Duke | 3 | 12 interviews',
+    });
+    expect(stats.rows).toEqual([]);
+  });
+});
+
 describe('validateImport: schools are resolved by the server', () => {
   it('matches by name, short name and alias, and flags what it cannot match', () => {
     const v = run([
@@ -150,7 +162,7 @@ describe('validateImport: schools are resolved by the server', () => {
       { schoolName: 'Springfield Academy of Healing', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] },
       { schoolName: 'Rowan', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] },
       { schoolName: 'U of X', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] },
-    ]);
+    ], { text: `${TEXT}\nSpringfield Academy of Healing | 2026-06-12\nRowan | 2026-06-12\nU of X | 2026-06-12` });
     const by = (name: string) => v.rows.find((r) => r.schoolName === name)!;
     expect(by('Harvard Medical School').school?.slug).toBe('harvard');
     expect(by('Hopkins').school?.slug).toBe('johns-hopkins');
@@ -159,6 +171,24 @@ describe('validateImport: schools are resolved by the server', () => {
     expect(by('Springfield Academy of Healing').school).toBeNull();
     expect(by('Rowan').school).toBeNull();
     expect(by('U of X').school).toBeNull();
+  });
+
+  it('shows a school name only when the text holds it', () => {
+    const v = run([
+      { schoolName: 'Invented Institute of Medicine', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] },
+      // Resolves to a real school, but the file never wrote it: not a row the file supports.
+      { schoolName: 'Kansas City University College of Osteopathic Medicine', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] },
+      { schoolName: 'Second Invention', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] },
+    ]);
+    expect(v.rows.map((r) => [r.schoolName, r.school])).toEqual([['', null], ['', null], ['', null]]);
+    expect(new Set(v.rows.map((r) => r.key)).size).toBe(3);
+    expect(JSON.stringify(v)).not.toMatch(/Invented|Invention|Kansas/);
+  });
+
+  it('keeps a matched school whose short name, not the model\'s wording, is in the text', () => {
+    const v = run([{ schoolName: 'Harvard Medical School', milestones: [ms('SUBMITTED', '2026-06-12', '2026-06-12')] }], { text: 'Harvard | 2026-06-12' });
+    expect(v.rows[0]!.school?.slug).toBe('harvard');
+    expect(v.rows[0]!.schoolName).toBe('');
   });
 
   it('never uses a slug or an id the model supplies', () => {

@@ -49,6 +49,33 @@ describe('rawSupportsDate', () => {
     expect(rawSupportsDate('03/04/2026', d(2026, 4, 3))?.ambiguous).toBe(true);
     expect(rawSupportsDate('03/14/2026', d(2026, 3, 14))?.ambiguous).toBe(false);
   });
+  it('a swapped month and day is not the date', () => {
+    // Year first reads one way: 2026-10-09 is October 9, never September 10.
+    expect(rawSupportsDate('2026-10-09', d(2026, 9, 10))).toBeNull();
+    expect(rawSupportsDate('2026-10-09', d(2026, 10, 9))).not.toBeNull();
+    expect(rawSupportsDate('Oct 9', d(2026, 9, 10))).toBeNull();
+    expect(rawSupportsDate('9 October', d(2026, 9, 10))).toBeNull();
+  });
+  it('unrelated numbers are not a date', () => {
+    expect(rawSupportsDate('Duke | 3 | 12 interviews', d(2026, 3, 12))).toBeNull();
+    expect(rawSupportsDate('12 interviews, 3 offers', d(2026, 3, 12))).toBeNull();
+    expect(rawSupportsDate('Rank 7 of 20', d(2026, 7, 20))).toBeNull();
+    expect(rawSupportsDate('3.5 GPA 12', d(2026, 3, 12))).toBeNull();
+  });
+  it('reads the formats in the wild', () => {
+    expect(rawSupportsDate('Oct 9', d(2026, 10, 9))).toEqual({ yearWritten: false, ambiguous: false });
+    expect(rawSupportsDate('October 9th, 2026', d(2026, 10, 9))).toEqual({ yearWritten: true, ambiguous: false });
+    expect(rawSupportsDate('9 October', d(2026, 10, 9))).toEqual({ yearWritten: false, ambiguous: false });
+    expect(rawSupportsDate('9th of October 2026', d(2026, 10, 9))?.yearWritten).toBe(true);
+    expect(rawSupportsDate('Sept. 14 2026', d(2026, 9, 14))).toEqual({ yearWritten: true, ambiguous: false });
+    expect(rawSupportsDate('Interview 10 Oct', d(2026, 10, 10))).not.toBeNull();
+    expect(rawSupportsDate('10/9/2026', d(2026, 10, 9))).toEqual({ yearWritten: true, ambiguous: true });
+    expect(rawSupportsDate('10/9', d(2026, 9, 10))).toEqual({ yearWritten: false, ambiguous: true }); // D/M reading
+    expect(rawSupportsDate('14/9/2026', d(2026, 9, 14))).toEqual({ yearWritten: true, ambiguous: false });
+    expect(rawSupportsDate('7-20', d(2026, 7, 20))?.yearWritten).toBe(false);
+    expect(rawSupportsDate('7/20/2025', d(2026, 7, 20))).toBeNull();
+    expect(rawSupportsDate('Sent on 2026-10-09 (secondary 7/20)', d(2026, 7, 20))).not.toBeNull();
+  });
   it('a year the quote writes must be the date\'s', () => {
     expect(rawSupportsDate('2025-07-15', d(2026, 7, 15))).toBeNull();
   });

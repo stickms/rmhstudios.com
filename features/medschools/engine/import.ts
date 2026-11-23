@@ -102,47 +102,89 @@ const MONTHS = [
   'december',
 ];
 
-/** Month numbers a word in the text names ("Jul", "july", "Sept"). */
-function monthsNamed(text: string): Set<number> {
-  const out = new Set<number>();
-  for (const w of text.toLowerCase().match(/[a-z]{3,9}/g) ?? []) {
-    const i = MONTHS.findIndex((name) => name.startsWith(w));
-    if (i >= 0) out.add(i + 1);
-  }
-  return out;
+/** A month number for a month word ("Jul", "july", "Sept", "Sept."), or null. At least three letters, a prefix of the name. */
+function monthOfWord(word: string): number | null {
+  const w = word.toLowerCase();
+  if (w.length < 3) return null;
+  const i = MONTHS.findIndex((name) => name.startsWith(w));
+  return i >= 0 ? i + 1 : null;
 }
 
 export interface RawDate {
   /** The quote writes the year (four digits, or two in a numeric date). */
   yearWritten: boolean;
-  /** Both of a numeric date's first two parts could be a month, and they differ: 03/04 is March 4 or April 3. */
+  /** Both readings of a numeric date are real days and differ: 03/04 is March 4 or April 3. */
   ambiguous: boolean;
 }
 
+/** A date written in the quote: the readings it allows (one for a month name or a year-first date, two for 03/04). */
+interface DateToken {
+  year: number | null;
+  readings: { m: number; d: number }[];
+}
+
+const realMonthDay = (m: number, d: number): boolean =>
+  m >= 1 && m <= 12 && d >= 1 && d <= new Date(Date.UTC(2024, m, 0)).getUTCDate();
+
+const fullYear = (written: string): number => (written.length === 2 ? 2000 + Number(written) : Number(written));
+
 /**
- * Does the quote the model gave actually say this day? The day and the month must both be readable in it (a month name
- * and the day number, or two numbers that are the month and the day); the year is not required, because a sheet often
- * leaves it out, but a year the quote does write must be the model's. This is what stops a date the model made up from
- * sitting beside a real quote like a column header. Null when the quote does not support the date, otherwise what the
- * quote did and did not say.
+ * The date tokens a quote holds, in the formats the sheets in the wild use: `2026-10-09` (year first, one reading),
+ * `7/20/2026`, `7/20/26`, `7/20` and `7-20` (month first or day first: every reading that is a real day), and month names
+ * (`Oct 9`, `October 9th, 2026`, `9 October`, `Sept. 14 2026`). A bare number is never a date.
+ */
+function dateTokens(raw: string): DateToken[] {
+  let text = raw.normalize('NFKC');
+  const out: DateToken[] = [];
+  // Year first, taken out of the text so its parts are not read again as a month and a day.
+  text = text.replace(/(?<!\d)((?:19|20)\d{2})[/.-](\d{1,2})[/.-](\d{1,2})(?!\d)/g, (_w, y: string, mo: string, d: string) => {
+    if (realMonthDay(Number(mo), Number(d))) out.push({ year: Number(y), readings: [{ m: Number(mo), d: Number(d) }] });
+    return ' ';
+  });
+  // Month names, with the day before or after the month and an optional year after.
+  text = text.replace(
+    /(?:(?<!\d)(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?)?\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b\.?(?:\s*(\d{1,2})(?:st|nd|rd|th)?(?!\d))?(?:\s*,?\s*((?:19|20)\d{2})(?!\d))?/gi,
+    (whole, before: string | undefined, word: string, after: string | undefined, year: string | undefined) => {
+      const m = monthOfWord(word);
+      if (m === null) return whole;
+      const day = after ?? before;
+      if (day !== undefined && realMonthDay(m, Number(day))) {
+        out.push({ year: year === undefined ? null : Number(year), readings: [{ m, d: Number(day) }] });
+      }
+      return ' ';
+    },
+  );
+  // Numeric: month first or day first. A year is two or four digits; a two-part date has no year.
+  for (const t of text.matchAll(/(?<![\d/.-])(\d{1,2})([/.-])(\d{1,2})(?:\2(\d{4}|\d{2}))?(?![\d])/g)) {
+    const [a, sep, b, y] = [Number(t[1]), t[2], Number(t[3]), t[4]];
+    // `3.5` is a decimal, not a date, unless it carries a year.
+    if (sep === '.' && y === undefined) continue;
+    const readings: { m: number; d: number }[] = [];
+    if (realMonthDay(a, b)) readings.push({ m: a, d: b });
+    if (a !== b && realMonthDay(b, a)) readings.push({ m: b, d: a });
+    if (readings.length > 0) out.push({ year: y === undefined ? null : fullYear(y), readings });
+  }
+  return out;
+}
+
+/**
+ * Does the quote the model gave actually say this day? The quote must hold a DATE (see `dateTokens`) that reads as
+ * exactly this month and day, and, when it writes a year, that year. Two numbers that merely appear in it never count
+ * (`2026-10-09` is not 10 September, `Duke | 3 | 12 interviews` is not 12 March). The year is not required, because a
+ * sheet often leaves it out. This is what stops a date the model made up from sitting beside a real quote like a column
+ * header. Null when the quote does not support the date, otherwise what the quote did and did not say.
  */
 export function rawSupportsDate(raw: string, day: { y: number; m: number; d: number }): RawDate | null {
-  const text = raw.normalize('NFKC');
-  const nums = (text.match(/\d+/g) ?? []).map((n) => Number(n));
-  const named = monthsNamed(text);
-  const supported = named.has(day.m)
-    ? nums.includes(day.d)
-    : nums.some((n, i) => n === day.m && nums.some((k, j) => j !== i && k === day.d));
-  if (!supported) return null;
-  const years4 = (text.match(/(?<!\d)(?:19|20)\d{2}(?!\d)/g) ?? []).map(Number);
-  if (years4.length > 0 && !years4.includes(day.y)) return null;
-  const twoDigit = /(?<!\d)\d{1,2}\s*[/.-]\s*\d{1,2}\s*[/.-]\s*(\d{2})(?!\d)/.exec(text);
-  const yearWritten = years4.includes(day.y) || (twoDigit !== null && Number(twoDigit[1]) === day.y % 100);
-  // A year-first date (2026-10-09) reads one way only: take it out before looking for a numeric month and day.
-  const numeric = /(?<!\d)(\d{1,2})\s*[/.-]\s*(\d{1,2})(?!\d)/.exec(text.replace(/(?<!\d)\d{4}\s*[/.-]\s*\d{1,2}\s*[/.-]\s*\d{1,2}(?!\d)/g, ' '));
-  const ambiguous =
-    named.size === 0 && numeric !== null && Number(numeric[1]) <= 12 && Number(numeric[2]) <= 12 && numeric[1] !== numeric[2];
-  return { yearWritten, ambiguous };
+  let best: RawDate | null = null;
+  for (const t of dateTokens(raw)) {
+    if (t.year !== null && t.year !== day.y) continue;
+    if (!t.readings.some((r) => r.m === day.m && r.d === day.d)) continue;
+    const found: RawDate = { yearWritten: t.year !== null, ambiguous: t.readings.length > 1 };
+    if (best === null || (best.ambiguous && !found.ambiguous) || (!best.yearWritten && found.yearWritten && best.ambiguous === found.ambiguous)) {
+      best = found;
+    }
+  }
+  return best;
 }
 
 /**

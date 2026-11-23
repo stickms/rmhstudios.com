@@ -95,6 +95,12 @@ interface Candidate {
   raw: string;
 }
 
+/** The folded name appears in the folded text (a name of under three characters never does). */
+function nameInText(name: string, foldedText: string): boolean {
+  const f = foldForMatch(name);
+  return f.length >= 3 && foldedText.includes(f);
+}
+
 export function validateImport(
   output: unknown,
   ctx: { text: string; dir: readonly ImportSchool[]; aliases: AliasIndex; now: Date },
@@ -146,8 +152,14 @@ export function validateImport(
 
   const rows = new Map<string, ValidRow>();
   heads.forEach((head, rowIndex) => {
-    const school = matchSchool(head.name, ctx.dir, ctx.aliases);
-    const key = `${school ? school.slug : `?${foldForMatch(normalizeSchoolKey(head.name))}`}|${head.program}`;
+    // The name is shown only if the member's text holds it (or, for a school it resolved to, that school's own name): the
+    // model's school name is otherwise its own words, and a made-up one must not reach the page or pick a school.
+    const found = matchSchool(head.name, ctx.dir, ctx.aliases);
+    const named = nameInText(head.name, folded);
+    const school = found && (named || nameInText(found.name, folded) || nameInText(found.shortName, folded)) ? found : null;
+    const shown = named ? head.name : '';
+    // An unmatched row keeps its own key (never the model's words), so two unrecognised schools stay two rows.
+    const key = `${school ? school.slug : `?unrecognised-${rowIndex}`}|${head.program}`;
     const milestones: ValidMilestone[] = [];
     for (const c of candidates.filter((x) => x.rowIndex === rowIndex)) {
       const y = c.yearWritten ? c.y : inferYear(c.type, c.m, c.d, cycle.cycleYear, ctx.now);
@@ -163,7 +175,7 @@ export function validateImport(
     if (!into) {
       rows.set(key, {
         key,
-        schoolName: head.name,
+        schoolName: shown,
         school,
         program: head.program,
         milestones: [],

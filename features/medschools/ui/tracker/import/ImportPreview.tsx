@@ -88,7 +88,7 @@ function MilestoneLine({
   const { min, max } = milestoneDateWindow(cycleYear, now);
   const label = milestoneLabel(m.type);
   const was = existing?.get(m.type);
-  const school = row.school?.shortName ?? row.schoolName;
+  const school = row.school?.shortName ?? (row.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' }));
   const day = (d: string) => formatUtcDay(d, locale, { month: 'short', day: 'numeric', year: 'numeric' });
 
   // The line's tick: add a date that is new, replace one that differs. Same and invalid dates are not writable.
@@ -207,13 +207,16 @@ export function ImportPreview({
                   checked={r.include}
                   disabled={!r.school}
                   aria-label={t('import-row-label', {
-                    school: r.school?.name ?? r.schoolName,
+                    school: r.school?.name ?? (r.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' })),
                     defaultValue: 'Include {{school}}',
                   })}
                   onChange={(e) => patchRow(r.key, { include: e.target.checked })}
                 />
                 <span className="min-w-0">
-                  <span className="t-body block">{r.school ? r.school.name : r.schoolName}</span>
+                  <span className="t-body block">{r.school
+                      ? r.school.name
+                      : r.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' })}
+                  </span>
                   <span className="t-meta block">
                     {r.school
                       ? t('import-row-meta', {

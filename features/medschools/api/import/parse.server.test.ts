@@ -125,7 +125,13 @@ describe('parseImport', () => {
   it('an unmatched school comes back flagged, not guessed', async () => {
     const out = { rows: [{ schoolName: 'Springfield Academy of Healing', milestones: [{ type: 'SUBMITTED', date: '2026-06-12', raw: '2026-06-12' }] }] };
     const r = await parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(out).runner, now: NOW });
-    expect(r.rows[0]).toMatchObject({ school: null, schoolName: 'Springfield Academy of Healing' });
+    // The file never wrote that name, so it is not shown: a neutral label and the picker, never the model's words.
+    expect(r.rows[0]).toMatchObject({ school: null, schoolName: '' });
+    const written = await parseImport(
+      { userId: 'u1', input: { kind: 'paste', text: 'Springfield Academy of Healing submitted 2026-06-12' } },
+      { runner: runnerOf(out).runner, now: NOW },
+    );
+    expect(written.rows[0]).toMatchObject({ school: null, schoolName: 'Springfield Academy of Healing' });
   });
 
   it('a long paste is cut and the member is told', async () => {
