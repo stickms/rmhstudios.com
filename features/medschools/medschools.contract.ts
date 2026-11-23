@@ -680,3 +680,134 @@ export const putMedPrefsApi = endpoint<{ body: z.infer<typeof putPrefsBody>; res
   method: 'PUT',
   path: '/api/medschools/me/prefs',
 });
+
+/* ------------------------- Secondaries (public tab, me/ overlap, admin entry) ------------------------- */
+
+/** Where a prompt was read: Admit.org, Student Doctor Network, or the school's own page. */
+export type MedPromptSourceId = 'ADMIT' | 'SDN' | 'SCHOOL';
+export type MedPromptStatus = 'same' | 'reworded' | 'new' | 'gone' | 'last-cycle';
+export interface MedPromptLimitDto {
+  kind: 'WORDS' | 'CHARS';
+  value: number;
+}
+
+export interface MedSecondaryPromptDto {
+  id: string;
+  text: string;
+  limit: MedPromptLimitDto | null;
+  optional: boolean;
+  /** Theme ids (`engine/secondaries/theme-ids.ts`), at least one (`other` when no rule matched). */
+  themes: string[];
+  /** `null` = nothing to compare with (a first year of data). */
+  status: MedPromptStatus | null;
+  previousText: string | null;
+  /** Entry years the prompt was observed in, ascending; the UI writes them as `2026–2027` ranges. */
+  cycles: number[];
+  /** The sources that saw it in the cycle shown. */
+  sources: MedPromptSourceId[];
+  /** ISO instant of the newest check of those sources. */
+  lastCheckedAt: string;
+}
+
+export interface MedSecondaryGroupDto {
+  program: 'REG' | 'PHD';
+  /** `current` = this cycle's prompts; `not-yet` = none seen this cycle, the newest earlier cycle's list is shown. */
+  state: 'current' | 'not-yet';
+  shownCycle: number;
+  comparedWith: number | null;
+  prompts: MedSecondaryPromptDto[];
+}
+
+export interface MedSecondarySourceDto {
+  source: MedPromptSourceId;
+  url: string | null;
+  /** ISO instant of the newest read of this source for this school; null when it was never read. */
+  checkedAt: string | null;
+  status: 'OK' | 'EMPTY' | 'UNAVAILABLE';
+}
+
+/** What the school's own admissions page says about rolling decisions (a curated, dated import). */
+export interface MedAdmissionsPolicyDto {
+  program: 'REG' | 'PHD';
+  /** true = rolling decisions; false = decisions on set dates. */
+  rolling: boolean;
+  /** The page's own sentence. */
+  evidence: string;
+  url: string;
+  /** YYYY-MM-DD. */
+  checkedOn: string;
+}
+
+/** Secondary turnaround (received to submitted): present only when at least 20 members who share contribute. */
+export interface MedSecondaryTurnaroundDto {
+  program: 'REG' | 'PHD';
+  members: number;
+  p25Days: number;
+  medianDays: number;
+  p75Days: number;
+  asOf: string;
+}
+
+export interface MedSchoolSecondariesRes {
+  /** The cycle the site is showing. */
+  cycleYear: number;
+  groups: MedSecondaryGroupDto[];
+  sources: MedSecondarySourceDto[];
+  admissions: MedAdmissionsPolicyDto[];
+  turnaround: MedSecondaryTurnaroundDto[];
+}
+
+export const getMedSchoolSecondariesApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined };
+  res: MedSchoolSecondariesRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/secondaries' });
+
+export interface MedSecondaryOverlapEntryDto {
+  slug: string;
+  schoolName: string;
+  program: 'REG' | 'PHD';
+  promptId: string;
+  text: string;
+  limit: MedPromptLimitDto | null;
+  optional: boolean;
+  basis: 'current' | 'last-cycle';
+}
+
+export interface MedSecondaryOverlapGroupDto {
+  theme: string;
+  schools: number;
+  shortestWords: number | null;
+  longestWords: number | null;
+  entries: MedSecondaryOverlapEntryDto[];
+}
+
+export interface MedSecondaryOverlapRes {
+  cycleYear: number;
+  source: 'list' | 'tracker';
+  groups: MedSecondaryOverlapGroupDto[];
+  withoutPrompts: { slug: string; name: string }[];
+  schoolCount: number;
+}
+
+/** The caller's own list or tracker schools. Personal: never cached; another member's list id is a 404. */
+export const getMedSecondaryOverlapApi = endpoint<{
+  query: { source: 'list' | 'tracker'; list?: string | undefined };
+  res: MedSecondaryOverlapRes;
+}>()({ method: 'GET', path: '/api/medschools/me/secondaries/overlap' });
+
+/** An admin's correction of a school's own prompts (the page URL is stored, never fetched). */
+export const postMedSecondariesAdminApi = endpoint<{
+  body: {
+    schoolId: string;
+    program: 'REG' | 'PHD';
+    cycleYear: number;
+    sourceUrl: string;
+    prompts: {
+      text: string;
+      limitKind?: 'WORDS' | 'CHARS' | undefined;
+      limitValue?: number | undefined;
+      optional?: boolean | undefined;
+    }[];
+  };
+  res: { prompts: number; created: number; rejected: number };
+}>()({ method: 'POST', path: '/api/admin/medschools/secondaries' });

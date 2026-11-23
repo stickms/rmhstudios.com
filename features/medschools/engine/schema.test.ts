@@ -531,7 +531,10 @@ model MedTrackerApplication {
     it('the migration sorts after every other medschools migration', () => {
       const dirs = readdirSync('prisma/migrations').filter((d) => /^\d{14}_/.test(d));
       const mine = dirs.find((d) => d.endsWith('_medschools_secondaries')) ?? '';
-      const others = dirs.filter((d) => d.includes('medschools') && d !== mine);
+      // The school-pages and turnaround tables are this feature's own follow-up and sort after it, on purpose.
+      const others = dirs.filter(
+        (d) => d.includes('medschools') && d !== mine && !d.endsWith('_medschools_school_pages_turnaround'),
+      );
       for (const o of others) expect(mine > o, o).toBe(true);
     });
   });
