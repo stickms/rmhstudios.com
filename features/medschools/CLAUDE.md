@@ -94,6 +94,36 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
   `hash(author:<member>:<school>:<cycle>:<type>)`, the member id read from the post header and hashed with the dedupe
   secret inside the `eventKey` closure, so nothing person-shaped crosses the adapter boundary. The first report wins.
   Posts with no member id keep the per-post key.
+- **Admit member dedupe and the whole-cycle backfill (owner 2026-11-23).** The live feed is only ~6 h deep, so Admit
+  data was thin. Every Admit event now keys on `hash(admit:author:<user id>:<schoolId>:<cycleYear>:<eventType>)` (the
+  dedupe secret, inside a closure in `adapters/admit/client.ts`; the id never leaves the adapter and is never stored),
+  so one member counts once per type per school per cycle whichever path saw it first: the live feed or the
+  profile-history backfill (`scrape/run-admit-history.ts`, queue `medschools.admit-history`). A feed row with no author
+  keeps the per-update key. **First report wins, earliest date kept** (`scrape/admit-events.ts`): when a later sighting
+  of an existing key carries an earlier `occurredAt`, the stored date moves back and the roll-up re-rolls both days; the
+  roll-up now deletes a cell whose events are gone, so a moved event is never counted on two days (the key holds the
+  cycle year, so a move never changes cycle). A stored event with no program takes the program a later sighting
+  resolved. The history job discovers members from `getAllCycleResults` (each status filter, paged, user id only),
+  fetches each unseen member's profile (`md_phd` plus the history's school slug and secondary/interview/decision dates,
+  nothing else), maps every entry to an event (SECONDARY, INTERVIEW, and the decision as
+  ACCEPTANCE/WAITLIST/REJECTION/WITHDRAWN/HOLD; a decision with no date or an unknown decision is counted, never
+  guessed) with `cycleYearOf` and the alias matching, and rolls up. The live feed ingests the history of any member it
+  meets for the first time from the lookup it already made. Progress is `MedAdmitMember` (a keyed hash of the member id,
+  a different HMAC input from any event key, plus DONE/FAILED and attempts; pruned after 400 days); the raw id lives in
+  memory for one run, discovery is repeated each run, and DONE members are skipped, so a deploy resumes. Three failed
+  lookups park a member for a week.
+- **One-time ADMIT re-key (`scrape/admit-rekey.ts`).** Old ADMIT rows used the per-update key and would be recounted by
+  the backfill. Before the first live write under the new key and before the first history run, `ensureAdmitRekey`
+  deletes every ADMIT `MedCycleEvent` and ADMIT `MedCycleCount` cell (an ADMIT cell holds nothing but its events), and
+  records a `MedSourceRun` (job `admit-rekey`, status OK) as the done flag. At most once; a failed attempt is retried
+  and the Admit event jobs write nothing until it succeeds. Mention it in the PR text: public Admit series are empty
+  until the feed and the backfill refill them (the first history run is queued at worker start).
+- **Politeness budgets (owner 2026-11-23).** The history job uses `backfillSpacingMs` 3 s plus 0-1 s random jitter
+  (`createPoliteHost` takes `jitterMs`; live sessions keep their spacing); the SDN forums host is 3 s plus jitter for
+  every session. Every host has a persisted DAILY request budget (`scrape/request-budget.ts`, `MedRequestBudget`, UTC
+  day, retries and robots.txt included) shared by all its jobs; spent budget halts the session (`BudgetExhaustedError`)
+  and the job ends PARTIAL until the next UTC day. The history job also has its own daily quota of profile lookups
+  (default 600). Env overrides are in `.env.example`.
 - The SDN live queue runs daily (SDN forum activity is slow); AI extraction is capped monthly. Detail:
   `server/CLAUDE.md`.
 

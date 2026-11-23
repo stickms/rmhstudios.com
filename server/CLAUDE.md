@@ -200,49 +200,64 @@ Consequences:
   `MEDSCHOOLS_INTERVIEWS_CRON`, expires after 3 h). Both Admit jobs share ONE `createPoliteHost(SOURCES.ADMIT)`,
   separate from the CycleTrack host. The host is FIFO, so while the ~600-request interviews walk runs (about 15 min)
   live requests interleave one-for-one: a live tick may run long and the in-flight guard drops the next tick; the live
-  feed's 6 h window absorbs that. `MEDSCHOOLS_ADMIT_ENABLED=false` disables both Admit crons (only a manual
-  `runNow({ manual: true })` bypasses it; bootstrap queues no Admit run). Both Admit jobs refuse to run and log an error
-  when `MEDSCHOOLS_DEDUPE_SECRET` is unset or under 16 characters; startup logs the same error without exiting, and
-  CycleTrack never reads the secret. Bootstrap also seeds the reviewed Admit aliases (`seedAdmitAliases`) and logs a
-  warning naming any conflicting pairs it skipped. Admit rules the readers depend on. (1) Program: a profile lookup
-  yields an opaque per-run token redeemable only for `md_phd`; `true` is MD-PhD, anything else on an existing profile is
-  MD, and no profile means program not reported (`null`). The `user_id` is held in memory for the run, never stored,
-  logged or hashed. Admit stats, interview profiles and questions carry `program = null`; later readers filter or label
-  them (never per-program curves). (2) Cycle year is event-type aware (`cycleYearOf`, UTC): decisions roll over on 1
-  September, interviews on 1 July, secondaries on 1 June, so summer acceptances stay in that August's class. (3) Admit
-  school stats (`getSchoolStats`) are a cumulative snapshot over all reported cycles, refreshed daily and stored under
-  the current cycle at fetch time; readers must label them "Admit.org, all reported cycles". (4) Alias misses: the admin
-  page is `/admin/medschools` (`features/medschools/ui/AliasMissesPanel`; endpoints `/api/admin/medschools/alias-misses`
-  with `/map` and `/ignore`, registered modules in `features/medschools/api/`). Mapping keeps the one-key-per-source
-  rule (a school has one alias key per source; an existing alias is never moved). Alias seeding is not gated by
-  `MEDSCHOOLS_ADMIT_ENABLED`. (5) A GraphQL `errors` reply to a profile lookup defers that user and does not count
-  toward the three-strike halt. (6) `pnpm i18n:extract` scans `features/medschools/**` (scoped in
-  `i18next-parser.config.js`); other feature folders are not yet scanned. Built by `pnpm build` and run as its own
-  compose service. **SDN (Student Doctor Network) connector, phase 2b.** Three more queues (all `exclusive`,
-  `retryLimit: 0`, UTC): `medschools.sdn-live` (daily at 12:20 UTC, off-peak, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after
-  25 min: RSS feeds, then the changed threads), `medschools.sdn-backfill` (monthly `15 0 1 * *`,
-  `MEDSCHOOLS_SDN_BACKFILL_CRON`, expires after 3 h: a safety net that also covers the budget reset) and
-  `medschools.rmh-publish` (daily at 00:05 UTC, expires after 10 min, no flag and no secret: the public snapshot of the RMH
-  tracker counts, `features/medschools/scrape/run-rmh-publish.ts`; skips when an OK run started under 20 h ago, from
-  `MedSourceRun`) and `medschools.sdn-interviews` (weekly, `50 5 * * 1`, `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page
-  interview reports, no model). The backfill has its own queue (spec section 8 names one shared backfill queue; this is
-  a recorded deviation: its own cadence, budget share and host session) and no bootstrap trigger: the live tick queues
-  it, after its own run, while `sdnBackfillOwed(prisma, now, aiConfigured)` says it is owed, and a manual
-  `runNow({ manual: true })` can too. Two polite hosts, each separate from the CycleTrack and Admit hosts:
-  `SOURCES.SDN_FORUMS` (forums.studentdoctor.net, shared by live and backfill, the backfill taking the slower
-  `backfillSpacingMs` session on it) and `SOURCES.SDN_WWW` (www.studentdoctor.net, interviews only).
-  `MEDSCHOOLS_SDN_ENABLED=false` disables the three crons, the live tick's backfill queueing and nothing else (only a
-  manual `runNow({ manual: true })` bypasses it; bootstrap queues no SDN run; alias seeding is not gated). All three SDN
-  jobs refuse to run without `MEDSCHOOLS_DEDUPE_SECRET` (16+ characters; manual never bypasses it); CycleTrack and Admit
-  are unaffected. Shutdown pauses all seven consumers and waits for the in-flight SDN runs with the others. Bootstrap
-  also calls `seedSdnAliases` and `seedSdnIgnoredMisses` from `data/medschools/sdn-aliases.json`, each in its own
-  try/catch so neither can block CycleTrack's or Admit's bootstrap, and logs the skipped (conflicting) and unmatched
-  keys. Update `data/medschools/sdn-forums.json` each cycle (D10); the live tick reports `staleForumConfig` when it is
-  out of date. SDN rules the readers depend on. (1) **Program (D1):** an SDN event is MD unless the thread or post
-  states MD-PhD, DO-PhD or MSTP; an unlabelled post counts as MD (the owner's SDN exception to spec section 4a, which
-  otherwise never defaults to MD). (2) **Cursor (D2):** `MedSdnThread` stores a cursor that holds an HMAC keyed by the
-  dedupe secret, never a post id; dedupe hashes are `HMAC('SDN:post:' + id)` and nothing person-shaped is stored (no
-  username, author, avatar, raw post body or permalink). (3) **Cycle year (D7):**
+  feed's 6 h window absorbs that. A third Admit queue, `medschools.admit-history` (daily `10 3 * * *`,
+  `MEDSCHOOLS_ADMIT_HISTORY_CRON`, `exclusive`, `retryLimit: 0`, expires after 3 h, same host and gate), backfills the
+  whole cycle from each member's profile history (`features/medschools/scrape/run-admit-history.ts`), and is queued once
+  at start while `admitHistoryOwed` (no run has completed). Both Admit event jobs first run the one-time guarded ADMIT
+  re-key (`admit-rekey`, see `features/medschools/CLAUDE.md`). Hardening: `guard.ts` (the overlap guard) now treats a
+  run in flight longer than its queue's expiry as hung, logs loudly and lets the next tick start; the interviews and
+  history runs end themselves at a 150 min deadline; the interviews tick and run log when they start, what they will
+  work on, and when stats fetching halts (with the failure). Every polite host has a persisted daily request budget
+  shared by its jobs (`MEDSCHOOLS_ADMIT_DAILY_REQUESTS` 3000, `MEDSCHOOLS_SDN_FORUMS_DAILY_REQUESTS` 2000,
+  `MEDSCHOOLS_SDN_WWW_DAILY_REQUESTS` 1500, `MEDSCHOOLS_CYCLETRACK_DAILY_REQUESTS` 20000) and the history job a daily
+  quota (`MEDSCHOOLS_ADMIT_HISTORY_DAILY_PROFILES` 600, `MEDSCHOOLS_ADMIT_HISTORY_MAX_PROFILES` per run); history
+  requests are 3 s apart plus 0-1 s jitter and the SDN forums host is 3 s plus jitter. **User agent (owner
+  2026-11-23):** every host is sent one static, honest agent, `MarlonJack/1.0 (contact: admin@rmhstudios.com)`
+  (`MEDSCHOOLS_USER_AGENT` in `scrape/sources.ts`): the name and address the sources' admins know, no site URL so nobody
+  can follow it back, and not a browser string; robots.txt matching uses it (a `MarlonJack` group, else `*`).
+  `MEDSCHOOLS_ADMIT_ENABLED=false` disables both Admit crons (only a manual `runNow({ manual: true })` bypasses it;
+  bootstrap queues no Admit run). Both Admit jobs refuse to run and log an error when `MEDSCHOOLS_DEDUPE_SECRET` is
+  unset or under 16 characters; startup logs the same error without exiting, and CycleTrack never reads the secret.
+  Bootstrap also seeds the reviewed Admit aliases (`seedAdmitAliases`) and logs a warning naming any conflicting pairs
+  it skipped. Admit rules the readers depend on. (1) Program: a profile lookup yields an opaque per-run token redeemable
+  only for `md_phd`; `true` is MD-PhD, anything else on an existing profile is MD, and no profile means program not
+  reported (`null`). The `user_id` is held in memory for the run, never stored or logged; it is hashed only inside the
+  adapter's member-key closures (the event key and the progress hash). Admit stats, interview profiles and questions
+  carry `program = null`; later readers filter or label them (never per-program curves). (2) Cycle year is event-type
+  aware (`cycleYearOf`, UTC): decisions roll over on 1 September, interviews on 1 July, secondaries on 1 June, so summer
+  acceptances stay in that August's class. (3) Admit school stats (`getSchoolStats`) are a cumulative snapshot over all
+  reported cycles, refreshed daily and stored under the current cycle at fetch time; readers must label them "Admit.org,
+  all reported cycles". (4) Alias misses: the admin page is `/admin/medschools`
+  (`features/medschools/ui/AliasMissesPanel`; endpoints `/api/admin/medschools/alias-misses` with `/map` and `/ignore`,
+  registered modules in `features/medschools/api/`). Mapping keeps the one-key-per-source rule (a school has one alias
+  key per source; an existing alias is never moved). Alias seeding is not gated by `MEDSCHOOLS_ADMIT_ENABLED`. (5) A
+  GraphQL `errors` reply to a profile lookup defers that user and does not count toward the three-strike halt. (6)
+  `pnpm i18n:extract` scans `features/medschools/**` (scoped in `i18next-parser.config.js`); other feature folders are
+  not yet scanned. Built by `pnpm build` and run as its own compose service. **SDN (Student Doctor Network) connector,
+  phase 2b.** Three more queues (all `exclusive`, `retryLimit: 0`, UTC): `medschools.sdn-live` (daily at 12:20 UTC,
+  off-peak, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after 25 min: RSS feeds, then the changed threads),
+  `medschools.sdn-backfill` (monthly `15 0 1 * *`, `MEDSCHOOLS_SDN_BACKFILL_CRON`, expires after 3 h: a safety net that
+  also covers the budget reset) and `medschools.rmh-publish` (daily at 00:05 UTC, expires after 10 min, no flag and no
+  secret: the public snapshot of the RMH tracker counts, `features/medschools/scrape/run-rmh-publish.ts`; skips when an
+  OK run started under 20 h ago, from `MedSourceRun`) and `medschools.sdn-interviews` (weekly, `50 5 * * 1`,
+  `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page interview reports, no model). The backfill has its
+  own queue (spec section 8 names one shared backfill queue; this is a recorded deviation: its own cadence, budget share
+  and host session) and no bootstrap trigger: the live tick queues it, after its own run, while
+  `sdnBackfillOwed(prisma, now, aiConfigured)` says it is owed, and a manual `runNow({ manual: true })` can too. Two
+  polite hosts, each separate from the CycleTrack and Admit hosts: `SOURCES.SDN_FORUMS` (forums.studentdoctor.net,
+  shared by live and backfill, the backfill taking the slower `backfillSpacingMs` session on it) and `SOURCES.SDN_WWW`
+  (www.studentdoctor.net, interviews only). `MEDSCHOOLS_SDN_ENABLED=false` disables the three crons, the live tick's
+  backfill queueing and nothing else (only a manual `runNow({ manual: true })` bypasses it; bootstrap queues no SDN run;
+  alias seeding is not gated). All three SDN jobs refuse to run without `MEDSCHOOLS_DEDUPE_SECRET` (16+ characters;
+  manual never bypasses it); CycleTrack and Admit are unaffected. Shutdown pauses all seven consumers and waits for the
+  in-flight SDN runs with the others. Bootstrap also calls `seedSdnAliases` and `seedSdnIgnoredMisses` from
+  `data/medschools/sdn-aliases.json`, each in its own try/catch so neither can block CycleTrack's or Admit's bootstrap,
+  and logs the skipped (conflicting) and unmatched keys. Update `data/medschools/sdn-forums.json` each cycle (D10); the
+  live tick reports `staleForumConfig` when it is out of date. SDN rules the readers depend on. (1) **Program (D1):** an
+  SDN event is MD unless the thread or post states MD-PhD, DO-PhD or MSTP; an unlabelled post counts as MD (the owner's
+  SDN exception to spec section 4a, which otherwise never defaults to MD). (2) **Cursor (D2):** `MedSdnThread` stores a
+  cursor that holds an HMAC keyed by the dedupe secret, never a post id; dedupe hashes are `HMAC('SDN:post:' + id)` and
+  nothing person-shaped is stored (no username, author, avatar, raw post body or permalink). (3) **Cycle year (D7):**
   `cycleYearOf(eventDate, type) === thread.cycleYear`, so SDN buckets match phase 2a's event-type rule. (4) **Scrubbing
   (D4):** before a post reaches the model, quoted replies are stripped and email addresses, URLs, `@handles` and US
   phone numbers are redacted (`[phone]`); names cannot be redacted reliably, so a name in post text MAY reach the model,

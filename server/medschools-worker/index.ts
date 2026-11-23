@@ -12,6 +12,7 @@
  *
  *   medschools.admit-live   every 5 min — the Admit.org live decisions feed (needs the dedupe secret).
  *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
+ *   medschools.admit-history daily 03:10 — Admit profile-history backfill: the whole cycle, member-keyed (same secret).
  *
  *   medschools.sdn-live       daily (12:20 UTC) — Student Doctor Network RSS feeds, then the changed threads, with the
  *                             posts read by the extraction model (needs the dedupe secret; AI optional).
@@ -38,9 +39,11 @@ import {
 } from '../../lib/jobs/scheduled-consumer.server';
 import schoolsJson from '../../data/medschools/schools.json';
 import cyclesJson from '../../data/medschools/cycles.json';
+import { createGuard } from './guard';
 import { createPoliteHost } from '../../features/medschools/scrape/http';
 import { runAdmitLive } from '../../features/medschools/scrape/run-admit-live';
 import { runAdmitInterviews } from '../../features/medschools/scrape/run-admit-interviews';
+import { admitHistoryOwed, runAdmitHistory } from '../../features/medschools/scrape/run-admit-history';
 import admitAliasesJson from '../../data/medschools/admit-aliases.json';
 import sdnAliasesJson from '../../data/medschools/sdn-aliases.json';
 import sdnForumsJson from '../../data/medschools/sdn-forums.json';
@@ -49,7 +52,12 @@ import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfil
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
 import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
 import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
-import { SOURCES } from '../../features/medschools/scrape/sources';
+import {
+  ADMIT_HISTORY_DAILY_PROFILES,
+  DAILY_REQUEST_BUDGETS,
+  SOURCES,
+} from '../../features/medschools/scrape/sources';
+import { createDailyBudget } from '../../features/medschools/scrape/request-budget';
 import { RMH_PUBLISH_CRON, runRmhPublish } from '../../features/medschools/scrape/run-rmh-publish';
 import { runCycletrack } from '../../features/medschools/scrape/run-cycletrack';
 import {
@@ -145,8 +153,15 @@ function intEnv(name: string, dflt: number): number {
   const n = Number(process.env[name]);
   return Number.isInteger(n) && n > 0 ? n : dflt;
 }
+/** Queue expiries (seconds). A run in flight past its expiry is treated as hung (guard.ts); a run ends itself earlier. */
+const ADMIT_LIVE_EXPIRY_S = 20 * 60;
+const INTERVIEWS_EXPIRY_S = 3 * 60 * 60;
+const ADMIT_HISTORY_EXPIRY_S = 3 * 60 * 60;
+const INTERVIEWS_RUN_DEADLINE_MS = 150 * 60_000;
+const ADMIT_HISTORY_RUN_DEADLINE_MS = 150 * 60_000;
 const SDN_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_MAX_LLM_CALLS', 40);
 const SDN_BACKFILL_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS', 150);
+const ADMIT_HISTORY_MAX_PROFILES = intEnv('MEDSCHOOLS_ADMIT_HISTORY_MAX_PROFILES', 600);
 
 /** The dedupe hashes are keyed with this; an Admit job without it would store unkeyed, guessable hashes. */
 const secretOk = () =>
@@ -205,9 +220,15 @@ const inFlight =
   >();
 
 // One host for both jobs: they take turns on CycleTrack's rate budget instead of doubling it.
+// Every host has a persisted DAILY request budget shared by all the jobs on it (request-budget.ts, MedRequestBudget):
+// when it is spent the jobs stop and the next UTC day starts afresh. Env overrides: MEDSCHOOLS_<HOST>_DAILY_REQUESTS.
+const hostBudget = (host: keyof typeof DAILY_REQUEST_BUDGETS) =>
+  createDailyBudget(medPrisma, host, () => intEnv(`MEDSCHOOLS_${host}_DAILY_REQUESTS`, DAILY_REQUEST_BUDGETS[host]));
+
 const cycletrackHost =
   createPoliteHost(
     SOURCES.CYCLETRACK,
+    { budget: hostBudget('CYCLETRACK') },
   );
 
 // One host for both Admit jobs, separate from CycleTrack's. FIFO: while the daily interviews walk
@@ -216,12 +237,17 @@ const cycletrackHost =
 const admitHost =
   createPoliteHost(
     SOURCES.ADMIT,
+    { budget: hostBudget('ADMIT') },
   );
+// The history job's own daily quota of profile lookups, a share of the ADMIT budget above.
+const admitHistoryQuota = createDailyBudget(medPrisma, 'ADMIT:history', () =>
+  intEnv('MEDSCHOOLS_ADMIT_HISTORY_DAILY_PROFILES', ADMIT_HISTORY_DAILY_PROFILES),
+);
 
 // SDN has two politeness domains. Live and backfill share the forums host (the backfill takes its slower spacing
 // session on it), so they never double the request rate; the interviews job has the www host to itself.
-const sdnForumsHost = createPoliteHost(SOURCES.SDN_FORUMS);
-const sdnWwwHost = createPoliteHost(SOURCES.SDN_WWW);
+const sdnForumsHost = createPoliteHost(SOURCES.SDN_FORUMS, { budget: hostBudget('SDN_FORUMS') });
+const sdnWwwHost = createPoliteHost(SOURCES.SDN_WWW, { budget: hostBudget('SDN_WWW') });
 
 // The extraction model and its monthly budget are built once. `configured()` is false without a DeepSeek key:
 // extraction then stores nothing and keeps its cursors, and the live tick queues no backfill.
@@ -233,61 +259,17 @@ const sdnBudget = createBudgetGate(
 );
 const sdnForums = sdnForumsJson as SdnForumsFile;
 
-/** Wraps a job so a second concurrent call is skipped, and so shutdown can await it. */
-function guarded(
-  name: string,
-  run: (
-    data: Record<
-      string,
-      unknown
-    >,
-  ) => Promise<void>,
-): (
-  data?: Record<
-    string,
-    unknown
-  >,
-) => Promise<void> {
-  let running = false;
-  return async (
-    data = {},
-  ) => {
-    if (
-      stopping
-    )
-      return;
-    if (
-      running
-    ) {
-      log.info(
-        `${name} tick skipped — previous run still in flight`,
-      );
-      return;
-    }
-    running = true;
-    const p =
-      (async () => {
-        try {
-          await run(data);
-        } catch (e) {
-          log.error(
-            `${name} run failed: ${e instanceof Error ? e.message : String(e)}`,
-          );
-        }
-      })();
-    inFlight.add(
-      p,
-    );
-    try {
-      await p;
-    } finally {
-      inFlight.delete(
-        p,
-      );
-      running = false;
-    }
-  };
-}
+/**
+ * Wraps a job so a second concurrent call is skipped, so shutdown can await it, and so a run hung past its max
+ * runtime (the queue's expiry) is abandoned loudly instead of blocking every later tick (guard.ts).
+ */
+const guarded = createGuard({ log, isStopping: () => stopping, inFlight });
+
+/** A `shouldStop` that also turns true once `ms` have passed: the run ends itself before its queue expires. */
+const stopAfter = (ms: number) => {
+  const end = Date.now() + ms;
+  return () => stopping || Date.now() > end;
+};
 
 /** True while a backfill run is executing in this process (the hourly tick must not queue another). */
 let backfillInFlight = false;
@@ -392,7 +374,10 @@ function admitGate(
   name: string,
   data: Record<string, unknown>,
 ): boolean {
-  if (!ADMIT_ENABLED && data.manual !== true) return false;
+  if (!ADMIT_ENABLED && data.manual !== true) {
+    if (name !== 'admit-live') log.warn(`${name}: tick skipped — MEDSCHOOLS_ADMIT_ENABLED=false`);
+    return false;
+  }
   if (!secretOk()) {
     log.error(
       `${name}: MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — run refused`,
@@ -431,22 +416,25 @@ const admitLiveTick =
         { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
       );
       log.info(
-        `admit-live run complete [${r.runId}] — status=${r.status} fetched=${r.fetched} created=${r.created} alreadyStored=${r.alreadyStored} deferred=${r.deferred} programNull=${r.programNull} misses=${r.misses} lookups=${r.lookups} rolledUp=${r.rolledUp} requests=${r.requests}`,
+        `admit-live run complete [${r.runId}] — status=${r.status} fetched=${r.fetched} created=${r.created} moved=${r.moved} alreadyStored=${r.alreadyStored} deferred=${r.deferred} programNull=${r.programNull} membersIngested=${r.membersIngested} misses=${r.misses} lookups=${r.lookups} rolledUp=${r.rolledUp} requests=${r.requests}`,
       );
     },
+    ADMIT_LIVE_EXPIRY_S * 1000,
   );
 
 const interviewsTick =
   guarded(
     'interviews',
     async (data) => {
+      log.info(`interviews tick starting (manual=${data.manual === true}, enabled=${ADMIT_ENABLED}, secret=${secretOk()})`);
       if (!admitGate('interviews', data)) return;
       const r = await runAdmitInterviews(
         {
           prisma: medPrisma,
           host: admitHost,
           secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
-          shouldStop: () => stopping,
+          shouldStop: stopAfter(INTERVIEWS_RUN_DEADLINE_MS),
+          deadlineMs: INTERVIEWS_RUN_DEADLINE_MS,
           log,
         },
         { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
@@ -455,7 +443,33 @@ const interviewsTick =
         `interviews run complete [${r.runId}] — status=${r.status} statsRows=${r.statsRows} schoolsFetched=${r.schoolsFetched} schoolsSkipped=${r.schoolsSkipped} schoolsFailed=${r.schoolsFailed} schoolsUnavailable=${r.schoolsUnavailable} questionsCreated=${r.questionsCreated} questionsUpdated=${r.questionsUpdated} questionsDeleted=${r.questionsDeleted} misses=${r.misses} requests=${r.requests}`,
       );
     },
+    INTERVIEWS_EXPIRY_S * 1000,
   );
+
+const admitHistoryTick = guarded(
+  'admit-history',
+  async (data) => {
+    log.info(`admit-history tick starting (manual=${data.manual === true}, enabled=${ADMIT_ENABLED}, secret=${secretOk()})`);
+    if (!admitGate('admit-history', data)) return;
+    const r = await runAdmitHistory(
+      {
+        prisma: medPrisma,
+        host: admitHost,
+        secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+        shouldStop: stopAfter(ADMIT_HISTORY_RUN_DEADLINE_MS),
+        deadlineMs: ADMIT_HISTORY_RUN_DEADLINE_MS,
+        maxProfiles: ADMIT_HISTORY_MAX_PROFILES,
+        quota: admitHistoryQuota,
+        log,
+      },
+      { trigger: data.manual === true ? 'MANUAL' : data.bootstrap === true ? 'BOOTSTRAP' : 'CRON' },
+    );
+    log.info(
+      `admit-history run complete [${r.runId}] — status=${r.status} budgetSpent=${r.budgetSpent} discovered=${r.discovered} settled=${r.settled} fetched=${r.fetched} noProfile=${r.noProfile} failed=${r.failedLookups} remaining=${r.remaining} created=${r.eventsCreated} moved=${r.eventsMoved} existing=${r.eventsExisting} skipped=${r.entriesSkipped} misses=${r.misses} rolledUp=${r.rolledUp} requests=${r.requests}`,
+    );
+  },
+  ADMIT_HISTORY_EXPIRY_S * 1000,
+);
 
 const sdnLiveTick = guarded('sdn-live', async (data) => {
   if (!sdnGate('sdn-live', data)) return;
@@ -631,10 +645,14 @@ const cycletrackCron =
   '20 * * * *';
 const ADMIT_LIVE_QUEUE = 'medschools.admit-live';
 const INTERVIEWS_QUEUE = 'medschools.interviews';
+const ADMIT_HISTORY_QUEUE = 'medschools.admit-history';
 const admitLiveCron =
   process.env.MEDSCHOOLS_ADMIT_LIVE_CRON?.trim() || '*/5 * * * *';
 const interviewsCron =
   process.env.MEDSCHOOLS_INTERVIEWS_CRON?.trim() || '35 4 * * *';
+// Daily, off-peak, ending (about 50 min for the 1500-profile cap) before the interviews walk at 04:35.
+const admitHistoryCron =
+  process.env.MEDSCHOOLS_ADMIT_HISTORY_CRON?.trim() || '10 3 * * *';
 const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
@@ -656,6 +674,7 @@ let admitLiveConsumer: ScheduledConsumer | null =
   null;
 let interviewsConsumer: ScheduledConsumer | null =
   null;
+let admitHistoryConsumer: ScheduledConsumer | null = null;
 let sdnLiveConsumer: ScheduledConsumer | null = null;
 let sdnBackfillConsumer: ScheduledConsumer | null = null;
 let sdnInterviewsConsumer: ScheduledConsumer | null = null;
@@ -763,7 +782,7 @@ async function main() {
   admitLiveConsumer = await startScheduledConsumer({
     queue: ADMIT_LIVE_QUEUE,
     cron: admitLiveCron,
-    expireInSeconds: 20 * 60,
+    expireInSeconds: ADMIT_LIVE_EXPIRY_S,
     retryLimit: 0,
     handler: admitLiveTick,
     shouldStop: () => stopping,
@@ -777,13 +796,27 @@ async function main() {
   interviewsConsumer = await startScheduledConsumer({
     queue: INTERVIEWS_QUEUE,
     cron: interviewsCron,
-    expireInSeconds: 3 * 60 * 60,
+    expireInSeconds: INTERVIEWS_EXPIRY_S,
     retryLimit: 0,
     handler: interviewsTick,
     shouldStop: () => stopping,
     log: consumerLog,
   });
   if (!interviewsConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
+  admitHistoryConsumer = await startScheduledConsumer({
+    queue: ADMIT_HISTORY_QUEUE,
+    cron: admitHistoryCron,
+    expireInSeconds: ADMIT_HISTORY_EXPIRY_S,
+    retryLimit: 0,
+    handler: admitHistoryTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!admitHistoryConsumer) {
     if (stopping) return;
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
@@ -850,8 +883,20 @@ async function main() {
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}"`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}"`,
   );
+  // The profile-history backfill is owed until one pass has completed: queue it at once on the first deploy (and after
+  // an interrupted first run) rather than wait for the 03:10 cron. Its first step is the one-time ADMIT re-key.
+  if (ADMIT_ENABLED && secretOk()) {
+    try {
+      if (await admitHistoryOwed(medPrisma)) {
+        log.info('Bootstrap: Admit history backfill not yet completed — queueing it');
+        await admitHistoryConsumer.runNow({ bootstrap: true });
+      }
+    } catch (e) {
+      log.warn(`Bootstrap: Admit history check failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
   if (
     backfillDue
   ) {
@@ -898,6 +943,7 @@ async function shutdown(
       backfillConsumer?.pause(),
       admitLiveConsumer?.pause(),
       interviewsConsumer?.pause(),
+      admitHistoryConsumer?.pause(),
       sdnLiveConsumer?.pause(),
       sdnBackfillConsumer?.pause(),
       sdnInterviewsConsumer?.pause(),

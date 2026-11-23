@@ -515,4 +515,36 @@ describe('runAdmitInterviews', () => {
       [...NEEDLES, '987654321', '987654322'],
     );
   });
+
+  it('logs the start of the run and what it will work on', async () => {
+    const t = setup(baseRoutes());
+    await t.run();
+    expect(t.logs[0]).toBe('interviews: run starting (trigger=MANUAL)');
+    expect(t.logs.join('\n')).toContain('interviews: 3 Admit aliases, 2 active schools');
+    expect(t.logs.join('\n')).toContain('interviews: stats GLOBAL fetched 2 rows');
+  });
+
+  it('logs loudly when the stats phase halts, with the failure, and ends PARTIAL', async () => {
+    const t = setup(baseRoutes({ [statsKey('GLOBAL')]: null }), {}, 1);
+    const s = await t.run();
+    expect(s.status).toBe('PARTIAL');
+    const error = t.logs.find((l) => l.startsWith('interviews: stats fetching halted'));
+    expect(error).toMatch(/GetSchoolStats|getSchoolStats/);
+    expect(t.table('medSchoolStats')).toHaveLength(0);
+  });
+
+  it('a stats request that throws a halt is logged too', async () => {
+    // two-strike source: the 404 on GLOBAL is failure one, the 404 on IN_STATE failure two, and OUT_OF_STATE is then refused
+    const t = setup(baseRoutes({ [statsKey('GLOBAL')]: null, [statsKey('IN_STATE')]: null }), {}, 2);
+    await t.run();
+    expect(t.logs.some((l) => l.startsWith('interviews: stats fetching halted'))).toBe(true);
+  });
+
+  it('respects its own deadline: it stops cleanly, PARTIAL, naming why', async () => {
+    const t = setup(baseRoutes(), { deadlineMs: 0 });
+    const s = await t.run();
+    expect(s.status).toBe('PARTIAL');
+    expect(s.requests).toBe(0);
+    expect(t.logs.some((l) => l.includes('run deadline reached'))).toBe(true);
+  });
 });
