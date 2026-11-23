@@ -22,7 +22,9 @@ const variable = (name: string): ChoiceSource => ({
 });
 
 export const CHOICE_SOURCES: Record<FontId, ChoiceSource> = {
-  'dm-sans': variable('dm-sans'),
+  // The default rides the site sheet (and the game islands built from it), so it carries the upright axis only, as
+  // Geist did; italics are synthesized. A face a reader chooses is its own sheet and brings its italics.
+  'dm-sans': { pkg: '@fontsource-variable/dm-sans', css: ['wght.css'] },
   inter: variable('inter'),
   geist: variable('geist'),
   'ibm-plex-sans': variable('ibm-plex-sans'),
@@ -38,8 +40,9 @@ export const CHOICE_SOURCES: Record<FontId, ChoiceSource> = {
   lora: variable('lora'),
   merriweather: variable('merriweather'),
   spectral: { pkg: '@fontsource/spectral', css: ['400.css', '500.css', '600.css', '400-italic.css'] },
-  'dm-mono': { pkg: '@fontsource/dm-mono', css: ['400.css', '500.css'] },
+  // Mono text is set at 400 (t-meta); a second static weight doubled the site sheet's mono rules for nothing.
+  'dm-mono': { pkg: '@fontsource/dm-mono', css: ['400.css'] },
   'jetbrains-mono': { pkg: '@fontsource-variable/jetbrains-mono', css: ['wght.css'] },
   'geist-mono': { pkg: '@fontsource-variable/geist-mono', css: ['wght.css'] },
-  'ibm-plex-mono': { pkg: '@fontsource/ibm-plex-mono', css: ['400.css', '500.css'] },
+  'ibm-plex-mono': { pkg: '@fontsource/ibm-plex-mono', css: ['400.css'] },
 };
