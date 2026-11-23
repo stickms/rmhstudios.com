@@ -332,7 +332,7 @@ const BUDGETS = {
   siteCssBrotli: 32_800,
   entryRaw: 716_000,
   criticalPathRaw: 938_200,
-  criticalPathBrotli: 246_500,
+  criticalPathBrotli: 247_500, // 2026-11-23: +~0.7 KB brotli (achievement catalog, icon and device registries) from the Vault games' move into the library; OPT-01, named in the PR body
 };
 
 /**
@@ -378,7 +378,7 @@ export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrot
   // re-measured when the per-game rework lands (docs/superpowers/plans/2026-11-23-vault-games-migration.md).
   'cursed-logic': { jsBrotli: 136_300, cssBrotli: 21_100 }, // after the rework: JS 132,303 / CSS 20,463 B brotli (+3%)
   'signal-forge': { jsBrotli: 155_650, cssBrotli: 20_500 },
-  vega: { jsBrotli: 120_600, cssBrotli: 18_900 },
+  vega: { jsBrotli: 124_800, cssBrotli: 18_900 }, // after the rework: JS 121,139 / CSS 17,6xx B brotli (+3%)
   'void-breaker': { jsBrotli: 313_750, cssBrotli: 20_900 },
 };
 
