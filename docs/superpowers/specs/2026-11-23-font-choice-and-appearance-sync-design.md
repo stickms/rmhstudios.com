@@ -24,7 +24,8 @@ appearance sync off is never changed by another device and never changes them.
 
 ## Non-goals
 
-- Font size, line height or letter-spacing per font (the existing text-size setting stays the only size control).
+- Font size, line height or letter-spacing per font. Text size and density stay retired (settings audit, 2026-11-19);
+  this work does not bring them back.
 - Fonts for games and full-screen apps that set their own faces (Dream Rift, Covid, Elections …): untouched.
 - Uploading custom fonts, or any face not in the catalogue below.
 - Changing what "appearance" syncs when sync is on, beyond adding the three font fields.
@@ -129,8 +130,8 @@ its own theme, fonts and display settings." Signed out, the toggle is hidden (th
 
 ## Appearance sync
 
-Appearance fields: theme (`style`), main/reading/mono font, text size (`fontScale`), density, readable font, colour-vision
-mode, globe motion (`jellyMotion`). Nothing else changes: every other preference keeps syncing whatever this switch says.
+Appearance fields: theme (`style`), main/reading/mono font, readable font, colour-vision mode, globe motion
+(`jellyMotion`). (Text size and density are retired and stay out.) Nothing else changes: every other preference keeps syncing whatever this switch says.
 
 - **Sync on (default).** Today's behaviour: the server seeds the account's values into the device before paint, the idle
   sync in `components/Providers.tsx` reconciles, and every change on the device is PUT to the account.
@@ -139,7 +140,20 @@ mode, globe motion (`jellyMotion`). Nothing else changes: every other preference
 - **Turning it back on: most recent wins.** Compare the device's `rmh-appearance-changed-at` with the account row's
   `updatedAt`. If the device is newer, PUT the device's values (the account now holds them and other syncing devices
   follow); if the account is newer, apply the account's values to the device. Equal or unknown device time → the account
-  wins (today's rule).
+  wins (today's rule). The merge is **per field and skips what the device never set** (builder check, designer's call): a device that follows its OS theme (no `rmh-style`) never sends `style: null`, and
+  `readableFont` keeps today's rule that the account wins.
+
+**Stored values (builder check, designer's call).** A font column holds an explicit id once the reader has chosen
+anything, defaults included: `dm-sans`, `dm-mono`, and `same` for "Same as main font". `null` means only "never chosen"
+and, as for every other field today, lets the device's own value stand. So the server's first-paint precedence per slot
+is: the account's value when the row has a non-null one (and sync is on for this device), else the `rmh-fonts` cookie,
+else the default. Picking the default again PUTs its id, so other devices follow it instead of keeping their old face.
+
+**font-display (builder check, designer's call).** The main and reading faces use `swap`, as Geist does today, each with
+its metric-matched fallback; mono stays `optional`, as Geist Mono does. On a warm cache, the normal case, the first frame
+is in the chosen face. On a cold cache (a new device, or the first load after choosing a face elsewhere) the fallback
+shows until the file arrives, then the face takes over without reflow. "First frame already right" is a hard test for a
+warm cache and best effort for a cold one.
 
 ## Constraints
 
