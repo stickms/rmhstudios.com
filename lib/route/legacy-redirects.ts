@@ -71,12 +71,6 @@ export const LEGACY_REDIRECTS: Readonly<Record<string, string>> = {
   '/changelog': '/site-history#changes',
   '/breaches': '/security#breaches',
   '/user-builds/manage': '/create/builds/manage',
-  // The Vault (`/secret`) was removed 2026-11-23: its three games are library titles at their own URLs, and
-  // Satan's Library was discontinued, so the index has nowhere better to send people than the library.
-  '/secret': '/games',
-  '/secret/vega': '/vega',
-  '/secret/signal-forge': '/signal-forge',
-  '/secret/cursed-logic': '/cursed-logic',
   // The games shell's copy of the community pages; `/communities` is the one directory.
   '/games/community': '/communities',
   '/games/communities': '/communities',

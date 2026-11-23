@@ -196,7 +196,7 @@ export function resolveTier(live: TierAnswer, server: TierAnswer): ResolvedTier 
  *  - `/discord` — runs inside Discord's iframe under a CSP that blocks the ad
  *    tag outright; the request would only ever be a console error.
  *  - `/embed` — this site's content rendered inside SOMEONE ELSE'S page.
- *  - `/offline`, `/secret` — no publisher content to place an ad against.
+ *  - `/offline` — no publisher content to place an ad against.
  *  - `/api` — not a page at all.
  */
 const EXCLUDED_PREFIXES = [
@@ -207,7 +207,6 @@ const EXCLUDED_PREFIXES = [
   '/login',
   '/messages',
   '/offline',
-  '/secret',
   '/settings',
   '/wallet',
 ];
