@@ -5,10 +5,13 @@
  * here with `?token=` (or `?error=INVALID_TOKEN` when it has expired or was used). Choosing a new password signs the
  * account out everywhere (`revokeSessionsOnPasswordReset`), then the person signs in with it. Full-screen like
  * /login, which it belongs with.
+ *
+ * The token is a bearer secret for the account, so the page reads it once, keeps it in memory and replaces the
+ * address with plain `/reset-password`: it does not sit in the address bar, in history, or in a referrer.
  */
 
-import { useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
@@ -21,14 +24,22 @@ export const Route = createFileRoute('/reset-password')({
     error: typeof search.error === 'string' ? search.error.slice(0, 80) : undefined,
   }),
   head: () => ({
-    meta: [{ title: 'Reset password | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+    meta: [
+      { title: 'Reset password | RMH Studios' },
+      { name: 'robots', content: 'noindex' },
+      { name: 'referrer', content: 'no-referrer' },
+    ],
   }),
   component: ResetPasswordPage,
 });
 
 function ResetPasswordPage() {
   const { t } = useTranslation('pages');
-  const { token, error: linkError } = Route.useSearch();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  // Read once: the address is cleared below, and the page keeps working from this copy.
+  const [token] = useState(search.token);
+  const [linkError] = useState(search.error);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +47,10 @@ function ResetPasswordPage() {
   const [done, setDone] = useState(false);
 
   const linkBroken = !token || !!linkError;
+
+  useEffect(() => {
+    if (search.token || search.error) void navigate({ to: '/reset-password', search: {}, replace: true });
+  }, [search.token, search.error, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
