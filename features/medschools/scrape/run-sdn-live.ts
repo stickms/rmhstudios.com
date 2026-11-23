@@ -31,6 +31,7 @@ import type { BudgetGate } from './sdn/budget';
 import type { SdnAi } from './sdn/extract';
 import { repairBackfillRollups } from './sdn/rollup-pending';
 import { processThread, type ThreadDeps } from './sdn/process-thread';
+import type { PromptSink } from './sdn/secondaries';
 import type { Logger, MedPrisma, MedSdnThreadRow } from './types';
 
 export interface SdnForumEntry {
@@ -60,6 +61,8 @@ export interface SdnLiveDeps {
   maxPages?: number;
   /** Model calls per run (default 40). */
   maxLlmCalls?: number;
+  /** The secondary-prompt extractor (secondaries plan, Task 10); absent, a thread is read exactly as before. */
+  prompts?: PromptSink;
 }
 
 export interface SdnLiveSummary {
@@ -567,6 +570,7 @@ export async function runSdnLive(
         },
         state,
         shouldStop: deps.shouldStop,
+        ...(deps.prompts ? { prompts: deps.prompts } : {}),
       };
       for (const thread of pending) {
         if (deps.shouldStop()) {

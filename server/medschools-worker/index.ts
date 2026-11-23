@@ -68,6 +68,12 @@ import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfil
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
 import { SECONDARIES_CRON, runSecondaries } from '../../features/medschools/scrape/run-secondaries';
 import { retagThemes } from '../../features/medschools/scrape/secondaries-store';
+import {
+  SECONDARIES_PROMPT_ID,
+  createSecondariesBudgetGate,
+  secondariesAiShare,
+} from '../../features/medschools/scrape/secondaries-budget';
+import { createPromptSink } from '../../features/medschools/scrape/sdn/secondaries';
 import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
 import { qaShare, scrapeCapUsd } from '../../features/medschools/ai-budget';
 import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
@@ -172,6 +178,9 @@ const SDN_ENABLED =
 // Switches the secondaries cron off on its own. Each of its two passes is also behind its source's flag (ADMIT_ENABLED for the
 // Admit page, SDN_ENABLED for the SDN page). Only a manual run bypasses these.
 const SECONDARIES_ENABLED = process.env.MEDSCHOOLS_SECONDARIES_ENABLED !== 'false';
+// The forum secondary-prompt extractor (a second, off-peak model call inside the SDN live and backfill reads) has its own
+// switch; it is on by default and only needs a DeepSeek key, like the event extraction it rides on.
+const SECONDARIES_FORUM_ENABLED = process.env.MEDSCHOOLS_SECONDARIES_FORUM_ENABLED !== 'false';
 
 // Switches the Admit forums cron off on its own (it is also behind MEDSCHOOLS_ADMIT_ENABLED). Only a manual run bypasses it.
 const ADMIT_FORUMS_ENABLED = process.env.MEDSCHOOLS_ADMIT_FORUMS_ENABLED !== 'false';
@@ -316,6 +325,21 @@ const admitForumsBudget = createForumsBudgetGate(
   scrapeCap,
   forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE, (line) => log.warn(line)),
 );
+
+// The secondary-prompt extractor reads the SAME posts the SDN live and backfill jobs already fetched (no extra request to
+// SDN) with its own registry prompt, labelled `medschools-extract:secondaries`. It spends only its own share of the same scrape
+// cap the other gates get (default 10%, MEDSCHOOLS_SECONDARIES_AI_SHARE), so the Q&A reservation above is respected, and it
+// makes no call at DeepSeek peak or when its gate cannot read the ledger.
+const secondariesAi = createSdnAi(SECONDARIES_PROMPT_ID);
+const secondariesBudget = createSecondariesBudgetGate(
+  medPrisma,
+  () => new Date(),
+  scrapeCap,
+  secondariesAiShare(process.env.MEDSCHOOLS_SECONDARIES_AI_SHARE, (line) => log.warn(line)),
+);
+const promptSink = SECONDARIES_FORUM_ENABLED
+  ? createPromptSink({ ai: secondariesAi, budget: secondariesBudget, prisma: medPrisma, now: () => new Date() })
+  : undefined;
 
 /**
  * Wraps a job so a second concurrent call is skipped, so shutdown can await it, and so a run hung past its max
@@ -598,6 +622,7 @@ const sdnLiveTick = guarded('sdn-live', async (data) => {
       shouldStop: () => stopping,
       log,
       maxLlmCalls: SDN_MAX_LLM_CALLS,
+      ...(promptSink ? { prompts: promptSink } : {}),
     },
     { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
   );
@@ -634,6 +659,7 @@ const sdnBackfillTick = guarded('sdn-backfill', async (data) => {
         shouldStop: () => stopping,
         log,
         maxLlmCalls: SDN_BACKFILL_MAX_LLM_CALLS,
+        ...(promptSink ? { prompts: promptSink } : {}),
       },
       { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
     );

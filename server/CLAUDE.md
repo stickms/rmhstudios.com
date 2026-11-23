@@ -320,7 +320,16 @@ Consequences:
   in a row end the pass. Observations are never deleted. Flags: `MEDSCHOOLS_SECONDARIES_ENABLED=false` turns the cron off
   (a manual run still works); each pass is also behind `MEDSCHOOLS_ADMIT_ENABLED` / `MEDSCHOOLS_SDN_ENABLED`. The tick re-tags
   prompts first (a no-op unless the keyword table's `THEMES_VERSION` moved). The page markup is UNVERIFIED against a live
-  fetch (plan Facts 1). Detail: `features/medschools/CLAUDE.md`.
+  fetch (plan Facts 1). **Forum prompts (the only model call here).** The SDN live and backfill reads hand each chunk the
+  event extraction has already committed to a second call (`scrape/sdn/secondaries.ts`, registry prompt
+  `MEDSCHOOLS_SECONDARIES`, label `medschools-extract:secondaries`): posts that mention prompts or limits, asked for the
+  school's essay questions quoted as text. A candidate is stored only if its post quotes it and it passes the
+  reject-not-redact scrub (`engine/secondaries/scrub.ts`); only the thread URL is kept, never a post. **Off-peak only**
+  (`isDeepseekPeak` is checked before every call, the retry included), inside its own share of the scrape cap
+  (`MEDSCHOOLS_SECONDARIES_AI_SHARE`, default 0.1, invalid closes it; `scrape/secondaries-budget.ts`), counted in the run's
+  `MEDSCHOOLS_SDN_MAX_LLM_CALLS` / `..._BACKFILL_MAX_LLM_CALLS`, fails closed on a ledger error, and can never lose an
+  event or move a cursor (it runs after the chunk's commit and its failure is swallowed).
+  `MEDSCHOOLS_SECONDARIES_FORUM_ENABLED=false` turns it off. Detail: `features/medschools/CLAUDE.md`.
 - **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss** consumer that drains queues and runs
   background work that used to block request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest` cron. D3 ports from the Go supervisor:

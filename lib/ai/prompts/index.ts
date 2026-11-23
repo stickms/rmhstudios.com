@@ -615,6 +615,32 @@ export const MEDSCHOOLS_EXTRACT: PromptSpec = {
   maxChars: 8_000,
 };
 
+/**
+ * RMH Med Schools: secondary-application essay prompts quoted in public forum posts. The same input shape as
+ * `MEDSCHOOLS_EXTRACT` (a JSON array of `{ ref, postedOn, text }`, no author, no id); a second model call on the posts the
+ * SDN live job already reads, metered under the `medschools-extract` task with its own label
+ * (`medschools-extract:secondaries`) so it has its own share of the monthly budget. Output is parsed by a strict zod
+ * schema in `features/medschools/scrape/sdn/secondaries.ts`, which also requires every prompt to be quoted in its post and
+ * rejects (never redacts) anything person-shaped, so this wording is guidance and not the only guard.
+ */
+export const MEDSCHOOLS_SECONDARIES: PromptSpec = {
+  id: 'medschools-secondaries',
+  version: 1,
+  task: 'medschools-extract',
+  instructions: [
+    'The input is a JSON array of forum posts: [{ "ref": number, "postedOn": "YYYY-MM-DD", "text": string }].',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"prompts":[{"postRef":<ref>,"text":"...","program":"REG|PHD"}]}',
+    'A prompt is an essay question a medical school asks in its secondary application, when a post quotes it as text.',
+    '"text" is the school\'s question copied exactly as the post writes it, word and character limit included.',
+    "Never return an applicant's answer, essay draft, advice, opinion, question to other members or any commentary, and never text that names or describes a person.",
+    '"program" only if the post says the prompt is for MD-PhD or MSTP applicants (PHD) or for regular MD or DO applicants (REG); otherwise omit it.',
+    'At most 8 prompts per post. Omit any post with nothing to report.',
+    '[user], [email], [link] and [phone] are redactions, not content.',
+  ].join('\n'),
+  maxChars: 8_000,
+};
+
 export const MEDSCHOOLS_QA_ROUTE_ID = 'medschools-qa-route';
 export const MEDSCHOOLS_QA_ANSWER_ID = 'medschools-qa-answer';
 
@@ -712,6 +738,7 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   EMAIL_DESIGN,
   CHARACTER_ADVISOR,
   MEDSCHOOLS_EXTRACT,
+  MEDSCHOOLS_SECONDARIES,
   MEDSCHOOLS_QA_ROUTE,
   MEDSCHOOLS_QA_ANSWER,
   NEWS_SUMMARY,

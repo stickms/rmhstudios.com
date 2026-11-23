@@ -93,6 +93,8 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_SECONDARIES_CRON',
       'MEDSCHOOLS_SECONDARIES_ENABLED',
       'MEDSCHOOLS_ADMIT_WEB_DAILY_REQUESTS',
+      'MEDSCHOOLS_SECONDARIES_FORUM_ENABLED',
+      'MEDSCHOOLS_SECONDARIES_AI_SHARE',
     ]) {
       expect(env, name).toContain(name);
     }
@@ -529,6 +531,21 @@ describe('medschools-worker wiring', () => {
     expect(job).toContain('export const SECONDARIES_SDN_SPACING_MS = 3000');
     expect(job).toContain('SOURCES.ADMIT_WEB.spacingMs');
     expect(job).toContain('assertPage(res, session');
+  });
+
+  it('the forum secondary-prompt extractor has its own label, its own share of the SAME scrape cap, its own switch and reaches both SDN reads', () => {
+    const src = flat();
+    expect(src.match(/createSdnAi\(SECONDARIES_PROMPT_ID\)/g)).toHaveLength(1);
+    expect(src).toContain("process.env.MEDSCHOOLS_SECONDARIES_FORUM_ENABLED !== 'false'");
+    expect(src).toContain('secondariesAiShare(process.env.MEDSCHOOLS_SECONDARIES_AI_SHARE');
+    // the gate gets the cap the other scrape gates get (after the Q&A reservation), never the raw monthly cap
+    expect(src).toMatch(/createSecondariesBudgetGate\( medPrisma, \(\) => new Date\(\), scrapeCap,/);
+    expect(src).toContain('SECONDARIES_FORUM_ENABLED ? createPromptSink(');
+    // the sink is only handed to the SDN live and backfill reads, never to the interviews or secondaries jobs
+    expect(slice(src, 'const sdnLiveTick', 'const sdnBackfillTick')).toContain('prompts: promptSink');
+    expect(slice(src, 'const sdnBackfillTick', 'const rmhPublishTick')).toContain('prompts: promptSink');
+    expect(slice(src, 'const sdnInterviewsTick', '// ─── Startup bootstrap')).not.toContain('promptSink');
+    expect(slice(src, 'const secondariesTick', 'const admitLiveTick')).not.toContain('promptSink');
   });
 
   it('every tick whose queue expires gets a guard max runtime equal to that expiry', () => {

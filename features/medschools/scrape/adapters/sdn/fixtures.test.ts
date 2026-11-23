@@ -37,6 +37,7 @@ const REQUIRED = [
   'essays-empty.html',
   'essays-changed.html',
   'essays-hostile.html',
+  'thread-secondary-prompts.html',
 ];
 const TRIMMED_THREADS = [
   'thread-small-p1.html',
