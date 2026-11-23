@@ -14,6 +14,9 @@
  *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
  *   medschools.admit-history daily 03:10 — Admit profile-history backfill: the whole cycle, member-keyed (same secret).
  *
+ *   medschools.forecast      daily 06:40 UTC — the statistics job: forecast bands per school, program and event type, then the
+ *                             aggregate wait curves (needs no secret and makes no model call).
+ *
  *   medschools.admit-forums  every 3 hours, UTC (the cron is in admitForumsCron) — Admit's school forums, only the posts past each thread's
  *                             cursor; fetched at any hour, read by the model off-peak only (needs the dedupe secret).
  *
@@ -69,6 +72,7 @@ import {
 } from '../../features/medschools/scrape/sources';
 import { createDailyBudget } from '../../features/medschools/scrape/request-budget';
 import { RMH_PUBLISH_CRON, runRmhPublish } from '../../features/medschools/scrape/run-rmh-publish';
+import { FORECAST_CRON, runForecast } from '../../features/medschools/scrape/run-forecast';
 import { runCycletrack } from '../../features/medschools/scrape/run-cycletrack';
 import {
   needsBackfill,
@@ -178,6 +182,7 @@ const SDN_LIVE_EXPIRY_S = 25 * 60;
 const SDN_BACKFILL_EXPIRY_S = 3 * 60 * 60;
 const SDN_INTERVIEWS_EXPIRY_S = 60 * 60;
 const RMH_PUBLISH_EXPIRY_S = 10 * 60;
+const FORECAST_EXPIRY_S = 20 * 60;
 const ADMIT_FORUMS_EXPIRY_S = 40 * 60;
 const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000;
 const ADMIT_FORUMS_MAX_REQUESTS = intEnv('MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS', 80);
@@ -602,6 +607,16 @@ const rmhPublishTick = guarded('rmh-publish', async (data) => {
   );
 }, RMH_PUBLISH_EXPIRY_S * 1000);
 
+// The daily forecast and wait-curve job (phase 5). Reads figures already in the database through the public floor and
+// writes the two aggregate tables; no source flag, no dedupe secret and no model call. The run ends itself a minute
+// before its queue expires.
+const forecastTick = guarded('forecast', async (data) => {
+  await runForecast(
+    { prisma: medPrisma, db: prisma, log, shouldStop: stopAfter(FORECAST_EXPIRY_S * 1000 - 60_000) },
+    { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+  );
+}, FORECAST_EXPIRY_S * 1000);
+
 const sdnInterviewsTick = guarded('sdn-interviews', async (data) => {
   if (!sdnGate('sdn-interviews', data)) return;
   const r = await runSdnInterviews(
@@ -723,6 +738,9 @@ const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
 const RMH_PUBLISH_QUEUE = 'medschools.rmh-publish';
+const FORECAST_QUEUE = 'medschools.forecast';
+// Daily 06:40 UTC (spec section 8): after the 00:05 snapshot and the overnight Admit and SDN runs.
+const forecastCron = process.env.MEDSCHOOLS_FORECAST_CRON?.trim() || FORECAST_CRON;
 const sdnLiveCron = process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '20 12 * * *';
 // Monthly safety net: the live tick queues the real walk, this one covers a missed tick and the budget reset (1st, UTC).
 const sdnBackfillCron = process.env.MEDSCHOOLS_SDN_BACKFILL_CRON?.trim() || '15 0 1 * *';
@@ -746,6 +764,7 @@ let sdnLiveConsumer: ScheduledConsumer | null = null;
 let sdnBackfillConsumer: ScheduledConsumer | null = null;
 let sdnInterviewsConsumer: ScheduledConsumer | null = null;
 let rmhPublishConsumer: ScheduledConsumer | null = null;
+let forecastConsumer: ScheduledConsumer | null = null;
 
 async function main() {
   // The Admit jobs hash dedupe keys with this and refuse to run without it; CycleTrack never reads it.
@@ -947,6 +966,20 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  forecastConsumer = await startScheduledConsumer({
+    queue: FORECAST_QUEUE,
+    cron: forecastCron,
+    expireInSeconds: FORECAST_EXPIRY_S,
+    retryLimit: 0,
+    handler: forecastTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!forecastConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   admitForumsConsumer = await startScheduledConsumer({
     queue: ADMIT_FORUMS_QUEUE,
     cron: admitForumsCron,
@@ -967,7 +1000,7 @@ async function main() {
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED}`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED}`,
   );
   // The profile-history backfill is owed until one pass has completed: queue it at once on the first deploy (and after
   // an interrupted first run) rather than wait for the 03:10 cron. Its first step is the one-time ADMIT re-key.
@@ -1032,6 +1065,7 @@ async function shutdown(
       sdnBackfillConsumer?.pause(),
       sdnInterviewsConsumer?.pause(),
       rmhPublishConsumer?.pause(),
+      forecastConsumer?.pause(),
       admitForumsConsumer?.pause(),
     ],
   );

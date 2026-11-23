@@ -308,6 +308,14 @@ Consequences:
   went from 3000 to 3500 for it. Requests use the shared Admit host's backfill session (3 s plus 0-1 s jitter,
   Retry-After, three-strike halt). No `DEEPSEEK_API_KEY`: counts are tracked, no post is fetched, cursors kept, PARTIAL.
   Detail: `features/medschools/CLAUDE.md`.
+  **Forecast job (phase 5).** `medschools.forecast` (daily at 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`, `exclusive`,
+  `retryLimit: 0`, expires after 20 min, tick guarded with `maxRuntimeMs` equal to that expiry and a `shouldStop` one
+  minute before it; cron owned by the `jobs` timekeeper through `startScheduledConsumer`; no flag, no secret and **no
+  model call**). `features/medschools/scrape/run-forecast.ts` fits `MedForecast` (REG and PHD, five charted event types)
+  from the floored public primary series (`engine/floor.ts` `floorWhere` plus `primarySeriesOf`, so an unpublished or
+  sub-k RMH figure never moves a band), then `run-wait-curves.ts` rebuilds the aggregate `MedWaitCurve` rows (only where
+  20 distinct sharing members contribute). Ledger `MedSourceRun` source `RMH`, job `forecast`; a non-manual run is
+  skipped inside 20 h of an OK one; an ended cycle is not rewritten. Log lines carry counts only.
 - **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss** consumer that drains queues and runs
   background work that used to block request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest` cron. D3 ports from the Go supervisor:

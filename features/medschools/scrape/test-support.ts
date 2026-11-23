@@ -23,6 +23,8 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medTrackerMilestone: ['applicationId', 'type'],
   medSchoolListItem: ['listId', 'schoolId', 'program'],
   medUserPrefs: ['userId'],
+  medForecast: ['schoolId', 'program', 'cycleYear', 'eventType'],
+  medWaitCurve: ['schoolId', 'program'],
 };
 
 /** `onDelete: Cascade` edges: deleting a row of the key removes the child rows whose `fk` equals its id. */
@@ -43,6 +45,8 @@ const CASCADES: Record<string, { child: string; fk: string }[]> = {
     { child: 'medAdmitForumThread', fk: 'schoolId' },
     { child: 'medTrackerApplication', fk: 'schoolId' },
     { child: 'medSchoolListItem', fk: 'schoolId' },
+    { child: 'medForecast', fk: 'schoolId' },
+    { child: 'medWaitCurve', fk: 'schoolId' },
   ],
   medTrackerCycle: [{ child: 'medTrackerApplication', fk: 'cycleId' }],
   medTrackerApplication: [{ child: 'medTrackerMilestone', fk: 'applicationId' }],
@@ -83,6 +87,7 @@ function applyUpdate(row: Row, data: Row): void {
 function matches(row: Row, where: Row | undefined): boolean {
   if (!where) return true;
   return Object.entries(flatten(where)).every(([k, v]) => {
+    if (k === 'OR') return (v as Row[]).some((w) => matches(row, w));
     if (v !== null && typeof v === 'object' && !(v instanceof Date) && 'in' in v) {
       return (
         v as {
@@ -189,13 +194,14 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
       },
       async findFirst(args?: { where?: Row; orderBy?: unknown }) {
         const all = t().filter((r) => matches(r, args?.where));
-        const desc = Object.values(
-          (
-            args as {
-              orderBy?: Row;
-            }
-          )?.orderBy ?? {},
-        ).includes('desc');
+        // One orderBy key: sort ascending (stable) and take the last for 'desc', the first otherwise.
+        const order = Object.entries((args as { orderBy?: Row })?.orderBy ?? {})[0];
+        if (order) {
+          const [col] = order;
+          const n = (x: unknown) => (x instanceof Date ? x.getTime() : typeof x === 'number' ? x : 0);
+          all.sort((a, b) => n(a[col]) - n(b[col]));
+        }
+        const desc = order?.[1] === 'desc';
         const hit = desc ? all[all.length - 1] : all[0];
         return hit
           ? {
@@ -312,6 +318,8 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
     'medCycle',
     'medCycleCount',
     'medCycleEvent',
+    'medForecast',
+    'medWaitCurve',
     'medAdmitMember',
     'medAdmitForumThread',
     'medRequestBudget',

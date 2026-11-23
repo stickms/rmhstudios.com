@@ -46,6 +46,9 @@ export interface MedCycleCountRow {
   source: MedSource;
   count: number;
   contributors: number | null;
+  /** RMH rows only: the daily public snapshot (see `api/read.server.ts`); the forecast reads these, never the live pair. */
+  publishedCount?: number | null;
+  publishedContributors?: number | null;
 }
 
 export interface MedCycleEventRow {
@@ -171,6 +174,20 @@ export interface MedAdmitForumThreadRow {
   updatedAt: Date;
 }
 
+/** A stored forecast row as the job reads it back to skip an unchanged write. */
+export interface MedForecastRow {
+  schoolId: string;
+  program: MedProgram;
+  cycleYear: number;
+  eventType: MedEventType;
+  modelVersion: number;
+  mode: string;
+  source: MedSource | null;
+  asOf: Date;
+  curve: unknown;
+  summary: unknown;
+}
+
 export interface MedPrisma {
   medSchool: {
     count(args?: { where?: Where }): Promise<number>;
@@ -193,6 +210,12 @@ export interface MedPrisma {
   };
   medCycle: {
     count(args?: { where?: Where }): Promise<number>;
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<
+      {
+        cycleYear: number;
+        dayZeroOn: Date;
+      }[]
+    >;
     upsert(args: {
       where: {
         cycleYear: number;
@@ -205,6 +228,9 @@ export interface MedPrisma {
   };
   medCycleCount: {
     count(args?: { where?: Where }): Promise<number>;
+    findFirst(args?: { where?: Where; orderBy?: unknown; select?: Record<string, boolean> }): Promise<{
+      cycleYear: number;
+    } | null>;
     findMany(args?: {
       where?: Where;
       select?: Record<string, boolean>;
@@ -237,6 +263,12 @@ export interface MedPrisma {
     }>;
     deleteMany(args: { where: Where }): Promise<{
       count: number;
+    }>;
+  };
+  medForecast: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedForecastRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{
+      id: string;
     }>;
   };
   medRequestBudget: {
