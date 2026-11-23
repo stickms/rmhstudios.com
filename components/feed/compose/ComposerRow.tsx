@@ -31,7 +31,7 @@ export function ComposerRow({
   children?: ReactNode;
   /** The quick actions, in order: picture, GIF, poll, AI, three dots. */
   tools: ReactNode;
-  /** The primary button at the inline end of the quick actions. */
+  /** The primary button at the inline end of the quick actions, at the `compact` size like the tools. */
   post: ReactNode;
   /** Notices that hang under the row (a stored draft, "saved"), so they never move the row itself. */
   footer?: ReactNode;
@@ -44,7 +44,7 @@ export function ComposerRow({
       </div>
       <div className="min-w-0 ps-10 empty:hidden">{children}</div>
       <div className="flex items-center ps-8">
-        <div className="flex min-w-0 flex-1 items-center">{tools}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-0.5">{tools}</div>
         {post}
       </div>
       {footer}
@@ -89,7 +89,7 @@ export function ComposerTool({
   'children' | 'variant' | 'size' | 'aria-label' | 'title'
 >) {
   return (
-    <Button type="button" variant="ghost" size="icon" aria-label={label} title={label} {...props}>
+    <Button type="button" variant="ghost" size="icon-compact" aria-label={label} title={label} {...props}>
       <Icon aria-hidden />
     </Button>
   );
