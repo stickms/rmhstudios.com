@@ -463,3 +463,30 @@ model MedUserPrefs {
 
   @@map("med_user_prefs")
 }
+
+/// Admit.org members whose profile history has been ingested (or who could not be read), keyed by a hash only.
+/// `memberHash` is HMAC(MEDSCHOOLS_DEDUPE_SECRET, 'ADMIT:member:' + user id), a different input from every event key, so
+/// nothing here joins to `med_cycle_event`. The raw id lives in memory for one run and is never stored. State DONE =
+/// history ingested or no profile; FAILED = the lookup failed (attempts counts them; the discovery skips a member at 3
+/// until a week passes). Rows older than 400 days are pruned by the history job.
+model MedAdmitMember {
+  memberHash String   @id
+  state      String   @default("DONE")
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([updatedAt])
+  @@map("med_admit_member")
+}
+
+/// Requests made to one source host (or one job's daily quota) on one UTC day, so a restart or a deploy does not reset
+/// the day's budget. `key` is a host name ('ADMIT', 'SDN_FORUMS', ...) or a job quota ('ADMIT:history'); no person data.
+model MedRequestBudget {
+  key      String
+  day      DateTime @db.Date
+  requests Int      @default(0)
+
+  @@id([key, day])
+  @@map("med_request_budget")
+}

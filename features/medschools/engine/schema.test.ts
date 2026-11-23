@@ -130,6 +130,16 @@ model MedTrackerApplication {
     expect(fields).toEqual(['schoolId', 'program', 'cycleYear', 'date', 'eventType', 'source']);
   });
 
+  it('MedAdmitMember holds only a hashed member id and progress, and passes the person-like check', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedAdmitMember');
+    expect(m?.fields).toEqual(['memberHash', 'state', 'attempts', 'createdAt', 'updatedAt']);
+    // a hash column is fine; a raw id or a person column is not
+    expect(forbiddenColumns(schema()).filter((c) => c.startsWith('MedAdmitMember.'))).toEqual([]);
+    expect(forbiddenColumns('model MedAdmitMember {\n  memberUserId String @id\n  authorHash String\n}')).toEqual([
+      'MedAdmitMember.authorHash',
+    ]);
+  });
+
   it('new Admit columns pass the person-like check', () => {
     const text = schema();
     expect(text).toContain('model MedInterviewQuestion');

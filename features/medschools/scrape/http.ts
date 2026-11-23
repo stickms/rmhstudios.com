@@ -47,13 +47,31 @@ export interface PoliteClient {
 }
 
 export interface PoliteHost {
-  session(opts?: { spacingMs?: number }): PoliteClient;
+  /** `jitterMs` adds a random 0..jitterMs to every gap of this session (default: the source's own). */
+  session(opts?: { spacingMs?: number; jitterMs?: number }): PoliteClient;
+}
+
+/** The host's daily request budget ran out: the session halts (like three strikes) until the next UTC day. */
+export class BudgetExhaustedError extends SourceHaltedError {
+  constructor(message = 'daily request budget spent') {
+    super(message);
+    this.name = 'BudgetExhaustedError';
+  }
+}
+
+/** One request attempt is asked for before it is made; `false` = the day's budget is spent. */
+export interface RequestBudget {
+  take(): Promise<boolean>;
 }
 
 export interface PoliteHostDeps {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
+  /** Random in [0, 1); injected by tests. */
+  random?: () => number;
+  /** Shared by every session on this host; counts each HTTP attempt, retries and robots.txt included. */
+  budget?: RequestBudget;
 }
 
 const ROBOTS_TTL_OK_MS = 24 * 60 * 60 * 1000;
@@ -64,6 +82,7 @@ const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}): PoliteHost {
   const sleep = deps.sleep ?? defaultSleep;
   const now = deps.now ?? Date.now;
+  const random = deps.random ?? Math.random;
 
   // Host-wide state shared by every session.
   let tail: Promise<unknown> = Promise.resolve();
@@ -103,8 +122,10 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
     return run;
   }
 
-  async function waitSlot(spacingMs: number): Promise<void> {
-    const wait = Math.max(0, lastAt + spacingMs - now());
+  async function waitSlot(spacingMs: number, jitterMs: number): Promise<void> {
+    // The jitter is drawn per request, so the gap to the previous request is spacing + 0..jitter.
+    const gap = spacingMs + (jitterMs > 0 ? Math.floor(random() * (jitterMs + 1)) : 0);
+    const wait = Math.max(0, lastAt + gap - now());
     if (wait > 0) await sleep(wait);
     lastAt = now();
   }
@@ -123,12 +144,15 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
     url: string,
     headers: Record<string, string>,
     spacingMs: number,
+    jitterMs: number,
     method: 'GET' | 'POST' = 'GET',
     body?: string,
   ): Promise<{ result: PoliteResult; transportFailure: boolean }> {
     let last: PoliteResult = { ok: false, status: 0, body: '' };
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
-      await waitSlot(spacingMs);
+      await waitSlot(spacingMs, jitterMs);
+      // Every attempt is a request on the host, so retries spend the budget too.
+      if (deps.budget && !(await deps.budget.take())) throw new BudgetExhaustedError();
       let res: Response | null = null;
       try {
         res = await transport(url, headers, method, body);
@@ -152,22 +176,30 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
   }
 
   /** robots.txt body, cached per host with a TTL (a failed fetch is retried sooner); null when unreachable (allowed). */
-  function loadRobots(spacingMs: number): Promise<string | null> {
+  function loadRobots(spacingMs: number, jitterMs: number): Promise<string | null> {
     if (robotsTxt !== null && now() >= robotsExpiresAt) robotsTxt = null;
     robotsTxt ??= serialized(async () => {
       const { result } = await fetchWithRetries(
         `${config.origin}/robots.txt`,
         { 'user-agent': config.userAgent, accept: 'text/plain, */*;q=0.5' },
         spacingMs,
+        jitterMs,
       );
       robotsExpiresAt = now() + (result.ok ? ROBOTS_TTL_OK_MS : ROBOTS_TTL_FAILED_MS);
       return result.ok ? result.body : null;
     });
-    return robotsTxt;
+    // A rejected load (the budget ran out mid-fetch) must not be cached for ever.
+    const loading = robotsTxt;
+    loading.catch(() => {
+      if (robotsTxt === loading) robotsTxt = null;
+    });
+    return loading;
   }
 
-  function session(opts: { spacingMs?: number } = {}): PoliteClient {
+  function session(opts: { spacingMs?: number; jitterMs?: number } = {}): PoliteClient {
     const spacingMs = opts.spacingMs ?? config.spacingMs;
+    const jitterMs = opts.jitterMs ?? config.jitterMs ?? 0;
+    let exhausted = false;
     let failures = 0;
     let requests = 0;
     let lastFailure: string | null = null;
@@ -184,13 +216,23 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
       body: string | undefined,
       extra: Record<string, string>,
     ): Promise<PoliteResult> {
+      if (exhausted) throw new BudgetExhaustedError();
       if (failures >= config.maxConsecutiveFailures) throw new SourceHaltedError(lastFailure ?? undefined);
       const url = new URL(path, config.origin);
       if (url.origin !== config.origin) {
         throw new Error(`refusing to fetch ${url.origin}: not the source origin ${config.origin}`);
       }
 
-      const robots = await loadRobots(spacingMs);
+      let robots: string | null;
+      try {
+        robots = await loadRobots(spacingMs, jitterMs);
+      } catch (e) {
+        if (e instanceof BudgetExhaustedError) {
+          exhausted = true;
+          lastFailure = 'daily request budget spent';
+        }
+        throw e;
+      }
       if (robots !== null && !isPathAllowed(robots, config.userAgent, url.pathname)) {
         return { ok: false, status: 0, body: '' };
       }
@@ -204,9 +246,17 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
       };
 
       requests++;
-      const { result, transportFailure } = await serialized(() =>
-        fetchWithRetries(url.toString(), headers, spacingMs, method, body),
-      );
+      let outcome: { result: PoliteResult; transportFailure: boolean };
+      try {
+        outcome = await serialized(() => fetchWithRetries(url.toString(), headers, spacingMs, jitterMs, method, body));
+      } catch (e) {
+        if (e instanceof BudgetExhaustedError) {
+          exhausted = true;
+          lastFailure = 'daily request budget spent';
+        }
+        throw e;
+      }
+      const { result, transportFailure } = outcome;
       if (transportFailure) {
         fail(`${url.pathname}: ${result.status ? `HTTP ${result.status}` : 'network error'}`);
       }
@@ -227,7 +277,7 @@ export function createPoliteHost(config: SourceConfig, deps: PoliteHostDeps = {}
         fail(reason);
       },
       get halted() {
-        return failures >= config.maxConsecutiveFailures;
+        return exhausted || failures >= config.maxConsecutiveFailures;
       },
       get requests() {
         return requests;

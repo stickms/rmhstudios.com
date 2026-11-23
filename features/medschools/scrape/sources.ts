@@ -1,5 +1,10 @@
 /** Politeness and identity config for every external data source the RMH Med Schools scraper talks to. */
-export const MEDSCHOOLS_USER_AGENT = 'RMHStudiosMedSchools/1.0 (+https://rmhstudios.com/rmh-medschool)';
+/**
+ * One static, honest agent for every host (owner 2026-11-23): the name and address the sources' admins know. It carries
+ * no site URL, so a source cannot send traffic back by following it. Not a browser string. robots.txt matching
+ * (`isPathAllowed`) uses it: a group naming `MarlonJack` applies, otherwise the `*` group.
+ */
+export const MEDSCHOOLS_USER_AGENT = 'MarlonJack/1.0 (contact: admin@rmhstudios.com)';
 
 export interface SourceConfig {
   origin: string;
@@ -8,6 +13,10 @@ export interface SourceConfig {
   spacingMs: number;
   /** Minimum gap between requests while backfilling. */
   backfillSpacingMs: number;
+  /** Random extra gap, 0 to this many ms, added to every spacing on the live path (default 0: none). */
+  jitterMs?: number;
+  /** Same, for sessions that take `backfillSpacingMs` (default: `jitterMs`). */
+  backfillJitterMs?: number;
   maxConsecutiveFailures: number;
   maxRetries: number;
   retryAfterCapMs: number;
@@ -46,7 +55,9 @@ export const SOURCES: {
     origin: 'https://api.admit.org',
     userAgent: MEDSCHOOLS_USER_AGENT,
     spacingMs: 1000,
-    backfillSpacingMs: 2000,
+    // The profile-history backfill (owner 2026-11-23): at least 3 s between requests plus 0-1 s of jitter.
+    backfillSpacingMs: 3000,
+    backfillJitterMs: 1000,
     maxConsecutiveFailures: 3,
     maxRetries: 3,
     retryAfterCapMs: 120_000,
@@ -61,8 +72,11 @@ export const SOURCES: {
   SDN_FORUMS: {
     origin: 'https://forums.studentdoctor.net',
     userAgent: MEDSCHOOLS_USER_AGENT,
-    spacingMs: 1500,
-    backfillSpacingMs: 2000,
+    // Forum pages are heavy (owner 2026-11-23): at least 3 s between requests plus 0-1 s of jitter, live and backfill.
+    spacingMs: 3000,
+    jitterMs: 1000,
+    backfillSpacingMs: 3000,
+    backfillJitterMs: 1000,
     maxConsecutiveFailures: 3,
     maxRetries: 3,
     retryAfterCapMs: 120_000,
@@ -79,3 +93,17 @@ export const SOURCES: {
     timeoutMs: 20_000,
   },
 };
+
+/** Default per-host DAILY request budgets (UTC day, all jobs on the host together; env overrides in the worker). */
+export const DAILY_REQUEST_BUDGETS: Record<'CYCLETRACK' | 'ADMIT' | 'SDN_FORUMS' | 'SDN_WWW', number> = {
+  // The hourly diff of ~238 schools is about 5,700 a day and the resumable backfill rides on top: this is a runaway
+  // guard well above that, not a throttle (the existing 1-2 s spacing is the throttle).
+  CYCLETRACK: 20_000,
+  // Live (~300 feed polls and a few lookups), interviews (~650) and history (<= 600) come to about 2,000.
+  ADMIT: 3000,
+  SDN_FORUMS: 2000,
+  SDN_WWW: 1500,
+};
+
+/** Admit profile-history lookups allowed per UTC day (a share of the ADMIT budget; env override in the worker). */
+export const ADMIT_HISTORY_DAILY_PROFILES = 600;

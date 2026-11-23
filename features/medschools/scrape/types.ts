@@ -144,6 +144,14 @@ export interface MedSourceRunRow {
   error: string | null;
 }
 
+/** A keyed hash of an Admit member id and whether that member's history was ingested; never the id. */
+export interface MedAdmitMemberRow {
+  memberHash: string;
+  state: string;
+  attempts: number;
+  updatedAt: Date;
+}
+
 export interface MedPrisma {
   medSchool: {
     count(args?: { where?: Where }): Promise<number>;
@@ -203,6 +211,25 @@ export interface MedPrisma {
       orderBy?: unknown;
     }): Promise<MedCycleEventRow[]>;
     createMany(args: { data: Data[]; skipDuplicates?: boolean }): Promise<{
+      count: number;
+    }>;
+    update(args: { where: Where; data: Data }): Promise<{
+      id: string;
+    }>;
+    deleteMany(args: { where: Where }): Promise<{
+      count: number;
+    }>;
+  };
+  medRequestBudget: {
+    findFirst(args?: { where?: Where }): Promise<{ key: string; day: Date; requests: number } | null>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{ key: string }>;
+  };
+  medAdmitMember: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedAdmitMemberRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{
+      memberHash: string;
+    }>;
+    deleteMany(args: { where: Where }): Promise<{
       count: number;
     }>;
   };
