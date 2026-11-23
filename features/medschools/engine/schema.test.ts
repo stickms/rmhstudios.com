@@ -387,4 +387,19 @@ model MedTrackerApplication {
       expect(sql).not.toMatch(/\bDROP\b/i);
     });
   });
+
+  describe('phase 6: Q&A keeps nothing', () => {
+    it('has no MedAsk or MedQa model', () => {
+      expect(parseModels(schema()).filter((m) => /^Med(Ask|Qa|Qna|Chat|Conversation)/i.test(m.model))).toEqual([]);
+    });
+
+    it('no Med model has a column that could hold a question or an answer (the scraped, anonymised interview questions excepted)', () => {
+      const hits: string[] = [];
+      for (const { model, fields } of parseModels(schema())) {
+        if (model === 'MedInterviewQuestion') continue;
+        for (const f of fields) if (/question|answer|prompt|query|chat|transcript/i.test(f)) hits.push(`${model}.${f}`);
+      }
+      expect(hits).toEqual([]);
+    });
+  });
 });

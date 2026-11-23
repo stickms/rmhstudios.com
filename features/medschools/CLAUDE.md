@@ -28,7 +28,8 @@ in the server HTML with scripting off.
 **The public endpoints stay user-independent (phase 4).** Nothing under `/api/medschools/schools*` or `live` reads a
 session, a preference or a list; a signed-in member's preferences are applied in the route loader, which prefetches the
 same public queries with explicit parameters, so the public cache keys and bodies are what any anonymous caller can type
-(`medschools-private.test.ts` holds that a session changes no public byte).
+(`medschools-private.test.ts` holds that a session changes no public byte). `me/ask` is the exception that is personal
+but not an aggregate of tracker rows: see "AI Q&A (phase 6)".
 
 **Placement (owner O1):** listed in the Services hub (`app/routes/_site/services/index.tsx`) and site search
 (`lib/search/catalog.ts`), **not** in the games/apps catalog. There is no `catalog.ts`, no card art, no image manifest
@@ -270,6 +271,57 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
 - **The chance** shows on the tracker (`tracker/ChanceLine.tsx`, one query for the cycle under `ME_KEY`) and under the
   Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is an addition: signed out, loading or failed, the page is whole without it.
 
+## AI Q&A (phase 6)
+
+`/rmh-medschool/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt
+and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md` (rulings R1-R16).
+`POST/GET /api/medschools/me/ask` (`api/medschools.me.ask.server.ts`), never cached.
+
+- **Two model calls, one task (R2, R3).** `runTaskJson` under the `medschools-qa` `AiTask` (`lib/ai/provider.server.ts`,
+  prompts `MEDSCHOOLS_QA_ROUTE` and `MEDSCHOOLS_QA_ANSWER`): route (`{intent, schools, cycle, filters}`, temperature 0),
+  then answer (`{segments:[{text, cites}], thin}`). The model names schools as written; the server resolves them against
+  the active schools (`engine/qa/route.ts`). An unresolved school or intent `other` ends before the second call. The
+  runner is a seam (`api/qa/runner.server.ts`) so every test scripts the model.
+- **Retrieval only through the public readers (R5, R6).** `api/qa/retrieve.server.ts` calls `getSchool`, `getActivity`,
+  `getHistory` and `getForecast`, so the one floor (`K_FLOOR`, the daily RMH snapshot, in-state splits) and the
+  primary-source rule are inherited, never re-implemented. It imports no tracker module and no user id
+  (`retrieve.server.test.ts` pins it). A fact's `updatedAt` is the source's last successful run for a count (the
+  citation says "source refreshed"), `fetchedAt` for a profile, `computedAt` for a forecast; unknown stays unknown.
+- **The validator is the guarantee (R7).** `engine/qa/ground.ts` keeps a segment only when every cite is a retrieved
+  fact, it cites at least one, every number token in it (`engine/qa/numbers.ts`: digits normalised, percents, dates,
+  years, ranges) is in a cited numeric fact, it holds no link or markup, and a segment citing only forum text
+  (`untrusted`) holds no digit. Dropped segments are not repaired or re-asked: `notice: 'removed-ungrounded'`, and
+  nothing left is `no-data`. No derived figures: a computed number is simply not found.
+- **Injection (R8).** Facts reach the model only inside `asData(...)`; forum text is cleaned again (`cleanForPrompt`),
+  capped and flagged untrusted. A model that obeys planted text still produces nothing the validator keeps
+  (`testing/integration/medschools-ask.test.ts` proves it end to end with a fake provider).
+- **My chance (R4).** Only on a `my-chance` question: the server runs `getChances(userId, ...)` for the resolved schools
+  and returns the rows as `mine`; the model never sees a milestone, date or percent from the tracker. `mine: []` means
+  no application; the UI renders it through `ChanceLine` even when the answer is thin. This is the one personal read in
+  `me/**` that is not an aggregate of tracker rows, and it reads only the caller's own.
+- **Ceilings (R9-R11), in this order before any model call.** Rate limit `ai` 6 per minute per user; a question already
+  in flight is `RATE_LIMITED`; the per-user daily cap (`MEDSCHOOLS_QA_DAILY_CAP`, default 15, counted from `AiUsage`
+  route rows since UTC midnight: no table, no stored question); `isAiConfigured` (503 `AI_UNAVAILABLE`);
+  `assertAiBudget` (402); the shared gate (503 `MEDSCHOOLS_QA_PAUSED`: Q&A may spend `MEDSCHOOLS_QA_AI_SHARE`, default
+  0.25, of `MEDSCHOOLS_AI_MONTHLY_USD`; the scrape gates get the rest, `features/medschools/ai-budget.ts`). A ledger
+  read error fails closed. The web tier needs `DEEPSEEK_API_KEY`.
+- **What is and is not kept (R12).** The question and the answer exist in memory for the call. No table, no cache, no
+  response micro-cache, no log line holds them (logs carry intent, counts and status). The only trace is the `AiUsage`
+  row every AI call already writes (user id, task, prompt id, tokens, cost, time; no text), kept under that table's
+  existing erasure decision (`lib/account/erasure-registry.ts`). So no erasure operation was added. Pinned by
+  `engine/schema.test.ts` (no `Med*` column can hold a question), `api/qa/privacy.server.test.ts` (no writes, no caches,
+  no logging of text) and `scripts/medschools/verify-erasure.ts`. The provider receives the question text; the form says
+  so in one line.
+- **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
+  `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
+  (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
+  Not streamed (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
+- **Tests.** Unit:
+  `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
+  `testing/integration/medschools-ask.test.ts` with `testing/integration/lib/fake-deepseek.ts` (the app is started with
+  `DEEPSEEK_API_KEY=integration-fake`, `DEEPSEEK_BASE_URL=http://127.0.0.1:$INTEGRATION_AI_FAKE_PORT/v1`; the
+  model-dependent cases skip without `INTEGRATION_AI_FAKE_PORT`, and CI sets it). Visual: `visual-check.mjs --fake-ai`.
+
 ## Testing and verification
 
 - Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds Steel, i18n
@@ -332,7 +384,7 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
 
 ## Private: the tracker, sharing, lists and preferences (phase 4)
 
-Pages `/rmh-medschool/tracker` and `/rmh-medschool/lists` (signed out they show a sign-in prompt, `noindex`; neither is
+Pages `/rmh-medschool/tracker`, `/rmh-medschool/lists` and (phase 6) `/rmh-medschool/ask` (signed out they show a sign-in prompt, `noindex`; neither is
 a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO with a user, cycle or event id:
 `me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
 DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),

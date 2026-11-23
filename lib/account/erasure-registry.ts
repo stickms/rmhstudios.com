@@ -78,7 +78,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   AiUsage: {
     decision: 'keep',
-    reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
+    reason:
+      "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. A row holds the user id, task, prompt id, token counts, cost and time, never text: the RMH Med Schools Q&A (`medschools-qa`) writes no question or answer anywhere else either (`features/medschools/CLAUDE.md`), so its rows are the only trace and carry nothing to erase.",
   },
   AltairCoopProfile: {
     decision: 'erase',
