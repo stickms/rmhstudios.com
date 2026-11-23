@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1321 endpoints across 202 groups: 167 route files under `app/routes/api` and 1154 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1324 endpoints across 202 groups: 167 route files under `app/routes/api` and 1157 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -45,7 +45,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-147 routes.
+148 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -137,6 +137,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/medschools/alias-misses` | `GET` | `features/medschools/api/admin.medschools.alias-misses.server.ts` |
 | `/api/admin/medschools/alias-misses/ignore` | `POST` | `features/medschools/api/admin.medschools.alias-misses.ignore.server.ts` |
 | `/api/admin/medschools/alias-misses/map` | `POST` | `features/medschools/api/admin.medschools.alias-misses.map.server.ts` |
+| `/api/admin/medschools/qa-limit-requests` | `GET` `POST` | `features/medschools/api/admin.medschools.qa-limit-requests.server.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `lib/admin/api/admin.mod-macros.server.ts` |
 | `/api/admin/moderation/content` | `POST` | `lib/moderation/api/admin.moderation.content.server.ts` |
 | `/api/admin/oncall` | `GET` | `lib/admin/api/admin.oncall.server.ts` |
@@ -1299,11 +1300,12 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/medschools`
 
-22 routes.
+24 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/medschools/live` | `GET` | `features/medschools/api/medschools.live.server.ts` |
+| `/api/medschools/me/ask` | `GET` `POST` | `features/medschools/api/medschools.me.ask.server.ts` |
 | `/api/medschools/me/chances` | `GET` | `features/medschools/api/medschools.me.chances.server.ts` |
 | `/api/medschools/me/list-items` | `POST` | `features/medschools/api/medschools.me.list-items.server.ts` |
 | `/api/medschools/me/list-order` | `PUT` | `features/medschools/api/medschools.me.list-order.server.ts` |
@@ -1313,6 +1315,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/medschools/me/lists/:id/item-order` | `PUT` | `features/medschools/api/medschools.me.lists.$id.item-order.server.ts` |
 | `/api/medschools/me/lists/:id/items/:itemId` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.lists.$id.items.$itemId.server.ts` |
 | `/api/medschools/me/prefs` | `GET` `PUT` | `features/medschools/api/medschools.me.prefs.server.ts` |
+| `/api/medschools/me/qa-limit-request` | `GET` `POST` | `features/medschools/api/medschools.me.qa-limit-request.server.ts` |
 | `/api/medschools/me/tracker` | `GET` | `features/medschools/api/medschools.me.tracker.server.ts` |
 | `/api/medschools/me/tracker/applications` | `POST` | `features/medschools/api/medschools.me.tracker.applications.server.ts` |
 | `/api/medschools/me/tracker/applications/:id` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.tracker.applications.$id.server.ts` |

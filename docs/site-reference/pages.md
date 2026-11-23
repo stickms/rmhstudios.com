@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 421 routes. 227 render inside the standard site shell (sidebar, nav, context rail); 194 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 422 routes. 228 render inside the standard site shell (sidebar, nav, context rail); 194 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -48,7 +48,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/lookup` | Lookup \| Admin | admin | `app/routes/_site/admin/lookup.tsx` |
 | `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
 | `/admin/media-sweep` | Media sweep \| Admin | admin | `app/routes/_site/admin/media-sweep.tsx` |
-| `/admin/medschools` | Med Schools aliases \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
+| `/admin/medschools` | Med Schools \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
 | `/admin/outbox` | Outbox \| Admin | admin | `app/routes/_site/admin/outbox.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
 | `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |
@@ -155,6 +155,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmh-datacenter/power` | — | public | `app/routes/_site/rmh-datacenter/power.tsx` |
 | `/rmh-medschool` | RMH Med Schools | public | `app/routes/_site/rmh-medschool/index.tsx` |
 | `/rmh-medschool/:slug` | — | public | `app/routes/_site/rmh-medschool/$slug.tsx` |
+| `/rmh-medschool/ask` | Ask the data | public | `app/routes/_site/rmh-medschool/ask.tsx` |
 | `/rmh-medschool/lists` | My lists | public | `app/routes/_site/rmh-medschool/lists.tsx` |
 | `/rmh-medschool/live` | Live reported events \| RMH Med Schools | public | `app/routes/_site/rmh-medschool/live.tsx` |
 | `/rmh-medschool/tracker` | My tracker | public | `app/routes/_site/rmh-medschool/tracker.tsx` |

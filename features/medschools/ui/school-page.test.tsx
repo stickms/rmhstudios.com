@@ -45,6 +45,9 @@ vi.mock('@/components/session/session-context', () => ({
   useSession: () => ({ data: h.session, isPending: false }),
 }));
 vi.mock('./SaveToList', () => ({ SaveToList: () => null }));
+vi.mock('@/components/errors/useRefusalText', () => ({
+  useRefusalText: () => Object.assign((e: unknown) => String(e), { maybe: (e: unknown) => String(e) }),
+}));
 vi.mock('@/components/feed/PageLayout', () => ({
   PageLayout: ({ title, children }: { title: string; children: ReactNode }) => (
     <main>
@@ -649,5 +652,35 @@ describe('Forecast tab', () => {
     for (const f of ['./ForecastTab.tsx', './charts/ForecastBand.tsx', './SchoolChances.tsx']) {
       expect(root(f)).not.toMatch(/engine\/stats/);
     }
+  });
+});
+
+describe('the Ask panel on a school page', () => {
+  it('signed in: after the tab content and the links, pinned to the school, with the only ink primary', () => {
+    h.search = {};
+    h.session = { user: { id: 'u1' } };
+    const html = render(seedActivity(activity()));
+    expect(html).toContain('Ask about Duke University School of Medicine');
+    expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('href="/rmh-medschool/tracker"'));
+    expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('>Activity<'));
+    expect(html).toContain('href="/rmh-medschool/ask"');
+    expect(html.match(/data-variant="primary"/g)?.length ?? 0).toBe(1);
+    // Three suggestions when pinned (the school page has no other plain buttons of this kind).
+    expect(html).toContain('What are the MCAT and GPA medians?');
+    expect(html).not.toContain('Compare reported interviews at Duke and Emory.');
+    h.session = null;
+  });
+
+  it('signed out: no panel, no field, the page renders as before', () => {
+    h.search = {};
+    h.session = null;
+    const html = render(seedActivity(activity()));
+    expect(html).not.toContain('Ask about');
+    expect(html).not.toContain('<textarea');
+    expect(html).toContain('<h1>Duke University School of Medicine</h1>');
+  });
+
+  it('SchoolPage pins the slug it was given', () => {
+    expect(root('./SchoolPage.tsx')).toMatch(/<AskPanel slug=\{slug\}/);
   });
 });

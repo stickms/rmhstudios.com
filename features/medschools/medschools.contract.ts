@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
+import type { askBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
   addListToTrackerBody,
@@ -463,6 +464,138 @@ export const getMedChancesApi = endpoint<{
   query: { school?: string | undefined; cycle?: number | undefined };
   res: MedChancesRes;
 }>()({ method: 'GET', path: '/api/medschools/me/chances' });
+
+/* ------------------------- AI Q&A (phase 6, me/ask) ------------------------- */
+
+/** A row an answer cites: where the figure came from and when that source was last refreshed. */
+export interface MedAskCitationDto {
+  ref: string;
+  label: string;
+  sourceName: string;
+  schoolSlug: string | null;
+  /** ISO. The source's last successful refresh (a count), a profile's fetch time, a forecast's computation; null when unknown. */
+  updatedAt: string | null;
+  /** A site path with its `?tab=`. */
+  href: string;
+  /** The source's own page for the school where one is known. */
+  sourceHref: string | null;
+}
+
+/**
+ * The answer to one question. Nothing in it is stored: no question text, no answer text. `segments` are sentences that
+ * survived the grounding check, each citing retrieved rows by `ref`; `mine` is the caller's own invite estimate (from the
+ * tracker, never shown to the model) on a `my-chance` question.
+ */
+export interface MedAskRes {
+  /** `answered`: every sentence survived. `partial`: some were removed. `no-data`: nothing to say from the data. */
+  status: 'answered' | 'partial' | 'no-data' | 'declined' | 'no-school';
+  segments: { text: string; cites: string[] }[];
+  citations: MedAskCitationDto[];
+  notice: 'removed-ungrounded' | 'thin' | 'mine-unavailable' | null;
+  decline: 'out-of-scope' | 'ungrounded' | 'name-a-school' | null;
+  schools: { slug: string; shortName: string }[];
+  cycleYear: number | null;
+  mine: ChanceDto[] | null;
+  tier: MedQaTier;
+  /** Questions left today; `null` for an admin (no daily limit). */
+  remainingToday: number | null;
+  dailyCap: number | null;
+  /** True when the answer call ran with DeepSeek's thinking on (plan R20). The reasoning text itself is never returned. */
+  thinking: boolean;
+}
+
+/** The caller's limit tier (plan R19), resolved on the server: `admin` has no daily limit, `member` is a paid membership. */
+export type MedQaTier = 'free' | 'approved' | 'member' | 'admin';
+
+export interface MedAskStatusRes {
+  /** False when the site has no model key: the page says so and sends no question. */
+  configured: boolean;
+  tier: MedQaTier;
+  /** `null` for an admin. */
+  remainingToday: number | null;
+  /** `null` for an admin. */
+  dailyCap: number | null;
+  /** Whether "Think it through" is offered (`MEDSCHOOLS_QA_THINKING`, plan R20). */
+  thinkingAvailable: boolean;
+}
+
+/**
+ * Signed in. 429 `MEDSCHOOLS_QA_DAILY_CAP` (the day's questions are used) or `MEDSCHOOLS_QA_BUSY` (another question of
+ * the member's is in flight, on any process), 503 `MEDSCHOOLS_QA_PAUSED` (the Q&A share of the monthly budget is spent, or its ledger cannot be
+ * read) or `AI_UNAVAILABLE`, 402 `AI_BUDGET_EXCEEDED` (the member's own allowance), 403 for a suspended account. Never cached.
+ */
+export const askMedQuestionApi = endpoint<{ body: z.infer<typeof askBody>; res: MedAskRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/ask',
+});
+
+/** What the Ask page needs before a question: whether Q&A is on and how many questions the caller has left today. */
+export const getMedAskStatusApi = endpoint<{ res: MedAskStatusRes }>()({
+  method: 'GET',
+  path: '/api/medschools/me/ask',
+});
+
+/* ------------------------- Q&A limit requests (phase 6, R19) ------------------------- */
+
+/**
+ * Where the caller stands on a higher daily limit. `none`: may ask; `pending`: waiting for an admin; `approved`: has the
+ * approved tier; `declined`: a decision (or a revoked approval) started a wait, `reapplyOn` is the day it ends;
+ * `not-needed`: an admin or a paying member, who never sees the form.
+ */
+export interface MedQaLimitRequestStateRes {
+  state: 'none' | 'pending' | 'approved' | 'declined' | 'not-needed';
+  tier: MedQaTier;
+  /** ISO. When the current request was made; null for `none` and `not-needed`. */
+  requestedAt: string | null;
+  decidedAt: string | null;
+  /** An admin's optional reply on the last decision. */
+  adminNote: string;
+  /** ISO. `declined` only: the first moment the member can ask again. */
+  reapplyOn: string | null;
+}
+
+export const getMedQaLimitRequestApi = endpoint<{ res: MedQaLimitRequestStateRes }>()({
+  method: 'GET',
+  path: '/api/medschools/me/qa-limit-request',
+});
+
+/** 409 `MEDSCHOOLS_QA_LIMIT_PENDING`, `MEDSCHOOLS_QA_LIMIT_WAIT` or `MEDSCHOOLS_QA_LIMIT_NOT_NEEDED`. */
+export const submitMedQaLimitRequestApi = endpoint<{
+  body: z.infer<typeof limitRequestBody>;
+  res: MedQaLimitRequestStateRes;
+}>()({
+  method: 'POST',
+  path: '/api/medschools/me/qa-limit-request',
+});
+
+export interface MedQaLimitRequestRowDto {
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'REVOKED';
+  note: string;
+  adminNote: string;
+  createdAt: string;
+  decidedAt: string | null;
+  /** Set when an approval was revoked; the approval's own `decidedAt` and `adminNote` stay as they were. */
+  revokedAt: string | null;
+  revokeNote: string;
+  user: { id: string; handle: string | null; name: string | null };
+}
+
+/** Admin: every pending request (oldest first), every approval in force, and the 50 most recent declines and revokes. */
+export const listMedQaLimitRequestsApi = endpoint<{
+  res: { pending: MedQaLimitRequestRowDto[]; active: MedQaLimitRequestRowDto[]; recent: MedQaLimitRequestRowDto[] };
+}>()({
+  method: 'GET',
+  path: '/api/admin/medschools/qa-limit-requests',
+});
+
+export const decideMedQaLimitRequestApi = endpoint<{
+  body: z.infer<typeof limitDecisionBody>;
+  res: { ok: true };
+}>()({
+  method: 'POST',
+  path: '/api/admin/medschools/qa-limit-requests',
+});
 
 /* ------------------------- saved lists and preferences (me/**) ------------------------- */
 
