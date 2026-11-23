@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { programPair, type ProgramKey } from '../engine/programs';
 import { SOURCE_NAMES } from '../engine/public-read';
 import type { MilestoneType } from '../engine/tracker';
 import type {
@@ -73,7 +74,21 @@ export function useMedLabels() {
   const programLabel = (p: MedProgramId | null, degree?: MedDegreeId): string =>
     programFilterLabel(p ?? 'NONE', degree);
 
+  /** One of the four program toggles: "MD", "MD-PhD", "DO", "DO-PhD". */
+  const programKeyLabel = (k: ProgramKey): string => {
+    const p = programPair(k);
+    return programFilterLabel(p.program, p.degree);
+  };
+
   const sourceName = (s: MedSourceId): string => SOURCE_NAMES[s];
 
-  return { eventLabel, milestoneLabel, eventShortLabel, programLabel, programFilterLabel, sourceName };
+  return {
+    eventLabel,
+    milestoneLabel,
+    eventShortLabel,
+    programLabel,
+    programFilterLabel,
+    programKeyLabel,
+    sourceName,
+  };
 }

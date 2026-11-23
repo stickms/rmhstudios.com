@@ -12,6 +12,11 @@ vi.mock('@/components/session/session-context', () => ({
   useSession: () => ({ data: h.session, isPending: false }),
 }));
 vi.mock('@tanstack/react-router', () => ({
+  Link: ({ to, hash, children, ...rest }: { to: string; hash?: string; children: React.ReactNode }) => (
+    <a href={hash ? `${to}#${hash}` : to} {...rest}>
+      {children}
+    </a>
+  ),
   useNavigate: () => (o: unknown) => {
     h.navigated.push(o);
   },
@@ -27,7 +32,13 @@ import { PrefsNote } from './PrefsNote';
 import { prefsQuery } from '../medschools.queries';
 import type { Prefs, PrefsSearch, ViewKind, ViewPatch } from '../engine/prefs';
 
-const PHD_MD: Prefs = { programFilter: 'PHD', degree: 'MD', homeState: null, chartCategories: [] };
+const PHD_MD: Prefs = {
+  programs: ['md-phd'],
+  programFilter: 'PHD',
+  degree: 'MD',
+  homeState: null,
+  chartCategories: [],
+};
 
 function view(
   kind: ViewKind,
@@ -57,28 +68,30 @@ function view(
 
 describe('useEffectiveView', () => {
   it('no preferences: the view equals the phase 3 view for the same URL', () => {
-    expect(view('index', {}, null).view).toEqual({ program: 'ALL', show: expect.any(Array), fromPrefs: false });
-    expect(view('index', { degree: 'DO', program: 'PHD' }, null).view).toMatchObject({
-      degree: 'DO',
-      program: 'PHD',
+    expect(view('index', {}, null).view).toEqual({
+      programs: ['md', 'md-phd', 'do', 'do-phd'],
+      program: 'ALL',
+      show: expect.any(Array),
+      fromPrefs: false,
+    });
+    expect(view('index', { programs: ['do-phd'] }, null).view).toMatchObject({
+      programs: ['do-phd'],
       fromPrefs: false,
     });
   });
 
-  it('PHD preference and a silent URL: PHD, from preferences', () => {
-    expect(view('index', {}, PHD_MD).view).toMatchObject({ degree: 'MD', program: 'PHD', fromPrefs: true });
+  it('a program preference and a silent URL: that set, from preferences', () => {
+    expect(view('index', {}, PHD_MD).view).toMatchObject({ programs: ['md-phd'], fromPrefs: true });
   });
 
-  it('?program=ALL with a PHD preference is All', () => {
-    const v = view('index', { program: 'ALL', degree: 'ALL' }, PHD_MD).view;
-    expect(v.program).toBe('ALL');
-    expect(v.degree).toBeUndefined();
+  it('every program in the URL with a preference is every program', () => {
+    const v = view('index', { programs: ['md', 'md-phd', 'do', 'do-phd'] }, PHD_MD).view;
+    expect(v.programs).toHaveLength(4);
     expect(v.fromPrefs).toBe(false);
   });
 
-  it('the school kind ignores the degree preference and takes its own', () => {
-    const v = view('school', {}, { ...PHD_MD, degree: 'DO' }, true, { schoolDegree: 'MD' }).view;
-    expect(v.degree).toBe('MD');
+  it('the school kind takes the preference through its own degree', () => {
+    const v = view('school', {}, { ...PHD_MD, programs: ['do', 'md-phd'] }, true, { schoolDegree: 'MD' }).view;
     expect(v.program).toBe('PHD');
   });
 
@@ -90,11 +103,11 @@ describe('useEffectiveView', () => {
 
   it('setSearch navigates in place with only the changed preference keys rewritten', () => {
     h.navigated.length = 0;
-    view('index', {}, PHD_MD, true, undefined, { degree: undefined, program: 'ALL' });
+    view('index', {}, PHD_MD, true, undefined, { programs: ['md', 'md-phd', 'do', 'do-phd'] });
     const nav = h.navigated[0] as { to: string; search: (p: Record<string, unknown>) => unknown; replace: boolean };
     expect(nav.to).toBe('.');
     expect(nav.replace).toBe(true);
-    expect(nav.search({ q: 'duke' })).toEqual({ q: 'duke', degree: 'ALL', program: 'ALL' });
+    expect(nav.search({ q: 'duke' })).toEqual({ q: 'duke', programs: 'md,md-phd,do,do-phd' });
   });
 });
 

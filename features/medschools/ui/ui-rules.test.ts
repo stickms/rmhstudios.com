@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
  * Static rules for the RMH Med Schools public UI (Phase 3). The three route files are held to the bundle rule; every
  * ui file to the Steel and i18n rules the review would otherwise catch by eye.
  */
-const ROUTES = ['index', 'live', '$slug', 'tracker'].map((n) => `app/routes/_site/rmh-medschool/${n}.tsx`);
+const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists'].map((n) => `app/routes/_site/rmh-medschool/${n}.tsx`);
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
   .filter((f) => !/\.test\./.test(f))
@@ -84,6 +84,25 @@ describe('medschools ui rules', () => {
     expect(src).toContain('definePage');
     expect(src).toContain('prefetchRouteQuery');
     expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-/);
+  });
+
+  it('keeps the private lists route private and thin (noindex, definePage, prefetched, no zod)', () => {
+    const src = read('app/routes/_site/rmh-medschool/lists.tsx');
+    expect(src).toContain('noIndex: true');
+    expect(src).toContain('definePage');
+    expect(src).toContain('prefetchRouteQuery');
+    expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-/);
+  });
+
+  it('draws the activity rail with one IntersectionObserver, on the sentinel, through useSentinel (B3: data loading only)', () => {
+    const src = read('features/medschools/ui/rail/ActivityRail.tsx');
+    expect(src).toContain('useSentinel');
+    expect(src).not.toMatch(/new (Intersection|Resize|Mutation)Observer|requestAnimationFrame/);
+  });
+
+  it('the shell hands the margin to a section by path, not by a branch per feature', () => {
+    expect(read('components/shell/margin-takeover.ts')).toContain("prefix: '/rmh-medschool'");
+    expect(read('components/shell/MarginColumn.tsx')).toContain('takeoverFor');
   });
 
   it('keeps createServerFn out of the query factories', () => {
