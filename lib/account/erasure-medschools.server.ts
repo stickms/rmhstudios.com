@@ -2,8 +2,8 @@ import { prisma } from '@/lib/prisma.server';
 
 /**
  * RMH Med Schools (phase 4): the member's private tracker, school lists and preferences are erased with the account.
- * Account deletion anonymises the `User` row in place, so none of the `onDelete: Cascade` relations fire; the three
- * models that carry `userId` are deleted here by the member's id, one `deleteMany` each.
+ * Account deletion anonymises the `User` row in place, so none of the `onDelete: Cascade` relations fire; the
+ * models that carry `userId` (`MedTrackerCycle`, `MedSchoolList`, `MedUserPrefs`, `MedQaLimitRequest`) are deleted here by the member's id, one `deleteMany` each.
  *
  * Children go by the database cascade, and each was checked in `prisma/schema/medschools.prisma`:
  * `MedTrackerCycle` takes its `MedTrackerApplication` rows, which take their `MedTrackerMilestone` rows;
@@ -21,5 +21,9 @@ export function medschoolsErasureOps(userId: string) {
     prisma.medTrackerCycle.deleteMany({ where: { userId } }),
     prisma.medSchoolList.deleteMany({ where: { userId } }),
     prisma.medUserPrefs.deleteMany({ where: { userId } }),
+    // Q&A limit requests (phase 6, R19): the member's own requests, with the reason they wrote and the reply they got
+    // (no question text is in them). Where this member decided others' requests as an admin, the reference is nulled.
+    prisma.medQaLimitRequest.deleteMany({ where: { userId } }),
+    prisma.medQaLimitRequest.updateMany({ where: { decidedBy: userId }, data: { decidedBy: null } }),
   ];
 }

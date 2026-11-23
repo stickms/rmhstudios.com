@@ -307,6 +307,7 @@ model User {
   medTrackerCycles MedTrackerCycle[] @relation("UserMedTrackerCycles")
   medSchoolLists   MedSchoolList[]   @relation("UserMedSchoolLists")
   medUserPrefs     MedUserPrefs?     @relation("UserMedPrefs")
+  medQaLimitRequests MedQaLimitRequest[] @relation("UserMedQaLimitRequests")
 
   media Media[]
 

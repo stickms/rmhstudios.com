@@ -915,6 +915,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove. The exception is the member\'s own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it.',
   },
+  MedQaLimitRequest: {
+    decision: 'erase',
+    reason:
+      "The member's requests for a higher Q&A limit (their optional reason and an admin's reply; never a question). Where the member decided others' requests as an admin, `decidedBy` is nulled.",
+  },
   MedSchoolList: {
     decision: 'erase',
     reason: "The member's saved school lists; list items go by the database cascade.",
