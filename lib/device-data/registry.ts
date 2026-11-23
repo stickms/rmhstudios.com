@@ -229,6 +229,8 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-elections-split',
       'rmh-elections-room',
       'rmh-elections-alerts',
+      // RMH Med Schools: this device's "Think it through" choice on the Ask page.
+      'rmh-medschool-ask-think',
     ],
     personal: false,
   },
