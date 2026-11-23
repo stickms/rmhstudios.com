@@ -109,7 +109,9 @@ process.on('exit', () => require('fs').writeFileSync(process.env.CONN_LOG, log.j
     expect(runJs(dir, { ...good, '172.31.86.1:10': 'connect' }).code).toBe(11);
     // the egress half still gates first
     expect(runJs(dir, { ...good, '192.0.2.1:9': 'timeout' }).code).toBe(20);
-  });
+    // Eight cold `node` processes run one after another here; on a loaded CI runner that took 5.8 s against vitest's
+    // default 5 s, so the test gets a time budget that fits what it does.
+  }, 30_000);
 
   it('is not proven when the network cannot be created', () => {
     const { result, log } = probe({ MOCK_UP_FAIL: '1' });
