@@ -182,8 +182,12 @@ describe('a full tracker (transaction limits and bulk writes)', () => {
       await addMs(w, 'u1', { id: `m${i}`, applicationId: `app${i}`, type: 'INTERVIEW', date: DAY });
     }
     const tx = vi.spyOn(w.db, '$transaction');
-    const many = vi.spyOn(w.prisma.medCycleEvent, 'createMany');
-    const single = vi.spyOn(w.prisma.medCycleEvent, 'create');
+    const eventTable = w.prisma.medCycleEvent as unknown as {
+      createMany: (a: unknown) => Promise<unknown>;
+      create: (a: unknown) => Promise<unknown>;
+    };
+    const many = vi.spyOn(eventTable, 'createMany');
+    const single = vi.spyOn(eventTable, 'create');
     await setShare(w, 'u1', 2027, true);
     expect(events(w)).toHaveLength(40);
     expect(many).toHaveBeenCalledTimes(1);
