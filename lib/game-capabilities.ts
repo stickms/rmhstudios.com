@@ -422,15 +422,16 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   'signal-forge': {
     genre: ['card', 'strategy'],
     players: ['single', 'async-leaderboard'],
-    // A canvas played by clicking cards, with keyboard shortcuts; touch is not claimed until it is checked.
-    input: { supported: ['keyboard', 'mouse'], required: ['mouse'] },
-    sessionMinutes: [15, 60],
-    engine: '2d-canvas',
+    // DOM buttons and SVG (the 2026-11-23 rework): click, tap or keys (1-9, V, E, Q, Tab/Enter) all play.
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    sessionMinutes: [20, 50],
+    engine: 'dom',
     demanding: false,
-    // Cloud saves of a run in progress, on the game's own table and routes.
+    // Cloud saves of a run in progress and the ascension progress, on the game's own table and routes.
     save: 'own-table',
-    accessibility: [],
-    descriptors: ['flashing'],
+    // Steady mode removes the beat: every on-phrase card counts as Good, no timed input anywhere. Waveforms are
+    // shape-coded glyphs as well as colours. Nothing strobes (the old canvas title and glow effects are gone).
+    accessibility: ['no-timed-input', 'colorblind-safe'],
   },
   'cursed-logic': {
     genre: ['strategy', 'card'],

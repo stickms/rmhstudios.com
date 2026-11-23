@@ -849,3 +849,21 @@ one set of drawings. The scheme is `docs/game-design-schemes/vega.json`.
 
 Regenerate with `node scripts/game-art/vega.mjs` (`--chromium <path>` or `PW_CHROMIUM` when Playwright's own browser
 build is missing; `--only card,logo` for a subset; `--preview <dir>` for PNG copies), then `pnpm images:variants`.
+
+---
+
+## Signal Forge (2026-11-23, the Vault migration)
+
+| Game | Font(s) used (Google Fonts, OFL 1.1) | Source path (google/fonts `ofl/`) | Changes |
+|---|---|---|---|
+| signal-forge | Audiowide, Barlow Condensed, IBM Plex Mono | audiowide/Audiowide-Regular.ttf, barlowcondensed/BarlowCondensed-Bold.ttf, ibmplexmono/IBMPlexMono-Medium.ttf | "SIGNAL" in a cold steel gradient over "FORGE" poured in a molten gradient with a soft bloom; a drawn pulse-sine-saw-noise trace runs between the lines |
+
+Card (`public/images/games/signal-forge.webp`), banner, logo and icon are entirely original vector artwork drawn by
+`scripts/game-art/signal-forge.mjs` (SVG rendered by headless Chromium, then sharp to WebP): an oscilloscope signal
+that runs cold cyan into a hot anvil and leaves as molten amber, a hammer, sparks, copper PCB traces with solder pads,
+a phosphor graticule, scanlines and a riveted frame; the banner adds a foundry skyline and a furnace mouth, the icon a
+hex nut around the trace. No photographs, scans or third-party images. The fonts are the self-hosted OFL copies in
+`components/shared/game-fonts/`. The in-game art (enemy machines, card frames, act backdrops, the circuit-board map,
+glyphs and relic tokens) is drawn as inline SVG in `features/signal-forge/ui/art/` and `ui/*.tsx`. Regenerate with
+`node scripts/game-art/signal-forge.mjs` (`PW_CHROMIUM=<path>` if Playwright's own browser build is missing), then
+`pnpm images:variants`.
