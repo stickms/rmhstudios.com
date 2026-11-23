@@ -1,8 +1,9 @@
 /**
  * Password resets in the security log: a request for an existing account and a completed reset each
  * write one row from Better Auth's `sendResetPassword` / `onPasswordReset` options. The request is
- * recorded without being awaited (an existing address must not answer slower than an unknown one), and
- * neither row carries the reset URL or token. The old `/reset-password` hook mapping is gone, so a
+ * handled in the background (an existing address must not answer slower than an unknown one), and
+ * neither row carries the reset URL or token. The policy itself (who gets a link, the hourly allowance,
+ * revoking earlier links) is `password-reset.test.ts`. The old `/reset-password` hook mapping is gone, so a
  * completed reset is one row, not two.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,9 +15,10 @@ const h = vi.hoisted(() => ({
   sendEmail: vi.fn(async (_input: unknown) => undefined),
   startRecoveryHold: vi.fn(async (..._a: unknown[]) => undefined),
   options: null as null | {
+    verification: { storeIdentifier: { default: string; overrides: Record<string, { hash: unknown }> } };
     emailAndPassword: {
       sendResetPassword: (
-        d: { user: { id: string; email: string }; url: string; token: string },
+        d: { user: { id: string; email: string; emailVerified?: boolean }; url: string; token: string },
         r: Request,
       ) => Promise<void>;
       onPasswordReset: (d: { user: { id: string; email: string } }, r: Request) => Promise<void>;
@@ -35,7 +37,7 @@ vi.mock('@/lib/email', async (orig) => ({ ...(await orig<object>()), sendEmail: 
 vi.mock('@/lib/prisma.server', () => ({ prisma: new Proxy({}, { get: () => new Proxy({}, { get: () => vi.fn() }) }) }));
 vi.mock('@/lib/recovery/hold.server', () => ({ startRecoveryHold: h.startRecoveryHold }));
 
-const user = { id: 'user-1', email: 'a@example.com' };
+const user = { id: 'user-1', email: 'a@example.com', emailVerified: true };
 const request = new Request('https://rmhstudios.com/api/auth/reset-password', { method: 'POST' });
 
 describe('password reset security log', () => {
@@ -44,7 +46,7 @@ describe('password reset security log', () => {
     if (!h.options) await import('@/lib/auth');
   });
 
-  it('a reset request writes one row and does not wait for it', async () => {
+  it('a reset request writes one row in the background and does not wait for it', async () => {
     let finish: () => void = () => {};
     h.recordSecurityEvent.mockImplementationOnce(() => new Promise<undefined>((r) => (finish = () => r(undefined))));
     await expect(
@@ -53,7 +55,7 @@ describe('password reset security log', () => {
         request,
       ),
     ).resolves.toBeUndefined();
-    expect(h.recordSecurityEvent).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(h.recordSecurityEvent).toHaveBeenCalledTimes(1));
     expect(h.recordSecurityEvent.mock.calls[0]![0]).toMatchObject({
       userId: 'user-1',
       kind: 'password_reset_requested',
@@ -78,11 +80,21 @@ describe('password reset security log', () => {
       { user, url: 'https://x.test/reset?token=SECRET', token: 'SECRET' },
       request,
     );
+    await vi.waitFor(() => expect(h.recordSecurityEvent).toHaveBeenCalledTimes(1));
     await h.options!.emailAndPassword.onPasswordReset({ user }, request);
+    expect(h.recordSecurityEvent).toHaveBeenCalledTimes(2);
     for (const [input] of h.recordSecurityEvent.mock.calls) {
       expect(JSON.stringify(input, (_k, v) => (v instanceof Request ? v.method : v))).not.toContain('SECRET');
       expect(Object.keys(input as object).sort()).toEqual(['kind', 'request', 'userId']);
     }
+  });
+
+  it('reset tokens are stored hashed, and only reset tokens', async () => {
+    const { hashResetIdentifier } = await import('@/lib/auth/password-reset.server');
+    const storage = h.options!.verification.storeIdentifier;
+    expect(storage.default).toBe('plain');
+    expect(Object.keys(storage.overrides)).toEqual(['reset-password:']);
+    expect(storage.overrides['reset-password:']!.hash).toBe(hashResetIdentifier);
   });
 
   it('the hooks no longer map /reset-password, so a reset is not logged twice', () => {
