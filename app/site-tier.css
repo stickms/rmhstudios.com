@@ -109,8 +109,6 @@
 @source not "../components/neon-driftway";
 @source not "../features/nightrail/engine";
 @source not "../features/nightrail/ui";
-@source not "../features/rmhos/engine";
-@source not "../features/rmhos/ui";
 @source not "../features/rmhcharacters/engine";
 @source not "../features/rmhcharacters/ui";
 @source not "../components/optimization";

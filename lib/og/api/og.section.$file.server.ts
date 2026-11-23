@@ -3,6 +3,17 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { STATIC_CARDS } from '@/lib/og/static-cards';
 import { liveStatsFor } from '@/lib/og/live-stats.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
+import { apps } from '@/lib/catalog';
+import { shuffle } from '@/lib/core/rng';
+
+/** How many of the catalog's cards a gallery card draws (the 2×2 the post card uses for four photos). */
+const GALLERY_SIZE = 4;
+
+/** Four apps with art, in a new order on every render: the card shows what is there, not the same four forever. */
+function pickGallery(kind: 'apps'): string[] {
+  const pool = kind === 'apps' ? apps.filter((a) => a.imagePath && !a.hidden && !a.unlisted) : [];
+  return shuffle(pool.map((a) => a.imagePath as string)).slice(0, GALLERY_SIZE);
+}
 
 /**
  * GET /api/og/section/$file — the Open Graph card for a section of the site.
@@ -26,20 +37,26 @@ export const route = apiRoute('/api/og/section/$file', {
 
     try {
       const stats = await liveStatsFor(card);
+      const gallery = card.gallery ? pickGallery(card.gallery) : undefined;
       const png = await renderPageCard({
-        // Everything drawn is in the key: the copy is fixed per file, the figures are not.
+        // Everything drawn is in the key: the copy is fixed per file, the figures are not (the gallery's picks are
+        // keyed by the renderer itself).
         cacheKey: `section:${card.file}:${(stats ?? []).map((s) => `${s.value}${s.label}`).join(',')}`,
         eyebrow: card.eyebrow,
         title: card.title,
         subtitle: card.subtitle,
         stats,
         art: card.art ?? null,
+        ...(gallery ? { gallery } : {}),
         path: card.path,
       });
       return new Response(new Uint8Array(png), {
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+          // A gallery is drawn fresh on each render, so the CDN keeps it ten minutes rather than a day.
+          'Cache-Control': gallery
+            ? 'public, max-age=600, s-maxage=600'
+            : 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
         },
       });
     } catch {

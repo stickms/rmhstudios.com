@@ -77,12 +77,6 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
     personal: false,
   },
   {
-    id: 'rmhos-home',
-    kind: 'indexeddb',
-    names: ['rmhos'],
-    personal: true,
-  },
-  {
     id: 'hearthworks-saves',
     kind: 'indexeddb',
     names: ['hearthworks'],
@@ -169,7 +163,6 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh:sp-game:save:',
       'rmhcharacters:roster',
       'rmhcalc:model',
-      'rmhos:',
       'rmhtube:',
       'gh:table-code',
       'velum.playerName',

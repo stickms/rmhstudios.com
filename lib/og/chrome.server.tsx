@@ -75,29 +75,30 @@ const FAVICON_PATHS = [
   path.join(process.cwd(), 'dist', 'public', 'favicon.svg'),
 ];
 
-/** Rasterised once per process, at the largest size a card draws it. */
-const FAVICON_PX = 256;
+/**
+ * The favicon is its own white disc inside a margin (125 of a 150 viewBox). Its viewBox is narrowed to the disc, so
+ * the flower fills the mark instead of floating in that margin inside the mark's own ring.
+ */
+function cropToContent(svg: string): string {
+  const box = new Resvg(svg).getBBox();
+  if (!box || box.width <= 0 || box.height <= 0) return svg;
+  return svg.replace(/viewBox="[^"]*"/, `viewBox="${box.x} ${box.y} ${box.width} ${box.height}"`);
+}
+
 let faviconUri: string | null | undefined;
 
+/**
+ * The favicon as an SVG data URI, read once per process. It stays a vector: resvg draws an SVG `<image>` as paths, so
+ * its hairline petals are drawn at the size the mark is, instead of a large bitmap shrunk into a few dozen pixels
+ * (which aliased the strokes into blots).
+ */
 function faviconDataUri(): string | null {
   if (faviconUri !== undefined) return faviconUri;
   faviconUri = null;
   for (const file of FAVICON_PATHS) {
     try {
-      const svg = readFileSync(file, 'utf8');
-      const png = new Resvg(svg, {
-        fitTo: {
-          mode: 'width',
-          value: FAVICON_PX,
-        },
-        background: 'rgba(0,0,0,0)',
-        font: {
-          loadSystemFonts: false,
-        },
-      })
-        .render()
-        .asPng();
-      faviconUri = `data:image/png;base64,${Buffer.from(png).toString('base64')}`;
+      const svg = cropToContent(readFileSync(file, 'utf8'));
+      faviconUri = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
       break;
     } catch {
       /* try the next root */
@@ -109,26 +110,28 @@ function faviconDataUri(): string | null {
 /**
  * The site's mark on a card: the favicon (`public/favicon.svg`), the same
  * picture a browser tab shows, so a shared link and the tab it opens carry one
- * logo. The favicon is a white disc, which would vanish into Steel's #fafafa
- * page, so it gets the 1px hairline ring every picture takes (S5).
+ * logo. Drawn bare: the mark is the brand, not a picture in a box, so it takes
+ * no ring (owner, 2026-11-23).
  */
-export function brandMark(size: number): React.ReactElement {
+export function brandMark(size: number, layoutSize: number = size): React.ReactElement {
   const src = faviconDataUri();
+  // Drawn at `size` but laid out at `layoutSize`: the overhang is taken back by negative margins, so a larger mark
+  // does not make the row it sits in any taller.
+  const overhang = Math.max(0, (size - layoutSize) / 2);
   return (
     <div
       style={{
         display: 'flex',
+        flexShrink: 0,
         width: size,
         height: size,
-        borderRadius: size,
-        border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        backgroundColor: SURFACE,
-        overflow: 'hidden',
+        marginTop: -overhang,
+        marginBottom: -overhang,
       }}
     >
       {src ? (
         // satori is handed this tree, not the DOM: `alt` is inert here.
-        <img src={src} alt="" width={size - HAIRLINE_W * 2} height={size - HAIRLINE_W * 2} />
+        <img src={src} alt="" width={size} height={size} />
       ) : null}
     </div>
   );
@@ -558,6 +561,8 @@ const PAD_STORY = 44 * SCALE;
    profile, the game) owns the card at the ~500px an unfurl is shown at. */
 const MARK = 16 * SCALE;
 const MARK_STORY = 30 * SCALE;
+/** How much larger the mark is drawn than the room the brand row gives it (see `brandMark`). */
+const MARK_GROW = 1.375;
 /** The chip row / URL line at the bottom. Tallest thing that goes there. */
 const FOOTER = 27 * SCALE;
 /** Gap between the brand row, the body and the footer. */
@@ -655,7 +660,7 @@ export function cardFrame({
             gap: (centred ? 10 : 8) * SCALE,
           }}
         >
-          {brandMark(markSize)}
+          {brandMark(Math.round(markSize * MARK_GROW), markSize)}
           <span
             style={{
               fontSize: (centred ? 20 : 12) * SCALE,

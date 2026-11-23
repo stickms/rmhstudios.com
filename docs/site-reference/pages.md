@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 423 routes. 228 render inside the standard site shell (sidebar, nav, context rail); 195 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 422 routes. 228 render inside the standard site shell (sidebar, nav, context rail); 194 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -377,7 +377,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhmusic/sprint` | — | sign-in | `app/routes/rmhmusic/sprint.tsx` |
 | `/rmhmusic/today` | — | sign-in | `app/routes/rmhmusic/today.tsx` |
 | `/rmhmusic/tuner` | — | sign-in | `app/routes/rmhmusic/tuner.tsx` |
-| `/rmhos` | — | sign-in | `app/routes/rmhos.tsx` |
 | `/rmhstudy` | — | sign-in | `app/routes/rmhstudy/index.tsx` |
 | `/rmhstudy/:roomId` | — | sign-in | `app/routes/rmhstudy/$roomId.tsx` |
 | `/rmhstudy/history` | — | sign-in | `app/routes/rmhstudy/history.tsx` |

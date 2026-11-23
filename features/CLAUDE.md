@@ -54,11 +54,11 @@ Rules:
 
 Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker`
 and `nightrail` (engine, ui), `vega` and `signal-forge` (engine, ui; unlisted secret games), `dream-rift`,
-`gabriels-horn`, `synapse-storm` and `laundry-sort` (engine, ui, server, catalog); `rmhos` (engine, ui, api; its relay
-hub is `server/rmhos-net/`, see `docs/rmhos.md`); `medschools` (engine, ui, api, scrape; a Services-hub app with no
-catalog card, see `features/medschools/CLAUDE.md`). A feature whose disconnect handler was guarded by
-`if (!shuttingDown)` sets `skipDisconnectOnShutdown` on its `FeatureSocketServer`, and the hub passes `shuttingDown` to
-`handleFeatureDisconnects`. The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+`gabriels-horn`, `synapse-storm` and `laundry-sort` (engine, ui, server, catalog); `medschools` (engine, ui, api,
+scrape; a Services-hub app with no catalog card, see `features/medschools/CLAUDE.md`). A feature whose disconnect
+handler was guarded by `if (!shuttingDown)` sets `skipDisconnectOnShutdown` on its `FeatureSocketServer`, and the hub
+passes `shuttingDown` to `handleFeatureDisconnects`. The A1 ledger line in
+`docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
 
 ## Islands (redesign audit B1)
 
