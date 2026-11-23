@@ -28,6 +28,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmh-datacenter/power` | — | public | `app/routes/_site/rmh-datacenter/power.tsx` |
 | `/rmh-medschool` | RMH Med Schools | public | `app/routes/_site/rmh-medschool/index.tsx` |
 | `/rmh-medschool/:slug` | — | public | `app/routes/_site/rmh-medschool/$slug.tsx` |
+| `/rmh-medschool/ask` | Ask the data | public | `app/routes/_site/rmh-medschool/ask.tsx` |
 | `/rmh-medschool/lists` | My lists | public | `app/routes/_site/rmh-medschool/lists.tsx` |
 | `/rmh-medschool/live` | Live reported events \| RMH Med Schools | public | `app/routes/_site/rmh-medschool/live.tsx` |
 | `/rmh-medschool/tracker` | My tracker | public | `app/routes/_site/rmh-medschool/tracker.tsx` |

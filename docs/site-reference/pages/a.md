@@ -43,7 +43,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/lookup` | Lookup \| Admin | admin | `app/routes/_site/admin/lookup.tsx` |
 | `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
 | `/admin/media-sweep` | Media sweep \| Admin | admin | `app/routes/_site/admin/media-sweep.tsx` |
-| `/admin/medschools` | Med Schools aliases \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
+| `/admin/medschools` | Med Schools \| Admin | admin | `app/routes/_site/admin/medschools.tsx` |
 | `/admin/outbox` | Outbox \| Admin | admin | `app/routes/_site/admin/outbox.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
 | `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |

@@ -20,8 +20,7 @@ See the [API inventory](../api.md) for how to read the tables.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/news/approve` | `GET` `POST` | `app/routes/api/news/approve.ts` |
-| `/api/news/reject` | `GET` `POST` | `app/routes/api/news/reject.ts` |
+| `/api/news/summary` | `POST` | `lib/news-wire/api/news.summary.server.ts` |
 
 ## `/api/nightrail`
 

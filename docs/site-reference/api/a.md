@@ -127,6 +127,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/admin/medschools/alias-misses` | `GET` | `features/medschools/api/admin.medschools.alias-misses.server.ts` |
 | `/api/admin/medschools/alias-misses/ignore` | `POST` | `features/medschools/api/admin.medschools.alias-misses.ignore.server.ts` |
 | `/api/admin/medschools/alias-misses/map` | `POST` | `features/medschools/api/admin.medschools.alias-misses.map.server.ts` |
+| `/api/admin/medschools/qa-limit-requests` | `GET` `POST` | `features/medschools/api/admin.medschools.qa-limit-requests.server.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `lib/admin/api/admin.mod-macros.server.ts` |
 | `/api/admin/moderation/content` | `POST` | `lib/moderation/api/admin.moderation.content.server.ts` |
 | `/api/admin/oncall` | `GET` | `lib/admin/api/admin.oncall.server.ts` |

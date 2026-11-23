@@ -108,6 +108,7 @@ import { route as r_lib_media_api_admin_media_sweep_run } from '@/lib/media/api/
 import { route as r_features_medschools_api_admin_medschools_alias_misses } from '@/features/medschools/api/admin.medschools.alias-misses.server';
 import { route as r_features_medschools_api_admin_medschools_alias_misses_ignore } from '@/features/medschools/api/admin.medschools.alias-misses.ignore.server';
 import { route as r_features_medschools_api_admin_medschools_alias_misses_map } from '@/features/medschools/api/admin.medschools.alias-misses.map.server';
+import { route as r_features_medschools_api_admin_medschools_qa_limit_requests } from '@/features/medschools/api/admin.medschools.qa-limit-requests.server';
 import { route as r_lib_admin_api_admin_mod_macros } from '@/lib/admin/api/admin.mod-macros.server';
 import { route as r_lib_moderation_api_admin_moderation_content } from '@/lib/moderation/api/admin.moderation.content.server';
 import { route as r_lib_admin_api_admin_oncall } from '@/lib/admin/api/admin.oncall.server';
@@ -585,6 +586,7 @@ import { route as r_lib_market_api_market_listings } from '@/lib/market/api/mark
 import { route as r_lib_market_api_market_listings_id } from '@/lib/market/api/market.listings.$id.server';
 import { route as r_lib_market_api_market_listings_id_buy } from '@/lib/market/api/market.listings.$id.buy.server';
 import { route as r_features_medschools_api_medschools_live } from '@/features/medschools/api/medschools.live.server';
+import { route as r_features_medschools_api_medschools_me_ask } from '@/features/medschools/api/medschools.me.ask.server';
 import { route as r_features_medschools_api_medschools_me_chances } from '@/features/medschools/api/medschools.me.chances.server';
 import { route as r_features_medschools_api_medschools_me_list_items } from '@/features/medschools/api/medschools.me.list-items.server';
 import { route as r_features_medschools_api_medschools_me_list_order } from '@/features/medschools/api/medschools.me.list-order.server';
@@ -594,6 +596,7 @@ import { route as r_features_medschools_api_medschools_me_lists_id_add_to_tracke
 import { route as r_features_medschools_api_medschools_me_lists_id_item_order } from '@/features/medschools/api/medschools.me.lists.$id.item-order.server';
 import { route as r_features_medschools_api_medschools_me_lists_id_items_itemId } from '@/features/medschools/api/medschools.me.lists.$id.items.$itemId.server';
 import { route as r_features_medschools_api_medschools_me_prefs } from '@/features/medschools/api/medschools.me.prefs.server';
+import { route as r_features_medschools_api_medschools_me_qa_limit_request } from '@/features/medschools/api/medschools.me.qa-limit-request.server';
 import { route as r_features_medschools_api_medschools_me_tracker } from '@/features/medschools/api/medschools.me.tracker.server';
 import { route as r_features_medschools_api_medschools_me_tracker_applications } from '@/features/medschools/api/medschools.me.tracker.applications.server';
 import { route as r_features_medschools_api_medschools_me_tracker_applications_id } from '@/features/medschools/api/medschools.me.tracker.applications.$id.server';
@@ -640,6 +643,7 @@ import { route as r_lib_delight_api_museum } from '@/lib/delight/api/museum.serv
 import { route as r_lib_neon_driftway_api_neon_driftway_leaderboard } from '@/lib/neon-driftway/api/neon-driftway.leaderboard.server';
 import { route as r_lib_neon_driftway_api_neon_driftway_livery } from '@/lib/neon-driftway/api/neon-driftway.livery.server';
 import { route as r_lib_game_api_neon_driftway_score } from '@/lib/game/api/neon-driftway.score.server';
+import { route as r_lib_news_wire_api_news_summary } from '@/lib/news-wire/api/news.summary.server';
 import { route as r_lib_trick_week_api_nightrail_tricks } from '@/lib/trick-week/api/nightrail.tricks.server';
 import { route as r_lib_trick_week_api_nightrail_tricks_vote } from '@/lib/trick-week/api/nightrail.tricks.vote.server';
 import { route as r_lib_ops_api_notices_active } from '@/lib/ops/api/notices.active.server';
@@ -1263,6 +1267,7 @@ const API_ROUTES_A: readonly ApiRoute[] = [
   r_features_medschools_api_admin_medschools_alias_misses, // /api/admin/medschools/alias-misses
   r_features_medschools_api_admin_medschools_alias_misses_ignore, // /api/admin/medschools/alias-misses/ignore
   r_features_medschools_api_admin_medschools_alias_misses_map, // /api/admin/medschools/alias-misses/map
+  r_features_medschools_api_admin_medschools_qa_limit_requests, // /api/admin/medschools/qa-limit-requests
   r_lib_admin_api_admin_mod_macros, // /api/admin/mod-macros
   r_lib_moderation_api_admin_moderation_content, // /api/admin/moderation/content
   r_lib_admin_api_admin_oncall, // /api/admin/oncall
@@ -1776,6 +1781,7 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_lib_market_api_market_listings_id, // /api/market/listings/$id
   r_lib_market_api_market_listings_id_buy, // /api/market/listings/$id/buy
   r_features_medschools_api_medschools_live, // /api/medschools/live
+  r_features_medschools_api_medschools_me_ask, // /api/medschools/me/ask
   r_features_medschools_api_medschools_me_chances, // /api/medschools/me/chances
   r_features_medschools_api_medschools_me_list_items, // /api/medschools/me/list-items
   r_features_medschools_api_medschools_me_list_order, // /api/medschools/me/list-order
@@ -1785,6 +1791,7 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_me_lists_id_item_order, // /api/medschools/me/lists/$id/item-order
   r_features_medschools_api_medschools_me_lists_id_items_itemId, // /api/medschools/me/lists/$id/items/$itemId
   r_features_medschools_api_medschools_me_prefs, // /api/medschools/me/prefs
+  r_features_medschools_api_medschools_me_qa_limit_request, // /api/medschools/me/qa-limit-request
   r_features_medschools_api_medschools_me_tracker, // /api/medschools/me/tracker
   r_features_medschools_api_medschools_me_tracker_applications, // /api/medschools/me/tracker/applications
   r_features_medschools_api_medschools_me_tracker_applications_id, // /api/medschools/me/tracker/applications/$id
@@ -1834,6 +1841,7 @@ const API_ROUTES_N: readonly ApiRoute[] = [
   r_lib_neon_driftway_api_neon_driftway_leaderboard, // /api/neon-driftway/leaderboard
   r_lib_neon_driftway_api_neon_driftway_livery, // /api/neon-driftway/livery
   r_lib_game_api_neon_driftway_score, // /api/neon-driftway/score
+  r_lib_news_wire_api_news_summary, // /api/news/summary
   r_lib_trick_week_api_nightrail_tricks, // /api/nightrail/tricks
   r_lib_trick_week_api_nightrail_tricks_vote, // /api/nightrail/tricks/vote
   r_lib_ops_api_notices_active, // /api/notices/active

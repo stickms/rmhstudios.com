@@ -164,6 +164,10 @@ jobs:
       # one), and testing/integration/medschools-private.test.ts recomputes them from the same value.
       MEDSCHOOLS_DEDUPE_SECRET: ci-integration-medschools-dedupe-0123456789
       INTEGRATION_BASE_URL: http://localhost:7005
+      # The port the RMH Med Schools Q&A test hosts its fake DeepSeek on (testing/integration/lib/fake-deepseek.ts). Its
+      # model-dependent cases are skipped without it, so CI sets it and they run. The app is pointed at the same port in
+      # the "Start the built server" step, and only there: no other step or test sees a model key.
+      INTEGRATION_AI_FAKE_PORT: '7798'
       # The table store for testing/integration/casino-restart.test.ts. Not REDIS_STATE_URL:
       # the web app under test must not read it.
       INTEGRATION_REDIS_STATE_URL: redis://127.0.0.1:6379
@@ -232,6 +236,11 @@ jobs:
           echo "redis never became ready"; cat "$RUNNER_TEMP/redis-start.log"; docker logs redis-state 2>&1 | tail -40 || true
           exit 1
       - name: Start the built server
+        env:
+          # A placeholder, not a secret: it makes `isAiConfigured()` true, and the base URL sends every model call to the
+          # fake provider the Q&A integration test hosts. Nothing here can reach api.deepseek.com.
+          DEEPSEEK_API_KEY: integration-fake
+          DEEPSEEK_BASE_URL: http://127.0.0.1:7798/v1
         run: |
           nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/server.pid"

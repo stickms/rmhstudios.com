@@ -178,3 +178,12 @@ export function parseTrackerSearch(raw: Record<string, unknown>): { cycle?: numb
   const c = str(raw.cycle)?.trim();
   return c && /^\d{4}$/.test(c) && Number(c) >= CYCLE_MIN && Number(c) <= CYCLE_MAX ? { cycle: Number(c) } : {};
 }
+
+/** The Ask page's search: an optional `q` that fills the field and never submits (at most 400 characters, control characters turned to spaces). */
+export function parseAskSearch(raw: Record<string, unknown>): { q?: string } {
+  const text = str(raw.q);
+  if (text === undefined) return {};
+  const clean = Array.from(text, (ch) => (ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127 ? ' ' : ch)).join('');
+  const q = clean.trim().slice(0, 400);
+  return q ? { q } : {};
+}

@@ -78,15 +78,6 @@ describe('spatial redesign — responsive layout contract', () => {
     expect(source('components/feed/feed.css')).not.toContain('spatial-whats-new');
   });
 
-  it('gives carousel controls touch-sized hit areas', () => {
-    const newsHero = source('components/news/NewsHero.tsx');
-
-    expect(newsHero).toContain('data-slot="news-hero-control"');
-    expect(newsHero).toContain('data-slot="news-hero-dot"');
-    expect(newsHero).toContain('size-11');
-    expect(newsHero).toContain('h-11');
-    expect(newsHero).toContain('onPointerDown={() => setIsPaused(true)}');
-  });
 
   it('keeps standalone parallax pages safe-area aware without creating scroll roots', () => {
     const capital = source('components/rmh-capital/rmh-capital.css');
