@@ -63,6 +63,7 @@ import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/
 import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
 import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
+import { qaShare, scrapeCapUsd } from '../../features/medschools/ai-budget';
 import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
 import {
   ADMIT_FORUMS_DAILY_REQUESTS,
@@ -283,11 +284,12 @@ const sdnWwwHost = createPoliteHost(SOURCES.SDN_WWW, { budget: hostBudget('SDN_W
 // The extraction model and its monthly budget are built once. `configured()` is false without a DeepSeek key:
 // extraction then stores nothing and keeps its cursors, and the live tick queues no backfill.
 const sdnAi = createSdnAi();
-const sdnBudget = createBudgetGate(
-  medPrisma,
-  () => new Date(),
-  monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD, (line) => log.warn(line)),
-);
+// MEDSCHOOLS_AI_MONTHLY_USD is one cap shared with the member-facing Q&A, which reserves MEDSCHOOLS_QA_AI_SHARE of it
+// (default 25%, features/medschools/ai-budget.ts). The scrape gates are given what is left as THEIR cap, so the 80%
+// backfill rule and the forums' 40% share apply inside that smaller cap and the two sides never pass the total.
+const totalAiCap = monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD, (line) => log.warn(line));
+const scrapeCap = scrapeCapUsd(totalAiCap, qaShare(process.env.MEDSCHOOLS_QA_AI_SHARE, (line) => log.warn(line)));
+const sdnBudget = createBudgetGate(medPrisma, () => new Date(), scrapeCap);
 const sdnForums = sdnForumsJson as SdnForumsFile;
 // The Admit forums job reads with the same static prompt but labels its calls, and spends only its own share of the same
 // monthly cap (default 40%, MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE) so SDN is never starved; the total stays under the cap.
@@ -295,7 +297,7 @@ const admitForumsAi = createSdnAi(ADMIT_FORUMS_PROMPT_ID);
 const admitForumsBudget = createForumsBudgetGate(
   medPrisma,
   () => new Date(),
-  monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD),
+  scrapeCap,
   forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE, (line) => log.warn(line)),
 );
 

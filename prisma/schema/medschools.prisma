@@ -584,3 +584,44 @@ model MedWaitCurve {
   @@unique([schoolId, program])
   @@map("med_wait_curve")
 }
+
+// ─── Q&A limit requests (phase 6, R19) ─────────────────────────────────────────
+// A member's request for a higher daily Q&A limit, reviewed by an admin (the pattern of LibraryQuotaRequest). Owner
+// only. It holds the applicant's optional reason (at most 500 characters) and an admin's optional reply, NEVER a
+// question or an answer. An APPROVED row is the grant itself: while it exists the member is in the `approved` tier.
+
+enum MedQaLimitStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  /// An admin withdrew an approval. Like a decline, it starts the 30-day wait before the member can ask again.
+  REVOKED
+}
+
+/// At most one PENDING and at most one APPROVED row per member: partial unique indexes in the migration (Prisma cannot
+/// express them), so two simultaneous submissions or approvals cannot both land.
+model MedQaLimitRequest {
+  id        String           @id @default(cuid())
+  userId    String
+  status    MedQaLimitStatus @default(PENDING)
+  /// The applicant's optional reason. Not a question.
+  note      String           @default("") @db.VarChar(500)
+  /// An admin's optional reply, shown to the applicant.
+  adminNote String           @default("") @db.VarChar(500)
+  createdAt DateTime         @default(now())
+  decidedAt DateTime?
+  /// The deciding admin's user id, nulled when that admin's account is erased.
+  decidedBy String?
+  /// A revoke leaves the approval above intact and is recorded here; the 30-day wait starts from `revokedAt`.
+  revokedAt  DateTime?
+  /// The revoking admin's user id, nulled when that admin's account is erased.
+  revokedBy  String?
+  /// The revoking admin's optional reply, shown to the applicant.
+  revokeNote String    @default("") @db.VarChar(500)
+
+  user User @relation("UserMedQaLimitRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("med_qa_limit_request")
+}

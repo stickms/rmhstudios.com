@@ -181,6 +181,26 @@ describe('anonymizeAccount with a sharing tracker', () => {
   });
 });
 
+describe('Q&A limit requests (phase 6, R19)', () => {
+  it("erases the member's requests, nulls the admin reference on others', and leaves other members' requests", async () => {
+    await seed();
+    f.tables.user.push({ id: 'adm', createdAt: OLD, banReason: null, deletionScheduledAt: null });
+    const base = { note: '', adminNote: '', createdAt: OLD, decidedAt: null, decidedBy: null, revokedAt: null, revokedBy: null, revokeNote: '' };
+    f.tables.medQaLimitRequest.push(
+      { id: 'q1', userId: 'u1', status: 'APPROVED', ...base, note: 'for my MCAT prep', decidedBy: 'adm' },
+      { id: 'q2', userId: 'u1', status: 'DECLINED', ...base },
+      { id: 'q3', userId: 'u2', status: 'APPROVED', ...base, decidedBy: 'u1' },
+      { id: 'q4', userId: 'u2', status: 'PENDING', ...base },
+      // Approved by 'adm', revoked by the erased member: only the revoke reference goes.
+      { id: 'q5', userId: 'u2', status: 'REVOKED', ...base, decidedBy: 'adm', revokedBy: 'u1', revokedAt: OLD },
+    );
+    await anonymizeAccount('u1');
+    expect(f.tables.medQaLimitRequest.map((r) => (r as { id: string }).id)).toEqual(['q3', 'q4', 'q5']);
+    expect(f.tables.medQaLimitRequest[0]).toMatchObject({ id: 'q3', decidedBy: null, status: 'APPROVED' });
+    expect(f.tables.medQaLimitRequest[2]).toMatchObject({ id: 'q5', decidedBy: 'adm', revokedBy: null, status: 'REVOKED' });
+  });
+});
+
 describe('scheduleDeletion', () => {
   it('removes the shared events at the request and switches sharing off (Q3)', async () => {
     await seed();
