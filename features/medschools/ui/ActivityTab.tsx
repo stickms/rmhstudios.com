@@ -127,7 +127,7 @@ export function ActivityTab({
               <span className="t-label">{t('school-type-visible-label', { defaultValue: 'Category' })}</span>
               <OptionGroup
                 label={t('school-type-label', { defaultValue: 'Category' })}
-                value={search.type}
+                value={search.type as MedChartedTypeId}
                 options={CHARTED_TYPES.map((ty) => ({
                   value: ty as MedChartedTypeId,
                   label: eventLabel(ty as MedChartedTypeId),
@@ -141,7 +141,7 @@ export function ActivityTab({
                   primary={chosenPrimary}
                   from={data.dayZeroOn}
                   to={to}
-                  color={CATEGORY_COLOR[search.type]}
+                  color={CATEGORY_COLOR[search.type as MedChartedTypeId]}
                   labels={chartLabels(
                     t('school-daily-title', {
                       defaultValue: '{{type}} by day',

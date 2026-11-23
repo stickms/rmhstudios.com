@@ -37,7 +37,7 @@ export function SchoolPage() {
   const { view, prefs } = useEffectiveView('school', parsed, detail ? { schoolDegree: detail.school.degree } : {});
   const search: SchoolSearch = {
     ...parsed,
-    program: view.program === 'NONE' ? 'ALL' : view.program,
+    program: view.program,
     show: view.show,
   };
 

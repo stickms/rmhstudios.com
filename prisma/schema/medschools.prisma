@@ -115,7 +115,6 @@ model MedSchool {
   interviewProfiles   MedInterviewProfile[]
   sdnThreads          MedSdnThread[]
   admitForumThreads   MedAdmitForumThread[]
-  admitForumThreads   MedAdmitForumThread[]
   trackerApplications MedTrackerApplication[]
   listItems           MedSchoolListItem[]
 
@@ -483,32 +482,6 @@ model MedAdmitMember {
 
   @@index([updatedAt])
   @@map("med_admit_member")
-}
-
-/// One Admit school-forum thread (a school's thread for one cycle on med.admit.org): a school and a cycle, never a person.
-/// `cursorPostHash` is an HMAC of the last processed post's id, never the id; `cursorOffset` counts the posts consumed
-/// (the next read starts one before it, so the anchor post is checked); `remoteCount` is the thread's post count at the
-/// last look, so `remoteCount > cursorOffset` is the persisted "held" state while the model is paused. No post text,
-/// author, username or avatar is stored anywhere.
-model MedAdmitForumThread {
-  id             String    @id @default(cuid())
-  schoolId       String
-  cycleYear      Int
-  remoteCount    Int       @default(0)
-  cursorOffset   Int       @default(0)
-  cursorPostHash String?
-  postsProcessed Int       @default(0)
-  lastPostAt     DateTime?
-  parkedAt       DateTime?
-  failCount      Int       @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-
-  @@unique([schoolId, cycleYear])
-  @@index([cycleYear])
-  @@map("med_admit_forum_thread")
 }
 
 /// One Admit school-forum thread (a school's thread for one cycle on med.admit.org): a school and a cycle, never a person.
