@@ -1,6 +1,6 @@
 /* ==========================================================================
    PROJECT VEGA ISLAND SHEET (redesign audit B1) — the one render-blocking
-   stylesheet of the island document `app/routes/secret/vega.tsx` serves.
+   stylesheet of the island document `app/routes/vega.tsx` serves.
 
    The shared design body (`app/globals.css`) plus Tailwind's utilities for THIS
    island's own module graph and nothing else.

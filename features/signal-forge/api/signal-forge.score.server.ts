@@ -1,12 +1,15 @@
+/**
+ * POST /api/signal-forge/score: a finished run. The score goes through the shared pipeline (`submitGameScore`:
+ * the catalog ceilings, points-per-second, assist runs, personal bests, quests), and the run's facts decide the
+ * achievements (`signalForgeAchievementsForRun`), granted idempotently.
+ */
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { submitSignalForgeScoreApi } from '@features/signal-forge/engine/signal-forge.contract';
-import {
-  signalForgeScoreBody,
-  signalForgeScoreMessage,
-} from '@features/signal-forge/engine/score-schema';
-import { prisma } from '@/lib/prisma.server';
-import { recordGamePlay } from '@/lib/quests/engine.server';
+import { signalForgeScoreBody, signalForgeScoreMessage } from '@features/signal-forge/engine/score-schema';
+import { signalForgeAchievementsForRun } from '@features/signal-forge/engine/achievements';
+import { submitGameScore } from '@/lib/game/submit.server';
+import { grantAchievement } from '@/lib/achievements/engine.server';
 
 export const route = apiRoute('/api/signal-forge/score', {
   POST: implement(
@@ -17,44 +20,32 @@ export const route = apiRoute('/api/signal-forge/score', {
       invalid: (error) => Response.json({ error: signalForgeScoreMessage(error) }, { status: 400 }),
     },
     async ({ session, body }) => {
-      const { score, floorReached } = body;
-
-      const username = session.user.name || session.user.email || 'Anonymous';
-
-      // Find existing profile
-      const existingProfile = await prisma.signalForgePlayer.findUnique({
-        where: { userId: session.user.id },
+      const { score, floorReached, durationMs, facts } = body;
+      const result = await submitGameScore({
+        gameId: 'signal-forge',
+        userId: session.user.id,
+        score,
+        progress: floorReached,
+        ...(durationMs !== undefined ? { durationMs } : {}),
+        username: session.user.name || undefined,
       });
-
-      if (existingProfile) {
-        const isBetter =
-          score > existingProfile.highScore ||
-          (score === existingProfile.highScore && floorReached > existingProfile.floorReached);
-
-        const updated = await prisma.signalForgePlayer.update({
-          where: { userId: session.user.id },
-          data: {
-            highScore: Math.max(existingProfile.highScore, score),
-            floorReached: Math.max(existingProfile.floorReached, floorReached),
-            gamesPlayed: { increment: 1 },
-            username,
-          },
-        });
-        await recordGamePlay(session.user.id);
-        return Response.json({ success: true, profile: updated, isRecord: isBetter });
-      } else {
-        const newProfile = await prisma.signalForgePlayer.create({
-          data: {
-            userId: session.user.id,
-            username,
-            highScore: score,
-            floorReached,
-            gamesPlayed: 1,
-          },
-        });
-        await recordGamePlay(session.user.id);
-        return Response.json({ success: true, profile: newProfile, isRecord: true });
+      if (!result.ok) {
+        return Response.json({ error: result.error, reason: result.reason }, { status: result.status });
       }
+
+      const granted: string[] = [];
+      if (facts) {
+        for (const id of signalForgeAchievementsForRun(facts)) {
+          // Best-effort: a failed grant never fails a recorded score.
+          if (await grantAchievement(session.user.id, id).catch(() => false)) granted.push(id);
+        }
+      }
+      return Response.json({
+        success: true,
+        ranked: result.ranked,
+        isRecord: result.moment?.kind === 'pb' || result.moment?.kind === 'first-score',
+        achievements: granted,
+      });
     },
   ),
 });

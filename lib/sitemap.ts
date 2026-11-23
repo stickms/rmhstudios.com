@@ -748,13 +748,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head
   '/discord/rmhbox': 'noindex',
   '/rmh-internal-affairs': 'noindex', // internal microsite
-  '/secret': 'noindex', // easter eggs — indexing them defeats the point
   // Signed-in only and deliberately unsearchable (licensing): also disallowed in
   // robots.txt and `noindex, nofollow` in its head.
   '/balatro': 'auth-gated',
-  '/secret/cursed-logic': 'noindex',
-  '/secret/signal-forge': 'noindex',
-  '/secret/vega': 'noindex',
   // A page about one named person, linked from their profile. It is meant to be
   // found by people who already know them, not by a search for their name.
   '/sohumbum': 'noindex',

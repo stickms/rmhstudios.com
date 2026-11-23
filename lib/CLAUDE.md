@@ -61,7 +61,7 @@ A Vite plugin (`stubServerFiles()` in `vite.config.ts`) replaces any module matc
   `classifiers/`, `pipeline/`, `scoring.ts`, `verification.ts`, `seed/`, `server/`). Driven by `server/ladder-worker` on
   a cron; **heavily unit-tested** — keep colocated `.test.ts` files passing.
 - **Per-game/app logic:** (games moved by redesign A1 live in `features/<id>/engine/` — `balatro`, `void-breaker`,
-  `nightrail`, `altair`, `slice-it`, `hearthworks`, `casino`, `doctrine`, `vega`, `signal-forge`, `dream-rift`,
+  `nightrail`, `altair`, `slice-it`, `hearthworks`, `casino`, `doctrine`, `vega`, `signal-forge`, `cursed-logic`, `dream-rift`,
   `gabriels-horn`, `synapse-storm`, `laundry-sort`; see `features/CLAUDE.md`) one subdir per game (`altair/`, `rmhbox/`,
   `slice-it/`, casino games, `doctrine/`, `versecraft/`, …) and per app (`rmhtube/`, `rmhmusic/`, `rmhtype/`,
   `rmhstudy/`, `rmhvibe/`, `studio/`, `personas/`, `rideshare/`, `homes/`, `predictions/`). Realtime client sockets live

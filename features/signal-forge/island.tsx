@@ -1,7 +1,7 @@
 /**
  * Signal Forge's island entry (redesign audit B1): the client entry
  * `vite.islands.config.ts` builds for this feature, mounted by the bare document
- * `app/routes/secret/signal-forge.tsx` serves. The page (`ui/SignalForgePage.tsx`)
+ * `app/routes/signal-forge.tsx` serves. The page (`ui/SignalForgePage.tsx`)
  * is what the router used to render there, without the site's router, shell or
  * providers.
  *

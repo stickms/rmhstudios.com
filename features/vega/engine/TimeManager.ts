@@ -1,68 +1,43 @@
-export type ActionType = 'PLACE_TOWER' | 'SELL_TOWER' | 'ACTIVATE_ABILITY';
+import { STEP_S } from './data';
 
-export interface GameAction {
-  timestamp: number; // Time relative to loop start (ms)
-  type: ActionType;
-  payload: any;
-  loopId: number;
-}
-
+/**
+ * The run clock: turns real frame time into fixed simulation steps at the chosen speed, and keeps the run's
+ * wall-clock duration (paused time excluded) for the score submission's rate check.
+ */
 export class TimeManager {
-  private startTime: number = 0;
-  private recordedActions: GameAction[] = [];
-  private currentLoopActions: GameAction[] = [];
-  private isRecording: boolean = false;
+  public speed: 1 | 2 = 1;
+  public paused = false;
+  /** Wall time the run has been unpaused, ms (carried across a resumed save). */
+  public elapsedMs = 0;
+  private acc = 0;
 
-  constructor() {}
-
-  public startLoop(loopId: number) {
-    this.startTime = Date.now();
-    this.isRecording = true;
-    this.currentLoopActions = [];
-    console.log(`[TimeManager] Started Loop ${loopId}`);
+  constructor(elapsedMs = 0) {
+    this.elapsedMs = elapsedMs;
   }
 
-  public stopLoop() {
-    this.isRecording = false;
-    // Archive current loop actions
-    this.recordedActions = [...this.recordedActions, ...this.currentLoopActions];
+  /**
+   * Feed one frame's real delta (ms). Returns how many fixed steps to run now. The delta is clamped so a
+   * backgrounded tab does not resume with a burst of steps, and steps per frame are capped.
+   */
+  public frame(deltaMs: number, running: boolean): number {
+    const d = Math.min(Math.max(deltaMs, 0), 100);
+    if (this.paused) return 0;
+    this.elapsedMs += d;
+    if (!running) {
+      this.acc = 0;
+      return 0;
+    }
+    this.acc += (d / 1000) * this.speed;
+    let steps = 0;
+    while (this.acc >= STEP_S && steps < 12) {
+      this.acc -= STEP_S;
+      steps++;
+    }
+    if (steps === 12) this.acc = 0;
+    return steps;
   }
 
-  public recordAction(type: ActionType, payload: any, loopId: number) {
-    if (!this.isRecording) return;
-
-    const action: GameAction = {
-      timestamp: Date.now() - this.startTime,
-      type,
-      payload,
-      loopId
-    };
-    
-    this.currentLoopActions.push(action);
-    console.log('[TimeManager] Recorded:', action);
-  }
-
-  public getActionsForTimeWindow(start: number, end: number, currentLoopId: number): GameAction[] {
-    return this.recordedActions.filter(action => {
-      // Return actions from previous loops
-      // That fall within the time window
-      return action.loopId < currentLoopId && 
-             action.timestamp >= start && 
-             action.timestamp < end;
-    });
-  }
-
-  public getAllRecordedActions(): GameAction[] {
-    return this.recordedActions;
-  }
-  
-  public clear() {
-    this.recordedActions = [];
-    this.currentLoopActions = [];
-  }
-  
-  public getTimeElapsed(): number {
-    if (!this.isRecording) return 0;
-    return Date.now() - this.startTime;
+  public toggleSpeed() {
+    this.speed = this.speed === 1 ? 2 : 1;
   }
 }

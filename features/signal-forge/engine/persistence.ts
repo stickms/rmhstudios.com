@@ -1,72 +1,67 @@
 /**
- * persistence.ts — Server-side run persistence for Signal Forge
- *
- * API wrapper functions for saving, loading, and abandoning game runs.
- * These are the only impure (side-effectful) functions in the game logic layer
- * since they perform network requests.
+ * Signal Forge client persistence: the network calls for the cloud save, the score and the leaderboard.
+ * The only impure module of the engine; everything it returns is classified by save.ts first.
  */
-
-import type { GameState } from './GameTypes';
-import { serializeGameState, deserializeGameState } from './serialization';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
+import type { SignalForgeRunFacts } from './achievements';
+import { classifySave, makeBlob, type ClassifiedSave, type SaveMeta } from './save';
 import {
   abandonSignalForgeRunApi,
+  getSignalForgeLeaderboardApi,
   loadSignalForgeRunApi,
   saveSignalForgeRunApi,
+  submitSignalForgeScoreApi,
+  type SignalForgeLeaderboardRow,
 } from './signal-forge.contract';
+import type { RunState } from './types';
 
-/** Save the current game state to the server. */
-export async function saveRunToServer(state: GameState): Promise<boolean> {
-  try {
-    const runState = serializeGameState(state);
-    // Any answer from the server (even a refusal) counted as saved; only a transport failure did not.
-    await api(saveSignalForgeRunApi, { body: { runState } }).catch((e: unknown) => {
-      if (!(e instanceof HttpError)) throw e;
-    });
-    return true;
-  } catch (e) {
-    console.error('Failed to save run:', e);
-    return false;
-  }
-}
-
-/** Clear (abandon) the saved run on the server. */
-export async function clearSavedRunOnServer(): Promise<boolean> {
-  try {
-    // Any answer from the server (even a refusal) counted as cleared; only a transport failure did not.
-    await api(abandonSignalForgeRunApi).catch((e: unknown) => {
-      if (!(e instanceof HttpError)) throw e;
-    });
-    return true;
-  } catch (e) {
-    console.error('Failed to clear save:', e);
-    return false;
-  }
-}
-
-/** Load a saved run from the server. Returns null if no saved run exists. */
-export async function loadSavedRunFromServer(): Promise<GameState | null> {
+export async function loadSave(): Promise<ClassifiedSave | null> {
   try {
     const data = await api(loadSignalForgeRunApi, { retries: 0 });
-    if (data.hasSavedRun && data.runState) {
-      return deserializeGameState(data.runState);
-    }
-    return null;
+    return classifySave(data.hasSavedRun ? data.runState : null);
   } catch (e) {
-    // A non-2xx (signed out, server error) was a silent "no saved run".
-    if (e instanceof HttpError) return null;
-    console.error('Failed to load saved run:', e);
+    if (!(e instanceof HttpError)) console.error('Signal Forge: load failed', e);
     return null;
   }
 }
 
-/** Check if a saved run exists on the server. */
-export async function checkSavedRunOnServer(): Promise<boolean> {
+export async function saveRun(run: RunState | null, meta: SaveMeta): Promise<boolean> {
   try {
-    const data = await api(loadSignalForgeRunApi, { retries: 0 });
-    return !!data.hasSavedRun;
+    await api(saveSignalForgeRunApi, { body: { runState: makeBlob(run, meta) as unknown as Record<string, unknown> } });
+    return true;
   } catch {
     return false;
+  }
+}
+
+export async function abandonRun(): Promise<void> {
+  try {
+    await api(abandonSignalForgeRunApi);
+  } catch {
+    /* a failed abandon is replaced by the next save */
+  }
+}
+
+export interface SubmitResult {
+  ok: boolean;
+  ranked: boolean;
+  achievements: string[];
+}
+
+export async function submitScore(score: number, floorReached: number, durationMs: number, facts: SignalForgeRunFacts): Promise<SubmitResult> {
+  try {
+    const res = await api(submitSignalForgeScoreApi, { body: { score, floorReached: Math.max(1, floorReached), durationMs, facts } });
+    return { ok: true, ranked: res.ranked, achievements: res.achievements ?? [] };
+  } catch {
+    return { ok: false, ranked: false, achievements: [] };
+  }
+}
+
+export async function fetchLeaderboard(): Promise<SignalForgeLeaderboardRow[]> {
+  try {
+    return await api(getSignalForgeLeaderboardApi, { retries: 0 });
+  } catch {
+    return [];
   }
 }

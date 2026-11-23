@@ -24,6 +24,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | --- | ----- | ------ | ------ |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/create` | public | `app/routes/v.new.tsx` |
+| `/vega` | — | public | `app/routes/vega.tsx` |
 | `/velum2099` | — | public | `app/routes/velum2099.tsx` |
 | `/versecraft` | — | public | `app/routes/versecraft/index.tsx` |
 | `/vibe-frame` | — | public | `app/routes/vibe-frame.ts` |

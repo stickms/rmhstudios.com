@@ -93,7 +93,7 @@
 @source not "../components/blm";
 @source not "../components/covid";
 @source not "../components/elections";
-@source not "../components/cursed-logic";
+@source not "../features/cursed-logic/ui";
 @source not "../components/daily-puzzles";
 @source not "../components/design";
 @source not "../features/dream-rift/ui";
@@ -151,7 +151,7 @@
 @source not "../features/void-breaker/ui";
 @source not "../lib/cards";
 @source not "../lib/controller";
-@source not "../lib/cursed-logic";
+@source not "../features/cursed-logic/engine";
 @source not "../lib/daily-puzzles";
 @source not "../features/dream-rift/engine";
 @source not "../lib/elections";
@@ -210,6 +210,7 @@
 @source not "./routes/dunesday.tsx";
 @source not "./routes/embed.replay.$id.tsx";
 @source not "./routes/gabriels-horn.tsx";
+@source not "./routes/cursed-logic.tsx";
 @source not "./routes/house-always-wins.tsx";
 @source not "./routes/hearthworks.tsx";
 @source not "./routes/kaikaidebtcounter.tsx";
@@ -241,10 +242,9 @@
 @source not "./routes/rmhtube";
 @source not "./routes/rmhtype.tsx";
 @source not "./routes/rmhtype";
-@source not "./routes/secret.tsx";
-@source not "./routes/secret";
 @source not "./routes/security.tsx";
 @source not "./routes/services.rebar-rutabaga.tsx";
+@source not "./routes/signal-forge.tsx";
 @source not "./routes/slice-it.tsx";
 @source not "./routes/slice-it";
 @source not "./routes/sohumbum.tsx";
@@ -257,6 +257,7 @@
 @source not "./routes/temple-of-joy.tsx";
 @source not "./routes/temple-of-joy";
 @source not "./routes/terms.tsx";
+@source not "./routes/vega.tsx";
 @source not "./routes/velum2099.tsx";
 @source not "./routes/versecraft.tsx";
 @source not "./routes/versecraft";

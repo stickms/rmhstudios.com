@@ -54,9 +54,9 @@ export interface GameScoreRules {
   minDurationMs?: number;
   direction: ScoreDirection;
   /**
-   * True for games that are deliberately absent from the public catalog
-   * (`lib/catalog`) — Signal Forge lives under `/secret/`. They still need
-   * scoring rules; they just aren't listed anywhere a visitor browses.
+   * True for boards that are deliberately absent from the public catalog
+   * (`lib/catalog`): the secondary boards of a catalog game below. They still
+   * need scoring rules; they just aren't listed anywhere a visitor browses.
    */
   unlisted?: boolean;
   /** Secondary progress metric a run can report (waves, floors, distance…). */
@@ -67,7 +67,7 @@ export interface GameScoreRules {
 
 /**
  * Score boards that have no catalog card: a secondary board of a catalog game
- * (Boss Rush, Temple of Joy efficiency) or a hidden game (Signal Forge). They
+ * (Boss Rush, Temple of Joy efficiency). They
  * need the same validation, so they are declared here; every catalog game
  * declares its rules on its own entry instead.
  *
@@ -102,17 +102,6 @@ const UNCATALOGED_SCORE_BOARDS: readonly GameScoreRules[] = [
     direction: 'higher-is-better',
     progressLabel: 'Hours played',
     maxProgress: 1_000_000,
-  },
-  {
-    id: 'signal-forge',
-    label: 'Signal Forge',
-    unlisted: true,
-    maxScore: 5_000_000,
-    maxScorePerSecond: 3_000,
-    minDurationMs: 3_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Floor',
-    maxProgress: 500,
   },
 ];
 

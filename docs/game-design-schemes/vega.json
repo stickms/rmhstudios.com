@@ -1,0 +1,38 @@
+{
+  "id": "vega",
+  "mood": "Sterile clinical horror: a diagnostic monitor of a specimen slide. Cold enamel instruments on lab tile, a corridor of tissue with a heartbeat traced down it, and the soft, wrong colours of the things that crawl along it.",
+  "palette": {
+    "bg": "#020504",
+    "bgAlt": "#06100D",
+    "surface": "#07110E",
+    "surfaceHover": "#0C1A16",
+    "ink": "#E6F2EE",
+    "inkMuted": "#9DBFB4",
+    "accent": "#8EF0C4",
+    "accent2": "#C58B8E",
+    "danger": "#E0393E",
+    "border": "#2F5D4F"
+  },
+  "fonts": {
+    "display": "Archivo (heavy for the VEGA wordmark; condensed capitals, width 66-75, for labels and specimen tags)",
+    "body": "Archivo (width 100)",
+    "mono": "IBM Plex Mono (every number, coordinate, log line and tag)"
+  },
+  "shape": {
+    "radius": "near-square (2px) with a clipped top-right corner on buttons, like a slide label; enamel instruments get a soft 14% radius",
+    "borderStyle": "1px surgical-green hairlines (#1D3A31, #2F5D4F on emphasis); the mint outline marks what is selected",
+    "texture": "lab tile grid with corner ticks, static scanlines every 3-4px, registration crosshairs in the corners, a 100 µm scale bar"
+  },
+  "motifs": [
+    "specimen jar with the thing inside looking out",
+    "ECG trace with a QRS spike (wordmark underline, the corridor's centre line, the menu floor)",
+    "tissue corridor with fibre striations",
+    "cold white enamel instruments with one mint status light",
+    "cell-like specimens: membranes, nuclei, cilia, keratin plates, shield bubbles",
+    "biohazard trefoil on the containment door",
+    "paper specimen tags in mono with a red stripe"
+  ],
+  "buttonStyle": "Primary is a flat surgical-mint fill with near-black ink in condensed Archivo capitals and a clipped top-right corner; secondary is a green-black panel with a hairline that turns mint on hover; danger is an arterial-red outline. No glow.",
+  "backdrop": "Near-black green glass with a lab-tile grid, corner registration marks, static scanlines and a vignette; the menu adds a large specimen jar on the right and a flat ECG trace across the floor; the board is the same monitor with the tissue corridor laid in.",
+  "motion": "Specimen membranes ripple slowly and the monitor's scan line drifts down every nine seconds; both stop under Globe motion: Still. Hits, deaths and splashes are responses that end within 360 ms; a leak darkens the screen edge in red over 600 ms, at most once a second. Nothing flashes or pulses."
+}
