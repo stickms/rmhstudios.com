@@ -615,6 +615,27 @@ export const MEDSCHOOLS_EXTRACT: PromptSpec = {
   maxChars: 8_000,
 };
 
+/**
+ * RMH News: the summary a reader sees on an article they opened (lib/news-wire/summary.server.ts). Written once per
+ * article from the outlet's own text and cached, so it runs only for articles somebody actually clicked.
+ */
+export const NEWS_SUMMARY: PromptSpec = {
+  id: 'news-summary',
+  version: 1,
+  task: 'summarize',
+  instructions: [
+    'You summarize one news article for a reader deciding whether to read it in full.',
+    'Use only facts stated in the article text. Never add background, opinion or predictions of your own.',
+    'If the text is not a news article (a paywall notice, a cookie banner, a video page), return an empty "points" list.',
+    'Reply with a JSON object: {"tldr": string, "points": string[]}.',
+    '"tldr" is one plain sentence of at most 30 words saying what happened.',
+    '"points" is 3 to 5 short plain sentences with the key facts: who, what, where, when, numbers, what happens next.',
+    'Plain text inside the strings: no markdown, no emoji, no exclamation marks, no preamble.',
+  ].join('\n'),
+  maxChars: 1_600,
+  forbid: ['Here is', "Here's", 'As an AI', 'This article'],
+};
+
 export const ALL_PROMPTS: readonly PromptSpec[] = [
   TOOL_SELECT,
   SUMMARIZE_THREAD,
@@ -640,4 +661,5 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   EMAIL_DESIGN,
   CHARACTER_ADVISOR,
   MEDSCHOOLS_EXTRACT,
+  NEWS_SUMMARY,
 ] as const;

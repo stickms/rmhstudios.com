@@ -86,9 +86,13 @@ export const WRITE_HREF: string = '/share';
 
 /**
  * Whether the page at `pathname` has an ink primary of its own (R4: one per view). On the front page that is Post (or
- * Sign in), and on a post it is Reply (or Sign in), so the sidebar's "Write a post" steps down to the plain button there
- * and stays the shell's primary everywhere else.
+ * Sign in), on a post it is Reply (or Sign in), and on an RMH News article it is "Read at <publisher>", so the sidebar's
+ * "Write a post" steps down to the plain button there and stays the shell's primary everywhere else.
  */
 export function pageOwnsPrimary(pathname: string): boolean {
-  return pathname === '/' || /^\/u\/[^/]+\/post\/[^/]+\/?$/.test(pathname);
+  return (
+    pathname === '/' ||
+    /^\/u\/[^/]+\/post\/[^/]+\/?$/.test(pathname) ||
+    /^\/news\/(?!stories\/|rss\.xml$)[^/]+\/?$/.test(pathname)
+  );
 }

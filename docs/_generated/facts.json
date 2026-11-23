@@ -1,18 +1,18 @@
 {
   "generatedFrom": "scripts/gen-repo-facts.ts (tracked files, prisma/schema/**, lib/i18n/config.ts); regenerate with `pnpm facts:generate`, gated by `pnpm facts:check`",
   "prismaModels": 577,
-  "prismaEnums": 95,
-  "prismaSchemaLines": 15423,
-  "prismaMigrations": 483,
-  "routeFiles": 625,
-  "apiRouteFiles": 171,
-  "registeredApiEndpoints": 1154,
+  "prismaEnums": 96,
+  "prismaSchemaLines": 15443,
+  "prismaMigrations": 484,
+  "routeFiles": 623,
+  "apiRouteFiles": 169,
+  "registeredApiEndpoints": 1155,
   "pageRouteFiles": 454,
   "i18nNamespaces": 292,
   "shippedLocales": 9,
   "testFiles": 2017,
   "workflows": 26,
-  "componentTsxFiles": 1907,
+  "componentTsxFiles": 1905,
   "cssFiles": 153,
-  "cssLines": 69869
+  "cssLines": 69779
 }

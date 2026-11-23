@@ -100,8 +100,10 @@ import { dataSaverFromRequest } from '../../lib/data-saver-request';
  *                   titles A-Z; no randomness, no per-viewer branch). Re-audit if
  *                   either loader ever returns anything for a signed-out visitor.
  *   `/news`         app/routes/_site/news/index.tsx — its loader is
- *                   `getAllNewsArticles()` + `getFeaturedNewsArticles()`, both
- *                   viewer-independent (the route says so and takes no session).
+ *                   `getNewsFront()` (one page of RMH News headlines for the URL's
+ *                   category, search and page), viewer-independent: it takes no
+ *                   session. A summary is fetched by the browser after paint, so a
+ *                   cached article page never pins a missing one.
  *   `/library`      app/routes/_site/library/index.tsx — five parallel loaders,
  *                   three of which DO resolve a session. Every one collapses to
  *                   the public variant when there isn't one: `listAllBooks()`

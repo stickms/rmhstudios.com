@@ -144,7 +144,8 @@ async function latestEditorial(): Promise<Editorial | null> {
   const [news, blog] = await Promise.all([
     prisma.newsArticle
       .findFirst({
-        where: { status: 'PUBLISHED' },
+        // The digest's "latest editorial" is something the site wrote, never a wire headline.
+        where: { status: 'PUBLISHED', origin: 'EDITORIAL' },
         orderBy: { date: 'desc' },
         select: { slug: true, title: true, description: true, date: true },
       })
