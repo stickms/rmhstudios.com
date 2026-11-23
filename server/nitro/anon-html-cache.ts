@@ -222,6 +222,15 @@ function hasLocalePreference(cookieHeader: string | null | undefined): boolean {
 }
 
 /**
+ * True if the visitor's page is rendered with their own fonts (`rmh-fonts`) or their device keeps its own appearance
+ * (`rmh-appearance-sync=0`): either way the HTML is theirs, like a locale preference.
+ */
+function hasAppearancePreference(cookieHeader: string | null | undefined): boolean {
+  if (!cookieHeader) return false;
+  return cookieHeader.includes('rmh-fonts=') || cookieHeader.includes('rmh-appearance-sync=0');
+}
+
+/**
  * The shared-cache policy for an allowlisted anonymous path, or `null` when the
  * path is not allowlisted at all. Exact matches win; prefixes are the fallback,
  * so a future exact entry can always override a prefix's TTL.
@@ -278,6 +287,9 @@ export function decideCacheControl(
   // A locale-preference anon visitor is left origin-rendered so they get their
   // language rather than the default-locale edge entry.
   if (hasLocalePreference(cookieHeader)) return null;
+  // Likewise a reader's chosen fonts, and a device that keeps its own appearance: the server renders those into the
+  // page (lib/appearance/fonts.ts), so they get their own render, never the shared default (owner, 2026-11-23).
+  if (hasAppearancePreference(cookieHeader)) return null;
   const policy = anonCachePolicy(pathname);
   return policy
     ? {
