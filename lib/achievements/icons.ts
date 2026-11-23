@@ -124,6 +124,19 @@ export const ACHIEVEMENT_ICON: Record<string, string> = {
   'game.vega.theatre_containment': 'Hospital',
   'game.vega.overtime_60': 'Timer',
   'game.vega.flawless': 'HeartPulse',
+  'game.signal_forge.first_run': 'Hammer',
+  'game.signal_forge.first_boss': 'Factory',
+  'game.signal_forge.act_three': 'Flame',
+  'game.signal_forge.victory': 'Anvil',
+  'game.signal_forge.timed_win': 'Timer',
+  'game.signal_forge.ascension_5': 'Thermometer',
+  'game.signal_forge.ascension_10': 'Sparkles',
+  'game.signal_forge.bursts_25': 'Bomb',
+  'game.signal_forge.perfect_50': 'AudioWaveform',
+  'game.signal_forge.big_hit': 'Zap',
+  'game.signal_forge.elite_hunter': 'ShieldHalf',
+  'game.signal_forge.lean_deck': 'Layers',
+  'game.signal_forge.close_call': 'HeartPulse',
 };
 
 /** The lucide icon name for an achievement id; a trophy for an unknown one. */
@@ -233,6 +246,19 @@ export const ACHIEVEMENT_ACCENT: Record<string, string> = {
   'game.vega.theatre_containment': 'Crown',
   'game.vega.overtime_60': 'Flame',
   'game.vega.flawless': 'Crown',
+  'game.signal_forge.first_run': 'Plus',
+  'game.signal_forge.first_boss': 'Star',
+  'game.signal_forge.act_three': 'Zap',
+  'game.signal_forge.victory': 'Crown',
+  'game.signal_forge.timed_win': 'Star',
+  'game.signal_forge.ascension_5': 'Flame',
+  'game.signal_forge.ascension_10': 'Crown',
+  'game.signal_forge.bursts_25': 'Zap',
+  'game.signal_forge.perfect_50': 'Check',
+  'game.signal_forge.big_hit': 'Flame',
+  'game.signal_forge.elite_hunter': 'Star',
+  'game.signal_forge.lean_deck': 'Check',
+  'game.signal_forge.close_call': 'Heart',
 };
 
 /** The accent glyph's lucide name, or null when the badge has none. */

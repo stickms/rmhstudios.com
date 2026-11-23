@@ -267,7 +267,6 @@ const ALLOW = new Set<string>([
   'components/rmhcalculator/ScientificCalculator.tsx',
   'components/rmhcoins/PlinkoGame.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
-  'features/signal-forge/ui/SignalForgeGame.tsx',
   'components/site/LanguageSwitcher.tsx',
   'components/studio/arrangement/PlayheadCursor.tsx',
   'components/studio/mixer/VUMeter.tsx',

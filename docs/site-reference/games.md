@@ -26,7 +26,7 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
 | **Project Vega** | [`/vega`](https://rmhstudios.com/vega) | Playable | required | `Strategy` `Tower Defense` `Horror` `Single-player` |
-| **Signal Forge** | [`/signal-forge`](https://rmhstudios.com/signal-forge) | Playable | required | `Roguelike` `Deckbuilder` `Rhythm` |
+| **Signal Forge** | [`/signal-forge`](https://rmhstudios.com/signal-forge) | Playable | required | `Roguelike` `Deckbuilder` `Rhythm` `Strategy` |
 | **Cursed Logic** | [`/cursed-logic`](https://rmhstudios.com/cursed-logic) | Playable | required | `Strategy` `Duel` `Roguelite` `Mind Games` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
@@ -124,7 +124,7 @@ Specimens crawl a corridor of tissue toward the containment door. Between waves 
 
 ### Signal Forge
 
-Climb floor after floor of the Forge with a deck you build as you go. Every card is played on the beat of the signal, so the best hand is the one you can land in time. Pick up relics, face elites and bosses, and bank a score and a place on the leaderboard when the run ends.
+Climb three acts of a living forge with a deck of waveform cards. Every turn the signal plays a short phrase: cards that land on it hit harder and build Heat, and finishing the phrase fires a Forge Burst at everything in the room. Bank Heat for a bigger Burst or vent it for Block. Play to a beat in Timed mode, or take your time in Steady mode. Over a hundred cards, elites and two bosses per act, relics, events, ten Ascension levels, achievements and a leaderboard.
 
 **Route:** `/signal-forge` · **Catalog id:** `signal-forge` · **Status:** Playable · **Sign-in:** required
 
