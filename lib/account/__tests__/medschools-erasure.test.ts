@@ -231,6 +231,7 @@ describe('the data export', () => {
       degree: null,
       homeState: null,
       chartCategories: [],
+      programs: [],
     });
   });
 });

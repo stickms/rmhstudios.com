@@ -567,6 +567,10 @@ const EXEMPT: Record<string, string> = {
   'lib/chat-plus/post.server.ts': 'chat messages, not posts',
   'lib/chat-plus/types.ts': 'chat messages, not posts',
   'lib/group-events.ts': 'group events, not posts',
+  'features/medschools/scrape/run-admit-forums.ts':
+    "Admit school-forum threads (post counts of a third party's thread, not an RMHark)",
+  'features/medschools/scrape/adapters/admit/forum.ts':
+    "Admit school-forum threads (post counts of a third party's thread, not an RMHark)",
   'lib/communities/automod.server.ts': 'moderation thresholds, no figure leaves',
   'lib/games/hub.server.ts': 'games, not posts',
   'lib/games/hub-types.ts': 'games, not posts',
