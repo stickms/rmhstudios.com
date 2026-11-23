@@ -45,7 +45,7 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
   "/images/games/altair.webp": { hash: '881f9f63', widths: [160, 320, 640, 960, 1280] },
   "/images/games/banners/altair.webp": { hash: 'ef541a24', widths: [160, 320, 640, 960, 1280, 1920, 2560] },
   "/images/games/banners/csgo.webp": { hash: '49a29619', widths: [160, 320, 640, 960, 1280, 1920, 2560] },
-  "/images/games/banners/cursed-logic.webp": { hash: 'a004cbd4', widths: [160, 320, 640, 960, 1280] },
+  "/images/games/banners/cursed-logic.webp": { hash: '2a5b1f51', widths: [160, 320, 640, 960, 1280] },
   "/images/games/banners/daily-puzzles.webp": { hash: '79e106d6', widths: [160, 320, 640, 960, 1280, 1920, 2560] },
   "/images/games/banners/dream-rift.webp": { hash: 'dacc7c93', widths: [160, 320, 640, 960, 1280, 1920, 2560] },
   "/images/games/banners/dunesday.webp": { hash: '2505328b', widths: [160, 320, 640, 960, 1280, 1920, 2560] },
