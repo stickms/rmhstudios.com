@@ -66,6 +66,7 @@ export class VegaGame {
   private clock = 0;
   private publishTimer = 0;
   private ended = false;
+  private destroyed = false;
   private killSfxBudget = 0;
   private fireSfxBudget = 0;
 
@@ -110,12 +111,13 @@ export class VegaGame {
     this.lastFrame = performance.now();
     const loop = (now: number) => {
       this.frame(now);
-      this.animationId = requestAnimationFrame(loop);
+      if (!this.destroyed) this.animationId = requestAnimationFrame(loop);
     };
     this.animationId = requestAnimationFrame(loop);
   }
 
   public destroy() {
+    this.destroyed = true;
     cancelAnimationFrame(this.animationId);
     this.animationId = 0;
     this.resizeObserver?.disconnect();

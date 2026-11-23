@@ -38,6 +38,14 @@ interface Case {
 }
 
 const VEGA = '@features/vega/api/vega.score.server';
+/** A well-formed Vega run; each case breaks one thing. */
+const VEGA_RUN = {
+  score: 40,
+  cleared: 1,
+  map: 'intake',
+  durationMs: 60_000,
+  facts: { integrityLost: 0, typesBuilt: ['SYNAPSE'], maxTier: 0, earlyCalls: 0, bossesKilled: 0, biobankIncome: 0 },
+};
 const LAUNDRY = '@features/laundry-sort/api/laundry-sort.score.server';
 const FORGE = '@features/signal-forge/api/signal-forge.score.server';
 const ALTAIR_SCORE = '@features/altair/api/altair.score.server';
@@ -50,21 +58,27 @@ const PASS_UNLOCK = '@/lib/battlepass/api/battlepass.unlock.server';
 
 const CASES: Case[] = [
   {
-    name: 'vega: loop is a string',
+    name: 'vega: score is a string',
     mod: VEGA,
-    body: { highestLoop: '3', highestLevel: 1 },
+    body: { ...VEGA_RUN, score: '3' },
     error: 'Invalid data',
   },
   {
     name: 'vega: unknown field (strict)',
     mod: VEGA,
-    body: { highestLoop: 1, highestLevel: 1, x: 1 },
+    body: { ...VEGA_RUN, x: 1 },
     error: 'Invalid data',
   },
   {
-    name: 'vega: loop over the cap',
+    name: 'vega: wave over the cap',
     mod: VEGA,
-    body: { highestLoop: 100_001, highestLevel: 1 },
+    body: { ...VEGA_RUN, cleared: 101 },
+    error: 'Invalid data',
+  },
+  {
+    name: 'vega: the pre-rework body (loop and level) is refused',
+    mod: VEGA,
+    body: { highestLoop: 1, highestLevel: 1 },
     error: 'Invalid data',
   },
   { name: 'vega: malformed JSON', mod: VEGA, body: '{nope', error: 'Invalid data' },

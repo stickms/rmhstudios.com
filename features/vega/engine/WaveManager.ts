@@ -83,10 +83,8 @@ export function composeWave(wave: number, lanes: number, seed: number): WavePlan
     }
     const threat = ENEMIES[type].threat;
     if (threat > budget) {
-      if (budget >= 1) {
-        groups.push({ type: 'ANXIETY', count: Math.floor(budget) });
-        budget = 0;
-      }
+      // What is left is too little for this pick: spend it on Anxiety and stop.
+      if (budget >= 1) groups.push({ type: 'ANXIETY', count: Math.floor(budget) });
       break;
     }
     const max = Math.max(1, Math.floor(budget / threat));

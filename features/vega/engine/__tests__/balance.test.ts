@@ -40,7 +40,7 @@ describe('vega balance (seeded simulation)', () => {
         rows.push(`${map.padEnd(8)} ${s.padEnd(9)} mean ${mean(waves).toFixed(1).padStart(5)}  min ${Math.min(...waves)}  max ${Math.max(...waves)}  [${waves.join(' ')}]`);
       }
     }
-    console.log(rows.join('\n'));
+    process.stdout.write(`${rows.join('\n')}\n`);
     expect(rows).toHaveLength(9);
   }, 300_000);
 
@@ -100,7 +100,7 @@ describe('vega scoring ceilings', () => {
         worst = Math.max(worst, maxScoreThrough(w, map) / Math.max(1, t / 2));
       }
     }
-    console.log('worst-case score per second', worst.toFixed(1));
+    process.stdout.write(`worst-case score per second ${worst.toFixed(1)}\n`);
     expect(catalog.scoring!.maxScorePerSecond).toBeGreaterThanOrEqual(worst);
   });
 });

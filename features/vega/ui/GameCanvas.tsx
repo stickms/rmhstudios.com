@@ -155,6 +155,8 @@ export default function GameCanvas() {
         setSave(s);
       },
       onEnd: (r) => {
+        // The board is gone with the play screen: stop its frame loop now.
+        game.destroy();
         const store = useGameStore.getState();
         store.setResult(r);
         store.setVictoryOpen(false);
