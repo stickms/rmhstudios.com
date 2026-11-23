@@ -140,6 +140,38 @@ describe('importSchoolPages', () => {
     expect(JSON.stringify(fake.tables)).toBe(before);
   });
 
+  it('a rerun never rewinds a later check or an admin correction (idempotent across a correction)', async () => {
+    const fake = setup();
+    await importSchoolPages(fake.prisma, file(entry()), log);
+    const obs = fake.tables.medSecondaryObservation as MedSecondaryObservationRow[];
+    const CORRECTED = new Date('2026-12-05T10:00:00Z');
+    // An admin corrects one prompt's limit, and a later check of the school and its policy is recorded.
+    const first = obs.find((o) => o.limitKind === 'WORDS')!;
+    first.limitValue = 300;
+    first.lastCheckedAt = CORRECTED;
+    (fake.tables.medSecondaryCheck as { checkedAt: Date }[])[0]!.checkedAt = CORRECTED;
+    (fake.tables.medSchoolAdmissionsPolicy as { checkedOn: Date; rolling: boolean }[])[0]!.checkedOn = CORRECTED;
+    (fake.tables.medSchoolAdmissionsPolicy as { checkedOn: Date; rolling: boolean }[])[0]!.rolling = false;
+    const corrected = JSON.stringify(fake.tables);
+    const again = await importSchoolPages(fake.prisma, file(entry()), log);
+    expect(again.created).toBe(0);
+    expect(JSON.stringify(fake.tables)).toBe(corrected);
+    expect(first.limitValue).toBe(300);
+    expect(first.lastCheckedAt).toEqual(CORRECTED);
+    // And a third run is the same: nothing moves.
+    await importSchoolPages(fake.prisma, file(entry()), log);
+    expect(JSON.stringify(fake.tables)).toBe(corrected);
+  });
+
+  it('a later file day still refreshes the checks forward', async () => {
+    const fake = setup();
+    await importSchoolPages(fake.prisma, file(entry()), log);
+    await importSchoolPages(fake.prisma, file(entry({ checkedOn: '2026-12-01' })), log);
+    const obs = fake.tables.medSecondaryObservation as MedSecondaryObservationRow[];
+    for (const o of obs) expect(o.lastCheckedAt).toEqual(new Date('2026-12-01T00:00:00Z'));
+    expect((fake.tables.medSecondaryCheck as { checkedAt: Date }[])[0]!.checkedAt).toEqual(new Date('2026-12-01T00:00:00Z'));
+  });
+
   it('puts a page that names no cycle in the cycle in progress on the day it was read', async () => {
     const e = entry();
     e.secondary.cycleYear = null;

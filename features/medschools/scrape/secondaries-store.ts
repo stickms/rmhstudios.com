@@ -154,6 +154,12 @@ export async function recordPrompts(prisma: MedPrisma, input: RecordInput): Prom
     const existing = seen.find((o) => o.cycleYear === c.cycleYear && o.source === source);
 
     if (existing) {
+      // A check never moves backwards, and an input older than what is stored never overwrites it: a rerun of a dated
+      // import (the school-pages file, checked on a past day) must not rewind a later check or an admin's correction.
+      if (existing.lastCheckedAt.getTime() > now.getTime()) {
+        result.unchanged++;
+        continue;
+      }
       if (weak) {
         result.unchanged++;
         continue;
@@ -231,6 +237,9 @@ export async function recordCheck(
   },
 ): Promise<void> {
   const fields = { checkedAt: input.now, status: input.status, promptCount: input.promptCount };
+  // Never backwards: a dated re-import must not make a school look checked earlier than it was.
+  const current = await prisma.medSecondaryCheck.findFirst({ where: { schoolId: input.schoolId, source: input.source } });
+  if (current && current.checkedAt.getTime() > input.now.getTime()) return;
   await prisma.medSecondaryCheck.upsert({
     where: { schoolId_source: { schoolId: input.schoolId, source: input.source } },
     create: { schoolId: input.schoolId, source: input.source, ...fields },
