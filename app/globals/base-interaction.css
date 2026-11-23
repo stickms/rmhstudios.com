@@ -113,27 +113,37 @@ html:not(.app-route) body {
   background-attachment: fixed;
 }
 html.ios-webkit:not(.app-route) body {
-  background-attachment: scroll;
   /* At rest the strips behind the status bar and the floating tab bar are OUTSIDE the document and Safari fills them with
-     ONE flat colour taken from body's background-color; the wash cannot be painted there (probes: scripts/ios-sim/probes).
-     So body's colour is the wash's own edge average (`--site-theme-edge`, lib/themes/tokens.ts), a ground layer keeps the
-     page itself `--site-bg`, and the document's first and last 48px ramp from the edge colour into the wash, so the page
-     meets each strip with no line. Scrolled content passes under the bars as itself, so the ramps only matter at the
-     two ends. Without a theme the vars are unset and this is the plain ground. */
+     ONE flat colour taken from body's background-color; nothing can be painted there (probes: scripts/ios-sim/probes). So
+     body's own colour is that strip colour: the wash's edge average (`--site-theme-edge`, lib/themes/tokens.ts). The page
+     itself is painted by `body::before` below, over the whole document and under the content, on every route (a legal
+     page has no site shell, so the shell cannot carry it). `isolation` keeps that layer above body's own colour. */
+  position: relative;
+  isolation: isolate;
   background-color: var(--site-theme-edge, var(--site-bg));
-  background-image:
-    var(--site-theme-ramp-top, none), var(--site-theme-ramp-bottom, none), var(--site-theme-wash, none),
-    var(--site-theme-ground, none);
+  background-image: none;
+}
+/* The page: the ground as a background-COLOR (a ground image under the 48px ramp layers painted only inside the ramps),
+   the theme wash, and the document's first and last 48px ramping from exactly the strip colour into the wash so the page
+   meets each strip with no line. Absolute, in the document's flow of scrolling: not a fixed layer at a screen edge.
+   Without a theme the vars are unset and this is the plain ground. */
+html.ios-webkit:not(.app-route) body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--site-bg);
+  background-image: var(--site-theme-ramp-top, none), var(--site-theme-ramp-bottom, none), var(--site-theme-wash, none);
   background-size:
     100% 48px,
     100% 48px,
-    100% 100%,
     100% 100%;
   background-position:
     0 0,
     0 100%,
-    0 0,
     0 0;
+  background-repeat: no-repeat;
 }
 
 /* App/game routes are excluded above because they do not scroll the document —
