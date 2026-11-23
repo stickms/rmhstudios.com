@@ -5,7 +5,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
-import type { askBody } from './api/qa-schemas';
+import type { askBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
   addListToTrackerBody,
@@ -496,15 +496,23 @@ export interface MedAskRes {
   schools: { slug: string; shortName: string }[];
   cycleYear: number | null;
   mine: ChanceDto[] | null;
-  remainingToday: number;
-  dailyCap: number;
+  tier: MedQaTier;
+  /** Questions left today; `null` for an admin (no daily limit). */
+  remainingToday: number | null;
+  dailyCap: number | null;
 }
+
+/** The caller's limit tier (plan R19), resolved on the server: `admin` has no daily limit, `member` is a paid membership. */
+export type MedQaTier = 'free' | 'approved' | 'member' | 'admin';
 
 export interface MedAskStatusRes {
   /** False when the site has no model key: the page says so and sends no question. */
   configured: boolean;
-  remainingToday: number;
-  dailyCap: number;
+  tier: MedQaTier;
+  /** `null` for an admin. */
+  remainingToday: number | null;
+  /** `null` for an admin. */
+  dailyCap: number | null;
 }
 
 /**
@@ -521,6 +529,65 @@ export const askMedQuestionApi = endpoint<{ body: z.infer<typeof askBody>; res: 
 export const getMedAskStatusApi = endpoint<{ res: MedAskStatusRes }>()({
   method: 'GET',
   path: '/api/medschools/me/ask',
+});
+
+/* ------------------------- Q&A limit requests (phase 6, R19) ------------------------- */
+
+/**
+ * Where the caller stands on a higher daily limit. `none`: may ask; `pending`: waiting for an admin; `approved`: has the
+ * approved tier; `declined`: a decision (or a revoked approval) started a wait, `reapplyOn` is the day it ends;
+ * `not-needed`: an admin or a paying member, who never sees the form.
+ */
+export interface MedQaLimitRequestStateRes {
+  state: 'none' | 'pending' | 'approved' | 'declined' | 'not-needed';
+  tier: MedQaTier;
+  /** ISO. When the current request was made; null for `none` and `not-needed`. */
+  requestedAt: string | null;
+  decidedAt: string | null;
+  /** An admin's optional reply on the last decision. */
+  adminNote: string;
+  /** ISO. `declined` only: the first moment the member can ask again. */
+  reapplyOn: string | null;
+}
+
+export const getMedQaLimitRequestApi = endpoint<{ res: MedQaLimitRequestStateRes }>()({
+  method: 'GET',
+  path: '/api/medschools/me/qa-limit-request',
+});
+
+/** 409 `MEDSCHOOLS_QA_LIMIT_PENDING`, `MEDSCHOOLS_QA_LIMIT_WAIT` or `MEDSCHOOLS_QA_LIMIT_NOT_NEEDED`. */
+export const submitMedQaLimitRequestApi = endpoint<{
+  body: z.infer<typeof limitRequestBody>;
+  res: MedQaLimitRequestStateRes;
+}>()({
+  method: 'POST',
+  path: '/api/medschools/me/qa-limit-request',
+});
+
+export interface MedQaLimitRequestRowDto {
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'REVOKED';
+  note: string;
+  adminNote: string;
+  createdAt: string;
+  decidedAt: string | null;
+  user: { id: string; handle: string | null; name: string | null };
+}
+
+/** Admin: every pending request (oldest first) and the 50 most recently decided. */
+export const listMedQaLimitRequestsApi = endpoint<{
+  res: { pending: MedQaLimitRequestRowDto[]; recent: MedQaLimitRequestRowDto[] };
+}>()({
+  method: 'GET',
+  path: '/api/admin/medschools/qa-limit-requests',
+});
+
+export const decideMedQaLimitRequestApi = endpoint<{
+  body: z.infer<typeof limitDecisionBody>;
+  res: { ok: true };
+}>()({
+  method: 'POST',
+  path: '/api/admin/medschools/qa-limit-requests',
 });
 
 /* ------------------------- saved lists and preferences (me/**) ------------------------- */

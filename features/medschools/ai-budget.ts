@@ -22,7 +22,26 @@ export const QA_LEASE_MS = 60_000;
 /** The whole question (route call, retrieval, answer call) ends by this; it is under the client's `AI_TIMEOUT_MS` (60 s). */
 export const QA_DEADLINE_MS = 50_000;
 export const DEFAULT_QA_SHARE = 0.25;
-export const DEFAULT_QA_DAILY_CAP = 15;
+/** Free members' questions per UTC day (R19). The approved and member tiers have their own, below. */
+export const DEFAULT_QA_DAILY_CAP = 25;
+
+/**
+ * Limit tiers (R19). `admin` has no daily limit at all; the other three are caps per UTC day, each from its own env var.
+ * Highest wins: admin, then member (a paying membership, automatic), then approved (an admin granted a limit request),
+ * then free.
+ */
+export type QaTier = 'free' | 'approved' | 'member' | 'admin';
+export type CappedQaTier = Exclude<QaTier, 'admin'>;
+export const QA_TIER_ENV: Record<CappedQaTier, string> = {
+  free: 'MEDSCHOOLS_QA_DAILY_CAP',
+  approved: 'MEDSCHOOLS_QA_DAILY_CAP_APPROVED',
+  member: 'MEDSCHOOLS_QA_DAILY_CAP_MEMBER',
+};
+export const DEFAULT_QA_TIER_CAPS: Record<CappedQaTier, number> = { free: DEFAULT_QA_DAILY_CAP, approved: 40, member: 100 };
+/** After a declined (or revoked) request the member cannot ask again for this long. */
+export const QA_LIMIT_REQUEST_COOLDOWN_DAYS = 30;
+/** The applicant's optional reason, and an admin's optional reply. */
+export const QA_LIMIT_NOTE_MAX = 500;
 
 const blank = (env: string | undefined): boolean => env === undefined || env.trim() === '';
 
@@ -38,13 +57,31 @@ export function qaShare(env: string | undefined, warn?: (line: string) => void):
   return 0;
 }
 
-/** Questions per member per UTC day. Unset or blank: 15. Present but not a non-negative integer: 0 (fail closed) and `warn`. */
-export function qaDailyCap(env: string | undefined, warn?: (line: string) => void): number {
-  if (blank(env)) return DEFAULT_QA_DAILY_CAP;
+/**
+ * Questions per UTC day for a capped tier. Unset or blank: the tier's default (25, 40, 100). Present but not a
+ * non-negative integer: 0 (fail closed) and `warn`, so a typo closes Q&A for that tier rather than opening it.
+ */
+export function qaTierCap(tier: CappedQaTier, env: string | undefined, warn?: (line: string) => void): number {
+  if (blank(env)) return DEFAULT_QA_TIER_CAPS[tier];
   const n = Number(env);
   if (Number.isInteger(n) && n >= 0) return n;
-  warn?.('MEDSCHOOLS_QA_DAILY_CAP is not a non-negative integer; Q&A is paused (cap 0) until it is fixed');
+  warn?.(`${QA_TIER_ENV[tier]} is not a non-negative integer; Q&A is paused for this tier (cap 0) until it is fixed`);
   return 0;
+}
+
+/** The free tier's cap (`MEDSCHOOLS_QA_DAILY_CAP`). */
+export function qaDailyCap(env: string | undefined, warn?: (line: string) => void): number {
+  return qaTierCap('free', env, warn);
+}
+
+/** The daily cap of any tier read from the environment; `null` for an admin (no daily limit). */
+export function qaCapForTier(
+  tier: QaTier,
+  env: Record<string, string | undefined>,
+  warn?: (line: string) => void,
+): number | null {
+  if (tier === 'admin') return null;
+  return qaTierCap(tier, env[QA_TIER_ENV[tier]], warn);
 }
 
 /** What Q&A may spend in a UTC month. */

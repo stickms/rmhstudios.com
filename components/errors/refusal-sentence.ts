@@ -553,6 +553,24 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
       });
     case 'MEDSCHOOLS_QA_PAUSED':
       return t('medschoolsQaPaused', { ns: 'errors', defaultValue: 'Questions are paused right now', ...p });
+    case 'MEDSCHOOLS_QA_LIMIT_PENDING':
+      return t('medschoolsQaLimitPending', {
+        ns: 'errors',
+        defaultValue: 'You already have a request waiting for review',
+        ...p,
+      });
+    case 'MEDSCHOOLS_QA_LIMIT_WAIT':
+      return t('medschoolsQaLimitWait', {
+        ns: 'errors',
+        defaultValue: 'A recent request was declined. You can ask again after the date shown on the page',
+        ...p,
+      });
+    case 'MEDSCHOOLS_QA_LIMIT_NOT_NEEDED':
+      return t('medschoolsQaLimitNotNeeded', {
+        ns: 'errors',
+        defaultValue: 'Your account already has a higher limit than a request can give',
+        ...p,
+      });
   }
 }
 

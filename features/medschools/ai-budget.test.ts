@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { qaCapUsd, qaDailyCap, qaShare, scrapeCapUsd, utcDayStart } from './ai-budget';
+import { qaCapForTier, qaCapUsd, qaDailyCap, qaShare, scrapeCapUsd, utcDayStart } from './ai-budget';
 
 describe('qaShare', () => {
   it('defaults to 0.25 when unset or blank', () => {
@@ -20,8 +20,8 @@ describe('qaShare', () => {
 });
 
 describe('qaDailyCap', () => {
-  it('defaults to 15 when unset or blank', () => {
-    for (const v of [undefined, '', ' ']) expect(qaDailyCap(v)).toBe(15);
+  it('defaults to 25 when unset or blank', () => {
+    for (const v of [undefined, '', ' ']) expect(qaDailyCap(v)).toBe(25);
   });
   it('reads a non-negative integer', () => {
     expect(qaDailyCap('15')).toBe(15);
@@ -59,5 +59,32 @@ describe('the split', () => {
 describe('utcDayStart', () => {
   it('is midnight UTC of the day', () => {
     expect(utcDayStart(new Date('2026-11-23T23:59:59.999Z')).toISOString()).toBe('2026-11-23T00:00:00.000Z');
+  });
+});
+
+describe('the limit tiers (R19)', () => {
+  it('default to 25 free, 40 approved, 100 member, and no cap for an admin', () => {
+    expect(qaCapForTier('free', {})).toBe(25);
+    expect(qaCapForTier('approved', {})).toBe(40);
+    expect(qaCapForTier('member', {})).toBe(100);
+    expect(qaCapForTier('admin', { MEDSCHOOLS_QA_DAILY_CAP: '1' })).toBeNull();
+  });
+  it('read each tier from its own variable', () => {
+    const env = {
+      MEDSCHOOLS_QA_DAILY_CAP: '5',
+      MEDSCHOOLS_QA_DAILY_CAP_APPROVED: '6',
+      MEDSCHOOLS_QA_DAILY_CAP_MEMBER: '7',
+    };
+    expect([qaCapForTier('free', env), qaCapForTier('approved', env), qaCapForTier('member', env)]).toEqual([5, 6, 7]);
+  });
+  it('close a tier whose variable is invalid, naming the variable, and leave the others alone', () => {
+    const warn = vi.fn();
+    const env = { MEDSCHOOLS_QA_DAILY_CAP_APPROVED: 'lots', MEDSCHOOLS_QA_DAILY_CAP_MEMBER: '-1' };
+    expect(qaCapForTier('approved', env, warn)).toBe(0);
+    expect(qaCapForTier('member', env, warn)).toBe(0);
+    expect(qaCapForTier('free', env, warn)).toBe(25);
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]![0]).toContain('MEDSCHOOLS_QA_DAILY_CAP_APPROVED');
+    expect(warn.mock.calls[1]![0]).toContain('MEDSCHOOLS_QA_DAILY_CAP_MEMBER');
   });
 });

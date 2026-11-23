@@ -21,11 +21,11 @@ import { askBody } from './qa-schemas';
 const ASK_LIMIT = { policy: 'ai', limit: 6, windowMs: 60_000, prefix: 'medschools-ask', scope: 'user' } as const;
 
 export const route = apiRoute('/api/medschools/me/ask', {
-  GET: implement(getMedAskStatusApi, { rateLimit: READ_LIMIT }, async ({ userId }) => ({
+  GET: implement(getMedAskStatusApi, { rateLimit: READ_LIMIT }, async ({ userId, isAdmin }) => ({
     configured: isAiConfigured(),
-    ...(await dailyStatus(userId)),
+    ...(await dailyStatus(userId, new Date(), { isAdmin })),
   })),
-  POST: implement(askMedQuestionApi, { rateLimit: ASK_LIMIT, body: askBody }, async ({ userId, body, request }) => {
+  POST: implement(askMedQuestionApi, { rateLimit: ASK_LIMIT, rateLimitExemptAdmin: true, body: askBody }, async ({ userId, isAdmin, body, request }) => {
     // A suspended account is refused, as it is for the wiki's "Edit with AI".
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { bannedUntil: true } });
     if (user?.bannedUntil && user.bannedUntil > new Date()) {
@@ -33,6 +33,6 @@ export const route = apiRoute('/api/medschools/me/ask', {
     }
     // No key, no spend: refuse before any ledger read or budget check.
     if (!isAiConfigured()) return Response.json({ ...refusalBody('AI_UNAVAILABLE') }, { status: 503 });
-    return answerQuestion({ userId, question: body.question, slug: body.slug, signal: request.signal });
+    return answerQuestion({ userId, isAdmin, question: body.question, slug: body.slug, signal: request.signal });
   }),
 });

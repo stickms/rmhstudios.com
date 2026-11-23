@@ -34,6 +34,11 @@ const m = vi.hoisted(() => {
   const tx = { aiUsage, $executeRaw: vi.fn(async () => 1) };
   const prismaMock = {
     aiUsage,
+    medQaLimitRequest: {
+      findFirst: vi.fn(async (a: { where: { userId: string } }) =>
+        m.grants.has(a.where.userId) ? { id: 'g' } : null,
+      ),
+    },
     $transaction: vi.fn(async (fn: (t: typeof tx) => Promise<unknown>) => {
       const run = chain.then(() => fn(tx));
       chain = run.catch(() => undefined);
@@ -48,16 +53,26 @@ const m = vi.hoisted(() => {
     clock: { now: Date.parse('2026-11-23T15:30:00Z') },
     assertAiBudget: vi.fn(async (..._a: unknown[]): Promise<void> => undefined),
     order: [] as string[],
+    getUserTier: vi.fn(async (..._a: unknown[]): Promise<string> => 'free'),
+    grants: new Set<string>(),
   };
 });
 vi.mock('@/lib/prisma.server', () => ({ prisma: m.prisma }));
+vi.mock('@/lib/entitlements', () => ({ getUserTier: m.getUserTier }));
 vi.mock('@/lib/ai/budget.server', () => ({ assertAiBudget: m.assertAiBudget }));
 
 import { AppError } from '@/lib/errors/codes';
-import { assertSharedBudget, admitQuestion, dailyStatus, questionsToday, reserveQuestion } from './budget.server';
+import {
+  assertSharedBudget,
+  admitQuestion,
+  dailyStatus,
+  questionsToday,
+  reserveQuestion,
+  resolveQaTier,
+} from './budget.server';
 
 const NOW = new Date('2026-11-23T15:30:00Z');
-const ENV = ['MEDSCHOOLS_QA_DAILY_CAP', 'MEDSCHOOLS_AI_MONTHLY_USD', 'MEDSCHOOLS_QA_AI_SHARE'] as const;
+const ENV = ['MEDSCHOOLS_QA_DAILY_CAP', 'MEDSCHOOLS_QA_DAILY_CAP_APPROVED', 'MEDSCHOOLS_QA_DAILY_CAP_MEMBER', 'MEDSCHOOLS_AI_MONTHLY_USD', 'MEDSCHOOLS_QA_AI_SHARE'] as const;
 
 /** Month-to-date spend in micro-dollars: Q&A alone, and Q&A plus extraction. */
 function spend(qa: number | null, both: number | null = qa) {
@@ -76,6 +91,10 @@ beforeEach(() => {
   for (const k of ENV) delete process.env[k];
   m.order.length = 0;
   m.ledger.length = 0;
+  m.grants.clear();
+  m.prisma.$transaction.mockClear();
+  m.prisma.medQaLimitRequest.findFirst.mockClear();
+  m.getUserTier.mockReset().mockResolvedValue('free');
   m.clock.now = NOW.getTime();
   m.aiUsage.count.mockClear();
   m.aiUsage.create.mockClear();
@@ -99,14 +118,14 @@ describe('the daily cap and the in-flight lease (reserveQuestion)', () => {
       where: { userId: 'u1', task: 'medschools-qa', promptId: 'medschools-qa-ask' },
     });
   });
-  it('lets the 15th question through and stops the 16th, with the day left after each', async () => {
-    let last = { remainingToday: -1, dailyCap: 0 };
-    for (let i = 0; i < 15; i++) {
+  it('lets the 25th question through and stops the 26th, with the day left after each', async () => {
+    let last: { remainingToday: number | null; dailyCap: number | null } = { remainingToday: -1, dailyCap: 0 };
+    for (let i = 0; i < 25; i++) {
       const r = await reserveQuestion('u1', NOW);
       last = r;
       await r.release();
     }
-    expect(last).toMatchObject({ remainingToday: 0, dailyCap: 15 });
+    expect(last).toMatchObject({ remainingToday: 0, dailyCap: 25 });
     expect(await code(reserveQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_DAILY_CAP');
     expect((await dailyStatus('u1', NOW)).remainingToday).toBe(0);
   });
@@ -220,7 +239,7 @@ describe('admitQuestion', () => {
       return row as never;
     });
     const r = await admitQuestion('u1', NOW);
-    expect(r).toMatchObject({ remainingToday: 14, dailyCap: 15 });
+    expect(r).toMatchObject({ remainingToday: 24, dailyCap: 25, tier: 'free' });
     expect(m.order).toEqual(['shared', 'allowance', 'reserve']);
     expect(m.assertAiBudget).toHaveBeenCalledWith('u1');
   });
@@ -233,8 +252,73 @@ describe('admitQuestion', () => {
     expect(m.ledger).toHaveLength(0);
   });
   it('says paused, not the daily cap, when both would refuse', async () => {
-    for (let i = 0; i < 15; i++) await (await reserveQuestion('u1', NOW)).release();
+    for (let i = 0; i < 25; i++) await (await reserveQuestion('u1', NOW)).release();
     spend(5_000_000);
     expect(await code(admitQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_PAUSED');
+  });
+});
+
+describe('limit tiers and the admin bypass (R19)', () => {
+  it('resolves admin, then member, then approved, then free, on the server per request', async () => {
+    expect(await resolveQaTier('u1', { isAdmin: true })).toBe('admin');
+    expect(m.getUserTier).not.toHaveBeenCalled();
+    m.grants.add('u1');
+    expect(await resolveQaTier('u1')).toBe('approved');
+    m.getUserTier.mockResolvedValue('starter');
+    expect(await resolveQaTier('u1')).toBe('member'); // a paying member outranks a grant
+    m.getUserTier.mockResolvedValue('free');
+    expect(await resolveQaTier('u2')).toBe('free');
+  });
+  it('drops to a lower tier, never a higher one, when a lookup fails', async () => {
+    m.getUserTier.mockRejectedValue(new Error('db'));
+    m.grants.add('u1');
+    expect(await resolveQaTier('u1')).toBe('approved');
+    m.prisma.medQaLimitRequest.findFirst.mockRejectedValueOnce(new Error('db'));
+    expect(await resolveQaTier('u1')).toBe('free');
+  });
+  it('gives each tier its own cap: free 25, approved 40, member 100', async () => {
+    expect((await dailyStatus('u1', NOW)).dailyCap).toBe(25);
+    m.grants.add('u1');
+    expect(await dailyStatus('u1', NOW)).toMatchObject({ tier: 'approved', dailyCap: 40, remainingToday: 40 });
+    m.getUserTier.mockResolvedValue('pro');
+    expect(await dailyStatus('u1', NOW)).toMatchObject({ tier: 'member', dailyCap: 100 });
+    process.env.MEDSCHOOLS_QA_DAILY_CAP_MEMBER = '2';
+    const r1 = await reserveQuestion('u1', NOW);
+    await r1.release();
+    const r2 = await reserveQuestion('u1', NOW);
+    expect(r2).toMatchObject({ tier: 'member', dailyCap: 2, remainingToday: 0 });
+    await r2.release();
+    expect(await code(reserveQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_DAILY_CAP');
+  });
+  it('closes a tier whose variable is garbage and leaves the others open', async () => {
+    process.env.MEDSCHOOLS_QA_DAILY_CAP_APPROVED = 'lots';
+    m.grants.add('u1');
+    expect(await code(reserveQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_DAILY_CAP');
+    await expect(reserveQuestion('u2', NOW)).resolves.toBeDefined();
+  });
+  it('lets an admin past the daily cap, the lease and the member allowance, with no ledger rows and null counts', async () => {
+    process.env.MEDSCHOOLS_QA_DAILY_CAP = '0';
+    const admin = { isAdmin: true };
+    const first = await admitQuestion('a1', NOW, admin);
+    const second = await admitQuestion('a1', NOW, admin); // the first is still "in flight"
+    expect(first).toMatchObject({ tier: 'admin', remainingToday: null, dailyCap: null });
+    expect(second.tier).toBe('admin');
+    expect(m.assertAiBudget).not.toHaveBeenCalled();
+    expect(m.ledger).toHaveLength(0);
+    expect(m.prisma.$transaction).not.toHaveBeenCalled();
+    await expect(first.release()).resolves.toBeUndefined();
+    expect(await dailyStatus('a1', NOW, admin)).toEqual({ tier: 'admin', remainingToday: null, dailyCap: null });
+    expect(m.aiUsage.count).not.toHaveBeenCalled();
+  });
+  it('still stops an admin at the shared monthly pause', async () => {
+    spend(5_000_000);
+    expect(await code(admitQuestion('a1', NOW, { isAdmin: true }))).toBe('MEDSCHOOLS_QA_PAUSED');
+    process.env.MEDSCHOOLS_AI_MONTHLY_USD = '-5';
+    spend(0);
+    expect(await code(admitQuestion('a1', NOW, { isAdmin: true }))).toBe('MEDSCHOOLS_QA_PAUSED');
+  });
+  it('keeps the member allowance for a non-admin', async () => {
+    await admitQuestion('u1', NOW);
+    expect(m.assertAiBudget).toHaveBeenCalledWith('u1');
   });
 });

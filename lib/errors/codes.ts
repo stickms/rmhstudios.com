@@ -1016,6 +1016,21 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsQaPaused',
     text: 'Questions are paused right now',
   },
+  MEDSCHOOLS_QA_LIMIT_PENDING: {
+    http: 409,
+    i18n: 'errors:medschoolsQaLimitPending',
+    text: 'You already have a request waiting for review',
+  },
+  MEDSCHOOLS_QA_LIMIT_WAIT: {
+    http: 409,
+    i18n: 'errors:medschoolsQaLimitWait',
+    text: 'A recent request was declined. You can ask again after the date shown on the page',
+  },
+  MEDSCHOOLS_QA_LIMIT_NOT_NEEDED: {
+    http: 409,
+    i18n: 'errors:medschoolsQaLimitNotNeeded',
+    text: 'Your account already has a higher limit than a request can give',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

@@ -50,7 +50,7 @@ beforeEach(() => {
   mocks.isAiConfigured.mockReturnValue(true);
   mocks.findUser.mockResolvedValue({ bannedUntil: null });
   mocks.answerQuestion.mockResolvedValue(ANSWER);
-  mocks.dailyStatus.mockResolvedValue({ remainingToday: 7, dailyCap: 15 });
+  mocks.dailyStatus.mockResolvedValue({ tier: 'free', remainingToday: 7, dailyCap: 15 });
 });
 
 describe('me/ask: sign-in', () => {
@@ -98,6 +98,7 @@ describe('me/ask: POST input', () => {
     expect(mocks.answerQuestion).toHaveBeenCalledTimes(1);
     expect(mocks.answerQuestion).toHaveBeenCalledWith({
       userId: 'u1',
+      isAdmin: false,
       question: 'What is the median?',
       slug: 'duke',
       signal: expect.any(AbortSignal),
@@ -175,10 +176,35 @@ describe('me/ask: limits', () => {
   });
 });
 
+describe('me/ask: admin bypass (R19)', () => {
+  it('passes the session admin flag, never a body field, and skips the per-minute rate limit', async () => {
+    mocks.session.mockResolvedValue({ user: { id: 'a1', isAdmin: true } });
+    await call('POST', { question: 'What is the median?', isAdmin: false });
+    expect(mocks.answerQuestion).toHaveBeenCalledWith(expect.objectContaining({ userId: 'a1', isAdmin: true }));
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+  });
+  it('still rate limits a member', async () => {
+    await call('POST', { question: 'What is the median?' });
+    expect(mocks.rateLimit).toHaveBeenCalled();
+  });
+  it('reports an admin as tier admin with no cap', async () => {
+    mocks.session.mockResolvedValue({ user: { id: 'a1', isAdmin: true } });
+    mocks.dailyStatus.mockResolvedValue({ tier: 'admin', remainingToday: null, dailyCap: null });
+    expect(await (await call('GET')).json()).toEqual({
+      configured: true,
+      tier: 'admin',
+      remainingToday: null,
+      dailyCap: null,
+    });
+    expect(mocks.dailyStatus).toHaveBeenCalledWith('a1', expect.any(Date), { isAdmin: true });
+  });
+});
+
 describe('me/ask: GET status', () => {
   it('returns whether Q&A is on and the questions left, and calls no model', async () => {
     const res = await call('GET');
-    expect(await res.json()).toEqual({ configured: true, remainingToday: 7, dailyCap: 15 });
+    expect(await res.json()).toEqual({ configured: true, tier: 'free', remainingToday: 7, dailyCap: 15 });
+    expect(mocks.dailyStatus).toHaveBeenCalledWith('u1', expect.any(Date), { isAdmin: false });
     expect(mocks.answerQuestion).not.toHaveBeenCalled();
     mocks.isAiConfigured.mockReturnValue(false);
     expect((await (await call('GET')).json()).configured).toBe(false);

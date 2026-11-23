@@ -26,10 +26,12 @@ export interface AskInput {
   slug?: string | undefined;
   /** The HTTP request's signal: a member who leaves ends the work. */
   signal?: AbortSignal | undefined;
+  /** The request's admin flag: an admin has no daily cap, rate limit or lease (plan R19). */
+  isAdmin?: boolean | undefined;
 }
 
 const MAX_QUESTION = 400;
-type Base = Pick<MedAskRes, 'remainingToday' | 'dailyCap'>;
+type Base = Pick<MedAskRes, 'tier' | 'remainingToday' | 'dailyCap'>;
 
 const empty = (b: Base, over: Partial<MedAskRes>): MedAskRes => ({
   status: 'no-data',
@@ -66,7 +68,7 @@ class Deadline extends Error {}
 export async function answerQuestion(i: AskInput, deps: { runner?: QaRunner; now?: Date } = {}): Promise<MedAskRes> {
   const now = deps.now ?? new Date();
   // Gates and the atomic reservation (daily count and one-in-flight lease, across processes) before any model call.
-  const gate = await admitQuestion(i.userId, now);
+  const gate = await admitQuestion(i.userId, now, { isAdmin: i.isAdmin === true });
   // One deadline for the whole question, under the client's own timeout, plus the request's own signal.
   const deadline = AbortSignal.timeout(QA_DEADLINE_MS);
   const signal = i.signal ? AbortSignal.any([i.signal, deadline]) : deadline;
@@ -102,11 +104,11 @@ async function run(
   i: AskInput,
   runner: QaRunner,
   now: Date,
-  gate: { remainingToday: number; dailyCap: number },
+  gate: Base,
   signal: AbortSignal,
 ): Promise<MedAskRes> {
   // The reservation already counts this question.
-  const base: Base = { remainingToday: gate.remainingToday, dailyCap: gate.dailyCap };
+  const base: Base = { tier: gate.tier, remainingToday: gate.remainingToday, dailyCap: gate.dailyCap };
   const live = () => {
     if (signal.aborted) throw new Deadline();
   };

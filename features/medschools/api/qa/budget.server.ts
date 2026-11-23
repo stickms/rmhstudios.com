@@ -1,10 +1,11 @@
 /**
  * The gates in front of a question (plan R9 to R11, R18), all on the `AiUsage` ledger so there is no new table and no
  * stored question: the Q&A share of the monthly budget, the site's own per-member allowance, then the member's daily cap
- * and one-in-flight lease, taken atomically across processes. Every gate runs before any model call. A ledger error
+ * and one-in-flight lease, taken atomically across processes. Every gate runs before any model call. The daily cap depends on the member's tier and an admin has none (R19). A ledger error
  * fails CLOSED for every one of them.
  */
 import { assertAiBudget } from '@/lib/ai/budget.server';
+import { getUserTier } from '@/lib/entitlements';
 import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import {
@@ -12,9 +13,10 @@ import {
   QA_LEASE_MS,
   QA_LOCK_PROMPT_ID,
   QA_TASK,
+  qaCapForTier,
   qaCapUsd,
-  qaDailyCap,
   qaShare,
+  type QaTier,
   utcDayStart,
 } from '../../ai-budget';
 import { EXTRACT_TASK, monthStartUtc, monthlyCapUsd } from '../../scrape/sdn/budget';
@@ -43,25 +45,66 @@ export async function questionsToday(userId: string, now: Date = new Date()): Pr
   });
 }
 
-/** The member's questions left today and the cap. A ledger error is `MEDSCHOOLS_QA_PAUSED` (unavailable), never "plenty left". */
+export interface QaCaller {
+  /** The `defineHandler` `isAdmin` of this request. An admin has no per-user limit (plan R19). */
+  isAdmin?: boolean;
+}
+
+/**
+ * The limit tier of this request (plan R19), resolved per request on the server and never taken from the client: an
+ * admin (the session's `isAdmin`), else a paying member (`getUserTier`, the Stripe membership and gift memberships the
+ * rest of the site uses), else a member with an APPROVED limit request, else free. A lookup that fails drops to the
+ * next lower tier (a smaller cap), never to a higher one.
+ */
+export async function resolveQaTier(userId: string, caller: QaCaller = {}): Promise<QaTier> {
+  if (caller.isAdmin) return 'admin';
+  try {
+    if ((await getUserTier(userId)) !== 'free') return 'member';
+  } catch {
+    // fall through to the lower tiers
+  }
+  try {
+    const grant = await prisma.medQaLimitRequest.findFirst({
+      where: { userId, status: 'APPROVED' },
+      select: { id: true },
+    });
+    if (grant) return 'approved';
+  } catch {
+    // free
+  }
+  return 'free';
+}
+
+/** A tier's daily cap from the environment, `null` for an admin. */
+export const capForTier = (tier: QaTier): number | null => qaCapForTier(tier, process.env, warnOnce);
+
+/**
+ * The member's tier, questions left today and cap. An admin has `null` for both (no daily limit) and no ledger read. A
+ * ledger error is `MEDSCHOOLS_QA_PAUSED` (unavailable), never "plenty left".
+ */
 export async function dailyStatus(
   userId: string,
   now: Date = new Date(),
-): Promise<{ remainingToday: number; dailyCap: number }> {
-  const dailyCap = qaDailyCap(process.env.MEDSCHOOLS_QA_DAILY_CAP, warnOnce);
+  caller: QaCaller = {},
+): Promise<{ tier: QaTier; remainingToday: number | null; dailyCap: number | null }> {
+  const tier = await resolveQaTier(userId, caller);
+  const dailyCap = capForTier(tier);
+  if (dailyCap === null) return { tier, remainingToday: null, dailyCap: null };
   let used: number;
   try {
     used = await questionsToday(userId, now);
   } catch {
     throw paused('unavailable');
   }
-  return { remainingToday: Math.max(0, dailyCap - used), dailyCap };
+  return { tier, remainingToday: Math.max(0, dailyCap - used), dailyCap };
 }
 
 export interface Reservation {
-  /** Questions left today AFTER this one. */
-  remainingToday: number;
-  dailyCap: number;
+  tier: QaTier;
+  /** Questions left today AFTER this one; `null` for an admin. */
+  remainingToday: number | null;
+  /** `null` for an admin. */
+  dailyCap: number | null;
   /** Ends the in-flight lease. Never throws; a failure only means the lease runs out by itself (`QA_LEASE_MS`). */
   release(): Promise<void>;
 }
@@ -88,8 +131,15 @@ const ledgerRow = (userId: string, promptId: string) => ({
  * the AI ledger with no tokens and no cost, so the cap never depends on the provider's metering write. A database
  * error is 503 `MEDSCHOOLS_QA_PAUSED` (unavailable): no ledger, no question.
  */
-export async function reserveQuestion(userId: string, now: Date = new Date()): Promise<Reservation> {
-  const dailyCap = qaDailyCap(process.env.MEDSCHOOLS_QA_DAILY_CAP, warnOnce);
+export async function reserveQuestion(
+  userId: string,
+  now: Date = new Date(),
+  caller: QaCaller = {},
+): Promise<Reservation> {
+  const tier = await resolveQaTier(userId, caller);
+  const dailyCap = capForTier(tier);
+  // An admin skips the daily cap and the in-flight lease (R19): nothing to reserve, nothing to release.
+  if (dailyCap === null) return { tier, remainingToday: null, dailyCap: null, release: async () => undefined };
   type Outcome = { kind: 'busy' } | { kind: 'cap' } | { kind: 'ok'; used: number; leaseId: bigint };
   let out: Outcome;
   try {
@@ -119,6 +169,7 @@ export async function reserveQuestion(userId: string, now: Date = new Date()): P
   if (out.kind === 'cap') throw new AppError('MEDSCHOOLS_QA_DAILY_CAP');
   const { leaseId, used } = out;
   return {
+    tier,
     remainingToday: Math.max(0, dailyCap - used),
     dailyCap,
     async release() {
@@ -163,8 +214,13 @@ export async function assertSharedBudget(now: Date = new Date()): Promise<void> 
  * allowance (`AI_BUDGET_EXCEEDED`, the upgrade envelope), then the atomic reservation (`MEDSCHOOLS_QA_BUSY`, then
  * `MEDSCHOOLS_QA_DAILY_CAP`). The first two only read, so a refused question never uses up a daily one.
  */
-export async function admitQuestion(userId: string, now: Date = new Date()): Promise<Reservation> {
+export async function admitQuestion(
+  userId: string,
+  now: Date = new Date(),
+  caller: QaCaller = {},
+): Promise<Reservation> {
   await assertSharedBudget(now);
-  await assertAiBudget(userId);
-  return reserveQuestion(userId, now);
+  // An admin has no per-user ceiling of any kind (R19); the shared monthly pause above still applies to them.
+  if (!caller.isAdmin) await assertAiBudget(userId);
+  return reserveQuestion(userId, now, caller);
 }
