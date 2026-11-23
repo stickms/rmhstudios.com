@@ -311,5 +311,6 @@ export async function addListToTracker(
     for (const a of toAdd) await createApplicationRow(tx, { cycleId, schoolId: a.schoolId, program: a.program });
     return { added: toAdd.length, skipped: wanted.size - toAdd.length };
   });
-  return 'cap' in outcome ? outcome : { cycleYear: year, ...outcome };
+  if (outcome.cap) return { cap: outcome.cap };
+  return { cycleYear: year, added: outcome.added, skipped: outcome.skipped };
 }
