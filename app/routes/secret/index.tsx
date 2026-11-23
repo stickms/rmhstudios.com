@@ -11,7 +11,6 @@ import {
   BrainCircuit,
   Zap,
   Newspaper,
-  Map,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -41,7 +40,6 @@ const secretGames: SecretItem[] = [
 
 const secretPages: SecretItem[] = [
   { id: 'news', name: 'News', desc: 'Latest announcements & updates', icon: Newspaper, accent: '#3b82f6', href: '/news' },
-  { id: 'roadmap', name: 'Roadmap', desc: "What's next for RMH Studios", icon: Map, accent: '#10b981', href: '/roadmap' },
 ];
 
 function ItemCard({ item }: { item: SecretItem }) {

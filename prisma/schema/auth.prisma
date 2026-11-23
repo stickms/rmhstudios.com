@@ -12,6 +12,9 @@ model User {
   handleChangedAt  DateTime? // Last time the handle was changed (2-week cooldown)
   email            String?          @unique
   emailVerified    Boolean?
+  // Two-step verification (Better Auth twoFactor plugin): true once an authenticator app is confirmed. Optional for
+  // every account; it gates email-and-password sign-in only (lib/auth/two-factor.server.ts).
+  twoFactorEnabled Boolean?         @default(false)
   password         String? // Added for password login
   image            String?
   stripeCustomerId String? // Stripe customer id (set by @better-auth/stripe on signup)
@@ -312,6 +315,8 @@ model User {
 
   // WebAuthn passkeys (@better-auth/passkey)
   passkeys Passkey[]
+  // Authenticator-app secret and backup codes (Better Auth twoFactor plugin), at most one row
+  twoFactor TwoFactor?
 
   // Web Push subscriptions
   pushSubscriptions PushSubscription[]
@@ -852,6 +857,23 @@ model Passkey {
   @@index([userId])
   @@index([credentialID])
   @@map("passkey")
+}
+
+/// Two-step verification for one account (Better Auth twoFactor plugin). `secret` and `backupCodes` are encrypted
+/// with BETTER_AUTH_SECRET; `verified` is false between "set up" and the first correct code. The two counters are
+/// the plugin's account lockout (10 wrong codes lock code entry for 15 minutes).
+model TwoFactor {
+  id                      String    @id @default(cuid())
+  secret                  String
+  backupCodes             String
+  userId                  String    @unique
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor")
 }
 
 // ─── Security / Bug Bounty reports ────────────────────────────────────

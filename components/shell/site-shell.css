@@ -133,8 +133,10 @@
   .site-shell__frame:not(:has([data-shell-margin='off'])) .site-main {
     padding-inline: 40px;
   }
+  /* A column so the foot (`.site-margin__foot`) can sit at the bottom of the cell when the page is short. */
   .site-shell__frame:not(:has([data-shell-margin='off'])) .site-margin {
-    display: block;
+    display: flex;
+    flex-direction: column;
     border-inline-start: 1px solid var(--site-border);
     padding: 22px 24px;
   }
@@ -305,6 +307,21 @@
 }
 .site-margin__page {
   margin-block-start: 26px;
+}
+/* The foot: reference pages on one wrapping line of `t-meta` links, pushed to the bottom of the column. */
+.site-margin__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-block-start: auto;
+  padding-block-start: 40px;
+}
+.site-margin__foot-link {
+  color: var(--site-text-muted);
+  text-decoration: none;
+}
+.site-margin__foot-link:hover {
+  color: var(--site-text);
 }
 /* A section's activity rail (margin-takeover.ts): it stays in view 16px off the top and scrolls inside itself, so
    "load more on scroll" works however short the page is. */

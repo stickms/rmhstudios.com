@@ -19,6 +19,7 @@
 import type { createAuthMiddleware } from 'better-auth/api';
 import { recordSecurityEvent, type RecordSecurityEventInput } from '@/lib/auth/security-log.server';
 import type { SecurityEventKind } from '@/lib/auth/security-log';
+import { notifySignInChange, type ProtectionChange } from '@/lib/auth/security-notice.server';
 
 type AuthHookContext = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
 
@@ -32,6 +33,19 @@ export const AUTH_PATH_EVENTS: Readonly<Record<string, SecurityEventKind>> = {
   '/change-email': 'email_changed',
   '/passkey/verify-registration': 'passkey_added',
   '/passkey/delete-passkey': 'passkey_removed',
+  // Signed in only: the same endpoint finishing a sign-in has no session, so no actor and no row here
+  // (that sign-in is recorded as one). Signed in, a correct code is what turns 2FA on.
+  '/two-factor/verify-totp': 'two_factor_enabled',
+  '/two-factor/disable': 'two_factor_disabled',
+  '/two-factor/generate-backup-codes': 'backup_codes_regenerated',
+};
+
+/** Events that also notify the account (in-app and by email), because they change how it is protected. */
+const NOTIFIED_EVENTS: Readonly<Partial<Record<SecurityEventKind, ProtectionChange['kind']>>> = {
+  password_changed: 'password_changed',
+  two_factor_enabled: 'two_factor_enabled',
+  two_factor_disabled: 'two_factor_disabled',
+  backup_codes_regenerated: 'backup_codes_regenerated',
 };
 
 interface Actor {
@@ -97,6 +111,8 @@ export async function recordSecurityAfter(ctx: AuthHookContext): Promise<void> {
       input.device = actor.revokedDevice ?? null;
     }
     void recordSecurityEvent(input);
+    const notice = NOTIFIED_EVENTS[kind];
+    if (notice) void notifySignInChange(actor.userId, { kind: notice });
   } catch (err) {
     console.error('[security-log] after-hook failed:', err);
   }

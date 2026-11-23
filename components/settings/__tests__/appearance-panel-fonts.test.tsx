@@ -13,6 +13,11 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => String(o?.defaultValue ?? k) }),
 }));
 vi.mock('@/components/settings/ThemePicker', () => ({ ThemePicker: () => null }));
+const rootData = vi.hoisted(() => ({ value: { appearanceSyncOff: false } as Record<string, unknown> }));
+vi.mock('@tanstack/react-router', async (orig) => ({
+  ...(await orig<typeof import('@tanstack/react-router')>()),
+  useLoaderData: () => rootData.value,
+}));
 vi.mock('@/components/settings/TiltEffectsRow', () => ({ TiltEffectsRow: () => null }));
 
 import { AppearancePanel } from '../AppearancePanel';
@@ -38,5 +43,22 @@ describe('Appearance panel: fonts and sync', () => {
   it('signed out, there is nothing to sync with, so no switch', () => {
     session.value = null;
     expect(html()).not.toContain('Sync appearance across devices');
+  });
+});
+
+describe('the sync switch is right on the first paint (final review minor)', () => {
+  it("before the store hydrates, it shows the server's answer: off for a sync-off device", () => {
+    session.value = { user: { id: 'u1' } };
+    rootData.value = { appearanceSyncOff: true };
+    const out = html();
+    const sw = out.slice(out.indexOf('Sync appearance across devices'));
+    expect(sw.match(/role="switch" aria-checked="(\w+)"/)?.[1]).toBe('false');
+  });
+
+  it('and on for a syncing device', () => {
+    rootData.value = { appearanceSyncOff: false };
+    const out = html();
+    const sw = out.slice(out.indexOf('Sync appearance across devices'));
+    expect(sw.match(/role="switch" aria-checked="(\w+)"/)?.[1]).toBe('true');
   });
 });
