@@ -728,7 +728,7 @@ describe('getArrivals (when results arrive)', () => {
     expect(m.$queryRaw).not.toHaveBeenCalled();
   });
 
-  it('aggregates in SQL: ADMIT and SDN only, Eastern time, no day-only SDN event, no individual timestamp selected', async () => {
+  it('aggregates in SQL: ADMIT and SDN only, Eastern time, no day-only ADMIT or SDN event, no individual timestamp selected', async () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     await getArrivals('duke', { program: 'PHD', type: 'ACCEPTANCE' });
     expect(m.$queryRaw).toHaveBeenCalledTimes(2);
@@ -736,7 +736,7 @@ describe('getArrivals (when results arrive)', () => {
       const q = sql(i);
       expect(q).toContain('IN (\'ADMIT\'::"MedSource", \'SDN\'::"MedSource")');
       expect(q).toContain('AT TIME ZONE');
-      expect(q).toContain('\'SDN\'::"MedSource" AND');
+      expect(q).toContain('NOT ("source" IN (\'ADMIT\'::"MedSource", \'SDN\'::"MedSource") AND');
       expect(q).toContain("TIME '00:00:00'");
       expect(q).not.toMatch(/SELECT\s+"occurredAt"/);
     }
