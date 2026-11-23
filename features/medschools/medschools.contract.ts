@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
+import type { askBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
   addListToTrackerBody,
@@ -505,6 +506,22 @@ export interface MedAskStatusRes {
   remainingToday: number;
   dailyCap: number;
 }
+
+/**
+ * Signed in. 429 `MEDSCHOOLS_QA_DAILY_CAP` (the day's questions are used, or another question is in flight; the latter is
+ * `RATE_LIMITED`), 503 `MEDSCHOOLS_QA_PAUSED` (the Q&A share of the monthly budget is spent, or its ledger cannot be
+ * read) or `AI_UNAVAILABLE`, 402 `AI_BUDGET_EXCEEDED` (the member's own allowance), 403 for a suspended account. Never cached.
+ */
+export const askMedQuestionApi = endpoint<{ body: z.infer<typeof askBody>; res: MedAskRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/ask',
+});
+
+/** What the Ask page needs before a question: whether Q&A is on and how many questions the caller has left today. */
+export const getMedAskStatusApi = endpoint<{ res: MedAskStatusRes }>()({
+  method: 'GET',
+  path: '/api/medschools/me/ask',
+});
 
 /* ------------------------- saved lists and preferences (me/**) ------------------------- */
 

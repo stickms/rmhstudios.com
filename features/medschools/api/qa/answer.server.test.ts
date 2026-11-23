@@ -377,7 +377,7 @@ describe('nothing is stored or logged', () => {
       segments: [seg('Duke has 412 reported interview events.', 'f1'), seg('Duke MCAT median is 512.', 'f2')],
     });
     await ask(runner);
-    const lines = log.flatMap((spy) => spy.mock.calls.map((c) => c.map(String).join(' ')));
+    const lines = log.flatMap((spy) => spy.mock.calls.map((c: unknown[]) => c.map(String).join(' ')));
     expect(lines).toHaveLength(1);
     for (const secret of ['zzzquestion', 'MCAT median', '412', 'Duke has', F1.text, 'f1']) {
       expect(lines[0], secret).not.toContain(secret);

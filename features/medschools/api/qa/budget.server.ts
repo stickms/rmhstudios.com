@@ -33,8 +33,8 @@ export async function questionsToday(userId: string, now: Date = new Date()): Pr
   });
 }
 
-/** 429 `MEDSCHOOLS_QA_DAILY_CAP` when the day's questions are used; 503 `MEDSCHOOLS_QA_PAUSED` when the ledger cannot be read. */
-export async function assertDailyCap(
+/** The member's questions left today and the cap. A ledger error is `MEDSCHOOLS_QA_PAUSED` (unavailable), never "plenty left". */
+export async function dailyStatus(
   userId: string,
   now: Date = new Date(),
 ): Promise<{ remainingToday: number; dailyCap: number }> {
@@ -45,8 +45,17 @@ export async function assertDailyCap(
   } catch {
     throw paused('unavailable');
   }
-  if (used >= dailyCap) throw new AppError('MEDSCHOOLS_QA_DAILY_CAP');
-  return { remainingToday: dailyCap - used, dailyCap };
+  return { remainingToday: Math.max(0, dailyCap - used), dailyCap };
+}
+
+/** 429 `MEDSCHOOLS_QA_DAILY_CAP` when the day's questions are used; 503 `MEDSCHOOLS_QA_PAUSED` when the ledger cannot be read. */
+export async function assertDailyCap(
+  userId: string,
+  now: Date = new Date(),
+): Promise<{ remainingToday: number; dailyCap: number }> {
+  const status = await dailyStatus(userId, now);
+  if (status.remainingToday <= 0) throw new AppError('MEDSCHOOLS_QA_DAILY_CAP');
+  return status;
 }
 
 /**
