@@ -234,11 +234,22 @@ export function scrubQuestion(text: string, handles: HandleSource): string | nul
   const t = text.replace(/\s+/g, ' ').trim();
   if (t.length < QUESTION_MIN || t.length > QUESTION_MAX) return null;
   if (!t.includes('?') && !QUESTION_START_RE.test(t)) return null;
-  if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]/.test(t)) return null;
-  if (/(?:https?:\/\/|www\.)\S+/i.test(t)) return null;
-  if (/@\w/.test(t)) return null;
-  if (PHONE_RE.test(t)) return null;
-  if (HONORIFIC_RE.test(t)) return null;
-  if (hasHandle(t, handles)) return null;
+  if (hasPersonShape(t, handles)) return null;
   return t;
+}
+
+/**
+ * True when the text carries an email, a URL, an @handle, a phone number, an honorific plus a name or one of the page's
+ * handles. The pattern checks `scrubQuestion` runs, without its length and question-shape bounds, so other scrubs (the
+ * secondary prompts') reuse the same patterns and a new pattern lands in both at once.
+ */
+export function hasPersonShape(text: string, handles: HandleSource): boolean {
+  return (
+    /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]/.test(text) ||
+    /(?:https?:\/\/|www\.)\S+/i.test(text) ||
+    /@\w/.test(text) ||
+    PHONE_RE.test(text) ||
+    HONORIFIC_RE.test(text) ||
+    hasHandle(text, handles)
+  );
 }
