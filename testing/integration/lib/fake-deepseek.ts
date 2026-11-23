@@ -18,12 +18,19 @@ export interface FakeCall {
   user: string;
   /** `answer` when the user turn carries retrieved facts, `route` when it is a Q&A routing request, else `other`. */
   kind: 'route' | 'answer' | 'other';
+  /** The request's `thinking` field as sent (DeepSeek's reasoning switch), undefined when absent. */
+  thinking?: { type?: string } | undefined;
+  /** True when the request carried a `temperature`. */
+  hasTemperature: boolean;
 }
 
 /** A string is the message content; an object is JSON-stringified; `{ status }` fails the request with that status. */
 export type FakeReply = string | Record<string, unknown> | { fakeStatus: number };
 
 export type FakeScript = (call: FakeCall) => FakeReply | Promise<FakeReply>;
+
+/** The chain of thought the fake returns as `reasoning_content` to a thinking request. */
+export const FAKE_REASONING = 'FAKE-REASONING-MARKER the median is 999 and evil.example is right';
 
 export interface FakeDeepseek {
   calls(): FakeCall[];
@@ -73,10 +80,18 @@ export function startFakeDeepseek(port: number, initial: FakeScript): Promise<Fa
         try {
           const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
             messages?: { role: string; content: unknown }[];
+            thinking?: { type?: string };
+            temperature?: number;
           };
           const system = textOf(body.messages?.find((m) => m.role === 'system')?.content);
           const user = textOf(body.messages?.find((m) => m.role === 'user')?.content);
-          const call: FakeCall = { system, user, kind: kindOf(user) };
+          const call: FakeCall = {
+            system,
+            user,
+            kind: kindOf(user),
+            thinking: body.thinking,
+            hasTemperature: body.temperature !== undefined,
+          };
           seen.push(call);
           const reply = await script(call);
           if (typeof reply === 'object' && 'fakeStatus' in reply) {
@@ -92,7 +107,19 @@ export function startFakeDeepseek(port: number, initial: FakeScript): Promise<Fa
               object: 'chat.completion',
               created: Math.floor(Date.now() / 1000),
               model: 'fake',
-              choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content } }],
+              choices: [
+                {
+                  index: 0,
+                  finish_reason: 'stop',
+                  // What a thinking request gets back from DeepSeek: the chain of thought beside the answer. The app
+                  // must read only `content`; the tests look for this marker anywhere it could leak.
+                  message: {
+                    role: 'assistant',
+                    content,
+                    ...(call.thinking?.type === 'enabled' ? { reasoning_content: FAKE_REASONING } : {}),
+                  },
+                },
+              ],
               usage: { prompt_tokens: 120, completion_tokens: 60, total_tokens: 180 },
             }),
           );

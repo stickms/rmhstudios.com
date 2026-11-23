@@ -17,7 +17,7 @@
  */
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Client, closeDb, db, type TestUser } from './lib/client';
-import { startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
+import { FAKE_REASONING, startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
 import {
   ASK_INJECTION,
   MEDSCHOOL_FIXTURE_SLUG,
@@ -50,6 +50,7 @@ interface AskBody {
   mine: { applicationId: string; school: { slug: string } }[] | null;
   remainingToday: number;
   dailyCap: number;
+  thinking: boolean;
   code?: string;
 }
 
@@ -198,6 +199,37 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
       .map((x) => x.system + x.user)
       .join('\n');
     for (const needle of [a.email, a.id, a.name, 'tracker']) expect(everything).not.toContain(needle);
+  });
+
+  it('think: the answer call alone runs with thinking enabled, and no reasoning text reaches the response', async () => {
+    const res = await ask(a, 'How many interviews has Fixture reported?', { think: true });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('answered');
+    expect(res.body.thinking).toBe(true);
+    const calls = fake.calls();
+    expect(calls.find((x) => x.kind === 'route')?.thinking?.type).toBe('disabled');
+    const answer = calls.find((x) => x.kind === 'answer')!;
+    expect(answer.thinking).toEqual({ type: 'enabled' });
+    expect(answer.hasTemperature).toBe(false);
+    expect(JSON.stringify(res.body)).not.toContain('FAKE-REASONING');
+    expect(JSON.stringify(res.body)).not.toContain(FAKE_REASONING);
+    // The day's count is one question, whatever it cost.
+    await new Promise((r) => setTimeout(r, 400));
+    expect(await askRows(a.id)).toBe(1);
+    // The ledger holds no reasoning text either.
+    const rows = await db().query(`select * from ai_usage where "userId" = $1`, [a.id]);
+    expect(JSON.stringify(rows.rows)).not.toContain('FAKE-REASONING');
+  });
+
+  it('without think no request carries thinking enabled', async () => {
+    const res = await ask(b, 'How many interviews has Fixture reported?');
+    expect(res.body.thinking).toBe(false);
+    expect(fake.calls().every((x) => x.thinking?.type === 'disabled')).toBe(true);
+  });
+
+  it('GET reports thinkingAvailable', async () => {
+    const res = await a.client.get<{ thinkingAvailable: boolean }>(ASK);
+    expect(typeof res.body.thinkingAvailable).toBe('boolean');
   });
 
   it("the userId in the body is ignored: the ledger row is the session user's", async () => {
