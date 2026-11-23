@@ -161,6 +161,9 @@ jobs:
       BETTER_AUTH_SECRET: ci-integration-not-a-real-secret-00000000000
       BETTER_AUTH_URL: http://localhost:7005
       PORT: '7005'
+      # A placeholder, not a secret: the app derives the RMH Med Schools sharing hashes with it (sharing is off without
+      # one), and testing/integration/medschools-private.test.ts recomputes them from the same value.
+      MEDSCHOOLS_DEDUPE_SECRET: ci-integration-medschools-dedupe-0123456789
       INTEGRATION_BASE_URL: http://localhost:7005
       # The table store for testing/integration/casino-restart.test.ts. Not REDIS_STATE_URL:
       # the web app under test must not read it.

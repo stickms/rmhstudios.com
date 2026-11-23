@@ -91,3 +91,112 @@ export async function seedMedSchoolsFixture(now: Date = new Date()): Promise<voi
     [SCHOOL_ID],
   );
 }
+
+/* ───────────────────────── the private tracker fixture (phase 4) ───────────────────────── */
+
+/**
+ * Two schools for `medschools-private.test.ts`, kept apart from the public fixture above so that file's "no RMH series"
+ * assertions stay true: an MD school and a DO school with no counts or events of their own, plus filler schools the list
+ * cap test needs (200 items need more than the two schools a list can hold three programs of).
+ */
+export const PRIVATE_MD_SLUG = 'it-medschools-private-md';
+export const PRIVATE_DO_SLUG = 'it-medschools-private-do';
+export const PRIVATE_MD_ID = 'it-medschools-private-md-school';
+export const PRIVATE_DO_ID = 'it-medschools-private-do-school';
+const FILLER_PREFIX = 'it-medschools-private-filler-';
+
+export async function removeTrackerFixture(userIds: readonly string[] = []): Promise<void> {
+  const q = (text: string, values: unknown[] = []) => db().query(text, values);
+  // Tracker cycles and lists hang off the user, not the school, so they go by user id (the schools cascade the rest).
+  if (userIds.length > 0) {
+    await q('delete from med_tracker_cycle where "userId" = any($1)', [userIds]);
+    await q('delete from med_school_list where "userId" = any($1)', [userIds]);
+    await q('delete from med_user_prefs where "userId" = any($1)', [userIds]);
+  }
+  await q('delete from med_school where slug = any($1) or id = any($2) or slug like $3', [
+    [PRIVATE_MD_SLUG, PRIVATE_DO_SLUG],
+    [PRIVATE_MD_ID, PRIVATE_DO_ID],
+    `${FILLER_PREFIX}%`,
+  ]);
+}
+
+export async function seedTrackerFixture(userIds: readonly string[] = []): Promise<void> {
+  await removeTrackerFixture(userIds);
+  const q = (text: string, values: unknown[] = []) => db().query(text, values);
+  for (const [id, slug, name, degree] of [
+    [PRIVATE_MD_ID, PRIVATE_MD_SLUG, 'Tracker Fixture School of Medicine', 'MD'],
+    [PRIVATE_DO_ID, PRIVATE_DO_SLUG, 'Tracker Fixture College of Osteopathic Medicine', 'DO'],
+  ] as const) {
+    await q(
+      `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
+       values ($1, $2, $3, $4, $5::"MedDegree", 'Durham', 'NC', true, now())`,
+      [id, slug, name, name.split(' ')[0], degree],
+    );
+  }
+}
+
+/** Inactive schools used only to fill a list to its cap; never reachable from a public page. */
+export async function seedFillerSchools(n: number): Promise<string[]> {
+  const ids: string[] = [];
+  for (let i = 0; i < n; i += 1) {
+    const id = `${FILLER_PREFIX}${i}`;
+    await db().query(
+      `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
+       values ($1, $1, $2, $2, 'MD', 'Durham', 'NC', false, now())`,
+      [id, `Filler ${i}`],
+    );
+    ids.push(id);
+  }
+  return ids;
+}
+
+/** Anonymous RMH events at a school (the rows the public figures are built from). */
+export async function rmhEventCount(schoolId: string): Promise<number> {
+  const r = await db().query(
+    `select count(*)::int as n from med_cycle_event where "schoolId" = $1 and source = 'RMH'`,
+    [schoolId],
+  );
+  return r.rows[0].n;
+}
+
+export interface RmhCountRow {
+  date: string;
+  eventType: string;
+  count: number;
+  contributors: number | null;
+  publishedCount: number | null;
+  publishedContributors: number | null;
+}
+
+export async function rmhCountRows(schoolId: string): Promise<RmhCountRow[]> {
+  const r = await db().query(
+    `select to_char(date, 'YYYY-MM-DD') as date, "eventType"::text as "eventType", count, contributors,
+            "publishedCount", "publishedContributors"
+     from med_cycle_count where "schoolId" = $1 and source = 'RMH' order by date, "eventType"`,
+    [schoolId],
+  );
+  return r.rows;
+}
+
+/**
+ * The cells a from-scratch recompute of the RMH events gives (`date|type|program|cycle -> n`) and the cells the count
+ * rows hold (zero rows, which the daily job removes, left out); equal when the writer kept them in step.
+ */
+export async function rmhRecompute(schoolId: string): Promise<{ fromEvents: string[]; fromCounts: string[] }> {
+  const ev = await db().query(
+    `select to_char("occurredAt"::date, 'YYYY-MM-DD') as day, "eventType"::text as t, program::text as p, "cycleYear" as c,
+            count(*)::int as n
+     from med_cycle_event where "schoolId" = $1 and source = 'RMH' group by 1, 2, 3, 4 order by 1, 2, 3, 4`,
+    [schoolId],
+  );
+  const ct = await db().query(
+    `select to_char(date, 'YYYY-MM-DD') as day, "eventType"::text as t, program::text as p, "cycleYear" as c,
+            count, contributors
+     from med_cycle_count where "schoolId" = $1 and source = 'RMH' and count > 0 order by 1, 2, 3, 4`,
+    [schoolId],
+  );
+  return {
+    fromEvents: ev.rows.map((r) => `${r.day}|${r.t}|${r.p}|${r.c}|${r.n}|${r.n}`),
+    fromCounts: ct.rows.map((r) => `${r.day}|${r.t}|${r.p}|${r.c}|${r.count}|${r.contributors}`),
+  };
+}
