@@ -163,8 +163,10 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
   lookups park a member for a week.
 - **One-time ADMIT re-key (`scrape/admit-rekey.ts`).** Old ADMIT rows used the per-update key and would be recounted by
   the backfill. Before the first live write under the new key and before the first history run, `ensureAdmitRekey`
-  deletes every ADMIT `MedCycleEvent` and ADMIT `MedCycleCount` cell (an ADMIT cell holds nothing but its events), and
-  records a `MedSourceRun` (job `admit-rekey`, status OK) as the done flag. At most once; a failed attempt is retried
+  deletes every ADMIT `MedCycleEvent` and ADMIT `MedCycleCount` cell (an ADMIT cell holds nothing but its events) and, in the same
+  transaction, every `MedAdmitMember` progress row and `MedAdmitForumThread` cursor (progress that says "already read"
+  would otherwise stop the events refilling: a DONE member is never re-fetched, a caught-up thread never re-read), and
+  records a `MedSourceRun` (job `admit-rekey`, status OK) as the done flag, inside that transaction too. At most once; a failed attempt is retried
   and the Admit event jobs write nothing until it succeeds. Mention it in the PR text: public Admit series are empty
   until the feed and the backfill refill them (the first history run is queued at worker start).
 - **Politeness budgets (owner 2026-11-23).** The history job uses `backfillSpacingMs` 3 s plus 0-1 s random jitter

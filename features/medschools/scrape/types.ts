@@ -256,6 +256,9 @@ export interface MedPrisma {
     findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedAdmitForumThreadRow[]>;
     create(args: { data: Data }): Promise<MedAdmitForumThreadRow>;
     update(args: { where: Where; data: Data }): Promise<MedAdmitForumThreadRow>;
+    deleteMany(args: { where: Where }): Promise<{
+      count: number;
+    }>;
   };
   medInterviewQuestion: {
     findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedInterviewQuestionRow[]>;

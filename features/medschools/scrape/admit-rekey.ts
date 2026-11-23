@@ -4,12 +4,16 @@
  * the profile-history backfill will insert, so left in place they would be counted twice. This step deletes every ADMIT
  * `MedCycleEvent` and every ADMIT `MedCycleCount` cell (an ADMIT cell holds nothing but its events: school stats live in
  * `MedSchoolStats`, so re-rolling the cells from the remaining events, of which there are none, is deleting them), and
- * the live feed and the backfill refill both under the new key.
+ * the live feed and the backfill refill both under the new key. Because the events do not come back by themselves,
+ * the progress that says "already read" goes in the same transaction: every `MedAdmitMember` row (a member marked DONE
+ * is never fetched again, so its history would never refill) and every `MedAdmitForumThread` cursor (a thread read to
+ * its end is never re-read, so its events would never refill; the forums job recreates the rows from offset 0).
  *
  * It runs at most once: the done flag is a `MedSourceRun` row (source ADMIT, job `admit-rekey`, status OK). Both Admit
  * event jobs call it before they write anything, so it precedes the first live write under the new key and the first
- * backfill; a failed or killed attempt leaves no OK row and is retried by the next call, and being a delete of
- * everything it is safe to repeat. Concurrent callers in one process share one attempt.
+ * backfill; a failed or killed attempt leaves no OK row and is retried by the next call, and being one all-or-nothing
+ * transaction that deletes everything, it is safe to repeat: a re-run can never wipe events while keeping the progress
+ * that would stop them refilling. Concurrent callers in one process share one attempt.
  */
 import { brief, closeStaleRuns } from './run-support';
 import type { Logger, MedPrisma } from './types';
@@ -50,18 +54,28 @@ async function rekeyOnce(prisma: MedPrisma, log: Logger, now: () => Date): Promi
     data: { source: 'ADMIT', job: ADMIT_REKEY_JOB, trigger: 'BOOTSTRAP', status: 'RUNNING' },
   });
   try {
-    const events = await prisma.medCycleEvent.deleteMany({ where: { source: 'ADMIT' } });
-    const cells = await prisma.medCycleCount.deleteMany({ where: { source: 'ADMIT' } });
-    await prisma.medSourceRun.update({
-      where: { id: run.id },
-      data: {
-        status: 'OK',
-        finishedAt: now(),
-        stats: { eventsDeleted: events.count, cellsDeleted: cells.count },
-      },
+    const { events, cells, members, threads } = await prisma.$transaction(async (tx) => {
+      const events = await tx.medCycleEvent.deleteMany({ where: { source: 'ADMIT' } });
+      const cells = await tx.medCycleCount.deleteMany({ where: { source: 'ADMIT' } });
+      const members = await tx.medAdmitMember.deleteMany({ where: {} });
+      const threads = await tx.medAdmitForumThread.deleteMany({ where: {} });
+      await tx.medSourceRun.update({
+        where: { id: run.id },
+        data: {
+          status: 'OK',
+          finishedAt: now(),
+          stats: {
+            eventsDeleted: events.count,
+            cellsDeleted: cells.count,
+            membersReset: members.count,
+            forumThreadsReset: threads.count,
+          },
+        },
+      });
+      return { events, cells, members, threads };
     });
     log.warn(
-      `admit-rekey: done (one time): deleted ${events.count} ADMIT events and ${cells.count} count cells; the live feed and admit-history refill them under the member key`,
+      `admit-rekey: done (one time): deleted ${events.count} ADMIT events and ${cells.count} count cells, reset ${members.count} member progress rows and ${threads.count} forum cursors; the live feed, admit-history and admit-forums refill them under the member key`,
     );
     return true;
   } catch (e) {

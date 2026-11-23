@@ -19,12 +19,49 @@ function seed() {
     { id: 'c2', schoolId: 's1', source: 'SDN', count: 2 },
     { id: 'c3', schoolId: 's1', source: 'CYCLETRACK', count: 9 },
   );
+  f.tables.medAdmitMember!.push(
+    { memberHash: 'm1', state: 'DONE', attempts: 0 },
+    { memberHash: 'm2', state: 'FAILED', attempts: 3 },
+  );
+  f.tables.medAdmitForumThread!.push({
+    id: 't1',
+    schoolId: 's1',
+    cycleYear: 2027,
+    remoteCount: 50,
+    cursorOffset: 50,
+    cursorPostHash: 'h',
+    postsProcessed: 50,
+  });
   return f;
 }
 const rekeyRuns = (f: ReturnType<typeof seed>) =>
   (f.tables.medSourceRun as Array<{ job: string; status: string; stats?: unknown }>).filter(
     (r) => r.job === ADMIT_REKEY_JOB,
   );
+
+describe('ensureAdmitRekey: progress is reset with the events', () => {
+  it('clears member progress and forum cursors in the same step, so the data can refill', async () => {
+    const f = seed();
+    expect(await ensureAdmitRekey(f.prisma, quiet, NOW)).toBe(true);
+    expect(f.tables.medAdmitMember).toHaveLength(0);
+    expect(f.tables.medAdmitForumThread).toHaveLength(0);
+    expect(rekeyRuns(f)[0]).toMatchObject({
+      stats: { eventsDeleted: 2, cellsDeleted: 1, membersReset: 2, forumThreadsReset: 1 },
+    });
+  });
+
+  it('is all or nothing: a failure while resetting progress leaves the events, members and cursors untouched', async () => {
+    const f = seed();
+    f.prisma.medAdmitForumThread.deleteMany = (async () => {
+      throw new Error('boom');
+    }) as never;
+    expect(await ensureAdmitRekey(f.prisma, quiet, NOW)).toBe(false);
+    expect((f.tables.medCycleEvent as Array<{ source: string }>).filter((e) => e.source === 'ADMIT')).toHaveLength(2);
+    expect(f.tables.medCycleCount as unknown[]).toHaveLength(3);
+    expect(f.tables.medAdmitMember).toHaveLength(2);
+    expect(f.tables.medAdmitForumThread).toHaveLength(1);
+  });
+});
 
 describe('ensureAdmitRekey', () => {
   it('deletes every ADMIT event and count cell and nothing of another source, then records the done flag', async () => {
@@ -36,7 +73,10 @@ describe('ensureAdmitRekey', () => {
       'SDN',
     ]);
     expect(rekeyRuns(f)).toEqual([
-      expect.objectContaining({ status: 'OK', stats: { eventsDeleted: 2, cellsDeleted: 1 } }),
+      expect.objectContaining({
+        status: 'OK',
+        stats: { eventsDeleted: 2, cellsDeleted: 1, membersReset: 2, forumThreadsReset: 1 },
+      }),
     ]);
   });
 
