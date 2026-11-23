@@ -37,8 +37,11 @@ const school = {
   interviewFormat: null,
   interviewType: null,
 };
-const FLOOR = { OR: [{ source: { not: 'RMH' } }, { contributors: { gte: 3 } }] };
 const d = (s: string) => new Date(`${s}T00:00:00Z`);
+// The k floor plus Q2: an RMH cell needs 3 contributors AND a date before today UTC (NOW is 2027-11-21).
+const FLOOR = {
+  OR: [{ source: { not: 'RMH' } }, { contributors: { gte: 3 }, date: { lt: d('2027-11-21') } }],
+};
 
 beforeEach(() => {
   for (const delegate of Object.values(m)) {
@@ -202,6 +205,23 @@ describe('getActivity', () => {
     const iv = (await getActivity('duke', {}, NOW))!.types[0]!;
     // 2+2 contributors sums to 4 but each row is under the floor, so 2026-11-10 is absent; 3 and 4 survive and add.
     expect(iv.sources).toEqual([{ source: 'RMH', days: [{ date: '2026-11-11', count: 10 }], total: 10 }]);
+  });
+
+  it("holds back today's RMH cells (Q2): today and later are dropped, yesterday is kept, other sources are not held", async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findMany.mockResolvedValue([
+      c('RMH', '2027-11-20', 'INTERVIEW', 5, 5), // yesterday (UTC): shown
+      c('RMH', '2027-11-21', 'INTERVIEW', 6, 6), // today (UTC): held back
+      c('RMH', '2027-11-22', 'INTERVIEW', 7, 7), // tomorrow (a milestone may be dated a day ahead): held back
+      c('ADMIT', '2027-11-21', 'INTERVIEW', 2, null), // another source's today stays
+    ]);
+    const iv = (await getActivity('duke', {}, NOW))!.types[0]!;
+    const rmh = iv.sources.find((s) => s.source === 'RMH');
+    expect(rmh?.days).toEqual([{ date: '2027-11-20', count: 5 }]);
+    expect(iv.sources.find((s) => s.source === 'ADMIT')?.days).toEqual([{ date: '2027-11-21', count: 2 }]);
+    // One minute into the next UTC day the held-back cell is public.
+    const next = (await getActivity('duke', {}, new Date('2027-11-22T00:01:00Z')))!.types[0]!;
+    expect(next.sources.find((s) => s.source === 'RMH')?.days.map((x) => x.date)).toEqual(['2027-11-20', '2027-11-21']);
   });
 
   it('reads one program when asked and 404s unknown slugs', async () => {

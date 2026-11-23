@@ -12,6 +12,7 @@ import {
   resolveCycleYear,
   toCumulativeByDay,
   truncateToMinute,
+  utcDayOf,
   type CountCell,
 } from '../engine/public-read';
 import { defaultDayZero } from '../engine/cycle';
@@ -47,10 +48,16 @@ const day = (d: Date): string => d.toISOString().slice(0, 10);
 const programsOf = (p: MedProgramFilter | undefined): MedProgram[] =>
   p === 'REG' ? ['REG'] : p === 'PHD' ? ['PHD'] : ['REG', 'PHD'];
 
-/** The k floor as a where clause: RMH rows need `contributors >= K_FLOOR` (null fails closed). Same rule as applyKFloor. */
-const FLOOR_WHERE = {
-  OR: [{ source: { not: 'RMH' as const } }, { contributors: { gte: K_FLOOR } }],
-};
+/**
+ * The k floor as a where clause: RMH rows need `contributors >= K_FLOOR` (null fails closed) and a date before today UTC
+ * (Q2: today's cells are held back so a cell crossing 3 is never visible in real time). Same rule as applyKFloor.
+ */
+const floorWhere = (now: Date) => ({
+  OR: [
+    { source: { not: 'RMH' as const } },
+    { contributors: { gte: K_FLOOR }, date: { lt: new Date(`${utcDayOf(now)}T00:00:00.000Z`) } },
+  ],
+});
 
 interface RawCell extends CountCell {
   eventType: MedEventType;
@@ -60,9 +67,9 @@ interface RawCell extends CountCell {
  * Floor each row, then sum rows of the same (source, date, eventType): that is REG + PHD within one source.
  * Never sums across sources. `contributors` of a summed RMH cell is the sum of the kept rows' contributors.
  */
-function sumPrograms(rows: readonly RawCell[]): RawCell[] {
+function sumPrograms(rows: readonly RawCell[], today: string): RawCell[] {
   const out = new Map<string, RawCell>();
-  for (const r of applyKFloor(rows) as RawCell[]) {
+  for (const r of applyKFloor(rows, today) as RawCell[]) {
     const key = `${r.source}|${r.date}|${r.eventType}`;
     const prev = out.get(key);
     if (!prev) out.set(key, { ...r });
@@ -97,10 +104,13 @@ async function findSchool(slug: string) {
   });
 }
 
-async function latestCycleWith(where: { schoolId?: string; eventType?: MedEventType }): Promise<number | null> {
+async function latestCycleWith(
+  where: { schoolId?: string; eventType?: MedEventType },
+  now: Date,
+): Promise<number | null> {
   // Floored too: a suppressed RMH row must not move the cycle the pages show.
   const r = await prisma.medCycleCount.findFirst({
-    where: { ...where, ...FLOOR_WHERE },
+    where: { ...where, ...floorWhere(now) },
     orderBy: { cycleYear: 'desc' },
     select: { cycleYear: true },
   });
@@ -115,7 +125,7 @@ async function latestCycleWith(where: { schoolId?: string; eventType?: MedEventT
 async function siteCycle(now: Date, requested?: number): Promise<number> {
   return resolveCycleYear({
     ...(requested !== undefined ? { requested } : {}),
-    latestWithData: await latestCycleWith({ eventType: 'INTERVIEW' }),
+    latestWithData: await latestCycleWith({ eventType: 'INTERVIEW' }, now),
     now,
   });
 }
@@ -132,7 +142,7 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
   ]);
   const sums = await prisma.medCycleCount.groupBy({
     by: ['schoolId', 'source'],
-    where: { cycleYear, eventType: 'INTERVIEW', program: { in: programsOf(program) }, ...FLOOR_WHERE },
+    where: { cycleYear, eventType: 'INTERVIEW', program: { in: programsOf(program) }, ...floorWhere(now) },
     _sum: { count: true },
   });
   const bySchool = new Map<string, { source: MedSource; count: number }[]>();
@@ -185,7 +195,7 @@ export async function getCardData(slug: string, now: Date = new Date()): Promise
       cycleYear,
       eventType: 'INTERVIEW',
       program: { in: programsOf('ALL') },
-      ...FLOOR_WHERE,
+      ...floorWhere(now),
     },
     _sum: { count: true },
   });
@@ -264,7 +274,7 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
       take: 100,
     }),
     prisma.medCycleCount.findMany({
-      where: { schoolId: school.id, cycleYear, ...FLOOR_WHERE },
+      where: { schoolId: school.id, cycleYear, ...floorWhere(now) },
       select: { program: true },
       distinct: ['program'],
     }),
@@ -356,6 +366,7 @@ export async function getActivity(
       count: r.count,
       contributors: r.contributors,
     })),
+    utcDayOf(now),
   );
   // Withdrawn and hold are totals only, never charted: floored and summed per source like the rest.
   const otherTotals = OTHER_TOTAL_TYPES.map((eventType) => {
@@ -369,7 +380,10 @@ export async function getActivity(
     };
   }).filter((o) => o.sources.length > 0);
   const types: ActivityTypeDto[] = CHARTED.map((eventType) => {
-    const s = buildTypeSeries(cells.filter((c) => c.eventType === eventType));
+    const s = buildTypeSeries(
+      cells.filter((c) => c.eventType === eventType),
+      utcDayOf(now),
+    );
     return { eventType, primary: s.primary, sources: s.sources };
   });
   return {
@@ -387,13 +401,13 @@ export async function getActivity(
 export async function getHistory(
   slug: string,
   q: HistoryQuery,
-  _now: Date = new Date(),
+  now: Date = new Date(),
 ): Promise<MedSchoolHistoryRes | null> {
   const school = await findSchool(slug);
   if (!school) return null;
   const program = q.program ?? 'ALL';
   const eventType: MedChartedTypeId = q.type ?? 'INTERVIEW';
-  const base = { schoolId: school.id, program: { in: programsOf(program) }, eventType, ...FLOOR_WHERE };
+  const base = { schoolId: school.id, program: { in: programsOf(program) }, eventType, ...floorWhere(now) };
   const years = await prisma.medCycleCount.findMany({
     where: base,
     select: { cycleYear: true },
@@ -426,8 +440,9 @@ export async function getHistory(
           count: r.count,
           contributors: r.contributors,
         })),
+      utcDayOf(now),
     );
-    const series = buildTypeSeries(cells);
+    const series = buildTypeSeries(cells, utcDayOf(now));
     if (series.sources.length === 0) continue;
     out.push({
       cycleYear,
@@ -507,7 +522,7 @@ export async function getToday(q: TodayQuery, now: Date = new Date()): Promise<M
     program: { in: programsOf(program) },
     count: { gt: 0 },
     school: { active: true, ...(q.degree ? { degree: q.degree } : {}) },
-    ...FLOOR_WHERE,
+    ...floorWhere(now),
   };
   const latest = await prisma.medCycleCount.findFirst({
     where: { ...where, date: { lte: new Date(`${today}T00:00:00Z`) } },

@@ -53,6 +53,29 @@ describe('pickPrimary', () => {
   });
 });
 
+describe('applyKFloor holds back today (Q2)', () => {
+  const rows = [
+    cell('RMH', '2026-11-19', 4, 4),
+    cell('RMH', '2026-11-20', 4, 4),
+    cell('RMH', '2026-11-21', 4, 4),
+    cell('CYCLETRACK', '2026-11-20', 4, null),
+  ];
+  it('drops RMH rows dated today or later, whatever the count', () => {
+    expect(applyKFloor(rows, '2026-11-20').map((r) => `${r.source}${r.date}`)).toEqual([
+      'RMH2026-11-19',
+      'CYCLETRACK2026-11-20',
+    ]);
+    expect(applyKFloor(rows, '2026-11-22').filter((r) => r.source === 'RMH')).toHaveLength(3);
+  });
+  it('a held-back RMH day can never be primary or appear', () => {
+    const s = buildTypeSeries([cell('RMH', '2026-11-20', 9, 9)], '2026-11-20');
+    expect(s).toEqual({ primary: null, sources: [] });
+  });
+  it('with no day given it uses the clock: a row dated far in the future is held back', () => {
+    expect(applyKFloor([cell('RMH', '2999-01-01', 9, 9)])).toEqual([]);
+  });
+});
+
 describe('applyKFloor', () => {
   it('drops RMH rows under 3 contributors, fails closed on null', () => {
     const rows = [

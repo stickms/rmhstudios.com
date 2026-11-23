@@ -35,7 +35,9 @@ row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts`
 - **k floor (spec §6):** `K_FLOOR = 3`. RMH tracker count rows are dropped when `contributors` is null or under 3 (fail
   closed); other sources show as published (their `contributors` is null today). An in-state/out-of-state split is
   returned only when both sides are at least 3; `MedSchoolStats` rows with `residence != GLOBAL` follow the same floor.
-  The live feed excludes `source = RMH` entirely.
+  The live feed excludes `source = RMH` entirely. **Held back (phase 4, Q2):** RMH count cells dated today (UTC) or
+  later are dropped too, in `applyKFloor` and the `floorWhere(now)` clause, so a cell crossing 3 is never visible in
+  real time; deletion is not delayed.
 - **Never sum sources (spec §10):** the primary series per school x program x cycle x event type is the first present
   source in `PRIMARY_ORDER` (CycleTrack, Admit, SDN, RMH, MDApplicants), after the floor. Others are comparison series.
   Every chart says "Reported events" and names its sources; reported events are never called applicants.

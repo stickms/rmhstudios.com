@@ -45,9 +45,21 @@ export function pickPrimary(present: Iterable<MedSource>): MedSource | null {
   return PRIMARY_ORDER.find((s) => set.has(s)) ?? null;
 }
 
-/** RMH tracker counts rest on contributors; fewer than K_FLOOR (or unknown) is suppressed. Other sources show as published. */
-export function applyKFloor(rows: readonly CountCell[]): CountCell[] {
-  return rows.filter((r) => !(r.source === 'RMH' && (r.contributors === null || r.contributors < K_FLOOR)));
+/** The UTC calendar day of `now`, `YYYY-MM-DD`. */
+export const utcDayOf = (now: Date): string => now.toISOString().slice(0, 10);
+
+/**
+ * RMH tracker counts rest on contributors; fewer than K_FLOOR (or unknown) is suppressed. Other sources show as published.
+ *
+ * Q2 (phase 4): RMH cells dated TODAY (UTC) or later are held back too, whatever their count. Without it a cell that
+ * crosses 3 appears the moment the third person shares, and someone who knows the other two learns the third's school,
+ * type and day in real time. A held-back day appears once the day has ended; deletion is not delayed. `today` defaults
+ * to the clock (fail closed); pass the request's own `now` so a body is a function of its inputs.
+ */
+export function applyKFloor(rows: readonly CountCell[], today: string = utcDayOf(new Date())): CountCell[] {
+  return rows.filter(
+    (r) => !(r.source === 'RMH' && (r.contributors === null || r.contributors < K_FLOOR || r.date >= today)),
+  );
 }
 
 /** The in-state split is shown only when both halves clear the floor, independent of the total. */
@@ -60,8 +72,8 @@ export function floorSplit(
   return { inState, outOfState };
 }
 
-export function buildTypeSeries(rows: readonly CountCell[]): TypeSeries {
-  const visible = applyKFloor(rows); // floor first: a suppressed source can never be primary
+export function buildTypeSeries(rows: readonly CountCell[], today?: string): TypeSeries {
+  const visible = applyKFloor(rows, today); // floor first: a suppressed source can never be primary
   const bySource = new Map<MedSource, CountCell[]>();
   for (const r of visible) {
     const list = bySource.get(r.source);
