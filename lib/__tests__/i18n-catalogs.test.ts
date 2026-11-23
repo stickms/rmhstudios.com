@@ -92,6 +92,13 @@ describe('registry parity', () => {
     expect(registered.filter((n) => !files.includes(n))).toEqual([]);
   });
 
+  // One name per line, in order: a new namespace then lands between its neighbours instead of at the
+  // tail of the array, where every branch that adds one edits the same lines and two of them conflict.
+  it('NAMESPACES is sorted', () => {
+    const sorted = [...NAMESPACES].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    expect([...NAMESPACES]).toEqual(sorted);
+  });
+
   it('every locales/ directory is either shipped or explicitly pending', () => {
     const dirs = readdirSync(localesDir)
       .filter((d) => statSync(join(localesDir, d)).isDirectory())

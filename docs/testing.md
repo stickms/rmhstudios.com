@@ -6,8 +6,8 @@ How tests are organized, how to run them, and how CI gates them. For the build a
 > Sources of truth: `vitest.config.ts`, `vitest.epic.config.ts`, the `testing/` tree, `go-services/**/*_test.go`, and
 > the `.github/workflows/*` files. When a doc disagrees with those, the files win.
 >
-> File counts are generated, not hand-written: see `testFiles` in [`_generated/facts.json`](./_generated/facts.json)
-> (`pnpm facts:check` keeps it honest). Timings are not recorded here; measure with `time pnpm test`.
+> File counts are generated, not hand-written: see `testFiles` in `_generated/facts/tests.json` (written by `pnpm gen`;
+> not committed, so it matches your own checkout). Timings are not recorded here; measure with `time pnpm test`.
 > `lib/__tests__/test-discovery.test.ts` keeps that accounting honest.
 >
 > The suite is deliberately **narrow**: it covers what costs money, data, or access if it breaks, and does not cover how
@@ -140,9 +140,9 @@ default settings, …).
 
 What's in it:
 
-- **`lib/__tests__/`** (`ls lib/__tests__ | wc -l`; total test files in `testFiles` of `_generated/facts.json`) — the
-  bulk of the suite and the executable conventions: auth and the API-handler contract, the coin economy and the ledger,
-  entitlements and membership tiers, media upload/quota/sweep, storage keys and compression, SSRF, rate limits,
+- **`lib/__tests__/`** (`ls lib/__tests__ | wc -l`; total test files in `testFiles` of `_generated/facts/tests.json`) —
+  the bulk of the suite and the executable conventions: auth and the API-handler contract, the coin economy and the
+  ledger, entitlements and membership tiers, media upload/quota/sweep, storage keys and compression, SSRF, rate limits,
   sessions, migration safety, the server-bundle copy check, i18n catalog integrity, sitemap/SEO, and the
   design/theme/colour-vision gates. See `lib/CLAUDE.md` §Testing; these are the authority for `docs/design-language.md`
   §13 and a subset of them are in the commit gate (the list in `scripts/check-consistency.sh` is authoritative).
