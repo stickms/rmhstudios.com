@@ -45,6 +45,14 @@ describe('font choice assets', () => {
     }
   });
 
+  it("a stand-in covers only Latin, so other scripts take the OS face at its own metrics", () => {
+    for (const f of FONT_CATALOGUE.filter((x) => x.kind !== 'mono')) {
+      const face = read(`app/fonts/choice/${f.id}.css`).match(/@font-face\s*\{[^}]*Fallback'[^}]*\}/)?.[0] ?? '';
+      expect(face, f.id).toMatch(/unicode-range: U\+0000-00FF/);
+      expect(face, f.id).not.toMatch(/U\+0600/);
+    }
+  });
+
   it('Charis SIL (Charter) answers 600 with its 700 file', () => {
     const css = read('app/fonts/choice/charter.css');
     expect(css).toMatch(/font-weight: 600 700;/);

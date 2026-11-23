@@ -90,6 +90,9 @@ and mono faces from `lib/appearance/fonts.ts`; post and article text use `--site
 | `t-meta`    | 12 / 1.3, mono | 400, muted | 0        | Time, kind, handle metadata          |
 
 - Y1. Weights used: 400, 500 (controls), 600. Never 700 or above.
+  One named exception (owner, 2026-11-23): Charter, a face a reader may choose (`lib/appearance/fonts.ts`), is set from
+  Charis SIL, which has no 600; its bold answers 600 (`font-weight: 600 700` in `app/fonts/choice/charter.css`), so a
+  reader who picks Charter sees headings at its 700. The site never asks for 700.
 - Y2. No letterspaced capitals anywhere. Labels are sentence case.
 - Y3. Links inside running text are underlined. Navigation words are not.
 

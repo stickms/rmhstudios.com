@@ -34,12 +34,17 @@
     "lib/rmh-research/*.ts",
     "lib/rmh-research/data/*.ts",
     "lib/blog-media.ts",
+    "lib/news-wire/categorize.ts",
+    "lib/news-wire/parse.ts",
+    "lib/news-wire/extract.ts",
+    "lib/news-wire/sources.ts",
+    "lib/news-wire/summary.ts",
+    "lib/news-wire/news-wire.contract.ts",
     "lib/sitewide-announcement.ts",
     "lib/sitewide-announcement-schema.ts",
     "lib/sitewide-announcement.contract.ts",
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts",
-    "features/rmhos/engine/*.ts",
     "lib/rmhmusic/learn/sprint/*.ts",
     "lib/rmhmusic/learn/tuner/*.ts",
     "lib/rmhmusic/learn/songs/*.ts",
@@ -51,5 +56,5 @@
     "lib/streaks/*.ts",
     "lib/toolbox/*.ts"
   ],
-  "exclude": ["node_modules", "features/rmhos/engine/vm.ts", "**/__tests__/**", "**/*.test.ts"]
+  "exclude": ["node_modules", "**/__tests__/**", "**/*.test.ts"]
 }

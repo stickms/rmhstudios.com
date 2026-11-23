@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
  * Static rules for the RMH Med Schools public UI (Phase 3). The three route files are held to the bundle rule; every
  * ui file to the Steel and i18n rules the review would otherwise catch by eye.
  */
-const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists'].map((n) => `app/routes/_site/rmh-medschool/${n}.tsx`);
+const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask'].map(
+  (n) => `app/routes/_site/rmh-medschool/${n}.tsx`,
+);
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
   .filter((f) => !/\.test\./.test(f))
@@ -92,6 +94,13 @@ describe('medschools ui rules', () => {
     expect(src).toContain('definePage');
     expect(src).toContain('prefetchRouteQuery');
     expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-/);
+  });
+
+  it('keeps the ask route private and thin (noindex, definePage, no engine/qa, no zod, no charts)', () => {
+    const src = read('app/routes/_site/rmh-medschool/ask.tsx');
+    expect(src).toContain('noIndex: true');
+    expect(src).toContain('definePage');
+    expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-|engine\/qa/);
   });
 
   it('draws the activity rail with one IntersectionObserver, on the sentinel, through useSentinel (B3: data loading only)', () => {

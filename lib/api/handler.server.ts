@@ -384,6 +384,11 @@ export interface HandlerOptions<
   /** Omit to skip rate limiting (reads that are already cheap and cached). */
   rateLimit?: RateLimitSpec;
   /**
+   * Skip `rateLimit` for a signed-in admin (the session's `isAdmin`). For a per-user product limit an owner has
+   * lifted for admins; it never applies to anonymous callers and `auth: 'admin'` routes do not need it. Default false.
+   */
+  rateLimitExemptAdmin?: boolean;
+  /**
    * `auth: 'optional'` only: a second way to identify a caller who has no site session
    * (e.g. a Discord Activity bearer token, where the iframe has no cookies). A session
    * always wins. `userId` becomes the context's `userId` (null for a guest);
@@ -680,7 +685,7 @@ export function defineHandler<
       /* 2. Rate limit ---------------------------------------------------- */
       // A loader's in-process read of this route (lib/api/internal-dispatch.server.ts) is
       // part of a page view that was already admitted; it is not charged again.
-      if (options.rateLimit && !isInternalRequest(request)) {
+      if (options.rateLimit && !isInternalRequest(request) && !(options.rateLimitExemptAdmin && isAdmin)) {
         const limited = await resolveRateLimit(request, options.rateLimit, userId, rateScope);
         if (limited) {
           recordCounter('ratelimit.rejected');

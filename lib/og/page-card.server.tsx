@@ -56,7 +56,9 @@ import {
   statChips,
   type Stat,
 } from '@/lib/og/chrome.server';
-import { loadOgImage } from '@/lib/og/media.server';
+import { loadOgImage, readImageSources } from '@/lib/og/media.server';
+import { MAX_COLLAGE_TILES, type CollageBox } from '@/lib/og/collage';
+import { collage, encodeTiles } from '@/lib/og/collage-render.server';
 
 const pngCache = new Map<
   string,
@@ -73,6 +75,8 @@ const PANE_PAD_STORY = 44 * SCALE;
 const ART_SHARE = 0.42;
 /** Between the text block and that picture. */
 const ART_GAP = 24 * SCALE;
+/** The footer's chips, at the size the post card draws them. */
+const FOOTER_CHIP_SCALE = 0.8;
 
 export type PageCardVariant = 'landscape' | 'story';
 
@@ -108,6 +112,12 @@ export interface PageCardData {
    * read: a card without the art is the same card, a card with a hole is not.
    */
   art?: string | null;
+  /**
+   * Several pictures beside the text instead of one: up to four, laid out as the post card lays out a post's photos
+   * (`lib/og/collage`). Takes the place of `art` when both are given; same sources, same rules (landscape only,
+   * unreadable ones dropped).
+   */
+  gallery?: readonly string[];
   /** Footer path, without the origin. Defaults to no path. */
   path?: string | null;
   /**
@@ -131,7 +141,8 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
 
   // The art is part of the key rather than trusted to the caller's: it is drawn,
   // and the rule for this cache is that everything drawn is in the key.
-  const cacheKey = `${variant}:${data.cacheKey}:${data.art ?? ''}`;
+  const gallerySources = (data.gallery ?? []).slice(0, MAX_COLLAGE_TILES);
+  const cacheKey = `${variant}:${data.cacheKey}:${data.art ?? ''}:${gallerySources.join('|')}`;
   const cached = pngCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < ttl) return cached.png;
 
@@ -151,15 +162,24 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
   const paneWidth = frame.width - pad * 2 - HAIRLINE_W * 2;
   const paneHeight = frame.height - pad * 2 - HAIRLINE_W * 2;
 
-  // The picture first — what is left of the pane is what the text gets.
-  const art = centred
-    ? null
-    : await loadOgImage(data.art, {
-        width: Math.round(paneWidth * ART_SHARE),
-        height: paneHeight,
-        fit: 'cover',
-      });
-  const inner = art ? paneWidth - art.width - ART_GAP : paneWidth;
+  // The pictures first — what is left of the pane is what the text gets.
+  const galleryBox: CollageBox = {
+    width: Math.round(paneWidth * ART_SHARE),
+    height: paneHeight,
+  };
+  const tiles =
+    centred || gallerySources.length === 0 ? [] : await encodeTiles(await readImageSources(gallerySources), galleryBox);
+  const art =
+    centred || tiles.length > 0
+      ? null
+      : await loadOgImage(data.art, {
+          width: Math.round(paneWidth * ART_SHARE),
+          height: paneHeight,
+          fit: 'cover',
+        });
+  const artWidth = tiles.length > 0 ? galleryBox.width : (art?.width ?? 0);
+  const hasArt = artWidth > 0;
+  const inner = hasArt ? paneWidth - artWidth - ART_GAP : paneWidth;
 
   // Height the pane's own rows claim before the title gets any: the lead line,
   // the subtitle, and the byline each reserve their band only when present.
@@ -290,7 +310,7 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
         : {
             flex: 1,
           }),
-      ...(art
+      ...(hasArt
         ? {
             flexDirection: 'row' as const,
             alignItems: 'center' as const,
@@ -301,7 +321,7 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
           }),
       padding: pad,
     },
-    children: art
+    children: hasArt
       ? [
           <div
             key="text"
@@ -323,7 +343,7 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
               marginLeft: ART_GAP,
             }}
           >
-            {framedImage(art, RADIUS_SM)}
+            {tiles.length > 0 ? collage(tiles, galleryBox) : art ? framedImage(art, RADIUS_SM) : null}
           </div>,
         ]
       : textChildren,
@@ -333,13 +353,15 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
   // off the edge of the card. Measure the chips first (same rough advance the
   // text fitter uses) and drop the path when the two together won't fit — the
   // origin alone always does.
+  //
+  // The footer is reference, not content, so it is drawn at the post card's size: chips at 0.8 and an 11px URL.
   const chipsWidth = stats.reduce(
-    (sum, s) => sum + 22 * SCALE + s.value.length * 17 + s.label.length * 11 + 10 * SCALE,
+    (sum, s) => sum + (22 * SCALE + s.value.length * 17 + s.label.length * 11 + 10 * SCALE) * FOOTER_CHIP_SCALE,
     0,
   );
   const host = data.host ?? 'rmhstudios.com';
   const withPath = `${host}${data.path ?? ''}`;
-  const shown = chipsWidth + withPath.length * 13 <= frame.width ? withPath : host;
+  const shown = chipsWidth + withPath.length * 11 <= frame.width ? withPath : host;
   const url = (
     <div
       style={{
@@ -349,7 +371,7 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
     >
       <span
         style={{
-          fontSize: (centred ? 20 : 13) * SCALE,
+          fontSize: (centred ? 20 : 11) * SCALE,
           fontWeight: 500,
           color: DIM,
         }}
@@ -396,7 +418,7 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
       : body,
     // On the story card the chips already have their own row under the pane, so
     // the footer is just the URL.
-    footerLeft: !centred && stats.length ? statChips(stats) : url,
+    footerLeft: !centred && stats.length ? statChips(stats, FOOTER_CHIP_SCALE) : url,
     footerRight: !centred && stats.length ? url : null,
   });
 
@@ -406,6 +428,8 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
   });
   const png = await svgToPng(svg, size.width);
 
+  // A gallery is a random pick, so its renders are not kept: hundreds of combinations would push out every other card.
+  if (gallerySources.length > 0) return png;
   if (pngCache.size >= PNG_MAX) {
     const oldest = pngCache.keys().next().value;
     if (oldest !== undefined) pngCache.delete(oldest);
@@ -420,7 +444,7 @@ async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
 // perf: in-flight dedupe - concurrent requests for one card share a single render.
 export function renderPageCard(data: PageCardData): Promise<Buffer> {
   return dedupeOgRender(
-    `page:${data.variant === 'story' ? 'story' : 'landscape'}:${data.cacheKey}:${data.art ?? ''}`,
+    `page:${data.variant === 'story' ? 'story' : 'landscape'}:${data.cacheKey}:${data.art ?? ''}:${(data.gallery ?? []).join('|')}`,
     () => renderPageCardUncached(data),
   );
 }

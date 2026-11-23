@@ -69,7 +69,6 @@ adsense
 albums-storage
 coins
 account-deletion
-rmhos
 translations
 ```
 

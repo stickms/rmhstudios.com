@@ -3723,15 +3723,6 @@ lib/prepaint/generated.ts
 /components/shell/NoGlobe.tsx
 /features/balatro/engine/mp/bridge-schema.gen.ts
 
-# rmhOS files whose behaviour or checks read their text layout (the same rule as the list above).
-# The registered endpoint module: lib/api/route-sources.ts and the route-table generator parse
-# `apiRoute(` from the source text, and prettier at printWidth 1 splits that call across lines.
-/features/rmhos/api/rmhos.session.server.ts
-# features/rmhos/__tests__/image-publish.test.ts pastes the printed pin over the `PUBLISHED_IMAGE`
-# declaration in this file by matching its single-line text, which prettier breaks up.
-/features/rmhos/engine/image-manifest.ts
-# A route file (app/routes is read as text by the route tests and the generator).
-/app/routes/rmhos.tsx
 /app/routes/rmh-research.tsx
 /app/routes/rmh-research/
 /components/rmh-research/

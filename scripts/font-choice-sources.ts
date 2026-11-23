@@ -32,6 +32,7 @@ export const CHOICE_SOURCES: Record<FontId, ChoiceSource> = {
   charter: {
     pkg: '@fontsource/charis-sil',
     css: ['400.css', '700.css', '400-italic.css', '700-italic.css'],
+    // Steel Y1 names this as its one exception: Charis SIL has no 600 (docs/plans/…steel…md, Y1).
     weights: { '700': '600 700' },
   },
   'source-serif-4': variable('source-serif-4'),

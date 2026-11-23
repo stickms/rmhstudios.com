@@ -570,31 +570,9 @@ else
       skip "docs freshness" "registry/catalog/routes untouched"
     fi
 
-    # lib/prepaint/generated.ts is the ONE inline pre-paint script (and its CSP
-    # hash), bundled from lib/prepaint/*.ts and the small modules those steps
-    # import. A stale copy ships the old logic to every document.
-    if has '^(lib/prepaint/|lib/access/prefs\.ts|lib/appearance\.ts|lib/cookie-consent\.ts|lib/delight/season\.ts|lib/i18n/config\.ts|lib/native-material-routes\.ts|scripts/build-prepaint\.ts)'; then
-      run_step "prepaint:check" pnpm run prepaint:check
-      case $? in
-        0) pass_timed "pre-paint script is current" ;;
-        1) fail "lib/prepaint/generated.ts is stale — run pnpm prepaint:build and stage it" ;;
-      esac
-    else
-      skip "pre-paint freshness" "lib/prepaint untouched"
-    fi
-
-    # docs/_generated/facts.json holds the counts (models, routes, tests, css, ...)
-    # that CLAUDE.md and the living docs point at. Only the paths that feed those
-    # counts (or the file itself) can make it stale.
-    if has '^(prisma/|app/routes/|(lib|features)/.*/api/[^/]+\.server\.ts$|lib/api/routes/|components/.*\.tsx$|.*\.css$|.*\.test\.tsx?$|\.github/workflows/|lib/i18n/config\.ts|scripts/gen-repo-facts\.ts|docs/_generated/)'; then
-      run_step "facts:check" pnpm run facts:check
-      case $? in
-        0) pass_timed "docs/_generated/facts.json is current" ;;
-        1) fail "facts.json is stale — run pnpm facts:generate and stage it" ;;
-      esac
-    else
-      skip "facts freshness" "no counted paths touched"
-    fi
+    # Not gated here any more: lib/prepaint/generated.ts, app/routeTree.gen.ts and
+    # docs/_generated/facts/ are not in git (.gitignore), so there is nothing to be stale in a
+    # commit. `pnpm gen` writes them; install, dev, build, typecheck and the vitest run do too.
 
     # A new game's art dropped into public/images/** without regenerating
     # lib/images/variants.gen.ts does not break anything — it silently serves

@@ -28,7 +28,8 @@ in the server HTML with scripting off.
 **The public endpoints stay user-independent (phase 4).** Nothing under `/api/medschools/schools*` or `live` reads a
 session, a preference or a list; a signed-in member's preferences are applied in the route loader, which prefetches the
 same public queries with explicit parameters, so the public cache keys and bodies are what any anonymous caller can type
-(`medschools-private.test.ts` holds that a session changes no public byte).
+(`medschools-private.test.ts` holds that a session changes no public byte). `me/ask` is the exception that is personal
+but not an aggregate of tracker rows: see "AI Q&A (phase 6)".
 
 **Placement (owner O1):** listed in the Services hub (`app/routes/_site/services/index.tsx`) and site search
 (`lib/search/catalog.ts`), **not** in the games/apps catalog. There is no `catalog.ts`, no card art, no image manifest
@@ -270,6 +271,96 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
 - **The chance** shows on the tracker (`tracker/ChanceLine.tsx`, one query for the cycle under `ME_KEY`) and under the
   Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is an addition: signed out, loading or failed, the page is whole without it.
 
+## AI Q&A (phase 6)
+
+`/rmh-medschool/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt
+and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md` (rulings R1-R19).
+`POST/GET /api/medschools/me/ask` (`api/medschools.me.ask.server.ts`), never cached.
+
+- **Two model calls, one task (R2, R3).** `runTaskJson` under the `medschools-qa` `AiTask` (`lib/ai/provider.server.ts`,
+  prompts `MEDSCHOOLS_QA_ROUTE` and `MEDSCHOOLS_QA_ANSWER`): route (`{intent, schools, cycle, filters}`, temperature 0),
+  then answer (`{segments:[{text, cites}], thin}`). The model names schools as written; the server resolves them against
+  the active schools (`engine/qa/route.ts`). An unresolved school or intent `other` ends before the second call. The
+  runner is a seam (`api/qa/runner.server.ts`) so every test scripts the model.
+- **Retrieval only through the public readers (R5, R6).** `api/qa/retrieve.server.ts` calls `getSchool`, `getActivity`,
+  `getHistory` and `getForecast`, so the one floor (`K_FLOOR`, the daily RMH snapshot, in-state splits) and the
+  primary-source rule are inherited, never re-implemented. It imports no tracker module and no user id
+  (`retrieve.server.test.ts` pins it). A fact's `updatedAt` is the source's last successful run for a count (the
+  citation says "source refreshed"), `fetchedAt` for a profile, `computedAt` for a forecast; unknown stays unknown.
+- **The validator is the guarantee (R7, R17).** `engine/qa/ground.ts` keeps a segment only when every cite is a
+  retrieved fact, it cites at least one, every number in it is in a cited numeric fact, it holds no link, bare domain or
+  markup, and a segment citing only forum text (`untrusted`) holds no number. A number is every maximal digit run
+  whatever precedes it (CJK and Arabic glue digits to letters; `engine/qa/numbers.ts`), digits normalised, percents
+  (`%`, `percent`, `per cent`), `k`/`m` suffixes and a leading minus part of the token, dates, years, ranges; and a
+  spelled-out number (`engine/qa/number-words.ts`: English parsed to its value, "a dozen", "half"; es/fr/pt/ru/ar/hi/zh/ja
+  listed best-effort as unverifiable, so those sentences are dropped). Bidi and zero-width characters (`\p{Cf}`) are
+  removed from the sentence before it is checked and shown; lookalike dots (`。` `．` `﹒` `[.]` `(dot)`, `evil . com`)
+  count as dots for the domain check. A sentence citing facts of several schools takes a number only from a cited fact
+  of a school it names (`schoolNames`). **What it does not guarantee:** that digit-free prose is true. A sentence may
+  paraphrase member-reported text (interview questions, feedback, the profile's style and length notes, all
+  `untrusted`), because that is what such an answer is; the page says members wrote it and RMH checks figures, not
+  words. Dropped segments are not repaired or re-asked: `notice: 'removed-ungrounded'`, and nothing left is `no-data`.
+  No derived figures: a computed number is simply not found.
+- **Injection (R8).** Facts reach the model only inside `asData(...)`; forum text is cleaned again (`cleanForPrompt`),
+  capped and flagged untrusted. A model that obeys planted text still produces nothing the validator keeps
+  (`testing/integration/medschools-ask.test.ts` proves it end to end with a fake provider).
+- **My chance (R4).** Only on a `my-chance` question: the server runs `getChances(userId, ...)` for the resolved schools
+  and returns the rows as `mine`; the model never sees a milestone, date or percent from the tracker. `mine: []` means
+  no application; `mine: null` with `notice: 'mine-unavailable'` means the read failed (R18); the UI renders it through `ChanceLine` even when the answer is thin. This is the one personal read in
+  `me/**` that is not an aggregate of tracker rows, and it reads only the caller's own.
+- **Ceilings (R9-R11, R18), in this order before any model call.** Rate limit `ai` 6 per minute per user;
+  `isAiConfigured` (503 `AI_UNAVAILABLE`); the shared gate (503 `MEDSCHOOLS_QA_PAUSED`: Q&A may spend
+  `MEDSCHOOLS_QA_AI_SHARE`, default 0.25, of `MEDSCHOOLS_AI_MONTHLY_USD`; the scrape gates get the rest,
+  `features/medschools/ai-budget.ts`); `assertAiBudget` (402); then the atomic reservation (`reserveQuestion` in
+  `api/qa/budget.server.ts`): one transaction under `pg_advisory_xact_lock` on the member writes a `medschools-qa-ask`
+  row (the day's count, the tier's cap since UTC midnight, below: 429 `MEDSCHOOLS_QA_DAILY_CAP`) and a
+  `medschools-qa-lock` row (the in-flight lease, 120 s since R20, deleted when the question ends: 429 `MEDSCHOOLS_QA_BUSY`).
+  Both are zero-token, zero-cost, text-free `AiUsage` rows, so the cap and the lease hold across every web process and do
+  not depend on the provider's metering write. Any ledger error fails closed (503 paused, unavailable). The one thing a
+  lost provider metering write can still do is under-count spend (it is logged by `meter`); the daily count cannot slip.
+  The whole question has a 50 s deadline (`QA_DEADLINE_MS`, under the client's 60 s `AI_TIMEOUT_MS`) plus the request's
+  own `signal`; both model calls take it and never retry. The web tier needs `DEEPSEEK_API_KEY`.
+- **Think it through (R20).** `think: true` in the ask body (optional) switches DeepSeek thinking on for the **answer
+  call only** (`runTask` option `thinking`, same `medschools-qa` task and JSON mode; the route call stays flash). Only
+  `message.content` is read: the reasoning text is dropped inside the provider and is never returned, stored, metered or
+  logged (it is ungrounded, so it would bypass the validator); the response carries `thinking: boolean` and the page says
+  "Thought for N s" (the question's own wall time, measured in `askRun`). `MEDSCHOOLS_QA_THINKING` (default on) gates it
+  and `GET me/ask` returns `thinkingAvailable`. Deadlines: whole question 90 s (`QA_THINK_DEADLINE_MS`, answer call gets
+  the remainder through the shared signal and a 90 s request timeout), the client's per-call timeout 97 s
+  (`QA_THINK_CLIENT_TIMEOUT_MS`; `AI_TIMEOUT_MS` is unchanged), the lease (member and admin) 120 s (`QA_LEASE_MS`).
+  Both stay under Cloudflare's 100 s cut of a proxied request, so a long think ends in the app's own refusal, not a 524.
+- **Limit tiers, the admin bypass and limit requests (R19).** The daily cap depends on the caller's tier, resolved on the
+  server per request by `resolveQaTier` (`api/qa/budget.server.ts`): **admin** is the session's `isAdmin` (the
+  `defineHandler` ctx field, the same flag `auth: 'admin'` checks), **member** is `getUserTier(userId) !== 'free'` (the
+  Stripe subscription or a gift membership, the source `assertAiBudget` uses; automatic, highest after admin), **approved**
+  is an `APPROVED` `MedQaLimitRequest` row, else **free**. Caps: free 25 `MEDSCHOOLS_QA_DAILY_CAP`, approved 40
+  `..._APPROVED`, member 100 `..._MEMBER` (invalid closes that tier). An admin skips the daily cap, the one-in-flight
+  lease, the 6 per minute rate limit (`rateLimitExemptAdmin: true` on the ask `POST`) and the member's own monthly
+  allowance, and writes no daily-count row; the shared monthly pause (R11) still applies, and so does a ceiling of 3 questions in flight per admin (`QA_ADMIN_MAX_IN_FLIGHT`, `medschools-qa-admin-lock` leases under an advisory lock keyed on the admin; 429 `MEDSCHOOLS_QA_BUSY`). A decision (approve, decline, revoke) sends the applicant a notice; a revoke is recorded in `revokedAt/By/Note` and leaves the approval fields alone; the admin list always includes every `APPROVED` row as `active`. `GET me/ask` returns
+  `{ tier, remainingToday, dailyCap }`, null and null for an admin ("Admin: no daily limit"). Limit requests
+  (`MedQaLimitRequest`, `api/qa-limit.server.ts`, outside `api/qa/` so the privacy pins on that folder stay literal): one
+  PENDING and one APPROVED per member (partial unique indexes in the migration), reason at most 500 characters, a decline
+  or revoke blocks a new request for 30 days, admins and paying members never see the form (`LimitRequest.tsx`, under the
+  Ask form, not an ink button). Endpoints `me/qa-limit-request` (GET, POST) and `admin/medschools/qa-limit-requests`
+  (GET, POST: approve, decline, revoke with an optional note), reviewed in the "Q&A limits" tab of `/admin/medschools`.
+  Erased with the account; the schema test pins the model's exact columns, none of which can hold a question.
+- **What is and is not kept (R12).** The question and the answer exist in memory for the call. No table, no cache, no
+  response micro-cache, no log line holds them (logs carry intent, counts and status). The only trace is the `AiUsage`
+  row every AI call already writes (user id, task, prompt id, tokens, cost, time; no text), kept under that table's
+  existing erasure decision (`lib/account/erasure-registry.ts`). So no erasure operation was added for it (the limit request of R19 is its own model with its own erasure op). Pinned by
+  `engine/schema.test.ts` (no `Med*` column can hold a question), `api/qa/privacy.server.test.ts` (no writes, no caches,
+  no logging of text) and `scripts/medschools/verify-erasure.ts`. The provider receives the question text; the form says
+  so in one line.
+- **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
+  `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
+  (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
+  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
+- **Tests.** Unit:
+  `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
+  `testing/integration/medschools-ask.test.ts` with `testing/integration/lib/fake-deepseek.ts` (the app is started with
+  `DEEPSEEK_API_KEY=integration-fake`, `DEEPSEEK_BASE_URL=http://127.0.0.1:$INTEGRATION_AI_FAKE_PORT/v1`; the
+  model-dependent cases skip without `INTEGRATION_AI_FAKE_PORT`, and CI sets it). Visual: `visual-check.mjs --fake-ai`.
+
 ## Testing and verification
 
 - Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds Steel, i18n
@@ -304,6 +395,14 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
   follows a Day pass paints Day on the tracker and lists pages unless the account is set first
   (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they are ordinary
   `_site` pages and `lib/prepaint/theme-routes.ts` does not exclude them.
+- **Ask pages in the visual pass (phase 6).** `visual-check.mjs --fake-ai` also shoots the Ask page (signed out, idle,
+  answered, partial, declined, my-chance, the wait, the cap reached and the 429 refusal) and the school page's panel (idle,
+  answered). It hosts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` itself, so the app must be started
+  with `DEEPSEEK_API_KEY=integration-fake DEEPSEEK_BASE_URL=http://127.0.0.1:7798/v1` and `RATE_LIMIT_MULTIPLIER=50`, and
+  `DATABASE_URL` must name the scratch database (it clears and plants the member's `ai_usage` rows). It asserts no
+  sideways scroll, 44 px controls, and Steel R1 on the page content (no shadow, gradient, filter or backdrop filter).
+  Without the flag only the signed-out and idle pages run. It found that the grounding validator dropped every sentence
+  naming "Admit.org" (a domain-shaped source name); a domain is now allowed when it is in our own fact text.
 - i18n: namespace `medschools`; new keys carry a prefix (`index-`, `live-`, `school-`, `chart-`, `event-`, `program-`,
   `source-`); the hub row's two strings are `nav-rmh-medschools` and `services-medschools-desc` in `feed`.
 
@@ -332,7 +431,7 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
 
 ## Private: the tracker, sharing, lists and preferences (phase 4)
 
-Pages `/rmh-medschool/tracker` and `/rmh-medschool/lists` (signed out they show a sign-in prompt, `noindex`; neither is
+Pages `/rmh-medschool/tracker`, `/rmh-medschool/lists` and (phase 6) `/rmh-medschool/ask` (signed out they show a sign-in prompt, `noindex`; neither is
 a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO with a user, cycle or event id:
 `me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
 DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),
@@ -358,7 +457,7 @@ a 403.
   the read rules above).
 - **Account deletion (D9, Q3).** `eraseSharedMedEvents` runs at the deletion request and again before the erasure
   transaction (idempotent; a missing secret with events present fails loudly and leaves the account scheduled);
-  `medschoolsErasureOps` deletes the three user-keyed models, children by cascade. `pnpm docs:deletion` lists them.
+  `medschoolsErasureOps` deletes the four user-keyed models (`MedTrackerCycle`, `MedSchoolList`, `MedUserPrefs`, `MedQaLimitRequest`), children by cascade, and nulls `decidedBy` and `revokedBy` on the limit requests the member decided or revoked as an admin. `pnpm docs:deletion` lists them.
 - **Preferences (D13, D14).** They apply only where the URL is silent, decided in the route loader; `?program=ALL` is an
   explicit choice and beats a stored `PHD`. A page whose defaults came from preferences says so in one line.
 - **Rotating `MEDSCHOOLS_DEDUPE_SECRET` orphans every shared event** (the hashes are keyed by the old secret). Do it

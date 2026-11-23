@@ -42,6 +42,8 @@ const NOT_A_KEY_TEMPLATE: ReadonlySet<string> = new Set([
   'cloud:',
   '/tf2/play?',
   '/rmh/mp/packs/',
+  // The Ask panel's sign-in return path (a school page), not a storage key.
+  '/rmh-medschool/',
   'matrix3d(',
   // A Neon Driftway livery share code, and the html class that names the active site style.
   'ND1-',

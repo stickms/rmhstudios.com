@@ -1,6 +1,7 @@
 /**
  * Tell an account that the ways into it changed: a sign-in method connected or
- * removed, or another account's sign-in moved into it. In-app at `critical`
+ * removed, another account's sign-in moved into it, the password changed, or
+ * two-step verification turned on or off (or its backup codes replaced). In-app at `critical`
  * urgency (it ignores quiet hours, as the new-device alert does) and by email to
  * the account's address when it has a real one.
  *
@@ -27,7 +28,13 @@ export type SignInChange =
   | {
       kind: 'merged';
       providerIds: string[];
-    };
+    }
+  | ProtectionChange;
+
+/** A change to how the account is protected, rather than to which providers can sign in. */
+export interface ProtectionChange {
+  kind: 'password_changed' | 'two_factor_enabled' | 'two_factor_disabled' | 'backup_codes_regenerated';
+}
 
 const SECURITY_PAGE = '/settings/security';
 
@@ -58,6 +65,26 @@ function describe(change: SignInChange): {
         line: `${names} from another, empty account can now be used to sign in to this account. The empty account was closed.`,
       };
     }
+    case 'password_changed':
+      return {
+        subject: 'Your RMH Studios password was changed',
+        line: 'The password for your account was changed from your security settings.',
+      };
+    case 'two_factor_enabled':
+      return {
+        subject: 'Two-step verification is on for your RMH Studios account',
+        line: 'Signing in with your email and password now also asks for a code from your authenticator app.',
+      };
+    case 'two_factor_disabled':
+      return {
+        subject: 'Two-step verification was turned off on your RMH Studios account',
+        line: 'Signing in with your email and password no longer asks for a code.',
+      };
+    case 'backup_codes_regenerated':
+      return {
+        subject: 'New backup codes for your RMH Studios account',
+        line: 'New two-step verification backup codes were made. The old ones no longer work.',
+      };
   }
 }
 
@@ -101,7 +128,12 @@ export async function notifySignInChange(userId: string, change: SignInChange): 
     if (user?.email && (await canEmail(userId, 'security'))) {
       // The same change reported twice within ten minutes (a retried request)
       // is one email; the hourly security cap bounds a burst of real changes.
-      const what = change.kind === 'merged' ? change.providerIds.join(',') : change.providerId;
+      const what =
+        change.kind === 'merged'
+          ? change.providerIds.join(',')
+          : change.kind === 'connected' || change.kind === 'removed'
+            ? change.providerId
+            : 'account';
       await sendOnce({
         userId,
         kind: 'security',
