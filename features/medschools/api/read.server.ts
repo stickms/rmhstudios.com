@@ -18,7 +18,9 @@ import {
 } from '../engine/public-read';
 import { floorWhere, publicSum } from '../engine/floor';
 import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
-import { defaultDayZero } from '../engine/cycle';
+import { cycleEndOn, defaultDayZero } from '../engine/cycle';
+import { addDays } from '../engine/stats/days';
+import { primarySeriesOf, seriesOfSource } from '../engine/stats/input';
 import {
   isAllPrograms,
   legacyOf,
@@ -41,12 +43,14 @@ import type {
   MedProgramFilter,
   MedSchoolActivityRes,
   MedSchoolDetailDto,
+  MedSchoolForecastRes,
   MedSchoolHistoryRes,
   MedTodayRes,
 } from '../medschools.contract';
 import type {
   ActivityQuery,
   ArrivalsQuery,
+  ForecastQuery,
   HistoryQuery,
   ListSchoolsQuery,
   LiveQuery,
@@ -486,6 +490,121 @@ export async function getHistory(
     });
   }
   return { program, eventType, cycles: out };
+}
+
+/** The stored band as parallel arrays; anything malformed reads as no band (the row is the job's, but fail soft). */
+function bandOf(curve: unknown): MedSchoolForecastRes['band'] {
+  const c = curve as { days?: unknown; p10?: unknown; p50?: unknown; p90?: unknown } | null;
+  if (!c || !Array.isArray(c.days) || !Array.isArray(c.p10) || !Array.isArray(c.p50) || !Array.isArray(c.p90)) return [];
+  const out: MedSchoolForecastRes['band'] = [];
+  for (let i = 0; i < c.days.length; i++) {
+    const day = c.days[i];
+    const p10 = c.p10[i];
+    const p50 = c.p50[i];
+    const p90 = c.p90[i];
+    if (typeof day === 'number' && typeof p10 === 'number' && typeof p50 === 'number' && typeof p90 === 'number') {
+      out.push({ day, p10, p50, p90 });
+    }
+  }
+  return out;
+}
+
+interface StoredSummary {
+  dayZeroOn: string;
+  total: { p10: number; p50: number; p90: number } | null;
+  halfDay: { p10: number; p50: number; p90: number } | null;
+  basis: { cycleYear: number; source: MedSourceId; weight: number }[];
+}
+
+/**
+ * The forecast of one program (ALL reads REG, D12) and event type for the SITE's cycle. A function of the stored
+ * `MedForecast` row plus the floored observed series (the same floor and primary rule as the Activity chart), cumulated
+ * through the row's `asOf`: today's partial counts never show. No row but floored data is `pending`; no data `no-data`.
+ */
+export async function getForecast(
+  slug: string,
+  q: ForecastQuery,
+  now: Date = new Date(),
+): Promise<MedSchoolForecastRes | null> {
+  const school = await findSchool(slug);
+  if (!school) return null;
+  const program: 'REG' | 'PHD' = q.program === 'PHD' ? 'PHD' : 'REG';
+  const eventType: MedChartedTypeId = q.type ?? 'INTERVIEW';
+  const cycleYear = await siteCycle(now);
+  const today = utcDayOf(now);
+  const [row, cycle, counts] = await Promise.all([
+    prisma.medForecast.findFirst({
+      where: { schoolId: school.id, program, cycleYear, eventType },
+      select: { mode: true, source: true, asOf: true, curve: true, summary: true },
+    }),
+    prisma.medCycle.findUnique({ where: { cycleYear }, select: { dayZeroOn: true, dateEstimated: true } }),
+    prisma.medCycleCount.findMany({
+      where: { schoolId: school.id, cycleYear, program, eventType, ...floorWhere(now) },
+      select: {
+        source: true,
+        date: true,
+        count: true,
+        contributors: true,
+        publishedCount: true,
+        publishedContributors: true,
+      },
+    }),
+  ]);
+  const stored = row ? (row.summary as StoredSummary | null) : null;
+  const cycleDayZero = cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear);
+  // The days of a stored band count from the day zero the job used, so that one names the dates.
+  const dayZeroOn = stored?.dayZeroOn ?? cycleDayZero;
+  const cells = counts.map((r) => ({ ...r, date: day(r.date), eventType }));
+  const asOf = row ? day(row.asOf) : addDays(today, -1);
+  const series = row?.source
+    ? { source: row.source as MedSource, days: seriesOfSource(cells, today, row.source as MedSource) }
+    : primarySeriesOf(cells, today);
+  const observed = toCumulativeByDay(
+    (series?.days ?? []).filter((d) => d.date <= asOf),
+    dayZeroOn,
+  );
+  const base = {
+    program,
+    eventType,
+    cycleYear,
+    dayZeroOn,
+    dayZeroEstimated: cycle ? cycle.dateEstimated : true,
+    endOn: cycleEndOn(cycleYear),
+  };
+  if (!row) {
+    return {
+      ...base,
+      status: observed.length > 0 ? 'pending' : 'no-data',
+      source: series?.source ?? null,
+      asOf: null,
+      observed,
+      band: [],
+      summary: null,
+      basis: [],
+    };
+  }
+  const band = row.mode === 'NONE' ? [] : bandOf(row.curve);
+  const dateOf = (n: number): string => addDays(dayZeroOn, n);
+  return {
+    ...base,
+    status: row.mode === 'FULL' ? 'ready' : row.mode === 'EARLY' ? 'early' : 'no-history',
+    source: (row.source as MedSourceId | null) ?? series?.source ?? null,
+    asOf,
+    observed,
+    band,
+    summary:
+      row.mode !== 'NONE' && stored?.total && stored.halfDay
+        ? {
+            total: stored.total,
+            halfOn: {
+              p10: dateOf(stored.halfDay.p10),
+              p50: dateOf(stored.halfDay.p50),
+              p90: dateOf(stored.halfDay.p90),
+            },
+          }
+        : null,
+    basis: row.mode === 'NONE' ? [] : (stored?.basis ?? []),
+  };
 }
 
 /**

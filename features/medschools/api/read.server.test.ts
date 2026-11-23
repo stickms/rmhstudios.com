@@ -18,6 +18,7 @@ const m = vi.hoisted(() => {
     medSdnThread: d(),
     medSchoolAlias: d(),
     medCycle: d(),
+    medForecast: d(),
     $queryRaw: vi.fn(async (..._a: unknown[]): Promise<unknown[]> => []),
   };
 });
@@ -28,6 +29,7 @@ import {
   getActivity,
   getArrivals,
   getCardData,
+  getForecast,
   getHistory,
   getLive,
   getSchool,
@@ -85,6 +87,7 @@ describe('anonymity of queries', () => {
     await getSchool('duke', NOW);
     await getActivity('duke', {}, NOW);
     await getHistory('duke', {}, NOW);
+    await getForecast('duke', {}, NOW);
     await getLive({}, NOW);
     await getToday({}, NOW);
     for (const [name, delegate] of Object.entries(m).filter(([, x]) => 'findMany' in x) as [string, Delegate][]) {
@@ -761,5 +764,137 @@ describe('getArrivals (when results arrive)', () => {
     expect(many.hours[9]).toBe(8);
     expect(many.cycles).toEqual([{ cycleYear: 2026, count: 12, firstOn: '2025-11-03', medianOn: '2025-12-02' }]);
     expect(Object.keys(many).sort()).toEqual(['cycles', 'eventType', 'hours', 'program', 'total', 'weekdays', 'zone']);
+  });
+});
+
+describe('getForecast', () => {
+  const CYCLE = 2028;
+  const ZERO = '2027-06-01';
+  const cnt = (
+    source: string,
+    date: string,
+    count: number,
+    contributors: number | null = null,
+    published?: { count: number | null; contributors: number | null },
+  ) => ({
+    source,
+    date: d(date),
+    count,
+    contributors,
+    publishedCount: source === 'RMH' ? (published ? published.count : count) : null,
+    publishedContributors: source === 'RMH' ? (published ? published.contributors : contributors) : null,
+  });
+  const row = (mode: 'FULL' | 'EARLY' | 'NONE', over: Record<string, unknown> = {}) => ({
+    mode,
+    source: 'ADMIT',
+    asOf: d('2027-11-20'),
+    curve:
+      mode === 'NONE'
+        ? { days: [], p10: [], p50: [], p90: [] }
+        : { days: [172, 173, 174], p10: [10, 11, 12], p50: [10, 13, 16], p90: [10, 15, 20] },
+    summary: {
+      dayZeroOn: ZERO,
+      observed: 10,
+      meanShare: 0.4,
+      total: mode === 'NONE' ? null : { p10: 20, p50: 30, p90: 40 },
+      halfDay: mode === 'NONE' ? null : { p10: 160, p50: 180, p90: 200 },
+      basis: mode === 'NONE' ? [] : [{ cycleYear: 2027, source: 'ADMIT', weight: 1 }],
+    },
+    ...over,
+  });
+  const setup = (forecast: unknown, counts: unknown[]) => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: CYCLE });
+    m.medForecast.findFirst.mockResolvedValue(forecast);
+    m.medCycleCount.findMany.mockResolvedValue(counts);
+  };
+
+  it('a FULL row is ready: the band is the stored curve, the observed line stops at the row asOf', async () => {
+    setup(row('FULL'), [
+      cnt('ADMIT', '2027-11-18', 4),
+      cnt('ADMIT', '2027-11-20', 6),
+      cnt('ADMIT', '2027-11-21', 9), // today: partial, after the row's asOf
+    ]);
+    const res = (await getForecast('duke', {}, NOW))!;
+    expect(res.status).toBe('ready');
+    expect(res.program).toBe('REG');
+    expect(res.source).toBe('ADMIT');
+    expect(res.asOf).toBe('2027-11-20');
+    expect(res.observed).toEqual([
+      { day: 170, cumulative: 4 },
+      { day: 172, cumulative: 10 },
+    ]);
+    expect(res.band).toEqual([
+      { day: 172, p10: 10, p50: 10, p90: 10 },
+      { day: 173, p10: 11, p50: 13, p90: 15 },
+      { day: 174, p10: 12, p50: 16, p90: 20 },
+    ]);
+    expect(res.summary).toEqual({
+      total: { p10: 20, p50: 30, p90: 40 },
+      halfOn: { p10: '2027-11-08', p50: '2027-11-28', p90: '2027-12-18' },
+    });
+    expect(res.endOn).toBe('2028-05-31');
+    expect(Math.abs(res.basis.reduce((n, b) => n + b.weight, 0) - 1)).toBeLessThan(0.01);
+  });
+
+  it('EARLY is early, NONE is no-history with an empty band', async () => {
+    setup(row('EARLY'), [cnt('ADMIT', '2027-11-18', 4)]);
+    expect((await getForecast('duke', {}, NOW))!.status).toBe('early');
+    setup(row('NONE'), [cnt('ADMIT', '2027-11-18', 4)]);
+    const none = (await getForecast('duke', {}, NOW))!;
+    expect(none.status).toBe('no-history');
+    expect(none.band).toEqual([]);
+    expect(none.summary).toBeNull();
+    expect(none.observed).toHaveLength(1);
+  });
+
+  it('no row: pending with the observed line through yesterday, or no-data with nothing', async () => {
+    setup(null, [cnt('ADMIT', '2027-11-18', 4), cnt('ADMIT', '2027-11-21', 9)]);
+    const pending = (await getForecast('duke', {}, NOW))!;
+    expect(pending.status).toBe('pending');
+    expect(pending.asOf).toBeNull();
+    expect(pending.observed).toEqual([{ day: 170, cumulative: 4 }]);
+    setup(null, []);
+    const none = (await getForecast('duke', {}, NOW))!;
+    expect(none.status).toBe('no-data');
+    expect(none.observed).toEqual([]);
+    expect(none.dayZeroOn).toBe(ZERO);
+  });
+
+  it('ALL and an absent program both resolve to REG; PHD reads the PHD row', async () => {
+    setup(null, []);
+    expect((await getForecast('duke', { program: 'ALL' }, NOW))!.program).toBe('REG');
+    expect((await getForecast('duke', {}, NOW))!.program).toBe('REG');
+    await getForecast('duke', { program: 'PHD', type: 'ACCEPTANCE' }, NOW);
+    const args = m.medForecast.findFirst.mock.calls.at(-1)![0] as { where: Record<string, unknown> };
+    expect(args.where).toEqual({ schoolId: 's1', program: 'PHD', cycleYear: CYCLE, eventType: 'ACCEPTANCE' });
+  });
+
+  it('reads the site cycle through the floor, never the schools own newest', async () => {
+    setup(null, []);
+    await getForecast('duke', {}, NOW);
+    const counts = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(counts.where).toMatchObject({ schoolId: 's1', cycleYear: CYCLE, program: 'REG', ...{ OR: FLOOR.OR } });
+    const latest = m.medCycleCount.findFirst.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(latest.where).toMatchObject(FLOOR);
+  });
+
+  it('an RMH-only school with an unpublished, a sub-k and a same-day cell has no observed line', async () => {
+    setup(null, [
+      cnt('RMH', '2027-11-10', 9, 9, { count: null, contributors: null }),
+      cnt('RMH', '2027-11-11', 9, 9, { count: 9, contributors: 2 }),
+      cnt('RMH', '2027-11-21', 9, 9, { count: 9, contributors: 9 }),
+    ]);
+    const res = (await getForecast('duke', {}, NOW))!;
+    expect(res.status).toBe('no-data');
+    expect(res.observed).toEqual([]);
+    const text = JSON.stringify(res);
+    for (const w of ['contributors', 'publishedCount', 'userId', 'dedupeHash']) expect(text).not.toContain(w);
+  });
+
+  it('an unknown, malformed or inactive slug is null', async () => {
+    expect(await getForecast('DUKE', {}, NOW)).toBeNull();
+    m.medSchool.findFirst.mockResolvedValue(null);
+    expect(await getForecast('nope', {}, NOW)).toBeNull();
   });
 });

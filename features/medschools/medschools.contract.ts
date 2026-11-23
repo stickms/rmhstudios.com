@@ -217,6 +217,30 @@ export interface MedSchoolActivityRes {
   unreportedProgramSource: 'ADMIT' | 'SDN' | null;
 }
 
+/** The public forecast of one school x program x event type for the site's current cycle (phase 5). */
+export interface MedSchoolForecastRes {
+  /** Resolved: `ALL` reads REG (D12). */
+  program: 'REG' | 'PHD';
+  eventType: MedChartedTypeId;
+  cycleYear: number;
+  dayZeroOn: string;
+  dayZeroEstimated: boolean;
+  endOn: string;
+  /** `ready` band drawn; `early` band drawn, wide; `no-history` observed only; `no-data` nothing reported; `pending` not computed yet. */
+  status: 'ready' | 'early' | 'no-history' | 'no-data' | 'pending';
+  source: MedSourceId | null;
+  /** The last day the model saw (`YYYY-MM-DD`). */
+  asOf: string | null;
+  /** Days since `dayZeroOn`, through `asOf`. The zero start is the chart's. */
+  observed: { day: number; cumulative: number }[];
+  band: { day: number; p10: number; p50: number; p90: number }[];
+  summary: {
+    total: { p10: number; p50: number; p90: number };
+    halfOn: { p10: string; p50: string; p90: string };
+  } | null;
+  basis: { cycleYear: number; source: MedSourceId; weight: number }[];
+}
+
 export interface MedSchoolHistoryRes {
   program: MedProgramFilter;
   eventType: MedChartedTypeId;
@@ -286,6 +310,11 @@ export const getMedSchoolHistoryApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
   res: MedSchoolHistoryRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/history' });
+
+export const getMedSchoolForecastApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
+  res: MedSchoolForecastRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/forecast' });
 
 export const getMedSchoolArrivalsApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };

@@ -35,6 +35,8 @@ export const historyQuery = z.object({
   type: chartedType.optional(),
 });
 
+export const forecastQuery = historyQuery;
+
 export const arrivalsQuery = historyQuery;
 
 export const liveQuery = z.object({
@@ -69,6 +71,7 @@ export const todayQuery = z.object({ program: program.optional(), degree: degree
 export type ListSchoolsQuery = z.infer<typeof listSchoolsQuery>;
 export type ActivityQuery = z.infer<typeof activityQuery>;
 export type HistoryQuery = z.infer<typeof historyQuery>;
+export type ForecastQuery = z.infer<typeof forecastQuery>;
 export type ArrivalsQuery = z.infer<typeof arrivalsQuery>;
 export type LiveQuery = z.infer<typeof liveQuery>;
 export type TodayQuery = z.infer<typeof todayQuery>;
