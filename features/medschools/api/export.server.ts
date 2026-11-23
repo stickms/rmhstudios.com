@@ -20,7 +20,13 @@ export interface MedschoolsExport {
     }[];
   }[];
   lists: { name: string; items: { school: string; program: string | null; note: string | null }[] }[];
-  prefs: { programFilter: string; degree: string | null; homeState: string | null; chartCategories: string[] };
+  prefs: {
+    programs: string[];
+    programFilter: string;
+    degree: string | null;
+    homeState: string | null;
+    chartCategories: string[];
+  };
 }
 
 export async function exportMedschools(userId: string): Promise<MedschoolsExport> {
@@ -57,7 +63,7 @@ export async function exportMedschools(userId: string): Promise<MedschoolsExport
   const slug = new Map(schools.map((s) => [s.id, s.slug]));
   const prefs = await prisma.medUserPrefs.findUnique({
     where: { userId },
-    select: { programFilter: true, degree: true, homeState: true, chartCategories: true },
+    select: { programFilter: true, degree: true, homeState: true, chartCategories: true, programs: true },
   });
 
   return {
@@ -90,11 +96,12 @@ export async function exportMedschools(userId: string): Promise<MedschoolsExport
       })),
     prefs: prefs
       ? {
+          programs: [...(prefs.programs ?? [])],
           programFilter: prefs.programFilter,
           degree: prefs.degree,
           homeState: prefs.homeState,
           chartCategories: [...prefs.chartCategories],
         }
-      : { programFilter: 'ALL', degree: null, homeState: null, chartCategories: [] },
+      : { programs: [], programFilter: 'ALL', degree: null, homeState: null, chartCategories: [] },
   };
 }

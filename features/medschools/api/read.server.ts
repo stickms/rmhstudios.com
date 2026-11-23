@@ -16,7 +16,17 @@ import {
   utcDayOf,
   type CountCell,
 } from '../engine/public-read';
+import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
 import { defaultDayZero } from '../engine/cycle';
+import {
+  isAllPrograms,
+  legacyOf,
+  parsePrograms,
+  programPair,
+  programsFromLegacy,
+  programsMatch,
+  type ProgramKey,
+} from '../engine/programs';
 import type { MedEventType, MedProgram, MedSource } from '../engine/types';
 import type {
   ActivityTypeDto,
@@ -24,6 +34,7 @@ import type {
   ListMedSchoolsRes,
   MedChartedTypeId,
   MedDegreeId,
+  MedArrivalsRes,
   MedLiveRes,
   MedSourceId,
   MedProgramFilter,
@@ -32,7 +43,14 @@ import type {
   MedSchoolHistoryRes,
   MedTodayRes,
 } from '../medschools.contract';
-import type { ActivityQuery, HistoryQuery, ListSchoolsQuery, LiveQuery, TodayQuery } from './read-schemas';
+import type {
+  ActivityQuery,
+  ArrivalsQuery,
+  HistoryQuery,
+  ListSchoolsQuery,
+  LiveQuery,
+  TodayQuery,
+} from './read-schemas';
 import { buildSourceLinks } from './source-links';
 
 /**
@@ -140,8 +158,17 @@ async function siteCycle(now: Date, requested?: number): Promise<number> {
   });
 }
 
+/**
+ * The program set a list or live query names: `programs`, else the older `degree` and `program` mapped onto it, else
+ * every program. Pure; the one place the readers turn query parameters into a set.
+ */
+const setOf = (q: { programs?: string | undefined; degree?: MedDegreeId | undefined; program?: string | undefined }) =>
+  (q.programs ? parsePrograms(q.programs) : undefined) ??
+  programsFromLegacy(q.degree, q.program === 'REG' || q.program === 'PHD' ? q.program : 'ALL');
+
 export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): Promise<ListMedSchoolsRes> {
-  const program = q.program ?? 'ALL';
+  const set: ProgramKey[] = setOf(q);
+  const program = legacyOf(set).programFilter;
   const [all, cycleYear] = await Promise.all([
     prisma.medSchool.findMany({
       where: { active: true },
@@ -150,26 +177,35 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
     }),
     siteCycle(now),
   ]);
+  const degreeOf = new Map(all.map((s) => [s.id, s.degree] as const));
   const sums = await prisma.medCycleCount.groupBy({
-    by: ['schoolId', 'source'],
-    where: { cycleYear, eventType: 'INTERVIEW', program: { in: programsOf(program) }, ...floorWhere(now) },
+    by: ['schoolId', 'source', 'program'],
+    where: {
+      cycleYear,
+      eventType: 'INTERVIEW',
+      program: { in: [...new Set(set.map((k) => programPair(k).program))] },
+      ...floorWhere(now),
+    },
     _sum: { count: true, publishedCount: true },
   });
-  const bySchool = new Map<string, { source: MedSource; count: number }[]>();
+  // A school counts only the programs of its own degree that are in the set (an MD school never adds DO's).
+  const bySchool = new Map<string, Map<MedSource, number>>();
   for (const s of sums) {
-    const list = bySchool.get(s.schoolId) ?? [];
-    list.push({ source: s.source, count: publicSum(s.source, s._sum) });
+    const degree = degreeOf.get(s.schoolId);
+    if (!degree || !programsMatch(set, degree, s.program)) continue;
+    const list = bySchool.get(s.schoolId) ?? new Map<MedSource, number>();
+    list.set(s.source, (list.get(s.source) ?? 0) + publicSum(s.source, s._sum));
     bySchool.set(s.schoolId, list);
   }
-  const filtered = filterSchools(all, { q: q.q, degree: q.degree, state: q.state });
+  const degrees = new Set(set.map((k) => programPair(k).degree));
+  const filtered = filterSchools(all, { q: q.q, state: q.state }).filter((s) => degrees.has(s.degree));
   return {
     cycleYear,
     program,
     states: [...new Set(all.map((s) => s.state))].sort(),
     schools: filtered.map((s) => {
-      const list = bySchool.get(s.id) ?? [];
-      const primary = pickPrimary(list.map((x) => x.source));
-      const hit = list.find((x) => x.source === primary);
+      const list = bySchool.get(s.id) ?? new Map<MedSource, number>();
+      const primary = pickPrimary(list.keys());
       return {
         slug: s.slug,
         name: s.name,
@@ -177,7 +213,7 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
         degree: s.degree,
         city: s.city,
         state: s.state,
-        reported: hit ? { source: hit.source, count: hit.count } : null,
+        reported: primary ? { source: primary, count: list.get(primary) ?? 0 } : null,
       };
     }),
   };
@@ -471,18 +507,111 @@ export async function getHistory(
   return { program, eventType, cycles: out };
 }
 
+/**
+ * When results arrive: ADMIT and SDN events of one category with an exact time, aggregated in Postgres into a weekday
+ * count, an hour count (both US Eastern) and, per cycle, the Eastern day of the first and of the median report. An SDN
+ * event stored at exactly 00:00:00.000 UTC is day-only (a date stated in the post) and is left out. No individual
+ * timestamp is selected into the app: the query returns groups and aggregates, and a cycle needs ARRIVAL_CYCLE_MIN
+ * events to show. Under ARRIVALS_MIN events the arrays are empty.
+ */
+export async function getArrivals(slug: string, q: ArrivalsQuery): Promise<MedArrivalsRes | null> {
+  const school = await findSchool(slug);
+  if (!school) return null;
+  const program = q.program ?? 'ALL';
+  const eventType: MedChartedTypeId = q.type ?? 'INTERVIEW';
+  const programs = programsOf(program);
+  const [groups, perCycle] = await Promise.all([
+    prisma.$queryRaw<{ dow: number; hr: number; n: number }[]>`
+      SELECT EXTRACT(ISODOW FROM ("occurredAt" AT TIME ZONE ${ARRIVAL_ZONE}))::int AS dow,
+             EXTRACT(HOUR FROM ("occurredAt" AT TIME ZONE ${ARRIVAL_ZONE}))::int AS hr,
+             COUNT(*)::int AS n
+      FROM "med_cycle_event"
+      WHERE "schoolId" = ${school.id}
+        AND "eventType" = ${eventType}::"MedEventType"
+        AND "source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource")
+        AND ("program" IS NULL AND ${program === 'ALL'} OR "program" = ANY(${programs}::"MedProgram"[]))
+        AND NOT ("source" = 'SDN'::"MedSource" AND ("occurredAt" AT TIME ZONE 'UTC')::time = TIME '00:00:00')
+      GROUP BY 1, 2`,
+    prisma.$queryRaw<{ cycleYear: number; n: number; firstOn: string; medianOn: string }[]>`
+      SELECT "cycleYear" AS "cycleYear",
+             COUNT(*)::int AS n,
+             TO_CHAR(MIN("occurredAt" AT TIME ZONE ${ARRIVAL_ZONE}), 'YYYY-MM-DD') AS "firstOn",
+             TO_CHAR((percentile_disc(0.5) WITHIN GROUP (ORDER BY "occurredAt")) AT TIME ZONE ${ARRIVAL_ZONE}, 'YYYY-MM-DD') AS "medianOn"
+      FROM "med_cycle_event"
+      WHERE "schoolId" = ${school.id}
+        AND "eventType" = ${eventType}::"MedEventType"
+        AND "source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource")
+        AND ("program" IS NULL AND ${program === 'ALL'} OR "program" = ANY(${programs}::"MedProgram"[]))
+        AND NOT ("source" = 'SDN'::"MedSource" AND ("occurredAt" AT TIME ZONE 'UTC')::time = TIME '00:00:00')
+      GROUP BY "cycleYear"
+      HAVING COUNT(*) >= ${ARRIVAL_CYCLE_MIN}
+      ORDER BY "cycleYear" DESC
+      LIMIT 6`,
+  ]);
+  const shape = shapeArrivals(groups);
+  if (!enoughArrivals(shape.total)) {
+    return { program, eventType, zone: ARRIVAL_ZONE, total: shape.total, weekdays: [], hours: [], cycles: [] };
+  }
+  return {
+    program,
+    eventType,
+    zone: ARRIVAL_ZONE,
+    total: shape.total,
+    weekdays: shape.weekdays,
+    hours: shape.hours,
+    cycles: perCycle.map((c) => ({ cycleYear: c.cycleYear, count: c.n, firstOn: c.firstOn, medianOn: c.medianOn })),
+  };
+}
+
 export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<MedLiveRes> {
   const limit = q.limit ?? 50;
   const cursor = q.cursor ? decodeLiveCursor(q.cursor) : null;
-  const program = q.program ?? 'ALL';
+  const legacyProgram = q.program ?? 'ALL';
+  const set = q.programs ? parsePrograms(q.programs) : undefined;
+  const types = q.types ? q.types.split(',').map((w) => w.toUpperCase() as MedEventType) : undefined;
+  // The program filter: a set maps to (degree, program) pairs; every program on is no filter and includes the events
+  // that did not report one. The older `program` / `degree` parameters keep their meaning when no set is given.
+  const programWhere =
+    set && !isAllPrograms(set)
+      ? [
+          {
+            OR: set.map((k) => {
+              const p = programPair(k);
+              return { program: p.program, school: { degree: p.degree } };
+            }),
+          },
+        ]
+      : [];
+  const legacyWhere =
+    set || legacyProgram === 'ALL' ? {} : legacyProgram === 'NONE' ? { program: null } : { program: legacyProgram };
+  const text = q.q?.trim();
+  const textWhere = text
+    ? [
+        {
+          school: {
+            OR: [
+              { name: { contains: text, mode: 'insensitive' as const } },
+              { shortName: { contains: text, mode: 'insensitive' as const } },
+              // "NC" is a state; two letters are matched exactly as well as a fragment of a name.
+              ...(text.length === 2 ? [{ state: text.toUpperCase() }] : []),
+            ],
+          },
+        },
+      ]
+    : [];
+  const and = [...programWhere, ...textWhere];
   const rows = await prisma.medCycleEvent.findMany({
     where: {
       // RMH events are never public one by one (D5); they reach the public only as floored counts.
       source: { in: ['ADMIT', 'SDN'] },
-      ...(q.type ? { eventType: q.type } : {}),
-      ...(program === 'REG' || program === 'PHD' ? { program } : program === 'NONE' ? { program: null } : {}),
-      // A school's own degree wins over a contradicting `degree`.
-      school: { active: true, ...(q.school ? { slug: q.school } : q.degree ? { degree: q.degree } : {}) },
+      ...(types ? { eventType: { in: types } } : q.type ? { eventType: q.type } : {}),
+      ...legacyWhere,
+      // A school's own degree wins over a contradicting `degree`; a program set carries its own degrees.
+      school: {
+        active: true,
+        ...(q.school ? { slug: q.school } : !set && q.degree ? { degree: q.degree } : {}),
+        ...(q.state ? { state: q.state } : {}),
+      },
       ...(cursor
         ? {
             OR: [
@@ -491,6 +620,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
             ],
           }
         : {}),
+      ...(and.length > 0 ? { AND: and } : {}),
     },
     select: {
       id: true,

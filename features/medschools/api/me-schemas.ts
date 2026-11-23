@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PROGRAM_KEYS } from '../engine/programs';
 import { CHARTED_TYPES } from '../engine/public-read';
 import { LIMITS, MILESTONE_TYPES, cleanText, cycleYearProblem, normalizeHomeState } from '../engine/tracker';
 
@@ -92,8 +93,11 @@ export const addListToTrackerBody = z.object({ cycleYear: windowedCycleYear.opti
 /** Every preference is sent every time (a PUT replaces the row); an unknown value or key is a 400. */
 export const putPrefsBody = z
   .object({
-    programFilter: z.enum(['ALL', 'REG', 'PHD']),
-    degree: z.enum(['MD', 'DO']).nullable(),
+    /** The program set: one to four of the keys, each at most once. Preferred over the two older fields. */
+    programs: z.array(z.enum(PROGRAM_KEYS)).min(1).max(PROGRAM_KEYS.length).optional(),
+    /** The older fields: still accepted for a client that has not moved to `programs`. */
+    programFilter: z.enum(['ALL', 'REG', 'PHD']).optional(),
+    degree: z.enum(['MD', 'DO']).nullable().optional(),
     homeState,
     chartCategories: z.array(z.enum(CHARTED_TYPES as unknown as [string, ...string[]])).max(CHARTED_TYPES.length),
   })

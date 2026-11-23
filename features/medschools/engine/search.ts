@@ -1,10 +1,10 @@
 import { CHARTED_TYPES, SCHOOL_TABS, type SchoolTab } from './public-read';
+import { parsePrograms, programsFromLegacy, programsValue, type ProgramKey } from './programs';
 import type { MedEventType, MedSource } from './types';
 
 /** Hand-rolled `validateSearch` parsers: zod may not enter the entry. Unknown input falls back, never throws. */
 
 export type ProgramFilter = 'ALL' | 'REG' | 'PHD';
-export type LiveProgramFilter = ProgramFilter | 'NONE';
 
 const ALL_TYPES: readonly MedEventType[] = [...CHARTED_TYPES, 'WITHDRAWN', 'HOLD'];
 const SOURCES: readonly MedSource[] = ['CYCLETRACK', 'ADMIT', 'SDN', 'MDAPPLICANTS', 'RMH'];
@@ -27,10 +27,14 @@ export const showParam = (types: readonly MedEventType[]): string =>
   CHARTED_TYPES.filter((t) => types.includes(t))
     .map((t) => t.toLowerCase())
     .join(',');
+/** The Interviews tab's sub-tabs (`?itab=`); Overview is the default and is never written to the URL. */
+export const INTERVIEW_TABS = ['overview', 'questions', 'format'] as const;
+export type InterviewTab = (typeof INTERVIEW_TABS)[number];
 export const SCHOOL_SEARCH_DEFAULTS = {
   tab: 'activity',
   type: 'INTERVIEW',
-} as const satisfies { tab: SchoolTab; type: MedEventType };
+  itab: 'overview',
+} as const satisfies { tab: SchoolTab; type: MedEventType; itab: InterviewTab };
 
 // The router JSON-parses what it can, so `?cycle=2026` or `?q=2026` reach a parser as numbers.
 const str = (v: unknown): string | undefined =>
@@ -46,42 +50,80 @@ const program = (v: unknown): ProgramFilter | undefined => pick(v, ['ALL', 'REG'
 /** `ALL` is the explicit "every degree": the one way a link can override a degree preference. */
 const degree = (v: unknown): 'MD' | 'DO' | 'ALL' | undefined => pick(v, ['MD', 'DO', 'ALL'] as const, false);
 
+/**
+ * The program set a URL names: `programs=md,do-phd`, else the old `degree` and `program` parameters mapped onto it
+ * (back-compatible links keep working), else `undefined` (the URL is silent: a preference may fill it).
+ */
+function programSetOf(raw: Record<string, unknown>): ProgramKey[] | undefined {
+  const named = parsePrograms(raw.programs);
+  if (named) return named;
+  const d = degree(raw.degree);
+  const p = program(raw.program);
+  if (!d && !p) return undefined;
+  return programsFromLegacy(d === 'MD' || d === 'DO' ? d : undefined, p);
+}
+
+/** A saved-list filter on the index: one list id, or `all` (every list of the signed-in viewer). */
+const listParam = (v: unknown): string | undefined => {
+  const s = str(v)?.trim();
+  return s && /^[a-z0-9]{1,40}$/.test(s) ? s : undefined;
+};
+
 export function parseIndexSearch(raw: Record<string, unknown>): {
   q?: string;
-  degree?: 'MD' | 'DO' | 'ALL';
   state?: string;
-  program?: ProgramFilter;
+  programs?: ProgramKey[];
+  list?: string;
 } {
   const q = str(raw.q)?.trim().slice(0, Q_MAX);
   const st = str(raw.state)?.trim();
-  const d = degree(raw.degree);
-  const p = program(raw.program);
+  const programs = programSetOf(raw);
+  const list = listParam(raw.list);
   return {
     ...(q ? { q } : {}),
-    ...(d ? { degree: d } : {}),
     ...(st && /^[A-Za-z]{2}$/.test(st) ? { state: st.toUpperCase() } : {}),
-    // Phase 3 read a program without a degree as All here; that now belongs to the effective view (`resolveView`),
-    // because a preference may supply the degree.
-    ...(p ? { program: p } : {}),
+    ...(programs ? { programs } : {}),
+    ...(list ? { list } : {}),
   };
+}
+
+/**
+ * What the index and live routes' `validateSearch` return: the parsed search with `programs` back as the comma list,
+ * because the router would write an array into the URL as JSON and a link would not read back.
+ */
+export function validateIndexSearch(raw: Record<string, unknown>): Omit<
+  ReturnType<typeof parseIndexSearch>,
+  'programs'
+> & {
+  programs?: string;
+} {
+  const { programs, ...rest } = parseIndexSearch(raw);
+  return { ...rest, ...(programs ? { programs: programsValue(programs) } : {}) };
 }
 
 export function parseLiveSearch(raw: Record<string, unknown>): {
   type?: MedEventType;
   school?: string;
-  degree?: 'MD' | 'DO' | 'ALL';
-  program?: LiveProgramFilter;
+  programs?: ProgramKey[];
 } {
   const type = pick(raw.type, ALL_TYPES);
   const school = str(raw.school);
-  const d = degree(raw.degree);
-  const p = pick(raw.program, ['ALL', 'REG', 'PHD', 'NONE'] as const);
+  const programs = programSetOf(raw);
   return {
     ...(type ? { type } : {}),
     ...(school && /^[a-z0-9-]{1,80}$/.test(school) ? { school } : {}),
-    ...(d ? { degree: d } : {}),
-    ...(p ? { program: p } : {}),
+    ...(programs ? { programs } : {}),
   };
+}
+
+export function validateLiveSearch(raw: Record<string, unknown>): Omit<
+  ReturnType<typeof parseLiveSearch>,
+  'programs'
+> & {
+  programs?: string;
+} {
+  const { programs, ...rest } = parseLiveSearch(raw);
+  return { ...rest, ...(programs ? { programs: programsValue(programs) } : {}) };
 }
 
 export function parseSchoolSearch(raw: Record<string, unknown>): {
@@ -92,6 +134,7 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
   type: MedEventType;
   source?: MedSource;
   cycle?: number;
+  itab: InterviewTab;
 } {
   const wanted = new Set(
     (str(raw.show) ?? '')
@@ -109,6 +152,7 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
     ...(prog ? { program: prog } : {}),
     ...(shown.length ? { show: shown } : {}),
     type: pick(raw.type, CHARTED_TYPES) ?? 'INTERVIEW',
+    itab: pick(raw.itab, INTERVIEW_TABS, false) ?? 'overview',
     ...(source ? { source } : {}),
     ...(cycle !== undefined ? { cycle } : {}),
   };

@@ -1,5 +1,14 @@
 import { CHARTED_TYPES } from './public-read';
-import { showParam, type LiveProgramFilter, type ProgramFilter } from './search';
+import {
+  ALL_PROGRAMS,
+  isAllPrograms,
+  normalizePrograms,
+  programsFromLegacy,
+  programsValue,
+  schoolProgramOf,
+  type ProgramKey,
+} from './programs';
+import { showParam, type ProgramFilter } from './search';
 import type { MedEventType } from './types';
 
 /**
@@ -8,30 +17,45 @@ import type { MedEventType } from './types';
  * shows the preferred view. Nothing here reads a session or touches a public endpoint's parameters.
  */
 
-/** Mirrors `MedPrefsDto` (the private prefs endpoint). */
+/**
+ * Mirrors `MedPrefsDto` (the private prefs endpoint). `programs` is the resolved program set (all four = no preference);
+ * `programFilter` and `degree` are the older columns, kept in step by the service and read only as a fallback.
+ */
 export interface Prefs {
+  programs: ProgramKey[];
   programFilter: ProgramFilter;
   degree: 'MD' | 'DO' | null;
   homeState: string | null;
   chartCategories: MedEventType[];
 }
 
+/** What a viewer with no saved preferences has: every program, no home state, no chosen categories. */
+export const DEFAULT_VIEW_PREFS: Prefs = {
+  programs: [...ALL_PROGRAMS],
+  programFilter: 'ALL',
+  degree: null,
+  homeState: null,
+  chartCategories: [],
+};
+
 export type ViewKind = 'index' | 'live' | 'school';
 
 /**
  * The keys of a parsed search that a preference can fill. An ABSENT key is "the URL is silent"; a present key is the
- * viewer's choice, including the default (`program: 'ALL'`). `degree: 'ALL'` is the explicit "every degree", the one
- * way a link can override a degree preference; an empty `show` is silent.
+ * viewer's choice, including the default (all four programs, `program: 'ALL'`); an empty `show` is silent.
+ * `programs` is the index and live pages' key, `program` the school page's.
  */
 export interface PrefsSearch {
-  degree?: 'MD' | 'DO' | 'ALL';
-  program?: LiveProgramFilter;
-  show?: readonly MedEventType[];
+  programs?: readonly ProgramKey[] | undefined;
+  program?: ProgramFilter | undefined;
+  show?: readonly MedEventType[] | undefined;
 }
 
 export interface EffectiveView {
-  degree?: 'MD' | 'DO';
-  program: LiveProgramFilter;
+  /** Index and live: the program set, canonical order, all four when unfiltered. */
+  programs: ProgramKey[];
+  /** School page: `ALL | REG | PHD` (the school's own two programs). */
+  program: ProgramFilter;
   /** The Activity chart's categories, in `CHARTED_TYPES` order (school pages; every type elsewhere). */
   show: MedEventType[];
   /** True while any default came from a preference, so the page can say its view is not the URL's alone. */
@@ -39,21 +63,25 @@ export interface EffectiveView {
 }
 
 interface Clean {
-  program: ProgramFilter;
-  degree: 'MD' | 'DO' | null;
+  programs: ProgramKey[];
   show: MedEventType[] | null;
 }
 
-const PROGRAMS: readonly ProgramFilter[] = ['ALL', 'REG', 'PHD'];
+const LEGACY_PROGRAMS: readonly ProgramFilter[] = ['ALL', 'REG', 'PHD'];
 
 /** A stale row (an enum that changed) falls to the default; it never throws. */
 function clean(prefs: Prefs | null | undefined): Clean {
-  const program = PROGRAMS.find((p) => p === prefs?.programFilter) ?? 'ALL';
-  const degree = prefs?.degree === 'MD' || prefs?.degree === 'DO' ? prefs.degree : null;
+  const stored = Array.isArray(prefs?.programs) ? normalizePrograms(prefs.programs) : [];
+  const legacyProgram = LEGACY_PROGRAMS.find((p) => p === prefs?.programFilter) ?? 'ALL';
+  const legacyDegree = prefs?.degree === 'MD' || prefs?.degree === 'DO' ? prefs.degree : undefined;
+  const programs = stored.length > 0 ? stored : programsFromLegacy(legacyDegree, legacyProgram);
   const wanted = new Set<unknown>(Array.isArray(prefs?.chartCategories) ? prefs.chartCategories : []);
   const shown = CHARTED_TYPES.filter((t) => wanted.has(t));
-  return { program, degree, show: shown.length ? shown : null };
+  return { programs, show: shown.length ? shown : null };
 }
+
+/** The resolved program preference of a stored `Prefs` (all four when it has none). Used by the pages and the rail. */
+export const prefProgramsOf = (prefs: Prefs | null | undefined): ProgramKey[] => clean(prefs).programs;
 
 export function applyPrefs(
   kind: ViewKind,
@@ -64,20 +92,18 @@ export function applyPrefs(
   const p = clean(prefs);
   let fromPrefs = false;
 
-  let program: LiveProgramFilter;
-  if (search.program !== undefined) program = search.program;
+  let programs: ProgramKey[] = [...ALL_PROGRAMS];
+  let program: ProgramFilter = 'ALL';
+  if (kind === 'school') {
+    if (search.program !== undefined) program = search.program;
+    else if (ctx.schoolDegree) {
+      program = schoolProgramOf(p.programs, ctx.schoolDegree);
+      if (program !== 'ALL') fromPrefs = true;
+    }
+  } else if (search.programs !== undefined && search.programs.length > 0) programs = normalizePrograms(search.programs);
   else {
-    program = p.program;
-    if (p.program !== 'ALL') fromPrefs = true;
-  }
-
-  let degree: 'MD' | 'DO' | undefined;
-  if (kind === 'school')
-    degree = ctx.schoolDegree; // a school has its own degree
-  else if (search.degree !== undefined) degree = search.degree === 'ALL' ? undefined : search.degree;
-  else if (p.degree) {
-    degree = p.degree;
-    fromPrefs = true;
+    programs = p.programs;
+    if (!isAllPrograms(programs)) fromPrefs = true;
   }
 
   let show: MedEventType[] = [...CHARTED_TYPES];
@@ -89,32 +115,17 @@ export function applyPrefs(
     }
   }
 
-  return { ...(degree ? { degree } : {}), program, show, fromPrefs };
+  return { programs, program, show, fromPrefs };
 }
 
-/**
- * The view a page reads: `applyPrefs`, then phase 3's rule that a program belongs to a degree. The index and live
- * pages have one select for both ("MD-PhD"), so a program with no degree behind it cannot be shown and reads as All;
- * a preference may supply the degree, which is why the rule runs after the preferences, not in the URL parser. A
- * school page keeps the program (the school supplies the degree).
- */
-export function resolveView(
-  kind: ViewKind,
-  search: PrefsSearch,
-  prefs: Prefs | null | undefined,
-  ctx: { schoolDegree?: 'MD' | 'DO' } = {},
-): EffectiveView {
-  const v = applyPrefs(kind, search, prefs, ctx);
-  if (kind === 'school' || v.degree || v.program === 'ALL' || v.program === 'NONE') return v;
-  // The program was dropped, so a preference that only supplied it no longer shows.
-  return { ...v, program: 'ALL', fromPrefs: applyPrefs(kind, { ...search, program: 'ALL' }, prefs, ctx).fromPrefs };
-}
+/** The view a page reads. Kept as the one name the pages and loaders call; the program set needs no second pass. */
+export const resolveView = applyPrefs;
 
 /**
  * The search params a page writes for a view it chose (D14). A value is omitted only when it equals the global default
  * AND no preference would override that default for this viewer, so a viewer with no preferences gets exactly the clean
- * URLs phase 3 wrote, and a viewer with a `PHD` preference who picks All gets `program=ALL`. Non-default values are
- * always written: a shared link must not depend on the recipient's preferences.
+ * URLs, and a viewer with a `md-phd` preference who turns every program back on gets the full list written. Non-default
+ * values are always written: a shared link must not depend on the recipient's preferences.
  */
 export function writeSearch(
   kind: ViewKind,
@@ -123,32 +134,32 @@ export function writeSearch(
 ): Record<string, string> {
   const p = clean(prefs);
   const out: Record<string, string> = {};
-  if (next.program !== 'ALL' || p.program !== 'ALL') out.program = next.program;
-  if (kind !== 'school') {
-    if (next.degree) out.degree = next.degree;
-    else if (p.degree) out.degree = 'ALL';
-  }
   if (kind === 'school') {
+    const schoolPrefersOther = !isAllPrograms(p.programs);
+    if (next.program !== 'ALL' || schoolPrefersOther) out.program = next.program;
     const shown = showParam(next.show.length ? next.show : CHARTED_TYPES);
     if (shown !== showParam(CHARTED_TYPES) || p.show) out.show = shown;
+  } else if (!isAllPrograms(next.programs) || !isAllPrograms(p.programs)) {
+    out.programs = programsValue(next.programs);
   }
   return out;
 }
 
 /** What a page changes in its view: only the keys it names are rewritten in the URL. */
 export interface ViewPatch {
-  degree?: 'MD' | 'DO' | undefined;
-  program?: LiveProgramFilter;
+  programs?: readonly ProgramKey[];
+  program?: ProgramFilter;
   show?: readonly MedEventType[];
 }
 
-/** The search keys a preference can fill; every other key (q, state, tab, type, cycle, school) is the page's own. */
-export const PREF_KEYS = ['program', 'degree', 'show'] as const;
+/** The search keys a preference can fill; every other key (q, state, tab, type, cycle, school, list) is the page's own. */
+export const PREF_KEYS = ['programs', 'program', 'show'] as const;
 
 /**
  * The next URL search after the viewer changes `patch`. Only the preference keys the patch names are rewritten, through
  * `writeSearch` (D14); a key it does not name stays exactly as the URL had it, so a default that came from a preference
- * is never frozen into the address by an unrelated change. Everything else in `prev` is kept.
+ * is never frozen into the address by an unrelated change. Everything else in `prev` is kept. The old `degree` key is
+ * dropped as soon as the program set is written, so a legacy link does not fight the new key.
  */
 export function patchSearch(
   kind: ViewKind,
@@ -157,9 +168,8 @@ export function patchSearch(
   patch: ViewPatch,
   prefs: Prefs | null | undefined,
 ): Record<string, unknown> {
-  const degree = 'degree' in patch ? patch.degree : view.degree;
   const merged: EffectiveView = {
-    ...(degree ? { degree } : {}),
+    programs: patch.programs ? normalizePrograms(patch.programs) : view.programs,
     program: patch.program ?? view.program,
     show: patch.show ? [...patch.show] : view.show,
     fromPrefs: false,
@@ -171,6 +181,10 @@ export function patchSearch(
     const w = written[k];
     if (w === undefined) delete out[k];
     else out[k] = w;
+  }
+  if (kind !== 'school' && 'programs' in patch) {
+    delete out.degree;
+    delete out.program;
   }
   return out;
 }

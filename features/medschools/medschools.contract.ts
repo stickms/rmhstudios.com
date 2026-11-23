@@ -223,6 +223,21 @@ export interface MedSchoolHistoryRes {
   cycles: HistoryCycleDto[];
 }
 
+export interface MedArrivalsRes {
+  program: MedProgramFilter;
+  eventType: MedChartedTypeId;
+  /** The zone the weekdays and hours are in (`America/New_York`); the chart names it. */
+  zone: string;
+  /** Events counted (ADMIT and SDN with an exact time). Under 10 the arrays are empty and the chart is hidden. */
+  total: number;
+  /** Monday first, seven counts. */
+  weekdays: number[];
+  /** Eastern hour 0 to 23, 24 counts. */
+  hours: number[];
+  /** Newest cycle first. `firstOn` and `medianOn` are Eastern calendar days, `YYYY-MM-DD`: aggregates, not a timestamp. */
+  cycles: { cycleYear: number; count: number; firstOn: string; medianOn: string }[];
+}
+
 export interface MedLiveRes {
   events: LiveEventDto[];
   nextCursor: string | null;
@@ -250,6 +265,8 @@ export const listMedSchoolsApi = endpoint<{
     degree?: MedDegreeId | undefined;
     state?: string | undefined;
     program?: MedProgramFilter | undefined;
+    /** The program set as a comma list (`md,do-phd`, see `engine/programs.ts`); omitted when every program is on. */
+    programs?: string | undefined;
   };
   res: ListMedSchoolsRes;
 }>()({ method: 'GET', path: '/api/medschools/schools' });
@@ -270,12 +287,24 @@ export const getMedSchoolHistoryApi = endpoint<{
   res: MedSchoolHistoryRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/history' });
 
+export const getMedSchoolArrivalsApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
+  res: MedArrivalsRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/arrivals' });
+
 export const getMedLiveApi = endpoint<{
   query: {
     type?: MedEventTypeId | undefined;
     school?: string | undefined;
     degree?: MedDegreeId | undefined;
     program?: MedLiveProgramFilter | undefined;
+    /** The program set (see `listMedSchoolsApi`); with it `degree` and `program` are ignored. */
+    programs?: string | undefined;
+    /** The activity rail's search: school name or short name, or a state code. */
+    q?: string | undefined;
+    state?: string | undefined;
+    /** Several event types as a comma list (`acceptance,rejection`); `type` names one. */
+    types?: string | undefined;
     cursor?: string | undefined;
     limit?: number | undefined;
   };

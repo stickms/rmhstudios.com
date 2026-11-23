@@ -32,6 +32,7 @@ describe('prefs', () => {
     } as const;
     const first = await putPrefs('a', i);
     expect(first).toEqual({
+      programs: ['do-phd'],
       programFilter: 'PHD',
       degree: 'DO',
       homeState: 'NC',
@@ -55,6 +56,7 @@ describe('prefs', () => {
       chartCategories: ['SUBMITTED', 'HOLD', 'WAITLIST'],
     });
     expect(await getPrefs('a')).toEqual({
+      programs: ['md', 'md-phd', 'do', 'do-phd'],
       programFilter: 'ALL',
       degree: null,
       homeState: null,
@@ -62,15 +64,47 @@ describe('prefs', () => {
     });
   });
 
+  it('stores the program set, canonical, and keeps the older columns in step', async () => {
+    const put = await putPrefs('a', { programs: ['do-phd', 'md'], homeState: null, chartCategories: [] });
+    expect(put).toMatchObject({ programs: ['md', 'do-phd'], programFilter: 'ALL', degree: null });
+    expect(f.tables.medUserPrefs[0]).toMatchObject({ programs: ['md', 'do-phd'] });
+    const one = await putPrefs('a', { programs: ['md-phd'], homeState: null, chartCategories: [] });
+    expect(one).toMatchObject({ programs: ['md-phd'], programFilter: 'PHD', degree: 'MD' });
+  });
+
+  it('every program on is stored as no preference and reads back as all four', async () => {
+    const all = ['md', 'md-phd', 'do', 'do-phd'] as const;
+    const put = await putPrefs('a', { programs: all, homeState: null, chartCategories: [] });
+    expect(put.programs).toEqual([...all]);
+    expect(f.tables.medUserPrefs[0]).toMatchObject({ programs: [], programFilter: 'ALL', degree: null });
+  });
+
+  it('a row written before the program set existed reads through its older columns', async () => {
+    f.tables.medUserPrefs.push({
+      userId: 'a',
+      programFilter: 'PHD',
+      degree: 'MD',
+      homeState: null,
+      chartCategories: [],
+    });
+    expect((await getPrefs('a')).programs).toEqual(['md-phd']);
+  });
+
   it('the schema rejects what the service would never store', () => {
     const ok = { programFilter: 'ALL', degree: null, homeState: null, chartCategories: [] };
     expect(putPrefsBody.safeParse(ok).success).toBe(true);
+    expect(putPrefsBody.safeParse({ programs: ['md', 'do-phd'], homeState: null, chartCategories: [] }).success).toBe(
+      true,
+    );
     for (const bad of [
       { ...ok, programFilter: 'NONE' },
       { ...ok, degree: 'PhD' },
       { ...ok, homeState: 'ZZ' },
       { ...ok, chartCategories: ['SUBMITTED'] },
       { ...ok, userId: 'u2' },
+      { ...ok, programs: [] },
+      { ...ok, programs: ['pa'] },
+      { ...ok, programs: ['md', 'md', 'do', 'do-phd', 'md-phd'] },
       { programFilter: 'ALL' },
     ]) {
       expect(putPrefsBody.safeParse(bad).success).toBe(false);
