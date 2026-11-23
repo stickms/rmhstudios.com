@@ -10,6 +10,7 @@ import { CumulativeLine } from './CumulativeLine';
 import { ArrivalBars } from './ArrivalBars';
 import { CycleOverlay } from './CycleOverlay';
 import { DailyBars } from './DailyBars';
+import { ForecastBand } from './ForecastBand';
 
 type Series = ActivityTypeDto['sources'][number];
 
@@ -291,6 +292,96 @@ describe('CycleOverlay', () => {
   });
 });
 
+describe('ForecastBand', () => {
+  const legendLabels = {
+    observed: 'Reported so far',
+    median: 'Median forecast',
+    range: '10th to 90th percentile',
+    low: '10th percentile',
+    high: '90th percentile',
+  };
+  const observed = [
+    { day: 170, cumulative: 4 },
+    { day: 172, cumulative: 10 },
+  ];
+  const band = [
+    { day: 172, p10: 10, p50: 10, p90: 10 },
+    { day: 250, p10: 14, p50: 20, p90: 28 },
+    { day: 364, p10: 20, p50: 30, p90: 44 },
+  ];
+  const draw = (o: { observed?: typeof observed; band?: typeof band } = {}) =>
+    renderToString(
+      <ForecastBand
+        eventType="INTERVIEW"
+        sourceName="Admit"
+        dayZeroOn="2025-06-01"
+        observed={o.observed ?? observed}
+        band={o.band ?? band}
+        labels={labels}
+        legendLabels={legendLabels}
+      />,
+    );
+
+  it('draws the observed line solid, the median and both boundaries dashed, in the category colour', () => {
+    const svg = phone(draw());
+    const paths = [...svg.matchAll(/<path [^>]*>/g)].map((m) => m[0]);
+    const dashed = paths.filter((p) => p.includes('stroke-dasharray'));
+    expect(dashed).toHaveLength(3);
+    expect(paths.filter((p) => !p.includes('stroke-dasharray'))).toHaveLength(1);
+    expect(dashed.filter((p) => p.includes('stroke-dasharray="6 3"') && p.includes('stroke-width="2"'))).toHaveLength(
+      1,
+    );
+    expect(dashed.filter((p) => p.includes('stroke-dasharray="2 3"') && p.includes('stroke-width="1"'))).toHaveLength(
+      2,
+    );
+    for (const p of paths) expect(p).toContain(`stroke="${CATEGORY_COLOR.INTERVIEW}"`);
+  });
+
+  it('nothing is filled, translucent or a gradient (Steel R1)', () => {
+    const html = draw();
+    for (const p of html.matchAll(/<path [^>]*>/g)) {
+      expect(p[0]).toContain('fill="none"');
+      expect(p[0]).not.toMatch(/opacity/);
+    }
+    expect(html).not.toMatch(/fill-opacity|linearGradient|radialGradient/);
+    expect(html).not.toMatch(/fill="(?!none|var\()/);
+  });
+
+  it('prints calendar dates on the axis, never a day count, starts at 0, and sits in a left-to-right wrapper', () => {
+    const html = draw();
+    const ticks = [...phone(html).matchAll(/<text [^>]*text-anchor="[a-z]+"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]!);
+    const dates = ticks.filter((t) => /^[A-Z][a-z]{2} \d{1,2}$/.test(t));
+    expect(dates.length).toBeGreaterThan(2);
+    expect(ticks.join(' ')).not.toMatch(/day/i);
+    expect(ticks).toContain('0');
+    expect(html).toContain('dir="ltr"');
+    expect(html).toContain('var(--site-chart-1)');
+  });
+
+  it('a legend of three entries, and a data table with one row a week plus the last day', () => {
+    const html = draw();
+    for (const l of [legendLabels.observed, legendLabels.median, legendLabels.range]) expect(html).toContain(l);
+    const rows = html.slice(html.indexOf('<tbody>')).match(/<tr>/g)!;
+    // Day 0 to day 364 is 52 whole weeks: a row every 7 days, and the last day is the 53rd.
+    expect(rows).toHaveLength(53);
+    expect(html).toContain('<td class="border-b border-site-border py-1 pe-3 text-site-text">May 31, 2026</td>');
+  });
+
+  it('an empty band draws the observed line only and no range legend', () => {
+    const html = draw({ band: [] });
+    const paths = [...phone(html).matchAll(/<path [^>]*>/g)];
+    expect(paths).toHaveLength(1);
+    expect(html).not.toContain(legendLabels.range);
+  });
+
+  it('nothing at all is the empty note, no NaN', () => {
+    const html = draw({ observed: [], band: [] });
+    expect(html).toContain(labels.empty);
+    expect(html).not.toContain('NaN');
+    expect(phone(html)).not.toContain('<path');
+  });
+});
+
 describe('static rules', () => {
   const dir = __dirname;
   const files = readdirSync(dir).filter((f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx'));
@@ -303,6 +394,7 @@ describe('static rules', () => {
       'CumulativeLine.tsx',
       'CycleOverlay.tsx',
       'DailyBars.tsx',
+      'ForecastBand.tsx',
     ]);
   });
   it.each(files)('%s uses only site tokens (text, border, surface, chart) and no motion of its own', (f) => {

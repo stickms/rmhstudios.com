@@ -513,7 +513,8 @@ export async function getHistory(
 /** The stored band as parallel arrays; anything malformed reads as no band (the row is the job's, but fail soft). */
 function bandOf(curve: unknown): MedSchoolForecastRes['band'] {
   const c = curve as { days?: unknown; p10?: unknown; p50?: unknown; p90?: unknown } | null;
-  if (!c || !Array.isArray(c.days) || !Array.isArray(c.p10) || !Array.isArray(c.p50) || !Array.isArray(c.p90)) return [];
+  if (!c || !Array.isArray(c.days) || !Array.isArray(c.p10) || !Array.isArray(c.p50) || !Array.isArray(c.p90))
+    return [];
   const out: MedSchoolForecastRes['band'] = [];
   for (let i = 0; i < c.days.length; i++) {
     const day = c.days[i];
@@ -717,9 +718,7 @@ async function liveWaveDays(
   });
   for (const slug of slugs) {
     const cells = sumPrograms(
-      rows
-        .filter((r) => r.school.slug === slug)
-        .flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
+      rows.filter((r) => r.school.slug === slug).flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
       utcDayOf(now),
     );
     const series = buildTypeSeries(cells, utcDayOf(now));

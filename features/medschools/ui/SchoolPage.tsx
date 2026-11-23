@@ -14,6 +14,7 @@ import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
+import { ForecastTab } from './ForecastTab';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ProgramToggles } from './ProgramToggles';
@@ -23,7 +24,7 @@ import { SchoolFacts } from './SchoolFacts';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
-/** /rmh-medschool/$slug. The phase 5 tab goes in `SCHOOL_TABS` and the switch below; there is no placeholder. */
+/** /rmh-medschool/$slug. A tab is an entry in `SCHOOL_TABS`, a label below and a branch of the switch at the end. */
 export function SchoolPage() {
   const { t } = useTranslation('medschools');
   const navigate = useNavigate();
@@ -64,6 +65,8 @@ export function SchoolPage() {
         return t('school-tab-activity', { defaultValue: 'Activity' });
       case 'history':
         return t('school-tab-history', { defaultValue: 'History' });
+      case 'forecast':
+        return t('school-tab-forecast', { defaultValue: 'Forecast' });
       case 'interviews':
         return t('school-tab-interviews', { defaultValue: 'Interviews' });
     }
@@ -151,6 +154,14 @@ export function SchoolPage() {
             </div>
             {search.tab === 'history' ? (
               <HistoryTab
+                slug={slug}
+                detail={detail}
+                search={search}
+                setSearch={setSearch}
+                programControl={programControl}
+              />
+            ) : search.tab === 'forecast' ? (
+              <ForecastTab
                 slug={slug}
                 detail={detail}
                 search={search}

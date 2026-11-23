@@ -46,6 +46,7 @@ export interface LegendItem {
   label: string;
   color: string;
   dash?: string | undefined;
+  width?: number | undefined;
 }
 
 /** A short stroke of the series colour with its dash: a line key, never a box (the marks are lines). */
@@ -91,7 +92,7 @@ export function ChartLegend({ items }: { items: LegendItem[] }) {
     <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
       {items.map((i) => (
         <li key={i.key} className="t-meta flex items-center gap-2">
-          <Swatch color={i.color} dash={i.dash} />
+          <Swatch color={i.color} dash={i.dash} width={i.width ?? 2} />
           <span>{i.label}</span>
         </li>
       ))}

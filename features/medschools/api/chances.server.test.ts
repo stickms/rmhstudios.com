@@ -36,10 +36,18 @@ function apply(
 ) {
   const cycleYear = opts.cycleYear ?? 2027;
   let cycle = f.tables.medTrackerCycle.find(
-    (c) => (c as { userId: string; cycleYear: number }).userId === user && (c as { cycleYear: number }).cycleYear === cycleYear,
+    (c) =>
+      (c as { userId: string; cycleYear: number }).userId === user &&
+      (c as { cycleYear: number }).cycleYear === cycleYear,
   ) as { id: string } | undefined;
   if (!cycle) {
-    cycle = { id: `cy-${user}-${cycleYear}`, userId: user, cycleYear, homeState: null, shareAnonymously: true } as never;
+    cycle = {
+      id: `cy-${user}-${cycleYear}`,
+      userId: user,
+      cycleYear,
+      homeState: null,
+      shareAnonymously: true,
+    } as never;
     f.tables.medTrackerCycle.push(cycle);
   }
   const id = `app-${++nextId}`;
@@ -142,7 +150,7 @@ describe('getChances', () => {
 });
 
 describe('privacy', () => {
-  it('has only the pinned keys, no user id, and never carries another member\'s date', async () => {
+  it("has only the pinned keys, no user id, and never carries another member's date", async () => {
     apply('a', 'x', { COMPLETE: '2026-10-31' });
     apply('b', 'x', { COMPLETE: '2026-09-17', INTERVIEW: '2026-10-05' });
     curveRow('x');
@@ -167,7 +175,7 @@ describe('privacy', () => {
     expect(res.chances).toHaveLength(1);
   });
 
-  it('reads curve rows for the caller\'s own school x program pairs and no milestone outside the caller\'s cycles', async () => {
+  it("reads curve rows for the caller's own school x program pairs and no milestone outside the caller's cycles", async () => {
     apply('a', 'x', { COMPLETE: '2026-10-31' });
     const bApp = apply('b', 'y', { COMPLETE: '2026-09-17' });
     curveRow('x');

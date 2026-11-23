@@ -34,7 +34,9 @@ export async function getChances(
   if (!cycle) return { cycleYear: null, chances: [] };
   const today = utcDayOf(now);
   // An inactive school gets no chance and no row; `school` narrows to one slug.
-  const apps = cycle.applications.filter((a) => a.school.active && (q.school === undefined || a.school.slug === q.school));
+  const apps = cycle.applications.filter(
+    (a) => a.school.active && (q.school === undefined || a.school.slug === q.school),
+  );
 
   // Only applications that can still have an estimate need a curve.
   const waiting = apps.filter(
@@ -45,7 +47,10 @@ export async function getChances(
   const curves = new Map<string, { curve: SurvivalCurve; maxDay: number; members: number; asOf: string }>();
   if (waiting.length > 0) {
     const slugs = [...new Set(waiting.map((a) => a.school.slug))];
-    const schools = await prisma.medSchool.findMany({ where: { slug: { in: slugs } }, select: { id: true, slug: true } });
+    const schools = await prisma.medSchool.findMany({
+      where: { slug: { in: slugs } },
+      select: { id: true, slug: true },
+    });
     const idOf = new Map(schools.map((s) => [s.slug, s.id] as const));
     const pairs = [
       ...new Map(
