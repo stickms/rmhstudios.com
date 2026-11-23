@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
   release: vi.fn(async () => undefined),
+  refund: vi.fn(async () => undefined),
   admitQuestion: vi.fn(),
 }));
 vi.mock('../qa/budget.server', () => ({ admitQuestion: m.admitQuestion }));
@@ -22,12 +23,13 @@ vi.mock('./directory.server', () => ({
 import { MEDSCHOOLS_IMPORT, SAFETY_FRAME } from '@/lib/ai/prompts';
 import { AppError } from '@/lib/errors/codes';
 import { parseImport } from './parse.server';
+import { UnreadableReplyError } from './unreadable';
 import type { ImportRunner } from './runner.server';
 
 const NOW = new Date('2027-03-01T15:00:00Z');
 const fixture = (name: string) => readFileSync(join(__dirname, '__fixtures__', name));
 const csv = { kind: 'file' as const, buffer: fixture('cycle.csv'), mimeType: 'text/csv', filename: 'cycle.csv' };
-const gate = { tier: 'free', remainingToday: 24, dailyCap: 25, release: m.release };
+const gate = { tier: 'free', remainingToday: 24, dailyCap: 25, release: m.release, refund: m.refund };
 const reply = {
   rows: [
     {
@@ -60,6 +62,7 @@ const code = async (p: Promise<unknown>) => ((await p.catch((e: unknown) => e)) 
 let logs: ReturnType<typeof vi.spyOn>[];
 beforeEach(() => {
   m.release.mockReset().mockResolvedValue(undefined);
+  m.refund.mockReset().mockResolvedValue(undefined);
   m.admitQuestion.mockReset().mockResolvedValue(gate);
   logs = (['log', 'warn', 'error', 'info'] as const).map((k) => vi.spyOn(console, k).mockImplementation(() => undefined));
 });
@@ -139,5 +142,20 @@ describe('parseImport', () => {
     const r = await parseImport({ userId: 'u1', input: { kind: 'paste', text: `Harvard Medical School | 2026-06-12\n${essay}` } }, { runner, now: NOW });
     expect(JSON.stringify(r)).not.toContain('zzzessay');
     for (const l of logs) for (const c of l.mock.calls) expect(JSON.stringify(c)).not.toMatch(/zzzessay|Harvard|grandmother|2026-06-12/);
+  });
+});
+
+describe('an unreadable model reply', () => {
+  it('refunds the day\'s question and ends in AI_UNAVAILABLE', async () => {
+    const { runner } = runnerOf(new UnreadableReplyError());
+    expect(await code(parseImport({ userId: 'u1', input: csv }, { runner, now: NOW }))).toBe('AI_UNAVAILABLE');
+    expect(m.refund).toHaveBeenCalledTimes(1);
+    expect(m.release).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the question for any other failure (the call was made)', async () => {
+    const { runner } = runnerOf(new AppError('AI_UNAVAILABLE'));
+    expect(await code(parseImport({ userId: 'u1', input: csv }, { runner, now: NOW }))).toBe('AI_UNAVAILABLE');
+    expect(m.refund).not.toHaveBeenCalled();
   });
 });

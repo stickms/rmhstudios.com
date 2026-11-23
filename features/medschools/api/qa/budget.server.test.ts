@@ -11,7 +11,7 @@ const m = vi.hoisted(() => {
       (w.userId === undefined || r.userId === w.userId) &&
       (w.task === undefined || r.task === w.task) &&
       (w.promptId === undefined || r.promptId === w.promptId) &&
-      (w.id === undefined || r.id === w.id) &&
+      (w.id === undefined || r.id === w.id || (typeof w.id === 'object' && (w.id as { in: bigint[] }).in.includes(r.id))) &&
       (!at || r.createdAt >= at.gte)
     );
   };
@@ -130,6 +130,18 @@ describe('the daily cap and the in-flight lease (reserveQuestion)', () => {
     expect(last).toMatchObject({ remainingToday: 0, dailyCap: 25 });
     expect(await code(reserveQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_DAILY_CAP');
     expect((await dailyStatus('u1', NOW)).remainingToday).toBe(0);
+  });
+  it('refund gives the day\'s question back and frees the lease; release alone keeps the question', async () => {
+    const kept = await reserveQuestion('u1', NOW);
+    await kept.release();
+    expect(await questionsToday('u1', NOW)).toBe(1);
+    const second = await reserveQuestion('u1', NOW);
+    expect(await questionsToday('u1', NOW)).toBe(2);
+    await second.refund();
+    expect(await questionsToday('u1', NOW)).toBe(1);
+    // The lease went with it: the next question is not busy.
+    await (await reserveQuestion('u1', NOW)).release();
+    expect(await questionsToday('u1', NOW)).toBe(2);
   });
   it('refuses a second question while the first is in flight, on any process, and frees it on release', async () => {
     const first = await reserveQuestion('u1', NOW);

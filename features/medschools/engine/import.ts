@@ -11,13 +11,13 @@ export const IMPORT_LIMITS = {
   /** A file's size, checked before it is read. */
   fileBytes: 2 * 1024 * 1024,
   /** Rows of a sheet or a CSV; the rest is counted and dropped. */
-  rows: 500,
+  rows: 300,
   /** Characters of extracted text sent to the model; the rest is dropped. */
   chars: 40_000,
   /** The paste box. Longer text is cut to `chars` like a file's; this only bounds the request. */
   pasteChars: 200_000,
   /** Schools the model may return, and milestones per school. */
-  schools: 80,
+  schools: 60,
   /** A grounding quote: a cell or a short phrase, never a paragraph. */
   rawChars: 80,
 } as const;

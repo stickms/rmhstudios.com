@@ -110,6 +110,11 @@ export interface Reservation {
   dailyCap: number | null;
   /** Ends the in-flight lease. Never throws; a failure only means the lease runs out by itself (`QA_LEASE_MS`). */
   release(): Promise<void>;
+  /**
+   * Gives back the day's question this reservation took (and ends the lease), for work that failed through no fault of the
+   * member's: the model answered with something unreadable. Never throws; an admin has no daily row, so it only releases.
+   */
+  refund(): Promise<void>;
 }
 
 const ledgerRow = (userId: string, promptId: string) => ({
@@ -164,6 +169,9 @@ async function reserveAdmin(userId: string, now: Date, tier: QaTier): Promise<Re
         console.error('[medschools-qa] could not end the admin lease; it expires by itself');
       }
     },
+    async refund() {
+      await this.release();
+    },
   };
 }
 
@@ -184,7 +192,7 @@ export async function reserveQuestion(
   const dailyCap = capForTier(tier);
   // An admin skips the daily cap and the one-at-a-time lease (R19), but not the concurrency ceiling.
   if (dailyCap === null) return reserveAdmin(userId, now, tier);
-  type Outcome = { kind: 'busy' } | { kind: 'cap' } | { kind: 'ok'; used: number; leaseId: bigint };
+  type Outcome = { kind: 'busy' } | { kind: 'cap' } | { kind: 'ok'; used: number; leaseId: bigint; askId: bigint };
   let out: Outcome;
   try {
     out = await prisma.$transaction(async (tx): Promise<Outcome> => {
@@ -202,16 +210,16 @@ export async function reserveQuestion(
         where: { userId, task: QA_TASK, promptId: QA_ASK_PROMPT_ID, createdAt: { gte: utcDayStart(now) } },
       });
       if (used >= dailyCap) return { kind: 'cap' };
-      await tx.aiUsage.create({ data: ledgerRow(userId, QA_ASK_PROMPT_ID) });
+      const ask = await tx.aiUsage.create({ data: ledgerRow(userId, QA_ASK_PROMPT_ID), select: { id: true } });
       const lease = await tx.aiUsage.create({ data: ledgerRow(userId, QA_LOCK_PROMPT_ID), select: { id: true } });
-      return { kind: 'ok', used: used + 1, leaseId: lease.id };
+      return { kind: 'ok', used: used + 1, leaseId: lease.id, askId: ask.id };
     });
   } catch {
     throw paused('unavailable');
   }
   if (out.kind === 'busy') throw new AppError('MEDSCHOOLS_QA_BUSY');
   if (out.kind === 'cap') throw new AppError('MEDSCHOOLS_QA_DAILY_CAP');
-  const { leaseId, used } = out;
+  const { leaseId, used, askId } = out;
   return {
     tier,
     remainingToday: Math.max(0, dailyCap - used),
@@ -221,6 +229,13 @@ export async function reserveQuestion(
         await prisma.aiUsage.deleteMany({ where: { id: leaseId } });
       } catch {
         console.error('[medschools-qa] could not end the in-flight lease; it expires by itself');
+      }
+    },
+    async refund() {
+      try {
+        await prisma.aiUsage.deleteMany({ where: { id: { in: [askId, leaseId] } } });
+      } catch {
+        console.error('[medschools-qa] could not refund the question; the lease expires by itself');
       }
     },
   };

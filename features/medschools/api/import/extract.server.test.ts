@@ -102,14 +102,14 @@ describe('limits', () => {
     expect(extractPasted('short').truncated).toBe(false);
   });
 
-  it('a CSV keeps its first 500 rows and says it dropped the rest', async () => {
+  it('a CSV keeps its first 300 rows and says it dropped the rest', async () => {
     const csv = Array.from({ length: 800 }, (_, i) => `School ${i},2026-06-12`).join('\n');
     const r = await extractFile({ buffer: Buffer.from(csv), mimeType: MIME.csv, filename: 'big.csv' });
     expect(r.text.split('\n')).toHaveLength(IMPORT_LIMITS.rows);
     expect(r.truncated).toBe(true);
   });
 
-  it('a workbook keeps its first 500 rows across sheets', async () => {
+  it('a workbook keeps its first 300 rows across sheets', async () => {
     const rows = Array.from({ length: 700 }, (_, i) => `<row r="${i + 1}"><c r="A${i + 1}" t="inlineStr"><is><t>S${i}</t></is></c></row>`).join('');
     const zip = new JSZip();
     zip.file('xl/workbook.xml', '<workbook xmlns:r="r"><sheets><sheet name="A" r:id="rId1"/></sheets></workbook>');

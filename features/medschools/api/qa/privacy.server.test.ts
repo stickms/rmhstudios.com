@@ -40,8 +40,9 @@ describe('Q&A privacy pins (R12)', () => {
     expect(creates).toHaveLength(3);
     for (const c of creates) expect(c).toMatch(/data: ledgerRow\(userId, QA_(ASK|LOCK|ADMIN_LOCK)_PROMPT_ID\)/);
     expect(src.match(/\.(update|updateMany|upsert|createMany)\(/g)).toBeNull();
-    expect(src.match(/\.deleteMany\(\{ where: \{ id(: leaseId)? \} \}\)/g)).toHaveLength(2);
-    expect(src.match(/\.deleteMany\(/g)).toHaveLength(2); // the member lease and the admin lease
+    expect(src.match(/\.deleteMany\(\{ where: \{ id(: leaseId|: \{ in: \[askId, leaseId\] \})? \} \}\)/g)).toHaveLength(3);
+    // The member lease, the admin lease, and a refund (the member's own ask row and lease, by id, after an unreadable reply).
+    expect(src.match(/\.deleteMany\(/g)).toHaveLength(3);
     const row = /const ledgerRow = [\s\S]*?\}\);/.exec(src)![0];
     expect(row).not.toMatch(/question|text|answer|body/i);
     expect(src).not.toMatch(/\$queryRawUnsafe/);

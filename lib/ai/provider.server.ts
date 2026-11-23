@@ -272,7 +272,13 @@ export function jsonFromModelText(raw: string): unknown {
   const first = trimmed.indexOf('{');
   const last = trimmed.lastIndexOf('}');
   if (first < 0 || last <= first) throw new AppError('AI_UNAVAILABLE');
-  return JSON.parse(trimmed.slice(first, last + 1));
+  try {
+    return JSON.parse(trimmed.slice(first, last + 1));
+  } catch {
+    // `SyntaxError.message` quotes the text it choked on (here: the model's echo of a member's file), and callers log and
+    // return errors. A fixed-message refusal carries nothing from the reply.
+    throw new AppError('AI_UNAVAILABLE');
+  }
 }
 
 /* -------------------------------------------------------------------------- */

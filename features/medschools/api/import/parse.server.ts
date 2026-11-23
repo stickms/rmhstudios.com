@@ -11,7 +11,8 @@
  *
  * What is kept: nothing. The file's bytes, its text, its name, the prompt and the model's output live in this call's
  * memory. The only trace is the `AiUsage` row the provider writes (user, task, prompt id, tokens, cost, time) and the two
- * zero-token reservation rows, none of which holds text. The log line carries counts and a status, never text.
+ * zero-token reservation rows, none of which holds text. A reply the server cannot read as JSON refunds the question
+ * and ends in a fixed-message `AI_UNAVAILABLE` (`runner.server.ts`); the member's text never reaches an error. The log line carries counts and a status, never text.
  */
 import { MEDSCHOOLS_IMPORT, asData, systemFor } from '@/lib/ai/prompts';
 import { AppError } from '@/lib/errors/codes';
@@ -22,6 +23,7 @@ import { assertLive, runUnderLease } from '../qa/lease.server';
 import { importDirectory } from './directory.server';
 import { extractFile, extractPasted, promptText, type Extracted } from './extract.server';
 import { aiImportRunner, type ImportRunner } from './runner.server';
+import { UnreadableReplyError } from './unreadable';
 import { validateImport } from './validate';
 
 export type ImportInput =
@@ -57,12 +59,18 @@ export async function parseImport(
   const gate = await admitQuestion(i.userId, now, { isAdmin: i.isAdmin === true });
   const runner = deps.runner ?? aiImportRunner;
   return runUnderLease(gate, QA_DEADLINE_MS, i.signal, async (signal) => {
-    const raw = await runner.run(
-      systemFor(MEDSCHOOLS_IMPORT),
-      asData(JSON.stringify({ text: prepared.text })),
-      i.userId,
-      signal,
-    );
+    let raw: unknown;
+    try {
+      raw = await runner.run(systemFor(MEDSCHOOLS_IMPORT), asData(JSON.stringify({ text: prepared.text })), i.userId, signal);
+    } catch (err) {
+      // The model answered and the answer cannot be read (cut off at the token limit, or prose): not the member's doing,
+      // so the day's question goes back. Any other failure (provider down, deadline) keeps it: the call was made.
+      if (err instanceof UnreadableReplyError) {
+        await gate.refund();
+        summary('unreadable');
+      }
+      throw err;
+    }
     assertLive(signal);
     const { dir, aliases } = await importDirectory();
     const valid = validateImport(raw, { text: prepared.text, dir, aliases, now });
