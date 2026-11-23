@@ -28,7 +28,7 @@ const HARVARD = 'harvard-medical-school';
 const ADMIT_URL = ADMIT_SECONDARY_URL(HARVARD);
 const COLUMBIA_URL = essayQuestionsUrl('COL', 'columbia');
 const admitPage = readAdmitFixture('secondary-essays-harvard.html');
-const sdnPage = readSdnFixture('essays-columbia.html');
+const sdnPage = readSdnFixture('essays-hms.html');
 
 const CLOUDFLARE =
   '<html><head><title>Just a moment...</title></head><body><noscript>Enable JavaScript and cookies to continue</noscript></body></html>';

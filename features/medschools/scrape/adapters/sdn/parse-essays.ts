@@ -1,161 +1,99 @@
 /**
- * SDN school-database essay-questions page (`…/medical-school/essay-questions/<CODE>/<slug>`, "Secondary prompts by
- * cycle"). A deterministic parser, no model. Two shapes are read: an inline JSON array (`<script id="essay-questions-data">`,
- * the way the school-database pages embed their data) when present, otherwise the visible list. It is an anonymization
- * boundary: only the allow-listed fields (cycle, program, question, limit, optional) are read, so a username, avatar,
- * comment, footnote or report link in the data or the markup cannot reach the output.
+ * SDN school-database essay-questions page (`www.studentdoctor.net/schools-database/medical-school/essay-questions/
+ * <CODE>/<slug>`). A deterministic parser, no model.
  *
- * UNVERIFIED MARKUP (secondaries plan, Facts 1): both shapes are hand-built to the endpoint inventory's description.
- * Selectors and field names are in `SEL` and `FIELD`; the live-capture swap is one edit.
+ * VERIFIED AGAINST LIVE PAGES (2026-11-23, secondaries plan Facts 1): the page is server-rendered HTML with no inline
+ * JSON. Prompts are grouped by TOPIC CATEGORY (`section.category-card`, its `h2` is "Other", "Motivation and Fit"...,
+ * never a cycle or a program), and one `li.question-item` is one prompt WORDING with `data-years="2026-2027,2024-2025"`
+ * naming every cycle it was used in, so a prompt yields one `NormalizedPrompt` per cycle. The text is the item's first
+ * `p`, numbered within its category ("1. Describe..."), with any limit and "(Optional)" written inside it. There is no
+ * program heading: a combined-degree prompt says so in its own text ("... - MSTP applicants", "HST Only").
+ * A school with nothing says so in a metrics block ("Prompts" 0) and has no category section.
+ *
+ * It is an anonymization boundary: only the item's `data-years` and its first `p` are read, so nothing else on the page
+ * (the add-a-prompt form and its token, comments, links, the page chrome) can reach the output.
  */
-import { parse, type HTMLElement } from 'node-html-parser';
+import { parse } from 'node-html-parser';
 import {
   MAX_PER_SECTION,
   classifyProgram,
   cycleLabelToEntryYear,
   parsePromptText,
 } from '../../../engine/secondaries/text';
-import type { NormalizedPrompt, PromptLimit } from '../../../engine/secondaries/types';
+import type { NormalizedPrompt } from '../../../engine/secondaries/types';
 import { inDiscussion } from '../discussion';
 import { SdnPageError } from './guard';
 
 const SEL = {
-  data: 'script#essay-questions-data',
-  section: 'section.essay-cycle',
-  cycleAttr: 'data-cycle',
-  cycleHeading: '.essay-heading, h2',
-  walk: '.essay-program, .essay-question',
-  program: 'essay-program',
-  text: '.essay-text',
-  limit: '.essay-limit',
-  optional: '.essay-optional',
-  empty: '.essay-empty',
+  page: '#essay-questions-page',
+  item: 'li.question-item',
+  yearsAttr: 'data-years',
+  text: 'p',
+  metrics: '.sdn-school-essay-metrics',
 } as const;
 
-/** The only keys read from an inline row. Anything else a row carries is never looked at. */
-const FIELD = {
-  cycle: 'cycle',
-  program: 'program',
-  question: 'question',
-  limit: 'limit',
-  optional: 'optional',
-} as const;
+const PROMPTS_METRIC_RE = /\bPrompts\s*(\d+)\b/;
 
 interface Ctx {
   currentCycle: number;
   onSkippedSection?: () => void;
 }
 
-function build(
-  cycleYear: number,
-  heading: string | undefined,
-  question: string,
-  limitText: string | undefined,
-  optionalFlag: boolean,
-): NormalizedPrompt | null {
-  const parsed = parsePromptText(question);
-  if (parsed.text === '') return null;
-  const fromElement = limitText ? parsePromptText(limitText) : null;
-  const limit: PromptLimit | null = fromElement?.limit ?? parsed.limit;
-  return {
-    cycleYear,
-    program: classifyProgram(parsed.text, heading),
-    text: parsed.text,
-    limit,
-    optional: parsed.optional || (fromElement?.optional ?? false) || optionalFlag,
-    sourceRef: null,
-  };
-}
-
-function fromInline(raw: string, ctx: Ctx): NormalizedPrompt[] {
-  let data: unknown;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    throw new SdnPageError('essays: inline data is not JSON');
-  }
-  if (!Array.isArray(data)) throw new SdnPageError('essays: inline data is not an array');
-
-  const perCycle = new Map<string, number>();
-  const skipped = new Set<string>();
-  const out: NormalizedPrompt[] = [];
-  for (const row of data) {
-    if (row === null || typeof row !== 'object') continue;
-    const r = row as Record<string, unknown>;
-    const label = r[FIELD.cycle];
-    const question = r[FIELD.question];
-    if (typeof label !== 'string' || typeof question !== 'string') continue;
-    const n = (perCycle.get(label) ?? 0) + 1;
-    perCycle.set(label, n);
-    if (n > MAX_PER_SECTION) throw new SdnPageError('essays: too many prompts in one cycle');
-    const cycleYear = cycleLabelToEntryYear(label, ctx.currentCycle);
-    if (cycleYear === null) {
-      if (!skipped.has(label)) {
-        skipped.add(label);
-        ctx.onSkippedSection?.();
-      }
-      continue;
-    }
-    const program = r[FIELD.program];
-    const limit = r[FIELD.limit];
-    const p = build(
-      cycleYear,
-      typeof program === 'string' ? program : undefined,
-      question,
-      typeof limit === 'string' ? limit : undefined,
-      r[FIELD.optional] === true,
-    );
-    if (p) out.push(p);
-  }
-  return out;
-}
-
-function fromMarkup(root: ReturnType<typeof parse>, ctx: Ctx): NormalizedPrompt[] {
-  const sections = root.querySelectorAll(SEL.section);
-  if (sections.length === 0) {
-    if (root.querySelector(SEL.empty)) return [];
-    throw new SdnPageError('essays: no recognisable cycle section');
-  }
-  const out: NormalizedPrompt[] = [];
-  for (const section of sections) {
-    const label = section.getAttribute(SEL.cycleAttr) ?? section.querySelector(SEL.cycleHeading)?.text.trim() ?? '';
-    const cycleYear = cycleLabelToEntryYear(label, ctx.currentCycle);
-    if (cycleYear === null) {
-      ctx.onSkippedSection?.();
-      continue;
-    }
-    let heading: string | undefined;
-    let inSection = 0;
-    for (const el of section.querySelectorAll(SEL.walk) as HTMLElement[]) {
-      if (inDiscussion(el)) continue;
-      if (el.classNames.split(/\s+/).includes(SEL.program)) {
-        heading = el.text;
-        continue;
-      }
-      const textEl = el.querySelector(SEL.text);
-      if (!textEl) continue;
-      inSection++;
-      if (inSection > MAX_PER_SECTION) throw new SdnPageError('essays: too many prompts in one cycle');
-      const p = build(
-        cycleYear,
-        heading,
-        textEl.text,
-        el.querySelector(SEL.limit)?.text,
-        el.querySelector(SEL.optional) !== null,
-      );
-      if (p) out.push(p);
-    }
-  }
-  return out;
-}
-
 /**
- * Every prompt on the page as a `NormalizedPrompt` (`sourceRef` null: the caller sets the page URL). Throws `SdnPageError`
- * (no status) for a page with neither shape, bad inline data, or more than `MAX_PER_SECTION` prompts under one cycle.
+ * Every prompt on the page as a `NormalizedPrompt` (`sourceRef` null: the caller sets the page URL). Throws
+ * `SdnPageError` (no status) for a page that is not the essay page, a page with no prompts that does not say it has
+ * none, or more than `MAX_PER_SECTION` prompts under one cycle.
  */
 export function parseEssayQuestionsPage(html: string, ctx: Ctx): NormalizedPrompt[] {
   const root = parse(html);
-  const inline = root.querySelector(SEL.data);
-  if (inline) return fromInline(inline.text, ctx);
-  return fromMarkup(root, ctx);
+  if (!root.querySelector(SEL.page)) throw new SdnPageError('essays: no recognisable essay page');
+
+  const items = root.querySelectorAll(SEL.item);
+  if (items.length === 0) {
+    const metrics = root.querySelector(SEL.metrics)?.text.replace(/\s+/g, ' ');
+    const m = metrics ? PROMPTS_METRIC_RE.exec(metrics) : null;
+    if (m?.[1] === '0') return [];
+    throw new SdnPageError('essays: no prompts and no statement that there are none');
+  }
+
+  const perCycle = new Map<number, number>();
+  const skipped = new Set<string>();
+  const out: NormalizedPrompt[] = [];
+  for (const item of items) {
+    if (inDiscussion(item)) continue;
+    const textEl = item.querySelector(SEL.text);
+    const labels = (item.getAttribute(SEL.yearsAttr) ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s !== '');
+    if (!textEl || labels.length === 0) continue;
+    const parsed = parsePromptText(textEl.text);
+    if (parsed.text === '') continue;
+
+    const seenHere = new Set<number>();
+    for (const label of labels) {
+      const cycleYear = cycleLabelToEntryYear(label, ctx.currentCycle);
+      if (cycleYear === null) {
+        if (!skipped.has(label)) {
+          skipped.add(label);
+          ctx.onSkippedSection?.();
+        }
+        continue;
+      }
+      if (seenHere.has(cycleYear)) continue;
+      seenHere.add(cycleYear);
+      const n = (perCycle.get(cycleYear) ?? 0) + 1;
+      perCycle.set(cycleYear, n);
+      if (n > MAX_PER_SECTION) throw new SdnPageError('essays: too many prompts in one cycle');
+      out.push({
+        cycleYear,
+        program: classifyProgram(parsed.text),
+        text: parsed.text,
+        limit: parsed.limit,
+        optional: parsed.optional,
+        sourceRef: null,
+      });
+    }
+  }
+  return out;
 }

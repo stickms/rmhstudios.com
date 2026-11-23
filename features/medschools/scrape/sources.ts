@@ -37,7 +37,7 @@ export const ADMIT_SCHOOL_URL: ((aliasKey: string) => string) | undefined = unde
 
 /**
  * Admit's public secondary-essays page for an alias key (secondaries tab). The path comes from the endpoint inventory
- * (`/secondary-essays/<slug>`); that the slug equals the Admit alias key is UNVERIFIED (secondaries plan, Facts 1).
+ * (`/secondary-essays/<slug>`); the slug equals the Admit alias key (verified live 2026-11-23).
  */
 export const ADMIT_SECONDARY_URL = (slug: string): string => `${SOURCES.ADMIT_WEB.origin}/secondary-essays/${slug}`;
 

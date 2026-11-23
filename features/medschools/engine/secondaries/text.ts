@@ -117,8 +117,8 @@ const YEAR_LABEL_RE = /^(\d{4})$/;
 
 /**
  * Entry year from a cycle label as a source writes it: "2024-2025", "2024–2025" and "2024-25" are 2025 (the
- * 2024–2025 cycle, entry year 2025); a bare "2025" is read as the entry year as written (secondaries plan, Facts 2:
- * UNVERIFIED against a live page). Null for anything else, for a range whose second year is not the first plus one, for a
+ * 2024–2025 cycle, entry year 2025); a bare "2025" is read as the entry year as written. No live source writes a bare year (verified
+ * 2026-11-23): SDN writes ranges, and Admit's numeric year is the APPLICATION year, so its adapter passes `${y}-${y + 1}`. Null for anything else, for a range whose second year is not the first plus one, for a
  * year below 2005 and, when `currentCycle` is given, for a year after it (a cycle that has not begun).
  */
 export function cycleLabelToEntryYear(label: string, currentCycle?: number): number | null {
