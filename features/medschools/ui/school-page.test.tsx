@@ -549,7 +549,7 @@ describe('Forecast tab', () => {
     h.session = null;
     const html = render(seed(forecast()));
     expect(html).toContain('<svg');
-    expect(html).toContain('Expected total 30 reported interview invite, likely between 20 and 44');
+    expect(html).toContain('Interview invite: expected total 30, likely between 20 and 44');
     expect(html).toContain('Half of them by Jan 10, likely between Dec 20 and Feb 2');
     expect(html).toContain('Forecast as of Nov 20.');
     expect(html).toContain('Based on 2 earlier cycles from Admit.');

@@ -40,7 +40,8 @@ export function ForecastTab({
   const { eventLabel, sourceName, programFilterLabel } = useMedLabels();
   const chartLabels = useChartLabels();
   const { locale } = useLocaleFormat();
-  const nf = new Intl.NumberFormat(locale);
+  // The band is a model output: whole events (the stored quantiles carry a fraction).
+  const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
   // WITHDRAWN and HOLD are never charted: they read as Interview here (the loader prefetches the same key).
   const type: MedChartedTypeId = CHARTED_TYPES.includes(search.type) ? (search.type as MedChartedTypeId) : 'INTERVIEW';
   const program = search.program === 'PHD' ? 'PHD' : 'REG';
@@ -75,7 +76,6 @@ export function ForecastTab({
   }
 
   const date = (d: string) => formatUtcDay(d, locale);
-  const typeWord = eventLabel(type).toLowerCase();
   const drawn = data && data.status !== 'no-data';
   const basisSources = data ? [...new Set(data.basis.map((b) => sourceName(b.source)))].join(', ') : '';
   const basisLine = !data
@@ -152,11 +152,11 @@ export function ForecastTab({
               <ul className="m-0 list-none border-t border-site-border p-0">
                 <li className="t-body border-b border-site-border py-2">
                   {t('forecast-total', {
-                    defaultValue: 'Expected total {{p50}} reported {{type}}, likely between {{p10}} and {{p90}}',
+                    defaultValue: '{{type}}: expected total {{p50}}, likely between {{p10}} and {{p90}}',
                     p50: nf.format(data.summary.total.p50),
                     p10: nf.format(data.summary.total.p10),
                     p90: nf.format(data.summary.total.p90),
-                    type: typeWord,
+                    type: eventLabel(type),
                   })}
                 </li>
                 <li className="t-body border-b border-site-border py-2">

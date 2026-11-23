@@ -47,7 +47,8 @@ export function ForecastBand(p: {
   legendLabels: { observed: string; median: string; range: string; low: string; high: string };
 }) {
   const { labels, legendLabels } = p;
-  const nf = new Intl.NumberFormat(labels.locale);
+  // Whole events: a forecast quantile carries a fraction nobody should read.
+  const nf = new Intl.NumberFormat(labels.locale, { maximumFractionDigits: 0 });
   const color = CATEGORY_STYLE[p.eventType].color;
   const dateOf = (day: number) => formatUtcDay(addUtcDays(p.dayZeroOn, day), labels.locale);
   const longDate = (day: number) =>

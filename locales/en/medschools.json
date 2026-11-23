@@ -65,7 +65,7 @@
   "forecast-load-failed": "Could not load the forecast.",
   "forecast-program-note": "A forecast is made for one program at a time. Showing {{program}}.",
   "forecast-title": "{{type}}, forecast",
-  "forecast-total": "Expected total {{p50}} reported {{type}}, likely between {{p10}} and {{p90}}",
+  "forecast-total": "{{type}}: expected total {{p50}}, likely between {{p10}} and {{p90}}",
   "ignore": "Ignore",
   "ignore-key": "Ignore {{name}}",
   "ignored": "Ignored",
