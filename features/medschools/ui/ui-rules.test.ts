@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
  * Static rules for the RMH Med Schools public UI (Phase 3). The three route files are held to the bundle rule; every
  * ui file to the Steel and i18n rules the review would otherwise catch by eye.
  */
-const ROUTES = ['index', 'live', '$slug'].map((n) => `app/routes/_site/rmh-medschool/${n}.tsx`);
+const ROUTES = ['index', 'live', '$slug', 'tracker'].map((n) => `app/routes/_site/rmh-medschool/${n}.tsx`);
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
   .filter((f) => !/\.test\./.test(f))
@@ -76,6 +76,14 @@ describe('medschools ui rules', () => {
     for (const [f, src] of routes) {
       expect(src, f).not.toMatch(/ui\/charts|chart-geometry|d3-/);
     }
+  });
+
+  it('keeps the private tracker route private and thin (noindex, definePage, prefetched, no zod)', () => {
+    const src = read('app/routes/_site/rmh-medschool/tracker.tsx');
+    expect(src).toContain('noIndex: true');
+    expect(src).toContain('definePage');
+    expect(src).toContain('prefetchRouteQuery');
+    expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-/);
   });
 
   it('keeps createServerFn out of the query factories', () => {

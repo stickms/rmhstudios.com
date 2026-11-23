@@ -112,6 +112,30 @@ export function milestoneDateProblem(cycleYear: number, date: unknown, now: Date
   return null;
 }
 
+/**
+ * The `min` and `max` of a milestone date input: the same window `milestoneDateProblem` enforces, so the control and the
+ * server agree. `max` is the cycle's last day or tomorrow UTC, whichever is earlier.
+ */
+export function milestoneDateWindow(cycleYear: number, now: Date): { min: string; max: string } {
+  const tomorrow = dayString(new Date(now.getTime() + 86_400_000));
+  const end = `${cycleYear}-08-31`;
+  return { min: `${cycleYear - 1}-05-01`, max: end < tomorrow ? end : tomorrow };
+}
+
+/** Sharing needs an account at least this old (plan Q8); the server checks, the toggle explains. */
+export const SHARE_MIN_ACCOUNT_AGE_DAYS = 7;
+
+/** True when an account created at `createdAt` may share on `now`. */
+export function accountOldEnoughToShare(createdAt: Date, now: Date = new Date()): boolean {
+  return now.getTime() - createdAt.getTime() >= SHARE_MIN_ACCOUNT_AGE_DAYS * 86_400_000;
+}
+
+/** The milestone types this application has not set yet, in display order. */
+export function unsetMilestoneTypes(set: readonly { type: MilestoneType }[]): MilestoneType[] {
+  const have = new Set(set.map((m) => m.type));
+  return MILESTONE_TYPES.filter((t) => !have.has(t));
+}
+
 /** A cycle year is accepted within `[currentCycle-3, currentCycle+1]`, the current cycle rolling over on June 1 UTC. */
 export function cycleYearProblem(cycleYear: unknown, now: Date): 'range' | null {
   if (typeof cycleYear !== 'number' || !Number.isInteger(cycleYear)) return 'range';
@@ -120,12 +144,11 @@ export function cycleYearProblem(cycleYear: unknown, now: Date): 'range' | null 
 }
 
 /** The 50 states, DC and the five inhabited territories. */
-const HOME_STATES = new Set(
-  (
-    'AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA ' +
-    'RI SC SD TN TX UT VT VA WA WV WI WY DC PR GU VI AS MP'
-  ).split(' '),
-);
+export const HOME_STATE_CODES: readonly string[] = (
+  'AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA ' +
+  'RI SC SD TN TX UT VT VA WA WV WI WY DC PR GU VI AS MP'
+).split(' ');
+const HOME_STATES = new Set(HOME_STATE_CODES);
 
 /** `'nc '` -> `'NC'`; empty or absent -> null; anything not a US state, DC or territory -> `'invalid'`. */
 export function normalizeHomeState(v: unknown): string | null | 'invalid' {

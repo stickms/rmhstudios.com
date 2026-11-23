@@ -1,15 +1,20 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  HOME_STATE_CODES,
   LIMITS,
   MILESTONE_TYPES,
+  SHARE_MIN_ACCOUNT_AGE_DAYS,
+  accountOldEnoughToShare,
   SHAREABLE,
   cellKey,
   cleanText,
   cycleYearProblem,
   milestoneDateProblem,
+  milestoneDateWindow,
   normalizeHomeState,
   reorderIds,
   toSharedEvent,
+  unsetMilestoneTypes,
   type MilestoneType,
 } from './tracker';
 
@@ -233,5 +238,40 @@ describe('cleanText', () => {
   });
   it('markup stays text (the rendering side escapes it)', () => {
     expect(cleanText('<b>hi</b>', 20)).toBe('<b>hi</b>');
+  });
+});
+
+describe('milestoneDateWindow (the date input agrees with milestoneDateProblem)', () => {
+  const now = new Date('2026-11-20T10:00:00Z');
+  it('min is May 1 of the year before; max is the cycle end or tomorrow, whichever is earlier', () => {
+    expect(milestoneDateWindow(2027, now)).toEqual({ min: '2026-05-01', max: '2026-11-21' });
+    expect(milestoneDateWindow(2026, now)).toEqual({ min: '2025-05-01', max: '2026-08-31' });
+  });
+  it('every day inside the window passes milestoneDateProblem and the days just outside fail', () => {
+    for (const cy of [2026, 2027]) {
+      const { min, max } = milestoneDateWindow(cy, now);
+      expect(milestoneDateProblem(cy, min, now)).toBeNull();
+      expect(milestoneDateProblem(cy, max, now)).toBeNull();
+    }
+    expect(milestoneDateProblem(2027, '2026-04-30', now)).toBe('window');
+    expect(milestoneDateProblem(2027, '2026-11-22', now)).toBe('future');
+  });
+});
+
+describe('sharing age and the client lists', () => {
+  it('accountOldEnoughToShare is exactly 7 days', () => {
+    expect(SHARE_MIN_ACCOUNT_AGE_DAYS).toBe(7);
+    const now = new Date('2026-11-20T12:00:00.000Z');
+    expect(accountOldEnoughToShare(new Date('2026-11-13T12:00:00.000Z'), now)).toBe(true);
+    expect(accountOldEnoughToShare(new Date('2026-11-13T12:00:00.001Z'), now)).toBe(false);
+  });
+  it('unsetMilestoneTypes keeps display order and drops what is set', () => {
+    expect(unsetMilestoneTypes([])).toEqual([...MILESTONE_TYPES]);
+    expect(unsetMilestoneTypes([{ type: 'INTERVIEW' }, { type: 'SUBMITTED' }])).not.toContain('INTERVIEW');
+    expect(unsetMilestoneTypes(MILESTONE_TYPES.map((type) => ({ type })))).toEqual([]);
+  });
+  it('home state codes are exactly what normalizeHomeState accepts', () => {
+    for (const c of HOME_STATE_CODES) expect(normalizeHomeState(c)).toBe(c);
+    expect(HOME_STATE_CODES).toContain('DC');
   });
 });

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { SOURCE_NAMES } from '../engine/public-read';
+import type { MilestoneType } from '../engine/tracker';
 import type {
   MedDegreeId,
   MedEventTypeId,
@@ -34,6 +35,18 @@ export function useMedLabels() {
     }
   };
 
+  /** A tracker milestone: the seven shareable types read as their event, plus the two that never leave the tracker. */
+  const milestoneLabel = (type: MilestoneType): string => {
+    switch (type) {
+      case 'SUBMITTED':
+        return t('tracker-milestone-submitted', { defaultValue: 'Application submitted' });
+      case 'COMPLETE':
+        return t('tracker-milestone-complete', { defaultValue: 'Application complete' });
+      default:
+        return eventLabel(type);
+    }
+  };
+
   /** Where the full label does not fit (chart end labels on a phone). */
   const eventShortLabel = (type: MedEventTypeId): string =>
     type === 'INTERVIEW' ? t('event-interview-short', { defaultValue: 'Interview' }) : eventLabel(type);
@@ -62,5 +75,5 @@ export function useMedLabels() {
 
   const sourceName = (s: MedSourceId): string => SOURCE_NAMES[s];
 
-  return { eventLabel, eventShortLabel, programLabel, programFilterLabel, sourceName };
+  return { eventLabel, milestoneLabel, eventShortLabel, programLabel, programFilterLabel, sourceName };
 }

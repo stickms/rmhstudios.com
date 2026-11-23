@@ -13,6 +13,7 @@ export default defineFeature({
     'app/routes/_site/rmh-medschool/index.tsx',
     'app/routes/_site/rmh-medschool/live.tsx',
     'app/routes/_site/rmh-medschool/$slug.tsx',
+    'app/routes/_site/rmh-medschool/tracker.tsx',
     'features/medschools/api/medschools.schools.server.ts',
     'features/medschools/api/medschools.schools.$slug.server.ts',
     'features/medschools/api/medschools.schools.$slug.activity.server.ts',

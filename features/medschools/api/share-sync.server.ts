@@ -24,7 +24,15 @@ import { randomUUID } from 'node:crypto';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { dedupeHash } from '../engine/dedupe';
-import { cellKey, toSharedEvent, SHAREABLE, type MilestoneType, type SharedEventRow } from '../engine/tracker';
+import {
+  SHARE_MIN_ACCOUNT_AGE_DAYS,
+  SHAREABLE,
+  accountOldEnoughToShare,
+  cellKey,
+  toSharedEvent,
+  type MilestoneType,
+  type SharedEventRow,
+} from '../engine/tracker';
 import type { MedEventType, MedProgram } from '../engine/types';
 
 export type Tx = Prisma.TransactionClient;
@@ -40,8 +48,8 @@ export class SharingUnavailableError extends Error {
   }
 }
 
-/** Q8: sharing needs an account at least this old. */
-export const SHARE_MIN_ACCOUNT_AGE_DAYS = 7;
+/** Q8: sharing needs an account at least this old (the rule lives in `engine/tracker.ts`, client-safe, so the toggle can explain it). */
+export { SHARE_MIN_ACCOUNT_AGE_DAYS, accountOldEnoughToShare };
 
 /** The account is too new to contribute shared events (Q8). Thrown inside the transaction, so nothing is written. */
 export class AccountTooNewError extends Error {
@@ -55,11 +63,6 @@ export class AccountTooNewError extends Error {
 export function shareSecret(env: NodeJS.ProcessEnv = process.env): string | null {
   const s = env.MEDSCHOOLS_DEDUPE_SECRET;
   return typeof s === 'string' && s.length >= 16 ? s : null;
-}
-
-/** True when an account created at `createdAt` may share on `now`. */
-export function accountOldEnoughToShare(createdAt: Date, now: Date = new Date()): boolean {
-  return now.getTime() - createdAt.getTime() >= SHARE_MIN_ACCOUNT_AGE_DAYS * 86_400_000;
 }
 
 const hashOf = (secret: string, milestoneId: string): string => dedupeHash(secret, 'RMH', `milestone:${milestoneId}`);
