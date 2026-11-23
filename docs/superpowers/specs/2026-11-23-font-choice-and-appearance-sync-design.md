@@ -1,6 +1,6 @@
 # Font choice and per-device appearance sync — design
 
-Date: 2026-11-23 · Owner request, same day · Status: draft for owner approval
+Date: 2026-11-23 · Owner request, same day · Status: for owner approval
 
 ## Intent
 
@@ -112,6 +112,13 @@ Sans's Latin file is preloaded only when it is in use.
 The server cannot read `localStorage`, so the sync switch is also mirrored into the cookie world: `rmh-appearance-sync=0`
 is a cookie too, so the server skips the account seed for that device. (The existing account seed in
 `lib/appearance/account-seed.ts` and the pre-paint theme step must honour the same flag.)
+
+**Edge cache (owner, 2026-11-23: option A).** Signed-out HTML on the allowlisted paths is cached at Cloudflare
+(`server/nitro/anon-html-cache.ts`; the rule in `deploy/apply-cloudflare-cache-rules.sh`), and it bypasses only for a
+session or `rmh-lang` cookie. A request carrying `rmh-fonts` (or `rmh-appearance-sync=0`) bypasses it too, in the origin
+plugin and in the Cloudflare rule, so a signed-out reader with a chosen face gets HTML rendered with it. Only signed-out
+readers who changed a font lose the edge copy. The Cloudflare rule is updated by running the deploy script, a manual
+step; the PR says so.
 
 **Pre-paint fallback.** If `localStorage` names fonts the server did not render (cookie cleared, first load after a
 change on a device whose cookie write failed), the pre-paint script sets the `data-font-*` attributes and appends the
