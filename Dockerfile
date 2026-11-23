@@ -348,6 +348,10 @@ RUN rm -rf .output \
     # set, so if the files were absent the art would not fall back to the master,
     # it would fail outright. That is why `pnpm build` chains images:variants
     # before `vite build`, and why the COPY above is not removable.
+    # The two generated modules that are not in git (.gitignore): the pre-paint script
+    # bundle (lib/prepaint/generated.ts, whose sha256 the CSP carries) and the route tree.
+    # The checkout comes without them, and `pnpm install --ignore-scripts` did not make them.
+    && pnpm run gen:code \
     # The islands first (redesign audit B1, vite.islands.config.ts): the site build
     # inlines their manifest into the server bundle and Nitro copies their output
     # into .output/public/islands, so it must exist before `vite build` starts.

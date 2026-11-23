@@ -16,7 +16,7 @@ app/
     __root.tsx       root document (see below)
     _site.tsx        pathless layout: sidebar/nav shell for standard pages
     _site/           standard site pages (feed, profiles, wallet, admin, …)
-    api/             server routes that are files, and `$.ts`, the dispatcher for the registered ones (counts: docs/_generated/facts.json)
+    api/             server routes that are files, and `$.ts`, the dispatcher for the registered ones (counts: docs/_generated/facts/routes.json)
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
   globals.css        theme tokens: base + curated themes as .style-* classes (see design.md)

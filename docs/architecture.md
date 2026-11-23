@@ -261,7 +261,7 @@ live origin policy lacks permission; JavaScript remains the fallback. See
 
 ## 4. CI
 
-The workflows (count: `workflows` in [`_generated/facts.json`](./_generated/facts.json)) live in `.github/workflows/` —
+The workflows (count: `workflows` in `_generated/facts/ci.json`) live in `.github/workflows/` —
 the fleet was consolidated in the rewrite, and this table used to describe the ~45-workflow one that preceded it
 (`typecheck-server.yml`, `vitest-coverage.yml`, `codeql.yml` and the granular linter/scanner set are all gone).
 `ls .github/workflows/` is the truth; this is what each one gates:
@@ -313,7 +313,7 @@ changed-file subset of all three. Test suites and what gates them: [`testing.md`
 ## 7. Data & media
 
 - **PostgreSQL** via Prisma 7 (`@prisma/adapter-pg`) in Node and raw pgx in Go — one shared schema (`prisma/schema/`
-  (per-domain files), model count in [`_generated/facts.json`](./_generated/facts.json)). Go models mirror Prisma column
+  (per-domain files), model count in `_generated/facts/prisma.json`). Go models mirror Prisma column
   casing verbatim.
 - **Media:** R2/S3 via `lib/storage/` (local-FS fallback for dev); MinIO provides the bucket locally; the Go `assets`
   service streams `/library /music /models /sprites` range-aware (main user path still goes through web/Apache under

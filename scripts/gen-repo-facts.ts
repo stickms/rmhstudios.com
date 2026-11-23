@@ -1,13 +1,19 @@
 /**
- * Generates `docs/_generated/facts.json`: the repository's countable facts
- * (models, routes, namespaces, test files, ...), so living docs and CLAUDE.md
- * point at one generated file instead of carrying hand-written numbers that rot.
+ * Generates `docs/_generated/facts/`: the repository's countable facts (models, routes,
+ * namespaces, test files, ...), one JSON file per category, so living docs, CLAUDE.md and
+ * coding agents point at generated numbers instead of hand-written ones that rot.
  *
  *     pnpm facts:generate
- *     pnpm facts:check      # exit 1 if facts.json is stale
  *
- * Deterministic on purpose: no dates, no commit shas, sorted keys. Everything is
- * counted from tracked files (`git ls-files`, which includes staged ones), so
+ * The files are NOT tracked in git (`.gitignore`). Committed, they were the most
+ * conflicted file in the repo: every PR that added a test, a component or a route changed
+ * the same few lines, so any two open PRs conflicted. Now `pnpm install` and `pnpm dev`
+ * (through `pnpm gen`) write them, so a checkout always has numbers that match its own
+ * tree, and a merge can never conflict on them.
+ *
+ * Split by category (`prisma`, `routes`, `i18n`, `tests`, `ui`, `ci`) so a reader opens the
+ * one file it needs; `index.json` lists them. Deterministic: no dates, no commit shas,
+ * sorted keys. Counted from tracked files (`git ls-files`, which includes staged ones), so
  * the output only changes when the tracked tree does.
  */
 
@@ -20,8 +26,7 @@ import { LOCALES, NAMESPACES } from '../lib/i18n/config';
 import { registeredApiRoutes } from '../lib/api/route-sources';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'docs', '_generated', 'facts.json');
-const CHECK = process.argv.includes('--check');
+const OUT_DIR = join(ROOT, 'docs', '_generated', 'facts');
 
 function tracked(...patterns: string[]): string[] {
   const out = execFileSync('git', ['ls-files', '-z', '--', ...patterns], {
@@ -53,39 +58,62 @@ const migrations = new Set(
     .filter((d) => d && d !== 'migration_lock.toml'),
 );
 
-const facts = {
-  generatedFrom:
-    'scripts/gen-repo-facts.ts (tracked files, prisma/schema/**, lib/i18n/config.ts); regenerate with `pnpm facts:generate`, gated by `pnpm facts:check`',
-  prismaModels: (schema.match(/^model /gm) ?? []).length,
-  prismaEnums: (schema.match(/^enum /gm) ?? []).length,
-  prismaSchemaLines: schemaTexts.reduce((n, s) => n + lines(s), 0),
-  prismaMigrations: migrations.size,
-  routeFiles: routes.length,
-  apiRouteFiles: apiRoutes.length,
-  // Endpoints served by the dispatcher app/routes/api/$.ts from a registered module
-  // (lib/api/route.server.ts, third-pass audit AR3); not route files.
-  registeredApiEndpoints: registeredApiRoutes(ROOT).length,
-  pageRouteFiles: routes.length - apiRoutes.length,
-  i18nNamespaces: NAMESPACES.length,
-  shippedLocales: LOCALES.length,
-  testFiles: tracked('*.test.ts', '*.test.tsx').length,
-  workflows: tracked('.github/workflows/*.yml', '.github/workflows/*.yaml').length,
-  componentTsxFiles: tracked('components/**/*.tsx').length,
-  cssFiles: css.length,
-  cssLines: css.reduce((n, f) => n + lines(read(f)), 0),
+const SCRIPT = 'scripts/gen-repo-facts.ts';
+
+const categories: Record<string, { source: string; facts: Record<string, number> }> = {
+  prisma: {
+    source: 'prisma/schema/** and prisma/migrations/**',
+    facts: {
+      prismaEnums: (schema.match(/^enum /gm) ?? []).length,
+      prismaMigrations: migrations.size,
+      prismaModels: (schema.match(/^model /gm) ?? []).length,
+      prismaSchemaLines: schemaTexts.reduce((n, s) => n + lines(s), 0),
+    },
+  },
+  routes: {
+    source: 'app/routes/** and the registered API modules (lib/api/route-sources.ts)',
+    facts: {
+      apiRouteFiles: apiRoutes.length,
+      pageRouteFiles: routes.length - apiRoutes.length,
+      // Endpoints served by the dispatcher app/routes/api/$.ts from a registered module
+      // (lib/api/route.server.ts, third-pass audit AR3); not route files.
+      registeredApiEndpoints: registeredApiRoutes(ROOT).length,
+      routeFiles: routes.length,
+    },
+  },
+  i18n: {
+    source: 'lib/i18n/config.ts',
+    facts: { i18nNamespaces: NAMESPACES.length, shippedLocales: LOCALES.length },
+  },
+  tests: {
+    source: '*.test.ts and *.test.tsx',
+    facts: { testFiles: tracked('*.test.ts', '*.test.tsx').length },
+  },
+  ui: {
+    source: 'components/**/*.tsx and *.css',
+    facts: {
+      componentTsxFiles: tracked('components/**/*.tsx').length,
+      cssFiles: css.length,
+      cssLines: css.reduce((n, f) => n + lines(read(f)), 0),
+    },
+  },
+  ci: {
+    source: '.github/workflows/*.yml',
+    facts: { workflows: tracked('.github/workflows/*.yml', '.github/workflows/*.yaml').length },
+  },
 };
 
-const next = JSON.stringify(facts, null, 2) + '\n';
+mkdirSync(OUT_DIR, { recursive: true });
+const write = (name: string, body: unknown) =>
+  writeFileSync(join(OUT_DIR, name), JSON.stringify(body, null, 2) + '\n');
 
-if (CHECK) {
-  const cur = existsSync(OUT) ? readFileSync(OUT, 'utf8') : '';
-  if (cur !== next) {
-    console.error('docs/_generated/facts.json is stale — run `pnpm facts:generate`');
-    process.exit(1);
-  }
-  process.stdout.write('facts.json is current\n');
-} else {
-  mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, next);
-  process.stdout.write(`wrote ${OUT}\n`);
+for (const [name, { source, facts }] of Object.entries(categories)) {
+  write(`${name}.json`, { generatedFrom: `${SCRIPT} (${source})`, ...facts });
 }
+write('index.json', {
+  generatedFrom: `${SCRIPT}; regenerate with \`pnpm facts:generate\` (also run by \`pnpm gen\`, \`pnpm install\` and \`pnpm dev\`)`,
+  categories: Object.fromEntries(
+    Object.entries(categories).map(([name, { facts }]) => [`${name}.json`, Object.keys(facts)]),
+  ),
+});
+process.stdout.write(`wrote ${OUT_DIR}\n`);
