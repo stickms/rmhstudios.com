@@ -2,8 +2,10 @@
  * Create · Storefront styles.
  *
  * The store layout used across every Create tab: a hero banner, a rail of a few
- * featured items, and a catalog mosaic where `.is-wide` tiles span two columns.
- * Mobile-first: the mosaic starts at two columns.
+ * featured items, and the catalog grid. The rail and the catalog share one grid
+ * (`--store-tile-min`), so every tile on the page is the same size: one column on a
+ * phone, two in the site's content column, three only when the container is wide
+ * enough (about 1100px) for three readable tiles.
  *
  * A tile is a picture with a caption under it (S3): the art carries the 1px border
  * and the 8px radius, the caption sits on the page. Hover, focus and press change
@@ -14,6 +16,12 @@
  */
 
 .store {
+  /* The narrowest a tile may be. Two fit in the ~770px content column, three need
+     ~1100px of container, never four (the store caps at 1400px). Titles wrap to two
+     lines at this width instead of truncating after a word or two. */
+  --store-tile-min: 21.5rem;
+  --store-gap-x: 24px;
+  --store-gap-y: 28px;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0; /* the page gutter (.cstudio-body) already insets the store */
@@ -275,7 +283,7 @@
 
 /* ── Spotlight rail ─────────────────────────────────────────────────────────── */
 .store-rail {
-  margin-bottom: 26px;
+  margin-bottom: var(--store-gap-y);
 }
 
 .store-rail__track {
@@ -286,16 +294,8 @@
      mobile. Wrapping keeps every featured card visible without any sideways
      scroll. */
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  padding-bottom: 4px;
-}
-
-@media (min-width: 640px) {
-  /* Room for the whole featured set on one row. */
-  .store-rail__track {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--store-tile-min)), 1fr));
+  gap: var(--store-gap-y) var(--store-gap-x);
 }
 
 .store-spot__link {
@@ -331,26 +331,31 @@
   border-color: var(--site-text);
 }
 
-.store-spot__body {
-  padding: 10px 12px 12px;
+/* The rail tile and the catalog tile share their caption: type from the t-* classes
+   in storefront.tsx (t-heading title, t-body description, t-meta line), the title and
+   the description each wrapping to two lines at most, and the meta line pinned to the
+   bottom so the captions in a row line up. */
+.store-spot__body,
+.store-card__body {
+  padding: 12px 14px 14px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   flex: 1;
 }
 
-.store-spot__title {
-  font-size: 0.92rem;
-  font-weight: 600;
+.store-spot__title,
+.store-card__title {
   color: var(--site-text);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.store-spot__desc {
-  font-size: 0.78rem;
-  line-height: 1.42;
+.store-spot__desc,
+.store-card__desc {
   color: var(--site-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -359,44 +364,21 @@
   overflow: hidden;
 }
 
-.store-spot__meta {
+.store-spot__meta,
+.store-card__meta {
   margin-top: auto;
   padding-top: 4px;
-  font-size: 0.7rem;
-  color: var(--site-text-muted);
 }
 
-/* ── Catalog mosaic ─────────────────────────────────────────────────────────── */
+/* ── Catalog grid ───────────────────────────────────────────────────────────── */
+/* One grid, one tile size: the same track as the rail above it, every tile a 16:9
+   picture with its caption. (It used to be a dense mosaic of 3:4 tiles with every
+   fifth one spanning two columns, four and five columns across, which squeezed the
+   titles to a word or two and gave each row a different shape.) */
 .store-mosaic {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-flow: dense;
-  gap: clamp(12px, 1.8vw, 20px);
-  /* Cards keep their natural height (portrait narrow vs 16:9 wide). Without
-     this the grid stretches shorter cards to the row height, leaving an
-     awkward empty band under their caption. */
-  align-items: start;
-}
-
-@media (min-width: 640px) {
-  .store-mosaic {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (min-width: 980px) {
-  .store-mosaic {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-@media (min-width: 1320px) {
-  .store-mosaic {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-/* Wide tiles span two columns and read landscape. */
-.store-card.is-wide {
-  grid-column: span 2;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--store-tile-min)), 1fr));
+  gap: var(--store-gap-y) var(--store-gap-x);
 }
 
 .store-card {
@@ -412,46 +394,7 @@
 }
 
 .store-card__art {
-  aspect-ratio: 3 / 4;
-}
-.store-card.is-wide .store-card__art {
   aspect-ratio: 16 / 9;
-}
-
-.store-card__body {
-  padding: 10px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.store-card__title {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--site-text);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.store-card__desc {
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: var(--site-text-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.store-card__meta {
-  margin-top: 2px;
-  font-size: 0.7rem;
-  color: var(--site-text-muted);
 }
 
 /* ⓘ details button (curated builds), top corner of the art. */
