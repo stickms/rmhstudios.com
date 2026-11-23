@@ -422,6 +422,48 @@ Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner a
   turnaround floors); `scripts/medschools/visual-check.mjs` (`--page secondaries`, `--page overlap`) after
   `seed-visual.ts`.
 
+## Tracker import (owner 2026-11-23)
+
+A member uploads a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` (2 MB), or pastes text; DeepSeek flash reads it into tracker
+dates; the member reviews a preview and presses "Add to my tracker". Endpoints `POST me/tracker/import/parse` (multipart
+`file` or JSON `{ text }`; `parseMedImportFileApi` / `parseMedImportTextApi`) and `POST me/tracker/import/save`
+(`saveMedImportApi`), both signed in and `no-store`.
+
+- **Only dates, and nothing is kept.** The file is read in memory (`api/import/extract.server.ts`, the generalised resume
+  reader plus `xlsx.server.ts` and a CSV parser), its cleaned text goes to one call under the `medschools-import` task
+  (prompt `MEDSCHOOLS_IMPORT`), and the preview is returned. No bytes, text or filename is stored, cached or logged (the log
+  line is counts and a status); the only trace is the text-free `AiUsage` row. The model's `notes` is read by nothing.
+  Pinned by `api/import/privacy.server.test.ts` and the integration test's scan of every table.
+- **The server is the validator** (`api/import/validate.ts`, pure): the envelope and each row and date are checked on their
+  own; a date is kept only when its `raw` quote is in the text AND says that month and day (an invented date is dropped and
+  counted in `dropped`); a year the file never wrote is chosen by the cycle rules (`engine/import.ts`, `inferYear`, flagged
+  `yearInferred`); a numeric date that reads two ways is flagged `ambiguous`; the date must be inside the cycle's window;
+  schools resolve by written name and alias, never by a slug from the model (no unique match: `school: null`, the member
+  picks). The cycle is the one most dated milestones belong to, else the model's hint, else the current one.
+- **Gates are the Q&A's** (`admitQuestion`, `api/qa/lease.server.ts` `runUnderLease`): rate limit `ai`, `isAiConfigured`,
+  the shared monthly pause, the member's allowance, then one of the day's questions and the in-flight lease. One import is
+  one daily question; spend counts against the Q&A share; admin bypass and the pause apply. A file the reader cannot read
+  (415 `MEDSCHOOLS_IMPORT_UNSUPPORTED`), over 2 MB (413 `..._TOO_LARGE`) or with no digit or no date found (422
+  `..._EMPTY`) ends before, or without spending, the model call where it can. The sentences are in
+  `components/errors/refusal-sentence.ts`; the view renders every refusal through `useRefusalText`.
+- **Save** (`importMilestones` in `api/tracker.server.ts`) goes through share-sync's row writers in one `withShared`
+  transaction, so a date is shared only if the cycle's sharing is already on and only the shareable types. The body names
+  schools by slug and never an application, cycle or user (strict schema). Conflict rule: an existing different date is
+  kept unless that date carries `overwrite: true`; the same date is `unchanged`; an out-of-window date or a school that is
+  not active is `invalid`. A cycle is created (unshared) only when the first school needs it.
+- **UI (`ui/tracker/import/`).** "Import from a file" on the tracker opens `TrackerImport` (a `lazy` chunk, so it is off
+  the tracker's critical path); while open it is the whole view, so "Add to my tracker" is the one ink primary (R4). The
+  upload uses `api(parseMedImportFileApi, { body: FormData })` (`lib/contract/client.ts` sends multipart with no
+  content-type), so no raw `fetch` was added. `model.ts` holds every rule the preview applies (pure, tested): which dates
+  are new, same, conflicting or invalid, what `saveBody` writes (an unticked row or date is simply absent), and
+  `retarget` when the cycle changes (a year the file wrote stays; a hand-edited date is final). `ImportPreview.tsx` is rows
+  on rules, 44 px targets on touch, the picker for an unmatched school. Strings are `import-*` keys. A file the browser
+  can see is unsupported or too large is refused before it is sent, with the server's own sentence.
+- **Tests.** Unit: `pnpm exec vitest run features/medschools/ui/tracker/import features/medschools/api/import
+  features/medschools/engine/import.test.ts features/medschools/api/tracker-import.server.test.ts`. Black box:
+  `testing/integration/medschools-import.test.ts` (fake provider, needs `MEDSCHOOLS_DEDUPE_SECRET` for the sharing case).
+  Visual: `visual-check.mjs --fake-ai --page import`.
+
 ## Testing and verification
 
 - Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds Steel, i18n

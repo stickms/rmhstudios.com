@@ -163,6 +163,8 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['GET', '/api/medschools/me/secondaries/overlap?source=tracker'],
   ['GET', '/api/medschools/me/prefs'],
   ['PUT', '/api/medschools/me/prefs', { chartCategories: [] }],
+  ['POST', '/api/medschools/me/tracker/import/parse', { text: 'Duke submitted 2026-06-12' }],
+  ['POST', '/api/medschools/me/tracker/import/save', { cycleYear: CYCLE, rows: [] }],
   ['GET', '/api/medschools/me/ask'],
   ['POST', '/api/medschools/me/ask', { question: 'What is the median?' }],
   ['GET', '/api/medschools/me/qa-limit-request'],
