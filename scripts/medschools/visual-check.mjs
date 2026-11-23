@@ -309,10 +309,11 @@ const clearLedger = () =>
   ai.pool?.query(`delete from ai_usage where task = 'medschools-qa' and ("userId" = $1 or "userId" is null)`, [
     ai.userId,
   ]);
+/** The daily cap counts `medschools-qa-ask` reservation rows (not the provider's `-route` rows), so that is what to plant. */
 const plantRows = (n) =>
   ai.pool?.query(
     `insert into ai_usage ("userId", task, provider, model, "promptId", "promptVer", "inTokens", "outTokens", "costMicros", ok)
-     select $1, 'medschools-qa', 'deepseek', 'fake', 'medschools-qa-route', 1, 1, 1, 0, true from generate_series(1, $2)`,
+     select $1, 'medschools-qa', 'deepseek', 'fake', 'medschools-qa-ask', 1, 1, 1, 0, true from generate_series(1, $2)`,
     [ai.userId, n],
   );
 /** Fill the field, press Ask and (unless `wait` is false) wait for the answer. */
