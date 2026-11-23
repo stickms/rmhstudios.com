@@ -154,6 +154,8 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['PUT', '/api/medschools/me/prefs', { chartCategories: [] }],
   ['GET', '/api/medschools/me/ask'],
   ['POST', '/api/medschools/me/ask', { question: 'What is the median?' }],
+  ['GET', '/api/medschools/me/qa-limit-request'],
+  ['POST', '/api/medschools/me/qa-limit-request', { note: 'more please' }],
 ];
 
 describe('the private endpoints refuse anonymous requests and are never publicly cached', () => {

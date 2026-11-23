@@ -299,9 +299,9 @@ const ASK_PAGES = [
       ai: true,
       before: async () => {
         await clearLedger();
-        await plantRows(15);
+        await plantRows(25);
       },
-      text: [/0 of 15 questions left today/],
+      text: [/0 of 25 questions left today/],
     },
   ],
   [
@@ -318,7 +318,7 @@ const ASK_PAGES = [
       ai: true,
       before: async () => {
         await clearLedger();
-        await plantRows(14);
+        await plantRows(24);
       },
       text: [/used today's questions/, /00:00 UTC/],
     },

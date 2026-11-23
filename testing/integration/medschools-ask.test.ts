@@ -336,8 +336,13 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
   });
 
   describe('the ceilings stop a question before any model call', () => {
-    it('15 questions today: 429 with the cap code, and the provider is never called', async () => {
-      await insertRouteRows(c.id, 15);
+    // Carol may hold a paid plan (the developer API file seeds one, and files run in turn), so the cap is read, not assumed.
+    const capOf = async (m: Member) => (await m.client.get<{ dailyCap: number }>(ASK)).body.dailyCap;
+
+    it('the daily cap reached: 429 with the cap code, and the provider is never called', async () => {
+      const cap = await capOf(c);
+      expect(cap).toBeGreaterThanOrEqual(25); // free 25, member 100 (R19)
+      await insertRouteRows(c.id, cap);
       const res = await ask(c, 'How many interviews has Fixture reported?');
       expect(res.status).toBe(429);
       expect(res.body.code).toBe('MEDSCHOOLS_QA_DAILY_CAP');
@@ -346,8 +351,9 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
       expect(status.body.remainingToday).toBe(0);
     });
 
-    it("14 today still reaches the model; yesterday's rows and another member's rows do not count", async () => {
-      await insertRouteRows(c.id, 14);
+    it("one under the cap still reaches the model; yesterday's rows and another member's rows do not count", async () => {
+      const cap = await capOf(c);
+      await insertRouteRows(c.id, cap - 1);
       const ok = await ask(c, 'How many interviews has Fixture reported?');
       expect(ok.status).toBe(200);
       expect(ok.body.remainingToday).toBe(0);
@@ -355,8 +361,8 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
 
       await new Promise((r) => setTimeout(r, 400));
       await clearLedger(ids());
-      await insertRouteRows(b.id, 15, new Date(Date.now() - 2 * DAY));
-      await insertRouteRows(a.id, 15);
+      await insertRouteRows(b.id, 25, new Date(Date.now() - 2 * DAY));
+      await insertRouteRows(a.id, 25);
       fake.reset();
       const other = await ask(b, 'How many interviews has Fixture reported?');
       expect(other.status).toBe(200);
