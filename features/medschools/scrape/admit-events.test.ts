@@ -74,6 +74,31 @@ describe('commitAdmitEvents', () => {
     );
   });
 
+  it('a day-only sighting on the same day never displaces an exact time; an exact time replaces a day-only one', async () => {
+    const f = seed();
+    await commitAdmitEvents(f.prisma, [cand({ occurredAt: new Date('2026-11-12T18:42:00.000Z') })]);
+    const r = await commitAdmitEvents(f.prisma, [cand({ occurredAt: new Date('2026-11-12T00:00:00.000Z') })]);
+    expect(r).toMatchObject({ moved: 0, existing: 1 });
+    const events = f.tables.medCycleEvent as Array<{ occurredAt: Date }>;
+    expect(events[0]!.occurredAt.toISOString()).toBe('2026-11-12T18:42:00.000Z');
+
+    const g = seed();
+    await commitAdmitEvents(g.prisma, [cand({ occurredAt: new Date('2026-11-12T00:00:00.000Z') })]);
+    await commitAdmitEvents(g.prisma, [cand({ occurredAt: new Date('2026-11-12T18:42:00.000Z') })]);
+    expect((g.tables.medCycleEvent as Array<{ occurredAt: Date }>)[0]!.occurredAt.toISOString()).toBe(
+      '2026-11-12T18:42:00.000Z',
+    );
+  });
+
+  it('merging candidates keeps the exact time of the same day, and the earlier day otherwise', () => {
+    const exact = cand({ occurredAt: new Date('2026-11-12T18:42:00.000Z') });
+    const dayOnly = cand({ occurredAt: new Date('2026-11-12T00:00:00.000Z') });
+    expect(mergeCandidates([exact, dayOnly])[0]!.occurredAt.toISOString()).toBe('2026-11-12T18:42:00.000Z');
+    expect(mergeCandidates([dayOnly, exact])[0]!.occurredAt.toISOString()).toBe('2026-11-12T18:42:00.000Z');
+    const earlier = cand({ occurredAt: new Date('2026-11-11T00:00:00.000Z') });
+    expect(mergeCandidates([exact, earlier])[0]!.occurredAt.toISOString()).toBe('2026-11-11T00:00:00.000Z');
+  });
+
   it('fills in a program the first sighting could not read, in the same cell', async () => {
     const f = seed();
     const r1 = await commitAdmitEvents(f.prisma, [cand({ program: null })]);

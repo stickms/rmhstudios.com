@@ -510,7 +510,7 @@ export async function getHistory(
 /**
  * When results arrive: ADMIT and SDN events of one category with an exact time, aggregated in Postgres into a weekday
  * count, an hour count (both US Eastern) and, per cycle, the Eastern day of the first and of the median report. An SDN
- * event stored at exactly 00:00:00.000 UTC is day-only (a date stated in the post) and is left out. No individual
+ * or ADMIT event stored at exactly 00:00:00.000 UTC is day-only (a date stated in a post, or an Admit profile-history date) and is left out. No individual
  * timestamp is selected into the app: the query returns groups and aggregates, and a cycle needs ARRIVAL_CYCLE_MIN
  * events to show. Under ARRIVALS_MIN events the arrays are empty.
  */
@@ -530,7 +530,7 @@ export async function getArrivals(slug: string, q: ArrivalsQuery): Promise<MedAr
         AND "eventType" = ${eventType}::"MedEventType"
         AND "source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource")
         AND ("program" IS NULL AND ${program === 'ALL'} OR "program" = ANY(${programs}::"MedProgram"[]))
-        AND NOT ("source" = 'SDN'::"MedSource" AND ("occurredAt" AT TIME ZONE 'UTC')::time = TIME '00:00:00')
+        AND NOT ("source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource") AND ("occurredAt" AT TIME ZONE 'UTC')::time = TIME '00:00:00')
       GROUP BY 1, 2`,
     prisma.$queryRaw<{ cycleYear: number; n: number; firstOn: string; medianOn: string }[]>`
       SELECT "cycleYear" AS "cycleYear",
@@ -542,7 +542,7 @@ export async function getArrivals(slug: string, q: ArrivalsQuery): Promise<MedAr
         AND "eventType" = ${eventType}::"MedEventType"
         AND "source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource")
         AND ("program" IS NULL AND ${program === 'ALL'} OR "program" = ANY(${programs}::"MedProgram"[]))
-        AND NOT ("source" = 'SDN'::"MedSource" AND ("occurredAt" AT TIME ZONE 'UTC')::time = TIME '00:00:00')
+        AND NOT ("source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource") AND ("occurredAt" AT TIME ZONE 'UTC')::time = TIME '00:00:00')
       GROUP BY "cycleYear"
       HAVING COUNT(*) >= ${ARRIVAL_CYCLE_MIN}
       ORDER BY "cycleYear" DESC

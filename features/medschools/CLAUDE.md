@@ -145,8 +145,11 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
   dedupe secret, inside a closure in `adapters/admit/client.ts`; the id never leaves the adapter and is never stored),
   so one member counts once per type per school per cycle whichever path saw it first: the live feed or the
   profile-history backfill (`scrape/run-admit-history.ts`, queue `medschools.admit-history`). A feed row with no author
-  keeps the per-update key. **First report wins, earliest date kept** (`scrape/admit-events.ts`): when a later sighting
-  of an existing key carries an earlier `occurredAt`, the stored date moves back and the roll-up re-rolls both days; the
+  keeps the per-update key. **First report wins, earliest day kept** (`scrape/admit-events.ts`, `replacesTime`): when a later
+  sighting of an existing key falls on an earlier calendar day (UTC), the stored date moves back; a smaller timestamp
+  on the same day never does (a profile-history date is day-only, stored at UTC midnight by the adapter, and must not
+  displace an exact live-feed time; on the same day an exact time replaces a midnight). Arrivals leave out ADMIT and
+  SDN events stored at exactly 00:00 UTC (day-only), so the live feed's own exact times still count. When it moves, the roll-up re-rolls both days; the
   roll-up now deletes a cell whose events are gone, so a moved event is never counted on two days (the key holds the
   cycle year, so a move never changes cycle). A stored event with no program takes the program a later sighting
   resolved. The history job discovers members from `getAllCycleResults` (each status filter, paged, user id only),
@@ -171,7 +174,9 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
   and the job ends PARTIAL until the next UTC day. The history job also has its own daily quota of profile lookups
   (default 600). Env overrides are in `.env.example`.
 - **Admit school forums (owner 2026-11-23, `scrape/run-admit-forums.ts`, queue `medschools.admit-forums`, every 3
-  hours).** Admit's school forums are a native thread per school per cycle (GraphQL `getAllSchoolThreads` and
+  hours).** From June 1 through August 31 the run lists and reads the previous cycle's threads too (`forumYearsFor`:
+  decisions roll over only on September 1), inside the same per-run request cap. Admit's school forums are a native
+  thread per school per cycle (GraphQL `getAllSchoolThreads` and
   `getSchoolThread`, oldest first; findings in the endpoint inventory). The job lists every thread's post count (three
   requests), and reads a thread only from its persisted cursor (`MedAdmitForumThread`: `cursorOffset` plus a keyed hash
   of the last post, read one post early as an anchor; no text, author or id stored). Rules a reader of the data depends

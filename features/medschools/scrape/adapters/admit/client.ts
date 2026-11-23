@@ -141,11 +141,15 @@ export function createAdmitClient(
           skipped.unknownDecision++;
           return;
         }
-        const at = date ? new Date(date) : null;
-        if (at === null || Number.isNaN(at.getTime()) || at.getTime() > latest) {
+        const parsedAt = date ? new Date(date) : null;
+        if (parsedAt === null || Number.isNaN(parsedAt.getTime()) || parsedAt.getTime() > latest) {
           skipped.badDate++;
           return;
         }
+        // A profile-history date is a day picked on a form (the API sends it at a fixed hour, e.g. 16:00Z), not a
+        // time of day. Stored at UTC midnight it is recognisably day-only, so arrivals leave it out and it never
+        // displaces an exact live-feed time (`replacesTime` in scrape/admit-events.ts).
+        const at = new Date(Date.UTC(parsedAt.getUTCFullYear(), parsedAt.getUTCMonth(), parsedAt.getUTCDate()));
         const cycleYear = cycleYearOf(at, type);
         history.push({
           schoolKey: e.school.slug,

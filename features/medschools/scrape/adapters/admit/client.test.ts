@@ -970,6 +970,8 @@ describe('profile history', () => {
       ['yale', 'WAITLIST', '2026-08-20', 2026],
       ['duke', 'HOLD', '2026-09-02', 2027],
     ]);
+    // day-only: stored at UTC midnight, never the form's 16:00Z
+    expect(p.history.every((h) => h.occurredAt.getTime() % 86_400_000 === 0)).toBe(true);
     expect(p.history[0]!.keyFor('s1')).toBe(dedupeHash(SECRET, 'ADMIT', 'author:u-1:s1:2027:SECONDARY'));
     // the same key the feed builds for the same member, school, cycle and type
     const { items } = await client.fetchFeed();

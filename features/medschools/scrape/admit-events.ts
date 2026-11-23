@@ -3,8 +3,8 @@
  * event is keyed by member (`hash(admit:author:<user id>:<schoolId>:<cycleYear>:<type>)`, built inside the adapter), so
  * the same person's status at a school counts once whichever path saw it first.
  *
- * First report wins, with one refinement: when a later sighting carries an EARLIER date for an existing key, the stored
- * `occurredAt` moves back to it (the earliest date is the truest one), and both the old and the new day's cells are
+ * First report wins, with one refinement: when a later sighting carries an EARLIER calendar day (UTC) for an existing
+ * key, the stored `occurredAt` moves back to it (the earliest date is the truest one; see `replacesTime`), and both the old and the new day's cells are
  * re-rolled. The key holds the cycle year, so a moved event never changes cycle; the roll-up recomputes touched cells
  * from stored events and deletes a cell whose events are gone, so a moved event is never counted on both days. A stored
  * event with no program also takes the program a later sighting resolved. Nothing here sees a user id.
@@ -32,6 +32,20 @@ export interface StoredAdmitEvent {
 
 const CHUNK = 500;
 const dayOf = (d: Date): string => d.toISOString().slice(0, 10);
+const isMidnightUtc = (d: Date): boolean => d.getTime() % 86_400_000 === 0;
+
+/**
+ * Whether `candidate` should replace `prior` as the stored time. Only a different CALENDAR day (UTC) counts as
+ * earlier: a history date is day-only (stored at UTC midnight), so a smaller timestamp on the same day is a fabricated
+ * precision, not an earlier report, and must never displace an exact live-feed time. On the same day an exact time
+ * does replace a day-only midnight.
+ */
+export function replacesTime(prior: Date, candidate: Date): boolean {
+  const a = dayOf(candidate);
+  const b = dayOf(prior);
+  if (a !== b) return a < b;
+  return isMidnightUtc(prior) && !isMidnightUtc(candidate);
+}
 
 /** Candidates sharing a key collapse to the earliest date; a known program beats an unknown one. */
 export function mergeCandidates(list: AdmitCandidate[]): AdmitCandidate[] {
@@ -42,7 +56,7 @@ export function mergeCandidates(list: AdmitCandidate[]): AdmitCandidate[] {
       byHash.set(c.dedupeHash, { ...c });
       continue;
     }
-    if (c.occurredAt < prior.occurredAt) prior.occurredAt = c.occurredAt;
+    if (replacesTime(prior.occurredAt, c.occurredAt)) prior.occurredAt = c.occurredAt;
     if (prior.program === null && c.program !== null) prior.program = c.program;
   }
   return [...byHash.values()];
@@ -100,7 +114,7 @@ export async function commitAdmitEvents(
     }
     result.existing++;
     cell(prior);
-    const earlier = c.occurredAt < prior.occurredAt;
+    const earlier = replacesTime(prior.occurredAt, c.occurredAt);
     const program = prior.program === null && c.program !== null;
     if (!earlier && !program) continue;
     const data: Record<string, unknown> = {};
