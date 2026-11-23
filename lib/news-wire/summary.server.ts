@@ -11,6 +11,8 @@
  *  - At most {@link dailyCap} new summaries per rolling 24 hours (`NEWS_SUMMARY_DAILY_CAP`, default 400); past it,
  *    readers see the cached ones and "Summary unavailable right now" on the rest.
  *  - The endpoint is rate-limited per IP (lib/news-wire/api/news.summary.server.ts).
+ *  - The call is pinned to DeepSeek Flash with thinking off (`profile: DEEPSEEK_FLASH`), so retuning the shared
+ *    `summarize` route never moves this public endpoint onto a pricier model or hidden reasoning tokens.
  *
  * The model reads the outlet's own article text (wrapped as data, `asData`), never the headline alone: a summary of a
  * headline would be a guess.
@@ -19,6 +21,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { asData, NEWS_SUMMARY, systemFor } from '@/lib/ai/prompts';
+import { DEEPSEEK_FLASH } from '@/lib/ai/deepseek-models';
 import { isAiConfigured, runTaskJson } from '@/lib/ai/provider.server';
 import { ARTICLE_TEXT_MAX, ARTICLE_TEXT_MIN, extractArticleText, extractOgImage } from './extract';
 import { fetchArticlePage } from './fetch.server';
@@ -112,7 +115,14 @@ async function generate(row: Row, now: Date): Promise<SummaryResult> {
       systemFor(NEWS_SUMMARY),
       `Headline: ${row.title}\nOutlet: ${row.sourcePublisher}\n\nArticle text:\n${asData(text)}`,
       toNewsSummary,
-      { promptId: NEWS_SUMMARY.id, promptVer: NEWS_SUMMARY.version, maxTokens: 500, temperature: 0.2 },
+      {
+        promptId: NEWS_SUMMARY.id,
+        promptVer: NEWS_SUMMARY.version,
+        maxTokens: 500,
+        temperature: 0.2,
+        // DeepSeek Flash, thinking off, whatever the shared `summarize` route is retuned to: this runs for any reader.
+        profile: DEEPSEEK_FLASH,
+      },
     );
   } catch (err) {
     console.warn(`[news-wire] summary failed for ${row.id}: ${(err as Error).message}`);

@@ -34,7 +34,13 @@ import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { timedAiFetch } from './timed-fetch.server';
 import type { VibeLedgerTask } from './vibe-tasks';
-import { DEEPSEEK_FLASH, DEEPSEEK_PRO_MODEL, DEEPSEEK_REASONING, deepseekThinking } from './deepseek-models';
+import {
+  DEEPSEEK_FLASH,
+  DEEPSEEK_PRO_MODEL,
+  DEEPSEEK_REASONING,
+  deepseekThinking,
+  type DeepseekProfile,
+} from './deepseek-models';
 import type { MeteredFeature } from './metered-fetch.server';
 
 /* -------------------------------------------------------------------------- */
@@ -264,6 +270,12 @@ export interface RunOptions {
   /** Per-call override; the route's value is used when omitted. */
   maxTokens?: number;
   temperature?: number;
+  /**
+   * Pin the DeepSeek model and thinking switch for this call (primary and fallback alike), whatever the task's route
+   * says. For a caller whose cost must not move when a route is retuned: RMH News summaries run on a public,
+   * signed-out endpoint and pin `DEEPSEEK_FLASH` (thinking off).
+   */
+  profile?: DeepseekProfile;
 }
 
 /**
@@ -367,15 +379,16 @@ async function invoke(
   user: string,
   opts: RunOptions,
 ): Promise<string> {
+  const model = opts.profile?.model ?? route.model;
   const res = await client().chat.completions.create({
-    model: route.model,
+    model,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
     max_tokens: opts.maxTokens ?? route.maxTokens,
     temperature: opts.temperature ?? route.temperature,
-    ...deepseekThinking(DEEPSEEK_FLASH),
+    ...deepseekThinking(opts.profile ?? DEEPSEEK_FLASH),
     stream: false,
     ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
   });
@@ -383,7 +396,7 @@ async function invoke(
   void meter({
     userId: opts.userId,
     task,
-    model: route.model,
+    model,
     promptId: opts.promptId,
     promptVer: opts.promptVer,
     inTokens: res.usage?.prompt_tokens ?? 0,
@@ -418,7 +431,7 @@ export async function runTask(
       void meter({
         userId: opts.userId,
         task,
-        model: route.model,
+        model: opts.profile?.model ?? route.model,
         promptId: opts.promptId,
         promptVer: opts.promptVer,
         inTokens: 0,
@@ -435,7 +448,7 @@ export async function runTask(
       void meter({
         userId: opts.userId,
         task,
-        model: route.fallback.model,
+        model: opts.profile?.model ?? route.fallback.model,
         promptId: opts.promptId,
         promptVer: opts.promptVer,
         inTokens: 0,

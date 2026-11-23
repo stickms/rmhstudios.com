@@ -20,9 +20,18 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // The provider pulls in the Prisma singleton for usage metering, and that
 // module throws at import time without a DATABASE_URL. Stubbed so this suite
 // runs anywhere — nothing under test touches the database.
-vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
+vi.mock('@/lib/prisma.server', () => ({ prisma: { aiUsage: { create: vi.fn().mockResolvedValue({}) } } }));
 
-import { AI_ROUTES, isAiConfigured } from '@/lib/ai/provider.server';
+// The OpenAI client, stubbed so a call's request body can be read without the network.
+const { create } = vi.hoisted(() => ({ create: vi.fn() }));
+vi.mock('openai', () => ({
+  default: class {
+    chat = { completions: { create } };
+  },
+}));
+
+import { AI_ROUTES, isAiConfigured, runTask } from '@/lib/ai/provider.server';
+import type { DeepseekProfile } from '@/lib/ai/deepseek-models';
 
 /**
  * The task union, restated as values.
@@ -113,5 +122,33 @@ describe('isAiConfigured()', () => {
   it('is true once a key is present', () => {
     process.env.DEEPSEEK_API_KEY = 'sk-test-not-a-real-key';
     expect(isAiConfigured()).toBe(true);
+  });
+});
+
+describe('runTask profile pinning', () => {
+  const original = process.env.DEEPSEEK_API_KEY;
+
+  beforeEach(() => {
+    process.env.DEEPSEEK_API_KEY = 'sk-test-not-a-real-key';
+    create.mockReset().mockResolvedValue({ choices: [{ message: { content: 'ok' } }], usage: {} });
+  });
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = original;
+  });
+
+  it('sends the pinned model and thinking switch, not the route\'s', async () => {
+    const pinned: DeepseekProfile = { model: 'pinned-model', thinking: { type: 'disabled' } };
+    await runTask('summarize', 'system', 'user', { profile: pinned });
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ model: 'pinned-model', thinking: { type: 'disabled' } });
+  });
+
+  it('without a pin, uses the route\'s model with thinking off', async () => {
+    await runTask('summarize', 'system', 'user');
+    expect(create.mock.calls[0]?.[0]).toMatchObject({
+      model: AI_ROUTES.summarize.model,
+      thinking: { type: 'disabled' },
+    });
   });
 });
