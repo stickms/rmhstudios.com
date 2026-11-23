@@ -90,7 +90,13 @@ function render(opts: { prefs?: object; lists?: MedListDto[] } = {}): string {
   qc.setQueryData(listsQuery().queryKey, { lists: opts.lists ?? lists });
   qc.setQueryData(
     prefsQuery().queryKey,
-    (opts.prefs ?? { programs: ['md-phd'], programFilter: 'PHD', degree: 'MD', homeState: null, chartCategories: [] }) as never,
+    (opts.prefs ?? {
+      programs: ['md-phd'],
+      programFilter: 'PHD',
+      degree: 'MD',
+      homeState: null,
+      chartCategories: [],
+    }) as never,
   );
   return renderToString(
     <QueryClientProvider client={qc}>
