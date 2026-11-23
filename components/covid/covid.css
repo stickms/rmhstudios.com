@@ -29,7 +29,7 @@
   --hair-soft: rgba(255, 255, 255, 0.1);
 
   --serif: 'Playfair Display', 'Times New Roman', Georgia, serif;
-  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --sans: var(--site-font-body);
   --script: 'Great Vibes', 'Segoe Script', cursive;
 
   --maxw: 1240px;

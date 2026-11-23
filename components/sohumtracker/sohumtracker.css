@@ -28,7 +28,7 @@
   /* Discord ships "gg sans", which is not licensed for redistribution. Geist is
      the site's sans (app/globals.css), with its metric-matched fallback. */
   --stk-font:
-    var(--font-geist), system-ui, sans-serif;
+    var(--site-font-body);
   --stk-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   /* ── Dark: Discord's own surface ladder ───────────────────────────────────

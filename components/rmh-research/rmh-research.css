@@ -101,8 +101,8 @@
   --danger: var(--site-danger);
   --ok: var(--site-success);
 
-  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
-  --mono: 'Geist Mono', ui-monospace, monospace;
+  --sans: var(--site-font-body);
+  --mono: var(--site-font-mono);
   --maxw: 1240px;
   --pad: clamp(20px, 4.2vw, 56px);
   --gap: clamp(16px, 2vw, 28px);

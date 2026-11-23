@@ -1,0 +1,151 @@
+{
+  "dm-sans": {
+    "local": [
+      "Arial",
+      "Helvetica Neue",
+      "Helvetica",
+      "Liberation Sans",
+      "Roboto"
+    ],
+    "sizeAdjust": "105.58%",
+    "ascent": "93.96%",
+    "descent": "29.36%",
+    "lineGap": "0.00%"
+  },
+  "inter": {
+    "local": [
+      "Arial",
+      "Helvetica Neue",
+      "Helvetica",
+      "Liberation Sans",
+      "Roboto"
+    ],
+    "sizeAdjust": "107.34%",
+    "ascent": "90.25%",
+    "descent": "22.47%",
+    "lineGap": "0.00%"
+  },
+  "geist": {
+    "local": [
+      "Arial",
+      "Helvetica Neue",
+      "Helvetica",
+      "Liberation Sans",
+      "Roboto"
+    ],
+    "sizeAdjust": "105.50%",
+    "ascent": "95.26%",
+    "descent": "27.96%",
+    "lineGap": "0.00%"
+  },
+  "ibm-plex-sans": {
+    "local": [
+      "Arial",
+      "Helvetica Neue",
+      "Helvetica",
+      "Liberation Sans",
+      "Roboto"
+    ],
+    "sizeAdjust": "101.20%",
+    "ascent": "101.29%",
+    "descent": "27.17%",
+    "lineGap": "0.00%"
+  },
+  "public-sans": {
+    "local": [
+      "Arial",
+      "Helvetica Neue",
+      "Helvetica",
+      "Liberation Sans",
+      "Roboto"
+    ],
+    "sizeAdjust": "102.92%",
+    "ascent": "92.30%",
+    "descent": "21.86%",
+    "lineGap": "0.00%"
+  },
+  "charter": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "111.71%",
+    "ascent": "107.09%",
+    "descent": "39.34%",
+    "lineGap": "0.00%"
+  },
+  "source-serif-4": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "118.97%",
+    "ascent": "87.08%",
+    "descent": "28.16%",
+    "lineGap": "0.00%"
+  },
+  "literata": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "118.55%",
+    "ascent": "99.28%",
+    "descent": "25.98%",
+    "lineGap": "0.00%"
+  },
+  "newsreader": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "105.41%",
+    "ascent": "69.73%",
+    "descent": "25.14%",
+    "lineGap": "0.00%"
+  },
+  "lora": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "116.51%",
+    "ascent": "86.34%",
+    "descent": "23.52%",
+    "lineGap": "0.00%"
+  },
+  "merriweather": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "117.90%",
+    "ascent": "83.46%",
+    "descent": "23.16%",
+    "lineGap": "0.00%"
+  },
+  "spectral": {
+    "local": [
+      "Times New Roman",
+      "Times",
+      "Liberation Serif",
+      "Tinos"
+    ],
+    "sizeAdjust": "110.24%",
+    "ascent": "96.06%",
+    "descent": "42.00%",
+    "lineGap": "0.00%"
+  }
+}

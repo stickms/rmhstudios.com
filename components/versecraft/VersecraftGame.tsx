@@ -151,7 +151,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
       style={{
         backgroundColor: '#1a1520',
         color: '#e8e0d0',
-        fontFamily: 'var(--font-geist), system-ui, sans-serif',
+        fontFamily: 'var(--site-font-body)',
       }}
     >
       {renderScreen()}
