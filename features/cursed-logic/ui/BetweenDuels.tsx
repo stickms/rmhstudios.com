@@ -8,18 +8,22 @@ import { canBuy } from '@features/cursed-logic/engine/shopState';
 import type { RunState } from '@features/cursed-logic/engine/run';
 import type { CursedLogicStore } from '@features/cursed-logic/engine/gameState';
 import type { ShopItemId } from '@features/cursed-logic/engine/types';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Portrait } from './portraits';
 import type { Copy } from './copy';
 
 function RunStatus({ run, copy }: { run: RunState; copy: Copy }) {
   const { t } = useTranslation('c-cursed-logic');
+  const fmt = useLocaleFormat();
   return (
     <div className="flex flex-wrap gap-2 text-[0.72rem]">
       <span className="cl-chip cl-chip-acid">
         {t('status-integrity', { defaultValue: 'Integrity {{n}}/{{max}}', n: run.integrity, max: run.maxIntegrity })}
       </span>
-      <span className="cl-chip cl-chip-violet">{t('status-fragments', { defaultValue: '{{n}} fragments', n: run.fragments })}</span>
-      <span className="cl-chip">{t('status-score', { defaultValue: 'Score {{n}}', n: run.score.toLocaleString() })}</span>
+      <span className="cl-chip cl-chip-violet">
+        {t('status-fragments', { defaultValue: '{{n}} fragments', n: run.fragments })}
+      </span>
+      <span className="cl-chip">{t('status-score', { defaultValue: 'Score {{n}}', n: fmt.number(run.score) })}</span>
       {run.upgrades.map((u) => (
         <span key={u} className="cl-chip">
           {copy.itemName(u)}
@@ -31,6 +35,7 @@ function RunStatus({ run, copy }: { run: RunState; copy: Copy }) {
 
 export function BetweenDuels({ run, store, copy }: { run: RunState; store: CursedLogicStore; copy: Copy }) {
   const { t } = useTranslation('c-cursed-logic');
+  const fmt = useLocaleFormat();
   const last = run.records[run.records.length - 1];
 
   if (run.stage === 'milestone' && run.milestoneChoices) {
@@ -45,7 +50,12 @@ export function BetweenDuels({ run, store, copy }: { run: RunState; store: Curse
         <RunStatus run={run} copy={copy} />
         <div className="grid sm:grid-cols-2 gap-3">
           {run.milestoneChoices.map((u) => (
-            <button key={u} type="button" className="cl-card !min-h-[110px] !items-start !text-left px-3" onClick={() => store.pickMilestone(u)}>
+            <button
+              key={u}
+              type="button"
+              className="cl-card !min-h-[110px] !items-start !text-left px-3"
+              onClick={() => store.pickMilestone(u)}
+            >
               <span className="cl-card-name cl-acid">{copy.itemName(u)}</span>
               <span className="cl-card-rule !text-[0.75rem]">{copy.itemRule(u)}</span>
               <span className="cl-key mt-auto">{t('free', { defaultValue: 'free' })}</span>
@@ -74,7 +84,12 @@ export function BetweenDuels({ run, store, copy }: { run: RunState; store: Curse
                   <div className="cl-display text-[0.85rem] cl-acid">{copy.itemName(item)}</div>
                   <div className="text-[0.72rem] cl-muted">{copy.itemRule(item)}</div>
                 </div>
-                <button type="button" className="cl-cmd !min-h-11 !px-3 !text-[0.75rem]" disabled={!can || atCeiling} onClick={() => store.buy(item)}>
+                <button
+                  type="button"
+                  className="cl-cmd !min-h-11 !px-3 !text-[0.75rem]"
+                  disabled={!can || atCeiling}
+                  onClick={() => store.buy(item)}
+                >
                   {t('buy', { defaultValue: 'Buy {{n}}', n: SHOP_PRICES[item] })}
                 </button>
               </li>
@@ -102,7 +117,7 @@ export function BetweenDuels({ run, store, copy }: { run: RunState; store: Curse
               {t('duel-won-body', {
                 defaultValue: '{{rounds}} rounds · +{{points}} points',
                 rounds: last.rounds,
-                points: last.points.toLocaleString(),
+                points: fmt.number(last.points),
               })}
               {last.flawless ? ` · ${t('flawless', { defaultValue: 'flawless' })}` : ''}
             </p>
@@ -111,7 +126,10 @@ export function BetweenDuels({ run, store, copy }: { run: RunState; store: Curse
       )}
       <RunStatus run={run} copy={copy} />
       <p className="text-[0.75rem] cl-muted cl-prompt">
-        {t('patch-note', { defaultValue: 'Field patch: +{{n}} Integrity before the next duel.', n: PLAYER.patchBetweenDuels })}
+        {t('patch-note', {
+          defaultValue: 'Field patch: +{{n}} Integrity before the next duel.',
+          n: PLAYER.patchBetweenDuels,
+        })}
       </p>
       <button type="button" className="cl-cmd cl-cmd-primary self-start" onClick={store.continueRun}>
         {t('next-duel', { defaultValue: 'Next duel' })}

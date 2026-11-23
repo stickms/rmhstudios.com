@@ -1,22 +1,21 @@
 /** The global top ten, as a terminal table. Refetches when `refreshKey` changes (after a submit). */
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/contract/client';
-import {
-  getCursedLogicLeaderboardApi,
-  type CursedLogicBoardRow,
-} from '@features/cursed-logic/engine/cursed-logic.contract';
+import type { CursedLogicBoardRow } from '@features/cursed-logic/engine/cursed-logic.contract';
+import { loadBoard } from '@features/cursed-logic/net/runs';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 export function Leaderboard({ refreshKey = 0 }: { refreshKey?: number }) {
   const { t } = useTranslation('c-cursed-logic');
+  const fmt = useLocaleFormat();
   const [rows, setRows] = useState<CursedLogicBoardRow[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let live = true;
-    api(getCursedLogicLeaderboardApi, {})
-      .then((res) => {
-        if (live) setRows(res.entries);
+    loadBoard()
+      .then((entries) => {
+        if (live) setRows(entries);
       })
       .catch(() => {
         if (live) setFailed(true);
@@ -57,7 +56,7 @@ export function Leaderboard({ refreshKey = 0 }: { refreshKey?: number }) {
                       : t('board-sector', { defaultValue: 'S{{n}}', n: r.sector })}
                     {r.pacts > 0 ? ` +${r.pacts}` : ''}
                   </td>
-                  <td className="text-right cl-acid">{r.score.toLocaleString()}</td>
+                  <td className="text-right cl-acid">{fmt.number(r.score)}</td>
                 </tr>
               ))}
             </tbody>

@@ -29,6 +29,7 @@ import {
   type TutorialState,
 } from './tutorial';
 import type { PactId, PlayerAction, RunUpgradeId, ShopItemId, Stance } from './types';
+import { submitRun, type Submission } from '@features/cursed-logic/net/runs';
 
 export type Screen = 'menu' | 'run' | 'tutorial';
 /** idle: waiting for input · reveal: the two actions flip in turn · minigame · result: the clash's outcome shows. */
@@ -70,6 +71,8 @@ export interface CursedLogicStore {
   startedAt: number;
   /** Bumps on every finished clash, to key one-shot effects. */
   clashId: number;
+  /** The finished run's submission to the board (sent once, when the run ends). */
+  submission: Submission;
 
   init: () => void;
   startRun: (pacts: PactId[]) => void;
@@ -133,6 +136,7 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set, get) => {
     settings: { minigames: true },
     startedAt: 0,
     clashId: 0,
+    submission: { state: 'idle' },
 
     init: () => {
       retireLegacyShop();
@@ -144,7 +148,15 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set, get) => {
       const seed = freshSeed();
       rng = createRng(seed);
       const startedAt = Date.now();
-      set({ screen: 'run', phase: 'idle', pending: null, reinforce: false, startedAt, clashId: 0 });
+      set({
+        screen: 'run',
+        phase: 'idle',
+        pending: null,
+        reinforce: false,
+        startedAt,
+        clashId: 0,
+        submission: { state: 'idle' },
+      });
       setRun(newRun(seed, pacts, rng));
     },
 
@@ -152,13 +164,27 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set, get) => {
       const saved = readSavedRun();
       if (!saved) return false;
       rng = createRng(saved.rng);
-      set({ screen: 'run', run: saved.run, phase: 'idle', pending: null, reinforce: false, startedAt: saved.startedAt });
+      set({
+        screen: 'run',
+        run: saved.run,
+        phase: 'idle',
+        pending: null,
+        reinforce: false,
+        startedAt: saved.startedAt,
+      });
       return true;
     },
 
     startTutorial: () => {
       rng = createRng(1);
-      set({ screen: 'tutorial', run: newTutorialRun(), phase: 'idle', pending: null, reinforce: false, tutorial: TUTORIAL_START });
+      set({
+        screen: 'tutorial',
+        run: newTutorialRun(),
+        phase: 'idle',
+        pending: null,
+        reinforce: false,
+        tutorial: TUTORIAL_START,
+      });
     },
 
     finishTutorial: () => {
@@ -226,6 +252,13 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set, get) => {
       const next = finishRound(run, rng, pending, played ? success : null);
       set((s) => ({ phase: 'result', clashId: s.clashId + 1, reinforce: false }));
       setRun(next);
+      // A run that just ended is logged once, here, rather than from a component effect.
+      if (next.mode === 'run' && next.stage === 'over' && run.stage !== 'over') {
+        set({ submission: { state: 'sending' } });
+        void submitRun(next, Date.now() - get().startedAt).then((submission) => {
+          if (get().run === next) set({ submission });
+        });
+      }
     },
 
     endResult: () => {

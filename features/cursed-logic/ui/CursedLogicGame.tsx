@@ -162,7 +162,6 @@ export function CursedLogicGame({ onHelp }: { onHelp: () => void }) {
         run={run}
         copy={copy}
         signedIn={signedIn}
-        startedAt={store.startedAt}
         onAgain={() => store.startRun(run.pacts)}
         onMenu={store.toMenu}
       />
