@@ -167,6 +167,10 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'gh:table-code',
       'velum.playerName',
       'rmh-kaikai-debt',
+      // Cursed Logic: an unfinished run and the training-duel flag; the retired fragment wallet is removed on load.
+      'rmh:cursed-logic:run',
+      'rmh:cursed-logic:tutorial-done',
+      'cursed-logic-shop',
     ],
     personal: true,
   },
@@ -243,6 +247,7 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-globeset-shapes',
       'rmh-globeset-view',
       'synapse-storm-settings',
+      'rmh:cursed-logic:settings',
       'rmh:tf2-game:settings:',
     ],
     personal: false,
