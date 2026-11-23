@@ -32,6 +32,7 @@ describe('parseSchoolSearch', () => {
     expect(parseSchoolSearch({ tab: 'forecast' }).tab).toBe('forecast');
     expect(parseSchoolSearch({ tab: 'nonsense' }).tab).toBe('activity');
     expect(parseSchoolSearch({ tab: 'history' }).tab).toBe('history');
+    expect(parseSchoolSearch({ tab: 'secondaries' }).tab).toBe('secondaries');
     expect(parseSchoolSearch({ program: 'PHD' }).program).toBe('PHD');
     expect(parseSchoolSearch({ program: 'REG' }).program).toBe('REG');
     expect(parseSchoolSearch({ program: 'x' }).program).toBeUndefined();

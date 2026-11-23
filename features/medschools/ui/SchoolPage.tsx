@@ -19,6 +19,7 @@ import { ForecastTab } from './ForecastTab';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ProgramToggles } from './ProgramToggles';
+import { SecondariesTab } from './SecondariesTab';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
@@ -70,6 +71,8 @@ export function SchoolPage() {
         return t('school-tab-forecast', { defaultValue: 'Forecast' });
       case 'interviews':
         return t('school-tab-interviews', { defaultValue: 'Interviews' });
+      case 'secondaries':
+        return t('school-tab-secondaries', { defaultValue: 'Secondaries' });
     }
   };
   const tabs: TabItem[] = SCHOOL_TABS.map((id) => ({ id, label: tabLabel(id) }));
@@ -172,6 +175,8 @@ export function SchoolPage() {
                 setSearch={setSearch}
                 programControl={programControl}
               />
+            ) : search.tab === 'secondaries' ? (
+              <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">{programControl}</div>
