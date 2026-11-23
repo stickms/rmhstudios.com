@@ -9,7 +9,7 @@ import {
   xTicks,
   yTicksTween,
 } from '../../engine/chart-geometry';
-import { cycleLabel } from '../../engine/cycle';
+import { cycleLabelIsolated } from '../../engine/cycle';
 import { formatUtcDay } from '../../engine/public-read';
 import { cycleColor, cycleDash } from './chartColors';
 import {
@@ -45,7 +45,7 @@ export function CycleOverlay(p: {
   const lines = p.cycles.map((c, rank) => ({
     c,
     rank,
-    name: cycleLabel(c.cycleYear),
+    name: cycleLabelIsolated(c.cycleYear),
     color: cycleColor(rank),
     dash: cycleDash(rank),
     width: 2,

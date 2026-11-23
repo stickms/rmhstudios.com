@@ -132,6 +132,11 @@ export function ListSection({
           itemLabel={(i) => i.school.shortName}
           onReorder={(next) => onReorderItems(next.map((i) => i.id))}
           className="gap-0"
+          // A phone has 288 px: the row's own side padding and the drag handle (the up and down buttons stay) would leave
+          // the school name and the note about 150 px; the move buttons stack for the same reason.
+          rowClassName="px-0"
+          handleClassName="max-sm:hidden"
+          controlsClassName="max-sm:flex-col"
           renderItem={(item) => (
             <ListItemRow
               item={item}

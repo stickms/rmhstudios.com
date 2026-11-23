@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CHARTED_TYPES, SHORT_SOURCE_NAMES, formatUtcDay, toCumulativeByDay } from '../engine/public-read';
-import { cycleEndOn, cycleLabel } from '../engine/cycle';
+import { cycleEndOn, cycleLabelIsolated } from '../engine/cycle';
 import { buildTotalsMatrix } from '../engine/totals';
 import { activityQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
@@ -82,7 +82,7 @@ export function ActivityTab({
           <h2 className="t-heading m-0">
             {t('school-activity-heading', {
               defaultValue: '{{cycle}} cycle',
-              cycle: cycleLabel(data.cycleYear),
+              cycle: cycleLabelIsolated(data.cycleYear),
             })}
           </h2>
           <section

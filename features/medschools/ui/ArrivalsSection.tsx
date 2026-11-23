@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { enoughArrivals } from '../engine/arrivals';
-import { cycleLabel } from '../engine/cycle';
+import { cycleLabelIsolated } from '../engine/cycle';
 import { formatUtcDay } from '../engine/public-read';
 import type { MedChartedTypeId, MedProgramFilter } from '../medschools.contract';
 import { arrivalsQuery } from '../medschools.queries';
@@ -46,7 +46,8 @@ export function ArrivalsSection({
   }));
   const hourItems: ArrivalItem[] = data.hours.map((count, h) => {
     const label = hourFmt.format(new Date(Date.UTC(2024, 0, 1, h)));
-    return { key: `h${h}`, label, tick: h % 3 === 0 ? label : null, count };
+    // A tick every six hours: "12 AM" is five characters and the phone plot is 252 units wide, so every third hour collided.
+    return { key: `h${h}`, label, tick: h % 6 === 0 ? label : null, count };
   });
   const color = CATEGORY_COLOR[type];
   const category = eventLabel(type);
@@ -88,7 +89,7 @@ export function ArrivalsSection({
                 key={c.cycleYear}
                 className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-site-border py-2"
               >
-                <span className="t-body">{cycleLabel(c.cycleYear)}</span>
+                <span className="t-body">{cycleLabelIsolated(c.cycleYear)}</span>
                 <span className="t-meta">
                   {t('arrivals-cycle-row', {
                     defaultValue: 'First report {{first}} · Half reported by {{median}} · {{n}} reports',

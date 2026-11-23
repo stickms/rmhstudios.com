@@ -90,8 +90,8 @@ export function ApplicationRow({
 
   return (
     <li className="border-b border-site-border py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+        <div className="min-w-44 flex-1">
           {school.active ? (
             <Link
               to="/rmh-medschool/$slug"

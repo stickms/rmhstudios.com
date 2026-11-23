@@ -52,6 +52,15 @@ export function cycleLabel(cycleYear: number): string {
   return `${cycleYear - 1}\u2013${cycleYear}`;
 }
 
+/**
+ * `cycleLabel` wrapped in a left-to-right isolate (U+2066 .. U+2069), for the pages. In a right-to-left sentence the
+ * bidi algorithm lays "2026\u20132027" out as "2027\u20132026", so a cycle read backwards in `ar`; the isolate keeps the
+ * years in order and leaves the text around it alone. The OG cards use the plain `cycleLabel`.
+ */
+export function cycleLabelIsolated(cycleYear: number): string {
+  return `\u2066${cycleLabel(cycleYear)}\u2069`;
+}
+
 /** Last UTC day of the cycle (the day before the next cycle's default start). */
 export function cycleEndOn(cycleYear: number): string {
   return `${cycleYear}-05-31`;

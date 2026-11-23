@@ -12,7 +12,7 @@ import { useSession } from '@/components/session/session-context';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { toast } from '@/lib/toast';
-import { cycleLabel, cycleYearOf } from '../../engine/cycle';
+import { cycleLabelIsolated, cycleYearOf } from '../../engine/cycle';
 import { parseTrackerSearch } from '../../engine/search';
 import { HOME_STATE_CODES, accountOldEnoughToShare, cycleYearProblem, type MilestoneType } from '../../engine/tracker';
 import {
@@ -78,7 +78,7 @@ function AddCycle({
       >
         {years.map((y) => (
           <option key={y} value={y}>
-            {cycleLabel(y)}
+            {cycleLabelIsolated(y)}
           </option>
         ))}
       </Select>
@@ -203,7 +203,7 @@ export function TrackerPage() {
           >
             {d.cycles.map((y) => (
               <option key={y} value={y}>
-                {cycleLabel(y)}
+                {cycleLabelIsolated(y)}
               </option>
             ))}
           </Select>

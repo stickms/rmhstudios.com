@@ -298,7 +298,7 @@ describe('SchoolPage', () => {
     const html = render(
       seedActivity(activity({ otherTotals: [{ eventType: 'HOLD', sources: [{ source: 'ADMIT', total: 4 }] }] })),
     );
-    expect(html).toContain('2025\u20132026 cycle');
+    expect(html).toContain('\u20662025\u20132026\u2069 cycle'); // the years sit in an LTR isolate so ar does not reverse them
     expect(html).toContain('>Hold<');
   });
 
