@@ -89,3 +89,41 @@ describe('pre-paint fonts step', () => {
     expect(() => fontsStep({ cfg: {}, html } as unknown as PrepaintCtx)).not.toThrow();
   });
 });
+
+import { accountSeedStep } from '../account-seed';
+
+describe('account seed: this device keeps its own appearance while sync is off', () => {
+  function seedRun(storage: Record<string, string>, cookieIn: string) {
+    const mem = new Map(Object.entries(storage));
+    let cookieOut = cookieIn;
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: (k: string) => mem.get(k) ?? null,
+      setItem: (k: string, v: string) => mem.set(k, v),
+      removeItem: (k: string) => mem.delete(k),
+    };
+    const doc = {
+      get cookie() {
+        return cookieOut;
+      },
+      set cookie(v: string) {
+        cookieOut = v;
+      },
+    };
+    accountSeedStep({ doc, cfg: { seed: { 'rmh-style': 'default', 'rmh-font-main': 'lora' } } } as unknown as PrepaintCtx);
+    return { mem, cookie: cookieOut };
+  }
+
+  it('sync off in storage: the account seed is not applied, even when the cookie has expired', () => {
+    const { mem, cookie } = seedRun({ 'rmh-appearance-sync': '0', 'rmh-style': 'graphite', 'rmh-font-main': 'inter' }, '');
+    expect(mem.get('rmh-style')).toBe('graphite');
+    expect(mem.get('rmh-font-main')).toBe('inter');
+    // …and the expired cookie is written back, so the next request skips the seed on the server too.
+    expect(cookie).toMatch(/^rmh-appearance-sync=0;/);
+  });
+
+  it('sync on in storage but a stale off cookie: the cookie is cleared and the seed applies', () => {
+    const { mem, cookie } = seedRun({ 'rmh-style': 'graphite' }, 'rmh-appearance-sync=0');
+    expect(mem.get('rmh-style')).toBe('default');
+    expect(cookie).toMatch(/^rmh-appearance-sync=; Max-Age=0/);
+  });
+});

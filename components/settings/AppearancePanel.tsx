@@ -20,6 +20,7 @@ import {
   type AppearancePrefsInput,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { toast } from '@/lib/toast';
 import { getAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
 import { useSession } from '@/components/Providers';
 import { FONT_CATALOGUE, type FontChoice } from '@/lib/appearance/fonts';
@@ -90,9 +91,16 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
             checked={store.appearanceSync}
             onChange={(on) => {
               if (on) {
+                // A failed read or save leaves sync off rather than overwriting either side (appearance-actions).
                 void enableAppearanceSync({
                   get: () => api(getAppearancePrefsApi),
-                  persist,
+                  persist: async (body) => {
+                    await api(setAppearancePrefsApi, { body });
+                  },
+                }).then((ok) => {
+                  if (!ok) {
+                    toast.error(t('appearance-sync-failed', { defaultValue: 'Could not turn sync on. Try again.' }));
+                  }
                 });
               } else {
                 disableAppearanceSync();
