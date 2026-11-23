@@ -433,6 +433,37 @@ export const deleteMedMilestoneApi = endpoint<{ res: TrackerApplicationDto }>()(
   path: '/api/medschools/me/tracker/applications/$id/milestones/$type',
 });
 
+/* ------------------------- personal invite chance (me/**) ------------------------- */
+
+/** Why an application has (or lacks) an estimate. */
+export type ChanceStatus = 'estimate' | 'thin' | 'invited' | 'closed' | 'no-complete' | 'beyond';
+
+/** One of the caller's own applications. No other member's data, no user id (spec §6). */
+export interface ChanceDto {
+  applicationId: string;
+  school: { slug: string; shortName: string; name: string; active: boolean };
+  program: 'REG' | 'PHD';
+  status: ChanceStatus;
+  completeOn: string | null;
+  invitedOn: string | null;
+  /** The curve's day, `estimate` only. */
+  asOf: string | null;
+  /** Members behind the curve, floored to a multiple of 10 and at least 20; `estimate` only. */
+  basis: number | null;
+  /** Calendar dates and whole percents; `estimate` only. */
+  points: { on: string; percent: number }[];
+}
+
+export interface MedChancesRes {
+  cycleYear: number | null;
+  chances: ChanceDto[];
+}
+
+export const getMedChancesApi = endpoint<{
+  query: { school?: string | undefined; cycle?: number | undefined };
+  res: MedChancesRes;
+}>()({ method: 'GET', path: '/api/medschools/me/chances' });
+
 /* ------------------------- saved lists and preferences (me/**) ------------------------- */
 
 /** `ANY` is "either program": a list item that does not pick one (spec section 4a). */
