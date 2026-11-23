@@ -26,6 +26,13 @@ import {
 } from '@/lib/auth/security-hooks.server';
 import { sendExistingAccountNotice } from '@/lib/auth/existing-account-notice.server';
 import { startRecoveryHold } from '@/lib/recovery/hold.server';
+import {
+  RESET_IDENTIFIER_PREFIX,
+  RESET_LINK_TTL_SECONDS,
+  hashResetIdentifier,
+  onResetRequested,
+  revokeResetLinks,
+} from '@/lib/auth/password-reset.server';
 import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
@@ -118,6 +125,14 @@ export const auth = betterAuth({
     '/email-otp/check-verification-otp',
   ],
   baseURL: process.env.BETTER_AUTH_URL,
+  // Password-reset tokens are stored hashed (lib/auth/password-reset.server.ts), so a leaked database or backup holds
+  // no working reset link. Only that prefix: the other verification rows keep their own storage.
+  verification: {
+    storeIdentifier: {
+      default: 'plain',
+      overrides: { [RESET_IDENTIFIER_PREFIX]: { hash: hashResetIdentifier } },
+    },
+  },
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
@@ -199,12 +214,16 @@ export const auth = betterAuth({
     },
     // A reset signs the account out everywhere: whoever had the old password, or a stolen session, is cut off.
     revokeSessionsOnPasswordReset: true,
+    // One hour, as the login page and the email say. A link works once (Better Auth consumes it atomically).
+    resetPasswordTokenExpiresIn: RESET_LINK_TTL_SECONDS,
     // A reset by email is how an account is recovered, so it starts the 72-hour economy hold (no tips, gifts or
     // redemptions) and tells the inbox it happened. Neither may fail the reset itself.
     // Also logged for the member (their security log, "Not you?"). Only the account and the request's device and
     // network are stored: never the token. The record never throws and is not awaited.
     onPasswordReset: async ({ user }, request) => {
       void recordSecurityEvent({ userId: user.id, kind: 'password_reset_completed', request });
+      // Any other link still outstanding for the account stops working too.
+      await revokeResetLinks(user.id);
       await startRecoveryHold(user.id, 'password reset by email').catch((err) =>
         console.error('[auth] recovery hold failed:', err),
       );
@@ -219,26 +238,13 @@ export const auth = betterAuth({
         text: 'The password for your RMH Studios account was just reset. If this was not you, reset it again now and review your security settings.',
       });
     },
-    // Make self-service password reset operable (the `/request-password-reset` and
-    // `/reset-password` rate rules above previously had no transport behind them).
-    // Not awaited (nor the verification email below): Better Auth answers a
-    // reset for an unknown address without sending, so waiting on the send
-    // would make a real address answer slower and give it away. sendEmail
-    // never throws, so nothing is lost by not waiting.
-    // The request is logged for the member the same way (existing accounts only, since this hook runs only for
-    // them): fire-and-forget, with no URL or token stored.
-    sendResetPassword: async ({ user, url }, request) => {
-      void recordSecurityEvent({ userId: user.id, kind: 'password_reset_requested', request });
-      void sendEmail({
-        to: user.email,
-        subject: 'Reset your RMH Studios password',
-        html: emailShell(
-          'Reset your password',
-          'We received a request to reset the password for your RMH Studios account. This link expires shortly. If you did not request this, you can safely ignore this email.',
-          { label: 'Reset password', url },
-        ),
-        text: `Reset your RMH Studios password: ${url}`,
-      });
+    // The reset email goes through Resend (`sendEmail`). Better Auth calls this only for an address that has an
+    // account, so `onResetRequested` returns at once and works in the background: waiting on it would make a real
+    // address answer slower than an unknown one and give it away. It decides whether this account may be sent a
+    // link at all, holds the account to an hourly allowance whatever the number of IPs asking, revokes the earlier
+    // links, logs the request for the member (never the URL or token) and sends.
+    sendResetPassword: async (data, request) => {
+      onResetRequested(data, request);
     },
   },
   emailVerification: {
@@ -358,6 +364,11 @@ export const auth = betterAuth({
     // Security log: passkeys, sessions, sign-out, password and email changes, once they have succeeded.
     after: createAuthMiddleware(async (ctx) => {
       await recordSecurityAfter(ctx);
+      // A password changed from Settings retires any reset link still outstanding for the account.
+      if (ctx.path === '/change-password' && !((ctx.context as { returned?: unknown }).returned instanceof Error)) {
+        const userId = ctx.context.session?.user.id;
+        if (userId) void revokeResetLinks(userId);
+      }
     }),
   },
   databaseHooks: {
