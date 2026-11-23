@@ -19,6 +19,7 @@ import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
+import { WaveNote } from './WaveNote';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const todayUtc = () => new Date().toISOString().slice(0, 10);
@@ -57,8 +58,9 @@ export function ActivityTab({
   const types = data?.types ?? [];
   const matrix = buildTotalsMatrix(types, data?.otherTotals);
   const visible = search.show.filter((s): s is MedChartedTypeId => CHARTED_TYPES.includes(s));
-  // The charts run from day zero to today, or to the cycle's last day once it is over: never 500 days of nothing.
-  const chartEnd = data ? [today, cycleEndOn(data.cycleYear)].sort()[0]! : today;
+  // The charts run from day zero to today, or to the cycle's last day once it is over (the last category's: decisions
+  // run to August 31): never 500 days of nothing.
+  const chartEnd = data ? [today, cycleEndOn(data.cycleYear, 'ACCEPTANCE')].sort()[0]! : today;
   const to = data && chartEnd > data.dayZeroOn ? chartEnd : (data?.dayZeroOn ?? today);
   const hasAny = types.some((ty) => ty.sources.length > 0);
   const chosen = types.find((ty) => ty.eventType === search.type);
@@ -95,6 +97,7 @@ export function ActivityTab({
                 t('school-categories-title', { defaultValue: 'Cumulative reported events by category' }),
               )}
               visible={visible}
+              waves={data.waves}
               dayZeroOn={data.dayZeroOn}
               sources={[
                 ...new Set(
@@ -119,6 +122,8 @@ export function ActivityTab({
             />
           </section>
 
+          <WaveNote waves={data.waves} />
+
           <section
             className="flex flex-col gap-3"
             aria-label={t('school-type-section', { defaultValue: 'One category by day' })}
@@ -142,6 +147,7 @@ export function ActivityTab({
                   from={data.dayZeroOn}
                   to={to}
                   color={CATEGORY_COLOR[search.type as MedChartedTypeId]}
+                  waves={search.type === 'INTERVIEW' ? data.waves : undefined}
                   labels={chartLabels(
                     t('school-daily-title', {
                       defaultValue: '{{type}} by day',

@@ -6,10 +6,12 @@ import type { QueryOf } from '@/lib/contract/endpoint';
 import {
   getMedListsApi,
   getMedLiveApi,
+  getMedChancesApi,
   getMedPrefsApi,
   getMedSchoolActivityApi,
   getMedSchoolApi,
   getMedSchoolArrivalsApi,
+  getMedSchoolForecastApi,
   getMedSchoolHistoryApi,
   getMedTrackerApi,
   listMedSchoolsApi,
@@ -21,6 +23,8 @@ import { programPair, programsQueryValue, type ProgramKey } from './engine/progr
 import { applyPrefs, type Prefs } from './engine/prefs';
 import type { ProgramFilter } from './engine/search';
 import type { SchoolTab } from './engine/public-read';
+
+const CHARTED: readonly string[] = ['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE'];
 
 /** Client-safe option factories for the public pages. No server functions here (queries-server-fn-ratchet). */
 
@@ -47,6 +51,14 @@ export const historyQuery = (slug: string, q: { program: MedProgramFilter; type:
     getMedSchoolHistoryApi,
     { params: { slug }, query: q },
     { staleTime: 60_000 },
+  );
+
+export const forecastQuery = (slug: string, q: { program: 'REG' | 'PHD'; type: MedChartedTypeId }) =>
+  contractQuery(
+    ['medschools', 'forecast', slug, q],
+    getMedSchoolForecastApi,
+    { params: { slug }, query: q },
+    { staleTime: 5 * 60_000 },
   );
 
 export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
@@ -90,6 +102,13 @@ export const trackerQuery = (cycle?: number) =>
     { query: cycle === undefined ? {} : { cycle } },
     { staleTime: 0 },
   );
+
+/**
+ * The caller's own invite chances (never cached by the server). `school` narrows to one school page; `cycle` to one
+ * tracker cycle (the newest when omitted). Under `ME_KEY`, so a tracker change refreshes it.
+ */
+export const chancesQuery = (q: { school?: string; cycle?: number } = {}) =>
+  contractQuery([...ME_KEY, 'chances', q] as const, getMedChancesApi, { query: q }, { staleTime: 0 });
 
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(
@@ -187,6 +206,10 @@ export async function loadSchoolHead(
     await prefetchRouteQuery(queryClient, activityQuery(slug, { program, cycle: deps.cycle }));
   } else if (deps.tab === 'history') {
     await prefetchRouteQuery(queryClient, historyQuery(slug, { program, type: deps.type as MedChartedTypeId }));
+  } else if (deps.tab === 'forecast') {
+    // The same key the tab asks for (ALL reads REG, D12; a category the charts do not draw reads Interview).
+    const type = (CHARTED.includes(deps.type as MedChartedTypeId) ? deps.type : 'INTERVIEW') as MedChartedTypeId;
+    await prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
   }
   const { school } = detail;
   return {

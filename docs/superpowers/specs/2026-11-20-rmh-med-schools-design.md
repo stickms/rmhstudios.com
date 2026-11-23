@@ -411,7 +411,19 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    Admit rows, the whole-cycle profile-history backfill), the Admit school forums every three hours, persisted daily
    request budgets and a static contact user agent. Black-box tests and the audit scripts:
    `features/medschools/CLAUDE.md`.
-5. Statistics + forecast tab + personal conditional chance.
+5. Statistics + forecast tab + personal conditional chance. Phase 5 shipped as the daily `medschools.forecast` job
+   (06:40 UTC, no model call), a Forecast tab on the school page and an invite chance on the tracker and under the
+   Forecast chart. Decisions: D1 one floor definition (`engine/floor.ts`) for the readers and the job; D2 the fitted
+   series is the chart's primary series, per program, never summed; D3 the model (share-of-season from up to four
+   earlier cycles, recency weights 0.5^k, 600 draws, FULL, EARLY with bands widened 1.5x, NONE; seeded, so a re-run the
+   same day changes nothing); D5 a Kaplan-Meier "complete to invite" curve from the tracker rows of members who share;
+   D6 it exists only where 20 distinct members contribute; D7 the worker precomputes it (`MedWaitCurve`), so no request
+   reads another member's row; D8 the request turns the curve into whole percents at 7, 14, 30 and 60 days given no
+   invite by today; D9 per-event sources never enter the curve (no complete date, and joining events to people is what
+   section 6 forbids); D10 waves (a day above 3x the trailing 14-day median and at least 5 invites) on the Activity
+   response and the live feed; D12 `program=ALL` shows the regular program. Facilitator rulings R1-R12 (only members who
+   share feed the curve; every signed-in member sees the chance; the shown basis rounds down to a multiple of 10). The
+   sharing switch gained one line of copy. Detail: `features/medschools/CLAUDE.md`.
 6. AI Q&A.
 7. Follow a school + wave notifications.
 

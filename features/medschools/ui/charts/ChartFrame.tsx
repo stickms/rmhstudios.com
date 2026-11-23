@@ -39,6 +39,8 @@ export interface ChartLabels {
   summary: (v: { lines: { name: string; total: number }[] }) => string;
   /** BCP 47 locale for dates and numbers. */
   locale: string;
+  /** The wave mark's words (phase 5, D10): the legend entry, and the probe row for a wave day. Optional: not every chart marks waves. */
+  wave?: { legend: string; probe: (count: number) => string };
 }
 
 export interface LegendItem {
@@ -46,6 +48,7 @@ export interface LegendItem {
   label: string;
   color: string;
   dash?: string | undefined;
+  width?: number | undefined;
 }
 
 /** A short stroke of the series colour with its dash: a line key, never a box (the marks are lines). */
@@ -84,6 +87,34 @@ export function Swatch({
   );
 }
 
+/** The wave mark's key: a short vertical tick in the muted ink, as drawn on the plot. */
+export function WaveKey({ label }: { label: string }) {
+  return (
+    <span className="t-meta flex items-center gap-2">
+      <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true" focusable="false" className="shrink-0">
+        <line x1="11" x2="11" y1="0" y2="8" stroke="var(--site-text-muted)" strokeWidth={1} />
+      </svg>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+/** The tick drawn at a wave day: 1px, `--site-text-muted`, rising 8 units from the x axis, no fill. */
+export function WaveTick({ x, g }: { x: number; g: ChartGeometry }) {
+  return (
+    <line
+      x1={x}
+      x2={x}
+      y1={g.plot.bottom}
+      y2={g.plot.bottom - 8}
+      stroke="var(--site-text-muted)"
+      strokeWidth={1}
+      fill="none"
+      data-wave=""
+    />
+  );
+}
+
 /** Colour key above the plot. Present for two or more series; one series is named by the title. */
 export function ChartLegend({ items }: { items: LegendItem[] }) {
   if (items.length < 2) return null;
@@ -91,7 +122,7 @@ export function ChartLegend({ items }: { items: LegendItem[] }) {
     <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
       {items.map((i) => (
         <li key={i.key} className="t-meta flex items-center gap-2">
-          <Swatch color={i.color} dash={i.dash} />
+          <Swatch color={i.color} dash={i.dash} width={i.width ?? 2} />
           <span>{i.label}</span>
         </li>
       ))}

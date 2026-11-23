@@ -12,6 +12,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import schoolsJson from '../../data/medschools/schools.json';
 import cyclesJson from '../../data/medschools/cycles.json';
 import { seedRegistryIfEmpty, seedCycles } from '../../features/medschools/scrape/registry';
+import { runForecast } from '../../features/medschools/scrape/run-forecast';
 
 function guard(): string {
   const url = process.env.DATABASE_URL ?? '';
@@ -202,6 +203,30 @@ async function main() {
     count: 99,
     contributors: 2,
   });
+  // FIXTURE: one wave. Harvard's primary (CycleTrack) interview count for yesterday is many times its trailing median, so
+  // the Activity chart draws a wave tick and the live feed marks the school's invites of that day "Part of a wave".
+  const WAVE_ON = TODAY - DAY;
+  const waveSchool = byslug.get('harvard')!.id;
+  const w = counts.findIndex(
+    (c) =>
+      c.schoolId === waveSchool &&
+      c.cycleYear === 2027 &&
+      c.eventType === 'INTERVIEW' &&
+      c.source === 'CYCLETRACK' &&
+      c.program === 'REG' &&
+      c.date.getTime() === WAVE_ON,
+  );
+  if (w >= 0) counts.splice(w, 1);
+  counts.push({
+    schoolId: waveSchool,
+    program: 'REG',
+    cycleYear: 2027,
+    date: new Date(WAVE_ON),
+    eventType: 'INTERVIEW',
+    source: 'CYCLETRACK',
+    count: 140,
+    contributors: null,
+  });
   await prisma.medCycleCount.createMany({ data: counts, skipDuplicates: true });
   console.log('counts', counts.length);
 
@@ -245,6 +270,18 @@ async function main() {
       inState: rand() < 0.5 ? null : rand() < 0.5,
     });
   }
+  // FIXTURE: three of Harvard's invites on the wave day (the feed marks each "Part of a wave").
+  for (const [i, hour] of [14, 15, 16].entries())
+    events.push({
+      schoolId: byslug.get('harvard')!.id,
+      cycleYear: 2027,
+      program: 'REG',
+      eventType: 'INTERVIEW',
+      occurredAt: new Date(TODAY - DAY + hour * 3_600_000 + 17 * 60_000),
+      source: 'ADMIT',
+      dedupeHash: `fixture-wave-${i}`,
+      inState: null,
+    });
   await prisma.medCycleEvent.createMany({ data: events, skipDuplicates: true });
   console.log('events', events.length, 'null-program', events.filter((e) => e.program === null).length);
 
@@ -369,6 +406,50 @@ async function main() {
       skipDuplicates: true,
     });
   }
+
+  // ---- tracker: 24 sharing members at one school, so the wait curve clears its floor of 20 (D6) ----
+  // FIXTURE members, `visual-fixture-*` addresses; a re-run deletes them (their tracker rows cascade) and writes them again.
+  const cycleYear = NOW.getUTCMonth() < 5 ? NOW.getUTCFullYear() : NOW.getUTCFullYear() + 1;
+  const curveSchool = byslug.get('duke')!.id;
+  await prisma.user.deleteMany({ where: { email: { startsWith: 'visual-fixture-' } } });
+  const MEMBERS = 24;
+  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const mrand = rng(5150);
+  for (let i = 0; i < MEMBERS; i++) {
+    const user = await prisma.user.create({
+      data: {
+        name: `Fixture member ${i}`,
+        email: `visual-fixture-${i}@example.test`,
+        createdAt: new Date(TODAY - 60 * DAY),
+      },
+    });
+    const completeAt = TODAY - (25 + i * 5) * DAY;
+    const wait = 10 + Math.floor(mrand() * 70);
+    const invited = i % 5 !== 4 && completeAt + wait * DAY < TODAY - DAY;
+    const rejected = !invited && i % 5 === 4 && completeAt + 40 * DAY < TODAY - DAY;
+    const milestones = [
+      { type: 'SUBMITTED' as const, date: new Date(completeAt - 12 * DAY) },
+      { type: 'COMPLETE' as const, date: new Date(completeAt) },
+      ...(invited ? [{ type: 'INTERVIEW' as const, date: new Date(completeAt + wait * DAY) }] : []),
+      ...(rejected ? [{ type: 'REJECTION' as const, date: new Date(completeAt + 40 * DAY) }] : []),
+    ];
+    await prisma.medTrackerCycle.create({
+      data: {
+        userId: user.id,
+        cycleYear,
+        shareAnonymously: true,
+        applications: { create: { schoolId: curveSchool, program: 'REG', milestones: { create: milestones } } },
+      },
+    });
+  }
+  console.log('sharing members', MEMBERS, 'at duke; first complete', iso(TODAY - 25 * DAY));
+
+  // ---- the forecast job and the wait curves, run directly (what the worker's daily queue does) ----
+  await prisma.medForecast.deleteMany({ where: { schoolId: { in: ids } } });
+  await prisma.medWaitCurve.deleteMany({ where: { schoolId: { in: ids } } });
+  const log = { info: console.log, warn: console.warn, error: console.error };
+  const forecast = await runForecast({ prisma: prisma as never, db: prisma, log }, { trigger: 'MANUAL' });
+  console.log('forecast', JSON.stringify(forecast));
 
   console.log('slugs MD:', SLUGS.MD.join(', '));
   console.log('slugs DO:', SLUGS.DO.join(', '));

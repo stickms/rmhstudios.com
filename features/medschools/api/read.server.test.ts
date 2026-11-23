@@ -18,6 +18,7 @@ const m = vi.hoisted(() => {
     medSdnThread: d(),
     medSchoolAlias: d(),
     medCycle: d(),
+    medForecast: d(),
     $queryRaw: vi.fn(async (..._a: unknown[]): Promise<unknown[]> => []),
   };
 });
@@ -28,6 +29,7 @@ import {
   getActivity,
   getArrivals,
   getCardData,
+  getForecast,
   getHistory,
   getLive,
   getSchool,
@@ -85,6 +87,7 @@ describe('anonymity of queries', () => {
     await getSchool('duke', NOW);
     await getActivity('duke', {}, NOW);
     await getHistory('duke', {}, NOW);
+    await getForecast('duke', {}, NOW);
     await getLive({}, NOW);
     await getToday({}, NOW);
     for (const [name, delegate] of Object.entries(m).filter(([, x]) => 'findMany' in x) as [string, Delegate][]) {
@@ -116,7 +119,7 @@ describe('getLive', () => {
     expect(args.where.source).toEqual({ in: ['ADMIT', 'SDN'] });
     const e = res.events[0]!;
     expect(e.program).toBeNull();
-    expect(Object.keys(e).sort()).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source']);
+    expect(Object.keys(e).sort()).toEqual(['eventType', 'id', 'occurredAt', 'program', 'school', 'source', 'wave']);
     expect(Object.keys(e.school).sort()).toEqual(['city', 'degree', 'name', 'shortName', 'slug', 'state']);
     expect(e.occurredAt).toBe('2026-11-20T10:15:00.000Z');
   });
@@ -277,7 +280,8 @@ describe('getActivity', () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     await getActivity('duke', { program: 'PHD' }, NOW);
     const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: { program: unknown } };
-    expect(args.where.program).toEqual({ in: ['PHD'] });
+    // Both programs are read whatever the page shows (waves follow REG + PHD, D10); the chart filters to PHD afterwards.
+    expect(args.where.program).toEqual({ in: ['REG', 'PHD'] });
   });
 });
 
@@ -761,5 +765,278 @@ describe('getArrivals (when results arrive)', () => {
     expect(many.hours[9]).toBe(8);
     expect(many.cycles).toEqual([{ cycleYear: 2026, count: 12, firstOn: '2025-11-03', medianOn: '2025-12-02' }]);
     expect(Object.keys(many).sort()).toEqual(['cycles', 'eventType', 'hours', 'program', 'total', 'weekdays', 'zone']);
+  });
+});
+
+describe('getForecast', () => {
+  const CYCLE = 2028;
+  const ZERO = '2027-06-01';
+  const cnt = (
+    source: string,
+    date: string,
+    count: number,
+    contributors: number | null = null,
+    published?: { count: number | null; contributors: number | null },
+  ) => ({
+    source,
+    date: d(date),
+    count,
+    contributors,
+    publishedCount: source === 'RMH' ? (published ? published.count : count) : null,
+    publishedContributors: source === 'RMH' ? (published ? published.contributors : contributors) : null,
+  });
+  const row = (mode: 'FULL' | 'EARLY' | 'NONE', over: Record<string, unknown> = {}) => ({
+    mode,
+    source: 'ADMIT',
+    asOf: d('2027-11-20'),
+    curve:
+      mode === 'NONE'
+        ? { days: [], p10: [], p50: [], p90: [] }
+        : { days: [172, 173, 174], p10: [10, 11, 12], p50: [10, 13, 16], p90: [10, 15, 20] },
+    summary: {
+      dayZeroOn: ZERO,
+      observed: 10,
+      meanShare: 0.4,
+      total: mode === 'NONE' ? null : { p10: 20, p50: 30, p90: 40 },
+      halfDay: mode === 'NONE' ? null : { p10: 160, p50: 180, p90: 200 },
+      basis: mode === 'NONE' ? [] : [{ cycleYear: 2027, source: 'ADMIT', weight: 1 }],
+    },
+    ...over,
+  });
+  const setup = (forecast: unknown, counts: unknown[]) => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: CYCLE });
+    m.medForecast.findFirst.mockResolvedValue(forecast);
+    m.medCycleCount.findMany.mockResolvedValue(counts);
+  };
+
+  it('a FULL row is ready: the band is the stored curve, the observed line stops at the row asOf', async () => {
+    setup(row('FULL'), [
+      cnt('ADMIT', '2027-11-18', 4),
+      cnt('ADMIT', '2027-11-20', 6),
+      cnt('ADMIT', '2027-11-21', 9), // today: partial, after the row's asOf
+    ]);
+    const res = (await getForecast('duke', {}, NOW))!;
+    expect(res.status).toBe('ready');
+    expect(res.program).toBe('REG');
+    expect(res.source).toBe('ADMIT');
+    expect(res.asOf).toBe('2027-11-20');
+    expect(res.observed).toEqual([
+      { day: 170, cumulative: 4 },
+      { day: 172, cumulative: 10 },
+    ]);
+    expect(res.band).toEqual([
+      { day: 172, p10: 10, p50: 10, p90: 10 },
+      { day: 173, p10: 11, p50: 13, p90: 15 },
+      { day: 174, p10: 12, p50: 16, p90: 20 },
+    ]);
+    expect(res.summary).toEqual({
+      total: { p10: 20, p50: 30, p90: 40 },
+      halfOn: { p10: '2027-11-08', p50: '2027-11-28', p90: '2027-12-18' },
+    });
+    expect(res.endOn).toBe('2028-06-30'); // interviews belong to the cycle until June 30
+    expect(Math.abs(res.basis.reduce((n, b) => n + b.weight, 0) - 1)).toBeLessThan(0.01);
+  });
+
+  it('a source that revised past days since the job ran: the band starts where the observed line ends', async () => {
+    // The job saw 10 by Nov 20; Admit has since revised the days to 11 (up) or 8 (down).
+    setup(row('FULL'), [cnt('ADMIT', '2027-11-18', 4), cnt('ADMIT', '2027-11-20', 7)]);
+    const up = (await getForecast('duke', {}, NOW))!;
+    expect(up.observed.at(-1)!.cumulative).toBe(11);
+    expect(up.band[0]).toEqual({ day: 172, p10: 11, p50: 11, p90: 11 });
+    expect(up.band[2]).toEqual({ day: 174, p10: 13, p50: 17, p90: 21 });
+    expect(up.summary!.total).toEqual({ p10: 21, p50: 31, p90: 41 });
+    setup(row('FULL'), [cnt('ADMIT', '2027-11-18', 4), cnt('ADMIT', '2027-11-20', 4)]);
+    const down = (await getForecast('duke', {}, NOW))!;
+    expect(down.observed.at(-1)!.cumulative).toBe(8);
+    expect(down.band[0]).toEqual({ day: 172, p10: 8, p50: 8, p90: 8 });
+    // Never below what is already observed, and unchanged rows stay unchanged (the test above).
+    for (const b of down.band) expect(b.p10).toBeGreaterThanOrEqual(8);
+  });
+
+  it('EARLY is early, NONE is no-history with an empty band', async () => {
+    setup(row('EARLY'), [cnt('ADMIT', '2027-11-18', 4)]);
+    expect((await getForecast('duke', {}, NOW))!.status).toBe('early');
+    setup(row('NONE'), [cnt('ADMIT', '2027-11-18', 4)]);
+    const none = (await getForecast('duke', {}, NOW))!;
+    expect(none.status).toBe('no-history');
+    expect(none.band).toEqual([]);
+    expect(none.summary).toBeNull();
+    expect(none.observed).toHaveLength(1);
+  });
+
+  it('no row: pending with the observed line through yesterday, or no-data with nothing', async () => {
+    setup(null, [cnt('ADMIT', '2027-11-18', 4), cnt('ADMIT', '2027-11-21', 9)]);
+    const pending = (await getForecast('duke', {}, NOW))!;
+    expect(pending.status).toBe('pending');
+    expect(pending.asOf).toBeNull();
+    expect(pending.observed).toEqual([{ day: 170, cumulative: 4 }]);
+    setup(null, []);
+    const none = (await getForecast('duke', {}, NOW))!;
+    expect(none.status).toBe('no-data');
+    expect(none.observed).toEqual([]);
+    expect(none.dayZeroOn).toBe(ZERO);
+  });
+
+  it('ALL and an absent program both resolve to REG; PHD reads the PHD row', async () => {
+    setup(null, []);
+    expect((await getForecast('duke', { program: 'ALL' }, NOW))!.program).toBe('REG');
+    expect((await getForecast('duke', {}, NOW))!.program).toBe('REG');
+    await getForecast('duke', { program: 'PHD', type: 'ACCEPTANCE' }, NOW);
+    const args = m.medForecast.findFirst.mock.calls.at(-1)![0] as { where: Record<string, unknown> };
+    expect(args.where).toEqual({ schoolId: 's1', program: 'PHD', cycleYear: CYCLE, eventType: 'ACCEPTANCE' });
+  });
+
+  it('reads the site cycle through the floor, never the schools own newest', async () => {
+    setup(null, []);
+    await getForecast('duke', {}, NOW);
+    const counts = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(counts.where).toMatchObject({ schoolId: 's1', cycleYear: CYCLE, program: 'REG', ...{ OR: FLOOR.OR } });
+    const latest = m.medCycleCount.findFirst.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(latest.where).toMatchObject(FLOOR);
+  });
+
+  it('an RMH-only school with an unpublished, a sub-k and a same-day cell has no observed line', async () => {
+    setup(null, [
+      cnt('RMH', '2027-11-10', 9, 9, { count: null, contributors: null }),
+      cnt('RMH', '2027-11-11', 9, 9, { count: 9, contributors: 2 }),
+      cnt('RMH', '2027-11-21', 9, 9, { count: 9, contributors: 9 }),
+    ]);
+    const res = (await getForecast('duke', {}, NOW))!;
+    expect(res.status).toBe('no-data');
+    expect(res.observed).toEqual([]);
+    const text = JSON.stringify(res);
+    for (const w of ['contributors', 'publishedCount', 'userId', 'dedupeHash']) expect(text).not.toContain(w);
+  });
+
+  it('an unknown, malformed or inactive slug is null', async () => {
+    expect(await getForecast('DUKE', {}, NOW)).toBeNull();
+    m.medSchool.findFirst.mockResolvedValue(null);
+    expect(await getForecast('nope', {}, NOW)).toBeNull();
+  });
+});
+
+describe('waves (D10)', () => {
+  const cnt = (source: string, date: string, count: number) => ({
+    source,
+    date: d(date),
+    eventType: 'INTERVIEW',
+    count,
+    contributors: null,
+    publishedCount: null,
+    publishedContributors: null,
+  });
+  const dayN = (n: number) => `2027-11-${String(n).padStart(2, '0')}`;
+  const quiet = (source: string, spike?: number) =>
+    Array.from({ length: 20 }, (_, i) => cnt(source, dayN(i + 1), i + 1 === spike ? 12 : 2));
+
+  it('getActivity: 2 a day with 12 on one day is one wave, on the primary series, as a calendar date', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    m.medCycleCount.findMany.mockResolvedValue(quiet('ADMIT', 15));
+    const res = (await getActivity('duke', {}, NOW))!;
+    expect(res.waves).toEqual([{ date: '2027-11-15', count: 12, baseline: 2 }]);
+  });
+
+  it('getActivity: waves follow REG + PHD whatever program the page shows, so they agree with the live feed', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    // REG alone is 2 a day (no wave); PHD adds 10 on the 15th: together 12.
+    const withProgram = (program: string) => (r: ReturnType<typeof cnt>) => ({ ...r, program });
+    m.medCycleCount.findMany.mockResolvedValue([
+      ...quiet('ADMIT').map(withProgram('REG')),
+      { ...cnt('ADMIT', dayN(15), 10), program: 'PHD' },
+    ]);
+    for (const program of ['REG', 'PHD', 'ALL'] as const) {
+      const res = (await getActivity('duke', { program }, NOW))!;
+      expect(res.waves, program).toEqual([{ date: '2027-11-15', count: 12, baseline: 2 }]);
+    }
+    // The chart itself still shows only the requested program's events.
+    const reg = (await getActivity('duke', { program: 'REG' }, NOW))!;
+    expect(reg.types[0]!.sources[0]!.total).toBe(40);
+  });
+
+  it('getActivity: a wave in a source that is not primary is ignored; no INTERVIEW series is no waves', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    m.medCycleCount.findMany.mockResolvedValue([...quiet('ADMIT'), ...quiet('SDN', 15)]);
+    expect((await getActivity('duke', {}, NOW))!.waves).toEqual([]);
+    m.medCycleCount.findMany.mockResolvedValue([]);
+    expect((await getActivity('duke', {}, NOW))!.waves).toEqual([]);
+  });
+
+  it('getActivity: an RMH-only series with sub-k cells has no waves', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    m.medCycleCount.findMany.mockResolvedValue(
+      quiet('RMH', 15).map((r) => ({ ...r, publishedCount: r.count, publishedContributors: 2 })),
+    );
+    expect((await getActivity('duke', {}, NOW))!.waves).toEqual([]);
+  });
+
+  describe('getLive', () => {
+    const ev = (id: string, eventType: string, at: string, slug = 'duke') => ({
+      id,
+      eventType,
+      program: 'REG',
+      source: 'ADMIT',
+      occurredAt: new Date(at),
+      school: { slug, shortName: 'Duke', name: 'Duke', degree: 'MD', city: 'Durham', state: 'NC' },
+    });
+    const withSchool = (rows: ReturnType<typeof quiet>) =>
+      rows.map((r) => ({ ...r, cycleYear: 2028, school: { slug: 'duke' } }));
+
+    it('flags an INTERVIEW row on the wave day only, with one batched read for the page', async () => {
+      m.medCycleEvent.findMany.mockResolvedValue([
+        ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z'),
+        ev('b', 'INTERVIEW', '2027-11-18T10:00:00Z'),
+        ev('c', 'SECONDARY', '2027-11-15T10:00:00Z'),
+        ev('e', 'INTERVIEW', '2027-11-15T12:00:00Z', 'unc'),
+      ]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool(quiet('ADMIT', 15)));
+      const res = await getLive({}, NOW);
+      expect(res.events.map((e) => [e.id, e.wave])).toEqual([
+        ['a', true],
+        ['b', false],
+        ['c', false],
+        ['e', false],
+      ]);
+      expect(m.medCycleCount.findMany).toHaveBeenCalledTimes(1);
+      const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+      expect(args.where).toMatchObject({ eventType: 'INTERVIEW', ...{ OR: FLOOR.OR } });
+    });
+
+    it('a burst after a quiet spell is a wave: the read goes back to the cycle, not a window around the page', async () => {
+      // Reports 2 a day for ten days in September, nothing for over two months, then 12 on Nov 15.
+      const september = Array.from({ length: 10 }, (_, i) => cnt('ADMIT', `2027-09-${String(i + 1).padStart(2, '0')}`, 2));
+      m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z')]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool([...september, cnt('ADMIT', '2027-11-15', 12)]));
+      const res = await getLive({}, NOW);
+      expect(res.events[0]!.wave).toBe(true);
+      const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+      expect(args.where).toMatchObject({ cycleYear: { in: [2028] } });
+      expect(args.where).not.toHaveProperty('date');
+    });
+
+    it('the first report is the cycle\'s: a school that began reporting a week ago has no wave from its first days', async () => {
+      const fresh = [dayN(10), dayN(11), dayN(12)].map((x) => cnt('ADMIT', x, 6));
+      m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-11T10:00:00Z')]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool(fresh));
+      expect((await getLive({}, NOW)).events[0]!.wave).toBe(false); // fewer than 7 days of data
+    });
+
+    it('the primary source is chosen over the whole cycle, as the Activity chart does', async () => {
+      // ADMIT is primary all cycle; a burst in SDN (not primary) is not a wave, even when the page window shows only SDN.
+      m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z')]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool([...quiet('ADMIT'), ...quiet('SDN', 15)]));
+      expect((await getLive({}, NOW)).events[0]!.wave).toBe(false);
+    });
+
+    it('a page with no INTERVIEW row reads no counts', async () => {
+      m.medCycleEvent.findMany.mockResolvedValue([ev('c', 'SECONDARY', '2027-11-15T10:00:00Z')]);
+      const res = await getLive({}, NOW);
+      expect(res.events[0]!.wave).toBe(false);
+      expect(m.medCycleCount.findMany).not.toHaveBeenCalled();
+    });
   });
 });

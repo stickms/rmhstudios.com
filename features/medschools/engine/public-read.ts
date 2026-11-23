@@ -24,9 +24,8 @@ export const SHORT_SOURCE_NAMES: Record<MedSource, string> = {
   MDAPPLICANTS: 'MDApplicants',
 };
 
-export type SchoolTab = 'activity' | 'history' | 'interviews';
-/** Phase 5 adds 'forecast' between history and interviews. */
-export const SCHOOL_TABS: readonly SchoolTab[] = ['activity', 'history', 'interviews'];
+export type SchoolTab = 'activity' | 'history' | 'forecast' | 'interviews';
+export const SCHOOL_TABS: readonly SchoolTab[] = ['activity', 'history', 'forecast', 'interviews'];
 
 export interface CountCell {
   source: MedSource;

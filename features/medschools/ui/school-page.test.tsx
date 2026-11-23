@@ -4,7 +4,10 @@ import { renderToString } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ search: {} as Record<string, unknown> }));
+const h = vi.hoisted(() => ({
+  search: {} as Record<string, unknown>,
+  session: null as null | { user: { id: string } },
+}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -38,6 +41,10 @@ vi.mock('@tanstack/react-router', () => ({
   useSearch: () => h.search,
   useParams: () => ({ slug: 'duke' }),
 }));
+vi.mock('@/components/session/session-context', () => ({
+  useSession: () => ({ data: h.session, isPending: false }),
+}));
+vi.mock('./SaveToList', () => ({ SaveToList: () => null }));
 vi.mock('@/components/feed/PageLayout', () => ({
   PageLayout: ({ title, children }: { title: string; children: ReactNode }) => (
     <main>
@@ -55,12 +62,13 @@ vi.mock('@/components/ui/select', () => ({
 }));
 
 import { SchoolPage } from './SchoolPage';
-import { activityQuery, historyQuery, schoolQuery } from '../medschools.queries';
+import { activityQuery, chancesQuery, forecastQuery, historyQuery, schoolQuery } from '../medschools.queries';
 import type {
   ActivityTypeDto,
   MedChartedTypeId,
   MedSchoolDetailDto,
   MedSchoolActivityRes,
+  MedSchoolForecastRes,
   MedSchoolHistoryRes,
 } from '../medschools.contract';
 
@@ -109,6 +117,7 @@ const activity = (
   otherTotals: [],
   unreportedProgram: 0,
   unreportedProgramSource: null,
+  waves: [],
   ...o,
 });
 
@@ -146,7 +155,6 @@ describe('route file', () => {
     expect(page).toContain('PageTabs');
     expect(page).toContain('renderTab');
     expect(page).not.toMatch(/aria-selected|layoutId/);
-    expect(page).not.toMatch(/forecast/i);
   });
   it('SchoolLink is gone: links are typed', () => {
     expect(() => root('./SchoolLink.tsx')).toThrow();
@@ -155,13 +163,15 @@ describe('route file', () => {
 });
 
 describe('SchoolPage', () => {
-  it('renders exactly the three tabs and no Forecast', () => {
+  it('renders the four tabs in order, Forecast between History and Interviews', () => {
     h.search = {};
     const html = render(seedActivity(activity()));
     expect(html).toContain('>Activity<');
     expect(html).toContain('>History<');
     expect(html).toContain('>Interviews<');
-    expect(html).not.toContain('Forecast');
+    expect(html).toContain('>Forecast<');
+    expect(html.indexOf('>History<')).toBeLessThan(html.indexOf('>Forecast<'));
+    expect(html.indexOf('>Forecast<')).toBeLessThan(html.indexOf('>Interviews<'));
     expect(html).toContain('<h1>Duke University School of Medicine</h1>');
     expect(html).toContain('MD · Durham, NC');
   });
@@ -478,5 +488,166 @@ describe('SchoolPage', () => {
     const src = root('./HistoryTab.tsx');
     expect(src).toContain('ArrivalsSection');
     expect(root('./ArrivalsSection.tsx')).toContain('enoughArrivals');
+  });
+});
+
+describe('Activity waves', () => {
+  it('the page names the waves in one line and marks them on both charts', () => {
+    h.search = {};
+    const html = render(seedActivity(activity({ waves: [{ date: '2026-11-18', count: 12, baseline: 2 }] })));
+    expect(html).toContain('Waves: Nov 18 (12 invites)');
+    expect(html.match(/data-wave/g)!.length).toBeGreaterThanOrEqual(2);
+  });
+  it('no waves: no line, no tick, no legend entry', () => {
+    h.search = {};
+    const html = render(seedActivity(activity()));
+    expect(html).not.toContain('Waves:');
+    expect(html).not.toContain('data-wave');
+    expect(html).not.toContain('>Wave<');
+  });
+});
+
+describe('Forecast tab', () => {
+  const forecast = (o: Partial<MedSchoolForecastRes> = {}): MedSchoolForecastRes => ({
+    program: 'REG',
+    eventType: 'INTERVIEW',
+    cycleYear: 2026,
+    dayZeroOn: '2025-06-01',
+    dayZeroEstimated: false,
+    endOn: '2026-05-31',
+    status: 'ready',
+    source: 'ADMIT',
+    asOf: '2025-11-20',
+    observed: [
+      { day: 170, cumulative: 4 },
+      { day: 172, cumulative: 10 },
+    ],
+    band: [
+      { day: 172, p10: 10, p50: 10, p90: 10 },
+      { day: 200, p10: 14, p50: 20, p90: 28 },
+      { day: 364, p10: 20, p50: 30, p90: 44 },
+    ],
+    summary: {
+      total: { p10: 20, p50: 30, p90: 44 },
+      halfOn: { p10: '2025-12-20', p50: '2026-01-10', p90: '2026-02-02' },
+    },
+    basis: [
+      { cycleYear: 2025, source: 'ADMIT', weight: 0.6 },
+      { cycleYear: 2024, source: 'ADMIT', weight: 0.4 },
+    ],
+    ...o,
+  });
+  const seed =
+    (f: MedSchoolForecastRes, program: 'REG' | 'PHD' = 'REG', type: MedChartedTypeId = 'INTERVIEW') =>
+    (qc: QueryClient) => {
+      qc.setQueryData(schoolQuery('duke').queryKey, detail());
+      qc.setQueryData(forecastQuery('duke', { program, type }).queryKey, f);
+    };
+
+  it('a ready forecast server-renders the chart and the summary rows, with calendar dates and no day count', () => {
+    h.search = { tab: 'forecast' };
+    h.session = null;
+    const html = render(seed(forecast()));
+    expect(html).toContain('<svg');
+    expect(html).toContain('Interview invite: expected total 30, likely between 20 and 44');
+    expect(html).toContain('Half of them by Jan 10, likely between Dec 20 and Feb 2');
+    expect(html).toContain('Forecast as of Nov 20.');
+    expect(html).toContain('Based on 2 earlier cycles from Admit.');
+    expect(html).not.toMatch(/days since|day \d/i);
+    expect(html).not.toContain('NaN');
+  });
+
+  it('early says the range is wide; one earlier cycle says the range is narrower than the real uncertainty', () => {
+    h.search = { tab: 'forecast' };
+    const early = render(seed(forecast({ status: 'early' })));
+    expect(early).toContain('Early in the cycle, so the range is wide');
+    const one = render(seed(forecast({ basis: [{ cycleYear: 2025, source: 'ADMIT', weight: 1 }] })));
+    expect(one).toContain('Based on one earlier cycle from Admit.');
+    expect(one).toContain('narrower than the real uncertainty');
+  });
+
+  it('no-history draws the observed line and says earlier cycles are too thin; no summary', () => {
+    h.search = { tab: 'forecast' };
+    const html = render(seed(forecast({ status: 'no-history', band: [], summary: null, basis: [] })));
+    expect(html).toContain('<svg');
+    expect(html).toContain('Earlier cycles do not have enough reported events for a forecast.');
+    expect(html).not.toContain('Expected total');
+  });
+
+  it('pending says the forecast is computed once a day; no-data is the empty state and no chart', () => {
+    h.search = { tab: 'forecast' };
+    const pending = render(seed(forecast({ status: 'pending', asOf: null, band: [], summary: null, basis: [] })));
+    expect(pending).toContain('The forecast is computed once a day.');
+    const none = render(
+      seed(forecast({ status: 'no-data', observed: [], band: [], summary: null, basis: [], asOf: null })),
+    );
+    expect(none).toContain('No reported events yet this cycle.');
+    expect(none).not.toContain('<svg viewBox');
+  });
+
+  it('All programs reads REG and says so in one line', () => {
+    h.search = { tab: 'forecast', program: 'ALL' };
+    const html = render(seed(forecast()));
+    expect(html).toContain('A forecast is made for one program at a time. Showing MD.');
+    h.search = { tab: 'forecast', program: 'REG' };
+    expect(render(seed(forecast()))).not.toContain('one program at a time');
+  });
+
+  it('signed out asks for no chances and renders none; signed in with an application shows the rows', () => {
+    h.search = { tab: 'forecast' };
+    h.session = null;
+    expect(render(seed(forecast()))).not.toContain('Your estimate');
+    h.session = { user: { id: 'u1' } };
+    const html = render((qc) => {
+      seed(forecast())(qc);
+      // The cycle is the one the Forecast tab shows (forecast().cycleYear), not whichever tracker cycle is newest.
+      qc.setQueryData(chancesQuery({ school: 'duke', cycle: 2026 }).queryKey, {
+        cycleYear: 2026,
+        chances: [
+          {
+            applicationId: 'a1',
+            school: { slug: 'duke', shortName: 'Duke', name: 'Duke', active: true },
+            program: 'REG',
+            status: 'estimate',
+            completeOn: '2026-10-31',
+            invitedOn: null,
+            asOf: '2026-11-19',
+            basis: 20,
+            points: [{ on: '2026-11-27', percent: 29 }],
+          },
+        ],
+      });
+    });
+    expect(html).toContain('Your estimate');
+    expect(html).toContain('the chance of an interview invite:');
+    expect(html).toContain('by \u2068Nov 27\u2069 \u00b7 \u206829%\u2069');
+    // An answer cached under the cycle-less key (the newest tracker cycle) is not this page's estimate.
+    const wrongCycle = render((qc) => {
+      seed(forecast())(qc);
+      qc.setQueryData(chancesQuery({ school: 'duke' }).queryKey, {
+        cycleYear: 2027,
+        chances: [
+          {
+            applicationId: 'a9',
+            school: { slug: 'duke', shortName: 'Duke', name: 'Duke', active: true },
+            program: 'REG',
+            status: 'thin',
+            completeOn: null,
+            invitedOn: null,
+            asOf: null,
+            basis: null,
+            points: [],
+          },
+        ],
+      });
+    });
+    expect(wrongCycle).not.toContain('Your estimate');
+    h.session = null;
+  });
+
+  it('the Forecast panel never imports the stats engine', () => {
+    for (const f of ['./ForecastTab.tsx', './charts/ForecastBand.tsx', './SchoolChances.tsx']) {
+      expect(root(f)).not.toMatch(/engine\/stats/);
+    }
   });
 });

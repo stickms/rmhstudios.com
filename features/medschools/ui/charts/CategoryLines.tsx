@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   addUtcDays,
+  type ChartGeometry,
   extendStep,
   linePath,
   niceMax,
@@ -10,6 +11,7 @@ import {
   xTicks,
   yTicksTween,
 } from '../../engine/chart-geometry';
+import { dayOfCycle } from '../../engine/cycle';
 import { SOURCE_NAMES, formatUtcDay } from '../../engine/public-read';
 import type { MedChartedTypeId, MedSourceId } from '../../medschools.contract';
 import { CATEGORY_STYLE } from './chartColors';
@@ -19,6 +21,8 @@ import {
   EmptyNote,
   PlotClip,
   ResponsivePlot,
+  WaveKey,
+  WaveTick,
   XAxis,
   YAxis,
   valueAt,
@@ -50,6 +54,8 @@ export function CategoryLines(p: {
   labels: ChartLabels;
   /** The category legend and toggle row, shown above the plot. */
   legend?: ReactNode;
+  /** Waves of the INTERVIEW series (D10): a tick on the axis at each date, only while Interview is switched on. */
+  waves?: { date: string; count: number }[] | undefined;
 }) {
   const { labels } = p;
   const nf = new Intl.NumberFormat(labels.locale);
@@ -72,6 +78,13 @@ export function CategoryLines(p: {
   const target = niceMax(Math.max(0, ...shown.map((s) => s.line[s.line.length - 1]!.y)));
   const tween = useTween(target);
 
+  const marks =
+    labels.wave && shown.some((s) => s.eventType === 'INTERVIEW')
+      ? (p.waves ?? [])
+          .map((w) => ({ day: dayOfCycle(w.date, p.dayZeroOn), count: w.count }))
+          .filter((w) => w.day >= firstDay && w.day <= lastDay)
+      : [];
+
   const names = [...new Set(p.sources)].map((s) => SOURCE_NAMES[s]);
   const days = [...new Set(shown.flatMap((s) => s.line.map((q) => q.x)))].sort((a, b) => a - b);
   const rows = days.map((d) => [
@@ -85,20 +98,34 @@ export function CategoryLines(p: {
         x: (g, i) => plotX(firstDay + i, domain, g),
         at: (i) => {
           const day = firstDay + i;
+          const wave = marks.find((w) => w.day === day);
           return {
             label: longDate(day),
-            rows: shown.map((s) => {
-              const v = valueAt(s.line, day) ?? 0;
-              const st = CATEGORY_STYLE[s.eventType];
-              return {
-                key: s.eventType,
-                name: s.label,
-                color: st.color,
-                dash: st.dash,
-                text: nf.format(v),
-                y: (g) => plotY(v, tween.value, g),
-              };
-            }),
+            rows: [
+              ...shown.map((s) => {
+                const v = valueAt(s.line, day) ?? 0;
+                const st = CATEGORY_STYLE[s.eventType];
+                return {
+                  key: s.eventType,
+                  name: s.label,
+                  color: st.color,
+                  dash: st.dash,
+                  text: nf.format(v),
+                  y: (g: ChartGeometry) => plotY(v, tween.value, g),
+                };
+              }),
+              ...(wave && labels.wave
+                ? [
+                    {
+                      key: 'wave',
+                      name: labels.wave.probe(wave.count),
+                      color: 'var(--site-text-muted)',
+                      text: '',
+                      y: () => null,
+                    },
+                  ]
+                : []),
+            ],
           };
         },
       }
@@ -109,7 +136,16 @@ export function CategoryLines(p: {
       title={labels.title}
       unit={labels.unitCumulative}
       sourcesLine={labels.sourcesPlain(names)}
-      legend={p.legend}
+      legend={
+        <>
+          {p.legend}
+          {marks.length > 0 && labels.wave ? (
+            <div className="mt-2">
+              <WaveKey label={labels.wave.legend} />
+            </div>
+          ) : null}
+        </>
+      }
       tableLabel={labels.showData}
       table={<DataTable head={[labels.date, ...shown.map((s) => s.label)]} rows={rows} />}
     >
@@ -154,6 +190,9 @@ export function CategoryLines(p: {
             ) : (
               <EmptyNote g={g} text={labels.empty} />
             )}
+            {marks.map((w) => (
+              <WaveTick key={w.day} x={plotX(w.day, domain, g)} g={g} />
+            ))}
           </>
         )}
       />

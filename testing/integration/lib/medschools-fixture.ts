@@ -54,6 +54,30 @@ export async function seedMedSchoolsFixture(now: Date = new Date()): Promise<voi
     );
   }
 
+  // Phase 5: waves and a forecast. A quiet run of 1-a-day CycleTrack invites, then a spike (30, three days ago) and the
+  // existing 6 yesterday: both are more than 3x the trailing median and at least 5, so both are waves. Today's 4 is not.
+  for (let ago = 12; ago >= 4; ago -= 1) {
+    await q(
+      `insert into med_cycle_count (id, "schoolId", program, "cycleYear", date, "eventType", source, count)
+       values ($1, $2, 'REG', $3, $4::date, 'INTERVIEW', 'CYCLETRACK', 1)`,
+      [`it-medschools-quiet-${ago}`, SCHOOL_ID, cycle, day(ago)],
+    );
+  }
+  await q(
+    `insert into med_cycle_count (id, "schoolId", program, "cycleYear", date, "eventType", source, count)
+     values ('it-medschools-spike', $1, 'REG', $2, $3::date, 'INTERVIEW', 'CYCLETRACK', 30)`,
+    [SCHOOL_ID, cycle, day(3)],
+  );
+  // Two earlier cycles of one invite every second day, days 60 to 300 (120 in all each), so a forecast has history to
+  // learn from. The current cycle's share at today's day of the cycle is then well over the EARLY threshold.
+  await q(
+    `insert into med_cycle_count (id, "schoolId", program, "cycleYear", date, "eventType", source, count)
+     select 'it-medschools-hist-' || y || '-' || g, $1, 'REG', y,
+            make_date(y - 1, 6, 1) + g, 'INTERVIEW', 'CYCLETRACK', 1
+     from unnest(array[$2::int, $3::int]) as y, generate_series(60, 300, 2) as g`,
+    [SCHOOL_ID, cycle - 1, cycle - 2],
+  );
+
   // Three events share one occurredAt (cursor ties); one has no program.
   const at = (ago: number, hour: number) => new Date(today - ago * DAY + hour * 3_600_000 + 42_000).toISOString();
   const events: Array<[string, string, string | null, string]> = [
@@ -199,4 +223,85 @@ export async function rmhRecompute(schoolId: string): Promise<{ fromEvents: stri
     fromEvents: ev.rows.map((r) => `${r.day}|${r.t}|${r.p}|${r.c}|${r.n}|${r.n}`),
     fromCounts: ct.rows.map((r) => `${r.day}|${r.t}|${r.p}|${r.c}|${r.count}|${r.contributors}`),
   };
+}
+
+/* ───────────────────────── sharing members for the wait curve (phase 5) ───────────────────────── */
+
+const SHARER_PREFIX = 'it-medschools-sharer-';
+
+/**
+ * `n` FIXTURE members who share their tracker, each with one application at `schoolId` (REG) and a COMPLETE date, written
+ * straight to Postgres: sign-up is limited to 10 a minute, and the curve needs 20 distinct members. Three kinds, by index:
+ * an early invite (10 to 14 days after complete), a late one (45 to 53 days) and none yet. Every date is at least 60 days
+ * back, so a test member who completed 30 to 40 days ago is "still waiting" inside the curve's range. Returns every date
+ * written, so a test can prove none of them reaches another member's response.
+ */
+export async function seedSharingMembers(
+  schoolId: string,
+  cycleYear: number,
+  n: number,
+  from = 0,
+  now: Date = new Date(),
+): Promise<string[]> {
+  const q = (text: string, values: unknown[] = []) => db().query(text, values);
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const iso = (ago: number) => new Date(today - ago * DAY).toISOString().slice(0, 10);
+  const dates: string[] = [];
+  for (let i = from; i < from + n; i += 1) {
+    const uid = `${SHARER_PREFIX}${i}`;
+    const completeAgo = 60 + i * 4;
+    const wait = i % 3 === 0 ? 10 + (i % 5) : i % 3 === 1 ? 45 + (i % 9) : null;
+    await q(`insert into "user" (id, email, name, "updatedAt") values ($1, $2, $3, now())`, [
+      uid,
+      `${uid}@example.test`,
+      `Sharer ${i}`,
+    ]);
+    await q(
+      `insert into med_tracker_cycle (id, "userId", "cycleYear", "shareAnonymously", "everShared", "updatedAt")
+       values ($1, $2, $3, true, true, now())`,
+      [`${uid}-cycle`, uid, cycleYear],
+    );
+    await q(`insert into med_tracker_application (id, "cycleId", "schoolId", program) values ($1, $2, $3, 'REG')`, [
+      `${uid}-app`,
+      `${uid}-cycle`,
+      schoolId,
+    ]);
+    const milestones: Array<[string, string]> = [['COMPLETE', iso(completeAgo)]];
+    if (wait !== null) milestones.push(['INTERVIEW', iso(completeAgo - wait)]);
+    for (const [type, date] of milestones) {
+      await q(
+        `insert into med_tracker_milestone (id, "applicationId", type, date, "updatedAt")
+         values ($1, $2, $3::"MedMilestoneType", $4::date, now())`,
+        [`${uid}-${type}`, `${uid}-app`, type, date],
+      );
+      dates.push(date);
+    }
+  }
+  return dates;
+}
+
+/** Turn one fixture member's sharing off or on, as a member would (the daily job reads the flag). */
+export async function setSharerSharing(index: number, on: boolean): Promise<void> {
+  await db().query(`update med_tracker_cycle set "shareAnonymously" = $2 where "userId" = $1`, [
+    `${SHARER_PREFIX}${index}`,
+    on,
+  ]);
+}
+
+/** Delete the fixture members (their cycles, applications and milestones cascade). */
+export async function removeSharingMembers(): Promise<void> {
+  await db().query(`delete from "user" where id like $1`, [`${SHARER_PREFIX}%`]);
+}
+
+/** The stored wait-curve row of a school x program, columns and all (the test proves none could hold a person). */
+export async function waitCurveRow(schoolId: string): Promise<Record<string, unknown> | null> {
+  const r = await db().query(`select * from med_wait_curve where "schoolId" = $1 and program = 'REG'`, [schoolId]);
+  return r.rows[0] ?? null;
+}
+
+export async function waitCurveColumns(): Promise<string[]> {
+  const r = await db().query(
+    `select column_name from information_schema.columns where table_name = 'med_wait_curve' order by ordinal_position`,
+  );
+  return r.rows.map((x) => x.column_name as string);
 }

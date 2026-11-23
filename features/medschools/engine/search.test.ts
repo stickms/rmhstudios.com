@@ -29,7 +29,8 @@ describe('parseSchoolSearch', () => {
     expect(s.cycle).toBeUndefined();
   });
   it('tab and program', () => {
-    expect(parseSchoolSearch({ tab: 'forecast' }).tab).toBe('activity');
+    expect(parseSchoolSearch({ tab: 'forecast' }).tab).toBe('forecast');
+    expect(parseSchoolSearch({ tab: 'nonsense' }).tab).toBe('activity');
     expect(parseSchoolSearch({ tab: 'history' }).tab).toBe('history');
     expect(parseSchoolSearch({ program: 'PHD' }).program).toBe('PHD');
     expect(parseSchoolSearch({ program: 'REG' }).program).toBe('REG');

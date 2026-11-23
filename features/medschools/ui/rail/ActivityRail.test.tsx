@@ -38,6 +38,7 @@ const ev = (id: string): LiveEventDto => ({
   school: { slug: 'duke', shortName: 'Duke', name: 'Duke University', degree: 'MD', city: 'Durham', state: 'NC' },
   occurredAt: '2026-11-20T15:04:00.000Z',
   source: 'ADMIT',
+  wave: false,
 });
 
 function render(events: LiveEventDto[] | null): string {

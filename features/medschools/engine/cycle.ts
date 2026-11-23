@@ -61,7 +61,11 @@ export function cycleLabelIsolated(cycleYear: number): string {
   return `\u2066${cycleLabel(cycleYear)}\u2069`;
 }
 
-/** Last UTC day of the cycle (the day before the next cycle's default start). */
-export function cycleEndOn(cycleYear: number): string {
-  return `${cycleYear}-05-31`;
+/**
+ * Last UTC day an event of `type` still belongs to `cycleYear`: the day before it starts belonging to the next entry year
+ * (`cycleYearOf`). Secondaries end May 31, interviews June 30, decisions (acceptance, waitlist, rejection) August 31.
+ * The default is the secondary's May 31, the day before the next cycle's default start.
+ */
+export function cycleEndOn(cycleYear: number, type: MedEventType = 'SECONDARY'): string {
+  return new Date(Date.UTC(cycleYear, NEXT_CYCLE_FROM_MONTH[type], 0)).toISOString().slice(0, 10);
 }

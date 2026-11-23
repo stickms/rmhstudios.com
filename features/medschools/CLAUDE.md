@@ -17,11 +17,11 @@ Signed-out readable, in the `_site` shell (Steel), not a full-screen app:
 | ---------------------- | ----------------------------------------------------------------------- |
 | `/rmh-medschool`       | School index (rows on rules) with search, degree, state and program     |
 | `/rmh-medschool/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging  |
-| `/rmh-medschool/$slug` | One school: Activity, History, Interviews tabs (`?tab=`, `?program=` …) |
+| `/rmh-medschool/$slug` | One school: Activity, History, Forecast, Interviews tabs (`?tab=`, `?program=` …) |
 
-Six anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
-rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`, `live`,
-`today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
+Eight anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
+rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
+`schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `live`, `today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
 `medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
 in the server HTML with scripting off.
 
@@ -197,11 +197,78 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
 - The SDN live queue runs daily (SDN forum activity is slow); AI extraction is capped monthly. Detail:
   `server/CLAUDE.md`.
 
-## Adding the Forecast tab (phase 5)
+## Statistics, the Forecast tab and the personal chance (phase 5)
 
-Add `'forecast'` to `SCHOOL_TABS` between `history` and `interviews` in `engine/public-read.ts`, one query factory in
-`medschools.queries.ts`, and one tab component in `ui/`; `SchoolPage` renders tabs from `SCHOOL_TABS` and needs no other
-change. Keep the chart rules and the floor above.
+Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and rulings (R1-R12) are in
+`docs/superpowers/plans/2026-11-23-rmh-medschool-phase5-forecast.md`.
+
+- **One floor.** `engine/floor.ts` (`floorWhere`, `publicSum`; pure, no Prisma) is the only definition of what is public;
+  the readers and the forecast job both import it, and `run-forecast.ts` is pinned to read counts only through it. A band
+  fitted on a looser floor would publish an unpublished or sub-k RMH figure.
+- **The model (D3, D4; `engine/stats/`, pure, server-side only; `stats-boundary.test.ts` keeps it out of the client
+  graph).** Fitted **per program to the primary series, never summed** (REG and PHD; `ALL` on the page reads REG, D12).
+  Day `d` is days since the cycle's `dayZeroOn`; the fit sees counts through yesterday UTC (`asOf`, a partial day biases
+  the share down). For up to 4 earlier cycles of the same source with a season total of at least 10, the share of the
+  season reported by day `d` is weighted `0.5^k` (newest first, renormalised). FULL (weighted share at `asOf` at least
+  0.05): the implied total is the count so far over that share; 600 draws with a stratified cycle choice and a Poisson
+  remainder, paths `C + R * q(d)`, per-day p10/p50/p90, a summary of the total and the day half of the invites are in
+  (`halfDay`). EARLY: the same with the cycle's own total as the Poisson mean and p10/p90 widened 1.5x around the median.
+  NONE: no band, the row still exists. A seeded `mulberry32` (`fnv1a` of school, program, type, cycle, `asOf`) makes a
+  re-run the same day change nothing. Constants: `engine/stats/constants.ts`, `MODEL_VERSION` 1.
+- **The job** is the queue `medschools.forecast` (`FORECAST_CRON`, 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`; no flag, no
+  secret, no model call; detail `server/CLAUDE.md`). It writes `MedForecast` (one row per school, program, cycle and
+  type; rows for finished cycles stay, a record of what was predicted, D11) and then `MedWaitCurve`.
+- **`MedWaitCurve` is precomputed by the worker (D7).** A request that computed the curve would read other members'
+  `COMPLETE` and `INTERVIEW` rows inside a per-user handler (one bad `where` and a stranger's row is on the wire), a member
+  back-dating a milestone could move a curve a neighbour is looking at (the once-a-day publish closes only same-day
+  differencing; R13 closes the rest), and the scan would be O(all tracker rows) per view. The row holds `members`,
+  `invited`, `maxDay` and `{ t, s, n }` steps (`n` = members at risk at the step); nothing about one contribution.
+- **R13: the curve is coarse (privacy review).** Times are whole weeks (`7 * ceil(t/7)`, `binObs`) before Kaplan-Meier, so
+  steps sit only at multiples of 7; `maxDay` is the last week with at least 10 members at risk (`KM_MIN_AT_RISK`), and
+  `inviteChance` is null for a target past it (which also puts 10 at risk at the caller's week); the request maps
+  `elapsed` to its week and the horizon to whole weeks, so every day of a week has one answer. No curve with fewer than 10
+  invite events (`KM_MIN_INVITES`) on top of 20 members. `runWaitCurves` replaces a stored row only when invites or members
+  moved by at least 3 (`KM_REFRESH_DELTA`, `worthRefreshing`); below any floor the row is deleted at once, and a row in an
+  older shape is rebuilt. The chance is rounded to the nearest 5%, the basis down to 10. An end date before COMPLETE drops
+  the observation; a COMPLETE in the future is status `not-complete-yet`. All constants in `engine/stats/constants.ts`.
+- **Each category ends on its own day.** `cycleEndOn(cycleYear, type)` is the day before `cycleYearOf` rolls the type over:
+  secondaries May 31, interviews June 30, decisions (acceptance, waitlist, rejection) August 31. The forecast job draws each
+  category to its own end, so the path, the total and `halfDay` match the implied total; the response's `endOn` is the
+  category's, and the chart's x axis follows the stored band.
+- **The observed line and the band agree.** `getForecast` cumulates the live series through the row's `asOf`; when a source
+  revised past days since the job ran, the band (and the total) shifts by the difference, never below what is observed.
+- **Live and Activity waves agree.** Both read REG + PHD summed, the primary source chosen over the whole cycle; the live
+  feed reads the page schools' cycle rows from the cycle's first report (a window would miss a burst after a quiet spell).
+- **Opt-in, and 20 distinct members (D5, D6, R1, R4).** Only cycles with `shareAnonymously` feed the curve; a pair with
+  fewer than 20 distinct members with a valid observation has no row (a member with two cycles counts once). The basis
+  shown is rounded down to a multiple of 10 so it does not reveal each new member. Every signed-in member sees the chance,
+  sharer or not (R2); the sharing switch's copy says the wait between complete date and invite feeds an aggregate.
+- **Per-event sources do not enter the curve (D9).** An Admit, SDN or RMH event has no person and no complete date;
+  joining events to people is exactly what spec section 6 forbids. The engine's input is `{ days, event }` per
+  observation, so a future source that carries pairs needs no model change.
+- **Waves (D10).** A day of the INTERVIEW primary series whose count is more than 3x the median of the previous 14 days
+  (zeros included), at least 5, with 7 previous days of data. Today's partial count is included.
+- **Endpoints.** The public ones are now eight (`schools/$slug/forecast` joined) and `SCHOOL_TABS` has four tabs. Private: `me/chances`, which is one more `me/**` route, signed in, never cached, no id parameter.
+
+## The Forecast tab, waves and the personal chance (phase 5, UI and endpoints)
+
+A school tab is four edits, not one: the id in `SCHOOL_TABS` (`engine/public-read.ts`, which `parseSchoolSearch` reads),
+a query factory and the loader's prefetch branch in `medschools.queries.ts` (so the chart is in the server HTML), a
+label and a branch of the switch in `ui/SchoolPage.tsx` (the strip comes from `SCHOOL_TABS`, the body does not), and the
+tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts/ForecastBand.tsx`.
+
+- **Endpoints.** Public `GET schools/$slug/forecast` (`getForecast` in `api/read.server.ts`: the stored `MedForecast`
+  row plus the floored observed series cumulated through the row's `asOf`; `ALL` reads REG; status `ready | early |
+  no-history | no-data | pending`). Private `GET me/chances` (`api/chances.server.ts`: the caller's own applications
+  from `getTracker`, one `MedWaitCurve` row per school x program, no id parameter, never cached).
+- **Chart.** The observed line is the category's colour, solid 2px; the median is dashed 2px; the 10th and 90th
+  percentiles are 1px dotted boundaries; nothing is filled or translucent (R1). The x axis is calendar dates, the y
+  axis starts at 0 and tweens. `ui/charts/charts.test.tsx` holds the markup.
+- **Waves.** `waves` on the Activity response and `wave` on live rows come from `engine/stats/waves.ts` (server only).
+  Ticks sit on `CategoryLines` (only while Interview is on) and `DailyBars` (Interview only); `WaveNote` is the
+  non-visual reading; a live row says "Part of a wave".
+- **The chance** shows on the tracker (`tracker/ChanceLine.tsx`, one query for the cycle under `ME_KEY`) and under the
+  Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is an addition: signed out, loading or failed, the page is whole without it.
 
 ## Testing and verification
 

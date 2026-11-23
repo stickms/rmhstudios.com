@@ -264,6 +264,7 @@ const ev = (id: string, o: Partial<LiveEventDto> = {}): LiveEventDto => ({
   },
   occurredAt: '2026-11-20T15:04:00.000Z',
   source: 'ADMIT',
+  wave: false,
   ...o,
 });
 
@@ -289,6 +290,11 @@ describe('LivePage', () => {
     expect(html).toContain('Student Doctor Network');
     expect(html).not.toContain('Reported events, not applicants');
     expect(html).not.toMatch(/@|\/u\/|cabc123|cdef456/);
+  });
+  it('a wave row says it is part of a wave in plain text; other rows do not', () => {
+    h.search = {};
+    const html = withClient(seedLive([ev('w1', { wave: true }), ev('w2', { wave: false })]), <LivePage />);
+    expect(html.match(/Part of a wave/g)).toHaveLength(1);
   });
   it('has the four program toggles', () => {
     h.search = {};

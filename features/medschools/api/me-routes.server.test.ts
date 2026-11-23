@@ -4,6 +4,7 @@ import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 const mocks = vi.hoisted(() => ({
   session: vi.fn(),
   getTracker: vi.fn(),
+  getChances: vi.fn(),
   putCycle: vi.fn(),
   deleteCycle: vi.fn(),
   addApplication: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: mocks.session } } }));
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
+vi.mock('./chances.server', () => ({ getChances: mocks.getChances }));
 vi.mock('./tracker.server', () => ({
   getTracker: mocks.getTracker,
   putCycle: mocks.putCycle,
@@ -27,6 +29,7 @@ vi.mock('./tracker.server', () => ({
 }));
 
 import { route as tracker } from './medschools.me.tracker.server';
+import { route as chances } from './medschools.me.chances.server';
 import { route as cycle } from './medschools.me.tracker.cycle.server';
 import { route as applications } from './medschools.me.tracker.applications.server';
 import { route as application } from './medschools.me.tracker.applications.$id.server';
@@ -195,4 +198,34 @@ describe('me/** tracker routes', () => {
     expect(await res.json()).toEqual({ error: 'Internal Server Error' });
     log.mockRestore();
   });
+});
+
+describe('me/chances route', () => {
+  beforeEach(() => mocks.getChances.mockResolvedValue({ cycleYear: null, chances: [] }));
+
+  it('signed out is 401 and the service is not called', async () => {
+    mocks.session.mockResolvedValue(null);
+    const res = await call(chances, 'GET');
+    expect(res.status).toBe(401);
+    expect(res.headers.get('cache-control') ?? '').not.toContain('public');
+    expect(mocks.getChances).not.toHaveBeenCalled();
+  });
+
+  it('signed in is 200, the user id comes from the session, and nothing is cacheable', async () => {
+    const res = await call(chances, 'GET', { query: `?school=duke&cycle=${YEAR}` });
+    expect(res.status).toBe(200);
+    expect(mocks.getChances).toHaveBeenCalledWith('u1', { school: 'duke', cycle: YEAR });
+    const cc = res.headers.get('cache-control') ?? '';
+    expect(cc).not.toContain('public');
+    expect(cc).not.toContain('s-maxage');
+    expect(res.headers.get('etag')).toBeNull();
+  });
+
+  it.each(['?school=BAD%20SLUG!', `?cycle=${YEAR + 40}`, '?cycle=1999', '?cycle=abc', '?userId=u2'])(
+    '%s is a 400 and never reaches the service',
+    async (query) => {
+      expect((await call(chances, 'GET', { query })).status).toBe(400);
+      expect(mocks.getChances).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -10,6 +10,7 @@ import { CumulativeLine } from './CumulativeLine';
 import { ArrivalBars } from './ArrivalBars';
 import { CycleOverlay } from './CycleOverlay';
 import { DailyBars } from './DailyBars';
+import { ForecastBand } from './ForecastBand';
 
 type Series = ActivityTypeDto['sources'][number];
 
@@ -30,6 +31,7 @@ const labels: ChartLabels = {
   showData: 'Show data',
   hint: 'Use the arrow keys to read values by date',
   summary: ({ lines }) => `Chart of ${lines.map((l) => `${l.name} ${l.total}`).join('; ')}`,
+  wave: { legend: 'Wave', probe: (n) => `Wave: ${n} invites` },
   locale: 'en-US',
 };
 
@@ -291,6 +293,142 @@ describe('CycleOverlay', () => {
   });
 });
 
+describe('wave marks', () => {
+  const series = (['INTERVIEW', 'ACCEPTANCE'] as const).map((t, i) => ({
+    eventType: t,
+    label: `Label-${t}`,
+    points: cumulative([i + 1, i + 3, i + 6]),
+  }));
+  const base = { series, sources: ['CYCLETRACK'] as const, dayZeroOn: '2026-06-01', labels };
+  const waves = [{ date: '2026-06-11', count: 12 }];
+  const ticks = (html: string) => [...html.matchAll(/<line [^>]*data-wave[^>]*>/g)].map((m) => m[0]);
+
+  it('CategoryLines: a 1px muted tick at the wave date, rising 8 units, no fill or opacity, and a Wave legend entry', () => {
+    const html = renderToString(<CategoryLines {...base} visible={['INTERVIEW', 'ACCEPTANCE']} waves={waves} />);
+    const t = ticks(phone(html));
+    expect(t).toHaveLength(1);
+    expect(t[0]).toContain('stroke="var(--site-text-muted)"');
+    expect(t[0]).toContain('stroke-width="1"');
+    expect(t[0]).not.toMatch(/opacity|fill="(?!none)/);
+    const x = Number(/x1="([\d.]+)"/.exec(t[0]!)![1]);
+    const y1 = Number(/y1="([\d.]+)"/.exec(t[0]!)![1]);
+    const y2 = Number(/y2="([\d.]+)"/.exec(t[0]!)![1]);
+    expect(y1 - y2).toBe(8);
+    // Day 10 of the domain 0..20 is the middle of the plot.
+    const lo = Number(/<clipPath[^>]*><rect x="([\d.]+)" [^>]* width="([\d.]+)"/.exec(phone(html))![1]) + 2;
+    const w = Number(/<clipPath[^>]*><rect x="[\d.]+" [^>]* width="([\d.]+)"/.exec(phone(html))![1]) - 4;
+    expect(x).toBeCloseTo(lo + w / 2, 0);
+    expect(html).toContain('>Wave<');
+  });
+  it('CategoryLines: no tick and no legend entry while Interview is off, or with no waves', () => {
+    const off = renderToString(<CategoryLines {...base} visible={['ACCEPTANCE']} waves={waves} />);
+    expect(ticks(off)).toHaveLength(0);
+    expect(off).not.toContain('>Wave<');
+    const none = renderToString(<CategoryLines {...base} visible={['INTERVIEW']} waves={[]} />);
+    expect(ticks(none)).toHaveLength(0);
+    expect(none).not.toContain('>Wave<');
+  });
+  it('DailyBars: a tick under the wave day bar and the legend entry; nothing without waves', () => {
+    const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--site-chart-1)', labels };
+    const html = renderToString(<DailyBars primary={ct} {...props} waves={[{ date: '2026-11-20', count: 4 }]} />);
+    expect(ticks(phone(html))).toHaveLength(1);
+    expect(html).toContain('>Wave<');
+    const plain = renderToString(<DailyBars primary={ct} {...props} />);
+    expect(ticks(plain)).toHaveLength(0);
+    expect(plain).not.toContain('>Wave<');
+  });
+});
+
+describe('ForecastBand', () => {
+  const legendLabels = {
+    observed: 'Reported so far',
+    median: 'Median forecast',
+    range: '10th to 90th percentile',
+    low: '10th percentile',
+    high: '90th percentile',
+  };
+  const observed = [
+    { day: 170, cumulative: 4 },
+    { day: 172, cumulative: 10 },
+  ];
+  const band = [
+    { day: 172, p10: 10, p50: 10, p90: 10 },
+    { day: 250, p10: 14, p50: 20, p90: 28 },
+    { day: 364, p10: 20, p50: 30, p90: 44 },
+  ];
+  const draw = (o: { observed?: typeof observed; band?: typeof band } = {}) =>
+    renderToString(
+      <ForecastBand
+        eventType="INTERVIEW"
+        sourceName="Admit"
+        dayZeroOn="2025-06-01"
+        observed={o.observed ?? observed}
+        band={o.band ?? band}
+        labels={labels}
+        legendLabels={legendLabels}
+      />,
+    );
+
+  it('draws the observed line solid, the median and both boundaries dashed, in the category colour', () => {
+    const svg = phone(draw());
+    const paths = [...svg.matchAll(/<path [^>]*>/g)].map((m) => m[0]);
+    const dashed = paths.filter((p) => p.includes('stroke-dasharray'));
+    expect(dashed).toHaveLength(3);
+    expect(paths.filter((p) => !p.includes('stroke-dasharray'))).toHaveLength(1);
+    expect(dashed.filter((p) => p.includes('stroke-dasharray="6 3"') && p.includes('stroke-width="2"'))).toHaveLength(
+      1,
+    );
+    expect(dashed.filter((p) => p.includes('stroke-dasharray="2 3"') && p.includes('stroke-width="1"'))).toHaveLength(
+      2,
+    );
+    for (const p of paths) expect(p).toContain(`stroke="${CATEGORY_COLOR.INTERVIEW}"`);
+  });
+
+  it('nothing is filled, translucent or a gradient (Steel R1)', () => {
+    const html = draw();
+    for (const p of html.matchAll(/<path [^>]*>/g)) {
+      expect(p[0]).toContain('fill="none"');
+      expect(p[0]).not.toMatch(/opacity/);
+    }
+    expect(html).not.toMatch(/fill-opacity|linearGradient|radialGradient/);
+    expect(html).not.toMatch(/fill="(?!none|var\()/);
+  });
+
+  it('prints calendar dates on the axis, never a day count, starts at 0, and sits in a left-to-right wrapper', () => {
+    const html = draw();
+    const ticks = [...phone(html).matchAll(/<text [^>]*text-anchor="[a-z]+"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]!);
+    const dates = ticks.filter((t) => /^[A-Z][a-z]{2} \d{1,2}$/.test(t));
+    expect(dates.length).toBeGreaterThan(2);
+    expect(ticks.join(' ')).not.toMatch(/day/i);
+    expect(ticks).toContain('0');
+    expect(html).toContain('dir="ltr"');
+    expect(html).toContain('var(--site-chart-1)');
+  });
+
+  it('a legend of three entries, and a data table with one row a week plus the last day', () => {
+    const html = draw();
+    for (const l of [legendLabels.observed, legendLabels.median, legendLabels.range]) expect(html).toContain(l);
+    const rows = html.slice(html.indexOf('<tbody>')).match(/<tr>/g)!;
+    // Day 0 to day 364 is 52 whole weeks: a row every 7 days, and the last day is the 53rd.
+    expect(rows).toHaveLength(53);
+    expect(html).toContain('<td class="border-b border-site-border py-1 pe-3 text-site-text">May 31, 2026</td>');
+  });
+
+  it('an empty band draws the observed line only and no range legend', () => {
+    const html = draw({ band: [] });
+    const paths = [...phone(html).matchAll(/<path [^>]*>/g)];
+    expect(paths).toHaveLength(1);
+    expect(html).not.toContain(legendLabels.range);
+  });
+
+  it('nothing at all is the empty note, no NaN', () => {
+    const html = draw({ observed: [], band: [] });
+    expect(html).toContain(labels.empty);
+    expect(html).not.toContain('NaN');
+    expect(phone(html)).not.toContain('<path');
+  });
+});
+
 describe('static rules', () => {
   const dir = __dirname;
   const files = readdirSync(dir).filter((f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx'));
@@ -303,6 +441,7 @@ describe('static rules', () => {
       'CumulativeLine.tsx',
       'CycleOverlay.tsx',
       'DailyBars.tsx',
+      'ForecastBand.tsx',
     ]);
   });
   it.each(files)('%s uses only site tokens (text, border, surface, chart) and no motion of its own', (f) => {

@@ -194,6 +194,15 @@ export interface LiveEventDto {
   /** ISO, truncated to the minute. */
   occurredAt: string;
   source: 'ADMIT' | 'SDN';
+  /** INTERVIEW rows only: the school had a wave of invites on this row's UTC day (D10). False for every other row. */
+  wave: boolean;
+}
+
+/** A day with far more invites than the trailing 14-day median (D10). `date` is a UTC calendar day. */
+export interface WaveDto {
+  date: string;
+  count: number;
+  baseline: number;
 }
 
 export interface ListMedSchoolsRes {
@@ -215,6 +224,32 @@ export interface MedSchoolActivityRes {
   /** Null-program events of the charted types for one source (never a sum across sources). */
   unreportedProgram: number;
   unreportedProgramSource: 'ADMIT' | 'SDN' | null;
+  /** Waves on the INTERVIEW primary series of this response's program filter (D10); empty when none. */
+  waves: WaveDto[];
+}
+
+/** The public forecast of one school x program x event type for the site's current cycle (phase 5). */
+export interface MedSchoolForecastRes {
+  /** Resolved: `ALL` reads REG (D12). */
+  program: 'REG' | 'PHD';
+  eventType: MedChartedTypeId;
+  cycleYear: number;
+  dayZeroOn: string;
+  dayZeroEstimated: boolean;
+  endOn: string;
+  /** `ready` band drawn; `early` band drawn, wide; `no-history` observed only; `no-data` nothing reported; `pending` not computed yet. */
+  status: 'ready' | 'early' | 'no-history' | 'no-data' | 'pending';
+  source: MedSourceId | null;
+  /** The last day the model saw (`YYYY-MM-DD`). */
+  asOf: string | null;
+  /** Days since `dayZeroOn`, through `asOf`. The zero start is the chart's. */
+  observed: { day: number; cumulative: number }[];
+  band: { day: number; p10: number; p50: number; p90: number }[];
+  summary: {
+    total: { p10: number; p50: number; p90: number };
+    halfOn: { p10: string; p50: string; p90: string };
+  } | null;
+  basis: { cycleYear: number; source: MedSourceId; weight: number }[];
 }
 
 export interface MedSchoolHistoryRes {
@@ -286,6 +321,11 @@ export const getMedSchoolHistoryApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
   res: MedSchoolHistoryRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/history' });
+
+export const getMedSchoolForecastApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
+  res: MedSchoolForecastRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/forecast' });
 
 export const getMedSchoolArrivalsApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; type?: MedChartedTypeId | undefined };
@@ -392,6 +432,37 @@ export const deleteMedMilestoneApi = endpoint<{ res: TrackerApplicationDto }>()(
   method: 'DELETE',
   path: '/api/medschools/me/tracker/applications/$id/milestones/$type',
 });
+
+/* ------------------------- personal invite chance (me/**) ------------------------- */
+
+/** Why an application has (or lacks) an estimate. */
+export type ChanceStatus = 'estimate' | 'thin' | 'invited' | 'closed' | 'no-complete' | 'not-complete-yet' | 'beyond';
+
+/** One of the caller's own applications. No other member's data, no user id (spec §6). */
+export interface ChanceDto {
+  applicationId: string;
+  school: { slug: string; shortName: string; name: string; active: boolean };
+  program: 'REG' | 'PHD';
+  status: ChanceStatus;
+  completeOn: string | null;
+  invitedOn: string | null;
+  /** The curve's day, `estimate` only. */
+  asOf: string | null;
+  /** Members behind the curve, floored to a multiple of 10 and at least 20; `estimate` only. */
+  basis: number | null;
+  /** Calendar dates and percents in steps of 5; `estimate` only. */
+  points: { on: string; percent: number }[];
+}
+
+export interface MedChancesRes {
+  cycleYear: number | null;
+  chances: ChanceDto[];
+}
+
+export const getMedChancesApi = endpoint<{
+  query: { school?: string | undefined; cycle?: number | undefined };
+  res: MedChancesRes;
+}>()({ method: 'GET', path: '/api/medschools/me/chances' });
 
 /* ------------------------- saved lists and preferences (me/**) ------------------------- */
 

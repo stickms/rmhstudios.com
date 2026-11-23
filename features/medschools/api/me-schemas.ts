@@ -35,6 +35,11 @@ const userText = (max: number) =>
 
 export const getTrackerQuery = z.object({ cycle: knownCycleYear.optional() }).strict();
 
+/** `school` is a slug filter; `cycle` must sit inside the tracker window (an estimate for an old cycle means nothing). */
+export const getChancesQuery = z
+  .object({ school: slug.optional(), cycle: z.coerce.number().int().pipe(windowedCycleYear).optional() })
+  .strict();
+
 export const putCycleBody = z
   .object({ cycleYear: windowedCycleYear, homeState: homeState.optional(), shareAnonymously: z.boolean() })
   .strict();

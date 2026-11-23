@@ -25,7 +25,7 @@ import {
   type TrackerCycleDto,
   type TrackerDto,
 } from '../../medschools.contract';
-import { ME_KEY, trackerQuery } from '../../medschools.queries';
+import { ME_KEY, chancesQuery, trackerQuery } from '../../medschools.queries';
 import { SkeletonSwap } from '../skeletons';
 import { AddSchool } from './AddSchool';
 import { ApplicationRow } from './ApplicationRow';
@@ -111,6 +111,11 @@ export function TrackerPage() {
   const qc = useQueryClient();
   const refusal = useRefusalText();
   const query = useQuery({ ...trackerQuery(search.cycle), enabled: signedIn });
+  // The estimate is an addition to the tracker: it asks only once the tracker has applications, and a failure leaves no
+  // line and no banner (a 401 is the same session expiry the tracker itself handles).
+  const trackerCycle = query.data?.cycle ?? null;
+  const chancesOn = signedIn && !!trackerCycle && trackerCycle.applications.length > 0;
+  const chances = useQuery({ ...chancesQuery({ cycle: trackerCycle?.cycleYear ?? 0 }), enabled: chancesOn });
   const [adding, setAdding] = useState<'none' | 'cycle' | 'school'>('none');
 
   const title = t('tracker-title', { defaultValue: 'My tracker' });
@@ -119,7 +124,7 @@ export function TrackerPage() {
     { label: title },
   ];
 
-  const expired = query.error instanceof HttpError && query.error.status === 401;
+  const expired = [query.error, chances.error].some((e) => e instanceof HttpError && e.status === 401);
   if (!signedIn && isPending) {
     return (
       <PageLayout title={title} breadcrumbs={breadcrumbs}>
@@ -288,6 +293,7 @@ export function TrackerPage() {
                 app={app}
                 cycleYear={cycle.cycleYear}
                 sharing={cycle.shareAnonymously}
+                chance={chances.data?.chances.find((c) => c.applicationId === app.id)}
                 onSaveMilestone={async (type: MilestoneType, date) => {
                   await api(putMedMilestoneApi, { params: { id: app.id, type }, body: { date } });
                   await refresh();

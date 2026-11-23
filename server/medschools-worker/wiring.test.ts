@@ -85,6 +85,7 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_ADMIT_FORUMS_MAX_LLM_CALLS',
       'MEDSCHOOLS_ADMIT_FORUMS_DAILY_REQUESTS',
       'MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE',
+      'MEDSCHOOLS_FORECAST_CRON',
     ]) {
       expect(env, name).toContain(name);
     }
@@ -365,6 +366,23 @@ describe('medschools-worker wiring', () => {
     expect(read('features/medschools/scrape/run-rmh-publish.ts')).toContain("RMH_PUBLISH_CRON = '5 0 * * *'");
   });
 
+  it('registers medschools.forecast (statistics, no model) as an exclusive queue with a persisted minimum interval', () => {
+    const src = flat();
+    expect(src).toContain("const FORECAST_QUEUE = 'medschools.forecast'");
+    expect(src).toContain('const FORECAST_EXPIRY_S = 20 * 60;');
+    expect(src).toContain("const forecastTick = guarded('forecast'");
+    expect(src).toContain('queue: FORECAST_QUEUE, cron: forecastCron');
+    expect(src).toContain('expireInSeconds: FORECAST_EXPIRY_S');
+    expect(src).toContain('handler: forecastTick');
+    expect(src).toContain('forecastConsumer?.pause()');
+    expect(src).toContain('process.env.MEDSCHOOLS_FORECAST_CRON?.trim() || FORECAST_CRON');
+    const job = read('features/medschools/scrape/run-forecast.ts');
+    expect(job).toContain("FORECAST_CRON = '40 6 * * *'");
+    expect(job).toContain('lastRealRunWithin');
+    // No model: the job file and the tick make no AI call.
+    expect(job).not.toMatch(/lib\/ai|MEDSCHOOLS_AI/);
+  });
+
   it('registers medschools.admit-history as its own exclusive queue with a daily off-peak cron, behind the Admit gate', () => {
     const src = flat();
     expect(src).toContain("const ADMIT_HISTORY_QUEUE = 'medschools.admit-history'");
@@ -464,6 +482,7 @@ describe('medschools-worker wiring', () => {
       ['sdn-backfill', 'SDN_BACKFILL_EXPIRY_S'],
       ['sdn-interviews', 'SDN_INTERVIEWS_EXPIRY_S'],
       ['rmh-publish', 'RMH_PUBLISH_EXPIRY_S'],
+      ['forecast', 'FORECAST_EXPIRY_S'],
     ];
     for (const [name, constant] of ticks) {
       expect(src, name).toMatch(new RegExp(`\\},\\s*${constant} \\* 1000,?\\s*\\);`));
@@ -474,6 +493,7 @@ describe('medschools-worker wiring', () => {
       'SDN_BACKFILL_EXPIRY_S = 3 * 60 * 60',
       'SDN_INTERVIEWS_EXPIRY_S = 60 * 60',
       'RMH_PUBLISH_EXPIRY_S = 10 * 60',
+      'FORECAST_EXPIRY_S = 20 * 60',
     ])
       expect(src).toContain(`const ${c};`);
   });

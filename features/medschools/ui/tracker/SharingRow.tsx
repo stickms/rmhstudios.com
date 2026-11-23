@@ -29,6 +29,7 @@ export function SharingRow({
   const refusal = useRefusalText();
   const labelId = useId();
   const noteId = useId();
+  const waitId = useId();
   const [busy, setBusy] = useState(false);
   const [refusedTooNew, setRefusedTooNew] = useState(false);
   const [refusedUnavailable, setRefusedUnavailable] = useState(false);
@@ -63,6 +64,12 @@ export function SharingRow({
               'When this is on, each milestone you add (secondary, interview invite, waitlist, rejection, acceptance, withdrawn, hold) is shared as one anonymous event: the school, the program, the type and the day. The public pages never link it to you. Your submission and completion dates and your home state are never shared, and a public figure appears only when at least 3 people reported the same thing on the same day. Public figures update once a day. Turn it off, or delete the milestone, and the event is removed at once; the public totals follow at the next daily update.',
           })}
         </p>
+        <p id={waitId} className="t-meta m-0 mt-2">
+          {t('share-wait-note', {
+            defaultValue:
+              'When sharing is on, the time between your complete date and an invite also feeds an estimate shown for this school once at least 20 members contribute. Only the estimate is shown, never a date or a row.',
+          })}
+        </p>
         {unavailable ? (
           <p className="t-meta m-0 mt-2" role="status">
             {t('share-unavailable', { defaultValue: 'Sharing is unavailable right now.' })}
@@ -82,7 +89,7 @@ export function SharingRow({
         disabled={busy || unavailable || tooNew}
         onCheckedChange={(next) => void toggle(next)}
         aria-labelledby={labelId}
-        aria-describedby={noteId}
+        aria-describedby={`${noteId} ${waitId}`}
       />
     </div>
   );

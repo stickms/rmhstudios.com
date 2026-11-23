@@ -36,6 +36,17 @@ export function useChartLabels(): (title: string) => ChartLabels {
         defaultValue: 'Chart of reported events: {{lines}}',
         lines: lines.map((l) => `${l.name} ${nf.format(l.total)}`).join('; '),
       }),
+    wave: {
+      legend: t('wave-legend', { defaultValue: 'Wave' }),
+      probe: (count) =>
+        t('wave-probe', {
+          count,
+          defaultValue_one: 'Wave: {{n}} invite',
+          defaultValue_other: 'Wave: {{n}} invites',
+          defaultValue: 'Wave: {{n}} invites',
+          n: nf.format(count),
+        }),
+    },
     locale,
   });
 }

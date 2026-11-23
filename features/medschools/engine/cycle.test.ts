@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { cycleYearFromLabel, dayOfCycle, cycleYearOf, defaultDayZero } from './cycle';
+import { cycleEndOn, cycleYearFromLabel, dayOfCycle, cycleYearOf, defaultDayZero } from './cycle';
+import { addDays } from './stats/days';
 
 describe('cycle math', () => {
   it('cycleYearFromLabel', () => {
@@ -47,5 +48,18 @@ describe('cycleYearOf', () => {
     ['SECONDARY', '2026-05-31', 2026],
   ] as const)('%s on %s is cycle %i', (type, iso, year) => {
     expect(cycleYearOf(new Date(iso), type)).toBe(year);
+  });
+});
+
+describe('cycleEndOn', () => {
+  it('is the last day each category still belongs to the cycle: the day before cycleYearOf rolls over', () => {
+    expect(cycleEndOn(2027)).toBe('2027-05-31');
+    expect(cycleEndOn(2027, 'INTERVIEW')).toBe('2027-06-30');
+    for (const type of ['ACCEPTANCE', 'WAITLIST', 'REJECTION'] as const) expect(cycleEndOn(2027, type)).toBe('2027-08-31');
+    for (const type of ['SECONDARY', 'INTERVIEW', 'ACCEPTANCE', 'WAITLIST', 'REJECTION', 'WITHDRAWN', 'HOLD'] as const) {
+      const end = cycleEndOn(2027, type);
+      expect(cycleYearOf(new Date(`${end}T23:59:59Z`), type)).toBe(2027);
+      expect(cycleYearOf(new Date(`${addDays(end, 1)}T00:00:00Z`), type)).toBe(2028);
+    }
   });
 });

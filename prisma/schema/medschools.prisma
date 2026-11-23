@@ -10,6 +10,9 @@
 // `MedSchoolListItem` reach their owner only through a parent, and an anonymous
 // `MedCycleEvent` (source RMH) has no column that points at any of them.
 //
+// `MedForecast` and `MedWaitCurve` (phase 5) are aggregate-only: derived by the `medschools.forecast` job, no person or
+// per-observation column. `MedWaitCurve` exists only where at least 20 distinct members contribute.
+//
 // CYCLE YEAR is the ENTRY year, CycleTrack's convention: the 2026-2027 cycle is 2027.
 
 enum MedDegree {
@@ -117,6 +120,8 @@ model MedSchool {
   admitForumThreads   MedAdmitForumThread[]
   trackerApplications MedTrackerApplication[]
   listItems           MedSchoolListItem[]
+  forecasts           MedForecast[]
+  waitCurves          MedWaitCurve[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -519,4 +524,63 @@ model MedRequestBudget {
 
   @@id([key, day])
   @@map("med_request_budget")
+}
+
+// ─── Forecasts and wait curves (phase 5) ───────────────────────────────────────
+// Written only by the `medschools.forecast` job. Neither model has a user column: a forecast is a function of the
+// public, floored primary series, and a wait curve is an aggregate survival step function.
+
+enum MedForecastMode {
+  FULL
+  EARLY
+  NONE
+}
+
+/// One band per school x program x cycle x event type: the p10/p50/p90 path of the cumulative count to the cycle's end.
+model MedForecast {
+  id           String          @id @default(cuid())
+  schoolId     String
+  program      MedProgram
+  /// Entry year (2026-2027 → 2027).
+  cycleYear    Int
+  eventType    MedEventType
+  modelVersion Int
+  mode         MedForecastMode
+  /// The primary source the fit used; null when there was nothing to fit.
+  source       MedSource?
+  /// The last UTC day the model saw (yesterday at run time).
+  asOf         DateTime        @db.Date
+  computedAt   DateTime        @default(now())
+  /// { days: number[], p10: number[], p50: number[], p90: number[] } from asOfDay to the cycle's last day.
+  curve        Json
+  /// { observed, meanShare, total, halfDay, basis }.
+  summary      Json
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program, cycleYear, eventType])
+  @@index([cycleYear])
+  @@map("med_forecast")
+}
+
+/// A Kaplan-Meier survival step function (complete -> interview invite) for one school x program, from the tracker rows
+/// of members who share. Exists only when at least 20 distinct members contribute; stores counts and the curve, nothing
+/// about any one contribution.
+model MedWaitCurve {
+  id         String     @id @default(cuid())
+  schoolId   String
+  program    MedProgram
+  asOf       DateTime   @db.Date
+  computedAt DateTime   @default(now())
+  /// Distinct members behind the curve (a count).
+  members    Int
+  invited    Int
+  maxDay     Int
+  /// { t: number[], s: number[] }
+  curve      Json
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program])
+  @@map("med_wait_curve")
 }

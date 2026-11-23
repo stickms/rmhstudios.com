@@ -16,8 +16,12 @@ import {
   utcDayOf,
   type CountCell,
 } from '../engine/public-read';
+import { floorWhere, publicSum } from '../engine/floor';
 import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
-import { defaultDayZero } from '../engine/cycle';
+import { cycleEndOn, cycleYearOf, defaultDayZero } from '../engine/cycle';
+import { addDays } from '../engine/stats/days';
+import { detectWaves } from '../engine/stats/waves';
+import { primarySeriesOf, seriesOfSource, toDayCounts } from '../engine/stats/input';
 import {
   isAllPrograms,
   legacyOf,
@@ -40,12 +44,15 @@ import type {
   MedProgramFilter,
   MedSchoolActivityRes,
   MedSchoolDetailDto,
+  MedSchoolForecastRes,
   MedSchoolHistoryRes,
   MedTodayRes,
+  WaveDto,
 } from '../medschools.contract';
 import type {
   ActivityQuery,
   ArrivalsQuery,
+  ForecastQuery,
   HistoryQuery,
   ListSchoolsQuery,
   LiveQuery,
@@ -66,26 +73,6 @@ const day = (d: Date): string => d.toISOString().slice(0, 10);
 /** O5: ALL reads both programs; null-program events are never in a count row (the column is not nullable). */
 const programsOf = (p: MedProgramFilter | undefined): MedProgram[] =>
   p === 'REG' ? ['REG'] : p === 'PHD' ? ['PHD'] : ['REG', 'PHD'];
-
-/**
- * The k floor as a where clause. An RMH row is public only through its daily snapshot (Q2): `publishedContributors >=
- * K_FLOOR` (null, never published, fails closed) and a date before today UTC. The live `count` / `contributors` follow
- * the tracker minute by minute and are never read for a public figure. Same rule as applyKFloor.
- */
-const floorWhere = (now: Date) => ({
-  OR: [
-    { source: { not: 'RMH' as const } },
-    {
-      source: 'RMH' as const,
-      publishedContributors: { gte: K_FLOOR },
-      date: { lt: new Date(`${utcDayOf(now)}T00:00:00.000Z`) },
-    },
-  ],
-});
-
-/** A summed groupBy row as one public figure: an RMH row's published total, any other source's `count`. */
-const publicSum = (source: MedSource, s: { count: number | null; publishedCount: number | null }): number =>
-  (source === 'RMH' ? s.publishedCount : s.count) ?? 0;
 
 interface RawCell extends CountCell {
   eventType: MedEventType;
@@ -382,6 +369,29 @@ async function unreportedFor(
   return { count: 0, source: null };
 }
 
+/**
+ * Waves (D10) on the INTERVIEW primary series that is already floored and summed (REG + PHD within the source). No new
+ * read: the response's own series. Dates are calendar days, today's partial count included.
+ */
+function wavesOf(interview: ActivityTypeDto | undefined, dayZeroOn: string): WaveDto[] {
+  const primary = interview?.sources.find((s) => s.source === interview.primary);
+  if (!primary) return [];
+  return detectWaves(toDayCounts(primary.days, dayZeroOn)).map((w) => ({
+    date: addDays(dayZeroOn, w.day),
+    count: w.count,
+    baseline: w.baseline,
+  }));
+}
+
+/** The INTERVIEW series of already floored and summed cells, in the Activity response's shape (waves read only this). */
+function interviewOf(cells: readonly RawCell[], today: string): ActivityTypeDto {
+  const s = buildTypeSeries(
+    cells.filter((c) => c.eventType === 'INTERVIEW'),
+    today,
+  );
+  return { eventType: 'INTERVIEW', primary: s.primary, sources: s.sources };
+}
+
 export async function getActivity(
   slug: string,
   q: ActivityQuery,
@@ -396,12 +406,14 @@ export async function getActivity(
       where: {
         schoolId: school.id,
         cycleYear,
-        program: { in: programsOf(program) },
+        // Both programs always: the waves follow REG + PHD (D10) whatever program the page shows, as the live feed's do.
+        program: { in: programsOf('ALL') },
         eventType: { in: [...CHARTED_TYPES, ...OTHER_TOTAL_TYPES] },
       },
       select: {
         source: true,
         date: true,
+        program: true,
         eventType: true,
         count: true,
         contributors: true,
@@ -412,10 +424,13 @@ export async function getActivity(
     prisma.medCycle.findUnique({ where: { cycleYear }, select: { dayZeroOn: true, dateEstimated: true } }),
     unreportedFor(school.id, cycleYear),
   ]);
-  const cells = sumPrograms(
-    rows.flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
-    utcDayOf(now),
-  );
+  const today = utcDayOf(now);
+  const cellsOf = (shown: readonly MedProgram[]) =>
+    sumPrograms(
+      rows.filter((r) => shown.length === 2 || shown.includes(r.program)).flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
+      today,
+    );
+  const cells = cellsOf(programsOf(program));
   // Withdrawn and hold are totals only, never charted: floored and summed per source like the rest.
   const otherTotals = OTHER_TOTAL_TYPES.map((eventType) => {
     const bySource = new Map<MedSource, number>();
@@ -434,15 +449,17 @@ export async function getActivity(
     );
     return { eventType, primary: s.primary, sources: s.sources };
   });
+  const dayZeroOn = cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear);
   return {
     cycleYear,
     program,
-    dayZeroOn: cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear),
+    dayZeroOn,
     dayZeroEstimated: cycle ? cycle.dateEstimated : true,
     types,
     otherTotals,
     unreportedProgram: unreported.count,
     unreportedProgramSource: unreported.source,
+    waves: wavesOf(program === 'ALL' ? types[0] : interviewOf(cellsOf(programsOf('ALL')), today), dayZeroOn),
   };
 }
 
@@ -507,6 +524,134 @@ export async function getHistory(
   return { program, eventType, cycles: out };
 }
 
+/** The stored band as parallel arrays; anything malformed reads as no band (the row is the job's, but fail soft). */
+function bandOf(curve: unknown): MedSchoolForecastRes['band'] {
+  const c = curve as { days?: unknown; p10?: unknown; p50?: unknown; p90?: unknown } | null;
+  if (!c || !Array.isArray(c.days) || !Array.isArray(c.p10) || !Array.isArray(c.p50) || !Array.isArray(c.p90))
+    return [];
+  const out: MedSchoolForecastRes['band'] = [];
+  for (let i = 0; i < c.days.length; i++) {
+    const day = c.days[i];
+    const p10 = c.p10[i];
+    const p50 = c.p50[i];
+    const p90 = c.p90[i];
+    if (typeof day === 'number' && typeof p10 === 'number' && typeof p50 === 'number' && typeof p90 === 'number') {
+      out.push({ day, p10, p50, p90 });
+    }
+  }
+  return out;
+}
+
+interface StoredSummary {
+  dayZeroOn: string;
+  total: { p10: number; p50: number; p90: number } | null;
+  halfDay: { p10: number; p50: number; p90: number } | null;
+  basis: { cycleYear: number; source: MedSourceId; weight: number }[];
+}
+
+/**
+ * The forecast of one program (ALL reads REG, D12) and event type for the SITE's cycle. A function of the stored
+ * `MedForecast` row plus the floored observed series (the same floor and primary rule as the Activity chart), cumulated
+ * through the row's `asOf`: today's partial counts never show. No row but floored data is `pending`; no data `no-data`.
+ */
+export async function getForecast(
+  slug: string,
+  q: ForecastQuery,
+  now: Date = new Date(),
+): Promise<MedSchoolForecastRes | null> {
+  const school = await findSchool(slug);
+  if (!school) return null;
+  const program: 'REG' | 'PHD' = q.program === 'PHD' ? 'PHD' : 'REG';
+  const eventType: MedChartedTypeId = q.type ?? 'INTERVIEW';
+  const cycleYear = await siteCycle(now);
+  const today = utcDayOf(now);
+  const [row, cycle, counts] = await Promise.all([
+    prisma.medForecast.findFirst({
+      where: { schoolId: school.id, program, cycleYear, eventType },
+      select: { mode: true, source: true, asOf: true, curve: true, summary: true },
+    }),
+    prisma.medCycle.findUnique({ where: { cycleYear }, select: { dayZeroOn: true, dateEstimated: true } }),
+    prisma.medCycleCount.findMany({
+      where: { schoolId: school.id, cycleYear, program, eventType, ...floorWhere(now) },
+      select: {
+        source: true,
+        date: true,
+        count: true,
+        contributors: true,
+        publishedCount: true,
+        publishedContributors: true,
+      },
+    }),
+  ]);
+  const stored = row ? (row.summary as StoredSummary | null) : null;
+  const cycleDayZero = cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear);
+  // The days of a stored band count from the day zero the job used, so that one names the dates.
+  const dayZeroOn = stored?.dayZeroOn ?? cycleDayZero;
+  const cells = counts.map((r) => ({ ...r, date: day(r.date), eventType }));
+  const asOf = row ? day(row.asOf) : addDays(today, -1);
+  const series = row?.source
+    ? { source: row.source as MedSource, days: seriesOfSource(cells, today, row.source as MedSource) }
+    : primarySeriesOf(cells, today);
+  const observed = toCumulativeByDay(
+    (series?.days ?? []).filter((d) => d.date <= asOf),
+    dayZeroOn,
+  );
+  const base = {
+    program,
+    eventType,
+    cycleYear,
+    dayZeroOn,
+    dayZeroEstimated: cycle ? cycle.dateEstimated : true,
+    endOn: cycleEndOn(cycleYear, eventType),
+  };
+  if (!row) {
+    return {
+      ...base,
+      status: observed.length > 0 ? 'pending' : 'no-data',
+      source: series?.source ?? null,
+      asOf: null,
+      observed,
+      band: [],
+      summary: null,
+      basis: [],
+    };
+  }
+  // The band starts at the count the job saw at `asOf`. A source that revised past days since (an Admit re-roll-up) moves
+  // the live observed line, and a line ending at one value with a band starting at another reads as a jump: shift the
+  // band, and the total with it, by the difference, and never below what is already observed.
+  const stored0 = row.mode === 'NONE' ? [] : bandOf(row.curve);
+  const bandFrom = stored0[0];
+  const seen = bandFrom ? (observed.filter((o) => o.day <= bandFrom.day).at(-1)?.cumulative ?? 0) : 0;
+  const shift = bandFrom ? seen - bandFrom.p50 : 0;
+  const lift = (v: number): number => Math.max(seen, v + shift);
+  const band =
+    shift === 0 ? stored0 : stored0.map((b) => ({ day: b.day, p10: lift(b.p10), p50: lift(b.p50), p90: lift(b.p90) }));
+  const dateOf = (n: number): string => addDays(dayZeroOn, n);
+  return {
+    ...base,
+    status: row.mode === 'FULL' ? 'ready' : row.mode === 'EARLY' ? 'early' : 'no-history',
+    source: (row.source as MedSourceId | null) ?? series?.source ?? null,
+    asOf,
+    observed,
+    band,
+    summary:
+      row.mode !== 'NONE' && stored?.total && stored.halfDay
+        ? {
+            total:
+              shift === 0
+                ? stored.total
+                : { p10: lift(stored.total.p10), p50: lift(stored.total.p50), p90: lift(stored.total.p90) },
+            halfOn: {
+              p10: dateOf(stored.halfDay.p10),
+              p50: dateOf(stored.halfDay.p50),
+              p90: dateOf(stored.halfDay.p90),
+            },
+          }
+        : null,
+    basis: row.mode === 'NONE' ? [] : (stored?.basis ?? []),
+  };
+}
+
 /**
  * When results arrive: ADMIT and SDN events of one category with an exact time, aggregated in Postgres into a weekday
  * count, an hour count (both US Eastern) and, per cycle, the Eastern day of the first and of the median report. An SDN
@@ -561,6 +706,61 @@ export async function getArrivals(slug: string, q: ArrivalsQuery): Promise<MedAr
     hours: shape.hours,
     cycles: perCycle.map((c) => ({ cycleYear: c.cycleYear, count: c.n, firstOn: c.firstOn, medianOn: c.medianOn })),
   };
+}
+
+/**
+ * Which UTC days each school of this page had a wave of invites (D10), keyed by slug. One batched read for the whole
+ * page: the INTERVIEW count rows of the page's schools for the cycle(s) of the page's invite days, from the cycle's first
+ * report, through the same floor and primary-source rule as the Activity chart (REG + PHD summed, the primary chosen over
+ * the whole cycle). Reading only a window around the page would take the first row of the window for the school's first
+ * report and miss a burst that follows a quiet spell. A page with no INTERVIEW row reads nothing.
+ */
+async function liveWaveDays(
+  page: readonly { eventType: MedEventType; occurredAt: Date; school: { slug: string } }[],
+  now: Date,
+): Promise<Map<string, Set<string>>> {
+  const out = new Map<string, Set<string>>();
+  const invites = page.filter((r) => r.eventType === 'INTERVIEW');
+  if (invites.length === 0) return out;
+  const cycleYears = [...new Set(invites.map((r) => cycleYearOf(r.occurredAt, 'INTERVIEW')))];
+  const slugs = [...new Set(invites.map((r) => r.school.slug))];
+  const rows = await prisma.medCycleCount.findMany({
+    where: {
+      eventType: 'INTERVIEW',
+      cycleYear: { in: cycleYears },
+      school: { slug: { in: slugs }, active: true },
+      ...floorWhere(now),
+    },
+    select: {
+      source: true,
+      date: true,
+      eventType: true,
+      cycleYear: true,
+      count: true,
+      contributors: true,
+      publishedCount: true,
+      publishedContributors: true,
+      school: { select: { slug: true } },
+    },
+  });
+  for (const slug of slugs) {
+    const found = new Set<string>();
+    for (const cycleYear of cycleYears) {
+      const cells = sumPrograms(
+        rows
+          .filter((r) => r.school.slug === slug && r.cycleYear === cycleYear)
+          .flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
+        utcDayOf(now),
+      );
+      const series = buildTypeSeries(cells, utcDayOf(now));
+      const primary = series.sources.find((s) => s.source === series.primary);
+      const base = primary?.days[0]?.date;
+      if (!primary || !base) continue;
+      for (const w of detectWaves(toDayCounts(primary.days, base))) found.add(addDays(base, w.day));
+    }
+    out.set(slug, found);
+  }
+  return out;
 }
 
 export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<MedLiveRes> {
@@ -635,6 +835,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
   });
   const page = rows.slice(0, limit);
   const last = page[page.length - 1];
+  const waveDays = await liveWaveDays(page, now);
   return {
     events: page.map((r) => ({
       id: r.id,
@@ -650,6 +851,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
       },
       occurredAt: truncateToMinute(r.occurredAt),
       source: r.source as 'ADMIT' | 'SDN',
+      wave: r.eventType === 'INTERVIEW' && (waveDays.get(r.school.slug)?.has(day(r.occurredAt)) ?? false),
     })),
     nextCursor: rows.length > limit && last ? encodeLiveCursor({ occurredAt: last.occurredAt, id: last.id }) : null,
     asOf: now.toISOString(),
