@@ -11,9 +11,18 @@ import { api } from '@/lib/contract/client';
 import { mergeLiveHead } from '../engine/public-read';
 import { parseLiveSearch } from '../engine/search';
 import { getMedLiveApi, type LiveEventDto, type MedEventTypeId } from '../medschools.contract';
-import { liveQuery, resolveLiveFilters, schoolDegreeOf, schoolsQuery, type LiveFilters } from '../medschools.queries';
+import {
+  liveQuery,
+  liveSearchOf,
+  resolveLiveFilters,
+  schoolDegreeOf,
+  schoolsQuery,
+  type LiveFilters,
+} from '../medschools.queries';
 import { DegreeProgramSelect } from './ProgramSelect';
+import { PrefsNote } from './PrefsNote';
 import { ReportedNote } from './ReportedNote';
+import { useEffectiveView } from './useEffectiveView';
 import { SkeletonSwap } from './skeletons';
 import { LiveRow } from './LiveRow';
 import { useMedLabels } from './labels';
@@ -36,20 +45,21 @@ export function LivePage() {
   const search = parseLiveSearch(useSearch({ strict: false }) as Record<string, unknown>);
 
   const schools = useQuery(schoolsQuery({}));
+  // The URL where it speaks, the viewer's preferences where it is silent (D13/D14).
+  const { view, setSearch: setView } = useEffectiveView('live', search);
   const schoolDegree = schoolDegreeOf(schools.data?.schools, search.school);
-  const filters = resolveLiveFilters(search, schoolDegree);
+  const filters = resolveLiveFilters(liveSearchOf(search, view), schoolDegree);
 
-  const setSearch = (next: Partial<typeof search>) => {
+  const setSearch = (next: { type?: MedEventTypeId | undefined; school?: string | undefined }) => {
     const m = { ...search, ...next };
     void navigate({
       to: '/rmh-medschool/live',
-      // `program` is left out when it is the default; the route's parser puts it back.
-      search: {
-        ...(m.type ? { type: m.type } : {}),
-        ...(m.school ? { school: m.school } : {}),
-        ...(m.degree ? { degree: m.degree } : {}),
-        ...(m.program !== 'ALL' ? { program: m.program } : {}),
-      } as typeof search,
+      // The preference keys (`program`, `degree`) stay as the URL had them; only the page's own keys are rebuilt.
+      search: ((prev: Record<string, unknown>) => ({
+        ...prev,
+        type: m.type || undefined,
+        school: m.school || undefined,
+      })) as never,
       replace: true,
       resetScroll: false,
     });
@@ -89,9 +99,10 @@ export function LivePage() {
           allowNone
           {...(schoolDegree ? { schoolDegree } : {})}
           value={{ degree: filters.degree, program: filters.program ?? 'ALL' }}
-          onChange={(v) => setSearch({ degree: v.degree, program: v.program })}
+          onChange={(v) => setView({ degree: v.degree, program: v.program })}
         />
       </div>
+      <PrefsNote fromPrefs={view.fromPrefs} />
       <div className="mt-4">
         {/* Keyed by the filters: a new filter set starts with its own rows and older pages. */}
         <LiveList key={JSON.stringify(filters)} filters={filters} />

@@ -7,6 +7,7 @@ import {
   parseIndexSearch,
   parseLiveSearch,
   parseSchoolSearch,
+  parseTrackerSearch,
   showParam,
   validateSchoolSearch,
 } from './search';
@@ -16,9 +17,12 @@ describe('parseSchoolSearch', () => {
   it('defaults', () => {
     const s = parseSchoolSearch({});
     expect(s.tab).toBe('activity');
-    expect(s.program).toBe('ALL');
+    // Absent stays absent (D14): a preference may fill it; the page's effective view says All.
+    expect(s.program).toBeUndefined();
+    expect('program' in s).toBe(false);
     expect(s.type).toBe('INTERVIEW');
-    expect(s.show).toEqual([...CHARTED_TYPES]);
+    expect(s.show).toBeUndefined();
+    expect('show' in s).toBe(false);
     expect(s.source).toBeUndefined();
     expect(s.cycle).toBeUndefined();
   });
@@ -27,14 +31,19 @@ describe('parseSchoolSearch', () => {
     expect(parseSchoolSearch({ tab: 'history' }).tab).toBe('history');
     expect(parseSchoolSearch({ program: 'PHD' }).program).toBe('PHD');
     expect(parseSchoolSearch({ program: 'REG' }).program).toBe('REG');
-    expect(parseSchoolSearch({ program: 'x' }).program).toBe('ALL');
+    expect(parseSchoolSearch({ program: 'x' }).program).toBeUndefined();
+    expect(parseSchoolSearch({ program: 'all' }).program).toBe('ALL'); // the explicit default is kept (Review Focus 9)
   });
   it('show is a filtered, deduped, ordered comma list', () => {
     expect(parseSchoolSearch({ show: 'interview,bogus,INTERVIEW' }).show).toEqual(['INTERVIEW']);
     expect(parseSchoolSearch({ show: 'acceptance,secondary' }).show).toEqual(['SECONDARY', 'ACCEPTANCE']);
-    expect(parseSchoolSearch({ show: 'withdrawn' }).show).toEqual([...CHARTED_TYPES]);
-    expect(parseSchoolSearch({ show: '' }).show).toEqual([...CHARTED_TYPES]);
-    expect(parseSchoolSearch({ show: 7 }).show).toEqual([...CHARTED_TYPES]);
+    // Empty or unknown is silent (a preference may fill it), not "all five".
+    expect(parseSchoolSearch({ show: 'withdrawn' }).show).toBeUndefined();
+    expect(parseSchoolSearch({ show: '' }).show).toBeUndefined();
+    expect(parseSchoolSearch({ show: 7 }).show).toBeUndefined();
+    expect(parseSchoolSearch({ show: 'interview,secondary,waitlist,rejection,acceptance' }).show).toEqual([
+      ...CHARTED_TYPES,
+    ]);
   });
   it('cycle, type, source', () => {
     expect(parseSchoolSearch({ cycle: '2027' }).cycle).toBe(2027);
@@ -52,7 +61,15 @@ describe('parseIndexSearch', () => {
     const s = parseIndexSearch({ state: 'zz9', degree: 'PhD' });
     expect(s.state).toBeUndefined();
     expect(s.degree).toBeUndefined();
-    expect(s.program).toBe('ALL');
+    expect(s.program).toBeUndefined();
+  });
+  it('degree=ALL is the explicit "every degree" and program=ALL the explicit default', () => {
+    expect(parseIndexSearch({ degree: 'ALL' }).degree).toBe('ALL');
+    expect(parseIndexSearch({ program: 'ALL' }).program).toBe('ALL');
+    expect(parseIndexSearch({}).degree).toBeUndefined();
+    expect('program' in parseIndexSearch({})).toBe(false);
+    expect(parseLiveSearch({ degree: 'ALL' }).degree).toBe('ALL');
+    expect(parseLiveSearch({ program: 'ALL' }).program).toBe('ALL');
   });
   it('keeps good ones', () => {
     expect(parseIndexSearch({ q: ' duke ', state: 'tx', degree: 'DO', program: 'PHD' })).toEqual({
@@ -61,7 +78,7 @@ describe('parseIndexSearch', () => {
       degree: 'DO',
       program: 'PHD',
     });
-    expect(parseIndexSearch({ program: 'NONE' }).program).toBe('ALL');
+    expect(parseIndexSearch({ program: 'NONE' }).program).toBeUndefined();
   });
   it('caps q length', () => {
     expect(parseIndexSearch({ q: 'a'.repeat(10_000) }).q?.length).toBeLessThanOrEqual(100);
@@ -70,14 +87,14 @@ describe('parseIndexSearch', () => {
 
 describe('parseLiveSearch', () => {
   it('defaults and NONE', () => {
-    expect(parseLiveSearch({}).program).toBe('ALL');
+    expect(parseLiveSearch({}).program).toBeUndefined();
     expect(parseLiveSearch({ program: 'NONE' }).program).toBe('NONE');
-    expect(parseLiveSearch({ program: 'bad' }).program).toBe('ALL');
+    expect(parseLiveSearch({ program: 'bad' }).program).toBeUndefined();
   });
   it('type, school, degree', () => {
     const s = parseLiveSearch({ type: 'hold', school: 'duke', degree: 'MD' });
-    expect(s).toEqual({ type: 'HOLD', school: 'duke', degree: 'MD', program: 'ALL' });
-    expect(parseLiveSearch({ school: 'Bad Slug%00', degree: 'PhD', type: 'x' })).toEqual({ program: 'ALL' });
+    expect(s).toEqual({ type: 'HOLD', school: 'duke', degree: 'MD' });
+    expect(parseLiveSearch({ school: 'Bad Slug%00', degree: 'PhD', type: 'x' })).toEqual({});
   });
 });
 
@@ -92,21 +109,25 @@ describe('defaults stay out of the URL (stripSearchParams)', () => {
       search,
       next: (s) => s,
     });
-  it('index and live drop program=ALL and keep a real choice', () => {
+  it('program, degree and show are never stripped: the URL can say "I chose the default" (D14)', () => {
     expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({}))).toEqual({});
+    expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({ program: 'ALL', degree: 'ALL' }))).toEqual({
+      program: 'ALL',
+      degree: 'ALL',
+    });
     expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({ program: 'PHD', degree: 'MD', q: 'duke' }))).toEqual({
       degree: 'MD',
       program: 'PHD',
       q: 'duke',
     });
     expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({}))).toEqual({});
+    expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({ program: 'ALL' }))).toEqual({ program: 'ALL' });
     expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({ program: 'NONE' }))).toEqual({ program: 'NONE' });
   });
-  it('a program without a degree is All on index and live (the control could not show it)', () => {
-    expect(parseIndexSearch({ program: 'PHD' }).program).toBe('ALL');
+  it('the parsers keep a program without a degree; the effective view (prefs.ts) is what reads it as All', () => {
+    expect(parseIndexSearch({ program: 'PHD' }).program).toBe('PHD');
     expect(parseIndexSearch({ program: 'PHD', degree: 'DO' }).program).toBe('PHD');
-    expect(parseLiveSearch({ program: 'REG' }).program).toBe('ALL');
-    expect(parseLiveSearch({ program: 'REG', degree: 'MD' }).program).toBe('REG');
+    expect(parseLiveSearch({ program: 'REG' }).program).toBe('REG');
     expect(parseLiveSearch({ program: 'NONE' }).program).toBe('NONE');
     expect(parseSchoolSearch({ program: 'PHD' }).program).toBe('PHD');
   });
@@ -116,14 +137,15 @@ describe('defaults stay out of the URL (stripSearchParams)', () => {
     expect(parseSchoolSearch({ cycle: '2101' }).cycle).toBeUndefined();
     expect(parseSchoolSearch({ cycle: '2100' }).cycle).toBe(2100);
   });
-  it('school drops tab, program, type and the all-five show list, keeps the rest', () => {
+  it('school drops tab and type defaults, keeps program, show and the rest', () => {
     expect(strip(SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch({}))).toEqual({});
+    expect(strip(SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch({ program: 'ALL' }))).toEqual({ program: 'ALL' });
     expect(
       strip(
         SCHOOL_SEARCH_DEFAULTS,
         validateSchoolSearch({ show: 'secondary,interview,waitlist,rejection,acceptance' }),
       ),
-    ).toEqual({});
+    ).toEqual({ show: showParam(CHARTED_TYPES) });
     expect(
       strip(
         SCHOOL_SEARCH_DEFAULTS,
@@ -140,7 +162,22 @@ describe('validateSchoolSearch', () => {
     expect(parseSchoolSearch(v).show).toEqual(['INTERVIEW', 'ACCEPTANCE']);
     expect(showParam(CHARTED_TYPES)).toBe('interview,secondary,waitlist,rejection,acceptance');
   });
-  it('falls back to every category for an empty or unknown list', () => {
-    expect(validateSchoolSearch({ show: 'x' }).show).toBe(SCHOOL_SEARCH_DEFAULTS.show);
+  it('leaves show out for an empty or unknown list (silent: a preference may fill it)', () => {
+    expect('show' in validateSchoolSearch({ show: 'x' })).toBe(false);
+    expect('show' in validateSchoolSearch({})).toBe(false);
+  });
+});
+
+describe('parseTrackerSearch', () => {
+  it('keeps a sane cycle year, from the router parsing ?cycle=2027 into a number or a string', () => {
+    expect(parseTrackerSearch({ cycle: 2027 })).toEqual({ cycle: 2027 });
+    expect(parseTrackerSearch({ cycle: '2027' })).toEqual({ cycle: 2027 });
+  });
+  it('drops everything else', () => {
+    expect(parseTrackerSearch({})).toEqual({});
+    expect(parseTrackerSearch({ cycle: 'x' })).toEqual({});
+    expect(parseTrackerSearch({ cycle: 1999 })).toEqual({});
+    expect(parseTrackerSearch({ cycle: 20270 })).toEqual({});
+    expect(parseTrackerSearch({ cycle: ['2027'] })).toEqual({});
   });
 });

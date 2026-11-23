@@ -15,11 +15,13 @@ const CYCLE_MIN = 2000;
 const CYCLE_MAX = 2100;
 
 /**
- * Values the parsers fall back to. The routes hand these to `stripSearchParams`, so a default never appears in the
- * URL: `/rmh-medschool` stays the canonical address and a shared link carries only what the viewer changed.
+ * Values handed to `stripSearchParams`. `program`, `degree` and `show` are NOT among them (plan D14): a preference can
+ * fill them where the URL is silent, so `?program=ALL` must survive as "I chose All" and be told from an absent key.
+ * The pages' write helper (`writeSearch` in `prefs.ts`) drops a value only when it equals the global default and no
+ * preference would override it.
  */
-export const INDEX_SEARCH_DEFAULTS = { program: 'ALL' } as const satisfies { program: ProgramFilter };
-export const LIVE_SEARCH_DEFAULTS = { program: 'ALL' } as const satisfies { program: LiveProgramFilter };
+export const INDEX_SEARCH_DEFAULTS = {} as const;
+export const LIVE_SEARCH_DEFAULTS = {} as const;
 /** `show` travels in the URL as a lowercase comma list (`show=interview,acceptance`), in `CHARTED_TYPES` order. */
 export const showParam = (types: readonly MedEventType[]): string =>
   CHARTED_TYPES.filter((t) => types.includes(t))
@@ -27,10 +29,8 @@ export const showParam = (types: readonly MedEventType[]): string =>
     .join(',');
 export const SCHOOL_SEARCH_DEFAULTS = {
   tab: 'activity',
-  program: 'ALL',
   type: 'INTERVIEW',
-  show: showParam(CHARTED_TYPES),
-} as const satisfies { tab: SchoolTab; program: ProgramFilter; type: MedEventType; show: string };
+} as const satisfies { tab: SchoolTab; type: MedEventType };
 
 // The router JSON-parses what it can, so `?cycle=2026` or `?q=2026` reach a parser as numbers.
 const str = (v: unknown): string | undefined =>
@@ -41,50 +41,54 @@ const pick = <T extends string>(v: unknown, allowed: readonly T[], upper = true)
   const k = upper ? s.toUpperCase() : s;
   return allowed.find((a) => a === k);
 };
-const program = (v: unknown): ProgramFilter => pick(v, ['ALL', 'REG', 'PHD'] as const) ?? 'ALL';
-const degree = (v: unknown): 'MD' | 'DO' | undefined => pick(v, ['MD', 'DO'] as const, false);
+/** Absent (or malformed) stays absent: only a value in the URL is the viewer's choice. */
+const program = (v: unknown): ProgramFilter | undefined => pick(v, ['ALL', 'REG', 'PHD'] as const);
+/** `ALL` is the explicit "every degree": the one way a link can override a degree preference. */
+const degree = (v: unknown): 'MD' | 'DO' | 'ALL' | undefined => pick(v, ['MD', 'DO', 'ALL'] as const, false);
 
 export function parseIndexSearch(raw: Record<string, unknown>): {
   q?: string;
-  degree?: 'MD' | 'DO';
+  degree?: 'MD' | 'DO' | 'ALL';
   state?: string;
-  program: ProgramFilter;
+  program?: ProgramFilter;
 } {
   const q = str(raw.q)?.trim().slice(0, Q_MAX);
   const st = str(raw.state)?.trim();
   const d = degree(raw.degree);
+  const p = program(raw.program);
   return {
     ...(q ? { q } : {}),
     ...(d ? { degree: d } : {}),
     ...(st && /^[A-Za-z]{2}$/.test(st) ? { state: st.toUpperCase() } : {}),
-    // A program is a degree's program (MD-PhD): without a degree the control reads "All", so the filter is All too.
-    program: d ? program(raw.program) : 'ALL',
+    // Phase 3 read a program without a degree as All here; that now belongs to the effective view (`resolveView`),
+    // because a preference may supply the degree.
+    ...(p ? { program: p } : {}),
   };
 }
 
 export function parseLiveSearch(raw: Record<string, unknown>): {
   type?: MedEventType;
   school?: string;
-  degree?: 'MD' | 'DO';
-  program: LiveProgramFilter;
+  degree?: 'MD' | 'DO' | 'ALL';
+  program?: LiveProgramFilter;
 } {
   const type = pick(raw.type, ALL_TYPES);
   const school = str(raw.school);
   const d = degree(raw.degree);
+  const p = pick(raw.program, ['ALL', 'REG', 'PHD', 'NONE'] as const);
   return {
     ...(type ? { type } : {}),
     ...(school && /^[a-z0-9-]{1,80}$/.test(school) ? { school } : {}),
     ...(d ? { degree: d } : {}),
-    program: ((p) => (p === 'NONE' || d ? p : 'ALL'))(
-      pick(raw.program, ['ALL', 'REG', 'PHD', 'NONE'] as const) ?? 'ALL',
-    ),
+    ...(p ? { program: p } : {}),
   };
 }
 
 export function parseSchoolSearch(raw: Record<string, unknown>): {
   tab: SchoolTab;
-  program: ProgramFilter;
-  show: MedEventType[];
+  program?: ProgramFilter;
+  /** Absent when the URL names no known category: a preference may fill it, else every category. */
+  show?: MedEventType[];
   type: MedEventType;
   source?: MedSource;
   cycle?: number;
@@ -96,13 +100,14 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
       .filter(Boolean),
   );
   const shown = CHARTED_TYPES.filter((t) => wanted.has(t));
+  const prog = program(raw.program);
   const source = pick(raw.source, SOURCES);
   const c = str(raw.cycle)?.trim();
   const cycle = c && /^\d{4}$/.test(c) && Number(c) >= CYCLE_MIN && Number(c) <= CYCLE_MAX ? Number(c) : undefined;
   return {
     tab: pick(raw.tab, SCHOOL_TABS, false) ?? 'activity',
-    program: program(raw.program),
-    show: shown.length ? shown : [...CHARTED_TYPES],
+    ...(prog ? { program: prog } : {}),
+    ...(shown.length ? { show: shown } : {}),
     type: pick(raw.type, CHARTED_TYPES) ?? 'INTERVIEW',
     ...(source ? { source } : {}),
     ...(cycle !== undefined ? { cycle } : {}),
@@ -118,8 +123,14 @@ export function validateSchoolSearch(raw: Record<string, unknown>): Omit<
   ReturnType<typeof parseSchoolSearch>,
   'show'
 > & {
-  show: string;
+  show?: string;
 } {
   const { show, ...rest } = parseSchoolSearch(raw);
-  return { ...rest, show: showParam(show) };
+  return { ...rest, ...(show ? { show: showParam(show) } : {}) };
+}
+
+/** The tracker page's search: the cycle year to show (the newest the user has when absent). */
+export function parseTrackerSearch(raw: Record<string, unknown>): { cycle?: number } {
+  const c = str(raw.cycle)?.trim();
+  return c && /^\d{4}$/.test(c) && Number(c) >= CYCLE_MIN && Number(c) <= CYCLE_MAX ? { cycle: Number(c) } : {};
 }

@@ -10,9 +10,16 @@ type SchoolParams = { slug: string };
 
 export const Route = createFileRoute('/_site/rmh-medschool/$slug')({
   validateSearch: validateSchoolSearch,
-  // A default is not written into the URL (canonical URLs, shared links).
+  // Only `tab` and `type` defaults are stripped: `program` and `show` absent means "the viewer's preferences",
+  // present (even the default) is a choice (D14).
   search: { middlewares: [stripSearchParams(SCHOOL_SEARCH_DEFAULTS)] },
-  loaderDeps: ({ search }) => ({ tab: search.tab, program: search.program, type: search.type, cycle: search.cycle }),
+  loaderDeps: ({ search }) => ({
+    tab: search.tab,
+    // Signed-out view; the loader reads the viewer's preferences in a later task (phase 4 task 12).
+    program: search.program ?? 'ALL',
+    type: search.type,
+    cycle: search.cycle,
+  }),
   loader: ({ context, params, deps }): Promise<SchoolHeadData> =>
     loadSchoolHead(context.queryClient, params.slug, deps),
   head: definePage<SchoolHeadData, SchoolParams>({

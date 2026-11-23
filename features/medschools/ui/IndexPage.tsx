@@ -11,7 +11,9 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { formatUtcDay } from '../engine/public-read';
 import { Q_MAX, SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
-import { schoolsQuery, todayQuery } from '../medschools.queries';
+import { indexQuery, schoolsQuery, todayQuery } from '../medschools.queries';
+import { PrefsNote } from './PrefsNote';
+import { useEffectiveView } from './useEffectiveView';
 import { DegreeProgramSelect } from './ProgramSelect';
 import { SchoolCrest } from './SchoolCrest';
 import { ReportedNote } from './ReportedNote';
@@ -31,20 +33,22 @@ export function IndexPage() {
   const nf = new Intl.NumberFormat(locale);
   const [text, setText] = useState(search.q ?? '');
 
-  const schools = useQuery(schoolsQuery(search));
-  const today = useQuery(todayQuery(search.program, search.degree));
+  // The URL where it speaks, the viewer's preferences where it is silent (D13/D14).
+  const { view, setSearch: setView } = useEffectiveView('index', search);
+  const program = view.program === 'NONE' ? 'ALL' : view.program;
+  const schools = useQuery(schoolsQuery(indexQuery(search, view)));
+  const today = useQuery(todayQuery(program, view.degree));
 
-  const setSearch = (next: Partial<typeof search> & { q?: string | undefined }) => {
+  const setSearch = (next: { q?: string | undefined; state?: string | undefined }) => {
     const merged = { ...search, ...next };
     void navigate({
       to: '/rmh-medschool',
-      // `program` is left out when it is the default; the route's parser puts it back.
-      search: {
-        ...(merged.q ? { q: merged.q } : {}),
-        ...(merged.degree ? { degree: merged.degree } : {}),
-        ...(merged.state ? { state: merged.state } : {}),
-        ...(merged.program !== 'ALL' ? { program: merged.program } : {}),
-      } as typeof search,
+      // The preference keys (`program`, `degree`) stay as the URL had them; only the page's own keys are rebuilt.
+      search: ((prev: Record<string, unknown>) => ({
+        ...prev,
+        q: merged.q || undefined,
+        state: merged.state || undefined,
+      })) as never,
       replace: true,
       resetScroll: false,
     });
@@ -118,9 +122,9 @@ export function IndexPage() {
           }}
         />
         <DegreeProgramSelect
-          value={{ degree: search.degree, program: search.program }}
+          value={{ degree: view.degree, program }}
           onChange={(v) =>
-            setSearch({
+            setView({
               degree: v.degree,
               program: v.program === 'REG' || v.program === 'PHD' ? v.program : 'ALL',
             })
@@ -140,6 +144,7 @@ export function IndexPage() {
           ))}
         </Select>
       </div>
+      <PrefsNote fromPrefs={view.fromPrefs} />
 
       <div className="mt-4">
         {schools.isError ? (

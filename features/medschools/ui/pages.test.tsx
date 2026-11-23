@@ -249,7 +249,8 @@ describe('route files', () => {
       expect(src).toContain('head:definePage(');
       expect(src).toContain(`validateSearch:${parser}`);
       expect(src).toContain('loaderDeps:');
-      expect(src).toContain('search:{middlewares:[stripSearchParams(');
+      // Task 9 (D14): no strip middleware, so `?program=ALL` survives as "I chose All" against a preference.
+      expect(src).not.toContain('stripSearchParams(');
       expect(src).toContain('loader:');
       expect(src).toContain('prefetch');
       expect(src).toContain(`component:${component}`);

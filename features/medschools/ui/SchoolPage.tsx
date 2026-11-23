@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { TabItem } from '@/components/ui/tabs';
 import { SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
-import type { MedEventType } from '../engine/types';
-import { parseSchoolSearch, showParam } from '../engine/search';
+import { patchSearch, type ViewPatch } from '../engine/prefs';
+import { parseSchoolSearch } from '../engine/search';
 import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
+import { PrefsNote } from './PrefsNote';
+import { useEffectiveView } from './useEffectiveView';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
 import { ProgramSelect } from './ProgramSelect';
@@ -25,24 +27,30 @@ export function SchoolPage() {
   const { t } = useTranslation('medschools');
   const navigate = useNavigate();
   const { slug } = useParams({ strict: false }) as { slug: string };
-  const search = parseSchoolSearch(useSearch({ strict: false }) as Record<string, unknown>);
+  const parsed = parseSchoolSearch(useSearch({ strict: false }) as Record<string, unknown>);
   const detailQuery = useQuery(schoolQuery(slug));
   const detail = detailQuery.data;
 
-  const routeSearch = (m: Omit<SchoolSearch, 'show'> & { show: readonly MedEventType[] }) => ({
-    tab: m.tab,
-    program: m.program,
-    type: m.type,
-    show: showParam(m.show),
-    ...(m.source ? { source: m.source } : {}),
-    ...(m.cycle !== undefined ? { cycle: m.cycle } : {}),
-  });
+  // The URL where it speaks, the viewer's preferences where it is silent. A school has its own degree.
+  const { view, prefs } = useEffectiveView('school', parsed, detail ? { schoolDegree: detail.school.degree } : {});
+  const search: SchoolSearch = {
+    ...parsed,
+    program: view.program === 'NONE' ? 'ALL' : view.program,
+    show: view.show,
+  };
+
   const setSearch = (patch: SchoolSearchPatch) => {
+    const { program, show, ...rest } = patch;
+    const viewPatch: ViewPatch = { ...(program ? { program } : {}), ...(show ? { show } : {}) };
+    const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     void navigate({
       to: '/rmh-medschool/$slug',
       params: { slug },
-      // Defaults are stripped by the route's search middleware, so a default never reaches the URL.
-      search: () => routeSearch({ ...search, ...patch }),
+      // Only the keys the viewer changed are rewritten; `tab` and `type` defaults are stripped by the route.
+      search: ((prev: Record<string, unknown>) => ({
+        ...patchSearch('school', prev, view, viewPatch, prefs),
+        ...own,
+      })) as never,
       replace: true,
       resetScroll: false,
     });
@@ -106,6 +114,7 @@ export function SchoolPage() {
               </div>
               <SchoolFacts school={detail.school} />
               <ReportedNote />
+              <PrefsNote fromPrefs={view.fromPrefs} />
             </div>
             <div>
               <PageTabs
@@ -116,7 +125,7 @@ export function SchoolPage() {
                   <Link
                     to="/rmh-medschool/$slug"
                     params={{ slug }}
-                    search={routeSearch({ ...search, tab: tab.id as SchoolTab })}
+                    search={((prev: Record<string, unknown>) => ({ ...prev, tab: tab.id })) as never}
                     replace
                     resetScroll={false}
                     id={props.id}

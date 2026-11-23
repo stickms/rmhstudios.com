@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyPrefs, writeSearch, type Prefs } from './prefs';
+import { applyPrefs, patchSearch, resolveView, writeSearch, type EffectiveView, type Prefs } from './prefs';
 import { CHARTED_TYPES } from './public-read';
 
 const prefs = (over: Partial<Prefs> = {}): Prefs => ({
@@ -141,5 +141,101 @@ describe('writeSearch (D14)', () => {
   it('a shared link never depends on the recipient: every non-default view value is written', () => {
     const w = writeSearch('live', { degree: 'DO', program: 'NONE', show: [], fromPrefs: false }, null);
     expect(w).toEqual({ degree: 'DO', program: 'NONE' });
+  });
+});
+
+describe('resolveView: the effective view a page reads (phase 3 rule, now after preferences)', () => {
+  it('a program with no degree is All on the index and live pages (the one select cannot show it)', () => {
+    expect(resolveView('index', { program: 'PHD' }, null)).toEqual({
+      program: 'ALL',
+      show: [...CHARTED_TYPES],
+      fromPrefs: false,
+    });
+    expect(resolveView('live', { program: 'REG' }, null).program).toBe('ALL');
+    expect(resolveView('live', { program: 'NONE' }, null).program).toBe('NONE');
+  });
+
+  it('a program with a degree stands, from the URL or from the preferences', () => {
+    expect(resolveView('index', { degree: 'DO', program: 'PHD' }, null)).toMatchObject({
+      degree: 'DO',
+      program: 'PHD',
+      fromPrefs: false,
+    });
+    expect(resolveView('index', {}, prefs())).toMatchObject({ degree: 'MD', program: 'PHD', fromPrefs: true });
+  });
+
+  it('a program preference with no degree anywhere is All on the index, and not "from prefs"', () => {
+    const v = resolveView('index', {}, prefs({ degree: null }));
+    expect(v.program).toBe('ALL');
+    expect(v.fromPrefs).toBe(false);
+  });
+
+  it('?degree=ALL beats a degree preference and then the program reads as All', () => {
+    const v = resolveView('index', { degree: 'ALL' }, prefs());
+    expect(v.degree).toBeUndefined();
+    expect(v.program).toBe('ALL');
+    expect(v.fromPrefs).toBe(false);
+  });
+
+  it('a school page keeps the program as is (the school supplies the degree)', () => {
+    expect(resolveView('school', { program: 'PHD' }, null, { schoolDegree: 'DO' })).toMatchObject({
+      degree: 'DO',
+      program: 'PHD',
+    });
+    expect(resolveView('school', {}, prefs(), { schoolDegree: 'MD' })).toMatchObject({
+      program: 'PHD',
+      fromPrefs: true,
+    });
+  });
+
+  it('no preferences and a clean URL equal phase 3', () => {
+    expect(resolveView('index', {}, undefined)).toEqual({ program: 'ALL', show: [...CHARTED_TYPES], fromPrefs: false });
+  });
+});
+
+describe('patchSearch: only the keys the viewer changed are rewritten', () => {
+  const view = (o: Partial<EffectiveView> = {}): EffectiveView => ({
+    program: 'ALL',
+    show: [...CHARTED_TYPES],
+    fromPrefs: false,
+    ...o,
+  });
+
+  it('keeps the page-owned keys and untouched preference keys as the URL had them', () => {
+    const prev = { q: 'duke', state: 'NC', program: 'PHD' };
+    expect(patchSearch('index', prev, view({ program: 'PHD' }), { degree: 'MD' }, null)).toEqual({
+      q: 'duke',
+      state: 'NC',
+      program: 'PHD',
+      degree: 'MD',
+    });
+  });
+
+  it('a default that came from a preference is not frozen into the URL by an unrelated change', () => {
+    const p = prefs({ degree: null });
+    const v = view({ program: 'PHD', fromPrefs: true });
+    expect(patchSearch('index', { q: 'x' }, v, { degree: 'DO' }, p)).toEqual({ q: 'x', degree: 'DO' });
+  });
+
+  it('picking All with a PHD preference writes program=ALL; with none, the key is dropped', () => {
+    const p = prefs({ degree: null });
+    expect(patchSearch('index', { program: 'PHD' }, view({ program: 'PHD' }), { program: 'ALL' }, p)).toEqual({
+      program: 'ALL',
+    });
+    expect(patchSearch('index', { program: 'PHD' }, view({ program: 'PHD' }), { program: 'ALL' }, null)).toEqual({});
+  });
+
+  it('a degree patch of undefined with a degree preference writes degree=ALL', () => {
+    expect(
+      patchSearch('index', {}, view({ degree: 'MD', fromPrefs: true }), { degree: undefined, program: 'ALL' }, prefs()),
+    ).toEqual({ degree: 'ALL', program: 'ALL' });
+  });
+
+  it('school: show is written as the lowercase list and dropped when it is every category', () => {
+    expect(patchSearch('school', { tab: 'activity' }, view(), { show: ['INTERVIEW', 'ACCEPTANCE'] }, null)).toEqual({
+      tab: 'activity',
+      show: 'interview,acceptance',
+    });
+    expect(patchSearch('school', { show: 'interview' }, view(), { show: [...CHARTED_TYPES] }, null)).toEqual({});
   });
 });

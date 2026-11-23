@@ -4,11 +4,14 @@ import { HttpError } from '@/lib/http';
 import { contractQuery, prefetchRouteQuery } from '@/lib/route/route-query';
 import type { QueryOf } from '@/lib/contract/endpoint';
 import {
+  getMedListsApi,
   getMedLiveApi,
+  getMedPrefsApi,
   getMedSchoolActivityApi,
   getMedSchoolApi,
   getMedSchoolHistoryApi,
   getMedTodayApi,
+  getMedTrackerApi,
   listMedSchoolsApi,
   type MedChartedTypeId,
   type MedDegreeId,
@@ -54,6 +57,53 @@ export const historyQuery = (slug: string, q: { program: MedProgramFilter; type:
 
 export const liveQuery = (q: LiveFilters) =>
   contractQuery(['medschools', 'live', q], getMedLiveApi, { query: q }, { staleTime: 0 });
+
+/* ------------------------- private (me/**) -------------------------
+ * Every personal key starts with `['medschools', 'me']`: the mutations invalidate that prefix and a sign-out clears
+ * the query client (plan D16). Signed out, these fail with a 401 and the pages show the sign-in prompt. */
+
+export const ME_KEY = ['medschools', 'me'] as const;
+
+export const listsQuery = () =>
+  contractQuery([...ME_KEY, 'lists'] as const, getMedListsApi, undefined, { staleTime: 30_000 });
+
+export const prefsQuery = () =>
+  contractQuery([...ME_KEY, 'prefs'] as const, getMedPrefsApi, undefined, { staleTime: 5 * 60_000 });
+
+/** The tracker for one cycle year, or the newest the user has when `cycle` is omitted. Never cached by the server. */
+export const trackerQuery = (cycle?: number) =>
+  contractQuery(
+    [...ME_KEY, 'tracker', cycle ?? null] as const,
+    getMedTrackerApi,
+    { query: cycle === undefined ? {} : { cycle } },
+    { staleTime: 0 },
+  );
+
+/** The schools-list request for a parsed index search and its effective view. */
+export function indexQuery(
+  search: { q?: string | undefined; state?: string | undefined },
+  view: { degree?: MedDegreeId | undefined; program: LiveProgramFilter },
+): IndexQuery {
+  return {
+    ...(search.q ? { q: search.q } : {}),
+    ...(view.degree ? { degree: view.degree } : {}),
+    ...(search.state ? { state: search.state } : {}),
+    program: view.program === 'NONE' ? 'ALL' : view.program,
+  };
+}
+
+/** The live loader's search from the parsed URL and the effective view (`degree=ALL` is already resolved away). */
+export function liveSearchOf(
+  search: { type?: LiveFilters['type']; school?: string | undefined },
+  view: { degree?: MedDegreeId | undefined; program: LiveProgramFilter },
+): { type?: LiveFilters['type']; school?: string; degree?: MedDegreeId; program: LiveProgramFilter } {
+  return {
+    ...(search.type ? { type: search.type } : {}),
+    ...(search.school ? { school: search.school } : {}),
+    ...(view.degree ? { degree: view.degree } : {}),
+    program: view.program,
+  };
+}
 
 /** What the live feed asks the API for, given the page's search and the school list (O5). */
 export function resolveLiveFilters(
