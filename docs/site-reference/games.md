@@ -27,7 +27,7 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
 | **Project Vega** | [`/vega`](https://rmhstudios.com/vega) | Playable | required | `Strategy` `Tower Defense` `Horror` |
 | **Signal Forge** | [`/signal-forge`](https://rmhstudios.com/signal-forge) | Playable | required | `Roguelike` `Deckbuilder` `Rhythm` |
-| **Cursed Logic** | [`/cursed-logic`](https://rmhstudios.com/cursed-logic) | Playable | required | `Strategy` `Duel` `Mind Games` |
+| **Cursed Logic** | [`/cursed-logic`](https://rmhstudios.com/cursed-logic) | Playable | required | `Strategy` `Duel` `Roguelite` `Mind Games` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
@@ -130,7 +130,7 @@ Climb floor after floor of the Forge with a deck you build as you go. Every card
 
 ### Cursed Logic
 
-The Protocol has gone unstable, and the only way to shut it down is to out-think it. Each round you pick a stance and an action while it picks its own in secret: strike, block, prepare or probe. Spend fragments in the shop between runs, survive the minigames it throws at you, and learn what its next move is before it lands.
+Something has got into the terminal. Seven rogue Protocols stand between you and NULL//ROOT, each with its own habits: the Warden blocks, the Mimic copies you, the Liar’s tells point the wrong way, the Oracle counters whatever you do most. Each round you pick one of three stances and a command (Strike, Block, Prepare or Probe) while the Protocol commits in secret and shows a tell that may be a bluff. A run is nine duels across five sectors with your Integrity carried between them, a free script and a black market after each sector, round mutations, clash minigames and optional Pacts that raise your score. Starts with a short training duel.
 
 **Route:** `/cursed-logic` · **Catalog id:** `cursed-logic` · **Status:** Playable · **Sign-in:** required
 

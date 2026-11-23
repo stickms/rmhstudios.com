@@ -376,7 +376,7 @@ export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrot
   // a session hook mounted in each). Re-measured + 3%: cursed-logic (a new island) JS 125,440 / CSS
   // 19,471 B brotli; signal-forge CSS 19,958 and vega CSS 18,389 B brotli (JS unchanged). To be
   // re-measured when the per-game rework lands (docs/superpowers/plans/2026-11-23-vault-games-migration.md).
-  'cursed-logic': { jsBrotli: 129_200, cssBrotli: 20_100 },
+  'cursed-logic': { jsBrotli: 136_300, cssBrotli: 21_100 }, // after the rework: JS 132,303 / CSS 20,463 B brotli (+3%)
   'signal-forge': { jsBrotli: 155_650, cssBrotli: 20_500 },
   vega: { jsBrotli: 120_600, cssBrotli: 18_900 },
   'void-breaker': { jsBrotli: 313_750, cssBrotli: 20_900 },
