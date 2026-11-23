@@ -308,13 +308,18 @@
 .site-margin__page {
   margin-block-start: 26px;
 }
-/* The foot: reference pages on one wrapping line of `t-meta` links, pushed to the bottom of the column. */
+/* The foot: reference pages on one wrapping line of `t-meta` links. On a short page it sits at the bottom of the column;
+   on a long one it stays in view 16px off the bottom edge of the window (never flush: iOS edge contract, like the
+   sidebar's 16px off the top) on the page ground, so a list scrolling behind it is covered, not overprinted. */
 .site-margin__foot {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
   margin-block-start: auto;
-  padding-block-start: 40px;
+  padding-block: 14px 8px;
+  position: sticky;
+  inset-block-end: 16px;
+  background: var(--site-bg);
 }
 .site-margin__foot-link {
   color: var(--site-text-muted);
