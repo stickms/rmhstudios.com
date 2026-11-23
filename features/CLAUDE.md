@@ -71,9 +71,8 @@ by `pnpm build` and the Dockerfile before `vite build`) into `dist-islands/`, se
   (`lib/islands/document.server.ts`), which emits the site-wide head (`lib/root-head.ts`) under the catalog head for the
   manifest's `kind`, the pre-paint script, the session seed, the locale's catalogs for the manifest's `namespaces`, and
   a loading frame. A page the catalog does not describe (an unlisted game) or one nested under a parent route with a
-  `head()` passes `heads` (outermost first) — e.g. `app/routes/secret/vega.tsx` hands over the `/secret` layout's
-  `noindexHead('Secret')` and its own title. A parent layout's frame is the island's to render (the Vault's scroller is
-  in `features/vega/ui/VegaPage.tsx`); a link out to a site page is a plain `<a>`. Keep a page's one-off utilities out
+  `head()` passes `heads` (outermost first) — e.g. an island nested under a layout route hands over that layout's head. A parent layout's frame is the
+  island's to render; a link out to a site page is a plain `<a>`. Keep a page's one-off utilities out
   of `island.tsx` (put the page in `ui/`, as vega and signal-forge do): the site sheets skip `features/<id>/ui`, not the
   entry, so they would land in both site sheets.
 - **Entry:** `island.tsx` calls `mountIsland(<tree />)` (`components/island/mount.tsx`); its providers

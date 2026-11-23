@@ -38,7 +38,7 @@ describe('islands', () => {
     const mod = (await import(`@features/${id}/feature`)) as { default: unknown };
     const manifest = FeatureManifestSchema.parse(mod.default);
     expect(manifest.delivery).toBe('island');
-    // `/secret/vega` is `secret.vega.tsx` (flat) or `secret/vega.tsx` (nested): either spelling.
+    // A nested base path is `a.b.tsx` (flat) or `a/b.tsx` (nested): either spelling.
     const segments = manifest.basePath.slice(1);
     const candidates = [
       join(ROOT, 'app', 'routes', `${segments.replace(/\//g, '.')}.tsx`),
