@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   addUtcDays,
+  type ChartGeometry,
   extendStep,
   linePath,
   niceMax,
@@ -110,7 +111,7 @@ export function CategoryLines(p: {
                   color: st.color,
                   dash: st.dash,
                   text: nf.format(v),
-                  y: (g) => plotY(v, tween.value, g),
+                  y: (g: ChartGeometry) => plotY(v, tween.value, g),
                 };
               }),
               ...(wave && labels.wave
