@@ -7,7 +7,7 @@ import { buildPrepaintConfig, prepaintHeadScripts } from '../config';
 import { PREPAINT_BODY_CODE, PREPAINT_BODY_SHA256, PREPAINT_CODE, PREPAINT_SHA256 } from '../generated';
 
 describe('generated pre-paint script', () => {
-  it('lib/prepaint/generated.ts is fresh (run `pnpm prepaint:build` if this fails)', async () => {
+  it('lib/prepaint/generated.ts is fresh (run `pnpm gen` if this fails)', async () => {
     const onDisk = readFileSync(join(__dirname, '..', 'generated.ts'), 'utf8');
     expect(onDisk).toBe(await generate());
   });

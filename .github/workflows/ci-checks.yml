@@ -90,7 +90,6 @@ jobs:
         run: |
           pnpm run docs:api:check
           pnpm run docs:site:check
-          pnpm run prepaint:check
           pnpm run sdk:check
 
   # The two ESLint ratchets took ~2.5 min at the end of the typecheck job, after tsc, so that job ran
