@@ -9,9 +9,13 @@
  * not the shared monthly pause; a paying member has 100; a free member who files a request, whom an admin approves,
  * has 40 and goes back to 25 when it is revoked; a decline blocks a new request for 30 days; a pending request is
  * one per member; the admin routes are 401 signed out and 403 for a member.
+ *
+ * It signs up no one. Sign-up is limited to 10 a minute per IP and the suite's other files already use most of that, so
+ * the roles are the global cast's: alice is made an admin for this file (and put back in `afterAll`), bob is the free
+ * member and, with his requests cleared in between, the declined one, and carol is the paying member.
  */
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { Client, PASSWORD, closeDb, db, signUp, type TestUser } from './lib/client';
+import { Client, PASSWORD, closeDb, db, type TestUser } from './lib/client';
 import { startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
 import { removeAskFixture, removeMedSchoolsFixture, seedAskFixture, seedMedSchoolsFixture } from './lib/medschools-fixture';
 
@@ -46,11 +50,11 @@ let free: Member;
 let paying: Member;
 let decline: Member;
 const everyone = () => [admin.id, free.id, paying.id, decline.id];
-
-async function signedUp(label: string): Promise<Member> {
-  const u = await signUp(label);
-  return { id: u.id, email: u.email, name: u.name, cookies: u.cookies, client: u.client };
-}
+const SUB_ID = 'it-sub-medschools-qa-limits';
+const cast = (name: 'alice' | 'bob' | 'carol'): Member => {
+  const u = inject(name);
+  return { ...u, client: new Client(u.cookies) };
+};
 
 /** Reservation rows (`medschools-qa-ask`) are the day's count; a priced row is Q&A spend. */
 async function insertRows(userId: string | null, n: number, cost = 0, promptId = 'medschools-qa-ask') {
@@ -87,19 +91,16 @@ const decide = (id: string, action: 'approve' | 'decline' | 'revoke', adminNote?
   admin.client.post(ADMIN_REQ, { id, action, ...(adminNote ? { adminNote } : {}) });
 
 beforeAll(async () => {
-  // Three sign-ups of its own (sign-up is limited to 10 a minute per IP); bob, who never holds a paid plan, is the
-  // member whose request is declined.
-  [admin, free, paying] = [await signedUp('lim-admin'), await signedUp('lim-free'), await signedUp('lim-paying')];
-  const bob = inject('bob');
-  decline = { ...bob, client: new Client(bob.cookies) };
-  // The session may carry its admin flag from sign-up, so flip it in the database and sign in again.
+  [admin, free, paying] = [cast('alice'), cast('bob'), cast('carol')];
+  decline = free;
+  // A session's cookie cache carries the admin flag it was created with, so flip it in the database and sign in again.
   await db().query(`update "user" set "isAdmin" = true where id = $1`, [admin.id]);
   admin.client = new Client();
   const res = await admin.client.post('/api/auth/sign-in/email', { email: admin.email, password: PASSWORD });
   expect(res.status).toBe(200);
   // A paying member is a Subscription row, the one the Stripe webhook writes.
   await db().query(`insert into "Subscription" (id, plan, "referenceId", status) values ($1, 'starter', $2, 'active')`, [
-    `it-sub-${paying.id}`,
+    SUB_ID,
     paying.id,
   ]);
   await clearLedger();
@@ -108,7 +109,8 @@ beforeAll(async () => {
 afterAll(async () => {
   await clearLedger();
   await clearRequests();
-  await db().query(`delete from "Subscription" where id = $1`, [`it-sub-${paying.id}`]);
+  await db().query(`delete from "Subscription" where id = $1`, [SUB_ID]);
+  await db().query(`update "user" set "isAdmin" = false where id = $1`, [admin.id]);
   await closeDb();
 });
 
@@ -192,6 +194,8 @@ describe('limit tiers and requests: no model needed', () => {
   });
 
   it('a decline blocks a new request for 30 days, then the member can ask again', async () => {
+    // The declined member is bob again, so the revoke of the case before must not be what blocks him.
+    await clearRequests();
     expect((await decline.client.post<LimitState>(REQ, {})).body.state).toBe('pending');
     expect((await decide(await pendingId(decline.id), 'decline', 'Not now')).status).toBe(200);
     const s = await state(decline);
