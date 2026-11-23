@@ -22,6 +22,15 @@ on:
           Also shoot with this official bought theme applied (a gradient wash), e.g. paper, sundial, aurora. "none"
           skips.
         default: paper
+      probes:
+        description:
+          Space-separated names from scripts/ios-sim/probes (html-red body-blue root-red-body-clear fixed-edge-gradient)
+          to shoot, to learn what colours Safari's strips. Empty skips.
+        default: ''
+      only_probes:
+        description: Skip the standard and themed captures and run only the probes
+        type: boolean
+        default: false
       runner:
         description: macOS runner label (needs Xcode with an iOS simulator runtime)
         default: macos-latest
@@ -84,7 +93,7 @@ jobs:
           echo "--- server log so far ---"; tail -60 "$RUNNER_TEMP/server.log"
 
       - name: Install idb (to tap the globe)
-        if: inputs.open_globe
+        if: inputs.open_globe || inputs.probes != ''
         continue-on-error: true
         run: |
           brew tap facebook/fb
@@ -95,6 +104,7 @@ jobs:
           echo "$(python3 -m site --user-base)/bin" >> "$GITHUB_PATH"
 
       - name: Capture (the site's own Day and Night)
+        if: ${{ !inputs.only_probes }}
         env:
           ROUTES: ${{ inputs.routes }}
           DEVICE: ${{ inputs.device }}
@@ -104,7 +114,7 @@ jobs:
       # A bought theme is stored in the page's localStorage; a simulator cannot set another origin's storage, so a small
       # proxy on 7006 puts it there before the pre-paint script runs.
       - name: Capture (with a bought theme)
-        if: always() && inputs.theme != '' && inputs.theme != 'none'
+        if: always() && !inputs.only_probes && inputs.theme != '' && inputs.theme != 'none'
         env:
           ROUTES: ${{ inputs.routes }}
           DEVICE: ${{ inputs.device }}
@@ -117,6 +127,26 @@ jobs:
           echo $! > "$RUNNER_TEMP/proxy.pid"
           sleep 2
           scripts/ios-sim/capture.sh http://localhost:7006 "$RUNNER_TEMP/shots"
+
+      # What drives the colour of Safari's status-bar and tab-bar strips? Each probe injects a stylesheet that paints
+      # something a loud colour; the strip shows which element Safari reads (docs/ios-safari-screenshots.md).
+      - name: Probe the strips
+        if: always() && inputs.probes != ''
+        env:
+          DEVICE: ${{ inputs.device }}
+          APPEARANCES: light
+          OPEN_GLOBE: '0'
+          SCROLL_BOTTOM: '1'
+        run: |
+          port=7010
+          for probe in ${{ inputs.probes }}; do
+            EXTRA_CSS="scripts/ios-sim/probes/$probe.css" nohup node scripts/ios-sim/theme-proxy.mjs 7005 $port none > "$RUNNER_TEMP/probe-$probe.log" 2>&1 &
+            pid=$!
+            sleep 2
+            ROUTES=/terms NAME_PREFIX="probe-$probe-" scripts/ios-sim/capture.sh http://localhost:$port "$RUNNER_TEMP/shots" || echo "probe $probe failed"
+            kill $pid 2>/dev/null || true
+            port=$((port + 1))
+          done
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

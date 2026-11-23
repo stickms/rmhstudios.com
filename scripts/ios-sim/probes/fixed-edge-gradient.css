@@ -1,0 +1,19 @@
+/* Does Safari sample a fixed layer's pixels and extend them (so a gradient could continue into the strip), or reduce it to one flat colour? A 4px fixed strip at the top (red to blue, left to right) and the bottom (green to yellow). */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+body::before {
+  top: 0;
+  background: linear-gradient(90deg, #ff0000, #0000ff);
+}
+body::after {
+  bottom: 0;
+  background: linear-gradient(90deg, #00ff00, #ffff00);
+}

@@ -1,7 +1,7 @@
 // A tiny reverse proxy that stores a bought theme in the page's localStorage before the pre-paint script runs, so Safari
 // in the iOS simulator loads the site wearing that theme (a simulator has no way to set another origin's storage).
 //
-//   node scripts/ios-sim/theme-proxy.mjs <target-port> <listen-port> <theme-json-file>
+//   [EXTRA_CSS=<file>] node scripts/ios-sim/theme-proxy.mjs <target-port> <listen-port> <theme-json-file|none>
 //
 // It injects `localStorage['rmh-user-theme'] = <json>` as the first thing in <head> of every HTML response and passes
 // everything else through untouched. Test tooling only.
@@ -9,8 +9,12 @@ import http from 'node:http';
 import { readFileSync } from 'node:fs';
 
 const [target, listen, file] = process.argv.slice(2);
-const blob = readFileSync(file, 'utf8');
-const inject = `<script>try{localStorage.setItem('rmh-user-theme',${JSON.stringify(blob)})}catch(e){}</script>`;
+const theme =
+  file && file !== 'none'
+    ? `<script>try{localStorage.setItem('rmh-user-theme',${JSON.stringify(readFileSync(file, 'utf8'))})}catch(e){}</script>`
+    : '';
+const css = process.env.EXTRA_CSS ? `<style>${readFileSync(process.env.EXTRA_CSS, 'utf8')}</style>` : '';
+const inject = theme + css;
 
 http
   .createServer((req, res) => {

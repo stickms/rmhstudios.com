@@ -34,7 +34,8 @@ It builds the site, runs it on the runner against a throwaway Postgres, boots an
 route and uploads the PNGs as the artifact `ios-safari-screenshots`:
 
 - `<route>-light.png`, `<route>-dark.png`: the site's own Day and Night
-- `<route>-<mode>-bottom.png`: scrolled to the bottom of the page (needs `idb`): the strip behind the tab bar is outside the document, so this is where a wash that ends at the document's last pixel shows as a seam
+- `<route>-<mode>-bottom.png`: scrolled to the bottom of the page (needs `idb`): the strip behind the tab bar is outside
+  the document, so this is where a wash that ends at the document's last pixel shows as a seam
 - `<route>-<mode>-globe-open.png`: the same with the globe tapped open
 - `theme-<id>-<route>-light.png` (and `-globe-open`): the bought theme
 
@@ -44,6 +45,24 @@ To run it by hand on a Mac: build, start the server on 7005, then
 `node scripts/ios-sim/theme-proxy.mjs 7005 7006 <theme.json>` (the JSON comes from
 `pnpm exec tsx scripts/ios-sim/theme-json.ts <id>`) and shoot `http://localhost:7006`: a simulator cannot set another
 origin's localStorage, so the proxy writes `rmh-user-theme` into every HTML page before the pre-paint script runs.
+
+## Probes: what colours the strips?
+
+The strips are Safari's, so the way to learn what drives them is to paint candidates a loud colour and look. Run the
+workflow with `probes` set (and `only_probes` on to skip the rest): each name in `scripts/ios-sim/probes/` is a
+stylesheet injected into the page through the proxy, shot at the top and at the bottom of `/terms` as
+`probe-<name>-terms-light.png` and `-bottom.png`. `html-red`, `body-blue` and `root-red-body-clear` show whether Safari
+reads the root's or body's background colour; `fixed-edge-gradient` shows whether a thin fixed layer at an edge makes
+Safari extend its pixels (so a gradient could continue into the strip) or reduce it to one flat colour. Add a probe by
+adding a stylesheet.
+
+**What they showed (iOS 26.5 simulator, 2026-11-22):** the strips are painted opaque over the page in ONE flat colour,
+and that colour is `<body>`'s `background-color` (`body-blue` turned both strips blue); with a transparent body it is
+the root's (`root-red-body-clear` turned them red); a root colour under an opaque body does nothing (`html-red`). A thin
+fixed gradient at each edge (`fixed-edge-gradient`) was not visible at all, so no layer can carry a gradient into a
+strip. The gradient cannot continue there; the only lever is that one colour, which is why `--site-theme-edge` exists
+(`lib/themes/tokens.ts`): body's `background-color` on iOS is the wash's own edge average, over a ground layer so the
+page stays `--site-bg`.
 
 ## Reading the pictures
 

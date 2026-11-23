@@ -1,0 +1,7 @@
+/* Root red, body transparent: what Safari does when only the root has a colour (the first attempt made body transparent and the strips went white). */
+html {
+  background: #ff0000 !important;
+}
+body {
+  background: transparent !important;
+}

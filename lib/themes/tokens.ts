@@ -210,8 +210,8 @@ export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
     '--site-radius-sm': `${Math.round(t.radius * 0.66)}px`,
     '--site-theme-wash': themeWash(t),
     '--site-accent-fill': accentFill(t),
-    '--site-theme-wash-top': themeWashTop(t),
-    '--site-theme-wash-bottom': themeWashBottom(t),
+    '--site-theme-edge': themeEdge(t),
+    '--site-theme-ground': `linear-gradient(${t.canvasBase}, ${t.canvasBase})`,
   };
 }
 
@@ -225,24 +225,17 @@ function themeWash(t: ThemeTokens): string {
 }
 
 /**
- * The ground fading into the wash at the top of the document, iOS only (base-interaction.css). At scroll top Safari fills
- * the strip behind its status bar with ONE flat colour (the ground), where the page's wash is a gradient, so the wash
- * began at a hard line under the strip. The strip is `env(safe-area-inset-top)` tall; the ground holds that far and then
- * gives way to the wash over 96px, so there is no line to see. It sits at the top of the DOCUMENT (scroll attachment on
- * iOS), so once the page scrolls the strip shows the content itself, which is already the wash. Zero inset, no strip, and
- * the fade only softens the top glows a little.
+ * The ONE flat colour for Safari's strips, iOS only (base-interaction.css). The probes in scripts/ios-sim/probes showed
+ * the strips behind the status bar and the floating tab bar are painted opaque over the page, in a single colour taken
+ * from <body>'s background-color (no gradient, and not even a fixed layer at the edge shows through). So the wash cannot
+ * run into them, but the colour can be chosen: the average of the wash along the top edge (glow1 and glow2 corners) and
+ * the bottom edge (glow3 centre), so the strips read as part of the gradient instead of a band of plain ground.
+ * Alphas are the wash's own (`themeWash`) averaged over the edge: each glow falls linearly to zero at 70% of its radius.
  */
-function themeWashTop(t: ThemeTokens): string {
-  return `linear-gradient(to bottom, ${t.canvasBase} env(safe-area-inset-top, 0px), transparent calc(env(safe-area-inset-top, 0px) + 96px))`;
-}
-
-/**
- * The ground fading into the wash at the END of the document, iOS only. The strip behind Safari's floating tab bar is
- * outside the document, so Safari paints it from the flat ground; the wash used to stop at the document's last pixel and
- * show as a lighter band there. The ground holds over the home-indicator inset and gives way to the wash over 96px.
- */
-function themeWashBottom(t: ThemeTokens): string {
-  return `linear-gradient(to top, ${t.canvasBase} env(safe-area-inset-bottom, 0px), transparent calc(env(safe-area-inset-bottom, 0px) + 96px))`;
+function themeEdge(t: ThemeTokens): string {
+  const top = over(t.glow2, 0.18 * 0.5 * 0.7 * 0.55, over(t.glow1, 0.22 * 0.5 * 0.7 * 0.6, t.canvasBase));
+  const bottom = over(t.glow3, 0.12 * 0.7 * 0.7, t.canvasBase);
+  return mix(top, bottom, 0.5);
 }
 
 /** The ink-primary sheen: accent into accent-plus-a-third-of-glow2, or `none` if that would fail AA. */
@@ -274,7 +267,7 @@ export interface AppliedUserTheme {
 }
 
 /** Bump when `themeCssVars` changes what it emits, so every cached applied theme is re-derived once. */
-export const THEME_DERIVATION_VERSION = 4;
+export const THEME_DERIVATION_VERSION = 5;
 
 /** True when a cached applied theme was derived by an older (or unstamped) derivation. */
 export function isStaleAppliedTheme(theme: AppliedUserTheme): boolean {

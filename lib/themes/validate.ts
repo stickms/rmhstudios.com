@@ -56,9 +56,6 @@ export const ALLOWED_CSS_FUNCTIONS: readonly string[] = [
   'radial-gradient',
   'linear-gradient',
   'color-mix',
-  // `--site-theme-wash-top` sizes its fade by the device's safe-area inset. Neither function can load or run anything.
-  'env',
-  'calc',
 ];
 
 /** The closed set of custom-property names a theme may set. */
