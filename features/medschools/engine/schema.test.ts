@@ -329,4 +329,62 @@ model MedTrackerApplication {
       expect(sql).not.toMatch(/\bDROP\b/i);
     });
   });
+  describe('phase 5: forecasts and wait curves (aggregate only)', () => {
+    const model = (name: string) => parseModels(schema()).find((x) => x.model === name);
+    const uniques = (name: string) =>
+      (model(name)?.body.split('\n') ?? [])
+        .filter((l) => l.includes('@@unique'))
+        .map(
+          (l) =>
+            /\[([^\]]+)\]/
+              .exec(l)?.[1]
+              ?.split(',')
+              .map((x) => x.trim()) ?? [],
+        );
+    const migration = () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_forecast'));
+      expect(dir).toBeDefined();
+      return readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+    };
+
+    it('both models exist and carry no person column or userId', () => {
+      for (const name of ['MedForecast', 'MedWaitCurve']) {
+        const m = model(name);
+        expect(m, name).toBeDefined();
+        expect(
+          m?.fields.some(
+            (f) => PERSON_LIKE.test(f) || f === 'userId' || /^member$|memberId|applicationId|cycleId/i.test(f),
+          ),
+        ).toBe(false);
+        expect(USER_OWNED.has(name)).toBe(false);
+      }
+    });
+
+    it('pins the uniques the job upserts on', () => {
+      expect(uniques('MedForecast')).toContainEqual(['schoolId', 'program', 'cycleYear', 'eventType']);
+      expect(uniques('MedWaitCurve')).toContainEqual(['schoolId', 'program']);
+    });
+
+    it('MedWaitCurve has exactly the aggregate columns', () => {
+      expect(model('MedWaitCurve')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'asOf',
+        'computedAt',
+        'members',
+        'invited',
+        'maxDay',
+        'curve',
+      ]);
+    });
+
+    it('the migration creates both tables and the enum and drops nothing', () => {
+      const sql = migration();
+      expect(sql).toContain('CREATE TABLE "med_forecast"');
+      expect(sql).toContain('CREATE TABLE "med_wait_curve"');
+      expect(sql).toContain('CREATE TYPE "MedForecastMode"');
+      expect(sql).not.toMatch(/\bDROP\b/i);
+    });
+  });
 });
