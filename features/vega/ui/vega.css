@@ -1,0 +1,627 @@
+/* ==========================================================================
+   PROJECT VEGA — the game's own look (docs/game-design-schemes/vega.json).
+
+   A diagnostic monitor in a sterile lab: green-black glass, cold white type,
+   one surgical mint for what you can act on, arterial red for what is lost.
+   Archivo condensed for labels (like a specimen tag), IBM Plex Mono for every
+   number. Full-screen app tier (L8): none of this reaches the site.
+
+   Motion: colour/background transitions only (90 ms controls, 160 ms
+   overlays); nothing pulses or flashes.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Archivo';
+  src: url('../../../components/shared/game-fonts/Archivo/Archivo-wdth-wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../../components/shared/game-fonts/IBMPlexMono/IBMPlexMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../../components/shared/game-fonts/IBMPlexMono/IBMPlexMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+.vega-root {
+  --vg-void: #020504;
+  --vg-glass: #050c0a;
+  --vg-panel: #07110e;
+  --vg-panel-2: #0c1a16;
+  --vg-line: #1d3a31;
+  --vg-line-strong: #2f5d4f;
+  --vg-ink: #e6f2ee;
+  --vg-muted: #9dbfb4;
+  --vg-faint: #6f978a;
+  --vg-mint: #8ef0c4;
+  --vg-mint-ink: #03231a;
+  --vg-mint-wash: #0f2a22;
+  --vg-blood: #ef5a5e;
+  --vg-blood-wash: #2a0b0d;
+  --vg-amber: #f2c96b;
+  --vg-display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+  --vg-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--vg-void);
+  color: var(--vg-ink);
+  font-family: var(--vg-display);
+  font-stretch: 100%;
+  overflow: hidden;
+}
+
+.vega-root :focus-visible {
+  outline: 2px solid var(--vg-ink);
+  outline-offset: 2px;
+}
+
+.vg-mono {
+  font-family: var(--vg-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A specimen-tag label: condensed capitals with a filled square in front. */
+.vg-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--vg-display);
+  font-stretch: 70%;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--vg-muted);
+}
+.vg-tag::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--vg-mint);
+  flex: none;
+}
+.vg-tag.is-danger::before {
+  background: var(--vg-blood);
+}
+
+.vg-title {
+  font-family: var(--vg-display);
+  font-stretch: 68%;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+
+.vg-rule {
+  height: 1px;
+  background: var(--vg-line);
+  border: 0;
+  margin: 0;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+.vg-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--vg-line-strong);
+  border-radius: 2px;
+  background: var(--vg-panel);
+  color: var(--vg-ink);
+  font-family: var(--vg-display);
+  font-stretch: 75%;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 90ms ease,
+    border-color 90ms ease,
+    color 90ms ease;
+}
+.vg-btn:hover {
+  background: var(--vg-panel-2);
+  border-color: var(--vg-mint);
+}
+.vg-btn:disabled {
+  cursor: not-allowed;
+  color: var(--vg-faint);
+  border-color: var(--vg-line);
+  background: var(--vg-panel);
+}
+/* The notch: a clipped top-right corner, like a slide label. */
+.vg-btn::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 0;
+  height: 0;
+  border-top: 9px solid var(--vg-void);
+  border-left: 9px solid transparent;
+}
+.vg-btn-primary {
+  background: var(--vg-mint);
+  border-color: var(--vg-mint);
+  color: var(--vg-mint-ink);
+}
+.vg-btn-primary:hover {
+  background: #b5f7d9;
+  border-color: #b5f7d9;
+}
+.vg-btn-primary:disabled {
+  background: var(--vg-mint-wash);
+  border-color: var(--vg-line);
+  color: var(--vg-faint);
+}
+.vg-btn-danger {
+  border-color: #7a2a2d;
+  color: var(--vg-blood);
+}
+.vg-btn-danger:hover {
+  border-color: var(--vg-blood);
+  background: var(--vg-blood-wash);
+}
+.vg-btn-sm {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.vg-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--vg-line);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--vg-muted);
+  cursor: pointer;
+  transition:
+    color 90ms ease,
+    border-color 90ms ease;
+}
+.vg-icon-btn:hover,
+.vg-icon-btn[aria-pressed='true'] {
+  color: var(--vg-mint);
+  border-color: var(--vg-mint);
+}
+
+/* A control the tutorial is pointing at: an amber ring, steady (no pulse). */
+.vega-root [data-hint='true'] {
+  box-shadow: 0 0 0 2px var(--vg-amber);
+}
+
+/* ── Play layout ──────────────────────────────────────────────────────── */
+
+.vg-hud {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: calc(8px + var(--safe-top, 0px)) 12px 8px;
+  border-bottom: 1px solid var(--vg-line);
+  background: var(--vg-glass);
+}
+.vg-hud-stat {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
+}
+.vg-hud-stat > span:first-child {
+  font-stretch: 70%;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vg-faint);
+}
+.vg-hud-stat > span:last-child {
+  font-family: var(--vg-mono);
+  font-weight: 500;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.vg-integrity {
+  display: flex;
+  gap: 2px;
+  margin-top: 3px;
+}
+.vg-integrity i {
+  width: 5px;
+  height: 10px;
+  background: var(--vg-mint);
+}
+.vg-integrity i.is-lost {
+  background: var(--vg-line);
+}
+.vg-integrity.is-low i:not(.is-lost) {
+  background: var(--vg-blood);
+}
+
+.vg-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.vg-board-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+.vg-board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vg-board canvas {
+  display: block;
+  border: 1px solid var(--vg-line);
+}
+.vg-side {
+  flex: none;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--vg-line);
+  background: var(--vg-glass);
+  overflow-y: auto;
+}
+.vg-side-section {
+  padding: 12px;
+  border-bottom: 1px solid var(--vg-line);
+}
+
+.vg-roster {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+.vg-rx {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 1px solid var(--vg-line);
+  border-radius: 2px;
+  background: var(--vg-panel);
+  color: var(--vg-ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 90ms ease,
+    background-color 90ms ease;
+}
+.vg-rx:hover {
+  border-color: var(--vg-line-strong);
+  background: var(--vg-panel-2);
+}
+.vg-rx[aria-pressed='true'] {
+  border-color: var(--vg-mint);
+  background: var(--vg-mint-wash);
+}
+.vg-rx.is-poor .vg-rx-cost {
+  color: var(--vg-blood);
+}
+.vg-rx-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-stretch: 66%;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.vg-rx-cost {
+  display: block;
+  font-family: var(--vg-mono);
+  font-size: 12px;
+  color: var(--vg-muted);
+}
+.vg-key {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-family: var(--vg-mono);
+  font-size: 10px;
+  color: var(--vg-faint);
+}
+.vg-glyph {
+  flex: none;
+  display: block;
+}
+
+.vg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.vg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 2px;
+  border: 1px solid var(--vg-line);
+  font-family: var(--vg-mono);
+  font-size: 12px;
+  color: var(--vg-muted);
+}
+.vg-chip.is-boss {
+  border-color: #7a2a2d;
+  color: var(--vg-blood);
+}
+
+.vg-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+.vg-stat-grid dt {
+  color: var(--vg-faint);
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+.vg-stat-grid dd {
+  margin: 0;
+  font-family: var(--vg-mono);
+}
+
+.vg-segment {
+  display: flex;
+  border: 1px solid var(--vg-line);
+  margin-top: 8px;
+}
+.vg-segment button {
+  flex: 1;
+  min-height: 36px;
+  border: 0;
+  border-right: 1px solid var(--vg-line);
+  background: transparent;
+  color: var(--vg-muted);
+  font-family: var(--vg-display);
+  font-stretch: 75%;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.vg-segment button:last-child {
+  border-right: 0;
+}
+.vg-segment button[aria-pressed='true'] {
+  background: var(--vg-mint-wash);
+  color: var(--vg-mint);
+}
+
+/* The case log, bottom-left of the board. */
+.vg-log {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  max-width: min(420px, 60%);
+  pointer-events: none;
+  font-family: var(--vg-mono);
+  font-size: 12px;
+}
+.vg-log p {
+  margin: 0;
+  padding: 2px 6px;
+  background: var(--vg-void);
+  color: var(--vg-muted);
+}
+.vg-log p.is-bad {
+  color: var(--vg-blood);
+}
+.vg-log p.is-good {
+  color: var(--vg-mint);
+}
+
+/* Cards on the board: the tutorial and the dossier. */
+.vg-card {
+  position: absolute;
+  z-index: 5;
+  width: min(360px, calc(100% - 24px));
+  padding: 14px;
+  border: 1px solid var(--vg-line-strong);
+  border-left: 3px solid var(--vg-mint);
+  background: var(--vg-panel);
+}
+.vg-card.is-danger {
+  border-left-color: var(--vg-blood);
+}
+.vg-card p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--vg-ink);
+}
+
+/* Overlays: pause, victory, manual, end. */
+.vg-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2, 5, 4, 0.86);
+  animation: vg-fade 160ms ease-out;
+}
+.vg-dialog {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 22px;
+  border: 1px solid var(--vg-line-strong);
+  background: var(--vg-panel);
+}
+@keyframes vg-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Menu ─────────────────────────────────────────────────────────────── */
+
+.vg-menu {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 32px;
+  padding: calc(72px + var(--safe-top, 0px)) 48px 40px;
+}
+.vg-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.vg-menu > *:not(.vg-menu-backdrop) {
+  position: relative;
+}
+.vg-maps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.vg-map {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--vg-line);
+  background: var(--vg-panel);
+  color: var(--vg-ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 90ms ease,
+    background-color 90ms ease;
+}
+.vg-map:hover {
+  border-color: var(--vg-line-strong);
+}
+.vg-map[aria-pressed='true'] {
+  border-color: var(--vg-mint);
+  background: var(--vg-mint-wash);
+}
+.vg-map svg {
+  display: block;
+  width: 112px;
+  height: auto;
+  border: 1px solid var(--vg-line);
+  background: var(--vg-void);
+}
+.vg-board-row td,
+.vg-board-row th {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--vg-line);
+  font-size: 13px;
+}
+
+/* ── Phone ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .vg-hud {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .vg-hud-stat > span:last-child {
+    font-size: 15px;
+  }
+  .vg-main {
+    flex-direction: column;
+  }
+  .vg-board-wrap {
+    flex: none;
+    padding: 6px;
+    aspect-ratio: 1200 / 780;
+    width: 100%;
+  }
+  .vg-side {
+    width: 100%;
+    flex: 1;
+    border-left: 0;
+    border-top: 1px solid var(--vg-line);
+  }
+  .vg-roster {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .vg-rx {
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    text-align: center;
+  }
+  .vg-rx .vg-key {
+    display: none;
+  }
+  .vg-rx-name {
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+  .vg-log {
+    display: none;
+  }
+  .vg-menu-jar,
+  .vg-hud-title {
+    display: none;
+  }
+  .vg-menu {
+    grid-template-columns: minmax(0, 1fr);
+    padding: calc(64px + var(--safe-top, 0px)) 16px 32px;
+    gap: 24px;
+  }
+}

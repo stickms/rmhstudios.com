@@ -18,7 +18,7 @@ export const getVoidBreakerLeaderboardApi = endpoint<{
   res: { username: string; highScore: number }[];
 }>()({ method: 'GET', path: '/api/void-breaker/leaderboard' });
 
-/** Vega's own board: the global top ten by loop, then level. */
+/** Vega's own board: the global top ten by best score (`highestLevel`), then best wave (`highestLoop`). */
 export const getVegaLeaderboardApi = endpoint<{
   res: { username: string; highestLoop: number; highestLevel: number; updatedAt: string }[];
 }>()({ method: 'GET', path: '/api/vega/leaderboard' });
