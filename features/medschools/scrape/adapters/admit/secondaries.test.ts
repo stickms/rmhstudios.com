@@ -8,7 +8,13 @@ const read = (f: string) => readFileSync(join(__dirname, '__fixtures__', f), 'ut
 const CTX = { currentCycle: 2027 };
 
 /** Needles only this adapter's hostile fixture carries, on top of Admit's shared ones. */
-const OWN_NEEDLES = ['@handle_ad77', 'ad.person@example.com', 'I got this prompt in 2023', 'grandmother', 'ignore the limit'];
+const OWN_NEEDLES = [
+  '@handle_ad77',
+  'ad.person@example.com',
+  'I got this prompt in 2023',
+  'grandmother',
+  'ignore the limit',
+];
 
 describe('parseSecondaryEssaysPage', () => {
   it('parses the Harvard page into the exact list of prompts', () => {
@@ -85,8 +91,12 @@ describe('parseSecondaryEssaysPage', () => {
 
   it('a hostile page gives only the prompt fields and none of its needles', () => {
     const out = parseSecondaryEssaysPage(read('secondary-essays-hostile.html'), CTX);
-    expect(out.map((p) => p.text)).toEqual(['Why are you interested in our school?', 'Describe a time you worked on a team.']);
-    for (const p of out) expect(Object.keys(p).sort()).toEqual(['cycleYear', 'limit', 'optional', 'program', 'sourceRef', 'text']);
+    expect(out.map((p) => p.text)).toEqual([
+      'Why are you interested in our school?',
+      'Describe a time you worked on a team.',
+    ]);
+    for (const p of out)
+      expect(Object.keys(p).sort()).toEqual(['cycleYear', 'limit', 'optional', 'program', 'sourceRef', 'text']);
     // The heading inside the comment block did not make the later prompts combined-degree ones.
     expect(out.every((p) => p.program === 'REG')).toBe(true);
     const dump = JSON.stringify(out);

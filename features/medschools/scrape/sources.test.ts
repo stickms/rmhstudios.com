@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ADMIT_GRAPHQL_PATH, ADMIT_SECONDARY_URL, DAILY_REQUEST_BUDGETS, MEDSCHOOLS_USER_AGENT, SOURCES } from './sources';
+import {
+  ADMIT_GRAPHQL_PATH,
+  ADMIT_SECONDARY_URL,
+  DAILY_REQUEST_BUDGETS,
+  MEDSCHOOLS_USER_AGENT,
+  SOURCES,
+} from './sources';
 
 describe('medschools sources', () => {
   it('identifies itself with the agreed user agent', () => {
@@ -76,6 +82,8 @@ describe('medschools sources', () => {
   });
 
   it('builds the secondary-essays page URL on the web origin', () => {
-    expect(ADMIT_SECONDARY_URL('harvard-medical-school')).toBe('https://med.admit.org/secondary-essays/harvard-medical-school');
+    expect(ADMIT_SECONDARY_URL('harvard-medical-school')).toBe(
+      'https://med.admit.org/secondary-essays/harvard-medical-school',
+    );
   });
 });

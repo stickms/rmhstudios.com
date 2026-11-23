@@ -9,7 +9,13 @@
  * one-line description and the hand-built fixtures. They are all in `SEL`, so the live-capture swap is one edit.
  */
 import { parse, type HTMLElement } from 'node-html-parser';
-import { MAX_PER_SECTION, classifyProgram, cycleLabelToEntryYear, parsePromptText } from '../../../engine/secondaries/text';
+import { inDiscussion } from '../discussion';
+import {
+  MAX_PER_SECTION,
+  classifyProgram,
+  cycleLabelToEntryYear,
+  parsePromptText,
+} from '../../../engine/secondaries/text';
 import type { NormalizedPrompt, PromptLimit } from '../../../engine/secondaries/types';
 
 export { cycleLabelToEntryYear, MAX_PER_SECTION };
@@ -35,17 +41,7 @@ const SEL = {
   empty: '.secondary-empty',
 } as const;
 
-const DISCUSSION_RE = /comment|discussion|reply|replies/i;
-const HEADING_CYCLE_RE = /\b\d{4}\s*[-‐-―/]\s*\d{2,4}\b/;
-
-/** True when an element sits inside a comment or discussion block (or an `aside`), whatever it looks like. */
-function inDiscussion(el: HTMLElement): boolean {
-  for (let n = el.parentNode as HTMLElement | null; n; n = n.parentNode as HTMLElement | null) {
-    if (n.tagName === 'ASIDE') return true;
-    if (DISCUSSION_RE.test(n.getAttribute?.('class') ?? '')) return true;
-  }
-  return false;
-}
+const HEADING_CYCLE_RE = /\b\d{4}\s*[-\u2010-\u2015/]\s*\d{2,4}\b/;
 
 function cycleOf(section: HTMLElement, currentCycle: number): number | null {
   const attr = section.getAttribute(SEL.cycleAttr);

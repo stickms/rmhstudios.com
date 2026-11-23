@@ -117,9 +117,12 @@ describe('classifyProgram', () => {
 });
 
 describe('cycleLabelToEntryYear', () => {
-  it.each(['2024-2025', '2024\u20132025', '2024-25', ' 2024 - 2025 ', '2024\u201325'])('reads %j as the entry year 2025', (label) => {
-    expect(cycleLabelToEntryYear(label)).toBe(2025);
-  });
+  it.each(['2024-2025', '2024\u20132025', '2024-25', ' 2024 - 2025 ', '2024\u201325'])(
+    'reads %j as the entry year 2025',
+    (label) => {
+      expect(cycleLabelToEntryYear(label)).toBe(2025);
+    },
+  );
 
   it('reads a bare year as the entry year as written (unverified, plan Facts 2)', () => {
     expect(cycleLabelToEntryYear('2025')).toBe(2025);

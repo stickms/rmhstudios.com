@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalThreadUrl, forumListingUrl, forumRssUrl, summaryPageUrl, threadPageUrl } from './urls';
+import { SOURCES } from '../../sources';
+import {
+  canonicalThreadUrl,
+  essayQuestionsUrl,
+  forumListingUrl,
+  forumRssUrl,
+  summaryPageUrl,
+  threadPageUrl,
+} from './urls';
 
 describe('SDN urls', () => {
   it('builds forum, thread and summary urls', () => {
@@ -12,5 +20,12 @@ describe('SDN urls', () => {
     expect(summaryPageUrl('CUCPS', 'columbia')).toBe(
       'https://www.studentdoctor.net/schools-database/medical-school/interview-feedback/summary/CUCPS/columbia',
     );
+  });
+
+  it('builds the essay-questions url on the www origin', () => {
+    expect(essayQuestionsUrl('123', 'columbia-university')).toBe(
+      'https://www.studentdoctor.net/schools-database/medical-school/essay-questions/123/columbia-university',
+    );
+    expect(essayQuestionsUrl('123', 'x').startsWith(SOURCES.SDN_WWW.origin)).toBe(true);
   });
 });
