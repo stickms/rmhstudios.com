@@ -7,6 +7,8 @@ import {
   EmptyNote,
   PlotClip,
   ResponsivePlot,
+  WaveKey,
+  WaveTick,
   XAxis,
   YAxis,
   type ChartLabels,
@@ -28,6 +30,8 @@ export function DailyBars(p: {
   to: string;
   color: string;
   labels: ChartLabels;
+  /** Waves of this category (Interview only, D10): a tick under the wave day's bar. */
+  waves?: { date: string; count: number }[] | undefined;
 }) {
   const { labels } = p;
   const nf = new Intl.NumberFormat(labels.locale);
@@ -40,6 +44,8 @@ export function DailyBars(p: {
   };
   const target = barsGeometry(hasData ? days : [], 0).top;
   const tween = useTween(target);
+
+  const waveOf = new Map((labels.wave ? (p.waves ?? []) : []).map((w) => [w.date, w.count] as const));
 
   const dates = [...p.primary.days].map((d) => d.date).sort();
   const counts = new Map(p.primary.days.map((d) => [d.date, d.count]));
@@ -65,6 +71,7 @@ export function DailyBars(p: {
         },
         at: (i) => {
           const d = days[i]!;
+          const wave = waveOf.get(d.date);
           return {
             label: formatUtcDay(d.date, labels.locale, { month: 'short', day: 'numeric', year: 'numeric' }),
             rows: [
@@ -75,6 +82,17 @@ export function DailyBars(p: {
                 text: nf.format(d.count),
                 y: (g) => geoOf(g).bars[i]!.y,
               },
+              ...(wave !== undefined && labels.wave
+                ? [
+                    {
+                      key: 'wave',
+                      name: labels.wave.probe(wave),
+                      color: 'var(--site-text-muted)',
+                      text: '',
+                      y: () => null,
+                    },
+                  ]
+                : []),
             ],
           };
         },
@@ -86,6 +104,7 @@ export function DailyBars(p: {
       title={labels.title}
       unit={labels.unitDaily}
       sourcesLine={labels.sourcesLine({ primary: name, comparison: [] })}
+      legend={waveOf.size > 0 && labels.wave ? <WaveKey label={labels.wave.legend} /> : undefined}
       tableLabel={labels.showData}
       table={<DataTable head={[labels.date, name]} rows={rows} />}
     >
@@ -121,6 +140,12 @@ export function DailyBars(p: {
               ) : (
                 <EmptyNote g={g} text={labels.empty} />
               )}
+              {hasData
+                ? days.flatMap((d, i) => {
+                    const b = geo.bars[i];
+                    return b && waveOf.has(d.date) ? [<WaveTick key={d.date} x={b.x + b.w / 2} g={g} />] : [];
+                  })
+                : null}
             </>
           );
         }}

@@ -31,6 +31,7 @@ const labels: ChartLabels = {
   showData: 'Show data',
   hint: 'Use the arrow keys to read values by date',
   summary: ({ lines }) => `Chart of ${lines.map((l) => `${l.name} ${l.total}`).join('; ')}`,
+  wave: { legend: 'Wave', probe: (n) => `Wave: ${n} invites` },
   locale: 'en-US',
 };
 
@@ -289,6 +290,52 @@ describe('CycleOverlay', () => {
       ),
       true,
     );
+  });
+});
+
+describe('wave marks', () => {
+  const series = (['INTERVIEW', 'ACCEPTANCE'] as const).map((t, i) => ({
+    eventType: t,
+    label: `Label-${t}`,
+    points: cumulative([i + 1, i + 3, i + 6]),
+  }));
+  const base = { series, sources: ['CYCLETRACK'] as const, dayZeroOn: '2026-06-01', labels };
+  const waves = [{ date: '2026-06-11', count: 12 }];
+  const ticks = (html: string) => [...html.matchAll(/<line [^>]*data-wave[^>]*>/g)].map((m) => m[0]);
+
+  it('CategoryLines: a 1px muted tick at the wave date, rising 8 units, no fill or opacity, and a Wave legend entry', () => {
+    const html = renderToString(<CategoryLines {...base} visible={['INTERVIEW', 'ACCEPTANCE']} waves={waves} />);
+    const t = ticks(phone(html));
+    expect(t).toHaveLength(1);
+    expect(t[0]).toContain('stroke="var(--site-text-muted)"');
+    expect(t[0]).toContain('stroke-width="1"');
+    expect(t[0]).not.toMatch(/opacity|fill="(?!none)/);
+    const x = Number(/x1="([\d.]+)"/.exec(t[0]!)![1]);
+    const y1 = Number(/y1="([\d.]+)"/.exec(t[0]!)![1]);
+    const y2 = Number(/y2="([\d.]+)"/.exec(t[0]!)![1]);
+    expect(y1 - y2).toBe(8);
+    // Day 10 of the domain 0..20 is the middle of the plot.
+    const lo = Number(/<clipPath[^>]*><rect x="([\d.]+)" [^>]* width="([\d.]+)"/.exec(phone(html))![1]) + 2;
+    const w = Number(/<clipPath[^>]*><rect x="[\d.]+" [^>]* width="([\d.]+)"/.exec(phone(html))![1]) - 4;
+    expect(x).toBeCloseTo(lo + w / 2, 0);
+    expect(html).toContain('>Wave<');
+  });
+  it('CategoryLines: no tick and no legend entry while Interview is off, or with no waves', () => {
+    const off = renderToString(<CategoryLines {...base} visible={['ACCEPTANCE']} waves={waves} />);
+    expect(ticks(off)).toHaveLength(0);
+    expect(off).not.toContain('>Wave<');
+    const none = renderToString(<CategoryLines {...base} visible={['INTERVIEW']} waves={[]} />);
+    expect(ticks(none)).toHaveLength(0);
+    expect(none).not.toContain('>Wave<');
+  });
+  it('DailyBars: a tick under the wave day bar and the legend entry; nothing without waves', () => {
+    const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--site-chart-1)', labels };
+    const html = renderToString(<DailyBars primary={ct} {...props} waves={[{ date: '2026-11-20', count: 4 }]} />);
+    expect(ticks(phone(html))).toHaveLength(1);
+    expect(html).toContain('>Wave<');
+    const plain = renderToString(<DailyBars primary={ct} {...props} />);
+    expect(ticks(plain)).toHaveLength(0);
+    expect(plain).not.toContain('>Wave<');
   });
 });
 

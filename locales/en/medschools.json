@@ -149,6 +149,7 @@
   "live-title": "Live reported events",
   "live-type-all": "All events",
   "live-type-label": "Event",
+  "live-wave": "Part of a wave",
   "load-failed": "Could not load the alias misses",
   "map": "Map",
   "map-key": "Map {{name}}",
@@ -317,5 +318,11 @@
   "tracker-schools-heading": "Schools",
   "tracker-signed-out-body": "Your tracker is private to your account. Sign in to keep your schools and dates.",
   "tracker-signed-out-title": "Sign in to track your cycle",
-  "tracker-title": "My tracker"
+  "tracker-title": "My tracker",
+  "wave-legend": "Wave",
+  "wave-note": "Waves: {{list}}",
+  "wave-note-item_one": "{{date}} ({{n}} invite)",
+  "wave-note-item_other": "{{date}} ({{n}} invites)",
+  "wave-probe_one": "Wave: {{n}} invite",
+  "wave-probe_other": "Wave: {{n}} invites"
 }

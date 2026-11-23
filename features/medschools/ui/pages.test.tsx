@@ -291,6 +291,11 @@ describe('LivePage', () => {
     expect(html).not.toContain('Reported events, not applicants');
     expect(html).not.toMatch(/@|\/u\/|cabc123|cdef456/);
   });
+  it('a wave row says it is part of a wave in plain text; other rows do not', () => {
+    h.search = {};
+    const html = withClient(seedLive([ev('w1', { wave: true }), ev('w2', { wave: false })]), <LivePage />);
+    expect(html.match(/Part of a wave/g)).toHaveLength(1);
+  });
   it('has the four program toggles', () => {
     h.search = {};
     const html = withClient(seedLive([ev('a1')]), <LivePage />);

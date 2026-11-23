@@ -62,6 +62,7 @@ export function LiveRow({
             <RelativeTime date={event.occurredAt} format={(ts) => lf.relative(ts)} className="t-meta" />
           )}
           {compact ? null : <span className="t-meta">{sourceName(event.source)}</span>}
+          {event.wave ? <span className="t-meta">{t('live-wave', { defaultValue: 'Part of a wave' })}</span> : null}
         </div>
       </div>
     </li>

@@ -491,6 +491,22 @@ describe('SchoolPage', () => {
   });
 });
 
+describe('Activity waves', () => {
+  it('the page names the waves in one line and marks them on both charts', () => {
+    h.search = {};
+    const html = render(seedActivity(activity({ waves: [{ date: '2026-11-18', count: 12, baseline: 2 }] })));
+    expect(html).toContain('Waves: Nov 18 (12 invites)');
+    expect(html.match(/data-wave/g)!.length).toBeGreaterThanOrEqual(2);
+  });
+  it('no waves: no line, no tick, no legend entry', () => {
+    h.search = {};
+    const html = render(seedActivity(activity()));
+    expect(html).not.toContain('Waves:');
+    expect(html).not.toContain('data-wave');
+    expect(html).not.toContain('>Wave<');
+  });
+});
+
 describe('Forecast tab', () => {
   const forecast = (o: Partial<MedSchoolForecastRes> = {}): MedSchoolForecastRes => ({
     program: 'REG',

@@ -19,6 +19,7 @@ import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
+import { WaveNote } from './WaveNote';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
 const todayUtc = () => new Date().toISOString().slice(0, 10);
@@ -95,6 +96,7 @@ export function ActivityTab({
                 t('school-categories-title', { defaultValue: 'Cumulative reported events by category' }),
               )}
               visible={visible}
+              waves={data.waves}
               dayZeroOn={data.dayZeroOn}
               sources={[
                 ...new Set(
@@ -119,6 +121,8 @@ export function ActivityTab({
             />
           </section>
 
+          <WaveNote waves={data.waves} />
+
           <section
             className="flex flex-col gap-3"
             aria-label={t('school-type-section', { defaultValue: 'One category by day' })}
@@ -142,6 +146,7 @@ export function ActivityTab({
                   from={data.dayZeroOn}
                   to={to}
                   color={CATEGORY_COLOR[search.type as MedChartedTypeId]}
+                  waves={search.type === 'INTERVIEW' ? data.waves : undefined}
                   labels={chartLabels(
                     t('school-daily-title', {
                       defaultValue: '{{type}} by day',
