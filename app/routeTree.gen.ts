@@ -18,6 +18,7 @@ import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matte
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CsgoRouteImport } from './routes/csgo'
+import { Route as CursedLogicRouteImport } from './routes/cursed-logic'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
@@ -53,8 +54,8 @@ import { Route as RmhosRouteImport } from './routes/rmhos'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
-import { Route as SecretRouteImport } from './routes/secret'
 import { Route as SecurityRouteImport } from './routes/security'
+import { Route as SignalForgeRouteImport } from './routes/signal-forge'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SohumbumRouteImport } from './routes/sohumbum'
@@ -64,6 +65,7 @@ import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
 import { Route as TempleOfJoyRouteImport } from './routes/temple-of-joy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as Tf2RouteImport } from './routes/tf2'
+import { Route as VegaRouteImport } from './routes/vega'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as VersecraftRouteImport } from './routes/versecraft'
 import { Route as VibeFrameRouteImport } from './routes/vibe-frame'
@@ -186,10 +188,6 @@ import { Route as RmhtypeMultiplayerRouteImport } from './routes/rmhtype/multipl
 import { Route as RmhtypeProgressRouteImport } from './routes/rmhtype/progress'
 import { Route as RmhtypeSoloRouteImport } from './routes/rmhtype/solo'
 import { Route as RmhtypeTextsRouteImport } from './routes/rmhtype/texts'
-import { Route as SecretIndexRouteImport } from './routes/secret/index'
-import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
-import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
-import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as ServicesRebarRutabagaRouteImport } from './routes/services.rebar-rutabaga'
 import { Route as SitemapsNameRouteImport } from './routes/sitemaps.$name'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
@@ -458,7 +456,6 @@ import { Route as RmhmusicRTokenRouteImport } from './routes/rmhmusic_.r.$token'
 import { Route as RmhtubePartyRoomIdRouteImport } from './routes/rmhtube/party.$roomId'
 import { Route as RmhtypeLessonsIndexRouteImport } from './routes/rmhtype/lessons.index'
 import { Route as RmhtypeLessonsLessonIdRouteImport } from './routes/rmhtype/lessons.$lessonId'
-import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
 import { Route as SliceItPlayerHandleRouteImport } from './routes/slice-it/player.$handle'
@@ -678,6 +675,11 @@ const CsgoRoute = CsgoRouteImport.update({
   path: '/csgo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CursedLogicRoute = CursedLogicRouteImport.update({
+  id: '/cursed-logic',
+  path: '/cursed-logic',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DailyRoute = DailyRouteImport.update({
   id: '/daily',
   path: '/daily',
@@ -853,14 +855,14 @@ const RmhtypeRoute = RmhtypeRouteImport.update({
   path: '/rmhtype',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SecretRoute = SecretRouteImport.update({
-  id: '/secret',
-  path: '/secret',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SecurityRoute = SecurityRouteImport.update({
   id: '/security',
   path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalForgeRoute = SignalForgeRouteImport.update({
+  id: '/signal-forge',
+  path: '/signal-forge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -906,6 +908,11 @@ const TermsRoute = TermsRouteImport.update({
 const Tf2Route = Tf2RouteImport.update({
   id: '/tf2',
   path: '/tf2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VegaRoute = VegaRouteImport.update({
+  id: '/vega',
+  path: '/vega',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Velum2099Route = Velum2099RouteImport.update({
@@ -1518,26 +1525,6 @@ const RmhtypeTextsRoute = RmhtypeTextsRouteImport.update({
   id: '/texts',
   path: '/texts',
   getParentRoute: () => RmhtypeRoute,
-} as any)
-const SecretIndexRoute = SecretIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretCursedLogicRoute = SecretCursedLogicRouteImport.update({
-  id: '/cursed-logic',
-  path: '/cursed-logic',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretSignalForgeRoute = SecretSignalForgeRouteImport.update({
-  id: '/signal-forge',
-  path: '/signal-forge',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretVegaRoute = SecretVegaRouteImport.update({
-  id: '/vega',
-  path: '/vega',
-  getParentRoute: () => SecretRoute,
 } as any)
 const ServicesRebarRutabagaRoute = ServicesRebarRutabagaRouteImport.update({
   id: '/services/rebar-rutabaga',
@@ -2895,11 +2882,6 @@ const RmhtypeLessonsLessonIdRoute = RmhtypeLessonsLessonIdRouteImport.update({
   path: '/lessons/$lessonId',
   getParentRoute: () => RmhtypeRoute,
 } as any)
-const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretCursedLogicRoute,
-} as any)
 const SliceItArtistKeyRoute = SliceItArtistKeyRouteImport.update({
   id: '/artist/$key',
   path: '/artist/$key',
@@ -3826,6 +3808,7 @@ export interface FileRoutesByFullPath {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/csgo': typeof CsgoRoute
+  '/cursed-logic': typeof CursedLogicRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
@@ -3861,8 +3844,8 @@ export interface FileRoutesByFullPath {
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
-  '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
+  '/signal-forge': typeof SignalForgeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/sohumbum': typeof SohumbumRoute
@@ -3872,6 +3855,7 @@ export interface FileRoutesByFullPath {
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
   '/terms': typeof TermsRoute
   '/tf2': typeof Tf2RouteWithChildren
+  '/vega': typeof VegaRoute
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/vibe-frame': typeof VibeFrameRoute
@@ -3979,9 +3963,6 @@ export interface FileRoutesByFullPath {
   '/rmhtype/progress': typeof RmhtypeProgressRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/rmhtype/texts': typeof RmhtypeTextsRoute
-  '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/signal-forge': typeof SecretSignalForgeRoute
-  '/secret/vega': typeof SecretVegaRoute
   '/services/rebar-rutabaga': typeof ServicesRebarRutabagaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
@@ -4005,7 +3986,6 @@ export interface FileRoutesByFullPath {
   '/rmhstudy/': typeof RmhstudyIndexRoute
   '/rmhtube/': typeof RmhtubeIndexRoute
   '/rmhtype/': typeof RmhtypeIndexRoute
-  '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
   '/sohumtracker/': typeof SohumtrackerIndexRoute
   '/strategies/': typeof StrategiesIndexRoute
@@ -4281,7 +4261,6 @@ export interface FileRoutesByFullPath {
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/rmhtype/lessons/': typeof RmhtypeLessonsIndexRoute
-  '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
@@ -4448,6 +4427,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/csgo': typeof CsgoRoute
+  '/cursed-logic': typeof CursedLogicRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
@@ -4473,10 +4453,12 @@ export interface FileRoutesByTo {
   '/rmhcharacters': typeof RmhcharactersRoute
   '/rmhos': typeof RmhosRoute
   '/security': typeof SecurityRoute
+  '/signal-forge': typeof SignalForgeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sohumbum': typeof SohumbumRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
+  '/vega': typeof VegaRoute
   '/velum2099': typeof Velum2099Route
   '/vibe-frame': typeof VibeFrameRoute
   '/void-breaker': typeof VoidBreakerRoute
@@ -4577,8 +4559,6 @@ export interface FileRoutesByTo {
   '/rmhtype/progress': typeof RmhtypeProgressRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/rmhtype/texts': typeof RmhtypeTextsRoute
-  '/secret/signal-forge': typeof SecretSignalForgeRoute
-  '/secret/vega': typeof SecretVegaRoute
   '/services/rebar-rutabaga': typeof ServicesRebarRutabagaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
@@ -4603,7 +4583,6 @@ export interface FileRoutesByTo {
   '/rmhstudy': typeof RmhstudyIndexRoute
   '/rmhtube': typeof RmhtubeIndexRoute
   '/rmhtype': typeof RmhtypeIndexRoute
-  '/secret': typeof SecretIndexRoute
   '/slice-it': typeof SliceItIndexRoute
   '/sohumtracker': typeof SohumtrackerIndexRoute
   '/strategies': typeof StrategiesIndexRoute
@@ -4878,7 +4857,6 @@ export interface FileRoutesByTo {
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs': typeof RmhmusicSongsIndexRoute
   '/rmhtype/lessons': typeof RmhtypeLessonsIndexRoute
-  '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
@@ -5048,6 +5026,7 @@ export interface FileRoutesById {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/csgo': typeof CsgoRoute
+  '/cursed-logic': typeof CursedLogicRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
@@ -5083,8 +5062,8 @@ export interface FileRoutesById {
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
-  '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
+  '/signal-forge': typeof SignalForgeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/sohumbum': typeof SohumbumRoute
@@ -5094,6 +5073,7 @@ export interface FileRoutesById {
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
   '/terms': typeof TermsRoute
   '/tf2': typeof Tf2RouteWithChildren
+  '/vega': typeof VegaRoute
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/vibe-frame': typeof VibeFrameRoute
@@ -5202,9 +5182,6 @@ export interface FileRoutesById {
   '/rmhtype/progress': typeof RmhtypeProgressRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/rmhtype/texts': typeof RmhtypeTextsRoute
-  '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/signal-forge': typeof SecretSignalForgeRoute
-  '/secret/vega': typeof SecretVegaRoute
   '/services/rebar-rutabaga': typeof ServicesRebarRutabagaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
@@ -5229,7 +5206,6 @@ export interface FileRoutesById {
   '/rmhstudy/': typeof RmhstudyIndexRoute
   '/rmhtube/': typeof RmhtubeIndexRoute
   '/rmhtype/': typeof RmhtypeIndexRoute
-  '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
   '/sohumtracker/': typeof SohumtrackerIndexRoute
   '/strategies/': typeof StrategiesIndexRoute
@@ -5505,7 +5481,6 @@ export interface FileRoutesById {
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/rmhtype/lessons/': typeof RmhtypeLessonsIndexRoute
-  '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
@@ -5676,6 +5651,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/csgo'
+    | '/cursed-logic'
     | '/daily'
     | '/deeplink'
     | '/design'
@@ -5711,8 +5687,8 @@ export interface FileRouteTypes {
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
-    | '/secret'
     | '/security'
+    | '/signal-forge'
     | '/sitemap.xml'
     | '/slice-it'
     | '/sohumbum'
@@ -5722,6 +5698,7 @@ export interface FileRouteTypes {
     | '/temple-of-joy'
     | '/terms'
     | '/tf2'
+    | '/vega'
     | '/velum2099'
     | '/versecraft'
     | '/vibe-frame'
@@ -5829,9 +5806,6 @@ export interface FileRouteTypes {
     | '/rmhtype/progress'
     | '/rmhtype/solo'
     | '/rmhtype/texts'
-    | '/secret/cursed-logic'
-    | '/secret/signal-forge'
-    | '/secret/vega'
     | '/services/rebar-rutabaga'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
@@ -5855,7 +5829,6 @@ export interface FileRouteTypes {
     | '/rmhstudy/'
     | '/rmhtube/'
     | '/rmhtype/'
-    | '/secret/'
     | '/slice-it/'
     | '/sohumtracker/'
     | '/strategies/'
@@ -6131,7 +6104,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/'
     | '/rmhmusic/songs/'
     | '/rmhtype/lessons/'
-    | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
@@ -6298,6 +6270,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/csgo'
+    | '/cursed-logic'
     | '/deeplink'
     | '/design'
     | '/dream-rift'
@@ -6323,10 +6296,12 @@ export interface FileRouteTypes {
     | '/rmhcharacters'
     | '/rmhos'
     | '/security'
+    | '/signal-forge'
     | '/sitemap.xml'
     | '/sohumbum'
     | '/synapse-storm'
     | '/terms'
+    | '/vega'
     | '/velum2099'
     | '/vibe-frame'
     | '/void-breaker'
@@ -6427,8 +6402,6 @@ export interface FileRouteTypes {
     | '/rmhtype/progress'
     | '/rmhtype/solo'
     | '/rmhtype/texts'
-    | '/secret/signal-forge'
-    | '/secret/vega'
     | '/services/rebar-rutabaga'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
@@ -6453,7 +6426,6 @@ export interface FileRouteTypes {
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
-    | '/secret'
     | '/slice-it'
     | '/sohumtracker'
     | '/strategies'
@@ -6728,7 +6700,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames'
     | '/rmhmusic/songs'
     | '/rmhtype/lessons'
-    | '/secret/cursed-logic'
     | '/strategies/profile'
     | '/strategies/puzzles'
     | '/strategies/safehouse'
@@ -6897,6 +6868,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/csgo'
+    | '/cursed-logic'
     | '/daily'
     | '/deeplink'
     | '/design'
@@ -6932,8 +6904,8 @@ export interface FileRouteTypes {
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
-    | '/secret'
     | '/security'
+    | '/signal-forge'
     | '/sitemap.xml'
     | '/slice-it'
     | '/sohumbum'
@@ -6943,6 +6915,7 @@ export interface FileRouteTypes {
     | '/temple-of-joy'
     | '/terms'
     | '/tf2'
+    | '/vega'
     | '/velum2099'
     | '/versecraft'
     | '/vibe-frame'
@@ -7051,9 +7024,6 @@ export interface FileRouteTypes {
     | '/rmhtype/progress'
     | '/rmhtype/solo'
     | '/rmhtype/texts'
-    | '/secret/cursed-logic'
-    | '/secret/signal-forge'
-    | '/secret/vega'
     | '/services/rebar-rutabaga'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
@@ -7078,7 +7048,6 @@ export interface FileRouteTypes {
     | '/rmhstudy/'
     | '/rmhtube/'
     | '/rmhtype/'
-    | '/secret/'
     | '/slice-it/'
     | '/sohumtracker/'
     | '/strategies/'
@@ -7354,7 +7323,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/'
     | '/rmhmusic/songs/'
     | '/rmhtype/lessons/'
-    | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
@@ -7524,6 +7492,7 @@ export interface RootRouteChildren {
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
   CsgoRoute: typeof CsgoRoute
+  CursedLogicRoute: typeof CursedLogicRoute
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
   DesignRoute: typeof DesignRoute
@@ -7559,8 +7528,8 @@ export interface RootRouteChildren {
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
-  SecretRoute: typeof SecretRouteWithChildren
   SecurityRoute: typeof SecurityRoute
+  SignalForgeRoute: typeof SignalForgeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
   SohumbumRoute: typeof SohumbumRoute
@@ -7570,6 +7539,7 @@ export interface RootRouteChildren {
   TempleOfJoyRoute: typeof TempleOfJoyRouteWithChildren
   TermsRoute: typeof TermsRoute
   Tf2Route: typeof Tf2RouteWithChildren
+  VegaRoute: typeof VegaRoute
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VibeFrameRoute: typeof VibeFrameRoute
@@ -7770,6 +7740,13 @@ declare module '@tanstack/react-router' {
       path: '/csgo'
       fullPath: '/csgo'
       preLoaderRoute: typeof CsgoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cursed-logic': {
+      id: '/cursed-logic'
+      path: '/cursed-logic'
+      fullPath: '/cursed-logic'
+      preLoaderRoute: typeof CursedLogicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daily': {
@@ -8017,18 +7994,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhtypeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/secret': {
-      id: '/secret'
-      path: '/secret'
-      fullPath: '/secret'
-      preLoaderRoute: typeof SecretRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/security': {
       id: '/security'
       path: '/security'
       fullPath: '/security'
       preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signal-forge': {
+      id: '/signal-forge'
+      path: '/signal-forge'
+      fullPath: '/signal-forge'
+      preLoaderRoute: typeof SignalForgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -8092,6 +8069,13 @@ declare module '@tanstack/react-router' {
       path: '/tf2'
       fullPath: '/tf2'
       preLoaderRoute: typeof Tf2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vega': {
+      id: '/vega'
+      path: '/vega'
+      fullPath: '/vega'
+      preLoaderRoute: typeof VegaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/velum2099': {
@@ -8947,34 +8931,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhtype/texts'
       preLoaderRoute: typeof RmhtypeTextsRouteImport
       parentRoute: typeof RmhtypeRoute
-    }
-    '/secret/': {
-      id: '/secret/'
-      path: '/'
-      fullPath: '/secret/'
-      preLoaderRoute: typeof SecretIndexRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/cursed-logic': {
-      id: '/secret/cursed-logic'
-      path: '/cursed-logic'
-      fullPath: '/secret/cursed-logic'
-      preLoaderRoute: typeof SecretCursedLogicRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/signal-forge': {
-      id: '/secret/signal-forge'
-      path: '/signal-forge'
-      fullPath: '/secret/signal-forge'
-      preLoaderRoute: typeof SecretSignalForgeRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/vega': {
-      id: '/secret/vega'
-      path: '/vega'
-      fullPath: '/secret/vega'
-      preLoaderRoute: typeof SecretVegaRouteImport
-      parentRoute: typeof SecretRoute
     }
     '/services/rebar-rutabaga': {
       id: '/services/rebar-rutabaga'
@@ -10851,13 +10807,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhtype/lessons/$lessonId'
       preLoaderRoute: typeof RmhtypeLessonsLessonIdRouteImport
       parentRoute: typeof RmhtypeRoute
-    }
-    '/secret/cursed-logic/': {
-      id: '/secret/cursed-logic/'
-      path: '/'
-      fullPath: '/secret/cursed-logic/'
-      preLoaderRoute: typeof SecretCursedLogicIndexRouteImport
-      parentRoute: typeof SecretCursedLogicRoute
     }
     '/slice-it/artist/$key': {
       id: '/slice-it/artist/$key'
@@ -12959,34 +12908,6 @@ const RmhtypeRouteChildren: RmhtypeRouteChildren = {
 const RmhtypeRouteWithChildren =
   RmhtypeRoute._addFileChildren(RmhtypeRouteChildren)
 
-interface SecretCursedLogicRouteChildren {
-  SecretCursedLogicIndexRoute: typeof SecretCursedLogicIndexRoute
-}
-
-const SecretCursedLogicRouteChildren: SecretCursedLogicRouteChildren = {
-  SecretCursedLogicIndexRoute: SecretCursedLogicIndexRoute,
-}
-
-const SecretCursedLogicRouteWithChildren =
-  SecretCursedLogicRoute._addFileChildren(SecretCursedLogicRouteChildren)
-
-interface SecretRouteChildren {
-  SecretCursedLogicRoute: typeof SecretCursedLogicRouteWithChildren
-  SecretSignalForgeRoute: typeof SecretSignalForgeRoute
-  SecretVegaRoute: typeof SecretVegaRoute
-  SecretIndexRoute: typeof SecretIndexRoute
-}
-
-const SecretRouteChildren: SecretRouteChildren = {
-  SecretCursedLogicRoute: SecretCursedLogicRouteWithChildren,
-  SecretSignalForgeRoute: SecretSignalForgeRoute,
-  SecretVegaRoute: SecretVegaRoute,
-  SecretIndexRoute: SecretIndexRoute,
-}
-
-const SecretRouteWithChildren =
-  SecretRoute._addFileChildren(SecretRouteChildren)
-
 interface SliceItRouteChildren {
   SliceItIndexRoute: typeof SliceItIndexRoute
   SliceItArtistKeyRoute: typeof SliceItArtistKeyRoute
@@ -13584,6 +13505,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
   CsgoRoute: CsgoRoute,
+  CursedLogicRoute: CursedLogicRoute,
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
   DesignRoute: DesignRoute,
@@ -13619,8 +13541,8 @@ const rootRouteChildren: RootRouteChildren = {
   RmhstudyRoute: RmhstudyRouteWithChildren,
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,
-  SecretRoute: SecretRouteWithChildren,
   SecurityRoute: SecurityRoute,
+  SignalForgeRoute: SignalForgeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
   SohumbumRoute: SohumbumRoute,
@@ -13630,6 +13552,7 @@ const rootRouteChildren: RootRouteChildren = {
   TempleOfJoyRoute: TempleOfJoyRouteWithChildren,
   TermsRoute: TermsRoute,
   Tf2Route: Tf2RouteWithChildren,
+  VegaRoute: VegaRoute,
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VibeFrameRoute: VibeFrameRoute,

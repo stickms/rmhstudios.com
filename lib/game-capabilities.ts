@@ -400,6 +400,44 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     // Neon signage, bloom, drift sparks and the crash burst all strobe.
     descriptors: ['flashing'],
   },
+  // The three former Vault games (design: docs/superpowers/specs/2026-11-23-vault-games-migration-design.md). These are
+  // the stub claims of the migration plumbing, true of the code today; each game's own build revisits them.
+  vega: {
+    genre: ['strategy'],
+    players: ['single', 'async-leaderboard'],
+    // Placing and selecting towers is a canvas pointer interaction; touch is not claimed until it is checked.
+    input: { supported: ['keyboard', 'mouse'], required: ['mouse'] },
+    sessionMinutes: [10, 40],
+    engine: '2d-canvas',
+    demanding: false,
+    // The best loop and level ride the player's own VegaPlayer row; a run itself is not saved.
+    save: 'own-table',
+    accessibility: [],
+  },
+  'signal-forge': {
+    genre: ['card', 'strategy'],
+    players: ['single', 'async-leaderboard'],
+    // A canvas played by clicking cards, with keyboard shortcuts; touch is not claimed until it is checked.
+    input: { supported: ['keyboard', 'mouse'], required: ['mouse'] },
+    sessionMinutes: [15, 60],
+    engine: '2d-canvas',
+    demanding: false,
+    // Cloud saves of a run in progress, on the game's own table and routes.
+    save: 'own-table',
+    accessibility: [],
+    descriptors: ['flashing'],
+  },
+  'cursed-logic': {
+    genre: ['strategy', 'card'],
+    players: ['single'],
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    sessionMinutes: [5, 20],
+    engine: 'dom',
+    demanding: false,
+    // The shop's fragments and unlocks live in localStorage (zustand persist).
+    save: 'local-only',
+    accessibility: [],
+  },
 };
 
 export function capabilitiesFor(gameId: string): GameCapabilities | undefined {

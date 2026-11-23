@@ -19,6 +19,7 @@ import {
   PROTOCOL_MODE_LABELS,
 } from '@features/cursed-logic/engine/types';
 import { MinigameOverlay } from './MinigameOverlay';
+import { useGameSession } from '@/hooks/useGameSession';
 
 function buildRoundState(s: ReturnType<typeof useCursedLogicStore.getState>): RoundState {
   return {
@@ -147,6 +148,8 @@ export function CursedLogicGame() {
   } = useCursedLogicStore();
 
   const { t } = useTranslation("c-cursed-logic");
+  // Keep the screen on while a duel is live (hooks/useGameSession.ts). Turn-based: nothing to pause.
+  useGameSession({ id: 'cursed-logic', active: result === null });
   const [animationKey, setAnimationKey] = useState(0);
   const [reinforce, setReinforce] = useState(false);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

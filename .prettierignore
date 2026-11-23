@@ -497,8 +497,6 @@ lib/prepaint/generated.ts
 /app/routes/rmhtype/multiplayer.tsx
 /app/routes/rmhtype/solo.tsx
 /app/routes/secret.tsx
-/app/routes/secret/cursed-logic.tsx
-/app/routes/secret/cursed-logic/index.tsx
 /app/routes/secret/index.tsx
 /app/routes/secret/signal-forge.tsx
 /app/routes/secret/vega.tsx

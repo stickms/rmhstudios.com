@@ -149,7 +149,6 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
   "/images/games/rmhtube.webp": { hash: '1ddb85b6', widths: [160, 320, 640, 960, 1280] },
   "/images/games/rmhtype.webp": { hash: '3d4f9716', widths: [160, 320, 640, 960, 1280] },
   "/images/games/rochester-offensive.webp": { hash: 'e3dd0970', widths: [160, 320, 640] },
-  "/images/games/satans_library.webp": { hash: '18d03217', widths: [160, 320, 640] },
   "/images/games/signal_forge.webp": { hash: 'dfe28d91', widths: [160, 320, 640] },
   "/images/games/slice_it.webp": { hash: '02b6fda2', widths: [160, 320, 640, 960, 1280] },
   "/images/games/synapsestorm.webp": { hash: '82dabef9', widths: [160, 320, 640, 960, 1280] },

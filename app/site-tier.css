@@ -212,6 +212,7 @@
 @source not "./routes/dunesday.tsx";
 @source not "./routes/embed.replay.$id.tsx";
 @source not "./routes/gabriels-horn.tsx";
+@source not "./routes/cursed-logic.tsx";
 @source not "./routes/house-always-wins.tsx";
 @source not "./routes/hearthworks.tsx";
 @source not "./routes/kaikaidebtcounter.tsx";
@@ -243,10 +244,9 @@
 @source not "./routes/rmhtube";
 @source not "./routes/rmhtype.tsx";
 @source not "./routes/rmhtype";
-@source not "./routes/secret.tsx";
-@source not "./routes/secret";
 @source not "./routes/security.tsx";
 @source not "./routes/services.rebar-rutabaga.tsx";
+@source not "./routes/signal-forge.tsx";
 @source not "./routes/slice-it.tsx";
 @source not "./routes/slice-it";
 @source not "./routes/sohumbum.tsx";
@@ -259,6 +259,7 @@
 @source not "./routes/temple-of-joy.tsx";
 @source not "./routes/temple-of-joy";
 @source not "./routes/terms.tsx";
+@source not "./routes/vega.tsx";
 @source not "./routes/velum2099.tsx";
 @source not "./routes/versecraft.tsx";
 @source not "./routes/versecraft";

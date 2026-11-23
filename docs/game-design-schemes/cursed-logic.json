@@ -1,0 +1,5 @@
+{
+  "id": "cursed-logic",
+  "status": "stub: written by the Vault migration plumbing; Task 5 (Cursed Logic) replaces every key with a full scheme (mood, palette, fonts, shape, motifs, buttonStyle, backdrop, motion) in the format of void-breaker.json",
+  "mood": "A glitching terminal and cursed-sigil logic."
+}

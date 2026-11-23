@@ -1,13 +1,14 @@
 import { defineFeature } from '@/lib/core/feature';
 
-/** Cursed Logic: a turn-based duel against an unstable Protocol (a hidden game for now). */
+/** Cursed Logic: a turn-based duel against an unstable Protocol. */
 export default defineFeature({
   id: 'cursed-logic',
   kind: 'game',
-  basePath: '/secret/cursed-logic',
-  delivery: 'shell',
-  routes: ['app/routes/secret/cursed-logic/index.tsx'],
-  // The game's strings, and the Vault's (`r-secret`: the way back to /secret) the page frame renders.
-  namespaces: ['c-cursed-logic', 'r-secret'],
-  listed: false,
+  basePath: '/cursed-logic',
+  delivery: 'island',
+  routes: ['app/routes/cursed-logic.tsx'],
+  // The game's strings, the way back to the games library included.
+  namespaces: ['c-cursed-logic'],
+  catalog: 'features/cursed-logic/catalog.ts',
+  listed: true,
 });

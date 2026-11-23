@@ -117,6 +117,7 @@ export const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'altair',
   'daily',
   'discord',
+  'cursed-logic',
   'dream-rift',
   // The games library: `games.tsx` + `games/**` — a directory, not flat
   // `games.community.tsx` files, because the segment is read off the first path part.
@@ -135,14 +136,15 @@ export const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'rmhstudy',
   'rmhtube',
   'rmhtype',
-  'secret',
   'slice-it',
   'sohumbum',
   // The live activity dossier — see the note beside `sohumtracker` above.
   'sohumtracker',
   'strategies',
+  'signal-forge',
   'synapse-storm',
   'temple-of-joy',
+  'vega',
   'velum2099',
   'versecraft',
   'void-breaker',

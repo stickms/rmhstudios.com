@@ -47,6 +47,7 @@ import {
   checkSavedRunOnServer,
 } from '@features/signal-forge/engine/persistence';
 import { renderCanvas, type RenderOutput } from '@features/signal-forge/ui/canvas/renderCanvas';
+import { useGameSession } from '@/hooks/useGameSession';
 
 // ─── Component ───────────────────────────────────────────────────────
 
@@ -72,6 +73,13 @@ export function SignalForgeGame() {
   const [gameState, setGameState] = useState<GameState>(() =>
     createFreshGameState(initialEnemies),
   );
+
+  // Keep the screen on during a run and open the pause menu when the tab hides (hooks/useGameSession.ts).
+  useGameSession({
+    id: 'signal-forge',
+    active: gameState.phase !== 'landing' && gameState.phase !== 'game-over' && !showPauseMenu,
+    onPause: () => setShowPauseMenu(true),
+  });
 
   // ── Resize observer ──
   useEffect(() => {

@@ -29,8 +29,8 @@ describe('game registry consistency', () => {
   it('every listed scored game exists in the site catalog', () => {
     const catalogIds = new Set(games.map((g) => g.id));
     const orphans = GAME_SCORE_RULES.filter(
-      // Unlisted games (e.g. the /secret/ ones) are deliberately absent from
-      // the public catalog, so only listed games must appear there.
+      // Secondary boards (Boss Rush, Temple of Joy efficiency) are deliberately
+      // absent from the public catalog, so only listed games must appear there.
       (r) => !r.unlisted && !catalogIds.has(r.id),
     ).map((r) => r.id);
 

@@ -53,7 +53,7 @@ Rules:
   that granularity.
 
 Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker`
-and `nightrail` (engine, ui), `vega` and `signal-forge` (engine, ui; unlisted secret games), `cursed-logic` (engine, ui; unlisted), `dream-rift`,
+and `nightrail` (engine, ui), `vega`, `signal-forge` and `cursed-logic` (engine, ui, catalog; the former Vault games, now listed library titles), `dream-rift`,
 `gabriels-horn`, `synapse-storm` and `laundry-sort` (engine, ui, server, catalog); `rmhos` (engine, ui, api; its relay
 hub is `server/rmhos-net/`, see `docs/rmhos.md`); `medschools` (engine, ui, api, scrape; a Services-hub app with no
 catalog card, see `features/medschools/CLAUDE.md`). A feature whose disconnect handler was guarded by
@@ -71,9 +71,7 @@ by `pnpm build` and the Dockerfile before `vite build`) into `dist-islands/`, se
   (`lib/islands/document.server.ts`), which emits the site-wide head (`lib/root-head.ts`) under the catalog head for the
   manifest's `kind`, the pre-paint script, the session seed, the locale's catalogs for the manifest's `namespaces`, and
   a loading frame. A page the catalog does not describe (an unlisted game) or one nested under a parent route with a
-  `head()` passes `heads` (outermost first) — e.g. `app/routes/secret/vega.tsx` hands over the `/secret` layout's
-  `noindexHead('Secret')` and its own title. A parent layout's frame is the island's to render (the Vault's scroller is
-  in `features/vega/ui/VegaPage.tsx`); a link out to a site page is a plain `<a>`. Keep a page's one-off utilities out
+  `head()` passes `heads` (outermost first). A parent layout's frame is the island's to render; a link out to a site page is a plain `<a>`. Keep a page's one-off utilities out
   of `island.tsx` (put the page in `ui/`, as vega and signal-forge do): the site sheets skip `features/<id>/ui`, not the
   entry, so they would land in both site sheets.
 - **Entry:** `island.tsx` calls `mountIsland(<tree />)` (`components/island/mount.tsx`); its providers
@@ -85,5 +83,5 @@ by `pnpm build` and the Dockerfile before `vite build`) into `dist-islands/`, se
 - `lib/__tests__/islands.test.ts` holds it together: manifest ↔ route, no site-shell import in the island graph, every
   reached component scanned by the island sheet.
 
-Islands so far: `void-breaker`, `nightrail`, `vega` and `signal-forge` (the last two under the `/secret` layout). The B1
+Islands so far: `void-breaker`, `nightrail`, `vega`, `signal-forge` and `cursed-logic`. The B1
 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.

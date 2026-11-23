@@ -61,7 +61,7 @@ Disallow: /rmhladder/settings
 # on its own URL.
 Disallow: /ref/
 
-# Pages absent from this file on purpose: /embed/*, /offline, /secret/* and the
+# Pages absent from this file on purpose: /embed/*, /offline and the
 # Discord Activity routes all carry a `noindex` meta tag instead. Blocking them
 # here would stop a crawler ever reading that tag, which is what actually keeps
 # an already-discovered URL out of the index.

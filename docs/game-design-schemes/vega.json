@@ -1,0 +1,5 @@
+{
+  "id": "vega",
+  "status": "stub: written by the Vault migration plumbing; Task 3 (Project Vega) replaces every key with a full scheme (mood, palette, fonts, shape, motifs, buttonStyle, backdrop, motion) in the format of void-breaker.json",
+  "mood": "Sterile clinical horror: the lab, the specimen, the scan."
+}

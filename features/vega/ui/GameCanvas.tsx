@@ -15,6 +15,7 @@ import { asset } from '@/lib/storage/asset';
 import { useGameStore, TOWER_COSTS } from '@features/vega/engine/GameState';
 import { TowerType } from '@features/vega/engine/Entities';
 import { useArrival } from '@/components/ui/arrive';
+import { useGameSession } from '@/hooks/useGameSession';
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -30,8 +31,14 @@ export default function GameCanvas() {
     isTransitioning,
     showTutorial,
     setShowTutorial,
-    logs
+    logs,
+    isPaused,
+    isGameOver,
+    setPaused,
   } = useGameStore();
+
+  // Keep the screen on during a run and pause it when the tab hides (hooks/useGameSession.ts).
+  useGameSession({ id: 'vega', active: !isGameOver && !isPaused, onPause: () => setPaused(true) });
 
   const [volume, setVolume] = useState(0.2);
   const audioRef = useRef<HTMLAudioElement | null>(null);

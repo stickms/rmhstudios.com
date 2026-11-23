@@ -2,7 +2,7 @@
  * Site Layout Route (pathless)
  *
  * Wraps all standard pages with the left sidebar and mobile navigation.
- * Game routes, /secret, and /login are NOT nested under this layout,
+ * Game routes and /login are NOT nested under this layout,
  * so they render full-screen without any sidebar.
  */
 

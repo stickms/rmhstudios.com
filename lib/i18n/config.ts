@@ -74,7 +74,7 @@ export const NAMESPACES = [
   "c-versecraft", "c-void-breaker", "c-wager", "c-wishlist",
   // Route namespaces.
   "r-altair", "r-discord", "r-kowloon-knockout",
-  "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-sohumbum",
+  "r-rmhbox", "r-rmhcode", "r-slice-it", "r-sohumbum",
   "r-sohumtracker",
   "r-strategies", "r-studio",
   // Feature-ideas namespaces (docs/plans/2026-10-12-feature-ideas-every-surface.md),
