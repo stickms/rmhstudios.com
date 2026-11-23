@@ -917,7 +917,7 @@ describe('processThread: the secondary-prompt sink', () => {
 
   function withSink(
     over: {
-      sinkRun?: () => Promise<string>;
+      sinkRun?: (system: string, user: string) => Promise<string>;
       sinkNow?: Date;
       limits?: { maxPages: number; maxLlmCalls: number };
       allow?: () => Promise<boolean>;
@@ -929,7 +929,7 @@ describe('processThread: the secondary-prompt sink', () => {
       ...(over.limits ? { limits: over.limits } : {}),
       ...(over.allow ? { allow: over.allow } : {}),
     });
-    const sinkRun = vi.fn(over.sinkRun ?? (async () => sinkAnswer));
+    const sinkRun = vi.fn<(system: string, user: string) => Promise<string>>(over.sinkRun ?? (async () => sinkAnswer));
     const sink = createPromptSink({
       ai: { configured: () => true, run: sinkRun },
       budget: { allow: async () => true },
