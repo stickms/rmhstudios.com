@@ -14,8 +14,8 @@
 
 .site-shell {
   min-block-size: 100dvh;
-  /* No background of its own: the ground and a bought theme's glow wash are painted on <body> (base-interaction.css),
-     which spans the document, so they reach the screen edges and the iOS safe areas, not just this box. */
+  /* No background of its own: the ground and a bought theme's glow wash are painted on <body> (base-interaction.css), which
+     spans the document. */
   color: var(--site-text);
 }
 

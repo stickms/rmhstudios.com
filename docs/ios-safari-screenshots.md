@@ -70,9 +70,13 @@ adding a stylesheet.
 
 So the gradient cannot start at the very screen edge at rest. What the theme does instead (`lib/themes/tokens.ts`,
 `app/globals/base-interaction.css`): `--site-theme-edge`, the wash's own edge average, is body's `background-color` on
-iOS (so the strip is a colour from inside the gradient, not plain ground); a ground layer keeps the page `--site-bg`;
-and `--site-theme-ramp-top` / `-bottom` start the document's first and last 48px at exactly that colour and ramp into
-the wash, so the page meets each strip with no line.
+iOS (so the strip is a colour from inside the gradient, not plain ground); `body::before` covers the whole document
+under the content on every route (a legal page has no site shell) with the page ground as a background-COLOR, the wash,
+and two 48px end ramps (`--site-theme-ramp-top` / `-bottom`) that start the document's first and last rows at exactly
+the strip colour, so the page meets each strip with no line. Two traps, both found by measuring simulator shots: a
+ground as an image layer under the 48px ramps painted only inside the ramps (page showed the strip colour elsewhere),
+and putting the layers on `.site-shell` left every route outside the shell (legal pages, login) flat strip colour. Check
+`/terms` AND `/`.
 
 ## Reading the pictures
 
