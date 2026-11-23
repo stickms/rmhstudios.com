@@ -2,8 +2,6 @@ import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AdminBody } from '@/components/admin/AdminBody';
-import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { RelativeTime } from '@/components/ui/RelativeTime';
@@ -23,8 +21,8 @@ import {
 } from '../medschools.contract';
 
 /**
- * /admin/medschools: source names the scrapers could not match to a school. An admin maps each
- * one to a school (it becomes an alias) or ignores it. The /admin layout gates admins.
+ * The alias tab of /admin/medschools: source names the scrapers could not match to a school. An admin maps each one to a
+ * school (it becomes an alias) or ignores it. The page (`AdminMedSchoolsPage`) and the /admin layout gate admins.
  */
 export function AliasMissesPanel() {
   const { t } = useTranslation('medschools');
@@ -32,55 +30,48 @@ export function AliasMissesPanel() {
   const arrival = useArrival(!!query.data);
 
   return (
-    <PageLayout
-      title={t('title', {
-        defaultValue: 'Med Schools aliases',
-      })}
-      description={t('description', {
-        defaultValue: 'Names a source reported that match no school yet. Map each to a school, or ignore it.',
-      })}
-      wide
-      backTo="/admin"
-      backLabel={t('back', {
-        defaultValue: 'Back to admin',
-      })}
-    >
-      <AdminBody width="narrow">
-        {query.isPending ? (
-          <div className="flex justify-center py-16">
-            <Spinner />
-          </div>
-        ) : query.isError ? (
-          <EmptyState
-            title={t('load-failed', {
-              defaultValue: 'Could not load the alias misses',
+    <>
+      {query.isPending ? (
+        <div className="flex justify-center py-16">
+          <Spinner />
+        </div>
+      ) : query.isError ? (
+        <EmptyState
+          title={t('load-failed', {
+            defaultValue: 'Could not load the alias misses',
+          })}
+          action={
+            <Button onClick={() => void query.refetch()}>
+              {t('retry', {
+                defaultValue: 'Try again',
+              })}
+            </Button>
+          }
+        />
+      ) : query.data.misses.length === 0 ? (
+        <EmptyState
+          title={t('empty', {
+            defaultValue: 'Nothing to map',
+          })}
+          description={t('empty-hint', {
+            defaultValue: 'Every source name has a school or has been ignored.',
+          })}
+        />
+      ) : (
+        <>
+          <p className="t-body m-0 max-w-prose text-site-text-muted">
+            {t('description', {
+              defaultValue: 'Names a source reported that match no school yet. Map each to a school, or ignore it.',
             })}
-            action={
-              <Button onClick={() => void query.refetch()}>
-                {t('retry', {
-                  defaultValue: 'Try again',
-                })}
-              </Button>
-            }
-          />
-        ) : query.data.misses.length === 0 ? (
-          <EmptyState
-            title={t('empty', {
-              defaultValue: 'Nothing to map',
-            })}
-            description={t('empty-hint', {
-              defaultValue: 'Every source name has a school or has been ignored.',
-            })}
-          />
-        ) : (
+          </p>
           <ul className={cn('border-t border-site-border', arrival)}>
             {query.data.misses.map((miss) => (
               <MissRow key={miss.id} miss={miss} schools={query.data.schools} />
             ))}
           </ul>
-        )}
-      </AdminBody>
-    </PageLayout>
+        </>
+      )}
+    </>
   );
 }
 

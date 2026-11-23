@@ -60,3 +60,9 @@ runs:
       if: steps.nm.outputs.cache-hit != 'true'
       shell: bash
       run: pnpm install --frozen-lockfile
+    # The generated modules that are not in git (route tree, pre-paint script; .gitignore).
+    # Every job needs them, and a node_modules cache hit skips the install, so the install's
+    # own postinstall cannot be what writes them. Writes only what differs; a few seconds.
+    - name: Generate untracked sources
+      shell: bash
+      run: pnpm run gen:code

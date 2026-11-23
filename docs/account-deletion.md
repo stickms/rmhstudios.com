@@ -22,11 +22,11 @@ The `User` row is anonymised in place, never removed, so `onDelete: Cascade` fro
 
 The clearly private leaf tables (birthday, reminders, drafts, saves, history, settings, notifications, and private reading highlights) are erased by `coverageErasureOps` in `lib/account/erasure-coverage.server.ts`.
 
-393 models are classified.
+394 models are classified.
 
 ## Erased
 
-Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 237 models.
+Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row stays with its member reference replaced or nulled; a `cascade` row goes with its parent in the database. 238 models.
 
 | Model | Decision | Reason |
 | --- | --- | --- |
@@ -163,6 +163,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `LoadoutPreset` | erase | Saved cosmetic loadouts; the items stay with the inventory decision. |
 | `MarathonList` | erase | A personal reading list; its shareId page 404s afterwards (the share page reads only this row). |
 | `Media` | deidentify | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. The exception is the member's own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it. |
+| `MedQaLimitRequest` | erase | The member's requests for a higher Q&A limit (their optional reason and an admin's reply; never a question). Where the member decided others' requests as an admin, `decidedBy` and `revokedBy` are nulled. |
 | `MedSchoolList` | erase | The member's saved school lists; list items go by the database cascade. |
 | `MedTrackerCycle` | erase | The private tracker; cascades to applications and milestones. The shared anonymous events are removed by `eraseSharedMedEvents` before this runs (plan Task 6), because only a milestone id plus the server secret finds them. |
 | `MedUserPrefs` | erase | The member's med schools display defaults; no child rows. |
@@ -186,6 +187,7 @@ Deleted, de-identified or cascaded by `anonymizeAccount`. A `deidentify` row sta
 | `NotificationPreference` | erase | Rule 1: settings only the member sees. |
 | `OfficeHoursConfig` | erase | Availability settings (windows go by cascade); bookings others made have their own entry. |
 | `Passkey` | erase | Every way to authenticate as the account is destroyed first, so a tombstone can never sign in. |
+| `TwoFactor` | erase | The second factor (encrypted authenticator secret and backup codes) is a way to authenticate as the account, so it goes with the passkeys. |
 | `Player` | erase | Per-game player tables and the shared GameStat, erased so a chosen username does not stay on a board (sprint 05 leaderboard-privacy). |
 | `PostAutoDelete` | erase | The member's own auto-delete rule. |
 | `PostSeriesFollow` | erase | Subscriptions to things (a feed, a series, a community, build or market watch), not the social graph the `Follow` owner decision covers; `PostSeries.followCount` is decremented (floored) in the same transaction. |
@@ -278,7 +280,7 @@ Kept for a stated reason: a ledger, an audit trail, another member's record, or 
 | `AchievementTipVote` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
 | `AdminAuditLog` | keep | Rule 4: admin audit trail. |
 | `AdventClaim` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
-| `AiUsage` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. |
+| `AiUsage` | keep | Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. A row holds the user id, task, prompt id, token counts, cost and time, never text: the RMH Med Schools Q&A (`medschools-qa`) writes no question or answer anywhere else either (`features/medschools/CLAUDE.md`), so its rows are the only trace and carry nothing to erase. |
 | `AvailabilityPoll` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |
 | `AvailabilityPollResponse` | keep | Rule 2: the member's interaction with someone else's thing, shown to others only as an aggregate (counts go through quiet counts); the row is needed for the aggregate's integrity. |
 | `BlogComment` | keep | Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member's record on it is not ours to remove. |

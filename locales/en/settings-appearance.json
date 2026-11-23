@@ -3,6 +3,7 @@
   "always-evert-globe-desc": "Play the globe transition even on devices where it is normally skipped to keep navigation fast. It may feel slower there. Reduced motion still turns it off.",
   "always-evert-globe-reduced-off": "Reduced motion is on, so the globe transition stays off and pages change as usual.",
   "appearance-sync": "Sync appearance across devices",
+  "appearance-sync-failed": "Could not turn sync on. Try again.",
   "appearance-sync-hint": "Off: this device keeps its own theme and fonts.",
   "browse-themes": "Browse themes",
   "color-vision": "Colour vision",

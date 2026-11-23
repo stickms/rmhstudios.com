@@ -107,6 +107,12 @@ export const NOTICE_TEMPLATES = {
   'member-joined': '{{name}} became a member 🎉',
   'membership-gifted': '{{name}} gifted you {{months}} month(s) of {{tier}}!',
   'membership-granted': 'An admin granted you {{months}} month(s) of {{tier}}!',
+  'medschools-qa-limit-approved': 'Your request for a higher Q&A limit was approved',
+  'medschools-qa-limit-approved-note': 'Your request for a higher Q&A limit was approved: {{note}}',
+  'medschools-qa-limit-declined': 'Your request for a higher Q&A limit was declined',
+  'medschools-qa-limit-declined-note': 'Your request for a higher Q&A limit was declined: {{note}}',
+  'medschools-qa-limit-revoked': 'Your higher Q&A limit was withdrawn',
+  'medschools-qa-limit-revoked-note': 'Your higher Q&A limit was withdrawn: {{note}}',
   'memory-one-year': '1 year ago today: {{text}}',
   'memory-years': '{{years}} years ago today: {{text}}',
   'message-request-accepted': 'accepted your message request',
@@ -336,6 +342,12 @@ export interface NoticeParamTypes {
   'member-joined': { name: string | number };
   'membership-gifted': { name: string | number; months: string | number; tier: string | number };
   'membership-granted': { months: string | number; tier: string | number };
+  'medschools-qa-limit-approved': Record<string, never>;
+  'medschools-qa-limit-approved-note': { note: string | number };
+  'medschools-qa-limit-declined': Record<string, never>;
+  'medschools-qa-limit-declined-note': { note: string | number };
+  'medschools-qa-limit-revoked': Record<string, never>;
+  'medschools-qa-limit-revoked-note': { note: string | number };
   'memory-one-year': { text: string | number };
   'memory-years': { years: string | number; text: string | number };
   'message-request-accepted': Record<string, never>;

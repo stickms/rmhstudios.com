@@ -99,6 +99,14 @@ enum NewsStatus {
   PUBLISHED
 }
 
+/// Where a News row came from. EDITORIAL: written for the site (the old AI pipeline, admin edits, seeds); the full
+/// body is `content`. WIRE: a headline the RMH News ingest pulled from a public feed (lib/news-wire/); `content` is
+/// the feed's short excerpt and the story itself lives at `sourceUrl`.
+enum NewsOrigin {
+  EDITORIAL
+  WIRE
+}
+
 model NewsArticle {
   id               String     @id @default(cuid())
   slug             String     @unique
@@ -116,12 +124,24 @@ model NewsArticle {
   image            String?
   discordMessageId String?
   status           NewsStatus @default(PUBLISHED)
+  origin           NewsOrigin @default(EDITORIAL)
+  /// The `NEWS_SOURCES` id a WIRE row was read from.
+  feedId           String?
+  /// When the outlet published it: the order of the RMH News front page. `date` stays the display/RSS day.
+  publishedAt      DateTime   @default(now())
+  /// The cached DeepSeek summary (JSON `{ tldr, points[] }`), written the first time a reader opens the article and
+  /// never regenerated. An empty string means "tried, nothing to summarise", retried after `summarizedAt` + 1 day.
+  summary          String?    @db.Text
+  summarizedAt     DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
   @@index([status, date(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([status, category, publishedAt(sort: Desc)])
   @@index([category])
   @@index([slug])
+  @@index([sourceUrl])
   @@map("news_article")
 }
 

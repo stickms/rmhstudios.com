@@ -33,6 +33,7 @@ const CASCADES: Record<string, { child: string; fk: string }[]> = {
     { child: 'medTrackerCycle', fk: 'userId' },
     { child: 'medSchoolList', fk: 'userId' },
     { child: 'medUserPrefs', fk: 'userId' },
+    { child: 'medQaLimitRequest', fk: 'userId' },
   ],
   medSchool: [
     { child: 'medSchoolAlias', fk: 'schoolId' },
@@ -335,6 +336,7 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
     'medSchoolList',
     'medSchoolListItem',
     'medUserPrefs',
+    'medQaLimitRequest',
     'user',
     'aiUsage',
   ];

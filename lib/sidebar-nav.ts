@@ -25,6 +25,7 @@ import {
   LayoutGrid,
   Rocket,
   Gamepad2,
+  Newspaper,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -127,6 +128,15 @@ export const SIDEBAR_NAV: NavItem[] = [
     label: 'Games & Apps',
     icon: Gamepad2,
     altHrefs: ['/apps'],
+  },
+  // RMH News (owner, 2026-11-23: "add it to the sidebar"): the public-feed headlines at /news, near the top of the
+  // places so it stays in the sidebar at small window heights. It was reachable only from the /secret page before.
+  {
+    id: '/news',
+    href: '/news',
+    tKey: 'nav-news',
+    label: 'RMH News',
+    icon: Newspaper,
   },
   {
     id: '/library',

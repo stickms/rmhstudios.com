@@ -40,6 +40,12 @@ export interface StaticCard {
    * show, and a stock one would be worse than the empty pane.
    */
   art?: string;
+  /**
+   * Draw a few of the catalog's own cards beside the text instead of one picture: four entries with art, picked at
+   * random each time the card is rendered (`/api/og/section/$file`), so the apps card shows the apps rather than
+   * describing them.
+   */
+  gallery?: 'apps';
 }
 
 /**
@@ -60,7 +66,7 @@ export const STATIC_CARDS: StaticCard[] = [
         lead: true,
       },
       {
-        value: '16',
+        value: '15',
         label: 'apps',
       },
       {
@@ -87,15 +93,16 @@ export const STATIC_CARDS: StaticCard[] = [
     path: '/apps',
     file: 'apps',
     eyebrow: 'Apps',
-    title: 'Tools that live here.',
-    subtitle: 'Watch parties, music, typing, study, code, ladders — full apps, not demos, all on one account.',
+    title: 'Apps you can just open and use.',
+    subtitle: 'Watch videos with friends, learn piano, study, write code.',
     stats: [
       {
-        value: '16',
+        value: '15',
         label: 'apps',
         lead: true,
       },
     ],
+    gallery: 'apps',
   },
   {
     path: '/blog',

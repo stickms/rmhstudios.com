@@ -34,7 +34,13 @@ import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import { timedAiFetch } from './timed-fetch.server';
 import type { VibeLedgerTask } from './vibe-tasks';
-import { DEEPSEEK_FLASH, DEEPSEEK_PRO_MODEL, DEEPSEEK_REASONING, deepseekThinking } from './deepseek-models';
+import {
+  DEEPSEEK_FLASH,
+  DEEPSEEK_PRO_MODEL,
+  DEEPSEEK_REASONING,
+  deepseekThinking,
+  type DeepseekProfile,
+} from './deepseek-models';
 import type { MeteredFeature } from './metered-fetch.server';
 
 /* -------------------------------------------------------------------------- */
@@ -57,6 +63,8 @@ export type AiTask =
   | 'moderate'
   /** Background classifier: structured extraction from forum posts (RMH Med Schools, no user watching). */
   | 'medschools-extract'
+  /** Interactive RMH Med Schools Q&A: short, grounded, a member is waiting. */
+  | 'medschools-qa'
   /** Conversational, may carry a tool contract. */
   | 'concierge'
   /** Long-form generation (recaps, narrative Wrapped). */
@@ -116,6 +124,14 @@ const ROUTES: Record<AiTask, Route> = {
     maxTokens: 8_000,
     // A classifier, like `moderate`: the same post must give the same events.
     temperature: 0,
+  },
+  // Interactive: runs on demand at any hour (not the off-peak scrape rule). No fallback: a second attempt doubles the
+  // spend of a question the member can simply retry. The route call overrides temperature to 0 per call.
+  'medschools-qa': {
+    provider: 'deepseek',
+    model: DEEPSEEK_CHAT,
+    maxTokens: 900,
+    temperature: 0.2,
   },
   concierge: {
     provider: 'deepseek',
@@ -264,6 +280,25 @@ export interface RunOptions {
   /** Per-call override; the route's value is used when omitted. */
   maxTokens?: number;
   temperature?: number;
+  /** Aborts the HTTP call (a request's own signal, or a deadline). An aborted call is `AI_UNAVAILABLE`. */
+  signal?: AbortSignal;
+  /** Retries of a failed call; the client's default is 1. A caller on a deadline passes 0. */
+  maxRetries?: number;
+  /**
+   * Switch DeepSeek's thinking on for this call (`deepseekThinking(DEEPSEEK_REASONING)`, the reasoning model id) instead of
+   * the route's thinking-off flash. Thinking tokens are billed as output tokens (`usage.completion_tokens` includes them),
+   * so the ledger row carries their cost; temperature is not sent (the API ignores it). Only `message.content` is read:
+   * `reasoning_content` is dropped here and never returned, metered or logged. JSON mode still applies.
+   */
+  thinking?: boolean;
+  /** Per-request HTTP timeout override; a thinking call outlives the client's 45 s. */
+  timeoutMs?: number;
+  /**
+   * Pin the DeepSeek model and thinking switch for this call (primary and fallback alike), whatever the task's route
+   * says, and over `thinking`. For a caller whose cost must not move when a route is retuned: RMH News summaries
+   * run on a public, signed-out endpoint and pin `DEEPSEEK_FLASH` (thinking off).
+   */
+  profile?: DeepseekProfile;
 }
 
 /**
@@ -360,6 +395,11 @@ export function estimateTokens(chars: number): number {
 /* Run                                                                        */
 /* -------------------------------------------------------------------------- */
 
+/** The profile a call is pinned to: `opts.profile`, else the reasoning profile for `thinking`, else none (the route's). */
+function callProfile(opts: RunOptions): DeepseekProfile | null {
+  return opts.profile ?? (opts.thinking ? DEEPSEEK_REASONING : null);
+}
+
 async function invoke(
   route: Omit<Route, 'fallback'>,
   task: AiTask,
@@ -367,23 +407,31 @@ async function invoke(
   user: string,
   opts: RunOptions,
 ): Promise<string> {
+  // A pinned profile wins; otherwise `thinking` picks the reasoning model; otherwise the route's thinking-off model.
+  const profile = callProfile(opts);
+  const model = profile?.model ?? route.model;
+  const thinkingOn = (profile ?? DEEPSEEK_FLASH).thinking.type === 'enabled';
   const res = await client().chat.completions.create({
-    model: route.model,
+    model,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
     max_tokens: opts.maxTokens ?? route.maxTokens,
-    temperature: opts.temperature ?? route.temperature,
-    ...deepseekThinking(DEEPSEEK_FLASH),
+    ...(thinkingOn ? {} : { temperature: opts.temperature ?? route.temperature }),
+    ...deepseekThinking(profile ?? DEEPSEEK_FLASH),
     stream: false,
     ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
+  }, {
+    ...(opts.signal ? { signal: opts.signal } : {}),
+    ...(opts.maxRetries !== undefined ? { maxRetries: opts.maxRetries } : {}),
+    ...(opts.timeoutMs !== undefined ? { timeout: opts.timeoutMs } : {}),
   });
 
   void meter({
     userId: opts.userId,
     task,
-    model: route.model,
+    model,
     promptId: opts.promptId,
     promptVer: opts.promptVer,
     inTokens: res.usage?.prompt_tokens ?? 0,
@@ -418,7 +466,7 @@ export async function runTask(
       void meter({
         userId: opts.userId,
         task,
-        model: route.model,
+        model: callProfile(opts)?.model ?? route.model,
         promptId: opts.promptId,
         promptVer: opts.promptVer,
         inTokens: 0,
@@ -435,7 +483,7 @@ export async function runTask(
       void meter({
         userId: opts.userId,
         task,
-        model: route.fallback.model,
+        model: callProfile(opts)?.model ?? route.fallback.model,
         promptId: opts.promptId,
         promptVer: opts.promptVer,
         inTokens: 0,

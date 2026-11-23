@@ -94,8 +94,6 @@
   "e.rmhladder.title": "RMHLadder",
   "e.rmhmusic.body": "A music app. By November it had realistic instruments, sight reading, a tuner, sheet music and tab play-along, voice as an instrument and a daily leaderboard.",
   "e.rmhmusic.title": "RMHMusic",
-  "e.rmhos.body": "A Linux desktop that runs in the browser, with a stored home folder that follows your account.",
-  "e.rmhos.title": "rmhOS",
   "e.rmhtube.body": "Three apps arrived in one week: RMHTube for watching videos together in a room, RMHType for typing races and RMHStudy for studying together on synced Pomodoro timers, which later gained spaced-repetition flashcards and an AI tutor.",
   "e.rmhtube.title": "RMHTube, RMHType and RMHStudy",
   "e.sidebar-shell.body": "The feed, builds, library and the other pages moved under one sidebar shell, and synthetic bot users began posting to the feed. The next day the timeline was rebuilt the way large social sites do it: keyset pagination, stored counters and targeted live updates.",
