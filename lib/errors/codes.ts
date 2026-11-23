@@ -1000,6 +1000,17 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsStaleOrder',
     text: 'Your lists changed in another tab. Reload to see them',
   },
+  // --- med schools Q&A (phase 6) ----------------------------------------------------
+  MEDSCHOOLS_QA_DAILY_CAP: {
+    http: 429,
+    i18n: 'errors:medschoolsQaDailyCap',
+    text: "You have used today's questions. Try again tomorrow",
+  },
+  MEDSCHOOLS_QA_PAUSED: {
+    http: 503,
+    i18n: 'errors:medschoolsQaPaused',
+    text: 'Questions are paused right now',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

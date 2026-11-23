@@ -539,6 +539,14 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'Your lists changed in another tab. Reload to see them',
         ...p,
       });
+    case 'MEDSCHOOLS_QA_DAILY_CAP':
+      return t('medschoolsQaDailyCap', {
+        ns: 'errors',
+        defaultValue: "You have used today's questions. Try again tomorrow",
+        ...p,
+      });
+    case 'MEDSCHOOLS_QA_PAUSED':
+      return t('medschoolsQaPaused', { ns: 'errors', defaultValue: 'Questions are paused right now', ...p });
   }
 }
 

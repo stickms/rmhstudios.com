@@ -88,6 +88,8 @@
   "medschoolsItemCap": "A list holds up to {{max}} schools",
   "medschoolsListCap": "You can keep up to {{max}} lists",
   "medschoolsListDuplicate": "That school is already on this list",
+  "medschoolsQaDailyCap": "You have used today's questions. Try again tomorrow",
+  "medschoolsQaPaused": "Questions are paused right now",
   "medschoolsSharingUnavailable": "Sharing is not available right now",
   "medschoolsStaleOrder": "Your lists changed in another tab. Reload to see them",
   "messageCouldNotSend": "The message could not be sent",

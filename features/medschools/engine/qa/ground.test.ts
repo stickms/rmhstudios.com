@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LIMITS, groundAnswer } from './ground';
-import { F1, F2, F3, FACTS, INJECTION_TEXT } from './fixtures';
+import { F2, F3, FACTS, INJECTION_TEXT } from './fixtures';
 import type { RetrievedFact } from './types';
 
 const seg = (text: string, ...cites: string[]) => ({ text, cites });

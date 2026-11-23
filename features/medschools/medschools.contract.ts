@@ -464,6 +464,48 @@ export const getMedChancesApi = endpoint<{
   res: MedChancesRes;
 }>()({ method: 'GET', path: '/api/medschools/me/chances' });
 
+/* ------------------------- AI Q&A (phase 6, me/ask) ------------------------- */
+
+/** A row an answer cites: where the figure came from and when that source was last refreshed. */
+export interface MedAskCitationDto {
+  ref: string;
+  label: string;
+  sourceName: string;
+  schoolSlug: string | null;
+  /** ISO. The source's last successful refresh (a count), a profile's fetch time, a forecast's computation; null when unknown. */
+  updatedAt: string | null;
+  /** A site path with its `?tab=`. */
+  href: string;
+  /** The source's own page for the school where one is known. */
+  sourceHref: string | null;
+}
+
+/**
+ * The answer to one question. Nothing in it is stored: no question text, no answer text. `segments` are sentences that
+ * survived the grounding check, each citing retrieved rows by `ref`; `mine` is the caller's own invite estimate (from the
+ * tracker, never shown to the model) on a `my-chance` question.
+ */
+export interface MedAskRes {
+  /** `answered`: every sentence survived. `partial`: some were removed. `no-data`: nothing to say from the data. */
+  status: 'answered' | 'partial' | 'no-data' | 'declined' | 'no-school';
+  segments: { text: string; cites: string[] }[];
+  citations: MedAskCitationDto[];
+  notice: 'removed-ungrounded' | 'thin' | null;
+  decline: 'out-of-scope' | 'ungrounded' | 'name-a-school' | null;
+  schools: { slug: string; shortName: string }[];
+  cycleYear: number | null;
+  mine: ChanceDto[] | null;
+  remainingToday: number;
+  dailyCap: number;
+}
+
+export interface MedAskStatusRes {
+  /** False when the site has no model key: the page says so and sends no question. */
+  configured: boolean;
+  remainingToday: number;
+  dailyCap: number;
+}
+
 /* ------------------------- saved lists and preferences (me/**) ------------------------- */
 
 /** `ANY` is "either program": a list item that does not pick one (spec section 4a). */
