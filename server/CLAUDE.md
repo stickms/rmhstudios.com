@@ -222,7 +222,9 @@ Consequences:
   `retryLimit: 0`, UTC): `medschools.sdn-live` (daily at 12:20 UTC, off-peak, `MEDSCHOOLS_SDN_LIVE_CRON`, expires after
   25 min: RSS feeds, then the changed threads), `medschools.sdn-backfill` (monthly `15 0 1 * *`,
   `MEDSCHOOLS_SDN_BACKFILL_CRON`, expires after 3 h: a safety net that also covers the budget reset) and
-  `medschools.sdn-interviews` (weekly, `50 5 * * 1`, `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page
+  `medschools.rmh-publish` (daily at 00:05 UTC, expires after 10 min, no flag and no secret: the public snapshot of the RMH
+  tracker counts, `features/medschools/scrape/run-rmh-publish.ts`; skips when an OK run started under 20 h ago, from
+  `MedSourceRun`) and `medschools.sdn-interviews` (weekly, `50 5 * * 1`, `MEDSCHOOLS_SDN_INTERVIEWS_CRON`, expires after 1 h: summary-page
   interview reports, no model). The backfill has its own queue (spec section 8 names one shared backfill queue; this is
   a recorded deviation: its own cadence, budget share and host session) and no bootstrap trigger: the live tick queues
   it, after its own run, while `sdnBackfillOwed(prisma, now, aiConfigured)` says it is owed, and a manual

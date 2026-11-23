@@ -9,11 +9,16 @@
  * The invariant, after every transaction: the RMH events equal `toSharedEvent` of the milestones under their cycle's
  * current flag, one event per milestone, and the RMH count rows equal the events grouped by cell, with
  * `contributors = count` (D4: exact, because the schema's uniques make the events in one cell come from distinct people).
+ * A cell whose last event goes keeps its row at 0 until the daily snapshot removes it, so a cell never vanishes mid-day.
+ * This writer never touches `publishedCount` / `publishedContributors`: those are what the public pages read, and only
+ * the daily `medschools.rmh-publish` job writes them (Q2), so nothing a member does shows publicly until the next day.
  *
- * What identifies nothing in the event row (D2, D3): the `dedupeHash` is recomputed from the server secret and the
- * milestone id and stored nowhere else; the id is a random UUID (a cuid embeds its creation time); `occurredAt` is the
- * milestone's calendar day and `ingestedAt` is set to that same instant (the `now()` default would stamp the minute the
- * user typed it); `inState` stays null.
+ * What the event and count rows hold (D2, D3): the `dedupeHash` is recomputed from the server secret and the milestone
+ * id and stored nowhere else; the id of an event and of a count row is a random UUID (a cuid embeds its creation
+ * minute); `occurredAt` is the milestone's calendar day and `ingestedAt` is set to that same instant (the `now()`
+ * default would stamp the minute the user typed it); `inState` stays null. What that buys is narrow: the public pages and
+ * the `med_cycle_event` / `med_cycle_count` tables alone link to no one. Someone with access to the database can still
+ * match shared figures against the private tracker tables in the same database (a school, program, type and day).
  */
 import { randomUUID } from 'node:crypto';
 import type { Prisma, PrismaClient } from '@prisma/client';
@@ -74,13 +79,15 @@ interface MilestoneInfo {
   program: MedProgram;
   cycleYear: number;
   sharing: boolean;
+  /** The cycle's sharing was on at some point (never cleared): only such a cycle can own an event. */
+  everShared: boolean;
 }
 
 /** Flat reads (cycles, then applications, then milestones), every one scoped through `userId`. */
 async function readMilestones(tx: Tx, userId: string, scope: ShareScope): Promise<MilestoneInfo[]> {
   const cycles = await tx.medTrackerCycle.findMany({
     where: { userId, ...(scope.cycleYear !== undefined ? { cycleYear: scope.cycleYear } : {}) },
-    select: { id: true, cycleYear: true, shareAnonymously: true },
+    select: { id: true, cycleYear: true, shareAnonymously: true, everShared: true },
   });
   if (cycles.length === 0) return [];
   const byCycle = new Map(cycles.map((c) => [c.id, c]));
@@ -107,6 +114,7 @@ async function readMilestones(tx: Tx, userId: string, scope: ShareScope): Promis
         program: a.program,
         cycleYear: c.cycleYear,
         sharing: c.shareAnonymously,
+        everShared: c.everShared || c.shareAnonymously,
       },
     ];
   });
@@ -160,8 +168,10 @@ const cellOfRow = (e: {
 }): string => `${e.schoolId}|${e.program}|${e.cycleYear}|${e.occurredAt.toISOString().slice(0, 10)}|${e.eventType}`;
 
 /**
- * Recompute the RMH count rows of these cells from the RMH events (D4): `count = n` and `contributors = n`; a cell with
- * no events has no row. Another source's rows are never read or written. The caller holds the school locks.
+ * Recompute the RMH count rows of these cells from the RMH events (D4): `count = n` and `contributors = n`. A cell with
+ * no events keeps an existing row at 0 (the daily snapshot deletes it) so the cell does not disappear mid-day; a cell
+ * that never had a row gets none. Another source's rows are never read or written, and `published*` never. The caller
+ * holds the school locks. `deleted` is always 0 now; it stays in the result so callers do not change.
  */
 export async function rollupRmhCells(
   tx: Tx,
@@ -215,14 +225,12 @@ export async function rollupRmhCells(
       const count = n.get(k) ?? 0;
       const row = rows.get(k);
       const date = new Date(`${c.day}T00:00:00.000Z`);
-      if (count === 0) {
-        if (row) {
-          await tx.medCycleCount.deleteMany({ where: { id: row.id } });
-          out.deleted += 1;
-        }
-      } else if (!row) {
+      if (!row) {
+        if (count === 0) continue;
         await tx.medCycleCount.create({
           data: {
+            // A random id: the schema's cuid() default embeds the minute the row was made (D3).
+            id: randomUUID(),
             schoolId,
             program: c.program,
             cycleYear: c.cycleYear,
@@ -283,7 +291,10 @@ async function syncEvents(
     // Fail closed. Contributing needs the secret; so does deleting what was contributed, because an event is found only
     // by recomputing its hash. With no secret, succeed only when no event could exist for these milestones.
     if (desired.size > 0) throw new SharingUnavailableError();
-    if (await rmhEventInPossibleCells(tx, ms)) throw new SharingUnavailableError();
+    // A member whose cycles never shared owns no event, so another member's event in the same cell is no reason to
+    // refuse them: the cell check is the fallback only for cycles that were ever on.
+    const everOn = ms.filter((m) => m.everShared);
+    if (everOn.length > 0 && (await rmhEventInPossibleCells(tx, everOn))) throw new SharingUnavailableError();
     return { touchedCells: [], deleted: 0 };
   }
 
@@ -470,11 +481,13 @@ export async function upsertCycleRow(
 ): Promise<void> {
   const fields = {
     shareAnonymously: data.shareAnonymously,
+    // Sticky: set on the first time sharing is on, never cleared (it says whether an event could ever have existed).
+    ...(data.shareAnonymously ? { everShared: true } : {}),
     ...(data.homeState !== undefined ? { homeState: data.homeState } : {}),
   };
   await tx.medTrackerCycle.upsert({
     where: { userId_cycleYear: { userId, cycleYear } },
-    create: { userId, cycleYear, ...fields },
+    create: { userId, cycleYear, everShared: data.shareAnonymously, ...fields },
     update: fields,
   });
 }

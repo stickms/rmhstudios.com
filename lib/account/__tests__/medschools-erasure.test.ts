@@ -53,7 +53,10 @@ const OLD = new Date('2026-01-01T00:00:00.000Z');
 let f: ReturnType<typeof createFakePrisma>;
 
 const rmhEvents = () => f.tables.medCycleEvent.filter((e) => (e as { source: string }).source === 'RMH');
-const rmhCounts = () => f.tables.medCycleCount.filter((e) => (e as { source: string }).source === 'RMH');
+const rmhCounts = () =>
+  f.tables.medCycleCount.filter(
+    (e) => (e as { source: string; count: number }).source === 'RMH' && (e as { count: number }).count > 0,
+  );
 const audit = () => auditRmh(f.prisma as never, SECRET);
 const ZERO = { orphanEvents: 0, mismatchedCells: 0, missingEvents: 0 };
 

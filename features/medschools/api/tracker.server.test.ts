@@ -38,7 +38,10 @@ const school = (id: string, over: Record<string, unknown> = {}) => ({
 });
 
 const rmh = () => f.tables.medCycleEvent.filter((e) => (e as { source: string }).source === 'RMH');
-const counts = () => f.tables.medCycleCount.filter((e) => (e as { source: string }).source === 'RMH');
+const counts = () =>
+  f.tables.medCycleCount.filter(
+    (e) => (e as { source: string; count: number }).source === 'RMH' && (e as { count: number }).count > 0,
+  );
 const snapshot = () => JSON.stringify(f.tables);
 
 beforeEach(() => {

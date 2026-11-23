@@ -13,6 +13,7 @@ import {
   reconcileShared,
   rollupRmhCells,
   shareSecret,
+  upsertCycleRow,
   withShared,
   withSharedErase,
 } from './share-sync.server';
@@ -36,7 +37,9 @@ function world(opts?: FakePrismaOptions) {
 
 const rows = (w: World, t: string): Row[] => w.tables[t] as Row[];
 const events = (w: World) => rows(w, 'medCycleEvent').filter((e) => e.source === 'RMH');
-const rmhCounts = (w: World) => rows(w, 'medCycleCount').filter((c) => c.source === 'RMH');
+/** RMH count rows with at least one event. A cell whose last event went keeps a 0 row until the daily snapshot (`zeroRows`). */
+const rmhCounts = (w: World) => rows(w, 'medCycleCount').filter((c) => c.source === 'RMH' && (c.count as number) > 0);
+const zeroRows = (w: World) => rows(w, 'medCycleCount').filter((c) => c.source === 'RMH' && c.count === 0);
 const hash = (milestoneId: string) => dedupeHash(SECRET, 'RMH', `milestone:${milestoneId}`);
 
 const addUser = (w: World, id: string, createdAt = OLD) => w.tables.user.push({ id, createdAt });
@@ -51,7 +54,7 @@ async function addCycle(
   await withShared(
     userId,
     { cycleYear },
-    (tx) => tx.medTrackerCycle.create({ data: { id, userId, cycleYear, shareAnonymously: share } }),
+    (tx) => tx.medTrackerCycle.create({ data: { id, userId, cycleYear, shareAnonymously: share, everShared: share } }),
     w.db,
     NOW,
   );
@@ -97,7 +100,8 @@ const setShare = (w: World, userId: string, cycleYear: number, on: boolean) =>
     (tx) =>
       tx.medTrackerCycle.update({
         where: { userId_cycleYear: { userId, cycleYear } },
-        data: { shareAnonymously: on },
+        // The real writer (`upsertCycleRow`) sets `everShared` the first time sharing is on and never clears it.
+        data: { shareAnonymously: on, ...(on ? { everShared: true } : {}) },
       }),
     w.db,
     NOW,
@@ -188,6 +192,7 @@ describe('basic sharing', () => {
     await setShare(w, 'u1', 2027, false);
     expect(events(w)).toHaveLength(0);
     expect(rmhCounts(w)).toHaveLength(0);
+    expect(zeroRows(w)).toHaveLength(1); // kept at 0 until the daily snapshot
     expectConsistent(w);
   });
 
@@ -262,6 +267,29 @@ describe('what the written row identifies (D3)', () => {
   });
 });
 
+describe('the public snapshot columns (Q2)', () => {
+  it('the writer never touches publishedCount or publishedContributors, through create, update and zeroing', async () => {
+    const w = world();
+    await simple(w, 'u1');
+    await simple(w, 'u2');
+    const row = () => rows(w, 'medCycleCount').find((c) => c.source === 'RMH')!;
+    expect(row().publishedCount ?? null).toBeNull();
+    expect(row().publishedContributors ?? null).toBeNull();
+    row().publishedCount = 7; // what the daily job would have written
+    row().publishedContributors = 7;
+    await setShare(w, 'u1', 2027, false);
+    await setShare(w, 'u2', 2027, false);
+    expect(row()).toMatchObject({ count: 0, contributors: 0, publishedCount: 7, publishedContributors: 7 });
+  });
+
+  it('count rows get a random UUID, not the cuid default that embeds the creation minute', async () => {
+    const w = world();
+    await simple(w, 'u1');
+    const id = rmhCounts(w)[0]!.id as string;
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+});
+
 describe('contributors and the k floor (Review Focus 3)', () => {
   it('count and contributors follow the events, and another source is never touched', async () => {
     const w = world();
@@ -326,7 +354,13 @@ describe('contributors and the k floor (Review Focus 3)', () => {
     w.tables.medCycleCount.length = 0;
     expect(await w.db.$transaction((tx) => rollupRmhCells(tx, [cell]))).toEqual({ created: 1, updated: 0, deleted: 0 });
     w.tables.medCycleEvent.length = 0;
-    expect(await w.db.$transaction((tx) => rollupRmhCells(tx, [cell]))).toEqual({ created: 0, updated: 0, deleted: 1 });
+    // The last event goes: the row stays, at 0 (the daily snapshot removes it), so the cell never vanishes mid-day.
+    expect(await w.db.$transaction((tx) => rollupRmhCells(tx, [cell]))).toEqual({ created: 0, updated: 1, deleted: 0 });
+    expect(zeroRows(w)).toEqual([expect.objectContaining({ count: 0, contributors: 0 })]);
+    // A cell that never had a row and has no events gets none.
+    w.tables.medCycleCount.length = 0;
+    expect(await w.db.$transaction((tx) => rollupRmhCells(tx, [cell]))).toEqual({ created: 0, updated: 0, deleted: 0 });
+    expect(rows(w, 'medCycleCount')).toHaveLength(0);
   });
 });
 
@@ -591,6 +625,48 @@ describe('the secret (Review Focus 7, D8)', () => {
     await expect(setShare(w, 'u1', 2027, false)).rejects.toBeInstanceOf(SharingUnavailableError);
     await expect(eraseSharedMedEvents('u1', w.db)).rejects.toBeInstanceOf(SharingUnavailableError);
     expect(events(w)).toHaveLength(1);
+  });
+
+  it('with no secret, a member who never shared is not refused because another member has an event in the cell', async () => {
+    const w = world();
+    await simple(w, 'u1'); // u1 shares: one INTERVIEW event at s1 on DAY
+    const b = await simple(w, 'u2', { share: false }); // u2 same cell, never shared
+    delete process.env.MEDSCHOOLS_DEDUPE_SECRET;
+    await expect(
+      withSharedErase('u2', {}, (tx) => tx.medTrackerMilestone.delete({ where: { id: b.milestoneId } }), w.db, NOW),
+    ).resolves.toMatchObject({ id: 'ms-u2' });
+    expect(rows(w, 'medTrackerMilestone').map((m) => m.id)).toEqual(['ms-u1']);
+    expect(events(w)).toHaveLength(1);
+  });
+
+  it('with no secret, a member who once shared (and switched off) is still refused when an event could exist in the cell', async () => {
+    const w = world();
+    const a = await simple(w, 'u1');
+    await setShare(w, 'u1', 2027, false); // the event is gone, the cell has no events, everShared stays
+    expect(rows(w, 'medTrackerCycle')[0]!.everShared).toBe(true);
+    await simple(w, 'u2'); // another member's event in the same cell
+    delete process.env.MEDSCHOOLS_DEDUPE_SECRET;
+    await expect(
+      withSharedErase('u1', {}, (tx) => tx.medTrackerMilestone.delete({ where: { id: a.milestoneId } }), w.db, NOW),
+    ).rejects.toBeInstanceOf(SharingUnavailableError);
+    expect(
+      rows(w, 'medTrackerMilestone')
+        .map((m) => m.id)
+        .sort(),
+    ).toEqual(['ms-u1', 'ms-u2']);
+  });
+
+  it('upsertCycleRow sets everShared when sharing is first on and never clears it', async () => {
+    const w = world();
+    addUser(w, 'u1');
+    await w.db.$transaction(async (tx) => {
+      await upsertCycleRow(tx, 'u1', 2027, { shareAnonymously: false });
+      expect(rows(w, 'medTrackerCycle')[0]!.everShared).toBe(false);
+      await upsertCycleRow(tx, 'u1', 2027, { shareAnonymously: true });
+      expect(rows(w, 'medTrackerCycle')[0]!.everShared).toBe(true);
+      await upsertCycleRow(tx, 'u1', 2027, { shareAnonymously: false });
+      expect(rows(w, 'medTrackerCycle')[0]!.everShared).toBe(true);
+    });
   });
 
   it('auditRmh needs the secret', async () => {

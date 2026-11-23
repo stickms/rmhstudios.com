@@ -8,6 +8,7 @@ import {
   SCHOOL_TABS,
   pickPrimary,
   applyKFloor,
+  publicCell,
   floorSplit,
   buildTypeSeries,
   resolveCycleYear,
@@ -237,5 +238,46 @@ describe('dates', () => {
     const s = formatUtcDay('2026-11-20', 'en-US');
     expect(s).toContain('Nov');
     expect(s).toContain('20');
+  });
+});
+
+describe('publicCell (the daily snapshot is the only RMH figure the public sees)', () => {
+  const row = (over: Record<string, unknown> = {}) => ({
+    source: 'RMH' as const,
+    date: '2026-11-10',
+    eventType: 'INTERVIEW' as const,
+    count: 9,
+    contributors: 9,
+    publishedCount: 3,
+    publishedContributors: 3,
+    ...over,
+  });
+
+  it('swaps the live figures for the published ones and drops the published keys', () => {
+    expect(publicCell(row())).toEqual({
+      source: 'RMH',
+      date: '2026-11-10',
+      eventType: 'INTERVIEW',
+      count: 3,
+      contributors: 3,
+    });
+  });
+
+  it('is absent when never published, whatever the live count', () => {
+    expect(publicCell(row({ publishedCount: null, publishedContributors: null }))).toBeNull();
+    expect(publicCell(row({ publishedCount: undefined }))).toBeNull();
+  });
+
+  it('passes other sources through untouched by their (null) published columns', () => {
+    expect(publicCell(row({ source: 'ADMIT', count: 5, contributors: null, publishedCount: null }))).toMatchObject({
+      source: 'ADMIT',
+      count: 5,
+      contributors: null,
+    });
+  });
+
+  it('then the floor applies to the published contributors', () => {
+    const cells = [row({ publishedContributors: 2 }), row({ date: '2026-11-11' })].flatMap((r) => publicCell(r) ?? []);
+    expect(applyKFloor(cells, '2026-11-20').map((c) => c.date)).toEqual(['2026-11-11']);
   });
 });

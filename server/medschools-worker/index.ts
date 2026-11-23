@@ -50,6 +50,7 @@ import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-inter
 import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
 import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
 import { SOURCES } from '../../features/medschools/scrape/sources';
+import { RMH_PUBLISH_CRON, runRmhPublish } from '../../features/medschools/scrape/run-rmh-publish';
 import { runCycletrack } from '../../features/medschools/scrape/run-cycletrack';
 import {
   needsBackfill,
@@ -516,6 +517,15 @@ const sdnBackfillTick = guarded('sdn-backfill', async (data) => {
   }
 });
 
+// The daily public snapshot of the RMH tracker counts (Q2). Needs no dedupe secret and is not behind a source flag: it
+// copies figures already in the database, and without it a tracker count never becomes public.
+const rmhPublishTick = guarded('rmh-publish', async (data) => {
+  await runRmhPublish(
+    { prisma: medPrisma, db: prisma, log },
+    { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+  );
+});
+
 const sdnInterviewsTick = guarded('sdn-interviews', async (data) => {
   if (!sdnGate('sdn-interviews', data)) return;
   const r = await runSdnInterviews(
@@ -628,6 +638,7 @@ const interviewsCron =
 const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
+const RMH_PUBLISH_QUEUE = 'medschools.rmh-publish';
 const sdnLiveCron = process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '20 12 * * *';
 // Monthly safety net: the live tick queues the real walk, this one covers a missed tick and the budget reset (1st, UTC).
 const sdnBackfillCron = process.env.MEDSCHOOLS_SDN_BACKFILL_CRON?.trim() || '15 0 1 * *';
@@ -648,6 +659,7 @@ let interviewsConsumer: ScheduledConsumer | null =
 let sdnLiveConsumer: ScheduledConsumer | null = null;
 let sdnBackfillConsumer: ScheduledConsumer | null = null;
 let sdnInterviewsConsumer: ScheduledConsumer | null = null;
+let rmhPublishConsumer: ScheduledConsumer | null = null;
 
 async function main() {
   // The Admit jobs hash dedupe keys with this and refuse to run without it; CycleTrack never reads it.
@@ -818,13 +830,27 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  rmhPublishConsumer = await startScheduledConsumer({
+    queue: RMH_PUBLISH_QUEUE,
+    cron: RMH_PUBLISH_CRON,
+    expireInSeconds: 10 * 60,
+    retryLimit: 0,
+    handler: rmhPublishTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!rmhPublishConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   if (
     stopping
   )
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE}"`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}"`,
   );
   if (
     backfillDue
@@ -875,6 +901,7 @@ async function shutdown(
       sdnLiveConsumer?.pause(),
       sdnBackfillConsumer?.pause(),
       sdnInterviewsConsumer?.pause(),
+      rmhPublishConsumer?.pause(),
     ],
   );
 

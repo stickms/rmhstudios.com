@@ -48,13 +48,41 @@ export function pickPrimary(present: Iterable<MedSource>): MedSource | null {
 /** The UTC calendar day of `now`, `YYYY-MM-DD`. */
 export const utcDayOf = (now: Date): string => now.toISOString().slice(0, 10);
 
+/** A stored count row as the readers select it: the live figures and, for RMH only, the daily snapshot. */
+export interface StoredCountRow {
+  source: MedSource;
+  /** YYYY-MM-DD */
+  date: string;
+  eventType: MedEventType;
+  count: number;
+  contributors: number | null;
+  publishedCount?: number | null;
+  publishedContributors?: number | null;
+}
+
+/**
+ * The row as a public figure (Q2). An RMH row is public only through its daily snapshot: `publishedCount` and
+ * `publishedContributors` stand in for `count` and `contributors`, and a row never published (null) is absent. The live
+ * columns follow the tracker minute by minute and are never shown, so a back-dated milestone cannot move a public figure
+ * until the next snapshot. Other sources pass through unchanged.
+ */
+export function publicCell<T extends StoredCountRow>(
+  r: T,
+): (Omit<T, 'publishedCount' | 'publishedContributors'> & CountCell) | null {
+  const { publishedCount, publishedContributors, ...rest } = r;
+  if (r.source !== 'RMH') return rest as Omit<T, 'publishedCount' | 'publishedContributors'> & CountCell;
+  if (publishedCount === null || publishedCount === undefined) return null;
+  return { ...rest, count: publishedCount, contributors: publishedContributors ?? null };
+}
+
 /**
  * RMH tracker counts rest on contributors; fewer than K_FLOOR (or unknown) is suppressed. Other sources show as published.
  *
- * Q2 (phase 4): RMH cells dated TODAY (UTC) or later are held back too, whatever their count. Without it a cell that
- * crosses 3 appears the moment the third person shares, and someone who knows the other two learns the third's school,
- * type and day in real time. A held-back day appears once the day has ended; deletion is not delayed. `today` defaults
- * to the clock (fail closed); pass the request's own `now` so a body is a function of its inputs.
+ * Q2 (phase 4): the rows are already the PUBLISHED figures (`publicCell`: the once-a-day snapshot, never the live
+ * count), so `contributors` here is `publishedContributors`. RMH cells dated TODAY (UTC) or later are held back too,
+ * whatever their count. The snapshot is what stops a back-dated milestone moving a past cell in real time; the date
+ * hold-back covers a cell that is itself still filling. `today` defaults to the clock (fail closed); pass the
+ * request's own `now` so a body is a function of its inputs.
  */
 export function applyKFloor(rows: readonly CountCell[], today: string = utcDayOf(new Date())): CountCell[] {
   return rows.filter(

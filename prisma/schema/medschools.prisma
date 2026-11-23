@@ -184,6 +184,11 @@ model MedCycleCount {
   count        Int
   /// Distinct-reporter count where known; null for CycleTrack (suppressed upstream).
   contributors Int?
+  /// RMH rows only: the figures the PUBLIC pages show, copied from `count` / `contributors` once a day by the
+  /// `medschools.rmh-publish` job and touched by nothing else. `count` / `contributors` follow the tracker live; a public
+  /// reader that read them would show who shared a moment ago. Null (never published) = absent from every public read.
+  publishedCount        Int?
+  publishedContributors Int?
 
   school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
@@ -363,6 +368,9 @@ model MedTrackerCycle {
   cycleYear        Int
   homeState        String?  @db.VarChar(2)
   shareAnonymously Boolean  @default(false)
+  /// Set when sharing is first switched on, never cleared. A cycle that never shared cannot own an event, so a delete
+  /// there needs no secret (share-sync `rmhEventInPossibleCells` is skipped).
+  everShared       Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

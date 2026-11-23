@@ -980,6 +980,26 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsCap',
     text: 'You can track up to {{max}} schools in one cycle',
   },
+  MEDSCHOOLS_LIST_CAP: {
+    http: 409,
+    i18n: 'errors:medschoolsListCap',
+    text: 'You can keep up to {{max}} lists',
+  },
+  MEDSCHOOLS_ITEM_CAP: {
+    http: 409,
+    i18n: 'errors:medschoolsItemCap',
+    text: 'A list holds up to {{max}} schools',
+  },
+  MEDSCHOOLS_LIST_DUPLICATE: {
+    http: 409,
+    i18n: 'errors:medschoolsListDuplicate',
+    text: 'That school is already on this list',
+  },
+  MEDSCHOOLS_STALE_ORDER: {
+    http: 409,
+    i18n: 'errors:medschoolsStaleOrder',
+    text: 'Your lists changed in another tab. Reload to see them',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

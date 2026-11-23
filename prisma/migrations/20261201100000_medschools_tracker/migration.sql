@@ -1,5 +1,5 @@
 -- RMH Med Schools phase 4: private tracker, school lists and preferences.
--- Additive only: three enums and six tables. Nothing in `med_cycle_event` changes: an anonymous shared event has no
+-- Additive only: three enums, six tables, and two nullable columns on `med_cycle_count` (the daily public snapshot). Nothing in `med_cycle_event` changes: an anonymous shared event has no
 -- column that points at a tracker row (its hash is recomputed from the server secret, never stored here).
 
 -- CreateEnum
@@ -11,6 +11,10 @@ CREATE TYPE "MedProgramFilter" AS ENUM ('ALL', 'REG', 'PHD');
 -- CreateEnum
 CREATE TYPE "MedListProgram" AS ENUM ('ANY', 'REG', 'PHD');
 
+-- AlterTable: the once-a-day public snapshot of the RMH tracker counts (null = never published = absent from every public read).
+ALTER TABLE "med_cycle_count" ADD COLUMN "publishedCount" INTEGER,
+ADD COLUMN "publishedContributors" INTEGER;
+
 -- CreateTable
 CREATE TABLE "med_tracker_cycle" (
     "id" TEXT NOT NULL,
@@ -18,6 +22,7 @@ CREATE TABLE "med_tracker_cycle" (
     "cycleYear" INTEGER NOT NULL,
     "homeState" VARCHAR(2),
     "shareAnonymously" BOOLEAN NOT NULL DEFAULT false,
+    "everShared" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

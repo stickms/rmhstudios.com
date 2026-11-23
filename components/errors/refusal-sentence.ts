@@ -527,6 +527,18 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'You can track up to {{max}} schools in one cycle',
         ...p,
       });
+    case 'MEDSCHOOLS_LIST_CAP':
+      return t('medschoolsListCap', { ns: 'errors', defaultValue: 'You can keep up to {{max}} lists', ...p });
+    case 'MEDSCHOOLS_ITEM_CAP':
+      return t('medschoolsItemCap', { ns: 'errors', defaultValue: 'A list holds up to {{max}} schools', ...p });
+    case 'MEDSCHOOLS_LIST_DUPLICATE':
+      return t('medschoolsListDuplicate', { ns: 'errors', defaultValue: 'That school is already on this list', ...p });
+    case 'MEDSCHOOLS_STALE_ORDER':
+      return t('medschoolsStaleOrder', {
+        ns: 'errors',
+        defaultValue: 'Your lists changed in another tab. Reload to see them',
+        ...p,
+      });
   }
 }
 

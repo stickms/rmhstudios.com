@@ -4,6 +4,7 @@ import {
   K_FLOOR,
   applyKFloor,
   buildTypeSeries,
+  publicCell,
   decodeLiveCursor,
   encodeLiveCursor,
   filterSchools,
@@ -49,15 +50,24 @@ const programsOf = (p: MedProgramFilter | undefined): MedProgram[] =>
   p === 'REG' ? ['REG'] : p === 'PHD' ? ['PHD'] : ['REG', 'PHD'];
 
 /**
- * The k floor as a where clause: RMH rows need `contributors >= K_FLOOR` (null fails closed) and a date before today UTC
- * (Q2: today's cells are held back so a cell crossing 3 is never visible in real time). Same rule as applyKFloor.
+ * The k floor as a where clause. An RMH row is public only through its daily snapshot (Q2): `publishedContributors >=
+ * K_FLOOR` (null, never published, fails closed) and a date before today UTC. The live `count` / `contributors` follow
+ * the tracker minute by minute and are never read for a public figure. Same rule as applyKFloor.
  */
 const floorWhere = (now: Date) => ({
   OR: [
     { source: { not: 'RMH' as const } },
-    { contributors: { gte: K_FLOOR }, date: { lt: new Date(`${utcDayOf(now)}T00:00:00.000Z`) } },
+    {
+      source: 'RMH' as const,
+      publishedContributors: { gte: K_FLOOR },
+      date: { lt: new Date(`${utcDayOf(now)}T00:00:00.000Z`) },
+    },
   ],
 });
+
+/** A summed groupBy row as one public figure: an RMH row's published total, any other source's `count`. */
+const publicSum = (source: MedSource, s: { count: number | null; publishedCount: number | null }): number =>
+  (source === 'RMH' ? s.publishedCount : s.count) ?? 0;
 
 interface RawCell extends CountCell {
   eventType: MedEventType;
@@ -143,12 +153,12 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
   const sums = await prisma.medCycleCount.groupBy({
     by: ['schoolId', 'source'],
     where: { cycleYear, eventType: 'INTERVIEW', program: { in: programsOf(program) }, ...floorWhere(now) },
-    _sum: { count: true },
+    _sum: { count: true, publishedCount: true },
   });
   const bySchool = new Map<string, { source: MedSource; count: number }[]>();
   for (const s of sums) {
     const list = bySchool.get(s.schoolId) ?? [];
-    list.push({ source: s.source, count: s._sum.count ?? 0 });
+    list.push({ source: s.source, count: publicSum(s.source, s._sum) });
     bySchool.set(s.schoolId, list);
   }
   const filtered = filterSchools(all, { q: q.q, degree: q.degree, state: q.state });
@@ -197,7 +207,7 @@ export async function getCardData(slug: string, now: Date = new Date()): Promise
       program: { in: programsOf('ALL') },
       ...floorWhere(now),
     },
-    _sum: { count: true },
+    _sum: { count: true, publishedCount: true },
   });
   const primary = pickPrimary(sums.map((x) => x.source));
   const hit = sums.find((x) => x.source === primary);
@@ -207,7 +217,7 @@ export async function getCardData(slug: string, now: Date = new Date()): Promise
     city: school.city,
     state: school.state,
     cycleYear,
-    reported: hit ? { source: hit.source, count: hit._sum.count ?? 0 } : null,
+    reported: hit ? { source: hit.source, count: publicSum(hit.source, hit._sum) } : null,
   };
 }
 
@@ -353,19 +363,21 @@ export async function getActivity(
         program: { in: programsOf(program) },
         eventType: { in: [...CHARTED_TYPES, ...OTHER_TOTAL_TYPES] },
       },
-      select: { source: true, date: true, eventType: true, count: true, contributors: true },
+      select: {
+        source: true,
+        date: true,
+        eventType: true,
+        count: true,
+        contributors: true,
+        publishedCount: true,
+        publishedContributors: true,
+      },
     }),
     prisma.medCycle.findUnique({ where: { cycleYear }, select: { dayZeroOn: true, dateEstimated: true } }),
     unreportedFor(school.id, cycleYear),
   ]);
   const cells = sumPrograms(
-    rows.map((r) => ({
-      source: r.source,
-      date: day(r.date),
-      eventType: r.eventType,
-      count: r.count,
-      contributors: r.contributors,
-    })),
+    rows.flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
     utcDayOf(now),
   );
   // Withdrawn and hold are totals only, never charted: floored and summed per source like the rest.
@@ -419,7 +431,16 @@ export async function getHistory(
   const [rows, cycles] = await Promise.all([
     prisma.medCycleCount.findMany({
       where: { ...base, cycleYear: { in: cycleYears } },
-      select: { cycleYear: true, source: true, date: true, eventType: true, count: true, contributors: true },
+      select: {
+        cycleYear: true,
+        source: true,
+        date: true,
+        eventType: true,
+        count: true,
+        contributors: true,
+        publishedCount: true,
+        publishedContributors: true,
+      },
     }),
     prisma.medCycle.findMany({
       where: { cycleYear: { in: cycleYears } },
@@ -431,15 +452,7 @@ export async function getHistory(
     const cy = cycles.find((c) => c.cycleYear === cycleYear);
     const dayZeroOn = cy ? day(cy.dayZeroOn) : defaultDayZero(cycleYear);
     const cells = sumPrograms(
-      rows
-        .filter((r) => r.cycleYear === cycleYear)
-        .map((r) => ({
-          source: r.source,
-          date: day(r.date),
-          eventType: r.eventType,
-          count: r.count,
-          contributors: r.contributors,
-        })),
+      rows.filter((r) => r.cycleYear === cycleYear).flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
       utcDayOf(now),
     );
     const series = buildTypeSeries(cells, utcDayOf(now));
@@ -520,9 +533,18 @@ export async function getToday(q: TodayQuery, now: Date = new Date()): Promise<M
     cycleYear,
     eventType: 'INTERVIEW' as const,
     program: { in: programsOf(program) },
-    count: { gt: 0 },
     school: { active: true, ...(q.degree ? { degree: q.degree } : {}) },
-    ...floorWhere(now),
+    // Positive on the figure the public sees: the published count for RMH, `count` for the rest. Combined with the
+    // floor under AND, because each is an OR.
+    AND: [
+      floorWhere(now),
+      {
+        OR: [
+          { source: { not: 'RMH' as const }, count: { gt: 0 } },
+          { source: 'RMH' as const, publishedCount: { gt: 0 } },
+        ],
+      },
+    ],
   };
   const latest = await prisma.medCycleCount.findFirst({
     where: { ...where, date: { lte: new Date(`${today}T00:00:00Z`) } },
@@ -536,13 +558,14 @@ export async function getToday(q: TodayQuery, now: Date = new Date()): Promise<M
       schoolId: true,
       source: true,
       count: true,
+      publishedCount: true,
       school: { select: { slug: true, shortName: true, name: true, city: true, state: true } },
     },
   });
   const bySchool = new Map<string, { school: (typeof rows)[number]['school']; counts: Map<MedSource, number> }>();
   for (const r of rows) {
     const e = bySchool.get(r.schoolId) ?? { school: r.school, counts: new Map<MedSource, number>() };
-    e.counts.set(r.source, (e.counts.get(r.source) ?? 0) + r.count);
+    e.counts.set(r.source, (e.counts.get(r.source) ?? 0) + publicSum(r.source, r));
     bySchool.set(r.schoolId, e);
   }
   const schools = [...bySchool.values()].flatMap(({ school, counts }) => {

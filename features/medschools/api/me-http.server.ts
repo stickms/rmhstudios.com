@@ -4,7 +4,16 @@ import { AccountTooNewError, SHARE_MIN_ACCOUNT_AGE_DAYS, SharingUnavailableError
 
 export const READ_LIMIT = { policy: 'read', scope: 'user', prefix: 'medschools-me-read' } as const;
 export const TRACKER_WRITE_LIMIT = { policy: 'write', scope: 'user', prefix: 'mutation:medschools/tracker' } as const;
+export const LISTS_WRITE_LIMIT = { policy: 'write', scope: 'user', prefix: 'mutation:medschools/lists' } as const;
+export const ADD_TO_TRACKER_LIMIT = {
+  limit: 10,
+  windowMs: 60_000,
+  prefix: 'medschools-add-to-tracker',
+  scope: 'user',
+} as const;
 export const SHARE_LIMIT = { limit: 10, windowMs: 60_000, prefix: 'medschools-share', scope: 'user' } as const;
+
+export const badInput = (): Response => Response.json({ error: 'Invalid input' }, { status: 400 });
 
 export const notFound = (): Response => Response.json({ error: 'Not found' }, { status: 404 });
 

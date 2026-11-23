@@ -35,9 +35,21 @@ row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts`
 - **k floor (spec §6):** `K_FLOOR = 3`. RMH tracker count rows are dropped when `contributors` is null or under 3 (fail
   closed); other sources show as published (their `contributors` is null today). An in-state/out-of-state split is
   returned only when both sides are at least 3; `MedSchoolStats` rows with `residence != GLOBAL` follow the same floor.
-  The live feed excludes `source = RMH` entirely. **Held back (phase 4, Q2):** RMH count cells dated today (UTC) or
-  later are dropped too, in `applyKFloor` and the `floorWhere(now)` clause, so a cell crossing 3 is never visible in
-  real time; deletion is not delayed.
+  The live feed excludes `source = RMH` entirely. **Tracker figures update once a day (phase 4, Q2):** a public read of
+  an RMH row uses `publishedCount` / `publishedContributors` only (`publicCell` in `engine/public-read.ts`, `floorWhere`
+  and `publicSum` in `api/read.server.ts`); null published (never published) means absent, and the k floor applies to
+  `publishedContributors`. The live `count` / `contributors` follow the tracker and are never public. The daily job
+  `medschools.rmh-publish` (00:05 UTC, `scrape/run-rmh-publish.ts`, an exclusive pg-boss queue in
+  `server/medschools-worker/`, last run persisted in `MedSourceRun`) copies live to published for every RMH row in one
+  statement and deletes rows whose live count is 0 (the writer keeps those at 0 so a cell never vanishes mid-day). Why:
+  a back-dated milestone changes a PAST cell, so a date hold-back alone would reveal who just shared. Cells dated today
+  (UTC) or later are still dropped (`applyKFloor`, `floorWhere(now)`). **Turning sharing off (or deleting a milestone)
+  removes the event at once but leaves the public totals until the next daily update.** The share-sync reconcile never
+  writes `published*`; only the job does.
+- **What the anonymity claim is:** the public pages and the `med_cycle_event` / `med_cycle_count` tables alone link to
+  no one (random UUID ids, a hash recomputed from the server secret, `ingestedAt = occurredAt`). Someone with access to
+  the database can still match shared figures against the private tracker tables in the same database. Do not write it
+  stronger than that.
 - **Never sum sources (spec §10):** the primary series per school x program x cycle x event type is the first present
   source in `PRIMARY_ORDER` (CycleTrack, Admit, SDN, RMH, MDApplicants), after the floor. Others are comparison series.
   Every chart says "Reported events" and names its sources; reported events are never called applicants.

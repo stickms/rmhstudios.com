@@ -18,6 +18,8 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medTrackerCycle: ['userId', 'cycleYear'],
   medTrackerApplication: ['cycleId', 'schoolId', 'program'],
   medTrackerMilestone: ['applicationId', 'type'],
+  medSchoolListItem: ['listId', 'schoolId', 'program'],
+  medUserPrefs: ['userId'],
 };
 
 /** `onDelete: Cascade` edges: deleting a row of the key removes the child rows whose `fk` equals its id. */

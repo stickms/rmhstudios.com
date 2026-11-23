@@ -340,4 +340,13 @@ describe('medschools-worker wiring', () => {
     const sd = src.slice(src.indexOf('async function shutdown'));
     expect(sd.match(/\.stop\(\)/g)).toHaveLength(1);
   });
+
+  it('registers medschools.rmh-publish (the daily public snapshot) as an exclusive pg-boss queue, off its own tick', () => {
+    const src = flat();
+    expect(src).toContain("const RMH_PUBLISH_QUEUE = 'medschools.rmh-publish'");
+    expect(src).toContain('queue: RMH_PUBLISH_QUEUE, cron: RMH_PUBLISH_CRON');
+    expect(src).toContain('handler: rmhPublishTick');
+    expect(src).toContain('rmhPublishConsumer?.pause()');
+    expect(read('features/medschools/scrape/run-rmh-publish.ts')).toContain("RMH_PUBLISH_CRON = '5 0 * * *'");
+  });
 });
