@@ -4,6 +4,7 @@
  * rarity (2 copper, 3 blued steel, 4 gold). Tempered cards get a molten edge and a "+".
  */
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
 import { label } from '@features/signal-forge/engine/labels';
 import type { CardDef } from '@features/signal-forge/engine/types';
 import { WAVE_COLOR, WaveGlyph } from './art/glyphs';
@@ -31,14 +32,15 @@ interface Props {
 
 export function CardView({ def, upgraded, onPhrase, disabled, onPlay, hint, size = 'hand', ariaLabel }: Props) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const color = def.rarity === 'glitch' ? '#7D7D7D' : WAVE_COLOR[def.wave];
-  const name = t(`card.${def.id}.name`, { defaultValue: def.name }) + (upgraded ? '+' : '');
+  const name = lbl(`card.${def.id}.name`, def.name) + (upgraded ? '+' : '');
   const lines = cardLines(def, t);
   const rivets = RIVET[def.rarity];
   const waveLabel =
     def.wave === 'any'
       ? t('wave.any', { defaultValue: 'Any waveform' })
-      : t(`wave.${def.wave}`, { defaultValue: label(`wave.${def.wave}`) });
+      : lbl(`wave.${def.wave}`, label(`wave.${def.wave}`));
   const aria = ariaLabel ?? `${name}. ${t('card.cost-aria', { defaultValue: 'Cost {{n}}', n: def.cost })}. ${waveLabel}. ${lines.join(' ')}`;
   const body = (
     <>

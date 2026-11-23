@@ -3,6 +3,8 @@
  * submission and the achievements it unlocked.
  */
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { SIGNAL_FORGE_ACHIEVEMENT_NAMES } from '@features/signal-forge/engine/achievements';
 import { finalScore, floorOf } from '@features/signal-forge/engine/run';
 import type { RunState } from '@features/signal-forge/engine/types';
@@ -22,6 +24,8 @@ interface Props {
 
 export function EndScreen({ run, status, achievements, unlockedAscension, onMenu, onAgain }: Props) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
+  const fmt = useLocaleFormat();
   const won = run.phase === 'victory';
   const s = run.stats;
   const stats: Array<[string, string | number]> = [
@@ -51,7 +55,7 @@ export function EndScreen({ run, status, achievements, unlockedAscension, onMenu
       </h2>
       <p className="sf-end-score">
         <span className="sf-label">{t('end.score', { defaultValue: 'Score' })}</span>
-        <b className="sf-mono">{finalScore(run).toLocaleString()}</b>
+        <b className="sf-mono">{fmt.number(finalScore(run))}</b>
       </p>
       <dl className="sf-end-stats">
         {stats.map(([k, v]) => (
@@ -77,7 +81,7 @@ export function EndScreen({ run, status, achievements, unlockedAscension, onMenu
         <ul className="sf-ach-list" aria-label={t('end.achievements', { defaultValue: 'Achievements unlocked' })}>
           {achievements.map((id) => (
             <li key={id}>
-              <Icon name="trophy" size={14} color="#FFD27A" /> {t(`ach.${id}`, { defaultValue: SIGNAL_FORGE_ACHIEVEMENT_NAMES[id] ?? id })}
+              <Icon name="trophy" size={14} color="#FFD27A" /> {lbl(`ach.${id}`, SIGNAL_FORGE_ACHIEVEMENT_NAMES[id] ?? id)}
             </li>
           ))}
         </ul>

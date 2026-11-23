@@ -76,12 +76,13 @@ export const RELICS: RelicDef[] = [
   { id: 'lucky_rivet', name: 'Lucky Rivet', rarity: 'event', text: 'Gain 3 Block at the start of each turn.', trigger: 'turnStart', effect: { block: 3 } },
 ];
 
-const BY_ID = new Map(RELICS.map((r) => [r.id, r]));
+/** Lookup by id: a plain object built once (no cache, no expiry). */
+const BY_ID: Readonly<Record<string, RelicDef>> = Object.fromEntries(RELICS.map((r) => [r.id, r]));
 export function relicDef(id: string): RelicDef {
-  const d = BY_ID.get(id);
+  const d = Object.hasOwn(BY_ID, id) ? BY_ID[id] : undefined;
   if (!d) throw new Error(`Unknown relic: ${id}`);
   return d;
 }
 export function hasRelicDef(id: string): boolean {
-  return BY_ID.has(id);
+  return Object.hasOwn(BY_ID, id);
 }

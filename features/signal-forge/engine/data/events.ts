@@ -321,9 +321,10 @@ export const EVENTS: EventDef[] = [
   },
 ];
 
-const BY_ID = new Map(EVENTS.map((e) => [e.id, e]));
+/** Lookup by id: a plain object built once (no cache, no expiry). */
+const BY_ID: Readonly<Record<string, EventDef>> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 export function eventDef(id: string): EventDef {
-  const d = BY_ID.get(id);
+  const d = Object.hasOwn(BY_ID, id) ? BY_ID[id] : undefined;
   if (!d) throw new Error(`Unknown event: ${id}`);
   return d;
 }

@@ -3,16 +3,17 @@
  * (help, sound, deck, leave). Shared by every screen of a run.
  */
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
 import { relicDef } from '@features/signal-forge/engine/data/relics';
 import { floorOf } from '@features/signal-forge/engine/run';
 import type { RunState } from '@features/signal-forge/engine/types';
 import { Icon } from './art/glyphs';
 
 export function RelicBadge({ id, size = 34 }: { id: string; size?: number }) {
-  const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const d = relicDef(id);
-  const name = t(`relic.${id}.name`, { defaultValue: d.name });
-  const text = t(`relic.${id}.text`, { defaultValue: d.text });
+  const name = lbl(`relic.${id}.name`, d.name);
+  const text = lbl(`relic.${id}.text`, d.text);
   // A relic is a stamped brass token; the glyph is picked from the id so each looks its own.
   const hue = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0);
   const ring = d.rarity === 'boss' ? '#FF4D3D' : d.rarity === 'rare' ? '#FFD27A' : d.rarity === 'uncommon' ? '#8FC6D4' : '#B8743A';

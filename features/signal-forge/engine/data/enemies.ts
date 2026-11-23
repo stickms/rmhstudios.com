@@ -282,9 +282,10 @@ export const ENEMIES: EnemyDef[] = [
   },
 ];
 
-const BY_ID = new Map(ENEMIES.map((e) => [e.id, e]));
+/** Lookup by id: a plain object built once (no cache, no expiry). */
+const BY_ID: Readonly<Record<string, EnemyDef>> = Object.fromEntries(ENEMIES.map((e) => [e.id, e]));
 export function enemyDef(id: string): EnemyDef {
-  const d = BY_ID.get(id);
+  const d = Object.hasOwn(BY_ID, id) ? BY_ID[id] : undefined;
   if (!d) throw new Error(`Unknown enemy: ${id}`);
   return d;
 }

@@ -4,6 +4,8 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { label } from '@features/signal-forge/engine/labels';
 import { ASCENSION, RHYTHM } from '@features/signal-forge/engine/balance';
 import { CARDS } from '@features/signal-forge/engine/data/cards';
@@ -54,6 +56,7 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
 
 export function HelpModal({ onClose, onTutorial }: { onClose: () => void; onTutorial?: () => void }) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const waves: Waveform[] = ['pulse', 'sine', 'saw', 'noise'];
   return (
     <Modal title={t('help.title', { defaultValue: 'How to play' })} onClose={onClose}>
@@ -69,7 +72,7 @@ export function HelpModal({ onClose, onTutorial }: { onClose: () => void; onTuto
             {waves.map((w) => (
               <li key={w}>
                 <WaveGlyph wave={w} size={28} />
-                <span>{t(`wave.${w}`, { defaultValue: label(`wave.${w}`) })}</span>
+                <span>{lbl(`wave.${w}`, label(`wave.${w}`))}</span>
               </li>
             ))}
             <li>
@@ -139,6 +142,7 @@ type CodexTab = 'cards' | 'relics' | 'enemies' | 'ascension';
 
 export function CodexModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const [tab, setTab] = useState<CodexTab>('cards');
   const tabs: Array<[CodexTab, string]> = [
     ['cards', t('codex.cards', { defaultValue: 'Cards ({{n}})', n: CARDS.length })],
@@ -168,8 +172,8 @@ export function CodexModal({ onClose }: { onClose: () => void }) {
             <div key={r.id} className="sf-relic-row">
               <RelicBadge id={r.id} size={40} />
               <div className="sf-relic-row-text">
-                <b>{t(`relic.${r.id}.name`, { defaultValue: r.name })}</b>
-                <span>{t(`relic.${r.id}.text`, { defaultValue: r.text })}</span>
+                <b>{lbl(`relic.${r.id}.name`, r.name)}</b>
+                <span>{lbl(`relic.${r.id}.text`, r.text)}</span>
               </div>
             </div>
           ))}
@@ -180,11 +184,11 @@ export function CodexModal({ onClose }: { onClose: () => void }) {
           {ENEMIES.filter((e) => e.id !== 'calibration_drone').map((e) => (
             <div key={e.id} className={`sf-enemy-card sf-tier-${e.tier}`}>
               <EnemyArt def={e} size={84} />
-              <b>{t(`enemy.${e.id}.name`, { defaultValue: e.name })}</b>
+              <b>{lbl(`enemy.${e.id}.name`, e.name)}</b>
               <span className="sf-label">
-                {t('codex.enemy-meta', { defaultValue: 'Act {{act}}, {{tier}}', act: e.act, tier: t(`tier.${e.tier}`, { defaultValue: label(`tier.${e.tier}`) }) })}
+                {t('codex.enemy-meta', { defaultValue: 'Act {{act}}, {{tier}}', act: e.act, tier: lbl(`tier.${e.tier}`, label(`tier.${e.tier}`)) })}
               </span>
-              <span className="sf-muted">{t(`enemy.${e.id}.lore`, { defaultValue: e.lore })}</span>
+              <span className="sf-muted">{lbl(`enemy.${e.id}.lore`, e.lore)}</span>
             </div>
           ))}
         </div>
@@ -193,7 +197,7 @@ export function CodexModal({ onClose }: { onClose: () => void }) {
         <ol className="sf-asc-list">
           {ASCENSION.map((a) => (
             <li key={a.level}>
-              <b className="sf-mono">A{a.level}</b> {t(`asc.${a.level}`, { defaultValue: a.text })}
+              <b className="sf-mono">A{a.level}</b> {lbl(`asc.${a.level}`, a.text)}
             </li>
           ))}
         </ol>
@@ -204,6 +208,7 @@ export function CodexModal({ onClose }: { onClose: () => void }) {
 
 export function LeaderboardPanel({ compact }: { compact?: boolean }) {
   const { t } = useTranslation('c-signal-forge');
+  const fmt = useLocaleFormat();
   const [rows, setRows] = useState<SignalForgeLeaderboardRow[] | null>(null);
   const arrival = useArrival(rows !== null);
   useEffect(() => {
@@ -228,7 +233,7 @@ export function LeaderboardPanel({ compact }: { compact?: boolean }) {
             <li key={`${r.username}-${i}`}>
               <span className="sf-mono sf-lb-rank">{i + 1}</span>
               <span className="sf-lb-name">{r.username}</span>
-              <span className="sf-mono">{r.highScore.toLocaleString()}</span>
+              <span className="sf-mono">{fmt.number(r.highScore)}</span>
             </li>
           ))}
         </ol>

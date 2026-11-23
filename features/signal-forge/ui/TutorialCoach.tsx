@@ -4,10 +4,12 @@
  */
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
 import { currentStep, TUTORIAL_STEPS, type TutorialState } from '@features/signal-forge/engine/tutorial';
 
 export function TutorialCoach({ state, onNext, onSkip }: { state: TutorialState; onNext: () => void; onSkip: () => void }) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const step = currentStep(state);
   const nextRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -20,8 +22,8 @@ export function TutorialCoach({ state, onNext, onSkip }: { state: TutorialState;
       <span className="sf-label">
         {t('tut.progress', { defaultValue: 'Tutorial {{n}} of {{total}}', n: state.step + 1, total: TUTORIAL_STEPS.length })}
       </span>
-      <h3 className="sf-subtitle">{t(`tut.${step.id}.title`, { defaultValue: step.title })}</h3>
-      <p>{t(`tut.${step.id}.body`, { defaultValue: step.body })}</p>
+      <h3 className="sf-subtitle">{lbl(`tut.${step.id}.title`, step.title)}</h3>
+      <p>{lbl(`tut.${step.id}.body`, step.body)}</p>
       <div className="sf-coach-actions">
         {step.expects === 'next' ? (
           <button ref={nextRef} type="button" className="sf-btn sf-btn-hot" onClick={onNext}>

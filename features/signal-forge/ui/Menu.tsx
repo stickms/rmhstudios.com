@@ -5,6 +5,8 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { ASCENSION } from '@features/signal-forge/engine/balance';
 import { floorOf } from '@features/signal-forge/engine/run';
 import type { SaveMeta } from '@features/signal-forge/engine/save';
@@ -31,6 +33,8 @@ interface Props {
 
 export function Menu(p: Props) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
+  const fmt = useLocaleFormat();
   const navigate = useSiteNavigate();
   const [asc, setAsc] = useState(p.meta.ascensionUnlocked);
   const level = Math.min(asc, p.meta.ascensionUnlocked);
@@ -46,7 +50,7 @@ export function Menu(p: Props) {
               {t('menu.retired', {
                 defaultValue: 'Your run from the old Forge (floor {{floor}}, score {{score}}) was retired with the rework. Its leaderboard entry stays.',
                 floor: p.retired.floor,
-                score: p.retired.score.toLocaleString(),
+                score: fmt.number(p.retired.score),
               })}
             </p>
             <button type="button" className="sf-btn sf-btn-ghost" onClick={p.onDismissRetired}>
@@ -101,7 +105,7 @@ export function Menu(p: Props) {
                       ? p.meta.ascensionUnlocked === 0
                         ? t('menu.asc-locked', { defaultValue: 'Win a run to open Ascension 1.' })
                         : t('menu.asc-zero', { defaultValue: 'No modifiers.' })
-                      : t(`asc.${level}`, { defaultValue: ASCENSION[level - 1]?.text ?? '' })}
+                      : lbl(`asc.${level}`, ASCENSION[level - 1]?.text ?? '')}
                   </span>
                 </div>
               </fieldset>

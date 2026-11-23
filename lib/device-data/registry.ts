@@ -175,6 +175,9 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh:vega:run',
       'rmh:vega:tutorial-done',
       'rmh:vega:catalogued',
+      // Signal Forge: this device's copy of the progression (ascension, wins) and the tutorial flag.
+      'rmh:signal-forge:meta',
+      'rmh:signal-forge:tutorial-done',
     ],
     personal: true,
   },
@@ -252,6 +255,9 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-globeset-view',
       'synapse-storm-settings',
       'rmh:cursed-logic:settings',
+      // Signal Forge: sound on/off and the rhythm mode (Timed or Steady).
+      'rmh:signal-forge:muted',
+      'rmh:signal-forge:mode',
       'rmh:tf2-game:settings:',
     ],
     personal: false,

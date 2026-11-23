@@ -12,6 +12,7 @@ import { RELICS, hasRelicDef } from '../data/relics';
 import { EVENTS } from '../data/events';
 import { ASCENSION } from '../balance';
 import { contentStrings } from '../content-strings';
+import { contentLabels } from '../../ui/content-labels';
 
 describe('content counts', () => {
   it('records the pool sizes', () => {
@@ -84,6 +85,11 @@ describe('references', () => {
         }
       }
     }
+  });
+
+  it('the literal label map (ui/content-labels.ts) carries every content string, unchanged', () => {
+    const echo = ((_key: string, o: { defaultValue: string }) => o.defaultValue) as unknown as Parameters<typeof contentLabels>[0];
+    expect(contentLabels(echo), 'run: pnpm exec tsx features/signal-forge/scripts/content-keys.ts').toEqual(contentStrings());
   });
 
   it('every content string is in locales/en/c-signal-forge.json with its English text', () => {

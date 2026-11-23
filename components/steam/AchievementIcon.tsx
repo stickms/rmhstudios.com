@@ -1,5 +1,11 @@
 import { useId } from 'react';
 import {
+  Anvil,
+  Thermometer,
+  Bomb,
+  AudioWaveform,
+  ShieldHalf,
+  Layers,
   Archive,
   AtSign,
   Award,
@@ -130,6 +136,13 @@ import type { AchievementTier } from '@/lib/achievements/catalog';
  * when this table and those maps drift apart.
  */
 export const ACHIEVEMENT_ICON_COMPONENTS: Record<string, LucideIcon> = {
+  // Signal Forge
+  Anvil,
+  Thermometer,
+  Bomb,
+  AudioWaveform,
+  ShieldHalf,
+  Layers,
   Archive,
   AtSign,
   Award,

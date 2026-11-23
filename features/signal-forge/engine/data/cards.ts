@@ -153,16 +153,17 @@ export const CARDS: CardDef[] = [
   c('rust', 'Rust', 'glitch', 'noise', 0, { unplayable: true, ethereal: true }),
 ];
 
-const BY_ID = new Map(CARDS.map((d) => [d.id, d]));
+/** Lookup by id: a plain object built once (no cache, no expiry). */
+const BY_ID: Readonly<Record<string, CardDef>> = Object.fromEntries(CARDS.map((d) => [d.id, d]));
 
 export function cardDef(id: string): CardDef {
-  const d = BY_ID.get(id);
+  const d = Object.hasOwn(BY_ID, id) ? BY_ID[id] : undefined;
   if (!d) throw new Error(`Unknown card: ${id}`);
   return d;
 }
 
 export function hasCard(id: string): boolean {
-  return BY_ID.has(id);
+  return Object.hasOwn(BY_ID, id);
 }
 
 /** Cards that can be offered as rewards or sold, by rarity. */

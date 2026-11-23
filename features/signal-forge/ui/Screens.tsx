@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
 import { cardDef } from '@features/signal-forge/engine/data/cards';
 import { eventDef } from '@features/signal-forge/engine/data/events';
 import { relicDef } from '@features/signal-forge/engine/data/relics';
@@ -27,13 +28,14 @@ function Panel({ title, kicker, children }: { title: string; kicker?: string; ch
 
 function RelicRow({ id, onTake, price, disabled }: { id: string; onTake?: () => void; price?: number; disabled?: boolean }) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const d = relicDef(id);
   return (
     <div className="sf-relic-row">
       <RelicBadge id={id} size={44} />
       <div className="sf-relic-row-text">
-        <b>{t(`relic.${id}.name`, { defaultValue: d.name })}</b>
-        <span>{t(`relic.${id}.text`, { defaultValue: d.text })}</span>
+        <b>{lbl(`relic.${id}.name`, d.name)}</b>
+        <span>{lbl(`relic.${id}.text`, d.text)}</span>
       </div>
       {onTake && (
         <button type="button" className="sf-btn" onClick={onTake} disabled={disabled}>
@@ -173,16 +175,17 @@ export function TreasureScreen({ act }: { act: (a: Action) => void }) {
 
 export function EventScreen({ run, act }: { run: RunState; act: (a: Action) => void }) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const ev = eventDef(run.event!.id);
   const resolved = run.event!.resolved;
   return (
-    <Panel title={t(`event.${ev.id}.title`, { defaultValue: ev.title })} kicker={t('node.event', { defaultValue: 'Event' })}>
-      <p className="sf-event-body">{t(`event.${ev.id}.body`, { defaultValue: ev.body })}</p>
+    <Panel title={lbl(`event.${ev.id}.title`, ev.title)} kicker={t('node.event', { defaultValue: 'Event' })}>
+      <p className="sf-event-body">{lbl(`event.${ev.id}.body`, ev.body)}</p>
       {!resolved ? (
         <div className="sf-event-choices">
           {ev.choices.map((ch) => (
             <button key={ch.id} type="button" className="sf-btn sf-event-choice" disabled={!canChoose(run, ev.id, ch.id)} onClick={() => act({ t: 'event', choice: ch.id })}>
-              {t(`event.${ev.id}.${ch.id}`, { defaultValue: ch.label })}
+              {lbl(`event.${ev.id}.${ch.id}`, ch.label)}
             </button>
           ))}
         </div>

@@ -3,6 +3,7 @@
  * amber, the chips you can reach next are ringed in cyan, and the act boss is the big processor at the top.
  */
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
 import { label } from '@features/signal-forge/engine/labels';
 import { MAP } from '@features/signal-forge/engine/balance';
 import { reachableLanes } from '@features/signal-forge/engine/run';
@@ -33,6 +34,7 @@ const KIND_COLOR: Record<NodeKind, string> = {
 
 export function MapScreen({ run, act }: { run: RunState; act: (a: Action) => void }) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const reach = new Set(reachableLanes(run));
   const rows = run.map.length;
   // Board coordinates: x by lane, y from the bottom (row 0) up to the boss.
@@ -55,7 +57,7 @@ export function MapScreen({ run, act }: { run: RunState; act: (a: Action) => voi
     <div className="sf-map">
       <div className="sf-map-head">
         <span className="sf-label">{t('hud.act', { defaultValue: 'Act {{n}}', n: run.act })}</span>
-        <h2 className="sf-title">{t(`act.${run.act}`, { defaultValue: label(`act.${run.act}`) })}</h2>
+        <h2 className="sf-title">{lbl(`act.${run.act}`, label(`act.${run.act}`))}</h2>
         <p className="sf-muted">{t('map.pick', { defaultValue: 'Pick the next chip along a trace.' })}</p>
       </div>
       <div className="sf-board" style={{ aspectRatio: `${W} / ${H}` }}>

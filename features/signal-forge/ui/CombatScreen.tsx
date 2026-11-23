@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useContentText } from './useContentText';
 import { label } from '@features/signal-forge/engine/labels';
 import { RHYTHM } from '@features/signal-forge/engine/balance';
 import { burstDamage, effectiveCard, enemyPassives, intentDamage, intentMove, isOnPhrase, living, relicPassive, staticThreshold } from '@features/signal-forge/engine/combat';
@@ -43,6 +44,7 @@ const STATUS_ICON: Record<StatusKey, IconName> = { weak: 'weak', vuln: 'vuln', b
 
 export function CombatScreen({ run, act, allow, onTutorialEvent, coach }: Props) {
   const { t } = useTranslation('c-signal-forge');
+  const lbl = useContentText();
   const c = run.combat!;
   const timed = run.mode === 'timed';
   const period = 60000 / RHYTHM.bpm[run.act];
@@ -185,8 +187,8 @@ export function CombatScreen({ run, act, allow, onTutorialEvent, coach }: Props)
           const mv = intentMove(e);
           const dmg = intentDamage(run, e);
           const passives = enemyPassives(e);
-          const name = t(`enemy.${e.id}.name`, { defaultValue: d.name });
-          const moveName = t(`enemy.${e.id}.move.${mv.id}`, { defaultValue: mv.name });
+          const name = lbl(`enemy.${e.id}.name`, d.name);
+          const moveName = lbl(`enemy.${e.id}.move.${mv.id}`, mv.name);
           const intentText = dmg ? (dmg.hits > 1 ? `${dmg.dmg}x${dmg.hits}` : `${dmg.dmg}`) : '';
           const selected = e.uid === targetUid && !dead;
           return (
@@ -239,7 +241,7 @@ export function CombatScreen({ run, act, allow, onTutorialEvent, coach }: Props)
               </span>
               <span className="sf-statuses">
                 {(Object.entries(e.statuses) as Array<[StatusKey, number]>).map(([k, v]) => (
-                  <span key={k} className={`sf-status sf-status-${k}`} title={t(`status.${k}`, { defaultValue: label(`status.${k}`) })}>
+                  <span key={k} className={`sf-status sf-status-${k}`} title={lbl(`status.${k}`, label(`status.${k}`))}>
                     <Icon name={STATUS_ICON[k]} size={12} />
                     {v}
                   </span>
@@ -279,7 +281,7 @@ export function CombatScreen({ run, act, allow, onTutorialEvent, coach }: Props)
             {c.phrase.map((w, i) => (
               <li key={`${c.turn}-${i}-${w}`} className={`sf-slot${i < c.phraseAt ? ' is-filled' : ''}${i === c.phraseAt ? ' is-next' : ''}`} style={{ ['--sf-wave' as string]: WAVE_COLOR[w] }}>
                 <WaveGlyph wave={w} size={30} />
-                <span className="sf-slot-name">{t(`wave.${w}`, { defaultValue: label(`wave.${w}`) })}</span>
+                <span className="sf-slot-name">{lbl(`wave.${w}`, label(`wave.${w}`))}</span>
               </li>
             ))}
           </ol>
@@ -331,7 +333,7 @@ export function CombatScreen({ run, act, allow, onTutorialEvent, coach }: Props)
           </span>
           <span className="sf-statuses">
             {(Object.entries(c.statuses) as Array<[StatusKey, number]>).map(([k, v]) => (
-              <span key={k} className={`sf-status sf-status-${k}`} title={t(`status.${k}`, { defaultValue: label(`status.${k}`) })}>
+              <span key={k} className={`sf-status sf-status-${k}`} title={lbl(`status.${k}`, label(`status.${k}`))}>
                 <Icon name={STATUS_ICON[k]} size={12} />
                 {v}
               </span>
@@ -371,7 +373,7 @@ export function CombatScreen({ run, act, allow, onTutorialEvent, coach }: Props)
         {c.hand.length === 0 && <p className="sf-empty-hand">{t('combat.empty-hand', { defaultValue: 'No cards in hand. End your turn.' })}</p>}
       </section>
       <p className="sf-sr-only" role="status">
-        {nextSlot ? t('combat.next-slot', { defaultValue: 'Next slot: {{w}}', w: t(`wave.${nextSlot}`, { defaultValue: label(`wave.${nextSlot}`) }) }) : ''}
+        {nextSlot ? t('combat.next-slot', { defaultValue: 'Next slot: {{w}}', w: lbl(`wave.${nextSlot}`, label(`wave.${nextSlot}`)) }) : ''}
       </p>
     </div>
   );
