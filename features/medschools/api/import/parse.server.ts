@@ -45,7 +45,7 @@ export async function parseImport(
 ): Promise<MedImportPreviewRes> {
   const now = deps.now ?? new Date();
   const extracted: Extracted =
-    i.input.kind === 'file' ? await extractFile(i.input) : extractPasted(i.input.text);
+    i.input.kind === 'file' ? await extractFile({ ...i.input, signal: i.signal }) : extractPasted(i.input.text);
   const prepared = promptText(extracted.text);
   // A date has a digit in it: nothing to read, nothing spent.
   if (!/\d/.test(prepared.text)) {

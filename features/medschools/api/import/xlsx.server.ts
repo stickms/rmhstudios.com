@@ -1,17 +1,30 @@
 /**
- * A spreadsheet (`.xlsx`) read into rows of text with `jszip` and a few patterns over the sheet XML: no spreadsheet
- * library. Only what an application-cycle sheet needs is read: cell text (shared strings, inline strings, numbers) and
- * dates. A date in a sheet is a number plus a number format, so `xl/styles.xml` is read to know which cells are dates and
- * those are written as `YYYY-MM-DD`, the form the model is asked to quote back.
+ * A spreadsheet (`.xlsx`) read into rows of text: no spreadsheet library and no regular expression over the sheet XML.
+ * Only what an application-cycle sheet needs is read: cell text (shared strings, inline strings, numbers) and dates. A
+ * date in a sheet is a number plus a number format, so `xl/styles.xml` is read to know which cells are dates and those
+ * are written as `YYYY-MM-DD`, the form the model is asked to quote back.
  *
- * Bounded on every side: the archive's parts are size-checked before they are inflated, a sheet is read up to the row
- * cap, and everything past it is only counted. Nothing is stored.
+ * Bounded on every side. The archive is read by `lib/zip/bounded-zip.server.ts`, which inflates with a real byte limit
+ * (the sizes a zip header declares are the sender's), one cap per part and one for the whole file. The XML is walked by
+ * `elements()`, an `indexOf` scanner that always moves forward, so a part of 12 MB of unclosed `<row>` tags costs one
+ * pass, not one pass per tag (the lazy regexes it replaces were quadratic). The work is capped on top: rows scanned,
+ * cells, shared strings and the characters kept from them, and a sheet stops early at the cap. Nothing is stored.
  */
-import type JSZip from 'jszip';
+import { openZip, type BoundedZip } from '@/lib/zip/bounded-zip.server';
 
 /** The most any one inflated part may be (a sheet of a few hundred rows is a few hundred KB). */
-const PART_MAX_BYTES = 12 * 1024 * 1024;
+export const PART_MAX_BYTES = 12 * 1024 * 1024;
+/** Inflated bytes across every part of one workbook. */
+export const TOTAL_MAX_BYTES = 24 * 1024 * 1024;
 const MAX_SHEETS = 12;
+/** Rows looked at in one sheet, empty ones included; the rest of the part is not read. */
+export const MAX_ROWS_SCANNED = 20_000;
+/** Cells looked at across the whole workbook. */
+export const MAX_CELLS = 250_000;
+/** Shared strings read, and the characters kept from them in all. */
+export const MAX_SHARED_STRINGS = 100_000;
+export const MAX_SHARED_CHARS = 4_000_000;
+const MAX_COLUMNS = 60;
 
 export interface SheetRows {
   name: string;
@@ -32,26 +45,97 @@ function decodeXml(s: string): string {
   });
 }
 
+interface El {
+  /** The text between the tag name and `>` (without a trailing `/`). */
+  attrs: string;
+  /** The text between the open and close tags; null for a self-closing tag or when bodies were not asked for. */
+  body: string | null;
+}
+
+const isTagBoundary = (c: number): boolean => c === 32 || c === 9 || c === 10 || c === 13 || c === 62 || c === 47;
+
+/**
+ * The `<tag ...>` elements of `xml` in order, found with `indexOf` only: every step moves the cursor forward, so the
+ * whole walk is linear in the input however the tags are (not) closed. An element with no `</tag>` ends where the next
+ * `<tag` starts (these elements never nest in the parts we read), and once one close search has failed no later one is
+ * tried. `limit` ends the walk early.
+ */
+export function* elements(xml: string, tag: string, wantBody: boolean, limit = Infinity): Generator<El> {
+  const open = `<${tag}`;
+  const close = `</${tag}>`;
+  let i = 0;
+  let n = 0;
+  let closeGone = false;
+  while (n < limit) {
+    const at = xml.indexOf(open, i);
+    if (at < 0) return;
+    const nameEnd = at + open.length;
+    if (!isTagBoundary(xml.charCodeAt(nameEnd))) {
+      i = nameEnd;
+      continue;
+    }
+    const gt = xml.indexOf('>', nameEnd);
+    if (gt < 0) return;
+    const selfClosing = xml.charCodeAt(gt - 1) === 47 && gt - 1 >= nameEnd;
+    const attrs = xml.slice(nameEnd, selfClosing ? gt - 1 : gt);
+    let body: string | null = null;
+    let next = gt + 1;
+    if (!selfClosing && wantBody) {
+      let end = -1;
+      if (!closeGone) {
+        end = xml.indexOf(close, gt + 1);
+        if (end < 0) closeGone = true;
+      }
+      if (end >= 0) {
+        body = xml.slice(gt + 1, end);
+        next = end + close.length;
+      } else {
+        const nx = xml.indexOf(open, gt + 1);
+        const stop = nx < 0 ? xml.length : nx;
+        body = xml.slice(gt + 1, stop);
+        next = stop;
+      }
+    }
+    n += 1;
+    yield { attrs, body };
+    i = next;
+  }
+}
+
 /** All `<t>` text inside a string item or an inline string (rich text has several runs; phonetic runs `<rPh>` are skipped). */
 function textOf(xml: string): string {
-  const bare = xml.replace(/<rPh\b[\s\S]*?<\/rPh>/g, '');
+  let bare = '';
+  let i = 0;
+  for (;;) {
+    const s = xml.indexOf('<rPh', i);
+    if (s < 0) {
+      bare += xml.slice(i);
+      break;
+    }
+    bare += xml.slice(i, s);
+    const e = xml.indexOf('</rPh>', s);
+    if (e < 0) break;
+    i = e + 6;
+  }
   let out = '';
-  for (const m of bare.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)) out += m[1] ?? '';
+  for (const t of elements(bare, 't', true)) out += t.body ?? '';
   return decodeXml(out);
 }
 
-async function part(zip: JSZip, path: string): Promise<string | null> {
-  const file = zip.file(path);
-  if (!file) return null;
-  const size = (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize;
-  if (typeof size === 'number' && size > PART_MAX_BYTES) throw new Error('XLSX part is too large');
-  const xml = await file.async('string');
-  if (xml.length > PART_MAX_BYTES) throw new Error('XLSX part is too large');
-  return xml;
+/** The inflated text of one part, or null when the archive has none by that name. */
+function part(zip: BoundedZip, path: string): string | null {
+  const buf = zip.read(path, PART_MAX_BYTES);
+  return buf === null ? null : buf.toString('utf8');
 }
 
+const attrPatterns = new Map<string, RegExp>();
 const attr = (tag: string, name: string): string | null => {
-  const m = new RegExp(`\\b${name}="([^"]*)"`).exec(tag);
+  let re = attrPatterns.get(name);
+  if (!re) {
+    re = new RegExp(`\\b${name}="([^"]*)"`);
+    attrPatterns.set(name, re);
+  }
+  const m = re.exec(tag);
   return m ? decodeXml(m[1] ?? '') : null;
 };
 
@@ -68,15 +152,15 @@ function dateStyles(styles: string | null): Set<number> {
   const out = new Set<number>();
   if (!styles) return out;
   const custom = new Map<number, string>();
-  for (const m of styles.matchAll(/<numFmt\b[^>]*>/g)) {
-    const id = Number(attr(m[0], 'numFmtId'));
-    const code = attr(m[0], 'formatCode');
+  for (const el of elements(styles, 'numFmt', false, 5_000)) {
+    const id = Number(attr(el.attrs, 'numFmtId'));
+    const code = attr(el.attrs, 'formatCode');
     if (Number.isInteger(id) && code !== null) custom.set(id, code);
   }
-  const cellXfs = /<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)?.[1] ?? '';
+  const cellXfs = elements(styles, 'cellXfs', true, 1).next().value?.body ?? '';
   let index = 0;
-  for (const m of cellXfs.matchAll(/<xf\b[^>]*?(?:\/>|>)/g)) {
-    const id = Number(attr(m[0], 'numFmtId') ?? 0);
+  for (const el of elements(cellXfs, 'xf', false, 20_000)) {
+    const id = Number(attr(el.attrs, 'numFmtId') ?? 0);
     const code = custom.get(id);
     if (BUILTIN_DATE_FORMATS.has(id) || (code !== undefined && isDateFormatCode(code))) out.add(index);
     index += 1;
@@ -100,33 +184,37 @@ function columnIndex(ref: string): number {
   return Math.max(0, n - 1);
 }
 
-const MAX_COLUMNS = 60;
-
 /** The sheets of the workbook in order: names, then each sheet's rows (at most `maxRows` read across all of them). */
 export async function readXlsx(buffer: Buffer, maxRows: number): Promise<SheetRows[]> {
-  const { default: JSZipClass } = await import('jszip');
-  const zip = await JSZipClass.loadAsync(buffer);
-  const workbook = await part(zip, 'xl/workbook.xml');
+  const zip = openZip(buffer, { maxTotalBytes: TOTAL_MAX_BYTES });
+  const workbook = part(zip, 'xl/workbook.xml');
   if (workbook === null) throw new Error('XLSX workbook is missing');
-  const rels = (await part(zip, 'xl/_rels/workbook.xml.rels')) ?? '';
-  const shared = await part(zip, 'xl/sharedStrings.xml');
-  const dateXf = dateStyles(await part(zip, 'xl/styles.xml'));
-  const system1904 = /<workbookPr\b[^>]*\bdate1904="(?:1|true)"/i.test(workbook);
+  const rels = part(zip, 'xl/_rels/workbook.xml.rels') ?? '';
+  const shared = part(zip, 'xl/sharedStrings.xml');
+  const dateXf = dateStyles(part(zip, 'xl/styles.xml'));
+  const system1904 = /<workbookPr\b[^>]{0,2000}\bdate1904="(?:1|true)"/i.test(workbook.slice(0, 200_000));
 
   const strings: string[] = [];
-  if (shared) for (const m of shared.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)) strings.push(textOf(m[1] ?? ''));
+  if (shared) {
+    let kept = 0;
+    for (const si of elements(shared, 'si', true, MAX_SHARED_STRINGS)) {
+      const text = kept > MAX_SHARED_CHARS ? '' : textOf(si.body ?? '');
+      kept += text.length;
+      strings.push(text);
+    }
+  }
 
   const targets = new Map<string, string>();
-  for (const m of rels.matchAll(/<Relationship\b[^>]*>/g)) {
-    const id = attr(m[0], 'Id');
-    const target = attr(m[0], 'Target');
+  for (const el of elements(rels, 'Relationship', false, 1_000)) {
+    const id = attr(el.attrs, 'Id');
+    const target = attr(el.attrs, 'Target');
     if (id && target) targets.set(id, target.startsWith('/') ? target.slice(1) : `xl/${target.replace(/^\.\//, '')}`);
   }
 
   const sheets: { name: string; path: string }[] = [];
-  for (const m of workbook.matchAll(/<sheet\b[^>]*>/g)) {
-    const name = attr(m[0], 'name');
-    const rid = attr(m[0], 'r:id');
+  for (const el of elements(workbook, 'sheet', false, 1_000)) {
+    const name = attr(el.attrs, 'name');
+    const rid = attr(el.attrs, 'r:id');
     const path = rid ? targets.get(rid) : undefined;
     if (name !== null && path && sheets.length < MAX_SHEETS) sheets.push({ name, path });
   }
@@ -134,22 +222,24 @@ export async function readXlsx(buffer: Buffer, maxRows: number): Promise<SheetRo
 
   const out: SheetRows[] = [];
   let budget = maxRows;
+  let cellsSeen = 0;
   for (const sheet of sheets) {
-    const xml = await part(zip, sheet.path);
+    const xml = part(zip, sheet.path);
     const rows: string[][] = [];
     let skipped = 0;
-    if (xml) {
-      for (const rowMatch of xml.matchAll(/<row\b[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g)) {
-        const body = rowMatch[1];
+    if (xml && cellsSeen < MAX_CELLS) {
+      for (const rowEl of elements(xml, 'row', true, MAX_ROWS_SCANNED)) {
+        const body = rowEl.body;
         if (!body) continue;
         const cells: string[] = [];
-        for (const c of body.matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
-          const head = c[1] ?? '';
-          const inner = c[2] ?? '';
+        for (const c of elements(body, 'c', true, MAX_CELLS - cellsSeen)) {
+          cellsSeen += 1;
+          const head = c.attrs;
+          const inner = c.body ?? '';
           const col = columnIndex(attr(head, 'r') ?? '');
           if (col >= MAX_COLUMNS) continue;
           const type = attr(head, 't');
-          const v = /<v\b[^>]*>([\s\S]*?)<\/v>/.exec(inner)?.[1];
+          const v = elements(inner, 'v', true, 1).next().value?.body ?? undefined;
           let text = '';
           if (type === 'inlineStr') text = textOf(inner);
           else if (type === 's') text = strings[Number(v)] ?? '';

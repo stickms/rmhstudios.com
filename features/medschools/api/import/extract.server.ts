@@ -26,6 +26,11 @@ export interface Extracted {
 const unsupported = () => new AppError('MEDSCHOOLS_IMPORT_UNSUPPORTED');
 const tooLarge = () => new AppError('MEDSCHOOLS_IMPORT_TOO_LARGE');
 
+/** A tracker is a few pages; a PDF past this is not one. */
+const PDF_MAX_PAGES = 30;
+/** Wall-clock budget for reading one PDF (the whole question has 50 s). */
+const PDF_DEADLINE_MS = 10_000;
+
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 
 /** CSV and text are text: no NUL bytes in the head (a binary renamed `.csv`), and a UTF-16 byte-order mark is decoded. */
@@ -101,7 +106,13 @@ export function extractPasted(text: string): Extracted {
  * The text of an uploaded file. Throws `MEDSCHOOLS_IMPORT_TOO_LARGE` over 2 MB and `MEDSCHOOLS_IMPORT_UNSUPPORTED` for a
  * type, a name or a content that is not one of ours or is damaged. The file's name is read for its extension only.
  */
-export async function extractFile(file: { buffer: Buffer; mimeType: string; filename: string }): Promise<Extracted> {
+export async function extractFile(file: {
+  buffer: Buffer;
+  mimeType: string;
+  filename: string;
+  /** The request's signal: a member who leaves ends a PDF read. */
+  signal?: AbortSignal | undefined;
+}): Promise<Extracted> {
   if (file.buffer.length > IMPORT_LIMITS.fileBytes) throw tooLarge();
   const kind = importKindOf(file.mimeType, file.filename);
   if (!kind) throw unsupported();
@@ -110,7 +121,12 @@ export async function extractFile(file: { buffer: Buffer; mimeType: string; file
     switch (kind) {
       case 'pdf': {
         if (!buffer.subarray(0, 1024).toString('latin1').includes('%PDF')) throw unsupported();
-        const { text, cut } = cap(await extractPdfText(buffer, { maxChars: IMPORT_LIMITS.chars + 1 }));
+        const { text, cut } = cap(await extractPdfText(buffer, {
+            maxChars: IMPORT_LIMITS.chars + 1,
+            maxPages: PDF_MAX_PAGES,
+            deadlineMs: PDF_DEADLINE_MS,
+            ...(file.signal ? { signal: file.signal } : {}),
+          }));
         return { kind, text, truncated: cut };
       }
       case 'docx': {
