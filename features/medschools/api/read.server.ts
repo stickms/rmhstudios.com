@@ -16,6 +16,7 @@ import {
   utcDayOf,
   type CountCell,
 } from '../engine/public-read';
+import { floorWhere, publicSum } from '../engine/floor';
 import { ARRIVAL_CYCLE_MIN, ARRIVAL_ZONE, enoughArrivals, shapeArrivals } from '../engine/arrivals';
 import { defaultDayZero } from '../engine/cycle';
 import {
@@ -66,26 +67,6 @@ const day = (d: Date): string => d.toISOString().slice(0, 10);
 /** O5: ALL reads both programs; null-program events are never in a count row (the column is not nullable). */
 const programsOf = (p: MedProgramFilter | undefined): MedProgram[] =>
   p === 'REG' ? ['REG'] : p === 'PHD' ? ['PHD'] : ['REG', 'PHD'];
-
-/**
- * The k floor as a where clause. An RMH row is public only through its daily snapshot (Q2): `publishedContributors >=
- * K_FLOOR` (null, never published, fails closed) and a date before today UTC. The live `count` / `contributors` follow
- * the tracker minute by minute and are never read for a public figure. Same rule as applyKFloor.
- */
-const floorWhere = (now: Date) => ({
-  OR: [
-    { source: { not: 'RMH' as const } },
-    {
-      source: 'RMH' as const,
-      publishedContributors: { gte: K_FLOOR },
-      date: { lt: new Date(`${utcDayOf(now)}T00:00:00.000Z`) },
-    },
-  ],
-});
-
-/** A summed groupBy row as one public figure: an RMH row's published total, any other source's `count`. */
-const publicSum = (source: MedSource, s: { count: number | null; publishedCount: number | null }): number =>
-  (source === 'RMH' ? s.publishedCount : s.count) ?? 0;
 
 interface RawCell extends CountCell {
   eventType: MedEventType;
