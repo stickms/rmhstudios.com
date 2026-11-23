@@ -7,6 +7,7 @@ import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { WAVES } from '@features/vega/engine/data';
 import type { EndResult } from '@features/vega/engine/GameState';
 import { useVegaNames } from './names';
+import { BestRuns, MenuBackdrop } from './Menu';
 
 export type SubmitState = 'idle' | 'sending' | 'saved' | 'record' | 'refused' | 'offline' | 'signed-out';
 
@@ -60,28 +61,52 @@ export function EndScreen({
   }
 
   return (
-    <main className="vg-menu" style={{ gridTemplateColumns: 'minmax(0, 1fr)', maxWidth: 820, margin: '0 auto', width: '100%' }}>
+    <main className="vg-menu">
+      <MenuBackdrop />
       <section aria-labelledby="vg-end-title">
         <p className={result.contained ? 'vg-tag' : 'vg-tag is-danger'}>
           {t('end-kicker', { defaultValue: 'Case report · {{map}}', map: names.map(result.map) })}
         </p>
-        <h1 id="vg-end-title" className="vg-title" style={{ margin: '10px 0 0', fontSize: 'clamp(40px, 8vw, 72px)', color: result.contained ? 'var(--vg-ink)' : 'var(--vg-blood)' }}>
+        <h1
+          id="vg-end-title"
+          className="vg-title"
+          style={{
+            margin: '10px 0 0',
+            fontSize: 'clamp(40px, 8vw, 72px)',
+            color: result.contained ? 'var(--vg-ink)' : 'var(--vg-blood)',
+          }}
+        >
           {headline}
         </h1>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap', marginTop: 18 }}>
-          <span className="vg-mono" style={{ fontSize: 'clamp(40px, 9vw, 64px)', color: 'var(--vg-mint)' }} data-vega-final-score>
+        <Trace alive={result.contained} />
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap', marginTop: 12 }}>
+          <span
+            className="vg-mono"
+            style={{ fontSize: 'clamp(40px, 9vw, 64px)', color: 'var(--vg-mint)' }}
+            data-vega-final-score
+          >
             {result.score.toLocaleString()}
           </span>
           <span style={{ color: 'var(--vg-muted)' }}>
             {t('end-waves', { defaultValue: '{{n}} waves held of {{goal}}', n: result.cleared, goal: WAVES.GOAL })}
           </span>
         </div>
-        <p className="vg-mono" style={{ fontSize: 13, color: submit === 'refused' || submit === 'offline' ? 'var(--vg-blood)' : 'var(--vg-faint)' }} aria-live="polite">
+        <p
+          className="vg-mono"
+          style={{
+            fontSize: 13,
+            color: submit === 'refused' || submit === 'offline' ? 'var(--vg-blood)' : 'var(--vg-faint)',
+          }}
+          aria-live="polite"
+        >
           {submitText}
         </p>
 
         <hr className="vg-rule" style={{ margin: '18px 0' }} />
-        <dl className="vg-stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px 18px', fontSize: 18 }}>
+        <dl
+          className="vg-stat-grid"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px 18px', fontSize: 18 }}
+        >
           <div>
             <dt>{t('end-kills', { defaultValue: 'Specimens destroyed' })}</dt>
             <dd>{s.kills}</dd>
@@ -124,7 +149,16 @@ export function EndScreen({
             <h2 className="vg-tag">{t('end-achievements', { defaultValue: 'Achievements this run' })}</h2>
             <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 0' }}>
               {earned.map((a) => (
-                <li key={a.id} style={{ padding: '6px 0', borderBottom: '1px solid var(--vg-line)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <li
+                  key={a.id}
+                  style={{
+                    padding: '6px 0',
+                    borderBottom: '1px solid var(--vg-line)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
                   <span>
                     <strong style={{ fontWeight: 600 }}>{a.name}</strong>
                     <span style={{ display: 'block', fontSize: 13, color: 'var(--vg-muted)' }}>{a.description}</span>
@@ -147,6 +181,25 @@ export function EndScreen({
           </button>
         </div>
       </section>
+      <section>
+        <BestRuns refreshKey={submit === 'saved' || submit === 'record' ? 1 : 0} />
+      </section>
     </main>
+  );
+}
+
+/** The monitor strip under the headline: a beating trace for a contained run, a flatline for a lost one. */
+function Trace({ alive }: { alive: boolean }) {
+  const beat = 'l14 -10 l10 10 h22 l8 8 l10 -64 l12 84 l10 -28 h30 q16 -20 32 0';
+  const d = alive ? `M0 60 h40 ${beat} h70 ${beat} h70 ${beat} H760` : `M0 60 h40 ${beat} h70 l10 -6 l8 6 H760`;
+  return (
+    <svg
+      viewBox="0 0 760 100"
+      aria-hidden
+      style={{ display: 'block', width: '100%', maxWidth: 620, height: 'auto', marginTop: 14 }}
+    >
+      <path d="M0 99.5H760" stroke="#1d3a31" />
+      <path d={d} fill="none" stroke={alive ? '#8ef0c4' : '#ef5a5e'} strokeWidth="2.5" strokeLinejoin="round" />
+    </svg>
   );
 }

@@ -35,7 +35,8 @@ export function useVegaNames() {
         return t('tower-synapse-blurb', { defaultValue: 'Cheap, steady pulses at one target. Tier III fires at two.' });
       case 'SUPPRESSOR':
         return t('tower-suppressor-blurb', {
-          defaultValue: 'A sedative field: slows everything inside and wears it down. Tier III makes them take more damage.',
+          defaultValue:
+            'A sedative field: slows everything inside and wears it down. Tier III makes them take more damage.',
         });
       case 'CAUTERY':
         return t('tower-cautery-blurb', {
@@ -106,7 +107,9 @@ export function useVegaNames() {
       case 'MANIC':
         return t('enemy-manic-blurb', { defaultValue: 'Surges and stalls, faster than it looks.' });
       case 'DOUBT':
-        return t('enemy-doubt-blurb', { defaultValue: 'Shielded. A Defibrillator breaks shields three times as fast.' });
+        return t('enemy-doubt-blurb', {
+          defaultValue: 'Shielded. A Defibrillator breaks shields three times as fast.',
+        });
       case 'OBSESSION':
         return t('enemy-obsession-blurb', { defaultValue: 'Regenerates unless it is burning.' });
       case 'PARANOIA':
@@ -116,9 +119,13 @@ export function useVegaNames() {
       case 'DREAD':
         return t('enemy-dread-blurb', { defaultValue: 'Heals the specimens around it. Kill it first.' });
       case 'PATIENT':
-        return t('enemy-patient-blurb', { defaultValue: 'A boss. Sheds Anxiety each time it loses a quarter of itself.' });
+        return t('enemy-patient-blurb', {
+          defaultValue: 'A boss. Sheds Anxiety each time it loses a quarter of itself.',
+        });
       case 'SURGEON':
-        return t('enemy-surgeon-blurb', { defaultValue: 'A boss. Every few seconds it severs the instruments around it.' });
+        return t('enemy-surgeon-blurb', {
+          defaultValue: 'A boss. Every few seconds it severs the instruments around it.',
+        });
       case 'SPECIMEN':
         return t('enemy-specimen-blurb', {
           defaultValue: 'A boss in a glass shell. Below half it breaks free and runs.',
@@ -140,9 +147,13 @@ export function useVegaNames() {
   const mapBlurb = (id: MapId): string => {
     switch (id) {
       case 'intake':
-        return t('map-intake-blurb', { defaultValue: 'One corridor that doubles back on itself. Where every intern starts.' });
+        return t('map-intake-blurb', {
+          defaultValue: 'One corridor that doubles back on itself. Where every intern starts.',
+        });
       case 'vault':
-        return t('map-vault-blurb', { defaultValue: 'A long spiral into the vault. More time to shoot, more to shoot at.' });
+        return t('map-vault-blurb', {
+          defaultValue: 'A long spiral into the vault. More time to shoot, more to shoot at.',
+        });
       case 'theatre':
         return t('map-theatre-blurb', { defaultValue: 'Two doors, two streams, one way out. Score x1.5.' });
     }

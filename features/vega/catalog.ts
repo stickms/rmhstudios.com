@@ -4,7 +4,8 @@ const entry: GameInfo = {
   id: 'vega',
   order: 131,
   title: 'Project Vega',
-  description: 'A clinical-horror tower defense. Hold the corridor against the specimens, wave by wave, to containment.',
+  description:
+    'A clinical-horror tower defense. Hold the corridor against the specimens, wave by wave, to containment.',
   longDescription:
     'Specimens crawl a corridor of tissue toward the containment door. Between waves the board waits while you place and upgrade eight instruments, from the Synapse and the Suppressor to the Lobotomizer and the Biobank, each with three tiers. Every wave brings a mix of specimens that armour, cloak, shield, regenerate, split and heal, and every fifth wave a boss. Three wards to hold, a score built from waves cleared, clean holds and early calls, and an overtime that runs to wave 100 for the ones who reach containment.',
   href: '/vega',

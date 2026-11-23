@@ -24,14 +24,17 @@ export function TopBar({ muted, onToggleMute }: { muted: boolean; onToggleMute: 
   const setManualOpen = useGameStore((s) => s.setManualOpen);
   const game = useGame();
   const low = hud.integrity <= 5;
-  const waveLabel = hud.wave > WAVES.GOAL ? t('overtime-wave', { defaultValue: 'Overtime {{wave}}', wave: hud.wave }) : `${hud.wave} / ${WAVES.GOAL}`;
+  const waveLabel =
+    hud.wave > WAVES.GOAL
+      ? t('overtime-wave', { defaultValue: 'Overtime {{wave}}', wave: hud.wave })
+      : `${hud.wave} / ${WAVES.GOAL}`;
 
   return (
     <header className="vg-hud">
       <a href="/games" className="vg-icon-btn" aria-label={t('back-to-games', { defaultValue: 'Back to games' })}>
         <ArrowLeft aria-hidden size={18} />
       </a>
-      <div className="vg-hud-stat" style={{ minWidth: 0 }}>
+      <div className="vg-hud-stat vg-hud-title" style={{ minWidth: 0 }}>
         <span>{names.map(mapId)}</span>
         <span className="vg-title" style={{ fontFamily: 'var(--vg-display)', fontSize: 18 }}>
           {t('project-vega', { defaultValue: 'Project Vega' })}
@@ -41,7 +44,14 @@ export function TopBar({ muted, onToggleMute }: { muted: boolean; onToggleMute: 
         <span>{t('hud-wave', { defaultValue: 'Wave' })}</span>
         <span>{waveLabel}</span>
       </div>
-      <div className="vg-hud-stat" aria-label={t('hud-integrity-aria', { defaultValue: 'Integrity {{n}} of {{max}}', n: hud.integrity, max: ECONOMY.START_INTEGRITY })}>
+      <div
+        className="vg-hud-stat"
+        aria-label={t('hud-integrity-aria', {
+          defaultValue: 'Integrity {{n}} of {{max}}',
+          n: hud.integrity,
+          max: ECONOMY.START_INTEGRITY,
+        })}
+      >
         <span>{t('hud-integrity', { defaultValue: 'Integrity' })}</span>
         <span style={{ color: low ? 'var(--vg-blood)' : undefined }}>{hud.integrity}</span>
         <span className={low ? 'vg-integrity is-low' : 'vg-integrity'} aria-hidden>
@@ -72,15 +82,29 @@ export function TopBar({ muted, onToggleMute }: { muted: boolean; onToggleMute: 
         <button
           type="button"
           className="vg-icon-btn"
-          aria-label={muted ? t('sound-on', { defaultValue: 'Turn sound on' }) : t('sound-off', { defaultValue: 'Turn sound off' })}
+          aria-label={
+            muted
+              ? t('sound-on', { defaultValue: 'Turn sound on' })
+              : t('sound-off', { defaultValue: 'Turn sound off' })
+          }
           onClick={onToggleMute}
         >
           {muted ? <VolumeX aria-hidden size={18} /> : <Volume2 aria-hidden size={18} />}
         </button>
-        <button type="button" className="vg-icon-btn" aria-label={t('open-manual', { defaultValue: 'Open the manual' })} onClick={() => setManualOpen(true)}>
+        <button
+          type="button"
+          className="vg-icon-btn"
+          aria-label={t('open-manual', { defaultValue: 'Open the manual' })}
+          onClick={() => setManualOpen(true)}
+        >
           <BookOpen aria-hidden size={18} />
         </button>
-        <button type="button" className="vg-icon-btn" aria-label={t('pause', { defaultValue: 'Pause' })} onClick={() => setPaused(true)}>
+        <button
+          type="button"
+          className="vg-icon-btn"
+          aria-label={t('pause', { defaultValue: 'Pause' })}
+          onClick={() => setPaused(true)}
+        >
           <Pause aria-hidden size={18} />
         </button>
       </div>
@@ -170,7 +194,9 @@ function Formulary() {
         })}
       </div>
       {build && (
-        <p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.45, color: 'var(--vg-muted)' }}>{names.towerBlurb(build)}</p>
+        <p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.45, color: 'var(--vg-muted)' }}>
+          {names.towerBlurb(build)}
+        </p>
       )}
     </div>
   );
@@ -195,9 +221,16 @@ function SelectedFile() {
         <InstrumentGlyph type={sel.type} size={44} tier={sel.tier} />
         <div>
           <h2 className="vg-title" style={{ margin: 0, fontSize: 22 }}>
-            {names.tower(sel.type)} <span className="vg-mono" style={{ fontSize: 14, color: 'var(--vg-mint)' }}>{tiers[sel.tier]}</span>
+            {names.tower(sel.type)}{' '}
+            <span className="vg-mono" style={{ fontSize: 14, color: 'var(--vg-mint)' }}>
+              {tiers[sel.tier]}
+            </span>
           </h2>
-          {sel.stunned && <p style={{ margin: 0, color: 'var(--vg-blood)', fontSize: 13 }}>{t('severed', { defaultValue: 'Severed' })}</p>}
+          {sel.stunned && (
+            <p style={{ margin: 0, color: 'var(--vg-blood)', fontSize: 13 }}>
+              {t('severed', { defaultValue: 'Severed' })}
+            </p>
+          )}
         </div>
       </div>
       <dl className="vg-stat-grid">
@@ -278,7 +311,11 @@ function NextWave() {
       </h2>
       <div className="vg-chips">
         {hud.next.map(({ type, count }) => (
-          <span key={type} className={type === hud.nextBoss ? 'vg-chip is-boss' : 'vg-chip'} title={names.enemyBlurb(type)}>
+          <span
+            key={type}
+            className={type === hud.nextBoss ? 'vg-chip is-boss' : 'vg-chip'}
+            title={names.enemyBlurb(type)}
+          >
             <SpecimenGlyph type={type} size={22} />
             {names.enemy(type)} ×{count}
           </span>

@@ -15,7 +15,15 @@ export function unlockSfx() {
   resumeAudioContext();
 }
 
-function tone(ctx: AudioContext, freq: number, start: number, dur: number, gain: number, type: OscillatorType = 'sine', slideTo?: number) {
+function tone(
+  ctx: AudioContext,
+  freq: number,
+  start: number,
+  dur: number,
+  gain: number,
+  type: OscillatorType = 'sine',
+  slideTo?: number,
+) {
   const o = ctx.createOscillator();
   const g = ctx.createGain();
   o.type = type;

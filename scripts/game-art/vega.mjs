@@ -143,7 +143,7 @@ function painter(kind, W, H) {
     ctx.lineJoin = 'round';
     ctx.beginPath();
     for (let x = x0; x <= x1; x += 2) {
-      const yy = y + ecgY((((x - x0 + phase) % period) + period) % period / period) * amp;
+      const yy = y + ecgY(((((x - x0 + phase) % period) + period) % period) / period) * amp;
       if (x === x0) ctx.moveTo(x, yy);
       else ctx.lineTo(x, yy);
     }
@@ -185,7 +185,7 @@ function painter(kind, W, H) {
       ctx.lineWidth = Math.max(2, s * 0.03);
       ctx.beginPath();
       for (let d = s * 0.4; d <= len - s * 0.4; d += 2) {
-        const off = ecgY(((d % (s * 4)) / (s * 4))) * s * 0.3;
+        const off = ecgY((d % (s * 4)) / (s * 4)) * s * 0.3;
         const px = ax + ((bx - ax) * d) / len + nx * off;
         const py = ay + ((by - ay) * d) / len + ny * off;
         if (d === s * 0.4) ctx.moveTo(px, py);
@@ -242,7 +242,12 @@ function painter(kind, W, H) {
       ctx.stroke();
     }
     for (const [t, fx, fy, sc] of opts.cells || []) {
-      A.drawSpecimen(ctx, t, cx + fx * w, cy + fy * h, { scale: sc * (w / 900), phase: fx * 9, still: true, revealed: true });
+      A.drawSpecimen(ctx, t, cx + fx * w, cy + fy * h, {
+        scale: sc * (w / 900),
+        phase: fx * 9,
+        still: true,
+        revealed: true,
+      });
     }
     // The thing in the jar: a curled body ending in a head with one eye.
     ctx.lineCap = 'round';
@@ -298,7 +303,12 @@ function painter(kind, W, H) {
     ctx.stroke();
     for (let i = 0; i < 6; i++) {
       const a = -2.5 + i * 0.25;
-      line(-44 * s + Math.cos(a) * 28 * s, -40 * s + Math.sin(a) * 28 * s, -44 * s + Math.cos(a) * 40 * s, -40 * s + Math.sin(a) * 40 * s);
+      line(
+        -44 * s + Math.cos(a) * 28 * s,
+        -40 * s + Math.sin(a) * 28 * s,
+        -44 * s + Math.cos(a) * 40 * s,
+        -40 * s + Math.sin(a) * 40 * s,
+      );
     }
     ctx.restore();
     ctx.restore();
@@ -410,9 +420,34 @@ function painter(kind, W, H) {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
     // A corridor under the jar with specimens walking it, and instruments on the benches.
-    corridor([[-100, 2050], [500, 2050], [500, 2250], [1700, 2250]], 100);
-    const walkers = [['ANXIETY', 80, 2050], ['GUILT', 250, 2050], ['MANIC', 400, 2050], ['DEPRESSION', 500, 2160], ['DOUBT', 760, 2250], ['ANXIETY', 980, 2250], ['DREAD', 1180, 2250], ['OBSESSION', 1420, 2250]];
-    for (const [t, x, y] of walkers) A.drawSpecimen(ctx, t, x, y, { scale: 2.4, phase: x * 0.01, still: true, revealed: true, shieldFrac: t === 'DOUBT' ? 1 : 0, heading: 0 });
+    corridor(
+      [
+        [-100, 2050],
+        [500, 2050],
+        [500, 2250],
+        [1700, 2250],
+      ],
+      100,
+    );
+    const walkers = [
+      ['ANXIETY', 80, 2050],
+      ['GUILT', 250, 2050],
+      ['MANIC', 400, 2050],
+      ['DEPRESSION', 500, 2160],
+      ['DOUBT', 760, 2250],
+      ['ANXIETY', 980, 2250],
+      ['DREAD', 1180, 2250],
+      ['OBSESSION', 1420, 2250],
+    ];
+    for (const [t, x, y] of walkers)
+      A.drawSpecimen(ctx, t, x, y, {
+        scale: 2.4,
+        phase: x * 0.01,
+        still: true,
+        revealed: true,
+        shieldFrac: t === 'DOUBT' ? 1 : 0,
+        heading: 0,
+      });
     A.drawInstrument(ctx, 'LOBOTOMIZER', 350, 2350, 84, { aim: -0.3, tier: 2 });
     A.drawInstrument(ctx, 'SYNAPSE', 700, 2120, 84, { aim: 0.6, tier: 1 });
     A.drawInstrument(ctx, 'CAUTERY', 1050, 2130, 84, { aim: 1.2, tier: 0 });
@@ -444,7 +479,11 @@ function painter(kind, W, H) {
     ecg(0, W, 1250, 520, 260, 7, P.mint, 0.55, 60);
     jar(W / 2, 1330, 860, 1110, {
       tag: ['SPECIMEN 07', 'VEGA / RECURSION'],
-      cells: [['ANXIETY', -0.32, 0.3, 2.2], ['FRAGMENT', 0.3, -0.12, 2.4], ['ANXIETY', 0.33, 0.33, 1.8]],
+      cells: [
+        ['ANXIETY', -0.32, 0.3, 2.2],
+        ['FRAGMENT', 0.3, -0.12, 2.4],
+        ['ANXIETY', 0.33, 0.33, 1.8],
+      ],
     });
     // Title block.
     wordmark(W / 2, 520, 460, { center: true });
@@ -455,7 +494,13 @@ function painter(kind, W, H) {
     ctx.letterSpacing = '6px';
     ctx.fillText('CASE FILE 07  ·  CONTAINMENT PROTOCOL', W / 2, 660);
     ctx.restore();
-    for (const [x, y] of [[90, 90], [W - 90, 90], [90, H - 90], [W - 90, H - 90]]) registration(x, y, 26);
+    for (const [x, y] of [
+      [90, 90],
+      [W - 90, 90],
+      [90, H - 90],
+      [W - 90, H - 90],
+    ])
+      registration(x, y, 26);
     scanlines(0.2, 5);
     vignette(H * 0.3, H * 0.75, 0.5);
   }
@@ -464,7 +509,16 @@ function painter(kind, W, H) {
     grid(160);
     // The corridor snakes across, specimens along it, instruments firing.
     const s = 160;
-    const path = [[-200, 400], [880, 400], [880, 880], [1840, 880], [1840, 240], [2720, 240], [2720, 720], [4100, 720]];
+    const path = [
+      [-200, 400],
+      [880, 400],
+      [880, 880],
+      [1840, 880],
+      [1840, 240],
+      [2720, 240],
+      [2720, 720],
+      [4100, 720],
+    ];
     corridor(path, s);
     const along = (d) => {
       let rest = d;
@@ -472,12 +526,29 @@ function painter(kind, W, H) {
         const [ax, ay] = path[i - 1];
         const [bx, by] = path[i];
         const len = Math.hypot(bx - ax, by - ay);
-        if (rest <= len) return [ax + ((bx - ax) * rest) / len, ay + ((by - ay) * rest) / len, Math.atan2(by - ay, bx - ax)];
+        if (rest <= len)
+          return [ax + ((bx - ax) * rest) / len, ay + ((by - ay) * rest) / len, Math.atan2(by - ay, bx - ax)];
         rest -= len;
       }
       return path[path.length - 1];
     };
-    const kinds = ['ANXIETY', 'ANXIETY', 'GUILT', 'MANIC', 'DOUBT', 'ANXIETY', 'DEPRESSION', 'OBSESSION', 'FRAGMENT', 'FRAGMENT', 'DREAD', 'PARANOIA', 'MANIC', 'DEPRESSION', 'ANXIETY'];
+    const kinds = [
+      'ANXIETY',
+      'ANXIETY',
+      'GUILT',
+      'MANIC',
+      'DOUBT',
+      'ANXIETY',
+      'DEPRESSION',
+      'OBSESSION',
+      'FRAGMENT',
+      'FRAGMENT',
+      'DREAD',
+      'PARANOIA',
+      'MANIC',
+      'DEPRESSION',
+      'ANXIETY',
+    ];
     const at = kinds.map((t, i) => {
       const [x, y, h] = along(220 + i * 280 + rnd() * 60);
       return { t, x, y, h, i };
@@ -516,7 +587,7 @@ function painter(kind, W, H) {
       }
       if (t === 'LOBOTOMIZER') best = { x: bx, y: by };
       shots.push([t, x, y, best]);
-      A.drawInstrument(ctx, t, x, y, 130, { aim: Math.atan2(best.y - y, best.x - x), tier: 1 + ((x / 160) % 2 | 0) });
+      A.drawInstrument(ctx, t, x, y, 130, { aim: Math.atan2(best.y - y, best.x - x), tier: 1 + (((x / 160) % 2) | 0) });
     }
     ctx.save();
     ctx.lineCap = 'round';
@@ -540,7 +611,9 @@ function painter(kind, W, H) {
         ctx.moveTo(tx, ty);
         ctx.lineTo((tx + e.x) / 2 + 24, (ty + e.y) / 2 - 18);
         ctx.lineTo(e.x, e.y);
-        const next = at.filter((o) => o !== e).sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
+        const next = at
+          .filter((o) => o !== e)
+          .sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
         ctx.lineTo((e.x + next.x) / 2 - 20, (e.y + next.y) / 2 + 14);
         ctx.lineTo(next.x, next.y);
         ctx.stroke();
@@ -556,14 +629,33 @@ function painter(kind, W, H) {
     }
     ctx.restore();
     for (const e of at) {
-      A.drawSpecimen(ctx, e.t, e.x, e.y, { scale: 3.4, phase: e.i * 1.7, heading: e.h, still: true, revealed: e.t !== 'PARANOIA', cloaked: e.t === 'PARANOIA', shieldFrac: e.t === 'DOUBT' ? 0.8 : 0 });
+      A.drawSpecimen(ctx, e.t, e.x, e.y, {
+        scale: 3.4,
+        phase: e.i * 1.7,
+        heading: e.h,
+        still: true,
+        revealed: e.t !== 'PARANOIA',
+        cloaked: e.t === 'PARANOIA',
+        shieldFrac: e.t === 'DOUBT' ? 0.8 : 0,
+      });
     }
     A.drawSpecimen(ctx, 'PATIENT', bx, by, { scale: 3.2, phase: 1, still: true });
     // The jar at the right, larger than life.
-    jar(3330, 640, 760, 1020, { cells: [['ANXIETY', -0.3, 0.32, 2], ['FRAGMENT', 0.3, -0.05, 2.2]] });
+    jar(3330, 640, 760, 1020, {
+      cells: [
+        ['ANXIETY', -0.3, 0.32, 2],
+        ['FRAGMENT', 0.3, -0.05, 2.2],
+      ],
+    });
     // Exit door.
     A.drawBiohazard(ctx, 3760, 1160, 50, P.blood);
-    for (const [x, y] of [[70, 70], [W - 70, 70], [70, H - 70], [W - 70, H - 70]]) registration(x, y, 22);
+    for (const [x, y] of [
+      [70, 70],
+      [W - 70, 70],
+      [70, H - 70],
+      [W - 70, H - 70],
+    ])
+      registration(x, y, 22);
     scanlines(0.2, 5);
     vignette(H * 0.4, W * 0.62, 0.62);
   }
@@ -641,7 +733,11 @@ async function main() {
       let img = sharp(png).resize(p.w, p.h, { kernel: 'lanczos3' });
       if (!p.alpha) img = img.flatten({ background: '#020504' }).removeAlpha();
       await img.clone().webp({ quality: p.q, effort: 6, alphaQuality: 100 }).toFile(out);
-      if (preview) await img.clone().png().toFile(join(preview, `${key}.png`));
+      if (preview)
+        await img
+          .clone()
+          .png()
+          .toFile(join(preview, `${key}.png`));
       process.stdout.write(`${key}: ${p.w}×${p.h} → ${out} (${Math.round(statSync(out).size / 1024)} KB)\n`);
     }
   } finally {

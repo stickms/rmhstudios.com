@@ -48,7 +48,14 @@ export interface InstrumentOpts {
 }
 
 /** Draw an instrument centred on (x, y) in a square of side `s`. */
-export function drawInstrument(ctx: CanvasRenderingContext2D, type: TowerType, x: number, y: number, s: number, o: InstrumentOpts = {}) {
+export function drawInstrument(
+  ctx: CanvasRenderingContext2D,
+  type: TowerType,
+  x: number,
+  y: number,
+  s: number,
+  o: InstrumentOpts = {},
+) {
   const aim = o.aim ?? -Math.PI / 2;
   const h = s / 2;
   ctx.save();
@@ -331,7 +338,13 @@ export interface SpecimenOpts {
 }
 
 /** Draw a specimen centred on (x, y). */
-export function drawSpecimen(ctx: CanvasRenderingContext2D, type: EnemyType, x: number, y: number, o: SpecimenOpts = {}) {
+export function drawSpecimen(
+  ctx: CanvasRenderingContext2D,
+  type: EnemyType,
+  x: number,
+  y: number,
+  o: SpecimenOpts = {},
+) {
   const look = SPECIMEN_LOOK[type];
   const r = look.r * (o.scale ?? 1);
   const t = o.still ? 0 : (o.t ?? 0);

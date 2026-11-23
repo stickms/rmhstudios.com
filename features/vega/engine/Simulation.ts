@@ -64,7 +64,16 @@ export interface RunSave {
   victoryShown: boolean;
   elapsedMs: number;
   stats: RunStats;
-  towers: { type: TowerType; cx: number; cy: number; tier: number; mode: TargetMode; invested: number; dmg: number; kills: number }[];
+  towers: {
+    type: TowerType;
+    cx: number;
+    cy: number;
+    tier: number;
+    mode: TargetMode;
+    invested: number;
+    dmg: number;
+    kills: number;
+  }[];
 }
 
 export class Simulation {

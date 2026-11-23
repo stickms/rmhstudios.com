@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { initialTutorial, isTutorialActive, tutorialReducer, type TutorialEvent, type TutorialState } from '../tutorial';
+import {
+  initialTutorial,
+  isTutorialActive,
+  tutorialReducer,
+  type TutorialEvent,
+  type TutorialState,
+} from '../tutorial';
 
 const run = (events: TutorialEvent['type'][], from: TutorialState = initialTutorial(false)) =>
   events.reduce((s, type) => tutorialReducer(s, { type } as TutorialEvent), from);
@@ -23,7 +29,12 @@ describe('vega tutorial state machine', () => {
   });
 
   it('can be skipped from any step', () => {
-    for (const prefix of [[], ['next'], ['next', 'select'], ['next', 'select', 'placed', 'waveStart']] as TutorialEvent['type'][][]) {
+    for (const prefix of [
+      [],
+      ['next'],
+      ['next', 'select'],
+      ['next', 'select', 'placed', 'waveStart'],
+    ] as TutorialEvent['type'][][]) {
       expect(run([...prefix, 'skip']).step).toBe('done');
     }
   });

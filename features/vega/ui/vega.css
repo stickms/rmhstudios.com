@@ -615,6 +615,10 @@
   .vg-log {
     display: none;
   }
+  .vg-menu-jar,
+  .vg-hud-title {
+    display: none;
+  }
   .vg-menu {
     grid-template-columns: minmax(0, 1fr);
     padding: calc(64px + var(--safe-top, 0px)) 16px 32px;

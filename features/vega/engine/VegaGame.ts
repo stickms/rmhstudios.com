@@ -484,7 +484,7 @@ export class VegaGame {
     if (digit >= 1 && digit <= TOWER_ORDER.length) {
       const type = TOWER_ORDER[digit - 1]!;
       this.chooseBuild(store.build === type ? null : type);
-      if (!this.keyCursor) this.keyCursor = this.firstFreeBench();
+      if (!this.keyCursor) this.keyCursor = this.suggestedBench();
       e.preventDefault();
       return;
     }
@@ -496,7 +496,7 @@ export class VegaGame {
     };
     const move = arrows[e.key];
     if (move && !onControl) {
-      const from = this.keyCursor ?? this.firstFreeBench();
+      const from = this.keyCursor ?? this.suggestedBench();
       this.keyCursor = {
         cx: Math.max(0, Math.min(BOARD.COLS - 1, from.cx + move[0])),
         cy: Math.max(0, Math.min(BOARD.ROWS - 1, from.cy + move[1])),
@@ -536,14 +536,9 @@ export class VegaGame {
     }
   };
 
-  private firstFreeBench(): { cx: number; cy: number } {
-    const b = this.sim.grid.benches().find((c) => this.sim.grid.canBuild(c.x, c.y)) ?? { x: 0, y: 0 };
-    return { cx: b.x, cy: b.y };
-  }
-
   /** Put the keyboard cursor on the board (the canvas took focus from the keyboard). */
   public focusCursor() {
-    if (!this.keyCursor) this.keyCursor = this.firstFreeBench();
+    if (!this.keyCursor) this.keyCursor = this.suggestedBench();
   }
 
   // ── Sizing ─────────────────────────────────────────────────────────────────

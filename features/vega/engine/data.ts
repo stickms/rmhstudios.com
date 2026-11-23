@@ -23,14 +23,7 @@ export const STEP_S = 1 / 60;
 // ── Instruments (towers) ─────────────────────────────────────────────────────
 
 export type TowerType =
-  | 'SYNAPSE'
-  | 'SUPPRESSOR'
-  | 'LOBOTOMIZER'
-  | 'ECHO'
-  | 'CAUTERY'
-  | 'CENTRIFUGE'
-  | 'DEFIBRILLATOR'
-  | 'BIOBANK';
+  'SYNAPSE' | 'SUPPRESSOR' | 'LOBOTOMIZER' | 'ECHO' | 'CAUTERY' | 'CENTRIFUGE' | 'DEFIBRILLATOR' | 'BIOBANK';
 
 export type DamageKind = 'kinetic' | 'chemical' | 'thermal' | 'electric';
 

@@ -37,7 +37,9 @@ describe('vega balance (seeded simulation)', () => {
     for (const map of MAP_ORDER) {
       for (const s of STRATS) {
         const waves = runs(map, s).map((r) => r.cleared);
-        rows.push(`${map.padEnd(8)} ${s.padEnd(9)} mean ${mean(waves).toFixed(1).padStart(5)}  min ${Math.min(...waves)}  max ${Math.max(...waves)}  [${waves.join(' ')}]`);
+        rows.push(
+          `${map.padEnd(8)} ${s.padEnd(9)} mean ${mean(waves).toFixed(1).padStart(5)}  min ${Math.min(...waves)}  max ${Math.max(...waves)}  [${waves.join(' ')}]`,
+        );
       }
     }
     process.stdout.write(`${rows.join('\n')}\n`);

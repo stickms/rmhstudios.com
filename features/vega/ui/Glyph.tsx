@@ -25,16 +25,34 @@ function useCanvas(size: number, paint: (ctx: CanvasRenderingContext2D) => void,
 }
 
 export function InstrumentGlyph({ type, size = 36, tier = 0 }: { type: TowerType; size?: number; tier?: number }) {
-  const ref = useCanvas(size, (ctx) => drawInstrument(ctx, type, size / 2, size / 2, size * 0.9, { tier }), [type, tier]);
+  const ref = useCanvas(size, (ctx) => drawInstrument(ctx, type, size / 2, size / 2, size * 0.9, { tier }), [
+    type,
+    tier,
+  ]);
   return <canvas ref={ref} aria-hidden className="vg-glyph" style={{ width: size, height: size }} />;
 }
 
-export function SpecimenGlyph({ type, size = 36, hidden = false }: { type: EnemyType; size?: number; hidden?: boolean }) {
+export function SpecimenGlyph({
+  type,
+  size = 36,
+  hidden = false,
+}: {
+  type: EnemyType;
+  size?: number;
+  hidden?: boolean;
+}) {
   const ref = useCanvas(
     size,
     (ctx) => {
       const scale = (size * 0.3) / SPECIMEN_LOOK[type].r;
-      drawSpecimen(ctx, type, size / 2, size / 2, { scale, still: true, phase: 0.7, revealed: true, cloaked: hidden, shieldFrac: type === 'DOUBT' ? 1 : 0 });
+      drawSpecimen(ctx, type, size / 2, size / 2, {
+        scale,
+        still: true,
+        phase: 0.7,
+        revealed: true,
+        cloaked: hidden,
+        shieldFrac: type === 'DOUBT' ? 1 : 0,
+      });
     },
     [type, hidden],
   );

@@ -56,15 +56,21 @@ export function TutorialCard({ bench, onFinish }: { bench: { cx: number; cy: num
       break;
     case 'start':
       title = t('tut-start-title', { defaultValue: 'Start the wave' });
-      body = t('tut-start-body', { defaultValue: 'The board waits until you are ready. Start wave 1, or press Space.' });
+      body = t('tut-start-body', {
+        defaultValue: 'The board waits until you are ready. Start wave 1, or press Space.',
+      });
       break;
     case 'watch':
       title = t('tut-watch-title', { defaultValue: 'Hold the wave' });
-      body = t('tut-watch-body', { defaultValue: 'Every kill pays serum. Clearing the wave pays more. Build while you wait.' });
+      body = t('tut-watch-body', {
+        defaultValue: 'Every kill pays serum. Clearing the wave pays more. Build while you wait.',
+      });
       break;
     case 'upgrade':
       title = t('tut-upgrade-title', { defaultValue: 'Upgrade' });
-      body = t('tut-upgrade-body', { defaultValue: 'Select your Synapse on the board and upgrade it to tier II, or press U.' });
+      body = t('tut-upgrade-body', {
+        defaultValue: 'Select your Synapse on the board and upgrade it to tier II, or press U.',
+      });
       break;
     case 'integrity':
       title = t('tut-integrity-title', { defaultValue: 'Integrity' });
@@ -93,15 +99,26 @@ export function TutorialCard({ bench, onFinish }: { bench: { cx: number; cy: num
           }}
         />
       )}
-      <section className="vg-card" style={{ top: 12, left: '50%', transform: 'translateX(-50%)' }} aria-live="polite" data-vega-tutorial={step}>
+      <section
+        className="vg-card"
+        style={{ top: 12, left: '50%', transform: 'translateX(-50%)' }}
+        aria-live="polite"
+        data-vega-tutorial={step}
+      >
         <h2 className="vg-tag">
           {t('tut-label', { defaultValue: 'Tutorial' })} · {title}
         </h2>
         <p>{body}</p>
         <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
           {info && (
-            <button type="button" className="vg-btn vg-btn-sm vg-btn-primary" onClick={() => tutorialEvent({ type: 'next' })}>
-              {step === 'welcome' ? t('tut-begin', { defaultValue: 'Begin' }) : t('tut-done', { defaultValue: 'Got it' })}
+            <button
+              type="button"
+              className="vg-btn vg-btn-sm vg-btn-primary"
+              onClick={() => tutorialEvent({ type: 'next' })}
+            >
+              {step === 'welcome'
+                ? t('tut-begin', { defaultValue: 'Begin' })
+                : t('tut-done', { defaultValue: 'Got it' })}
             </button>
           )}
           <button type="button" className="vg-btn vg-btn-sm" onClick={() => tutorialEvent({ type: 'skip' })}>
@@ -127,9 +144,17 @@ export function DossierCard() {
     <section className={boss ? 'vg-card is-danger' : 'vg-card'} style={{ top: 12, right: 12 }} aria-live="polite">
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
         <h2 className={boss ? 'vg-tag is-danger' : 'vg-tag'}>
-          {boss ? t('dossier-boss', { defaultValue: 'Boss specimen on the next wave' }) : t('dossier-new', { defaultValue: 'New specimen catalogued' })}
+          {boss
+            ? t('dossier-boss', { defaultValue: 'Boss specimen on the next wave' })
+            : t('dossier-new', { defaultValue: 'New specimen catalogued' })}
         </h2>
-        <button type="button" className="vg-icon-btn" style={{ minWidth: 32, minHeight: 32 }} aria-label={t('dismiss', { defaultValue: 'Dismiss' })} onClick={() => setDossier(null)}>
+        <button
+          type="button"
+          className="vg-icon-btn"
+          style={{ minWidth: 32, minHeight: 32 }}
+          aria-label={t('dismiss', { defaultValue: 'Dismiss' })}
+          onClick={() => setDossier(null)}
+        >
           <X aria-hidden size={16} />
         </button>
       </div>
@@ -178,15 +203,27 @@ function LogEntry({ line }: { line: LogLine }) {
       tone = 'is-bad';
       break;
     case 'waveClear':
-      text = t('log-wave-clear', { defaultValue: 'Wave {{wave}} held. +{{amount}} serum.', wave: line.wave, amount: line.amount });
+      text = t('log-wave-clear', {
+        defaultValue: 'Wave {{wave}} held. +{{amount}} serum.',
+        wave: line.wave,
+        amount: line.amount,
+      });
       tone = 'is-good';
       break;
     case 'perfect':
-      text = t('log-wave-perfect', { defaultValue: 'Wave {{wave}} held clean. +{{amount}} serum.', wave: line.wave, amount: line.amount });
+      text = t('log-wave-perfect', {
+        defaultValue: 'Wave {{wave}} held clean. +{{amount}} serum.',
+        wave: line.wave,
+        amount: line.amount,
+      });
       tone = 'is-good';
       break;
     case 'leak':
-      text = t('log-leak', { defaultValue: '{{enemy}} breached containment. -{{amount}} integrity.', enemy, amount: line.amount });
+      text = t('log-leak', {
+        defaultValue: '{{enemy}} breached containment. -{{amount}} integrity.',
+        enemy,
+        amount: line.amount,
+      });
       tone = 'is-bad';
       break;
     case 'catalogued':
@@ -229,7 +266,9 @@ export function PauseDialog({ onAbandon, onQuit }: { onAbandon: () => void; onQu
           {t('paused', { defaultValue: 'Paused' })}
         </h2>
         <p style={{ color: 'var(--vg-muted)', fontSize: 14 }}>
-          {t('paused-body', { defaultValue: 'The run is saved after every wave you clear. Quitting keeps the last save.' })}
+          {t('paused-body', {
+            defaultValue: 'The run is saved after every wave you clear. Quitting keeps the last save.',
+          })}
         </p>
         <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
           <button type="button" className="vg-btn vg-btn-primary" onClick={() => setPaused(false)}>
@@ -263,7 +302,8 @@ export function VictoryDialog({ onContinue, onClose }: { onContinue: () => void;
         </h3>
         <p style={{ color: 'var(--vg-muted)' }}>
           {t('victory-body', {
-            defaultValue: 'The specimen is contained. Score so far {{score}}, integrity bonus included. Overtime continues to wave {{cap}}, harder every wave.',
+            defaultValue:
+              'The specimen is contained. Score so far {{score}}, integrity bonus included. Overtime continues to wave {{cap}}, harder every wave.',
             score: score.toLocaleString(),
             cap: WAVES.CAP,
           })}
@@ -302,7 +342,12 @@ export function ManualDialog({ onReplayTutorial }: { onReplayTutorial: (() => vo
           <h2 id="vg-manual-title" className="vg-title" style={{ margin: 0, fontSize: 34 }}>
             {t('manual-title', { defaultValue: 'Operator manual' })}
           </h2>
-          <button type="button" className="vg-icon-btn" aria-label={t('close', { defaultValue: 'Close' })} onClick={() => setManualOpen(false)}>
+          <button
+            type="button"
+            className="vg-icon-btn"
+            aria-label={t('close', { defaultValue: 'Close' })}
+            onClick={() => setManualOpen(false)}
+          >
             <X aria-hidden size={18} />
           </button>
         </div>
@@ -311,10 +356,28 @@ export function ManualDialog({ onReplayTutorial }: { onReplayTutorial: (() => vo
           {t('manual-protocol', { defaultValue: 'Protocol' })}
         </h3>
         <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 14, lineHeight: 1.6, color: 'var(--vg-ink)' }}>
-          <li>{t('manual-rule-build', { defaultValue: 'Between waves the board waits. Build, upgrade and sell, then start the wave.' })}</li>
-          <li>{t('manual-rule-early', { defaultValue: 'Once a wave has finished arriving you may call the next one early: extra serum and x1.25 score for that wave.' })}</li>
-          <li>{t('manual-rule-score', { defaultValue: 'A cleared wave scores 40 x its number, x1.2 if nothing got through, x the map. Containment at wave 40 adds 250 per point of integrity left.' })}</li>
-          <li>{t('manual-rule-boss', { defaultValue: 'Every fifth wave brings a boss. A boss that reaches the door costs 8 or more integrity.' })}</li>
+          <li>
+            {t('manual-rule-build', {
+              defaultValue: 'Between waves the board waits. Build, upgrade and sell, then start the wave.',
+            })}
+          </li>
+          <li>
+            {t('manual-rule-early', {
+              defaultValue:
+                'Once a wave has finished arriving you may call the next one early: extra serum and x1.25 score for that wave.',
+            })}
+          </li>
+          <li>
+            {t('manual-rule-score', {
+              defaultValue:
+                'A cleared wave scores 40 x its number, x1.2 if nothing got through, x the map. Containment at wave 40 adds 250 per point of integrity left.',
+            })}
+          </li>
+          <li>
+            {t('manual-rule-boss', {
+              defaultValue: 'Every fifth wave brings a boss. A boss that reaches the door costs 8 or more integrity.',
+            })}
+          </li>
         </ul>
 
         <h3 className="vg-tag" style={{ marginTop: 18 }}>
@@ -322,15 +385,25 @@ export function ManualDialog({ onReplayTutorial }: { onReplayTutorial: (() => vo
         </h3>
         <dl className="vg-stat-grid" style={{ gridTemplateColumns: 'auto 1fr', fontSize: 14 }}>
           <dt>{t('key-click', { defaultValue: 'Click / tap' })}</dt>
-          <dd style={{ fontFamily: 'inherit' }}>{t('key-click-do', { defaultValue: 'Place the chosen instrument, or select one (on a phone: tap twice to place)' })}</dd>
+          <dd style={{ fontFamily: 'inherit' }}>
+            {t('key-click-do', {
+              defaultValue: 'Place the chosen instrument, or select one (on a phone: tap twice to place)',
+            })}
+          </dd>
           <dt>1-8</dt>
           <dd style={{ fontFamily: 'inherit' }}>{t('key-digits-do', { defaultValue: 'Choose an instrument' })}</dd>
           <dt>{t('key-arrows', { defaultValue: 'Arrows, Enter' })}</dt>
-          <dd style={{ fontFamily: 'inherit' }}>{t('key-arrows-do', { defaultValue: 'Move the board cursor and act on its bench' })}</dd>
+          <dd style={{ fontFamily: 'inherit' }}>
+            {t('key-arrows-do', { defaultValue: 'Move the board cursor and act on its bench' })}
+          </dd>
           <dt>{t('key-space', { defaultValue: 'Space' })}</dt>
-          <dd style={{ fontFamily: 'inherit' }}>{t('key-space-do', { defaultValue: 'Start the wave, or call the next one early' })}</dd>
+          <dd style={{ fontFamily: 'inherit' }}>
+            {t('key-space-do', { defaultValue: 'Start the wave, or call the next one early' })}
+          </dd>
           <dt>U · Del · T · F</dt>
-          <dd style={{ fontFamily: 'inherit' }}>{t('key-letters-do', { defaultValue: 'Upgrade, sell, change targeting, double speed' })}</dd>
+          <dd style={{ fontFamily: 'inherit' }}>
+            {t('key-letters-do', { defaultValue: 'Upgrade, sell, change targeting, double speed' })}
+          </dd>
           <dt>Esc</dt>
           <dd style={{ fontFamily: 'inherit' }}>{t('key-esc-do', { defaultValue: 'Cancel, or pause' })}</dd>
         </dl>
@@ -340,11 +413,23 @@ export function ManualDialog({ onReplayTutorial }: { onReplayTutorial: (() => vo
         </h3>
         <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0 }}>
           {TOWER_ORDER.map((type) => (
-            <li key={type} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--vg-line)' }}>
+            <li
+              key={type}
+              style={{
+                display: 'flex',
+                gap: 10,
+                alignItems: 'center',
+                padding: '6px 0',
+                borderBottom: '1px solid var(--vg-line)',
+              }}
+            >
               <InstrumentGlyph type={type} size={36} />
               <div style={{ minWidth: 0 }}>
                 <p style={{ margin: 0, fontWeight: 600 }}>
-                  {names.tower(type)} <span className="vg-mono" style={{ color: 'var(--vg-mint)', fontWeight: 400, fontSize: 13 }}>{TOWERS[type].tiers[0].cost}</span>
+                  {names.tower(type)}{' '}
+                  <span className="vg-mono" style={{ color: 'var(--vg-mint)', fontWeight: 400, fontSize: 13 }}>
+                    {TOWERS[type].tiers[0].cost}
+                  </span>
                 </p>
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--vg-muted)' }}>{names.towerBlurb(type)}</p>
               </div>
@@ -359,12 +444,25 @@ export function ManualDialog({ onReplayTutorial }: { onReplayTutorial: (() => vo
           {specimens.map((type) => {
             const known = seen.has(type) || type === 'ANXIETY';
             return (
-              <li key={type} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--vg-line)' }}>
+              <li
+                key={type}
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  alignItems: 'center',
+                  padding: '6px 0',
+                  borderBottom: '1px solid var(--vg-line)',
+                }}
+              >
                 <SpecimenGlyph type={type} size={36} hidden={!known} />
                 <div>
-                  <p style={{ margin: 0, fontWeight: 600 }}>{known ? names.enemy(type) : t('uncatalogued', { defaultValue: 'Uncatalogued' })}</p>
+                  <p style={{ margin: 0, fontWeight: 600 }}>
+                    {known ? names.enemy(type) : t('uncatalogued', { defaultValue: 'Uncatalogued' })}
+                  </p>
                   <p style={{ margin: 0, fontSize: 13, color: 'var(--vg-muted)' }}>
-                    {known ? names.enemyBlurb(type) : t('uncatalogued-body', { defaultValue: 'Not yet observed. Hold more waves.' })}
+                    {known
+                      ? names.enemyBlurb(type)
+                      : t('uncatalogued-body', { defaultValue: 'Not yet observed. Hold more waves.' })}
                   </p>
                 </div>
               </li>

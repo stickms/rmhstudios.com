@@ -39,18 +39,6 @@ export function Menu({
   const mapId = useGameStore((s) => s.mapId);
   const setMap = useGameStore((s) => s.setMap);
   const setManualOpen = useGameStore((s) => s.setManualOpen);
-  const [board, setBoard] = useState<BoardRow[] | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    api(getVegaLeaderboardApi)
-      .then((rows) => live && setBoard(Array.isArray(rows) ? rows : []))
-      .catch(() => live && setBoard([]));
-    return () => {
-      live = false;
-    };
-  }, []);
-
   const signedIn = !!session.data;
 
   return (
@@ -76,7 +64,14 @@ export function Menu({
         </h2>
         <div className="vg-maps" role="group" aria-label={t('choose-map', { defaultValue: 'Choose the ward' })}>
           {MAP_ORDER.map((id) => (
-            <button key={id} type="button" className="vg-map" aria-pressed={mapId === id} onClick={() => setMap(id)} data-vega-map={id}>
+            <button
+              key={id}
+              type="button"
+              className="vg-map"
+              aria-pressed={mapId === id}
+              onClick={() => setMap(id)}
+              data-vega-map={id}
+            >
               <MapPreview id={id} />
               <span>
                 <span className="vg-title" style={{ display: 'block', fontSize: 20 }}>
@@ -85,7 +80,11 @@ export function Menu({
                     ×{MAPS[id].scoreMul}
                   </span>
                 </span>
-                <span style={{ display: 'block', fontSize: 13, lineHeight: 1.4, color: 'var(--vg-muted)', marginTop: 2 }}>{names.mapBlurb(id)}</span>
+                <span
+                  style={{ display: 'block', fontSize: 13, lineHeight: 1.4, color: 'var(--vg-muted)', marginTop: 2 }}
+                >
+                  {names.mapBlurb(id)}
+                </span>
               </span>
             </button>
           ))}
@@ -103,7 +102,11 @@ export function Menu({
           )}
           {signedIn && save && (
             <button type="button" className="vg-btn" onClick={onResume}>
-              {t('resume-run', { defaultValue: 'Resume: {{map}}, after wave {{wave}}', map: names.map(save.map), wave: save.wave })}
+              {t('resume-run', {
+                defaultValue: 'Resume: {{map}}, after wave {{wave}}',
+                map: names.map(save.map),
+                wave: save.wave,
+              })}
             </button>
           )}
           <button type="button" className="vg-btn" onClick={() => setManualOpen(true)}>
@@ -117,63 +120,85 @@ export function Menu({
         </div>
         {!signedIn && (
           <p style={{ fontSize: 13, color: 'var(--vg-faint)', marginTop: 10 }}>
-            {t('signin-note', { defaultValue: 'Runs, scores and achievements are kept on your account. The manual is open to everyone.' })}
+            {t('signin-note', {
+              defaultValue: 'Runs, scores and achievements are kept on your account. The manual is open to everyone.',
+            })}
           </p>
         )}
       </section>
 
       <section>
-        <h2 className="vg-tag">{t('best-runs', { defaultValue: 'Best runs' })}</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 10 }}>
-          <thead>
-            <tr className="vg-board-row" style={{ textAlign: 'left', color: 'var(--vg-faint)' }}>
-              <th scope="col" style={{ fontWeight: 600, width: 34 }}>
-                #
-              </th>
-              <th scope="col" style={{ fontWeight: 600 }}>
-                {t('board-operator', { defaultValue: 'Operator' })}
-              </th>
-              <th scope="col" style={{ fontWeight: 600, textAlign: 'right' }}>
-                {t('board-wave', { defaultValue: 'Wave' })}
-              </th>
-              <th scope="col" style={{ fontWeight: 600, textAlign: 'right' }}>
-                {t('board-score', { defaultValue: 'Score' })}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {board === null ? (
-              <tr className="vg-board-row">
-                <td colSpan={4} style={{ color: 'var(--vg-faint)' }}>
-                  {t('board-loading', { defaultValue: 'Reading the files.' })}
-                </td>
-              </tr>
-            ) : board.length === 0 ? (
-              <tr className="vg-board-row">
-                <td colSpan={4} style={{ color: 'var(--vg-faint)' }}>
-                  {t('board-empty', { defaultValue: 'No runs filed yet.' })}
-                </td>
-              </tr>
-            ) : (
-              board.map((r, i) => (
-                <tr key={`${r.username}-${i}`} className="vg-board-row">
-                  <td className="vg-mono" style={{ color: 'var(--vg-faint)' }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </td>
-                  <td>{r.username}</td>
-                  <td className="vg-mono" style={{ textAlign: 'right' }}>
-                    {r.highestLoop}
-                  </td>
-                  <td className="vg-mono" style={{ textAlign: 'right', color: 'var(--vg-mint)' }}>
-                    {r.highestLevel.toLocaleString()}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <BestRuns refreshKey={0} />
       </section>
     </main>
+  );
+}
+
+/** The board of best runs (best score, then best wave), from the game's own leaderboard. */
+export function BestRuns({ refreshKey }: { refreshKey: number }) {
+  const { t } = useTranslation('c-vega');
+  const [board, setBoard] = useState<BoardRow[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    api(getVegaLeaderboardApi)
+      .then((rows) => live && setBoard(Array.isArray(rows) ? rows : []))
+      .catch(() => live && setBoard([]));
+    return () => {
+      live = false;
+    };
+  }, [refreshKey]);
+  return (
+    <>
+      <h2 className="vg-tag">{t('best-runs', { defaultValue: 'Best runs' })}</h2>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 10 }}>
+        <thead>
+          <tr className="vg-board-row" style={{ textAlign: 'left', color: 'var(--vg-faint)' }}>
+            <th scope="col" style={{ fontWeight: 600, width: 34 }}>
+              #
+            </th>
+            <th scope="col" style={{ fontWeight: 600 }}>
+              {t('board-operator', { defaultValue: 'Operator' })}
+            </th>
+            <th scope="col" style={{ fontWeight: 600, textAlign: 'right' }}>
+              {t('board-wave', { defaultValue: 'Wave' })}
+            </th>
+            <th scope="col" style={{ fontWeight: 600, textAlign: 'right' }}>
+              {t('board-score', { defaultValue: 'Score' })}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {board === null ? (
+            <tr className="vg-board-row">
+              <td colSpan={4} style={{ color: 'var(--vg-faint)' }}>
+                {t('board-loading', { defaultValue: 'Reading the files.' })}
+              </td>
+            </tr>
+          ) : board.length === 0 ? (
+            <tr className="vg-board-row">
+              <td colSpan={4} style={{ color: 'var(--vg-faint)' }}>
+                {t('board-empty', { defaultValue: 'No runs filed yet.' })}
+              </td>
+            </tr>
+          ) : (
+            board.map((r, i) => (
+              <tr key={`${r.username}-${i}`} className="vg-board-row">
+                <td className="vg-mono" style={{ color: 'var(--vg-faint)' }}>
+                  {String(i + 1).padStart(2, '0')}
+                </td>
+                <td>{r.username}</td>
+                <td className="vg-mono" style={{ textAlign: 'right' }}>
+                  {r.highestLoop}
+                </td>
+                <td className="vg-mono" style={{ textAlign: 'right', color: 'var(--vg-mint)' }}>
+                  {r.highestLevel.toLocaleString()}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </>
   );
 }
 
@@ -184,7 +209,16 @@ export function MapPreview({ id }: { id: MapId }) {
   rows.forEach((row, y) =>
     [...row].forEach((ch, x) => {
       if (ch === '#' || ch === 'S' || ch === 'E') {
-        cells.push(<rect key={`${x}-${y}`} x={x * 6} y={y * 6} width={6} height={6} fill={ch === 'E' ? '#e0393e' : ch === 'S' ? '#8ef0c4' : '#5a1a1f'} />);
+        cells.push(
+          <rect
+            key={`${x}-${y}`}
+            x={x * 6}
+            y={y * 6}
+            width={6}
+            height={6}
+            fill={ch === 'E' ? '#e0393e' : ch === 'S' ? '#8ef0c4' : '#5a1a1f'}
+          />,
+        );
       } else if (ch === 'x') {
         cells.push(<circle key={`${x}-${y}`} cx={x * 6 + 3} cy={y * 6 + 3} r={2} fill="#3e8a6c" />);
       }
@@ -199,7 +233,7 @@ export function MapPreview({ id }: { id: MapId }) {
 }
 
 /** The menu's backdrop: scan grid, registration marks, a specimen jar and a flat ECG trace. Static. */
-function MenuBackdrop() {
+export function MenuBackdrop() {
   return (
     <svg className="vg-menu-backdrop" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden>
       <defs>
@@ -214,13 +248,22 @@ function MenuBackdrop() {
       <rect width="1600" height="1000" fill="#020504" />
       <rect width="1600" height="1000" fill="url(#vg-grid)" />
       {/* The jar: glass, fluid line, the curled thing inside, a tag. */}
-      <g transform="translate(1180 520)" opacity="0.9">
+      <g className="vg-menu-jar" transform="translate(1200 640) scale(0.85)" opacity="0.85">
         <rect x="-170" y="-330" width="340" height="40" rx="6" fill="#0b1613" stroke="#2f5d4f" strokeWidth="3" />
-        <path d="M-150 -290 V280 Q-150 320 -110 320 H110 Q150 320 150 280 V-290" fill="#06120f" stroke="#2f5d4f" strokeWidth="3" />
+        <path
+          d="M-150 -290 V280 Q-150 320 -110 320 H110 Q150 320 150 280 V-290"
+          fill="#06120f"
+          stroke="#2f5d4f"
+          strokeWidth="3"
+        />
         <path d="M-148 -200 H148" stroke="#3e8a6c" strokeWidth="2" opacity="0.6" />
         <path d="M-120 -170 V260" stroke="#e6f2ee" strokeWidth="6" opacity="0.08" />
         <g fill="none" stroke="#b98a86" strokeLinecap="round">
-          <path d="M20 160 C-80 150 -95 40 -30 -10 C30 -55 95 -10 80 60 C68 115 0 120 -10 70" strokeWidth="26" opacity="0.85" />
+          <path
+            d="M20 160 C-80 150 -95 40 -30 -10 C30 -55 95 -10 80 60 C68 115 0 120 -10 70"
+            strokeWidth="26"
+            opacity="0.85"
+          />
           <path d="M-10 70 C-15 40 20 30 35 50" strokeWidth="14" opacity="0.85" />
         </g>
         <circle cx="-38" cy="-30" r="34" fill="#c58b8e" />
@@ -230,6 +273,7 @@ function MenuBackdrop() {
       </g>
       {/* The ECG trace across the bottom. */}
       <path
+        className="vg-menu-jar"
         d="M0 900 H520 l18 -16 l14 16 h30 l10 10 l14 -90 l16 120 l12 -40 h40 q20 -26 40 0 H1600"
         fill="none"
         stroke="#8ef0c4"

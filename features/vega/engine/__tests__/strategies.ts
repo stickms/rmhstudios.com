@@ -33,9 +33,15 @@ function bestCell(sim: Simulation, type: TowerType): { x: number; y: number } | 
       score = 10_000 - coverage(sim, c.x, c.y, 2.5);
     } else if (type === 'ECHO') {
       const centre = sim.grid.cellCenter(c.x, c.y);
-      score = sim.entities.towers.filter(
-        (t) => t.def.attack !== 'income' && t.def.attack !== 'support' && Math.hypot(t.x - centre.x, t.y - centre.y) <= range * 60,
-      ).length * 1000 + coverage(sim, c.x, c.y, range);
+      score =
+        sim.entities.towers.filter(
+          (t) =>
+            t.def.attack !== 'income' &&
+            t.def.attack !== 'support' &&
+            Math.hypot(t.x - centre.x, t.y - centre.y) <= range * 60,
+        ).length *
+          1000 +
+        coverage(sim, c.x, c.y, range);
     } else {
       score = coverage(sim, c.x, c.y, range);
     }
@@ -84,7 +90,15 @@ const BALANCED_OPENING: TowerType[] = [
   'LOBOTOMIZER',
   'ECHO',
 ];
-const BALANCED_ROTATION: TowerType[] = ['CAUTERY', 'CENTRIFUGE', 'DEFIBRILLATOR', 'LOBOTOMIZER', 'SUPPRESSOR', 'SYNAPSE', 'ECHO'];
+const BALANCED_ROTATION: TowerType[] = [
+  'CAUTERY',
+  'CENTRIFUGE',
+  'DEFIBRILLATOR',
+  'LOBOTOMIZER',
+  'SUPPRESSOR',
+  'SYNAPSE',
+  'ECHO',
+];
 
 /** The first opening instrument not yet on the board (counting repeats), or null once the opening is built. */
 function openingMissing(sim: Simulation): TowerType | null {
@@ -121,7 +135,11 @@ function balanced(sim: Simulation) {
       continue;
     }
     // Then alternate: bring every damage instrument to the next tier, else add one from the rotation.
-    const lowTier = Math.min(...towersOf(sim).filter((t) => DAMAGE.includes(t.type)).map((t) => t.tier));
+    const lowTier = Math.min(
+      ...towersOf(sim)
+        .filter((t) => DAMAGE.includes(t.type))
+        .map((t) => t.tier),
+    );
     const builtAfter = Math.max(0, have - towersOf(sim, 'BIOBANK').length - (BALANCED_OPENING.length - 1));
     if (lowTier < Math.min(2, 1 + Math.floor(builtAfter / 4))) {
       if (!upgradeLowest(sim, DAMAGE)) return;
