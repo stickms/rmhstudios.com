@@ -1,10 +1,8 @@
-import { memo, useState } from'react';
+import { memo } from'react';
 import { Link } from'@tanstack/react-router';
 import { useTranslation } from'react-i18next';
-import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
+import { UserAvatar as AvatarImage } from'@/components/ui/UserAvatar';
 import type { FeedItemUser } from'@/lib/feed-types';
-
-const DEFAULT_AVATAR ='/images/social/default_avatar.png';
 
 interface UserAvatarProps {
  user: FeedItemUser | undefined | null;
@@ -27,31 +25,21 @@ function userProfileHref(user: FeedItemUser): string {
 
 function UserAvatarImpl({ user, size ='md', linkToProfile = true }: UserAvatarProps) {
  const { t } = useTranslation('feed');
- const [imgError, setImgError] = useState(false);
-
  if (!user) return null;
 
- const rawSrc = imgError ? DEFAULT_AVATAR : user.image;
- const showImg = !!rawSrc;
- // Route the avatar through the optimizer at ~2x its display size instead of
- // pulling the full-resolution external CDN original — 20 feed cards would each
- // fetch a raw Discord/Google avatar otherwise. Local paths (the fallback) pass
- // through untouched.
- const imgSrc = showImg ? buildOptimizedUrl(rawSrc as string, sizePx[size] * 2, 80) : undefined;
+ // The picture is drawn by the shared avatar (components/ui/UserAvatar), so a face is ONE file at every size and on
+ // every surface. This component used to ask the optimizer for its own width (`w=64`/`80`/`96`) while the feed asked
+ // for the shared srcset's, so opening a post downloaded every face on it again and each popped in late (owner,
+ // 2026-11-23: profile pics flash when opening a post).
  const frame = user.cosmetics?.avatarFrame;
 
  const inner = (
  <div className={`${sizeClasses[size]} rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-semibold shrink-0`}>
- {showImg ? (
- <img
- src={imgSrc}
+ {user.image ? (
+ <AvatarImage
+ src={user.image}
  alt={user.name || t('user-avatar-alt', { defaultValue:'User'})}
- loading="lazy"
- decoding="async"
- width={sizePx[size]}
- height={sizePx[size]}
- className="w-full h-full rounded-full object-cover"
- onError={() => setImgError(true)}
+ size={sizePx[size]}
  />
  ) : (
  (user.name?.[0] ||'U').toUpperCase()

@@ -74,6 +74,10 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
       alt={alt}
       width={size * 2}
       height={size * 2}
+      // The real slot, not the 2x `width`: the browser picks the srcset file from it. At 2x `width` a 48px avatar on a
+      // 2x screen asked for the 320 file while every 28px one asked for the 160, so the same face was two downloads
+      // and the post page's avatars popped in late. Every avatar up to ~53px now resolves to the one 160 file.
+      sizes={`${size}px`}
       quality={75}
       // An avatar is tiny and is on screen the moment its row is: no lazy gate, no async decode, so a cached one is in
       // the first frame instead of flashing in a frame later.
