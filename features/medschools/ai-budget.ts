@@ -24,10 +24,39 @@ export const QA_LOCK_PROMPT_ID = 'medschools-qa-lock';
  */
 export const QA_ADMIN_LOCK_PROMPT_ID = 'medschools-qa-admin-lock';
 export const QA_ADMIN_MAX_IN_FLIGHT = 3;
-/** The lease outlives the deadline, so a crashed process frees the member after a minute. */
-export const QA_LEASE_MS = 60_000;
 /** The whole question (route call, retrieval, answer call) ends by this; it is under the client's `AI_TIMEOUT_MS` (60 s). */
 export const QA_DEADLINE_MS = 50_000;
+/**
+ * The same, for a question the member asked to think through (R20): the whole question ends by this, and the answer call
+ * gets whatever the route call and retrieval left. The client's per-call timeout for that endpoint stays above it
+ * (`QA_THINK_CLIENT_TIMEOUT_MS`).
+ */
+export const QA_THINK_DEADLINE_MS = 120_000;
+/** The client's timeout for a thinking question: above `QA_THINK_DEADLINE_MS`, so the server's refusal arrives first. */
+export const QA_THINK_CLIENT_TIMEOUT_MS = 135_000;
+/** How far past the longest deadline the in-flight lease runs, for a clock or a pause the deadline did not see. */
+export const QA_LEASE_MARGIN_MS = 30_000;
+/**
+ * The in-flight lease (member and admin) outlives the longest a question can run, so a live thinking question is never
+ * counted as gone; a crashed process frees the member after this long.
+ */
+export const QA_LEASE_MS = QA_THINK_DEADLINE_MS + QA_LEASE_MARGIN_MS;
+
+/** The whole-question deadline of a question, by whether it thinks. */
+export const qaDeadlineMs = (think: boolean): number => (think ? QA_THINK_DEADLINE_MS : QA_DEADLINE_MS);
+
+/**
+ * `MEDSCHOOLS_QA_THINKING`: whether members may ask for DeepSeek's reasoning mode (R20). Unset or blank is on; `on` and
+ * `off` (any case) are themselves; anything else is a typo about money and means off, with `warn` saying so.
+ */
+export function qaThinkingEnabled(env: string | undefined, warn?: (line: string) => void): boolean {
+  if (blank(env)) return true;
+  const v = (env ?? '').trim().toLowerCase();
+  if (v === 'on') return true;
+  if (v === 'off') return false;
+  warn?.('MEDSCHOOLS_QA_THINKING is neither on nor off; thinking is off until it is fixed');
+  return false;
+}
 export const DEFAULT_QA_SHARE = 0.25;
 /** Free members' questions per UTC day (R19). The approved and member tiers have their own, below. */
 export const DEFAULT_QA_DAILY_CAP = 25;

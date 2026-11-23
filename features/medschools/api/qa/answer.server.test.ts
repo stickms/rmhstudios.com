@@ -470,3 +470,68 @@ describe('nothing is stored or logged', () => {
     expect(src).not.toMatch(/prisma|\.(create|createMany|update|updateMany|upsert|deleteMany)\(|redis|cached\(/i);
   });
 });
+
+describe('thinking (R20)', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const goodAnswer = { segments: [seg('Duke has 412 reported interview events.', 'f1')], thin: false };
+  const askThink = (runner: QaRunner, think: boolean) =>
+    answerQuestion({ userId: 'u1', question: QUESTION, think }, { runner });
+
+  it('asks the answer call to think, never the route call, and reports it', async () => {
+    const { runner } = fakeRunner(route(), goodAnswer);
+    const r = await askThink(runner, true);
+    expect(r.thinking).toBe(true);
+    expect(vi.mocked(runner.route).mock.calls[0]).toHaveLength(4);
+    expect(vi.mocked(runner.answer).mock.calls[0]![4]).toEqual({ think: true });
+  });
+  it('does not think unless asked', async () => {
+    const { runner } = fakeRunner(route(), goodAnswer);
+    const r = await askThink(runner, false);
+    expect(r.thinking).toBe(false);
+    expect(vi.mocked(runner.answer).mock.calls[0]![4]).toEqual({ think: false });
+  });
+  it('MEDSCHOOLS_QA_THINKING=off (or invalid) ignores think', async () => {
+    for (const v of ['off', 'garbage']) {
+      vi.stubEnv('MEDSCHOOLS_QA_THINKING', v);
+      const { runner } = fakeRunner(route(), goodAnswer);
+      const r = await askThink(runner, true);
+      expect(r.thinking, v).toBe(false);
+      expect(vi.mocked(runner.answer).mock.calls[0]![4], v).toEqual({ think: false });
+    }
+  });
+  it('uses the long deadline only when thinking', async () => {
+    const spy = vi.spyOn(AbortSignal, 'timeout');
+    await askThink(fakeRunner(route(), goodAnswer).runner, true);
+    expect(spy).toHaveBeenLastCalledWith(120_000);
+    await askThink(fakeRunner(route(), goodAnswer).runner, false);
+    expect(spy).toHaveBeenLastCalledWith(50_000);
+    vi.stubEnv('MEDSCHOOLS_QA_THINKING', 'off');
+    await askThink(fakeRunner(route(), goodAnswer).runner, true);
+    expect(spy).toHaveBeenLastCalledWith(50_000);
+  });
+  it('a model that leaks reasoning in the answer JSON shows none of it, and the log has no text', async () => {
+    const { runner } = fakeRunner(route(), {
+      ...goodAnswer,
+      reasoning_content: 'SECRET-CHAIN-OF-THOUGHT',
+      reasoning: 'SECRET-CHAIN-OF-THOUGHT',
+    });
+    const r = await askThink(runner, true);
+    expect(JSON.stringify(r)).not.toContain('SECRET-CHAIN');
+    const lines = log.flatMap((spy) => spy.mock.calls.map((c: unknown[]) => c.map(String).join(' ')));
+    expect(lines.join('\n')).not.toContain('SECRET-CHAIN');
+    expect(JSON.parse(lines[0]!.replace('[medschools-qa] ', ''))).toMatchObject({ think: 1 });
+  });
+  it('still ends with AI_UNAVAILABLE when the deadline fires during the thinking call', async () => {
+    const ctl = new AbortController();
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(ctl.signal);
+    const runner: QaRunner = {
+      route: vi.fn(async () => route()),
+      answer: vi.fn(() => {
+        queueMicrotask(() => ctl.abort());
+        return new Promise<unknown>(() => undefined);
+      }),
+    };
+    const e = await askThink(runner, true).catch((x: unknown) => x);
+    expect(e).toBeInstanceOf(AppError);
+  });
+});

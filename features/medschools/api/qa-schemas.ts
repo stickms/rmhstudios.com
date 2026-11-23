@@ -14,6 +14,8 @@ export const askBody = z.object({
     .refine((s) => !/[^\P{Cc}\n\r\t]/u.test(s), 'control characters'),
   /** The school page's panel pins its school; the route call still runs. */
   slug: z.string().regex(SLUG_RE).optional(),
+  /** Think it through (plan R20; absent means false): the answer call uses DeepSeek's reasoning. Ignored when `MEDSCHOOLS_QA_THINKING` is off. */
+  think: z.boolean().optional(),
 });
 export type AskBody = z.infer<typeof askBody>;
 

@@ -10,7 +10,7 @@
 import { MEDSCHOOLS_QA_ANSWER, MEDSCHOOLS_QA_ROUTE, asData, systemFor } from '@/lib/ai/prompts';
 import { AppError } from '@/lib/errors/codes';
 import type { ChanceDto, MedAskCitationDto, MedAskRes } from '../../medschools.contract';
-import { QA_DEADLINE_MS } from '../../ai-budget';
+import { qaDeadlineMs } from '../../ai-budget';
 import { groundAnswer, type SchoolNames } from '../../engine/qa/ground';
 import { cleanForPrompt } from '../../engine/qa/sanitize';
 import { filterSchools, parseRoute, resolveSchools } from '../../engine/qa/route';
@@ -19,6 +19,7 @@ import { admitQuestion } from './budget.server';
 import { schoolDirectory } from './freshness.server';
 import { retrieve } from './retrieve.server';
 import { aiRunner, type QaRunner } from './runner.server';
+import { thinkingAvailable } from './thinking.server';
 
 export interface AskInput {
   userId: string;
@@ -28,6 +29,8 @@ export interface AskInput {
   signal?: AbortSignal | undefined;
   /** The request's admin flag: an admin has no daily cap, rate limit or lease (plan R19). */
   isAdmin?: boolean | undefined;
+  /** The member asked to think it through (plan R20). Ignored when `MEDSCHOOLS_QA_THINKING` is off. */
+  think?: boolean | undefined;
 }
 
 const MAX_QUESTION = 400;
@@ -42,6 +45,7 @@ const empty = (b: Base, over: Partial<MedAskRes>): MedAskRes => ({
   schools: [],
   cycleYear: null,
   mine: null,
+  thinking: false,
   ...b,
   ...over,
 });
@@ -69,10 +73,13 @@ export async function answerQuestion(i: AskInput, deps: { runner?: QaRunner; now
   const now = deps.now ?? new Date();
   // Gates and the atomic reservation (daily count and one-in-flight lease, across processes) before any model call.
   const gate = await admitQuestion(i.userId, now, { isAdmin: i.isAdmin === true });
-  // One deadline for the whole question, under the client's own timeout, plus the request's own signal.
-  const deadline = AbortSignal.timeout(QA_DEADLINE_MS);
+  // Thinking is the member's request AND the site's switch (R20); the answer call is the only one that uses it.
+  const think = i.think === true && thinkingAvailable();
+  // One deadline for the whole question, under the client's own timeout for that kind of question (the thinking one is
+  // longer, and its answer call gets whatever the route call and retrieval left), plus the request's own signal.
+  const deadline = AbortSignal.timeout(qaDeadlineMs(think));
   const signal = i.signal ? AbortSignal.any([i.signal, deadline]) : deadline;
-  const work = run(i, deps.runner ?? aiRunner, now, gate, signal);
+  const work = run(i, deps.runner ?? aiRunner, now, gate, signal, think);
   // The lease ends when the work really ends, not when the caller stopped waiting.
   const done = work
     .then(
@@ -106,6 +113,7 @@ async function run(
   now: Date,
   gate: Base,
   signal: AbortSignal,
+  think: boolean,
 ): Promise<MedAskRes> {
   // The reservation already counts this question.
   const base: Base = { tier: gate.tier, remainingToday: gate.remainingToday, dailyCap: gate.dailyCap };
@@ -189,6 +197,7 @@ async function run(
     ),
     i.userId,
     signal,
+    { think },
   );
   live();
   const schoolNames: SchoolNames = new Map(
@@ -221,11 +230,13 @@ async function run(
     facts: retrieval.facts.length,
     kept: grounded.segments.length,
     dropped: grounded.dropped,
+    ...(think ? { think: 1 } : {}),
   });
 
   if (grounded.segments.length === 0) {
     return empty(base, {
       ...shared,
+      thinking: think,
       status: 'no-data',
       ...(grounded.dropped > 0
         ? { decline: 'ungrounded' as const, notice: mineNotice }
@@ -240,5 +251,6 @@ async function run(
     citations,
     notice: mineNotice ?? (grounded.dropped > 0 ? 'removed-ungrounded' : modelSaidThin ? 'thin' : null),
     decline: null,
+    thinking: think,
   };
 }

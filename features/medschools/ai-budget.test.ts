@@ -1,5 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
-import { qaCapForTier, qaCapUsd, qaDailyCap, qaShare, scrapeCapUsd, utcDayStart } from './ai-budget';
+import {
+  QA_DEADLINE_MS,
+  QA_LEASE_MS,
+  QA_THINK_CLIENT_TIMEOUT_MS,
+  QA_THINK_DEADLINE_MS,
+  qaCapForTier,
+  qaCapUsd,
+  qaDailyCap,
+  qaDeadlineMs,
+  qaShare,
+  qaThinkingEnabled,
+  scrapeCapUsd,
+  utcDayStart,
+} from './ai-budget';
 
 describe('qaShare', () => {
   it('defaults to 0.25 when unset or blank', () => {
@@ -86,5 +99,25 @@ describe('the limit tiers (R19)', () => {
     expect(warn).toHaveBeenCalledTimes(2);
     expect(warn.mock.calls[0]![0]).toContain('MEDSCHOOLS_QA_DAILY_CAP_APPROVED');
     expect(warn.mock.calls[1]![0]).toContain('MEDSCHOOLS_QA_DAILY_CAP_MEMBER');
+  });
+});
+
+describe('thinking (R20)', () => {
+  it('is on by default and for on, off for off and for anything invalid, which warns', () => {
+    for (const v of [undefined, '', ' ', 'on', 'ON', ' On ']) expect(qaThinkingEnabled(v)).toBe(true);
+    const warn = vi.fn();
+    for (const v of ['off', 'OFF']) expect(qaThinkingEnabled(v, warn)).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    for (const v of ['true', '1', 'yes', 'maybe']) expect(qaThinkingEnabled(v, warn)).toBe(false);
+    expect(warn).toHaveBeenCalledTimes(4);
+    expect(warn.mock.calls[0]![0]).toContain('MEDSCHOOLS_QA_THINKING');
+  });
+  it('orders the deadlines: server < client timeout, and the lease outlives the longest question', () => {
+    expect(qaDeadlineMs(false)).toBe(QA_DEADLINE_MS);
+    expect(qaDeadlineMs(true)).toBe(QA_THINK_DEADLINE_MS);
+    expect(QA_DEADLINE_MS).toBeLessThan(60_000);
+    expect(QA_THINK_DEADLINE_MS).toBe(120_000);
+    expect(QA_THINK_CLIENT_TIMEOUT_MS).toBeGreaterThan(QA_THINK_DEADLINE_MS);
+    expect(QA_LEASE_MS).toBeGreaterThanOrEqual(QA_THINK_DEADLINE_MS + 30_000);
   });
 });

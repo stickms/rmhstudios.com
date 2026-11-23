@@ -7,6 +7,7 @@ import { askMedQuestionApi, getMedAskStatusApi } from '@features/medschools/meds
 import { READ_LIMIT } from './me-http.server';
 import { answerQuestion } from './qa/answer.server';
 import { dailyStatus } from './qa/budget.server';
+import { thinkingAvailable } from './qa/thinking.server';
 import { askBody } from './qa-schemas';
 
 /**
@@ -23,6 +24,7 @@ const ASK_LIMIT = { policy: 'ai', limit: 6, windowMs: 60_000, prefix: 'medschool
 export const route = apiRoute('/api/medschools/me/ask', {
   GET: implement(getMedAskStatusApi, { rateLimit: READ_LIMIT }, async ({ userId, isAdmin }) => ({
     configured: isAiConfigured(),
+    thinkingAvailable: thinkingAvailable(),
     ...(await dailyStatus(userId, new Date(), { isAdmin })),
   })),
   POST: implement(askMedQuestionApi, { rateLimit: ASK_LIMIT, rateLimitExemptAdmin: true, body: askBody }, async ({ userId, isAdmin, body, request }) => {
@@ -33,6 +35,6 @@ export const route = apiRoute('/api/medschools/me/ask', {
     }
     // No key, no spend: refuse before any ledger read or budget check.
     if (!isAiConfigured()) return Response.json({ ...refusalBody('AI_UNAVAILABLE') }, { status: 503 });
-    return answerQuestion({ userId, isAdmin, question: body.question, slug: body.slug, signal: request.signal });
+    return answerQuestion({ userId, isAdmin, question: body.question, slug: body.slug, think: body.think === true, signal: request.signal });
   }),
 });

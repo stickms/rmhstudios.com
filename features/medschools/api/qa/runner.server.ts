@@ -7,16 +7,26 @@
  * under the client's timeout, so a retry could only make the member wait past it for an answer nobody reads.
  */
 import { MEDSCHOOLS_QA_ANSWER, MEDSCHOOLS_QA_ROUTE } from '@/lib/ai/prompts';
+import { QA_THINK_DEADLINE_MS } from '../../ai-budget';
 import { jsonFromModelText, runTask } from '@/lib/ai/provider.server';
 
 export interface QaRunner {
   route(system: string, user: string, userId: string, signal?: AbortSignal): Promise<unknown>;
-  answer(system: string, user: string, userId: string, signal?: AbortSignal): Promise<unknown>;
+  /** `think` switches DeepSeek's reasoning on for this call only (plan R20); its reasoning text never leaves the provider seam. */
+  answer(
+    system: string,
+    user: string,
+    userId: string,
+    signal?: AbortSignal,
+    opts?: { think?: boolean },
+  ): Promise<unknown>;
 }
 
 const TASK = 'medschools-qa';
 /** The route call returns a few short fields. */
 const ROUTE_MAX_TOKENS = 200;
+/** A thinking answer's `max_tokens` covers the reasoning as well as the JSON, so it is far above the route's 900. */
+const THINK_MAX_TOKENS = 8_000;
 
 function parsed(raw: string): unknown {
   try {
@@ -42,7 +52,8 @@ export const aiRunner: QaRunner = {
       }),
     );
   },
-  async answer(system, user, userId, signal) {
+  async answer(system, user, userId, signal, opts) {
+    const think = opts?.think === true;
     return parsed(
       await runTask(TASK, system, user, {
         userId,
@@ -50,6 +61,8 @@ export const aiRunner: QaRunner = {
         promptId: MEDSCHOOLS_QA_ANSWER.id,
         promptVer: MEDSCHOOLS_QA_ANSWER.version,
         maxRetries: 0,
+        // Same task label, so spend is metered and counted against the same Q&A share. JSON mode stays on.
+        ...(think ? { thinking: true, maxTokens: THINK_MAX_TOKENS, timeoutMs: QA_THINK_DEADLINE_MS } : {}),
         ...(signal ? { signal } : {}),
       }),
     );

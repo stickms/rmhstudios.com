@@ -101,8 +101,17 @@ describe('me/ask: POST input', () => {
       isAdmin: false,
       question: 'What is the median?',
       slug: 'duke',
+      think: false,
       signal: expect.any(AbortSignal),
     });
+  });
+  it('passes think on, and treats an absent or non-boolean one as off (R20)', async () => {
+    await call('POST', { question: 'What is the median?', think: true });
+    expect(mocks.answerQuestion).toHaveBeenLastCalledWith(expect.objectContaining({ think: true }));
+    await call('POST', { question: 'What is the median?' });
+    expect(mocks.answerQuestion).toHaveBeenLastCalledWith(expect.objectContaining({ think: false }));
+    const bad = await call('POST', { question: 'What is the median?', think: 'yes' });
+    expect(bad.status).toBe(400);
   });
 });
 
@@ -195,6 +204,7 @@ describe('me/ask: admin bypass (R19)', () => {
       tier: 'admin',
       remainingToday: null,
       dailyCap: null,
+      thinkingAvailable: true,
     });
     expect(mocks.dailyStatus).toHaveBeenCalledWith('a1', expect.any(Date), { isAdmin: true });
   });
@@ -203,7 +213,7 @@ describe('me/ask: admin bypass (R19)', () => {
 describe('me/ask: GET status', () => {
   it('returns whether Q&A is on and the questions left, and calls no model', async () => {
     const res = await call('GET');
-    expect(await res.json()).toEqual({ configured: true, tier: 'free', remainingToday: 7, dailyCap: 15 });
+    expect(await res.json()).toEqual({ configured: true, thinkingAvailable: true, tier: 'free', remainingToday: 7, dailyCap: 15 });
     expect(mocks.dailyStatus).toHaveBeenCalledWith('u1', expect.any(Date), { isAdmin: false });
     expect(mocks.answerQuestion).not.toHaveBeenCalled();
     mocks.isAiConfigured.mockReturnValue(false);

@@ -500,6 +500,8 @@ export interface MedAskRes {
   /** Questions left today; `null` for an admin (no daily limit). */
   remainingToday: number | null;
   dailyCap: number | null;
+  /** True when the answer call ran with DeepSeek's thinking on (plan R20). The reasoning text itself is never returned. */
+  thinking: boolean;
 }
 
 /** The caller's limit tier (plan R19), resolved on the server: `admin` has no daily limit, `member` is a paid membership. */
@@ -513,6 +515,8 @@ export interface MedAskStatusRes {
   remainingToday: number | null;
   /** `null` for an admin. */
   dailyCap: number | null;
+  /** Whether "Think it through" is offered (`MEDSCHOOLS_QA_THINKING`, plan R20). */
+  thinkingAvailable: boolean;
 }
 
 /**

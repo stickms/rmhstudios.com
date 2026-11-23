@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QA_LEASE_MS, QA_THINK_DEADLINE_MS } from '../../ai-budget';
 
 const m = vi.hoisted(() => {
   type Row = { id: bigint; userId: string; task: string; promptId: string; createdAt: Date };
@@ -143,10 +144,13 @@ describe('the daily cap and the in-flight lease (reserveQuestion)', () => {
     expect(await questionsToday('u1', NOW)).toBe(1);
     expect(m.tx.$executeRaw).toHaveBeenCalled();
   });
-  it('does not let a crashed question block the member for more than a minute', async () => {
-    await reserveQuestion('u1', at('2026-11-23T15:30:00Z'));
-    expect(await code(reserveQuestion('u1', at('2026-11-23T15:30:30Z')))).toBe('MEDSCHOOLS_QA_BUSY');
-    await expect(reserveQuestion('u1', at('2026-11-23T15:31:01Z'))).resolves.toBeDefined();
+  it('keeps the lease past a thinking question and frees a crashed one soon after (R20)', async () => {
+    expect(QA_LEASE_MS).toBeGreaterThan(QA_THINK_DEADLINE_MS);
+    const t0 = at('2026-11-23T15:30:00Z').getTime();
+    await reserveQuestion('u1', new Date(t0));
+    // Still busy when a thinking question hits its own deadline.
+    expect(await code(reserveQuestion('u1', new Date(t0 + QA_THINK_DEADLINE_MS)))).toBe('MEDSCHOOLS_QA_BUSY');
+    await expect(reserveQuestion('u1', new Date(t0 + QA_LEASE_MS + 1_000))).resolves.toBeDefined();
   });
   it('keeps the reservation when the lease cannot be released, and survives the delete failing', async () => {
     const r = await reserveQuestion('u1', NOW);
@@ -325,7 +329,7 @@ describe('limit tiers and the admin bypass (R19)', () => {
     await expect(reserveQuestion('a1', NOW, admin)).resolves.toBeDefined();
     expect(await code(reserveQuestion('a1', NOW, admin))).toBe('MEDSCHOOLS_QA_BUSY');
     // A lease older than QA_LEASE_MS no longer counts (a crashed process frees its place).
-    expect(await code(reserveQuestion('a1', new Date(NOW.getTime() + 61_000), admin))).not.toBe('MEDSCHOOLS_QA_BUSY');
+    expect(await code(reserveQuestion('a1', new Date(NOW.getTime() + QA_LEASE_MS + 1_000), admin))).not.toBe('MEDSCHOOLS_QA_BUSY');
   });
   it('still stops an admin at the shared monthly pause', async () => {
     spend(5_000_000);
