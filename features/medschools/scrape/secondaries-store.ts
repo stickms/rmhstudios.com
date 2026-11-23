@@ -238,7 +238,9 @@ export async function recordCheck(
 ): Promise<void> {
   const fields = { checkedAt: input.now, status: input.status, promptCount: input.promptCount };
   // Never backwards: a dated re-import must not make a school look checked earlier than it was.
-  const current = await prisma.medSecondaryCheck.findFirst({ where: { schoolId: input.schoolId, source: input.source } });
+  const [current] = await prisma.medSecondaryCheck.findMany({
+    where: { schoolId: input.schoolId, source: input.source },
+  });
   if (current && current.checkedAt.getTime() > input.now.getTime()) return;
   await prisma.medSecondaryCheck.upsert({
     where: { schoolId_source: { schoolId: input.schoolId, source: input.source } },

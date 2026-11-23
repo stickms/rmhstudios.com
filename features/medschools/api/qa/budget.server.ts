@@ -158,21 +158,15 @@ async function reserveAdmin(userId: string, now: Date, tier: QaTier): Promise<Re
   }
   if (leaseId === null) throw new AppError('MEDSCHOOLS_QA_BUSY');
   const id = leaseId;
-  return {
-    tier,
-    remainingToday: null,
-    dailyCap: null,
-    async release() {
-      try {
-        await prisma.aiUsage.deleteMany({ where: { id } });
-      } catch {
-        console.error('[medschools-qa] could not end the admin lease; it expires by itself');
-      }
-    },
-    async refund() {
-      await this.release();
-    },
+  const release = async () => {
+    try {
+      await prisma.aiUsage.deleteMany({ where: { id } });
+    } catch {
+      console.error('[medschools-qa] could not end the admin lease; it expires by itself');
+    }
   };
+  // An admin writes no daily-count row, so a refund only has the lease to end.
+  return { tier, remainingToday: null, dailyCap: null, release, refund: release };
 }
 
 /**
@@ -253,7 +247,10 @@ export async function assertSharedBudget(now: Date = new Date()): Promise<void> 
   let allSpent: number;
   try {
     const [qa, both] = await Promise.all([
-      prisma.aiUsage.aggregate({ where: { task: { in: [QA_TASK, IMPORT_TASK] }, createdAt: since }, _sum: { costMicros: true } }),
+      prisma.aiUsage.aggregate({
+        where: { task: { in: [QA_TASK, IMPORT_TASK] }, createdAt: since },
+        _sum: { costMicros: true },
+      }),
       prisma.aiUsage.aggregate({
         where: { task: { in: [QA_TASK, IMPORT_TASK, EXTRACT_TASK] }, createdAt: since },
         _sum: { costMicros: true },

@@ -100,7 +100,7 @@ export async function extractPdfText(buffer: Buffer, opts: ExtractOptions = {}):
   const until = Date.now() + (opts.deadlineMs ?? PDF_DEADLINE_MS);
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   // The loading task owns the document: `destroy()` is on the task (the document proxy has none in this pdfjs).
-  const task = pdfjs.getDocument({ data: new Uint8Array(buffer), useWorkerFetch: false, isEvalSupported: false });
+  const task = pdfjs.getDocument({ data: new Uint8Array(buffer), useWorkerFetch: false });
   let timer: ReturnType<typeof setTimeout> | undefined;
   let onAbort: (() => void) | undefined;
   const expired = new Promise<never>((_, reject) => {

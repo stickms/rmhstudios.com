@@ -38,7 +38,7 @@ export async function formFromBytes(bytes: Buffer, contentType: string): Promise
     return await new Request('http://local.invalid/', {
       method: 'POST',
       headers: { 'content-type': contentType },
-      body: bytes,
+      body: new Uint8Array(bytes),
     }).formData();
   } catch {
     return null;

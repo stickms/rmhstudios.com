@@ -197,7 +197,7 @@ export async function importSchoolPages(
       if (rolling === null || ev === null || url === null) continue;
       const data = { rolling, evidence: ev, url, checkedOn: now, source: 'SCHOOL' as const };
       // A policy checked or corrected after the file's day is newer than the file: leave it.
-      const current = await prisma.medSchoolAdmissionsPolicy.findFirst({ where: { schoolId, program: p } });
+      const [current] = await prisma.medSchoolAdmissionsPolicy.findMany({ where: { schoolId, program: p } });
       if (current && current.checkedOn.getTime() > now.getTime()) continue;
       await prisma.medSchoolAdmissionsPolicy.upsert({
         where: { schoolId_program: { schoolId, program: p } },
