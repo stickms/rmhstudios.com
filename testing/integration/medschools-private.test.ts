@@ -27,7 +27,15 @@ import {
   PRIVATE_DO_SLUG,
   PRIVATE_MD_ID,
   PRIVATE_MD_SLUG,
+  removeSecondariesFixture,
   removeSharingMembers,
+  removeTurnaroundMembers,
+  SECONDARIES_TEXT,
+  seedSecondariesFixture,
+  seedTurnaroundMembers,
+  setTurnaroundSharing,
+  turnaroundColumns,
+  turnaroundRows,
   removeTrackerFixture,
   rmhCountRows,
   rmhEventCount,
@@ -77,6 +85,8 @@ beforeAll(async () => {
 afterAll(async () => {
   const ids = [a?.id, b?.id, c?.id].filter((x): x is string => !!x);
   await removeSharingMembers();
+  await removeTurnaroundMembers();
+  await removeSecondariesFixture();
   await removeTrackerFixture(ids);
   for (const [id, createdAt] of originalCreated)
     await db().query('update "user" set "createdAt" = $2 where id = $1', [id, createdAt]);
@@ -150,6 +160,7 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['PUT', '/api/medschools/me/lists/x/item-order', { ids: [] }],
   ['POST', '/api/medschools/me/lists/x/add-to-tracker', {}],
   ['GET', '/api/medschools/me/chances'],
+  ['GET', '/api/medschools/me/secondaries/overlap?source=tracker'],
   ['GET', '/api/medschools/me/prefs'],
   ['PUT', '/api/medschools/me/prefs', { chartCategories: [] }],
   ['GET', '/api/medschools/me/ask'],
@@ -818,7 +829,9 @@ describe('the personal invite chance (me/chances)', () => {
       await runForecastJob();
     };
     const sharerInvites = () =>
-      db().query(`select count(*)::int as n from med_tracker_milestone where type = 'INTERVIEW' and id like 'it-medschools-sharer-%'`);
+      db().query(
+        `select count(*)::int as n from med_tracker_milestone where type = 'INTERVIEW' and id like 'it-medschools-sharer-%'`,
+      );
 
     it('refreshes only after at least 3 more members or invites: one new sharer changes nothing, three do', async () => {
       await rebuild();
@@ -839,7 +852,7 @@ describe('the personal invite chance (me/chances)', () => {
     });
 
     it('needs at least 10 invites on top of the members: with fewer, the curve is deleted at once', async () => {
-      expect((await waitCurveRow(PRIVATE_DO_ID))).not.toBeNull();
+      expect(await waitCurveRow(PRIVATE_DO_ID)).not.toBeNull();
       const before = (await sharerInvites()).rows[0].n as number;
       expect(before).toBeGreaterThanOrEqual(10);
       // Take the sharers' invites away until 9 remain: 23 members, 9 invites.
@@ -851,5 +864,174 @@ describe('the personal invite chance (me/chances)', () => {
       await runForecastJob();
       expect(await waitCurveRow(PRIVATE_DO_ID)).toBeNull();
     });
+  });
+});
+
+/* --------------------------- secondaries: the essay overlap (me/**) --------------------------- */
+
+describe('the essay overlap', () => {
+  const OVERLAP = '/api/medschools/me/secondaries/overlap';
+  let listId = '';
+
+  beforeAll(async () => {
+    await seedMedSchoolsFixture();
+    await seedSecondariesFixture({ mdId: PRIVATE_MD_ID });
+    for (const m of [a, b]) await m.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
+    const first = await a.client.post('/api/medschools/me/list-items', {
+      schoolSlug: MEDSCHOOL_FIXTURE_SLUG,
+      newListName: 'Alice secret reach list',
+    });
+    expect(first.status, JSON.stringify(first.body)).toBe(200);
+    listId = first.body.id as string;
+    await a.client.post('/api/medschools/me/list-items', { schoolSlug: PRIVATE_MD_SLUG, listId });
+  });
+  afterAll(async () => {
+    await a.client.delete(`/api/medschools/me/lists/${listId}`);
+  });
+
+  it('is 401 without a session and never publicly cached', async () => {
+    const res = await anon.get(`${OVERLAP}?source=list&list=${listId}`);
+    expect(res.status).toBe(401);
+    const ok = await a.client.get(`${OVERLAP}?source=list&list=${listId}`);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('cache-control') ?? '').not.toMatch(/public|s-maxage/i);
+    expect(ok.headers.get('etag')).toBeNull();
+  });
+
+  it("groups the list's schools by theme with a pinned key set and no list name or id", async () => {
+    const res = await a.client.get(`${OVERLAP}?source=list&list=${listId}`);
+    expect(Object.keys(res.body).sort()).toEqual(['cycleYear', 'groups', 'schoolCount', 'source', 'withoutPrompts']);
+    expect(res.body.schoolCount).toBe(2);
+    const diversity = res.body.groups.find((g: { theme: string }) => g.theme === 'diversity');
+    expect(diversity).toMatchObject({ schools: 2, shortestWords: 250, longestWords: 300 });
+    expect(Object.keys(diversity).sort()).toEqual(['entries', 'longestWords', 'schools', 'shortestWords', 'theme']);
+    for (const e of diversity.entries)
+      expect(Object.keys(e).sort()).toEqual(
+        ['basis', 'limit', 'optional', 'program', 'promptId', 'schoolName', 'slug', 'text'].sort(),
+      );
+    expect(diversity.entries.map((e: { text: string }) => e.text).sort()).toEqual(
+      [SECONDARIES_TEXT.diversityA, SECONDARIES_TEXT.diversityB].sort(),
+    );
+    const text = JSON.stringify(res.body);
+    for (const f of [listId, 'Alice secret reach list', a.id, 'userId', 'position', 'note'])
+      expect(text).not.toContain(f);
+  });
+
+  it("another member's list is a 404 with the same body as an unknown id, and bob never sees alice's data", async () => {
+    const foreign = await b.client.get(`${OVERLAP}?source=list&list=${listId}`);
+    const unknown = await b.client.get(`${OVERLAP}?source=list&list=does-not-exist`);
+    expect(foreign.status).toBe(404);
+    expect(unknown.status).toBe(404);
+    expect(JSON.stringify(foreign.body)).toBe(JSON.stringify(unknown.body));
+    const own = await b.client.get(`${OVERLAP}?source=tracker`);
+    expect(own.status).toBe(200);
+    const text = JSON.stringify(own.body);
+    expect(text).not.toContain('Alice secret reach list');
+    expect(own.body.groups).toEqual([]);
+  });
+
+  it('rejects a list source with no list and a tracker source with one', async () => {
+    expect((await a.client.get(`${OVERLAP}?source=list`)).status).toBe(400);
+    expect((await a.client.get(`${OVERLAP}?source=tracker&list=${listId}`)).status).toBe(400);
+    expect((await a.client.get(`${OVERLAP}`)).status).toBe(400);
+  });
+
+  it("the tracker source reads the caller's current-cycle schools only", async () => {
+    expect((await putCycle(a, false)).status).toBe(200);
+    expect((await putCycle(b, false)).status).toBe(200);
+    await addApp(a, MEDSCHOOL_FIXTURE_SLUG);
+    await addApp(b, PRIVATE_MD_SLUG);
+    const mine = await a.client.get(`${OVERLAP}?source=tracker`);
+    expect(mine.status).toBe(200);
+    expect(mine.body.source).toBe('tracker');
+    expect(mine.body.schoolCount).toBe(1);
+    const slugs = mine.body.groups.flatMap((g: { entries: { slug: string }[] }) => g.entries.map((e) => e.slug));
+    expect(new Set(slugs)).toEqual(new Set([MEDSCHOOL_FIXTURE_SLUG]));
+    // No application this cycle is an empty 200, never an error.
+    await a.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
+    const none = await a.client.get(`${OVERLAP}?source=tracker`);
+    expect(none.status).toBe(200);
+    expect(none.body).toMatchObject({ groups: [], schoolCount: 0, withoutPrompts: [] });
+  });
+});
+
+/* --------------------------- secondaries: turnaround (received -> submitted) --------------------------- */
+
+describe('secondary turnaround', () => {
+  const publicTurnaround = async () => {
+    const res = await anon.get(fresh(`/api/medschools/schools/${PRIVATE_MD_SLUG}/secondaries`));
+    expect(res.status).toBe(200);
+    return res.body.turnaround as Array<Record<string, unknown>>;
+  };
+
+  beforeAll(async () => {
+    await removeTurnaroundMembers();
+  });
+
+  it('shows no figure under 20 sharing members and one at 20, with counts and whole days only', async () => {
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 19);
+    await runForecastJob();
+    expect(await turnaroundRows(PRIVATE_MD_ID)).toHaveLength(0);
+    expect(await publicTurnaround()).toEqual([]);
+
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 1, 19);
+    await runForecastJob();
+    const rows = await turnaroundRows(PRIVATE_MD_ID);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ program: 'REG', members: 20 });
+    const shown = await publicTurnaround();
+    expect(shown).toHaveLength(1);
+    expect(Object.keys(shown[0]!).sort()).toEqual(['asOf', 'medianDays', 'members', 'p25Days', 'p75Days', 'program']);
+    expect(shown[0]!.members).toBe(20);
+    for (const k of ['medianDays', 'p25Days', 'p75Days']) expect(Number.isInteger(shown[0]![k])).toBe(true);
+    expect(shown[0]!.medianDays as number).toBeGreaterThanOrEqual(3);
+    expect(shown[0]!.medianDays as number).toBeLessThanOrEqual(11);
+    expect(JSON.stringify(shown)).not.toMatch(/it-medschools-turn|userId|receivedOn|submittedOn/);
+  });
+
+  it('stores no column that could hold a person or a date of one contribution', async () => {
+    const cols = await turnaroundColumns();
+    expect(cols).toEqual([
+      'id',
+      'schoolId',
+      'program',
+      'asOf',
+      'computedAt',
+      'members',
+      'p25Days',
+      'medianDays',
+      'p75Days',
+    ]);
+    expect(cols.join(' ')).not.toMatch(/user|member_?id|email|application|date/i);
+  });
+
+  it('refreshes only after at least 3 more members: two new ones change nothing, three do', async () => {
+    const before = (await turnaroundRows(PRIVATE_MD_ID))[0]!;
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 2, 20);
+    await runForecastJob();
+    const same = (await turnaroundRows(PRIVATE_MD_ID))[0]!;
+    expect(same.members).toBe(20);
+    expect(same.computedAt).toEqual(before.computedAt);
+    await seedTurnaroundMembers(PRIVATE_MD_ID, CYCLE, 1, 22);
+    await runForecastJob();
+    expect((await turnaroundRows(PRIVATE_MD_ID))[0]!.members).toBe(23);
+  });
+
+  it('removes the figure at once when members turn sharing off and the count falls under 20', async () => {
+    for (const i of [0, 1, 2, 3, 4]) await setTurnaroundSharing(i, false);
+    await runForecastJob();
+    expect(await turnaroundRows(PRIVATE_MD_ID)).toHaveLength(0);
+    expect(await publicTurnaround()).toEqual([]);
+  });
+
+  it('SECONDARY_SUBMITTED is accepted privately and never becomes a public event; SECONDARY does', async () => {
+    expect((await putCycle(a, true)).status).toBe(200);
+    const appId = await addApp(a, PRIVATE_MD_SLUG);
+    const before = await rmhEventCount(PRIVATE_MD_ID);
+    expect((await putMilestone(a, appId, 'SECONDARY_SUBMITTED', dayAgo(4))).status).toBe(200);
+    expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before);
+    expect((await putMilestone(a, appId, 'SECONDARY', dayAgo(9))).status).toBe(200);
+    expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before + 1);
+    await a.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
   });
 });

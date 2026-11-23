@@ -11,7 +11,15 @@
  */
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Client, closeDb, db } from './lib/client';
-import { MEDSCHOOL_FIXTURE_SLUG, removeMedSchoolsFixture, seedMedSchoolsFixture } from './lib/medschools-fixture';
+import {
+  MEDSCHOOL_FIXTURE_SLUG,
+  SECONDARIES_NOTYET_SLUG,
+  SECONDARIES_TEXT,
+  removeMedSchoolsFixture,
+  removeSecondariesFixture,
+  seedMedSchoolsFixture,
+  seedSecondariesFixture,
+} from './lib/medschools-fixture';
 
 const anon = new Client();
 const SLUG = MEDSCHOOL_FIXTURE_SLUG;
@@ -19,6 +27,7 @@ const INACTIVE_SLUG = 'it-medschools-fixture-inactive';
 
 beforeAll(async () => {
   await seedMedSchoolsFixture();
+  await seedSecondariesFixture();
   await db().query(
     `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
      values ($1, $1, 'Inactive Fixture', 'Inactive', 'MD', 'Durham', 'NC', false, now())`,
@@ -27,6 +36,7 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   await db().query('delete from med_school where id = $1', [INACTIVE_SLUG]);
+  await removeSecondariesFixture();
   await removeMedSchoolsFixture();
   await closeDb();
 });
@@ -314,5 +324,151 @@ describe('the public forecast', () => {
     expect(html).toContain('Median forecast');
     expect(html).toContain('10th to 90th percentile');
     for (const f of FORBIDDEN) expect(html, f).not.toContain(f);
+  });
+});
+
+/* --------------------------- secondaries: the public tab and its endpoint --------------------------- */
+
+const SECONDARIES_KEYS = ['admissions', 'cycleYear', 'groups', 'sources', 'turnaround'];
+const GROUP_KEYS = ['comparedWith', 'program', 'prompts', 'shownCycle', 'state'];
+const PROMPT_KEYS = [
+  'cycles',
+  'id',
+  'lastCheckedAt',
+  'limit',
+  'optional',
+  'previousText',
+  'sources',
+  'status',
+  'text',
+  'themes',
+];
+const secondariesUrl = (slug = SLUG, query = '') => `/api/medschools/schools/${slug}/secondaries${query}`;
+const CURRENT = (() => {
+  const now = new Date();
+  return now.getUTCMonth() < 5 ? now.getUTCFullYear() : now.getUTCFullYear() + 1;
+})();
+
+describe('the public secondaries endpoint', () => {
+  it('has the pinned key sets and a public cache', async () => {
+    const res = await anon.get(secondariesUrl());
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body).sort()).toEqual(SECONDARIES_KEYS);
+    expect(res.headers.get('cache-control')).toBe('public, max-age=300, s-maxage=900, stale-while-revalidate=3600');
+    for (const g of res.body.groups) {
+      expect(Object.keys(g).sort()).toEqual(GROUP_KEYS);
+      for (const p of g.prompts) expect(Object.keys(p).sort()).toEqual(PROMPT_KEYS);
+    }
+    const text = JSON.stringify(res.body);
+    for (const f of ['themesVersion', 'userId', 'dedupeHash', '"key"', 'contributors', 'draft'])
+      expect(text).not.toContain(f);
+  });
+
+  it('shows the same, reworded, new and not-seen marks and integer cycles, REG before PHD', async () => {
+    const res = await anon.get(secondariesUrl());
+    expect(res.body.cycleYear).toBe(CURRENT);
+    expect(res.body.groups.map((g: { program: string }) => g.program)).toEqual(['REG', 'PHD']);
+    const reg = res.body.groups[0];
+    expect(reg).toMatchObject({ state: 'current', shownCycle: CURRENT, comparedWith: CURRENT - 1 });
+    const mark = (text: string) => reg.prompts.find((p: { text: string }) => p.text === text);
+    expect(mark(SECONDARIES_TEXT.same)).toMatchObject({ status: 'same', cycles: [CURRENT - 1, CURRENT] });
+    expect(mark(SECONDARIES_TEXT.reworded)).toMatchObject({
+      status: 'reworded',
+      previousText: SECONDARIES_TEXT.previous,
+    });
+    expect(mark(SECONDARIES_TEXT.added)).toMatchObject({ status: 'new', cycles: [CURRENT] });
+    expect(mark(SECONDARIES_TEXT.gone)).toMatchObject({ status: 'gone', cycles: [CURRENT - 2, CURRENT - 1] });
+    expect(mark(SECONDARIES_TEXT.optional)).toMatchObject({ optional: true, limit: { kind: 'CHARS', value: 1500 } });
+    // Two sources seeing one prompt in one cycle is one cycle, not two.
+    expect(mark(SECONDARIES_TEXT.same).sources).toEqual(['ADMIT', 'SDN']);
+    for (const g of res.body.groups)
+      for (const p of g.prompts) for (const y of p.cycles) expect(Number.isInteger(y)).toBe(true);
+    expect(res.body.groups[1].prompts[0]).toMatchObject({
+      text: SECONDARIES_TEXT.phd,
+      limit: { kind: 'WORDS', value: 500 },
+    });
+  });
+
+  it("carries the school's own admissions statement and its source lines", async () => {
+    const res = await anon.get(secondariesUrl());
+    expect(res.body.admissions).toEqual([
+      {
+        program: 'REG',
+        rolling: true,
+        evidence: 'Decisions are made on a rolling basis.',
+        url: 'https://med.fixture.example.edu/admissions',
+        checkedOn: '2026-11-23',
+      },
+    ]);
+    // SDN has an observation of one prompt (a forum sighting) but no recorded page read: it is named, with no link.
+    expect(res.body.sources.map((s: { source: string }) => s.source)).toEqual(['SCHOOL', 'ADMIT', 'SDN']);
+    expect(res.body.sources[2].url).toBeNull();
+    expect(res.body.sources[0].url).toBe('https://med.fixture.example.edu/secondary');
+  });
+
+  it('before this cycle has prompts it shows last cycle as not-yet with every mark last-cycle', async () => {
+    const res = await anon.get(secondariesUrl(SECONDARIES_NOTYET_SLUG));
+    expect(res.status).toBe(200);
+    expect(res.body.groups).toHaveLength(1);
+    expect(res.body.groups[0]).toMatchObject({ state: 'not-yet', shownCycle: CURRENT - 1 });
+    expect(res.body.groups[0].prompts.map((p: { status: string }) => p.status)).toEqual(['last-cycle']);
+  });
+
+  it('filters by program and answers a school with none as empty groups', async () => {
+    const phd = await anon.get(secondariesUrl(SLUG, '?program=PHD'));
+    expect(phd.body.groups.map((g: { program: string }) => g.program)).toEqual(['PHD']);
+    expect((await anon.get(secondariesUrl(SLUG, '?program=BOGUS'))).status).toBe(400);
+  });
+
+  it('is byte-identical with and without a session', async () => {
+    const member = new Client(inject('alice').cookies);
+    const without = await anon.get(secondariesUrl(SLUG, '?cb=viewer'));
+    const withSession = await member.get(secondariesUrl(SLUG, '?cb=viewer'));
+    expect(JSON.stringify(withSession.body)).toBe(JSON.stringify(without.body));
+    expect(withSession.headers.get('cache-control')).toMatch(/public/);
+  });
+
+  it('answers an unknown and an inactive school with a 404', async () => {
+    expect((await anon.get(secondariesUrl('does-not-exist'))).status).toBe(404);
+    expect((await anon.get(secondariesUrl(INACTIVE_SLUG))).status).toBe(404);
+  });
+
+  it('server-renders the tab with a prompt and its source line, no script needed, and no text field', async () => {
+    const res = await anon.get(`/rmh-medschool/${SLUG}?tab=secondaries`);
+    expect(res.status).toBe(200);
+    const html = String(res.body);
+    expect(html).toContain(SECONDARIES_TEXT.same);
+    expect(html).toContain('Source: Admit.org');
+    expect(html).toContain('Rolling admissions');
+    expect(html).not.toMatch(/<(input|textarea)\b/);
+  });
+
+  it('is written by an admin only, and what an admin writes shows in the public response', async () => {
+    const alice = new Client(inject('alice').cookies);
+    const aliceId = inject('alice').id;
+    const body = {
+      schoolId: 'it-medschools-fixture-school',
+      program: 'REG',
+      cycleYear: CURRENT,
+      sourceUrl: 'https://med.fixture.example.edu/corrected',
+      prompts: [{ text: 'Describe a time you changed your mind.', limitKind: 'WORDS', limitValue: 400 }],
+    };
+    expect((await anon.request('POST', '/api/admin/medschools/secondaries', { json: body })).status).toBe(401);
+    expect((await alice.request('POST', '/api/admin/medschools/secondaries', { json: body })).status).toBe(403);
+    await db().query(`update "user" set "isAdmin" = true where id = $1`, [aliceId]);
+    try {
+      const ok = await alice.request('POST', '/api/admin/medschools/secondaries', { json: body });
+      expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+      expect(ok.body).toEqual({ prompts: 1, created: 1, rejected: 0 });
+      const bad = await alice.request('POST', '/api/admin/medschools/secondaries', {
+        json: { ...body, sourceUrl: 'javascript:alert(1)' },
+      });
+      expect(bad.status).toBe(400);
+    } finally {
+      await db().query(`update "user" set "isAdmin" = false where id = $1`, [aliceId]);
+    }
+    const res = await anon.get(secondariesUrl(SLUG, '?cb=admin'));
+    const texts = res.body.groups.flatMap((g: { prompts: { text: string }[] }) => g.prompts.map((p) => p.text));
+    expect(texts).toContain('Describe a time you changed your mind.');
   });
 });
