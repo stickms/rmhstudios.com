@@ -112,36 +112,6 @@
   position: relative;
 }
 
-/* Per-book entry point into the 3D viewer (components/library/Book3DViewer).
-   A sibling of the cover's <Link>, pinned to the cover's top corner. It is
-   always visible rather than hover-revealed: the device this exists for has no
-   hover, and the shelf's own 3D flourishes never fire there. */
-.lib-book__inspect {
-  position: absolute;
-  z-index: 3;
-  top: 16px;
-  right: 16px;
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--site-border);
-  border-radius: 999px;
-  corner-shape: round;
-  background: var(--site-surface);
-  color: var(--site-text);
-  cursor: pointer;
-  transition:
-    background var(--site-transition-speed),
-    transform 0.15s ease;
-}
-.lib-book__inspect:hover {
-  background: var(--site-surface-hover);
-}
-.lib-book__inspect:active {
-  transform: scale(0.92);
-}
 .lib-book__wrap.is-hidden-book {
   opacity: 0.45;
 }

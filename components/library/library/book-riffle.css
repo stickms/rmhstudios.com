@@ -1,35 +1,39 @@
-/* Riffle: loose pages hinged at the spine, tucked just behind the cover face at rest (so
-   they cannot be seen). On hover each one flicks up off the stack and falls back, one after
-   another, like a thumb running down the edge of the pages: five flicks of 180 ms staggered
-   45 ms, so the whole riffle is done in about 360 ms — a response to the pointer, nothing
-   that keeps moving. It replays on every new hover; leaving the book simply lets the cover
-   settle (the pages are already back on the stack by then). */
+/* Riffle: loose pages inside the book's page block. At rest each one lies in the block, behind
+   the cover and inside the fore-edge, so it cannot be seen. On hover they flick one after another
+   like a thumb running down the edge of the pages: each page swings back about the spine (a
+   rotation in the BOOK's frame, which is already turned to a three-quarter view) so its free end
+   springs out past the fore-edge to the right, then falls back onto the stack. Six flicks of
+   200 ms staggered 32 ms, done in 360 ms — a response to the pointer, nothing that keeps moving.
+   It replays on every new hover; leaving simply lets the book turn back (the pages are already
+   on the stack by then).
+   `--leaf` is the page's index (0 = nearest the cover) and `--z` its depth as a fraction of the
+   book's thickness; both are set inline by BookLeaves. */
 .lib-book__leaf {
-  --fan: calc(-34deg - var(--leaf) * 6deg);
+  --fan: calc(20deg + var(--leaf) * 6deg);
   position: absolute;
-  top: 2px;
-  bottom: 2px;
-  left: 0;
-  width: calc(100% - 4px);
-  border: 1px solid var(--site-border);
+  top: 1px;
+  bottom: 1px;
+  left: 1px;
+  right: 1px;
+  border-right: 1px solid rgba(120, 120, 125, 0.6);
   border-radius: 0 var(--site-radius-sm) var(--site-radius-sm) 0;
-  background: var(--site-surface);
+  background: rgb(242 242 244);
   pointer-events: none;
   transform-origin: left center;
-  transform: translateZ(-1px) rotateY(0deg);
+  transform: translateZ(calc(var(--thick) * var(--z))) rotateY(0deg);
 }
 
 .lib-book:hover .lib-book__leaf,
 .lib-book:focus-visible .lib-book__leaf {
-  animation: lib-riffle 180ms var(--ease-smooth) calc(var(--leaf) * 45ms) both;
+  animation: lib-riffle 200ms var(--ease-smooth) calc(var(--leaf) * 32ms) both;
 }
 
 @keyframes lib-riffle {
   0%,
   100% {
-    transform: translateZ(-1px) rotateY(0deg);
+    transform: translateZ(calc(var(--thick) * var(--z))) rotateY(0deg);
   }
-  45% {
-    transform: translateZ(-1px) rotateY(var(--fan));
+  50% {
+    transform: translateZ(calc(var(--thick) * var(--z))) rotateY(var(--fan));
   }
 }
