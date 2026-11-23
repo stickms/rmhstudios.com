@@ -48,6 +48,7 @@ import { getRepostMutedIds } from './repost-mutes.server';
 import { isExpired } from '../posts-plus/constants';
 import { pollLifecycleView } from '@/lib/feed/poll-lifecycle';
 import { quizRevealFor, viewerHasVoted } from '@/lib/feed/quiz-poll';
+import { NEWS_POST_KIND } from '@/lib/news-wire/discussion';
 
 export { deduplicateReposts };
 
@@ -585,6 +586,8 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
         // Only thread roots + standalone posts in the feed; follow-up segments
         // (threadRootId set) are read on the thread page.
         threadRootId: null,
+        // RMH News discussion posts reach a timeline only as a repost (lib/news-wire/discussion.ts).
+        kind: { not: NEWS_POST_KIND },
         ...contentWhere,
         ...keyset,
       },
@@ -712,6 +715,9 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
           deletedAt: null,
           communityId: null,
           threadRootId: null,
+          // RMH News discussion posts reach the feed only as a repost: by a reader, or by the RMH News account when
+          // the feed pick features one (a few a day; lib/news-wire/feed-pick.server.ts).
+          kind: { not: NEWS_POST_KIND },
           ...contentWhere,
           ...authorWhere,
           ...audWhere,

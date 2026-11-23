@@ -329,3 +329,28 @@ describe('Following surface', () => {
     expect(rows).toEqual(['reposted-public']);
   });
 });
+
+/**
+ * RMH News discussion posts (`kind: 'news'`, lib/news-wire/discussion.ts) are made for every discussed headline. They
+ * reach a timeline only as a repost (a reader's, or the RMH News account's capped feed pick), never on their own.
+ */
+describe('RMH News discussion posts', () => {
+  it('keeps the post itself off For You and Following, and lets a repost of it through', async () => {
+    store.following = ['rmh-news', 'friend'];
+    const own = post({ userId: 'friend', content: 'a friend post' });
+    const discussion = post({ userId: 'rmh-news', content: 'news-discussion', kind: 'news' });
+    store.posts = [own, discussion];
+    store.reposts = [{ id: 'rp-news', userId: 'friend', createdAt: new Date(NOW + 1000), rmhark: discussion }];
+    for (const surface of ['foryou', 'following'] as const) {
+      const rows = await contents({ surface, cursor: null });
+      expect(rows.filter((r) => r === 'news-discussion')).toHaveLength(1); // the repost, not the post
+      expect(rows).toContain('a friend post');
+    }
+    store.reposts = [];
+    // The signed-in first page is cached per viewer: read the new fixtures cold.
+    await invalidateCachedPrefix('');
+    for (const surface of ['foryou', 'following'] as const) {
+      expect(await contents({ surface, cursor: null })).not.toContain('news-discussion');
+    }
+  });
+});

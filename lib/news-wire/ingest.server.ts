@@ -162,13 +162,15 @@ export async function ingestNews(now = new Date()): Promise<IngestResult> {
   return { feeds: NEWS_SOURCES.length, seen: all.length, stored, pruned };
 }
 
-/** Delete wire rows published before `before`, except those an admin placed in a story timeline. */
+/** Delete wire rows published before `before`, except those in a story timeline or with a discussion post. */
 export async function pruneWire(before: Date): Promise<number> {
   const inStories = await prisma.newsStoryArticle.findMany({ select: { articleSlug: true } });
   const result = await prisma.newsArticle.deleteMany({
     where: {
       origin: 'WIRE',
       publishedAt: { lt: before },
+      // A discussed story stays: its discussion post links to it, and the post outlives the 21 days.
+      postId: null,
       ...(inStories.length ? { slug: { notIn: inStories.map((s) => s.articleSlug) } } : {}),
     },
   });
