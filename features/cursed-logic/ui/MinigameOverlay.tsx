@@ -104,7 +104,7 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
 
   return (
     <div
-      className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-4 bg-[#06040a]/85"
       onClick={result === null ? handlePress : undefined}
       role="button"
       tabIndex={0}
@@ -118,14 +118,14 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
         defaultValue: 'Press when the indicator is in the zone',
       })}
     >
-      <p className="text-cyan-300 text-sm font-mono">
+      <p className="cl-display text-sm text-[#b6ff3c]">
         {t('press-zone-hint', {
           defaultValue: 'Press when in the zone',
         })}
       </p>
-      <div className="w-full max-w-xs h-10 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
+      <div className="w-full max-w-xs h-10 bg-[#0f0a18] border border-[#5d4590] relative overflow-hidden">
         <div
-          className="absolute inset-y-0 rounded bg-cyan-500/40 border border-cyan-400/60"
+          className="absolute inset-y-0 bg-[#b6ff3c]/25 border border-[#b6ff3c]"
           style={{
             left: `${zoneStart * 100}%`,
             width: `${(zoneEnd - zoneStart) * 100}%`,
@@ -133,7 +133,7 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
         />
         {indicatorVisible && (
           <div
-            className="absolute top-1 bottom-1 w-1.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)]"
+            className="absolute top-1 bottom-1 w-1.5 bg-[#a970ff]"
             style={{
               left: `calc(${position * 100}% - 3px)`,
             }}
@@ -141,14 +141,14 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
         )}
       </div>
       {result === 'hit' && (
-        <p className="text-cyan-400 font-mono font-bold">
+        <p className="cl-display text-[#b6ff3c]">
           {t('result-hit', {
             defaultValue: 'Hit!',
           })}
         </p>
       )}
       {result === 'miss' && (
-        <p className="text-amber-400/90 font-mono">
+        <p className="cl-display text-[#ff4f6e]">
           {t('result-miss', {
             defaultValue: 'Miss',
           })}
@@ -282,16 +282,16 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
     // come up highlighted partway through every attempt. (globals.css §Selection)
     <div
       data-gesture=""
-      className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-[#06040a]/85"
     >
-      <p className="text-cyan-300 text-sm font-mono">
+      <p className="cl-display text-sm text-[#b6ff3c]">
         {t('hold-hint', {
           defaultValue: 'Hold — Brace to correct drift',
         })}
       </p>
-      <div className="w-full max-w-xs h-12 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
+      <div className="w-full max-w-xs h-12 bg-[#0f0a18] border border-[#5d4590] relative overflow-hidden">
         <div
-          className="absolute inset-y-0 rounded bg-cyan-500/40 border border-cyan-400/60"
+          className="absolute inset-y-0 bg-[#b6ff3c]/25 border border-[#b6ff3c]"
           style={{
             left: `${zoneStart * 100}%`,
             width: `${(zoneEnd - zoneStart) * 100}%`,
@@ -303,7 +303,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
             transform: `translateX(${position * 100}%)`,
           }}
         >
-          <div className="absolute inset-y-0 -ml-1 w-2 rounded-full bg-amber-400" />
+          <div className="absolute inset-y-0 -ml-1 w-2 bg-[#a970ff]" />
         </div>
       </div>
       <div className="flex gap-3 items-center">
@@ -313,7 +313,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
           onContextMenu={(e) => e.preventDefault()}
-          className="min-h-12 touch-none select-none rounded-xl border-2 border-cyan-500/60 bg-cyan-500/20 px-6 py-3 font-mono font-bold text-cyan-200"
+          className="min-h-12 touch-none select-none border border-[#b6ff3c] bg-[#b6ff3c]/15 px-6 py-3 cl-display text-[#b6ff3c]"
         >
           {holding
             ? t('hold-active', {
@@ -327,7 +327,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           type="button"
           onClick={handleNudge}
           disabled={!holding || failed || nudgesLeft <= 0}
-          className="min-h-12 touch-manipulation rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-3 font-mono text-amber-200 disabled:opacity-40"
+          className="min-h-12 touch-manipulation border border-[#a970ff] bg-[#a970ff]/10 px-4 py-3 cl-display text-[#a970ff] disabled:opacity-40"
         >
           {t('brace-btn', {
             defaultValue: 'Brace ({{count}})',
@@ -335,15 +335,15 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           })}
         </button>
       </div>
-      <p className="text-white/50 text-xs font-mono">
+      <p className="text-[#a9c49a] text-xs">
         {t('nudge-hint', {
           defaultValue: 'Space or Brace to nudge toward center',
         })}
       </p>
       {progress > 0 && progress < 1 && !failed && (
-        <div className="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
+        <div className="w-48 h-1.5 bg-[#241838] overflow-hidden">
           <div
-            className="h-full bg-cyan-500/80 w-full origin-left transition-transform duration-100"
+            className="h-full bg-[#b6ff3c] w-full origin-left transition-transform duration-100"
             style={{
               transform: `scaleX(${(progress * 100) / 100})`,
             }}
@@ -351,7 +351,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
         </div>
       )}
       {failed && progress < 1 && (
-        <p className="text-amber-400/90 font-mono">
+        <p className="cl-display text-[#ff4f6e]">
           {t('hold-failed', {
             defaultValue: 'Lost grip',
           })}
@@ -401,8 +401,8 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
-      <p className="text-cyan-300 text-sm font-mono">
+    <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-[#06040a]/85">
+      <p className="cl-display text-sm text-[#b6ff3c]">
         {!ready
           ? '…'
           : t('choose-quickly', {
@@ -415,7 +415,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
             type="button"
             onClick={() => handleChoice(0)}
             disabled={chosen !== null}
-            className="rounded-xl border-2 border-cyan-500/50 bg-cyan-500/10 px-6 py-4 font-mono text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
+            className="border border-[#b6ff3c] bg-[#0f0a18] px-6 py-4 cl-display text-[#b6ff3c] hover:bg-[#b6ff3c]/15 disabled:opacity-50"
           >
             {t('choice-absorb', {
               defaultValue: 'Absorb',
@@ -425,7 +425,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
             type="button"
             onClick={() => handleChoice(1)}
             disabled={chosen !== null}
-            className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-6 py-4 font-mono text-amber-200 hover:bg-amber-500/20 disabled:opacity-50"
+            className="border border-[#a970ff] bg-[#0f0a18] px-6 py-4 cl-display text-[#a970ff] hover:bg-[#a970ff]/15 disabled:opacity-50"
           >
             {t('choice-deflect', {
               defaultValue: 'Deflect',
@@ -433,9 +433,9 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
           </button>
         </div>
       )}
-      {ready && !chosen && !timedOut && <p className="text-white/40 text-xs font-mono">~0.7s</p>}
+      {ready && !chosen && !timedOut && <p className="text-[#a9c49a] text-xs">~0.7s</p>}
       {chosen !== null && (
-        <p className="text-white/70 font-mono text-sm">
+        <p className="text-[#e8ffd2] text-sm">
           {chosen === betterIndexRef.current
             ? t('rapid-recovered', {
                 defaultValue: 'Recovered',
@@ -446,7 +446,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
         </p>
       )}
       {timedOut && (
-        <p className="text-amber-400/90 font-mono text-sm">
+        <p className="cl-display text-[#ff4f6e] text-sm">
           {t('rapid-too-slow', {
             defaultValue: 'Too slow',
           })}

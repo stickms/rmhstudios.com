@@ -6,7 +6,11 @@ export default defineFeature({
   kind: 'game',
   basePath: '/cursed-logic',
   delivery: 'island',
-  routes: ['app/routes/cursed-logic.tsx'],
+  routes: [
+    'app/routes/cursed-logic.tsx',
+    'features/cursed-logic/api/cursed-logic.score.server.ts',
+    'features/cursed-logic/api/cursed-logic.leaderboard.server.ts',
+  ],
   // The game's strings, the way back to the games library included.
   namespaces: ['c-cursed-logic'],
   catalog: 'features/cursed-logic/catalog.ts',

@@ -1,112 +1,151 @@
-import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { useFocusReturn } from "@/components/shared/useFocusReturn";
+/**
+ * The re-openable reference: the round, the four commands, tells, the twelve stance sigils, the mutations and the
+ * ladder, each a line or two. The training duel is one press away from here.
+ */
+import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useFocusReturn } from '@/components/shared/useFocusReturn';
+import { MODIFIERS, STANCES, TOTAL_DUELS } from '@features/cursed-logic/engine/data';
+import { PLAYER_ACTIONS } from '@features/cursed-logic/engine/types';
+import { ActionGlyph, ModifierGlyph, StanceSigil } from './glyphs';
+import type { Copy } from './copy';
 
-interface HowToPlayModalProps {
+interface Props {
   open: boolean;
   onClose: () => void;
+  onTraining: () => void;
+  copy: Copy;
 }
 
-export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
-  const { t } = useTranslation("c-cursed-logic");
+export function HowToPlayModal({ open, onClose, onTraining, copy }: Props) {
+  const { t } = useTranslation('c-cursed-logic');
   const returnFocus = useFocusReturn(open);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent hideClose onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none">
-       <div className="space-y-4 rounded-xl border border-cyan-500/30 bg-[#0f0f14] p-4 text-white">
-        <div className="flex items-center justify-between">
-          <DialogTitle className="font-mono text-lg font-bold text-cyan-400">{t("how-to-play-title", { defaultValue: "How to Play" })}</DialogTitle>
-          <DialogClose className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white" aria-label={t("close", { defaultValue: "Close" })}>
-            <X className="h-5 w-5" aria-hidden />
-          </DialogClose>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent
+        hideClose
+        onCloseAutoFocus={returnFocus}
+        overlayClassName="bg-[#06040a]/85"
+        data-dialog-shell="bare"
+        className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
+      >
+        <div className="cl-theme cl-window max-h-[85vh] max-h-[85dvh] overflow-y-auto cl-scroll">
+          <div className="cl-window-title sticky top-0 bg-[#120c1d] z-10">
+            <DialogTitle className="cl-display text-[0.8rem]">{t('help-title', { defaultValue: 'MANUAL' })}</DialogTitle>
+            <DialogClose className="ml-auto cl-link !min-h-0 p-1" aria-label={t('close', { defaultValue: 'Close' })}>
+              <X className="h-4 w-4" aria-hidden />
+            </DialogClose>
+          </div>
+          <DialogDescription className="sr-only">{t('help-aria', { defaultValue: 'How to play Cursed Logic' })}</DialogDescription>
+          <div className="p-4 flex flex-col gap-5 text-[0.8rem] leading-snug">
+            <section className="flex flex-col gap-1.5">
+              <h3 className="cl-display cl-acid text-[0.8rem]">{t('help-round', { defaultValue: 'THE ROUND' })}</h3>
+              <p>
+                {t('help-round-body', {
+                  defaultValue:
+                    'Pick one of three stances, then a command. The Protocol has already chosen in secret and shows a tell: its intent, which may be a lie. Both moves flip, then resolve.',
+                })}
+              </p>
+              <p className="cl-muted">
+                {t('help-charge', {
+                  defaultValue:
+                    'Commands cost Charge (+1 each round). Acting without enough is an overdraw: you act and lose 1 Integrity. Reinforce spends one more for a stronger Strike or Block.',
+                })}
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="cl-display cl-acid text-[0.8rem]">{t('help-commands', { defaultValue: 'COMMANDS' })}</h3>
+              <ul className="flex flex-col gap-1.5">
+                {PLAYER_ACTIONS.map((a) => (
+                  <li key={a} className="flex items-center gap-2">
+                    <ActionGlyph action={a} size={20} className="cl-acid shrink-0" />
+                    <span className="cl-display text-[0.75rem] w-20 shrink-0">{copy.actionName(a)}</span>
+                    <span className="cl-muted">{copy.actionRule(a)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="cl-muted">
+                {t('help-triangle', {
+                  defaultValue:
+                    'Strike beats Prepare. Block blunts Strike and leaves the striker Overextended. Prepare beats Block. Probe locks the next tell to the truth.',
+                })}
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="cl-display cl-acid text-[0.8rem]">{t('help-stances', { defaultValue: 'STANCES' })}</h3>
+              <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                {STANCES.map((s) => (
+                  <li key={s} className="flex items-start gap-2">
+                    <StanceSigil stance={s} size={22} className="cl-acid shrink-0" />
+                    <span>
+                      <span className="cl-display text-[0.72rem]">{copy.stanceName(s)}</span>{' '}
+                      <span className="cl-muted text-[0.72rem]">{copy.stanceRule(s)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="cl-display cl-violet text-[0.8rem]">{t('help-mutations', { defaultValue: 'MUTATIONS' })}</h3>
+              <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                {MODIFIERS.map((m) => (
+                  <li key={m} className="flex items-start gap-2">
+                    <span className="cl-violet shrink-0">
+                      <ModifierGlyph modifier={m} size={18} />
+                    </span>
+                    <span>
+                      <span className="cl-display text-[0.72rem]">{copy.modifierName(m)}</span>{' '}
+                      <span className="cl-muted text-[0.72rem]">{copy.modifierRule(m)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="flex flex-col gap-1.5">
+              <h3 className="cl-display cl-violet text-[0.8rem]">{t('help-run', { defaultValue: 'THE RUN' })}</h3>
+              <p>
+                {t('help-run-body', {
+                  defaultValue:
+                    'A run is {{n}} duels across five sectors. Integrity carries from duel to duel (a small patch between). After each of the first four sectors: one free script, then the black market. NULL//ROOT waits at the end.',
+                  n: TOTAL_DUELS,
+                })}
+              </p>
+              <p className="cl-muted">
+                {t('help-score', {
+                  defaultValue:
+                    'Score: each duel won is worth 1,000 x its sector, plus Integrity left, a flawless bonus and speed. Pacts multiply it.',
+                })}
+              </p>
+              <p className="cl-muted">
+                {t('help-keys', {
+                  defaultValue: 'Keys: 1-3 stance · A Strike · S Block · D Prepare · F Probe · R reinforce.',
+                })}
+              </p>
+            </section>
+
+            <button
+              type="button"
+              className="cl-cmd self-start"
+              onClick={() => {
+                onClose();
+                onTraining();
+              }}
+            >
+              {t('help-training', { defaultValue: 'Play the training duel' })}
+            </button>
+          </div>
         </div>
-        <DialogDescription className="sr-only">{t("how-to-play-aria", { defaultValue: "How to play" })}</DialogDescription>
-        <div className="space-y-4 text-sm text-white/90">
-          <p className="text-white/70">
-            {t("intro", { defaultValue: "You duel the" })} <strong className="text-amber-400">{t("protocol-name", { defaultValue: "Protocol" })}</strong> {t("intro-rest", { defaultValue: "in simultaneous turns. Each round: choose a" })} <strong>{t("stance", { defaultValue: "stance" })}</strong>{t("intro-then-modifier", { defaultValue: ", then see the modifier, then" })} <strong>{t("commit", { defaultValue: "commit" })}</strong> {t("intro-commit-rest", { defaultValue: "an action (and optionally reinforce). Protocol and your move are revealed in sequence, then resolved." })}
-          </p>
-
-          <div>
-            <h3 className="font-mono font-bold text-cyan-400 mb-2">{t("round-flow-heading", { defaultValue: "Round flow" })}</h3>
-            <ol className="list-decimal list-inside space-y-1 text-white/80">
-              <li><strong>{t("stance", { defaultValue: "stance" })}</strong> {t("round-flow-stance", { defaultValue: "— Each round you get 3 random stances from a pool (e.g. Strike +1, Block negates chip, Prepare can't fail). Pick one before the modifier." })}</li>
-              <li><strong>{t("modifier-label", { defaultValue: "Modifier" })}</strong> {t("round-flow-modifier", { defaultValue: "— Rolled after stance; applies this round only." })}</li>
-              <li><strong>{t("action-label", { defaultValue: "Action" })}</strong> {t("round-flow-action-prefix", { defaultValue: "— Pick an action. Optionally" })} <strong>{t("reinforce", { defaultValue: "Reinforce" })}</strong> {t("round-flow-action-suffix", { defaultValue: "(+1 Charge) to boost that action's effect if you have 2+ Charge." })}</li>
-              <li><strong>{t("reveal-label", { defaultValue: "Reveal" })}</strong> {t("round-flow-reveal", { defaultValue: "— Protocol's move, then yours, then resolution." })}</li>
-            </ol>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-cyan-400 mb-2">{t("resources-heading", { defaultValue: "Resources" })}</h3>
-            <ul className="list-disc list-inside space-y-1 text-white/80">
-              <li><strong>{t("charge", { defaultValue: "Charge" })}</strong> {t("resources-charge", { defaultValue: "— You spend" })} <strong>{t("one", { defaultValue: "1" })}</strong> {t("resources-charge-act", { defaultValue: "to act (or" })} <strong>{t("two", { defaultValue: "2" })}</strong> {t("resources-charge-reinforce", { defaultValue: "to act + reinforce). Cap 5. +1 at the start of each round (unless a modifier says otherwise)." })}</li>
-              <li><strong>{t("integrity", { defaultValue: "Integrity" })}</strong> {t("resources-integrity", { defaultValue: "— Your health. If it hits 0, you lose." })}</li>
-              <li><strong>{t("protocol-health", { defaultValue: "Protocol health" })}</strong> {t("resources-protocol-health", { defaultValue: "— Reduce it to 0 with Strikes to win." })}</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-cyan-400 mb-2">{t("actions-heading", { defaultValue: "Actions" })}</h3>
-            <ul className="space-y-2 text-white/80">
-              <li><strong className="text-cyan-300">{t("action-strike", { defaultValue: "Strike" })}</strong> {t("action-strike-desc", { defaultValue: "— Deal damage (1 base, 2 if you had Prepare). If they Block, they still take 1 chip damage." })}</li>
-              <li><strong className="text-cyan-300">{t("action-block", { defaultValue: "Block" })}</strong> {t("action-block-desc", { defaultValue: "— Reduce incoming Strike to 1 chip damage (instead of full). Block is a resource, not a perfect counter." })}</li>
-              <li><strong className="text-cyan-300">{t("action-prepare", { defaultValue: "Prepare" })}</strong> {t("action-prepare-desc-prefix", { defaultValue: "— Do nothing this round; next round your action is enhanced." })} <strong>{t("action-prepare-fails", { defaultValue: "Fails if the Protocol Strikes" })}</strong>{t("action-prepare-desc-suffix", { defaultValue: ": you take full damage and get no buff. A read on the opponent." })}</li>
-              <li><strong className="text-cyan-300">{t("action-probe", { defaultValue: "Probe" })}</strong> {t("action-probe-desc-prefix", { defaultValue: "— Reveal the Protocol's intent for" })} <strong>{t("next-round", { defaultValue: "next round" })}</strong> {t("action-probe-desc-suffix", { defaultValue: "(not this one). Lets you plan ahead while keeping bluffing alive this round." })}</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-amber-400 mb-2">{t("overdraw-heading", { defaultValue: "Overdraw" })}</h3>
-            <p className="text-white/80">
-              {t("overdraw-desc", { defaultValue: "If you have 0 Charge and still choose an action, you overdraw: you take 1 extra damage (penalty) that round." })}
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-amber-400 mb-2">{t("protocol-mode-heading", { defaultValue: "Protocol mode" })}</h3>
-            <p className="text-white/80">
-              {t("protocol-mode-desc-prefix", { defaultValue: "The Protocol has a visible" })} <strong>{t("mode", { defaultValue: "mode" })}</strong> {t("protocol-mode-desc-middle", { defaultValue: "that shifts each round:" })} <strong>{t("pressuring", { defaultValue: "Pressuring" })}</strong> {t("mode-pressuring-desc", { defaultValue: "(after it Strikes)," })} <strong>{t("defensive", { defaultValue: "Defensive" })}</strong> {t("mode-defensive-desc", { defaultValue: "(after it Blocks)," })} <strong>{t("recovering", { defaultValue: "Recovering" })}</strong> {t("protocol-mode-desc-suffix", { defaultValue: "(otherwise). Modes nudge its tendencies, not rules—use them to read it." })}
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-amber-400 mb-2">{t("conditions-heading", { defaultValue: "One-round conditions" })}</h3>
-            <p className="text-white/80 mb-1">
-              {t("conditions-desc", { defaultValue: "After certain clashes, you or the Protocol get a" })} <strong>{t("condition", { defaultValue: "condition" })}</strong> {t("conditions-desc-suffix", { defaultValue: "for the next round only:" })}
-            </p>
-            <ul className="list-disc list-inside space-y-0.5 text-white/80">
-              <li><strong>{t("overextended", { defaultValue: "Overextended" })}</strong> {t("overextended-desc", { defaultValue: "(you) — You Struck into its Block; you take extra chip when you Block next." })}</li>
-              <li><strong>{t("exposed", { defaultValue: "Exposed" })}</strong> {t("exposed-desc", { defaultValue: "(you) — You Prepared into its Strike; you take +1 damage when hit next round." })}</li>
-              <li><strong>{t("shaken", { defaultValue: "Shaken" })}</strong> {t("shaken-desc", { defaultValue: "(Protocol) — It Struck into your Block; it takes extra chip when it Blocks next." })}</li>
-              <li><strong>{t("locked-in", { defaultValue: "Locked In" })}</strong> {t("locked-in-desc", { defaultValue: "(Protocol) — It Prepared into your Strike; it takes +1 when you hit it next round." })}</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-amber-400 mb-2">{t("modifiers-heading", { defaultValue: "Modifiers" })}</h3>
-            <p className="text-white/80 mb-2">
-              {t("modifiers-desc", { defaultValue: "Each round there's a chance a random modifier applies for that round only:" })}
-            </p>
-            <ul className="list-disc list-inside space-y-0.5 text-white/80">
-              <li><strong>{t("mod-double-strike", { defaultValue: "Double Strike" })}</strong> {t("mod-double-strike-desc", { defaultValue: "— Strikes deal 2." })}</li>
-              <li><strong>{t("mod-no-block", { defaultValue: "No Block" })}</strong> {t("mod-no-block-desc", { defaultValue: "— Block doesn't work." })}</li>
-              <li><strong>{t("mod-chaos", { defaultValue: "Chaos" })}</strong> {t("mod-chaos-desc", { defaultValue: "— One side's action (yours or the Protocol's) is replaced at random." })}</li>
-              <li><strong>{t("mod-charge-drain", { defaultValue: "Charge Drain" })}</strong> {t("mod-charge-drain-desc", { defaultValue: "— You gain 0 Charge this round." })}</li>
-              <li><strong>{t("mod-reveal", { defaultValue: "Reveal" })}</strong> {t("mod-reveal-desc", { defaultValue: "— You see the Protocol's intent before you choose." })}</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-mono font-bold text-cyan-400 mb-2">{t("win-lose-heading", { defaultValue: "Win / Lose" })}</h3>
-            <p className="text-white/80">
-              <strong>{t("win", { defaultValue: "Win" })}</strong> {t("win-desc", { defaultValue: "— Protocol health reaches 0." })}<br />
-              <strong>{t("lose", { defaultValue: "Lose" })}</strong> {t("lose-desc", { defaultValue: "— Your Integrity reaches 0." })}
-            </p>
-          </div>
-        </div>
-       </div>
       </DialogContent>
     </Dialog>
   );

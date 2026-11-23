@@ -430,13 +430,15 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   'cursed-logic': {
     genre: ['strategy', 'card'],
     players: ['single'],
+    // Turn-based with tap targets of 44 px+; the clash minigames take a tap or a hold, and can be turned off.
     input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
-    sessionMinutes: [5, 20],
+    sessionMinutes: [8, 25],
     engine: 'dom',
     demanding: false,
-    // The shop's fragments and unlocks live in localStorage (zustand persist).
+    // An unfinished run and the tutorial flag live in localStorage; scores go to the board through the score route.
     save: 'local-only',
-    accessibility: [],
+    // Turn-based throughout; the only timed inputs are the clash minigames, which the menu turns off.
+    accessibility: ['no-timed-input'],
   },
 };
 

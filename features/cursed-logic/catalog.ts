@@ -1,35 +1,35 @@
 import type { GameInfo } from '@/lib/catalog/types';
 
-// Stub written by the Vault migration (docs/superpowers/plans/2026-11-23-vault-games-migration.md, Task 2):
-// the art is the game's old card and the ceilings are generous placeholders. The game has no score endpoint
-// yet (the generic one in lib/game answers for the declared rules); its own build replaces the copy, the art
-// (card, banner, logo) and the ceilings.
+/**
+ * Cursed Logic's card. Art: scripts/game-art/cursed-logic.mjs (card, banner, logo, icon). Scoring: the ceiling is
+ * `MAX_RUN_SCORE` in features/cursed-logic/engine/score.ts (every duel flawless at the Integrity ceiling in one
+ * round, all four pacts: 138,364) rounded up; progress is duels won, nine at most. The score route also checks a
+ * run's score against the duels and pacts it claims (`claimProblem`).
+ */
 const entry: GameInfo = {
   id: 'cursed-logic',
   order: 133,
   title: 'Cursed Logic',
-  description: 'A turn-based duel against a rogue Protocol. Read it, bluff it, outlast it.',
+  description: 'A mind-game duel against rogue Protocols that lie. Read their tells, climb nine duels, reach the root.',
   longDescription:
-    'The Protocol has gone unstable, and the only way to shut it down is to out-think it. Each round you pick a stance and an action while it picks its own in secret: strike, block, prepare or probe. Spend fragments in the shop between runs, survive the minigames it throws at you, and learn what its next move is before it lands.',
+    'Something has got into the terminal. Seven rogue Protocols stand between you and NULL//ROOT, each with its own habits: the Warden blocks, the Mimic copies you, the Liar’s tells point the wrong way, the Oracle counters whatever you do most. Each round you pick one of three stances and a command (Strike, Block, Prepare or Probe) while the Protocol commits in secret and shows a tell that may be a bluff. A run is nine duels across five sectors with your Integrity carried between them, a free script and a black market after each sector, round mutations, clash minigames and optional Pacts that raise your score. Starts with a short training duel.',
   href: '/cursed-logic',
   status: 'Playable',
   cta: 'Duel the Protocol',
   isSteam: false,
-  gradient: 'from-cyan-400 to-amber-500',
+  gradient: 'from-lime-400 to-violet-500',
   iconName: 'Swords',
-  color: 'from-cyan-400/20 to-amber-500/20 hover:border-cyan-400/50',
-  tags: ['Strategy', 'Duel', 'Mind Games'],
-  imagePath: '/images/games/cursed_logic.webp',
-  // Placeholders: lib/__tests__/catalog.test.ts requires a banner and a logo for every listed entry. The game's
-  // own build draws real ones (1920x620 banner, transparent wordmark).
-  bannerPath: '/images/games/cursed_logic.webp',
-  logoPath: '/images/games/cursed_logic.webp',
+  color: 'from-lime-400/20 to-violet-500/20 hover:border-lime-400/50',
+  tags: ['Strategy', 'Duel', 'Roguelite', 'Mind Games'],
+  imagePath: '/images/games/cursed-logic.webp',
+  bannerPath: '/images/games/banners/cursed-logic.webp',
+  logoPath: '/images/games/logos/cursed-logic.webp',
   authGate: true,
   scoring: {
-    maxScore: 1_000_000,
+    maxScore: 150_000,
     direction: 'higher-is-better',
     progressLabel: 'Duels',
-    maxProgress: 200,
+    maxProgress: 9,
   },
 };
 
