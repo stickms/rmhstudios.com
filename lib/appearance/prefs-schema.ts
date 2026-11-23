@@ -10,6 +10,16 @@
  */
 import { z } from 'zod';
 import { DENSITIES, COLOR_VISION_MODES, JELLY_MOTION_LEVELS } from '@/lib/appearance/prefs';
+import { isFontFor, type FontSlot } from '@/lib/appearance/fonts';
+
+/** A font id valid for `slot` (lib/appearance/fonts.ts); stored as given, defaults and `same` included. */
+const fontFor = (slot: FontSlot) =>
+  z
+    .string()
+    .max(32)
+    .refine((v) => isFontFor(slot, v), { message: `Unknown ${slot} font` })
+    .nullable()
+    .optional();
 
 export const appearanceComfortSchema = z.object({
   fontScale: z
@@ -20,6 +30,9 @@ export const appearanceComfortSchema = z.object({
   readableFont: z.boolean().optional(),
   colorVision: z.enum(COLOR_VISION_MODES).nullable().optional(),
   jellyMotion: z.enum(JELLY_MOTION_LEVELS).nullable().optional(),
+  fontMain: fontFor('main'),
+  fontReading: fontFor('reading'),
+  fontMono: fontFor('mono'),
 });
 
 export type AppearanceComfortInput = z.infer<typeof appearanceComfortSchema>;
