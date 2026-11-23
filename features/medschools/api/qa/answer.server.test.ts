@@ -49,13 +49,13 @@ const retrieval = (facts: RetrievedFact[] = [F1, F2], over: Record<string, unkno
 function fakeRunner(routeOut: unknown, answerOut: unknown) {
   const calls: { route: string[][]; answer: string[][] } = { route: [], answer: [] };
   const runner: QaRunner = {
-    route: vi.fn(async (...a: string[]) => {
-      calls.route.push(a);
+    route: vi.fn(async (...a: unknown[]) => {
+      calls.route.push(a as string[]);
       if (routeOut instanceof Error) throw routeOut;
       return routeOut;
     }),
-    answer: vi.fn(async (...a: string[]) => {
-      calls.answer.push(a);
+    answer: vi.fn(async (...a: unknown[]) => {
+      calls.answer.push(a as string[]);
       if (answerOut instanceof Error) throw answerOut;
       return answerOut;
     }),

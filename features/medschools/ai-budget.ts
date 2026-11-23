@@ -17,6 +17,13 @@ export const QA_TASK = 'medschools-qa';
 export const QA_ASK_PROMPT_ID = 'medschools-qa-ask';
 /** `AiUsage.promptId` of the in-flight lease: written with the reservation, deleted when the question ends. */
 export const QA_LOCK_PROMPT_ID = 'medschools-qa-lock';
+/**
+ * `AiUsage.promptId` of an admin's in-flight lease (R19): an admin has no daily cap and no one-at-a-time rule, but at
+ * most `QA_ADMIN_MAX_IN_FLIGHT` of these per admin exist at once, so parallel questions cannot all pass the shared
+ * monthly pause before any spend is metered. Written under a lock keyed on the admin; deleted when the question ends.
+ */
+export const QA_ADMIN_LOCK_PROMPT_ID = 'medschools-qa-admin-lock';
+export const QA_ADMIN_MAX_IN_FLIGHT = 3;
 /** The lease outlives the deadline, so a crashed process frees the member after a minute. */
 export const QA_LEASE_MS = 60_000;
 /** The whole question (route call, retrieval, answer call) ends by this; it is under the client's `AI_TIMEOUT_MS` (60 s). */

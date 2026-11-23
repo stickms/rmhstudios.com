@@ -233,7 +233,7 @@ describe('admitQuestion', () => {
       if (!m.order.includes('shared')) m.order.push('shared');
       return { _sum: { costMicros: 0 } };
     });
-    m.aiUsage.create.mockImplementationOnce(async (a: never) => {
+    m.aiUsage.create.mockImplementationOnce(async (a) => {
       m.order.push('reserve');
       const row = { ...(a as { data: object }).data, id: 99n, createdAt: new Date(m.clock.now) };
       return row as never;
@@ -296,7 +296,7 @@ describe('limit tiers and the admin bypass (R19)', () => {
     expect(await code(reserveQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_DAILY_CAP');
     await expect(reserveQuestion('u2', NOW)).resolves.toBeDefined();
   });
-  it('lets an admin past the daily cap, the lease and the member allowance, with no ledger rows and null counts', async () => {
+  it('lets an admin past the daily cap, the one-at-a-time lease and the member allowance, with null counts', async () => {
     process.env.MEDSCHOOLS_QA_DAILY_CAP = '0';
     const admin = { isAdmin: true };
     const first = await admitQuestion('a1', NOW, admin);
@@ -304,11 +304,28 @@ describe('limit tiers and the admin bypass (R19)', () => {
     expect(first).toMatchObject({ tier: 'admin', remainingToday: null, dailyCap: null });
     expect(second.tier).toBe('admin');
     expect(m.assertAiBudget).not.toHaveBeenCalled();
-    expect(m.ledger).toHaveLength(0);
-    expect(m.prisma.$transaction).not.toHaveBeenCalled();
+    // Only leases: no reservation row, so no daily count.
+    expect(m.ledger.map((r) => r.promptId)).toEqual(['medschools-qa-admin-lock', 'medschools-qa-admin-lock']);
     await expect(first.release()).resolves.toBeUndefined();
+    m.aiUsage.count.mockClear();
     expect(await dailyStatus('a1', NOW, admin)).toEqual({ tier: 'admin', remainingToday: null, dailyCap: null });
     expect(m.aiUsage.count).not.toHaveBeenCalled();
+  });
+  it('caps an admin at three questions in flight, even asked in parallel, and frees a place on release', async () => {
+    const admin = { isAdmin: true };
+    const results = await Promise.allSettled(Array.from({ length: 6 }, () => reserveQuestion('a1', NOW, admin)));
+    const ok = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof reserveQuestion>>> => r.status === 'fulfilled');
+    expect(ok).toHaveLength(3);
+    for (const r of results.filter((x) => x.status === 'rejected')) {
+      expect((r as PromiseRejectedResult).reason.code).toBe('MEDSCHOOLS_QA_BUSY');
+    }
+    // Another admin has their own ceiling.
+    await expect(reserveQuestion('a2', NOW, admin)).resolves.toBeDefined();
+    await ok[0]!.value.release();
+    await expect(reserveQuestion('a1', NOW, admin)).resolves.toBeDefined();
+    expect(await code(reserveQuestion('a1', NOW, admin))).toBe('MEDSCHOOLS_QA_BUSY');
+    // A lease older than QA_LEASE_MS no longer counts (a crashed process frees its place).
+    expect(await code(reserveQuestion('a1', new Date(NOW.getTime() + 61_000), admin))).not.toBe('MEDSCHOOLS_QA_BUSY');
   });
   it('still stops an admin at the shared monthly pause', async () => {
     spend(5_000_000);

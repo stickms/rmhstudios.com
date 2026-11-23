@@ -37,11 +37,11 @@ describe('Q&A privacy pins (R12)', () => {
     const src = code('features/medschools/api/qa/budget.server.ts');
     // Every create takes `ledgerRow(userId, <constant prompt id>)`: user, task, 'none', 'reservation', zeros.
     const creates = src.match(/\.create\(\{[^}]*\}/g) ?? [];
-    expect(creates).toHaveLength(2);
-    for (const c of creates) expect(c).toMatch(/data: ledgerRow\(userId, QA_(ASK|LOCK)_PROMPT_ID\)/);
+    expect(creates).toHaveLength(3);
+    for (const c of creates) expect(c).toMatch(/data: ledgerRow\(userId, QA_(ASK|LOCK|ADMIN_LOCK)_PROMPT_ID\)/);
     expect(src.match(/\.(update|updateMany|upsert|createMany)\(/g)).toBeNull();
-    expect(src.match(/\.deleteMany\(\{ where: \{ id: leaseId \} \}\)/g)).toHaveLength(1);
-    expect(src.match(/\.deleteMany\(/g)).toHaveLength(1);
+    expect(src.match(/\.deleteMany\(\{ where: \{ id(: leaseId)? \} \}\)/g)).toHaveLength(2);
+    expect(src.match(/\.deleteMany\(/g)).toHaveLength(2); // the member lease and the admin lease
     const row = /const ledgerRow = [\s\S]*?\}\);/.exec(src)![0];
     expect(row).not.toMatch(/question|text|answer|body/i);
     expect(src).not.toMatch(/\$queryRawUnsafe/);

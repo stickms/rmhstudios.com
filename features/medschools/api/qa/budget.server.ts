@@ -9,6 +9,8 @@ import { getUserTier } from '@/lib/entitlements';
 import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
 import {
+  QA_ADMIN_LOCK_PROMPT_ID,
+  QA_ADMIN_MAX_IN_FLIGHT,
   QA_ASK_PROMPT_ID,
   QA_LEASE_MS,
   QA_LOCK_PROMPT_ID,
@@ -124,6 +126,47 @@ const ledgerRow = (userId: string, promptId: string) => ({
 });
 
 /**
+ * An admin's place in the queue: at most `QA_ADMIN_MAX_IN_FLIGHT` questions at once, counted across processes under an
+ * advisory lock keyed on the admin (429 `MEDSCHOOLS_QA_BUSY` over it). No reservation row, so no daily count; the
+ * lease row is zero-token, zero-cost and deleted when the question ends (or runs out after `QA_LEASE_MS`).
+ */
+async function reserveAdmin(userId: string, now: Date, tier: QaTier): Promise<Reservation> {
+  let leaseId: bigint | null;
+  try {
+    leaseId = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`med-qa-admin:${userId}`}, 0))`;
+      const inFlight = await tx.aiUsage.count({
+        where: {
+          userId,
+          task: QA_TASK,
+          promptId: QA_ADMIN_LOCK_PROMPT_ID,
+          createdAt: { gte: new Date(now.getTime() - QA_LEASE_MS) },
+        },
+      });
+      if (inFlight >= QA_ADMIN_MAX_IN_FLIGHT) return null;
+      const lease = await tx.aiUsage.create({ data: ledgerRow(userId, QA_ADMIN_LOCK_PROMPT_ID), select: { id: true } });
+      return lease.id;
+    });
+  } catch {
+    throw paused('unavailable');
+  }
+  if (leaseId === null) throw new AppError('MEDSCHOOLS_QA_BUSY');
+  const id = leaseId;
+  return {
+    tier,
+    remainingToday: null,
+    dailyCap: null,
+    async release() {
+      try {
+        await prisma.aiUsage.deleteMany({ where: { id } });
+      } catch {
+        console.error('[medschools-qa] could not end the admin lease; it expires by itself');
+      }
+    },
+  };
+}
+
+/**
  * Takes the member's place in the day and in the queue of one, atomically and across every process: inside one
  * transaction holding `pg_advisory_xact_lock` on the member (the transaction-scoped form, which the pooler allows) it
  * refuses when a lease younger than `QA_LEASE_MS` exists (429 `MEDSCHOOLS_QA_BUSY`), refuses when the day's reservations
@@ -138,8 +181,8 @@ export async function reserveQuestion(
 ): Promise<Reservation> {
   const tier = await resolveQaTier(userId, caller);
   const dailyCap = capForTier(tier);
-  // An admin skips the daily cap and the in-flight lease (R19): nothing to reserve, nothing to release.
-  if (dailyCap === null) return { tier, remainingToday: null, dailyCap: null, release: async () => undefined };
+  // An admin skips the daily cap and the one-at-a-time lease (R19), but not the concurrency ceiling.
+  if (dailyCap === null) return reserveAdmin(userId, now, tier);
   type Outcome = { kind: 'busy' } | { kind: 'cap' } | { kind: 'ok'; used: number; leaseId: bigint };
   let out: Outcome;
   try {
