@@ -75,11 +75,12 @@ import {
 const NOW = new Date('2026-11-23T15:30:00Z');
 const ENV = ['MEDSCHOOLS_QA_DAILY_CAP', 'MEDSCHOOLS_QA_DAILY_CAP_APPROVED', 'MEDSCHOOLS_QA_DAILY_CAP_MEMBER', 'MEDSCHOOLS_AI_MONTHLY_USD', 'MEDSCHOOLS_QA_AI_SHARE'] as const;
 
-/** Month-to-date spend in micro-dollars: Q&A alone, and Q&A plus extraction. */
+/** Month-to-date spend in micro-dollars: Q&A (with the import), and that plus extraction. */
 function spend(qa: number | null, both: number | null = qa) {
   m.aiUsage.aggregate.mockImplementation(async (...a: unknown[]) => {
-    const where = (a[0] as { where: { task: unknown } }).where;
-    return { _sum: { costMicros: where.task === 'medschools-qa' ? qa : both } };
+    const where = (a[0] as { where: { task: { in: string[] } } }).where;
+    // Q&A's own total is Q&A plus the import (they share one slice); the whole is those two and the extraction.
+    return { _sum: { costMicros: where.task.in.includes('medschools-extract') ? both : qa } };
   });
 }
 const code = async (p: Promise<unknown>) => ((await p.catch((e: unknown) => e)) as AppError).code;

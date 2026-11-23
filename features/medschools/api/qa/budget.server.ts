@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma.server';
 import {
   QA_ADMIN_LOCK_PROMPT_ID,
   QA_ADMIN_MAX_IN_FLIGHT,
+  IMPORT_TASK,
   QA_ASK_PROMPT_ID,
   QA_LEASE_MS,
   QA_LOCK_PROMPT_ID,
@@ -226,7 +227,7 @@ export async function reserveQuestion(
 }
 
 /**
- * Q&A may spend while its own UTC-month total is under `cap * share`, and the two sides together stay under `cap`.
+ * Q&A (and the tracker import, which shares its share) may spend while its own UTC-month total is under `cap * share`, and the two sides together stay under `cap`.
  * Spent at the limit is closed (`spent < limit`, as the scrape gates do). A ledger error is `unavailable`, not "over".
  */
 export async function assertSharedBudget(now: Date = new Date()): Promise<void> {
@@ -237,9 +238,9 @@ export async function assertSharedBudget(now: Date = new Date()): Promise<void> 
   let allSpent: number;
   try {
     const [qa, both] = await Promise.all([
-      prisma.aiUsage.aggregate({ where: { task: QA_TASK, createdAt: since }, _sum: { costMicros: true } }),
+      prisma.aiUsage.aggregate({ where: { task: { in: [QA_TASK, IMPORT_TASK] }, createdAt: since }, _sum: { costMicros: true } }),
       prisma.aiUsage.aggregate({
-        where: { task: { in: [QA_TASK, EXTRACT_TASK] }, createdAt: since },
+        where: { task: { in: [QA_TASK, IMPORT_TASK, EXTRACT_TASK] }, createdAt: since },
         _sum: { costMicros: true },
       }),
     ]);

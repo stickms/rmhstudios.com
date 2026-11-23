@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
+import type { importSaveBody, importTextBody } from './api/import-schemas';
 import type { askBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
@@ -464,6 +465,76 @@ export const getMedChancesApi = endpoint<{
   query: { school?: string | undefined; cycle?: number | undefined };
   res: MedChancesRes;
 }>()({ method: 'GET', path: '/api/medschools/me/chances' });
+
+/* ------------------------- tracker import (me/tracker/import) ------------------------- */
+/* A member's file or pasted text, read by the model into tracker dates; the preview is returned, nothing is stored. */
+
+export interface MedImportMilestoneDto {
+  type: MilestoneType;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  /** The file did not write the year; the cycle rules chose it. */
+  yearInferred: boolean;
+  /** A numeric date that reads as two different days (03/04). */
+  ambiguous: boolean;
+  /** The cell or phrase the date came from, cut to 40 characters. */
+  from: string;
+}
+
+export interface MedImportRowDto {
+  /** Stable within this preview: the matched slug or the folded name, and the program. */
+  key: string;
+  /** The school's name as the file wrote it. */
+  schoolName: string;
+  /** The directory school it matched, or null: "couldn't match" and the member picks. */
+  school: { slug: string; name: string; shortName: string; degree: MedDegreeId; state: string } | null;
+  program: 'REG' | 'PHD';
+  milestones: MedImportMilestoneDto[];
+}
+
+export interface MedImportPreviewRes {
+  cycleYear: number;
+  /** How the cycle was chosen: the file's dated milestones, the model's hint, or the current cycle. */
+  cycleFrom: 'dates' | 'hint' | 'default';
+  /** Rows or text were cut to fit the limits. */
+  truncated: boolean;
+  /** Dates dropped because they were not in the file, not real, or outside the cycle. */
+  dropped: number;
+  rows: MedImportRowDto[];
+  tier: 'free' | 'approved' | 'member' | 'admin';
+  remainingToday: number | null;
+  dailyCap: number | null;
+}
+
+export interface MedImportSaveRes {
+  cycleYear: number;
+  schoolsAdded: number;
+  added: number;
+  overwritten: number;
+  /** Already the same date on the tracker. */
+  unchanged: number;
+  /** A different date was on the tracker and the row was not ticked to replace it. */
+  conflicts: number;
+  /** Not written: a date outside the cycle, or a school that is not on the list. */
+  invalid: number;
+}
+
+/** Multipart `file` (a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` up to 2 MB). Pasted text uses `parseMedImportTextApi`. */
+export const parseMedImportFileApi = endpoint<{ body: FormData; res: MedImportPreviewRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/tracker/import/parse',
+});
+
+/** The same endpoint with a JSON body: pasted text. */
+export const parseMedImportTextApi = endpoint<{ body: z.infer<typeof importTextBody>; res: MedImportPreviewRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/tracker/import/parse',
+});
+
+export const saveMedImportApi = endpoint<{ body: z.infer<typeof importSaveBody>; res: MedImportSaveRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/tracker/import/save',
+});
 
 /* ------------------------- AI Q&A (phase 6, me/ask) ------------------------- */
 

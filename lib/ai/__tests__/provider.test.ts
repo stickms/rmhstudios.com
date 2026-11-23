@@ -48,6 +48,7 @@ const ALL_TASKS = [
   'moderate',
   'medschools-extract',
   'medschools-qa',
+  'medschools-import',
   'concierge',
   'narrative',
   'document',
@@ -105,6 +106,16 @@ describe('AI_ROUTES', () => {
     expect(route.maxTokens).toBeLessThanOrEqual(1_200);
     // A second attempt doubles the spend of a question the member can simply retry.
     expect(route.fallback).toBeUndefined();
+  });
+});
+
+describe('medschools-import route', () => {
+  it('is a deterministic, single-attempt classifier route', () => {
+    const route = AI_ROUTES['medschools-import'];
+    expect(route.provider).toBe('deepseek');
+    expect(route.temperature).toBe(0);
+    expect(route.fallback).toBeUndefined();
+    expect(route.maxTokens).toBeLessThanOrEqual(8_000);
   });
 });
 

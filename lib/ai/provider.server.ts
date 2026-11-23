@@ -65,6 +65,8 @@ export type AiTask =
   | 'medschools-extract'
   /** Interactive RMH Med Schools Q&A: short, grounded, a member is waiting. */
   | 'medschools-qa'
+  /** RMH Med Schools tracker import: one structured read of a member's file, a member is waiting. */
+  | 'medschools-import'
   /** Conversational, may carry a tool contract. */
   | 'concierge'
   /** Long-form generation (recaps, narrative Wrapped). */
@@ -132,6 +134,14 @@ const ROUTES: Record<AiTask, Route> = {
     model: DEEPSEEK_CHAT,
     maxTokens: 900,
     temperature: 0.2,
+  },
+  // Interactive, one call, no fallback and no retry (the member can run it again). A classifier over the member's own
+  // file: temperature 0. Sized for ~40 schools x ~4 dates as compact JSON; under the client's 60 s timeout at flash speed.
+  'medschools-import': {
+    provider: 'deepseek',
+    model: DEEPSEEK_CHAT,
+    maxTokens: 6_000,
+    temperature: 0,
   },
   concierge: {
     provider: 'deepseek',

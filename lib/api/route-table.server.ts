@@ -604,6 +604,8 @@ import { route as r_features_medschools_api_medschools_me_tracker_applications }
 import { route as r_features_medschools_api_medschools_me_tracker_applications_id } from '@/features/medschools/api/medschools.me.tracker.applications.$id.server';
 import { route as r_features_medschools_api_medschools_me_tracker_applications_id_milestones_type } from '@/features/medschools/api/medschools.me.tracker.applications.$id.milestones.$type.server';
 import { route as r_features_medschools_api_medschools_me_tracker_cycle } from '@/features/medschools/api/medschools.me.tracker.cycle.server';
+import { route as r_features_medschools_api_medschools_me_tracker_import_parse } from '@/features/medschools/api/medschools.me.tracker.import.parse.server';
+import { route as r_features_medschools_api_medschools_me_tracker_import_save } from '@/features/medschools/api/medschools.me.tracker.import.save.server';
 import { route as r_features_medschools_api_medschools_schools } from '@/features/medschools/api/medschools.schools.server';
 import { route as r_features_medschools_api_medschools_schools_slug } from '@/features/medschools/api/medschools.schools.$slug.server';
 import { route as r_features_medschools_api_medschools_schools_slug_activity } from '@/features/medschools/api/medschools.schools.$slug.activity.server';
@@ -1802,6 +1804,8 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_me_tracker_applications_id, // /api/medschools/me/tracker/applications/$id
   r_features_medschools_api_medschools_me_tracker_applications_id_milestones_type, // /api/medschools/me/tracker/applications/$id/milestones/$type
   r_features_medschools_api_medschools_me_tracker_cycle, // /api/medschools/me/tracker/cycle
+  r_features_medschools_api_medschools_me_tracker_import_parse, // /api/medschools/me/tracker/import/parse
+  r_features_medschools_api_medschools_me_tracker_import_save, // /api/medschools/me/tracker/import/save
   r_features_medschools_api_medschools_schools, // /api/medschools/schools
   r_features_medschools_api_medschools_schools_slug, // /api/medschools/schools/$slug
   r_features_medschools_api_medschools_schools_slug_activity, // /api/medschools/schools/$slug/activity
