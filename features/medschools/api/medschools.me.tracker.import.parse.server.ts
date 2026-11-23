@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma.server';
 import { parseMedImportFileApi } from '@features/medschools/medschools.contract';
 import { IMPORT_LIMITS } from '../engine/import';
 import { importTextBody } from './import-schemas';
+import { readBodyCapped, formFromBytes } from './import/body.server';
 import { parseImport, type ImportInput } from './import/parse.server';
 
 /**
@@ -13,7 +14,7 @@ import { parseImport, type ImportInput } from './import/parse.server';
  * read into a PREVIEW of tracker dates. Signed in, never cached, and nothing is written: no tracker row, no file, no
  * text, no name. Same ceilings as the Q&A, in the Q&A's order, before any model call: the `ai` rate class (6 a minute,
  * an admin exempt), `isAiConfigured`, the shared monthly pause, the member's own allowance, then one of the day's
- * questions and the in-flight lease (`parseImport`). The body's size is checked before it is buffered.
+ * questions and the in-flight lease (`parseImport`). The body is read as a stream with a byte cap (so a chunked request is bounded too), then parsed.
  */
 const IMPORT_PARSE_LIMIT = {
   policy: 'ai',
@@ -43,25 +44,31 @@ export const route = apiRoute('/api/medschools/me/tracker/import/parse', {
       if (!isAiConfigured()) return Response.json({ ...refusalBody('AI_UNAVAILABLE') }, { status: 503 });
 
       const type = (request.headers.get('content-type') ?? '').toLowerCase();
-      const declared = Number(request.headers.get('content-length') ?? 0);
       const json = type.startsWith('application/json');
+      const multipart = type.startsWith('multipart/form-data');
+      if (!json && !multipart) throw new AppError('MEDSCHOOLS_IMPORT_UNSUPPORTED');
       const ceiling = json ? IMPORT_LIMITS.pasteChars * 4 + 1024 : IMPORT_LIMITS.fileBytes + FORM_SLACK_BYTES;
-      // Before `formData()` or `json()` buffers the whole body.
-      if (Number.isFinite(declared) && declared > ceiling) throw new AppError('MEDSCHOOLS_IMPORT_TOO_LARGE');
+      // The stream is counted as it arrives and cut at the ceiling: a chunked request has no Content-Length, and
+      // `formData()` / `json()` would buffer all of it first.
+      const bytes = await readBodyCapped(request, ceiling);
 
       let input: ImportInput;
       if (json) {
-        const parsed = importTextBody.safeParse(await request.json().catch(() => null));
+        let value: unknown = null;
+        try {
+          value = JSON.parse(bytes.toString('utf8'));
+        } catch {
+          value = null;
+        }
+        const parsed = importTextBody.safeParse(value);
         if (!parsed.success) return badInput();
         input = { kind: 'paste', text: parsed.data.text };
-      } else if (type.startsWith('multipart/form-data')) {
-        const form = await request.formData().catch(() => null);
+      } else {
+        const form = await formFromBytes(bytes, request.headers.get('content-type') ?? '');
         const file = form?.get('file');
         if (!(file instanceof File)) return badInput();
         if (file.size > IMPORT_LIMITS.fileBytes) throw new AppError('MEDSCHOOLS_IMPORT_TOO_LARGE');
         input = { kind: 'file', buffer: Buffer.from(await file.arrayBuffer()), mimeType: file.type, filename: file.name };
-      } else {
-        throw new AppError('MEDSCHOOLS_IMPORT_UNSUPPORTED');
       }
       const preview = await parseImport({ userId, isAdmin, input, signal: request.signal });
       return Response.json(preview, { headers: NO_STORE });
