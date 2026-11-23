@@ -22,6 +22,11 @@
  * database too: the script clears the member's `ai_usage` rows between pages and plants the cap's rows. Without `--fake-ai`
  * the pages that need a model are skipped; the signed-out and idle ones still run.
  *
+ * Secondaries (owner 2026-11-23): the Secondaries tab (regular and MD-PhD prompts with every mark, the MD-PhD program filter,
+ * a not-yet school, a first-year school, an empty school, the turnaround figure) and the essay overlap opened on the lists and
+ * tracker pages. Every one asserts no text field (drafts are not stored) and, through `isolates`, that a cycle range keeps its
+ * years in order (each cycle a left-to-right isolate, so it holds in `ar`). seed-visual.ts writes the fixture prompts.
+ *
  * Options: --fake-ai, --fake-port 7798, --size 390x844 (one size), --mode day|night, --page <substring>, --lang ar (only the `ar` pass; `ar` always
  * runs at 390 and 1280 unless --size is given), --skip-setup (reuse the user in <out>/user.json).
  *
@@ -149,6 +154,113 @@ const PAGES = [
   ],
   ['lists', '/rmh-medschool/lists', true, async () => {}],
 ];
+
+/* ------------------------------ Secondaries and the essay overlap ------------------------------ */
+
+const NO_FIELD = { flat: true, absent: ['textarea', 'input[type=text]', '[contenteditable=true]'] };
+// The lists page has note fields and the tracker a switch of its own: the rule is that the overlap disclosure has none.
+const OVERLAP_NO_FIELD = ['details textarea', 'details input', 'details [contenteditable=true]'];
+/** Open every "Essay overlap" disclosure and wait for the grouped prompts (or the empty line) to arrive. */
+const openOverlap = async (p) => {
+  const all = p.locator('summary', { hasText: 'Essay overlap' });
+  const n = await all.count();
+  for (let i = 0; i < n; i++) {
+    await all
+      .nth(i)
+      .scrollIntoViewIfNeeded()
+      .catch(() => {});
+    await all.nth(i).click();
+  }
+  await p.waitForTimeout(1500);
+};
+const SECONDARIES_PAGES = [
+  [
+    'harvard-secondaries',
+    `${SCHOOL}?tab=secondaries`,
+    false,
+    async () => {},
+    {
+      ...NO_FIELD,
+      isolates: true,
+      text: [
+        /Regular prompts/,
+        /MD-PhD prompts/,
+        /Reworded/,
+        /Not seen this cycle/,
+        /Same as last cycle/,
+        /Optional/,
+        /1,500 characters/,
+        /Seen in/,
+        /Rolling admissions/,
+        /Decisions on set dates/,
+        /Source: .* admissions page, checked/,
+        /Source: Admit\.org, checked/,
+        /website, checked/,
+      ],
+    },
+  ],
+  [
+    'harvard-secondaries-phd',
+    `${SCHOOL}?tab=secondaries&program=PHD`,
+    false,
+    async () => {},
+    { ...NO_FIELD, isolates: true, text: [/MD-PhD prompts/, /in addition to or instead of/] },
+  ],
+  [
+    'michigan-secondaries-not-yet',
+    '/rmh-medschool/michigan?tab=secondaries',
+    false,
+    async () => {},
+    { ...NO_FIELD, text: [/prompts are not out yet/] },
+  ],
+  [
+    'stanford-secondaries-first-year',
+    '/rmh-medschool/stanford?tab=secondaries',
+    false,
+    async () => {},
+    {
+      ...NO_FIELD,
+      text: [/Regular prompts/],
+      textAbsent: [/Same as last cycle/, /Not seen this cycle/, /Compared with/],
+    },
+  ],
+  [
+    'hopkins-secondaries-empty',
+    '/rmh-medschool/johns-hopkins?tab=secondaries',
+    false,
+    async () => {},
+    { ...NO_FIELD, text: [/No secondary prompts on file/, /nothing found/] },
+  ],
+  [
+    'duke-secondaries-turnaround',
+    '/rmh-medschool/duke?tab=secondaries',
+    false,
+    async () => {},
+    { ...NO_FIELD, isolates: true, text: [/Turnaround/, /median of \d+ days/, /24 members who shared/] },
+  ],
+  [
+    'do-secondaries',
+    '/rmh-medschool/philadelphia-com?tab=secondaries',
+    false,
+    async () => {},
+    { ...NO_FIELD, text: [/DO-PhD prompts/], textAbsent: [/MD-PhD prompts/] },
+  ],
+  [
+    'lists-overlap',
+    '/rmh-medschool/lists',
+    true,
+    openOverlap,
+    { absent: OVERLAP_NO_FIELD, text: [/Essay overlap/, /Shortest limit/, /schools?\b/, /No prompts found yet/] },
+  ],
+  [
+    'tracker-overlap',
+    '/rmh-medschool/tracker',
+    true,
+    openOverlap,
+    { absent: OVERLAP_NO_FIELD, text: [/Essay overlap/, /Secondary received/] },
+  ],
+];
+PAGES.push(...SECONDARIES_PAGES);
 
 /* ------------------------------ the Ask pages (phase 6) ------------------------------ */
 
@@ -410,6 +522,13 @@ async function setup() {
   for (const s of md.slice(1, 3))
     await call('POST', '/api/medschools/me/list-items', { schoolSlug: s.slug, listId: reach.id, program: 'PHD' });
   await call('POST', '/api/medschools/me/list-items', { schoolSlug: dos[0].slug, newListName: 'Maybe DO' });
+  // The essay overlap's list: schools with prompts (two cycles, not yet, none) so every state of the view shows.
+  const overlap = await call('POST', '/api/medschools/me/list-items', {
+    schoolSlug: 'harvard',
+    newListName: 'Essay plan',
+  });
+  for (const slug of ['duke', 'michigan', 'johns-hopkins', 'stanford'])
+    await call('POST', '/api/medschools/me/list-items', { schoolSlug: slug, listId: overlap.id });
   const lists = (await call('GET', '/api/medschools/me/lists')).lists;
   await call('PATCH', `/api/medschools/me/lists/${lists[0].id}/items/${lists[0].items[0].id}`, {
     note: 'Visited in October. Ask about the research track at the interview.',
@@ -459,6 +578,13 @@ async function setup() {
     ])
       await call('PUT', `/api/medschools/me/tracker/applications/${waiting.id}/milestones/${type}`, { date });
   }
+  // Two more applications at schools with prompts, so the tracker's essay overlap has something to group.
+  for (const slug of ['harvard', 'stanford'])
+    await call('POST', '/api/medschools/me/tracker/applications', {
+      cycleYear: cycle,
+      schoolSlug: slug,
+      program: 'REG',
+    });
   const sharing = await call('PUT', '/api/medschools/me/tracker/cycle', { cycleYear: cycle, shareAnonymously: true });
   if (sharing?.cycle?.shareAnonymously !== true)
     console.log('setup: sharing stayed off (secret unset or the account is too new)');
@@ -495,7 +621,7 @@ function measure({ touch, narrow, forecast, flat, absent, present }) {
       // draws a 16px track with a 44px hit area of its own (Steel K6, its `::after`).
       [
         ...document.querySelectorAll(
-          'main button:not([role=switch]), main select, main input, main [role=radio], aside button, aside input',
+          'main button:not([role=switch]), main select, main input, main [role=radio], main summary, aside button, aside input',
         ),
       ]
         .filter(visible)
@@ -662,9 +788,14 @@ async function main() {
         if (r.missing.length) found.push(`missing ${r.missing.join(', ')}`);
         if (r.translucent) found.push(`${r.translucent} translucent or filtered chart element(s)`);
         // Copy is English; in `ar` only the structure is asserted.
-        if (lang === 'en')
-          for (const re of expect.text ?? [])
-            if (!re.test(r.text.replace(/[\u2066-\u2069]/g, ''))) found.push(`page lacks ${re}`);
+        if (lang === 'en') {
+          const plain = r.text.replace(/[\u2066-\u2069]/g, '');
+          for (const re of expect.text ?? []) if (!re.test(plain)) found.push(`page lacks ${re}`);
+          for (const re of expect.textAbsent ?? []) if (re.test(plain)) found.push(`page shows ${re}`);
+        }
+        // A cycle range keeps its years in order in every language: each cycle is a left-to-right isolate.
+        if (expect.isolates && !/\u2066\d{4}\u2013\d{4}\u2069/.test(r.text))
+          found.push('no isolated cycle label (years could reverse in a right-to-left page)');
         if (r.scrims) found.push(`${r.scrims} modal scrim(s) over the page`);
         if (r.chartText.length)
           found.push(
