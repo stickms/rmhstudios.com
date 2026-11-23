@@ -90,6 +90,9 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_ADMIT_FORUMS_DAILY_REQUESTS',
       'MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE',
       'MEDSCHOOLS_FORECAST_CRON',
+      'MEDSCHOOLS_SECONDARIES_CRON',
+      'MEDSCHOOLS_SECONDARIES_ENABLED',
+      'MEDSCHOOLS_ADMIT_WEB_DAILY_REQUESTS',
     ]) {
       expect(env, name).toContain(name);
     }
@@ -186,7 +189,7 @@ describe('medschools-worker wiring', () => {
 
   it('one admitHost, separate from the CycleTrack host, serves both Admit ticks', () => {
     const src = flat();
-    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT,/g)).toHaveLength(1);
     const live = slice(src, 'const admitLiveTick', 'const interviewsTick');
     const iv = slice(src, 'const interviewsTick', '// ─── Startup bootstrap');
     expect(live).toContain('host: admitHost');
@@ -440,9 +443,9 @@ describe('medschools-worker wiring', () => {
   it('every polite host gets a persisted daily budget; the Admit jobs share one host and the history job has its own quota', () => {
     const src = flat();
     expect(src).toContain('createDailyBudget(medPrisma, host,');
-    for (const h of ['CYCLETRACK', 'ADMIT', 'SDN_FORUMS', 'SDN_WWW'])
+    for (const h of ['CYCLETRACK', 'ADMIT', 'ADMIT_WEB', 'SDN_FORUMS', 'SDN_WWW'])
       expect(src, h).toContain(`SOURCES.${h}, { budget: hostBudget('${h}') }`);
-    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT,/g)).toHaveLength(1);
     expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:history'");
     expect(slice(src, 'const admitHistoryTick', 'const sdnLiveTick')).toContain('quota: admitHistoryQuota');
   });
@@ -487,7 +490,45 @@ describe('medschools-worker wiring', () => {
     expect(src).toContain('createForumsBudgetGate(');
     expect(src).toContain('forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE');
     expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:forums'");
-    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT,/g)).toHaveLength(1);
+  });
+
+  it('registers medschools.secondaries as its own exclusive queue, cron owned by the timekeeper, guarded, with a persisted interval and no model', () => {
+    const src = flat();
+    expect(src).toContain("const SECONDARIES_QUEUE = 'medschools.secondaries'");
+    expect(src).toContain('const SECONDARIES_EXPIRY_S = 75 * 60');
+    expect(src).toContain('process.env.MEDSCHOOLS_SECONDARIES_CRON?.trim() || SECONDARIES_CRON');
+    const reg = slice(src, 'secondariesConsumer = await startScheduledConsumer', 'log.info( `Started');
+    expect(reg).toContain('queue: SECONDARIES_QUEUE');
+    expect(reg).toContain('cron: secondariesCron');
+    expect(reg).toContain('expireInSeconds: SECONDARIES_EXPIRY_S');
+    expect(reg).toContain('retryLimit: 0');
+    expect(reg).toContain('handler: secondariesTick');
+    const tick = slice(src, 'const secondariesTick', 'const admitLiveTick');
+    expect(tick).toContain("guarded('secondaries'");
+    expect(tick).toContain('SECONDARIES_EXPIRY_S * 1000');
+    // the run ends itself a minute before its queue expires
+    expect(tick).toContain('stopAfter(SECONDARIES_EXPIRY_S * 1000 - 60_000)');
+    // two hosts, neither of them the Admit API or CycleTrack host; each pass behind its source's flag; the tick needs no secret
+    expect(tick).toContain('admitHost: admitWebHost');
+    expect(tick).toContain('sdnHost: sdnWwwHost');
+    expect(tick).toContain('!SECONDARIES_ENABLED && !manual');
+    expect(tick).toContain('admit: ADMIT_ENABLED || manual');
+    expect(tick).toContain('sdn: SDN_ENABLED || manual');
+    expect(tick).not.toContain('secretOk');
+    expect(tick).not.toContain('sdnAi');
+    expect(tick.indexOf('retagThemes(')).toBeLessThan(tick.indexOf('runSecondaries('));
+    expect(src).toContain("createPoliteHost(SOURCES.ADMIT_WEB, { budget: hostBudget('ADMIT_WEB') })");
+    expect(src.slice(src.indexOf('async function shutdown'))).toContain('secondariesConsumer?.pause()');
+  });
+
+  it('the secondaries job persists its minimum interval, waits at least 3 s plus jitter and reads no live web beyond its two hosts', () => {
+    const job = read('features/medschools/scrape/run-secondaries.ts');
+    expect(job).toContain("lastRealRunWithin(prisma, medSource, 'secondaries'");
+    expect(job).toContain('export const SECONDARIES_MIN_INTERVAL_MS = 60 * 3_600_000');
+    expect(job).toContain('export const SECONDARIES_SDN_SPACING_MS = 3000');
+    expect(job).toContain('SOURCES.ADMIT_WEB.spacingMs');
+    expect(job).toContain('assertPage(res, session');
   });
 
   it('every tick whose queue expires gets a guard max runtime equal to that expiry', () => {
@@ -498,6 +539,7 @@ describe('medschools-worker wiring', () => {
       ['sdn-interviews', 'SDN_INTERVIEWS_EXPIRY_S'],
       ['rmh-publish', 'RMH_PUBLISH_EXPIRY_S'],
       ['forecast', 'FORECAST_EXPIRY_S'],
+      ['secondaries', 'SECONDARIES_EXPIRY_S'],
     ];
     for (const [name, constant] of ticks) {
       expect(src, name).toMatch(new RegExp(`\\},\\s*${constant} \\* 1000,?\\s*\\);`));
@@ -509,6 +551,7 @@ describe('medschools-worker wiring', () => {
       'SDN_INTERVIEWS_EXPIRY_S = 60 * 60',
       'RMH_PUBLISH_EXPIRY_S = 10 * 60',
       'FORECAST_EXPIRY_S = 20 * 60',
+      'SECONDARIES_EXPIRY_S = 75 * 60',
     ])
       expect(src).toContain(`const ${c};`);
   });

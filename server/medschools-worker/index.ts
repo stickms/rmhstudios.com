@@ -26,6 +26,10 @@
  *                             (own queue: its own cadence, budget share and back-off).
  *   medschools.sdn-interviews weekly — SDN summary-page interview reports (no model; needs the dedupe secret).
  *
+ *   medschools.secondaries    Sunday and Wednesday 05:35 UTC — each school's secondary prompts from Admit's public secondary-essays
+ *                             page (med.admit.org) and SDN's essay-questions page, one page per school, 3 s plus jitter apart (no
+ *                             model, no secret; the SDN forum prompts are a second, off-peak model call inside the live job).
+ *
  * The two CycleTrack jobs share ONE polite host (`createPoliteHost(SOURCES.CYCLETRACK)`), which is what makes them
  * mutually exclusive against CycleTrack: one request at a time at the configured rate, one halt flag.
  * The two Admit jobs share their own host (`createPoliteHost(SOURCES.ADMIT)`), independent of CycleTrack.
@@ -62,6 +66,8 @@ import sdnForumsJson from '../../data/medschools/sdn-forums.json';
 import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/medschools/scrape/run-sdn-live';
 import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
+import { SECONDARIES_CRON, runSecondaries } from '../../features/medschools/scrape/run-secondaries';
+import { retagThemes } from '../../features/medschools/scrape/secondaries-store';
 import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
 import { qaShare, scrapeCapUsd } from '../../features/medschools/ai-budget';
 import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
@@ -163,6 +169,10 @@ const ADMIT_ENABLED =
 const SDN_ENABLED =
   process.env.MEDSCHOOLS_SDN_ENABLED !== 'false';
 
+// Switches the secondaries cron off on its own. Each of its two passes is also behind its source's flag (ADMIT_ENABLED for the
+// Admit page, SDN_ENABLED for the SDN page). Only a manual run bypasses these.
+const SECONDARIES_ENABLED = process.env.MEDSCHOOLS_SECONDARIES_ENABLED !== 'false';
+
 // Switches the Admit forums cron off on its own (it is also behind MEDSCHOOLS_ADMIT_ENABLED). Only a manual run bypasses it.
 const ADMIT_FORUMS_ENABLED = process.env.MEDSCHOOLS_ADMIT_FORUMS_ENABLED !== 'false';
 
@@ -182,6 +192,8 @@ const SDN_BACKFILL_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS
 const SDN_LIVE_EXPIRY_S = 25 * 60;
 const SDN_BACKFILL_EXPIRY_S = 3 * 60 * 60;
 const SDN_INTERVIEWS_EXPIRY_S = 60 * 60;
+// Two passes of about 240 pages at 3-4 s each is under 35 min; the run ends itself a minute before this expires.
+const SECONDARIES_EXPIRY_S = 75 * 60;
 const RMH_PUBLISH_EXPIRY_S = 10 * 60;
 const FORECAST_EXPIRY_S = 20 * 60;
 const ADMIT_FORUMS_EXPIRY_S = 40 * 60;
@@ -280,6 +292,10 @@ const admitForumsQuota = createDailyBudget(medPrisma, 'ADMIT:forums', () =>
 // session on it), so they never double the request rate; the interviews job has the www host to itself.
 const sdnForumsHost = createPoliteHost(SOURCES.SDN_FORUMS, { budget: hostBudget('SDN_FORUMS') });
 const sdnWwwHost = createPoliteHost(SOURCES.SDN_WWW, { budget: hostBudget('SDN_WWW') });
+
+// med.admit.org (Admit's public website, a different origin from the API host above) is read only by the secondaries job: its
+// own polite host with its own persisted daily budget (700 by default, MEDSCHOOLS_ADMIT_WEB_DAILY_REQUESTS).
+const admitWebHost = createPoliteHost(SOURCES.ADMIT_WEB, { budget: hostBudget('ADMIT_WEB') });
 
 // The extraction model and its monthly budget are built once. `configured()` is false without a DeepSeek key:
 // extraction then stores nothing and keeps its cursors, and the live tick queues no backfill.
@@ -441,6 +457,35 @@ function sdnGate(name: string, data: Record<string, unknown>): boolean {
   }
   return true;
 }
+
+// Secondary prompts (secondaries plan, Task 9): Admit's page then SDN's page per school, polite, no model and no secret. The run
+// ends itself a minute before its queue expires. Themes are re-tagged first (a no-op unless the rule table changed).
+const secondariesTick = guarded('secondaries', async (data) => {
+  const manual = data.manual === true;
+  if (!SECONDARIES_ENABLED && !manual) return;
+  const passes = { admit: ADMIT_ENABLED || manual, sdn: SDN_ENABLED || manual };
+  if (!passes.admit && !passes.sdn) return;
+  try {
+    const retagged = await retagThemes(medPrisma);
+    if (retagged > 0) log.info(`secondaries: re-tagged ${retagged} prompts`);
+  } catch (e) {
+    log.warn(`secondaries: re-tag failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  const r = await runSecondaries(
+    {
+      prisma: medPrisma,
+      admitHost: admitWebHost,
+      sdnHost: sdnWwwHost,
+      shouldStop: stopAfter(SECONDARIES_EXPIRY_S * 1000 - 60_000),
+      log,
+      passes,
+    },
+    { trigger: manual ? 'MANUAL' : 'CRON' },
+  );
+  log.info(
+    `secondaries run complete — status=${r.status} outcome=${r.outcome} admit(schools=${r.admit.schools} fetched=${r.admit.fetched} fresh=${r.admit.fresh} unavailable=${r.admit.unavailable} empty=${r.admit.empty} failed=${r.admit.failed} prompts=${r.admit.prompts} requests=${r.admit.requests}) sdn(schools=${r.sdn.schools} fetched=${r.sdn.fetched} fresh=${r.sdn.fresh} unavailable=${r.sdn.unavailable} empty=${r.sdn.empty} failed=${r.sdn.failed} prompts=${r.sdn.prompts} requests=${r.sdn.requests})`,
+  );
+}, SECONDARIES_EXPIRY_S * 1000);
 
 const admitLiveTick =
   guarded(
@@ -739,6 +784,7 @@ const admitForumsCron = process.env.MEDSCHOOLS_ADMIT_FORUMS_CRON?.trim() || '0 *
 const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
+const SECONDARIES_QUEUE = 'medschools.secondaries';
 const RMH_PUBLISH_QUEUE = 'medschools.rmh-publish';
 const FORECAST_QUEUE = 'medschools.forecast';
 // Daily 06:40 UTC (spec section 8): after the 00:05 snapshot and the overnight Admit and SDN runs.
@@ -748,6 +794,8 @@ const sdnLiveCron = process.env.MEDSCHOOLS_SDN_LIVE_CRON?.trim() || '20 12 * * *
 const sdnBackfillCron = process.env.MEDSCHOOLS_SDN_BACKFILL_CRON?.trim() || '15 0 1 * *';
 // Monday just before DeepSeek's 06:00 UTC peak; the job uses no model anyway.
 const sdnInterviewsCron = process.env.MEDSCHOOLS_SDN_INTERVIEWS_CRON?.trim() || '50 5 * * 1';
+// Sunday and Wednesday 05:35 UTC; the job uses no model, so DeepSeek's peak hours do not matter. Persisted minimum interval 60 h.
+const secondariesCron = process.env.MEDSCHOOLS_SECONDARIES_CRON?.trim() || SECONDARIES_CRON;
 // Yearly no-op safety net: a finished backfill records an OK no-op, an unfinished one resumes.
 const BACKFILL_CRON =
   '0 0 1 1 *';
@@ -765,6 +813,7 @@ let admitForumsConsumer: ScheduledConsumer | null = null;
 let sdnLiveConsumer: ScheduledConsumer | null = null;
 let sdnBackfillConsumer: ScheduledConsumer | null = null;
 let sdnInterviewsConsumer: ScheduledConsumer | null = null;
+let secondariesConsumer: ScheduledConsumer | null = null;
 let rmhPublishConsumer: ScheduledConsumer | null = null;
 let forecastConsumer: ScheduledConsumer | null = null;
 
@@ -996,13 +1045,27 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  secondariesConsumer = await startScheduledConsumer({
+    queue: SECONDARIES_QUEUE,
+    cron: secondariesCron,
+    expireInSeconds: SECONDARIES_EXPIRY_S,
+    retryLimit: 0,
+    handler: secondariesTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!secondariesConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   if (
     stopping
   )
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED}`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED} secondaries="${secondariesCron}" queue+="${SECONDARIES_QUEUE}" secondariesEnabled=${SECONDARIES_ENABLED}`,
   );
   // The profile-history backfill is owed until one pass has completed: queue it at once on the first deploy (and after
   // an interrupted first run) rather than wait for the 03:10 cron. Its first step is the one-time ADMIT re-key.
@@ -1069,6 +1132,7 @@ async function shutdown(
       rmhPublishConsumer?.pause(),
       forecastConsumer?.pause(),
       admitForumsConsumer?.pause(),
+      secondariesConsumer?.pause(),
     ],
   );
 
