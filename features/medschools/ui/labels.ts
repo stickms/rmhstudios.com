@@ -36,13 +36,18 @@ export function useMedLabels() {
     }
   };
 
-  /** A tracker milestone: the seven shareable types read as their event, plus the two that never leave the tracker. */
+  /** A tracker milestone: the shareable types read as their event (`SECONDARY` is relabelled "Secondary received"), plus the three that never leave the tracker. */
   const milestoneLabel = (type: MilestoneType): string => {
     switch (type) {
       case 'SUBMITTED':
         return t('tracker-milestone-submitted', { defaultValue: 'Application submitted' });
       case 'COMPLETE':
         return t('tracker-milestone-complete', { defaultValue: 'Application complete' });
+      // `SECONDARY` is the date the school sent the secondary; the public event of the same name stays "Secondary".
+      case 'SECONDARY':
+        return t('tracker-milestone-secondary-received', { defaultValue: 'Secondary received' });
+      case 'SECONDARY_SUBMITTED':
+        return t('tracker-milestone-secondary-submitted', { defaultValue: 'Secondary submitted' });
       default:
         return eventLabel(type);
     }

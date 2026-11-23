@@ -384,6 +384,7 @@ describe('MilestoneForm', () => {
         'SUBMITTED',
         'COMPLETE',
         'SECONDARY',
+        'SECONDARY_SUBMITTED',
         'INTERVIEW',
         'WAITLIST',
         'REJECTION',

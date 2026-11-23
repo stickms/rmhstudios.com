@@ -8,13 +8,23 @@ import type { MedEventType, MedProgram } from './types';
  */
 
 export type MilestoneType =
-  'SUBMITTED' | 'COMPLETE' | 'SECONDARY' | 'INTERVIEW' | 'WAITLIST' | 'REJECTION' | 'ACCEPTANCE' | 'WITHDRAWN' | 'HOLD';
+  | 'SUBMITTED'
+  | 'COMPLETE'
+  | 'SECONDARY'
+  | 'SECONDARY_SUBMITTED'
+  | 'INTERVIEW'
+  | 'WAITLIST'
+  | 'REJECTION'
+  | 'ACCEPTANCE'
+  | 'WITHDRAWN'
+  | 'HOLD';
 
 /** Display order on the tracker. */
 export const MILESTONE_TYPES: readonly MilestoneType[] = [
   'SUBMITTED',
   'COMPLETE',
   'SECONDARY',
+  'SECONDARY_SUBMITTED',
   'INTERVIEW',
   'WAITLIST',
   'REJECTION',
@@ -24,13 +34,14 @@ export const MILESTONE_TYPES: readonly MilestoneType[] = [
 ];
 
 /**
- * Which milestones can leave the private tables, and as what. `SUBMITTED` and `COMPLETE` are never shared (phase 5
- * aggregates them server-side from private rows under its own floor); home state never leaves either.
+ * Which milestones can leave the private tables, and as what. `SUBMITTED`, `COMPLETE` and `SECONDARY_SUBMITTED` are never
+ * shared (phase 5 and the secondaries turnaround aggregate them server-side from private rows under its own floor); home state never leaves either.
  */
 export const SHAREABLE: Record<MilestoneType, MedEventType | null> = {
   SUBMITTED: null,
   COMPLETE: null,
   SECONDARY: 'SECONDARY',
+  SECONDARY_SUBMITTED: null,
   INTERVIEW: 'INTERVIEW',
   WAITLIST: 'WAITLIST',
   REJECTION: 'REJECTION',

@@ -25,11 +25,13 @@ enum MedProgram {
   PHD
 }
 
-/// A step in a private tracker application. Only the seven public event types are ever shared.
+/// A step in a private tracker application. Only the seven public event types are ever shared: SUBMITTED, COMPLETE and
+/// SECONDARY_SUBMITTED never leave the private tables. SECONDARY reads "Secondary received" in the UI.
 enum MedMilestoneType {
   SUBMITTED
   COMPLETE
   SECONDARY
+  SECONDARY_SUBMITTED
   INTERVIEW
   WAITLIST
   REJECTION
@@ -122,6 +124,8 @@ model MedSchool {
   listItems           MedSchoolListItem[]
   forecasts           MedForecast[]
   waitCurves          MedWaitCurve[]
+  secondaryPrompts    MedSecondaryPrompt[]
+  secondaryChecks     MedSecondaryCheck[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -624,4 +628,84 @@ model MedQaLimitRequest {
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@map("med_qa_limit_request")
+}
+
+/// Where a secondary prompt was read. A new enum, not a value on `MedSource` (every `MedSource` map is exhaustive).
+/// ADMIT and SDN are the two public pages (and SDN's forum posts, which ride the SDN value); SCHOOL is the school's own
+/// page, a one-time curated import from `data/medschools/`, never a scraper.
+enum MedPromptSource {
+  ADMIT
+  SDN
+  SCHOOL
+}
+
+enum MedLimitKind {
+  WORDS
+  CHARS
+}
+
+enum MedCheckStatus {
+  OK
+  EMPTY
+  UNAVAILABLE
+}
+
+/// One secondary-application prompt of one school and program, one row per normalised wording. Institutional text, not
+/// personal data: no author, user, post or handle column, and no draft or note field (private essay drafts are not stored).
+model MedSecondaryPrompt {
+  id            String     @id @default(cuid())
+  schoolId      String
+  program       MedProgram
+  /// `secondaryKey(text)`: the wording with limits, markers, case and punctuation removed.
+  key           String
+  text          String
+  /// Keyword theme ids (`engine/secondaries/theme-ids.ts`), `THEMES_VERSION` says which rule table tagged them.
+  themes        String[]
+  themesVersion Int
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  school       MedSchool                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  observations MedSecondaryObservation[]
+
+  @@unique([schoolId, program, key])
+  @@index([schoolId])
+  @@map("med_secondary_prompt")
+}
+
+/// A prompt seen in one cycle by one source. Never deleted: the history is the product.
+model MedSecondaryObservation {
+  id            String          @id @default(cuid())
+  promptId      String
+  /// Entry year: 2027 is the 2026-2027 cycle.
+  cycleYear     Int
+  source        MedPromptSource
+  limitKind     MedLimitKind?
+  limitValue    Int?
+  optional      Boolean         @default(false)
+  /// A school page or thread URL, never a post.
+  sourceRef     String?
+  firstSeenAt   DateTime        @default(now())
+  lastCheckedAt DateTime
+
+  prompt MedSecondaryPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId, cycleYear, source])
+  @@index([cycleYear])
+  @@map("med_secondary_observation")
+}
+
+/// When each school and source page was last read and what it gave.
+model MedSecondaryCheck {
+  id          String          @id @default(cuid())
+  schoolId    String
+  source      MedPromptSource
+  checkedAt   DateTime
+  status      MedCheckStatus
+  promptCount Int
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, source])
+  @@map("med_secondary_check")
 }

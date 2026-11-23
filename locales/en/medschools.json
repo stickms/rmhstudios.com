@@ -402,6 +402,8 @@
   "tracker-milestone-line": "{{type}}, {{date}}",
   "tracker-milestone-remove": "Remove",
   "tracker-milestone-remove-label": "Remove milestone",
+  "tracker-milestone-secondary-received": "Secondary received",
+  "tracker-milestone-secondary-submitted": "Secondary submitted",
   "tracker-milestone-submitted": "Application submitted",
   "tracker-milestone-type": "Milestone",
   "tracker-milestones-all-set": "Every milestone is already set for this school.",
