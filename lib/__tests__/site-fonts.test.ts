@@ -98,4 +98,9 @@ describe('site fonts: DM Sans + DM Mono by default, the reader\'s choice otherwi
     expect(rootRoute).toMatch(/fontsInUse\(fonts\)\.map\(\(id\) => \(\{ rel: 'stylesheet', href: FONT_ASSETS\[id\]\.sheet \}\)\)/);
     expect(rootRoute.match(/as: 'font'/g)?.length).toBe(1);
   });
+
+  it('the Discord head links the chosen faces too, since it stamps their attributes', () => {
+    const discord = rootRoute.slice(rootRoute.indexOf('if (discord) {'), rootRoute.indexOf('hintDocumentAssets(appCss'));
+    expect(discord).toContain('...fontLinks.sheets');
+  });
 });

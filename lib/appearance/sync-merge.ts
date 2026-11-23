@@ -15,11 +15,12 @@ export interface AppearanceFields {
   /** null = this device follows its OS theme (nothing chosen). */
   style: string | null;
   readableFont: boolean;
-  colorVision: string;
-  jellyMotion: string;
-  fontMain: string;
-  fontReading: string;
-  fontMono: string;
+  /** For these, null = this device never chose (nothing stored), so it is never pushed. */
+  colorVision: string | null;
+  jellyMotion: string | null;
+  fontMain: string | null;
+  fontReading: string | null;
+  fontMono: string | null;
 }
 
 export interface AccountAppearance {

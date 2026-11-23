@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLoaderData } from '@tanstack/react-router';
 
 import { Switch } from '@/components/ui/switch';
 import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
@@ -20,6 +22,7 @@ import {
   type AppearancePrefsInput,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { toast } from '@/lib/toast';
 import { getAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
 import { useSession } from '@/components/Providers';
 import { FONT_CATALOGUE, type FontChoice } from '@/lib/appearance/fonts';
@@ -53,6 +56,13 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
   const { t } = useTranslation('settings-appearance');
   const store = useThemeStore();
   const { data: session } = useSession();
+  // Before the store has read this device's storage it still holds the default (on), so the switch shows what the
+  // server saw in the request's cookie instead; no flip on a direct load of Settings for a sync-off device.
+  const rootData = useLoaderData({ from: '__root__' });
+  const syncOn = store.appearanceHydrated ? store.appearanceSync : !rootData?.appearanceSyncOff;
+  // Turning sync on reads and may write the account; the switch waits for it, so a second press cannot start a second
+  // merge.
+  const [syncPending, setSyncPending] = useState(false);
   // A line set in the face it describes: the picker's own preview (a native select cannot draw its options in their
   // faces, and drawing every option would fetch every face).
   const sample = t('font-sample', { defaultValue: 'The quick brown fox jumps over the lazy dog.' });
@@ -87,12 +97,22 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
             description={t('appearance-sync-hint', {
               defaultValue: 'Off: this device keeps its own theme and fonts.',
             })}
-            checked={store.appearanceSync}
+            checked={syncPending || syncOn}
+            disabled={syncPending || !store.appearanceHydrated}
             onChange={(on) => {
               if (on) {
+                setSyncPending(true);
+                // A failed read or save leaves sync off rather than overwriting either side (appearance-actions).
                 void enableAppearanceSync({
                   get: () => api(getAppearancePrefsApi),
-                  persist,
+                  persist: async (body) => {
+                    await api(setAppearancePrefsApi, { body });
+                  },
+                }).then((ok) => {
+                  setSyncPending(false);
+                  if (!ok) {
+                    toast.error(t('appearance-sync-failed', { defaultValue: 'Could not turn sync on. Try again.' }));
+                  }
                 });
               } else {
                 disableAppearanceSync();

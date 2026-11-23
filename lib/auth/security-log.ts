@@ -26,6 +26,9 @@ export const SECURITY_EVENT_KINDS = [
   'deletion_scheduled',
   'deletion_cancelled',
   'account_secured_by_admin',
+  'two_factor_enabled',
+  'two_factor_disabled',
+  'backup_codes_regenerated',
 ] as const;
 
 export type SecurityEventKind = (typeof SECURITY_EVENT_KINDS)[number];
@@ -57,6 +60,9 @@ export const FILTER_KINDS: Readonly<Record<SecurityFilter, readonly SecurityEven
     'password_changed',
     'password_reset_requested',
     'password_reset_completed',
+    'two_factor_enabled',
+    'two_factor_disabled',
+    'backup_codes_regenerated',
   ],
   account: ['email_changed', 'handle_changed', 'deletion_scheduled', 'deletion_cancelled'],
 };
@@ -118,6 +124,9 @@ const UNFAMILIAR_KINDS: ReadonlySet<SecurityEventKind> = new Set([
   'password_reset_completed',
   'email_changed',
   'deletion_scheduled',
+  'two_factor_enabled',
+  'two_factor_disabled',
+  'backup_codes_regenerated',
 ]);
 
 export function isUnfamiliarEvent(kind: string, thisDevice: boolean): boolean {

@@ -5,7 +5,16 @@
  * lib/prepaint/fonts.ts. Design: docs/superpowers/specs/2026-11-23-font-choice-and-appearance-sync-design.md.
  */
 import { removeKey, writeString } from '@/lib/core/persist';
-import { DEFAULT_FONTS, FONT_KEYS, FONTS_COOKIE, fontsInUse, formatFontsCookie, type FontChoice, type FontId } from '@/lib/appearance/fonts';
+import {
+  DEFAULT_FONTS,
+  FONT_KEYS,
+  FONTS_COOKIE,
+  fontEntry,
+  fontsInUse,
+  formatFontsCookie,
+  type FontChoice,
+  type FontId,
+} from '@/lib/appearance/fonts';
 import { FONT_ASSETS } from '@/lib/appearance/font-assets.gen';
 
 /** Link a face's stylesheet once (the defaults live in the site sheet and are skipped). */
@@ -17,6 +26,22 @@ export function ensureFontSheet(id: FontId): void {
   link.rel = 'stylesheet';
   link.href = href;
   document.head.appendChild(link);
+}
+
+/**
+ * Link a face and wait (up to 3 s) for its Latin file, BEFORE the page switches to it. A mono face is
+ * `font-display: optional`: switched on cold, it misses its ~100 ms window and the fallback stays for the life of the
+ * document, so a pick would look like it did nothing until a reload (final review, 2026-11-23).
+ */
+export async function loadFontFace(id: FontId | 'same'): Promise<void> {
+  if (id === 'same' || typeof document === 'undefined') return;
+  ensureFontSheet(id);
+  const family = fontEntry(id)?.family;
+  if (!family || !document.fonts?.load) return;
+  await Promise.race([
+    document.fonts.load(`1em "${family}"`).catch(() => undefined),
+    new Promise((resolve) => setTimeout(resolve, 3000)),
+  ]);
 }
 
 export function applyFonts(fonts: FontChoice): void {

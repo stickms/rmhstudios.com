@@ -33,7 +33,9 @@
 # visitor is never served someone else's cached page. It also bypasses for a
 # data-saver request (the `rmh-data-saver=on` cookie, or a `Save-Data: on`
 # header), whose page is rendered with smaller images (lib/data-saver-request.ts):
-# that visitor gets their own render, and the origin marks it private as well. It also RESPECTS the
+# that visitor gets their own render, and the origin marks it private as well. And it bypasses for a reader's
+# chosen fonts (`rmh-fonts=`), which the server renders into the page (lib/appearance/fonts.ts; owner, 2026-11-23). The owner applies this rule in the Cloudflare
+# dashboard by hand; this file records the live expression for the drift test. It also RESPECTS the
 # origin Cache-Control, and the origin only emits a shared-cacheable
 # `public, s-maxage=…` header for exactly that anon/default-locale case and
 # `private, no-cache, max-age=0, must-revalidate` for authenticated requests
@@ -120,7 +122,7 @@ read -r -d '' BODY <<'JSON' || true
     },
     {
       "description": "Cache anonymous default-locale public HTML",
-      "expression": "(http.request.method eq \"GET\" and (http.request.uri.path in {\"/\" \"/games\" \"/apps\" \"/news\" \"/library\" \"/rmh-research/reports/optimization\" \"/security\" \"/privacy\" \"/terms\" \"/cookies\" \"/copyright\"} or starts_with(http.request.uri.path, \"/blog/\") or starts_with(http.request.uri.path, \"/news/\")) and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\") and not (http.cookie contains \"rmh-data-saver=on\") and not any(http.request.headers[\"save-data\"][*] eq \"on\"))",
+      "expression": "(http.request.method eq \"GET\" and (http.request.uri.path in {\"/\" \"/games\" \"/apps\" \"/news\" \"/library\" \"/rmh-research/reports/optimization\" \"/security\" \"/privacy\" \"/terms\" \"/cookies\" \"/copyright\"} or starts_with(http.request.uri.path, \"/blog/\") or starts_with(http.request.uri.path, \"/news/\")) and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\") and not (http.cookie contains \"rmh-data-saver=on\") and not any(http.request.headers[\"save-data\"][*] eq \"on\")) and not (http.cookie contains \"rmh-fonts=\")",
       "action": "set_cache_settings",
       "action_parameters": {
         "cache": true,
