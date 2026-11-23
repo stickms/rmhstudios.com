@@ -1,7 +1,17 @@
 /**
  * Contracts for the med schools admin endpoints. Client-safe: no zod, no server imports.
  */
+import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
+import type { MilestoneType } from './engine/tracker';
+import type {
+  addApplicationBody,
+  deleteCycleQuery,
+  getTrackerQuery,
+  patchApplicationBody,
+  putCycleBody,
+  putMilestoneBody,
+} from './api/me-schemas';
 import type { MedEventType, MedProgram, MedSource } from './engine/types';
 
 export interface AliasMissDto {
@@ -265,3 +275,80 @@ export const getMedTodayApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; degree?: MedDegreeId | undefined };
   res: MedTodayRes;
 }>()({ method: 'GET', path: '/api/medschools/today' });
+
+/* ------------------------- private tracker (me/**) ------------------------- */
+/* Signed-in only, never publicly cached. No DTO carries a user id, a cycle id or an event hash (spec §6). */
+
+export interface TrackerSchoolDto {
+  slug: string;
+  name: string;
+  shortName: string;
+  degree: MedDegreeId;
+  state: string;
+  /** False for a deactivated school: the row stays, the link degrades to plain text. */
+  active: boolean;
+}
+
+export interface TrackerApplicationDto {
+  id: string;
+  school: TrackerSchoolDto;
+  program: 'REG' | 'PHD';
+  notes: string | null;
+  /** Ordered by date, then by `MILESTONE_TYPES`. `date` is a calendar day, `YYYY-MM-DD`. */
+  milestones: { type: MilestoneType; date: string }[];
+}
+
+export interface TrackerCycleDto {
+  cycleYear: number;
+  homeState: string | null;
+  shareAnonymously: boolean;
+  applications: TrackerApplicationDto[];
+}
+
+export interface TrackerDto {
+  /** False when the server secret is unset: the switch is disabled, the tracker still works unshared. */
+  sharingAvailable: boolean;
+  /** The user's cycle years, newest first. */
+  cycles: number[];
+  cycle: TrackerCycleDto | null;
+}
+
+export const getMedTrackerApi = endpoint<{ query: z.infer<typeof getTrackerQuery>; res: TrackerDto }>()({
+  method: 'GET',
+  path: '/api/medschools/me/tracker',
+});
+
+export const putMedTrackerCycleApi = endpoint<{ body: z.infer<typeof putCycleBody>; res: TrackerDto }>()({
+  method: 'PUT',
+  path: '/api/medschools/me/tracker/cycle',
+});
+
+export const deleteMedTrackerCycleApi = endpoint<{ query: z.infer<typeof deleteCycleQuery>; res: { ok: true } }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/tracker/cycle',
+});
+
+export const addMedApplicationApi = endpoint<{
+  body: z.infer<typeof addApplicationBody>;
+  res: TrackerApplicationDto;
+}>()({ method: 'POST', path: '/api/medschools/me/tracker/applications' });
+
+export const patchMedApplicationApi = endpoint<{
+  body: z.infer<typeof patchApplicationBody>;
+  res: TrackerApplicationDto;
+}>()({ method: 'PATCH', path: '/api/medschools/me/tracker/applications/$id' });
+
+export const deleteMedApplicationApi = endpoint<{ res: { ok: true } }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/tracker/applications/$id',
+});
+
+export const putMedMilestoneApi = endpoint<{
+  body: z.infer<typeof putMilestoneBody>;
+  res: TrackerApplicationDto;
+}>()({ method: 'PUT', path: '/api/medschools/me/tracker/applications/$id/milestones/$type' });
+
+export const deleteMedMilestoneApi = endpoint<{ res: TrackerApplicationDto }>()({
+  method: 'DELETE',
+  path: '/api/medschools/me/tracker/applications/$id/milestones/$type',
+});

@@ -507,6 +507,26 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
       return t('tournamentBadWinner', { ns: 'errors', defaultValue: 'Winner must be in this match', ...p });
     case 'EVENT_NOT_FOUND':
       return t('eventNotFound', { ns: 'errors', defaultValue: 'Not found', ...p });
+    case 'MEDSCHOOLS_SHARING_UNAVAILABLE':
+      return t('medschoolsSharingUnavailable', {
+        ns: 'errors',
+        defaultValue: 'Sharing is not available right now',
+        ...p,
+      });
+    case 'MEDSCHOOLS_ACCOUNT_TOO_NEW':
+      return t('medschoolsAccountTooNew', {
+        ns: 'errors',
+        defaultValue: 'Sharing needs an account at least {{days}} days old',
+        ...p,
+      });
+    case 'MEDSCHOOLS_DUPLICATE':
+      return t('medschoolsDuplicate', { ns: 'errors', defaultValue: 'That school is already in this cycle', ...p });
+    case 'MEDSCHOOLS_CAP':
+      return t('medschoolsCap', {
+        ns: 'errors',
+        defaultValue: 'You can track up to {{max}} schools in one cycle',
+        ...p,
+      });
   }
 }
 

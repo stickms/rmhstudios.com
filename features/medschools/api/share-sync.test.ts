@@ -714,3 +714,62 @@ describe('auditRmh', () => {
     expect((await auditRmh(w.db)).missingEvents).toBe(1);
   });
 });
+
+describe('withSharedErase deletes events only for what the closure deleted', () => {
+  async function twoMilestones(w: World) {
+    const ids = await simple(w, 'u1', { type: 'INTERVIEW' });
+    await addMs(w, 'u1', { id: 'ms-u1-b', applicationId: ids.applicationId, type: 'SECONDARY', date: DAY2 });
+    return ids;
+  }
+
+  it('a closure narrower than its scope leaves the other milestone shared and counted', async () => {
+    const w = world();
+    const ids = await twoMilestones(w);
+    expect(events(w)).toHaveLength(2);
+    await withSharedErase(
+      'u1',
+      { applicationId: ids.applicationId },
+      (tx) => tx.medTrackerMilestone.delete({ where: { id: ids.milestoneId } }),
+      w.db,
+      NOW,
+    );
+    expect(events(w).map((e) => e.eventType)).toEqual(['SECONDARY']);
+    expect(rmhCounts(w).map((c) => [c.eventType, c.count, c.contributors])).toEqual([['SECONDARY', 1, 1]]);
+    expectConsistent(w);
+    expect(await auditRmh(w.db)).toEqual({ orphanEvents: 0, mismatchedCells: 0, missingEvents: 0 });
+  });
+
+  it('a closure that deletes nothing changes nothing', async () => {
+    const w = world();
+    const ids = await twoMilestones(w);
+    const before = JSON.stringify([w.tables.medCycleEvent, w.tables.medCycleCount]);
+    await withSharedErase('u1', { cycleYear: 2027 }, async () => 'noop', w.db, NOW);
+    await withSharedErase(
+      'u1',
+      {},
+      async (tx) => tx.medTrackerMilestone.deleteMany({ where: { id: 'nope' } }),
+      w.db,
+      NOW,
+    );
+    expect(JSON.stringify([w.tables.medCycleEvent, w.tables.medCycleCount])).toBe(before);
+    expectConsistent(w);
+    expect(await auditRmh(w.db)).toEqual({ orphanEvents: 0, mismatchedCells: 0, missingEvents: 0 });
+    expect(ids.milestoneId).toBeTruthy();
+  });
+
+  it('a nothing-deleted call needs no secret and does not 503', async () => {
+    const w = world();
+    await twoMilestones(w);
+    delete process.env.MEDSCHOOLS_DEDUPE_SECRET;
+    await expect(withSharedErase('u1', {}, async () => 0, w.db, NOW)).resolves.toBe(0);
+  });
+});
+
+describe('eraseSharedMedEvents', () => {
+  it('opens no transaction and takes no lock for a member who never had a tracker', async () => {
+    const w = world();
+    addUser(w, 'nobody');
+    expect(await eraseSharedMedEvents('nobody', w.db)).toEqual({ events: 0 });
+    expect(w.lockLog).toHaveLength(0);
+  });
+});

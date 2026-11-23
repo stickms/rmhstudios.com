@@ -582,567 +582,572 @@ import { route as r573 } from '@/lib/market/api/market.listings.server';
 import { route as r574 } from '@/lib/market/api/market.listings.$id.server';
 import { route as r575 } from '@/lib/market/api/market.listings.$id.buy.server';
 import { route as r576 } from '@/features/medschools/api/medschools.live.server';
-import { route as r577 } from '@/features/medschools/api/medschools.schools.server';
-import { route as r578 } from '@/features/medschools/api/medschools.schools.$slug.server';
-import { route as r579 } from '@/features/medschools/api/medschools.schools.$slug.activity.server';
-import { route as r580 } from '@/features/medschools/api/medschools.schools.$slug.history.server';
-import { route as r581 } from '@/features/medschools/api/medschools.today.server';
-import { route as r582 } from '@/lib/ai/api/memory.server';
-import { route as r583 } from '@/lib/messages/api/messages.server';
-import { route as r584 } from '@/lib/messages/api/messages.$conversationId.server';
-import { route as r585 } from '@/lib/messages/api/messages.$conversationId.alt.server';
-import { route as r586 } from '@/lib/messages/api/messages.$conversationId.edit.server';
-import { route as r587 } from '@/lib/messages/api/messages.$conversationId.hide.server';
-import { route as r588 } from '@/lib/messages/api/messages.$conversationId.mutations.server';
-import { route as r589 } from '@/lib/messages/api/messages.$conversationId.react.server';
-import { route as r590 } from '@/lib/messages/api/messages.$conversationId.read.server';
-import { route as r591 } from '@/lib/messages/api/messages.$conversationId.thread.server';
-import { route as r592 } from '@/lib/messages/api/messages.$conversationId.typing.server';
-import { route as r593 } from '@/lib/messages/api/messages.$conversationId.unsend.server';
-import { route as r594 } from '@/lib/messages/api/messages.$conversationId.voice.server';
-import { route as r595 } from '@/lib/messages/api/messages.away.server';
-import { route as r596 } from '@/lib/messages/api/messages.away.$userId.status.server';
-import { route as r597 } from '@/lib/messages/api/messages.read-all.server';
-import { route as r598 } from '@/lib/messages/api/messages.requests.server';
-import { route as r599 } from '@/lib/messages/api/messages.requests.$id.server';
-import { route as r600 } from '@/lib/messages/api/messages.saved.server';
-import { route as r601 } from '@/lib/messages/api/messages.scheduled.server';
-import { route as r602 } from '@/lib/messages/api/messages.scheduled.$id.server';
-import { route as r603 } from '@/lib/messages/api/messages.scheduled.$id.send-now.server';
-import { route as r604 } from '@/lib/messages/api/messages.search.server';
-import { route as r605 } from '@/lib/messages/api/messages.sidebar.server';
-import { route as r606 } from '@/lib/messages/api/messages.unread-count.server';
-import { route as r607 } from '@/lib/messages/api/messages.voice.$filename.server';
-import { route as r608 } from '@/lib/moderation/api/moderation.block.server';
-import { route as r609 } from '@/lib/moderation/api/moderation.mute.server';
-import { route as r610 } from '@/lib/moderation/api/moderation.report.server';
-import { route as r611 } from '@/lib/api/routes/moments.server';
-import { route as r612 } from '@/lib/delight/api/museum.server';
-import { route as r613 } from '@/lib/neon-driftway/api/neon-driftway.leaderboard.server';
-import { route as r614 } from '@/lib/neon-driftway/api/neon-driftway.livery.server';
-import { route as r615 } from '@/lib/game/api/neon-driftway.score.server';
-import { route as r616 } from '@/lib/trick-week/api/nightrail.tricks.server';
-import { route as r617 } from '@/lib/trick-week/api/nightrail.tricks.vote.server';
-import { route as r618 } from '@/lib/ops/api/notices.active.server';
-import { route as r619 } from '@/lib/ops/api/notices.dismiss.server';
-import { route as r620 } from '@/lib/preferences/api/notifications.server';
-import { route as r621 } from '@/lib/notifications/api/notifications.$id.server';
-import { route as r622 } from '@/lib/notifications/api/notifications.dismiss.server';
-import { route as r623 } from '@/lib/preferences/api/notifications.preferences.server';
-import { route as r624 } from '@/lib/preferences/api/notifications.read.server';
-import { route as r625 } from '@/lib/api/routes/oembed.server';
-import { route as r626 } from '@/lib/calendar/api/office-hours.server';
-import { route as r627 } from '@/lib/calendar/api/office-hours.bookings.$id.server';
-import { route as r628 } from '@/lib/calendar/api/office-hours.bookings.$id.ics.server';
-import { route as r629 } from '@/lib/calendar/api/office-hours.host.$id.server';
-import { route as r630 } from '@/lib/calendar/api/office-hours.host.$id.summary.server';
-import { route as r631 } from '@/lib/og/api/og.album.$albumId.server';
-import { route as r632 } from '@/lib/og/api/og.app.$appId.server';
-import { route as r633 } from '@/lib/og/api/og.blog.$slug.server';
-import { route as r634 } from '@/lib/og/api/og.build.$slug.server';
-import { route as r635 } from '@/lib/og/api/og.elections.server';
-import { route as r636 } from '@/lib/og/api/og.game.$gameId.server';
-import { route as r637 } from '@/lib/og/api/og.job.$jobId.server';
-import { route as r638 } from '@/lib/og/api/og.med-school.$slug.server';
-import { route as r639 } from '@/lib/og/api/og.moment.$id.server';
-import { route as r640 } from '@/lib/og/api/og.music.$token.server';
-import { route as r641 } from '@/lib/og/api/og.post.$id.server';
-import { route as r642 } from '@/lib/og/api/og.post.$id.story.server';
-import { route as r643 } from '@/lib/og/api/og.profile.$id.server';
-import { route as r644 } from '@/lib/og/api/og.replay.$id.server';
-import { route as r645 } from '@/lib/rmh-research/api/og.research.$kind.$id.server';
-import { route as r646 } from '@/lib/og/api/og.section.$file.server';
-import { route as r647 } from '@/lib/og/api/og.sohumtracker.server';
-import { route as r648 } from '@/lib/og/api/og.story.$slug.server';
-import { route as r649 } from '@/lib/og/api/og.wiki.server';
-import { route as r650 } from '@/lib/api/routes/onboarding.server';
-import { route as r651 } from '@/lib/api/routes/onboarding.first-week.server';
-import { route as r652 } from '@/lib/personas/api/personas.server';
-import { route as r653 } from '@/lib/personas/api/personas.$id.server';
-import { route as r654 } from '@/lib/personas/api/personas.$id.chat.server';
-import { route as r655 } from '@/lib/api/routes/photo-of-the-day.server';
-import { route as r656 } from '@/lib/delight/api/photo-of-the-day.$id.server';
-import { route as r657 } from '@/lib/delight/api/photo-of-the-day.vote.server';
-import { route as r658 } from '@/lib/playlists/api/playlists.server';
-import { route as r659 } from '@/lib/playlists/api/playlists.$id.server';
-import { route as r660 } from '@/lib/playlists/api/playlists.$id.collaborators.server';
-import { route as r661 } from '@/lib/playlists/api/playlists.$id.collaborators.$userId.server';
-import { route as r662 } from '@/lib/playlists/api/playlists.$id.items.server';
-import { route as r663 } from '@/lib/playlists/api/playlists.$id.items.$itemId.server';
-import { route as r664 } from '@/lib/playlists/api/playlists.$id.items.bulk.server';
-import { route as r665 } from '@/lib/predictions/api/predictions.server';
-import { route as r666 } from '@/lib/predictions/api/predictions.$id.server';
-import { route as r667 } from '@/lib/predictions/api/predictions.$id.comments.server';
-import { route as r668 } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
-import { route as r669 } from '@/lib/predictions/api/predictions.$id.trade.server';
-import { route as r670 } from '@/lib/preferences/api/preferences.appearance.server';
-import { route as r671 } from '@/lib/preferences/api/preferences.conversation.server';
-import { route as r672 } from '@/lib/preferences/api/preferences.email.server';
-import { route as r673 } from '@/lib/preferences/api/preferences.keyboard.server';
-import { route as r674 } from '@/lib/preferences/api/preferences.layout.server';
-import { route as r675 } from '@/lib/preferences/api/preferences.muted-words.server';
-import { route as r676 } from '@/lib/preferences/api/preferences.notifications.server';
-import { route as r677 } from '@/lib/preferences/api/preferences.presence.server';
-import { route as r678 } from '@/lib/presence/api/presence.online-count.server';
-import { route as r679 } from '@/lib/api/routes/profile.server';
-import { route as r680 } from '@/lib/profile-links/api/profile-links.server';
-import { route as r681 } from '@/lib/profile-links/api/profile-links.$id.server';
-import { route as r682 } from '@/lib/profile-links/api/profile-links.$id.verify.server';
-import { route as r683 } from '@/lib/profile/api/profile.$id.server';
-import { route as r684 } from '@/lib/profile/api/profile.$id.activity.server';
-import { route as r685 } from '@/lib/profile/api/profile.$id.card.server';
-import { route as r686 } from '@/lib/profile/api/profile.$id.endorsements.server';
-import { route as r687 } from '@/lib/profile/api/profile.$id.follow.server';
-import { route as r688 } from '@/lib/profile/api/profile.$id.followers.server';
-import { route as r689 } from '@/lib/profile/api/profile.$id.following.server';
-import { route as r690 } from '@/lib/guestbook/api/profile.$id.guestbook.server';
-import { route as r691 } from '@/lib/guestbook/api/profile.$id.guestbook.$entryId.server';
-import { route as r692 } from '@/lib/profile/api/profile.$id.kudos.server';
-import { route as r693 } from '@/lib/profile/api/profile.$id.likes.server';
-import { route as r694 } from '@/lib/profile/api/profile.$id.membership.server';
-import { route as r695 } from '@/lib/profile/api/profile.$id.plus.server';
-import { route as r696 } from '@/lib/profile/api/profile.$id.pronunciation.server';
-import { route as r697 } from '@/lib/profile/api/profile.$id.rmharks.server';
-import { route as r698 } from '@/lib/profile/api/profile.$id.shelves.server';
-import { route as r699 } from '@/lib/profile/api/profile.$id.stamps.server';
-import { route as r700 } from '@/lib/profile/api/profile.$id.visit.server';
-import { route as r701 } from '@/lib/profile/api/profile.$id.webrings.server';
-import { route as r702 } from '@/lib/profile/api/profile.analytics.server';
-import { route as r703 } from '@/lib/api/routes/profile.avatar.server';
-import { route as r704 } from '@/lib/api/routes/profile.banner.server';
-import { route as r705 } from '@/lib/api/routes/profile.banner-source.server';
-import { route as r706 } from '@/lib/profile/api/profile.layout.server';
-import { route as r707 } from '@/lib/profile/api/profile.me.server';
-import { route as r708 } from '@/lib/profile/api/profile.plus.server';
-import { route as r709 } from '@/lib/profile/api/profile.preview.server';
-import { route as r710 } from '@/lib/profile/api/profile.pronunciation.server';
-import { route as r711 } from '@/lib/profile/api/profile.status.server';
-import { route as r712 } from '@/lib/profile/api/profile.top-four.server';
-import { route as r713 } from '@/lib/api/routes/progress.server';
-import { route as r714 } from '@/lib/api/routes/promo.free-month.server';
-import { route as r715 } from '@/lib/push/api/push.action.server';
-import { route as r716 } from '@/lib/push/api/push.public-key.server';
-import { route as r717 } from '@/lib/push/api/push.subscribe.server';
-import { route as r718 } from '@/lib/posts-plus/api/qotd.answers.server';
-import { route as r719 } from '@/lib/posts-plus/api/qotd.archive.server';
-import { route as r720 } from '@/lib/posts-plus/api/qotd.today.server';
-import { route as r721 } from '@/lib/battlepass/api/quests.$id.claim.server';
-import { route as r722 } from '@/lib/ranked/api/ranked.server';
-import { route as r723 } from '@/lib/ranked/api/ranked.$game.leaderboard.server';
-import { route as r724 } from '@/lib/ranked/api/ranked.challenge.$id.server';
-import { route as r725 } from '@/lib/reading/api/reading.doc.server';
-import { route as r726 } from '@/lib/reading/api/reading.goal.server';
-import { route as r727 } from '@/lib/reading/api/reading.highlights.server';
-import { route as r728 } from '@/lib/reading/api/reading.highlights.$id.server';
-import { route as r729 } from '@/lib/reading/api/reading.highlights.export.server';
-import { route as r730 } from '@/lib/reading/api/reading.highlights.search.server';
-import { route as r731 } from '@/lib/reading/api/reading.shelves.server';
-import { route as r732 } from '@/lib/reading/api/reading.shelves.prefs.server';
-import { route as r733 } from '@/lib/reading/api/reading.subscriptions.server';
-import { route as r734 } from '@/lib/reading/api/reading.subscriptions.$id.server';
-import { route as r735 } from '@/lib/reading/api/reading.time.server';
-import { route as r736 } from '@/lib/reading/api/reading.time.prefs.server';
-import { route as r737 } from '@/lib/api/routes/recap.server';
-import { route as r738 } from '@/lib/developer/api/recipes.server';
-import { route as r739 } from '@/lib/developer/api/recipes.$id.server';
-import { route as r740 } from '@/lib/api/routes/referrals.claim.server';
-import { route as r741 } from '@/lib/api/routes/referrals.me.server';
-import { route as r742 } from '@/lib/developer/api/release-notes.server';
-import { route as r743 } from '@/lib/reminders/api/reminders.server';
-import { route as r744 } from '@/lib/reminders/api/reminders.$id.server';
-import { route as r745 } from '@/lib/game/api/replays.server';
-import { route as r746 } from '@/lib/game/api/replays.$id.server';
-import { route as r747 } from '@/lib/game/api/replays.board.server';
-import { route as r748 } from '@/lib/game/api/replays.mine.server';
-import { route as r749 } from '@/lib/requests/api/requests.server';
-import { route as r750 } from '@/lib/requests/api/requests.$id.server';
-import { route as r751 } from '@/lib/requests/api/requests.$id.vote.server';
-import { route as r752 } from '@/lib/games/api/reviews.$id.vote.server';
-import { route as r753 } from '@/lib/rideshare/api/rideshare.directions.server';
-import { route as r754 } from '@/lib/rideshare/api/rideshare.driver.server';
-import { route as r755 } from '@/lib/rideshare/api/rideshare.earnings.server';
-import { route as r756 } from '@/lib/rideshare/api/rideshare.geocode.server';
-import { route as r757 } from '@/lib/rideshare/api/rideshare.location.server';
-import { route as r758 } from '@/lib/rideshare/api/rideshare.places.server';
-import { route as r759 } from '@/lib/rideshare/api/rideshare.places.$id.server';
-import { route as r760 } from '@/lib/rideshare/api/rideshare.reverse.server';
-import { route as r761 } from '@/lib/rideshare/api/rideshare.rides.server';
-import { route as r762 } from '@/lib/rideshare/api/rideshare.rides.$id.server';
-import { route as r763 } from '@/lib/rideshare/api/rideshare.rides.$id.messages.server';
-import { route as r764 } from '@/lib/rideshare/api/rideshare.rides.$id.rate.server';
-import { route as r765 } from '@/lib/rideshare/api/rideshare.rides.$id.sync.server';
-import { route as r766 } from '@/lib/feed/api/rmharks.server';
-import { route as r767 } from '@/lib/feed/api/rmharks.$id.server';
-import { route as r768 } from '@/lib/feed/api/rmharks.$id.alt-text.server';
-import { route as r769 } from '@/lib/feed/api/rmharks.$id.bookmark.server';
-import { route as r770 } from '@/lib/feed/api/rmharks.$id.comment.server';
-import { route as r771 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.server';
-import { route as r772 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.hide.server';
-import { route as r773 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.like.server';
-import { route as r774 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.repost.server';
-import { route as r775 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.view.server';
-import { route as r776 } from '@/lib/feed/api/rmharks.$id.embed.server';
-import { route as r777 } from '@/lib/feed/api/rmharks.$id.history.server';
-import { route as r778 } from '@/lib/feed/api/rmharks.$id.insights.server';
-import { route as r779 } from '@/lib/feed/api/rmharks.$id.like.server';
-import { route as r780 } from '@/lib/feed/api/rmharks.$id.mute.server';
-import { route as r781 } from '@/lib/feed/api/rmharks.$id.pin.server';
-import { route as r782 } from '@/lib/feed/api/rmharks.$id.pin-reply.server';
-import { route as r783 } from '@/lib/feed/api/rmharks.$id.pin.move.server';
-import { route as r784 } from '@/lib/feed/api/rmharks.$id.poll.end.server';
-import { route as r785 } from '@/lib/feed/api/rmharks.$id.poll.extend.server';
-import { route as r786 } from '@/lib/feed/api/rmharks.$id.quotes.server';
-import { route as r787 } from '@/lib/feed/api/rmharks.$id.react.server';
-import { route as r788 } from '@/lib/feed/api/rmharks.$id.repost.server';
-import { route as r789 } from '@/lib/feed/api/rmharks.$id.summary.server';
-import { route as r790 } from '@/lib/feed/api/rmharks.$id.take.server';
-import { route as r791 } from '@/lib/ai/api/rmharks.$id.translate.server';
-import { route as r792 } from '@/lib/feed/api/rmharks.$id.vibe.server';
-import { route as r793 } from '@/lib/feed/api/rmharks.$id.vote.server';
-import { route as r794 } from '@/lib/feed/api/rmharks.ai-generate.server';
-import { route as r795 } from '@/lib/rmhark-ai/api/rmharks.ai-image.server';
-import { route as r796 } from '@/lib/media/api/rmharks.image.server';
-import { route as r797 } from '@/lib/feed/api/rmharks.thread.server';
-import { route as r798 } from '@/lib/rmhbox/api/rmhbox.history.server';
-import { route as r799 } from '@/lib/rmhbox/api/rmhbox.packs.server';
-import { route as r800 } from '@/lib/rmhbox/api/rmhbox.packs.$id.server';
-import { route as r801 } from '@/lib/rmhbox/api/rmhbox.packs.$id.report.server';
-import { route as r802 } from '@/lib/rmhbox/api/rmhbox.presets.server';
-import { route as r803 } from '@/lib/rmhbox/api/rmhbox.presets.$id.server';
-import { route as r804 } from '@/lib/rmhbox/api/rmhbox.stats.server';
-import { route as r805 } from '@/features/rmhcharacters/api/rmhcharacters.advisor.server';
-import { route as r806 } from '@/features/rmhcharacters/api/rmhcharacters.characters.server';
-import { route as r807 } from '@/features/rmhcharacters/api/rmhcharacters.characters.$id.server';
-import { route as r808 } from '@/lib/rmhcode/api/rmhcode.auth.generate.server';
-import { route as r809 } from '@/lib/rmhcode/api/rmhcode.auth.initiate.server';
-import { route as r810 } from '@/lib/rmhcode/api/rmhcode.auth.list.server';
-import { route as r811 } from '@/lib/rmhcode/api/rmhcode.auth.revoke.server';
-import { route as r812 } from '@/lib/rmhcode/api/rmhcode.auth.validate.server';
-import { route as r813 } from '@/lib/rmhladder/api/rmhladder.answers.server';
-import { route as r814 } from '@/lib/rmhladder/api/rmhladder.calendar.server';
-import { route as r815 } from '@/lib/rmhladder/api/rmhladder.export.server';
-import { route as r816 } from '@/lib/rmhladder/api/rmhladder.import.server';
-import { route as r817 } from '@/lib/rmhladder/api/rmhladder.insights.server';
-import { route as r818 } from '@/lib/rmhladder/api/rmhladder.interview-reports.server';
-import { route as r819 } from '@/lib/rmhladder/api/rmhladder.offers.server';
-import { route as r820 } from '@/lib/rmhladder/api/rmhladder.offers.$id.server';
-import { route as r821 } from '@/lib/rmhladder/api/rmhladder.offers.$id.decide.server';
-import { route as r822 } from '@/lib/rmhladder/api/rmhladder.prep.server';
-import { route as r823 } from '@/lib/rmhladder/api/rmhladder.referral-requests.$id.server';
-import { route as r824 } from '@/lib/rmhladder/api/rmhladder.referrals.server';
-import { route as r825 } from '@/lib/rmhladder/api/rmhladder.referrals.$id.server';
-import { route as r826 } from '@/lib/rmhladder/api/rmhladder.referrals.$id.request.server';
-import { route as r827 } from '@/lib/rmhladder/api/rmhladder.searches.server';
-import { route as r828 } from '@/lib/rmhmusic/api/rmhmusic.friends.server';
-import { route as r829 } from '@/lib/rmhmusic/api/rmhmusic.history.server';
-import { route as r830 } from '@/lib/rmhmusic/api/rmhmusic.history.entries.server';
-import { route as r831 } from '@/lib/rmhmusic/api/rmhmusic.history.songs.$songId.server';
-import { route as r832 } from '@/lib/rmhmusic/api/rmhmusic.learn.cards.server';
-import { route as r833 } from '@/lib/rmhmusic/api/rmhmusic.learn.lesson-complete.server';
-import { route as r834 } from '@/lib/rmhmusic/api/rmhmusic.learn.profile.server';
-import { route as r835 } from '@/lib/rmhmusic/api/rmhmusic.r.$token.server';
-import { route as r836 } from '@/lib/rmhmusic/api/rmhmusic.share.server';
-import { route as r837 } from '@/lib/rmhmusic/api/rmhmusic.share.$id.server';
-import { route as r838 } from '@/lib/rmhmusic/api/rmhmusic.social.server';
-import { route as r839 } from '@/lib/rmhmusic/api/rmhmusic.songs.server';
-import { route as r840 } from '@/lib/rmhmusic/api/rmhmusic.songs.best.server';
-import { route as r841 } from '@/lib/rmhmusic/api/rmhmusic.sprint.server';
-import { route as r842 } from '@/lib/rmhmusic/api/rmhmusic.sprint.board.server';
-import { route as r843 } from '@/lib/rmhmusic/api/rmhmusic.sprint.daily.server';
-import { route as r844 } from '@/lib/rmhmusic/api/rmhmusic.sprint.daily-start.server';
-import { route as r845 } from '@/lib/rmhmusic/api/rmhmusic.sprint.freeplay.server';
-import { route as r846 } from '@/features/rmhos/api/rmhos.session.server';
-import { route as r847 } from '@/lib/rmhstudy/api/rmhstudy.goal.server';
-import { route as r848 } from '@/lib/rmhstudy/api/rmhstudy.history.server';
-import { route as r849 } from '@/lib/rmhstudy/api/rmhstudy.history.sessions.server';
-import { route as r850 } from '@/lib/rmhtube/api/rmhtube.commentary.server';
-import { route as r851 } from '@/lib/rmhtube/api/rmhtube.heat.server';
-import { route as r852 } from '@/lib/rmhtube/api/rmhtube.parties.server';
-import { route as r853 } from '@/lib/rmhtube/api/rmhtube.parties.$roomId.server';
-import { route as r854 } from '@/lib/rmhtube/api/rmhtube.parties.$roomId.rsvp.server';
-import { route as r855 } from '@/lib/rmhtube/api/rmhtube.stats.server';
-import { route as r856 } from '@/lib/rmhtube/api/rmhtube.stats.pause.server';
-import { route as r857 } from '@/lib/rmhtube/api/rmhtube.subscribe.$channelId.server';
-import { route as r858 } from '@/lib/rmhtube/api/rmhtube.timed-comments.server';
-import { route as r859 } from '@/lib/rmhtube/api/rmhtube.watch-later.server';
-import { route as r860 } from '@/lib/rmhtype/api/rmhtype.daily.server';
-import { route as r861 } from '@/lib/rmhtype/api/rmhtype.daily.finish.server';
-import { route as r862 } from '@/lib/rmhtype/api/rmhtype.daily.leaderboard.server';
-import { route as r863 } from '@/lib/rmhtype/api/rmhtype.daily.start.server';
-import { route as r864 } from '@/lib/rmhtype/api/rmhtype.ghosts.server';
-import { route as r865 } from '@/lib/rmhtype/api/rmhtype.ghosts.$passageId.server';
-import { route as r866 } from '@/lib/rmhtype/api/rmhtype.keystats.server';
-import { route as r867 } from '@/lib/rmhtype/api/rmhtype.lessons.progress.server';
-import { route as r868 } from '@/lib/rmhtype/api/rmhtype.practice-test.server';
-import { route as r869 } from '@/lib/rmhtype/api/rmhtype.progress.server';
-import { route as r870 } from '@/lib/rmhtype/api/rmhtype.progress.runs.server';
-import { route as r871 } from '@/lib/rmhtype/api/rmhtype.texts.server';
-import { route as r872 } from '@/lib/rmhtype/api/rmhtype.texts.$textId.server';
-import { route as r873 } from '@/lib/rmhtype/api/rmhtype.texts.$textId.runs.server';
-import { route as r874 } from '@/lib/api/routes/rum.server';
-import { route as r875 } from '@/lib/api/routes/safety.pile-on.server';
-import { route as r876 } from '@/lib/messages/api/saved-replies.server';
-import { route as r877 } from '@/lib/messages/api/saved-replies.$id.server';
-import { route as r878 } from '@/lib/messages/api/saved-replies.$id.use.server';
-import { route as r879 } from '@/lib/messages/api/saved-replies.order.server';
-import { route as r880 } from '@/lib/saves/api/saves.server';
-import { route as r881 } from '@/lib/saves/api/saves.folders.server';
-import { route as r882 } from '@/lib/saves/api/saves.folders.$id.server';
-import { route as r883 } from '@/lib/saves/api/saves.note.server';
-import { route as r884 } from '@/lib/schedule/api/schedule.server';
-import { route as r885 } from '@/lib/schedule/api/schedule.admin.server';
-import { route as r886 } from '@/lib/schedule/api/schedule.mine.server';
-import { route as r887 } from '@/lib/scheduled/api/scheduled.server';
-import { route as r888 } from '@/lib/scheduled/api/scheduled.$id.server';
-import { route as r889 } from '@/lib/scheduled/api/scheduled.$id.publish.server';
-import { route as r890 } from '@/lib/scheduled/api/scheduled.capsules.server';
-import { route as r891 } from '@/lib/search/api/search.server';
-import { route as r892 } from '@/lib/search/api/search.saved.server';
-import { route as r893 } from '@/lib/search/api/search.saved.$id.server';
-import { route as r894 } from '@/lib/posts-plus/api/series.server';
-import { route as r895 } from '@/lib/posts-plus/api/series.$id.server';
-import { route as r896 } from '@/lib/posts-plus/api/series.$id.follow.server';
-import { route as r897 } from '@/lib/posts-plus/api/series.$id.posts.server';
-import { route as r898 } from '@/lib/posts-plus/api/series.$id.posts.$postId.server';
-import { route as r899 } from '@/lib/posts-plus/api/series.post.$postId.server';
-import { route as r900 } from '@/lib/rebar-rutabaga/api/services.rebar-reservations.server';
-import { route as r901 } from '@/lib/feed/api/settings.alt-text.server';
-import { route as r902 } from '@/lib/posts-plus/api/settings.auto-delete.server';
-import { route as r903 } from '@/lib/moderation/api/settings.blocked.server';
-import { route as r904 } from '@/lib/feed/api/settings.content-warnings.server';
-import { route as r905 } from '@/lib/game/api/settings.game-assists.server';
-import { route as r906 } from '@/lib/game/api/settings.leaderboard-privacy.server';
-import { route as r907 } from '@/lib/feed/api/settings.missing-alt-text.server';
-import { route as r908 } from '@/lib/notify/api/settings.muted-conversations.server';
-import { route as r909 } from '@/lib/economy/api/settings.play-limits.server';
-import { route as r910 } from '@/lib/playtime/api/settings.playtime-privacy.server';
-import { route as r911 } from '@/lib/feed/api/settings.quiet-counts.server';
-import { route as r912 } from '@/lib/messages/api/settings.read-receipts.server';
-import { route as r913 } from '@/lib/auth/api/settings.security.activity.server';
-import { route as r914 } from '@/lib/auth/api/settings.security.activity.export.server';
-import { route as r915 } from '@/lib/shop/api/shop.server';
-import { route as r916 } from '@/lib/shop/api/shop.bundle.server';
-import { route as r917 } from '@/lib/shop/api/shop.daily.server';
-import { route as r918 } from '@/lib/shop/api/shop.equip.server';
-import { route as r919 } from '@/lib/shop/api/shop.loadouts.server';
-import { route as r920 } from '@/lib/shop/api/shop.loadouts.$id.server';
-import { route as r921 } from '@/lib/shop/api/shop.loadouts.$id.apply.server';
-import { route as r922 } from '@/lib/shop/api/shop.search.server';
-import { route as r923 } from '@/features/signal-forge/api/signal-forge.abandon.server';
-import { route as r924 } from '@/features/signal-forge/api/signal-forge.leaderboard.server';
-import { route as r925 } from '@/features/signal-forge/api/signal-forge.load.server';
-import { route as r926 } from '@/features/signal-forge/api/signal-forge.save.server';
-import { route as r927 } from '@/features/signal-forge/api/signal-forge.score.server';
-import { route as r928 } from '@/lib/api/routes/sitewide-announcement.server';
-import { route as r929 } from '@/lib/api/routes/sitewide-announcement.seen.server';
-import { route as r930 } from '@/features/slice-it/api/slice-it.admin.content.server';
-import { route as r931 } from '@/features/slice-it/api/slice-it.admin.review.server';
-import { route as r932 } from '@/features/slice-it/api/slice-it.admin.takedown.server';
-import { route as r933 } from '@/features/slice-it/api/slice-it.charts.server';
-import { route as r934 } from '@/features/slice-it/api/slice-it.charts.$id.server';
-import { route as r935 } from '@/features/slice-it/api/slice-it.charts.$id.reviews.server';
-import { route as r936 } from '@/features/slice-it/api/slice-it.charts.$id.revisions.server';
-import { route as r937 } from '@/features/slice-it/api/slice-it.charts.ranking.server';
-import { route as r938 } from '@/features/slice-it/api/slice-it.daily.server';
-import { route as r939 } from '@/features/slice-it/api/slice-it.daily.submit.server';
-import { route as r940 } from '@/features/slice-it/api/slice-it.leaderboard.server';
-import { route as r941 } from '@/features/slice-it/api/slice-it.packs.server';
-import { route as r942 } from '@/features/slice-it/api/slice-it.packs.$id.server';
-import { route as r943 } from '@/features/slice-it/api/slice-it.packs.$id.items.server';
-import { route as r944 } from '@/features/slice-it/api/slice-it.replay.server';
-import { route as r945 } from '@/features/slice-it/api/slice-it.replay.$id.server';
-import { route as r946 } from '@/features/slice-it/api/slice-it.score.server';
-import { route as r947 } from '@/features/slice-it/api/slice-it.setlists.server';
-import { route as r948 } from '@/features/slice-it/api/slice-it.setlists.$id.server';
-import { route as r949 } from '@/features/slice-it/api/slice-it.shelves.server';
-import { route as r950 } from '@/features/slice-it/api/slice-it.showcase.server';
-import { route as r951 } from '@/features/slice-it/api/slice-it.songs.server';
-import { route as r952 } from '@/features/slice-it/api/slice-it.songs.$id.server';
-import { route as r953 } from '@/features/slice-it/api/slice-it.songs.$id.charts.server';
-import { route as r954 } from '@/features/slice-it/api/slice-it.songs.$id.comments.server';
-import { route as r955 } from '@/features/slice-it/api/slice-it.songs.$id.cover.server';
-import { route as r956 } from '@/features/slice-it/api/slice-it.songs.$id.import-chart.server';
-import { route as r957 } from '@/features/slice-it/api/slice-it.songs.$id.like.server';
-import { route as r958 } from '@/features/slice-it/api/slice-it.songs.$id.patch-analysis.server';
-import { route as r959 } from '@/features/slice-it/api/slice-it.songs.$id.play.server';
-import { route as r960 } from '@/features/slice-it/api/slice-it.songs.$id.regenerate.server';
-import { route as r961 } from '@/features/slice-it/api/slice-it.songs.artist.$key.server';
-import { route as r962 } from '@/features/slice-it/api/slice-it.songs.artists.server';
-import { route as r963 } from '@/features/slice-it/api/slice-it.songs.upload.server';
-import { route as r964 } from '@/features/slice-it/api/slice-it.uploader-stats.server';
-import { route as r965 } from '@/lib/sohumtracker/api/sohumtracker.activity.server';
-import { route as r966 } from '@/lib/sohumtracker/api/sohumtracker.alert.server';
-import { route as r967 } from '@/lib/sohumtracker/api/sohumtracker.export.server';
-import { route as r968 } from '@/lib/spaces/api/spaces.server';
-import { route as r969 } from '@/lib/spaces/api/spaces.$id.end.server';
-import { route as r970 } from '@/lib/spaces/api/spaces.$id.start.server';
-import { route as r971 } from '@/lib/speedrun/api/speedrun.categories.server';
-import { route as r972 } from '@/lib/speedrun/api/speedrun.leaderboard.server';
-import { route as r973 } from '@/lib/speedrun/api/speedrun.queue.server';
-import { route as r974 } from '@/lib/speedrun/api/speedrun.replays.server';
-import { route as r975 } from '@/lib/speedrun/api/speedrun.runs.server';
-import { route as r976 } from '@/lib/speedrun/api/speedrun.verify.server';
-import { route as r977 } from '@/lib/api/routes/spotify.search.server';
-import { route as r978 } from '@/lib/staking/api/staking.server';
-import { route as r979 } from '@/lib/staking/api/staking.deposit.server';
-import { route as r980 } from '@/lib/staking/api/staking.settings.server';
-import { route as r981 } from '@/lib/staking/api/staking.withdraw.server';
-import { route as r982 } from '@/lib/profile/api/stamps.server';
-import { route as r983 } from '@/lib/profile/api/stamps.$id.server';
-import { route as r984 } from '@/lib/profile/api/stamps.$id.wall.server';
-import { route as r985 } from '@/lib/profile/api/stamps.image.$filename.server';
-import { route as r986 } from '@/lib/profile/api/stamps.mine.server';
-import { route as r987 } from '@/lib/storefront/api/storefront.creator.$userid.server';
-import { route as r988 } from '@/lib/storefront/api/storefront.products.server';
-import { route as r989 } from '@/lib/storefront/api/storefront.products.$id.server';
-import { route as r990 } from '@/lib/storefront/api/storefront.products.$id.buy.server';
-import { route as r991 } from '@/lib/api/routes/streak.server';
-import { route as r992 } from '@/lib/api/routes/streak.freeze.server';
-import { route as r993 } from '@/lib/studio/api/studio.challenges.server';
-import { route as r994 } from '@/lib/studio/api/studio.challenges.$id.server';
-import { route as r995 } from '@/lib/studio/api/studio.challenges.$id.entry.server';
-import { route as r996 } from '@/lib/studio/api/studio.challenges.$id.vote.server';
-import { route as r997 } from '@/lib/creator/api/studio.challenges.audio.server';
-import { route as r998 } from '@/lib/studio/api/studio.challenges.audio.$filename.server';
-import { route as r999 } from '@/lib/studio/api/studio.overview.server';
-import { route as r1000 } from '@/lib/studio/api/studio.projects.server';
-import { route as r1001 } from '@/lib/studio/api/studio.projects.$id.server';
-import { route as r1002 } from '@/lib/studio/api/studio.projects.$id.versions.server';
-import { route as r1003 } from '@/lib/studio/api/studio.projects.$id.versions.$versionId.server';
-import { route as r1004 } from '@/lib/studio/api/studio.projects.$id.versions.$versionId.restore.server';
-import { route as r1005 } from '@/lib/studio/api/studio.tiers.server';
-import { route as r1006 } from '@/lib/calendar/api/study-buddy.server';
-import { route as r1007 } from '@/lib/tools/api/study-plans.server';
-import { route as r1008 } from '@/lib/tools/api/study-plans.$id.server';
-import { route as r1009 } from '@/lib/study/api/study.card-images.server';
-import { route as r1010 } from '@/lib/study/api/study.card-sound.server';
-import { route as r1011 } from '@/lib/study/api/study.card-sound.$file.server';
-import { route as r1012 } from '@/lib/study/api/study.cards.$id.server';
-import { route as r1013 } from '@/lib/study/api/study.cards.$id.review.server';
-import { route as r1014 } from '@/lib/study/api/study.cards.$id.suspend.server';
-import { route as r1015 } from '@/lib/study/api/study.decks.server';
-import { route as r1016 } from '@/lib/study/api/study.decks.$id.server';
-import { route as r1017 } from '@/lib/study/api/study.decks.$id.cards.server';
-import { route as r1018 } from '@/lib/study/api/study.decks.$id.clone.server';
-import { route as r1019 } from '@/lib/study/api/study.decks.$id.folder.server';
-import { route as r1020 } from '@/lib/study/api/study.decks.$id.link-original.server';
-import { route as r1021 } from '@/lib/study/api/study.decks.$id.order.server';
-import { route as r1022 } from '@/lib/study/api/study.decks.$id.pace.server';
-import { route as r1023 } from '@/lib/study/api/study.decks.$id.review.server';
-import { route as r1024 } from '@/lib/study/api/study.decks.$id.suggestions.server';
-import { route as r1025 } from '@/lib/study/api/study.decks.$id.tests.server';
-import { route as r1026 } from '@/lib/study/api/study.decks.$id.updates.server';
-import { route as r1027 } from '@/lib/study/api/study.folders.server';
-import { route as r1028 } from '@/lib/study/api/study.folders.$id.server';
-import { route as r1029 } from '@/lib/study/api/study.highlight-cards.server';
-import { route as r1030 } from '@/lib/study/api/study.marketplace.server';
-import { route as r1031 } from '@/lib/study/api/study.reminders.server';
-import { route as r1032 } from '@/lib/study/api/study.review.server';
-import { route as r1033 } from '@/lib/study/api/study.stats.server';
-import { route as r1034 } from '@/lib/study/api/study.suggestions.$id.server';
-import { route as r1035 } from '@/lib/study/api/study.suggestions.$id.decision.server';
-import { route as r1036 } from '@/lib/study/api/study.tutor.server';
-import { route as r1037 } from '@/lib/api/routes/tags.$tag.server';
-import { route as r1038 } from '@/lib/temple-of-joy/api/temple-of-joy.efficiency.server';
-import { route as r1039 } from '@/lib/temple-of-joy/api/temple-of-joy.save.server';
-import { route as r1040 } from '@/lib/tf2-hud/api/tf2-hud.ai.server';
-import { route as r1041 } from '@/lib/tf2-hud/api/tf2-hud.blobs.$sha1.server';
-import { route as r1042 } from '@/lib/tf2-hud/api/tf2-hud.blobs.check.server';
-import { route as r1043 } from '@/lib/tf2-hud/api/tf2-hud.huds.server';
-import { route as r1044 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.server';
-import { route as r1045 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.download.server';
-import { route as r1046 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.file.server';
-import { route as r1047 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.fork.server';
-import { route as r1048 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.like.server';
-import { route as r1049 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.share.server';
-import { route as r1050 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.versions.server';
-import { route as r1051 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.versions.$n.server';
-import { route as r1052 } from '@/lib/tf2-hud/api/tf2-hud.share.$token.server';
-import { route as r1053 } from '@/lib/tf2-hud/api/tf2-hud.share.$token.file.server';
-import { route as r1054 } from '@/lib/tf2-loadout/api/tf2-loadout.ai.server';
-import { route as r1055 } from '@/lib/tf2-loadout/api/tf2-loadout.catalog.server';
-import { route as r1056 } from '@/lib/tf2-loadout/api/tf2-loadout.icons.$id.server';
-import { route as r1057 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.server';
-import { route as r1058 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.server';
-import { route as r1059 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.fork.server';
-import { route as r1060 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.like.server';
-import { route as r1061 } from '@/lib/tf2-loadout/api/tf2-loadout.models.server';
-import { route as r1062 } from '@/lib/tf2-loadout/api/tf2-loadout.models.$id.server';
-import { route as r1063 } from '@/lib/themes/api/themes.server';
-import { route as r1064 } from '@/lib/themes/api/themes.$id.server';
-import { route as r1065 } from '@/lib/themes/api/themes.$id.buy.server';
-import { route as r1066 } from '@/lib/themes/api/themes.$id.publish.server';
-import { route as r1067 } from '@/lib/themes/api/themes.shop.server';
-import { route as r1068 } from '@/lib/discovery/api/tips.leaderboard.server';
-import { route as r1069 } from '@/lib/quests/api/today.server';
-import { route as r1070 } from '@/lib/tournaments/api/tournaments.server';
-import { route as r1071 } from '@/lib/tournaments/api/tournaments.$id.server';
-import { route as r1072 } from '@/lib/tournaments/api/tournaments.$id.checkin.server';
-import { route as r1073 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.award.server';
-import { route as r1074 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.confirm.server';
-import { route as r1075 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.decide.server';
-import { route as r1076 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.dispute.server';
-import { route as r1077 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.report.server';
-import { route as r1078 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.schedule.server';
-import { route as r1079 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.withdraw.server';
-import { route as r1080 } from '@/lib/competitive/api/tournaments.$id.pickem.server';
-import { route as r1081 } from '@/lib/tournaments/api/tournaments.$id.schedule-settings.server';
-import { route as r1082 } from '@/lib/tournaments/api/tournaments.$id.seeding.server';
-import { route as r1083 } from '@/lib/delight/api/translate.server';
-import { route as r1084 } from '@/lib/delight/api/translate.suggest.server';
-import { route as r1085 } from '@/lib/delight/api/translate.vote.server';
-import { route as r1086 } from '@/lib/trash/api/trash.server';
-import { route as r1087 } from '@/lib/trash/api/trash.$kind.$id.server';
-import { route as r1088 } from '@/lib/trash/api/trash.restore.server';
-import { route as r1089 } from '@/lib/unfurl/api/unfurl.server';
-import { route as r1090 } from '@/lib/api/routes/user-builds.server';
-import { route as r1091 } from '@/lib/api/routes/user-builds.$id.server';
-import { route as r1092 } from '@/lib/api/routes/user-builds.$id.comments.server';
-import { route as r1093 } from '@/lib/builds/api/user-builds.$id.comments-lock.server';
-import { route as r1094 } from '@/lib/builds/api/user-builds.$id.comments.$commentId.server';
-import { route as r1095 } from '@/lib/builds/api/user-builds.$id.comments.$commentId.hide.server';
-import { route as r1096 } from '@/lib/builds/api/user-builds.$id.images.server';
-import { route as r1097 } from '@/lib/builds/api/user-builds.$id.insights.server';
-import { route as r1098 } from '@/lib/api/routes/user-builds.$id.like.server';
-import { route as r1099 } from '@/lib/builds/api/user-builds.$id.releases.server';
-import { route as r1100 } from '@/lib/builds/api/user-builds.$id.releases.$releaseId.server';
-import { route as r1101 } from '@/lib/builds/api/user-builds.$id.screenshots.server';
-import { route as r1102 } from '@/lib/api/routes/user-builds.categories.server';
-import { route as r1103 } from '@/lib/api/routes/user-builds.featured.server';
-import { route as r1104 } from '@/lib/wishlist/api/users.$id.wishlist.server';
-import { route as r1105 } from '@/lib/discovery/api/users.search.server';
-import { route as r1106 } from '@/lib/game/api/vega.leaderboard.server';
-import { route as r1107 } from '@/features/vega/api/vega.score.server';
-import { route as r1108 } from '@/lib/velum2099/api/velum2099.contracts.server';
-import { route as r1109 } from '@/lib/versecraft/api/versecraft.chapter.server';
-import { route as r1110 } from '@/lib/versecraft/api/versecraft.outline.server';
-import { route as r1111 } from '@/lib/versecraft/api/versecraft.progress.server';
-import { route as r1112 } from '@/lib/versecraft/api/versecraft.save.server';
-import { route as r1113 } from '@/lib/versecraft/api/versecraft.seeds.server';
-import { route as r1114 } from '@/lib/versecraft/api/versecraft.seeds.fork.server';
-import { route as r1115 } from '@/lib/versecraft/api/versecraft.seeds.rate.server';
-import { route as r1116 } from '@/lib/rmhvibe/api/vibe.gallery.server';
-import { route as r1117 } from '@/lib/rmhvibe/api/vibe.kv.$slug.server';
-import { route as r1118 } from '@/lib/rmhvibe/api/vibe.page.$slug.server';
-import { route as r1119 } from '@/lib/rmhvibe/api/vibe.page.$slug.tweaks.server';
-import { route as r1120 } from '@/lib/game/api/void-breaker.leaderboard.server';
-import { route as r1121 } from '@/lib/game/api/void-breaker.score.server';
-import { route as r1122 } from '@/lib/wager/api/wager.server';
-import { route as r1123 } from '@/lib/wager/api/wager.$id.server';
-import { route as r1124 } from '@/lib/profile/api/webrings.server';
-import { route as r1125 } from '@/lib/profile/api/webrings.$slug.server';
-import { route as r1126 } from '@/lib/profile/api/webrings.$slug.hop.server';
-import { route as r1127 } from '@/lib/profile/api/webrings.$slug.membership.server';
-import { route as r1128 } from '@/lib/wheel/api/wheel.server';
-import { route as r1129 } from '@/lib/wheel/api/wheel.spin.server';
-import { route as r1130 } from '@/lib/calendar/api/when.server';
-import { route as r1131 } from '@/lib/calendar/api/when.$id.server';
-import { route as r1132 } from '@/lib/calendar/api/when.$id.ics.server';
-import { route as r1133 } from '@/lib/calendar/api/when.$id.lock.server';
-import { route as r1134 } from '@/lib/calendar/api/when.$id.respond.server';
-import { route as r1135 } from '@/lib/wiki/api/wiki.sso.server';
-import { route as r1136 } from '@/lib/wishlist/api/wishlist.server';
-import { route as r1137 } from '@/lib/wrapped/api/wrapped.server';
+import { route as r577 } from '@/features/medschools/api/medschools.me.tracker.server';
+import { route as r578 } from '@/features/medschools/api/medschools.me.tracker.applications.server';
+import { route as r579 } from '@/features/medschools/api/medschools.me.tracker.applications.$id.server';
+import { route as r580 } from '@/features/medschools/api/medschools.me.tracker.applications.$id.milestones.$type.server';
+import { route as r581 } from '@/features/medschools/api/medschools.me.tracker.cycle.server';
+import { route as r582 } from '@/features/medschools/api/medschools.schools.server';
+import { route as r583 } from '@/features/medschools/api/medschools.schools.$slug.server';
+import { route as r584 } from '@/features/medschools/api/medschools.schools.$slug.activity.server';
+import { route as r585 } from '@/features/medschools/api/medschools.schools.$slug.history.server';
+import { route as r586 } from '@/features/medschools/api/medschools.today.server';
+import { route as r587 } from '@/lib/ai/api/memory.server';
+import { route as r588 } from '@/lib/messages/api/messages.server';
+import { route as r589 } from '@/lib/messages/api/messages.$conversationId.server';
+import { route as r590 } from '@/lib/messages/api/messages.$conversationId.alt.server';
+import { route as r591 } from '@/lib/messages/api/messages.$conversationId.edit.server';
+import { route as r592 } from '@/lib/messages/api/messages.$conversationId.hide.server';
+import { route as r593 } from '@/lib/messages/api/messages.$conversationId.mutations.server';
+import { route as r594 } from '@/lib/messages/api/messages.$conversationId.react.server';
+import { route as r595 } from '@/lib/messages/api/messages.$conversationId.read.server';
+import { route as r596 } from '@/lib/messages/api/messages.$conversationId.thread.server';
+import { route as r597 } from '@/lib/messages/api/messages.$conversationId.typing.server';
+import { route as r598 } from '@/lib/messages/api/messages.$conversationId.unsend.server';
+import { route as r599 } from '@/lib/messages/api/messages.$conversationId.voice.server';
+import { route as r600 } from '@/lib/messages/api/messages.away.server';
+import { route as r601 } from '@/lib/messages/api/messages.away.$userId.status.server';
+import { route as r602 } from '@/lib/messages/api/messages.read-all.server';
+import { route as r603 } from '@/lib/messages/api/messages.requests.server';
+import { route as r604 } from '@/lib/messages/api/messages.requests.$id.server';
+import { route as r605 } from '@/lib/messages/api/messages.saved.server';
+import { route as r606 } from '@/lib/messages/api/messages.scheduled.server';
+import { route as r607 } from '@/lib/messages/api/messages.scheduled.$id.server';
+import { route as r608 } from '@/lib/messages/api/messages.scheduled.$id.send-now.server';
+import { route as r609 } from '@/lib/messages/api/messages.search.server';
+import { route as r610 } from '@/lib/messages/api/messages.sidebar.server';
+import { route as r611 } from '@/lib/messages/api/messages.unread-count.server';
+import { route as r612 } from '@/lib/messages/api/messages.voice.$filename.server';
+import { route as r613 } from '@/lib/moderation/api/moderation.block.server';
+import { route as r614 } from '@/lib/moderation/api/moderation.mute.server';
+import { route as r615 } from '@/lib/moderation/api/moderation.report.server';
+import { route as r616 } from '@/lib/api/routes/moments.server';
+import { route as r617 } from '@/lib/delight/api/museum.server';
+import { route as r618 } from '@/lib/neon-driftway/api/neon-driftway.leaderboard.server';
+import { route as r619 } from '@/lib/neon-driftway/api/neon-driftway.livery.server';
+import { route as r620 } from '@/lib/game/api/neon-driftway.score.server';
+import { route as r621 } from '@/lib/trick-week/api/nightrail.tricks.server';
+import { route as r622 } from '@/lib/trick-week/api/nightrail.tricks.vote.server';
+import { route as r623 } from '@/lib/ops/api/notices.active.server';
+import { route as r624 } from '@/lib/ops/api/notices.dismiss.server';
+import { route as r625 } from '@/lib/preferences/api/notifications.server';
+import { route as r626 } from '@/lib/notifications/api/notifications.$id.server';
+import { route as r627 } from '@/lib/notifications/api/notifications.dismiss.server';
+import { route as r628 } from '@/lib/preferences/api/notifications.preferences.server';
+import { route as r629 } from '@/lib/preferences/api/notifications.read.server';
+import { route as r630 } from '@/lib/api/routes/oembed.server';
+import { route as r631 } from '@/lib/calendar/api/office-hours.server';
+import { route as r632 } from '@/lib/calendar/api/office-hours.bookings.$id.server';
+import { route as r633 } from '@/lib/calendar/api/office-hours.bookings.$id.ics.server';
+import { route as r634 } from '@/lib/calendar/api/office-hours.host.$id.server';
+import { route as r635 } from '@/lib/calendar/api/office-hours.host.$id.summary.server';
+import { route as r636 } from '@/lib/og/api/og.album.$albumId.server';
+import { route as r637 } from '@/lib/og/api/og.app.$appId.server';
+import { route as r638 } from '@/lib/og/api/og.blog.$slug.server';
+import { route as r639 } from '@/lib/og/api/og.build.$slug.server';
+import { route as r640 } from '@/lib/og/api/og.elections.server';
+import { route as r641 } from '@/lib/og/api/og.game.$gameId.server';
+import { route as r642 } from '@/lib/og/api/og.job.$jobId.server';
+import { route as r643 } from '@/lib/og/api/og.med-school.$slug.server';
+import { route as r644 } from '@/lib/og/api/og.moment.$id.server';
+import { route as r645 } from '@/lib/og/api/og.music.$token.server';
+import { route as r646 } from '@/lib/og/api/og.post.$id.server';
+import { route as r647 } from '@/lib/og/api/og.post.$id.story.server';
+import { route as r648 } from '@/lib/og/api/og.profile.$id.server';
+import { route as r649 } from '@/lib/og/api/og.replay.$id.server';
+import { route as r650 } from '@/lib/rmh-research/api/og.research.$kind.$id.server';
+import { route as r651 } from '@/lib/og/api/og.section.$file.server';
+import { route as r652 } from '@/lib/og/api/og.sohumtracker.server';
+import { route as r653 } from '@/lib/og/api/og.story.$slug.server';
+import { route as r654 } from '@/lib/og/api/og.wiki.server';
+import { route as r655 } from '@/lib/api/routes/onboarding.server';
+import { route as r656 } from '@/lib/api/routes/onboarding.first-week.server';
+import { route as r657 } from '@/lib/personas/api/personas.server';
+import { route as r658 } from '@/lib/personas/api/personas.$id.server';
+import { route as r659 } from '@/lib/personas/api/personas.$id.chat.server';
+import { route as r660 } from '@/lib/api/routes/photo-of-the-day.server';
+import { route as r661 } from '@/lib/delight/api/photo-of-the-day.$id.server';
+import { route as r662 } from '@/lib/delight/api/photo-of-the-day.vote.server';
+import { route as r663 } from '@/lib/playlists/api/playlists.server';
+import { route as r664 } from '@/lib/playlists/api/playlists.$id.server';
+import { route as r665 } from '@/lib/playlists/api/playlists.$id.collaborators.server';
+import { route as r666 } from '@/lib/playlists/api/playlists.$id.collaborators.$userId.server';
+import { route as r667 } from '@/lib/playlists/api/playlists.$id.items.server';
+import { route as r668 } from '@/lib/playlists/api/playlists.$id.items.$itemId.server';
+import { route as r669 } from '@/lib/playlists/api/playlists.$id.items.bulk.server';
+import { route as r670 } from '@/lib/predictions/api/predictions.server';
+import { route as r671 } from '@/lib/predictions/api/predictions.$id.server';
+import { route as r672 } from '@/lib/predictions/api/predictions.$id.comments.server';
+import { route as r673 } from '@/lib/predictions/api/predictions.$id.devils-advocate.server';
+import { route as r674 } from '@/lib/predictions/api/predictions.$id.trade.server';
+import { route as r675 } from '@/lib/preferences/api/preferences.appearance.server';
+import { route as r676 } from '@/lib/preferences/api/preferences.conversation.server';
+import { route as r677 } from '@/lib/preferences/api/preferences.email.server';
+import { route as r678 } from '@/lib/preferences/api/preferences.keyboard.server';
+import { route as r679 } from '@/lib/preferences/api/preferences.layout.server';
+import { route as r680 } from '@/lib/preferences/api/preferences.muted-words.server';
+import { route as r681 } from '@/lib/preferences/api/preferences.notifications.server';
+import { route as r682 } from '@/lib/preferences/api/preferences.presence.server';
+import { route as r683 } from '@/lib/presence/api/presence.online-count.server';
+import { route as r684 } from '@/lib/api/routes/profile.server';
+import { route as r685 } from '@/lib/profile-links/api/profile-links.server';
+import { route as r686 } from '@/lib/profile-links/api/profile-links.$id.server';
+import { route as r687 } from '@/lib/profile-links/api/profile-links.$id.verify.server';
+import { route as r688 } from '@/lib/profile/api/profile.$id.server';
+import { route as r689 } from '@/lib/profile/api/profile.$id.activity.server';
+import { route as r690 } from '@/lib/profile/api/profile.$id.card.server';
+import { route as r691 } from '@/lib/profile/api/profile.$id.endorsements.server';
+import { route as r692 } from '@/lib/profile/api/profile.$id.follow.server';
+import { route as r693 } from '@/lib/profile/api/profile.$id.followers.server';
+import { route as r694 } from '@/lib/profile/api/profile.$id.following.server';
+import { route as r695 } from '@/lib/guestbook/api/profile.$id.guestbook.server';
+import { route as r696 } from '@/lib/guestbook/api/profile.$id.guestbook.$entryId.server';
+import { route as r697 } from '@/lib/profile/api/profile.$id.kudos.server';
+import { route as r698 } from '@/lib/profile/api/profile.$id.likes.server';
+import { route as r699 } from '@/lib/profile/api/profile.$id.membership.server';
+import { route as r700 } from '@/lib/profile/api/profile.$id.plus.server';
+import { route as r701 } from '@/lib/profile/api/profile.$id.pronunciation.server';
+import { route as r702 } from '@/lib/profile/api/profile.$id.rmharks.server';
+import { route as r703 } from '@/lib/profile/api/profile.$id.shelves.server';
+import { route as r704 } from '@/lib/profile/api/profile.$id.stamps.server';
+import { route as r705 } from '@/lib/profile/api/profile.$id.visit.server';
+import { route as r706 } from '@/lib/profile/api/profile.$id.webrings.server';
+import { route as r707 } from '@/lib/profile/api/profile.analytics.server';
+import { route as r708 } from '@/lib/api/routes/profile.avatar.server';
+import { route as r709 } from '@/lib/api/routes/profile.banner.server';
+import { route as r710 } from '@/lib/api/routes/profile.banner-source.server';
+import { route as r711 } from '@/lib/profile/api/profile.layout.server';
+import { route as r712 } from '@/lib/profile/api/profile.me.server';
+import { route as r713 } from '@/lib/profile/api/profile.plus.server';
+import { route as r714 } from '@/lib/profile/api/profile.preview.server';
+import { route as r715 } from '@/lib/profile/api/profile.pronunciation.server';
+import { route as r716 } from '@/lib/profile/api/profile.status.server';
+import { route as r717 } from '@/lib/profile/api/profile.top-four.server';
+import { route as r718 } from '@/lib/api/routes/progress.server';
+import { route as r719 } from '@/lib/api/routes/promo.free-month.server';
+import { route as r720 } from '@/lib/push/api/push.action.server';
+import { route as r721 } from '@/lib/push/api/push.public-key.server';
+import { route as r722 } from '@/lib/push/api/push.subscribe.server';
+import { route as r723 } from '@/lib/posts-plus/api/qotd.answers.server';
+import { route as r724 } from '@/lib/posts-plus/api/qotd.archive.server';
+import { route as r725 } from '@/lib/posts-plus/api/qotd.today.server';
+import { route as r726 } from '@/lib/battlepass/api/quests.$id.claim.server';
+import { route as r727 } from '@/lib/ranked/api/ranked.server';
+import { route as r728 } from '@/lib/ranked/api/ranked.$game.leaderboard.server';
+import { route as r729 } from '@/lib/ranked/api/ranked.challenge.$id.server';
+import { route as r730 } from '@/lib/reading/api/reading.doc.server';
+import { route as r731 } from '@/lib/reading/api/reading.goal.server';
+import { route as r732 } from '@/lib/reading/api/reading.highlights.server';
+import { route as r733 } from '@/lib/reading/api/reading.highlights.$id.server';
+import { route as r734 } from '@/lib/reading/api/reading.highlights.export.server';
+import { route as r735 } from '@/lib/reading/api/reading.highlights.search.server';
+import { route as r736 } from '@/lib/reading/api/reading.shelves.server';
+import { route as r737 } from '@/lib/reading/api/reading.shelves.prefs.server';
+import { route as r738 } from '@/lib/reading/api/reading.subscriptions.server';
+import { route as r739 } from '@/lib/reading/api/reading.subscriptions.$id.server';
+import { route as r740 } from '@/lib/reading/api/reading.time.server';
+import { route as r741 } from '@/lib/reading/api/reading.time.prefs.server';
+import { route as r742 } from '@/lib/api/routes/recap.server';
+import { route as r743 } from '@/lib/developer/api/recipes.server';
+import { route as r744 } from '@/lib/developer/api/recipes.$id.server';
+import { route as r745 } from '@/lib/api/routes/referrals.claim.server';
+import { route as r746 } from '@/lib/api/routes/referrals.me.server';
+import { route as r747 } from '@/lib/developer/api/release-notes.server';
+import { route as r748 } from '@/lib/reminders/api/reminders.server';
+import { route as r749 } from '@/lib/reminders/api/reminders.$id.server';
+import { route as r750 } from '@/lib/game/api/replays.server';
+import { route as r751 } from '@/lib/game/api/replays.$id.server';
+import { route as r752 } from '@/lib/game/api/replays.board.server';
+import { route as r753 } from '@/lib/game/api/replays.mine.server';
+import { route as r754 } from '@/lib/requests/api/requests.server';
+import { route as r755 } from '@/lib/requests/api/requests.$id.server';
+import { route as r756 } from '@/lib/requests/api/requests.$id.vote.server';
+import { route as r757 } from '@/lib/games/api/reviews.$id.vote.server';
+import { route as r758 } from '@/lib/rideshare/api/rideshare.directions.server';
+import { route as r759 } from '@/lib/rideshare/api/rideshare.driver.server';
+import { route as r760 } from '@/lib/rideshare/api/rideshare.earnings.server';
+import { route as r761 } from '@/lib/rideshare/api/rideshare.geocode.server';
+import { route as r762 } from '@/lib/rideshare/api/rideshare.location.server';
+import { route as r763 } from '@/lib/rideshare/api/rideshare.places.server';
+import { route as r764 } from '@/lib/rideshare/api/rideshare.places.$id.server';
+import { route as r765 } from '@/lib/rideshare/api/rideshare.reverse.server';
+import { route as r766 } from '@/lib/rideshare/api/rideshare.rides.server';
+import { route as r767 } from '@/lib/rideshare/api/rideshare.rides.$id.server';
+import { route as r768 } from '@/lib/rideshare/api/rideshare.rides.$id.messages.server';
+import { route as r769 } from '@/lib/rideshare/api/rideshare.rides.$id.rate.server';
+import { route as r770 } from '@/lib/rideshare/api/rideshare.rides.$id.sync.server';
+import { route as r771 } from '@/lib/feed/api/rmharks.server';
+import { route as r772 } from '@/lib/feed/api/rmharks.$id.server';
+import { route as r773 } from '@/lib/feed/api/rmharks.$id.alt-text.server';
+import { route as r774 } from '@/lib/feed/api/rmharks.$id.bookmark.server';
+import { route as r775 } from '@/lib/feed/api/rmharks.$id.comment.server';
+import { route as r776 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.server';
+import { route as r777 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.hide.server';
+import { route as r778 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.like.server';
+import { route as r779 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.repost.server';
+import { route as r780 } from '@/lib/feed/api/rmharks.$id.comment.$commentId.view.server';
+import { route as r781 } from '@/lib/feed/api/rmharks.$id.embed.server';
+import { route as r782 } from '@/lib/feed/api/rmharks.$id.history.server';
+import { route as r783 } from '@/lib/feed/api/rmharks.$id.insights.server';
+import { route as r784 } from '@/lib/feed/api/rmharks.$id.like.server';
+import { route as r785 } from '@/lib/feed/api/rmharks.$id.mute.server';
+import { route as r786 } from '@/lib/feed/api/rmharks.$id.pin.server';
+import { route as r787 } from '@/lib/feed/api/rmharks.$id.pin-reply.server';
+import { route as r788 } from '@/lib/feed/api/rmharks.$id.pin.move.server';
+import { route as r789 } from '@/lib/feed/api/rmharks.$id.poll.end.server';
+import { route as r790 } from '@/lib/feed/api/rmharks.$id.poll.extend.server';
+import { route as r791 } from '@/lib/feed/api/rmharks.$id.quotes.server';
+import { route as r792 } from '@/lib/feed/api/rmharks.$id.react.server';
+import { route as r793 } from '@/lib/feed/api/rmharks.$id.repost.server';
+import { route as r794 } from '@/lib/feed/api/rmharks.$id.summary.server';
+import { route as r795 } from '@/lib/feed/api/rmharks.$id.take.server';
+import { route as r796 } from '@/lib/ai/api/rmharks.$id.translate.server';
+import { route as r797 } from '@/lib/feed/api/rmharks.$id.vibe.server';
+import { route as r798 } from '@/lib/feed/api/rmharks.$id.vote.server';
+import { route as r799 } from '@/lib/feed/api/rmharks.ai-generate.server';
+import { route as r800 } from '@/lib/rmhark-ai/api/rmharks.ai-image.server';
+import { route as r801 } from '@/lib/media/api/rmharks.image.server';
+import { route as r802 } from '@/lib/feed/api/rmharks.thread.server';
+import { route as r803 } from '@/lib/rmhbox/api/rmhbox.history.server';
+import { route as r804 } from '@/lib/rmhbox/api/rmhbox.packs.server';
+import { route as r805 } from '@/lib/rmhbox/api/rmhbox.packs.$id.server';
+import { route as r806 } from '@/lib/rmhbox/api/rmhbox.packs.$id.report.server';
+import { route as r807 } from '@/lib/rmhbox/api/rmhbox.presets.server';
+import { route as r808 } from '@/lib/rmhbox/api/rmhbox.presets.$id.server';
+import { route as r809 } from '@/lib/rmhbox/api/rmhbox.stats.server';
+import { route as r810 } from '@/features/rmhcharacters/api/rmhcharacters.advisor.server';
+import { route as r811 } from '@/features/rmhcharacters/api/rmhcharacters.characters.server';
+import { route as r812 } from '@/features/rmhcharacters/api/rmhcharacters.characters.$id.server';
+import { route as r813 } from '@/lib/rmhcode/api/rmhcode.auth.generate.server';
+import { route as r814 } from '@/lib/rmhcode/api/rmhcode.auth.initiate.server';
+import { route as r815 } from '@/lib/rmhcode/api/rmhcode.auth.list.server';
+import { route as r816 } from '@/lib/rmhcode/api/rmhcode.auth.revoke.server';
+import { route as r817 } from '@/lib/rmhcode/api/rmhcode.auth.validate.server';
+import { route as r818 } from '@/lib/rmhladder/api/rmhladder.answers.server';
+import { route as r819 } from '@/lib/rmhladder/api/rmhladder.calendar.server';
+import { route as r820 } from '@/lib/rmhladder/api/rmhladder.export.server';
+import { route as r821 } from '@/lib/rmhladder/api/rmhladder.import.server';
+import { route as r822 } from '@/lib/rmhladder/api/rmhladder.insights.server';
+import { route as r823 } from '@/lib/rmhladder/api/rmhladder.interview-reports.server';
+import { route as r824 } from '@/lib/rmhladder/api/rmhladder.offers.server';
+import { route as r825 } from '@/lib/rmhladder/api/rmhladder.offers.$id.server';
+import { route as r826 } from '@/lib/rmhladder/api/rmhladder.offers.$id.decide.server';
+import { route as r827 } from '@/lib/rmhladder/api/rmhladder.prep.server';
+import { route as r828 } from '@/lib/rmhladder/api/rmhladder.referral-requests.$id.server';
+import { route as r829 } from '@/lib/rmhladder/api/rmhladder.referrals.server';
+import { route as r830 } from '@/lib/rmhladder/api/rmhladder.referrals.$id.server';
+import { route as r831 } from '@/lib/rmhladder/api/rmhladder.referrals.$id.request.server';
+import { route as r832 } from '@/lib/rmhladder/api/rmhladder.searches.server';
+import { route as r833 } from '@/lib/rmhmusic/api/rmhmusic.friends.server';
+import { route as r834 } from '@/lib/rmhmusic/api/rmhmusic.history.server';
+import { route as r835 } from '@/lib/rmhmusic/api/rmhmusic.history.entries.server';
+import { route as r836 } from '@/lib/rmhmusic/api/rmhmusic.history.songs.$songId.server';
+import { route as r837 } from '@/lib/rmhmusic/api/rmhmusic.learn.cards.server';
+import { route as r838 } from '@/lib/rmhmusic/api/rmhmusic.learn.lesson-complete.server';
+import { route as r839 } from '@/lib/rmhmusic/api/rmhmusic.learn.profile.server';
+import { route as r840 } from '@/lib/rmhmusic/api/rmhmusic.r.$token.server';
+import { route as r841 } from '@/lib/rmhmusic/api/rmhmusic.share.server';
+import { route as r842 } from '@/lib/rmhmusic/api/rmhmusic.share.$id.server';
+import { route as r843 } from '@/lib/rmhmusic/api/rmhmusic.social.server';
+import { route as r844 } from '@/lib/rmhmusic/api/rmhmusic.songs.server';
+import { route as r845 } from '@/lib/rmhmusic/api/rmhmusic.songs.best.server';
+import { route as r846 } from '@/lib/rmhmusic/api/rmhmusic.sprint.server';
+import { route as r847 } from '@/lib/rmhmusic/api/rmhmusic.sprint.board.server';
+import { route as r848 } from '@/lib/rmhmusic/api/rmhmusic.sprint.daily.server';
+import { route as r849 } from '@/lib/rmhmusic/api/rmhmusic.sprint.daily-start.server';
+import { route as r850 } from '@/lib/rmhmusic/api/rmhmusic.sprint.freeplay.server';
+import { route as r851 } from '@/features/rmhos/api/rmhos.session.server';
+import { route as r852 } from '@/lib/rmhstudy/api/rmhstudy.goal.server';
+import { route as r853 } from '@/lib/rmhstudy/api/rmhstudy.history.server';
+import { route as r854 } from '@/lib/rmhstudy/api/rmhstudy.history.sessions.server';
+import { route as r855 } from '@/lib/rmhtube/api/rmhtube.commentary.server';
+import { route as r856 } from '@/lib/rmhtube/api/rmhtube.heat.server';
+import { route as r857 } from '@/lib/rmhtube/api/rmhtube.parties.server';
+import { route as r858 } from '@/lib/rmhtube/api/rmhtube.parties.$roomId.server';
+import { route as r859 } from '@/lib/rmhtube/api/rmhtube.parties.$roomId.rsvp.server';
+import { route as r860 } from '@/lib/rmhtube/api/rmhtube.stats.server';
+import { route as r861 } from '@/lib/rmhtube/api/rmhtube.stats.pause.server';
+import { route as r862 } from '@/lib/rmhtube/api/rmhtube.subscribe.$channelId.server';
+import { route as r863 } from '@/lib/rmhtube/api/rmhtube.timed-comments.server';
+import { route as r864 } from '@/lib/rmhtube/api/rmhtube.watch-later.server';
+import { route as r865 } from '@/lib/rmhtype/api/rmhtype.daily.server';
+import { route as r866 } from '@/lib/rmhtype/api/rmhtype.daily.finish.server';
+import { route as r867 } from '@/lib/rmhtype/api/rmhtype.daily.leaderboard.server';
+import { route as r868 } from '@/lib/rmhtype/api/rmhtype.daily.start.server';
+import { route as r869 } from '@/lib/rmhtype/api/rmhtype.ghosts.server';
+import { route as r870 } from '@/lib/rmhtype/api/rmhtype.ghosts.$passageId.server';
+import { route as r871 } from '@/lib/rmhtype/api/rmhtype.keystats.server';
+import { route as r872 } from '@/lib/rmhtype/api/rmhtype.lessons.progress.server';
+import { route as r873 } from '@/lib/rmhtype/api/rmhtype.practice-test.server';
+import { route as r874 } from '@/lib/rmhtype/api/rmhtype.progress.server';
+import { route as r875 } from '@/lib/rmhtype/api/rmhtype.progress.runs.server';
+import { route as r876 } from '@/lib/rmhtype/api/rmhtype.texts.server';
+import { route as r877 } from '@/lib/rmhtype/api/rmhtype.texts.$textId.server';
+import { route as r878 } from '@/lib/rmhtype/api/rmhtype.texts.$textId.runs.server';
+import { route as r879 } from '@/lib/api/routes/rum.server';
+import { route as r880 } from '@/lib/api/routes/safety.pile-on.server';
+import { route as r881 } from '@/lib/messages/api/saved-replies.server';
+import { route as r882 } from '@/lib/messages/api/saved-replies.$id.server';
+import { route as r883 } from '@/lib/messages/api/saved-replies.$id.use.server';
+import { route as r884 } from '@/lib/messages/api/saved-replies.order.server';
+import { route as r885 } from '@/lib/saves/api/saves.server';
+import { route as r886 } from '@/lib/saves/api/saves.folders.server';
+import { route as r887 } from '@/lib/saves/api/saves.folders.$id.server';
+import { route as r888 } from '@/lib/saves/api/saves.note.server';
+import { route as r889 } from '@/lib/schedule/api/schedule.server';
+import { route as r890 } from '@/lib/schedule/api/schedule.admin.server';
+import { route as r891 } from '@/lib/schedule/api/schedule.mine.server';
+import { route as r892 } from '@/lib/scheduled/api/scheduled.server';
+import { route as r893 } from '@/lib/scheduled/api/scheduled.$id.server';
+import { route as r894 } from '@/lib/scheduled/api/scheduled.$id.publish.server';
+import { route as r895 } from '@/lib/scheduled/api/scheduled.capsules.server';
+import { route as r896 } from '@/lib/search/api/search.server';
+import { route as r897 } from '@/lib/search/api/search.saved.server';
+import { route as r898 } from '@/lib/search/api/search.saved.$id.server';
+import { route as r899 } from '@/lib/posts-plus/api/series.server';
+import { route as r900 } from '@/lib/posts-plus/api/series.$id.server';
+import { route as r901 } from '@/lib/posts-plus/api/series.$id.follow.server';
+import { route as r902 } from '@/lib/posts-plus/api/series.$id.posts.server';
+import { route as r903 } from '@/lib/posts-plus/api/series.$id.posts.$postId.server';
+import { route as r904 } from '@/lib/posts-plus/api/series.post.$postId.server';
+import { route as r905 } from '@/lib/rebar-rutabaga/api/services.rebar-reservations.server';
+import { route as r906 } from '@/lib/feed/api/settings.alt-text.server';
+import { route as r907 } from '@/lib/posts-plus/api/settings.auto-delete.server';
+import { route as r908 } from '@/lib/moderation/api/settings.blocked.server';
+import { route as r909 } from '@/lib/feed/api/settings.content-warnings.server';
+import { route as r910 } from '@/lib/game/api/settings.game-assists.server';
+import { route as r911 } from '@/lib/game/api/settings.leaderboard-privacy.server';
+import { route as r912 } from '@/lib/feed/api/settings.missing-alt-text.server';
+import { route as r913 } from '@/lib/notify/api/settings.muted-conversations.server';
+import { route as r914 } from '@/lib/economy/api/settings.play-limits.server';
+import { route as r915 } from '@/lib/playtime/api/settings.playtime-privacy.server';
+import { route as r916 } from '@/lib/feed/api/settings.quiet-counts.server';
+import { route as r917 } from '@/lib/messages/api/settings.read-receipts.server';
+import { route as r918 } from '@/lib/auth/api/settings.security.activity.server';
+import { route as r919 } from '@/lib/auth/api/settings.security.activity.export.server';
+import { route as r920 } from '@/lib/shop/api/shop.server';
+import { route as r921 } from '@/lib/shop/api/shop.bundle.server';
+import { route as r922 } from '@/lib/shop/api/shop.daily.server';
+import { route as r923 } from '@/lib/shop/api/shop.equip.server';
+import { route as r924 } from '@/lib/shop/api/shop.loadouts.server';
+import { route as r925 } from '@/lib/shop/api/shop.loadouts.$id.server';
+import { route as r926 } from '@/lib/shop/api/shop.loadouts.$id.apply.server';
+import { route as r927 } from '@/lib/shop/api/shop.search.server';
+import { route as r928 } from '@/features/signal-forge/api/signal-forge.abandon.server';
+import { route as r929 } from '@/features/signal-forge/api/signal-forge.leaderboard.server';
+import { route as r930 } from '@/features/signal-forge/api/signal-forge.load.server';
+import { route as r931 } from '@/features/signal-forge/api/signal-forge.save.server';
+import { route as r932 } from '@/features/signal-forge/api/signal-forge.score.server';
+import { route as r933 } from '@/lib/api/routes/sitewide-announcement.server';
+import { route as r934 } from '@/lib/api/routes/sitewide-announcement.seen.server';
+import { route as r935 } from '@/features/slice-it/api/slice-it.admin.content.server';
+import { route as r936 } from '@/features/slice-it/api/slice-it.admin.review.server';
+import { route as r937 } from '@/features/slice-it/api/slice-it.admin.takedown.server';
+import { route as r938 } from '@/features/slice-it/api/slice-it.charts.server';
+import { route as r939 } from '@/features/slice-it/api/slice-it.charts.$id.server';
+import { route as r940 } from '@/features/slice-it/api/slice-it.charts.$id.reviews.server';
+import { route as r941 } from '@/features/slice-it/api/slice-it.charts.$id.revisions.server';
+import { route as r942 } from '@/features/slice-it/api/slice-it.charts.ranking.server';
+import { route as r943 } from '@/features/slice-it/api/slice-it.daily.server';
+import { route as r944 } from '@/features/slice-it/api/slice-it.daily.submit.server';
+import { route as r945 } from '@/features/slice-it/api/slice-it.leaderboard.server';
+import { route as r946 } from '@/features/slice-it/api/slice-it.packs.server';
+import { route as r947 } from '@/features/slice-it/api/slice-it.packs.$id.server';
+import { route as r948 } from '@/features/slice-it/api/slice-it.packs.$id.items.server';
+import { route as r949 } from '@/features/slice-it/api/slice-it.replay.server';
+import { route as r950 } from '@/features/slice-it/api/slice-it.replay.$id.server';
+import { route as r951 } from '@/features/slice-it/api/slice-it.score.server';
+import { route as r952 } from '@/features/slice-it/api/slice-it.setlists.server';
+import { route as r953 } from '@/features/slice-it/api/slice-it.setlists.$id.server';
+import { route as r954 } from '@/features/slice-it/api/slice-it.shelves.server';
+import { route as r955 } from '@/features/slice-it/api/slice-it.showcase.server';
+import { route as r956 } from '@/features/slice-it/api/slice-it.songs.server';
+import { route as r957 } from '@/features/slice-it/api/slice-it.songs.$id.server';
+import { route as r958 } from '@/features/slice-it/api/slice-it.songs.$id.charts.server';
+import { route as r959 } from '@/features/slice-it/api/slice-it.songs.$id.comments.server';
+import { route as r960 } from '@/features/slice-it/api/slice-it.songs.$id.cover.server';
+import { route as r961 } from '@/features/slice-it/api/slice-it.songs.$id.import-chart.server';
+import { route as r962 } from '@/features/slice-it/api/slice-it.songs.$id.like.server';
+import { route as r963 } from '@/features/slice-it/api/slice-it.songs.$id.patch-analysis.server';
+import { route as r964 } from '@/features/slice-it/api/slice-it.songs.$id.play.server';
+import { route as r965 } from '@/features/slice-it/api/slice-it.songs.$id.regenerate.server';
+import { route as r966 } from '@/features/slice-it/api/slice-it.songs.artist.$key.server';
+import { route as r967 } from '@/features/slice-it/api/slice-it.songs.artists.server';
+import { route as r968 } from '@/features/slice-it/api/slice-it.songs.upload.server';
+import { route as r969 } from '@/features/slice-it/api/slice-it.uploader-stats.server';
+import { route as r970 } from '@/lib/sohumtracker/api/sohumtracker.activity.server';
+import { route as r971 } from '@/lib/sohumtracker/api/sohumtracker.alert.server';
+import { route as r972 } from '@/lib/sohumtracker/api/sohumtracker.export.server';
+import { route as r973 } from '@/lib/spaces/api/spaces.server';
+import { route as r974 } from '@/lib/spaces/api/spaces.$id.end.server';
+import { route as r975 } from '@/lib/spaces/api/spaces.$id.start.server';
+import { route as r976 } from '@/lib/speedrun/api/speedrun.categories.server';
+import { route as r977 } from '@/lib/speedrun/api/speedrun.leaderboard.server';
+import { route as r978 } from '@/lib/speedrun/api/speedrun.queue.server';
+import { route as r979 } from '@/lib/speedrun/api/speedrun.replays.server';
+import { route as r980 } from '@/lib/speedrun/api/speedrun.runs.server';
+import { route as r981 } from '@/lib/speedrun/api/speedrun.verify.server';
+import { route as r982 } from '@/lib/api/routes/spotify.search.server';
+import { route as r983 } from '@/lib/staking/api/staking.server';
+import { route as r984 } from '@/lib/staking/api/staking.deposit.server';
+import { route as r985 } from '@/lib/staking/api/staking.settings.server';
+import { route as r986 } from '@/lib/staking/api/staking.withdraw.server';
+import { route as r987 } from '@/lib/profile/api/stamps.server';
+import { route as r988 } from '@/lib/profile/api/stamps.$id.server';
+import { route as r989 } from '@/lib/profile/api/stamps.$id.wall.server';
+import { route as r990 } from '@/lib/profile/api/stamps.image.$filename.server';
+import { route as r991 } from '@/lib/profile/api/stamps.mine.server';
+import { route as r992 } from '@/lib/storefront/api/storefront.creator.$userid.server';
+import { route as r993 } from '@/lib/storefront/api/storefront.products.server';
+import { route as r994 } from '@/lib/storefront/api/storefront.products.$id.server';
+import { route as r995 } from '@/lib/storefront/api/storefront.products.$id.buy.server';
+import { route as r996 } from '@/lib/api/routes/streak.server';
+import { route as r997 } from '@/lib/api/routes/streak.freeze.server';
+import { route as r998 } from '@/lib/studio/api/studio.challenges.server';
+import { route as r999 } from '@/lib/studio/api/studio.challenges.$id.server';
+import { route as r1000 } from '@/lib/studio/api/studio.challenges.$id.entry.server';
+import { route as r1001 } from '@/lib/studio/api/studio.challenges.$id.vote.server';
+import { route as r1002 } from '@/lib/creator/api/studio.challenges.audio.server';
+import { route as r1003 } from '@/lib/studio/api/studio.challenges.audio.$filename.server';
+import { route as r1004 } from '@/lib/studio/api/studio.overview.server';
+import { route as r1005 } from '@/lib/studio/api/studio.projects.server';
+import { route as r1006 } from '@/lib/studio/api/studio.projects.$id.server';
+import { route as r1007 } from '@/lib/studio/api/studio.projects.$id.versions.server';
+import { route as r1008 } from '@/lib/studio/api/studio.projects.$id.versions.$versionId.server';
+import { route as r1009 } from '@/lib/studio/api/studio.projects.$id.versions.$versionId.restore.server';
+import { route as r1010 } from '@/lib/studio/api/studio.tiers.server';
+import { route as r1011 } from '@/lib/calendar/api/study-buddy.server';
+import { route as r1012 } from '@/lib/tools/api/study-plans.server';
+import { route as r1013 } from '@/lib/tools/api/study-plans.$id.server';
+import { route as r1014 } from '@/lib/study/api/study.card-images.server';
+import { route as r1015 } from '@/lib/study/api/study.card-sound.server';
+import { route as r1016 } from '@/lib/study/api/study.card-sound.$file.server';
+import { route as r1017 } from '@/lib/study/api/study.cards.$id.server';
+import { route as r1018 } from '@/lib/study/api/study.cards.$id.review.server';
+import { route as r1019 } from '@/lib/study/api/study.cards.$id.suspend.server';
+import { route as r1020 } from '@/lib/study/api/study.decks.server';
+import { route as r1021 } from '@/lib/study/api/study.decks.$id.server';
+import { route as r1022 } from '@/lib/study/api/study.decks.$id.cards.server';
+import { route as r1023 } from '@/lib/study/api/study.decks.$id.clone.server';
+import { route as r1024 } from '@/lib/study/api/study.decks.$id.folder.server';
+import { route as r1025 } from '@/lib/study/api/study.decks.$id.link-original.server';
+import { route as r1026 } from '@/lib/study/api/study.decks.$id.order.server';
+import { route as r1027 } from '@/lib/study/api/study.decks.$id.pace.server';
+import { route as r1028 } from '@/lib/study/api/study.decks.$id.review.server';
+import { route as r1029 } from '@/lib/study/api/study.decks.$id.suggestions.server';
+import { route as r1030 } from '@/lib/study/api/study.decks.$id.tests.server';
+import { route as r1031 } from '@/lib/study/api/study.decks.$id.updates.server';
+import { route as r1032 } from '@/lib/study/api/study.folders.server';
+import { route as r1033 } from '@/lib/study/api/study.folders.$id.server';
+import { route as r1034 } from '@/lib/study/api/study.highlight-cards.server';
+import { route as r1035 } from '@/lib/study/api/study.marketplace.server';
+import { route as r1036 } from '@/lib/study/api/study.reminders.server';
+import { route as r1037 } from '@/lib/study/api/study.review.server';
+import { route as r1038 } from '@/lib/study/api/study.stats.server';
+import { route as r1039 } from '@/lib/study/api/study.suggestions.$id.server';
+import { route as r1040 } from '@/lib/study/api/study.suggestions.$id.decision.server';
+import { route as r1041 } from '@/lib/study/api/study.tutor.server';
+import { route as r1042 } from '@/lib/api/routes/tags.$tag.server';
+import { route as r1043 } from '@/lib/temple-of-joy/api/temple-of-joy.efficiency.server';
+import { route as r1044 } from '@/lib/temple-of-joy/api/temple-of-joy.save.server';
+import { route as r1045 } from '@/lib/tf2-hud/api/tf2-hud.ai.server';
+import { route as r1046 } from '@/lib/tf2-hud/api/tf2-hud.blobs.$sha1.server';
+import { route as r1047 } from '@/lib/tf2-hud/api/tf2-hud.blobs.check.server';
+import { route as r1048 } from '@/lib/tf2-hud/api/tf2-hud.huds.server';
+import { route as r1049 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.server';
+import { route as r1050 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.download.server';
+import { route as r1051 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.file.server';
+import { route as r1052 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.fork.server';
+import { route as r1053 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.like.server';
+import { route as r1054 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.share.server';
+import { route as r1055 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.versions.server';
+import { route as r1056 } from '@/lib/tf2-hud/api/tf2-hud.huds.$id.versions.$n.server';
+import { route as r1057 } from '@/lib/tf2-hud/api/tf2-hud.share.$token.server';
+import { route as r1058 } from '@/lib/tf2-hud/api/tf2-hud.share.$token.file.server';
+import { route as r1059 } from '@/lib/tf2-loadout/api/tf2-loadout.ai.server';
+import { route as r1060 } from '@/lib/tf2-loadout/api/tf2-loadout.catalog.server';
+import { route as r1061 } from '@/lib/tf2-loadout/api/tf2-loadout.icons.$id.server';
+import { route as r1062 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.server';
+import { route as r1063 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.server';
+import { route as r1064 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.fork.server';
+import { route as r1065 } from '@/lib/tf2-loadout/api/tf2-loadout.loadouts.$id.like.server';
+import { route as r1066 } from '@/lib/tf2-loadout/api/tf2-loadout.models.server';
+import { route as r1067 } from '@/lib/tf2-loadout/api/tf2-loadout.models.$id.server';
+import { route as r1068 } from '@/lib/themes/api/themes.server';
+import { route as r1069 } from '@/lib/themes/api/themes.$id.server';
+import { route as r1070 } from '@/lib/themes/api/themes.$id.buy.server';
+import { route as r1071 } from '@/lib/themes/api/themes.$id.publish.server';
+import { route as r1072 } from '@/lib/themes/api/themes.shop.server';
+import { route as r1073 } from '@/lib/discovery/api/tips.leaderboard.server';
+import { route as r1074 } from '@/lib/quests/api/today.server';
+import { route as r1075 } from '@/lib/tournaments/api/tournaments.server';
+import { route as r1076 } from '@/lib/tournaments/api/tournaments.$id.server';
+import { route as r1077 } from '@/lib/tournaments/api/tournaments.$id.checkin.server';
+import { route as r1078 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.award.server';
+import { route as r1079 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.confirm.server';
+import { route as r1080 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.decide.server';
+import { route as r1081 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.dispute.server';
+import { route as r1082 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.report.server';
+import { route as r1083 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.schedule.server';
+import { route as r1084 } from '@/lib/tournaments/api/tournaments.$id.matches.$matchId.withdraw.server';
+import { route as r1085 } from '@/lib/competitive/api/tournaments.$id.pickem.server';
+import { route as r1086 } from '@/lib/tournaments/api/tournaments.$id.schedule-settings.server';
+import { route as r1087 } from '@/lib/tournaments/api/tournaments.$id.seeding.server';
+import { route as r1088 } from '@/lib/delight/api/translate.server';
+import { route as r1089 } from '@/lib/delight/api/translate.suggest.server';
+import { route as r1090 } from '@/lib/delight/api/translate.vote.server';
+import { route as r1091 } from '@/lib/trash/api/trash.server';
+import { route as r1092 } from '@/lib/trash/api/trash.$kind.$id.server';
+import { route as r1093 } from '@/lib/trash/api/trash.restore.server';
+import { route as r1094 } from '@/lib/unfurl/api/unfurl.server';
+import { route as r1095 } from '@/lib/api/routes/user-builds.server';
+import { route as r1096 } from '@/lib/api/routes/user-builds.$id.server';
+import { route as r1097 } from '@/lib/api/routes/user-builds.$id.comments.server';
+import { route as r1098 } from '@/lib/builds/api/user-builds.$id.comments-lock.server';
+import { route as r1099 } from '@/lib/builds/api/user-builds.$id.comments.$commentId.server';
+import { route as r1100 } from '@/lib/builds/api/user-builds.$id.comments.$commentId.hide.server';
+import { route as r1101 } from '@/lib/builds/api/user-builds.$id.images.server';
+import { route as r1102 } from '@/lib/builds/api/user-builds.$id.insights.server';
+import { route as r1103 } from '@/lib/api/routes/user-builds.$id.like.server';
+import { route as r1104 } from '@/lib/builds/api/user-builds.$id.releases.server';
+import { route as r1105 } from '@/lib/builds/api/user-builds.$id.releases.$releaseId.server';
+import { route as r1106 } from '@/lib/builds/api/user-builds.$id.screenshots.server';
+import { route as r1107 } from '@/lib/api/routes/user-builds.categories.server';
+import { route as r1108 } from '@/lib/api/routes/user-builds.featured.server';
+import { route as r1109 } from '@/lib/wishlist/api/users.$id.wishlist.server';
+import { route as r1110 } from '@/lib/discovery/api/users.search.server';
+import { route as r1111 } from '@/lib/game/api/vega.leaderboard.server';
+import { route as r1112 } from '@/features/vega/api/vega.score.server';
+import { route as r1113 } from '@/lib/velum2099/api/velum2099.contracts.server';
+import { route as r1114 } from '@/lib/versecraft/api/versecraft.chapter.server';
+import { route as r1115 } from '@/lib/versecraft/api/versecraft.outline.server';
+import { route as r1116 } from '@/lib/versecraft/api/versecraft.progress.server';
+import { route as r1117 } from '@/lib/versecraft/api/versecraft.save.server';
+import { route as r1118 } from '@/lib/versecraft/api/versecraft.seeds.server';
+import { route as r1119 } from '@/lib/versecraft/api/versecraft.seeds.fork.server';
+import { route as r1120 } from '@/lib/versecraft/api/versecraft.seeds.rate.server';
+import { route as r1121 } from '@/lib/rmhvibe/api/vibe.gallery.server';
+import { route as r1122 } from '@/lib/rmhvibe/api/vibe.kv.$slug.server';
+import { route as r1123 } from '@/lib/rmhvibe/api/vibe.page.$slug.server';
+import { route as r1124 } from '@/lib/rmhvibe/api/vibe.page.$slug.tweaks.server';
+import { route as r1125 } from '@/lib/game/api/void-breaker.leaderboard.server';
+import { route as r1126 } from '@/lib/game/api/void-breaker.score.server';
+import { route as r1127 } from '@/lib/wager/api/wager.server';
+import { route as r1128 } from '@/lib/wager/api/wager.$id.server';
+import { route as r1129 } from '@/lib/profile/api/webrings.server';
+import { route as r1130 } from '@/lib/profile/api/webrings.$slug.server';
+import { route as r1131 } from '@/lib/profile/api/webrings.$slug.hop.server';
+import { route as r1132 } from '@/lib/profile/api/webrings.$slug.membership.server';
+import { route as r1133 } from '@/lib/wheel/api/wheel.server';
+import { route as r1134 } from '@/lib/wheel/api/wheel.spin.server';
+import { route as r1135 } from '@/lib/calendar/api/when.server';
+import { route as r1136 } from '@/lib/calendar/api/when.$id.server';
+import { route as r1137 } from '@/lib/calendar/api/when.$id.ics.server';
+import { route as r1138 } from '@/lib/calendar/api/when.$id.lock.server';
+import { route as r1139 } from '@/lib/calendar/api/when.$id.respond.server';
+import { route as r1140 } from '@/lib/wiki/api/wiki.sso.server';
+import { route as r1141 } from '@/lib/wishlist/api/wishlist.server';
+import { route as r1142 } from '@/lib/wrapped/api/wrapped.server';
 
 const API_ROUTES_0: readonly ApiRoute[] = [
   r0, // /api/account/delete
@@ -1728,576 +1733,581 @@ const API_ROUTES_2: readonly ApiRoute[] = [
   r574, // /api/market/listings/$id
   r575, // /api/market/listings/$id/buy
   r576, // /api/medschools/live
-  r577, // /api/medschools/schools
-  r578, // /api/medschools/schools/$slug
-  r579, // /api/medschools/schools/$slug/activity
-  r580, // /api/medschools/schools/$slug/history
-  r581, // /api/medschools/today
-  r582, // /api/memory
-  r583, // /api/messages
-  r584, // /api/messages/$conversationId
-  r585, // /api/messages/$conversationId/alt
-  r586, // /api/messages/$conversationId/edit
-  r587, // /api/messages/$conversationId/hide
-  r588, // /api/messages/$conversationId/mutations
-  r589, // /api/messages/$conversationId/react
-  r590, // /api/messages/$conversationId/read
-  r591, // /api/messages/$conversationId/thread
-  r592, // /api/messages/$conversationId/typing
-  r593, // /api/messages/$conversationId/unsend
-  r594, // /api/messages/$conversationId/voice
-  r595, // /api/messages/away
-  r596, // /api/messages/away/$userId/status
-  r597, // /api/messages/read-all
-  r598, // /api/messages/requests
-  r599, // /api/messages/requests/$id
+  r577, // /api/medschools/me/tracker
+  r578, // /api/medschools/me/tracker/applications
+  r579, // /api/medschools/me/tracker/applications/$id
+  r580, // /api/medschools/me/tracker/applications/$id/milestones/$type
+  r581, // /api/medschools/me/tracker/cycle
+  r582, // /api/medschools/schools
+  r583, // /api/medschools/schools/$slug
+  r584, // /api/medschools/schools/$slug/activity
+  r585, // /api/medschools/schools/$slug/history
+  r586, // /api/medschools/today
+  r587, // /api/memory
+  r588, // /api/messages
+  r589, // /api/messages/$conversationId
+  r590, // /api/messages/$conversationId/alt
+  r591, // /api/messages/$conversationId/edit
+  r592, // /api/messages/$conversationId/hide
+  r593, // /api/messages/$conversationId/mutations
+  r594, // /api/messages/$conversationId/react
+  r595, // /api/messages/$conversationId/read
+  r596, // /api/messages/$conversationId/thread
+  r597, // /api/messages/$conversationId/typing
+  r598, // /api/messages/$conversationId/unsend
+  r599, // /api/messages/$conversationId/voice
 ];
 
 const API_ROUTES_3: readonly ApiRoute[] = [
-  r600, // /api/messages/saved
-  r601, // /api/messages/scheduled
-  r602, // /api/messages/scheduled/$id
-  r603, // /api/messages/scheduled/$id/send-now
-  r604, // /api/messages/search
-  r605, // /api/messages/sidebar
-  r606, // /api/messages/unread-count
-  r607, // /api/messages/voice/$filename
-  r608, // /api/moderation/block
-  r609, // /api/moderation/mute
-  r610, // /api/moderation/report
-  r611, // /api/moments
-  r612, // /api/museum
-  r613, // /api/neon-driftway/leaderboard
-  r614, // /api/neon-driftway/livery
-  r615, // /api/neon-driftway/score
-  r616, // /api/nightrail/tricks
-  r617, // /api/nightrail/tricks/vote
-  r618, // /api/notices/active
-  r619, // /api/notices/dismiss
-  r620, // /api/notifications
-  r621, // /api/notifications/$id
-  r622, // /api/notifications/dismiss
-  r623, // /api/notifications/preferences
-  r624, // /api/notifications/read
-  r625, // /api/oembed
-  r626, // /api/office-hours
-  r627, // /api/office-hours/bookings/$id
-  r628, // /api/office-hours/bookings/$id/ics
-  r629, // /api/office-hours/host/$id
-  r630, // /api/office-hours/host/$id/summary
-  r631, // /api/og/album/$albumId
-  r632, // /api/og/app/$appId
-  r633, // /api/og/blog/$slug
-  r634, // /api/og/build/$slug
-  r635, // /api/og/elections
-  r636, // /api/og/game/$gameId
-  r637, // /api/og/job/$jobId
-  r638, // /api/og/med-school/$slug
-  r639, // /api/og/moment/$id
-  r640, // /api/og/music/$token
-  r641, // /api/og/post/$id
-  r642, // /api/og/post/$id/story
-  r643, // /api/og/profile/$id
-  r644, // /api/og/replay/$id
-  r645, // /api/og/research/$kind/$id
-  r646, // /api/og/section/$file
-  r647, // /api/og/sohumtracker
-  r648, // /api/og/story/$slug
-  r649, // /api/og/wiki
-  r650, // /api/onboarding
-  r651, // /api/onboarding/first-week
-  r652, // /api/personas
-  r653, // /api/personas/$id
-  r654, // /api/personas/$id/chat
-  r655, // /api/photo-of-the-day
-  r656, // /api/photo-of-the-day/$id
-  r657, // /api/photo-of-the-day/vote
-  r658, // /api/playlists
-  r659, // /api/playlists/$id
-  r660, // /api/playlists/$id/collaborators
-  r661, // /api/playlists/$id/collaborators/$userId
-  r662, // /api/playlists/$id/items
-  r663, // /api/playlists/$id/items/$itemId
-  r664, // /api/playlists/$id/items/bulk
-  r665, // /api/predictions
-  r666, // /api/predictions/$id
-  r667, // /api/predictions/$id/comments
-  r668, // /api/predictions/$id/devils-advocate
-  r669, // /api/predictions/$id/trade
-  r670, // /api/preferences/appearance
-  r671, // /api/preferences/conversation
-  r672, // /api/preferences/email
-  r673, // /api/preferences/keyboard
-  r674, // /api/preferences/layout
-  r675, // /api/preferences/muted-words
-  r676, // /api/preferences/notifications
-  r677, // /api/preferences/presence
-  r678, // /api/presence/online-count
-  r679, // /api/profile
-  r680, // /api/profile-links
-  r681, // /api/profile-links/$id
-  r682, // /api/profile-links/$id/verify
-  r683, // /api/profile/$id
-  r684, // /api/profile/$id/activity
-  r685, // /api/profile/$id/card
-  r686, // /api/profile/$id/endorsements
-  r687, // /api/profile/$id/follow
-  r688, // /api/profile/$id/followers
-  r689, // /api/profile/$id/following
-  r690, // /api/profile/$id/guestbook
-  r691, // /api/profile/$id/guestbook/$entryId
-  r692, // /api/profile/$id/kudos
-  r693, // /api/profile/$id/likes
-  r694, // /api/profile/$id/membership
-  r695, // /api/profile/$id/plus
-  r696, // /api/profile/$id/pronunciation
-  r697, // /api/profile/$id/rmharks
-  r698, // /api/profile/$id/shelves
-  r699, // /api/profile/$id/stamps
-  r700, // /api/profile/$id/visit
-  r701, // /api/profile/$id/webrings
-  r702, // /api/profile/analytics
-  r703, // /api/profile/avatar
-  r704, // /api/profile/banner
-  r705, // /api/profile/banner-source
-  r706, // /api/profile/layout
-  r707, // /api/profile/me
-  r708, // /api/profile/plus
-  r709, // /api/profile/preview
-  r710, // /api/profile/pronunciation
-  r711, // /api/profile/status
-  r712, // /api/profile/top-four
-  r713, // /api/progress
-  r714, // /api/promo/free-month
-  r715, // /api/push/action
-  r716, // /api/push/public-key
-  r717, // /api/push/subscribe
-  r718, // /api/qotd/answers
-  r719, // /api/qotd/archive
-  r720, // /api/qotd/today
-  r721, // /api/quests/$id/claim
-  r722, // /api/ranked
-  r723, // /api/ranked/$game/leaderboard
-  r724, // /api/ranked/challenge/$id
-  r725, // /api/reading/doc
-  r726, // /api/reading/goal
-  r727, // /api/reading/highlights
-  r728, // /api/reading/highlights/$id
-  r729, // /api/reading/highlights/export
-  r730, // /api/reading/highlights/search
-  r731, // /api/reading/shelves
-  r732, // /api/reading/shelves/prefs
-  r733, // /api/reading/subscriptions
-  r734, // /api/reading/subscriptions/$id
-  r735, // /api/reading/time
-  r736, // /api/reading/time/prefs
-  r737, // /api/recap
-  r738, // /api/recipes
-  r739, // /api/recipes/$id
-  r740, // /api/referrals/claim
-  r741, // /api/referrals/me
-  r742, // /api/release-notes
-  r743, // /api/reminders
-  r744, // /api/reminders/$id
-  r745, // /api/replays
-  r746, // /api/replays/$id
-  r747, // /api/replays/board
-  r748, // /api/replays/mine
-  r749, // /api/requests
-  r750, // /api/requests/$id
-  r751, // /api/requests/$id/vote
-  r752, // /api/reviews/$id/vote
-  r753, // /api/rideshare/directions
-  r754, // /api/rideshare/driver
-  r755, // /api/rideshare/earnings
-  r756, // /api/rideshare/geocode
-  r757, // /api/rideshare/location
-  r758, // /api/rideshare/places
-  r759, // /api/rideshare/places/$id
-  r760, // /api/rideshare/reverse
-  r761, // /api/rideshare/rides
-  r762, // /api/rideshare/rides/$id
-  r763, // /api/rideshare/rides/$id/messages
-  r764, // /api/rideshare/rides/$id/rate
-  r765, // /api/rideshare/rides/$id/sync
-  r766, // /api/rmharks
-  r767, // /api/rmharks/$id
-  r768, // /api/rmharks/$id/alt-text
-  r769, // /api/rmharks/$id/bookmark
-  r770, // /api/rmharks/$id/comment
-  r771, // /api/rmharks/$id/comment/$commentId
-  r772, // /api/rmharks/$id/comment/$commentId/hide
-  r773, // /api/rmharks/$id/comment/$commentId/like
-  r774, // /api/rmharks/$id/comment/$commentId/repost
-  r775, // /api/rmharks/$id/comment/$commentId/view
-  r776, // /api/rmharks/$id/embed
-  r777, // /api/rmharks/$id/history
-  r778, // /api/rmharks/$id/insights
-  r779, // /api/rmharks/$id/like
-  r780, // /api/rmharks/$id/mute
-  r781, // /api/rmharks/$id/pin
-  r782, // /api/rmharks/$id/pin-reply
-  r783, // /api/rmharks/$id/pin/move
-  r784, // /api/rmharks/$id/poll/end
-  r785, // /api/rmharks/$id/poll/extend
-  r786, // /api/rmharks/$id/quotes
-  r787, // /api/rmharks/$id/react
-  r788, // /api/rmharks/$id/repost
-  r789, // /api/rmharks/$id/summary
-  r790, // /api/rmharks/$id/take
-  r791, // /api/rmharks/$id/translate
-  r792, // /api/rmharks/$id/vibe
-  r793, // /api/rmharks/$id/vote
-  r794, // /api/rmharks/ai-generate
-  r795, // /api/rmharks/ai-image
-  r796, // /api/rmharks/image
-  r797, // /api/rmharks/thread
-  r798, // /api/rmhbox/history
-  r799, // /api/rmhbox/packs
+  r600, // /api/messages/away
+  r601, // /api/messages/away/$userId/status
+  r602, // /api/messages/read-all
+  r603, // /api/messages/requests
+  r604, // /api/messages/requests/$id
+  r605, // /api/messages/saved
+  r606, // /api/messages/scheduled
+  r607, // /api/messages/scheduled/$id
+  r608, // /api/messages/scheduled/$id/send-now
+  r609, // /api/messages/search
+  r610, // /api/messages/sidebar
+  r611, // /api/messages/unread-count
+  r612, // /api/messages/voice/$filename
+  r613, // /api/moderation/block
+  r614, // /api/moderation/mute
+  r615, // /api/moderation/report
+  r616, // /api/moments
+  r617, // /api/museum
+  r618, // /api/neon-driftway/leaderboard
+  r619, // /api/neon-driftway/livery
+  r620, // /api/neon-driftway/score
+  r621, // /api/nightrail/tricks
+  r622, // /api/nightrail/tricks/vote
+  r623, // /api/notices/active
+  r624, // /api/notices/dismiss
+  r625, // /api/notifications
+  r626, // /api/notifications/$id
+  r627, // /api/notifications/dismiss
+  r628, // /api/notifications/preferences
+  r629, // /api/notifications/read
+  r630, // /api/oembed
+  r631, // /api/office-hours
+  r632, // /api/office-hours/bookings/$id
+  r633, // /api/office-hours/bookings/$id/ics
+  r634, // /api/office-hours/host/$id
+  r635, // /api/office-hours/host/$id/summary
+  r636, // /api/og/album/$albumId
+  r637, // /api/og/app/$appId
+  r638, // /api/og/blog/$slug
+  r639, // /api/og/build/$slug
+  r640, // /api/og/elections
+  r641, // /api/og/game/$gameId
+  r642, // /api/og/job/$jobId
+  r643, // /api/og/med-school/$slug
+  r644, // /api/og/moment/$id
+  r645, // /api/og/music/$token
+  r646, // /api/og/post/$id
+  r647, // /api/og/post/$id/story
+  r648, // /api/og/profile/$id
+  r649, // /api/og/replay/$id
+  r650, // /api/og/research/$kind/$id
+  r651, // /api/og/section/$file
+  r652, // /api/og/sohumtracker
+  r653, // /api/og/story/$slug
+  r654, // /api/og/wiki
+  r655, // /api/onboarding
+  r656, // /api/onboarding/first-week
+  r657, // /api/personas
+  r658, // /api/personas/$id
+  r659, // /api/personas/$id/chat
+  r660, // /api/photo-of-the-day
+  r661, // /api/photo-of-the-day/$id
+  r662, // /api/photo-of-the-day/vote
+  r663, // /api/playlists
+  r664, // /api/playlists/$id
+  r665, // /api/playlists/$id/collaborators
+  r666, // /api/playlists/$id/collaborators/$userId
+  r667, // /api/playlists/$id/items
+  r668, // /api/playlists/$id/items/$itemId
+  r669, // /api/playlists/$id/items/bulk
+  r670, // /api/predictions
+  r671, // /api/predictions/$id
+  r672, // /api/predictions/$id/comments
+  r673, // /api/predictions/$id/devils-advocate
+  r674, // /api/predictions/$id/trade
+  r675, // /api/preferences/appearance
+  r676, // /api/preferences/conversation
+  r677, // /api/preferences/email
+  r678, // /api/preferences/keyboard
+  r679, // /api/preferences/layout
+  r680, // /api/preferences/muted-words
+  r681, // /api/preferences/notifications
+  r682, // /api/preferences/presence
+  r683, // /api/presence/online-count
+  r684, // /api/profile
+  r685, // /api/profile-links
+  r686, // /api/profile-links/$id
+  r687, // /api/profile-links/$id/verify
+  r688, // /api/profile/$id
+  r689, // /api/profile/$id/activity
+  r690, // /api/profile/$id/card
+  r691, // /api/profile/$id/endorsements
+  r692, // /api/profile/$id/follow
+  r693, // /api/profile/$id/followers
+  r694, // /api/profile/$id/following
+  r695, // /api/profile/$id/guestbook
+  r696, // /api/profile/$id/guestbook/$entryId
+  r697, // /api/profile/$id/kudos
+  r698, // /api/profile/$id/likes
+  r699, // /api/profile/$id/membership
+  r700, // /api/profile/$id/plus
+  r701, // /api/profile/$id/pronunciation
+  r702, // /api/profile/$id/rmharks
+  r703, // /api/profile/$id/shelves
+  r704, // /api/profile/$id/stamps
+  r705, // /api/profile/$id/visit
+  r706, // /api/profile/$id/webrings
+  r707, // /api/profile/analytics
+  r708, // /api/profile/avatar
+  r709, // /api/profile/banner
+  r710, // /api/profile/banner-source
+  r711, // /api/profile/layout
+  r712, // /api/profile/me
+  r713, // /api/profile/plus
+  r714, // /api/profile/preview
+  r715, // /api/profile/pronunciation
+  r716, // /api/profile/status
+  r717, // /api/profile/top-four
+  r718, // /api/progress
+  r719, // /api/promo/free-month
+  r720, // /api/push/action
+  r721, // /api/push/public-key
+  r722, // /api/push/subscribe
+  r723, // /api/qotd/answers
+  r724, // /api/qotd/archive
+  r725, // /api/qotd/today
+  r726, // /api/quests/$id/claim
+  r727, // /api/ranked
+  r728, // /api/ranked/$game/leaderboard
+  r729, // /api/ranked/challenge/$id
+  r730, // /api/reading/doc
+  r731, // /api/reading/goal
+  r732, // /api/reading/highlights
+  r733, // /api/reading/highlights/$id
+  r734, // /api/reading/highlights/export
+  r735, // /api/reading/highlights/search
+  r736, // /api/reading/shelves
+  r737, // /api/reading/shelves/prefs
+  r738, // /api/reading/subscriptions
+  r739, // /api/reading/subscriptions/$id
+  r740, // /api/reading/time
+  r741, // /api/reading/time/prefs
+  r742, // /api/recap
+  r743, // /api/recipes
+  r744, // /api/recipes/$id
+  r745, // /api/referrals/claim
+  r746, // /api/referrals/me
+  r747, // /api/release-notes
+  r748, // /api/reminders
+  r749, // /api/reminders/$id
+  r750, // /api/replays
+  r751, // /api/replays/$id
+  r752, // /api/replays/board
+  r753, // /api/replays/mine
+  r754, // /api/requests
+  r755, // /api/requests/$id
+  r756, // /api/requests/$id/vote
+  r757, // /api/reviews/$id/vote
+  r758, // /api/rideshare/directions
+  r759, // /api/rideshare/driver
+  r760, // /api/rideshare/earnings
+  r761, // /api/rideshare/geocode
+  r762, // /api/rideshare/location
+  r763, // /api/rideshare/places
+  r764, // /api/rideshare/places/$id
+  r765, // /api/rideshare/reverse
+  r766, // /api/rideshare/rides
+  r767, // /api/rideshare/rides/$id
+  r768, // /api/rideshare/rides/$id/messages
+  r769, // /api/rideshare/rides/$id/rate
+  r770, // /api/rideshare/rides/$id/sync
+  r771, // /api/rmharks
+  r772, // /api/rmharks/$id
+  r773, // /api/rmharks/$id/alt-text
+  r774, // /api/rmharks/$id/bookmark
+  r775, // /api/rmharks/$id/comment
+  r776, // /api/rmharks/$id/comment/$commentId
+  r777, // /api/rmharks/$id/comment/$commentId/hide
+  r778, // /api/rmharks/$id/comment/$commentId/like
+  r779, // /api/rmharks/$id/comment/$commentId/repost
+  r780, // /api/rmharks/$id/comment/$commentId/view
+  r781, // /api/rmharks/$id/embed
+  r782, // /api/rmharks/$id/history
+  r783, // /api/rmharks/$id/insights
+  r784, // /api/rmharks/$id/like
+  r785, // /api/rmharks/$id/mute
+  r786, // /api/rmharks/$id/pin
+  r787, // /api/rmharks/$id/pin-reply
+  r788, // /api/rmharks/$id/pin/move
+  r789, // /api/rmharks/$id/poll/end
+  r790, // /api/rmharks/$id/poll/extend
+  r791, // /api/rmharks/$id/quotes
+  r792, // /api/rmharks/$id/react
+  r793, // /api/rmharks/$id/repost
+  r794, // /api/rmharks/$id/summary
+  r795, // /api/rmharks/$id/take
+  r796, // /api/rmharks/$id/translate
+  r797, // /api/rmharks/$id/vibe
+  r798, // /api/rmharks/$id/vote
+  r799, // /api/rmharks/ai-generate
 ];
 
 const API_ROUTES_4: readonly ApiRoute[] = [
-  r800, // /api/rmhbox/packs/$id
-  r801, // /api/rmhbox/packs/$id/report
-  r802, // /api/rmhbox/presets
-  r803, // /api/rmhbox/presets/$id
-  r804, // /api/rmhbox/stats
-  r805, // /api/rmhcharacters/advisor
-  r806, // /api/rmhcharacters/characters
-  r807, // /api/rmhcharacters/characters/$id
-  r808, // /api/rmhcode/auth/generate
-  r809, // /api/rmhcode/auth/initiate
-  r810, // /api/rmhcode/auth/list
-  r811, // /api/rmhcode/auth/revoke
-  r812, // /api/rmhcode/auth/validate
-  r813, // /api/rmhladder/answers
-  r814, // /api/rmhladder/calendar
-  r815, // /api/rmhladder/export
-  r816, // /api/rmhladder/import
-  r817, // /api/rmhladder/insights
-  r818, // /api/rmhladder/interview-reports
-  r819, // /api/rmhladder/offers
-  r820, // /api/rmhladder/offers/$id
-  r821, // /api/rmhladder/offers/$id/decide
-  r822, // /api/rmhladder/prep
-  r823, // /api/rmhladder/referral-requests/$id
-  r824, // /api/rmhladder/referrals
-  r825, // /api/rmhladder/referrals/$id
-  r826, // /api/rmhladder/referrals/$id/request
-  r827, // /api/rmhladder/searches
-  r828, // /api/rmhmusic/friends
-  r829, // /api/rmhmusic/history
-  r830, // /api/rmhmusic/history/entries
-  r831, // /api/rmhmusic/history/songs/$songId
-  r832, // /api/rmhmusic/learn/cards
-  r833, // /api/rmhmusic/learn/lesson-complete
-  r834, // /api/rmhmusic/learn/profile
-  r835, // /api/rmhmusic/r/$token
-  r836, // /api/rmhmusic/share
-  r837, // /api/rmhmusic/share/$id
-  r838, // /api/rmhmusic/social
-  r839, // /api/rmhmusic/songs
-  r840, // /api/rmhmusic/songs/best
-  r841, // /api/rmhmusic/sprint
-  r842, // /api/rmhmusic/sprint/board
-  r843, // /api/rmhmusic/sprint/daily
-  r844, // /api/rmhmusic/sprint/daily-start
-  r845, // /api/rmhmusic/sprint/freeplay
-  r846, // /api/rmhos/session
-  r847, // /api/rmhstudy/goal
-  r848, // /api/rmhstudy/history
-  r849, // /api/rmhstudy/history/sessions
-  r850, // /api/rmhtube/commentary
-  r851, // /api/rmhtube/heat
-  r852, // /api/rmhtube/parties
-  r853, // /api/rmhtube/parties/$roomId
-  r854, // /api/rmhtube/parties/$roomId/rsvp
-  r855, // /api/rmhtube/stats
-  r856, // /api/rmhtube/stats/pause
-  r857, // /api/rmhtube/subscribe/$channelId
-  r858, // /api/rmhtube/timed-comments
-  r859, // /api/rmhtube/watch-later
-  r860, // /api/rmhtype/daily
-  r861, // /api/rmhtype/daily/finish
-  r862, // /api/rmhtype/daily/leaderboard
-  r863, // /api/rmhtype/daily/start
-  r864, // /api/rmhtype/ghosts
-  r865, // /api/rmhtype/ghosts/$passageId
-  r866, // /api/rmhtype/keystats
-  r867, // /api/rmhtype/lessons/progress
-  r868, // /api/rmhtype/practice-test
-  r869, // /api/rmhtype/progress
-  r870, // /api/rmhtype/progress/runs
-  r871, // /api/rmhtype/texts
-  r872, // /api/rmhtype/texts/$textId
-  r873, // /api/rmhtype/texts/$textId/runs
-  r874, // /api/rum
-  r875, // /api/safety/pile-on
-  r876, // /api/saved-replies
-  r877, // /api/saved-replies/$id
-  r878, // /api/saved-replies/$id/use
-  r879, // /api/saved-replies/order
-  r880, // /api/saves
-  r881, // /api/saves/folders
-  r882, // /api/saves/folders/$id
-  r883, // /api/saves/note
-  r884, // /api/schedule
-  r885, // /api/schedule/admin
-  r886, // /api/schedule/mine
-  r887, // /api/scheduled
-  r888, // /api/scheduled/$id
-  r889, // /api/scheduled/$id/publish
-  r890, // /api/scheduled/capsules
-  r891, // /api/search
-  r892, // /api/search/saved
-  r893, // /api/search/saved/$id
-  r894, // /api/series
-  r895, // /api/series/$id
-  r896, // /api/series/$id/follow
-  r897, // /api/series/$id/posts
-  r898, // /api/series/$id/posts/$postId
-  r899, // /api/series/post/$postId
-  r900, // /api/services/rebar-reservations
-  r901, // /api/settings/alt-text
-  r902, // /api/settings/auto-delete
-  r903, // /api/settings/blocked
-  r904, // /api/settings/content-warnings
-  r905, // /api/settings/game-assists
-  r906, // /api/settings/leaderboard-privacy
-  r907, // /api/settings/missing-alt-text
-  r908, // /api/settings/muted-conversations
-  r909, // /api/settings/play-limits
-  r910, // /api/settings/playtime-privacy
-  r911, // /api/settings/quiet-counts
-  r912, // /api/settings/read-receipts
-  r913, // /api/settings/security/activity
-  r914, // /api/settings/security/activity/export
-  r915, // /api/shop
-  r916, // /api/shop/bundle
-  r917, // /api/shop/daily
-  r918, // /api/shop/equip
-  r919, // /api/shop/loadouts
-  r920, // /api/shop/loadouts/$id
-  r921, // /api/shop/loadouts/$id/apply
-  r922, // /api/shop/search
-  r923, // /api/signal-forge/abandon
-  r924, // /api/signal-forge/leaderboard
-  r925, // /api/signal-forge/load
-  r926, // /api/signal-forge/save
-  r927, // /api/signal-forge/score
-  r928, // /api/sitewide-announcement
-  r929, // /api/sitewide-announcement/seen
-  r930, // /api/slice-it/admin/content
-  r931, // /api/slice-it/admin/review
-  r932, // /api/slice-it/admin/takedown
-  r933, // /api/slice-it/charts
-  r934, // /api/slice-it/charts/$id
-  r935, // /api/slice-it/charts/$id/reviews
-  r936, // /api/slice-it/charts/$id/revisions
-  r937, // /api/slice-it/charts/ranking
-  r938, // /api/slice-it/daily
-  r939, // /api/slice-it/daily/submit
-  r940, // /api/slice-it/leaderboard
-  r941, // /api/slice-it/packs
-  r942, // /api/slice-it/packs/$id
-  r943, // /api/slice-it/packs/$id/items
-  r944, // /api/slice-it/replay
-  r945, // /api/slice-it/replay/$id
-  r946, // /api/slice-it/score
-  r947, // /api/slice-it/setlists
-  r948, // /api/slice-it/setlists/$id
-  r949, // /api/slice-it/shelves
-  r950, // /api/slice-it/showcase
-  r951, // /api/slice-it/songs
-  r952, // /api/slice-it/songs/$id
-  r953, // /api/slice-it/songs/$id/charts
-  r954, // /api/slice-it/songs/$id/comments
-  r955, // /api/slice-it/songs/$id/cover
-  r956, // /api/slice-it/songs/$id/import-chart
-  r957, // /api/slice-it/songs/$id/like
-  r958, // /api/slice-it/songs/$id/patch-analysis
-  r959, // /api/slice-it/songs/$id/play
-  r960, // /api/slice-it/songs/$id/regenerate
-  r961, // /api/slice-it/songs/artist/$key
-  r962, // /api/slice-it/songs/artists
-  r963, // /api/slice-it/songs/upload
-  r964, // /api/slice-it/uploader-stats
-  r965, // /api/sohumtracker/activity
-  r966, // /api/sohumtracker/alert
-  r967, // /api/sohumtracker/export
-  r968, // /api/spaces
-  r969, // /api/spaces/$id/end
-  r970, // /api/spaces/$id/start
-  r971, // /api/speedrun/categories
-  r972, // /api/speedrun/leaderboard
-  r973, // /api/speedrun/queue
-  r974, // /api/speedrun/replays
-  r975, // /api/speedrun/runs
-  r976, // /api/speedrun/verify
-  r977, // /api/spotify/search
-  r978, // /api/staking
-  r979, // /api/staking/deposit
-  r980, // /api/staking/settings
-  r981, // /api/staking/withdraw
-  r982, // /api/stamps
-  r983, // /api/stamps/$id
-  r984, // /api/stamps/$id/wall
-  r985, // /api/stamps/image/$filename
-  r986, // /api/stamps/mine
-  r987, // /api/storefront/creator/$userid
-  r988, // /api/storefront/products
-  r989, // /api/storefront/products/$id
-  r990, // /api/storefront/products/$id/buy
-  r991, // /api/streak
-  r992, // /api/streak/freeze
-  r993, // /api/studio/challenges
-  r994, // /api/studio/challenges/$id
-  r995, // /api/studio/challenges/$id/entry
-  r996, // /api/studio/challenges/$id/vote
-  r997, // /api/studio/challenges/audio
-  r998, // /api/studio/challenges/audio/$filename
-  r999, // /api/studio/overview
+  r800, // /api/rmharks/ai-image
+  r801, // /api/rmharks/image
+  r802, // /api/rmharks/thread
+  r803, // /api/rmhbox/history
+  r804, // /api/rmhbox/packs
+  r805, // /api/rmhbox/packs/$id
+  r806, // /api/rmhbox/packs/$id/report
+  r807, // /api/rmhbox/presets
+  r808, // /api/rmhbox/presets/$id
+  r809, // /api/rmhbox/stats
+  r810, // /api/rmhcharacters/advisor
+  r811, // /api/rmhcharacters/characters
+  r812, // /api/rmhcharacters/characters/$id
+  r813, // /api/rmhcode/auth/generate
+  r814, // /api/rmhcode/auth/initiate
+  r815, // /api/rmhcode/auth/list
+  r816, // /api/rmhcode/auth/revoke
+  r817, // /api/rmhcode/auth/validate
+  r818, // /api/rmhladder/answers
+  r819, // /api/rmhladder/calendar
+  r820, // /api/rmhladder/export
+  r821, // /api/rmhladder/import
+  r822, // /api/rmhladder/insights
+  r823, // /api/rmhladder/interview-reports
+  r824, // /api/rmhladder/offers
+  r825, // /api/rmhladder/offers/$id
+  r826, // /api/rmhladder/offers/$id/decide
+  r827, // /api/rmhladder/prep
+  r828, // /api/rmhladder/referral-requests/$id
+  r829, // /api/rmhladder/referrals
+  r830, // /api/rmhladder/referrals/$id
+  r831, // /api/rmhladder/referrals/$id/request
+  r832, // /api/rmhladder/searches
+  r833, // /api/rmhmusic/friends
+  r834, // /api/rmhmusic/history
+  r835, // /api/rmhmusic/history/entries
+  r836, // /api/rmhmusic/history/songs/$songId
+  r837, // /api/rmhmusic/learn/cards
+  r838, // /api/rmhmusic/learn/lesson-complete
+  r839, // /api/rmhmusic/learn/profile
+  r840, // /api/rmhmusic/r/$token
+  r841, // /api/rmhmusic/share
+  r842, // /api/rmhmusic/share/$id
+  r843, // /api/rmhmusic/social
+  r844, // /api/rmhmusic/songs
+  r845, // /api/rmhmusic/songs/best
+  r846, // /api/rmhmusic/sprint
+  r847, // /api/rmhmusic/sprint/board
+  r848, // /api/rmhmusic/sprint/daily
+  r849, // /api/rmhmusic/sprint/daily-start
+  r850, // /api/rmhmusic/sprint/freeplay
+  r851, // /api/rmhos/session
+  r852, // /api/rmhstudy/goal
+  r853, // /api/rmhstudy/history
+  r854, // /api/rmhstudy/history/sessions
+  r855, // /api/rmhtube/commentary
+  r856, // /api/rmhtube/heat
+  r857, // /api/rmhtube/parties
+  r858, // /api/rmhtube/parties/$roomId
+  r859, // /api/rmhtube/parties/$roomId/rsvp
+  r860, // /api/rmhtube/stats
+  r861, // /api/rmhtube/stats/pause
+  r862, // /api/rmhtube/subscribe/$channelId
+  r863, // /api/rmhtube/timed-comments
+  r864, // /api/rmhtube/watch-later
+  r865, // /api/rmhtype/daily
+  r866, // /api/rmhtype/daily/finish
+  r867, // /api/rmhtype/daily/leaderboard
+  r868, // /api/rmhtype/daily/start
+  r869, // /api/rmhtype/ghosts
+  r870, // /api/rmhtype/ghosts/$passageId
+  r871, // /api/rmhtype/keystats
+  r872, // /api/rmhtype/lessons/progress
+  r873, // /api/rmhtype/practice-test
+  r874, // /api/rmhtype/progress
+  r875, // /api/rmhtype/progress/runs
+  r876, // /api/rmhtype/texts
+  r877, // /api/rmhtype/texts/$textId
+  r878, // /api/rmhtype/texts/$textId/runs
+  r879, // /api/rum
+  r880, // /api/safety/pile-on
+  r881, // /api/saved-replies
+  r882, // /api/saved-replies/$id
+  r883, // /api/saved-replies/$id/use
+  r884, // /api/saved-replies/order
+  r885, // /api/saves
+  r886, // /api/saves/folders
+  r887, // /api/saves/folders/$id
+  r888, // /api/saves/note
+  r889, // /api/schedule
+  r890, // /api/schedule/admin
+  r891, // /api/schedule/mine
+  r892, // /api/scheduled
+  r893, // /api/scheduled/$id
+  r894, // /api/scheduled/$id/publish
+  r895, // /api/scheduled/capsules
+  r896, // /api/search
+  r897, // /api/search/saved
+  r898, // /api/search/saved/$id
+  r899, // /api/series
+  r900, // /api/series/$id
+  r901, // /api/series/$id/follow
+  r902, // /api/series/$id/posts
+  r903, // /api/series/$id/posts/$postId
+  r904, // /api/series/post/$postId
+  r905, // /api/services/rebar-reservations
+  r906, // /api/settings/alt-text
+  r907, // /api/settings/auto-delete
+  r908, // /api/settings/blocked
+  r909, // /api/settings/content-warnings
+  r910, // /api/settings/game-assists
+  r911, // /api/settings/leaderboard-privacy
+  r912, // /api/settings/missing-alt-text
+  r913, // /api/settings/muted-conversations
+  r914, // /api/settings/play-limits
+  r915, // /api/settings/playtime-privacy
+  r916, // /api/settings/quiet-counts
+  r917, // /api/settings/read-receipts
+  r918, // /api/settings/security/activity
+  r919, // /api/settings/security/activity/export
+  r920, // /api/shop
+  r921, // /api/shop/bundle
+  r922, // /api/shop/daily
+  r923, // /api/shop/equip
+  r924, // /api/shop/loadouts
+  r925, // /api/shop/loadouts/$id
+  r926, // /api/shop/loadouts/$id/apply
+  r927, // /api/shop/search
+  r928, // /api/signal-forge/abandon
+  r929, // /api/signal-forge/leaderboard
+  r930, // /api/signal-forge/load
+  r931, // /api/signal-forge/save
+  r932, // /api/signal-forge/score
+  r933, // /api/sitewide-announcement
+  r934, // /api/sitewide-announcement/seen
+  r935, // /api/slice-it/admin/content
+  r936, // /api/slice-it/admin/review
+  r937, // /api/slice-it/admin/takedown
+  r938, // /api/slice-it/charts
+  r939, // /api/slice-it/charts/$id
+  r940, // /api/slice-it/charts/$id/reviews
+  r941, // /api/slice-it/charts/$id/revisions
+  r942, // /api/slice-it/charts/ranking
+  r943, // /api/slice-it/daily
+  r944, // /api/slice-it/daily/submit
+  r945, // /api/slice-it/leaderboard
+  r946, // /api/slice-it/packs
+  r947, // /api/slice-it/packs/$id
+  r948, // /api/slice-it/packs/$id/items
+  r949, // /api/slice-it/replay
+  r950, // /api/slice-it/replay/$id
+  r951, // /api/slice-it/score
+  r952, // /api/slice-it/setlists
+  r953, // /api/slice-it/setlists/$id
+  r954, // /api/slice-it/shelves
+  r955, // /api/slice-it/showcase
+  r956, // /api/slice-it/songs
+  r957, // /api/slice-it/songs/$id
+  r958, // /api/slice-it/songs/$id/charts
+  r959, // /api/slice-it/songs/$id/comments
+  r960, // /api/slice-it/songs/$id/cover
+  r961, // /api/slice-it/songs/$id/import-chart
+  r962, // /api/slice-it/songs/$id/like
+  r963, // /api/slice-it/songs/$id/patch-analysis
+  r964, // /api/slice-it/songs/$id/play
+  r965, // /api/slice-it/songs/$id/regenerate
+  r966, // /api/slice-it/songs/artist/$key
+  r967, // /api/slice-it/songs/artists
+  r968, // /api/slice-it/songs/upload
+  r969, // /api/slice-it/uploader-stats
+  r970, // /api/sohumtracker/activity
+  r971, // /api/sohumtracker/alert
+  r972, // /api/sohumtracker/export
+  r973, // /api/spaces
+  r974, // /api/spaces/$id/end
+  r975, // /api/spaces/$id/start
+  r976, // /api/speedrun/categories
+  r977, // /api/speedrun/leaderboard
+  r978, // /api/speedrun/queue
+  r979, // /api/speedrun/replays
+  r980, // /api/speedrun/runs
+  r981, // /api/speedrun/verify
+  r982, // /api/spotify/search
+  r983, // /api/staking
+  r984, // /api/staking/deposit
+  r985, // /api/staking/settings
+  r986, // /api/staking/withdraw
+  r987, // /api/stamps
+  r988, // /api/stamps/$id
+  r989, // /api/stamps/$id/wall
+  r990, // /api/stamps/image/$filename
+  r991, // /api/stamps/mine
+  r992, // /api/storefront/creator/$userid
+  r993, // /api/storefront/products
+  r994, // /api/storefront/products/$id
+  r995, // /api/storefront/products/$id/buy
+  r996, // /api/streak
+  r997, // /api/streak/freeze
+  r998, // /api/studio/challenges
+  r999, // /api/studio/challenges/$id
 ];
 
 const API_ROUTES_5: readonly ApiRoute[] = [
-  r1000, // /api/studio/projects
-  r1001, // /api/studio/projects/$id
-  r1002, // /api/studio/projects/$id/versions
-  r1003, // /api/studio/projects/$id/versions/$versionId
-  r1004, // /api/studio/projects/$id/versions/$versionId/restore
-  r1005, // /api/studio/tiers
-  r1006, // /api/study-buddy
-  r1007, // /api/study-plans
-  r1008, // /api/study-plans/$id
-  r1009, // /api/study/card-images
-  r1010, // /api/study/card-sound
-  r1011, // /api/study/card-sound/$file
-  r1012, // /api/study/cards/$id
-  r1013, // /api/study/cards/$id/review
-  r1014, // /api/study/cards/$id/suspend
-  r1015, // /api/study/decks
-  r1016, // /api/study/decks/$id
-  r1017, // /api/study/decks/$id/cards
-  r1018, // /api/study/decks/$id/clone
-  r1019, // /api/study/decks/$id/folder
-  r1020, // /api/study/decks/$id/link-original
-  r1021, // /api/study/decks/$id/order
-  r1022, // /api/study/decks/$id/pace
-  r1023, // /api/study/decks/$id/review
-  r1024, // /api/study/decks/$id/suggestions
-  r1025, // /api/study/decks/$id/tests
-  r1026, // /api/study/decks/$id/updates
-  r1027, // /api/study/folders
-  r1028, // /api/study/folders/$id
-  r1029, // /api/study/highlight-cards
-  r1030, // /api/study/marketplace
-  r1031, // /api/study/reminders
-  r1032, // /api/study/review
-  r1033, // /api/study/stats
-  r1034, // /api/study/suggestions/$id
-  r1035, // /api/study/suggestions/$id/decision
-  r1036, // /api/study/tutor
-  r1037, // /api/tags/$tag
-  r1038, // /api/temple-of-joy/efficiency
-  r1039, // /api/temple-of-joy/save
-  r1040, // /api/tf2-hud/ai
-  r1041, // /api/tf2-hud/blobs/$sha1
-  r1042, // /api/tf2-hud/blobs/check
-  r1043, // /api/tf2-hud/huds
-  r1044, // /api/tf2-hud/huds/$id
-  r1045, // /api/tf2-hud/huds/$id/download
-  r1046, // /api/tf2-hud/huds/$id/file
-  r1047, // /api/tf2-hud/huds/$id/fork
-  r1048, // /api/tf2-hud/huds/$id/like
-  r1049, // /api/tf2-hud/huds/$id/share
-  r1050, // /api/tf2-hud/huds/$id/versions
-  r1051, // /api/tf2-hud/huds/$id/versions/$n
-  r1052, // /api/tf2-hud/share/$token
-  r1053, // /api/tf2-hud/share/$token/file
-  r1054, // /api/tf2-loadout/ai
-  r1055, // /api/tf2-loadout/catalog
-  r1056, // /api/tf2-loadout/icons/$id
-  r1057, // /api/tf2-loadout/loadouts
-  r1058, // /api/tf2-loadout/loadouts/$id
-  r1059, // /api/tf2-loadout/loadouts/$id/fork
-  r1060, // /api/tf2-loadout/loadouts/$id/like
-  r1061, // /api/tf2-loadout/models
-  r1062, // /api/tf2-loadout/models/$id
-  r1063, // /api/themes
-  r1064, // /api/themes/$id
-  r1065, // /api/themes/$id/buy
-  r1066, // /api/themes/$id/publish
-  r1067, // /api/themes/shop
-  r1068, // /api/tips/leaderboard
-  r1069, // /api/today
-  r1070, // /api/tournaments
-  r1071, // /api/tournaments/$id
-  r1072, // /api/tournaments/$id/checkin
-  r1073, // /api/tournaments/$id/matches/$matchId/award
-  r1074, // /api/tournaments/$id/matches/$matchId/confirm
-  r1075, // /api/tournaments/$id/matches/$matchId/decide
-  r1076, // /api/tournaments/$id/matches/$matchId/dispute
-  r1077, // /api/tournaments/$id/matches/$matchId/report
-  r1078, // /api/tournaments/$id/matches/$matchId/schedule
-  r1079, // /api/tournaments/$id/matches/$matchId/withdraw
-  r1080, // /api/tournaments/$id/pickem
-  r1081, // /api/tournaments/$id/schedule-settings
-  r1082, // /api/tournaments/$id/seeding
-  r1083, // /api/translate
-  r1084, // /api/translate/suggest
-  r1085, // /api/translate/vote
-  r1086, // /api/trash
-  r1087, // /api/trash/$kind/$id
-  r1088, // /api/trash/restore
-  r1089, // /api/unfurl
-  r1090, // /api/user-builds
-  r1091, // /api/user-builds/$id
-  r1092, // /api/user-builds/$id/comments
-  r1093, // /api/user-builds/$id/comments-lock
-  r1094, // /api/user-builds/$id/comments/$commentId
-  r1095, // /api/user-builds/$id/comments/$commentId/hide
-  r1096, // /api/user-builds/$id/images
-  r1097, // /api/user-builds/$id/insights
-  r1098, // /api/user-builds/$id/like
-  r1099, // /api/user-builds/$id/releases
-  r1100, // /api/user-builds/$id/releases/$releaseId
-  r1101, // /api/user-builds/$id/screenshots
-  r1102, // /api/user-builds/categories
-  r1103, // /api/user-builds/featured
-  r1104, // /api/users/$id/wishlist
-  r1105, // /api/users/search
-  r1106, // /api/vega/leaderboard
-  r1107, // /api/vega/score
-  r1108, // /api/velum2099/contracts
-  r1109, // /api/versecraft/chapter
-  r1110, // /api/versecraft/outline
-  r1111, // /api/versecraft/progress
-  r1112, // /api/versecraft/save
-  r1113, // /api/versecraft/seeds
-  r1114, // /api/versecraft/seeds/fork
-  r1115, // /api/versecraft/seeds/rate
-  r1116, // /api/vibe/gallery
-  r1117, // /api/vibe/kv/$slug
-  r1118, // /api/vibe/page/$slug
-  r1119, // /api/vibe/page/$slug/tweaks
-  r1120, // /api/void-breaker/leaderboard
-  r1121, // /api/void-breaker/score
-  r1122, // /api/wager
-  r1123, // /api/wager/$id
-  r1124, // /api/webrings
-  r1125, // /api/webrings/$slug
-  r1126, // /api/webrings/$slug/hop
-  r1127, // /api/webrings/$slug/membership
-  r1128, // /api/wheel
-  r1129, // /api/wheel/spin
-  r1130, // /api/when
-  r1131, // /api/when/$id
-  r1132, // /api/when/$id/ics
-  r1133, // /api/when/$id/lock
-  r1134, // /api/when/$id/respond
-  r1135, // /api/wiki/sso
-  r1136, // /api/wishlist
-  r1137, // /api/wrapped
+  r1000, // /api/studio/challenges/$id/entry
+  r1001, // /api/studio/challenges/$id/vote
+  r1002, // /api/studio/challenges/audio
+  r1003, // /api/studio/challenges/audio/$filename
+  r1004, // /api/studio/overview
+  r1005, // /api/studio/projects
+  r1006, // /api/studio/projects/$id
+  r1007, // /api/studio/projects/$id/versions
+  r1008, // /api/studio/projects/$id/versions/$versionId
+  r1009, // /api/studio/projects/$id/versions/$versionId/restore
+  r1010, // /api/studio/tiers
+  r1011, // /api/study-buddy
+  r1012, // /api/study-plans
+  r1013, // /api/study-plans/$id
+  r1014, // /api/study/card-images
+  r1015, // /api/study/card-sound
+  r1016, // /api/study/card-sound/$file
+  r1017, // /api/study/cards/$id
+  r1018, // /api/study/cards/$id/review
+  r1019, // /api/study/cards/$id/suspend
+  r1020, // /api/study/decks
+  r1021, // /api/study/decks/$id
+  r1022, // /api/study/decks/$id/cards
+  r1023, // /api/study/decks/$id/clone
+  r1024, // /api/study/decks/$id/folder
+  r1025, // /api/study/decks/$id/link-original
+  r1026, // /api/study/decks/$id/order
+  r1027, // /api/study/decks/$id/pace
+  r1028, // /api/study/decks/$id/review
+  r1029, // /api/study/decks/$id/suggestions
+  r1030, // /api/study/decks/$id/tests
+  r1031, // /api/study/decks/$id/updates
+  r1032, // /api/study/folders
+  r1033, // /api/study/folders/$id
+  r1034, // /api/study/highlight-cards
+  r1035, // /api/study/marketplace
+  r1036, // /api/study/reminders
+  r1037, // /api/study/review
+  r1038, // /api/study/stats
+  r1039, // /api/study/suggestions/$id
+  r1040, // /api/study/suggestions/$id/decision
+  r1041, // /api/study/tutor
+  r1042, // /api/tags/$tag
+  r1043, // /api/temple-of-joy/efficiency
+  r1044, // /api/temple-of-joy/save
+  r1045, // /api/tf2-hud/ai
+  r1046, // /api/tf2-hud/blobs/$sha1
+  r1047, // /api/tf2-hud/blobs/check
+  r1048, // /api/tf2-hud/huds
+  r1049, // /api/tf2-hud/huds/$id
+  r1050, // /api/tf2-hud/huds/$id/download
+  r1051, // /api/tf2-hud/huds/$id/file
+  r1052, // /api/tf2-hud/huds/$id/fork
+  r1053, // /api/tf2-hud/huds/$id/like
+  r1054, // /api/tf2-hud/huds/$id/share
+  r1055, // /api/tf2-hud/huds/$id/versions
+  r1056, // /api/tf2-hud/huds/$id/versions/$n
+  r1057, // /api/tf2-hud/share/$token
+  r1058, // /api/tf2-hud/share/$token/file
+  r1059, // /api/tf2-loadout/ai
+  r1060, // /api/tf2-loadout/catalog
+  r1061, // /api/tf2-loadout/icons/$id
+  r1062, // /api/tf2-loadout/loadouts
+  r1063, // /api/tf2-loadout/loadouts/$id
+  r1064, // /api/tf2-loadout/loadouts/$id/fork
+  r1065, // /api/tf2-loadout/loadouts/$id/like
+  r1066, // /api/tf2-loadout/models
+  r1067, // /api/tf2-loadout/models/$id
+  r1068, // /api/themes
+  r1069, // /api/themes/$id
+  r1070, // /api/themes/$id/buy
+  r1071, // /api/themes/$id/publish
+  r1072, // /api/themes/shop
+  r1073, // /api/tips/leaderboard
+  r1074, // /api/today
+  r1075, // /api/tournaments
+  r1076, // /api/tournaments/$id
+  r1077, // /api/tournaments/$id/checkin
+  r1078, // /api/tournaments/$id/matches/$matchId/award
+  r1079, // /api/tournaments/$id/matches/$matchId/confirm
+  r1080, // /api/tournaments/$id/matches/$matchId/decide
+  r1081, // /api/tournaments/$id/matches/$matchId/dispute
+  r1082, // /api/tournaments/$id/matches/$matchId/report
+  r1083, // /api/tournaments/$id/matches/$matchId/schedule
+  r1084, // /api/tournaments/$id/matches/$matchId/withdraw
+  r1085, // /api/tournaments/$id/pickem
+  r1086, // /api/tournaments/$id/schedule-settings
+  r1087, // /api/tournaments/$id/seeding
+  r1088, // /api/translate
+  r1089, // /api/translate/suggest
+  r1090, // /api/translate/vote
+  r1091, // /api/trash
+  r1092, // /api/trash/$kind/$id
+  r1093, // /api/trash/restore
+  r1094, // /api/unfurl
+  r1095, // /api/user-builds
+  r1096, // /api/user-builds/$id
+  r1097, // /api/user-builds/$id/comments
+  r1098, // /api/user-builds/$id/comments-lock
+  r1099, // /api/user-builds/$id/comments/$commentId
+  r1100, // /api/user-builds/$id/comments/$commentId/hide
+  r1101, // /api/user-builds/$id/images
+  r1102, // /api/user-builds/$id/insights
+  r1103, // /api/user-builds/$id/like
+  r1104, // /api/user-builds/$id/releases
+  r1105, // /api/user-builds/$id/releases/$releaseId
+  r1106, // /api/user-builds/$id/screenshots
+  r1107, // /api/user-builds/categories
+  r1108, // /api/user-builds/featured
+  r1109, // /api/users/$id/wishlist
+  r1110, // /api/users/search
+  r1111, // /api/vega/leaderboard
+  r1112, // /api/vega/score
+  r1113, // /api/velum2099/contracts
+  r1114, // /api/versecraft/chapter
+  r1115, // /api/versecraft/outline
+  r1116, // /api/versecraft/progress
+  r1117, // /api/versecraft/save
+  r1118, // /api/versecraft/seeds
+  r1119, // /api/versecraft/seeds/fork
+  r1120, // /api/versecraft/seeds/rate
+  r1121, // /api/vibe/gallery
+  r1122, // /api/vibe/kv/$slug
+  r1123, // /api/vibe/page/$slug
+  r1124, // /api/vibe/page/$slug/tweaks
+  r1125, // /api/void-breaker/leaderboard
+  r1126, // /api/void-breaker/score
+  r1127, // /api/wager
+  r1128, // /api/wager/$id
+  r1129, // /api/webrings
+  r1130, // /api/webrings/$slug
+  r1131, // /api/webrings/$slug/hop
+  r1132, // /api/webrings/$slug/membership
+  r1133, // /api/wheel
+  r1134, // /api/wheel/spin
+  r1135, // /api/when
+  r1136, // /api/when/$id
+  r1137, // /api/when/$id/ics
+  r1138, // /api/when/$id/lock
+  r1139, // /api/when/$id/respond
+  r1140, // /api/wiki/sso
+  r1141, // /api/wishlist
+  r1142, // /api/wrapped
 ];
 
 export const API_ROUTES: readonly ApiRoute[] = [

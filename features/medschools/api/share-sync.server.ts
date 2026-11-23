@@ -398,8 +398,9 @@ export async function deleteSharedEvents(tx: Tx, userId: string, milestoneIds: r
 }
 
 /**
- * Delete tracker rows (a milestone, an application, a cycle) and every event hanging from them. The ids and cells are
- * read first, then `deleteRows` runs, then the events go, all under the user lock in one transaction. With sharing never
+ * Delete tracker rows (a milestone, an application, a cycle) and every event hanging from them. The milestones in scope
+ * are read first, `deleteRows` runs, the scope is read again, and the events of the ids that disappeared go (the
+ * survivors are reconciled), all under the user lock in one transaction. With sharing never
  * on (or the secret unset and no event possible) it needs no secret.
  */
 export async function withSharedErase<T>(
@@ -411,9 +412,17 @@ export async function withSharedErase<T>(
 ): Promise<T> {
   return db.$transaction(async (tx) => {
     await lock(tx, `med-tracker:${userId}`);
-    const ms = await readMilestones(tx, userId, scope);
+    const before = await readMilestones(tx, userId, scope);
     const r = await deleteRows(tx);
-    await syncEvents(tx, userId, ms, false, now);
+    // What the closure actually deleted, not what the scope covered: a closure narrower than its scope (or one that
+    // deleted nothing) must not unshare the milestones that are still there.
+    const after = await readMilestones(tx, userId, scope);
+    const left = new Set(after.map((m) => m.id));
+    const gone = before.filter((m) => !left.has(m.id));
+    if (gone.length > 0) {
+      await syncEvents(tx, userId, gone, false, now);
+      await syncEvents(tx, userId, after, true, now);
+    }
     return r;
   });
 }
@@ -424,6 +433,10 @@ export async function withSharedErase<T>(
  * Runs BEFORE the erasure transaction, which then deletes the tracker rows.
  */
 export async function eraseSharedMedEvents(userId: string, db: PrismaClient = prisma): Promise<{ events: number }> {
+  // Most accounts never opened the tracker: one indexed count instead of a transaction and a lock. A member whose
+  // deletion is requested or finalising is signed out, so nothing can create a cycle between this read and the erasure.
+  const cycles = await db.medTrackerCycle.count({ where: { userId } });
+  if (!(cycles > 0)) return { events: 0 };
   return db.$transaction(async (tx) => {
     await lock(tx, `med-tracker:${userId}`);
     const ms = await readMilestones(tx, userId, {});
@@ -435,6 +448,69 @@ export async function eraseSharedMedEvents(userId: string, db: PrismaClient = pr
     });
     return { events: deleted };
   });
+}
+
+// ─── Row writers (the only place a tracker row is created, changed or deleted) ─────────────────────────────────────
+// Dumb on purpose: ownership, caps and validation are the caller's, checked inside the same `withShared` /
+// `withSharedErase` transaction (under the user lock). They live here so the ratchet's one-writer rule stays literal.
+
+/** Sharing may be switched on: the secret is set and the account is old enough (Q8). Throws inside the transaction. */
+export async function assertMayShare(tx: Tx, userId: string, now: Date = new Date()): Promise<void> {
+  if (!shareSecret()) throw new SharingUnavailableError();
+  const u = await tx.user.findUnique({ where: { id: userId }, select: { createdAt: true } });
+  if (!u || !accountOldEnoughToShare(u.createdAt, now)) throw new AccountTooNewError();
+}
+
+/** Create the cycle or change its flag and (when given) its home state. `homeState: undefined` leaves it alone. */
+export async function upsertCycleRow(
+  tx: Tx,
+  userId: string,
+  cycleYear: number,
+  data: { shareAnonymously: boolean; homeState?: string | null },
+): Promise<void> {
+  const fields = {
+    shareAnonymously: data.shareAnonymously,
+    ...(data.homeState !== undefined ? { homeState: data.homeState } : {}),
+  };
+  await tx.medTrackerCycle.upsert({
+    where: { userId_cycleYear: { userId, cycleYear } },
+    create: { userId, cycleYear, ...fields },
+    update: fields,
+  });
+}
+
+export async function createApplicationRow(
+  tx: Tx,
+  data: { cycleId: string; schoolId: string; program: MedProgram },
+): Promise<{ id: string }> {
+  const row = await tx.medTrackerApplication.create({ data, select: { id: true } });
+  return { id: row.id };
+}
+
+export async function setApplicationNotesRow(tx: Tx, id: string, notes: string | null): Promise<void> {
+  await tx.medTrackerApplication.update({ where: { id }, data: { notes } });
+}
+
+/** One milestone per `(application, type)`: a second call changes the date. `day` is a calendar day at 00:00 UTC. */
+export async function upsertMilestoneRow(tx: Tx, applicationId: string, type: MilestoneType, day: Date): Promise<void> {
+  await tx.medTrackerMilestone.upsert({
+    where: { applicationId_type: { applicationId, type } },
+    create: { applicationId, type, date: day },
+    update: { date: day },
+  });
+}
+
+/** Deletions: call only through `withSharedErase`, which has read the milestone ids first. */
+export async function deleteMilestoneRow(tx: Tx, applicationId: string, type: MilestoneType): Promise<void> {
+  await tx.medTrackerMilestone.deleteMany({ where: { applicationId, type } });
+}
+
+export async function deleteApplicationRow(tx: Tx, id: string): Promise<void> {
+  await tx.medTrackerApplication.deleteMany({ where: { id } });
+}
+
+export async function deleteCycleRow(tx: Tx, id: string): Promise<void> {
+  await tx.medTrackerCycle.deleteMany({ where: { id } });
 }
 
 // ─── Audit ──────────────────────────────────────────────────────────────────────────────────────────────────────
