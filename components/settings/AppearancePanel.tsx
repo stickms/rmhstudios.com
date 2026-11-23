@@ -20,6 +20,10 @@ import {
   type AppearancePrefsInput,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { getAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
+import { useSession } from '@/components/Providers';
+import { FONT_CATALOGUE, type FontChoice } from '@/lib/appearance/fonts';
+import { chooseFont, disableAppearanceSync, enableAppearanceSync } from '@/components/settings/appearance-actions';
 import {
   DATA_SAVER_PREFERENCES,
   useDataSaverPreference,
@@ -29,6 +33,14 @@ import {
 async function persist(body: AppearancePrefsInput) {
   await api(setAppearancePrefsApi, { body }).catch(() => {});
 }
+
+/** Saved to the account only while this device syncs appearance (owner, 2026-11-23). */
+async function persistIfSynced(body: AppearancePrefsInput) {
+  if (useThemeStore.getState().appearanceSync) await persist(body);
+}
+
+const TEXT_FACES = FONT_CATALOGUE.filter((f) => f.kind !== 'mono');
+const MONO_FACES = FONT_CATALOGUE.filter((f) => f.kind === 'mono');
 
 
 /**
@@ -40,18 +52,22 @@ async function persist(body: AppearancePrefsInput) {
 export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeView[] }) {
   const { t } = useTranslation('settings-appearance');
   const store = useThemeStore();
+  const { data: session } = useSession();
+  // A line set in the face it describes: the picker's own preview (a native select cannot draw its options in their
+  // faces, and drawing every option would fetch every face).
+  const sample = t('font-sample', { defaultValue: 'The quick brown fox jumps over the lazy dog.' });
 
   function setReadableFont(value: boolean) {
     store.setReadableFont(value);
-    void persist({ readableFont: value });
+    void persistIfSynced({ readableFont: value });
   }
   function setColorVision(value: ColorVisionMode) {
     store.setColorVision(value);
-    void persist({ colorVision: value });
+    void persistIfSynced({ colorVision: value });
   }
   function setJellyMotion(value: JellyMotion) {
     store.setJellyMotion(value);
-    void persist({ jellyMotion: value });
+    void persistIfSynced({ jellyMotion: value });
   }
 
   const colorVision = colorVisionText(t);
@@ -64,6 +80,27 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
 
   return (
     <>
+      {session ? (
+        <Section title={t('sync', { defaultValue: 'Sync' })}>
+          <ToggleRow
+            label={t('appearance-sync', { defaultValue: 'Sync appearance across devices' })}
+            description={t('appearance-sync-hint', {
+              defaultValue: 'Off: this device keeps its own theme and fonts.',
+            })}
+            checked={store.appearanceSync}
+            onChange={(on) => {
+              if (on) {
+                void enableAppearanceSync({
+                  get: () => api(getAppearancePrefsApi),
+                  persist,
+                });
+              } else {
+                disableAppearanceSync();
+              }
+            }}
+          />
+        </Section>
+      ) : null}
       <Section
         title={t('display', { defaultValue: 'Display' })}
         description={t('display-desc', { defaultValue: 'How the page reads on this device.' })}
@@ -86,6 +123,33 @@ export function AppearancePanel({ ownedThemes = [] }: { ownedThemes?: UserThemeV
           })}
           checked={store.readableFont}
           onChange={setReadableFont}
+        />
+      </Section>
+
+      <Section title={t('fonts', { defaultValue: 'Fonts' })}>
+        <SettingsSelectRow
+          label={t('font-main', { defaultValue: 'Main font' })}
+          hint={<span style={{ fontFamily: 'var(--site-font-body)' }}>{sample}</span>}
+          value={store.fonts.main}
+          onChange={(v) => void chooseFont('main', v as FontChoice['main'], { persist })}
+          options={TEXT_FACES.map((f) => ({ value: f.id, label: f.label }))}
+        />
+        <SettingsSelectRow
+          label={t('font-reading', { defaultValue: 'Reading font' })}
+          hint={<span style={{ fontFamily: 'var(--site-font-reading)' }}>{sample}</span>}
+          value={store.fonts.reading}
+          onChange={(v) => void chooseFont('reading', v as FontChoice['reading'], { persist })}
+          options={[
+            { value: 'same', label: t('font-same-as-main', { defaultValue: 'Same as main font' }) },
+            ...TEXT_FACES.map((f) => ({ value: f.id, label: f.label })),
+          ]}
+        />
+        <SettingsSelectRow
+          label={t('font-mono', { defaultValue: 'Mono font' })}
+          hint={<span style={{ fontFamily: 'var(--site-font-mono)' }}>{sample}</span>}
+          value={store.fonts.mono}
+          onChange={(v) => void chooseFont('mono', v as FontChoice['mono'], { persist })}
+          options={MONO_FACES.map((f) => ({ value: f.id, label: f.label }))}
         />
       </Section>
 

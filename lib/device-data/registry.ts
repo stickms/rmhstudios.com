@@ -190,6 +190,9 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh-font-scale',
       'rmh-readable-font',
       'rmh-jelly-motion',
+      // The reader's fonts (rmh-font-main/-reading/-mono) and this device's appearance sync switch and last change.
+      'rmh-font-',
+      'rmh-appearance-',
       'rmh-style',
       'rmh-user-theme',
       'rmh-lang-picked',
