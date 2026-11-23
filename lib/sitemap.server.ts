@@ -178,7 +178,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
     count: async () => {
       const [blog, news, docs, albums, guides, wiki] = await Promise.all([
         prisma.blogPost.count({ where: publishedLogWhere(new Date()) }),
-        prisma.newsArticle.count({ where: { status: 'PUBLISHED' } }),
+        prisma.newsArticle.count({ where: { status: 'PUBLISHED', origin: 'EDITORIAL' } }),
         prisma.libraryDocument.count({ where: { hidden: false, reported: false } }),
         prisma.album.count(),
         prisma.gameGuide.count({ where: { published: true } }),
@@ -197,8 +197,9 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
           orderBy: { updatedAt: 'desc' },
           take: CAPS.content,
         }),
+        // Wire headlines (RMH News) are `noindex`: the story is the publisher's, so only editorial articles are listed.
         prisma.newsArticle.findMany({
-          where: { status: 'PUBLISHED' },
+          where: { status: 'PUBLISHED', origin: 'EDITORIAL' },
           select: { slug: true, updatedAt: true },
           orderBy: { updatedAt: 'desc' },
           take: CAPS.content,

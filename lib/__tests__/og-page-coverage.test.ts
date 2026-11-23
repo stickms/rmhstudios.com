@@ -110,7 +110,6 @@ const BACKLOG: Record<string, string> = {
   // point at their own rendered cards; the move is onto buildMeta.
   'app/routes/_site/u/$userid/index.tsx': 'hand-rolled meta (has its own card)',
   'app/routes/_site/u/$userid/post/$postid.tsx': 'hand-rolled meta (has its own card)',
-  'app/routes/_site/news/$slug.tsx': 'hand-rolled meta',
   'app/routes/library.$slug.tsx': 'hand-rolled meta',
   // Full-screen standalone pages with their own head.
   'app/routes/black-lives-matter.tsx': 'hand-rolled meta',

@@ -247,7 +247,6 @@ const ALLOW = new Set<string>([
   'components/elections/GlobeCanvas.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'features/nightrail/ui/NightrailGame.tsx',
-  'components/news/NewsHero.tsx',
   'components/rideshare/cars/LiquidCarStage.tsx',
   'components/rmhfashion/FashionStage.tsx',
   'components/rmh-capital/ContactPage.tsx',
