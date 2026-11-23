@@ -126,7 +126,7 @@ export function DuelView({ run, store, copy, coach }: Props) {
             <Portrait
               id={duel.protocolId}
               size={112}
-              className={killed ? 'cl-terminate' : hitFoe ? 'cl-tear' : undefined}
+              className={killed ? 'cl-terminate' : duel.result === 'win' ? 'opacity-20' : hitFoe ? 'cl-tear' : undefined}
             />
             {hitFoe && <Shrapnel seed={clashId} color="#b6ff3c" />}
             {showResult && last.protocolAction === 'Block' && (
@@ -227,9 +227,11 @@ export function DuelView({ run, store, copy, coach }: Props) {
           </>
         ) : (
           <p className="text-[0.75rem] cl-muted cl-prompt">
-            {choosingStance
-              ? t('prompt-stance', { defaultValue: 'Choose a stance.' })
-              : t('prompt-action', { defaultValue: 'Choose a command.' })}
+            {duel.result === 'win'
+              ? t('terminated', { defaultValue: 'PROCESS TERMINATED' })
+              : choosingStance
+                ? t('prompt-stance', { defaultValue: 'Choose a stance.' })
+                : t('prompt-action', { defaultValue: 'Choose a command.' })}
           </p>
         )}
         {killed && (
