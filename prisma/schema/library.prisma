@@ -133,6 +133,12 @@ model NewsArticle {
   /// never regenerated. An empty string means "tried, nothing to summarise", retried after `summarizedAt` + 1 day.
   summary          String?    @db.Text
   summarizedAt     DateTime?
+  /// The article's discussion post (an RMHark by the RMH News account, `kind = 'news'`), made the first time someone
+  /// comments on or reposts the article, or when the feed pick features it (lib/news-wire/discussion.server.ts).
+  /// Comments, likes and reposts live on that post. Not a relation: a post the moderators deleted closes the discussion.
+  postId           String?    @unique @db.VarChar(64)
+  /// When the feed pick put this article in the feed (lib/news-wire/feed-pick.server.ts): a few a day at most.
+  featuredAt       DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
@@ -142,6 +148,7 @@ model NewsArticle {
   @@index([category])
   @@index([slug])
   @@index([sourceUrl])
+  @@index([featuredAt(sort: Desc)])
   @@map("news_article")
 }
 

@@ -645,6 +645,7 @@ import { route as r_lib_delight_api_museum } from '@/lib/delight/api/museum.serv
 import { route as r_lib_neon_driftway_api_neon_driftway_leaderboard } from '@/lib/neon-driftway/api/neon-driftway.leaderboard.server';
 import { route as r_lib_neon_driftway_api_neon_driftway_livery } from '@/lib/neon-driftway/api/neon-driftway.livery.server';
 import { route as r_lib_game_api_neon_driftway_score } from '@/lib/game/api/neon-driftway.score.server';
+import { route as r_lib_news_wire_api_news_discussion } from '@/lib/news-wire/api/news.discussion.server';
 import { route as r_lib_news_wire_api_news_summary } from '@/lib/news-wire/api/news.summary.server';
 import { route as r_lib_trick_week_api_nightrail_tricks } from '@/lib/trick-week/api/nightrail.tricks.server';
 import { route as r_lib_trick_week_api_nightrail_tricks_vote } from '@/lib/trick-week/api/nightrail.tricks.vote.server';
@@ -1845,6 +1846,7 @@ const API_ROUTES_N: readonly ApiRoute[] = [
   r_lib_neon_driftway_api_neon_driftway_leaderboard, // /api/neon-driftway/leaderboard
   r_lib_neon_driftway_api_neon_driftway_livery, // /api/neon-driftway/livery
   r_lib_game_api_neon_driftway_score, // /api/neon-driftway/score
+  r_lib_news_wire_api_news_discussion, // /api/news/discussion
   r_lib_news_wire_api_news_summary, // /api/news/summary
   r_lib_trick_week_api_nightrail_tricks, // /api/nightrail/tricks
   r_lib_trick_week_api_nightrail_tricks_vote, // /api/nightrail/tricks/vote

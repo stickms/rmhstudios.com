@@ -40,6 +40,8 @@
     "lib/news-wire/sources.ts",
     "lib/news-wire/summary.ts",
     "lib/news-wire/news-wire.contract.ts",
+    "lib/news-wire/discussion.ts",
+    "lib/news-wire/feed-pick.ts",
     "lib/sitewide-announcement.ts",
     "lib/sitewide-announcement-schema.ts",
     "lib/sitewide-announcement.contract.ts",

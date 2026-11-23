@@ -3,6 +3,7 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { SummaryResult } from './summary';
+import type { NewsDiscussionState } from './discussion';
 
 /**
  * The article's DeepSeek summary, written on the first request and cached on the row. A POST, not a GET, so that no
@@ -13,3 +14,18 @@ export const requestNewsSummaryApi = endpoint<{
   body: { slug: string };
   res: SummaryResult;
 }>()({ method: 'POST', path: '/api/news/summary' });
+
+/** The article's discussion: counts, the post page, and whether the viewer reposted it. 404 for an unknown slug. */
+export const getNewsDiscussionApi = endpoint<{
+  query: { slug: string };
+  res: NewsDiscussionState;
+}>()({ method: 'GET', path: '/api/news/discussion' });
+
+/**
+ * Open the article's discussion: makes its discussion post on first use (signed in only), then answers like the GET.
+ * The caller comments on or reposts that post through the ordinary post endpoints.
+ */
+export const openNewsDiscussionApi = endpoint<{
+  body: { slug: string };
+  res: NewsDiscussionState;
+}>()({ method: 'POST', path: '/api/news/discussion' });

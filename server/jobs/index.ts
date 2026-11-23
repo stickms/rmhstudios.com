@@ -75,6 +75,7 @@ import { PROFILE_LINK_REVERIFY_QUEUE, registerProfileLinkReverifyCron } from '@/
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
 import { SECURITY_LOG_PRUNE_QUEUE, registerSecurityLogPrune } from '@/lib/auth/security-log.server';
 import { NEWS_INGEST_QUEUE, registerNewsIngestCron } from '@/lib/news-wire/ingest.server';
+import { NEWS_FEED_PICK_QUEUE, registerNewsFeedPickCron } from '@/lib/news-wire/feed-pick.server';
 import { registerReadingSubscriptionJobs } from '@/lib/reading/subscriptions-jobs.server';
 import { registerBlogPublicationJobs } from '@/lib/blog/publication-jobs.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
@@ -230,6 +231,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // RMH News: every 20 minutes, read the public feeds (lib/news-wire/sources.ts), store new headlines with a keyword
   // category and a picture, and prune wire rows older than 21 days. No model runs here; summaries are per click.
   { queue: NEWS_INGEST_QUEUE, register: registerNewsIngestCron },
+  // RMH News in the feed: hourly, at most NEWS_FEED_PICKS_PER_DAY (default 4) stories a day, 3 h apart, each a repost
+  // by the RMH News account of the story's discussion post.
+  { queue: NEWS_FEED_PICK_QUEUE, register: registerNewsFeedPickCron },
   // Follow Logs and News: every 15 min one notification per new Log / published article per subscriber
   // (cursor + dedupe), and a daily 17:00 UTC email batch for members who turned email on.
   { queue: 'reading.subscriptions', register: registerReadingSubscriptionJobs },
