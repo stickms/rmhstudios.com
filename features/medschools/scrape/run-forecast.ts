@@ -21,6 +21,7 @@ import { primarySeriesOf, seriesOfSource, toDayCounts } from '../engine/stats/in
 import { MIN_HISTORY_TOTAL } from '../engine/stats/constants';
 import { fnv1a } from '../engine/stats/random';
 import type { MedEventType, MedProgram, MedSource } from '../engine/types';
+import { runWaitCurves } from './run-wait-curves';
 import { brief, closeStaleRuns, lastRealRunWithin } from './run-support';
 import type { Logger, MedPrisma } from './types';
 
@@ -359,5 +360,17 @@ export async function runForecast(
     return close(summary, error);
   }
 
+  // The wait curves come last: their failure makes the run PARTIAL and never hides the forecasts written above.
+  if (summary.status === 'OK') {
+    try {
+      const r = await runWaitCurves({ prisma, db, asOf: addDays(utcDayOf(now()), -1), log });
+      summary.curves = r.curves;
+      summary.curvesRemoved = r.removed;
+    } catch (e) {
+      summary.status = 'PARTIAL';
+      error = `wait curves: ${brief(e)}`;
+      log.error(`forecast: ${error}`);
+    }
+  }
   return close(summary, error);
 }

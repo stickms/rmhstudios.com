@@ -10,11 +10,12 @@ const NOW = new Date('2027-01-15T06:40:00.000Z'); // asOf 2027-01-14, day 227 of
 const shape = { startDay: 30, peakDay: 150, endDay: 330 };
 type Table = Record<string, unknown>[];
 
-function setup() {
+function setup(rows: () => unknown[] = () => []) {
   const f = createFakePrisma();
+  const queryRaw = vi.fn(async () => rows());
   let t = NOW;
   const run = (trigger: 'CRON' | 'MANUAL' = 'MANUAL', over: { shouldStop?: () => boolean } = {}) =>
-    runForecast({ prisma: f.prisma, db: {} as never, now: () => t, log, ...over }, { trigger });
+    runForecast({ prisma: f.prisma, db: { $queryRaw: queryRaw } as never, now: () => t, log, ...over }, { trigger });
   const school = (id: string, active = true) => (f.tables.medSchool as Table).push({ id, active });
   /** A season of one source: a triangle of `total` reports, cut at `until` (a date) when given. */
   const season = (o: {
@@ -44,7 +45,7 @@ function setup() {
       });
     }
   };
-  return { f, run, school, season, at: (d: Date) => (t = d) };
+  return { f, run, school, season, queryRaw, at: (d: Date) => (t = d) };
 }
 const forecasts = (f: ReturnType<typeof setup>['f']) => f.tables.medForecast as Record<string, unknown>[];
 
@@ -190,6 +191,39 @@ describe('runForecast', () => {
     const r = await s.run('MANUAL', { shouldStop: () => calls++ >= 1 });
     expect(r).toMatchObject({ status: 'PARTIAL', schools: 1 });
     expect(forecasts(s.f).map((x) => x.schoolId)).toEqual(['a']);
+  });
+
+  it("builds the wait curves with the run's own asOf, after the forecasts", async () => {
+    const member = (i: number) => ({
+      schoolId: 'a',
+      program: 'REG',
+      member: `m${i}`,
+      completeOn: '2026-11-01',
+      inviteOn: i % 2 ? '2026-11-10' : null,
+      endOn: null,
+    });
+    const s = setup(() => Array.from({ length: 22 }, (_, i) => member(i)));
+    s.school('a');
+    s.season({ schoolId: 'a', cycleYear: 2027, total: 150, until: '2027-01-14' });
+    s.season({ schoolId: 'a', cycleYear: 2026, total: 200 });
+    const r = await s.run();
+    expect(r).toMatchObject({ status: 'OK', fitted: 1, curves: 1, curvesRemoved: 0 });
+    const w = (s.f.tables.medWaitCurve as { asOf: Date; members: number }[])[0];
+    expect(w?.asOf.toISOString().slice(0, 10)).toBe('2027-01-14');
+    expect(w?.members).toBe(22);
+  });
+
+  it('a failing wait-curve step makes the run PARTIAL and keeps the forecasts', async () => {
+    const s = setup();
+    s.queryRaw.mockRejectedValue(new Error('boom member-x'));
+    s.school('a');
+    s.season({ schoolId: 'a', cycleYear: 2027, total: 150, until: '2027-01-14' });
+    s.season({ schoolId: 'a', cycleYear: 2026, total: 200 });
+    const r = await s.run();
+    expect(r).toMatchObject({ status: 'PARTIAL', fitted: 1, curves: 0 });
+    expect(forecasts(s.f)).toHaveLength(1);
+    const ledger = (s.f.tables.medSourceRun as { error: string }[])[0];
+    expect(ledger?.error).toBe('wait curves: wait-curve query failed');
   });
 
   it('inactive schools are not forecast', async () => {

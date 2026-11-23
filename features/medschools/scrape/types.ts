@@ -271,6 +271,20 @@ export interface MedPrisma {
       id: string;
     }>;
   };
+  medWaitCurve: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<
+      {
+        schoolId: string;
+        program: MedProgram;
+      }[]
+    >;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<{
+      id: string;
+    }>;
+    deleteMany(args: { where: Where }): Promise<{
+      count: number;
+    }>;
+  };
   medRequestBudget: {
     findFirst(args?: { where?: Where }): Promise<{ key: string; day: Date; requests: number } | null>;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<{ key: string }>;
