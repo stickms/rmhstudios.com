@@ -13,7 +13,16 @@ import { useMedLabels } from './labels';
  * One reported event: what, where, when, from which source. No person is named (D8).
  * Two lines on every width, so rows have one shape: the event and the school, then the program, the time and the source.
  */
-export function LiveRow({ event, className }: { event: LiveEventDto; className?: string | undefined }) {
+export function LiveRow({
+  event,
+  className,
+  compact,
+}: {
+  event: LiveEventDto;
+  className?: string | undefined;
+  /** The rail: no source line (it is 272px wide and the page names its sources). */
+  compact?: boolean | undefined;
+}) {
   const { t } = useTranslation('medschools');
   const { eventLabel, programLabel, sourceName } = useMedLabels();
   const lf = useLocaleFormat();
@@ -52,7 +61,7 @@ export function LiveRow({ event, className }: { event: LiveEventDto; className?:
           ) : (
             <RelativeTime date={event.occurredAt} format={(ts) => lf.relative(ts)} className="t-meta" />
           )}
-          <span className="t-meta">{sourceName(event.source)}</span>
+          {compact ? null : <span className="t-meta">{sourceName(event.source)}</span>}
         </div>
       </div>
     </li>
