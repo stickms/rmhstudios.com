@@ -236,23 +236,24 @@ input[type='number'] {
  * opted-out images are never hidden. Full-screen apps keep their own image
  * handling. Base layer, so a component's own fade utilities still win.
  *
- * An image is hidden only once it has WAITED (`media-wait`, 100ms after it
- * appears): a picture already in the cache — a feed avatar remounted by a tab
+ * An image is hidden only once it has WAITED (100ms after it appears: it starts
+ * shown through `@starting-style`, and the step to 0 is a 0s transition delayed
+ * 100ms that a load before then cancels): a picture already in the cache — a
+ * feed avatar remounted by a tab
  * switch, a navigation or the composer's swap — loads inside that window, is
  * never hidden and never fades. Hiding every unloaded image at once made each
  * of those blink out and fade back in over 320ms (owner, 2026-11-23: "why do
  * profile pics on the feed keep flashing"). The script marks an image the wait
  * did hide `data-loaded="reveal"`, and only that one fades in, with the M9
  * arrival (160ms, opacity only). */
-@keyframes media-wait {
-  to {
-    opacity: 0;
-  }
-}
 @layer base {
   html.media-reveal:not(.app-route)
     img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]):not([data-loaded]) {
-    animation: media-wait 0s linear 0.1s forwards;
+    opacity: 0;
+    transition: opacity 0s linear 0.1s;
+    @starting-style {
+      opacity: 1;
+    }
   }
   html.media-reveal:not(.app-route)
     img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal])[data-loaded='reveal'] {
