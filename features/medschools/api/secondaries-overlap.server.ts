@@ -11,7 +11,6 @@ import { buildOverlap } from '../engine/secondaries/overlap';
 import { LIMITS } from '../engine/tracker';
 import type { MedProgram } from '../engine/types';
 import { getSchoolViews } from './secondaries.server';
-import { siteCycleYear } from './read.server';
 
 export type OverlapQuery = { source: 'list'; list: string } | { source: 'tracker' };
 
@@ -23,7 +22,8 @@ export async function getOverlap(
   q: OverlapQuery,
   now: Date = new Date(),
 ): Promise<MedSecondaryOverlapRes | 'not-found'> {
-  const cycleYear = await siteCycleYear(now);
+  // The secondary cycle, as the tracker lookup below and the stored prompts use it (not the site cycle, which follows interviews).
+  const cycleYear = cycleYearOf(now, 'SECONDARY');
   const wanted: { schoolId: string; programs: MedProgram[] }[] = [];
 
   if (q.source === 'list') {
@@ -37,7 +37,7 @@ export async function getOverlap(
       wanted.push({ schoolId: i.schoolId, programs: programsOf(i.program) });
   } else {
     const cycle = await prisma.medTrackerCycle.findFirst({
-      where: { userId, cycleYear: cycleYearOf(now, 'SECONDARY') },
+      where: { userId, cycleYear },
       select: { id: true },
     });
     if (cycle) {

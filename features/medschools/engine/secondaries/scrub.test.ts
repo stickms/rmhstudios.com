@@ -20,6 +20,12 @@ describe('scrubForumPrompt: rejects, never redacts', () => {
     ['a quote tag', '[quote="Name"]Why are you interested in our school?[/quote]'],
     ['too short', 'Why us?'],
     ['too long', `Describe ${'a very long challenge '.repeat(40)}`],
+    ['a capitalised first person', 'My mom told the dean that the secondary was due on Friday.'],
+    ['a capitalised me', 'Me and my friends all wrote about volunteering for this one.'],
+    ['an upper-case I', 'I think the diversity prompt is harder than the leadership prompt here.'],
+    ['third-person narration, no prompt shape', 'The dean told her the class was already full by October.'],
+    ['third-person narration about a school', 'Duke asked applicants to explain a challenge but nobody got an update.'],
+    ['a status line', 'Secondary received and submitted within two weeks of the invitation.'],
     ['shouting', 'DESCRIBE A CHALLENGE YOU FACED AND HOW YOU RESPONDED'],
   ])('rejects %s', (_name, text) => {
     expect(scrubForumPrompt(text, HANDLES)).toBeNull();
@@ -30,6 +36,10 @@ describe('scrubForumPrompt: rejects, never redacts', () => {
     ['Why are you interested in our school? (250 words)'],
     ['Please describe your activities since graduation.'],
     ['In your own words, tell us how you would use your experiences in our class.'],
+    ['Prompt 2: the experiences that shaped your path to medicine.'],
+    ['Question: your motivation for a career in medicine and research'],
+    ['Reflect on a time you changed your mind about something important.'],
+    ['What is the most meaningful experience you have had in the last year'],
   ])('accepts %s', (text) => {
     expect(scrubForumPrompt(text, HANDLES)).toBe(text);
   });

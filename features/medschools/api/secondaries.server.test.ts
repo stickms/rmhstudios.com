@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFakePrisma } from '../scrape/test-support';
 
 const fake = vi.hoisted(() => ({ current: null as null | { prisma: unknown } }));
@@ -7,7 +7,7 @@ vi.mock('@/lib/prisma.server', () => ({
     return fake.current?.prisma;
   },
 }));
-vi.mock('./read.server', () => ({ SLUG_RE: /^[a-z0-9-]{1,80}$/, siteCycleYear: async () => 2027 }));
+vi.mock('./read.server', () => ({ SLUG_RE: /^[a-z0-9-]{1,80}$/, siteCycleYear: async () => 2026 }));
 
 import { getSchoolSecondaries } from './secondaries.server';
 
@@ -39,6 +39,9 @@ const obs = (promptId: string, cycleYear: number, source = 'ADMIT', over: Record
 });
 
 beforeEach(() => {
+  // The cycle is read from the clock (the secondary cycle rolls over on June 1): pin it so the suite does not age.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-23T12:00:00Z'));
   f = createFakePrisma();
   fake.current = f;
   f.tables.medSchool.push(
@@ -46,6 +49,8 @@ beforeEach(() => {
     { id: 's2', slug: 'gone', name: 'Gone', active: false },
   );
 });
+
+afterEach(() => vi.useRealTimers());
 
 const KEYS = ['cycleYear', 'groups', 'sources', 'admissions', 'turnaround'];
 
@@ -95,6 +100,15 @@ describe('getSchoolSecondaries', () => {
     );
     const body = JSON.stringify(r);
     for (const needle of ['themesVersion', 'dedupeHash', 'userId', '"key"']) expect(body).not.toContain(needle);
+  });
+
+  it('in July, before any interview, the tab shows the new cycle\'s prompts, not last cycle\'s', async () => {
+    f.tables.medSecondaryPrompt.push(prompt('p1', 'Describe a challenge you faced and how you responded to it.'));
+    f.tables.medSecondaryObservation.push(obs('p1', 2026), obs('p1', 2027));
+    const r = await getSchoolSecondaries('duke', {}, new Date('2026-07-15T12:00:00Z'));
+    expect(r!.cycleYear).toBe(2027);
+    expect(r!.groups[0]).toMatchObject({ shownCycle: 2027, comparedWith: 2026, state: 'current' });
+    expect(r!.groups[0]!.prompts[0]).toMatchObject({ status: 'same', cycles: [2026, 2027] });
   });
 
   it('filters by program and shows only the programs that have prompts (no empty PHD heading)', async () => {

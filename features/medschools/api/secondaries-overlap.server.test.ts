@@ -7,7 +7,7 @@ vi.mock('@/lib/prisma.server', () => ({
     return fake.current?.prisma;
   },
 }));
-vi.mock('./read.server', () => ({ SLUG_RE: /^[a-z0-9-]{1,80}$/, siteCycleYear: async () => 2027 }));
+vi.mock('./read.server', () => ({ SLUG_RE: /^[a-z0-9-]{1,80}$/, siteCycleYear: async () => 2026 }));
 
 import { getOverlap } from './secondaries-overlap.server';
 
@@ -141,6 +141,26 @@ describe('getOverlap (list)', () => {
     if (r === 'not-found') throw new Error('expected a result');
     const entry = r.groups[0]!.entries.find((e) => e.slug === 'school-b');
     expect(entry?.basis).toBe('last-cycle');
+  });
+});
+
+describe('getOverlap in summer, before any interview of the new cycle', () => {
+  // July 2026: `siteCycleYear` still reads 2026 (it follows interviews); prompts and the tracker are the 2027 secondary cycle.
+  const JULY = new Date('2026-07-15T12:00:00Z');
+  it('the list overlap reads the secondary cycle, so both halves agree with the tracker', async () => {
+    const r = await getOverlap('alice', { source: 'list', list: 'L1' }, JULY);
+    if (r === 'not-found') throw new Error('expected a result');
+    expect(r.cycleYear).toBe(2027);
+    expect(r.groups.flatMap((g) => g.entries).length).toBeGreaterThan(0);
+  });
+  it('the tracker overlap finds the 2027 applications and shows their 2027 prompts', async () => {
+    f.tables.medTrackerCycle.push({ id: 'ca', userId: 'alice', cycleYear: 2027 });
+    f.tables.medTrackerApplication.push({ id: 'x1', cycleId: 'ca', schoolId: 'a', program: 'REG' });
+    const r = await getOverlap('alice', { source: 'tracker' }, JULY);
+    if (r === 'not-found') throw new Error('expected a result');
+    expect(r.cycleYear).toBe(2027);
+    expect(r.schoolCount).toBe(1);
+    expect(r.groups.flatMap((g) => g.entries).map((e) => e.slug)).toEqual(['school-a']);
   });
 });
 
