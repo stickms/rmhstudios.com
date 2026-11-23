@@ -58,8 +58,9 @@ export function ActivityTab({
   const types = data?.types ?? [];
   const matrix = buildTotalsMatrix(types, data?.otherTotals);
   const visible = search.show.filter((s): s is MedChartedTypeId => CHARTED_TYPES.includes(s));
-  // The charts run from day zero to today, or to the cycle's last day once it is over: never 500 days of nothing.
-  const chartEnd = data ? [today, cycleEndOn(data.cycleYear)].sort()[0]! : today;
+  // The charts run from day zero to today, or to the cycle's last day once it is over (the last category's: decisions
+  // run to August 31): never 500 days of nothing.
+  const chartEnd = data ? [today, cycleEndOn(data.cycleYear, 'ACCEPTANCE')].sort()[0]! : today;
   const to = data && chartEnd > data.dayZeroOn ? chartEnd : (data?.dayZeroOn ?? today);
   const hasAny = types.some((ty) => ty.sources.length > 0);
   const chosen = types.find((ty) => ty.eventType === search.type);

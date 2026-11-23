@@ -600,8 +600,9 @@ describe('Forecast tab', () => {
     h.session = { user: { id: 'u1' } };
     const html = render((qc) => {
       seed(forecast())(qc);
-      qc.setQueryData(chancesQuery({ school: 'duke' }).queryKey, {
-        cycleYear: 2027,
+      // The cycle is the one the Forecast tab shows (forecast().cycleYear), not whichever tracker cycle is newest.
+      qc.setQueryData(chancesQuery({ school: 'duke', cycle: 2026 }).queryKey, {
+        cycleYear: 2026,
         chances: [
           {
             applicationId: 'a1',
@@ -620,6 +621,27 @@ describe('Forecast tab', () => {
     expect(html).toContain('Your estimate');
     expect(html).toContain('the chance of an interview invite:');
     expect(html).toContain('by \u2068Nov 27\u2069 \u00b7 \u206829%\u2069');
+    // An answer cached under the cycle-less key (the newest tracker cycle) is not this page's estimate.
+    const wrongCycle = render((qc) => {
+      seed(forecast())(qc);
+      qc.setQueryData(chancesQuery({ school: 'duke' }).queryKey, {
+        cycleYear: 2027,
+        chances: [
+          {
+            applicationId: 'a9',
+            school: { slug: 'duke', shortName: 'Duke', name: 'Duke', active: true },
+            program: 'REG',
+            status: 'thin',
+            completeOn: null,
+            invitedOn: null,
+            asOf: null,
+            basis: null,
+            points: [],
+          },
+        ],
+      });
+    });
+    expect(wrongCycle).not.toContain('Your estimate');
     h.session = null;
   });
 

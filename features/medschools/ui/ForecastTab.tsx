@@ -200,7 +200,7 @@ export function ForecastTab({
                 </p>
               ) : null}
             </div>
-            <SchoolChances slug={slug} />
+            <SchoolChances slug={slug} cycle={data.cycleYear} />
           </div>
         ) : null}
       </SkeletonSwap>

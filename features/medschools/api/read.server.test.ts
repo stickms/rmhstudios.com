@@ -280,7 +280,8 @@ describe('getActivity', () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     await getActivity('duke', { program: 'PHD' }, NOW);
     const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: { program: unknown } };
-    expect(args.where.program).toEqual({ in: ['PHD'] });
+    // Both programs are read whatever the page shows (waves follow REG + PHD, D10); the chart filters to PHD afterwards.
+    expect(args.where.program).toEqual({ in: ['REG', 'PHD'] });
   });
 });
 
@@ -833,8 +834,24 @@ describe('getForecast', () => {
       total: { p10: 20, p50: 30, p90: 40 },
       halfOn: { p10: '2027-11-08', p50: '2027-11-28', p90: '2027-12-18' },
     });
-    expect(res.endOn).toBe('2028-05-31');
+    expect(res.endOn).toBe('2028-06-30'); // interviews belong to the cycle until June 30
     expect(Math.abs(res.basis.reduce((n, b) => n + b.weight, 0) - 1)).toBeLessThan(0.01);
+  });
+
+  it('a source that revised past days since the job ran: the band starts where the observed line ends', async () => {
+    // The job saw 10 by Nov 20; Admit has since revised the days to 11 (up) or 8 (down).
+    setup(row('FULL'), [cnt('ADMIT', '2027-11-18', 4), cnt('ADMIT', '2027-11-20', 7)]);
+    const up = (await getForecast('duke', {}, NOW))!;
+    expect(up.observed.at(-1)!.cumulative).toBe(11);
+    expect(up.band[0]).toEqual({ day: 172, p10: 11, p50: 11, p90: 11 });
+    expect(up.band[2]).toEqual({ day: 174, p10: 13, p50: 17, p90: 21 });
+    expect(up.summary!.total).toEqual({ p10: 21, p50: 31, p90: 41 });
+    setup(row('FULL'), [cnt('ADMIT', '2027-11-18', 4), cnt('ADMIT', '2027-11-20', 4)]);
+    const down = (await getForecast('duke', {}, NOW))!;
+    expect(down.observed.at(-1)!.cumulative).toBe(8);
+    expect(down.band[0]).toEqual({ day: 172, p10: 8, p50: 8, p90: 8 });
+    // Never below what is already observed, and unchanged rows stay unchanged (the test above).
+    for (const b of down.band) expect(b.p10).toBeGreaterThanOrEqual(8);
   });
 
   it('EARLY is early, NONE is no-history with an empty band', async () => {
@@ -921,6 +938,24 @@ describe('waves (D10)', () => {
     expect(res.waves).toEqual([{ date: '2027-11-15', count: 12, baseline: 2 }]);
   });
 
+  it('getActivity: waves follow REG + PHD whatever program the page shows, so they agree with the live feed', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
+    // REG alone is 2 a day (no wave); PHD adds 10 on the 15th: together 12.
+    const withProgram = (program: string) => (r: ReturnType<typeof cnt>) => ({ ...r, program });
+    m.medCycleCount.findMany.mockResolvedValue([
+      ...quiet('ADMIT').map(withProgram('REG')),
+      { ...cnt('ADMIT', dayN(15), 10), program: 'PHD' },
+    ]);
+    for (const program of ['REG', 'PHD', 'ALL'] as const) {
+      const res = (await getActivity('duke', { program }, NOW))!;
+      expect(res.waves, program).toEqual([{ date: '2027-11-15', count: 12, baseline: 2 }]);
+    }
+    // The chart itself still shows only the requested program's events.
+    const reg = (await getActivity('duke', { program: 'REG' }, NOW))!;
+    expect(reg.types[0]!.sources[0]!.total).toBe(40);
+  });
+
   it('getActivity: a wave in a source that is not primary is ignored; no INTERVIEW series is no waves', async () => {
     m.medSchool.findFirst.mockResolvedValue(school);
     m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2028 });
@@ -948,7 +983,8 @@ describe('waves (D10)', () => {
       occurredAt: new Date(at),
       school: { slug, shortName: 'Duke', name: 'Duke', degree: 'MD', city: 'Durham', state: 'NC' },
     });
-    const withSchool = (rows: ReturnType<typeof quiet>) => rows.map((r) => ({ ...r, school: { slug: 'duke' } }));
+    const withSchool = (rows: ReturnType<typeof quiet>) =>
+      rows.map((r) => ({ ...r, cycleYear: 2028, school: { slug: 'duke' } }));
 
     it('flags an INTERVIEW row on the wave day only, with one batched read for the page', async () => {
       m.medCycleEvent.findMany.mockResolvedValue([
@@ -968,6 +1004,32 @@ describe('waves (D10)', () => {
       expect(m.medCycleCount.findMany).toHaveBeenCalledTimes(1);
       const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
       expect(args.where).toMatchObject({ eventType: 'INTERVIEW', ...{ OR: FLOOR.OR } });
+    });
+
+    it('a burst after a quiet spell is a wave: the read goes back to the cycle, not a window around the page', async () => {
+      // Reports 2 a day for ten days in September, nothing for over two months, then 12 on Nov 15.
+      const september = Array.from({ length: 10 }, (_, i) => cnt('ADMIT', `2027-09-${String(i + 1).padStart(2, '0')}`, 2));
+      m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z')]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool([...september, cnt('ADMIT', '2027-11-15', 12)]));
+      const res = await getLive({}, NOW);
+      expect(res.events[0]!.wave).toBe(true);
+      const args = m.medCycleCount.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+      expect(args.where).toMatchObject({ cycleYear: { in: [2028] } });
+      expect(args.where).not.toHaveProperty('date');
+    });
+
+    it('the first report is the cycle\'s: a school that began reporting a week ago has no wave from its first days', async () => {
+      const fresh = [dayN(10), dayN(11), dayN(12)].map((x) => cnt('ADMIT', x, 6));
+      m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-11T10:00:00Z')]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool(fresh));
+      expect((await getLive({}, NOW)).events[0]!.wave).toBe(false); // fewer than 7 days of data
+    });
+
+    it('the primary source is chosen over the whole cycle, as the Activity chart does', async () => {
+      // ADMIT is primary all cycle; a burst in SDN (not primary) is not a wave, even when the page window shows only SDN.
+      m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z')]);
+      m.medCycleCount.findMany.mockResolvedValue(withSchool([...quiet('ADMIT'), ...quiet('SDN', 15)]));
+      expect((await getLive({}, NOW)).events[0]!.wave).toBe(false);
     });
 
     it('a page with no INTERVIEW row reads no counts', async () => {

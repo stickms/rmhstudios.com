@@ -86,7 +86,8 @@ describe('runForecast', () => {
     expect(row).toMatchObject({ program: 'REG', eventType: 'INTERVIEW', mode: 'FULL', source: 'CYCLETRACK' });
     expect(row.asOf.toISOString().slice(0, 10)).toBe('2027-01-14');
     expect(row.curve.days?.[0]).toBe(227);
-    expect(row.curve.days?.[row.curve.days.length - 1]).toBe(364);
+    // Interviews belong to the cycle until June 30 (`cycleYearOf`): day zero is 2026-06-01, so the band ends on day 394.
+    expect(row.curve.days?.[row.curve.days.length - 1]).toBe(394);
     const lens = ['p10', 'p50', 'p90'].map((k) => row.curve[k]?.length);
     expect(lens).toEqual([row.curve.days?.length, row.curve.days?.length, row.curve.days?.length]);
   });
@@ -165,7 +166,21 @@ describe('runForecast', () => {
     expect(b.curve.days).toEqual([]);
   });
 
-  it('after the cycle ends (June 1 rollover) nothing is written and the last rows stand', async () => {
+  it('a decision category is drawn to August 31, not May 31: the path, the total and halfDay cover the whole season', async () => {
+    const s = setup();
+    s.school('a');
+    s.at(new Date('2027-02-20T06:40:00.000Z'));
+    const type = { eventType: 'ACCEPTANCE' };
+    // Past seasons report acceptances all the way to the end of August (day 456 from 2026-06-01).
+    s.season({ schoolId: 'a', cycleYear: 2027, total: 150, until: '2027-02-19', ...type });
+    s.season({ schoolId: 'a', cycleYear: 2026, total: 200, ...type });
+    s.season({ schoolId: 'a', cycleYear: 2025, total: 100, ...type });
+    await s.run();
+    const row = forecasts(s.f).find((r) => r.eventType === 'ACCEPTANCE') as { curve: { days: number[] } };
+    expect(row.curve.days[row.curve.days.length - 1]).toBe(456);
+  });
+
+  it('after a category ends nothing is written for it, and the last rows stand', async () => {
     const s = setup();
     s.school('a');
     s.at(new Date('2027-05-20T06:40:00.000Z'));
@@ -174,8 +189,9 @@ describe('runForecast', () => {
     await s.run();
     const before = JSON.stringify(forecasts(s.f));
     expect(before).not.toBe('[]');
-    s.at(new Date('2027-06-02T06:40:00.000Z'));
-    expect(await s.run()).toMatchObject({ cycleYear: 2027, schools: 0, fitted: 0, early: 0, none: 0, unchanged: 0 });
+    // The interview season ended June 30 (July 1 is the next cycle's); only decision categories are still open.
+    s.at(new Date('2027-07-02T06:40:00.000Z'));
+    expect(await s.run()).toMatchObject({ cycleYear: 2027, fitted: 0, early: 0, none: 0, unchanged: 0 });
     expect(JSON.stringify(forecasts(s.f))).toBe(before);
     expect(forecasts(s.f).some((r) => r.cycleYear === 2028)).toBe(false);
   });

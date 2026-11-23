@@ -104,10 +104,13 @@ export function fitSchool(args: {
   const asOf = addDays(today, -1);
   const dayZeroOn = dayZeroOf(cycleYear);
   const asOfDay = dayOfCycle(asOf, dayZeroOn);
-  const endDay = dayOfCycle(cycleEndOn(cycleYear), dayZeroOn);
   const out: ForecastRow[] = [];
   for (const program of PROGRAMS) {
     for (const eventType of CHARTED_TYPES) {
+      // Each category runs to its own last day (decisions to Aug 31, `cycleYearOf`), so the drawn path, the total and
+      // `halfDay` cover every event that belongs to the cycle. Past that day the stored row stays as the record (D11).
+      const endDay = dayOfCycle(cycleEndOn(cycleYear, eventType), dayZeroOn);
+      if (asOfDay >= endDay) continue;
       const of = (y: number) =>
         rows.filter((r) => r.program === program && r.eventType === eventType && r.cycleYear === y);
       const primary = primarySeriesOf(of(cycleYear), today);
@@ -246,7 +249,8 @@ export async function runForecast(
     const dayZeroOf = (y: number): string => zero.get(y) ?? defaultDayZero(y);
     const asOf = addDays(today, -1);
     const asOfDay = dayOfCycle(asOf, dayZeroOf(cycleYear));
-    const endDay = dayOfCycle(cycleEndOn(cycleYear), dayZeroOf(cycleYear));
+    // The latest end of any category (decisions, Aug 31); `fitSchool` stops each category at its own end.
+    const endDay = dayOfCycle(cycleEndOn(cycleYear, 'ACCEPTANCE'), dayZeroOf(cycleYear));
 
     // Before the cycle starts or after its last day there is nothing to forecast, and the rows the cycle ended with
     // stay as the record of what was predicted (D11): no write.
