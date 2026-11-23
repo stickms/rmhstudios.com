@@ -56,7 +56,7 @@ export default function ActivityRail() {
   };
 
   return (
-    <section aria-labelledby="medschools-rail-heading" className="site-margin__rail flex flex-col gap-3">
+    <section aria-labelledby="medschools-rail-heading" className="site-margin__rail flex flex-col gap-3 text-site-text">
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="medschools-rail-heading" className="t-label m-0">
           {t('rail-title', { defaultValue: 'Live activity' })}

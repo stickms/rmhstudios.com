@@ -5,7 +5,6 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
-import { SortableList } from '@/components/ui/sortable-list';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -187,15 +186,12 @@ export function ListsPage() {
   };
 
   return (
-    <PageLayout
-      title={title}
-      breadcrumbs={breadcrumbs}
-      headerRight={
+    <PageLayout title={title} breadcrumbs={breadcrumbs}>
+      <div className="mb-4">
         <Button variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
           {t('lists-new', { defaultValue: 'New list' })}
         </Button>
-      }
-    >
+      </div>
       <SkeletonSwap ready={!!lists.data}>
         {stale ? (
           <p className="t-meta m-0 mb-3" role="status">
@@ -215,14 +211,20 @@ export function ListsPage() {
             })}
           />
         ) : (
-          <SortableList
-            items={all}
-            itemLabel={(l) => l.name}
-            onReorder={(next) => void reorderLists(next)}
-            className="gap-8"
-            renderItem={(list) => (
+          <div className="flex flex-col gap-10">
+            {all.map((list, i) => (
               <ListSection
+                key={list.id}
                 list={list}
+                onMove={(by) => {
+                  const ids = all.map((l) => l.id);
+                  const to = i + by;
+                  if (to < 0 || to >= ids.length) return;
+                  [ids[i], ids[to]] = [ids[to]!, ids[i]!];
+                  void reorderLists(ids.flatMap((id) => all.filter((l) => l.id === id)));
+                }}
+                canMoveUp={i > 0}
+                canMoveDown={i < all.length - 1}
                 onRename={() => void rename(list)}
                 onDelete={() => void remove(list)}
                 onAddToTracker={() => addToTracker(list)}
@@ -232,8 +234,8 @@ export function ListsPage() {
                 }
                 onRemoveItem={(itemId) => run(() => api(deleteMedListItemApi, { params: { id: list.id, itemId } }))}
               />
-            )}
-          />
+            ))}
+          </div>
         )}
       </SkeletonSwap>
 

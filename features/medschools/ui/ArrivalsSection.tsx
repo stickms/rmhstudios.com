@@ -36,7 +36,7 @@ export function ArrivalsSection({
 
   const locale = chartLabels('').locale;
   const wd = new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' });
-  const wdShort = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' });
+  const wdShort = new Intl.DateTimeFormat(locale, { weekday: 'narrow', timeZone: 'UTC' });
   const hourFmt = new Intl.DateTimeFormat(locale, { hour: 'numeric', timeZone: 'UTC' });
   const weekdayItems: ArrivalItem[] = data.weekdays.map((count, i) => ({
     key: `d${i}`,

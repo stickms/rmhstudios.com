@@ -202,3 +202,26 @@ change. Keep the chart rules and the floor above.
   viewport sizes, Day and Night, plus `ar`) and `pnpm audit:pages --routes …`.
 - i18n: namespace `medschools`; new keys carry a prefix (`index-`, `live-`, `school-`, `chart-`, `event-`, `program-`,
   `source-`); the hub row's two strings are `nav-rmh-medschools` and `services-medschools-desc` in `feed`.
+
+## Programs, lists, the activity rail and arrivals (owner 2026-11-23)
+
+- **Program set.** `engine/programs.ts` is the one definition: four keys (`md`, `md-phd`, `do`, `do-phd`), the URL param
+  `programs=md,do-phd` (canonical order; the old `degree` and `program` links still parse onto it), the preference
+  (`MedUserPrefs.programs`, text[]; empty means "not chosen" and the older `programFilter` and `degree` columns still
+  answer for old rows), and the three public readers (`programs` on the list, live and rail queries). All four on is
+  no filter and the only set that includes events with no program reported. The index, live page, rail and
+  preferences use `ProgramSetToggles`; the school page keeps `ProgramToggles` for its own degree (`ALL | REG | PHD`).
+- **Preferences and lists on the public pages (plan task 12).** Each route loader awaits `loadPrefs` first, then
+  prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
+  preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/rmh-medschool/lists` holds
+  the lists and the preferences (`#preferences`).
+- **Activity rail.** `components/shell/margin-takeover.ts` maps a path prefix to a lazy rail that replaces the shell
+  margin's search and lists (>= 1280px only; neither rendered nor fetched below). `ui/rail/ActivityRail.tsx` uses
+  `useLiveFeed` (60 s head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to
+  load older pages: data loading only, so B3's no-decorative-observer rule is untouched. Server side it is the live
+  endpoint with `q` (name, short name or an exact state code), `state` and `types`.
+- **When results arrive.** `GET /schools/$slug/arrivals`: weekday and Eastern-hour counts and per-cycle first and
+  median report days, aggregated in SQL from ADMIT and SDN events with an exact time (SDN midnights are day-only and
+  excluded). Aggregates only; a cycle needs 3 events; the arrays are empty (and the section hidden) under 10 events.
+- **Interviews** has `?itab=overview|questions|format`; Overview compares reported invites with Admit's yearly
+  interview count (labelled "Source: Admit.org", hidden when unknown) and keeps the floored stats.

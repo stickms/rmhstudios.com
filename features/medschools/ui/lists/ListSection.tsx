@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,9 @@ import { ListItemRow } from './ListItemRow';
  */
 export function ListSection({
   list,
+  onMove,
+  canMoveUp,
+  canMoveDown,
   onRename,
   onDelete,
   onAddToTracker,
@@ -23,6 +26,10 @@ export function ListSection({
   onRemoveItem,
 }: {
   list: MedListDto;
+  /** Move the list one place up (-1) or down (1): the lists reorder from this menu, the schools by SortableList. */
+  onMove: (by: -1 | 1) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onRename: () => void;
   onDelete: () => void;
   onAddToTracker: () => Promise<void>;
@@ -37,7 +44,7 @@ export function ListSection({
   return (
     <section aria-label={list.name} className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2 border-b border-site-border pb-2">
-        <h2 className="t-heading m-0 min-w-0 flex-1 break-words">{list.name}</h2>
+        <h2 className="t-heading m-0 w-full min-w-0 break-words sm:w-auto sm:flex-1">{list.name}</h2>
         <span className="t-meta">
           {t('lists-count', {
             count: list.items.length,
@@ -82,6 +89,26 @@ export function ListSection({
             }}
           >
             {t('lists-rename', { defaultValue: 'Rename' })}
+          </MenuItem>
+          <MenuItem
+            icon={ChevronUp}
+            disabled={!canMoveUp}
+            onSelect={() => {
+              setMenu(false);
+              onMove(-1);
+            }}
+          >
+            {t('lists-move-up', { defaultValue: 'Move up' })}
+          </MenuItem>
+          <MenuItem
+            icon={ChevronDown}
+            disabled={!canMoveDown}
+            onSelect={() => {
+              setMenu(false);
+              onMove(1);
+            }}
+          >
+            {t('lists-move-down', { defaultValue: 'Move down' })}
           </MenuItem>
           <MenuItem
             icon={Trash2}

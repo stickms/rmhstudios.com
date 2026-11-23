@@ -90,7 +90,8 @@ export function ListItemRow({
         aria-label={t('lists-item-note', { defaultValue: 'Note on {{name}}', name: school.shortName })}
         placeholder={t('lists-item-note-placeholder', { defaultValue: 'Add a note' })}
         maxLength={LIMITS.note}
-        rows={1}
+        rows={2}
+        className="min-h-16 py-1.5"
         value={note}
         disabled={busy}
         onChange={(e) => setNote(e.target.value)}
