@@ -11,7 +11,9 @@ export const LIMITS = { segments: 8, segmentChars: 400, totalChars: 1200 } as co
 
 const MARKUP_RE = /https?:|www\.|\]\(|<[a-z/]|\bhref\b|@\w/i;
 // A bare domain ("evil.example"): a label, a dot and a letters-only tail.
-const DOMAIN_RE = /(?<![\p{L}\p{N}])[\p{L}\p{N}][\p{L}\p{N}-]*(?:\.[\p{L}\p{N}-]+)*\.\p{L}{2,}(?![\p{L}\p{N}])/u;
+const DOMAIN_SOURCE =
+  '(?<![\\p{L}\\p{N}])[\\p{L}\\p{N}][\\p{L}\\p{N}-]*(?:\\.[\\p{L}\\p{N}-]+)*\\.\\p{L}{2,}(?![\\p{L}\\p{N}])';
+const domainsIn = (s: string): string[] => (s.match(new RegExp(DOMAIN_SOURCE, 'gu')) ?? []).map((d) => d.toLowerCase());
 const LEAK_WINDOW = 6;
 
 const words = (s: string): string[] => s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
@@ -42,6 +44,9 @@ export function groundAnswer(
   if (!isObject(raw) || !Array.isArray(raw.segments) || raw.segments.length === 0) return empty;
 
   const byRef = new Map(facts.map((f) => [f.ref, f] as const));
+  // A source's own name ("Admit.org") is a domain-shaped word in OUR fact text, so a sentence may say it. Only text that
+  // came from our own columns counts: a domain planted in forum text (untrusted) is never allowed.
+  const ownDomains = new Set(facts.filter((f) => !f.untrusted).flatMap((f) => domainsIn(f.text)));
   const reasons: DropReason[] = [];
   const note = (r: DropReason) => {
     if (!reasons.includes(r)) reasons.push(r);
@@ -74,7 +79,7 @@ export function groundAnswer(
       drop('over-limit');
       continue;
     }
-    if (MARKUP_RE.test(text) || DOMAIN_RE.test(text)) {
+    if (MARKUP_RE.test(text) || domainsIn(text).some((d) => !ownDomains.has(d))) {
       drop('link');
       continue;
     }

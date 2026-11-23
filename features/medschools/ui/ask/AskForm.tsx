@@ -22,6 +22,7 @@ export function AskForm({
   remaining,
   cap,
   pinned,
+  showSuggestions = true,
 }: {
   question: string;
   onQuestion: (q: string) => void;
@@ -33,6 +34,8 @@ export function AskForm({
   remaining: number | null;
   cap: number | null;
   pinned: boolean;
+  /** False while a question is in flight or answered: the answer, not a list of starters, is what the page is about. */
+  showSuggestions?: boolean;
 }) {
   const { t } = useTranslation('medschools');
   const id = useId();
@@ -97,26 +100,28 @@ export function AskForm({
           defaultValue: 'Your question is sent to our AI provider to write the answer. RMH does not keep it.',
         })}
       </p>
-      <div>
-        <p className="t-label m-0 mt-2">{t('ask-suggest-heading', { defaultValue: 'Try one' })}</p>
-        <ul className="m-0 mt-1 list-none border-t border-site-border p-0">
-          {suggestionsFor(pinned).map((s) => {
-            const text = t(s.key, { defaultValue: s.defaultValue });
-            return (
-              <li key={s.key} className="border-b border-site-border">
-                <button
-                  type="button"
-                  className="t-body min-h-11 w-full py-2 text-start hover:bg-site-bg-subtle disabled:opacity-45"
-                  disabled={pending}
-                  onClick={() => onQuestion(text)}
-                >
-                  {text}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      {showSuggestions ? (
+        <div>
+          <p className="t-label m-0 mt-2">{t('ask-suggest-heading', { defaultValue: 'Try one' })}</p>
+          <ul className="m-0 mt-1 list-none border-t border-site-border p-0">
+            {suggestionsFor(pinned).map((s) => {
+              const text = t(s.key, { defaultValue: s.defaultValue });
+              return (
+                <li key={s.key} className="border-b border-site-border">
+                  <button
+                    type="button"
+                    className="t-body min-h-11 w-full py-2 text-start hover:bg-site-bg-subtle disabled:opacity-45"
+                    disabled={pending}
+                    onClick={() => onQuestion(text)}
+                  >
+                    {text}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
     </form>
   );
 }

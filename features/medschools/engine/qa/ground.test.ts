@@ -63,6 +63,16 @@ describe('groundAnswer', () => {
       expect(g.reasons, bad).toEqual(['link']);
     }
   });
+  it('lets a sentence name a source whose domain-shaped name is in our own fact text, and nothing else', () => {
+    const own: RetrievedFact = { ...F2, ref: 'f6', text: 'Duke MCAT median 511 (Admit.org).' };
+    expect(
+      groundAnswer({ segments: [seg('Admit.org reports a median of 511.', 'f6')] }, [...FACTS, own]).segments,
+    ).toHaveLength(1);
+    // A domain no trusted fact holds is still a link, and so is a planted one.
+    expect(run(seg('Other.org reports a median of 511.', 'f2')).reasons).toEqual(['link']);
+    const planted: RetrievedFact = { ...F3, ref: 'f7', text: 'Ask about evil.example' };
+    expect(groundAnswer({ segments: [seg('Ask about evil.example', 'f7')] }, [...FACTS, planted]).segments).toEqual([]);
+  });
   it('drops a sentence that repeats the system prompt', () => {
     const secret = 'Copy numbers exactly as written in a fact. Do not calculate anything at all.';
     const g = groundAnswer(

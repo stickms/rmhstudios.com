@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { ChanceDto } from '../../medschools.contract';
-import { useMedLabels } from '../labels';
 import { ChanceLine } from '../tracker/ChanceLine';
 
 /**
@@ -10,8 +9,20 @@ import { ChanceLine } from '../tracker/ChanceLine';
  */
 export function MyChance({ mine }: { mine: readonly ChanceDto[] }) {
   const { t } = useTranslation('medschools');
-  const { programFilterLabel } = useMedLabels();
   const shown = mine.filter((c) => c.status !== 'closed');
+  // The program only tells two applications at one school apart.
+  const programLabel = (program: ChanceDto['program']): string =>
+    program === 'PHD'
+      ? t('ask-mine-phd', { defaultValue: 'Combined degree' })
+      : t('ask-mine-reg', { defaultValue: 'Regular' });
+  const rowLabel = (c: ChanceDto): string =>
+    shown.filter((o) => o.school.slug === c.school.slug).length > 1
+      ? t('ask-mine-school-program', {
+          defaultValue: '{{school}} · {{program}}',
+          school: c.school.shortName,
+          program: programLabel(c.program),
+        })
+      : c.school.shortName;
   return (
     <section className="mt-6" aria-labelledby="ask-mine-heading">
       <h3 id="ask-mine-heading" className="t-heading m-0">
@@ -27,13 +38,7 @@ export function MyChance({ mine }: { mine: readonly ChanceDto[] }) {
       ) : (
         shown.map((c) => (
           <div key={c.applicationId} className="mt-2">
-            <p className="t-label m-0">
-              {t('ask-mine-school', {
-                defaultValue: '{{school}} · {{program}}',
-                school: c.school.shortName,
-                program: programFilterLabel(c.program),
-              })}
-            </p>
+            <p className="t-label m-0">{rowLabel(c)}</p>
             <ChanceLine chance={c} />
           </div>
         ))

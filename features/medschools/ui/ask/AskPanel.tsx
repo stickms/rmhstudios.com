@@ -106,6 +106,7 @@ export function AskPanel({
         remaining={remaining}
         cap={cap}
         pinned={!!slug}
+        showSuggestions={run.state === 'idle' || run.state === 'error'}
       />
       {run.state === 'pending' ? <PendingView /> : null}
       {errorText ? (
