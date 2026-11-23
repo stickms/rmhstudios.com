@@ -83,6 +83,7 @@ export const BOARD_PRIVACY_READ_PATHS = [
   'features/laundry-sort/api/laundry-sort.leaderboard.server.ts',
   'features/gabriels-horn/api/gabriels-horn.leaderboard.server.ts',
   'features/synapse-storm/api/games.synapse-storm.leaderboard.server.ts',
+  'features/cursed-logic/api/score-adapter.server.ts',
   'features/altair/api/altair.leaderboard.server.ts',
   'features/dream-rift/api/dream-rift.leaderboard.server.ts',
   'features/slice-it/api/slice-it.leaderboard.server.ts',
@@ -127,6 +128,10 @@ export interface BoardPrivacyExemption {
 
 export const BOARD_PRIVACY_EXEMPT: Readonly<Record<string, BoardPrivacyExemption>> = {
   // Handlers that return what a listed file reads.
+  'features/cursed-logic/api/cursed-logic.leaderboard.server.ts': {
+    reason: 'The HTTP shape of the Cursed Logic board, read by its adapter module.',
+    via: 'features/cursed-logic/api/score-adapter.server.ts',
+  },
   'lib/game/api/games.$id.leaderboard.server.ts': {
     reason: 'The HTTP shape only: every row comes from the game adapters.',
     via: 'lib/game/adapters.server.ts',

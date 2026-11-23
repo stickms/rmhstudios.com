@@ -115,6 +115,48 @@ export function gameWin() {
   });
 }
 
+/**
+ * The terminal's voice: square-wave chirps stepped in pitch, like a modem choking on bad data. Each cue is one
+ * short burst (<= 0.3 s) answering a clash; nothing loops.
+ */
+function chirp(freqs: number[], step: number, type: OscillatorType, volume: number) {
+  const ctx = getContext();
+  if (!ctx) return;
+  const t = now();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  freqs.forEach((f, i) => osc.frequency.setValueAtTime(f, t + i * step));
+  const end = t + freqs.length * step;
+  gain.gain.setValueAtTime(volume, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, end);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(end);
+}
+
+/** A tell or an action flipping over: one dry tick (yours a little higher). */
+export function revealTick(isPlayer: boolean) {
+  chirp(isPlayer ? [1320, 990] : [880, 660], 0.025, 'square', 0.05);
+}
+
+/** Your hit lands: a rising corrupted arpeggio. */
+export function hitFoe() {
+  chirp([220, 440, 330, 660, 495], 0.03, 'square', 0.07);
+}
+
+/** You are hit: a falling bit-crush with a thud under it. */
+export function hitYou() {
+  chirp([600, 300, 450, 150], 0.035, 'sawtooth', 0.06);
+  damageHit();
+}
+
+/** A process terminated: a long stepped fall to silence. */
+export function terminate() {
+  chirp([880, 660, 990, 440, 330, 220, 110], 0.04, 'square', 0.07);
+}
+
 /** Game lose — low descent */
 export function gameLose() {
   const ctx = getContext();

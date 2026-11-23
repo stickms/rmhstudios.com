@@ -8,6 +8,7 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used in the ca
 |---|---|---|---|
 | altair | Michroma, Jost | michroma/Michroma-Regular.ttf, jost/Jost[wght].ttf | Title offset in cyan/magenta for a glitch look |
 | csgo | Teko, Jost | teko/Teko[wght].ttf, jost/Jost[wght].ttf | Stroked and shadowed |
+| cursed-logic (2026-11-23) | Silkscreen, IBM Plex Mono | components/shared/game-fonts/Silkscreen/ (silkscreen/Silkscreen-Bold.ttf, OFL), components/shared/game-fonts/IBMPlexMono/ (ibmplexmono/IBMPlexMono-Medium.ttf, OFL) | Card, 1920x620 banner, transparent wordmark and icon: a corrupted terminal. The seven Protocols' 16x16 pixel masks (drawn here, the same as the game's portraits) on the nodes of a seven-point logic-gate sigil with NULL//ROOT at the centre, circuit traces, seeded glyph columns, static scanlines and horizontal tears; wordmark in Silkscreen with violet/acid ghost layers and its lower half torn sideways. In-game sigils, glyphs and portraits are original SVG (features/cursed-logic/ui/). Generator: `scripts/game-art/cursed-logic.mjs` |
 | daily-puzzles | Lilita One, Fredoka | lilitaone/LilitaOne-Regular.ttf, fredoka/Fredoka[wdth,wght].ttf | Stroked, drop shadow |
 | dream-rift | Press Start 2P, Silkscreen | pressstart2p/PressStart2P-Regular.ttf, silkscreen/Silkscreen-Bold.ttf | Offset colour shadow |
 | gabriels-horn | Cinzel, Jost | cinzel/Cinzel[wght].ttf, jost/Jost[wght].ttf | Gold gradient fill, stroke |

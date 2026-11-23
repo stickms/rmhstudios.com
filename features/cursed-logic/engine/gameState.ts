@@ -1,339 +1,271 @@
+/**
+ * The UI store: holds the run (`run.ts`), the seeded RNG behind it, the reveal sequence the UI plays between a
+ * commit and its result, the tutorial's step, and the two per-player settings. All rules are in the pure modules;
+ * this file only sequences them and saves an unfinished run to localStorage so a reload resumes it.
+ */
 import { create } from 'zustand';
-import type {
-  GameState as GameStateShape,
-  PlayerAction,
-  ProtocolAction,
-  LastRound,
-  RoundModifier,
-  ProtocolVariant,
-  RunUpgradeId,
-  Stance,
-  ProtocolMode,
-  PlayerCondition,
-  ProtocolCondition,
-  MinigameKind,
-} from './types';
-import { applyMinigameAdjustment } from './minigame';
-import { CHARGE_CAP, START_CHARGE, START_INTEGRITY, PROTOCOL_HEALTH } from './types';
-import { pickRandomStances, getStanceEffect, INITIAL_STANCE_CHOICES } from './types';
-import { rollMutation } from './mutations';
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
+import { createRng, freshSeed, type Rng } from './rng';
+import {
+  chooseStance as chooseStanceRule,
+  commitAction,
+  continueRun as continueRunRule,
+  finishRound,
+  newRun,
+  pickMilestone as pickMilestoneRule,
+  applyDecoder,
+  type PendingClash,
+  type RunState,
+} from './run';
+import { buyItem as buyItemRule, retireLegacyShop } from './shopState';
+import {
+  TUTORIAL_START,
+  accepts,
+  advance,
+  isFinished,
+  newTutorialRun,
+  writeTutorialDone,
+  type TutorialInput,
+  type TutorialState,
+} from './tutorial';
+import type { PactId, PlayerAction, RunUpgradeId, ShopItemId, Stance } from './types';
 
-function nextProtocolMode(lastProtocolAction: ProtocolAction | null): ProtocolMode {
-  if (!lastProtocolAction) return 'recovering';
-  if (lastProtocolAction === 'Strike') return 'pressuring';
-  if (lastProtocolAction === 'Block') return 'defensive';
-  return 'recovering';
+export type Screen = 'menu' | 'run' | 'tutorial';
+/** idle: waiting for input · reveal: the two actions flip in turn · minigame · result: the clash's outcome shows. */
+export type Phase = 'idle' | 'reveal' | 'minigame' | 'result';
+
+const SAVE_KEY = 'rmh:cursed-logic:run';
+const SETTINGS_KEY = 'rmh:cursed-logic:settings';
+const SAVE_VERSION = 1;
+
+interface Settings {
+  minigames: boolean;
 }
 
-function nextPlayerCondition(playerAction: PlayerAction, protocolAction: ProtocolAction): PlayerCondition {
-  if (playerAction === 'Strike' && protocolAction === 'Block') return 'Overextended';
-  if (playerAction === 'Prepare' && protocolAction === 'Strike') return 'Exposed';
-  return null;
+interface SavedRun {
+  v: number;
+  run: RunState;
+  rng: number;
+  startedAt: number;
 }
 
-function nextProtocolCondition(playerAction: PlayerAction, protocolAction: ProtocolAction): ProtocolCondition {
-  if (protocolAction === 'Strike' && playerAction === 'Block') return 'Shaken';
-  if (protocolAction === 'Prepare' && playerAction === 'Strike') return 'LockedIn';
-  return null;
+/** A saved run in the current format, or null (an old or broken save is dropped, never loaded half-way). */
+export function readSavedRun(): SavedRun | null {
+  const saved = readJson<SavedRun | null>(SAVE_KEY, null);
+  if (!saved || saved.v !== SAVE_VERSION || !saved.run || saved.run.mode !== 'run' || saved.run.stage === 'over') {
+    return null;
+  }
+  return saved;
 }
 
-const MILESTONE_ROUNDS = [3, 6, 9];
-const ALL_RUN_UPGRADES: RunUpgradeId[] = [
-  'strikePlus1',
-  'blockReflect',
-  'probeReveals2',
-  'prepareHeal',
-  'chargeOnKill',
-];
+export interface CursedLogicStore {
+  screen: Screen;
+  run: RunState | null;
+  phase: Phase;
+  revealStep: number;
+  pending: PendingClash | null;
+  reinforce: boolean;
+  tutorial: TutorialState;
+  settings: Settings;
+  startedAt: number;
+  /** Bumps on every finished clash, to key one-shot effects. */
+  clashId: number;
 
-function pickTwoMilestoneChoices(current: RunUpgradeId[]): [RunUpgradeId, RunUpgradeId] {
-  const pool = ALL_RUN_UPGRADES.filter((u) => !current.includes(u));
-  const a = pool[Math.floor(Math.random() * pool.length)] ?? 'strikePlus1';
-  const b = pool.filter((u) => u !== a)[Math.floor(Math.random() * (pool.length - 1))] ?? 'blockReflect';
-  return [a, b];
-}
-
-const initialState: GameStateShape = {
-  phase: 'stance',
-  round: 1,
-  charge: START_CHARGE,
-  integrity: START_INTEGRITY,
-  protocolHealth: PROTOCOL_HEALTH,
-  chargeCap: CHARGE_CAP,
-  playerPrepared: false,
-  protocolPrepared: false,
-  currentModifier: null,
-  lastRound: null,
-  log: [],
-  pendingPlayerAction: null,
-  pendingProtocolAction: null,
-  probeRevealedIntent: null,
-  result: null,
-  revealedProtocolIntent: null,
-  probeRevealedNextIntent: null,
-  probeRevealedRoundAfterNext: null,
-  protocolVariant: 'default',
-  runUpgrades: [],
-  milestoneChoices: null,
-  runModifier: null,
-  currentStance: null,
-  stanceChoices: INITIAL_STANCE_CHOICES,
-  reinforced: false,
-  protocolMode: 'recovering',
-  playerCondition: null,
-  protocolCondition: null,
-  revealStep: 0,
-  minigameKind: null,
-  minigameChaosDistort: false,
-  pendingMinigameResolution: null,
-};
-
-interface CursedLogicStore extends GameStateShape {
+  init: () => void;
+  startRun: (pacts: PactId[]) => void;
+  resumeRun: () => boolean;
+  startTutorial: () => void;
+  finishTutorial: () => void;
+  tutorialContinue: () => void;
   chooseStance: (stance: Stance) => void;
-  commit: (action: PlayerAction, reinforced?: boolean) => void;
-  setReveal: (protocolAction: ProtocolAction, probeRevealed?: ProtocolAction | null) => void;
-  setRevealStep: (step: number) => void;
-  applyResolution: (
-    lastRound: LastRound,
-    nextCharge: number,
-    nextModifier: RoundModifier | null,
-    skipExposed?: boolean,
-  ) => void;
-  setMinigamePending: (
-    lastRound: LastRound,
-    nextCharge: number,
-    nextModifier: RoundModifier | null,
-    kind: MinigameKind,
-    chaosDistort: boolean,
-  ) => void;
+  setReinforce: (on: boolean) => void;
+  decode: () => void;
+  commit: (action: PlayerAction) => void;
+  advanceReveal: () => void;
   completeMinigame: (success: boolean) => void;
-  advanceToCommit: () => void;
-  pickMilestone: (choice: RunUpgradeId) => void;
-  setGameOver: (result: 'win' | 'lose') => void;
-  setRevealedProtocolIntent: (action: ProtocolAction | null) => void;
-  setProbeRevealedNextIntent: (action: ProtocolAction | null) => void;
-  setProbeRevealedRoundAfterNext: (action: ProtocolAction | null) => void;
-  resetGame: (overrides?: {
-    startCharge?: number;
-    startIntegrity?: number;
-    protocolHealth?: number;
-    protocolVariant?: ProtocolVariant;
-    runModifier?: string | null;
-  }) => void;
+  endResult: () => void;
+  pickMilestone: (choice: RunUpgradeId | null) => void;
+  buy: (item: ShopItemId) => void;
+  continueRun: () => void;
+  abandon: () => void;
+  toMenu: () => void;
+  setMinigames: (on: boolean) => void;
 }
 
-export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
-  ...initialState,
+let rng: Rng = createRng(1);
 
-  chooseStance: (stance) =>
-    set((s) => {
-      if (s.phase !== 'stance' || s.result || !s.stanceChoices) return s;
-      if (!s.stanceChoices.includes(stance)) return s;
-      const nextModifier = rollMutation(s.runModifier === 'chaosRun');
-      return {
-        currentStance: stance,
-        currentModifier: nextModifier,
-        phase: 'commit',
-      };
-    }),
+function persist(run: RunState | null, startedAt: number): void {
+  if (!run || run.mode !== 'run' || run.stage === 'over') {
+    removeKey(SAVE_KEY);
+    return;
+  }
+  writeJson(SAVE_KEY, { v: SAVE_VERSION, run, rng: rng.state, startedAt } satisfies SavedRun);
+}
 
-  commit: (action, reinforced = false) =>
-    set((s) => {
-      if (s.phase !== 'commit' || s.result) return s;
-      const cost = reinforced ? 2 : 1;
-      if (s.charge < cost && s.charge > 0) return s; // can't reinforce without 2
-      return {
-        pendingPlayerAction: action,
-        reinforced: reinforced && cost <= s.charge,
-        phase: 'commit',
-      };
-    }),
+export const useCursedLogicStore = create<CursedLogicStore>()((set, get) => {
+  /** Tutorial gate: in the training duel only the input the step waits for goes through. */
+  const tutorialAllows = (input: TutorialInput): boolean => {
+    const s = get();
+    if (s.screen !== 'tutorial') return true;
+    if (!accepts(s.tutorial, input)) {
+      set({ tutorial: { ...s.tutorial, nudge: true } });
+      return false;
+    }
+    return true;
+  };
+  const tutorialStep = (input: TutorialInput) => {
+    const s = get();
+    if (s.screen === 'tutorial') set({ tutorial: advance(s.tutorial, input) });
+  };
+  const setRun = (run: RunState | null) => {
+    set({ run });
+    persist(run, get().startedAt);
+  };
 
-  setReveal: (protocolAction, probeRevealed = null) =>
-    set((s) => {
-      if (s.phase !== 'commit' || s.result) return s;
-      return {
-        phase: 'reveal',
-        pendingProtocolAction: protocolAction,
-        probeRevealedIntent: probeRevealed,
-        revealStep: 0,
-      };
-    }),
+  return {
+    screen: 'menu',
+    run: null,
+    phase: 'idle',
+    revealStep: 0,
+    pending: null,
+    reinforce: false,
+    tutorial: TUTORIAL_START,
+    settings: { minigames: true },
+    startedAt: 0,
+    clashId: 0,
 
-  setRevealStep: (step) =>
-    set({
-      revealStep: step,
-    }),
+    init: () => {
+      retireLegacyShop();
+      const settings = readJson<Settings | null>(SETTINGS_KEY, null);
+      if (settings && typeof settings.minigames === 'boolean') set({ settings: { minigames: settings.minigames } });
+    },
 
-  applyResolution: (lastRound, nextCharge, nextModifier, skipExposed = false) =>
-    set((s) => {
-      // Resolves the round being revealed (directly or after its minigame) — once.
-      if ((s.phase !== 'reveal' && s.phase !== 'minigame') || s.result) return s;
-      let newIntegrity = Math.max(0, s.integrity - lastRound.playerDamage);
-      const eff = getStanceEffect(s.currentStance);
-      const prepareImmune = eff === 'prepare_immune';
-      const prepareSucceeded =
-        s.pendingPlayerAction === 'Prepare' && (s.pendingProtocolAction !== 'Strike' || prepareImmune);
-      if (prepareSucceeded && s.runUpgrades.includes('prepareHeal')) {
-        newIntegrity = Math.min(10, newIntegrity + 1);
+    startRun: (pacts) => {
+      const seed = freshSeed();
+      rng = createRng(seed);
+      const startedAt = Date.now();
+      set({ screen: 'run', phase: 'idle', pending: null, reinforce: false, startedAt, clashId: 0 });
+      setRun(newRun(seed, pacts, rng));
+    },
+
+    resumeRun: () => {
+      const saved = readSavedRun();
+      if (!saved) return false;
+      rng = createRng(saved.rng);
+      set({ screen: 'run', run: saved.run, phase: 'idle', pending: null, reinforce: false, startedAt: saved.startedAt });
+      return true;
+    },
+
+    startTutorial: () => {
+      rng = createRng(1);
+      set({ screen: 'tutorial', run: newTutorialRun(), phase: 'idle', pending: null, reinforce: false, tutorial: TUTORIAL_START });
+    },
+
+    finishTutorial: () => {
+      writeTutorialDone();
+      set({ screen: 'menu', run: null, phase: 'idle', pending: null, tutorial: TUTORIAL_START });
+    },
+
+    tutorialContinue: () => {
+      const s = get();
+      if (s.screen !== 'tutorial' || !accepts(s.tutorial, { kind: 'continue' })) return;
+      const next = advance(s.tutorial, { kind: 'continue' });
+      if (isFinished(next)) {
+        get().finishTutorial();
+        return;
       }
-      if (prepareSucceeded && eff === 'prepare_heal_one') {
-        newIntegrity = Math.min(10, newIntegrity + 1);
+      set({ tutorial: next });
+    },
+
+    chooseStance: (stance) => {
+      const { run, phase } = get();
+      if (!run || phase !== 'idle' || run.stage !== 'duel') return;
+      if (!tutorialAllows({ kind: 'stance', stance })) return;
+      const next = chooseStanceRule(run, stance);
+      if (next === run) return;
+      tutorialStep({ kind: 'stance', stance });
+      setRun(next);
+    },
+
+    setReinforce: (on) => set({ reinforce: on }),
+
+    decode: () => {
+      const { run } = get();
+      if (!run || get().screen === 'tutorial') return;
+      setRun(applyDecoder(run));
+    },
+
+    commit: (action) => {
+      const { run, phase, reinforce } = get();
+      if (!run || phase !== 'idle' || run.stage !== 'duel' || !run.duel?.stance) return;
+      if (!tutorialAllows({ kind: 'action', action })) return;
+      const pending = commitAction(run, rng, action, reinforce && get().screen !== 'tutorial');
+      if (!pending) return;
+      tutorialStep({ kind: 'action', action });
+      set({ pending, phase: 'reveal', revealStep: 0 });
+    },
+
+    advanceReveal: () => {
+      const { phase, revealStep, pending, settings, screen } = get();
+      if (phase !== 'reveal' || !pending) return;
+      if (revealStep < 1) {
+        set({ revealStep: revealStep + 1 });
+        return;
       }
-      const blockHealOne =
-        eff === 'block_heal_one' && s.pendingPlayerAction === 'Block' && s.pendingProtocolAction === 'Strike';
-      if (blockHealOne) {
-        newIntegrity = Math.min(10, newIntegrity + 1);
+      if (pending.minigame && settings.minigames && screen !== 'tutorial') {
+        set({ phase: 'minigame' });
+        return;
       }
-      if (eff === 'rally' && lastRound.protocolDamage > 0) {
-        newIntegrity = Math.min(10, newIntegrity + 1);
-      }
-      let charge = nextCharge;
-      if (eff === 'charge_on_damage' && lastRound.protocolDamage > 0) {
-        charge = Math.min(s.chargeCap, charge + 1);
-      }
-      if (eff === 'second_wind' && s.pendingPlayerAction === 'Block') {
-        charge = Math.min(s.chargeCap, charge + 1);
-      }
-      const newProtocolHealth = Math.max(0, s.protocolHealth - lastRound.protocolDamage);
-      const log = [lastRound, ...s.log].slice(0, 5);
-      const result = newIntegrity <= 0 ? 'lose' : newProtocolHealth <= 0 ? 'win' : null;
-      const shouldMilestone = !result && MILESTONE_ROUNDS.includes(s.round) && s.runUpgrades.length === s.round / 3 - 1;
-      const milestoneChoices = shouldMilestone ? pickTwoMilestoneChoices(s.runUpgrades) : null;
-      const phase = result ? 'gameover' : shouldMilestone ? 'milestone' : 'resolved';
-      const nextMode = nextProtocolMode(s.pendingProtocolAction);
-      const nextPlayerCond = skipExposed ? null : nextPlayerCondition(s.pendingPlayerAction!, s.pendingProtocolAction!);
-      const nextProtocolCond = nextProtocolCondition(s.pendingPlayerAction!, s.pendingProtocolAction!);
-      return {
-        lastRound,
-        log,
-        charge,
-        integrity: newIntegrity,
-        protocolHealth: newProtocolHealth,
-        currentModifier: nextModifier,
-        playerPrepared: prepareSucceeded,
-        protocolPrepared: s.pendingProtocolAction === 'Prepare' && s.pendingPlayerAction !== 'Strike',
-        pendingPlayerAction: null,
-        pendingProtocolAction: null,
-        probeRevealedIntent: null,
-        revealedProtocolIntent: null,
-        probeRevealedNextIntent: null,
-        probeRevealedRoundAfterNext: null,
-        currentStance: null,
-        reinforced: false,
-        protocolMode: nextMode,
-        playerCondition: nextPlayerCond,
-        protocolCondition: nextProtocolCond,
-        revealStep: 0,
-        minigameKind: null,
-        minigameChaosDistort: false,
-        pendingMinigameResolution: null,
-        milestoneChoices,
-        phase,
-        result: result ?? s.result,
-      };
-    }),
+      get().completeMinigame(false);
+    },
 
-  setMinigamePending: (lastRound, nextCharge, nextModifier, kind, chaosDistort) =>
-    set((s) => {
-      if (s.phase !== 'reveal' || s.result) return s;
-      return {
-        phase: 'minigame',
-        minigameKind: kind,
-        minigameChaosDistort: chaosDistort,
-        pendingMinigameResolution: {
-          lastRound,
-          nextCharge,
-          nextModifier,
-        },
-      };
-    }),
+    completeMinigame: (success) => {
+      const { run, pending, phase, settings, screen } = get();
+      if (!run || !pending || (phase !== 'minigame' && phase !== 'reveal')) return;
+      const played = phase === 'minigame' && pending.minigame && settings.minigames && screen !== 'tutorial';
+      const next = finishRound(run, rng, pending, played ? success : null);
+      set((s) => ({ phase: 'result', clashId: s.clashId + 1, reinforce: false }));
+      setRun(next);
+    },
 
-  completeMinigame: (success) => {
-    const s = useCursedLogicStore.getState();
-    const pending = s.pendingMinigameResolution;
-    if (s.phase !== 'minigame' || !pending || !s.minigameKind) return;
-    const { lastRound, skipExposed } = applyMinigameAdjustment(
-      pending.lastRound,
-      success,
-      s.minigameKind,
-      s.minigameChaosDistort,
-    );
-    useCursedLogicStore.getState().applyResolution(lastRound, pending.nextCharge, pending.nextModifier, skipExposed);
-  },
+    endResult: () => {
+      if (get().phase !== 'result') return;
+      set({ phase: 'idle', pending: null, revealStep: 0 });
+    },
 
-  pickMilestone: (choice) =>
-    set((s) => {
-      if (s.phase !== 'milestone' || !s.milestoneChoices?.includes(choice)) return s;
-      return {
-        runUpgrades: [...s.runUpgrades, choice],
-        milestoneChoices: null,
-        phase: 'resolved',
-      };
-    }),
+    pickMilestone: (choice) => {
+      const { run } = get();
+      if (!run) return;
+      setRun(pickMilestoneRule(run, rng, choice));
+    },
 
-  setRevealedProtocolIntent: (action) =>
-    set({
-      revealedProtocolIntent: action,
-    }),
-  setProbeRevealedNextIntent: (action) =>
-    set({
-      probeRevealedNextIntent: action,
-    }),
-  setProbeRevealedRoundAfterNext: (action) =>
-    set({
-      probeRevealedRoundAfterNext: action,
-    }),
+    buy: (item) => {
+      const { run } = get();
+      if (!run) return;
+      setRun(buyItemRule(run, item));
+    },
 
-  // Misnomer kept for its callers: this opens the next round at 'stance' (the
-  // stance pick precedes 'commit').
-  advanceToCommit: () =>
-    set((s) => {
-      if (s.result) return s;
-      const chargeGain = s.currentModifier === 'ChargeDrain' ? 0 : 1;
-      const nextCharge = Math.min(s.charge + chargeGain, s.chargeCap);
-      return {
-        phase: 'stance',
-        round: s.round + 1,
-        charge: nextCharge,
-        stanceChoices: pickRandomStances(3),
-      };
-    }),
+    continueRun: () => {
+      const { run } = get();
+      if (!run) return;
+      set({ phase: 'idle', pending: null });
+      setRun(continueRunRule(run, rng));
+    },
 
-  setGameOver: (result) =>
-    set((s) =>
-      s.result
-        ? s
-        : {
-            phase: 'gameover',
-            result,
-          },
-    ),
+    abandon: () => {
+      removeKey(SAVE_KEY);
+      set({ screen: 'menu', run: null, phase: 'idle', pending: null });
+    },
 
-  resetGame: (overrides) => {
-    const mod = overrides?.runModifier ?? null;
-    const startUpgrades: RunUpgradeId[] = [];
-    if (mod === 'glassCannon') startUpgrades.push('strikePlus1');
-    if (mod === 'probeMaster') startUpgrades.push('probeReveals2');
-    set({
-      ...initialState,
-      phase: 'stance',
-      stanceChoices: pickRandomStances(3),
-      runModifier: mod,
-      runUpgrades: startUpgrades,
-      minigameKind: null,
-      minigameChaosDistort: false,
-      pendingMinigameResolution: null,
-      ...(overrides && {
-        charge: Math.min(
-          overrides.startCharge ?? initialState.charge,
-          overrides.runModifier === 'fortress' ? 6 : CHARGE_CAP,
-        ),
-        chargeCap: overrides.runModifier === 'fortress' ? 6 : CHARGE_CAP,
-        integrity: overrides.startIntegrity ?? initialState.integrity,
-        protocolHealth: overrides.protocolHealth ?? initialState.protocolHealth,
-        protocolVariant: overrides.protocolVariant ?? initialState.protocolVariant,
-      }),
-    });
-  },
-}));
+    toMenu: () => {
+      const { run } = get();
+      if (run?.mode === 'run' && run.stage === 'over') removeKey(SAVE_KEY);
+      set({ screen: 'menu', run: null, phase: 'idle', pending: null });
+    },
+
+    setMinigames: (on) => {
+      set({ settings: { minigames: on } });
+      writeJson(SETTINGS_KEY, { minigames: on });
+    },
+  };
+});

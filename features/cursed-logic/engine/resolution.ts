@@ -1,112 +1,159 @@
+/**
+ * One clash: both actions are known, nothing random happens here (Chaos is applied by `duel.ts` before this is
+ * called), so every rule is a pure function of its input and unit-testable. Numbers come from `data.ts`.
+ *
+ * The triangle at the heart of it: Strike beats Prepare and a glitch; Block blunts Strike to chip and leaves the
+ * striker Overextended; Prepare beats Block (you are primed and the Block wasted a turn); Probe trades a round for the
+ * truth about the next one.
+ */
+import { DAMAGE, STANCE_NUMBERS as S } from './data';
+import type { ProtocolTrait } from './data';
 import type {
-  PlayerAction,
-  ProtocolAction,
   LastRound,
+  PlayerAction,
+  PlayerCondition,
+  ProtocolAction,
+  ProtocolCondition,
   RoundModifier,
   RunUpgradeId,
   Stance,
-  PlayerCondition,
-  ProtocolCondition,
 } from './types';
-import { getStanceEffect } from './types';
 
-const CHIP = 1;
+export interface ClashInput {
+  player: PlayerAction;
+  protocol: ProtocolAction;
+  playerPrimed: boolean;
+  protocolPrimed: boolean;
+  stance: Stance | null;
+  reinforced: boolean;
+  overdraw: boolean;
+  modifier: RoundModifier | null;
+  playerCondition: PlayerCondition;
+  protocolCondition: ProtocolCondition;
+  upgrades: readonly RunUpgradeId[];
+  /** Pacts that add to the player's Strike (Glass Cannon, Double Down). */
+  playerStrikeBonus: number;
+  /** Sector bonus, Double Down and Berserk's overclock. */
+  protocolStrikeBonus: number;
+  trait: ProtocolTrait;
+  traitPower: number;
+}
 
-/** Block reduces Strike to chip (1). Stance/reinforced/conditions apply. */
-export function resolveRound(
-  playerAction: PlayerAction,
-  protocolAction: ProtocolAction,
-  playerPrepared: boolean,
-  protocolPrepared: boolean,
-  modifier: RoundModifier | null,
-  playerHadZeroCharge: boolean,
-  runUpgrades: RunUpgradeId[] = [],
-  doubleDown = false,
-  stance: Stance | null = null,
-  reinforced = false,
-  playerCondition: PlayerCondition = null,
-  protocolCondition: ProtocolCondition = null,
-): LastRound {
-  let effectivePlayer = playerAction;
-  let effectiveProtocol = protocolAction;
+export interface ClashResult extends LastRound {
+  nextPlayerCondition: PlayerCondition;
+  nextProtocolCondition: ProtocolCondition;
+}
 
-  if (modifier === 'Chaos') {
-    const actions: PlayerAction[] = ['Strike', 'Block', 'Prepare', 'Probe'];
-    const protoActions: ProtocolAction[] = ['Strike', 'Block', 'Idle', 'Prepare'];
-    if (Math.random() < 0.5) {
-      effectivePlayer = actions[Math.floor(Math.random() * actions.length)];
+export function resolveClash(i: ClashInput): ClashResult {
+  const overcharge = i.modifier === 'Overcharge' ? 1 : 0;
+  const blocksWork = i.modifier !== 'NoBlock';
+  const stance = i.stance;
+
+  const playerStrike =
+    i.player === 'Strike'
+      ? DAMAGE.strike +
+        (i.playerPrimed ? DAMAGE.primedBonus : 0) +
+        (i.reinforced ? DAMAGE.reinforceStrike : 0) +
+        (stance === 'Commit' ? S.commitStrike : 0) +
+        (stance === 'Reckless' ? S.recklessStrike : 0) +
+        (stance === 'Resist' ? -S.resistReduce : 0) +
+        (i.upgrades.includes('strikePlus1') ? 1 : 0) +
+        i.playerStrikeBonus +
+        overcharge
+      : 0;
+  const protocolStrike =
+    i.protocol === 'Strike'
+      ? DAMAGE.protocolStrike + (i.protocolPrimed ? DAMAGE.primedBonus : 0) + i.protocolStrikeBonus + overcharge
+      : 0;
+
+  const playerBlocks = i.player === 'Block' && blocksWork;
+  const protocolBlocks = i.protocol === 'Block' && blocksWork;
+
+  let toProtocol = 0;
+  let toPlayer = 0;
+  let protocolHeal = 0;
+  let playerHeal = 0;
+  let chargeGain = 0;
+  let nextPlayerCondition: PlayerCondition = null;
+  let nextProtocolCondition: ProtocolCondition = null;
+
+  // The player's Strike.
+  if (playerStrike > 0) {
+    if (protocolBlocks) {
+      let chip = stance === 'Pressure' ? S.pressureChip : DAMAGE.chip;
+      if (i.protocolCondition === 'Shaken') chip += DAMAGE.condition;
+      toProtocol += chip;
+      if (i.trait === 'bulwark') toPlayer += i.traitPower;
+      if (stance !== 'Pressure') nextPlayerCondition = 'Overextended';
     } else {
-      effectiveProtocol = protoActions[Math.floor(Math.random() * protoActions.length)];
+      toProtocol += playerStrike;
+      if (i.protocol === 'Prepare') {
+        toProtocol += DAMAGE.interruptBonus;
+        nextProtocolCondition = 'LockedIn';
+      }
+      if (i.protocolCondition === 'LockedIn') toProtocol += DAMAGE.condition;
     }
   }
 
-  if (modifier === 'NoBlock') {
-    if (effectivePlayer === 'Block') effectivePlayer = 'Prepare';
-    if (effectiveProtocol === 'Block') effectiveProtocol = 'Idle';
+  // The Protocol's Strike.
+  let struckClean = false;
+  if (protocolStrike > 0) {
+    if (playerBlocks) {
+      const chip = i.reinforced || stance === 'Guard' ? 0 : DAMAGE.chip;
+      toPlayer += chip;
+      toProtocol +=
+        (stance === 'Counter' ? S.counterReflect : 0) +
+        (i.upgrades.includes('blockReflect') ? 1 : 0) +
+        (i.reinforced ? DAMAGE.reinforceReflect : 0);
+      nextProtocolCondition = 'Shaken';
+    } else {
+      struckClean = true;
+      let hit = protocolStrike;
+      if (i.player === 'Prepare') {
+        if (stance === 'Read') hit -= S.readReduce;
+        else {
+          hit += DAMAGE.interruptBonus;
+          nextPlayerCondition = 'Exposed';
+        }
+      }
+      if (i.playerCondition === 'Exposed') hit += DAMAGE.condition;
+      if (stance === 'Reckless') hit += S.recklessPenalty;
+      hit = Math.max(0, hit);
+      toPlayer += hit;
+      if (i.trait === 'siphon' && hit > 0) protocolHeal += i.traitPower;
+    }
   }
 
-  const baseStrike = doubleDown ? 2 : 1;
-  const doubleStrike = modifier === 'DoubleStrike';
-  let playerStrikeDamage =
-    (effectivePlayer === 'Strike' ? (playerPrepared ? 2 : baseStrike) : 0) * (doubleStrike ? 2 : 1);
-  const protocolStrikeDamage =
-    (effectiveProtocol === 'Strike' ? (protocolPrepared ? 2 : baseStrike) : 0) * (doubleStrike ? 2 : 1);
+  // Overextended (you Struck into a Block last round): the next damage you take is heavier.
+  if (i.playerCondition === 'Overextended' && toPlayer > 0) toPlayer += DAMAGE.condition;
+  if (stance === 'Resist' && toPlayer > 0) toPlayer = Math.max(0, toPlayer - S.resistReduce);
+  if (stance === 'Bastion' && toPlayer > 0) toProtocol += S.bastionThorns;
+  if (i.overdraw) toPlayer += DAMAGE.overdraw;
 
-  if (runUpgrades.includes('strikePlus1') && effectivePlayer === 'Strike') playerStrikeDamage += 1;
-  const eff = stance ? getStanceEffect(stance) : null;
-  const strikePlusOne = eff === 'strike_plus_one' || eff === 'reckless';
-  if ((strikePlusOne || reinforced) && effectivePlayer === 'Strike') playerStrikeDamage += 1;
+  const playerPrimed = i.player === 'Prepare' && (!struckClean || stance === 'Read');
+  const protocolPrimed = i.protocol === 'Prepare' && playerStrike === 0;
 
-  const playerBlocked = effectivePlayer === 'Block';
-  const protocolBlocked = effectiveProtocol === 'Block';
-
-  let chipToPlayer = playerBlocked && protocolStrikeDamage > 0 ? CHIP : 0;
-  let chipToProtocol = protocolBlocked && playerStrikeDamage > 0 ? CHIP : 0;
-  const blockNoChip = eff === 'block_no_chip';
-  if ((blockNoChip || reinforced) && playerBlocked) chipToPlayer = 0;
-  const strikeChipTwo = eff === 'strike_chip_two' || eff === 'strike_double_chip';
-  if (strikeChipTwo && protocolBlocked && playerStrikeDamage > 0) chipToProtocol = 2;
-  const chipReduceOne = eff === 'chip_reduce_one';
-  if (chipReduceOne && playerBlocked && chipToPlayer > 0) chipToPlayer = Math.max(0, chipToPlayer - 1);
-  if (protocolCondition === 'Shaken' && protocolBlocked && playerStrikeDamage > 0)
-    chipToProtocol = Math.min(2, CHIP + 1);
-  if (playerCondition === 'Overextended' && playerBlocked) chipToPlayer = Math.min(2, chipToPlayer + 1);
-
-  let damageToProtocol = protocolBlocked ? chipToProtocol : playerStrikeDamage;
-  let damageToPlayer = playerBlocked ? chipToPlayer : protocolStrikeDamage;
-
-  const blockReflectOne = eff === 'block_reflect_one';
-  if ((runUpgrades.includes('blockReflect') || blockReflectOne) && playerBlocked && effectiveProtocol === 'Strike') {
-    damageToProtocol += 1;
-  }
-  if (protocolCondition === 'LockedIn' && damageToProtocol > 0) damageToProtocol += 1;
-  if (playerCondition === 'Exposed' && damageToPlayer > 0) damageToPlayer += 1;
-
-  const vengeance = eff === 'vengeance';
-  if (vengeance && damageToPlayer > 0) damageToProtocol += 1;
-
-  const protocolStrikeWeaker = eff === 'protocol_strike_weaker';
-  if (protocolStrikeWeaker && !playerBlocked && damageToPlayer > 0) damageToPlayer = Math.max(0, damageToPlayer - 1);
-  const damageReduceOne = eff === 'damage_reduce_one';
-  if (damageReduceOne && damageToPlayer > 0) damageToPlayer = Math.max(0, damageToPlayer - 1);
-  const reckless = eff === 'reckless';
-  if (reckless && damageToPlayer > 0) damageToPlayer += 1;
-
-  const noOverdrawPenalty = eff === 'no_overdraw_penalty';
-  const overdrawPenalty = playerHadZeroCharge && !noOverdrawPenalty ? 1 : 0;
-  const finalDamageToPlayer = damageToPlayer + overdrawPenalty;
+  if (playerPrimed && stance === 'Recover') playerHeal += S.recoverHeal;
+  if (playerPrimed && i.upgrades.includes('prepareHeal')) playerHeal += 1;
+  if (toProtocol >= S.surgeThreshold && stance === 'Surge' && !i.playerPrimed) playerHeal += S.surgeHeal;
+  if (toProtocol > 0 && stance === 'Harvest') chargeGain += S.harvestCharge;
+  if (toProtocol > 0 && i.upgrades.includes('chargeOnHit')) chargeGain += 1;
+  if (i.player === 'Probe' && stance === 'Scan') chargeGain += S.scanCharge;
+  if (playerPrimed && stance === 'Read') chargeGain += S.readCharge;
 
   return {
-    playerAction: effectivePlayer,
-    protocolAction: effectiveProtocol,
-    playerDamage: finalDamageToPlayer,
-    protocolDamage: damageToProtocol,
-    overdraw: playerHadZeroCharge,
-    reinforced,
+    playerAction: i.player,
+    protocolAction: i.protocol,
+    playerDamage: toPlayer,
+    protocolDamage: toProtocol,
+    playerHeal,
+    protocolHeal,
+    overdraw: i.overdraw,
+    reinforced: i.reinforced,
+    playerPrimed,
+    protocolPrimed,
+    chargeGain,
+    nextPlayerCondition,
+    nextProtocolCondition,
   };
-}
-
-/** Charge after spending this round (1 or 2 if reinforced). */
-export function chargeAfterSpend(currentCharge: number, cap: number, spent: number = 1): number {
-  return Math.max(0, currentCharge - spent);
 }

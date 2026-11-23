@@ -25,48 +25,36 @@ export function getMinigameForRound(
   const chaos = modifier === 'Chaos';
 
   if (playerAction === 'Prepare' && protocolAction === 'Strike') {
-    return {
-      kind: 'rapid_choice',
-      chaosDistort: chaos,
-    };
+    return { kind: 'rapid_choice', chaosDistort: chaos };
   }
   if (playerAction === 'Strike' && protocolAction === 'Strike') {
-    return {
-      kind: 'timed_press',
-      chaosDistort: chaos,
-    };
+    return { kind: 'timed_press', chaosDistort: chaos };
   }
   if (playerAction === 'Strike' && protocolAction === 'Block') {
-    return {
-      kind: 'hold_zone',
-      chaosDistort: chaos,
-    };
+    return { kind: 'hold_zone', chaosDistort: chaos };
   }
   if (playerAction === 'Block' && protocolAction === 'Strike') {
-    return {
-      kind: 'timed_press',
-      chaosDistort: chaos,
-    };
+    return { kind: 'timed_press', chaosDistort: chaos };
   }
 
   return null;
 }
 
-export interface MinigameAdjustmentResult {
-  lastRound: LastRound;
+export interface MinigameAdjustmentResult<T extends LastRound> {
+  lastRound: T;
   skipExposed: boolean;
 }
 
 /**
- * Apply minigame success/failure to the round result. Never flips win/loss; caps at 0.
- * Chaos: success = +1 player favor, failure = -1 player favor (1 damage in the appropriate direction).
+ * Apply minigame success/failure to the round result: one point of damage in the player's favour or against it.
+ * Never below 0. Chaos: success = +1 player favour, failure = -1 player favour.
  */
-export function applyMinigameAdjustment(
-  lastRound: LastRound,
+export function applyMinigameAdjustment<T extends LastRound>(
+  lastRound: T,
   success: boolean,
   kind: MinigameKind,
   chaosDistort: boolean,
-): MinigameAdjustmentResult {
+): MinigameAdjustmentResult<T> {
   let playerDamage = lastRound.playerDamage;
   let protocolDamage = lastRound.protocolDamage;
   let skipExposed = false;
@@ -79,14 +67,7 @@ export function applyMinigameAdjustment(
       if (protocolDamage > 0) protocolDamage = Math.max(0, protocolDamage - 1);
       else playerDamage += 1;
     }
-    return {
-      lastRound: {
-        ...lastRound,
-        playerDamage,
-        protocolDamage,
-      },
-      skipExposed: false,
-    };
+    return { lastRound: { ...lastRound, playerDamage, protocolDamage }, skipExposed: false };
   }
 
   switch (kind) {
@@ -118,12 +99,5 @@ export function applyMinigameAdjustment(
     }
   }
 
-  return {
-    lastRound: {
-      ...lastRound,
-      playerDamage,
-      protocolDamage,
-    },
-    skipExposed,
-  };
+  return { lastRound: { ...lastRound, playerDamage, protocolDamage }, skipExposed };
 }

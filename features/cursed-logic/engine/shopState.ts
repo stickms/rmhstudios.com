@@ -1,179 +1,62 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { ProtocolVariant } from './types';
+/**
+ * The milestone shop: what is on the shelf after a sector and what buying does. Fragments are earned inside a run
+ * (`run.ts` pays them per duel won) and spent here; nothing carries to the next run.
+ *
+ * The old game kept a persistent fragment wallet in localStorage under `cursed-logic-shop` and sold one-run
+ * modifiers and Protocol "unlocks" from it. That economy is retired: the modifiers became the Pacts chosen at the
+ * start of a run (free, raising the score multiplier) and every Protocol is on the ladder. `retireLegacyShop`
+ * removes the old key once.
+ */
+import { PLAYER, RUN_UPGRADES, SHOP_NUMBERS, SHOP_PRICES, SHOP_SHELF } from './data';
+import { removeKey } from '@/lib/core/persist';
+import { shuffled, type Rng } from './rng';
+import type { RunState } from './run';
+import type { RunUpgradeId, ShopItemId } from './types';
 
-/** One-time run modifier: applied to next run only, then consumed */
-export type RunModifierId =
-  | 'chaosRun' // 2x mutation chance, 2x glitch
-  | 'glassCannon' // Start 2 Integrity, your Strikes +1
-  | 'probeMaster' // Probe reveals this round + next round
-  | 'doubleDown' // Both sides' Strikes deal 2 base
-  | 'fortress'; // Start 7 Integrity, Charge cap 6
+const LEGACY_KEY = 'cursed-logic-shop';
 
-/** Unlock a Protocol variant so it can appear in runs */
-export type VariantUnlockId = 'aggressor' | 'defender' | 'chaotic';
-
-const RUN_MODIFIERS: Record<
-  RunModifierId,
-  {
-    label: string;
-    description: string;
-    cost: number;
-  }
-> = {
-  chaosRun: {
-    label: 'Chaos Run',
-    description: 'Next run: 2× mutations, Protocol glitches more. Wild ride.',
-    cost: 5,
-  },
-  glassCannon: {
-    label: 'Glass Cannon',
-    description: 'Next run: Start 2 Integrity, your Strikes deal +1. High risk.',
-    cost: 10,
-  },
-  probeMaster: {
-    label: 'Probe Master',
-    description: 'Next run: Probe reveals intent for this round and next.',
-    cost: 12,
-  },
-  doubleDown: {
-    label: 'Double Down',
-    description: 'Next run: All Strikes deal 2 base. Fast and deadly.',
-    cost: 8,
-  },
-  fortress: {
-    label: 'Fortress',
-    description: 'Next run: Start 7 Integrity, Charge cap 6. Defensive.',
-    cost: 10,
-  },
-};
-
-const VARIANT_UNLOCKS: Record<
-  VariantUnlockId,
-  {
-    label: string;
-    description: string;
-    cost: number;
-    variant: ProtocolVariant;
-  }
-> = {
-  aggressor: {
-    label: 'Unlock: Aggressor',
-    description: 'Protocol that favors Strikes can appear in runs.',
-    cost: 7,
-    variant: 'aggressor',
-  },
-  defender: {
-    label: 'Unlock: Defender',
-    description: 'Protocol that favors Block can appear in runs.',
-    cost: 7,
-    variant: 'defender',
-  },
-  chaotic: {
-    label: 'Unlock: Chaotic',
-    description: 'Protocol that glitches often can appear in runs.',
-    cost: 7,
-    variant: 'chaotic',
-  },
-};
-
-interface ShopState {
-  fragments: number;
-  /** Consumed when a run starts */
-  pendingRunModifier: RunModifierId | null;
-  /** Unlocked protocol variants (default always available) */
-  unlockedVariants: ProtocolVariant[];
-  awardRun: (roundsSurvived: number, won: boolean) => void;
-  purchaseRunModifier: (id: RunModifierId) => boolean;
-  purchaseVariantUnlock: (id: VariantUnlockId) => boolean;
-  getRunModifiers: () => {
-    startCharge: number;
-    startIntegrity: number;
-    protocolHealth: number;
-    protocolVariant: ProtocolVariant;
-    runModifier: RunModifierId | null;
-  };
-  consumeRunModifier: () => void;
+/** Drop the retired persistent shop (fragments and unlocks from before the ladder). Safe without storage. */
+export function retireLegacyShop(): void {
+  removeKey(LEGACY_KEY);
 }
 
-const START_CHARGE = 3;
-const START_INTEGRITY = 5;
-const PROTOCOL_HEALTH = 10;
-
-function pickRandomVariant(unlocked: ProtocolVariant[]): ProtocolVariant {
-  const pool: ProtocolVariant[] = ['default', ...unlocked];
-  return pool[Math.floor(Math.random() * pool.length)] ?? 'default';
+export function stockShelf(run: Pick<RunState, 'upgrades' | 'maxIntegrity'>, rng: Rng): ShopItemId[] {
+  const isUpgrade = (id: ShopItemId): id is RunUpgradeId => (RUN_UPGRADES as readonly string[]).includes(id);
+  const candidates = (Object.keys(SHOP_PRICES) as ShopItemId[]).filter((id) => {
+    if (id === 'patch') return false;
+    if (isUpgrade(id)) return !run.upgrades.includes(id);
+    if (id === 'hull') return run.maxIntegrity < PLAYER.integrityCeiling;
+    return true;
+  });
+  return ['patch', ...shuffled(rng, candidates).slice(0, SHOP_SHELF)];
 }
 
-export const useShopStore = create<ShopState>()(
-  persist(
-    (set, get) => ({
-      fragments: 0,
-      pendingRunModifier: null,
-      unlockedVariants: [],
+export function canBuy(run: RunState, item: ShopItemId): boolean {
+  if (run.stage !== 'shop' || !run.shelf.includes(item)) return false;
+  if (run.fragments < SHOP_PRICES[item]) return false;
+  if (item === 'patch') return run.integrity < run.maxIntegrity;
+  if (item === 'hull') return run.maxIntegrity < PLAYER.integrityCeiling;
+  return true;
+}
 
-      awardRun: (roundsSurvived, won) =>
-        set((s) => {
-          const earned = roundsSurvived * 1 + (won ? 3 : 0);
-          return {
-            fragments: s.fragments + earned,
-          };
-        }),
+export function buyItem(run: RunState, item: ShopItemId): RunState {
+  if (!canBuy(run, item)) return run;
+  const paid: RunState = { ...run, fragments: run.fragments - SHOP_PRICES[item] };
+  // Everything but the Patch is a one-off: it leaves the shelf once bought.
+  const shelf = item === 'patch' ? run.shelf : run.shelf.filter((s) => s !== item);
+  switch (item) {
+    case 'patch':
+      return { ...paid, shelf, integrity: Math.min(run.maxIntegrity, run.integrity + SHOP_NUMBERS.patchHeal) };
+    case 'hull': {
+      const max = Math.min(PLAYER.integrityCeiling, run.maxIntegrity + SHOP_NUMBERS.hullMax);
+      return { ...paid, shelf, maxIntegrity: max, integrity: Math.min(max, run.integrity + SHOP_NUMBERS.hullMax) };
+    }
+    case 'capacitor':
+      return { ...paid, shelf, capacitors: run.capacitors + 1 };
+    case 'decoder':
+      return { ...paid, shelf, decoders: run.decoders + 1 };
+    default:
+      return { ...paid, shelf, upgrades: run.upgrades.includes(item) ? run.upgrades : [...run.upgrades, item] };
+  }
+}
 
-      purchaseRunModifier: (id) => {
-        const s = get();
-        const meta = RUN_MODIFIERS[id];
-        if (s.fragments < meta.cost) return false;
-        set({
-          fragments: s.fragments - meta.cost,
-          pendingRunModifier: id,
-        });
-        return true;
-      },
-
-      purchaseVariantUnlock: (id) => {
-        const s = get();
-        if (s.unlockedVariants.includes(VARIANT_UNLOCKS[id].variant)) return false;
-        const cost = VARIANT_UNLOCKS[id].cost;
-        if (s.fragments < cost) return false;
-        set({
-          fragments: s.fragments - cost,
-          unlockedVariants: [...s.unlockedVariants, VARIANT_UNLOCKS[id].variant],
-        });
-        return true;
-      },
-
-      getRunModifiers: () => {
-        const { pendingRunModifier, unlockedVariants } = get();
-        let startCharge = START_CHARGE;
-        let startIntegrity = START_INTEGRITY;
-        const protocolHealth = PROTOCOL_HEALTH;
-        if (pendingRunModifier === 'glassCannon') {
-          startIntegrity = 2;
-        } else if (pendingRunModifier === 'fortress') {
-          startIntegrity = 7;
-        }
-        if (pendingRunModifier === 'fortress') {
-          startCharge = Math.min(6, 6);
-        }
-        return {
-          startCharge,
-          startIntegrity,
-          protocolHealth,
-          protocolVariant: pickRandomVariant(unlockedVariants),
-          runModifier: pendingRunModifier,
-        };
-      },
-
-      consumeRunModifier: () =>
-        set({
-          pendingRunModifier: null,
-        }),
-    }),
-    {
-      name: 'cursed-logic-shop',
-    },
-  ),
-);
-
-export { RUN_MODIFIERS, VARIANT_UNLOCKS };
