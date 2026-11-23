@@ -91,9 +91,11 @@ describe('site fonts: DM Sans + DM Mono by default, the reader\'s choice otherwi
     expect(globals).toMatch(/--site-kicker-tracking:\s*0;/);
   });
 
-  it('preloads the Geist Latin subset (and only one font file) from the root document', () => {
-    expect(rootRoute).toContain("@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url'");
-    expect(rootRoute).toMatch(/href:\s*geistLatinWoff2/);
+  it('preloads only the text faces in use, from the generated asset list, and links only chosen sheets', () => {
+    expect(rootRoute).not.toMatch(/@fontsource-variable\/geist/);
+    expect(rootRoute).toContain("from '@/lib/appearance/font-assets.gen'");
+    expect(rootRoute).toMatch(/href: FONT_ASSETS\[id\]\.latin/);
+    expect(rootRoute).toMatch(/fontsInUse\(fonts\)\.map\(\(id\) => \(\{ rel: 'stylesheet', href: FONT_ASSETS\[id\]\.sheet \}\)\)/);
     expect(rootRoute.match(/as: 'font'/g)?.length).toBe(1);
   });
 });
