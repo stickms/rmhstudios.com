@@ -618,7 +618,8 @@ describe('Forecast tab', () => {
       });
     });
     expect(html).toContain('Your estimate');
-    expect(html).toContain('the chance of an interview invite is 29% by Nov 27');
+    expect(html).toContain('the chance of an interview invite:');
+    expect(html).toContain('by \u2068Nov 27\u2069 \u00b7 \u206829%\u2069');
     h.session = null;
   });
 

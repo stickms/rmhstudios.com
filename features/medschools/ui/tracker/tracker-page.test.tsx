@@ -268,8 +268,10 @@ describe('TrackerPage invite chance', () => {
 
   it('an estimate is a row per horizon with a calendar date, then where it comes from', () => {
     const html = render(dto(), true, answer(estimate));
-    expect(html).toContain('If you have not heard by today, the chance of an interview invite is 29% by Nov 27');
-    expect(html).toContain('the chance of an interview invite is 57% by Dec 20');
+    expect(html).toContain('If you have not heard by today, the chance of an interview invite:');
+    expect(html).toContain('by \u2068Nov 27\u2069 \u00b7 \u206829%\u2069');
+    expect(html).toContain('by \u2068Dec 20\u2069 \u00b7 \u206857%\u2069');
+    expect(html.match(/chance of an interview invite/g)).toHaveLength(1);
     expect(html).toContain('Estimate as of Nov 19, from at least 30 members&#x27; applications at this school.');
     expect(html).not.toMatch(/day \d|!/);
   });
