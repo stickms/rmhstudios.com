@@ -53,6 +53,13 @@ export function ChanceLine({ chance }: { chance: ChanceDto | undefined }) {
         t('chance-no-complete', { defaultValue: 'Add the date your application was complete to see an estimate.' }),
       );
       break;
+    case 'not-complete-yet':
+      lines.push(
+        t('chance-not-complete-yet', {
+          defaultValue: 'The complete date is still ahead. The estimate starts once it has passed.',
+        }),
+      );
+      break;
     case 'invited':
       lines.push(
         t('chance-invited', {

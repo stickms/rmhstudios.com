@@ -436,7 +436,7 @@ export const deleteMedMilestoneApi = endpoint<{ res: TrackerApplicationDto }>()(
 /* ------------------------- personal invite chance (me/**) ------------------------- */
 
 /** Why an application has (or lacks) an estimate. */
-export type ChanceStatus = 'estimate' | 'thin' | 'invited' | 'closed' | 'no-complete' | 'beyond';
+export type ChanceStatus = 'estimate' | 'thin' | 'invited' | 'closed' | 'no-complete' | 'not-complete-yet' | 'beyond';
 
 /** One of the caller's own applications. No other member's data, no user id (spec §6). */
 export interface ChanceDto {
@@ -450,7 +450,7 @@ export interface ChanceDto {
   asOf: string | null;
   /** Members behind the curve, floored to a multiple of 10 and at least 20; `estimate` only. */
   basis: number | null;
-  /** Calendar dates and whole percents; `estimate` only. */
+  /** Calendar dates and percents in steps of 5; `estimate` only. */
   points: { on: string; percent: number }[];
 }
 

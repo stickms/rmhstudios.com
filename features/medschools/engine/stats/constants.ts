@@ -19,4 +19,14 @@ export const WAVE_MIN_HISTORY = 7;
 export const KM_MIN_MEMBERS = 20;
 export const KM_MAX_DAY = 180;
 export const KM_MIN_SURVIVAL = 0.02;
+/** Times in the curve are whole weeks (R13): a step never reveals a day. */
+export const KM_BIN_DAYS = 7;
+/** Fewer members at risk than this at a week and the curve says nothing about it (R13). */
+export const KM_MIN_AT_RISK = 10;
+/** A curve exists only with at least this many invite events, on top of the member floor (R13). */
+export const KM_MIN_INVITES = 10;
+/** A stored curve is replaced only when invites or members moved by at least this many (R13, delta k-anonymity). */
+export const KM_REFRESH_DELTA = 3;
+/** The shown chance is rounded to the nearest multiple of this many percent (R13). */
+export const CHANCE_STEP_PERCENT = 5;
 export const CHANCE_HORIZONS = [7, 14, 30, 60] as const;

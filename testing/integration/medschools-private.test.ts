@@ -744,6 +744,7 @@ describe('the personal invite chance (me/chances)', () => {
     let prev = -1;
     for (const p of est.points) {
       expect(Object.keys(p).sort()).toEqual(['on', 'percent']);
+      expect(p.percent % 5).toBe(0); // R13: the chance is shown in steps of 5
       expect(Number.isInteger(p.percent)).toBe(true);
       expect(p.percent).toBeGreaterThanOrEqual(0);
       expect(p.percent).toBeLessThanOrEqual(100);
@@ -751,6 +752,7 @@ describe('the personal invite chance (me/chances)', () => {
       expect(p.on > dayAgo(0)).toBe(true);
       prev = p.percent;
     }
+    // Only horizons whose week still has 10 members at risk are shown (R13): with this fixture that is the nearest ones.
     // Late invites exist in the fixture past alice's 39 days, so the chance does rise.
     expect(est.points[est.points.length - 1].percent).toBeGreaterThan(0);
   });
@@ -773,13 +775,16 @@ describe('the personal invite chance (me/chances)', () => {
     expect(other.body.chances).toEqual([]);
   });
 
-  it('stores a curve with no column that could hold a person, only t and s', async () => {
+  it('stores a curve with no column that could hold a person, only t, s and the at-risk counts', async () => {
     const cols = await waitCurveColumns();
     expect(cols).toEqual(['id', 'schoolId', 'program', 'asOf', 'computedAt', 'members', 'invited', 'maxDay', 'curve']);
     expect(cols.join(' ')).not.toMatch(/user|member_?id|email|application/i);
     const row = await waitCurveRow(PRIVATE_DO_ID);
     expect(row).not.toBeNull();
-    expect(Object.keys(row!.curve as object).sort()).toEqual(['s', 't']);
+    expect(Object.keys(row!.curve as object).sort()).toEqual(['n', 's', 't']);
+    // Weekly bins (R13): every step sits on a multiple of 7, whatever days the members completed on.
+    for (const t of (row!.curve as { t: number[] }).t) expect(t % 7).toBe(0);
+    expect(row!.invited as number).toBeGreaterThanOrEqual(10);
     expect(row!.members).toBe(20);
   });
 
@@ -801,5 +806,46 @@ describe('the personal invite chance (me/chances)', () => {
     const bobApp = (await b.client.get('/api/medschools/me/tracker')).body.cycle.applications[0].id as string;
     expect((await putMilestone(b, bobApp, 'REJECTION', dayAgo(2))).status).toBe(200);
     expect((await chances(b)).body.chances[0].status).toBe('closed');
+  });
+
+  describe('what a curve may reveal (R13)', () => {
+    const rebuild = async () => {
+      await setSharerSharing(0, true);
+      await runForecastJob();
+    };
+    const sharerInvites = () =>
+      db().query(`select count(*)::int as n from med_tracker_milestone where type = 'INTERVIEW' and id like 'it-medschools-sharer-%'`);
+
+    it('refreshes only after at least 3 more members or invites: one new sharer changes nothing, three do', async () => {
+      await rebuild();
+      const first = await waitCurveRow(PRIVATE_DO_ID);
+      expect(first).not.toBeNull();
+      expect(first!.members).toBe(20);
+      // Sharer 20 would be invited (20 % 3 = 2 waits, so the fixture leaves them waiting): +1 member, no new invite.
+      await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 1, 20);
+      await runForecastJob();
+      const same = await waitCurveRow(PRIVATE_DO_ID);
+      expect(same!.members).toBe(20);
+      expect(same!.curve).toEqual(first!.curve);
+      expect(same!.computedAt).toEqual(first!.computedAt);
+      // Two more: members 23, a difference of 3 from the stored row, so it is rebuilt.
+      await seedSharingMembers(PRIVATE_DO_ID, CYCLE, 2, 21);
+      await runForecastJob();
+      expect((await waitCurveRow(PRIVATE_DO_ID))!.members).toBe(23);
+    });
+
+    it('needs at least 10 invites on top of the members: with fewer, the curve is deleted at once', async () => {
+      expect((await waitCurveRow(PRIVATE_DO_ID))).not.toBeNull();
+      const before = (await sharerInvites()).rows[0].n as number;
+      expect(before).toBeGreaterThanOrEqual(10);
+      // Take the sharers' invites away until 9 remain: 23 members, 9 invites.
+      await db().query(
+        `delete from med_tracker_milestone where id in (
+           select id from med_tracker_milestone where type = 'INTERVIEW' and id like 'it-medschools-sharer-%' order by id limit $1)`,
+        [before - 9],
+      );
+      await runForecastJob();
+      expect(await waitCurveRow(PRIVATE_DO_ID)).toBeNull();
+    });
   });
 });

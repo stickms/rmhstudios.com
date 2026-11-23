@@ -20,6 +20,7 @@
   "chance-invited": "Invited on {{date}}.",
   "chance-lead": "If you have not heard by today, the chance of an interview invite:",
   "chance-no-complete": "Add the date your application was complete to see an estimate.",
+  "chance-not-complete-yet": "The complete date is still ahead. The estimate starts once it has passed.",
   "chance-thin": "Not enough data yet for an estimate here. It needs at least 20 members at this school.",
   "chart-comparison": "Comparison",
   "chart-count": "Reported events",

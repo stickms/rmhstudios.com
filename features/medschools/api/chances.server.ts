@@ -16,12 +16,17 @@ import { getTracker } from './tracker.server';
 const day = (d: Date): string => d.toISOString().slice(0, 10);
 const CLOSING = new Set(['REJECTION', 'WITHDRAWN', 'ACCEPTANCE']);
 
-/** The stored step function, or null when the JSON is not `{ t: number[], s: number[] }` of equal length. */
+/**
+ * The stored step function, or null when the JSON is not `{ t, s, n }` of numbers and equal length. A row written before
+ * R13 has no `n` (the next job run rebuilds it); the chance does not read `n`, `maxDay` carries the at-risk floor.
+ */
 function curveOf(json: unknown): SurvivalCurve | null {
-  const c = json as { t?: unknown; s?: unknown } | null;
+  const c = json as { t?: unknown; s?: unknown; n?: unknown } | null;
   if (!c || !Array.isArray(c.t) || !Array.isArray(c.s) || c.t.length !== c.s.length) return null;
-  if (!c.t.every((n) => typeof n === 'number') || !c.s.every((n) => typeof n === 'number')) return null;
-  return { t: c.t as number[], s: c.s as number[] };
+  const nums = (a: unknown[]) => a.every((n) => typeof n === 'number');
+  if (!nums(c.t) || !nums(c.s)) return null;
+  const n = Array.isArray(c.n) && c.n.length === c.t.length && nums(c.n) ? (c.n as number[]) : [];
+  return { t: c.t as number[], s: c.s as number[], n };
 }
 
 export async function getChances(
@@ -100,6 +105,8 @@ export async function getChances(
     if (invitedOn) return dto('invited');
     if (a.milestones.some((m) => CLOSING.has(m.type))) return dto('closed');
     if (!completeOn) return dto('no-complete');
+    // A COMPLETE date in the future is not a wait yet; it must not pick a week of the curve (R13).
+    if (completeOn > today) return dto('not-complete-yet');
     const hit = curves.get(`${a.school.slug}|${a.program}`);
     if (!hit) return dto('thin');
     const elapsed = Math.max(0, dayIndex(today) - dayIndex(completeOn));

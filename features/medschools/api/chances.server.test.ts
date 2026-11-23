@@ -23,8 +23,8 @@ const school = (id: string, over: Record<string, unknown> = {}) => ({
   active: true,
   ...over,
 });
-/** S = 0.7 through day 26, 0.5 from day 27, 0.3 from day 40 (the plan's fixture). */
-const CURVE = { t: [10, 27, 40], s: [0.7, 0.5, 0.3] };
+/** Weekly steps (R13): S = 0.7 from week 2, 0.5 from week 4, 0.3 from week 6; 27, 20 and 12 members at risk there. */
+const CURVE = { t: [14, 28, 42], s: [0.7, 0.5, 0.3], n: [27, 20, 12] };
 
 let nextId = 0;
 /** One tracker application of `user` at `schoolId` with the given milestones. */
@@ -82,9 +82,9 @@ afterEach(() => {
 
 describe('getChances', () => {
   it('estimates from the curve: percents by calendar date, beyond-maxDay horizons omitted, basis floored to 10', async () => {
-    // Complete 20 days ago: S(20) = 0.7, S(27) = 0.5 -> 29%; S(34) = 0.5 -> 29%; S(50) = 0.3 -> 57%; 80 is past maxDay 90? 20+60 = 80 < 90.
+    // Complete 20 days ago: week 21, S = 0.7. Targets 28 (0.5 -> 29% -> 30), 35 (0.5 -> 30), 56 (0.3 -> 57% -> 55); 84 is past maxDay 70.
     apply('a', 'x', { COMPLETE: '2026-10-31' });
-    curveRow('x', { maxDay: 70 }); // 20 + 60 = 80 > 70: the 60-day point is omitted
+    curveRow('x', { maxDay: 70 });
     const res = await getChances('a', {}, NOW);
     expect(res.cycleYear).toBe(2027);
     const c = res.chances[0]!;
@@ -93,13 +93,34 @@ describe('getChances', () => {
     expect(c.asOf).toBe('2026-11-19');
     expect(c.basis).toBe(20);
     expect(c.points).toEqual([
-      { on: '2026-11-27', percent: 29 },
-      { on: '2026-12-04', percent: 29 },
-      { on: '2026-12-20', percent: 57 },
+      { on: '2026-11-27', percent: 30 },
+      { on: '2026-12-04', percent: 30 },
+      { on: '2026-12-20', percent: 55 },
     ]);
     // Non-decreasing in the horizon.
     const p = c.points.map((x) => x.percent);
     expect(p).toEqual([...p].sort((a, b) => a - b));
+  });
+
+  it("every percent is a multiple of 5, and the answer is the same for every day of the caller's week", async () => {
+    curveRow('x', { maxDay: 70 });
+    const pointsFor = async (completeOn: string) => {
+      f.tables.medTrackerApplication.length = 0;
+      f.tables.medTrackerMilestone.length = 0;
+      apply('a', 'x', { COMPLETE: completeOn });
+      return (await getChances('a', {}, NOW)).chances[0]!.points;
+    };
+    // Elapsed 20 and 21 days are both week 21; 24 days is week 28 and may differ.
+    const [d20, d21] = [await pointsFor('2026-10-31'), await pointsFor('2026-10-30')];
+    expect(d20).toEqual(d21);
+    for (const p of [...d20, ...(await pointsFor('2026-10-27'))]) expect(p.percent % 5).toBe(0);
+  });
+
+  it('a COMPLETE date in the future is not an estimate', async () => {
+    apply('a', 'x', { COMPLETE: '2026-11-25' });
+    curveRow('x');
+    const c = (await getChances('a', {}, NOW)).chances[0]!;
+    expect(c).toMatchObject({ status: 'not-complete-yet', points: [], basis: null, asOf: null });
   });
 
   it('basis is a multiple of 10 and at least 20', async () => {
@@ -124,7 +145,7 @@ describe('getChances', () => {
     f.tables.medTrackerMilestone.length = 0;
     apply('a', 'x', { COMPLETE: '2026-10-31' });
     expect((await getChances('a', {}, NOW)).chances[0]!.status).toBe('thin');
-    curveRow('x', { curve: { t: [5], s: [0.01] }, maxDay: 90 });
+    curveRow('x', { curve: { t: [7], s: [0.01], n: [30] }, maxDay: 90 });
     expect((await getChances('a', {}, NOW)).chances[0]!.status).toBe('beyond');
   });
 

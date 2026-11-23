@@ -2,15 +2,18 @@
  * The aggregate wait curves of phase 5 (D5-D7): a Kaplan-Meier "complete to interview invite" step function per school x
  * program, from the private tracker rows of members who share. Written by the forecast job, never by a request.
  *
- * Anonymity: a curve exists only when at least `KM_MIN_MEMBERS` (20) DISTINCT members have a valid observation for that
- * school x program (one member with two cycles counts once). What is stored is a count of members, a count of invites and
+ * Anonymity (R13): a curve exists only when at least `KM_MIN_MEMBERS` (20) DISTINCT members have a valid observation for
+ * that school x program (one member with two cycles counts once) and at least `KM_MIN_INVITES` (10) of the observations
+ * are invites. Times are whole weeks, the steps carry their at-risk count, `maxDay` is the last week with at least 10 at
+ * risk, and a stored curve is replaced only when invites or members moved by at least `KM_REFRESH_DELTA` (3), so one new
+ * invite never shows up as a new step the next day. What is stored is a count of members, a count of invites and
  * the step function; no row, member, application or date of any one contribution survives this module. The member id in
  * a `TrackerObservationRow` lives in memory for one run and is never logged, stored or thrown; a failing query is
  * reported with a fixed message because a database error can carry bound values.
  */
 import type { PrismaClient } from '@prisma/client';
-import { KM_MIN_MEMBERS } from '../engine/stats/constants';
-import { kaplanMeier, maxDayOf, observationOf, type Obs, type SurvivalCurve } from '../engine/stats/km';
+import { KM_MIN_INVITES, KM_MIN_MEMBERS, KM_REFRESH_DELTA } from '../engine/stats/constants';
+import { binObs, kaplanMeier, maxDayOf, observationOf, type Obs, type SurvivalCurve } from '../engine/stats/km';
 import type { Logger, MedPrisma } from './types';
 
 /** One flat row per application with a COMPLETE date, in a cycle whose owner shares. */
@@ -82,17 +85,37 @@ export function buildWaitCurves(rows: readonly TrackerObservationRow[], asOf: st
     `${a.schoolId}|${a.program}`.localeCompare(`${b.schoolId}|${b.program}`),
   )) {
     if (g.members.size < KM_MIN_MEMBERS) continue;
-    const curve = kaplanMeier(g.obs);
+    const binned = g.obs.map(binObs);
+    const invited = binned.filter((o) => o.event).length;
+    if (invited < KM_MIN_INVITES) continue;
     out.push({
       schoolId: g.schoolId,
       program: g.program,
       members: g.members.size,
-      invited: g.obs.filter((o) => o.event).length,
-      maxDay: maxDayOf(curve, g.obs),
-      curve,
+      invited,
+      maxDay: maxDayOf(binned),
+      curve: kaplanMeier(binned),
     });
   }
   return out;
+}
+
+/** True when a stored row is in the current shape (steps carry `n`), so an old row is rebuilt rather than kept. */
+const currentShape = (json: unknown): boolean => {
+  const c = json as { t?: unknown; n?: unknown } | null;
+  return !!c && Array.isArray(c.t) && Array.isArray(c.n) && c.t.length === c.n.length;
+};
+
+/** Delta k-anonymity (R13): replace only when at least 3 invites or members differ from the stored curve. */
+export function worthRefreshing(
+  stored: { invited: number; members: number; curve: unknown },
+  next: { invited: number; members: number },
+): boolean {
+  if (!currentShape(stored.curve)) return true;
+  return (
+    Math.abs(next.invited - stored.invited) >= KM_REFRESH_DELTA ||
+    Math.abs(next.members - stored.members) >= KM_REFRESH_DELTA
+  );
 }
 
 export async function runWaitCurves(deps: {
@@ -100,29 +123,39 @@ export async function runWaitCurves(deps: {
   db: Pick<PrismaClient, '$queryRaw'>;
   asOf: string;
   log: Logger;
-}): Promise<{ curves: number; removed: number }> {
+}): Promise<{ curves: number; removed: number; kept: number }> {
   const { prisma, db, asOf, log } = deps;
   const curves = buildWaitCurves(await loadObservationRows(db), asOf);
   const asOfDate = new Date(`${asOf}T00:00:00.000Z`);
-  const keep = new Set(curves.map((c) => `${c.schoolId}|${c.program}`));
-  const removed = await prisma.$transaction(async (tx) => {
-    for (const c of curves) {
-      const data = { asOf: asOfDate, members: c.members, invited: c.invited, maxDay: c.maxDay, curve: c.curve };
-      await tx.medWaitCurve.upsert({
-        where: { schoolId_program: { schoolId: c.schoolId, program: c.program } },
-        create: { schoolId: c.schoolId, program: c.program, ...data },
-        update: { ...data, computedAt: new Date() },
+  // The interactive transaction reads every stored row and writes each changed one: more than Prisma's 5 s default.
+  const { removed, kept } = await prisma.$transaction(
+    async (tx) => {
+      const stored = await tx.medWaitCurve.findMany({
+        select: { schoolId: true, program: true, invited: true, members: true, curve: true },
       });
-    }
-    // A pair that fell under the floor (a member turned sharing off, or left) loses its row at this run.
-    const stored = await tx.medWaitCurve.findMany({ select: { schoolId: true, program: true } });
-    let gone = 0;
-    for (const s of stored) {
-      if (keep.has(`${s.schoolId}|${s.program}`)) continue;
-      gone += (await tx.medWaitCurve.deleteMany({ where: { schoolId: s.schoolId, program: s.program } })).count;
-    }
-    return gone;
-  });
-  log.info(`wait-curves: curves=${curves.length} removed=${removed}`);
-  return { curves: curves.length, removed };
+      const had = new Map(stored.map((s) => [`${s.schoolId}|${s.program}`, s] as const));
+      let keptRows = 0;
+      for (const c of curves) {
+        const old = had.get(`${c.schoolId}|${c.program}`);
+        if (old && !worthRefreshing(old, c)) {
+          keptRows += 1; // unchanged on purpose: the stored curve stays exactly as the members last saw it
+          continue;
+        }
+        const data = { asOf: asOfDate, members: c.members, invited: c.invited, maxDay: c.maxDay, curve: c.curve };
+        await tx.medWaitCurve.upsert({
+          where: { schoolId_program: { schoolId: c.schoolId, program: c.program } },
+          create: { schoolId: c.schoolId, program: c.program, ...data },
+          update: { ...data, computedAt: new Date() },
+        });
+      }
+      // A pair that fell under a floor (a member turned sharing off, or left) loses its row at this run, at once.
+      const gone = await tx.medWaitCurve.deleteMany({
+        where: { NOT: curves.map((c) => ({ schoolId: c.schoolId, program: c.program })) },
+      });
+      return { removed: gone.count, kept: keptRows };
+    },
+    { timeout: 60000, maxWait: 10000 },
+  );
+  log.info(`wait-curves: curves=${curves.length} kept=${kept} removed=${removed}`);
+  return { curves: curves.length, removed, kept };
 }

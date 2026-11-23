@@ -88,6 +88,7 @@ function matches(row: Row, where: Row | undefined): boolean {
   if (!where) return true;
   return Object.entries(flatten(where)).every(([k, v]) => {
     if (k === 'OR') return (v as Row[]).some((w) => matches(row, w));
+    if (k === 'NOT') return !(Array.isArray(v) ? (v as Row[]) : [v as Row]).some((w) => matches(row, w));
     if (v !== null && typeof v === 'object' && !(v instanceof Date) && 'in' in v) {
       return (
         v as {

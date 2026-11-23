@@ -276,6 +276,9 @@ export interface MedPrisma {
       {
         schoolId: string;
         program: MedProgram;
+        invited: number;
+        members: number;
+        curve: unknown;
       }[]
     >;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<{
@@ -371,6 +374,8 @@ export interface MedPrisma {
     fn: (tx: MedPrisma) => Promise<T>,
     options?: {
       isolationLevel?: 'Serializable';
+      timeout?: number;
+      maxWait?: number;
     },
   ): Promise<T>;
 }
