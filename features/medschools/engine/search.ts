@@ -8,7 +8,11 @@ export type LiveProgramFilter = ProgramFilter | 'NONE';
 
 const ALL_TYPES: readonly MedEventType[] = [...CHARTED_TYPES, 'WITHDRAWN', 'HOLD'];
 const SOURCES: readonly MedSource[] = ['CYCLETRACK', 'ADMIT', 'SDN', 'MDAPPLICANTS', 'RMH'];
-const Q_MAX = 100;
+/** Matches the API's `q` limit (read-schemas), so a URL the page accepts is one the endpoint accepts. */
+export const Q_MAX = 80;
+/** The API's `cycle` range (read-schemas). */
+const CYCLE_MIN = 2000;
+const CYCLE_MAX = 2100;
 
 /**
  * Values the parsers fall back to. The routes hand these to `stripSearchParams`, so a default never appears in the
@@ -53,7 +57,8 @@ export function parseIndexSearch(raw: Record<string, unknown>): {
     ...(q ? { q } : {}),
     ...(d ? { degree: d } : {}),
     ...(st && /^[A-Za-z]{2}$/.test(st) ? { state: st.toUpperCase() } : {}),
-    program: program(raw.program),
+    // A program is a degree's program (MD-PhD): without a degree the control reads "All", so the filter is All too.
+    program: d ? program(raw.program) : 'ALL',
   };
 }
 
@@ -70,7 +75,9 @@ export function parseLiveSearch(raw: Record<string, unknown>): {
     ...(type ? { type } : {}),
     ...(school && /^[a-z0-9-]{1,80}$/.test(school) ? { school } : {}),
     ...(d ? { degree: d } : {}),
-    program: pick(raw.program, ['ALL', 'REG', 'PHD', 'NONE'] as const) ?? 'ALL',
+    program: ((p) => (p === 'NONE' || d ? p : 'ALL'))(
+      pick(raw.program, ['ALL', 'REG', 'PHD', 'NONE'] as const) ?? 'ALL',
+    ),
   };
 }
 
@@ -91,7 +98,7 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
   const shown = CHARTED_TYPES.filter((t) => wanted.has(t));
   const source = pick(raw.source, SOURCES);
   const c = str(raw.cycle)?.trim();
-  const cycle = c && /^\d{4}$/.test(c) ? Number(c) : undefined;
+  const cycle = c && /^\d{4}$/.test(c) && Number(c) >= CYCLE_MIN && Number(c) <= CYCLE_MAX ? Number(c) : undefined;
   return {
     tab: pick(raw.tab, SCHOOL_TABS, false) ?? 'activity',
     program: program(raw.program),

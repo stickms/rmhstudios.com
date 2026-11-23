@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { CHARTED_TYPES, SHORT_SOURCE_NAMES, formatUtcDay, toCumulativeByDay } from '../engine/public-read';
+import { cycleEndOn, cycleLabel } from '../engine/cycle';
 import { buildTotalsMatrix } from '../engine/totals';
 import { activityQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
@@ -53,7 +54,11 @@ export function ActivityTab({
 
   const data = query.data;
   const types = data?.types ?? [];
-  const matrix = buildTotalsMatrix(types);
+  const matrix = buildTotalsMatrix(types, data?.otherTotals);
+  const visible = search.show.filter((s): s is MedChartedTypeId => CHARTED_TYPES.includes(s));
+  // The charts run from day zero to today, or to the cycle's last day once it is over: never 500 days of nothing.
+  const chartEnd = data ? [today, cycleEndOn(data.cycleYear)].sort()[0]! : today;
+  const to = data && chartEnd > data.dayZeroOn ? chartEnd : (data?.dayZeroOn ?? today);
   const hasAny = types.some((ty) => ty.sources.length > 0);
   const chosen = types.find((ty) => ty.eventType === search.type);
   const chosenPrimary = chosen?.sources.find((s) => s.source === chosen.primary) ?? chosen?.sources[0];
@@ -73,6 +78,12 @@ export function ActivityTab({
         <EmptyState title={t('school-activity-empty', { defaultValue: 'No reported events yet this cycle.' })} />
       ) : data ? (
         <div className="flex flex-col gap-8">
+          <h2 className="t-heading m-0">
+            {t('school-activity-heading', {
+              defaultValue: '{{cycle}} cycle',
+              cycle: cycleLabel(data.cycleYear),
+            })}
+          </h2>
           <section
             className="flex flex-col gap-3"
             aria-label={t('school-categories-section', { defaultValue: 'Categories' })}
@@ -82,9 +93,16 @@ export function ActivityTab({
               labels={chartLabels(
                 t('school-categories-title', { defaultValue: 'Cumulative reported events by category' }),
               )}
-              visible={search.show.filter((s): s is MedChartedTypeId => CHARTED_TYPES.includes(s))}
+              visible={visible}
               dayZeroOn={data.dayZeroOn}
-              sources={[...new Set(types.map((ty) => ty.primary).filter((s): s is MedSourceId => s !== null))]}
+              sources={[
+                ...new Set(
+                  types
+                    .filter((ty) => visible.includes(ty.eventType))
+                    .map((ty) => ty.primary)
+                    .filter((s): s is MedSourceId => s !== null),
+                ),
+              ]}
               series={types.flatMap((ty) => {
                 const src = ty.sources.find((s) => s.source === ty.primary);
                 return src
@@ -125,7 +143,7 @@ export function ActivityTab({
                 <DailyBars
                   primary={chosenPrimary}
                   from={data.dayZeroOn}
-                  to={today > data.dayZeroOn ? today : data.dayZeroOn}
+                  to={to}
                   labels={chartLabels(
                     t('school-daily-title', {
                       defaultValue: '{{type}} by day',
@@ -137,7 +155,7 @@ export function ActivityTab({
                   primary={chosenPrimary}
                   comparison={chosenComparison}
                   dayZeroOn={data.dayZeroOn}
-                  to={today > data.dayZeroOn ? today : data.dayZeroOn}
+                  to={to}
                   labels={chartLabels(
                     t('school-cumulative-title', {
                       defaultValue: '{{type}}, cumulative',
@@ -246,7 +264,7 @@ export function ActivityTab({
               })}
             </p>
           ) : null}
-          <SourceLinks links={detail.links} />
+          <SourceLinks links={detail.links} cycleYear={data.cycleYear} />
         </div>
       ) : null}
     </SkeletonSwap>

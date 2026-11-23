@@ -88,7 +88,7 @@ export function LivePage() {
         <DegreeProgramSelect
           allowNone
           {...(schoolDegree ? { schoolDegree } : {})}
-          value={{ degree: filters.degree, program: search.program }}
+          value={{ degree: filters.degree, program: filters.program ?? 'ALL' }}
           onChange={(v) => setSearch({ degree: v.degree, program: v.program })}
         />
       </div>

@@ -189,6 +189,8 @@ export interface MedSchoolActivityRes {
   dayZeroEstimated: boolean;
   /** All five CHARTED_TYPES, always, so toggling a category refetches nothing (O4). */
   types: ActivityTypeDto[];
+  /** Withdrawn and hold, floored per-source totals only (never charted), where any source reports them. */
+  otherTotals: { eventType: 'WITHDRAWN' | 'HOLD'; sources: { source: MedSourceId; total: number }[] }[];
   /** Null-program events of the charted types for one source (never a sum across sources). */
   unreportedProgram: number;
   unreportedProgramSource: 'ADMIT' | 'SDN' | null;
@@ -260,6 +262,6 @@ export const getMedLiveApi = endpoint<{
 }>()({ method: 'GET', path: '/api/medschools/live' });
 
 export const getMedTodayApi = endpoint<{
-  query: { program?: MedProgramFilter | undefined };
+  query: { program?: MedProgramFilter | undefined; degree?: MedDegreeId | undefined };
   res: MedTodayRes;
 }>()({ method: 'GET', path: '/api/medschools/today' });

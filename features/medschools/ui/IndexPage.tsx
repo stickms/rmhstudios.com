@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { formatUtcDay } from '../engine/public-read';
-import { SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
+import { Q_MAX, SCHOOL_SEARCH_DEFAULTS, parseIndexSearch } from '../engine/search';
 import { schoolsQuery, todayQuery } from '../medschools.queries';
 import { DegreeProgramSelect } from './ProgramSelect';
 import { SchoolCrest } from './SchoolCrest';
@@ -28,10 +28,11 @@ export function IndexPage() {
   const { sourceName } = useMedLabels();
   const navigate = useNavigate();
   const search = parseIndexSearch(useSearch({ strict: false }) as Record<string, unknown>);
+  const nf = new Intl.NumberFormat(locale);
   const [text, setText] = useState(search.q ?? '');
 
   const schools = useQuery(schoolsQuery(search));
-  const today = useQuery(todayQuery(search.program));
+  const today = useQuery(todayQuery(search.program, search.degree));
 
   const setSearch = (next: Partial<typeof search> & { q?: string | undefined }) => {
     const merged = { ...search, ...next };
@@ -91,9 +92,10 @@ export function IndexPage() {
                 <span className="t-meta ps-9 sm:ps-0">
                   {t('index-day-invites', {
                     count: r.count,
-                    defaultValue_one: '{{count}} invite · {{source}}',
-                    defaultValue_other: '{{count}} invites · {{source}}',
-                    defaultValue: '{{count}} invites · {{source}}',
+                    n: nf.format(r.count),
+                    defaultValue_one: '{{n}} invite · {{source}}',
+                    defaultValue_other: '{{n}} invites · {{source}}',
+                    defaultValue: '{{n}} invites · {{source}}',
                     source: sourceName(r.source),
                   })}
                 </span>
@@ -108,6 +110,7 @@ export function IndexPage() {
           containerClassName="w-full sm:w-auto sm:min-w-48 sm:flex-1"
           aria-label={t('index-search-label', { defaultValue: 'Search schools' })}
           placeholder={t('index-search-placeholder', { defaultValue: 'Search schools' })}
+          maxLength={Q_MAX}
           value={text}
           onValueChange={(v) => {
             setText(v);
@@ -177,8 +180,11 @@ export function IndexPage() {
                     {s.reported ? (
                       <span className="t-meta ps-9 sm:ps-0">
                         {t('index-reported', {
+                          count: s.reported.count,
+                          n: nf.format(s.reported.count),
+                          defaultValue_one: '{{n}} reported invite, {{source}}',
+                          defaultValue_other: '{{n}} reported invites, {{source}}',
                           defaultValue: '{{n}} reported invites, {{source}}',
-                          n: s.reported.count,
                           source: sourceName(s.reported.source),
                         })}
                       </span>

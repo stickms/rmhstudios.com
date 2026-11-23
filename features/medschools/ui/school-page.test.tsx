@@ -106,6 +106,7 @@ const activity = (
   dayZeroOn: '2026-06-01',
   dayZeroEstimated: false,
   types: TYPES.map(perType),
+  otherTotals: [],
   unreportedProgram: 0,
   unreportedProgramSource: null,
   ...o,
@@ -277,6 +278,15 @@ describe('SchoolPage', () => {
     );
     expect(html).toContain('No reported events yet this cycle.');
     expect(html).not.toMatch(/>7</);
+  });
+
+  it('prints the cycle in the Activity heading and totals withdrawn and hold without charting them', () => {
+    h.search = {};
+    const html = render(
+      seedActivity(activity({ otherTotals: [{ eventType: 'HOLD', sources: [{ source: 'ADMIT', total: 4 }] }] })),
+    );
+    expect(html).toContain('2025\u20132026 cycle');
+    expect(html).toContain('>Hold<');
   });
 
   it('unreported program events appear as one muted line and in no chart or table cell', () => {

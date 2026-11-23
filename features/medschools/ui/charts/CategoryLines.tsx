@@ -44,8 +44,8 @@ interface CategorySeries {
 /**
  * One cumulative step line per visible category on one calendar axis (the cycle's own dates), each with a direct end
  * label placed by `spreadLabels` per geometry. Which categories are visible is the caller's (the URL's) business;
- * hidden ones are not drawn and not in the table. `sources` names the sources the series came from (the primary of
- * each type), as the caption.
+ * hidden ones are not drawn and not in the table. `sources` names the sources of the VISIBLE series (each line is
+ * its own type's primary, so none is "the" primary), as a plain caption.
  */
 export function CategoryLines(p: {
   series: CategorySeries[];
@@ -79,7 +79,7 @@ export function CategoryLines(p: {
     <ChartFrame
       title={labels.title}
       unit={labels.unitCumulative}
-      sourcesLine={labels.sourcesLine({ primary: names[0] ?? '', comparison: names.slice(1) })}
+      sourcesLine={labels.sourcesPlain(names)}
       summary={labels.summary({
         lines: shown.map((s) => ({ name: s.label, total: s.points[s.points.length - 1]!.cumulative })),
       })}

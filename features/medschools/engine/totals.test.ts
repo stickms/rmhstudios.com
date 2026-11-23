@@ -42,3 +42,15 @@ describe('SHORT_SOURCE_NAMES', () => {
     expect(SHORT_SOURCE_NAMES.ADMIT).toBe('Admit');
   });
 });
+
+describe('buildTotalsMatrix with withdrawn and hold', () => {
+  it('adds them as rows after the charted ones, with their own source columns', () => {
+    const m = buildTotalsMatrix(
+      [{ eventType: 'INTERVIEW', primary: 'ADMIT', sources: [{ source: 'ADMIT', days: [], total: 5 }] }],
+      [{ eventType: 'HOLD', sources: [{ source: 'SDN', total: 2 }] }],
+    );
+    expect(m.sources).toEqual(['ADMIT', 'SDN']);
+    expect(m.rows.map((r) => r.eventType)).toEqual(['INTERVIEW', 'HOLD']);
+    expect(m.rows[1]!.cells).toEqual([null, { total: 2, primary: true }]);
+  });
+});

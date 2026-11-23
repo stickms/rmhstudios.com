@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_site/rmh-medschool/')({
   loader: async ({ context, deps }) => {
     await Promise.all([
       prefetchRouteQuery(context.queryClient, schoolsQuery(deps)),
-      prefetchRouteQuery(context.queryClient, todayQuery(deps.program)),
+      prefetchRouteQuery(context.queryClient, todayQuery(deps.program, deps.degree)),
     ]);
     return undefined;
   },

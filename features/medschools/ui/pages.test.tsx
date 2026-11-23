@@ -9,7 +9,10 @@ const h = vi.hoisted(() => ({ search: {} as Record<string, unknown> }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (_key: string, o: { defaultValue: string; [k: string]: unknown }) =>
-      o.defaultValue.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(o[k] ?? '')),
+      (o.count === 1 && typeof o.defaultValue_one === 'string' ? o.defaultValue_one : o.defaultValue).replace(
+        /\{\{(\w+)\}\}/g,
+        (_m, k: string) => String(o[k] ?? ''),
+      ),
   }),
 }));
 vi.mock('@tanstack/react-router', () => ({
@@ -92,6 +95,20 @@ describe('IndexPage', () => {
     expect(html).toContain('4 invites · Admit.org');
     expect(html).toContain('>Durham, NC<');
     expect(html).not.toContain('data-variant="primary"');
+  });
+  it('pluralises and groups the reported count', () => {
+    const html = withClient(
+      seedIndex(
+        [
+          school('one', { reported: { source: 'ADMIT', count: 1 } }),
+          school('many', { reported: { source: 'ADMIT', count: 1200 } }),
+        ],
+        { date: null, isToday: false },
+      ),
+      <IndexPage />,
+    );
+    expect(html).toContain('1 reported invite, Admit.org');
+    expect(html).toContain('1,200 reported invites, Admit.org');
   });
   it('prints nothing in the figure slot of a school with no data', () => {
     const html = withClient(
@@ -195,6 +212,16 @@ describe('LivePage', () => {
     expect(html).toContain('>MD-PhD</option>');
     expect(html).not.toContain('>DO</option>');
     expect(html).not.toContain('>DO-PhD</option>');
+  });
+  it('resolveLiveFilters resets a program whose degree was dropped (or never given) to All', () => {
+    expect(resolveLiveFilters({ program: 'PHD', school: 'duke', degree: 'DO' }, 'MD')).toMatchObject({
+      program: 'ALL',
+    });
+    expect(resolveLiveFilters({ program: 'PHD', school: 'duke', degree: 'MD' }, 'MD')).toMatchObject({
+      program: 'PHD',
+    });
+    expect(resolveLiveFilters({ program: 'REG' }, undefined).program).toBe('ALL');
+    expect(resolveLiveFilters({ program: 'NONE' }, undefined).program).toBe('NONE');
   });
   it('resolveLiveFilters drops a degree that contradicts the school', () => {
     expect(resolveLiveFilters({ program: 'ALL', school: 'duke', degree: 'DO' }, 'MD').degree).toBeUndefined();

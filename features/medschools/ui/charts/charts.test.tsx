@@ -19,6 +19,7 @@ const labels: ChartLabels = {
   daysSinceStart: 'Days since cycle start',
   sourcesLine: ({ primary, comparison }) =>
     `Sources: ${primary} (primary)${comparison.length ? `, ${comparison.join(', ')}` : ''}`,
+  sourcesPlain: (names) => `Sources: ${names.join(', ')}`,
   primary: 'Primary',
   comparison: 'Comparison',
   date: 'Date',
@@ -109,6 +110,22 @@ describe('CumulativeLine', () => {
   });
 });
 
+describe('CategoryLines caption', () => {
+  it('names the given sources plainly, with no (primary)', () => {
+    const html = renderToString(
+      <CategoryLines
+        series={[{ eventType: 'INTERVIEW', label: 'Interview', points: cumulative([1, 2]) }]}
+        visible={['INTERVIEW']}
+        sources={['CYCLETRACK', 'ADMIT']}
+        dayZeroOn="2026-06-01"
+        labels={labels}
+      />,
+    );
+    expect(html).toContain('Sources: CycleTrack, Admit.org');
+    expect(html).not.toContain('(primary)');
+  });
+});
+
 describe('CategoryLines', () => {
   const series = (['SECONDARY', 'INTERVIEW', 'WAITLIST', 'REJECTION', 'ACCEPTANCE'] as const).map((t, i) => ({
     eventType: t,
@@ -167,7 +184,9 @@ describe('CycleOverlay', () => {
     { cycleYear: 2024, points: cumulative([1, 2, 3]) },
   ];
   it('current cycle solid ink, priors muted with their own dashes, end labels, one source named', () => {
-    const html = renderToString(<CycleOverlay cycles={cycles} sourceName="CycleTrack" labels={labels} />);
+    const html = renderToString(
+      <CycleOverlay cycles={cycles} currentCycleYear={2026} sourceName="CycleTrack" labels={labels} />,
+    );
     expectBasics(html);
     expect(html).toContain('2026');
     expect(html).toContain('2025');
@@ -176,11 +195,28 @@ describe('CycleOverlay', () => {
     expect(phone(html).match(/<path/g)).toHaveLength(3);
     expect(html).toContain('Days since cycle start');
   });
+  it('only the line of the current cycle is solid ink; with no current line all are prior-style', () => {
+    const noCurrent = renderToString(
+      <CycleOverlay cycles={cycles.slice(1)} currentCycleYear={2026} sourceName="CycleTrack" labels={labels} />,
+    );
+    expect(phone(noCurrent)).not.toContain('stroke-width="2"');
+    const current = renderToString(
+      <CycleOverlay cycles={cycles} currentCycleYear={2026} sourceName="CycleTrack" labels={labels} />,
+    );
+    expect(phone(current).match(/stroke-width="2"/g)).toHaveLength(1);
+  });
   it('no cycles or all-empty cycles are safe', () => {
-    expectBasics(renderToString(<CycleOverlay cycles={[]} sourceName="CycleTrack" labels={labels} />));
+    expectBasics(
+      renderToString(<CycleOverlay cycles={[]} currentCycleYear={2026} sourceName="CycleTrack" labels={labels} />),
+    );
     expectBasics(
       renderToString(
-        <CycleOverlay cycles={[{ cycleYear: 2026, points: [] }]} sourceName="CycleTrack" labels={labels} />,
+        <CycleOverlay
+          cycles={[{ cycleYear: 2026, points: [] }]}
+          currentCycleYear={2026}
+          sourceName="CycleTrack"
+          labels={labels}
+        />,
       ),
     );
   });

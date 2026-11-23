@@ -40,6 +40,7 @@ import { buildSourceLinks } from './source-links';
  */
 
 const CHARTED = CHARTED_TYPES as readonly MedChartedTypeId[];
+const OTHER_TOTAL_TYPES = ['WITHDRAWN', 'HOLD'] as const;
 const day = (d: Date): string => d.toISOString().slice(0, 10);
 
 /** O5: ALL reads both programs; null-program events are never in a count row (the column is not nullable). */
@@ -106,17 +107,29 @@ async function latestCycleWith(where: { schoolId?: string; eventType?: MedEventT
   return r?.cycleYear ?? null;
 }
 
+/**
+ * The one cycle the site shows, resolved the same way for the index, today, and every per-school read: the newest
+ * cycle with a floored INTERVIEW row anywhere, capped at the June 1 rollover, unless the caller asked for one. A school
+ * is never given its own newest cycle: with nothing this cycle it shows the empty state, not last cycle's figures.
+ */
+async function siteCycle(now: Date, requested?: number): Promise<number> {
+  return resolveCycleYear({
+    ...(requested !== undefined ? { requested } : {}),
+    latestWithData: await latestCycleWith({ eventType: 'INTERVIEW' }),
+    now,
+  });
+}
+
 export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): Promise<ListMedSchoolsRes> {
   const program = q.program ?? 'ALL';
-  const [all, latest] = await Promise.all([
+  const [all, cycleYear] = await Promise.all([
     prisma.medSchool.findMany({
       where: { active: true },
       select: { id: true, slug: true, name: true, shortName: true, degree: true, city: true, state: true },
       orderBy: { name: 'asc' },
     }),
-    latestCycleWith({ eventType: 'INTERVIEW' }),
+    siteCycle(now),
   ]);
-  const cycleYear = resolveCycleYear({ latestWithData: latest, now });
   const sums = await prisma.medCycleCount.groupBy({
     by: ['schoolId', 'source'],
     where: { cycleYear, eventType: 'INTERVIEW', program: { in: programsOf(program) }, ...FLOOR_WHERE },
@@ -164,7 +177,7 @@ export interface MedSchoolCardData {
 export async function getCardData(slug: string, now: Date = new Date()): Promise<MedSchoolCardData | null> {
   const school = await findSchool(slug);
   if (!school) return null;
-  const cycleYear = resolveCycleYear({ latestWithData: await latestCycleWith({ schoolId: school.id }), now });
+  const cycleYear = await siteCycle(now);
   const sums = await prisma.medCycleCount.groupBy({
     by: ['source'],
     where: {
@@ -191,7 +204,7 @@ export async function getCardData(slug: string, now: Date = new Date()): Promise
 export async function getSchool(slug: string, now: Date = new Date()): Promise<MedSchoolDetailDto | null> {
   const school = await findSchool(slug);
   if (!school) return null;
-  const cycleYear = resolveCycleYear({ latestWithData: await latestCycleWith({ schoolId: school.id }), now });
+  const cycleYear = await siteCycle(now);
   const [aliases, threads, stats, profiles, questions, programRows] = await Promise.all([
     prisma.medSchoolAlias.findMany({ where: { schoolId: school.id }, select: { source: true, sourceKey: true } }),
     prisma.medSdnThread.findMany({
@@ -199,7 +212,10 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
       select: { threadId: true, slug: true, cycleYear: true, archive: true },
     }),
     prisma.medSchoolStats.findMany({
-      where: { schoolId: school.id, cycleYear },
+      // ADMIT stats are written under the interview-season cycle and labelled "all reported cycles": read them
+      // whatever cycle they carry and keep the newest per (program, residence) below.
+      where: { schoolId: school.id, OR: [{ cycleYear }, { source: 'ADMIT' }] },
+      orderBy: { cycleYear: 'desc' },
       select: {
         source: true,
         program: true,
@@ -254,7 +270,13 @@ export async function getSchool(slug: string, now: Date = new Date()): Promise<M
     }),
   ]);
   // D5: an in/out-of-state row (and any RMH row) stands only on at least K_FLOOR contributors; null fails closed.
+  const seenAdmit = new Set<string>();
   const shownStats = stats.filter((s) => {
+    if (s.source === 'ADMIT') {
+      const key = `${s.program}|${s.residence}`;
+      if (seenAdmit.has(key)) return false;
+      seenAdmit.add(key);
+    } else if (s.cycleYear !== cycleYear) return false;
     const guarded = s.residence !== 'GLOBAL' || s.source === 'RMH';
     return !guarded || (s.contributors !== null && s.contributors >= K_FLOOR);
   });
@@ -312,18 +334,14 @@ export async function getActivity(
   const school = await findSchool(slug);
   if (!school) return null;
   const program = q.program ?? 'ALL';
-  const cycleYear = resolveCycleYear({
-    ...(q.cycle !== undefined ? { requested: q.cycle } : {}),
-    latestWithData: await latestCycleWith({ schoolId: school.id }),
-    now,
-  });
+  const cycleYear = await siteCycle(now, q.cycle);
   const [rows, cycle, unreported] = await Promise.all([
     prisma.medCycleCount.findMany({
       where: {
         schoolId: school.id,
         cycleYear,
         program: { in: programsOf(program) },
-        eventType: { in: [...CHARTED_TYPES] },
+        eventType: { in: [...CHARTED_TYPES, ...OTHER_TOTAL_TYPES] },
       },
       select: { source: true, date: true, eventType: true, count: true, contributors: true },
     }),
@@ -339,6 +357,17 @@ export async function getActivity(
       contributors: r.contributors,
     })),
   );
+  // Withdrawn and hold are totals only, never charted: floored and summed per source like the rest.
+  const otherTotals = OTHER_TOTAL_TYPES.map((eventType) => {
+    const bySource = new Map<MedSource, number>();
+    for (const c of cells) {
+      if (c.eventType === eventType) bySource.set(c.source, (bySource.get(c.source) ?? 0) + c.count);
+    }
+    return {
+      eventType,
+      sources: [...bySource].map(([source, total]) => ({ source, total })),
+    };
+  }).filter((o) => o.sources.length > 0);
   const types: ActivityTypeDto[] = CHARTED.map((eventType) => {
     const s = buildTypeSeries(cells.filter((c) => c.eventType === eventType));
     return { eventType, primary: s.primary, sources: s.sources };
@@ -349,6 +378,7 @@ export async function getActivity(
     dayZeroOn: cycle ? day(cycle.dayZeroOn) : defaultDayZero(cycleYear),
     dayZeroEstimated: cycle ? cycle.dateEstimated : true,
     types,
+    otherTotals,
     unreportedProgram: unreported.count,
     unreportedProgramSource: unreported.source,
   };
@@ -469,14 +499,14 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
 
 export async function getToday(q: TodayQuery, now: Date = new Date()): Promise<MedTodayRes> {
   const program = q.program ?? 'ALL';
-  const cycleYear = resolveCycleYear({ latestWithData: await latestCycleWith({ eventType: 'INTERVIEW' }), now });
+  const cycleYear = await siteCycle(now);
   const today = day(now);
   const where = {
     cycleYear,
     eventType: 'INTERVIEW' as const,
     program: { in: programsOf(program) },
     count: { gt: 0 },
-    school: { active: true },
+    school: { active: true, ...(q.degree ? { degree: q.degree } : {}) },
     ...FLOOR_WHERE,
   };
   const latest = await prisma.medCycleCount.findFirst({

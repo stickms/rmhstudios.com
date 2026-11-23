@@ -1,5 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
+import { cycleLabel } from '@features/medschools/engine/cycle';
 import { getCardData } from '@features/medschools/api/read.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
 
@@ -22,7 +23,15 @@ export const route = apiRoute('/api/og/med-school/$slug', {
       subtitle: `${card.degree} · ${card.city}, ${card.state}`,
       path: `/rmh-medschool/${params.slug}`,
       ...(card.reported
-        ? { stats: [{ value: String(card.reported.count), label: 'reported interview events this cycle', lead: true }] }
+        ? {
+            stats: [
+              {
+                value: String(card.reported.count),
+                label: `reported interview events, ${cycleLabel(card.cycleYear)} cycle`,
+                lead: true,
+              },
+            ],
+          }
         : {}),
     });
 

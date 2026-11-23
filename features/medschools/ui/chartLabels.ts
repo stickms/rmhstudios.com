@@ -21,6 +21,7 @@ export function useChartLabels(): (title: string) => ChartLabels {
             others: comparison.join(', '),
           })
         : t('chart-sources', { defaultValue: 'Sources: {{primary}} (primary)', primary }),
+    sourcesPlain: (names) => t('chart-sources-plain', { defaultValue: 'Sources: {{names}}', names: names.join(', ') }),
     primary: t('chart-primary', { defaultValue: 'Primary' }),
     comparison: t('chart-comparison', { defaultValue: 'Comparison' }),
     date: t('chart-date', { defaultValue: 'Date' }),

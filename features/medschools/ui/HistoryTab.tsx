@@ -96,6 +96,7 @@ export function HistoryTab({
             <CycleOverlay
               cycles={lines.slice(0, 4)}
               sourceName={sourceName(chosen)}
+              currentCycleYear={detail.cycleYear}
               labels={chartLabels(
                 t('school-history-title', {
                   defaultValue: '{{type}} by cycle',

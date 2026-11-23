@@ -94,12 +94,27 @@ describe('defaults stay out of the URL (stripSearchParams)', () => {
     });
   it('index and live drop program=ALL and keep a real choice', () => {
     expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({}))).toEqual({});
-    expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({ program: 'PHD', q: 'duke' }))).toEqual({
+    expect(strip(INDEX_SEARCH_DEFAULTS, parseIndexSearch({ program: 'PHD', degree: 'MD', q: 'duke' }))).toEqual({
+      degree: 'MD',
       program: 'PHD',
       q: 'duke',
     });
     expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({}))).toEqual({});
     expect(strip(LIVE_SEARCH_DEFAULTS, parseLiveSearch({ program: 'NONE' }))).toEqual({ program: 'NONE' });
+  });
+  it('a program without a degree is All on index and live (the control could not show it)', () => {
+    expect(parseIndexSearch({ program: 'PHD' }).program).toBe('ALL');
+    expect(parseIndexSearch({ program: 'PHD', degree: 'DO' }).program).toBe('PHD');
+    expect(parseLiveSearch({ program: 'REG' }).program).toBe('ALL');
+    expect(parseLiveSearch({ program: 'REG', degree: 'MD' }).program).toBe('REG');
+    expect(parseLiveSearch({ program: 'NONE' }).program).toBe('NONE');
+    expect(parseSchoolSearch({ program: 'PHD' }).program).toBe('PHD');
+  });
+  it('limits match the API: q 80 characters, cycle 2000-2100', () => {
+    expect(parseIndexSearch({ q: 'a'.repeat(200) }).q).toHaveLength(80);
+    expect(parseSchoolSearch({ cycle: '1999' }).cycle).toBeUndefined();
+    expect(parseSchoolSearch({ cycle: '2101' }).cycle).toBeUndefined();
+    expect(parseSchoolSearch({ cycle: '2100' }).cycle).toBe(2100);
   });
   it('school drops tab, program, type and the all-five show list, keeps the rest', () => {
     expect(strip(SCHOOL_SEARCH_DEFAULTS, validateSchoolSearch({}))).toEqual({});

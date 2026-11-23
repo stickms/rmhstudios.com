@@ -214,6 +214,60 @@ describe('getActivity', () => {
   });
 });
 
+describe('the cycle is resolved once, site-wide', () => {
+  it("getActivity, getSchool and getCardData never look up the school's own newest cycle", async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    // Site-wide latest INTERVIEW row is 2027; this school has nothing in 2027 (only older cycles).
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    await getActivity('duke', {}, NOW);
+    await getSchool('duke', NOW);
+    await getCardData('duke', NOW);
+    for (const [args] of m.medCycleCount.findFirst.mock.calls) {
+      const w = (args as { where: Record<string, unknown> }).where;
+      expect(w).not.toHaveProperty('schoolId');
+      expect(w).toMatchObject({ eventType: 'INTERVIEW' });
+    }
+    const act = m.medCycleCount.findMany.mock.calls[0]![0] as { where: { cycleYear: number } };
+    expect(act.where.cycleYear).toBe(2027);
+    expect((await getActivity('duke', {}, NOW))!.cycleYear).toBe(2027);
+  });
+
+  it('an explicit cycle wins, and a June interview row of Y is not hidden by a Y+1 secondary', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    expect((await getActivity('duke', { cycle: 2025 }, NOW))!.cycleYear).toBe(2025);
+    // 2027-06-15: the rollover says 2028, but the newest INTERVIEW data is 2027.
+    expect((await getActivity('duke', {}, new Date('2027-06-15T00:00:00Z')))!.cycleYear).toBe(2027);
+  });
+});
+
+describe('getActivity other totals', () => {
+  it('totals withdrawn and hold per source, floored, and never charts them', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    const row = (source: string, eventType: string, count: number, contributors: number | null = null) => ({
+      source,
+      date: d('2026-11-10'),
+      eventType,
+      count,
+      contributors,
+    });
+    m.medCycleCount.findMany.mockResolvedValue([
+      row('ADMIT', 'WITHDRAWN', 2),
+      row('ADMIT', 'WITHDRAWN', 3),
+      row('RMH', 'HOLD', 4, 2),
+      row('SDN', 'HOLD', 1),
+    ]);
+    const res = (await getActivity('duke', {}, NOW))!;
+    expect(res.otherTotals).toEqual([
+      { eventType: 'WITHDRAWN', sources: [{ source: 'ADMIT', total: 5 }] },
+      { eventType: 'HOLD', sources: [{ source: 'SDN', total: 1 }] },
+    ]);
+    expect(res.types.map((t) => t.eventType)).not.toContain('WITHDRAWN');
+    const w = (m.medCycleCount.findMany.mock.calls[0]![0] as { where: { eventType: { in: string[] } } }).where;
+    expect(w.eventType.in).toEqual(expect.arrayContaining(['WITHDRAWN', 'HOLD']));
+  });
+});
+
 describe('getHistory', () => {
   it('gives cumulative points by day of cycle, newest first, at most four', async () => {
     m.medSchool.findFirst.mockResolvedValue(school);
@@ -322,12 +376,35 @@ describe('getSchool', () => {
 
   it('marks ADMIT stats as spanning all cycles', async () => {
     m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
     m.medSchoolStats.findMany.mockResolvedValue([{ ...stat('GLOBAL', null), source: 'ADMIT' }, stat('GLOBAL', null)]);
     const res = (await getSchool('duke', NOW))!;
     expect(res.stats.map((x) => [x.source, x.allCycles])).toEqual([
       ['ADMIT', true],
       ['CYCLETRACK', false],
     ]);
+  });
+
+  it('reads the newest ADMIT stats per program and residence whatever cycle they carry', async () => {
+    m.medSchool.findFirst.mockResolvedValue(school);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    const a = (cycleYear: number, gpa: number) => ({
+      ...stat('GLOBAL', null),
+      source: 'ADMIT',
+      cycleYear,
+      gpaMedian: gpa,
+    });
+    // Prisma returns them ordered cycleYear desc; the 2025 row is stale, the 2026 ADMIT row stands in for 2027.
+    m.medSchoolStats.findMany.mockResolvedValue([
+      a(2026, 3.8),
+      a(2025, 3.5),
+      { ...stat('GLOBAL', null), cycleYear: 2026 },
+    ]);
+    const res = (await getSchool('duke', NOW))!;
+    expect(res.stats.map((x) => [x.source, x.cycleYear, x.gpaMedian])).toEqual([['ADMIT', 2026, 3.8]]);
+    const args = m.medSchoolStats.findMany.mock.calls[0]![0] as { where: { OR: unknown[] }; orderBy: unknown };
+    expect(args.where.OR).toEqual([{ cycleYear: 2027 }, { source: 'ADMIT' }]);
+    expect(args.orderBy).toEqual({ cycleYear: 'desc' });
   });
 
   it('floors programsWithData and the latest-cycle lookup', async () => {
@@ -390,6 +467,15 @@ describe('getToday', () => {
     expect(res.schools).toEqual([
       { slug: 'duke', shortName: 'Duke', name: 'Duke', city: 'Durham', state: 'NC', count: 4, source: 'ADMIT' },
     ]);
+  });
+
+  it('respects the degree filter', async () => {
+    m.medCycleCount.findFirst
+      .mockResolvedValueOnce({ cycleYear: 2027 })
+      .mockResolvedValueOnce({ date: d('2027-11-20') });
+    await getToday({ degree: 'DO' }, NOW);
+    const w = (m.medCycleCount.findMany.mock.calls[0]![0] as { where: { school: unknown } }).where;
+    expect(w.school).toEqual({ active: true, degree: 'DO' });
   });
 
   it('is empty with no interview counts', async () => {

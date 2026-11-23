@@ -25,8 +25,13 @@ export type LiveFilters = QueryOf<typeof getMedLiveApi>;
 export const schoolsQuery = (q: IndexQuery) =>
   contractQuery(['medschools', 'schools', q], listMedSchoolsApi, { query: q }, { staleTime: 60_000 });
 
-export const todayQuery = (program: MedProgramFilter) =>
-  contractQuery(['medschools', 'today', program], getMedTodayApi, { query: { program } }, { staleTime: 60_000 });
+export const todayQuery = (program: MedProgramFilter, degree?: MedDegreeId) =>
+  contractQuery(
+    ['medschools', 'today', program, degree ?? null],
+    getMedTodayApi,
+    { query: { program, degree } },
+    { staleTime: 60_000 },
+  );
 
 export const schoolQuery = (slug: string) =>
   contractQuery(['medschools', 'school', slug], getMedSchoolApi, { params: { slug } }, { staleTime: 60_000 });
@@ -57,7 +62,9 @@ export function resolveLiveFilters(
 ): LiveFilters {
   // A degree that contradicts the one school the feed is filtered to is dropped.
   const degree = schoolDegree && search.degree !== schoolDegree ? undefined : search.degree;
-  return { type: search.type, school: search.school, degree, program: search.program };
+  // A program belongs to a degree (MD-PhD): with no degree left, only "program not reported" can still filter.
+  const program = degree || search.program === 'NONE' ? search.program : 'ALL';
+  return { type: search.type, school: search.school, degree, program };
 }
 
 /** The degree of the school the live feed is filtered to, read from the (cached) school list. */

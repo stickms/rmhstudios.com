@@ -1,18 +1,28 @@
 /**
  * RMH Med Schools public pages, black box (phase 3, plan Task 12 Step 3).
  *
- * Runs against a RUNNING app whose database was seeded by `scripts/medschools/seed-visual.ts` (FIXTURE rows: three
- * sources, an RMH count row with 2 contributors, an in-state stats row with 2 contributors, null-program events,
- * several events sharing one `occurredAt`). Everything here is anonymous: no session, no cookie needed.
+ * Runs against a RUNNING app and writes its own data: `lib/medschools-fixture.ts` inserts one FIXTURE school (an RMH
+ * count row with 2 contributors, an in-state stats row with 2 contributors, null-program events, several events sharing
+ * one `occurredAt`) under a test-only slug in `beforeAll` and deletes it in `afterAll`. It needs no seed script, so it
+ * passes against an empty migrated database and against one that already holds `scripts/medschools/seed-visual.ts`
+ * data. Everything here is anonymous: no session, no cookie needed.
  *
- *   DATABASE_URL=postgresql://postgres@127.0.0.1:55432/scratch pnpm exec tsx scripts/medschools/seed-visual.ts
  *   INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration -- testing/integration/medschools-public.test.ts
  */
-import { describe, expect, it } from 'vitest';
-import { Client } from './lib/client';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { Client, closeDb } from './lib/client';
+import { MEDSCHOOL_FIXTURE_SLUG, removeMedSchoolsFixture, seedMedSchoolsFixture } from './lib/medschools-fixture';
 
 const anon = new Client();
-const SLUG = 'harvard';
+const SLUG = MEDSCHOOL_FIXTURE_SLUG;
+
+beforeAll(async () => {
+  await seedMedSchoolsFixture();
+});
+afterAll(async () => {
+  await removeMedSchoolsFixture();
+  await closeDb();
+});
 
 /** The pinned public key sets: a new key on any of these is a privacy review, not a drive-by. */
 const LIVE_EVENT_KEYS = ['eventType', 'id', 'occurredAt', 'program', 'school', 'source'];

@@ -16,12 +16,14 @@ const PRIOR_DASH: (string | undefined)[] = [undefined, '6 3', '2 3'];
 
 /**
  * Cumulative reported events by day of the cycle, one line per cycle, from ONE source (D4: never cross-source). The
- * cycles are different years, so the axis is the day of the cycle ("Days since cycle start"), not a date. The first
- * cycle is the current one (solid ink 2px); the rest are muted 1.5px. Each line ends in its cycle year.
+ * cycles are different years, so the axis is the day of the cycle ("Days since cycle start"), not a date. The line of
+ * the current cycle, if it has data, is solid ink 2px; every other is muted 1.5px. Each line ends in its cycle year.
  */
 export function CycleOverlay(p: {
   cycles: { cycleYear: number; points: { day: number; cumulative: number }[] }[];
   sourceName: string;
+  /** The site's current cycle: only its line is the solid ink one; every other line is prior-style. */
+  currentCycleYear: number;
   labels: ChartLabels;
 }) {
   const { labels } = p;
@@ -59,18 +61,22 @@ export function CycleOverlay(p: {
       <ResponsivePlot
         xTitle={hasData ? labels.daysSinceStart : undefined}
         render={(g) => {
-          const drawn = p.cycles.map((c, i) => ({
-            c,
-            current: i === 0,
-            dash: i === 0 ? undefined : PRIOR_DASH[(i - 1) % PRIOR_DASH.length],
-            ...linePath(
-              c.points.map((q) => ({ x: q.day, y: q.cumulative })),
-              domain,
-              yMax,
-              true,
-              g,
-            ),
-          }));
+          let priors = 0;
+          const drawn = p.cycles
+            .map((c) => {
+              const current = c.cycleYear === p.currentCycleYear;
+              return { c, current, dash: current ? undefined : PRIOR_DASH[priors++ % PRIOR_DASH.length] };
+            })
+            .map((l) => ({
+              ...l,
+              ...linePath(
+                l.c.points.map((q) => ({ x: q.day, y: q.cumulative })),
+                domain,
+                yMax,
+                true,
+                g,
+              ),
+            }));
           const ends = drawn.filter((l) => l.end);
           const labelYs = spreadLabels(
             ends.map((l) => l.end!.y),

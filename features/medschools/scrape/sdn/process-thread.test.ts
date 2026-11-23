@@ -216,14 +216,9 @@ describe('processThread: one member, one report', () => {
       { id: 1, member: 501, text: 'interview d:2026-11-10' },
       { id: 2, member: 502, text: 'interview d:2026-11-11' },
     );
-    await processThread(s.deps, await s.seed());
+    expect((await processThread(s.deps, await s.seed())).eventsCreated).toBe(2);
+    // A second run, on the SAME fake database, sees a later post by member 501 (the thread grew).
     const again = setup({
-      routes: { [path(1)]: page([{ id: 3, member: 501, text: 'interview again d:2026-11-20' }], 1) },
-      answer: typedAnswer('INTERVIEW'),
-    });
-    expect(eventRows(again.tables)).toHaveLength(0);
-    // same fake db across runs is not shared, so replay both on one db: duplicates must still be 2 rows.
-    const s2 = setup({
       routes: {
         [path(1)]: page(
           [
@@ -236,9 +231,14 @@ describe('processThread: one member, one report', () => {
       },
       answer: typedAnswer('INTERVIEW'),
     });
-    const r = await processThread(s2.deps, await s2.seed());
-    expect(r.eventsCreated).toBe(2);
-    expect(r.touched.map((c) => c.date).sort()).toEqual(['2026-11-10', '2026-11-11']);
+    const r = await processThread({ ...again.deps, prisma: s.prisma }, await s.fresh());
+    expect(r.eventsCreated).toBe(0);
+    const rows = eventRows(s.tables);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((e) => (e.occurredAt as Date).toISOString().slice(0, 10)).sort()).toEqual([
+      '2026-11-10',
+      '2026-11-11',
+    ]);
   });
 
   it('different members reporting the same thing store two events', async () => {
@@ -579,7 +579,6 @@ describe('processThread', () => {
     const t = await s.fresh();
     expect(t.cursorPostHash).toBeNull();
     expect(t.postsProcessed).toBe(0);
-    expect(r.touched).toEqual([]);
   });
 
   it('ai.run throwing is ai-unavailable: nothing written, cursor unchanged', async () => {

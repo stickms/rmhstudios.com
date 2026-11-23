@@ -20,6 +20,8 @@ export interface ChartLabels {
   daysSinceStart: string;
   /** "Sources: CycleTrack (primary), Admit.org", built from the sources the chart was given. */
   sourcesLine: (v: { primary: string; comparison: string[] }) => string;
+  /** "Sources: A, B" for a chart whose lines each have their own primary (no one source is the primary). */
+  sourcesPlain: (names: string[]) => string;
   primary: string;
   comparison: string;
   date: string;

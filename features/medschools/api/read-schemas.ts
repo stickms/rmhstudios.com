@@ -44,7 +44,7 @@ export const liveQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-export const todayQuery = z.object({ program: program.optional() });
+export const todayQuery = z.object({ program: program.optional(), degree: degree.optional() });
 
 export type ListSchoolsQuery = z.infer<typeof listSchoolsQuery>;
 export type ActivityQuery = z.infer<typeof activityQuery>;
