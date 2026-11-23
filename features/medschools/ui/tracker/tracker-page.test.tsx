@@ -69,8 +69,9 @@ vi.mock('@/components/errors/useRefusalText', () => ({
 
 import { TrackerPage } from './TrackerPage';
 import { MilestoneForm } from './MilestoneForm';
-import { trackerQuery } from '../../medschools.queries';
-import type { TrackerApplicationDto, TrackerDto } from '../../medschools.contract';
+import { HttpError } from '@/lib/http';
+import { chancesQuery, trackerQuery } from '../../medschools.queries';
+import type { ChanceDto, MedChancesRes, TrackerApplicationDto, TrackerDto } from '../../medschools.contract';
 
 const app = (o: Partial<TrackerApplicationDto> & Pick<TrackerApplicationDto, 'id'>): TrackerApplicationDto => ({
   school: {
@@ -114,10 +115,34 @@ const dto = (o: Partial<TrackerDto> = {}): TrackerDto => ({
   ...o,
 });
 
-function render(data: TrackerDto | null, signedIn = true): string {
+const chance = (o: Partial<ChanceDto> & Pick<ChanceDto, 'applicationId'>): ChanceDto => ({
+  school: { slug: 'duke', shortName: 'Duke', name: 'Duke University School of Medicine', active: true },
+  program: 'REG',
+  status: 'thin',
+  completeOn: null,
+  invitedOn: null,
+  asOf: null,
+  basis: null,
+  points: [],
+  ...o,
+});
+
+/** `chances`: the answer, or an error the query is in. Absent means the query was never answered. */
+function render(
+  data: TrackerDto | null,
+  signedIn = true,
+  chances?: MedChancesRes | Error,
+  cycle: number | undefined = 2027,
+): string {
   h.session = signedIn ? { user: { id: 'u1' } } : null;
-  const qc = new QueryClient();
+  // An errored query would be refetched on mount and render as pending; keep it as the test set it.
+  const qc = new QueryClient({ defaultOptions: { queries: { retryOnMount: false } } });
   if (data) qc.setQueryData(trackerQuery(undefined).queryKey, data);
+  if (chances instanceof Error) {
+    qc.getQueryCache()
+      .build(qc, { queryKey: chancesQuery({ cycle }).queryKey })
+      .setState({ status: 'error', error: chances, fetchStatus: 'idle', errorUpdateCount: 1 });
+  } else if (chances) qc.setQueryData(chancesQuery({ cycle }).queryKey, chances);
   return renderToString(
     <QueryClientProvider client={qc}>
       <TrackerPage />
@@ -224,6 +249,93 @@ describe('TrackerPage signed in', () => {
 
   it('states that home state is never shared', () => {
     expect(render(dto())).toContain('Never shared.');
+  });
+});
+
+describe('TrackerPage invite chance', () => {
+  const answer = (...chances: ChanceDto[]): MedChancesRes => ({ cycleYear: 2027, chances });
+  const estimate = chance({
+    applicationId: 'a1',
+    status: 'estimate',
+    completeOn: '2026-10-31',
+    asOf: '2026-11-19',
+    basis: 30,
+    points: [
+      { on: '2026-11-27', percent: 29 },
+      { on: '2026-12-20', percent: 57 },
+    ],
+  });
+
+  it('an estimate is a row per horizon with a calendar date, then where it comes from', () => {
+    const html = render(dto(), true, answer(estimate));
+    expect(html).toContain('If you have not heard by today, the chance of an interview invite is 29% by Nov 27');
+    expect(html).toContain('the chance of an interview invite is 57% by Dec 20');
+    expect(html).toContain('Estimate as of Nov 19, from at least 30 members&#x27; applications at this school.');
+    expect(html).not.toMatch(/day \d|!/);
+  });
+
+  it('each other status shows its line, and closed shows nothing', () => {
+    const lines: [ChanceDto['status'], string][] = [
+      ['thin', 'Not enough data yet for an estimate here. It needs at least 20 members at this school.'],
+      ['no-complete', 'Add the date your application was complete to see an estimate.'],
+      ['beyond', 'Too few comparable applications are still waiting at this point for an estimate.'],
+    ];
+    for (const [status, text] of lines) {
+      expect(render(dto(), true, answer(chance({ applicationId: 'a1', status })))).toContain(text);
+    }
+    expect(
+      render(dto(), true, answer(chance({ applicationId: 'a1', status: 'invited', invitedOn: '2026-11-20' }))),
+    ).toContain('Invited on Nov 20.');
+    expect(render(dto(), true, answer(chance({ applicationId: 'a1', status: 'closed' })))).not.toContain('data-chance');
+  });
+
+  it('a line belongs to its own application only', () => {
+    const html = render(dto(), true, answer(chance({ applicationId: 'a2', status: 'no-complete' })));
+    expect(html.match(/data-chance/g)).toHaveLength(1);
+    expect(html.indexOf('data-chance')).toBeGreaterThan(html.indexOf('Ohio DO College'));
+  });
+
+  it('a failed chances request leaves the tracker whole: no line, no banner', () => {
+    const html = render(dto(), true, new HttpError(500, 'boom'));
+    expect(html).toContain('Duke University School of Medicine');
+    expect(html).not.toContain('data-chance');
+    expect(html).not.toContain('role="alert"');
+    expect(html).not.toContain('Sign in to track your cycle');
+  });
+
+  it('a 401 on chances after load is the session-expiry path', () => {
+    expect(render(dto(), true, new HttpError(401, 'no'))).toContain('Sign in to track your cycle');
+  });
+
+  it('a cycle with no applications asks for no chances', () => {
+    const none = dto();
+    none.cycle!.applications = [];
+    const qc = new QueryClient();
+    h.session = { user: { id: 'u1' } };
+    qc.setQueryData(trackerQuery(undefined).queryKey, none);
+    renderToString(
+      <QueryClientProvider client={qc}>
+        <TrackerPage />
+      </QueryClientProvider>,
+    );
+    const q = qc.getQueryCache().find({ queryKey: ['medschools', 'me', 'chances'] });
+    expect(q?.getObserversCount() ?? 0).toBeLessThanOrEqual(1);
+    expect(q?.isDisabled() ?? true).toBe(true);
+  });
+
+  it('the sharing row has the estimate line whether sharing is on or off, and the shipped copy is unchanged', () => {
+    for (const on of [false, true]) {
+      const d = dto();
+      d.cycle!.shareAnonymously = on;
+      const html = render(d);
+      expect(html).toContain('feeds an estimate shown for this school once at least 20 members contribute');
+      expect(html).toContain('Only the estimate is shown, never a date or a row.');
+      expect(html).toContain('Your submission and completion dates and your home state are never shared');
+    }
+  });
+
+  it('the tracker still has one ink primary with chance rows on it', () => {
+    expect(primaries(render(dto(), true, answer(estimate)))).toBe(1);
   });
 });
 

@@ -273,6 +273,7 @@
   "share-label": "Share my milestones anonymously",
   "share-too-new": "Sharing needs an account at least {{days}} days old. You can turn it on once yours is.",
   "share-unavailable": "Sharing is unavailable right now.",
+  "share-wait-note": "When sharing is on, the time between your complete date and an invite also feeds an estimate shown for this school once at least 20 members contribute. Only the estimate is shown, never a date or a row.",
   "source-line": "Source: {{name}}",
   "source-line-cycle": "Source: {{name}}, {{year}} cycle",
   "source-line-summary": "Source: {{name}}, interview feedback",

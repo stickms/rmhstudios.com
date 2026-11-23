@@ -13,8 +13,9 @@ import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { formatUtcDay } from '../../engine/public-read';
 import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { LIMITS, type MilestoneType } from '../../engine/tracker';
-import type { TrackerApplicationDto } from '../../medschools.contract';
+import type { ChanceDto, TrackerApplicationDto } from '../../medschools.contract';
 import { useMedLabels } from '../labels';
+import { ChanceLine } from './ChanceLine';
 import { MilestoneForm } from './MilestoneForm';
 
 type Panel =
@@ -29,6 +30,7 @@ export function ApplicationRow({
   app,
   cycleYear,
   sharing,
+  chance,
   onSaveMilestone,
   onRemoveMilestone,
   onSaveNotes,
@@ -38,6 +40,8 @@ export function ApplicationRow({
   cycleYear: number;
   /** Whether this cycle shares anonymously: the remove confirmation says shared events go too. */
   sharing: boolean;
+  /** This application's invite chance, once loaded; absent while loading or when it failed (the row is whole without it). */
+  chance?: ChanceDto | undefined;
   onSaveMilestone: (type: MilestoneType, date: string) => Promise<void>;
   onRemoveMilestone: (type: MilestoneType) => Promise<void>;
   onSaveNotes: (notes: string | null) => Promise<void>;
@@ -180,6 +184,8 @@ export function ApplicationRow({
           })}
         </ul>
       ) : null}
+
+      <ChanceLine chance={chance} />
 
       {app.notes && panel.kind !== 'notes' ? <p className="t-meta m-0 mt-2 whitespace-pre-wrap">{app.notes}</p> : null}
 
