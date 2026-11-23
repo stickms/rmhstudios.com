@@ -4,7 +4,6 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FollowButton } from '@/components/reading/FollowButton';
-import { getCategoryColor } from '@/lib/news-categories';
 import type { StoryPageData } from '@/lib/reading/schema';
 
 /** L5 — the story page: summary, then the articles in date order. */
@@ -36,7 +35,6 @@ export function StoryTimeline({ story }: { story: Pick<StoryPageData, 'slug' | '
             })}
           >
             {story.articles.map((a, i) => {
-              const color = getCategoryColor(a.category);
               return (
                 <li key={a.slug} className="relative">
                   <span
@@ -53,7 +51,7 @@ export function StoryTimeline({ story }: { story: Pick<StoryPageData, 'slug' | '
                     }}
                     className="surface-press mt-2 block rounded-site px-4 py-3"
                   >
-                    <Badge className={`mb-2 ${color.bg} ${color.text} ${color.border}`}>{a.category}</Badge>
+                    <Badge className="mb-2">{a.category}</Badge>
                     <h2 className="text-lg font-semibold leading-snug text-site-text">{a.title}</h2>
                     <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-site-text-muted">{a.description}</p>
                     {i === 0 ? (

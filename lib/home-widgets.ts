@@ -180,6 +180,7 @@ export const SIDEBAR_NAV_IDS = [
   '/messages',
   '/create',
   '/games',
+  '/news',
   '/library',
   '/communities',
   '/store',
@@ -205,6 +206,7 @@ const SIDEBAR_ID_SET = new Set<string>(SIDEBAR_NAV_IDS);
  */
 export const SIDEBAR_HIDEABLE_IDS = [
   '/create',
+  '/news',
   '/library',
   '/communities',
   '/store',

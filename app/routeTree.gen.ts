@@ -402,8 +402,6 @@ import { Route as ApiInternalStreakPushRouteImport } from './routes/api/internal
 import { Route as ApiKaikaiDebtAskRouteImport } from './routes/api/kaikai-debt/ask'
 import { Route as ApiKaikaiDebtStreamRouteImport } from './routes/api/kaikai-debt/stream'
 import { Route as ApiMessagesStreamRouteImport } from './routes/api/messages/stream'
-import { Route as ApiNewsApproveRouteImport } from './routes/api/news/approve'
-import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
 import { Route as ApiReplaysGhostRouteImport } from './routes/api/replays/ghost'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
 import { Route as ApiRmhcalculatorComputeRouteImport } from './routes/api/rmhcalculator/compute'
@@ -2610,16 +2608,6 @@ const ApiMessagesStreamRoute = ApiMessagesStreamRouteImport.update({
   path: '/api/messages/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiNewsApproveRoute = ApiNewsApproveRouteImport.update({
-  id: '/api/news/approve',
-  path: '/api/news/approve',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiNewsRejectRoute = ApiNewsRejectRouteImport.update({
-  id: '/api/news/reject',
-  path: '/api/news/reject',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiReplaysGhostRoute = ApiReplaysGhostRouteImport.update({
   id: '/api/replays/ghost',
   path: '/api/replays/ghost',
@@ -4174,8 +4162,6 @@ export interface FileRoutesByFullPath {
   '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
-  '/api/news/approve': typeof ApiNewsApproveRoute
-  '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhcalculator/compute': typeof ApiRmhcalculatorComputeRoute
@@ -4771,8 +4757,6 @@ export interface FileRoutesByTo {
   '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
-  '/api/news/approve': typeof ApiNewsApproveRoute
-  '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhcalculator/compute': typeof ApiRmhcalculatorComputeRoute
@@ -5396,8 +5380,6 @@ export interface FileRoutesById {
   '/api/kaikai-debt/ask': typeof ApiKaikaiDebtAskRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
-  '/api/news/approve': typeof ApiNewsApproveRoute
-  '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhcalculator/compute': typeof ApiRmhcalculatorComputeRoute
@@ -6021,8 +6003,6 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ask'
     | '/api/kaikai-debt/stream'
     | '/api/messages/stream'
-    | '/api/news/approve'
-    | '/api/news/reject'
     | '/api/replays/ghost'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhcalculator/compute'
@@ -6618,8 +6598,6 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ask'
     | '/api/kaikai-debt/stream'
     | '/api/messages/stream'
-    | '/api/news/approve'
-    | '/api/news/reject'
     | '/api/replays/ghost'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhcalculator/compute'
@@ -7242,8 +7220,6 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ask'
     | '/api/kaikai-debt/stream'
     | '/api/messages/stream'
-    | '/api/news/approve'
-    | '/api/news/reject'
     | '/api/replays/ghost'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhcalculator/compute'
@@ -7604,8 +7580,6 @@ export interface RootRouteChildren {
   ApiKaikaiDebtAskRoute: typeof ApiKaikaiDebtAskRoute
   ApiKaikaiDebtStreamRoute: typeof ApiKaikaiDebtStreamRoute
   ApiMessagesStreamRoute: typeof ApiMessagesStreamRoute
-  ApiNewsApproveRoute: typeof ApiNewsApproveRoute
-  ApiNewsRejectRoute: typeof ApiNewsRejectRoute
   ApiReplaysGhostRoute: typeof ApiReplaysGhostRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
   ApiRmhcalculatorComputeRoute: typeof ApiRmhcalculatorComputeRoute
@@ -10445,20 +10419,6 @@ declare module '@tanstack/react-router' {
       path: '/api/messages/stream'
       fullPath: '/api/messages/stream'
       preLoaderRoute: typeof ApiMessagesStreamRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/news/approve': {
-      id: '/api/news/approve'
-      path: '/api/news/approve'
-      fullPath: '/api/news/approve'
-      preLoaderRoute: typeof ApiNewsApproveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/news/reject': {
-      id: '/api/news/reject'
-      path: '/api/news/reject'
-      fullPath: '/api/news/reject'
-      preLoaderRoute: typeof ApiNewsRejectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/replays/ghost': {
@@ -13657,8 +13617,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKaikaiDebtAskRoute: ApiKaikaiDebtAskRoute,
   ApiKaikaiDebtStreamRoute: ApiKaikaiDebtStreamRoute,
   ApiMessagesStreamRoute: ApiMessagesStreamRoute,
-  ApiNewsApproveRoute: ApiNewsApproveRoute,
-  ApiNewsRejectRoute: ApiNewsRejectRoute,
   ApiReplaysGhostRoute: ApiReplaysGhostRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
   ApiRmhcalculatorComputeRoute: ApiRmhcalculatorComputeRoute,

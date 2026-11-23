@@ -143,8 +143,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/internal/predictions-tick.ts',
   'app/routes/api/internal/streak-push.ts',
   'app/routes/api/library/file/$id.ts',
-  'app/routes/api/news/approve.ts',
-  'app/routes/api/news/reject.ts',
   'app/routes/api/personas/avatar/$filename.ts',
   'app/routes/api/profile/avatar/$filename.ts',
   'app/routes/api/profile/banner/$filename.ts',

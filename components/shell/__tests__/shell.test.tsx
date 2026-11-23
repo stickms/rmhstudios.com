@@ -226,6 +226,9 @@ describe('the sidebar lists the sections as words, and "You" is the account row 
     expect(write('/u/rmh')).toBe('primary');
     expect(pageOwnsPrimary('/u/rmh/post/abc')).toBe(true);
     expect(pageOwnsPrimary('/u/rmh')).toBe(false);
+    expect(pageOwnsPrimary('/news/some-headline-abc1234')).toBe(true);
+    expect(pageOwnsPrimary('/news')).toBe(false);
+    expect(pageOwnsPrimary('/news/stories/a-story')).toBe(false);
   });
 
   it('maps paths to sections', () => {

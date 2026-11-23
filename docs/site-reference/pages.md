@@ -126,8 +126,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/messages/requests` | Message requests | public | `app/routes/_site/messages/requests.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
-| `/news` | News | public | `app/routes/_site/news/index.tsx` |
-| `/news/:slug` | — | public | `app/routes/_site/news/$slug.tsx` |
+| `/news` | RMH News | public | `app/routes/_site/news/index.tsx` |
+| `/news/:slug` | Article not found \| RMH News | public | `app/routes/_site/news/$slug.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
 | `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
 | `/office-hours/:userId` | Book office hours | public | `app/routes/_site/office-hours/$userId.tsx` |
@@ -319,7 +319,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/library/albums/:albumId` | — | public | `app/routes/library.albums.$albumId.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
-| `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
+| `/news/rss.xml` | RMH News | public | `app/routes/news.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |
 | `/offline` | Offline | public | `app/routes/offline.tsx` |
 | `/portal` | — | public | `app/routes/portal.tsx` |

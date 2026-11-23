@@ -416,7 +416,10 @@ async function newBlogItems(
   );
 }
 
-/** Published News articles created in `[after, until]`. */
+/**
+ * Published editorial News articles created in `[after, until]`. Wire headlines (RMH News ingest, hundreds a day) are
+ * left out: following a category is a follow of what the site writes, and a notification per headline would bury it.
+ */
 async function newNewsItems(
   db: Pick<Prisma.TransactionClient, 'newsArticle' | 'newsStoryArticle'>,
   after: Date,
@@ -427,6 +430,7 @@ async function newNewsItems(
   const rows = await db.newsArticle.findMany({
     where: {
       status: 'PUBLISHED',
+      origin: 'EDITORIAL',
       createdAt: {
         gte: after,
         ...(until
