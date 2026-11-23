@@ -314,12 +314,20 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   `features/medschools/ai-budget.ts`); `assertAiBudget` (402); then the atomic reservation (`reserveQuestion` in
   `api/qa/budget.server.ts`): one transaction under `pg_advisory_xact_lock` on the member writes a `medschools-qa-ask`
   row (the day's count, the tier's cap since UTC midnight, below: 429 `MEDSCHOOLS_QA_DAILY_CAP`) and a
-  `medschools-qa-lock` row (the in-flight lease, 60 s, deleted when the question ends: 429 `MEDSCHOOLS_QA_BUSY`).
+  `medschools-qa-lock` row (the in-flight lease, 150 s since R20, deleted when the question ends: 429 `MEDSCHOOLS_QA_BUSY`).
   Both are zero-token, zero-cost, text-free `AiUsage` rows, so the cap and the lease hold across every web process and do
   not depend on the provider's metering write. Any ledger error fails closed (503 paused, unavailable). The one thing a
   lost provider metering write can still do is under-count spend (it is logged by `meter`); the daily count cannot slip.
   The whole question has a 50 s deadline (`QA_DEADLINE_MS`, under the client's 60 s `AI_TIMEOUT_MS`) plus the request's
   own `signal`; both model calls take it and never retry. The web tier needs `DEEPSEEK_API_KEY`.
+- **Think it through (R20).** `think: true` in the ask body (optional) switches DeepSeek thinking on for the **answer
+  call only** (`runTask` option `thinking`, same `medschools-qa` task and JSON mode; the route call stays flash). Only
+  `message.content` is read: the reasoning text is dropped inside the provider and is never returned, stored, metered or
+  logged (it is ungrounded, so it would bypass the validator); the response carries `thinking: boolean` and the page says
+  "Thought for N s" (the question's own wall time, measured in `askRun`). `MEDSCHOOLS_QA_THINKING` (default on) gates it
+  and `GET me/ask` returns `thinkingAvailable`. Deadlines: whole question 120 s (`QA_THINK_DEADLINE_MS`, answer call gets
+  the remainder through the shared signal and a 120 s request timeout), the client's per-call timeout 135 s
+  (`QA_THINK_CLIENT_TIMEOUT_MS`; `AI_TIMEOUT_MS` is unchanged), the lease (member and admin) 150 s (`QA_LEASE_MS`).
 - **Limit tiers, the admin bypass and limit requests (R19).** The daily cap depends on the caller's tier, resolved on the
   server per request by `resolveQaTier` (`api/qa/budget.server.ts`): **admin** is the session's `isAdmin` (the
   `defineHandler` ctx field, the same flag `auth: 'admin'` checks), **member** is `getUserTier(userId) !== 'free'` (the
