@@ -18,6 +18,8 @@ const ALLOWED: Record<string, string> = {
   'features/medschools/api/share-sync.server.ts': 'the one writer',
   'lib/account/erasure-medschools.server.ts':
     'deleteMany of MedTrackerCycle in the erasure transaction, after eraseSharedMedEvents has removed the events',
+  'scripts/medschools/seed-visual.ts':
+    'FIXTURE tracker rows for the wait curve (a scratch database only; the script refuses any other). It writes no event, so no RMH event can outlive its milestone',
 };
 
 export function violations(file: string, text: string): string[] {
