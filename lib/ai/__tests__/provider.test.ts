@@ -47,6 +47,7 @@ const ALL_TASKS = [
   'summarize',
   'moderate',
   'medschools-extract',
+  'medschools-qa',
   'concierge',
   'narrative',
   'document',
@@ -95,6 +96,15 @@ describe('AI_ROUTES', () => {
   it('medschools-extract is a deterministic classifier route', () => {
     expect(AI_ROUTES['medschools-extract'].temperature).toBe(0);
     expect(AI_ROUTES['medschools-extract'].provider).toBe('deepseek');
+  });
+
+  it('medschools-qa is an interactive, short, single-attempt route', () => {
+    const route = AI_ROUTES['medschools-qa'];
+    expect(route.provider).toBe('deepseek');
+    expect(route.maxTokens).toBeGreaterThanOrEqual(600);
+    expect(route.maxTokens).toBeLessThanOrEqual(1_200);
+    // A second attempt doubles the spend of a question the member can simply retry.
+    expect(route.fallback).toBeUndefined();
   });
 });
 

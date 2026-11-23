@@ -78,7 +78,8 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
   },
   AiUsage: {
     decision: 'keep',
-    reason: "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record.",
+    reason:
+      "Rule 4: the coin ledger, payouts, purchases and stakes stay for accounting and the other party's record. A row holds the user id, task, prompt id, token counts, cost and time, never text: the RMH Med Schools Q&A (`medschools-qa`) writes no question or answer anywhere else either (`features/medschools/CLAUDE.md`), so its rows are the only trace and carry nothing to erase.",
   },
   AltairCoopProfile: {
     decision: 'erase',
@@ -913,6 +914,11 @@ export const ERASURE_REGISTRY: Record<string, ErasureEntry> = {
     decision: 'deidentify',
     reason:
       'Rules 2 and 3: published or shared content that other members see stays under "Deleted user" (as posts do); another member\'s record on it is not ours to remove. The exception is the member\'s own card sounds (voice recordings, s10-02), heard by nobody else: those rows go back to PENDING in the erasure transaction and are deleted with their stored objects after it.',
+  },
+  MedQaLimitRequest: {
+    decision: 'erase',
+    reason:
+      "The member's requests for a higher Q&A limit (their optional reason and an admin's reply; never a question). Where the member decided others' requests as an admin, `decidedBy` is nulled.",
   },
   MedSchoolList: {
     decision: 'erase',

@@ -127,8 +127,8 @@ describe('static rules', () => {
     const q = read('../medschools.queries.ts');
     expect(q).toContain("export const ME_KEY = ['medschools', 'me'] as const");
     for (const m of q.matchAll(/\[\.\.\.ME_KEY, '(\w+)'/g)) expect(m[1]).toBeTruthy();
-    // lists, prefs, tracker, chances (phase 5)
-    expect(q.match(/\[\.\.\.ME_KEY/g)?.length).toBe(4);
+    // lists, prefs, tracker, chances (phase 5), ask status and limit request (phase 6)
+    expect(q.match(/\[\.\.\.ME_KEY/g)?.length).toBe(6);
   });
   it('the queries file holds no createServerFn', () => {
     expect(read('../medschools.queries.ts')).not.toContain('createServerFn');

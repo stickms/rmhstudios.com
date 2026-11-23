@@ -424,7 +424,17 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    response and the live feed; D12 `program=ALL` shows the regular program. Facilitator rulings R1-R12 (only members who
    share feed the curve; every signed-in member sees the chance; the shown basis rounds down to a multiple of 10). The
    sharing switch gained one line of copy. Detail: `features/medschools/CLAUDE.md`.
-6. AI Q&A.
+6. AI Q&A. Phase 6 shipped as `/rmh-medschool/ask` and a panel on each school page (signed in only), served by
+   `POST/GET /api/medschools/me/ask`. Two `runTaskJson` calls under the `medschools-qa` task: route the question to
+   {intent, schools, cycle}, then write a structured answer from facts the server retrieved through the floored public
+   readers; the server resolves school names, and drops any sentence whose numbers or citations do not match the
+   retrieved facts (`engine/qa/ground.ts`). One JSON response, not streamed (a number can be checked only once its
+   sentence is whole). Every kept sentence cites rows, each with its source and when that source was refreshed. The
+   member's own invite estimate is shown beside the answer and never sent to the model. 15 questions per user per UTC
+   day (`MEDSCHOOLS_QA_DAILY_CAP`), and 25% of `MEDSCHOOLS_AI_MONTHLY_USD` reserved for Q&A (`MEDSCHOOLS_QA_AI_SHARE`),
+   so the scrape side runs inside the rest. Nothing about a question or an answer is stored, cached or logged.
+   Cross-school questions use state and format filters, not embeddings (deferred). Detail:
+   `features/medschools/CLAUDE.md`.
 7. Follow a school + wave notifications.
 
 ## 15. Calls made by the designer (owner may override)
