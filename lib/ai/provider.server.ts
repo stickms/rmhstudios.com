@@ -274,6 +274,10 @@ export interface RunOptions {
   /** Per-call override; the route's value is used when omitted. */
   maxTokens?: number;
   temperature?: number;
+  /** Aborts the HTTP call (a request's own signal, or a deadline). An aborted call is `AI_UNAVAILABLE`. */
+  signal?: AbortSignal;
+  /** Retries of a failed call; the client's default is 1. A caller on a deadline passes 0. */
+  maxRetries?: number;
 }
 
 /**
@@ -388,6 +392,9 @@ async function invoke(
     ...deepseekThinking(DEEPSEEK_FLASH),
     stream: false,
     ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
+  }, {
+    ...(opts.signal ? { signal: opts.signal } : {}),
+    ...(opts.maxRetries !== undefined ? { maxRetries: opts.maxRetries } : {}),
   });
 
   void meter({

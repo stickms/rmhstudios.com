@@ -88,6 +88,7 @@
   "medschoolsItemCap": "A list holds up to {{max}} schools",
   "medschoolsListCap": "You can keep up to {{max}} lists",
   "medschoolsListDuplicate": "That school is already on this list",
+  "medschoolsQaBusy": "Your last question is still being answered. Try again in a minute",
   "medschoolsQaDailyCap": "You have used today's questions. Try again tomorrow",
   "medschoolsQaPaused": "Questions are paused right now",
   "medschoolsSharingUnavailable": "Sharing is not available right now",

@@ -24,13 +24,27 @@ describe('Q&A privacy pins (R12)', () => {
     expect(files.length).toBeGreaterThanOrEqual(6);
   });
 
-  it('writes nothing: no create, update, upsert or delete on any model', () => {
-    for (const f of files) {
+  it('writes nothing but the reservation rows: no create, update, upsert or delete on any model elsewhere', () => {
+    for (const f of files.filter((x) => !x.endsWith('budget.server.ts'))) {
       expect(code(f), f).not.toMatch(
         /\b(prisma|tx)\.\w+\.(create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
       );
       expect(code(f), f).not.toMatch(/\$executeRaw|\$queryRawUnsafe/);
     }
+  });
+
+  it('lets the budget module write only fixed-field ledger rows with no text, and delete only its own lease', () => {
+    const src = code('features/medschools/api/qa/budget.server.ts');
+    // Every create takes `ledgerRow(userId, <constant prompt id>)`: user, task, 'none', 'reservation', zeros.
+    const creates = src.match(/\.create\(\{[^}]*\}/g) ?? [];
+    expect(creates).toHaveLength(2);
+    for (const c of creates) expect(c).toMatch(/data: ledgerRow\(userId, QA_(ASK|LOCK)_PROMPT_ID\)/);
+    expect(src.match(/\.(update|updateMany|upsert|createMany)\(/g)).toBeNull();
+    expect(src.match(/\.deleteMany\(\{ where: \{ id: leaseId \} \}\)/g)).toHaveLength(1);
+    expect(src.match(/\.deleteMany\(/g)).toHaveLength(1);
+    const row = /const ledgerRow = [\s\S]*?\}\);/.exec(src)![0];
+    expect(row).not.toMatch(/question|text|answer|body/i);
+    expect(src).not.toMatch(/\$queryRawUnsafe/);
   });
 
   it('caches nothing about a question: the one cache is the school directory, in freshness', () => {

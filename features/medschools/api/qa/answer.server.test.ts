@@ -3,12 +3,13 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
-  assertQaAllowed: vi.fn(async (..._a: unknown[]) => ({ remainingToday: 10, dailyCap: 15 })),
+  release: vi.fn(async () => undefined),
+  admitQuestion: vi.fn(),
   retrieve: vi.fn(),
   getChances: vi.fn(),
   schoolDirectory: vi.fn(),
 }));
-vi.mock('./budget.server', () => ({ assertQaAllowed: m.assertQaAllowed }));
+vi.mock('./budget.server', () => ({ admitQuestion: m.admitQuestion }));
 vi.mock('./retrieve.server', () => ({ retrieve: m.retrieve }));
 vi.mock('./freshness.server', () => ({ schoolDirectory: m.schoolDirectory }));
 vi.mock('../chances.server', () => ({ getChances: m.getChances }));
@@ -66,7 +67,8 @@ const ask = (runner: QaRunner, o: { userId?: string; slug?: string; question?: s
 
 let log: ReturnType<typeof vi.spyOn>[];
 beforeEach(() => {
-  m.assertQaAllowed.mockReset().mockResolvedValue({ remainingToday: 10, dailyCap: 15 });
+  m.release.mockReset().mockResolvedValue(undefined);
+  m.admitQuestion.mockReset().mockResolvedValue({ remainingToday: 9, dailyCap: 15, release: m.release });
   m.retrieve.mockReset().mockResolvedValue(retrieval());
   m.getChances.mockReset().mockResolvedValue({ cycleYear: 2027, chances: [] });
   m.schoolDirectory.mockReset().mockResolvedValue(dir);
@@ -103,7 +105,7 @@ describe('a grounded answer', () => {
     expect([r.notice, r.decline, r.mine]).toEqual([null, null, null]);
     expect(r.schools).toEqual([{ slug: 'duke', shortName: 'Duke' }]);
     expect(r.cycleYear).toBe(2027);
-    // This question's route call is not counted yet.
+    // The reservation already counts this question.
     expect([r.remainingToday, r.dailyCap]).toEqual([9, 15]);
   });
 
@@ -166,6 +168,23 @@ describe('what ends before the answer call', () => {
     }
   });
 
+  it('declines when the router names a school that is not active, even on a school page', async () => {
+    const { runner, calls } = fakeRunner(route({ schools: ['Hogwarts'] }), { segments: [] });
+    const r = await ask(runner, { slug: 'duke' });
+    expect(r).toMatchObject({ status: 'no-school', decline: 'name-a-school' });
+    expect(calls.answer).toHaveLength(0);
+    expect(m.retrieve).not.toHaveBeenCalled();
+  });
+  it('declines a comparison with any name it cannot resolve, pinned or not', async () => {
+    for (const slug of [undefined, 'duke']) {
+      const { runner, calls } = fakeRunner(route({ intent: 'compare', schools: ['Baylor', 'Hogwarts'] }), {});
+      const r = await ask(runner, slug ? { slug } : {});
+      expect(r).toMatchObject({ status: 'no-school', decline: 'name-a-school' });
+      expect(calls.answer).toHaveLength(0);
+    }
+    expect(m.retrieve).not.toHaveBeenCalled();
+  });
+
   it('picks schools from a state and format filter when none is named', async () => {
     const { runner } = fakeRunner(route({ schools: [], filters: { state: 'TX', format: 'MMI' } }), {
       segments: [],
@@ -184,9 +203,9 @@ describe('what ends before the answer call', () => {
 
   it('runs every gate before the first model call', async () => {
     const order: string[] = [];
-    m.assertQaAllowed.mockImplementation(async () => {
+    m.admitQuestion.mockImplementation(async () => {
       order.push('gates');
-      return { remainingToday: 10, dailyCap: 15 };
+      return { remainingToday: 9, dailyCap: 15, release: m.release };
     });
     const { runner } = fakeRunner(route({ intent: 'other' }), null);
     (runner.route as ReturnType<typeof vi.fn>).mockImplementation(async () => {
@@ -198,7 +217,7 @@ describe('what ends before the answer call', () => {
   });
 
   it('does not call a model when a gate refuses', async () => {
-    m.assertQaAllowed.mockRejectedValue(new AppError('MEDSCHOOLS_QA_DAILY_CAP'));
+    m.admitQuestion.mockRejectedValue(new AppError('MEDSCHOOLS_QA_DAILY_CAP'));
     const { runner, calls } = fakeRunner(route(), {});
     await expect(ask(runner)).rejects.toMatchObject({ code: 'MEDSCHOOLS_QA_DAILY_CAP' });
     expect(calls.route).toHaveLength(0);
@@ -262,13 +281,16 @@ describe('my chance: the caller own estimate, never sent to the model', () => {
     await ask(fakeRunner(route({ intent: 'my-chance' }), { segments: [] }).runner, { userId: 'u2' });
     expect(m.getChances.mock.calls.every((c) => c[0] === 'u2')).toBe(true);
   });
-  it('still answers when the estimate cannot be read', async () => {
+  it('still answers when the estimate cannot be read, and says it is unavailable rather than empty', async () => {
     m.getChances.mockRejectedValue(new Error('db'));
     const r = await ask(
       fakeRunner(route({ intent: 'my-chance' }), { segments: [seg('Duke has 412 reported interview events.', 'f1')] })
         .runner,
     );
-    expect([r.status, r.mine]).toEqual(['answered', []]);
+    expect([r.status, r.mine, r.notice]).toEqual(['answered', null, 'mine-unavailable']);
+    m.getChances.mockResolvedValue({ cycleYear: 2027, chances: [] });
+    const none = await ask(fakeRunner(route({ intent: 'my-chance' }), { segments: [] }).runner);
+    expect(none.mine).toEqual([]);
   });
   it('tells the model the estimate is shown beside the answer only through the personal flag', async () => {
     const { runner, calls } = fakeRunner(route({ intent: 'my-chance' }), { segments: [] });
@@ -348,26 +370,75 @@ describe('a model that fails', () => {
   });
 });
 
-describe('one question in flight per member', () => {
-  it('refuses a second concurrent question and lets the first finish', async () => {
-    let release!: (v: unknown) => void;
-    const { runner } = fakeRunner(route(), { segments: [seg('Duke has 412 reported interview events.', 'f1')] });
-    (runner.route as ReturnType<typeof vi.fn>).mockImplementationOnce(() => new Promise((res) => (release = res)));
-    (runner.route as ReturnType<typeof vi.fn>).mockResolvedValue(route({ intent: 'other' }));
-    const first = ask(runner);
-    await vi.waitFor(() => expect(runner.route).toHaveBeenCalledTimes(1));
-    await expect(ask(runner)).rejects.toMatchObject({ code: 'RATE_LIMITED' });
-    await expect(ask(runner, { userId: 'u2' }).catch(() => 'other member ran')).resolves.toBeDefined();
-    release(route());
-    expect((await first).status).toBe('answered');
-    // Released: the same member may ask again.
-    (runner.route as ReturnType<typeof vi.fn>).mockResolvedValue(route({ intent: 'other' }));
-    expect((await ask(runner)).status).toBe('declined');
+describe('the lease and the deadline', () => {
+  it('ends the lease when the question ends, whatever way', async () => {
+    await ask(fakeRunner(route({ intent: 'other' }), null).runner);
+    await vi.waitFor(() => expect(m.release).toHaveBeenCalledTimes(1));
+    await expect(ask(fakeRunner(new AppError('AI_UNAVAILABLE'), {}).runner)).rejects.toBeDefined();
+    await vi.waitFor(() => expect(m.release).toHaveBeenCalledTimes(2));
   });
-  it('releases the lock when the question fails', async () => {
-    const { runner } = fakeRunner(new AppError('AI_UNAVAILABLE'), {});
-    await expect(ask(runner)).rejects.toBeDefined();
-    await expect(ask(runner)).rejects.toMatchObject({ code: 'AI_UNAVAILABLE' });
+  it('takes no lease when a gate refuses', async () => {
+    m.admitQuestion.mockRejectedValue(new AppError('MEDSCHOOLS_QA_BUSY'));
+    await expect(ask(fakeRunner(route(), {}).runner)).rejects.toMatchObject({ code: 'MEDSCHOOLS_QA_BUSY' });
+    expect(m.release).not.toHaveBeenCalled();
+  });
+  it('passes one signal to both model calls and stops with AI_UNAVAILABLE when the request is aborted', async () => {
+    const ctl = new AbortController();
+    const seen: (AbortSignal | undefined)[] = [];
+    const runner: QaRunner = {
+      route: vi.fn(async (_s, _u, _id, sig) => {
+        seen.push(sig);
+        return route();
+      }),
+      answer: vi.fn(async (_s, _u, _id, sig) => {
+        seen.push(sig);
+        ctl.abort();
+        return await new Promise(() => undefined); // a provider that never answers
+      }),
+    };
+    await expect(
+      answerQuestion({ userId: 'u1', question: QUESTION, signal: ctl.signal }, { runner }),
+    ).rejects.toMatchObject({ code: 'AI_UNAVAILABLE' });
+    expect(seen[0]).toBeDefined();
+    expect(seen[0]).toBe(seen[1]);
+    expect(seen[0]!.aborted).toBe(true);
+  });
+  it('does not start the answer call once the signal has fired during the route call', async () => {
+    const ctl = new AbortController();
+    const { runner } = fakeRunner(route(), { segments: [] });
+    (runner.route as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+      ctl.abort();
+      return route();
+    });
+    await expect(
+      answerQuestion({ userId: 'u1', question: QUESTION, signal: ctl.signal }, { runner }),
+    ).rejects.toMatchObject({ code: 'AI_UNAVAILABLE' });
+    expect(runner.answer).not.toHaveBeenCalled();
+  });
+  it('keeps the whole question under the client timeout of 60 s', async () => {
+    const { QA_DEADLINE_MS, QA_LEASE_MS } = await import('../../ai-budget');
+    const { AI_TIMEOUT_MS } = await import('@/lib/contract/client');
+    expect(QA_DEADLINE_MS).toBeLessThan(AI_TIMEOUT_MS);
+    expect(QA_LEASE_MS).toBeGreaterThan(QA_DEADLINE_MS);
+  });
+});
+
+describe('a sentence that pools several schools', () => {
+  it('takes numbers only from a cited fact of a school the sentence names', async () => {
+    const other: RetrievedFact = { ...F2, ref: 'f4', schoolSlug: 'baylor', text: 'Baylor MCAT median 515 (Admit.org).' };
+    m.retrieve.mockResolvedValue(
+      retrieval([F1, F2, other], {
+        schools: [
+          { slug: 'duke', shortName: 'Duke' },
+          { slug: 'baylor', shortName: 'Baylor' },
+        ],
+      }),
+    );
+    const { runner } = fakeRunner(route({ intent: 'compare', schools: ['Duke', 'Baylor'] }), {
+      segments: [seg('Duke MCAT median is 515.', 'f2', 'f4'), seg('Duke MCAT median is 511 and Baylor is 515.', 'f2', 'f4')],
+    });
+    const r = await ask(runner);
+    expect(r.segments.map((x) => x.text)).toEqual(['Duke MCAT median is 511 and Baylor is 515.']);
   });
 });
 

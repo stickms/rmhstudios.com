@@ -96,7 +96,12 @@ describe('me/ask: POST input', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(ANSWER);
     expect(mocks.answerQuestion).toHaveBeenCalledTimes(1);
-    expect(mocks.answerQuestion).toHaveBeenCalledWith({ userId: 'u1', question: 'What is the median?', slug: 'duke' });
+    expect(mocks.answerQuestion).toHaveBeenCalledWith({
+      userId: 'u1',
+      question: 'What is the median?',
+      slug: 'duke',
+      signal: expect.any(AbortSignal),
+    });
   });
 });
 

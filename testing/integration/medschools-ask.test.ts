@@ -56,13 +56,19 @@ interface AskBody {
 const ask = (m: Member, question: string, extra: Record<string, unknown> = {}) =>
   m.client.post<AskBody>(ASK, { question, ...extra });
 
-/** `[question]` rows of the day's count: what the cap reads. */
-async function insertRouteRows(userId: string | null, n: number, createdAt: Date = new Date(), cost = 0) {
+/** Reservation rows (`medschools-qa-ask`) are the day's count the cap reads; a priced row is Q&A spend. */
+async function insertRouteRows(
+  userId: string | null,
+  n: number,
+  createdAt: Date = new Date(),
+  cost = 0,
+  promptId = 'medschools-qa-ask',
+) {
   for (let i = 0; i < n; i += 1) {
     await db().query(
       `insert into ai_usage ("userId", task, provider, model, "promptId", "promptVer", "inTokens", "outTokens", "costMicros", ok, "createdAt")
-       values ($1, 'medschools-qa', 'deepseek', 'fake', 'medschools-qa-route', 1, 1, 1, $2, true, $3)`,
-      [userId, cost, createdAt],
+       values ($1, 'medschools-qa', 'deepseek', 'fake', $4, 1, 1, 1, $2, true, $3)`,
+      [userId, cost, createdAt, promptId],
     );
   }
 }
@@ -71,11 +77,11 @@ const clearLedger = async (ids: string[]) => {
     ids,
   ]);
 };
-const routeRows = async (userId: string) =>
+const askRows = async (userId: string) =>
   Number(
     (
       await db().query(
-        `select count(*)::int as n from ai_usage where "userId" = $1 and task = 'medschools-qa' and "promptId" = 'medschools-qa-route'`,
+        `select count(*)::int as n from ai_usage where "userId" = $1 and task = 'medschools-qa' and "promptId" = 'medschools-qa-ask'`,
         [userId],
       )
     ).rows[0].n,
@@ -198,8 +204,8 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
     const res = await ask(a, 'How many interviews has Fixture reported?', { userId: b.id });
     expect(res.status).toBe(200);
     await new Promise((r) => setTimeout(r, 400));
-    expect(await routeRows(a.id)).toBe(1);
-    expect(await routeRows(b.id)).toBe(0);
+    expect(await askRows(a.id)).toBe(1);
+    expect(await askRows(b.id)).toBe(0);
   });
 
   it('an invented citation and a wrong number are dropped, with a notice; all wrong is declined as ungrounded', async () => {
@@ -360,7 +366,7 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
     it('the Q&A share of the monthly budget spent: 503 paused, no provider call', async () => {
       const total = Number(process.env.MEDSCHOOLS_AI_MONTHLY_USD || 20);
       const share = Number(process.env.MEDSCHOOLS_QA_AI_SHARE || 0.25);
-      await insertRouteRows(null, 1, new Date(), Math.ceil(total * share * 1_000_000) + 1);
+      await insertRouteRows(null, 1, new Date(), Math.ceil(total * share * 1_000_000) + 1, 'medschools-qa-route');
       const res = await ask(c, 'How many interviews has Fixture reported?');
       expect(res.status).toBe(503);
       expect(res.body.code).toBe('MEDSCHOOLS_QA_PAUSED');
@@ -381,7 +387,12 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
       ]);
       expect(first.status).toBe(200);
       expect(second.status).toBe(429);
-      expect(second.body.code).toBe('RATE_LIMITED');
+      expect(second.body.code).toBe('MEDSCHOOLS_QA_BUSY');
+      // The refused one used none of the day, and the lease is gone: the member can ask again at once.
+      fake.setScript(goodScript);
+      const third = await ask(c, 'What are the medians at Fixture?');
+      expect(third.status).toBe(200);
+      expect(await askRows(c.id)).toBe(2);
     });
   });
 
@@ -391,7 +402,7 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
     expect(res.status).toBe(503);
     expect(JSON.stringify(res.body)).not.toMatch(/fake provider failure|stack|at \w+ \(/);
     await new Promise((r) => setTimeout(r, 400));
-    expect(await routeRows(b.id)).toBeGreaterThan(0);
+    expect(await askRows(b.id)).toBeGreaterThan(0);
   });
 
   it('keeps no text: the question appears in no row of any table', async () => {

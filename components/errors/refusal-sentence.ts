@@ -545,6 +545,12 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: "You have used today's questions. Try again tomorrow",
         ...p,
       });
+    case 'MEDSCHOOLS_QA_BUSY':
+      return t('medschoolsQaBusy', {
+        ns: 'errors',
+        defaultValue: 'Your last question is still being answered. Try again in a minute',
+        ...p,
+      });
     case 'MEDSCHOOLS_QA_PAUSED':
       return t('medschoolsQaPaused', { ns: 'errors', defaultValue: 'Questions are paused right now', ...p });
   }

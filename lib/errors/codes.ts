@@ -1006,6 +1006,11 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsQaDailyCap',
     text: "You have used today's questions. Try again tomorrow",
   },
+  MEDSCHOOLS_QA_BUSY: {
+    http: 429,
+    i18n: 'errors:medschoolsQaBusy',
+    text: 'Your last question is still being answered. Try again in a minute',
+  },
   MEDSCHOOLS_QA_PAUSED: {
     http: 503,
     i18n: 'errors:medschoolsQaPaused',

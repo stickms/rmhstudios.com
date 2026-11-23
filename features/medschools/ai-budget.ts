@@ -9,8 +9,18 @@
 
 /** `AiUsage.task` of every Q&A call (route and answer), the budget's unit. */
 export const QA_TASK = 'medschools-qa';
-/** `AiUsage.promptId` of the route call: every question makes exactly one, so it is the per-user daily count. */
-export const QA_ROUTE_PROMPT_ID = 'medschools-qa-route';
+/**
+ * `AiUsage.promptId` of the reservation row written (zero tokens, zero cost) under a per-member advisory lock BEFORE any
+ * model call: one per question, so it is the per-member daily count, atomic across processes and independent of whether
+ * the provider's own metering write succeeds (plan R18).
+ */
+export const QA_ASK_PROMPT_ID = 'medschools-qa-ask';
+/** `AiUsage.promptId` of the in-flight lease: written with the reservation, deleted when the question ends. */
+export const QA_LOCK_PROMPT_ID = 'medschools-qa-lock';
+/** The lease outlives the deadline, so a crashed process frees the member after a minute. */
+export const QA_LEASE_MS = 60_000;
+/** The whole question (route call, retrieval, answer call) ends by this; it is under the client's `AI_TIMEOUT_MS` (60 s). */
+export const QA_DEADLINE_MS = 50_000;
 export const DEFAULT_QA_SHARE = 0.25;
 export const DEFAULT_QA_DAILY_CAP = 15;
 

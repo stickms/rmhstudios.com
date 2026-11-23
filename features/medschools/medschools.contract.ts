@@ -491,7 +491,7 @@ export interface MedAskRes {
   status: 'answered' | 'partial' | 'no-data' | 'declined' | 'no-school';
   segments: { text: string; cites: string[] }[];
   citations: MedAskCitationDto[];
-  notice: 'removed-ungrounded' | 'thin' | null;
+  notice: 'removed-ungrounded' | 'thin' | 'mine-unavailable' | null;
   decline: 'out-of-scope' | 'ungrounded' | 'name-a-school' | null;
   schools: { slug: string; shortName: string }[];
   cycleYear: number | null;
@@ -508,8 +508,8 @@ export interface MedAskStatusRes {
 }
 
 /**
- * Signed in. 429 `MEDSCHOOLS_QA_DAILY_CAP` (the day's questions are used, or another question is in flight; the latter is
- * `RATE_LIMITED`), 503 `MEDSCHOOLS_QA_PAUSED` (the Q&A share of the monthly budget is spent, or its ledger cannot be
+ * Signed in. 429 `MEDSCHOOLS_QA_DAILY_CAP` (the day's questions are used) or `MEDSCHOOLS_QA_BUSY` (another question of
+ * the member's is in flight, on any process), 503 `MEDSCHOOLS_QA_PAUSED` (the Q&A share of the monthly budget is spent, or its ledger cannot be
  * read) or `AI_UNAVAILABLE`, 402 `AI_BUDGET_EXCEEDED` (the member's own allowance), 403 for a suspended account. Never cached.
  */
 export const askMedQuestionApi = endpoint<{ body: z.infer<typeof askBody>; res: MedAskRes }>()({

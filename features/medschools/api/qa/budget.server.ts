@@ -1,12 +1,22 @@
 /**
- * The gates in front of a question (plan R9 to R11), all read from the `AiUsage` ledger so there is no new table and no
- * stored question: the member's daily cap, the Q&A share of the monthly budget, then the site's own per-member allowance.
- * Every gate here runs before any model call. A ledger read error fails CLOSED for the two that guard shared money.
+ * The gates in front of a question (plan R9 to R11, R18), all on the `AiUsage` ledger so there is no new table and no
+ * stored question: the Q&A share of the monthly budget, the site's own per-member allowance, then the member's daily cap
+ * and one-in-flight lease, taken atomically across processes. Every gate runs before any model call. A ledger error
+ * fails CLOSED for every one of them.
  */
 import { assertAiBudget } from '@/lib/ai/budget.server';
 import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
-import { QA_ROUTE_PROMPT_ID, QA_TASK, qaCapUsd, qaDailyCap, qaShare, utcDayStart } from '../../ai-budget';
+import {
+  QA_ASK_PROMPT_ID,
+  QA_LEASE_MS,
+  QA_LOCK_PROMPT_ID,
+  QA_TASK,
+  qaCapUsd,
+  qaDailyCap,
+  qaShare,
+  utcDayStart,
+} from '../../ai-budget';
 import { EXTRACT_TASK, monthStartUtc, monthlyCapUsd } from '../../scrape/sdn/budget';
 
 const warned = new Set<string>();
@@ -19,15 +29,15 @@ const warnOnce = (line: string): void => {
 const paused = (reason: 'budget' | 'unavailable') => new AppError('MEDSCHOOLS_QA_PAUSED', { reason });
 
 /**
- * Questions the member has asked since 00:00 UTC. Every question makes exactly one route call (ok or failed), so the
- * count is the route rows: a failing provider cannot be hammered for free.
+ * Questions the member has asked since 00:00 UTC: the reservation rows (`reserveQuestion`), one per question, written
+ * before any model call. A failing provider cannot be hammered for free, and a lost metering write cannot lose a count.
  */
 export async function questionsToday(userId: string, now: Date = new Date()): Promise<number> {
   return prisma.aiUsage.count({
     where: {
       userId,
       task: QA_TASK,
-      promptId: QA_ROUTE_PROMPT_ID,
+      promptId: QA_ASK_PROMPT_ID,
       createdAt: { gte: utcDayStart(now) },
     },
   });
@@ -48,14 +58,77 @@ export async function dailyStatus(
   return { remainingToday: Math.max(0, dailyCap - used), dailyCap };
 }
 
-/** 429 `MEDSCHOOLS_QA_DAILY_CAP` when the day's questions are used; 503 `MEDSCHOOLS_QA_PAUSED` when the ledger cannot be read. */
-export async function assertDailyCap(
-  userId: string,
-  now: Date = new Date(),
-): Promise<{ remainingToday: number; dailyCap: number }> {
-  const status = await dailyStatus(userId, now);
-  if (status.remainingToday <= 0) throw new AppError('MEDSCHOOLS_QA_DAILY_CAP');
-  return status;
+export interface Reservation {
+  /** Questions left today AFTER this one. */
+  remainingToday: number;
+  dailyCap: number;
+  /** Ends the in-flight lease. Never throws; a failure only means the lease runs out by itself (`QA_LEASE_MS`). */
+  release(): Promise<void>;
+}
+
+const ledgerRow = (userId: string, promptId: string) => ({
+  userId,
+  task: QA_TASK,
+  provider: 'none',
+  model: 'reservation',
+  promptId,
+  promptVer: null,
+  inTokens: 0,
+  outTokens: 0,
+  cacheHitTokens: 0,
+  costMicros: 0,
+  ok: true,
+});
+
+/**
+ * Takes the member's place in the day and in the queue of one, atomically and across every process: inside one
+ * transaction holding `pg_advisory_xact_lock` on the member (the transaction-scoped form, which the pooler allows) it
+ * refuses when a lease younger than `QA_LEASE_MS` exists (429 `MEDSCHOOLS_QA_BUSY`), refuses when the day's reservations
+ * are at the cap (429 `MEDSCHOOLS_QA_DAILY_CAP`), and otherwise writes the reservation and the lease. Both are rows of
+ * the AI ledger with no tokens and no cost, so the cap never depends on the provider's metering write. A database
+ * error is 503 `MEDSCHOOLS_QA_PAUSED` (unavailable): no ledger, no question.
+ */
+export async function reserveQuestion(userId: string, now: Date = new Date()): Promise<Reservation> {
+  const dailyCap = qaDailyCap(process.env.MEDSCHOOLS_QA_DAILY_CAP, warnOnce);
+  type Outcome = { kind: 'busy' } | { kind: 'cap' } | { kind: 'ok'; used: number; leaseId: bigint };
+  let out: Outcome;
+  try {
+    out = await prisma.$transaction(async (tx): Promise<Outcome> => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`med-qa:${userId}`}, 0))`;
+      const leased = await tx.aiUsage.count({
+        where: {
+          userId,
+          task: QA_TASK,
+          promptId: QA_LOCK_PROMPT_ID,
+          createdAt: { gte: new Date(now.getTime() - QA_LEASE_MS) },
+        },
+      });
+      if (leased > 0) return { kind: 'busy' };
+      const used = await tx.aiUsage.count({
+        where: { userId, task: QA_TASK, promptId: QA_ASK_PROMPT_ID, createdAt: { gte: utcDayStart(now) } },
+      });
+      if (used >= dailyCap) return { kind: 'cap' };
+      await tx.aiUsage.create({ data: ledgerRow(userId, QA_ASK_PROMPT_ID) });
+      const lease = await tx.aiUsage.create({ data: ledgerRow(userId, QA_LOCK_PROMPT_ID), select: { id: true } });
+      return { kind: 'ok', used: used + 1, leaseId: lease.id };
+    });
+  } catch {
+    throw paused('unavailable');
+  }
+  if (out.kind === 'busy') throw new AppError('MEDSCHOOLS_QA_BUSY');
+  if (out.kind === 'cap') throw new AppError('MEDSCHOOLS_QA_DAILY_CAP');
+  const { leaseId, used } = out;
+  return {
+    remainingToday: Math.max(0, dailyCap - used),
+    dailyCap,
+    async release() {
+      try {
+        await prisma.aiUsage.deleteMany({ where: { id: leaseId } });
+      } catch {
+        console.error('[medschools-qa] could not end the in-flight lease; it expires by itself');
+      }
+    },
+  };
 }
 
 /**
@@ -84,13 +157,14 @@ export async function assertSharedBudget(now: Date = new Date()): Promise<void> 
   if (qaSpent >= qaCapUsd(total, share) || allSpent >= total) throw paused('budget');
 }
 
-/** Daily cap, then the shared monthly gate, then the member's own allowance (`AI_BUDGET_EXCEEDED`); all before any model call. */
-export async function assertQaAllowed(
-  userId: string,
-  now: Date = new Date(),
-): Promise<{ remainingToday: number; dailyCap: number }> {
-  const daily = await assertDailyCap(userId, now);
+/**
+ * Every gate in front of the first model call, in the order that gives the most useful refusal (plan R18): the shared
+ * monthly gate first (a pause is for everyone, so say so instead of blaming this member's day), then the member's own
+ * allowance (`AI_BUDGET_EXCEEDED`, the upgrade envelope), then the atomic reservation (`MEDSCHOOLS_QA_BUSY`, then
+ * `MEDSCHOOLS_QA_DAILY_CAP`). The first two only read, so a refused question never uses up a daily one.
+ */
+export async function admitQuestion(userId: string, now: Date = new Date()): Promise<Reservation> {
   await assertSharedBudget(now);
   await assertAiBudget(userId);
-  return daily;
+  return reserveQuestion(userId, now);
 }
