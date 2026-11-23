@@ -9,8 +9,9 @@ export interface RetrievedFact {
   label: string; // short English label for the citation row ("Interview profile")
   text: string; // the exact line the model is shown; the allowed numbers are the tokens in it
   untrusted: boolean; // forum free text
-  source: MedSource | 'FORECAST';
-  sourceName: string; // 'CycleTrack' | 'Admit.org' | 'Student Doctor Network' | 'RMH' | 'RMH forecast'
+  // 'DIRECTORY' is the school's own header row (name, city, interview format); it has no data source.
+  source: MedSource | 'FORECAST' | 'DIRECTORY';
+  sourceName: string; // 'CycleTrack' | 'Admit.org' | 'Student Doctor Network' | 'RMH tracker' | 'RMH forecast' | 'RMH Med Schools'
   updatedAt: string | null; // ISO
   href: string; // site path incl. ?tab=
   sourceHref: string | null; // external attribution link where known
