@@ -32,8 +32,49 @@ describe('extractNumberTokens', () => {
     expect(normalizeDigits('٥٫٥')).toBe('5.5');
   });
   it('finds no number in words, names or number words', () => {
-    expect(t('MMI Duke three')).toEqual([]);
-    expect(t('COVID19 f12')).toEqual([]);
+    expect(t('MMI Duke MD-PhD')).toEqual([]);
+    expect(t('Duke no one knows')).toEqual([]);
+  });
+  it('reads every digit run, whatever precedes it (a letter is no cover)', () => {
+    // The validator's old lookbehind made digits glued to a letter invisible: CJK has no spaces, Arabic has prefixes.
+    expect(t('MCAT中央値は999です')).toEqual([tok('number', '999')]);
+    expect(t('中位数是999')).toEqual([tok('number', '999')]);
+    expect(t('ب٩٩٩')).toEqual([tok('number', '999')]);
+    expect(t('وال٩٩٩')).toEqual([tok('number', '999')]);
+    expect(t('abc999')).toEqual([tok('number', '999')]);
+    expect(t('COVID19 f12')).toEqual([tok('number', '19'), tok('number', '12')]);
+    expect(t('Hangul filler\u3164999')).toEqual([tok('number', '999')]);
+    expect(t('x\u200b999')).toEqual([tok('number', '999')]);
+    expect(t('中2026-11-21')).toEqual([tok('date', '2026-11-21')]);
+    expect(t('中2026年')).toEqual([tok('year', '2026')]);
+  });
+  it('keeps MD-PhD and the en-dash cycle range sane', () => {
+    expect(t('MD-PhD, 2026\u20132027')).toEqual([tok('year', '2026'), tok('year', '2027')]);
+    expect(t('2026\u22122027')).toEqual([tok('year', '2026'), tok('year', '2027')]);
+  });
+  it('keeps k, per cent and a leading minus part of the token', () => {
+    expect(t('120k')).toEqual([tok('number', '120k')]);
+    expect(t('120 K')).toEqual([tok('number', '120k')]);
+    expect(t('120 per cent')).toEqual([tok('percent', '120')]);
+    expect(t('120 percent')).toEqual([tok('percent', '120')]);
+    expect(t('-8%')).toEqual([tok('percent', '-8')]);
+    expect(t('down \u22128%')).toEqual([tok('percent', '-8')]);
+    expect(t('(-3.5)')).toEqual([tok('number', '-3.5')]);
+    expect(t('3.7-3.9')).toEqual([tok('number', '3.7'), tok('number', '3.9')]);
+    expect(t('120 Kids')).toEqual([tok('number', '120')]);
+    expect(tokensEqual(tok('number', '120k'), tok('number', '120'))).toBe(false);
+    expect(tokensEqual(tok('percent', '-8'), tok('percent', '8'))).toBe(false);
+  });
+  it('reads number words as numbers', () => {
+    expect(t('five hundred nineteen')).toEqual([tok('number', '519')]);
+    expect(t('twenty-one and ninety-nine')).toEqual([tok('number', '21'), tok('number', '99')]);
+    expect(t('a dozen')).toEqual([tok('number', '12')]);
+    expect(t('two thousand')).toEqual([tok('number', '2000')]);
+    expect(t('fifty percent')).toEqual([tok('percent', '50')]);
+    expect(t('half of them')).toEqual([tok('number', '?half')]);
+    expect(t('one hundred')).toEqual([tok('number', '100')]);
+    expect(t('cincuenta, 五百, ثلاثة')).toHaveLength(3);
+    expect(t('Stanford ستانفورد')).toEqual([]);
   });
   it('reads a number glued to a unit on its right', () => {
     expect(t('511MCAT')).toEqual([tok('number', '511')]);

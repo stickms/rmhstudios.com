@@ -142,10 +142,6 @@ function profileFact(
   const parts: string[] = [];
   const format = freeField(p.format);
   if (format) parts.push(`format ${format}`);
-  const style = freeField(p.interviewStyle);
-  if (style) parts.push(`style ${style}`);
-  const length = freeField(p.interviewLength);
-  if (length) parts.push(`length ${length}`);
   field(parts, 'average difficulty', p.avgDifficulty);
   field(parts, 'average stress', p.avgStress);
   field(parts, 'average impression', p.avgImpression);
@@ -157,6 +153,35 @@ function profileFact(
     label: FACT_LABELS.profile,
     text: `${school.shortName} interview profile, ${SOURCE_NAMES[p.source]}: ${parts.join(', ')}.`,
     untrusted: false,
+    source: p.source,
+    sourceName: SOURCE_NAMES[p.source],
+    updatedAt: stamp(stamps.profile, p.source),
+    href: pagePath(school.slug, '?tab=interviews&itab=format'),
+    sourceHref: linkFor(p.source, links),
+  };
+}
+
+/**
+ * The profile's free-text columns (`interviewStyle`, `interviewLength`) are scraped, member-reported text, not a column of
+ * ours: they travel as an untrusted fact, so they can be quoted but never supply a number or a domain (plan R17).
+ */
+function profileNotesFact(
+  school: SchoolHead,
+  p: InterviewProfileDto,
+  stamps: Stamps,
+  links: readonly SourceLinkDto[] | undefined,
+): DraftFact | null {
+  const parts: string[] = [];
+  const style = freeField(p.interviewStyle);
+  if (style) parts.push(`style ${style}`);
+  const length = freeField(p.interviewLength);
+  if (length) parts.push(`length ${length}`);
+  if (parts.length === 0) return null;
+  return {
+    schoolSlug: school.slug,
+    label: FACT_LABELS.question,
+    text: `${school.shortName} interview notes, member-reported, ${SOURCE_NAMES[p.source]}: ${parts.join(', ')}.`,
+    untrusted: true,
     source: p.source,
     sourceName: SOURCE_NAMES[p.source],
     updatedAt: stamp(stamps.profile, p.source),
@@ -199,6 +224,9 @@ export function schoolFacts(d: MedSchoolDetailDto, stamps: Stamps, opts: { quest
   for (const p of d.profiles) {
     const f = profileFact(school, p, stamps, d.links);
     if (f) out.push(f);
+    // Member-reported text is only retrieved where questions are (a timing question gets none).
+    const notes = opts.questions > 0 ? profileNotesFact(school, p, stamps, d.links) : null;
+    if (notes) out.push(notes);
   }
 
   if (opts.questions > 0) {

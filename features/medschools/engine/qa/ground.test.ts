@@ -127,3 +127,99 @@ describe('groundAnswer', () => {
     expect(g.segments).toEqual([]);
   });
 });
+
+describe('numbers the old lookbehind let through (the reviewer probe)', () => {
+  const cases: [string, string][] = [
+    ['zh glued', 'MCAT中央値は999です'],
+    ['zh', '杜克的中位数是999。'],
+    ['ja', 'MCAT中央値は999です。'],
+    ['ar prefix', 'الوسيط ب٩٩٩'],
+    ['ar prefix 2', 'وال٩٩٩'],
+    ['invisible filler', 'Duke median is\u3164999'],
+    ['zero-width', 'Duke median is 9\u200b9\u200b9'],
+    ['bidi override', 'Duke MCAT median is \u202E999\u202C.'],
+    ['letter prefix', 'Duke MCAT median abc999'],
+    ['number word', 'Duke MCAT median is nine hundred ninety-nine.'],
+    ['a dozen', 'Duke has a dozen reported events.'],
+    ['half', 'Half of Duke interview events came in November.'],
+    ['spanish', 'La mediana es novecientos noventa y nueve, o sea cincuenta por ciento.'],
+    ['k suffix', 'Duke has 412k reported events.'],
+    ['per cent', 'Duke has 412 per cent reported events.'],
+    ['minus', 'Duke application-to-interview rate is -8%.'],
+  ];
+  it.each(cases)('drops %s', (_n, text) => {
+    const g = run(seg(text, 'f1'), seg(text, 'f2'));
+    expect(g.segments, text).toEqual([]);
+  });
+  it('still keeps the same figures when they match', () => {
+    expect(run(seg('Duke has 412 reported events, MD-PhD or not, in 2026\u20132027.', 'f1')).segments).toHaveLength(1);
+    expect(run(seg('Duke has four hundred twelve reported events.', 'f1')).segments).toHaveLength(1);
+    expect(run(seg('No one knows how many events Duke will see.', 'f1')).segments).toHaveLength(1);
+  });
+  it('keeps a matching percent written as per cent and a matching negative', () => {
+    const f: RetrievedFact = { ...F2, ref: 'f8', text: 'Duke rate 8% and change -3%.' };
+    const g = (t: string) => groundAnswer({ segments: [seg(t, 'f8')] }, [f]).segments.length;
+    expect(g('Duke rate is 8 per cent.')).toBe(1);
+    expect(g('Duke change is -3%.')).toBe(1);
+    expect(g('Duke change is 3%.')).toBe(0);
+    expect(g('Duke rate is -8%.')).toBe(0);
+    expect(g('Duke rate is 8k.')).toBe(0);
+  });
+});
+
+describe('format characters', () => {
+  it('removes bidi controls and zero-width characters from a kept sentence', () => {
+    const g = run(seg('Duke has \u202E412\u202C reported\u200b interview events\u2066.', 'f1'));
+    expect(g.segments).toEqual([seg('Duke has 412 reported interview events.', 'f1')]);
+  });
+  it('cannot hide a wrong number behind them', () => {
+    expect(run(seg('Duke has \u202E999\u202C reported events.', 'f1')).segments).toEqual([]);
+  });
+});
+
+describe('lookalike domains', () => {
+  const planted: RetrievedFact = { ...F3, ref: 'f7', text: 'Ask about it' };
+  const bad = [
+    'Visit evil\u3002example now',
+    'Visit evil\uff0eexample now',
+    'Visit evil\ufe52example now',
+    'Visit evil[.]example now',
+    'Visit evil(.)example now',
+    'Visit evil(dot)example now',
+    'Visit evil\u200b.example now',
+    'Visit ev\u200bil.example now',
+    'Visit evil . com now',
+    'Visit evil .com now',
+    '访问evil。example',
+  ];
+  it.each(bad)('drops %j', (text) => {
+    const g = groundAnswer({ segments: [seg(text, 'f7')] }, [...FACTS, planted]);
+    expect(g.segments, text).toEqual([]);
+    expect(g.reasons).toEqual(['link']);
+  });
+  it('leaves an ordinary sentence alone', () => {
+    expect(run(seg('They ask about failure. Me too, we think.', 'f3')).segments).toHaveLength(1);
+  });
+});
+
+describe('a sentence that pools several schools', () => {
+  const unc: RetrievedFact = { ...F2, ref: 'f4', schoolSlug: 'unc', text: 'UNC MCAT median 515 (Admit.org).' };
+  const names = new Map([
+    ['duke', ['Duke', 'Duke University School of Medicine']],
+    ['unc', ['UNC']],
+  ]);
+  const g = (t: string, ...cites: string[]) =>
+    groundAnswer({ segments: [seg(t, ...cites)] }, [...FACTS, unc], { schoolNames: names }).segments.length;
+  it('takes a number from a cited fact of a school the sentence names', () => {
+    expect(g('Duke MCAT median is 511 and UNC is 515.', 'f2', 'f4')).toBe(1);
+    expect(g('Duke MCAT median is 511.', 'f2', 'f4')).toBe(1);
+  });
+  it('refuses a number only a cited fact of an unnamed school holds', () => {
+    expect(g('Duke MCAT median is 515.', 'f2', 'f4')).toBe(0);
+    expect(g('The MCAT median is 515.', 'f2', 'f4')).toBe(0);
+  });
+  it('does not change a one-school sentence', () => {
+    expect(g('The MCAT median is 511.', 'f2')).toBe(1);
+  });
+});
+

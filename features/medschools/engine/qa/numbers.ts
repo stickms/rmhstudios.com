@@ -3,6 +3,8 @@
  * Pure. The grounding validator (`ground.ts`) compares the tokens of a sentence with the tokens of the facts it cites.
  */
 
+import { numberWordTokens } from './number-words';
+
 export type NumberToken = { kind: 'number' | 'percent' | 'date' | 'year'; value: string };
 
 /** Zero code points of the digit blocks we map to ASCII. */
@@ -23,7 +25,8 @@ export function normalizeDigits(s: string): string {
     if (mapped === null) {
       if (cp === 0x066b) mapped = '.';
       else if (cp === 0x066c) mapped = ',';
-      else if (cp === 0x066a || cp === 0xff05) mapped = '%';
+      else if (cp === 0x066a || cp === 0xff05 || cp === 0xfe6a) mapped = '%';
+      else if (cp === 0x2212) mapped = '-';
       else if (cp === 0xff0e) mapped = '.';
       else if (cp === 0xff0c) mapped = ',';
       else if (cp === 0xff0d) mapped = '-';
@@ -50,13 +53,18 @@ const MONTHS: Record<string, string> = {
 const MONTH_RE =
   'Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?';
 
-const ISO_RE = /(?<![\p{L}\p{N}_])(\d{4})-(\d{2})-(\d{2})(?![\p{L}\p{N}_])/gu;
+// A digit run is a number whatever letter precedes it (CJK has no spaces, Arabic glues prefixes on): only a neighbouring
+// digit changes where a token starts or ends.
+const ISO_RE = /(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/gu;
 // "Nov 21", "Nov 21st", "Nov. 21, 2026", "21 Nov"
 const MD_RE = new RegExp(
-  `(?<![\\p{L}\\p{N}_])(?:(${MONTH_RE})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(20\\d{2}))?|(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_RE})\\.?(?:,?\\s+(20\\d{2}))?)(?![\\p{L}\\p{N}_])`,
+  `(?:(?<![\\p{L}\\p{N}_])(${MONTH_RE})\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(20\\d{2}))?|(?<!\\d)(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_RE})\\.?(?:,?\\s+(20\\d{2}))?)(?![\\p{L}\\p{N}_])`,
   'giu',
 );
-const NUM_RE = /(?<![\p{L}\p{N}_])(\d+(?:\.\d+)?)(\s?%|\s?percent\b)?/giu;
+// An optional sign (a minus that starts a word, not the hyphen of a range or a compound), the digit run, and the suffix
+// that changes what the number is: a percent ("%", "percent", "per cent"), thousands ("120k") or millions ("1.2M").
+const NUM_RE =
+  /((?<=^|[\s([{:;,/=])-)?(\d+(?:\.\d+)?)(\s?%|\s?per\s?cent(?![\p{L}])|\s?percent(?![\p{L}])|\s?[kK](?![\p{L}\p{N}])|[mM](?![\p{L}\p{N}]))?/giu;
 /** Any numeral we do not map (Devanagari, superscripts, circled, fractions): it can never be verified, so it is a token. */
 const OTHER_NUMERAL_RE = /(?![0-9])\p{N}/gu;
 
@@ -69,11 +77,13 @@ const validMd = (m: string, d: string) => {
 /**
  * Canonical number tokens of `text`, in reading order within each kind (dates, then percents/numbers/years).
  * `'3.7-3.9'` is two tokens; `'2026-2027'` two years; a bare date `Nov 21` is the date token `11-21` and
- * `'2026-11-21'` the date token `2026-11-21`. Digits glued on the left to a letter (`f12`, `COVID19`) are not numbers;
- * `511MCAT` is `511`.
+ * `'2026-11-21'` the date token `2026-11-21`. Every maximal digit run is a number whatever precedes it (`COVID19` is
+ * `19`, `中央値は999` is `999`, `511MCAT` is `511`); a leading minus is part of the token (`-8%` is not `8%`), `120k`
+ * is not `120`, `120 per cent` is a percent, and number words ("five hundred") are read by `number-words.ts`.
  */
 export function extractNumberTokens(text: string): NumberToken[] {
-  let s = normalizeDigits(text);
+  // Format characters (bidi controls, zero-width) carry no meaning of their own and split or hide digits.
+  let s = normalizeDigits(text).replace(/\p{Cf}/gu, '');
   // "1,200" -> "1200"
   s = s.replace(/(?<=\d),(?=\d{3}(?!\d))/g, '');
   const out: NumberToken[] = [];
@@ -92,13 +102,16 @@ export function extractNumberTokens(text: string): NumberToken[] {
     out.push({ kind: 'date', value: year ? `${year}-${mon}-${pad2(day)}` : `${mon}-${pad2(day)}` });
     return ' ';
   });
-  s = s.replace(NUM_RE, (_w, n: string, pct?: string) => {
-    const value = Number(n).toString();
-    if (pct) out.push({ kind: 'percent', value });
-    else out.push({ kind: /^20\d{2}$/.test(n) ? 'year' : 'number', value });
+  s = s.replace(NUM_RE, (_w, sign: string | undefined, n: string, suffix?: string) => {
+    const value = `${sign ? '-' : ''}${Number(n).toString()}`;
+    const unit = suffix?.trim().toLowerCase();
+    if (unit === 'k' || unit === 'm') out.push({ kind: 'number', value: `${value}${unit}` });
+    else if (unit) out.push({ kind: 'percent', value });
+    else out.push({ kind: /^20\d{2}$/.test(n) && !sign ? 'year' : 'number', value });
     return ' ';
   });
   for (const m of s.matchAll(OTHER_NUMERAL_RE)) out.push({ kind: 'number', value: `?${m[0]}` });
+  out.push(...numberWordTokens(s));
   return out;
 }
 
