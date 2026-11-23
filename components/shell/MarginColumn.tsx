@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { MarginFooter } from './MarginFooter';
 import { takeoverFor } from './margin-takeover';
 import { useMarginSlotRef } from './margin-slot';
 
@@ -49,6 +50,7 @@ export function MarginColumn() {
           </ArrivalSuspense>
         )}
         <div ref={setSlot} className="site-margin__page" />
+        <MarginFooter />
       </aside>
     );
   }
@@ -83,6 +85,7 @@ export function MarginColumn() {
         </ArrivalSuspense>
       )}
       <div ref={setSlot} className="site-margin__page" />
+      <MarginFooter />
     </aside>
   );
 }
