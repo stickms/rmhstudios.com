@@ -67,6 +67,14 @@ export function shareSecret(env: NodeJS.ProcessEnv = process.env): string | null
 
 const hashOf = (secret: string, milestoneId: string): string => dedupeHash(secret, 'RMH', `milestone:${milestoneId}`);
 
+/**
+ * Interactive-transaction limits for every share-sync transaction. Prisma's default is a 5 s timeout and a 2 s wait for
+ * a connection; enabling sharing on a full tracker reads the milestones, locks, writes the events and rolls up the
+ * cells, which can pass 5 s on a busy pool. The user lock serialises a member's own transactions, so a longer timeout
+ * cannot pile up.
+ */
+export const SHARE_TX_OPTIONS = { timeout: 30_000, maxWait: 10_000 } as const;
+
 /** `pg_advisory_xact_lock`: released with the transaction, allowed through the pooler (the session-scoped form is banned). */
 async function lock(tx: Tx, key: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
@@ -223,6 +231,7 @@ export async function rollupRmhCells(
       const k = cellOfRow({ ...r, schoolId, occurredAt: r.date });
       if (wanted.has(k)) rows.set(k, r);
     }
+    const fresh: Array<Record<string, unknown>> = [];
     for (const c of list) {
       const k = cellRefKey(c);
       const count = n.get(k) ?? 0;
@@ -230,25 +239,27 @@ export async function rollupRmhCells(
       const date = new Date(`${c.day}T00:00:00.000Z`);
       if (!row) {
         if (count === 0) continue;
-        await tx.medCycleCount.create({
-          data: {
-            // A random id: the schema's cuid() default embeds the minute the row was made (D3).
-            id: randomUUID(),
-            schoolId,
-            program: c.program,
-            cycleYear: c.cycleYear,
-            date,
-            eventType: c.eventType,
-            source: 'RMH',
-            count,
-            contributors: count,
-          },
+        fresh.push({
+          // A random id: the schema's cuid() default embeds the minute the row was made (D3).
+          id: randomUUID(),
+          schoolId,
+          program: c.program,
+          cycleYear: c.cycleYear,
+          date,
+          eventType: c.eventType,
+          source: 'RMH',
+          count,
+          contributors: count,
         });
-        out.created += 1;
       } else if (row.count !== count || row.contributors !== count) {
         await tx.medCycleCount.update({ where: { id: row.id }, data: { count, contributors: count } });
         out.updated += 1;
       }
+    }
+    // One statement for the new cells (a full tracker is hundreds); the user lock and the school locks are held.
+    if (fresh.length > 0) {
+      await tx.medCycleCount.createMany({ data: fresh as never });
+      out.created += fresh.length;
     }
   }
   return out;
@@ -333,6 +344,7 @@ async function syncEvents(
   const stale = stored.filter((s) => !wantedHashes.has(s.dedupeHash));
   if (stale.length) await tx.medCycleEvent.deleteMany({ where: { id: { in: stale.map((s) => s.id) } } });
 
+  const created: Array<Record<string, unknown>> = [];
   for (const [id, { e }] of desired) {
     const hash = hashes.get(id) ?? '';
     const had = storedByHash.get(hash);
@@ -345,13 +357,13 @@ async function syncEvents(
       ingestedAt: e.occurredAt,
     };
     if (!had) {
-      await tx.medCycleEvent.create({
-        data: { id: randomUUID(), ...row, source: 'RMH', dedupeHash: hash, inState: null },
-      });
+      created.push({ id: randomUUID(), ...row, source: 'RMH', dedupeHash: hash, inState: null });
     } else if (cellOfRow(had) !== cellKey(e)) {
       await tx.medCycleEvent.update({ where: { id: had.id }, data: row });
     }
   }
+  // One insert for every new event: enabling sharing on a full tracker is about 400 of them.
+  if (created.length > 0) await tx.medCycleEvent.createMany({ data: created as never });
 
   await rollupRmhCells(tx, [...cells]);
   return { touchedCells: [...cells], deleted: stale.length };
@@ -389,7 +401,7 @@ export async function withShared<T>(
     const r = await mutate(tx);
     await reconcileShared(tx, userId, scope, now);
     return r;
-  });
+  }, SHARE_TX_OPTIONS);
 }
 
 /** Delete the events of these milestone ids (read BEFORE the rows are deleted) and re-roll their cells. */
@@ -438,7 +450,7 @@ export async function withSharedErase<T>(
       await syncEvents(tx, userId, after, true, now);
     }
     return r;
-  });
+  }, SHARE_TX_OPTIONS);
 }
 
 /**
@@ -461,7 +473,7 @@ export async function eraseSharedMedEvents(userId: string, db: PrismaClient = pr
       data: { shareAnonymously: false },
     });
     return { events: deleted };
-  });
+  }, SHARE_TX_OPTIONS);
 }
 
 // ─── Row writers (the only place a tracker row is created, changed or deleted) ─────────────────────────────────────

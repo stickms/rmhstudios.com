@@ -171,6 +171,29 @@ afterEach(() => {
   delete process.env.MEDSCHOOLS_DEDUPE_SECRET;
 });
 
+describe('a full tracker (transaction limits and bulk writes)', () => {
+  it('every share-sync transaction gets an explicit timeout and maxWait, and new events go in one createMany', async () => {
+    const w = world();
+    addUser(w, 'u1');
+    const cycleId = await addCycle(w, 'u1', 2027, false);
+    for (let i = 0; i < 40; i++) {
+      w.tables.medSchool.push({ id: `sx${i}`, slug: `sx${i}`, degree: 'MD', active: true });
+      await addApp(w, 'u1', { id: `app${i}`, cycleId, schoolId: `sx${i}` });
+      await addMs(w, 'u1', { id: `m${i}`, applicationId: `app${i}`, type: 'INTERVIEW', date: DAY });
+    }
+    const tx = vi.spyOn(w.db, '$transaction');
+    const many = vi.spyOn(w.prisma.medCycleEvent, 'createMany');
+    const single = vi.spyOn(w.prisma.medCycleEvent, 'create');
+    await setShare(w, 'u1', 2027, true);
+    expect(events(w)).toHaveLength(40);
+    expect(many).toHaveBeenCalledTimes(1);
+    expect(single).not.toHaveBeenCalled();
+    for (const call of tx.mock.calls) expect(call[1]).toEqual({ timeout: 30_000, maxWait: 10_000 });
+    expect(tx).toHaveBeenCalled();
+    expectConsistent(w);
+  });
+});
+
 describe('basic sharing', () => {
   it('sharing on writes one anonymous event and one count row; off deletes both', async () => {
     const w = world();
