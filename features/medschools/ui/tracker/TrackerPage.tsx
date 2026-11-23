@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { lazy, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
@@ -31,6 +32,9 @@ import { SkeletonSwap } from '../skeletons';
 import { AddSchool } from './AddSchool';
 import { ApplicationRow } from './ApplicationRow';
 import { SharingRow } from './SharingRow';
+
+/** The import view is its own chunk: it loads when "Import from a file" is pressed, never with the tracker. */
+const TrackerImport = lazy(() => import('./import/TrackerImport'));
 
 /** The cycle years the tracker will create (D7): the window around the current cycle that the server accepts. */
 function candidateCycles(now: Date, have: readonly number[]): number[] {
@@ -117,7 +121,7 @@ export function TrackerPage() {
   const trackerCycle = query.data?.cycle ?? null;
   const chancesOn = signedIn && !!trackerCycle && trackerCycle.applications.length > 0;
   const chances = useQuery({ ...chancesQuery({ cycle: trackerCycle?.cycleYear ?? 0 }), enabled: chancesOn });
-  const [adding, setAdding] = useState<'none' | 'cycle' | 'school'>('none');
+  const [adding, setAdding] = useState<'none' | 'cycle' | 'school' | 'import'>('none');
 
   const title = t('tracker-title', { defaultValue: 'My tracker' });
   const breadcrumbs = [
@@ -177,6 +181,22 @@ export function TrackerPage() {
         />
       ) : null;
 
+    // The import is the view while it is open: its "Add to my tracker" is the one ink primary on the page (R4).
+    if (adding === 'import') {
+      return (
+        <ArrivalSuspense fallback={<SkeletonSwap ready={false}>{null}</SkeletonSwap>}>
+          <TrackerImport
+            cycleYear={cycle?.cycleYear ?? cycleYearOf(new Date(), 'SECONDARY')}
+            onClose={() => setAdding('none')}
+            onSaved={(year) => {
+              setAdding('none');
+              void navigate({ to: '/rmh-medschool/tracker', search: { cycle: year }, replace: true });
+            }}
+          />
+        </ArrivalSuspense>
+      );
+    }
+
     if (!cycle) {
       return (
         <>
@@ -186,9 +206,12 @@ export function TrackerPage() {
               defaultValue: 'Add a cycle to start tracking schools and dates. Only you can see it.',
             })}
             action={
-              <Button variant="primary" onClick={() => setAdding('cycle')}>
-                {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button variant="primary" onClick={() => setAdding('cycle')}>
+                  {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
+                </Button>
+                <Button onClick={() => setAdding('import')}>{t('import-open', { defaultValue: 'Import from a file' })}</Button>
+              </div>
             }
           />
           {addCycleForm}
@@ -261,9 +284,12 @@ export function TrackerPage() {
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <h2 className="t-heading m-0">{t('tracker-schools-heading', { defaultValue: 'Schools' })}</h2>
-          <Button variant="primary" onClick={() => setAdding('school')}>
-            {t('tracker-add-school', { defaultValue: 'Add school' })}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => setAdding('import')}>{t('import-open', { defaultValue: 'Import from a file' })}</Button>
+            <Button variant="primary" onClick={() => setAdding('school')}>
+              {t('tracker-add-school', { defaultValue: 'Add school' })}
+            </Button>
+          </div>
         </div>
 
         {adding === 'school' ? (
