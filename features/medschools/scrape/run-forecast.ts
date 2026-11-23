@@ -21,6 +21,7 @@ import { primarySeriesOf, seriesOfSource, toDayCounts } from '../engine/stats/in
 import { MIN_HISTORY_TOTAL } from '../engine/stats/constants';
 import { fnv1a } from '../engine/stats/random';
 import type { MedEventType, MedProgram, MedSource } from '../engine/types';
+import { runTurnaround } from './run-turnaround';
 import { runWaitCurves } from './run-wait-curves';
 import { brief, closeStaleRuns, lastRealRunWithin } from './run-support';
 import type { Logger, MedPrisma } from './types';
@@ -59,6 +60,9 @@ export interface ForecastSummary {
   unchanged: number;
   curves: number;
   curvesRemoved: number;
+  /** Secondary turnaround figures written or kept (at least 20 sharing members each) and rows dropped under the floor. */
+  turnarounds: number;
+  turnaroundsRemoved: number;
 }
 
 /** A count row as the job reads it: the stored figures plus where it belongs. */
@@ -217,6 +221,8 @@ export async function runForecast(
     unchanged: 0,
     curves: 0,
     curvesRemoved: 0,
+    turnarounds: 0,
+    turnaroundsRemoved: 0,
   };
 
   if (opts.trigger !== 'MANUAL') {
@@ -373,6 +379,18 @@ export async function runForecast(
     } catch (e) {
       summary.status = 'PARTIAL';
       error = `wait curves: ${brief(e)}`;
+      log.error(`forecast: ${error}`);
+    }
+  }
+  // Secondary turnaround rides the same pass; its failure is its own PARTIAL and hides nothing above.
+  if (summary.status === 'OK') {
+    try {
+      const r = await runTurnaround({ prisma, db, asOf: addDays(utcDayOf(now()), -1), log });
+      summary.turnarounds = r.figures;
+      summary.turnaroundsRemoved = r.removed;
+    } catch (e) {
+      summary.status = 'PARTIAL';
+      error = `turnaround: ${brief(e)}`;
       log.error(`forecast: ${error}`);
     }
   }

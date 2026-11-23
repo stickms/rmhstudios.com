@@ -506,6 +506,40 @@ model MedTrackerApplication {
       ]);
     });
 
+    it('the admissions-policy and turnaround tables are institutional text and counts: no person column, pinned', () => {
+      for (const name of ['MedSchoolAdmissionsPolicy', 'MedSecondaryTurnaround']) {
+        const m = model(name);
+        expect(m, name).toBeDefined();
+        expect(
+          m?.fields.some((f) => PERSON_LIKE.test(f) || f === 'userId' || /handle|post|author|member\b/i.test(f)),
+        ).toBe(false);
+        expect(USER_OWNED.has(name)).toBe(false);
+      }
+      expect(model('MedSchoolAdmissionsPolicy')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'rolling',
+        'evidence',
+        'url',
+        'checkedOn',
+        'source',
+      ]);
+      expect(model('MedSecondaryTurnaround')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'asOf',
+        'computedAt',
+        'members',
+        'p25Days',
+        'medianDays',
+        'p75Days',
+      ]);
+      expect(uniques('MedSchoolAdmissionsPolicy')).toContainEqual(['schoolId', 'program']);
+      expect(uniques('MedSecondaryTurnaround')).toContainEqual(['schoolId', 'program']);
+    });
+
     it('themes is a plain string array', () => {
       expect(model('MedSecondaryPrompt')?.body).toMatch(/\bthemes\s+String\[\]/);
     });

@@ -30,3 +30,13 @@ export const KM_REFRESH_DELTA = 3;
 /** The shown chance is rounded to the nearest multiple of this many percent (R13). */
 export const CHANCE_STEP_PERCENT = 5;
 export const CHANCE_HORIZONS = [7, 14, 30, 60] as const;
+
+/**
+ * Secondary turnaround (received -> submitted), owner 2026-11-23. A figure exists only when at least this many DISTINCT
+ * members who share contribute a valid pair of dates for a school x program (a member with two cycles counts once).
+ */
+export const TURNAROUND_MIN_MEMBERS = 20;
+/** A stored figure is replaced only when the member count moved by at least this many (delta k-anonymity, as R13). */
+export const TURNAROUND_REFRESH_DELTA = 3;
+/** A pair further apart than this is a typo or a different thing (a deferred secondary); it neither counts nor feeds the floor. */
+export const TURNAROUND_MAX_DAYS = 120;
