@@ -31,6 +31,16 @@ function PendingView() {
 }
 
 /**
+ * Where signing in returns: a school page's own panel (`#ask`), else the Ask page with the question the link carried
+ * (`?q=`) so it is not lost on the way through the sign-in screen.
+ */
+export function signInReturnPath(slug: string | undefined, question: string): string {
+  if (slug) return `/rmh-medschool/${encodeURIComponent(slug)}#ask`;
+  const q = question.trim();
+  return q ? `/rmh-medschool/ask?q=${encodeURIComponent(q)}` : '/rmh-medschool/ask';
+}
+
+/**
  * Ask a question about the public data. Signed out it is the site's sign-in prompt and sends nothing. `slug` pins a
  * school (the school page's panel); without it the question names its schools. The typed question survives every
  * failure so the member can retry. Nothing is stored here either: the answer lives in this component's state.
@@ -63,7 +73,7 @@ export function AskPanel({
         description={t('ask-signed-out-body', {
           defaultValue: 'Answers use RMH’s public data. You need an account to ask.',
         })}
-        callbackURL="/rmh-medschool/ask"
+        callbackURL={signInReturnPath(slug, initialQuestion)}
       />
     );
   }
@@ -78,6 +88,8 @@ export function AskPanel({
     const base = refusal(run.error).replace(/[.。]+$/, '');
     if (code === 'MEDSCHOOLS_QA_DAILY_CAP')
       return `${base}. ${t('ask-cap-reset', { defaultValue: 'Questions reset at 00:00 UTC.' })}`;
+    // The busy sentence already says when to try again.
+    if (code === 'MEDSCHOOLS_QA_BUSY') return `${base}.`;
     if (code === 'MEDSCHOOLS_QA_PAUSED' || code === 'AI_UNAVAILABLE')
       return `${base}. ${t('ask-retry-later', { defaultValue: 'Your question is kept. Try again in a few minutes.' })}`;
     return `${base}. ${t('ask-retry', { defaultValue: 'Your question is kept. Try again.' })}`;
@@ -92,6 +104,7 @@ export function AskPanel({
 
   return (
     <section
+      id="ask"
       className="flex flex-col gap-3"
       aria-label={title ? undefined : t('ask-heading', { defaultValue: 'Ask the data' })}
     >

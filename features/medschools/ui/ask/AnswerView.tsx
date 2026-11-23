@@ -32,13 +32,21 @@ export function AnswerView({ res }: { res: MedAskRes }) {
   })();
 
   const notice =
-    res.notice === 'removed-ungrounded'
+    res.notice === 'mine-unavailable'
+      ? t('ask-notice-mine-unavailable', {
+          defaultValue: 'Your own estimate could not be loaded just now. Try again, or open My tracker.',
+        })
+      : res.notice === 'removed-ungrounded'
       ? t('ask-notice-removed', {
           defaultValue: 'Some statements were removed because their figures could not be matched to the data.',
         })
       : res.notice === 'thin'
         ? t('ask-notice-thin', { defaultValue: 'RMH has little data on this yet, so the answer may be incomplete.' })
         : null;
+
+  // Interview questions and comments are member-reported text: quoted with their source, never checked. The sentence
+  // says so only when the answer cites one (plan R17).
+  const memberReported = res.segments.length > 0 && res.citations.some((c) => c.label === 'Interview question');
 
   const used =
     res.schools.length > 0
@@ -87,6 +95,14 @@ export function AnswerView({ res }: { res: MedAskRes }) {
       ) : null}
       {empty ? <p className="t-body m-0 py-3">{empty}</p> : null}
       {notice ? <p className="t-meta m-0 mt-2">{notice}</p> : null}
+      {memberReported ? (
+        <p className="t-meta m-0 mt-1">
+          {t('ask-notice-member-reported', {
+            defaultValue:
+              'Interview questions and comments are reported by members. RMH checks the figures in an answer, not what members wrote.',
+          })}
+        </p>
+      ) : null}
       {used ? <p className="t-meta m-0 mt-1">{used}</p> : null}
       {res.mine !== null ? <MyChance mine={res.mine} /> : null}
       <Citations citations={res.citations} schools={res.schools} />

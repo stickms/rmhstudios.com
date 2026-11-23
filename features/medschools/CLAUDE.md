@@ -287,24 +287,39 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   primary-source rule are inherited, never re-implemented. It imports no tracker module and no user id
   (`retrieve.server.test.ts` pins it). A fact's `updatedAt` is the source's last successful run for a count (the
   citation says "source refreshed"), `fetchedAt` for a profile, `computedAt` for a forecast; unknown stays unknown.
-- **The validator is the guarantee (R7).** `engine/qa/ground.ts` keeps a segment only when every cite is a retrieved
-  fact, it cites at least one, every number token in it (`engine/qa/numbers.ts`: digits normalised, percents, dates,
-  years, ranges) is in a cited numeric fact, it holds no link or markup, and a segment citing only forum text
-  (`untrusted`) holds no digit. Dropped segments are not repaired or re-asked: `notice: 'removed-ungrounded'`, and
-  nothing left is `no-data`. No derived figures: a computed number is simply not found.
+- **The validator is the guarantee (R7, R17).** `engine/qa/ground.ts` keeps a segment only when every cite is a
+  retrieved fact, it cites at least one, every number in it is in a cited numeric fact, it holds no link, bare domain or
+  markup, and a segment citing only forum text (`untrusted`) holds no number. A number is every maximal digit run
+  whatever precedes it (CJK and Arabic glue digits to letters; `engine/qa/numbers.ts`), digits normalised, percents
+  (`%`, `percent`, `per cent`), `k`/`m` suffixes and a leading minus part of the token, dates, years, ranges; and a
+  spelled-out number (`engine/qa/number-words.ts`: English parsed to its value, "a dozen", "half"; es/fr/pt/ru/ar/hi/zh/ja
+  listed best-effort as unverifiable, so those sentences are dropped). Bidi and zero-width characters (`\p{Cf}`) are
+  removed from the sentence before it is checked and shown; lookalike dots (`。` `．` `﹒` `[.]` `(dot)`, `evil . com`)
+  count as dots for the domain check. A sentence citing facts of several schools takes a number only from a cited fact
+  of a school it names (`schoolNames`). **What it does not guarantee:** that digit-free prose is true. A sentence may
+  paraphrase member-reported text (interview questions, feedback, the profile's style and length notes, all
+  `untrusted`), because that is what such an answer is; the page says members wrote it and RMH checks figures, not
+  words. Dropped segments are not repaired or re-asked: `notice: 'removed-ungrounded'`, and nothing left is `no-data`.
+  No derived figures: a computed number is simply not found.
 - **Injection (R8).** Facts reach the model only inside `asData(...)`; forum text is cleaned again (`cleanForPrompt`),
   capped and flagged untrusted. A model that obeys planted text still produces nothing the validator keeps
   (`testing/integration/medschools-ask.test.ts` proves it end to end with a fake provider).
 - **My chance (R4).** Only on a `my-chance` question: the server runs `getChances(userId, ...)` for the resolved schools
   and returns the rows as `mine`; the model never sees a milestone, date or percent from the tracker. `mine: []` means
-  no application; the UI renders it through `ChanceLine` even when the answer is thin. This is the one personal read in
+  no application; `mine: null` with `notice: 'mine-unavailable'` means the read failed (R18); the UI renders it through `ChanceLine` even when the answer is thin. This is the one personal read in
   `me/**` that is not an aggregate of tracker rows, and it reads only the caller's own.
-- **Ceilings (R9-R11), in this order before any model call.** Rate limit `ai` 6 per minute per user; a question already
-  in flight is `RATE_LIMITED`; the per-user daily cap (`MEDSCHOOLS_QA_DAILY_CAP`, default 15, counted from `AiUsage`
-  route rows since UTC midnight: no table, no stored question); `isAiConfigured` (503 `AI_UNAVAILABLE`);
-  `assertAiBudget` (402); the shared gate (503 `MEDSCHOOLS_QA_PAUSED`: Q&A may spend `MEDSCHOOLS_QA_AI_SHARE`, default
-  0.25, of `MEDSCHOOLS_AI_MONTHLY_USD`; the scrape gates get the rest, `features/medschools/ai-budget.ts`). A ledger
-  read error fails closed. The web tier needs `DEEPSEEK_API_KEY`.
+- **Ceilings (R9-R11, R18), in this order before any model call.** Rate limit `ai` 6 per minute per user;
+  `isAiConfigured` (503 `AI_UNAVAILABLE`); the shared gate (503 `MEDSCHOOLS_QA_PAUSED`: Q&A may spend
+  `MEDSCHOOLS_QA_AI_SHARE`, default 0.25, of `MEDSCHOOLS_AI_MONTHLY_USD`; the scrape gates get the rest,
+  `features/medschools/ai-budget.ts`); `assertAiBudget` (402); then the atomic reservation (`reserveQuestion` in
+  `api/qa/budget.server.ts`): one transaction under `pg_advisory_xact_lock` on the member writes a `medschools-qa-ask`
+  row (the day's count, `MEDSCHOOLS_QA_DAILY_CAP`, default 15, since UTC midnight: 429 `MEDSCHOOLS_QA_DAILY_CAP`) and a
+  `medschools-qa-lock` row (the in-flight lease, 60 s, deleted when the question ends: 429 `MEDSCHOOLS_QA_BUSY`).
+  Both are zero-token, zero-cost, text-free `AiUsage` rows, so the cap and the lease hold across every web process and do
+  not depend on the provider's metering write. Any ledger error fails closed (503 paused, unavailable). The one thing a
+  lost provider metering write can still do is under-count spend (it is logged by `meter`); the daily count cannot slip.
+  The whole question has a 50 s deadline (`QA_DEADLINE_MS`, under the client's 60 s `AI_TIMEOUT_MS`) plus the request's
+  own `signal`; both model calls take it and never retry. The web tier needs `DEEPSEEK_API_KEY`.
 - **What is and is not kept (R12).** The question and the answer exist in memory for the call. No table, no cache, no
   response micro-cache, no log line holds them (logs carry intent, counts and status). The only trace is the `AiUsage`
   row every AI call already writes (user id, task, prompt id, tokens, cost, time; no text), kept under that table's

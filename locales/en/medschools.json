@@ -35,6 +35,8 @@
   "ask-mine-phd": "Combined degree",
   "ask-mine-reg": "Regular",
   "ask-mine-school-program": "{{school}} · {{program}}",
+  "ask-notice-member-reported": "Interview questions and comments are reported by members. RMH checks the figures in an answer, not what members wrote.",
+  "ask-notice-mine-unavailable": "Your own estimate could not be loaded just now. Try again, or open My tracker.",
   "ask-notice-removed": "Some statements were removed because their figures could not be matched to the data.",
   "ask-notice-thin": "RMH has little data on this yet, so the answer may be incomplete.",
   "ask-pending": "Checking the data. This takes a few seconds.",

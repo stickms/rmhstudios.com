@@ -27,7 +27,7 @@ vi.mock('@/components/errors/useRefusalText', () => ({
   useRefusalText: () => Object.assign((e: unknown) => String(e), { maybe: (e: unknown) => String(e) }),
 }));
 
-import { AskPanel } from './AskPanel';
+import { AskPanel, signInReturnPath } from './AskPanel';
 import { AnswerView } from './AnswerView';
 import { AskForm } from './AskForm';
 import { suggestionsFor } from './suggestions';
@@ -207,6 +207,27 @@ describe('AnswerView', () => {
     const html = renderToString(<AnswerView res={res({ mine: [chance], notice: 'thin' })} />);
     expect(html).toContain('data-chance="thin"');
     expect(html).toContain('Your estimate');
+  });
+});
+
+describe('the sign-in return path', () => {
+  it('returns to the school panel from a school page and keeps ?q= on the Ask page', () => {
+    expect(signInReturnPath('duke', 'ignored')).toBe('/rmh-medschool/duke#ask');
+    expect(signInReturnPath(undefined, '')).toBe('/rmh-medschool/ask');
+    expect(signInReturnPath(undefined, ' Duke MCAT? & more ')).toBe('/rmh-medschool/ask?q=Duke%20MCAT%3F%20%26%20more');
+  });
+});
+
+describe('notices for the member-reported text and an unavailable estimate', () => {
+  it('names an estimate that could not be loaded, apart from an empty one', () => {
+    const html = renderToString(<AnswerView res={res({ mine: null, notice: 'mine-unavailable' })} />);
+    expect(html).toContain('Your own estimate could not be loaded');
+  });
+  it('says interview text is member-reported only when an answer cites it', () => {
+    expect(renderToString(<AnswerView res={res()} />)).not.toContain('reported by members');
+    const cited = res();
+    cited.citations[1] = { ...cited.citations[1]!, label: 'Interview question' };
+    expect(renderToString(<AnswerView res={cited} />)).toContain('reported by members');
   });
 });
 

@@ -184,6 +184,37 @@ existing primitives (`PageLayout`, `Button`, `Input`/textarea field, rows on rul
 most 40 facts and 12,000 characters of facts in the prompt (lowest-priority facts drop first: questions, then history,
 then stats). Answer: at most 8 segments, each 400 chars, 1,200 in all; extras are dropped before validation.
 
+**R17. What the validator guarantees, said exactly (review fixes, 2026-11-23).** Guaranteed: every number in a kept
+sentence, in digits or spelled out, is a number of a cited trusted fact (and, when the sentence cites facts of several
+schools, of a fact of a school the sentence names); no link, bare domain or markup, with lookalike dots and zero-width
+characters normalised before the check; no run of six words of the system prompt; no bidi or zero-width characters in
+what is shown (they are removed, not judged). A number is every maximal digit run whatever letter precedes it (CJK and
+Arabic prefixes), with `k`, `per cent`/`percent` and a leading minus part of the token; English number words are parsed
+to their value, the other shipped locales' number words are an unverifiable best-effort list, and a lone "one" is left
+alone (a pronoun). NOT guaranteed: that digit-free prose is true. We considered dropping a sentence whose words overlap
+an untrusted fact more than a trusted one, and rejected it: an answer about interview questions is a paraphrase of
+untrusted text, so the rule would delete the feature, and word overlap is too fuzzy to separate "quotes a question"
+from "repeats a planted claim". Instead the claim is made smaller: R7, the code docs, the UI notice (shown when an
+answer cites member-reported text: RMH checks the figures, not what members wrote) say exactly this, and the profile's
+scraped `interviewStyle` and `interviewLength` now travel as an untrusted fact so they can never supply a number or a
+domain.
+
+**R18. Gates, atomically and across processes (review fixes).** Order, chosen for the most useful refusal: the shared
+monthly pause first (it is for everyone, so it is not blamed on this member's day), the member's own allowance (402),
+then one transaction under `pg_advisory_xact_lock` that refuses a live lease (`MEDSCHOOLS_QA_BUSY`, "Your last question is
+still being answered. Try again in a minute") and then the daily cap, and writes the reservation. The first two only
+read, so a refused question never spends one of the day's. This supersedes R9's order and R10's count: the day's count
+is now the `medschools-qa-ask` reservation rows (written before the model call, so a failing provider or a lost
+metering write cannot hand out free questions), the in-flight rule is the `medschools-qa-lock` row (60 s lease,
+deleted at the end), both zero-cost `AiUsage` rows with no text (no new table; `privacy.server.test.ts` pins that
+`budget.server.ts` writes only these). The transaction-scoped advisory lock is the form the pooler allows (the
+session-scoped one is banned), Redis is optional and so not used for a limit. Deadline: the whole question ends within
+50 s (`QA_DEADLINE_MS`, under the client's 60 s), the request's `signal` is joined to it and passed to both model calls,
+which never retry; past it the member gets `AI_UNAVAILABLE`, and the lease ends when the work really stops. A named
+school that does not resolve ends the question (`no-school`), pinned page or not, and a comparison with any such name
+declines. A failed read of the member's own estimate is `mine: null` with `notice: 'mine-unavailable'`; `[]` stays "no
+application". Sign-in returns to `/rmh-medschool/<slug>#ask` from a school page and to the Ask page with `?q=`.
+
 ## Review Focus
 
 Failure modes the spec implies but no obvious task test reaches; each has its test in the named task.
