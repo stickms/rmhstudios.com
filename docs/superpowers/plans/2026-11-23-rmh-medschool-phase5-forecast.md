@@ -144,7 +144,9 @@ and "Private tracker", §8 `medschools.forecast` daily 06:40, §10 statistics an
   logged error, and a stranger's row is on the wire. The worker is the batch tier that already holds the secret and reads
   the tracker for the publish job, and what it writes is the aggregate. (b) It gives the curve the same once-a-day
   stability as the RMH snapshot (Q2): a member who back-dates a milestone cannot move a curve a neighbour is looking at
-  in real time, which would reveal who just shared (the differencing attack Q2 closes for counts). (c) Cost: a per-request
+  in real time, which would reveal who just shared (the differencing attack Q2 closes for counts). Once a day closes only the
+  same-day differencing; the day-over-day differencing of a curve that is rebuilt every day, and a member choosing `elapsed` by
+  editing their own COMPLETE date, are closed by R13. (c) Cost: a per-request
   scan is O(all tracker rows) for every tracker view. The price is a lag of up to a day, shown as "estimate as of {{date}}".
 - **D8 What the request computes.** `getChances(userId, …)` reads the caller's own applications (the tracker service) and
   at most one `MedWaitCurve` row per school x program, then turns `S(t)` into
@@ -1062,6 +1064,23 @@ smaller option and recorded for override.
   school's second year of data is the common case in this product's first season.
 - **R12 No MDApplicants adapter is written** for "depth": the enum exists but nothing stores it; the loader accepts it generically (share shape
   only, >= 30 reports) so adding the source later changes no forecast code.
+- **R13 The wait curve is coarse in time, in count and in refresh (privacy review, 2026-11-23).** Three attacks on the first design: `me/chances`
+  lets a member pick `elapsed` by editing their own COMPLETE date and reads `1 - S(e+h)/S(e)` at 1% resolution, so the whole step function can be
+  rebuilt; the curve is rebuilt every day from live rows, so a new step at t = X on day D+1 shows that one sharing member was invited X days after
+  complete; and `KM_MIN_SURVIVAL` guarded S, not the at-risk count, so an estimate could rest on one or two people. The answers, all in one ruling:
+  (1) **Weekly bins**: every time is rounded up to whole weeks (t' = 7 * ceil(t/7)) before Kaplan-Meier, steps sit only at multiples of 7, and the
+  request maps `elapsed` to its week the same way and the horizon to whole weeks, so every day of a week gets one answer. (2) **At-risk floor**:
+  each step stores the number at risk (`{ t, s, n }`), `maxDay` is the last week with at least 10 members at risk, and a horizon past it is not
+  shown ("not enough data yet" for that horizon; the existing `beyond` state when every horizon is missing); because at-risk only falls, a target
+  at or before `maxDay` also has 10 at risk at the caller's week. `KM_MIN_SURVIVAL` stays alongside as a guard against dividing by about zero.
+  (3) **Minimum invites**: no curve with fewer than 10 invite events, on top of the 20 distinct members. (4) **Delta k-anonymity**: the job replaces a
+  stored curve only when invites or members differ from the stored row by at least 3; otherwise the row is left exactly as it was, so one new
+  invite never appears as a new step the next day. A row falling under any floor is still deleted at once, and a row in an older shape is rebuilt.
+  (5) **Coarser output**: the chance is rounded to the nearest 5%; the shown basis stays rounded down to 10. (6) An end date (rejection, withdrawal,
+  acceptance) dated before COMPLETE drops the observation, as an invite before COMPLETE does. (7) A COMPLETE date in the future is not a wait: the
+  status is `not-complete-yet` with its own line, and it never selects a week of the curve. Reasoning: each is the smallest change that removes one
+  of the three attacks without hiding the curve from members; weekly bins and the 5% step cost accuracy the estimate never had, and the delta rule
+  costs freshness the page already labelled "as of" a date.
 
 ## For the owner (short; the plan does the listed thing meanwhile)
 
@@ -1073,4 +1092,7 @@ smaller option and recorded for override.
 3. **Forecast for "All programs" (R5).** Show REG with a note, as built, or add a summed ALL fit?
 4. **Wave floor (R7).** Keep the minimum of 5 invites, or the bare 3x rule?
 5. **Wave on the live feed.** It adds a field to the live row (`wave`); acceptable for the public key set, or a separate "waves today" strip instead?
-6. **Steel §18.** D10 (charts and data tables) and D13 (RMH Med Schools gap) are touched, not answered.
+6. **Rejection is censored, not a competing risk (review finding 5).** An application that ends in rejection, withdrawal or acceptance before an
+   invite is censored at that date, which treats "still could have been invited" as true of it. A competing-risk (cumulative incidence) estimate
+   would say how likely an invite is among all outcomes, but needs more data per school than the floor allows. Meanwhile: censoring, as built.
+7. **Steel §18.** D10 (charts and data tables) and D13 (RMH Med Schools gap) are touched, not answered.

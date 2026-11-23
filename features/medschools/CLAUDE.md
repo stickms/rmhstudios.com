@@ -220,9 +220,25 @@ Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and r
   type; rows for finished cycles stay, a record of what was predicted, D11) and then `MedWaitCurve`.
 - **`MedWaitCurve` is precomputed by the worker (D7).** A request that computed the curve would read other members'
   `COMPLETE` and `INTERVIEW` rows inside a per-user handler (one bad `where` and a stranger's row is on the wire), a member
-  back-dating a milestone could move a curve a neighbour is looking at (the differencing attack the once-a-day publish
-  closes for counts), and the scan would be O(all tracker rows) per view. The row holds `members`, `invited`, `maxDay`
-  and `{ t, s }` steps; nothing about one contribution.
+  back-dating a milestone could move a curve a neighbour is looking at (the once-a-day publish closes only same-day
+  differencing; R13 closes the rest), and the scan would be O(all tracker rows) per view. The row holds `members`,
+  `invited`, `maxDay` and `{ t, s, n }` steps (`n` = members at risk at the step); nothing about one contribution.
+- **R13: the curve is coarse (privacy review).** Times are whole weeks (`7 * ceil(t/7)`, `binObs`) before Kaplan-Meier, so
+  steps sit only at multiples of 7; `maxDay` is the last week with at least 10 members at risk (`KM_MIN_AT_RISK`), and
+  `inviteChance` is null for a target past it (which also puts 10 at risk at the caller's week); the request maps
+  `elapsed` to its week and the horizon to whole weeks, so every day of a week has one answer. No curve with fewer than 10
+  invite events (`KM_MIN_INVITES`) on top of 20 members. `runWaitCurves` replaces a stored row only when invites or members
+  moved by at least 3 (`KM_REFRESH_DELTA`, `worthRefreshing`); below any floor the row is deleted at once, and a row in an
+  older shape is rebuilt. The chance is rounded to the nearest 5%, the basis down to 10. An end date before COMPLETE drops
+  the observation; a COMPLETE in the future is status `not-complete-yet`. All constants in `engine/stats/constants.ts`.
+- **Each category ends on its own day.** `cycleEndOn(cycleYear, type)` is the day before `cycleYearOf` rolls the type over:
+  secondaries May 31, interviews June 30, decisions (acceptance, waitlist, rejection) August 31. The forecast job draws each
+  category to its own end, so the path, the total and `halfDay` match the implied total; the response's `endOn` is the
+  category's, and the chart's x axis follows the stored band.
+- **The observed line and the band agree.** `getForecast` cumulates the live series through the row's `asOf`; when a source
+  revised past days since the job ran, the band (and the total) shifts by the difference, never below what is observed.
+- **Live and Activity waves agree.** Both read REG + PHD summed, the primary source chosen over the whole cycle; the live
+  feed reads the page schools' cycle rows from the cycle's first report (a window would miss a burst after a quiet spell).
 - **Opt-in, and 20 distinct members (D5, D6, R1, R4).** Only cycles with `shareAnonymously` feed the curve; a pair with
   fewer than 20 distinct members with a valid observation has no row (a member with two cycles counts once). The basis
   shown is rounded down to a multiple of 10 so it does not reveal each new member. Every signed-in member sees the chance,
@@ -252,7 +268,7 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
   Ticks sit on `CategoryLines` (only while Interview is on) and `DailyBars` (Interview only); `WaveNote` is the
   non-visual reading; a live row says "Part of a wave".
 - **The chance** shows on the tracker (`tracker/ChanceLine.tsx`, one query for the cycle under `ME_KEY`) and under the
-  Forecast chart (`SchoolChances.tsx`). It is an addition: signed out, loading or failed, the page is whole without it.
+  Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is an addition: signed out, loading or failed, the page is whole without it.
 
 ## Testing and verification
 

@@ -314,7 +314,7 @@ Consequences:
   model call**). `features/medschools/scrape/run-forecast.ts` fits `MedForecast` (REG and PHD, five charted event types)
   from the floored public primary series (`engine/floor.ts` `floorWhere` plus `primarySeriesOf`, so an unpublished or
   sub-k RMH figure never moves a band), then `run-wait-curves.ts` rebuilds the aggregate `MedWaitCurve` rows (only where
-  20 distinct sharing members contribute). Ledger `MedSourceRun` source `RMH`, job `forecast`; a non-manual run is
+  20 distinct sharing members and 10 invites contribute; weekly steps; a stored row is replaced only on a change of 3 or more, R13). Ledger `MedSourceRun` source `RMH`, job `forecast`; a non-manual run is
   skipped inside 20 h of an OK one; an ended cycle is not rewritten. Log lines carry counts only.
 - **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss** consumer that drains queues and runs
   background work that used to block request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
