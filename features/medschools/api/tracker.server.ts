@@ -311,7 +311,11 @@ export async function importMilestones(
         : [];
       const appOf = new Map(existing.map((a) => [`${a.schoolId}|${a.program}`, a.id]));
       const known = [...wanted.values()].filter((w) => idOf.has(w.slug));
-      const toCreate = known.filter((w) => !appOf.has(`${idOf.get(w.slug)}|${w.program}`));
+      // Only a school that would get at least one writable date adds an application (the loop below skips the rest), so
+      // only those count against the cap: an import that would add nothing is never refused for its size.
+      const hasWritableDate = (w: { milestones: Map<MilestoneType, { date: string }> }) =>
+        [...w.milestones.values()].some((m) => milestoneDateProblem(i.cycleYear, m.date, now) === null);
+      const toCreate = known.filter((w) => !appOf.has(`${idOf.get(w.slug)}|${w.program}`) && hasWritableDate(w));
       if (existing.length + toCreate.length > LIMITS.applicationsPerCycle) {
         return { cap: { existing: existing.length, adding: toCreate.length } };
       }

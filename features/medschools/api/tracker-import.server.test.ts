@@ -139,6 +139,25 @@ describe('importMilestones', () => {
     expect((await getTracker('a')).cycles).toEqual([]);
   });
 
+  it('counts only schools that would add a writable date against the cap', async () => {
+    for (let i = 0; i < 70; i += 1) f.tables.medSchool.push(school(`s${i}`));
+    // 70 schools, but only 3 have a date inside the cycle's window: the other 67 would add nothing.
+    const rows = Array.from({ length: 70 }, (_, i) => ({
+      slug: `school-s${i}`,
+      program: 'REG' as const,
+      milestones: [ms('SUBMITTED', i < 3 ? '2026-06-12' : '2019-06-12')],
+    }));
+    const r = await importMilestones('a', { cycleYear: 2027, rows }, NOW);
+    expect(r).toMatchObject({ schoolsAdded: 3, added: 3, invalid: 67 });
+    // And at the cap, a school with only bad dates is still not a refusal.
+    for (let i = 0; i < 57; i += 1) f.tables.medSchool.push(school(`t${i}`));
+    await importMilestones('a', { cycleYear: 2027, rows: Array.from({ length: 57 }, (_, i) => ({ slug: `school-t${i}`, program: 'REG' as const, milestones: [ms('SUBMITTED', '2026-06-12')] })) }, NOW);
+    const full = await importMilestones('a', { cycleYear: 2027, rows: [{ slug: 'school-x', program: 'REG', milestones: [ms('SUBMITTED', '2019-06-12')] }] }, NOW);
+    expect(full).toMatchObject({ schoolsAdded: 0, added: 0, invalid: 1 });
+    const over = await importMilestones('a', { cycleYear: 2027, rows: [{ slug: 'school-x', program: 'REG', milestones: [ms('SUBMITTED', '2026-06-12')] }] }, NOW);
+    expect(over).toEqual({ cap: { existing: 60, adding: 1 } });
+  });
+
   it('writes only the caller\'s tracker: another member\'s rows are untouched', async () => {
     await importMilestones('b', { cycleYear: 2027, rows: [{ slug: 'school-x', program: 'REG', milestones: [ms('SUBMITTED', '2026-06-01')] }] }, NOW);
     await importMilestones('a', { cycleYear: 2027, rows: [{ slug: 'school-x', program: 'REG', milestones: [ms('SUBMITTED', '2026-06-12', true)] }] }, NOW);
