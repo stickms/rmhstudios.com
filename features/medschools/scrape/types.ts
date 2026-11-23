@@ -223,6 +223,29 @@ export interface MedSecondaryCheckRow {
   promptCount: number;
 }
 
+/** What a school's own admissions page said about rolling decisions (a curated import). */
+export interface MedSchoolAdmissionsPolicyRow {
+  id: string;
+  schoolId: string;
+  program: MedProgram;
+  rolling: boolean;
+  evidence: string;
+  url: string;
+  checkedOn: Date;
+  source: 'ADMIT' | 'SDN' | 'SCHOOL';
+}
+
+export interface MedSecondaryTurnaroundRow {
+  id: string;
+  schoolId: string;
+  program: MedProgram;
+  asOf: Date;
+  members: number;
+  p25Days: number;
+  medianDays: number;
+  p75Days: number;
+}
+
 export interface MedPrisma {
   medSchool: {
     count(args?: { where?: Where }): Promise<number>;
@@ -386,6 +409,15 @@ export interface MedPrisma {
     findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedSecondaryObservationRow[]>;
     create(args: { data: Data }): Promise<MedSecondaryObservationRow>;
     update(args: { where: Where; data: Data }): Promise<MedSecondaryObservationRow>;
+  };
+  medSchoolAdmissionsPolicy: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedSchoolAdmissionsPolicyRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSchoolAdmissionsPolicyRow>;
+  };
+  medSecondaryTurnaround: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedSecondaryTurnaroundRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSecondaryTurnaroundRow>;
+    deleteMany(args: { where: Where }): Promise<{ count: number }>;
   };
   medSecondaryCheck: {
     findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedSecondaryCheckRow[]>;

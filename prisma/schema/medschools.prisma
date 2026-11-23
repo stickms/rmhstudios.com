@@ -96,36 +96,38 @@ enum MedRunTrigger {
 /// A US medical school (MD or DO). Rows are curated, never auto-created from a
 /// source name; unmatched names go to `MedSchoolAliasMiss`.
 model MedSchool {
-  id              String    @id @default(cuid())
-  slug            String    @unique
-  name            String
-  shortName       String
-  degree          MedDegree
-  city            String
+  id                   String    @id @default(cuid())
+  slug                 String    @unique
+  name                 String
+  shortName            String
+  degree               MedDegree
+  city                 String
   /// Two-letter state code.
-  state           String
-  country         String    @default("US")
-  website         String?
-  interviewFormat String?
-  interviewType   String?
-  active          Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  state                String
+  country              String    @default("US")
+  website              String?
+  interviewFormat      String?
+  interviewType        String?
+  active               Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  aliases             MedSchoolAlias[]
-  counts              MedCycleCount[]
-  events              MedCycleEvent[]
-  stats               MedSchoolStats[]
-  interviewQuestions  MedInterviewQuestion[]
-  interviewProfiles   MedInterviewProfile[]
-  sdnThreads          MedSdnThread[]
-  admitForumThreads   MedAdmitForumThread[]
-  trackerApplications MedTrackerApplication[]
-  listItems           MedSchoolListItem[]
-  forecasts           MedForecast[]
-  waitCurves          MedWaitCurve[]
-  secondaryPrompts    MedSecondaryPrompt[]
-  secondaryChecks     MedSecondaryCheck[]
+  aliases              MedSchoolAlias[]
+  counts               MedCycleCount[]
+  events               MedCycleEvent[]
+  stats                MedSchoolStats[]
+  interviewQuestions   MedInterviewQuestion[]
+  interviewProfiles    MedInterviewProfile[]
+  sdnThreads           MedSdnThread[]
+  admitForumThreads    MedAdmitForumThread[]
+  trackerApplications  MedTrackerApplication[]
+  listItems            MedSchoolListItem[]
+  forecasts            MedForecast[]
+  waitCurves           MedWaitCurve[]
+  secondaryPrompts     MedSecondaryPrompt[]
+  secondaryChecks      MedSecondaryCheck[]
+  admissionsPolicies   MedSchoolAdmissionsPolicy[]
+  secondaryTurnarounds MedSecondaryTurnaround[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -708,4 +710,45 @@ model MedSecondaryCheck {
 
   @@unique([schoolId, source])
   @@map("med_secondary_check")
+}
+
+/// Whether a school decides on a rolling basis, per program: a fact read once from the school's own admissions page
+/// (a curated import from `data/medschools/school-pages.json`, never a scraper). One row per school and program, only
+/// where the page said something; `evidence` is the page's own sentence, verified verbatim. Institutional text, no person.
+model MedSchoolAdmissionsPolicy {
+  id        String          @id @default(cuid())
+  schoolId  String
+  program   MedProgram
+  /// true = rolling decisions; false = decisions on set dates.
+  rolling   Boolean
+  evidence  String
+  url       String
+  checkedOn DateTime        @db.Date
+  source    MedPromptSource @default(SCHOOL)
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program])
+  @@map("med_school_admissions_policy")
+}
+
+/// Secondary turnaround (secondary received -> secondary submitted) per school x program, aggregated by the worker from
+/// the tracker rows of members who share. Exists only when at least 20 distinct members contribute; stores counts and
+/// whole-day quantiles, nothing about any one contribution.
+model MedSecondaryTurnaround {
+  id         String     @id @default(cuid())
+  schoolId   String
+  program    MedProgram
+  asOf       DateTime   @db.Date
+  computedAt DateTime   @default(now())
+  /// Distinct members behind the figures (a count).
+  members    Int
+  p25Days    Int
+  medianDays Int
+  p75Days    Int
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program])
+  @@map("med_secondary_turnaround")
 }
