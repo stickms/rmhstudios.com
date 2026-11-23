@@ -42,6 +42,7 @@ import type {
 
 const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
   status: 'answered',
+  thinking: false,
   segments: [
     { text: 'Duke has 412 reported interview events.', cites: ['f1'] },
     { text: 'The MCAT median is 511.', cites: ['f2', 'f1'] },
@@ -79,7 +80,7 @@ const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
 
 function panel(
   props: Parameters<typeof AskPanel>[0] = {},
-  status: MedAskStatusRes = { configured: true, tier: 'free', remainingToday: 12, dailyCap: 15 },
+  status: MedAskStatusRes = { configured: true, thinkingAvailable: true, tier: 'free', remainingToday: 12, dailyCap: 15 },
   limit?: MedQaLimitRequestStateRes,
 ) {
   const qc = new QueryClient();
@@ -111,7 +112,8 @@ describe('AskPanel', () => {
     expect(html.match(/bg-site-accent/g)?.length).toBe(1);
     expect(html).toContain('>Ask</span>');
     // Suggestion rows fill, never submit.
-    expect(html.match(/type="button"/g)?.length).toBe(suggestionsFor(false).length);
+    // Plus the "Think it through" switch, which is a button too.
+    expect(html.match(/type="button"/g)?.length).toBe(suggestionsFor(false).length + 1);
   });
 
   it('a pinned panel offers three suggestions and a school heading', () => {
@@ -126,7 +128,7 @@ describe('AskPanel', () => {
     h.session = { user: { id: 'u1' } };
     const html = panel(
       { initialQuestion: 'What is the median?' },
-      { configured: true, tier: 'free', remainingToday: 0, dailyCap: 15 },
+      { configured: true, thinkingAvailable: true, tier: 'free', remainingToday: 0, dailyCap: 15 },
     );
     expect(html).toMatch(/<button[^>]*disabled[^>]*>[^<]*(<[^>]+>)*Ask/);
     expect(html).toContain('0 of 15 questions left today');
@@ -134,7 +136,7 @@ describe('AskPanel', () => {
 
   it('an unconfigured site says so', () => {
     h.session = { user: { id: 'u1' } };
-    expect(panel({}, { configured: false, tier: 'free', remainingToday: 0, dailyCap: 15 })).toContain('Questions are not available');
+    expect(panel({}, { configured: false, thinkingAvailable: true, tier: 'free', remainingToday: 0, dailyCap: 15 })).toContain('Questions are not available');
   });
 });
 
@@ -147,19 +149,19 @@ const LIMIT = (over: Partial<MedQaLimitRequestStateRes> = {}): MedQaLimitRequest
   reapplyOn: null,
   ...over,
 });
-const FREE: MedAskStatusRes = { configured: true, tier: 'free', remainingToday: 25, dailyCap: 25 };
+const FREE: MedAskStatusRes = { configured: true, thinkingAvailable: true, tier: 'free', remainingToday: 25, dailyCap: 25 };
 
 describe('limit tiers on the Ask page (R19)', () => {
   it('an admin sees "Admin: no daily limit", no count and no request form', () => {
     h.session = { user: { id: 'a1' } };
-    const html = panel({}, { configured: true, tier: 'admin', remainingToday: null, dailyCap: null }, LIMIT({ state: 'not-needed', tier: 'admin' }));
+    const html = panel({}, { configured: true, thinkingAvailable: true, tier: 'admin', remainingToday: null, dailyCap: null }, LIMIT({ state: 'not-needed', tier: 'admin' }));
     expect(html).toContain('Admin: no daily limit');
     expect(html).not.toContain('questions left today');
     expect(html).not.toContain('Request a higher limit');
   });
   it('a paying member sees the count and no form', () => {
     h.session = { user: { id: 'm1' } };
-    const html = panel({}, { configured: true, tier: 'member', remainingToday: 90, dailyCap: 100 }, LIMIT({ state: 'not-needed', tier: 'member' }));
+    const html = panel({}, { configured: true, thinkingAvailable: true, tier: 'member', remainingToday: 90, dailyCap: 100 }, LIMIT({ state: 'not-needed', tier: 'member' }));
     expect(html).toContain('90 of 100 questions left today');
     expect(html).not.toContain('Request a higher limit');
   });
@@ -204,6 +206,50 @@ describe('AskForm busy', () => {
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('Cancel');
     expect(html).toContain('disabled');
+  });
+});
+
+describe('Think it through (R20)', () => {
+  const form = (o: { thinkingAvailable?: boolean; think?: boolean }) =>
+    renderToString(
+      <AskForm
+        question="x question"
+        onQuestion={() => undefined}
+        onSubmit={() => undefined}
+        onCancel={() => undefined}
+        pending={false}
+        configured
+        remaining={5}
+        cap={15}
+        pinned={false}
+        onThink={() => undefined}
+        {...o}
+      />,
+    );
+  it('shows the switch and its helper only when the server offers thinking', () => {
+    expect(form({})).not.toContain('Think it through');
+    const html = form({ thinkingAvailable: true, think: true });
+    expect(html).toContain('Think it through');
+    expect(html).toContain('Slower, more careful answer. Can take up to two minutes.');
+    expect(html).toContain('role="switch"');
+    expect(html).toContain('aria-checked="true"');
+  });
+  it('says "Thought for N s" only for an answer that thought, and never shows reasoning', () => {
+    expect(renderToString(<AnswerView res={res({ thinking: true })} seconds={42} />)).toContain('Thought for');
+    expect(renderToString(<AnswerView res={res({ thinking: true })} seconds={42} />)).toContain('42');
+    expect(renderToString(<AnswerView res={res({ thinking: false })} seconds={42} />)).not.toContain('Thought for');
+  });
+  it('askRun carries think to the call and reports the seconds the question took', async () => {
+    let t = 1_000;
+    const call = vi.fn(async (_b: unknown, _s: AbortSignal) => {
+      t += 37_400;
+      return res({ thinking: true });
+    });
+    const seen: AskSnapshot[] = [];
+    createAskRun(call, (s) => seen.push(s), () => t).ask({ question: 'q', think: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(call.mock.calls[0]?.[0]).toMatchObject({ think: true });
+    expect(seen.at(-1)?.seconds).toBe(37);
   });
 });
 

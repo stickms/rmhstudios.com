@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { suggestionsFor } from './suggestions';
 
@@ -27,6 +28,9 @@ export function AskForm({
   admin = false,
   pinned,
   showSuggestions = true,
+  thinkingAvailable = false,
+  think = false,
+  onThink,
 }: {
   question: string;
   onQuestion: (q: string) => void;
@@ -42,6 +46,10 @@ export function AskForm({
   pinned: boolean;
   /** False while a question is in flight or answered: the answer, not a list of starters, is what the page is about. */
   showSuggestions?: boolean;
+  /** Offer "Think it through" (the server's `thinkingAvailable`, plan R20). */
+  thinkingAvailable?: boolean;
+  think?: boolean;
+  onThink?: (on: boolean) => void;
 }) {
   const { t } = useTranslation('medschools');
   const id = useId();
@@ -92,6 +100,26 @@ export function AskForm({
         onChange={(e) => onQuestion(e.target.value)}
         aria-describedby={`${id}-count`}
       />
+      {thinkingAvailable && onThink ? (
+        <div className="flex items-start gap-3">
+          <Switch
+            id={`${id}-think`}
+            checked={think}
+            onCheckedChange={onThink}
+            disabled={pending}
+            aria-labelledby={`${id}-think-label`}
+            aria-describedby={`${id}-think-help`}
+          />
+          <div className="flex min-w-0 flex-col">
+            <span id={`${id}-think-label`} className="t-label">
+              {t('ask-think-label', { defaultValue: 'Think it through' })}
+            </span>
+            <span id={`${id}-think-help`} className="t-meta">
+              {t('ask-think-help', { defaultValue: 'Slower, more careful answer. Can take up to two minutes.' })}
+            </span>
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Button type="submit" variant="primary" loading={pending} disabled={!canAsk && !pending}>
           {t('ask-submit', { defaultValue: 'Ask' })}

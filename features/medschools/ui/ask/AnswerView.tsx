@@ -10,7 +10,7 @@ import { MyChance } from './MyChance';
  * an empty state, the schools used) is the only copy added here. `mine` renders whatever the notice says, so a thin
  * answer still shows the member's own estimate. The panel wraps it in `useArrival` (M9): it replaces a skeleton.
  */
-export function AnswerView({ res }: { res: MedAskRes }) {
+export function AnswerView({ res, seconds = null }: { res: MedAskRes; seconds?: number | null }) {
   const { t } = useTranslation('medschools');
   const numberOf = new Map(res.citations.map((c, i) => [c.ref, i + 1] as const));
 
@@ -95,6 +95,11 @@ export function AnswerView({ res }: { res: MedAskRes }) {
       ) : null}
       {empty ? <p className="t-body m-0 py-3">{empty}</p> : null}
       {notice ? <p className="t-meta m-0 mt-2">{notice}</p> : null}
+      {res.thinking && seconds !== null ? (
+        <p className="t-meta m-0 mt-1" data-testid="ask-thought">
+          {t('ask-thought-for', { defaultValue: 'Thought for {{n}} s', n: `\u2068${seconds}\u2069` })}
+        </p>
+      ) : null}
       {memberReported ? (
         <p className="t-meta m-0 mt-1">
           {t('ask-notice-member-reported', {

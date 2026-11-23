@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -6,6 +6,7 @@ import { useSession } from '@/components/session/session-context';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
+import { readString, writeString } from '@/lib/core/persist';
 import { errorField } from '@/lib/http';
 import { askStatusQuery } from '../../medschools.queries';
 import { AnswerView } from './AnswerView';
@@ -14,11 +15,23 @@ import { LimitRequest } from './LimitRequest';
 import { useAsk } from './useAsk';
 
 /** The wait: a labelled status line and still blocks the shape of an answer (no pulse; M6). */
-function PendingView() {
+function PendingView({ think }: { think: boolean }) {
   const { t } = useTranslation('medschools');
+  // Seconds since the question went out, a response to the member's submit (R5), only while it is pending.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!think) return;
+    const started = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [think]);
   return (
     <div role="status" aria-busy="true" className="mt-6">
-      <p className="t-meta m-0">{t('ask-pending', { defaultValue: 'Checking the data. This takes a few seconds.' })}</p>
+      <p className="t-meta m-0">
+        {think
+          ? t('ask-pending-thinking', { defaultValue: 'Thinking… {{n}} s', n: `\u2068${elapsed}\u2069` })
+          : t('ask-pending', { defaultValue: 'Checking the data. This takes a few seconds.' })}
+      </p>
       <div aria-hidden="true" className="mt-2 border-t border-site-border">
         {[0, 1, 2].map((i) => (
           <div key={i} className="border-b border-site-border py-3">
@@ -46,6 +59,9 @@ export function signInReturnPath(slug: string | undefined, question: string): st
  * school (the school page's panel); without it the question names its schools. The typed question survives every
  * failure so the member can retry. Nothing is stored here either: the answer lives in this component's state.
  */
+/** The member's choice, kept per device (never on the server). */
+const THINK_KEY = 'rmh-medschool-ask-think';
+
 export function AskPanel({
   slug,
   schoolName,
@@ -64,6 +80,18 @@ export function AskPanel({
   const status = useQuery({ ...askStatusQuery(), enabled: signedIn });
   const [question, setQuestion] = useState(initialQuestion);
   const run = useAsk();
+  const [think, setThink] = useState(false);
+  // Read after mount so the server render and the first client render agree.
+  useEffect(() => {
+    setThink(readString(THINK_KEY) === '1');
+  }, []);
+  const changeThink = (on: boolean) => {
+    setThink(on);
+    writeString(THINK_KEY, on ? '1' : '0');
+  };
+  const thinkingAvailable = status.data?.thinkingAvailable === true;
+  // What the pending question was sent with, not what the switch says now (it is disabled while pending).
+  const thinkNow = thinkingAvailable && think;
   const arrival = useArrival(run.state === 'done');
 
   if (!signedIn) {
@@ -113,7 +141,7 @@ export function AskPanel({
       <AskForm
         question={question}
         onQuestion={setQuestion}
-        onSubmit={() => run.ask({ question: question.trim(), ...(slug ? { slug } : {}) })}
+        onSubmit={() => run.ask({ question: question.trim(), ...(slug ? { slug } : {}), ...(thinkNow ? { think: true } : {}) })}
         onCancel={run.cancel}
         pending={run.state === 'pending'}
         configured={configured}
@@ -122,9 +150,12 @@ export function AskPanel({
         admin={status.data?.tier === 'admin'}
         pinned={!!slug}
         showSuggestions={run.state === 'idle' || run.state === 'error'}
+        thinkingAvailable={thinkingAvailable}
+        think={think}
+        onThink={changeThink}
       />
       <LimitRequest tier={status.data?.tier ?? null} />
-      {run.state === 'pending' ? <PendingView /> : null}
+      {run.state === 'pending' ? <PendingView think={thinkNow} /> : null}
       {errorText ? (
         <p className="t-body m-0 border-t border-site-border pt-3" role="alert">
           {errorText}
@@ -132,7 +163,7 @@ export function AskPanel({
       ) : null}
       {run.state === 'done' && run.res ? (
         <div className={arrival}>
-          <AnswerView res={run.res} />
+          <AnswerView res={run.res} seconds={run.seconds} />
         </div>
       ) : null}
     </section>

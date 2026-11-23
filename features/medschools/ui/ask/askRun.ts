@@ -11,31 +11,41 @@ export interface AskSnapshot {
   state: AskState;
   res: MedAskRes | null;
   error: unknown;
+  /** Whole seconds the question took, set when it ends (the "Thought for N s" line); null before then. */
+  seconds: number | null;
 }
 
-export const IDLE: AskSnapshot = { state: 'idle', res: null, error: null };
+export const IDLE: AskSnapshot = { state: 'idle', res: null, error: null, seconds: null };
 
-export type AskCall = (body: { question: string; slug?: string }, signal: AbortSignal) => Promise<MedAskRes>;
+export interface AskQuestion {
+  question: string;
+  slug?: string;
+  /** Think it through (plan R20). */
+  think?: boolean;
+}
+export type AskCall = (body: AskQuestion, signal: AbortSignal) => Promise<MedAskRes>;
 
-export function createAskRun(call: AskCall, onChange: (s: AskSnapshot) => void) {
+export function createAskRun(call: AskCall, onChange: (s: AskSnapshot) => void, now: () => number = Date.now) {
   let controller: AbortController | null = null;
   return {
     /** Starts a question. Ignored while one is in flight (a second submit is impossible). */
-    ask(body: { question: string; slug?: string }): void {
+    ask(body: AskQuestion): void {
       if (controller) return;
       const mine = new AbortController();
       controller = mine;
-      onChange({ state: 'pending', res: null, error: null });
+      const started = now();
+      const took = () => Math.max(0, Math.round((now() - started) / 1000));
+      onChange({ state: 'pending', res: null, error: null, seconds: null });
       call(body, mine.signal).then(
         (res) => {
           if (controller !== mine || mine.signal.aborted) return;
           controller = null;
-          onChange({ state: 'done', res, error: null });
+          onChange({ state: 'done', res, error: null, seconds: took() });
         },
         (error: unknown) => {
           if (controller !== mine || mine.signal.aborted) return;
           controller = null;
-          onChange({ state: 'error', res: null, error });
+          onChange({ state: 'error', res: null, error, seconds: took() });
         },
       );
     },
