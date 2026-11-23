@@ -171,6 +171,10 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
       'rmh:cursed-logic:run',
       'rmh:cursed-logic:tutorial-done',
       'cursed-logic-shop',
+      // Project Vega: the run saved between waves, the tutorial flag and the specimens this device has catalogued.
+      'rmh:vega:run',
+      'rmh:vega:tutorial-done',
+      'rmh:vega:catalogued',
     ],
     personal: true,
   },
@@ -236,7 +240,7 @@ export const DEVICE_STORES: readonly DeviceStore[] = [
     kind: 'localstorage-prefix',
     names: [
       'vb-',
-      'vega_volume',
+      'rmh:vega:audio',
       'haw-music-',
       'haw-sfx-',
       'kk-',

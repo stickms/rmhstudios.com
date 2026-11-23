@@ -6,6 +6,7 @@
 import { createContext, useContext } from 'react';
 import { ArrowLeft, BookOpen, FastForward, Pause, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { TOWER_ORDER, TOWERS, WAVES, ECONOMY, type TargetMode } from '@features/vega/engine/data';
 import { useGameStore } from '@features/vega/engine/GameState';
 import type { VegaGame } from '@features/vega/engine/VegaGame';
@@ -17,6 +18,7 @@ const useGame = () => useContext(GameCtx);
 
 export function TopBar({ muted, onToggleMute }: { muted: boolean; onToggleMute: () => void }) {
   const { t } = useTranslation('c-vega');
+  const fmt = useLocaleFormat();
   const names = useVegaNames();
   const hud = useGameStore((s) => s.hud);
   const mapId = useGameStore((s) => s.mapId);
@@ -66,7 +68,7 @@ export function TopBar({ muted, onToggleMute }: { muted: boolean; onToggleMute: 
       </div>
       <div className="vg-hud-stat">
         <span>{t('hud-score', { defaultValue: 'Score' })}</span>
-        <span>{hud.score.toLocaleString()}</span>
+        <span>{fmt.number(hud.score)}</span>
       </div>
       <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
         <button
@@ -204,6 +206,7 @@ function Formulary() {
 
 function SelectedFile() {
   const { t } = useTranslation('c-vega');
+  const fmt = useLocaleFormat();
   const names = useVegaNames();
   const sel = useGameStore((s) => s.selected);
   const serum = useGameStore((s) => s.hud.serum);
@@ -264,7 +267,7 @@ function SelectedFile() {
         <dt>{t('stat-kills', { defaultValue: 'Kills' })}</dt>
         <dd>{sel.kills}</dd>
         <dt>{t('stat-dealt', { defaultValue: 'Dealt' })}</dt>
-        <dd>{sel.damage.toLocaleString()}</dd>
+        <dd>{fmt.number(sel.damage)}</dd>
       </dl>
       {targets && (
         <div className="vg-segment" role="group" aria-label={t('targeting', { defaultValue: 'Targeting' })}>

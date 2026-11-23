@@ -3,11 +3,10 @@
  * picker (each map's corridor drawn from its layout), the start control behind the sign-in gate, the manual, the
  * tutorial and the board of best runs.
  */
-import { useEffect, useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '@/lib/contract/client';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { asset } from '@/lib/storage/asset';
-import { getVegaLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { useSession } from '@/components/session/session-context';
 import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { MAP_ORDER, MAPS, type MapId } from '@features/vega/engine/data';
@@ -15,7 +14,7 @@ import { useGameStore } from '@features/vega/engine/GameState';
 import type { RunSave } from '@features/vega/engine/Simulation';
 import { useVegaNames } from './names';
 
-interface BoardRow {
+export interface BoardRow {
   username: string;
   highestLoop: number;
   highestLevel: number;
@@ -23,11 +22,14 @@ interface BoardRow {
 
 export function Menu({
   save,
+  board,
   onStart,
   onResume,
   onTutorial,
 }: {
   save: RunSave | null;
+  /** The best runs, fetched by the app (null while loading). */
+  board: BoardRow[] | null;
   onStart: (map: MapId) => void;
   onResume: () => void;
   onTutorial: () => void;
@@ -128,25 +130,16 @@ export function Menu({
       </section>
 
       <section>
-        <BestRuns refreshKey={0} />
+        <BestRuns board={board} />
       </section>
     </main>
   );
 }
 
 /** The board of best runs (best score, then best wave), from the game's own leaderboard. */
-export function BestRuns({ refreshKey }: { refreshKey: number }) {
+export function BestRuns({ board }: { board: BoardRow[] | null }) {
   const { t } = useTranslation('c-vega');
-  const [board, setBoard] = useState<BoardRow[] | null>(null);
-  useEffect(() => {
-    let live = true;
-    api(getVegaLeaderboardApi)
-      .then((rows) => live && setBoard(Array.isArray(rows) ? rows : []))
-      .catch(() => live && setBoard([]));
-    return () => {
-      live = false;
-    };
-  }, [refreshKey]);
+  const fmt = useLocaleFormat();
   return (
     <>
       <h2 className="vg-tag">{t('best-runs', { defaultValue: 'Best runs' })}</h2>
@@ -191,7 +184,7 @@ export function BestRuns({ refreshKey }: { refreshKey: number }) {
                   {r.highestLoop}
                 </td>
                 <td className="vg-mono" style={{ textAlign: 'right', color: 'var(--vg-mint)' }}>
-                  {r.highestLevel.toLocaleString()}
+                  {fmt.number(r.highestLevel)}
                 </td>
               </tr>
             ))

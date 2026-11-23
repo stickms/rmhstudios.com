@@ -13,6 +13,7 @@ import { motionStill } from '@/lib/appearance/prefs';
 import { useSession } from '@/components/session/session-context';
 import { useGameSession } from '@/hooks/useGameSession';
 import { submitVegaScoreApi } from '@features/vega/engine/vega.contract';
+import { getVegaLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { VegaGame } from '@features/vega/engine/VegaGame';
 import { useGameStore, type EndResult } from '@features/vega/engine/GameState';
 import { initialTutorial, TUTORIAL_KEY } from '@features/vega/engine/tutorial';
@@ -20,7 +21,7 @@ import type { MapId } from '@features/vega/engine/data';
 import type { RunSave } from '@features/vega/engine/Simulation';
 import { GameCtx, SidePanel, TopBar } from './Hud';
 import { CaseLog, DossierCard, ManualDialog, PauseDialog, TutorialCard, VictoryDialog } from './Overlays';
-import { Menu } from './Menu';
+import { Menu, type BoardRow } from './Menu';
 import { EndScreen, type SubmitState } from './EndScreen';
 import { playSfx, setSfxVolume, unlockSfx } from './sfx';
 
@@ -57,6 +58,19 @@ export default function GameCanvas() {
   const [muted, setMuted] = useState(false);
   const [track, setTrack] = useState(1);
   const [bench, setBench] = useState<{ cx: number; cy: number } | null>(null);
+  const [board, setBoard] = useState<BoardRow[] | null>(null);
+  const [boardKey, setBoardKey] = useState(0);
+
+  // The best runs, for the menu and the case report; read again once a report is filed.
+  useEffect(() => {
+    let live = true;
+    api(getVegaLeaderboardApi)
+      .then((rows) => live && setBoard(Array.isArray(rows) ? rows : []))
+      .catch(() => live && setBoard([]));
+    return () => {
+      live = false;
+    };
+  }, [boardKey]);
 
   // Keep the screen awake during a run and pause when the tab hides (hooks/useGameSession.ts).
   useGameSession({
@@ -132,6 +146,7 @@ export default function GameCanvas() {
           },
         });
         setSubmit(res.isRecord ? 'record' : 'saved');
+        setBoardKey((k) => k + 1);
       } catch (e) {
         setSubmit(e instanceof HttpError ? 'refused' : 'offline');
       }
@@ -201,6 +216,7 @@ export default function GameCanvas() {
         {screen === 'menu' && (
           <Menu
             save={save}
+            board={board}
             onStart={(m) => begin(m, null, false)}
             onResume={() => save && begin(save.map, save, false)}
             onTutorial={() => begin('intake', null, true)}
@@ -248,7 +264,7 @@ export default function GameCanvas() {
         )}
 
         {screen === 'end' && result && (
-          <EndScreen result={result} submit={submit} onAgain={() => begin(result.map, null, false)} onMenu={quitToMenu} />
+          <EndScreen result={result} submit={submit} board={board} onAgain={() => begin(result.map, null, false)} onMenu={quitToMenu} />
         )}
 
         {manualOpen && (

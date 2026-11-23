@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { ENEMIES, TOWER_ORDER, TOWERS, WAVES, type EnemyType } from '@features/vega/engine/data';
 import { useGameStore, type LogLine } from '@features/vega/engine/GameState';
 import { readCatalogued } from '@features/vega/engine/VegaGame';
@@ -291,6 +292,7 @@ export function PauseDialog({ onAbandon, onQuit }: { onAbandon: () => void; onQu
 
 export function VictoryDialog({ onContinue, onClose }: { onContinue: () => void; onClose: () => void }) {
   const { t } = useTranslation('c-vega');
+  const fmt = useLocaleFormat();
   const score = useGameStore((s) => s.hud.score);
   const ref = useDialogFocus<HTMLDivElement>();
   return (
@@ -304,7 +306,7 @@ export function VictoryDialog({ onContinue, onClose }: { onContinue: () => void;
           {t('victory-body', {
             defaultValue:
               'The specimen is contained. Score so far {{score}}, integrity bonus included. Overtime continues to wave {{cap}}, harder every wave.',
-            score: score.toLocaleString(),
+            score: fmt.number(score),
             cap: WAVES.CAP,
           })}
         </p>

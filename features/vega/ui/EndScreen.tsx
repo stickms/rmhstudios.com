@@ -3,26 +3,30 @@
  * whether it reached the board.
  */
 import { useTranslation } from 'react-i18next';
+import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { WAVES } from '@features/vega/engine/data';
 import type { EndResult } from '@features/vega/engine/GameState';
 import { useVegaNames } from './names';
-import { BestRuns, MenuBackdrop } from './Menu';
+import { BestRuns, MenuBackdrop, type BoardRow } from './Menu';
 
 export type SubmitState = 'idle' | 'sending' | 'saved' | 'record' | 'refused' | 'offline' | 'signed-out';
 
 export function EndScreen({
   result,
   submit,
+  board,
   onAgain,
   onMenu,
 }: {
   result: EndResult;
   submit: SubmitState;
+  board: BoardRow[] | null;
   onAgain: () => void;
   onMenu: () => void;
 }) {
   const { t } = useTranslation('c-vega');
+  const fmt = useLocaleFormat();
   const names = useVegaNames();
   const s = result.stats;
   const minutes = Math.floor(result.durationMs / 60_000);
@@ -85,7 +89,7 @@ export function EndScreen({
             style={{ fontSize: 'clamp(40px, 9vw, 64px)', color: 'var(--vg-mint)' }}
             data-vega-final-score
           >
-            {result.score.toLocaleString()}
+            {fmt.number(result.score)}
           </span>
           <span style={{ color: 'var(--vg-muted)' }}>
             {t('end-waves', { defaultValue: '{{n}} waves held of {{goal}}', n: result.cleared, goal: WAVES.GOAL })}
@@ -133,7 +137,7 @@ export function EndScreen({
           </div>
           <div>
             <dt>{t('end-serum', { defaultValue: 'Serum earned' })}</dt>
-            <dd>{s.serumEarned.toLocaleString()}</dd>
+            <dd>{fmt.number(s.serumEarned)}</dd>
           </div>
           <div>
             <dt>{t('end-time', { defaultValue: 'Time' })}</dt>
@@ -182,7 +186,7 @@ export function EndScreen({
         </div>
       </section>
       <section>
-        <BestRuns refreshKey={submit === 'saved' || submit === 'record' ? 1 : 0} />
+        <BestRuns board={board} />
       </section>
     </main>
   );

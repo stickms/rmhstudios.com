@@ -17,6 +17,7 @@ export const ACHIEVEMENT_GROUP_BY_GAME_ID: Record<string, string> = {
   'slice-it': 'Slice It!',
   'synapse-storm': 'Synapse Storm',
   'temple-of-joy': 'Temple of Joy',
+  vega: 'Project Vega',
 };
 
 /**
