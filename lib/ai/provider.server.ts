@@ -57,6 +57,8 @@ export type AiTask =
   | 'moderate'
   /** Background classifier: structured extraction from forum posts (RMH Med Schools, no user watching). */
   | 'medschools-extract'
+  /** Interactive RMH Med Schools Q&A: short, grounded, a member is waiting. */
+  | 'medschools-qa'
   /** Conversational, may carry a tool contract. */
   | 'concierge'
   /** Long-form generation (recaps, narrative Wrapped). */
@@ -116,6 +118,14 @@ const ROUTES: Record<AiTask, Route> = {
     maxTokens: 8_000,
     // A classifier, like `moderate`: the same post must give the same events.
     temperature: 0,
+  },
+  // Interactive: runs on demand at any hour (not the off-peak scrape rule). No fallback: a second attempt doubles the
+  // spend of a question the member can simply retry. The route call overrides temperature to 0 per call.
+  'medschools-qa': {
+    provider: 'deepseek',
+    model: DEEPSEEK_CHAT,
+    maxTokens: 900,
+    temperature: 0.2,
   },
   concierge: {
     provider: 'deepseek',
