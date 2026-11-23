@@ -98,6 +98,19 @@ export const ACHIEVEMENT_ICON: Record<string, string> = {
   'game.casino.first_win': 'Dices',
   'game.casino.high_roller': 'Banknote',
   'game.casino.blackjack': 'Spade',
+  'game.vega.first_intake': 'Microscope',
+  'game.vega.tier_three': 'FlaskConical',
+  'game.vega.first_boss': 'Syringe',
+  'game.vega.full_formulary': 'TestTubes',
+  'game.vega.early_caller': 'BellRing',
+  'game.vega.wave_20': 'Stethoscope',
+  'game.vega.biobank_tycoon': 'Dna',
+  'game.vega.monotherapy': 'Pill',
+  'game.vega.containment': 'Biohazard',
+  'game.vega.vault_containment': 'Lock',
+  'game.vega.theatre_containment': 'Hospital',
+  'game.vega.overtime_60': 'Timer',
+  'game.vega.flawless': 'HeartPulse',
 };
 
 /** The lucide icon name for an achievement id; a trophy for an unknown one. */
@@ -189,6 +202,11 @@ export const ACHIEVEMENT_ACCENT: Record<string, string> = {
   'game.casino.first_win': 'Star',
   'game.casino.high_roller': 'Crown',
   'game.casino.blackjack': 'Star',
+  'game.vega.containment': 'Star',
+  'game.vega.vault_containment': 'Star',
+  'game.vega.theatre_containment': 'Crown',
+  'game.vega.overtime_60': 'Flame',
+  'game.vega.flawless': 'Crown',
 };
 
 /** The accent glyph's lucide name, or null when the badge has none. */

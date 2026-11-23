@@ -3,8 +3,11 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { vegaScoreBody } from './score-schema';
 
-/** The caller's profile row comes back opaque; the client only needs the submit to land. */
+/**
+ * The run lands on the caller's VegaPlayer row (best score in `highestLevel`, best wave in `highestLoop`; see
+ * features/vega/api/vega.score.server.ts) and comes back with the achievements it newly unlocked.
+ */
 export const submitVegaScoreApi = endpoint<{
   body: z.infer<typeof vegaScoreBody>;
-  res: { success: true; profile: Record<string, unknown>; isRecord: boolean };
+  res: { success: true; isRecord: boolean; bestScore: number; bestWave: number; unlocked: string[] };
 }>()({ method: 'POST', path: '/api/vega/score' });

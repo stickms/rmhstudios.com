@@ -405,14 +405,19 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   vega: {
     genre: ['strategy'],
     players: ['single', 'async-leaderboard'],
-    // Placing and selecting towers is a canvas pointer interaction; touch is not claimed until it is checked.
-    input: { supported: ['keyboard', 'mouse'], required: ['mouse'] },
-    sessionMinutes: [10, 40],
+    // Pointer events place and select (a touch previews on the first tap and places on the second); the whole
+    // game is also playable from the keyboard alone (board cursor, digits, Space), so no one input is required.
+    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
+    // A run to containment (wave 40) is 30-60 minutes; a lost run is often 10-20.
+    sessionMinutes: [15, 60],
     engine: '2d-canvas',
     demanding: false,
-    // The best loop and level ride the player's own VegaPlayer row; a run itself is not saved.
+    // Best score and wave ride the player's own VegaPlayer row; the run in progress is kept in localStorage
+    // between waves (resume from the menu).
     save: 'own-table',
     accessibility: [],
+    // Clinical body horror: specimens burst and stain the board when they die.
+    descriptors: ['violence'],
   },
   'signal-forge': {
     genre: ['card', 'strategy'],
