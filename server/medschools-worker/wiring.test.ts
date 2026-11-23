@@ -79,6 +79,12 @@ describe('medschools-worker wiring', () => {
       'MEDSCHOOLS_SDN_MAX_LLM_CALLS',
       'MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS',
       'MEDSCHOOLS_AI_MONTHLY_USD',
+      'MEDSCHOOLS_ADMIT_FORUMS_ENABLED',
+      'MEDSCHOOLS_ADMIT_FORUMS_CRON',
+      'MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS',
+      'MEDSCHOOLS_ADMIT_FORUMS_MAX_LLM_CALLS',
+      'MEDSCHOOLS_ADMIT_FORUMS_DAILY_REQUESTS',
+      'MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE',
     ]) {
       expect(env, name).toContain(name);
     }
@@ -417,5 +423,37 @@ describe('medschools-worker wiring', () => {
     expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
     expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:history'");
     expect(slice(src, 'const admitHistoryTick', 'const sdnLiveTick')).toContain('quota: admitHistoryQuota');
+  });
+
+  it('registers medschools.admit-forums as its own exclusive queue, every 3 hours, behind the Admit gate and its own flag', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_FORUMS_QUEUE = 'medschools.admit-forums'");
+    expect(src).toContain("process.env.MEDSCHOOLS_ADMIT_FORUMS_CRON?.trim() || '0 */3 * * *'");
+    expect(src).toContain('const ADMIT_FORUMS_EXPIRY_S = 40 * 60');
+    const reg = slice(src, 'admitForumsConsumer = await startScheduledConsumer', 'log.info( `Started');
+    expect(reg).toContain('queue: ADMIT_FORUMS_QUEUE');
+    expect(reg).toContain('expireInSeconds: ADMIT_FORUMS_EXPIRY_S');
+    expect(reg).toContain('retryLimit: 0');
+    expect(reg).toContain('handler: admitForumsTick');
+    const tick = slice(src, 'const admitForumsTick', 'const sdnLiveTick');
+    expect(tick).toContain("guarded( 'admit-forums'");
+    expect(tick).toContain('host: admitHost');
+    expect(tick).toContain('ADMIT_FORUMS_ENABLED && data.manual !== true');
+    expect(tick.indexOf("admitGate('admit-forums'")).toBeLessThan(tick.indexOf('runAdmitForums('));
+    expect(tick).toContain('ADMIT_FORUMS_EXPIRY_S * 1000');
+    expect(tick).toContain('quota: admitForumsQuota');
+    // the run ends itself (30 min) before its queue expires (40 min)
+    expect(tick).toContain('stopAfter(ADMIT_FORUMS_RUN_DEADLINE_MS)');
+    expect(src).toContain('const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000');
+    expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitForumsConsumer?.pause()');
+  });
+
+  it('the forums job keeps its own model budget share and its own request quota on the shared Admit host', () => {
+    const src = flat();
+    expect(src).toContain('createSdnAi(ADMIT_FORUMS_PROMPT_ID)');
+    expect(src).toContain('createForumsBudgetGate(');
+    expect(src).toContain('forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE');
+    expect(src).toContain("createDailyBudget(medPrisma, 'ADMIT:forums'");
+    expect(src.match(/createPoliteHost\( SOURCES\.ADMIT/g)).toHaveLength(1);
   });
 });

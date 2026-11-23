@@ -35,6 +35,7 @@ import {
   schoolCrestsData,
   schoolStatsData,
 } from './schemas';
+import { admitMemberKey } from './member-key';
 import { mapStatus } from './statuses';
 import {
   mintLookupToken,
@@ -120,7 +121,7 @@ export function createAdmitClient(
   const flags = new Map<string, Promise<AdmitProfile | 'FAILED'>>();
   /** Member-scoped key (owner 2026-11-23): one member counts once per type per school per cycle, feed or history. */
   const memberKey = (userId: string, schoolId: string, cycleYear: number, type: MedEventType): string =>
-    dedupeHash(opts.secret, 'ADMIT', `author:${userId}:${schoolId}:${cycleYear}:${type}`);
+    admitMemberKey(opts.secret, userId, schoolId, cycleYear, type);
 
   /** A history entry's dates and decision become events; entries that cannot be dated are counted, never guessed. */
   function mapHistory(userId: string, raw: unknown[] | null | undefined): Pick<AdmitProfile, 'history' | 'skipped'> {

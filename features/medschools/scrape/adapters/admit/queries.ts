@@ -180,3 +180,50 @@ export const SCHOOL_CRESTS: AdmitOperation = {
     offset: 0,
   },
 };
+
+/**
+ * School-forum thread summaries (med.admit.org /school-forums): one row per school with the thread's `comment_count`
+ * and the date of its latest post, for one cycle year (`year` is the entry year minus one: 2026 is the 2026-2027
+ * cycle). Selects ONLY the school slug, the count and the date; `latest_user` exists and is never requested.
+ * `$limit`/`$offset` are `Float!` here, `limit` at most 100 (about 240 schools, so three pages).
+ */
+export const FORUM_THREADS: AdmitOperation = {
+  operationName: 'getAllSchoolThreads',
+  query: `query getAllSchoolThreads($filterOwnSchools: Boolean!, $year: Float!, $limit: Float!, $offset: Float!) {
+  getAllSchoolThreads(filterOwnSchools: $filterOwnSchools, year: $year, limit: $limit, offset: $offset) {
+    comment_count
+    latest_post_date
+    school {
+      slug
+    }
+  }
+}`,
+  variables: { filterOwnSchools: false, limit: 100, offset: 0 },
+};
+
+/**
+ * One page of a school's cycle thread, oldest post first, `limit` at most 100 (`offset` counts posts). A post is its
+ * own opaque 7-character id, its HTML `content` and `created_at`; the author is requested for exactly two in-memory
+ * uses: `id` keys the event on the member (`member-key.ts`, the same key the tracker feed writes) and
+ * `public_display_name` is a handle the redaction removes from the text. `roles` is read only to recognise a post
+ * that is not the poster's own. Avatars, message counts and join dates exist and are never requested, and nothing here
+ * is stored or logged.
+ */
+export const FORUM_THREAD: AdmitOperation = {
+  operationName: 'getSchoolThread',
+  query: `query getSchoolThread($slug: String!, $year: Float!, $limit: Float!, $offset: Float!) {
+  getSchoolThread(slug: $slug, year: $year, limit: $limit, offset: $offset) {
+    comment_count
+    posts {
+      id
+      content
+      created_at
+      user {
+        id
+        public_display_name
+        roles
+      }
+    }
+  }
+}`,
+};

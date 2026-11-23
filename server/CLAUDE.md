@@ -287,7 +287,26 @@ Consequences:
   `Content-Signal: search=yes, ai-input=yes, ai-train=no`: RMH trains no model, and sending text to a hosted model for
   extraction is input, not training. Robots allow `/forums/` and `/threads/` and disallow `/members/`, `/goto/`,
   `/search/` and `/find-threads/`; the connector never logs in and never touches a disallowed path. Endpoint facts:
-  `docs/superpowers/specs/2026-11-20-rmh-medschool-source-endpoints.md`.
+  `docs/superpowers/specs/2026-11-20-rmh-medschool-source-endpoints.md`. **Admit school forums (owner 2026-11-23).** An
+  eighth cron queue, `medschools.admit-forums` (`exclusive`, `retryLimit: 0`, expires after 40 min, run ends itself at
+  30), every 3 hours UTC (`0 */3 * * *`, `MEDSCHOOLS_ADMIT_FORUMS_CRON`; fired by the `jobs` timekeeper like the
+  others), behind `MEDSCHOOLS_ADMIT_ENABLED`, the dedupe secret and its own `MEDSCHOOLS_ADMIT_FORUMS_ENABLED`. It reads
+  Admit's native school threads through GraphQL (`getAllSchoolThreads`, then `getSchoolThread` from a per-thread
+  persisted cursor in `MedAdmitForumThread`: a post count and an HMAC of the last post, never text or an id), so a run
+  reads only new posts. **Fetch anytime, model off-peak:** the 03, 06 and 09 weekday runs (`isDeepseekPeak`) only list
+  the threads and persist their counts (`outcome: 'held-peak'`; the count past the cursor is the held state, no text
+  kept); the next off-peak run reads the held range. A persisted 2.5 h minimum interval (`lastRealRunWithin`,
+  `outcome: 'skipped-min-interval'`) stops extra runs after a deploy. **No duplicates:** posts mirrored from SDN are
+  skipped (`isSdnMirror`: Admit has no source field, so a fail-closed content-and-shape check), native events key on the
+  Admit member key (`adapters/admit/member-key.ts`, shared with the tracker feed and history) or a per-post key when the
+  author id is absent. **Budgets:** calls are labelled `medschools-extract:admit-forums` and gated by
+  `createForumsBudgetGate` (the month's total under `MEDSCHOOLS_AI_MONTHLY_USD`, the forums' own spend under
+  `MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE` of it, default 0.4, so SDN keeps at least 60%); per run
+  `MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS` (80) and `MEDSCHOOLS_ADMIT_FORUMS_MAX_LLM_CALLS` (60); the job's own daily
+  quota `ADMIT:forums` (`MEDSCHOOLS_ADMIT_FORUMS_DAILY_REQUESTS`, 600) sits inside the ADMIT host budget, whose default
+  went from 3000 to 3500 for it. Requests use the shared Admit host's backfill session (3 s plus 0-1 s jitter,
+  Retry-After, three-strike halt). No `DEEPSEEK_API_KEY`: counts are tracked, no post is fetched, cursors kept, PARTIAL.
+  Detail: `features/medschools/CLAUDE.md`.
 - **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss** consumer that drains queues and runs
   background work that used to block request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest` cron. D3 ports from the Go supervisor:

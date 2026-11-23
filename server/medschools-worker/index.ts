@@ -14,6 +14,9 @@
  *   medschools.interviews   daily — Admit interview profiles, questions and school stats (same).
  *   medschools.admit-history daily 03:10 — Admit profile-history backfill: the whole cycle, member-keyed (same secret).
  *
+ *   medschools.admit-forums  every 3 hours, UTC (the cron is in admitForumsCron) — Admit's school forums, only the posts past each thread's
+ *                             cursor; fetched at any hour, read by the model off-peak only (needs the dedupe secret).
+ *
  *   medschools.sdn-live       daily (12:20 UTC) — Student Doctor Network RSS feeds, then the changed threads, with the
  *                             posts read by the extraction model (needs the dedupe secret; AI optional).
  *   medschools.sdn-backfill   monthly safety net, and queued by the live tick while the prior-year walk is owed
@@ -41,6 +44,12 @@ import schoolsJson from '../../data/medschools/schools.json';
 import cyclesJson from '../../data/medschools/cycles.json';
 import { createGuard } from './guard';
 import { createPoliteHost } from '../../features/medschools/scrape/http';
+import { runAdmitForums } from '../../features/medschools/scrape/run-admit-forums';
+import {
+  ADMIT_FORUMS_PROMPT_ID,
+  createForumsBudgetGate,
+  forumsAiShare,
+} from '../../features/medschools/scrape/admit-forums-budget';
 import { runAdmitLive } from '../../features/medschools/scrape/run-admit-live';
 import { runAdmitInterviews } from '../../features/medschools/scrape/run-admit-interviews';
 import { admitHistoryOwed, runAdmitHistory } from '../../features/medschools/scrape/run-admit-history';
@@ -53,6 +62,7 @@ import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-inter
 import { createSdnAi } from '../../features/medschools/scrape/sdn/provider.server';
 import { createBudgetGate, monthlyCapUsd } from '../../features/medschools/scrape/sdn/budget';
 import {
+  ADMIT_FORUMS_DAILY_REQUESTS,
   ADMIT_HISTORY_DAILY_PROFILES,
   DAILY_REQUEST_BUDGETS,
   SOURCES,
@@ -148,6 +158,9 @@ const ADMIT_ENABLED =
 const SDN_ENABLED =
   process.env.MEDSCHOOLS_SDN_ENABLED !== 'false';
 
+// Switches the Admit forums cron off on its own (it is also behind MEDSCHOOLS_ADMIT_ENABLED). Only a manual run bypasses it.
+const ADMIT_FORUMS_ENABLED = process.env.MEDSCHOOLS_ADMIT_FORUMS_ENABLED !== 'false';
+
 /** A positive integer from env, else the default. */
 function intEnv(name: string, dflt: number): number {
   const n = Number(process.env[name]);
@@ -161,6 +174,10 @@ const INTERVIEWS_RUN_DEADLINE_MS = 150 * 60_000;
 const ADMIT_HISTORY_RUN_DEADLINE_MS = 150 * 60_000;
 const SDN_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_MAX_LLM_CALLS', 40);
 const SDN_BACKFILL_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_SDN_BACKFILL_MAX_LLM_CALLS', 150);
+const ADMIT_FORUMS_EXPIRY_S = 40 * 60;
+const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000;
+const ADMIT_FORUMS_MAX_REQUESTS = intEnv('MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS', 80);
+const ADMIT_FORUMS_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_ADMIT_FORUMS_MAX_LLM_CALLS', 60);
 const ADMIT_HISTORY_MAX_PROFILES = intEnv('MEDSCHOOLS_ADMIT_HISTORY_MAX_PROFILES', 600);
 
 /** The dedupe hashes are keyed with this; an Admit job without it would store unkeyed, guessable hashes. */
@@ -244,6 +261,11 @@ const admitHistoryQuota = createDailyBudget(medPrisma, 'ADMIT:history', () =>
   intEnv('MEDSCHOOLS_ADMIT_HISTORY_DAILY_PROFILES', ADMIT_HISTORY_DAILY_PROFILES),
 );
 
+// The forums job's own daily quota of requests, a share of the ADMIT budget above.
+const admitForumsQuota = createDailyBudget(medPrisma, 'ADMIT:forums', () =>
+  intEnv('MEDSCHOOLS_ADMIT_FORUMS_DAILY_REQUESTS', ADMIT_FORUMS_DAILY_REQUESTS),
+);
+
 // SDN has two politeness domains. Live and backfill share the forums host (the backfill takes its slower spacing
 // session on it), so they never double the request rate; the interviews job has the www host to itself.
 const sdnForumsHost = createPoliteHost(SOURCES.SDN_FORUMS, { budget: hostBudget('SDN_FORUMS') });
@@ -258,6 +280,15 @@ const sdnBudget = createBudgetGate(
   monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD, (line) => log.warn(line)),
 );
 const sdnForums = sdnForumsJson as SdnForumsFile;
+// The Admit forums job reads with the same static prompt but labels its calls, and spends only its own share of the same
+// monthly cap (default 40%, MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE) so SDN is never starved; the total stays under the cap.
+const admitForumsAi = createSdnAi(ADMIT_FORUMS_PROMPT_ID);
+const admitForumsBudget = createForumsBudgetGate(
+  medPrisma,
+  () => new Date(),
+  monthlyCapUsd(process.env.MEDSCHOOLS_AI_MONTHLY_USD),
+  forumsAiShare(process.env.MEDSCHOOLS_ADMIT_FORUMS_AI_SHARE, (line) => log.warn(line)),
+);
 
 /**
  * Wraps a job so a second concurrent call is skipped, so shutdown can await it, and so a run hung past its max
@@ -471,6 +502,33 @@ const admitHistoryTick = guarded(
   ADMIT_HISTORY_EXPIRY_S * 1000,
 );
 
+const admitForumsTick = guarded(
+  'admit-forums',
+  async (data) => {
+    if (!ADMIT_FORUMS_ENABLED && data.manual !== true) return;
+    if (!admitGate('admit-forums', data)) return;
+    const r = await runAdmitForums(
+      {
+        prisma: medPrisma,
+        host: admitHost,
+        ai: admitForumsAi,
+        budget: admitForumsBudget,
+        secret: process.env.MEDSCHOOLS_DEDUPE_SECRET ?? '',
+        shouldStop: stopAfter(ADMIT_FORUMS_RUN_DEADLINE_MS),
+        log,
+        maxRequests: ADMIT_FORUMS_MAX_REQUESTS,
+        maxLlmCalls: ADMIT_FORUMS_MAX_LLM_CALLS,
+        quota: admitForumsQuota,
+      },
+      { trigger: data.manual === true ? 'MANUAL' : 'CRON' },
+    );
+    log.info(
+      `admit-forums run complete [${r.runId}] — status=${r.status} outcome=${r.outcome} listed=${r.threadsListed} pending=${r.pending} behind=${r.postsBehind} processed=${r.processed} scanned=${r.postsScanned} mirrored=${r.mirroredSkipped} llmCalls=${r.llmCalls} created=${r.eventsCreated} existing=${r.eventsExisting} rolledUp=${r.rolledUp} peakPaused=${r.peakPaused} budgetPaused=${r.budgetPaused} requests=${r.requests}`,
+    );
+  },
+  ADMIT_FORUMS_EXPIRY_S * 1000,
+);
+
 const sdnLiveTick = guarded('sdn-live', async (data) => {
   if (!sdnGate('sdn-live', data)) return;
   const r = await runSdnLive(
@@ -653,6 +711,10 @@ const interviewsCron =
 // Daily, off-peak, ending (about 50 min for the 1500-profile cap) before the interviews walk at 04:35.
 const admitHistoryCron =
   process.env.MEDSCHOOLS_ADMIT_HISTORY_CRON?.trim() || '10 3 * * *';
+const ADMIT_FORUMS_QUEUE = 'medschools.admit-forums';
+// Every 3 hours, UTC: 0 3 6 9 12 15 18 21. Fetching runs at any hour; the model reads only off-peak (the 03, 06 and 09
+// weekday runs look and hold). Persisted minimum interval 2.5 h, so a deploy never fires an extra one.
+const admitForumsCron = process.env.MEDSCHOOLS_ADMIT_FORUMS_CRON?.trim() || '0 */3 * * *';
 const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
@@ -675,6 +737,7 @@ let admitLiveConsumer: ScheduledConsumer | null =
 let interviewsConsumer: ScheduledConsumer | null =
   null;
 let admitHistoryConsumer: ScheduledConsumer | null = null;
+let admitForumsConsumer: ScheduledConsumer | null = null;
 let sdnLiveConsumer: ScheduledConsumer | null = null;
 let sdnBackfillConsumer: ScheduledConsumer | null = null;
 let sdnInterviewsConsumer: ScheduledConsumer | null = null;
@@ -692,6 +755,9 @@ async function main() {
     log.error(
       'MEDSCHOOLS_DEDUPE_SECRET is unset or shorter than 16 characters — the SDN jobs (sdn-live, sdn-backfill, sdn-interviews) are disabled too',
     );
+  }
+  if (!admitForumsAi.configured()) {
+    log.warn('DEEPSEEK_API_KEY is not set — Admit forum posts are not read (counts are still tracked, cursors kept)');
   }
   if (!sdnAi.configured()) {
     log.warn(
@@ -877,13 +943,27 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  admitForumsConsumer = await startScheduledConsumer({
+    queue: ADMIT_FORUMS_QUEUE,
+    cron: admitForumsCron,
+    expireInSeconds: ADMIT_FORUMS_EXPIRY_S,
+    retryLimit: 0,
+    handler: admitForumsTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!admitForumsConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   if (
     stopping
   )
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}"`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED}`,
   );
   // The profile-history backfill is owed until one pass has completed: queue it at once on the first deploy (and after
   // an interrupted first run) rather than wait for the 03:10 cron. Its first step is the one-time ADMIT re-key.
@@ -948,6 +1028,7 @@ async function shutdown(
       sdnBackfillConsumer?.pause(),
       sdnInterviewsConsumer?.pause(),
       rmhPublishConsumer?.pause(),
+      admitForumsConsumer?.pause(),
     ],
   );
 

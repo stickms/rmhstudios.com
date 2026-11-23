@@ -99,11 +99,17 @@ export const DAILY_REQUEST_BUDGETS: Record<'CYCLETRACK' | 'ADMIT' | 'SDN_FORUMS'
   // The hourly diff of ~238 schools is about 5,700 a day and the resumable backfill rides on top: this is a runaway
   // guard well above that, not a throttle (the existing 1-2 s spacing is the throttle).
   CYCLETRACK: 20_000,
-  // Live (~300 feed polls and a few lookups), interviews (~650) and history (<= 600) come to about 2,000.
-  ADMIT: 3000,
+  // Live (~300 feed polls and a few lookups), interviews (~650) and history (<= 600) come to about 2,000, and the school
+  // forums (owner 2026-11-23, <= 600 a day by their own quota) bring it to about 2,600: raised from 3,000 to leave headroom.
+  ADMIT: 3500,
   SDN_FORUMS: 2000,
   SDN_WWW: 1500,
 };
 
 /** Admit profile-history lookups allowed per UTC day (a share of the ADMIT budget; env override in the worker). */
 export const ADMIT_HISTORY_DAILY_PROFILES = 600;
+/**
+ * Admit school-forum requests allowed per UTC day (a share of the ADMIT budget; env override in the worker): eight runs of
+ * three summary pages and the threads with new posts, 80 requests at most per run.
+ */
+export const ADMIT_FORUMS_DAILY_REQUESTS = 600;

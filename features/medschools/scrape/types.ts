@@ -152,6 +152,25 @@ export interface MedAdmitMemberRow {
   updatedAt: Date;
 }
 
+/** A school's Admit forum thread for one cycle: counts and a hashed cursor, never text or a person. */
+export interface MedAdmitForumThreadRow {
+  id: string;
+  schoolId: string;
+  cycleYear: number;
+  remoteCount: number;
+  /** Posts consumed; the next read starts one before it so the anchor post is checked. */
+  cursorOffset: number;
+  /** HMAC of the last processed post's id, never the id. */
+  cursorPostHash: string | null;
+  postsProcessed: number;
+  lastPostAt: Date | null;
+  /** Set while the thread is parked (failing repeatedly); retried after 24 h. */
+  parkedAt: Date | null;
+  failCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface MedPrisma {
   medSchool: {
     count(args?: { where?: Where }): Promise<number>;
@@ -232,6 +251,11 @@ export interface MedPrisma {
     deleteMany(args: { where: Where }): Promise<{
       count: number;
     }>;
+  };
+  medAdmitForumThread: {
+    findMany(args?: { where?: Where; orderBy?: unknown }): Promise<MedAdmitForumThreadRow[]>;
+    create(args: { data: Data }): Promise<MedAdmitForumThreadRow>;
+    update(args: { where: Where; data: Data }): Promise<MedAdmitForumThreadRow>;
   };
   medInterviewQuestion: {
     findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedInterviewQuestionRow[]>;

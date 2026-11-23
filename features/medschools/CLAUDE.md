@@ -165,6 +165,23 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
   day, retries and robots.txt included) shared by all its jobs; spent budget halts the session (`BudgetExhaustedError`)
   and the job ends PARTIAL until the next UTC day. The history job also has its own daily quota of profile lookups
   (default 600). Env overrides are in `.env.example`.
+- **Admit school forums (owner 2026-11-23, `scrape/run-admit-forums.ts`, queue `medschools.admit-forums`, every 3
+  hours).** Admit's school forums are a native thread per school per cycle (GraphQL `getAllSchoolThreads` and
+  `getSchoolThread`, oldest first; findings in the endpoint inventory). The job lists every thread's post count (three
+  requests), and reads a thread only from its persisted cursor (`MedAdmitForumThread`: `cursorOffset` plus a keyed hash
+  of the last post, read one post early as an anchor; no text, author or id stored). Rules a reader of the data depends
+  on: (1) a post mirrored from SDN is skipped (`isSdnMirror` in `adapters/admit/forum.ts`; Admit has no source field, so
+  it is a fail-closed content-and-shape check) because SDN already counts it; (2) a native post's events key on
+  `hash(admit:author:<user id>:<schoolId>:<cycleYear>:<type>)`, built by `adapters/admit/member-key.ts` which the feed
+  and the history now share, so one member counts once per type per school per cycle across the tracker, the history and
+  the forum (the writer is `admit-events.ts`: first report wins, earliest date kept, a known program is kept); a post
+  with no author id (anonymous, deleted) falls back to a per-post key; (3) program is the SDN text rule (MD unless the
+  post says MD-PhD), no profile lookup per author; (4) the model runs off-peak only: at peak the run lists the threads
+  and persists their counts (the count past the cursor is the held state, nothing is stored or fetched twice) and the
+  next off-peak run reads them; (5) its own AI share (`admit-forums-budget.ts`, label `medschools-extract:admit-forums`,
+  default 40% of `MEDSCHOOLS_AI_MONTHLY_USD`); (6) the Admit host budget default is now 3500 (the forums add a 600/day
+  quota of their own). Tests: `forum.test.ts` (the adapter boundary), `run-admit-forums.test.ts` (hostile fixtures:
+  names, ids, SDN mirrors, quotes, injection), `admit-forums-budget.test.ts`.
 - The SDN live queue runs daily (SDN forum activity is slow); AI extraction is capped monthly. Detail:
   `server/CLAUDE.md`.
 

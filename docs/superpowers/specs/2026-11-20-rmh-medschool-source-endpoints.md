@@ -66,3 +66,42 @@ do not touch /search/, /members/, /ajax/ etc.
 | .../medical-school/detail/<CODE>/<slug>                                                                                                                         | HTML: application fee, in/out-of-state tuition, avg GPA/MCAT, OOS matriculant % (AAMC Table A-1), class size, ownership, founded                                                                                                                                                                         | School metadata                                                          | HTML scrape                                                           |
 | .../medical-school/essay-questions/<CODE>/<slug>                                                                                                                | Secondary prompts by cycle                                                                                                                                                                                                                                                                               | Essay prompts                                                            | HTML                                                                  |
 | No JSON or XHR endpoints found behind these (server-rendered Laravel, recaptcha only). No anonymous interview-date tracker was found (log-in submissions only). |
+
+## Admit school forums: findings (probed 2026-11-23, about 40 requests plus 27 static assets, 3 to 3.5 s apart, the static agent)
+
+Owner direction: read Admit's school forums like SDN's. Two corrections to the rows above first. (1) The
+`?view=discussion&discussion_cycle=…&community_program=MD&post_sort=newest` row is **CycleTrack's** school page
+(`cycletrack.org/explorer/school/<Name>`), not Admit: it is the page that mirrors SDN thread posts with SDN post ids.
+The Admit school page `med.admit.org/cycle-results/<slug>?view=discussion…` serves the cycle table and carries no
+discussion text. (2) `med.admit.org/school-forums/<slug>` is a **native Admit thread**, one per school per cycle
+("2026-2027 Thread"), not a mirror.
+
+- **SSR** (`/school-forums/<slug>` 307-redirects to the current cycle's page, `/school-forums/<slug>/<year>/<page>`, 50
+  posts a page): per post a short id (`id="NGTNOdB"`, 7 characters), the author's display name (`/user/<name>`) or
+  `anonymous` or `[deleted]`, a day-resolution date, `#<n>` and the HTML body. No user id on the page, so the SSR cannot
+  key a member. robots.txt on `med.admit.org` is `Allow: /`; `api.admit.org` has none (404).
+- **GraphQL** (the SSR's own data source, `POST api.admit.org/graphql`, Origin `https://med.admit.org`; introspection is
+  off but validation errors suggest field names):
+  - `getAllSchoolThreads(filterOwnSchools, year, limit<=100, offset)` returns one row per school: `comment_count`,
+    `latest_post_date`, `school { slug }` (also `latest_user`: not requested). 239 schools, three pages. `year` is the
+    start year (2026 is the 2026-2027 cycle, entry year 2027). Rows are ordered by activity, so a slug can move between
+    pages.
+  - `getSchoolThread(slug, year, limit<=100, offset)` returns `comment_count` and `posts`, **oldest first**,
+    offset-paged ("Limit must be an integer between 1 and 100"). Post fields: `id` (the SSR's 7-character id), `content`
+    (HTML, `<p>`), `created_at` (ISO, ms), `edited_at`, `heart_count`, `user { id, public_display_name, roles }` (also
+    `avatar`, `userCreatedAt`, `commentCount`). `comment_count` equals the number of posts (Harvard 2026: 130, offsets
+    0..129), deleted posts stay in place as a placeholder, so offsets are stable and a post count past a stored offset
+    is "new posts". Variables are `Float!` for `year`, `limit`, `offset`.
+  - **Author id.** `user.id` is a UUID; it is `null` for `anonymous` (26 of 130 on Harvard) and `[deleted]` (8 of 130)
+    posts. It is the same id space as the tracker feed's `user_id` (a thread poster appeared in the same day's
+    `getRecentSchoolCycleUpdates` feed), so it keys the same member key. Not every poster has a CycleTrack profile
+    (`getCycleTrackProfileByUserId` returned `null` for one named poster).
+  - **Mirror marker: none found.** No `sdn`, `source`, `imported`, `external`, `original_*` or `parent` field exists on
+    a post or its user (about 60 names probed), roles seen are `USER` or none, and all 130 Harvard posts have distinct 7
+    character ids and ordinary timestamps. Posts that mention SDN do so as a native post would ("this is someone on the
+    SDN md/phd thread who has 20 ii"). So the connector skips by a conservative, fail-closed check (`isSdnMirror`): an
+    all-digit post id (an SDN post id), an import or mirror role, an attribution banner ("originally posted on SDN"), or
+    a link to an SDN thread or post. If Admit ever adds a source field, replace the check with it.
+- **Post volume.** The 50 busiest 2026 threads hold 11,722 posts (largest 720); the whole forum is about 20,000 posts
+  and grows by a few hundred a day, so a steady-state run is the three summary pages plus a request per thread with new
+  posts.

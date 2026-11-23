@@ -140,6 +140,26 @@ model MedTrackerApplication {
     ]);
   });
 
+  it('MedAdmitForumThread holds counts and a hashed cursor only: no post text, id or person column', () => {
+    const m = parseModels(schema()).find((x) => x.model === 'MedAdmitForumThread');
+    expect(m?.fields).toEqual([
+      'id',
+      'schoolId',
+      'cycleYear',
+      'remoteCount',
+      'cursorOffset',
+      'cursorPostHash',
+      'postsProcessed',
+      'lastPostAt',
+      'parkedAt',
+      'failCount',
+      'createdAt',
+      'updatedAt',
+    ]);
+    expect(forbiddenColumns(schema()).filter((c) => c.startsWith('MedAdmitForumThread.'))).toEqual([]);
+    expect(m?.body).toMatch(/@@unique\(\[schoolId, cycleYear\]\)/);
+  });
+
   it('new Admit columns pass the person-like check', () => {
     const text = schema();
     expect(text).toContain('model MedInterviewQuestion');
