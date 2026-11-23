@@ -164,13 +164,10 @@
   );
 }
 
-/* The page block: two real faces behind the cover, each hinged on the cover's edge and folded
-   back by the book's thickness. Both are edge-on and hidden at rest (backface-visibility only
-   draws a face from outside), and the turn on hover reveals them, so the book reads as a solid
-   with depth rather than a card.
-   - Fore-edge (right): pages stack front-to-back, so their edges are lines running up and down
-     the face; the stripes repeat ACROSS the face's width (the thickness), hence `to right`.
-   - Head (top): a thin solid cap, only a couple of pixels at the hover tilt. */
+/* The page block: two faces behind the cover, hinged on its edges and folded back by the book's
+   thickness; backface-hidden, so the hover turn is what reveals them. Fore-edge (right): pages
+   stack front-to-back, so the stripes repeat across the thickness (`to right`) and read as
+   vertical page lines. Head (top): a thin solid cap. */
 .lib-book__cover::after,
 .lib-book__cover::before {
   content: '';
@@ -224,8 +221,6 @@
   transform: translateY(-4px) rotateX(5deg) rotateY(-30deg);
   transition-duration: 140ms;
 }
-
-/* Respect reduced motion: keep the 3D thickness but don't spin. */
 
 /* Cover image (rendered first page). Fills the cover, clipped to its rounded
    shape; the spine band + page badge sit on top. */
