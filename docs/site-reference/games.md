@@ -25,7 +25,7 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable | required | `Multiplayer` `Physics` `3D` |
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
-| **Project Vega** | [`/vega`](https://rmhstudios.com/vega) | Playable | required | `Strategy` `Tower Defense` `Horror` |
+| **Project Vega** | [`/vega`](https://rmhstudios.com/vega) | Playable | required | `Strategy` `Tower Defense` `Horror` `Single-player` |
 | **Signal Forge** | [`/signal-forge`](https://rmhstudios.com/signal-forge) | Playable | required | `Roguelike` `Deckbuilder` `Rhythm` |
 | **Cursed Logic** | [`/cursed-logic`](https://rmhstudios.com/cursed-logic) | Playable | required | `Strategy` `Duel` `Roguelite` `Mind Games` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
@@ -118,7 +118,7 @@ Step into the neon-lit rooftops of Kowloon, 1997, and brawl in a fully animated 
 
 ### Project Vega
 
-The Recursion Defense System is the last thing standing between the specimen and the rest of the facility. Build towers along the corridor, hold each wave, and watch what the scan turns up in the next one. Every loop the defense survives makes the next one worse.
+Specimens crawl a corridor of tissue toward the containment door. Between waves the board waits while you place and upgrade eight instruments, from the Synapse and the Suppressor to the Lobotomizer and the Biobank, each with three tiers. Every wave brings a mix of specimens that armour, cloak, shield, regenerate, split and heal, and every fifth wave a boss. Three wards to hold, a score built from waves cleared, clean holds and early calls, and an overtime that runs to wave 100 for the ones who reach containment.
 
 **Route:** `/vega` · **Catalog id:** `vega` · **Status:** Playable · **Sign-in:** required
 
