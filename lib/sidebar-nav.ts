@@ -135,7 +135,8 @@ export const SIDEBAR_NAV: NavItem[] = [
     id: '/news',
     href: '/news',
     tKey: 'nav-news',
-    label: 'RMH News',
+    // The sidebar says "News"; the page's own title stays "RMH News" (owner, 2026-11-24).
+    label: 'News',
     icon: Newspaper,
   },
   {
@@ -194,8 +195,9 @@ export const SIDEBAR_NAV: NavItem[] = [
   {
     id: '/ventures',
     href: '/ventures',
-    tKey: 'nav-ventures',
-    label: 'RMH Ventures',
+    // A short key of its own: the /ventures page title reads `nav-ventures` ("RMH Ventures") and keeps it.
+    tKey: 'nav-ventures-short',
+    label: 'Ventures',
     icon: Rocket,
   },
   // Admin is never reordered/hidden (its id isn't in SIDEBAR_NAV_IDS), so it
