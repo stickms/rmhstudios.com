@@ -10,6 +10,7 @@
  * by the page (which owns the collection list so the main shelf can hide books that
  * already live in a collection) and calls `onChanged` after each change.
  */
+import { Cells } from '@/components/ui/rules';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useState } from 'react';
 import { BookLeaves } from './BookLeaves';
@@ -170,7 +171,7 @@ export function LibraryCollections({
   const userMade = visible.filter((c) => !c.official);
 
   const renderGroup = (group: CollectionView[]) => (
-    <div className="lib__shelf" role="list">
+    <Cells columns={3} className="lib-cells">
       {group.map((c) => (
         <CollectionTile
           key={c.id}
@@ -183,7 +184,7 @@ export function LibraryCollections({
           onCover={() => generateCover(c)}
         />
       ))}
-    </div>
+    </Cells>
   );
 
   // Live versions of the collections referenced by open modals (so edits reflect).
@@ -271,7 +272,9 @@ function CollectionTile({
   onRename,
   onDelete,
   onCover,
+  ...rest
 }: {
+  'data-last-row'?: string;
   collection: CollectionView;
   generating: boolean;
   onOpen: () => void;
@@ -316,10 +319,10 @@ function CollectionTile({
   ];
 
   return (
-    <div
+    <li
+      {...rest}
       ref={revealRef}
       className="lib-book__wrap lib-coll-tile lib-reveal"
-      role="listitem"
       onContextMenu={c.canEdit ? menu.openAt : undefined}
     >
       <button
@@ -370,7 +373,7 @@ function CollectionTile({
           label={t('manage', { defaultValue: 'Manage' })}
         />
       )}
-    </div>
+    </li>
   );
 }
 

@@ -132,6 +132,12 @@
     flex: 0 0 100%;
     min-inline-size: 0;
     padding-block: 0.75rem;
+    /* The content sits between the rules: a cell's text starts where its horizontal rule starts and stops where it
+       stops, so a row's hover fill (which bleeds 4px past the text) never reaches a vertical rule or the next cell. */
+    padding-inline: var(--rule-inset);
+  }
+  .rule-cells > li > .row-hover::before {
+    inset-inline: -0.25rem;
   }
   .rule-cells > li::after {
     content: '';
@@ -157,11 +163,6 @@
     }
     .rule-cells > li[data-last-row]::after {
       display: none;
-    }
-    .rule-cells[data-columns='2'] > li:nth-child(2n),
-    .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1)),
-    .rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1)) {
-      padding-inline-start: 1rem;
     }
     .rule-cells[data-columns='2'] > li:nth-child(2n)::before,
     .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1))::before,

@@ -1226,3 +1226,17 @@
 .lib-playground[data-library-layout='shelves'] .lib__shelf {
   align-items: start;
 }
+
+/* Cover shelves are Cells (rules between tiles): the cover height the tiles read, and no fixed caption row. */
+.lib-cells {
+  --cover-h: 280px;
+  --cap-h: auto;
+}
+@media (max-width: 560px) {
+  .lib-cells {
+    --cover-h: 236px;
+  }
+}
+.lib-blog__tags {
+  margin-top: 8px;
+}

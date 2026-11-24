@@ -5,6 +5,7 @@
  * the fullscreen carousel viewer at /library/albums/$albumId.
  */
 
+import { Cells } from '@/components/ui/rules';
 import { Link } from '@tanstack/react-router';
 import { Images, Play, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -92,17 +93,17 @@ export function LibraryAlbums({
           )}
         </div>
       ) : (
-        <div className="lib-albums__grid" role="list">
+        <Cells columns={4} className="lib-albums__cells">
           {albums.map((album) => (
             <AlbumCard key={album.id} album={album} />
           ))}
-        </div>
+        </Cells>
       )}
     </section>
   );
 }
 
-function AlbumCard({ album }: { album: Album }) {
+function AlbumCard({ album, ...rest }: { album: Album; 'data-last-row'?: string }) {
   const { t } = useTranslation('library');
   const revealRef = useReveal();
   const { images, videos, total } = albumCount(album);
@@ -114,7 +115,7 @@ function AlbumCard({ album }: { album: Album }) {
   );
 
   return (
-    <div ref={revealRef} className="lib-reveal" role="listitem">
+    <li {...rest} ref={revealRef} className="lib-reveal">
       <ViewTransitionLink
         to="/library/albums/$albumId"
         params={{
@@ -168,6 +169,6 @@ function AlbumCard({ album }: { album: Album }) {
           </p>
         </div>
       </ViewTransitionLink>
-    </div>
+    </li>
   );
 }
