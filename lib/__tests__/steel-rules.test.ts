@@ -20,6 +20,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isSiteTier } from '../../eslint-local-rules/design-scope.js';
+import { STEEL_GHOST_BASELINE } from './steel-ghost-baseline';
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ['components', 'features', join('app', 'routes')];
@@ -32,7 +33,7 @@ const POINTER =
   join('docs', 'superpowers', 'specs', '2026-11-24-steel-dividers-design.md') +
   ').';
 
-export type SteelRuleKind = 'bordered-group-box' | 'retired-surface-role' | 'card-import';
+export type SteelRuleKind = 'bordered-group-box' | 'retired-surface-role' | 'card-import' | 'ghost-box';
 
 export interface SteelRuleViolation {
   file: string;
@@ -69,6 +70,21 @@ const CONTROL_MARKERS = [
   token('surface-overlay'),
   /(?:^|\s)(?:\S*:)*aspect-/,
   /(?:^|\s)(?:\S*:)*size-\d/,
+];
+/**
+ * A ghost box: `rounded-site` with horizontal padding and nothing to see (no fill, ring, shadow or all-sides border).
+ * It is what is left of a card once its box is gone, and the padding indents the content away from the page edge that
+ * the title sits on. Vertical padding alone is fine (it is spacing); a row that needs a hover fill uses `row-hover`.
+ */
+const ROUNDED_SITE = /(?:^|\s)(?:\S*:)*rounded-site(?![\w-])/;
+const HORIZONTAL_PAD = /(?:^|\s)(?:\S*:)*(?:p|px|ps|pe|pl|pr)-\d/;
+const VISIBLE_SURFACE = [
+  /(?:^|\s)(?:\S*:)*bg-/,
+  /(?:^|\s)(?:\S*:)*ring(?:-|\s|$)/,
+  /(?:^|\s)(?:\S*:)*shadow/,
+  token('surface-overlay'),
+  token('surface-field'),
+  token('surface-chrome'),
 ];
 const FIXED_H = /(?:^|\s)(?:\S*:)*h-\d/;
 const FIXED_W = /(?:^|\s)(?:\S*:)*w-\d/;
@@ -231,13 +247,25 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
         detail: 'surface-card / surface-panel is retired on the site tier',
       });
     }
-    if (!ROUNDED.test(text) || !BORDER_ALL.test(text)) return;
+    if (ROUNDED.test(text) && BORDER_ALL.test(text)) {
+      if (isControlOrPicture(text) || isControlTag(enclosingTag(code, at))) return;
+      out.push({
+        file,
+        line,
+        kind: 'bordered-group-box',
+        detail: 'bordered group box (border + rounded radius, no control, picture or overlay marker)',
+      });
+      return;
+    }
+    if (!ROUNDED_SITE.test(text) || !HORIZONTAL_PAD.test(text)) return;
+    if (VISIBLE_SURFACE.some((re) => re.test(text))) return;
     if (isControlOrPicture(text) || isControlTag(enclosingTag(code, at))) return;
     out.push({
       file,
       line,
-      kind: 'bordered-group-box',
-      detail: 'bordered group box (border + rounded radius, no control, picture or overlay marker)',
+      kind: 'ghost-box',
+      detail:
+        'rounded-site with horizontal padding and no fill, ring, shadow or border: drop the padding (and the radius)',
     });
   };
 
@@ -356,6 +384,21 @@ describe('scanSteelRules (the scanner itself)', () => {
     expect(scanSteelRules('<div className="border rounded-site border-site-border p-4" />', 'x.tsx')).toHaveLength(1);
     expect(scanSteelRules('<div className="surface-card p-4" />', 'x.tsx')).toHaveLength(1);
   });
+  it('flags a ghost box: rounded-site with horizontal padding and nothing visible', () => {
+    expect(scanSteelRules('<div className="rounded-site p-5" />', 'x.tsx').map((v) => v.kind)).toEqual(['ghost-box']);
+    expect(scanSteelRules('<div className="rounded-site px-4 py-3" />', 'x.tsx')).toHaveLength(1);
+    expect(scanSteelRules('<div className={cn("space-y-3", "rounded-site ps-4")} />', 'x.tsx')).toHaveLength(1);
+  });
+
+  it('does not flag vertical padding, a fill, a ring, an overlay or a control', () => {
+    expect(scanSteelRules('<div className="rounded-site py-3" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-site px-4 bg-site-bg-subtle" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-site px-4 hover:bg-site-bg-subtle" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-site p-4 ring-1 ring-site-accent" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="surface-overlay rounded-site p-4" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<Button className="rounded-site px-4" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-app p-4" />', 'x.tsx')).toEqual([]);
+  });
 });
 
 describe('steel rules on the site tier', () => {
@@ -369,12 +412,59 @@ describe('steel rules on the site tier', () => {
     () => {
       const offenders: string[] = [];
       for (const [file, violations] of scanAll()) {
-        for (const v of violations) offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
+        for (const v of violations) {
+          if (v.kind === 'ghost-box') continue;
+          offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
+        }
       }
       expect(offenders, offenders.join('\n')).toEqual([]);
     },
     SCAN_TIMEOUT_MS,
   );
+
+  it(
+    'no file gains a ghost box: rounded-site with horizontal padding and nothing visible',
+    () => {
+      const grew: string[] = [];
+      for (const [file, violations] of scanAll()) {
+        const ghosts = violations.filter((v) => v.kind === 'ghost-box');
+        const allowed = STEEL_GHOST_BASELINE[file]?.count ?? 0;
+        if (ghosts.length > allowed) {
+          const where = ghosts.map((g) => g.line).join(', ');
+          grew.push(
+            `${file}: ${ghosts.length} ghost boxes (lines ${where}), baseline ${allowed}. Drop the horizontal padding and the radius.`,
+          );
+        }
+      }
+      expect(grew, grew.join('\n')).toEqual([]);
+    },
+    SCAN_TIMEOUT_MS,
+  );
+
+  it(
+    'every ghost baseline entry still matches its count (a clean file leaves the list; a smaller count is lowered)',
+    () => {
+      const byFile = scanAll();
+      const problems: string[] = [];
+      for (const [file, entry] of Object.entries(STEEL_GHOST_BASELINE)) {
+        const now = byFile.get(file)?.filter((v) => v.kind === 'ghost-box').length ?? 0;
+        if (now === 0) problems.push(`${file}: clean now, delete the entry`);
+        else if (now < entry.count) problems.push(`${file}: ${now} now, lower its count from ${entry.count}`);
+      }
+      expect(problems, problems.join('\n')).toEqual([]);
+    },
+    SCAN_TIMEOUT_MS,
+  );
+
+  it('prints the ghost boxes when STEEL_GHOST_UPDATE=1 (baseline regeneration only)', () => {
+    if (process.env.STEEL_GHOST_UPDATE !== '1') return;
+    const counts: Record<string, number> = {};
+    for (const [file, violations] of scanAll()) {
+      const n = violations.filter((v) => v.kind === 'ghost-box').length;
+      if (n) counts[file] = n;
+    }
+    process.stdout.write(`STEEL_GHOST_COUNTS ${JSON.stringify(counts)}\n`);
+  });
 });
 
 describe('steel rules in the stylesheet', () => {
