@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Flag, Sparkles, Star, Trash2, EyeOff } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Card } from '@/components/ui/card';
+import { Cells, Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -156,7 +156,7 @@ export function PacksPage() {
   }
 
   const card = (p: PackView) => (
-    <Card key={p.id} className="gap-3 p-4">
+    <li key={p.id} className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate font-semibold text-site-text">{p.name}</h3>
@@ -237,14 +237,14 @@ export function PacksPage() {
           </>
         ) : null}
       </div>
-    </Card>
+    </li>
   );
 
   const section = (title: string, items: PackView[], empty: string) => (
     <section className={cn('space-y-3', arrival)}>
       <h2 className="site-section-label">{title}</h2>
       {items.length ? (
-        <div className="grid gap-3 sm:grid-cols-2">{items.map(card)}</div>
+        <Cells columns={2}>{items.map(card)}</Cells>
       ) : (
         <p className="text-sm text-site-text-muted">{empty}</p>
       )}
@@ -263,7 +263,7 @@ export function PacksPage() {
     >
       <div className="space-y-6 px-4 pt-4 pb-12">
         {signedIn ? (
-          <Card pane className="gap-3 p-4">
+          <Section className="flex flex-col gap-3">
             <h2 className="site-section-label flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-site-accent" aria-hidden />
               {t('new-pack', {
@@ -317,7 +317,7 @@ export function PacksPage() {
                 })}
               </Button>
             </div>
-          </Card>
+          </Section>
         ) : (
           <p className="text-sm text-site-text-muted">
             {t('sign-in', {

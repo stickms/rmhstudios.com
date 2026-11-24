@@ -6,7 +6,7 @@ import { toast } from '@/lib/toast';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CalendarCheck, Plus, Share2, Star, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
@@ -40,7 +40,7 @@ function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
   const { t } = useTranslation('f-party');
   return (
     <Link to="/connections/u/$id" params={{ id: g.id }} className="block">
-      <Card className="flex items-center justify-between gap-3 p-4">
+      <div className="row-hover flex items-center justify-between gap-3 border-b border-site-border py-3">
         <div className="min-w-0">
           <p className="truncate font-semibold text-site-text">{g.title}</p>
           <p className="text-xs text-site-text-muted">
@@ -61,7 +61,7 @@ function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
             </span>
           ) : null}
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }
@@ -205,7 +205,7 @@ export function ConnectionsNew() {
           aria-label={t('grid-title', { defaultValue: 'Grid title' })}
         />
         {groups.map((g, gi) => (
-          <Card key={gi} className={cn('space-y-3 p-4', BAND[gi])}>
+          <Section key={gi} className={cn('space-y-3 p-4', BAND[gi])}>
             <Input
               value={g.label}
               maxLength={40}
@@ -228,7 +228,7 @@ export function ConnectionsNew() {
                 />
               ))}
             </div>
-          </Card>
+          </Section>
         ))}
         {filled && !unique ? (
           <p className="text-sm text-site-danger">
@@ -478,7 +478,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
         ) : null}
 
         {done ? (
-          <Card className="space-y-3 p-4 text-center">
+          <Section className="space-y-3 pt-4 text-center">
             <p className="font-semibold text-site-text">
               {grid.status === 'solved'
                 ? t('solved', { defaultValue: 'Solved!' })
@@ -505,7 +505,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 {t('share', { defaultValue: 'Share' })}
               </Button>
             </div>
-          </Card>
+          </Section>
         ) : null}
 
         {grid.rating != null ? (
@@ -520,7 +520,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
         ) : null}
 
         {isAdmin ? (
-          <Card className="flex flex-wrap items-center gap-2 px-4 py-3">
+          <Section className="flex flex-wrap items-center gap-2 py-3">
             <Input
               type="date"
               className="w-auto"
@@ -536,7 +536,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 {t('clear-daily', { defaultValue: 'Clear daily' })}
               </Button>
             ) : null}
-          </Card>
+          </Section>
         ) : null}
         {grid.isAuthor || isAdmin ? (
           <div className="text-center">

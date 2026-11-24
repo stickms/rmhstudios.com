@@ -467,7 +467,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   padding: clamp(22px, 3vw, 30px);
 }
 /* The "critical" tier is featured with the store's gold (--site-warning) rim. */
-.surface-card.sec-tier[data-sev="critical"] {
+.sec-tier[data-sev="critical"] {
   border-color: color-mix(in srgb, var(--site-warning) 60%, transparent);
 }
 .sec-tier__head {

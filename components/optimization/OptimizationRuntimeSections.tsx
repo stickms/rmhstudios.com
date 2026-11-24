@@ -25,7 +25,7 @@ export function OptimizationRuntimeSections() {
               return (
                 <article
                   key={p.title}
-                  className="surface-card sec-card sec-reveal"
+                  className="sec-card sec-reveal"
                   style={
                     {
                       '--sec-delay': `${(i % 3) * 80}ms`,
@@ -58,7 +58,7 @@ export function OptimizationRuntimeSections() {
               wired.
             </p>
           </div>
-          <div className="surface-card sec-spec sec-reveal">
+          <div className="sec-spec sec-reveal">
             {RENDER_SPECS.map((s) => (
               <div className="sec-spec__row" key={s.term}>
                 <div className="sec-spec__term">{s.term}</div>
@@ -81,7 +81,7 @@ export function OptimizationRuntimeSections() {
               The cheapest byte is the one we never send. We stay aggressive about what actually reaches your browser.
             </p>
           </div>
-          <div className="surface-card sec-spec sec-reveal">
+          <div className="sec-spec sec-reveal">
             {BUNDLE_SPECS.map((s) => (
               <div className="sec-spec__row" key={s.term}>
                 <div className="sec-spec__term">{s.term}</div>
@@ -145,7 +145,7 @@ export function OptimizationRuntimeSections() {
               A fast build is a fast feedback loop. Every stage is understood, profiled, and tuned.
             </p>
           </div>
-          <div className="surface-card sec-spec sec-reveal">
+          <div className="sec-spec sec-reveal">
             {BUILD_SPECS.map((s) => (
               <div className="sec-spec__row" key={s.term}>
                 <div className="sec-spec__term">{s.term}</div>

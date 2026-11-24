@@ -6,16 +6,7 @@
  * is clean must be deleted. Nothing new goes in.
  */
 export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number }> = {
-  'components/optimization/OptimizationClosingSections.tsx': { wave: 'wave 4', count: 2 },
-  'components/optimization/OptimizationHero.tsx': { wave: 'wave 4', count: 1 },
-  'components/optimization/OptimizationResultSections.tsx': { wave: 'wave 4', count: 2 },
-  'components/optimization/OptimizationRuntimeSections.tsx': { wave: 'wave 4', count: 4 },
-  'components/party/ConnectionsPages.tsx': { wave: 'wave 4', count: 1 },
-  'components/party/ControllerPad.tsx': { wave: 'wave 4', count: 1 },
-  'components/party/PacksPage.tsx': { wave: 'wave 4', count: 1 },
   'components/rebar-rutabaga/Masthead.tsx': { wave: 'wave 4', count: 1 },
-  'components/security/BreachesSection.tsx': { wave: 'wave 4', count: 9 },
-  'components/security/SecurityPage.tsx': { wave: 'wave 4', count: 13 },
   'components/settings/ShortcutCapture.tsx': { wave: 'wave 2', count: 1 },
   'components/settings/TwoFactorSetup.tsx': { wave: 'wave 2', count: 1 },
   'components/studio/SampleBrowser.tsx': { wave: 'wave 4', count: 1 },
