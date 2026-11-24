@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 export function AiPracticesLink() {
   const { t } = useTranslation('f-dev-ai');
   return (
-    <Link to="/developer/ai-practices" className="surface-press group flex items-start gap-3 rounded-site p-5">
+    <Link to="/developer/ai-practices" className="row-hover group flex items-start gap-3 py-5">
       <Sparkles className="mt-0.5 size-5 shrink-0 text-site-accent" aria-hidden />
       <span>
         <span className="block font-semibold text-site-text transition-colors group-hover:text-site-accent">

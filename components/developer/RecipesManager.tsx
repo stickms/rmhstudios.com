@@ -22,7 +22,6 @@ import {
 } from '@/lib/developer/recipes.contract';
 import { recipesQuery } from '@/lib/developer/developer.queries';
 import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
 
 interface Options {
   games: { id: string; title: string }[];
@@ -110,7 +109,7 @@ export function RecipesManager() {
         })}
       </p>
 
-      <div className="space-y-3 rounded-site px-4 py-3">
+      <div className="space-y-3 py-3">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -211,9 +210,9 @@ export function RecipesManager() {
       {recipes === null ? (
         <Spinner />
       ) : (
-        <ul className={cn('space-y-3', arrival)}>
+        <ul className={arrival}>
           {recipes.map((r) => (
-            <li key={r.id} className="flex items-center gap-3 rounded-site px-4 py-3">
+            <li key={r.id} className="rule-row flex items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{r.name}</p>
                 <p className="text-xs text-site-text-muted">

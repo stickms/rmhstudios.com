@@ -162,7 +162,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
 
   if (!hasAccess) {
     return (
-      <section className={cn('rounded-site px-4 py-6 text-center', arrival)}>
+      <section className={cn('py-6 text-center', arrival)}>
         <ShieldCheck className="mx-auto mb-2 size-7 text-site-accent" aria-hidden />
         <p className="font-semibold text-site-text">
           {t('keys-subscription-title', { defaultValue: 'A subscription is required' })}
@@ -219,7 +219,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
       )}
 
       {/* Create form */}
-      <div className="space-y-3 rounded-site px-4 py-3">
+      <div className="space-y-3 py-3">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -335,11 +335,11 @@ export function KeysManager() { const fmt = useLocaleFormat();
           {t('keys-empty', { defaultValue: 'No keys yet. Create one to get started.' })}
         </p>
       ) : (
-        <div className="space-y-3">
+        <div>
           {keys.map((k) => {
             const expired = k.expiresAt && new Date(k.expiresAt).getTime() < Date.now();
             return (
-              <div key={k.id} className="rounded-site px-4 py-3">
+              <div key={k.id} className="rule-row py-3">
                 <div className="flex items-center gap-3">
                   <KeyRound className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <div className="min-w-0 flex-1">

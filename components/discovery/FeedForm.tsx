@@ -67,7 +67,7 @@ export function FeedForm({
 
   return (
     <form
-      className="space-y-3 rounded-site p-5"
+      className="space-y-3 py-5"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) onSubmit(v);

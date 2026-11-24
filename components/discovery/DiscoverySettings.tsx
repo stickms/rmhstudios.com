@@ -19,7 +19,6 @@ import {
   type DiscoveryAlert as Alert,
 } from '@/lib/discovery/discovery.contract';
 import { discoveryAlertsQuery, discoveryMemoriesQuery } from '@/lib/settings/prefs.queries';
-import { cn } from '@/lib/utils';
 
 /**
  * A6 keyword alerts and the A5 "On this day" opt-in, on the notification settings page.
@@ -178,12 +177,9 @@ export function DiscoverySettings({
           </Button>
         </form>
         {alerts && alerts.length > 0 && (
-          <ul className={cn('space-y-2', alertsArrival)}>
+          <ul className={alertsArrival}>
             {alerts.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between gap-2 rounded-site px-3 py-2 text-sm text-site-text"
-              >
+              <li key={a.id} className="rule-row flex items-center justify-between gap-2 py-2 text-sm text-site-text">
                 <span className="min-w-0 truncate">{a.query}</span>
                 <IconButton
                   icon={X}

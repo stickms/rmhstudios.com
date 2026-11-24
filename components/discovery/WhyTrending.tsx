@@ -79,7 +79,7 @@ export function WhyTrending({ tag }: { tag: string }) {
           {why && (
             <div className={cn('space-y-4 pt-3', arrival)}>
               <dl className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-site p-2">
+                <div className="py-2">
                   <dt className="text-xs text-site-text-muted">
                     {t('why-first-seen', {
                       defaultValue: 'First seen',
@@ -87,7 +87,7 @@ export function WhyTrending({ tag }: { tag: string }) {
                   </dt>
                   <dd className="text-sm font-semibold text-site-text">{fmt.date(new Date(why.firstSeen))}</dd>
                 </div>
-                <div className="rounded-site p-2">
+                <div className="py-2">
                   <dt className="text-xs text-site-text-muted">
                     {t('why-last-day', {
                       defaultValue: 'Last 24h',
@@ -95,7 +95,7 @@ export function WhyTrending({ tag }: { tag: string }) {
                   </dt>
                   <dd className="text-sm font-semibold text-site-text">{why.last24h}</dd>
                 </div>
-                <div className="rounded-site p-2">
+                <div className="py-2">
                   <dt className="text-xs text-site-text-muted">
                     {t('why-growth', {
                       defaultValue: 'Vs usual',
@@ -123,14 +123,10 @@ export function WhyTrending({ tag }: { tag: string }) {
                     })}
                   </p>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul>
                     {why.starters.map((p) => (
-                      <li key={p.id}>
-                        <Link
-                          to={p.href}
-                          onClick={() => setOpen(false)}
-                          className="block rounded-site p-4 hover:bg-site-surface-hover"
-                        >
+                      <li key={p.id} className="rule-row">
+                        <Link to={p.href} onClick={() => setOpen(false)} className="row-hover block py-3">
                           <p className="text-sm text-site-text">{p.snippet}</p>
                           <p className="mt-1 text-xs text-site-text-muted">{p.author}</p>
                         </Link>
