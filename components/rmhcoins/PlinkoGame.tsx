@@ -399,7 +399,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                  `-fg` token, which tracks each theme's green and red. This used
                  to say `text-black`, which was invisible on the themes whose
                  success colour is a dark forest green. */
-              className={`px-4 py-2.5 rounded-site font-semibold text-sm sm:text-lg ${
+              className={`px-4 py-2.5 font-semibold text-sm sm:text-lg ${
                 resultWon ? 'bg-site-success' : 'bg-site-danger'
               }`}
             >

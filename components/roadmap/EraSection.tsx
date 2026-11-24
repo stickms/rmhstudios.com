@@ -5,7 +5,7 @@ import { eraColorFor } from './roadmap-model';
  *  muted body, a subtle reduced-motion-safe lift on hover. */
 function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
-    <div data-slot="card" className="roadmap-card rounded-site px-4 py-3">
+    <div data-slot="card" className="roadmap-card py-3">
       <h3 className="site-section-label mb-2 text-site-accent!">{title}</h3>
       <p className="text-sm leading-relaxed text-site-text-muted">{body}</p>
     </div>

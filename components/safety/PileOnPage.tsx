@@ -85,7 +85,7 @@ export default function PileOnPage({ postId }: { postId: string }) {
             })}
           />
         ) : (
-          <div className={cn('flex flex-col gap-4 rounded-site p-5 sm:p-5', arrival)}>
+          <div className={cn('flex flex-col gap-4 py-5 sm:py-5', arrival)}>
             <div className="flex items-center gap-2 text-site-text">
               <ShieldCheck className="size-5 shrink-0 text-site-accent" aria-hidden />
               <h2 className="text-lg font-medium">

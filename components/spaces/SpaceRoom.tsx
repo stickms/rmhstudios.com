@@ -95,7 +95,7 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
         ? t('space-pinned-post', { defaultValue: 'Pinned post' })
         : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
-    <div className="relative mx-4 mt-3 shrink-0 rounded-site px-4 py-3">
+    <div className="relative mx-4 mt-3 shrink-0 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
         <Pin className="size-3.5" aria-hidden />
         {label}

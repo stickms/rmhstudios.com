@@ -156,9 +156,9 @@ export function SpeedrunQueue({
           defaultValue: 'Not ranked yet',
         })}
       </h3>
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col">
         {unranked.map((entry) => (
-          <li key={entry.id} className="rounded-site px-3 py-3">
+          <li key={entry.id} className="rule-row py-3">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="min-w-0 flex-1 truncate text-sm text-site-text">
                 {entry.runner.name ??
