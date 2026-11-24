@@ -155,6 +155,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
       column-gap: 0;
+      align-items: baseline;
     }
     .rule-defs > div > dd {
       border-inline-start: 1px solid var(--site-border);
