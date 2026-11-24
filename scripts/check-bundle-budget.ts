@@ -336,13 +336,19 @@ const BUDGETS = {
   // toggle change keeps the page on screen instead of the pending screen. CI measured the entry at 699.2 KB against a
   // 699.2 KB line (+0.0%), i.e. a few hundred bytes over; no library, page component or chart entered the entry
   // (check-entry-composition --strict is unchanged). The line keeps about 0.8 KB of headroom.
-  entryRaw: 716_800,
+  // Inbox icon toolbars and the ghost-button bleed (2026-11-24): entry RAISED 716,800 -> 717,800 B and critical path
+  // RAISED 939,000 -> 940,000 B raw (OPT-01, named in the PR body). The bytes are the icon buttons that replace the text
+  // buttons on the Messages, Groups and Notifications tabs (their lucide glyphs and the IconButton wrapper) and the one
+  // `first:-ms-4` class string every ghost text Button now carries. CI measured the entry at 700.3 KB against 700.0 KB
+  // (+0.0%), about 300 B over; no library, page component or chart entered the entry. The void-breaker island CSS line
+  // below goes 20,900 -> 21,000 B brotli for the same class (the island's Button carries it too).
+  entryRaw: 717_800,
   // RMH Med Schools round 2 (2026-11-24): critical path RAISED 938,200 -> 939,000 B raw (OPT-01, named in the PR body).
   // The bytes are the /med URL parsers the routes' validateSearch reaches (features/medschools/engine/search.ts): a
   // states LIST (`state=CA,NY`, the owner's multi-state filter) and the by-day chart's category list (`daily=`), plus
   // the school queries' cache lifetimes in medschools.queries.ts. CI measured 916.4 KB against 916.2 KB (+0.0%), about
   // 200 B over; no state-name table, library, page component or chart entered the entry (those stay in page chunks).
-  criticalPathRaw: 939_000,
+  criticalPathRaw: 940_000,
   criticalPathBrotli: 247_500, // 2026-11-23: +~0.7 KB brotli (achievement catalog, icon and device registries) from the Vault games' move into the library; OPT-01, named in the PR body
 };
 
@@ -390,7 +396,7 @@ export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrot
   'cursed-logic': { jsBrotli: 136_300, cssBrotli: 21_100 }, // after the rework: JS 132,303 / CSS 20,463 B brotli (+3%)
   'signal-forge': { jsBrotli: 155_650, cssBrotli: 20_500 },
   vega: { jsBrotli: 124_800, cssBrotli: 18_900 }, // after the rework: JS 121,139 / CSS 17,6xx B brotli (+3%)
-  'void-breaker': { jsBrotli: 313_750, cssBrotli: 20_900 },
+  'void-breaker': { jsBrotli: 313_750, cssBrotli: 21_000 },
 };
 
 const ISLANDS_DIR = path.join(ROOT, 'dist-islands');
