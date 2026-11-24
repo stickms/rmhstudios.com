@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { decodeLiveCursor } from '../engine/public-read';
+import { MAX_STATES } from '../engine/search';
+import { HOME_STATE_CODES } from '../engine/tracker';
+
+const KNOWN_STATES = new Set(HOME_STATE_CODES);
 
 /** Query schemas for the public reads (server-side importers only; the contract imports types). */
 
@@ -10,17 +14,22 @@ const programsParam = z
   .string()
   .max(40)
   .regex(/^(md|md-phd|do|do-phd)(,(md|md-phd|do|do-phd)){0,3}$/);
-const state = z.string().regex(/^[A-Z]{2}$/);
+/**
+ * `state=CA,NY`: one to `MAX_STATES` known codes (the 50 states, DC and the territories), comma separated. The readers
+ * dedupe and sort, so the filter is user-independent and one choice reads the same however it was written.
+ */
+const state = z
+  .string()
+  .max(3 * MAX_STATES)
+  .regex(new RegExp(`^[A-Z]{2}(,[A-Z]{2}){0,${MAX_STATES - 1}}$`))
+  .refine((v) => v.split(',').every((c) => KNOWN_STATES.has(c)), 'unknown state');
 const chartedType = z.enum(['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJECTION', 'ACCEPTANCE']);
 const anyType = z.enum(['SECONDARY', 'INTERVIEW', 'WAITLIST', 'REJECTION', 'ACCEPTANCE', 'WITHDRAWN', 'HOLD']);
 
 export const listSchoolsQuery = z.object({
   q: z.string().max(80).optional(),
   degree: degree.optional(),
-  state: z
-    .string()
-    .regex(/^[A-Z]{2}$/)
-    .optional(),
+  state: state.optional(),
   program: program.optional(),
   programs: programsParam.optional(),
 });

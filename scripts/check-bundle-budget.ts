@@ -337,7 +337,12 @@ const BUDGETS = {
   // 699.2 KB line (+0.0%), i.e. a few hundred bytes over; no library, page component or chart entered the entry
   // (check-entry-composition --strict is unchanged). The line keeps about 0.8 KB of headroom.
   entryRaw: 716_800,
-  criticalPathRaw: 938_200,
+  // RMH Med Schools round 2 (2026-11-24): critical path RAISED 938,200 -> 939,000 B raw (OPT-01, named in the PR body).
+  // The bytes are the /med URL parsers the routes' validateSearch reaches (features/medschools/engine/search.ts): a
+  // states LIST (`state=CA,NY`, the owner's multi-state filter) and the by-day chart's category list (`daily=`), plus
+  // the school queries' cache lifetimes in medschools.queries.ts. CI measured 916.4 KB against 916.2 KB (+0.0%), about
+  // 200 B over; no state-name table, library, page component or chart entered the entry (those stay in page chunks).
+  criticalPathRaw: 939_000,
   criticalPathBrotli: 247_500, // 2026-11-23: +~0.7 KB brotli (achievement catalog, icon and device registries) from the Vault games' move into the library; OPT-01, named in the PR body
 };
 

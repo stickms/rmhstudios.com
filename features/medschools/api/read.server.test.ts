@@ -594,13 +594,19 @@ describe('the program set on the list and the live feed (owner 2026-11-23)', () 
     expect(all.where.program).toBeUndefined();
   });
 
+  it('filters several states at once, deduped and sorted', async () => {
+    await getLive({ state: 'TX,NC,TX' }, NOW);
+    const a = m.medCycleEvent.findMany.mock.calls[0]![0] as { where: { school: unknown } };
+    expect(a.where.school).toEqual({ active: true, state: { in: ['NC', 'TX'] } });
+  });
+
   it('searches school name, short name and an exact state code; filters state and several event types', async () => {
     await getLive({ q: 'Duk', state: 'NC', types: 'acceptance,rejection' }, NOW);
     const a = m.medCycleEvent.findMany.mock.calls[0]![0] as {
       where: { eventType: unknown; school: unknown; AND: unknown[] };
     };
     expect(a.where.eventType).toEqual({ in: ['ACCEPTANCE', 'REJECTION'] });
-    expect(a.where.school).toEqual({ active: true, state: 'NC' });
+    expect(a.where.school).toEqual({ active: true, state: { in: ['NC'] } });
     expect(a.where.AND).toEqual([
       {
         school: {

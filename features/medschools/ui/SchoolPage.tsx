@@ -1,17 +1,19 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { holdScroll } from './hold-scroll';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
-import { SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
+import { CHARTED_TYPES, SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
 import { patchSearch, type ViewPatch } from '../engine/prefs';
-import { parseSchoolSearch } from '../engine/search';
+import { parseSchoolSearch, showParam } from '../engine/search';
 import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
 import { AskPanel } from './ask/AskPanel';
 import { MedEmpty } from './MedEmpty';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
+import { prefetchSchoolTabs } from './prefetch-tabs';
 import { ForecastTab } from './ForecastTab';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
@@ -23,7 +25,6 @@ import { SchoolFacts } from './SchoolFacts';
 import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { Curriculum } from './facts/Curriculum';
 import { PageHead } from './shell/PageHead';
-import { Places } from './shell/Places';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
@@ -58,8 +59,18 @@ export function SchoolPage() {
     show: view.show,
   };
 
+  // One background wave per school (and program) once the page has its school: the other tabs' public data, so a tab
+  // switch renders from the cache. Not keyed on the tab: switching tabs neither restarts nor cancels it.
+  const qc = useQueryClient();
+  const ready = !!detail;
+  useEffect(
+    () => (ready ? prefetchSchoolTabs(qc, slug, search) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one wave per school and program, not per search change
+    [ready, qc, slug, search.program],
+  );
+
   const setSearch = (patch: SchoolSearchPatch) => {
-    const { program, show, ...rest } = patch;
+    const { program, show, daily, ...rest } = patch;
     const viewPatch: ViewPatch = { ...(program ? { program } : {}), ...(show ? { show } : {}) };
     const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     holdScroll();
@@ -70,6 +81,8 @@ export function SchoolPage() {
       search: ((prev: Record<string, unknown>) => ({
         ...patchSearch('school', prev, view, viewPatch, prefs),
         ...own,
+        // The "by day" categories travel as a comma list in canonical order; all five is the default and is dropped.
+        ...(daily ? { daily: daily.length < CHARTED_TYPES.length ? showParam(daily) : undefined } : {}),
       })) as never,
       replace: true,
       resetScroll: false,
@@ -135,12 +148,6 @@ export function SchoolPage() {
       <SkeletonSwap ready={!!detail}>
         {detail ? (
           <div className="medapp-school-body">
-            {session ? (
-              <Places
-                label={t('school-my-label', { defaultValue: 'My Med Schools' })}
-                places={['tracker', 'ask', 'lists']}
-              />
-            ) : null}
             <PrefsNote fromPrefs={view.fromPrefs} />
             <SchoolFacts school={detail.school} />
             {/* Links to the same page with another `tab`, so a nav with `aria-current`, not a tablist (as the shared

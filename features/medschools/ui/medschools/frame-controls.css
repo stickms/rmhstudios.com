@@ -31,10 +31,42 @@
   display: flex;
   align-items: center;
   gap: var(--app-med-space-3);
-  margin-block-end: var(--app-med-space-5);
 }
-.medapp-bar__gap {
+/* The actions (practice, live, the member's area, the mode) as one group at the bar's end, on the title's row at every
+   width (owner 2026-11-24): 44px each, never wrapped, never hidden; the title gives way and ends in an ellipsis. */
+.medapp-bar__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--app-med-space-2);
+  margin-inline-start: auto;
+}
+.medapp-bar .medapp-title {
   flex: 1 1 auto;
+}
+@media (max-width: 479px) {
+  .medapp-bar {
+    gap: var(--app-med-space-2);
+  }
+  .medapp-bar__actions {
+    gap: var(--app-med-space-1);
+  }
+}
+/* The member's own area while on one of its pages: the ink fill, so "you are here" never rests on a tint alone. */
+.medapp-round.medapp-round--current {
+  background-color: var(--app-text);
+  color: var(--app-surface);
+}
+.medapp-round.medapp-round--current:hover {
+  background-color: var(--app-text);
+}
+.medapp-round--avatar {
+  overflow: hidden;
+}
+.medapp-round--avatar img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 .medapp-title {
   margin: 0;
@@ -45,6 +77,7 @@
   font-family: var(--app-font-display);
   font-size: clamp(18px, 5.4vw, var(--app-med-text-section));
   font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.2;
   color: var(--app-text);
 }
@@ -86,9 +119,23 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--app-med-section-gap);
 }
+/* The main column: the top bar, then the page. */
+.medapp-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-4);
+}
+/* The rail is in the server HTML on every width; the column exists only from 1280px (CSS, not a script). */
+.medapp-rail {
+  display: none;
+}
 @media (min-width: 1280px) {
   .medapp-grid {
     grid-template-columns: minmax(0, 1fr) 320px;
+  }
+  .medapp-rail {
+    display: block;
   }
 }
 .medapp-main {
@@ -97,13 +144,23 @@
   flex-direction: column;
   gap: var(--app-med-section-gap);
 }
-/* Headings only: the display face. Weight 600, never bold-synthesised. */
+/* Headings: the body's face, bolder (owner 2026-11-24), slightly tightened; no letterspaced capitals. */
 .medapp-main :is(h1, h2, h3) {
   font-family: var(--app-font-display);
   font-weight: 600;
+  letter-spacing: -0.015em;
 }
 .medapp-rail {
   min-width: 0;
+}
+.medapp-rail .medapp-skeleton--crest {
+  inline-size: 40px;
+  block-size: 40px;
+}
+.medapp-skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
 }
 /* The activity rail stays in view 16px off the top (not flush with the edge) and scrolls inside itself, so "load more
    on scroll" works however short the page is. The same rule the Steel shell's margin used. */
@@ -139,7 +196,7 @@
   margin: 0;
   font-size: var(--app-med-text-title);
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--app-text);
   overflow-wrap: anywhere;
 }

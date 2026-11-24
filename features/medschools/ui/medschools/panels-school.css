@@ -32,9 +32,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--app-med-space-2);
 }
-.medapp-rail-open {
-  font-size: var(--app-med-text-meta);
-}
 .medapp-rows {
   margin: 0;
   list-style: none;
@@ -87,9 +84,54 @@
 .medapp-row--compact .medapp-row__name {
   font-size: 15px;
 }
-.medapp-row--compact .medapp-status-icon {
-  inline-size: 32px;
-  block-size: 32px;
+/* A live event (the live page and the rail, one component): crest with the status badge | the words | the time, the
+   time at the end on the row's centre line. The rail (`--compact`) has no meta line. */
+.medapp-liverow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--app-med-space-3);
+}
+.medapp-row--compact {
+  padding-block: var(--app-med-space-3);
+}
+/* On a phone the live page's time goes under the words (past the crest), so the school's name keeps the width. */
+@media (max-width: 479px) {
+  .medapp-liverow:not(.medapp-row--compact) {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 0;
+  }
+  .medapp-liverow:not(.medapp-row--compact) > .medapp-crestbadge {
+    grid-row: span 2;
+  }
+  .medapp-liverow:not(.medapp-row--compact) > .medapp-when {
+    grid-column: 2;
+    justify-self: start;
+    margin-block-start: 2px;
+  }
+  .medapp-liverow:not(.medapp-row--compact) > .medapp-when .medapp-when__tip {
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+  }
+}
+.medapp-liverow__when {
+  font-size: var(--app-med-text-meta);
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* The crest with the decision as a small badge on its top-right corner, ringed in the paper so it reads on any crest. */
+.medapp-crestbadge {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+}
+.medapp-crestbadge__badge {
+  position: absolute;
+  inset-block-start: -6px;
+  inset-inline-end: -6px;
+  box-shadow: 0 0 0 2px var(--app-surface);
 }
 
 /* ── Status: a swatch disc with an icon, and the words in the same hue ──── */
@@ -161,6 +203,15 @@
   inline-size: 14px;
   block-size: 14px;
 }
+.medapp-status-icon--xs {
+  inline-size: 20px;
+  block-size: 20px;
+}
+.medapp-status-icon--xs svg {
+  inline-size: 11px;
+  block-size: 11px;
+  stroke-width: 2.8;
+}
 .medapp-status-text {
   color: var(--medapp-st-text);
   font-weight: 600;
@@ -229,7 +280,8 @@
     flex: 1 1 280px;
   }
   .medapp-toolbar > :not(.medapp-toolbar__grow) {
-    flex: 0 1 220px;
+    flex: 1 1 150px;
+    max-inline-size: 220px;
   }
 }
 /* The filters of a page (toolbar, program pills, the preferences line) as one group, 12px apart. */
@@ -254,7 +306,7 @@
 }
 .medapp-rail-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
@@ -268,11 +320,19 @@
 }
 
 /* ── School page: header, section pills, key facts ───────────────────────── */
+/* The crest's top lines up with the name's first line, whatever the name's length (owner 2026-11-24): top-aligned, and
+   4px down so it meets the cap height rather than the line box. */
 .medapp-pagehead--school {
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--app-med-space-4);
+}
+.medapp-pagehead--school > .medapp-crest {
+  margin-block-start: var(--app-med-space-1);
+}
+.medapp-pagehead--school > .medapp-pagehead__actions {
+  align-self: center;
 }
 .medapp-pagehead__text {
   display: flex;

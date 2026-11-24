@@ -22,7 +22,7 @@ export const Route = createFileRoute('/med/$slug')({
   // Preferences first (private, quiet when signed out), then the school and its tab with explicit parameters (D13).
   // `head()` reads only the school, so a preference never changes the title, canonical or card.
   loader: async ({ context, params, deps, cause }): Promise<SchoolHeadData> => {
-    const prefs = await loadPrefs(context.queryClient);
+    const prefs = await loadPrefs(context.queryClient, cause);
     // A tab or setting change (`cause: 'stay'`) does not wait for the tab's data: the page stays and fills in.
     return loadSchoolHead(context.queryClient, params.slug, deps, prefs, cause);
   },

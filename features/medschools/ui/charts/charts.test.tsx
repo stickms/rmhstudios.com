@@ -3,9 +3,10 @@ import { readCss } from '@/lib/__tests__/css-source';
 import path from 'node:path';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { ActivityTypeDto } from '../../medschools.contract';
+import type { ActivityTypeDto, MedChartedTypeId } from '../../medschools.contract';
+import { STATUS, statusOfEvent } from '../status/status';
 import { CategoryLines } from './CategoryLines';
-import { CATEGORY_COLOR, CATEGORY_STYLE, SOURCE_COLOR, cycleColor } from './chartColors';
+import { CATEGORY_COLOR, CATEGORY_STYLE, SOURCE_COLOR, cycleColor, fillOf } from './chartColors';
 import type { ChartLabels } from './ChartFrame';
 import { CumulativeLine } from './CumulativeLine';
 import { ArrivalBars } from './ArrivalBars';
@@ -77,32 +78,66 @@ function expectBasics(html: string, empty = false) {
 }
 
 describe('DailyBars', () => {
-  const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--app-med-chart-1)', labels };
+  const props = { from: '2026-11-19', to: '2026-11-23', labels };
+  const one = (primary: Series) => [{ key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary }];
+  const two = [
+    { key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary: ct },
+    { key: 'ACCEPTANCE', name: 'Acceptance', color: CATEGORY_COLOR.ACCEPTANCE, primary: admit },
+  ];
   it('renders the frame, names exactly the sources passed, and reads Nov 20 whatever the zone', () => {
-    const html = renderToString(<DailyBars primary={ct} {...props} />);
+    const html = renderToString(<DailyBars series={one(ct)} {...props} />);
     expectBasics(html);
     expect(html).toContain('CycleTrack');
     expect(html).not.toContain('Admit');
     expect(html).not.toContain('RMH');
     expect(html).toContain('Nov 20');
     expect(html).toContain('<rect');
-    expect(html).toContain('fill="var(--app-med-chart-1)"');
+    expect(html).toContain(`fill="${CATEGORY_COLOR.INTERVIEW}"`);
   });
   it('draws the primary source only: no comparison line, nothing dashed, no zero line before the first report', () => {
-    const html = renderToString(<DailyBars primary={ct} {...props} />);
+    const html = renderToString(<DailyBars series={one(ct)} {...props} />);
     expect(html).not.toContain('stroke-dasharray');
     expect(html).not.toContain('<path');
     expect(html).toContain('Reported events per day');
   });
   it('one series: no legend and no end label', () => {
-    const html = renderToString(<DailyBars primary={ct} {...props} />);
+    const html = renderToString(<DailyBars series={one(ct)} {...props} />);
     expect(html).not.toContain('<ul');
     expect(phone(html)).not.toContain('>CycleTrack<');
   });
   it('an empty primary renders the empty state, no NaN, no empty path', () => {
-    const html = renderToString(<DailyBars primary={empty} {...props} />);
+    const html = renderToString(<DailyBars series={one(empty)} {...props} />);
     expectBasics(html, true);
     expect(html).toContain('No reported events yet');
+  });
+  it('several categories stack per day in their status colours, and the table has a column each plus the total', () => {
+    const html = renderToString(<DailyBars series={two} {...props} />);
+    expectBasics(html);
+    const svg = phone(html);
+    // Nov 20 (4 interview), Nov 21 (3 acceptance), Nov 22 (2 interview): three segments, each in its category colour.
+    expect(svg.match(new RegExp(`fill="${CATEGORY_COLOR.INTERVIEW.replace(/[()]/g, '\\$&')}"`, 'g'))).toHaveLength(2);
+    expect(svg.match(new RegExp(`fill="${CATEGORY_COLOR.ACCEPTANCE.replace(/[()]/g, '\\$&')}"`, 'g'))).toHaveLength(1);
+    const table = html.slice(html.indexOf('<table'));
+    expect(table).toContain('<th scope="col">Interview invite</th><th scope="col">Acceptance</th><th scope="col">Count</th>');
+    expect(table).toContain('<td>Nov 20, 2026</td><td>4</td><td>0</td><td>4</td>');
+    expect(table).toContain('<td>Nov 21, 2026</td><td>0</td><td>3</td><td>3</td>');
+    // Each category draws its own primary; the caption names both.
+    expect(html).toContain('Sources: CycleTrack, Admit.org');
+    expect(html).toContain('Chart of Interview invite 6; Acceptance 3');
+  });
+  it('a day with two categories stacks them: the upper segment sits on the lower one', () => {
+    const same = [
+      { key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary: ct },
+      { key: 'ACCEPTANCE', name: 'Acceptance', color: CATEGORY_COLOR.ACCEPTANCE, primary: { ...admit, days: [{ date: '2026-11-20', count: 2 }] } },
+    ];
+    const svg = phone(renderToString(<DailyBars series={same} {...props} />));
+    const rects = [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="[\d.]+" height="([\d.]+)" fill="([^"]+)"/g)];
+    const lower = rects.find((r) => r[4] === CATEGORY_COLOR.INTERVIEW)!;
+    const upper = rects.find((r) => r[4] === CATEGORY_COLOR.ACCEPTANCE)!;
+    expect(upper[1]).toBe(lower[1]);
+    expect(Number(upper[2]) + Number(upper[3])).toBeCloseTo(Number(lower[2]), 1);
+    // 2 of 6: a third of the bar.
+    expect(Number(upper[3]) * 2).toBeCloseTo(Number(lower[3]), 1);
   });
 });
 
@@ -330,11 +365,12 @@ describe('wave marks', () => {
     expect(none).not.toContain('>Wave<');
   });
   it('DailyBars: a tick under the wave day bar and the legend entry; nothing without waves', () => {
-    const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--app-med-chart-1)', labels };
-    const html = renderToString(<DailyBars primary={ct} {...props} waves={[{ date: '2026-11-20', count: 4 }]} />);
+    const props = { from: '2026-11-19', to: '2026-11-23', labels };
+    const series = [{ key: 'INTERVIEW', name: 'Interview invite', color: CATEGORY_COLOR.INTERVIEW, primary: ct }];
+    const html = renderToString(<DailyBars series={series} {...props} waves={[{ date: '2026-11-20', count: 4 }]} />);
     expect(ticks(phone(html))).toHaveLength(1);
     expect(html).toContain('>Wave<');
-    const plain = renderToString(<DailyBars primary={ct} {...props} />);
+    const plain = renderToString(<DailyBars series={series} {...props} />);
     expect(ticks(plain)).toHaveLength(0);
     expect(plain).not.toContain('>Wave<');
   });
@@ -529,7 +565,7 @@ describe('ArrivalBars (when results arrive)', () => {
     renderToString(
       <ArrivalBars
         items={data}
-        color="var(--app-med-chart-3)"
+        color={CATEGORY_COLOR.ACCEPTANCE}
         title="Acceptance by day of the week"
         unit="Reported events, US Eastern time"
         sourcesLine="Sources: Admit.org, Student Doctor Network"
@@ -541,7 +577,7 @@ describe('ArrivalBars (when results arrive)', () => {
     const html = render();
     expect(html).toContain('US Eastern time');
     expect(html.match(/<rect/g)!.length).toBeGreaterThanOrEqual(items.length);
-    expect(html).toContain('fill="var(--app-med-chart-3-fill)" stroke="var(--app-med-chart-3)"');
+    expect(html).toContain('fill="var(--app-med-accept-fill)" stroke="var(--app-med-accept-text)"');
     expect(html).toContain('<table');
     expect(html).toContain('>Monday<');
     expect(html).toContain('role="group"');
@@ -589,7 +625,21 @@ describe('chart colours, from the stylesheet', () => {
       for (const [i, line] of lines.entries()) {
         expect(contrast(line, mode['app-surface']!), `chart-${i + 1} on paper`).toBeGreaterThanOrEqual(3);
         expect(contrast(line, mode['app-bg']!), `chart-${i + 1} on ground`).toBeGreaterThanOrEqual(3);
-        expect(mode[`app-med-chart-${i + 1}-fill`], `chart-${i + 1} fill`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      }
+    },
+  );
+
+  it.each(Object.entries(MODES))(
+    '%s: a category draws in its status text colour, which holds 3:1 on paper and ground, with a fill of its own',
+    (_m, mode) => {
+      for (const [type, color] of Object.entries(CATEGORY_COLOR)) {
+        const stem = /^var\(--app-med-([a-z]+)-text\)$/.exec(color)?.[1];
+        expect(stem, type).toBe(STATUS[statusOfEvent(type as MedChartedTypeId)].stem);
+        const line = mode[`app-med-${stem}-text`]!;
+        expect(contrast(line, mode['app-surface']!), `${type} on paper`).toBeGreaterThanOrEqual(3);
+        expect(contrast(line, mode['app-bg']!), `${type} on ground`).toBeGreaterThanOrEqual(3);
+        expect(mode[`app-med-${stem}-fill`], `${type} fill`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+        expect(fillOf(color)).toBe(`var(--app-med-${stem}-fill)`);
       }
     },
   );

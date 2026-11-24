@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { PROGRAM_KEYS, isAllPrograms, type ProgramKey } from '../engine/programs';
+import { MAX_STATES } from '../engine/search';
+import { stateNameOf } from '../engine/state-names';
 import type { MedEventTypeId } from '../medschools.contract';
 import { MedMultiSelect } from './controls/MedMultiSelect';
 import { useMedLabels } from './labels';
@@ -28,6 +30,7 @@ export function ProgramMultiSelect({
       value={value}
       onChange={onChange}
       compact={compact ?? false}
+      doneLabel={t('multi-select-done', { defaultValue: 'Done' })}
       summary={(v) =>
         isAllPrograms(v)
           ? t('program-set-all', { defaultValue: 'All programs' })
@@ -73,12 +76,56 @@ export function EventTypeMultiSelect({
       value={value}
       onChange={onChange}
       compact={compact ?? false}
+      doneLabel={t('multi-select-done', { defaultValue: 'Done' })}
       summary={(v) =>
         v.length === LIVE_EVENT_TYPES.length
           ? t('live-type-all', { defaultValue: 'All events' })
           : v.length === 1
             ? eventLabel(v[0]!)
             : t('event-type-count', { defaultValue: '{{n}} types', n: v.length })
+      }
+    />
+  );
+}
+
+/**
+ * The states as a multi-select with a filter field (owner 2026-11-24): "California (CA)" sorted by name, the trigger
+ * "All states", "CA", "CA, NY" or "5 states". None checked is every state (no filter), so nothing is kept on.
+ */
+export function StateMultiSelect({
+  states,
+  value,
+  onChange,
+  compact,
+}: {
+  /** The codes that have schools. */
+  states: readonly string[];
+  value: readonly string[];
+  onChange: (next: string[]) => void;
+  compact?: boolean;
+}) {
+  const { t } = useTranslation('medschools');
+  const options = [...new Set([...states, ...value])]
+    .map((code) => ({ value: code, label: `${stateNameOf(code)} (${code})` }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  return (
+    <MedMultiSelect<string>
+      label={t('index-state-label', { defaultValue: 'State' })}
+      options={options}
+      value={value}
+      // The URL's canonical order: sorted codes.
+      onChange={(next) => onChange([...next].sort())}
+      keepOne={false}
+      max={MAX_STATES}
+      searchLabel={t('state-filter-search', { defaultValue: 'Find a state' })}
+      compact={compact ?? false}
+      doneLabel={t('multi-select-done', { defaultValue: 'Done' })}
+      summary={(v) =>
+        v.length === 0
+          ? t('index-state-all', { defaultValue: 'All states' })
+          : v.length <= 2
+            ? v.join(', ')
+            : t('state-count', { defaultValue: '{{n}} states', n: v.length })
       }
     />
   );

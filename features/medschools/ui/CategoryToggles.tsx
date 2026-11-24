@@ -33,9 +33,15 @@ export function toggleCategory(value: readonly MedEventTypeId[], type: MedCharte
 export function CategoryToggles({
   value,
   onChange,
+  label,
+  bars,
 }: {
   value: readonly MedEventTypeId[];
   onChange: (v: MedChartedTypeId[]) => void;
+  /** The group's accessible name, when a page has two of these. */
+  label?: string;
+  /** The legend of a bar chart: a solid block swatch, not the line's dash. */
+  bars?: boolean;
 }) {
   const { t } = useTranslation('medschools');
   const { eventLabel } = useMedLabels();
@@ -43,7 +49,7 @@ export function CategoryToggles({
   return (
     <div
       role="group"
-      aria-label={t('category-toggles-label', { defaultValue: 'Show categories' })}
+      aria-label={label ?? t('category-toggles-label', { defaultValue: 'Show categories' })}
       className="medapp-chips medapp-chips--wrap"
     >
       {CATEGORY_ORDER.map((type) => {
@@ -59,7 +65,10 @@ export function CategoryToggles({
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
             onClick={() => onChange(toggleCategory(value, type))}
           >
-            <Swatch {...CATEGORY_STYLE[type]} dim={!pressed} />
+            <Swatch
+              {...(bars ? { color: CATEGORY_STYLE[type].color, width: 6 } : CATEGORY_STYLE[type])}
+              dim={!pressed}
+            />
             {eventLabel(type)}
           </button>
         );

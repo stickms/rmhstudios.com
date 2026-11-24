@@ -156,15 +156,16 @@ export function overlaySource(cycles: { cycleYear: number; sources: MedSource[] 
 
 export function filterSchools<T extends { name: string; shortName: string; state: string; degree: string }>(
   schools: readonly T[],
-  f: { q?: string; degree?: string; state?: string },
+  f: { q?: string | undefined; degree?: string; state?: string; states?: readonly string[] | undefined },
 ): T[] {
   const q = f.q?.trim().toLowerCase();
-  const state = f.state?.toUpperCase();
+  // One state (`state`) or several (`states`, owner 2026-11-24); none is every state.
+  const states = new Set([...(f.states ?? []), ...(f.state ? [f.state] : [])].map((x) => x.toUpperCase()));
   return schools.filter(
     (s) =>
       (!q || s.name.toLowerCase().includes(q) || s.shortName.toLowerCase().includes(q)) &&
       (!f.degree || s.degree === f.degree) &&
-      (!state || s.state.toUpperCase() === state),
+      (states.size === 0 || states.has(s.state.toUpperCase())),
   );
 }
 

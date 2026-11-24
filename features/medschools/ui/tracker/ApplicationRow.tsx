@@ -14,6 +14,7 @@ import { formatUtcDay } from '../../engine/public-read';
 import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { LIMITS, type MilestoneType } from '../../engine/tracker';
 import type { ChanceDto, TrackerApplicationDto } from '../../medschools.contract';
+import { EventTime } from '../EventTime';
 import { useMedLabels } from '../labels';
 import { StatusText } from '../status/StatusText';
 import { statusOfMilestone } from '../status/status';
@@ -196,9 +197,7 @@ export function ApplicationRow({
                       milestoneLabel(m.type)
                     )}
                   </span>
-                  <time dateTime={m.date} className="medapp-date">
-                    {formatUtcDay(m.date, locale)}
-                  </time>
+                  <EventTime iso={m.date} dayOnly nested className="medapp-date" />
                 </button>
               </li>
             );

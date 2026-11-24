@@ -8,6 +8,8 @@ import {
   parseLiveSearch,
   parseSchoolSearch,
   parseTrackerSearch,
+  parseStates,
+  MAX_STATES,
   showParam,
   validateIndexSearch,
   validateLiveSearch,
@@ -49,6 +51,20 @@ describe('parseSchoolSearch', () => {
       ...CHARTED_TYPES,
     ]);
   });
+  it('daily is a list of categories in canonical order; a single value still parses; absent is every category', () => {
+    expect(parseSchoolSearch({ daily: 'interview' }).daily).toEqual(['INTERVIEW']);
+    expect(parseSchoolSearch({ daily: 'ACCEPTANCE,interview,bogus' }).daily).toEqual(['INTERVIEW', 'ACCEPTANCE']);
+    expect('daily' in parseSchoolSearch({})).toBe(false);
+    expect('daily' in parseSchoolSearch({ daily: 'hold' })).toBe(false);
+    expect(validateSchoolSearch({ daily: 'acceptance,secondary' }).daily).toBe('secondary,acceptance');
+    // All five is the default, so the canonical URL drops it.
+    expect('daily' in validateSchoolSearch({ daily: CHARTED_TYPES.join(',') })).toBe(false);
+    // The old single-category `type` link still parses, for the cumulative chart and the other tabs.
+    expect(parseSchoolSearch({ type: 'rejection', daily: 'rejection' })).toMatchObject({
+      type: 'REJECTION',
+      daily: ['REJECTION'],
+    });
+  });
   it('cycle, type, source', () => {
     expect(parseSchoolSearch({ cycle: '2027' }).cycle).toBe(2027);
     expect(parseSchoolSearch({ cycle: 2027 }).cycle).toBe(2027); // the router parses ?cycle=2027 into a number
@@ -81,7 +97,7 @@ describe('parseIndexSearch', () => {
   it('keeps good ones, and a list id or all', () => {
     expect(parseIndexSearch({ q: ' duke ', state: 'tx', programs: 'do-phd', list: 'all' })).toEqual({
       q: 'duke',
-      state: 'TX',
+      states: ['TX'],
       programs: ['do-phd'],
       list: 'all',
     });
@@ -90,6 +106,17 @@ describe('parseIndexSearch', () => {
   it('the route validator writes the program set back as the comma list, never an array', () => {
     expect(validateIndexSearch({ programs: 'do,md-phd', q: 'x' })).toEqual({ q: 'x', programs: 'md-phd,do' });
     expect(validateLiveSearch({ degree: 'DO', program: 'PHD' })).toEqual({ programs: 'do-phd' });
+  });
+  it('states is a sorted, deduped list of codes; an old single-state link still parses; none is every state', () => {
+    expect(parseIndexSearch({ state: 'ny,CA,ny' }).states).toEqual(['CA', 'NY']);
+    expect(parseIndexSearch({ state: 'CA' }).states).toEqual(['CA']);
+    expect(parseIndexSearch({ state: 'CA,zz9,N' }).states).toEqual(['CA']);
+    expect('states' in parseIndexSearch({ state: '' })).toBe(false);
+    expect(parseStates('AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI,ID')).toHaveLength(MAX_STATES);
+    expect(parseLiveSearch({ state: 'tx,nc' }).states).toEqual(['NC', 'TX']);
+    // The route validators write the canonical comma list back.
+    expect(validateIndexSearch({ state: 'ny,ca' })).toEqual({ state: 'CA,NY' });
+    expect(validateLiveSearch({ state: 'NC' })).toEqual({ state: 'NC' });
   });
   it('caps q length', () => {
     expect(parseIndexSearch({ q: 'a'.repeat(10_000) }).q?.length).toBeLessThanOrEqual(100);

@@ -17,7 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useRouterState: ({ select }: { select: (s: unknown) => unknown }) =>
-    select({ location: { pathname: route.pathname } }),
+    select({ location: { pathname: route.pathname, href: route.pathname } }),
   useRouter: () => ({ history: { back: () => undefined } }),
 }));
 
@@ -57,6 +57,33 @@ describe('medschools shell', () => {
     } finally {
       route.pathname = '/med/live';
     }
+  });
+
+  it('puts the actions in the bar as named 44px icon links, never a link to the page itself (owner 2026-11-24)', async () => {
+    const { MedTopBar } = await import('./MedTopBar');
+    const on = (p: string) => {
+      route.pathname = p;
+      try {
+        return renderToStaticMarkup(<MedTopBar />);
+      } finally {
+        route.pathname = '/med/live';
+      }
+    };
+    const index = on('/med');
+    expect(index).toContain(
+      '<a href="/med/practice" class="medapp-round" aria-label="Interview practice" title="Interview practice">',
+    );
+    expect(index).toContain(
+      '<a href="/med/live" class="medapp-round" aria-label="Live activity" title="Live activity">',
+    );
+    // Signed out, the member's area is a sign-in link that comes back here.
+    expect(index).toContain('aria-label="Sign in to see your cycle and lists"');
+    expect(index).toContain('href="/login"');
+    expect(index).toContain('aria-label="Dark mode"');
+    expect(on('/med/live')).not.toContain('href="/med/live"');
+    expect(on('/med/practice')).not.toContain('href="/med/practice"');
+    // One group at the bar's end; nothing in the bar is fixed or sticky.
+    expect(index).toMatch(/<div class="medapp-bar__actions" role="group" aria-label="Go to">/);
   });
 
   it('stores the mode as {"dark": boolean}, follows the system otherwise, and shares its key with the pre-paint entry', () => {
@@ -105,20 +132,24 @@ describe('medschools shell', () => {
     const css = readCss('features/medschools/ui/medschools.css');
     for (const k of ['accept', 'reject', 'hold', 'secondary', 'waitlist', 'matric', 'interview', 'withdrawn'])
       for (const part of ['swatch', 'ink', 'text']) expect(css).toContain(`--app-med-${k}-${part}:`);
+    // A charted category's bars fill with its own pastel (owner 2026-11-24: charts use the status colours).
+    for (const k of ['accept', 'reject', 'secondary', 'waitlist', 'interview'])
+      expect(css).toContain(`--app-med-${k}-fill:`);
     for (let i = 1; i <= 5; i++) {
       expect(css).toContain(`--app-med-chart-${i}:`);
-      expect(css).toContain(`--app-med-chart-${i}-fill:`);
       expect(css).not.toContain(`--site-chart-${i}`);
     }
     expect(css).toContain("[data-app-dark='1']");
     expect(css).toContain("not([data-app-dark='0'])");
   });
 
-  it('the layout mounts the cookie notice and links the stylesheet and the display face', () => {
+  it('the layout mounts the cookie notice and links the stylesheet, and no display face (one typeface)', () => {
     expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain('<CookieConsent />');
     const route = read('app/routes/med.tsx');
     expect(route).toContain('medschools.css?url');
-    expect(route).toContain('fraunces.css?url');
+    // Headings are DM Sans at 600 (owner 2026-11-24): no Fraunces sheet or preload.
+    expect(route).not.toMatch(/fraunces|preloadFont/i);
     expect(route).not.toMatch(/inter/i);
+    expect(readCss('features/medschools/ui/medschools.css')).toContain('--app-font-display: var(--app-font-body);');
   });
 });

@@ -89,6 +89,12 @@
   padding: 0;
   list-style: none;
 }
+/* A list that is also the panel keeps the panel's padding (the list's reset comes later in the cascade and would
+   otherwise put the text against the panel's edge: the Forecast summary and the interview questions). */
+.medapp-list.medapp-panel {
+  padding-block: var(--app-med-space-1);
+  padding-inline: var(--app-med-panel-pad);
+}
 .medapp-list > li {
   padding-block: var(--app-med-space-3);
   border-bottom: 1px solid var(--app-border);

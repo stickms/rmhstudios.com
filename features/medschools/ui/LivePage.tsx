@@ -13,7 +13,7 @@ import {
   schoolsQuery,
   type LiveFilters,
 } from '../medschools.queries';
-import { ProgramMultiSelect } from './ProgramMultiSelect';
+import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { useLiveFeed } from './useLiveFeed';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
@@ -47,7 +47,11 @@ export function LivePage() {
   const schoolDegree = schoolDegreeOf(schools.data?.schools, search.school);
   const filters = resolveLiveFilters(liveSearchOf(search, view), schoolDegree);
 
-  const setSearch = (next: { type?: MedEventTypeId | undefined; school?: string | undefined }) => {
+  const setSearch = (next: {
+    type?: MedEventTypeId | undefined;
+    school?: string | undefined;
+    states?: string[] | undefined;
+  }) => {
     const m = { ...search, ...next };
     holdScroll();
     void navigate({
@@ -57,6 +61,7 @@ export function LivePage() {
         ...prev,
         type: m.type || undefined,
         school: m.school || undefined,
+        state: m.states?.length ? m.states.join(',') : undefined,
       })) as never,
       replace: true,
       resetScroll: false,
@@ -92,6 +97,11 @@ export function LivePage() {
               </option>
             ))}
           </MedSelect>
+          <StateMultiSelect
+            states={schools.data?.states ?? []}
+            value={search.states ?? []}
+            onChange={(states) => setSearch({ states })}
+          />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
         </div>
         <PrefsNote fromPrefs={view.fromPrefs} />

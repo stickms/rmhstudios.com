@@ -138,13 +138,20 @@ describe('medschools ui rules', () => {
   });
 
   it('draws the activity rail with one IntersectionObserver, on the sentinel, through useSentinel (B3: data loading only)', () => {
-    const src = read('features/medschools/ui/rail/ActivityRail.tsx');
+    const src = read('features/medschools/ui/rail/RailFeed.tsx');
     expect(src).toContain('useSentinel');
     expect(src).not.toMatch(/new (Intersection|Resize|Mutation)Observer|requestAnimationFrame/);
   });
 
   it('the app frame mounts the live rail itself; the Steel shell no longer hands it the margin', () => {
-    expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain("import('../rail/ActivityRail')");
+    // The frame and skeleton are server-rendered at every width (owner 2026-11-24); the list is its own lazy chunk,
+    // loaded only where the rail shows, and the column is hidden by CSS, not a script.
+    expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain(
+      "import ActivityRail from '../rail/ActivityRail'",
+    );
+    const rail = read('features/medschools/ui/rail/ActivityRail.tsx');
+    expect(rail).toContain("lazy(() => import('./RailFeed'))");
+    expect(rail).toContain("useMediaQuery('(min-width: 1280px)')");
     expect(read('components/shell/margin-takeover.ts')).not.toContain("prefix: '/med'");
   });
 

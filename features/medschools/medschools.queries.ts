@@ -44,6 +44,19 @@ export type IndexQuery = QueryOf<typeof listMedSchoolsApi>;
 /** A query's options with what it shows while a new key loads (`contractQuery` takes only the cache options). */
 const keeping = <O extends object, P>(options: O, placeholderData: P) => ({ ...options, placeholderData });
 
+/**
+ * A school's public figures change at most once a day (the ingest jobs, the daily forecast), so a school page and its
+ * tabs stay fresh for 5 minutes and in memory for 30: going back to a school or a tab, or a tab the page fetched in the
+ * background (`ui/prefetch-tabs.ts`), renders straight from the cache (owner 2026-11-24). The live feed keeps its own.
+ */
+const SCHOOL_STALE = 5 * 60_000;
+const SCHOOL_GC = 30 * 60_000;
+const schoolScoped = <O extends object>(options: O, slug: string) => ({
+  ...options,
+  gcTime: SCHOOL_GC,
+  placeholderData: keepWithinSchool(slug),
+});
+
 const keepWithinSchool =
   (slug: string) =>
   <T>(previous: T | undefined, previousQuery?: { queryKey: readonly unknown[] }): T | undefined =>
@@ -66,67 +79,71 @@ export const schoolsQuery = (q: IndexQuery) =>
     keepPreviousData,
   );
 
-export const schoolQuery = (slug: string) =>
-  contractQuery(['medschools', 'school', slug], getMedSchoolApi, { params: { slug } }, { staleTime: 60_000 });
+export const schoolQuery = (slug: string) => ({
+  ...contractQuery(['medschools', 'school', slug], getMedSchoolApi, { params: { slug } }, { staleTime: SCHOOL_STALE }),
+  gcTime: SCHOOL_GC,
+});
 
 export const activityQuery = (slug: string, q: { program: MedProgramFilter; cycle?: number | undefined }) =>
-  keeping(
+  schoolScoped(
     contractQuery(
       ['medschools', 'activity', slug, q],
       getMedSchoolActivityApi,
       { params: { slug }, query: q },
-      { staleTime: 60_000 },
+      { staleTime: SCHOOL_STALE },
     ),
-    keepWithinSchool(slug),
+    slug,
   );
 
 export const historyQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
-  keeping(
+  schoolScoped(
     contractQuery(
       ['medschools', 'history', slug, q],
       getMedSchoolHistoryApi,
       { params: { slug }, query: q },
-      { staleTime: 60_000 },
+      { staleTime: SCHOOL_STALE },
     ),
-    keepWithinSchool(slug),
+    slug,
   );
 
 export const forecastQuery = (slug: string, q: { program: 'REG' | 'PHD'; type: MedChartedTypeId }) =>
-  keeping(
+  schoolScoped(
     contractQuery(
       ['medschools', 'forecast', slug, q],
       getMedSchoolForecastApi,
       { params: { slug }, query: q },
-      { staleTime: 5 * 60_000 },
+      { staleTime: SCHOOL_STALE },
     ),
-    keepWithinSchool(slug),
+    slug,
   );
 
 /** The Secondaries tab: prompts, marks and attribution. Public, so the loader prefetches the same key as anyone's. */
 export const secondariesQuery = (slug: string, q: { program: MedProgramFilter }) =>
-  keeping(
+  schoolScoped(
     contractQuery(
       ['medschools', 'secondaries', slug, q],
       getMedSchoolSecondariesApi,
       { params: { slug }, query: q },
-      { staleTime: 5 * 60_000 },
+      { staleTime: SCHOOL_STALE },
     ),
-    keepWithinSchool(slug),
+    slug,
   );
 
 /** The Facts tab: Admissions facts (the AAMC MSAR reports) and Curriculum (Admit.org). Public, so the loader prefetches the same key as anyone's. */
-export const schoolFactsQuery = (slug: string) =>
-  contractQuery(['medschools', 'facts', slug], getMedSchoolFactsApi, { params: { slug } }, { staleTime: 30 * 60_000 });
+export const schoolFactsQuery = (slug: string) => ({
+  ...contractQuery(['medschools', 'facts', slug], getMedSchoolFactsApi, { params: { slug } }, { staleTime: SCHOOL_GC }),
+  gcTime: SCHOOL_GC,
+});
 
 export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
-  keeping(
+  schoolScoped(
     contractQuery(
       ['medschools', 'arrivals', slug, q],
       getMedSchoolArrivalsApi,
       { params: { slug }, query: q },
-      { staleTime: 5 * 60_000 },
+      { staleTime: SCHOOL_STALE },
     ),
-    keepWithinSchool(slug),
+    slug,
   );
 
 export const liveQuery = (q: LiveFilters) =>
@@ -149,7 +166,10 @@ export const prefsQuery = () =>
  * out, or on any failure, nothing lands and the page is exactly what an anonymous request gets. The public queries
  * that follow carry the resulting view as explicit parameters, so their cache keys are the ones anyone could type.
  */
-export async function loadPrefs(queryClient: QueryClient): Promise<Prefs | null> {
+export async function loadPrefs(queryClient: QueryClient, cause?: 'enter' | 'stay' | 'preload'): Promise<Prefs | null> {
+  // A tab or setting change on the same page reads what the cache has and never waits on the private request (signed
+  // out it is a 401 that caches nothing, so awaiting it put the router's pending frame up on every change).
+  if (cause === 'stay') return queryClient.getQueryData(prefsQuery().queryKey) ?? null;
   await prefetchRouteQuery(queryClient, prefsQuery());
   return queryClient.getQueryData(prefsQuery().queryKey) ?? null;
 }
@@ -199,13 +219,14 @@ export const qaLimitRequestQuery = () =>
 
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(
-  search: { q?: string | undefined; state?: string | undefined },
+  search: { q?: string | undefined; states?: readonly string[] | undefined },
   view: { programs: readonly ProgramKey[] },
 ): IndexQuery {
   const programs = programsQueryValue(view.programs);
   return {
     ...(search.q ? { q: search.q } : {}),
-    ...(search.state ? { state: search.state } : {}),
+    // Canonical (sorted, deduped by the parser), so one choice is one cache key.
+    ...(search.states?.length ? { state: search.states.join(',') } : {}),
     ...(programs ? { programs } : {}),
   };
 }
@@ -213,17 +234,19 @@ export function indexQuery(
 export type LiveSearch = {
   type?: LiveFilters['type'];
   school?: string;
+  states?: readonly string[];
   programs: readonly ProgramKey[];
 };
 
 /** The live loader's search from the parsed URL and the effective view. */
 export function liveSearchOf(
-  search: { type?: LiveFilters['type']; school?: string | undefined },
+  search: { type?: LiveFilters['type']; school?: string | undefined; states?: readonly string[] | undefined },
   view: { programs: readonly ProgramKey[] },
 ): LiveSearch {
   return {
     ...(search.type ? { type: search.type } : {}),
     ...(search.school ? { school: search.school } : {}),
+    ...(search.states?.length ? { states: search.states } : {}),
     programs: view.programs,
   };
 }
@@ -239,6 +262,7 @@ export function resolveLiveFilters(search: LiveSearch, schoolDegree: MedDegreeId
   return {
     ...(search.type ? { type: search.type } : {}),
     ...(search.school ? { school: search.school } : {}),
+    ...(search.states?.length ? { state: search.states.join(',') } : {}),
     ...(programs ? { programs } : {}),
   };
 }

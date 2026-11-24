@@ -10,8 +10,10 @@ export type SchoolSearch = Omit<ReturnType<typeof parseSchoolSearch>, 'program' 
   program: ProgramFilter;
   show: MedEventType[];
 };
-export type SchoolSearchPatch = Partial<Omit<SchoolSearch, 'show' | 'type'>> & {
+export type SchoolSearchPatch = Partial<Omit<SchoolSearch, 'show' | 'type' | 'daily'>> & {
   show?: readonly MedChartedTypeId[];
+  /** The "by day" chart's categories; every category drops the key. */
+  daily?: readonly MedChartedTypeId[];
   type?: MedChartedTypeId;
 };
 export type SetSchoolSearch = (patch: SchoolSearchPatch) => void;

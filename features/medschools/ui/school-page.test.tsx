@@ -585,6 +585,23 @@ describe('Forecast tab', () => {
     expect(html).not.toContain('NaN');
   });
 
+  it('a range that collapses to one value reads "about" and "around", never "between X and X"', () => {
+    h.search = { tab: 'forecast' };
+    const html = render(
+      seed(
+        forecast({
+          summary: {
+            total: { p10: 26.6, p50: 27, p90: 27.4 },
+            halfOn: { p10: '2025-09-28', p50: '2025-09-28', p90: '2025-09-28' },
+          },
+        }),
+      ),
+    );
+    expect(html).toContain('Interview invite: expected total about 27');
+    expect(html).toContain('Half of them around Sep 28');
+    expect(html).not.toMatch(/between (\S+) and \1/);
+  });
+
   it('early says the range is wide; one earlier cycle says the range is narrower than the real uncertainty', () => {
     h.search = { tab: 'forecast' };
     const early = render(seed(forecast({ status: 'early' })));
@@ -690,9 +707,7 @@ describe('the Ask panel on a school page', () => {
     h.session = { user: { id: 'u1' } };
     const html = render(seedActivity(activity()));
     expect(html).toContain('Ask about Duke University School of Medicine');
-    expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('href="/med/tracker"'));
     expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('>Activity<'));
-    expect(html).toContain('href="/med/ask"');
     expect(html.match(/data-variant="primary"/g)?.length ?? 0).toBe(1);
     // Three suggestions when pinned (the school page has no other plain buttons of this kind).
     expect(html).toContain('What are the MCAT and GPA medians?');

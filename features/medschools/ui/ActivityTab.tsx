@@ -6,7 +6,7 @@ import { cycleEndOn, cycleLabelIsolated } from '../engine/cycle';
 import { buildTotalsMatrix } from '../engine/totals';
 import { activityQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
-import { CategoryToggles } from './CategoryToggles';
+import { CATEGORY_ORDER, CategoryToggles } from './CategoryToggles';
 import { CategoryLines } from './charts/CategoryLines';
 import { CATEGORY_COLOR } from './charts/chartColors';
 import { CumulativeLine } from './charts/CumulativeLine';
@@ -68,6 +68,15 @@ export function ActivityTab({
   const chosen = types.find((ty) => ty.eventType === search.type);
   const chosenPrimary = chosen?.sources.find((s) => s.source === chosen.primary) ?? chosen?.sources[0];
   const chosenComparison = chosen?.sources.filter((s) => s !== chosenPrimary) ?? [];
+  // The "by day" chart stacks every category the URL names (all of them when it names none), each from its primary.
+  const daily: MedChartedTypeId[] = search.daily?.length
+    ? CATEGORY_ORDER.filter((c) => search.daily!.includes(c))
+    : [...CATEGORY_ORDER];
+  const dailySeries = daily.flatMap((type) => {
+    const ty = types.find((x) => x.eventType === type);
+    const primary = ty?.sources.find((s) => s.source === ty.primary) ?? ty?.sources[0];
+    return primary ? [{ key: type, name: eventLabel(type), color: CATEGORY_COLOR[type], primary }] : [];
+  });
 
   return (
     <SkeletonSwap
@@ -127,6 +136,28 @@ export function ActivityTab({
 
           <WaveNote waves={data.waves} />
 
+          <section className="medapp-section" aria-label={t('school-daily-section', { defaultValue: 'By day' })}>
+            <DailyBars
+              legend={
+                <CategoryToggles
+                  value={daily}
+                  onChange={(next) => setSearch({ daily: next })}
+                  bars
+                  label={t('category-toggles-daily-label', { defaultValue: 'Show categories by day' })}
+                />
+              }
+              series={dailySeries}
+              from={data.dayZeroOn}
+              to={to}
+              waves={daily.includes('INTERVIEW') ? data.waves : undefined}
+              labels={chartLabels(
+                daily.length === 1
+                  ? t('school-daily-title', { defaultValue: '{{type}} by day', type: eventLabel(daily[0]!) })
+                  : t('school-daily-title-many', { defaultValue: 'Reported events by day' }),
+              )}
+            />
+          </section>
+
           <section
             className="medapp-section"
             aria-label={t('school-type-section', { defaultValue: 'One category by day' })}
@@ -144,33 +175,18 @@ export function ActivityTab({
               />
             </div>
             {chosenPrimary ? (
-              <>
-                <DailyBars
-                  primary={chosenPrimary}
-                  from={data.dayZeroOn}
-                  to={to}
-                  color={CATEGORY_COLOR[search.type as MedChartedTypeId]}
-                  waves={search.type === 'INTERVIEW' ? data.waves : undefined}
-                  labels={chartLabels(
-                    t('school-daily-title', {
-                      defaultValue: '{{type}} by day',
-                      type: eventLabel(search.type),
-                    }),
-                  )}
-                />
-                <CumulativeLine
-                  primary={chosenPrimary}
-                  comparison={chosenComparison}
-                  dayZeroOn={data.dayZeroOn}
-                  to={to}
-                  labels={chartLabels(
-                    t('school-cumulative-title', {
-                      defaultValue: '{{type}}, cumulative',
-                      type: eventLabel(search.type),
-                    }),
-                  )}
-                />
-              </>
+              <CumulativeLine
+                primary={chosenPrimary}
+                comparison={chosenComparison}
+                dayZeroOn={data.dayZeroOn}
+                to={to}
+                labels={chartLabels(
+                  t('school-cumulative-title', {
+                    defaultValue: '{{type}}, cumulative',
+                    type: eventLabel(search.type),
+                  }),
+                )}
+              />
             ) : (
               <p className="medapp-meta">
                 {t('school-type-empty', {

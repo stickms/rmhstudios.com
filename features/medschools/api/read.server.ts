@@ -153,6 +153,9 @@ const setOf = (q: { programs?: string | undefined; degree?: MedDegreeId | undefi
   (q.programs ? parsePrograms(q.programs) : undefined) ??
   programsFromLegacy(q.degree, q.program === 'REG' || q.program === 'PHD' ? q.program : 'ALL');
 
+/** `CA,NY` -> the codes, deduped and sorted (the schema has checked each one). */
+const statesOf = (v: string | undefined): string[] | undefined => (v ? [...new Set(v.split(','))].sort() : undefined);
+
 /** The site's current cycle as the readers resolve it; the Q&A retrieval clamps a question's cycle against it. */
 export const siteCycleYear = siteCycle;
 
@@ -188,7 +191,7 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
     bySchool.set(s.schoolId, list);
   }
   const degrees = new Set(set.map((k) => programPair(k).degree));
-  const filtered = filterSchools(all, { q: q.q, state: q.state }).filter((s) => degrees.has(s.degree));
+  const filtered = filterSchools(all, { q: q.q, states: statesOf(q.state) }).filter((s) => degrees.has(s.degree));
   const latest = await latestPublicEvents(cycleYear, set);
   return {
     cycleYear,
@@ -852,7 +855,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
       school: {
         active: true,
         ...(q.school ? { slug: q.school } : !set && q.degree ? { degree: q.degree } : {}),
-        ...(q.state ? { state: q.state } : {}),
+        ...(q.state ? { state: { in: statesOf(q.state) } } : {}),
       },
       ...(cursor
         ? {

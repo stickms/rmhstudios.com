@@ -50,9 +50,22 @@ longer govern this feature**; the admin page does not move with it (`components/
   `APP_TIER_DIRS` (`lib/__tests__/css-tiers.ts`, so the CSS stays under the `!important`, keyframes and hex gates).
   `/med` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes the lean site stylesheet, not the app superset
   (`--app-*` utilities are already in it).
-- **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, the live rail at >= 1280px), `MedTopBar`
-  (44px round back button, always present: the session's history, else `/services` from the index and the index from
-  everywhere else; Fraunces title; the light/dark toggle), `useMedMode` and `ThemeToggle`. The Steel shell's overlays
+- **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, a grid of the main column and the live
+  rail), `MedTopBar` (over the main column only: 44px round back button, always present: the session's history, else
+  `/` from the index and the index from everywhere else; the app's name; `HeaderActions`), `useMedMode` and
+  `ThemeToggle`. **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the title's row at
+  every width (the title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice (`Mic`), Live
+  activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link or button
+  with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on
+  `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle
+  (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it
+  when it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
+  `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
+  into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
+  `SquareArrowOutUpRight`, the search, the two filters and `RailSkeleton`'s eight static rows) and CSS shows the column
+  from 1280px, so nothing shifts when it fills; it starts level with the top bar. Its list (`rail/RailFeed.tsx`) is a
+  lazy chunk loaded and queried only at 1280px and up (`useMediaQuery`), replaces the skeleton with the M9 fade and
+  keeps its rows, dimmed, on a refetch. The Steel shell's overlays
   (command palette, "/" shortcut, what's-new) are not here, as in the other apps; the margin takeover entry is gone and
   `ActivityRail` is mounted by `MedApp`.
 - **Mode.** Light or dark, device-local (`rmh-medschool-mode`, `{"dark":boolean}`, `engine/mode.ts`), defaulting to the
@@ -65,8 +78,8 @@ longer govern this feature**; the admin page does not move with it (`components/
   small **overlay bridge** at the end of the palettes, on `<html>` while the app is open, points the Steel names the
   shared anchored menu, confirm and prompt dialogs, toaster and `SortableList` buttons read at this palette (they portal
   outside the app root and are not worth a second copy).
-- **Type.** Body is DM Sans (the site font); Fraunces for headings only (`--app-font-display`), self-hosted
-  (`app/fonts/fraunces.css`, preloaded by the layout).
+- **Type.** One face, DM Sans (the site font), owner 2026-11-24: `--app-font-display` is `var(--app-font-body)` and
+  headings are weight 600 with -0.015em (the page h1 -0.02em). Fraunces and its preload left the layout route.
 - **The wash.** `public/images/medschools/wash-{light,dark}.webp`, pre-rendered by `scripts/medschools/render-wash.mjs`
   from the mockup's blobs; a `background-image` of `.medapp-page`, in the flow, never fixed, never animated, fading to
   the exact ground at each tile's top and bottom (iOS fills its bars from the ground). Dropped under
@@ -117,7 +130,7 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 - **Space:** 4 / 8 / 12 / 16 / 24 / 32 / 48 (`--app-med-space-1`..`-7`). Gutter 16, 24 from 768px; section gap 24, 32
   from 768px (`.medapp-main` and `.medapp-sections` are flex columns with that gap, so a page writes no `mt-*` between
   sections); panel padding 16, 20 from 768px; a row 12 top and bottom; a heading 12 above its content.
-- **Type:** page title 28 (32 from 768px, Fraunces), section title 20 (Fraunces), body 16, secondary 14 (`.medapp-meta`:
+- **Type:** page title 28 (32 from 768px, weight 600), section title 20 (600), body 16, secondary 14 (`.medapp-meta`:
   all help copy, never smaller), meta 13 (row meta, chart text 12-13 inside charts only). Body line height 1.5.
 - **Radius:** 10 (`--app-med-radius-sm`: an option inside a group, a step, a note), 14 (`--app-med-radius`: buttons,
   fields, groups, menus), 24 (`--app-med-radius-lg`: panels, charts, tiles); circles only for the round icon buttons and
@@ -137,7 +150,7 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 - **Surfaces:** one level of panel. Inside a panel, groups are rules and space (`.medapp-subrule`, `.medapp-group`,
   `.medapp-rows`); a list or prose may sit on the wash with no panel. Empty, failed and signed-out states are `MedEmpty`
   / `MedSignedOut`: centred, a 16px line, a 14px line, one action.
-- **Places:** the app's other pages are `Places` (`ui/shell/Places.tsx`): icon-and-label tertiary links, one line. The
+- **Places:** the app's other pages are the top bar's icon buttons and the member's menu (`HeaderActions`). The
   top bar's title is the app's name, "RMH Med Schools"; on the index it is the page's `<h1>` (the index has no title of
   its own) and the left button is a house linking to the site home `/`; every other page has its own h1 and the back
   arrow.
@@ -163,12 +176,39 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   a block whose answer makes the rest moot is one line ("Deposit · Not required"); yes / no / case by case is a small
   mark and the word; the DACA report's sentence shows once when it repeats the school's note. Definition rows: a word or
   figure on its label's line, a sentence under it; from 768px the label is a 12rem column.
-- **Newest status on the index:** each row ends with the school's newest public event (`LatestStatus`: the disc, the
-  words, the time ago), from `latest` on `GET /schools` (`latestPublicEvents` in `api/read.server.ts`: the live feed's
-  rules, Admit and SDN only, never RMH, the list's program set, the site cycle; user-independent). The time is worked
-  out at render, never on a timer: the server and the hydrating render print the day.
+- **Newest status on the index:** each row is one grid (`.medapp-schoolrow`): crest | the school's words | the status
+  words (label in the status colour, the time under it, right-aligned) | the status disc at the far end, every cell on
+  the row's centre line (owner 2026-11-24); on a narrow phone the school's words wrap (hyphenated under 360px) and the
+  status keeps a readable width. The index column's parts are 16px apart (`.medapp-index`) and its rows 8px top and
+  bottom. The newest status (`LatestStatus`) comes from `latest` on `GET /schools`
+  (`latestPublicEvents` in `api/read.server.ts`: the live feed's rules, Admit and SDN only, never RMH, the list's
+  program set, the site cycle; user-independent). The time is `EventTime`: the server and the hydrating render print
+  the day.
 - **The rail:** its heading, search and the two multi-selects (event types, programs) are sticky inside the rail panel
   (`.medapp-rail-top`) while the list scrolls under them.
+- **Live rows (`LiveRow`, owner 2026-11-24):** one component for the live page and the rail (`compact`), so they cannot
+  drift: the school's crest (initials without one) with the decision as a 20px status badge on its top-right corner
+  (ringed in the paper, `aria-hidden`: the status is written out), the name, the status in its colour, and the time at
+  the row's end on its centre line. The live page adds one muted line, program · city, state · source; the rail has
+  none. On a phone the live page's time moves under the words.
+- **Event times (`EventTime`, owner 2026-11-24):** every short event date (the index's newest status, live and rail
+  rows, the tracker's steps and timeline) is a focusable `<time>` that shows the exact time on hover, focus or tap, in
+  the viewer's own zone ("Tue, Nov 24, 2026, 3:42 PM EST"). The server does not know that zone, so the tooltip is
+  built after hydration and the HTML has no server-zone string. A day-only event (`isDayOnlyEvent`: Admit or SDN at
+  exactly 00:00 UTC, the arrivals rule; a tracker milestone) shows the full date in UTC and "No time reported", never
+  an invented time. Inside a button (a tracker step) it is a `title` only. Pure parts in `ui/event-time.ts`.
+- **States (owner 2026-11-24):** the index and the live page filter several states at once (`StateMultiSelect`:
+  "California (CA)", sorted by name, a filter field, "All states" / "CA, NY" / "5 states"). `?state=CA,NY` is a sorted
+  comma list (`parseStates`, at most `MAX_STATES` = 10), an old single code still parses, none is every state. The
+  schools and live readers take the same list, each code checked against `HOME_STATE_CODES`, deduped and sorted. The
+  home-state preference stays single.
+- **Multi-selects on a phone:** under 640px the panel is a full-width sheet under its toolbar (absolute, never fixed)
+  with a 16px filter field where it has one and a Done button.
+- **Loading (owner 2026-11-24):** once a school page has its school, `ui/prefetch-tabs.ts` fetches the other tabs'
+  public queries in the background (one wave per school and program, at idle, one request at a time; skipped under
+  Save-Data, Data Saver, 2G or offline; never `me/**`, never a model call). The school's public queries are fresh for
+  5 minutes and kept 30 (`schoolScoped`). A same-page change (`cause: 'stay'`) reads the cached prefs in
+  `loadPrefs` and never waits on the private request. The router already preloads on intent (`app/router.tsx`).
 - **Settings change in place (owner 2026-11-24):** every `navigate()` first calls `holdScroll()` (`ui/hold-scroll.ts`:
   the site's `useScrollRestoration` would otherwise read the new href as a fresh navigation and scroll to the top) and
   passes `replace: true, resetScroll: false`; the section body (`.medapp-tabbody`) is at least a screen tall, so a
@@ -217,20 +257,22 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 React SVG, server-rendered (the charts are in the HTML with scripting off). **Owner O7 (2026-11-23)** supersedes O2's
 ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays open for the rest of the site.
 
-- **Colour (O7.1, moved in B2).** `--app-med-chart-1`..`-5` (line, at least 3:1 on paper and ground in both modes,
-  pinned by `charts.test.tsx` from `medschools.css`) and `-n-fill` (the pastel, used for `ArrivalBars` bodies) in
-  `ui/medschools.css`; the `--site-chart-*` tokens are gone. Mappings are fixed in `ui/charts/chartColors.ts` and never
-  depend on rank or on what is switched on: categories take their status hue (Secondary 1 blue, Interview 2 orange,
-  Acceptance 3 green, Rejection 4 red, Waitlist 5 yellow); sources (per-type charts) CycleTrack 1, Admit 2, SDN 3, RMH
-  4, MDApplicants 5; History cycles newest first 1..5. A component writes `var(--app-med-chart-n)` through those maps,
-  never a hex. Dash and weight stay as the secondary cue. Text is always `--app-text` / `--app-text-muted`. The dataviz
-  validator's contrast check passes; its chroma, dark-lightness and CVD checks do not for these status hues (see "Phase
-  B2 as built" in the redesign plan).
+- **Colour (O7.1; status colours, owner 2026-11-24).** A category draws in its STATUS colour: `CATEGORY_COLOR` in
+  `ui/charts/chartColors.ts` is `var(--app-med-<stem>-text)` (the stem from `ui/status/status.ts`), the token the row's
+  status words use, and its bar body is `var(--app-med-<stem>-fill)` (`fillOf`), so a category's line, bar and legend
+  swatch match its row icon everywhere (acceptance green, rejection red, hold dark blue, secondary light blue, waitlist
+  yellow, interview orange, matriculation purple, withdrawn neutral). Sources (per-type charts: CycleTrack 1, Admit 2,
+  SDN 3, RMH 4, MDApplicants 5) and History cycles (newest first 1..5) are a different concept and keep the slots
+  `--app-med-chart-1`..`-5`. `charts.test.tsx` holds both from `medschools.css`: every slot and every category colour at
+  least 3:1 on paper and ground in both modes, and every category with a fill. A component never writes a hex. Dash and
+  weight stay as the secondary cue. Text is always `--app-text` / `--app-text-muted`. The dataviz validator's contrast
+  check passes; its chroma, dark-lightness and CVD checks do not for these status hues (see "Phase B2 as built" in the
+  redesign plan).
 - **Card and legend (O7.2).** `ChartFrame` is a paper panel (`.medapp-chart`: `--app-surface`, 1px `--app-border`);
   caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per series) is present for two
   or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as `legend`: aria-pressed
   buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one stays on). There are no
-  end labels. The daily bars are one series, named by the title and the sources line.
+  end labels. The daily bars have their own category toggles (solid block swatches, `bars`).
 - **Tween (O7.3).** `tween.ts` (pure, injected scheduler) and `useTween.ts`: the y scale moves from the old to the new
   top in 280 ms, ease-out (`easeOutCubic`), when a toggle, program or source changes it. Lines, bars and gridlines
   follow the animated scale (`yTicksTween`: shared ticks stay, new ones fade in, old ones fade out); an interrupted
@@ -263,8 +305,12 @@ ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays o
   multi-select pair for the school's own degree; the URL param stays `ALL | REG | PHD`. `ProgramSelect` and
   `DegreeProgramSelect` remain for the index and live pages.
 
-The first Activity chart is `CategoryLines` with `CategoryToggles` (O4: `?show=`); then `DailyBars` for one chosen type
-(in that type's colour), `CumulativeLine` (per-source colours), then a native `<details>` table. Each chart is wrapped
+The first Activity chart is `CategoryLines` with `CategoryToggles` (O4: `?show=`); then `DailyBars`, stacked bars per
+day for several categories at once (owner 2026-11-24: its own `CategoryToggles`, `?daily=interview,acceptance` in
+canonical order, absent = every category and dropped from the URL, a single value still parses; each category from its
+own primary source, stacked in `CATEGORY_ORDER`; the readout lists each category's count and the total, and "Show data"
+has a column per category plus Total); then the `OptionGroup` for one category (`?type=`) and its `CumulativeLine`
+(per-source colours), then a native `<details>` table. Each chart is wrapped
 in `dir="ltr"` so the time axis stays left to right in `ar`. Each width gets its own viewBox (phone 252, mid 420, wide
 640 units: the phone one is sized so a 320 px phone shows it at about 1:1 inside the card), all rendered, CSS shows one.
 

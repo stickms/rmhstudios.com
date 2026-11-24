@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { STATUS, type StatusKey } from './status';
 
-const BOX = { sm: 'medapp-status-icon--sm', md: '' } as const;
+const BOX = { xs: 'medapp-status-icon--xs', sm: 'medapp-status-icon--sm', md: '' } as const;
 
 /**
  * A round swatch with the status's stroke icon in its ink token. Decorative whenever the status is also written out

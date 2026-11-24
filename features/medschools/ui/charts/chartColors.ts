@@ -1,28 +1,31 @@
 import type { MedChartedTypeId, MedSourceId } from '../../medschools.contract';
+import { STATUS, statusOfEvent } from '../status/status';
 
 /**
- * The fixed colour mappings of the RMH Med Schools charts. Colours are the `--app-med-chart-1`..`-5` tokens (the lines;
- * `-n-fill` is the pastel for fills), set per mode in `ui/medschools.css`. Every line is at least 3:1 against paper and
- * ground in both modes (`charts.test.tsx` pins it from the stylesheet). A component never writes a hex. Colour follows
- * the entity, never its rank or position: a category is the same colour on every chart and page whichever categories
- * are switched on, and a source is always the same colour on every per-type chart. Dash and width stay as the
- * secondary cue (colour is never the only cue).
- *
- * The slots are hued like the status colours (`ui/status`), so a category's line matches the swatch of its rows:
- * 1 blue (secondary), 2 orange (interview), 3 green (acceptance), 4 red (rejection), 5 yellow (waitlist).
+ * The fixed colour mappings of the RMH Med Schools charts. A category is drawn in its STATUS colour (owner
+ * 2026-11-24): the line, the bar and the legend swatch are `var(--app-med-<stem>-text)`, the same token the row's
+ * status words use, so a category matches its row icon and words everywhere (acceptance green, rejection red, hold dark
+ * blue, secondary light blue, waitlist yellow, interview orange, matriculation purple, withdrawn neutral). Its pastel
+ * fill is `var(--app-med-<stem>-fill)`. Sources and cycles are a different thing from a category and keep their own
+ * slots, `--app-med-chart-1`..`-5`. Every line holds 3:1 against paper and ground in both modes (`status.test.tsx`
+ * holds the status text at 4.5:1, `charts.test.tsx` the slots at 3:1). A component never writes a hex. Colour follows
+ * the entity, never its rank or position. Dash and width stay as the secondary cue (colour is never the only cue).
  */
 export const chartVar = (slot: 1 | 2 | 3 | 4 | 5): string => `var(--app-med-chart-${slot})`;
 
-/** The pastel of a line colour (`var(--app-med-chart-3)` gives `var(--app-med-chart-3-fill)`), for the body of a bar. */
-export const fillOf = (color: string): string => color.replace(/\)$/, '-fill)');
+/** A status key's line colour (the status text token). */
+export const statusLine = (stem: string): string => `var(--app-med-${stem}-text)`;
 
-/** One colour per event category, the hue of its status colour. */
+/** The pastel of a category's line colour (`var(--app-med-accept-text)` gives `var(--app-med-accept-fill)`). */
+export const fillOf = (color: string): string => color.replace(/-text\)$/, '-fill)');
+
+/** One colour per event category: its status colour. */
 export const CATEGORY_COLOR: Record<MedChartedTypeId, string> = {
-  SECONDARY: chartVar(1),
-  INTERVIEW: chartVar(2),
-  ACCEPTANCE: chartVar(3),
-  REJECTION: chartVar(4),
-  WAITLIST: chartVar(5),
+  SECONDARY: statusLine(STATUS[statusOfEvent('SECONDARY')].stem),
+  INTERVIEW: statusLine(STATUS[statusOfEvent('INTERVIEW')].stem),
+  ACCEPTANCE: statusLine(STATUS[statusOfEvent('ACCEPTANCE')].stem),
+  REJECTION: statusLine(STATUS[statusOfEvent('REJECTION')].stem),
+  WAITLIST: statusLine(STATUS[statusOfEvent('WAITLIST')].stem),
 };
 
 /** Line weight and dash per category (secondary cue, kept from O4). */

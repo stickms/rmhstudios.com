@@ -13,12 +13,11 @@ import { indexQuery, listsQuery, schoolsQuery } from '../medschools.queries';
 import { useSession } from '@/components/session/session-context';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
-import { ProgramMultiSelect } from './ProgramMultiSelect';
+import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
-import { Places } from './shell/Places';
 import { LatestStatus } from './LatestStatus';
 import { MedEmpty } from './MedEmpty';
 
@@ -43,7 +42,7 @@ export function IndexPage() {
   const lists = useQuery({ ...listsQuery(), enabled: signedIn });
   const myLists = signedIn ? (lists.data?.lists ?? []) : [];
 
-  const setSearch = (next: { q?: string | undefined; state?: string | undefined; list?: string | undefined }) => {
+  const setSearch = (next: { q?: string | undefined; states?: string[] | undefined; list?: string | undefined }) => {
     const merged = { ...search, ...next };
     holdScroll();
     void navigate({
@@ -52,7 +51,8 @@ export function IndexPage() {
       search: ((prev: Record<string, unknown>) => ({
         ...prev,
         q: merged.q || undefined,
-        state: merged.state || undefined,
+        // A comma list of sorted codes (`state=CA,NY`); none is every state.
+        state: merged.states?.length ? merged.states.join(',') : undefined,
         list: merged.list || undefined,
       })) as never,
       replace: true,
@@ -72,12 +72,7 @@ export function IndexPage() {
   const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
 
   return (
-    <>
-      <Places
-        label={t('index-nav-label', { defaultValue: 'Med Schools' })}
-        places={signedIn ? ['live', 'tracker', 'ask', 'lists', 'practice'] : ['live', 'practice']}
-      />
-
+    <div className="medapp-index">
       <div className="medapp-filters">
         <div className="medapp-toolbar">
           <MedSearch
@@ -91,18 +86,11 @@ export function IndexPage() {
               pushQuery(v);
             }}
           />
-          <MedSelect
-            aria-label={t('index-state-label', { defaultValue: 'State' })}
-            value={search.state ?? ''}
-            onChange={(e) => setSearch({ state: e.target.value || undefined })}
-          >
-            <option value="">{t('index-state-all', { defaultValue: 'All states' })}</option>
-            {(schools.data?.states ?? []).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </MedSelect>
+          <StateMultiSelect
+            states={schools.data?.states ?? []}
+            value={search.states ?? []}
+            onChange={(states) => setSearch({ states })}
+          />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
           {myLists.length > 0 ? (
             <MedSelect
@@ -143,7 +131,7 @@ export function IndexPage() {
             ) : (
               <ul className="medapp-panel medapp-rows">
                 {rows.map((s) => (
-                  <li key={s.slug} className="medapp-row items-center">
+                  <li key={s.slug} className="medapp-row medapp-schoolrow">
                     <SchoolCrest slug={s.slug} name={s.name} size={40} />
                     <div className="medapp-row__body">
                       <p className="medapp-row__name">
@@ -184,6 +172,6 @@ export function IndexPage() {
           </SkeletonSwap>
         )}
       </div>
-    </>
+    </div>
   );
 }

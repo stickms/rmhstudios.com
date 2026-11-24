@@ -16,7 +16,7 @@ export const Route = createFileRoute('/med/live')({
   // No `stripSearchParams`: absent `programs` means "the viewer's preferences", present is a choice (D14).
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps, cause }) => {
-    const prefs = await loadPrefs(context.queryClient);
+    const prefs = await loadPrefs(context.queryClient, cause);
     const search = parseLiveSearch(deps);
     // A filter change (`cause: 'stay'`) does not wait: the feed stays on screen, dimmed, until the new one lands.
     await waitUnlessStay(
