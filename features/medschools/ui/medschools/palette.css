@@ -70,9 +70,9 @@
   --app-radius-sm: 16px;
   --app-radius-lg: 28px;
 
-  /* Type: Fraunces for headings only; the body is the site's DM Sans (the AppShell tier already points
+  /* Type: one face (owner 2026-11-24). Headings are the body's DM Sans at weight 600 (the AppShell tier already points
      `--app-font-body` at `--site-font-body`). */
-  --app-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --app-font-display: var(--app-font-body);
 }
 
 /* ── Dark: ink-navy night ────────────────────────────────────────────────── */

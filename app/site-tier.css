@@ -91,6 +91,9 @@
 @source not "../features/slice-it/ui/useMarginRoom.ts";
 /* The island route helpers (redesign B1): reached only by island routes, and they render no classes. */
 @source not "../lib/islands";
+/* The self-hosted face helpers: reached only by a full-screen route that links a face of its own (RMH Med Schools
+   dropped Fraunces, owner 2026-11-24, which left adaptive-intelligence); they render no classes. */
+@source not "../lib/fonts";
 @source not "../components/blm";
 @source not "../components/covid";
 @source not "../components/elections";

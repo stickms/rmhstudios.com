@@ -117,7 +117,7 @@ const GROUPS: Group[] = [
   },
   {
     out: 'app/fonts/fraunces.css',
-    usedBy: 'app/routes/adaptive-intelligence.tsx and app/routes/med.tsx',
+    usedBy: 'app/routes/adaptive-intelligence.tsx',
     sources: [
       {
         pkg: '@fontsource-variable/fraunces',

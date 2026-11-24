@@ -50,9 +50,22 @@ longer govern this feature**; the admin page does not move with it (`components/
   `APP_TIER_DIRS` (`lib/__tests__/css-tiers.ts`, so the CSS stays under the `!important`, keyframes and hex gates).
   `/med` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes the lean site stylesheet, not the app superset
   (`--app-*` utilities are already in it).
-- **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, the live rail at >= 1280px), `MedTopBar`
-  (44px round back button, always present: the session's history, else `/services` from the index and the index from
-  everywhere else; Fraunces title; the light/dark toggle), `useMedMode` and `ThemeToggle`. The Steel shell's overlays
+- **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, a grid of the main column and the live
+  rail), `MedTopBar` (over the main column only: 44px round back button, always present: the session's history, else
+  `/` from the index and the index from everywhere else; the app's name; `HeaderActions`), `useMedMode` and
+  `ThemeToggle`. **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the title's row at
+  every width (the title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice (`Mic`), Live
+  activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link or button
+  with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on
+  `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle
+  (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it
+  when it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
+  `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
+  into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
+  `SquareArrowOutUpRight`, the search, the two filters and `RailSkeleton`'s eight static rows) and CSS shows the column
+  from 1280px, so nothing shifts when it fills; it starts level with the top bar. Its list (`rail/RailFeed.tsx`) is a
+  lazy chunk loaded and queried only at 1280px and up (`useMediaQuery`), replaces the skeleton with the M9 fade and
+  keeps its rows, dimmed, on a refetch. The Steel shell's overlays
   (command palette, "/" shortcut, what's-new) are not here, as in the other apps; the margin takeover entry is gone and
   `ActivityRail` is mounted by `MedApp`.
 - **Mode.** Light or dark, device-local (`rmh-medschool-mode`, `{"dark":boolean}`, `engine/mode.ts`), defaulting to the
@@ -65,8 +78,8 @@ longer govern this feature**; the admin page does not move with it (`components/
   small **overlay bridge** at the end of the palettes, on `<html>` while the app is open, points the Steel names the
   shared anchored menu, confirm and prompt dialogs, toaster and `SortableList` buttons read at this palette (they portal
   outside the app root and are not worth a second copy).
-- **Type.** Body is DM Sans (the site font); Fraunces for headings only (`--app-font-display`), self-hosted
-  (`app/fonts/fraunces.css`, preloaded by the layout).
+- **Type.** One face, DM Sans (the site font), owner 2026-11-24: `--app-font-display` is `var(--app-font-body)` and
+  headings are weight 600 with -0.015em (the page h1 -0.02em). Fraunces and its preload left the layout route.
 - **The wash.** `public/images/medschools/wash-{light,dark}.webp`, pre-rendered by `scripts/medschools/render-wash.mjs`
   from the mockup's blobs; a `background-image` of `.medapp-page`, in the flow, never fixed, never animated, fading to
   the exact ground at each tile's top and bottom (iOS fills its bars from the ground). Dropped under
@@ -117,7 +130,7 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 - **Space:** 4 / 8 / 12 / 16 / 24 / 32 / 48 (`--app-med-space-1`..`-7`). Gutter 16, 24 from 768px; section gap 24, 32
   from 768px (`.medapp-main` and `.medapp-sections` are flex columns with that gap, so a page writes no `mt-*` between
   sections); panel padding 16, 20 from 768px; a row 12 top and bottom; a heading 12 above its content.
-- **Type:** page title 28 (32 from 768px, Fraunces), section title 20 (Fraunces), body 16, secondary 14 (`.medapp-meta`:
+- **Type:** page title 28 (32 from 768px, weight 600), section title 20 (600), body 16, secondary 14 (`.medapp-meta`:
   all help copy, never smaller), meta 13 (row meta, chart text 12-13 inside charts only). Body line height 1.5.
 - **Radius:** 10 (`--app-med-radius-sm`: an option inside a group, a step, a note), 14 (`--app-med-radius`: buttons,
   fields, groups, menus), 24 (`--app-med-radius-lg`: panels, charts, tiles); circles only for the round icon buttons and

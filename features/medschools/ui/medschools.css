@@ -4,8 +4,8 @@
  * The owner approved the redesign as a full-screen app (roadmap item 11, owner 2026-11-23 and 2026-11-24), so this
  * sheet follows the RMH Music precedent (`components/rmhmusic/rmhmusic.css`): structure from `components/shared/
  * app-theme.css`, hues from here. Values are the approved mockup's (`renderVals()` in Main.dc.html): cream paper and
- * ink-navy night, a pastel painterly wash, seven status colour pairs. Body type is the site's DM Sans; Fraunces is for
- * headings only (owner, 2026-11-24).
+ * ink-navy night, a pastel painterly wash, seven status colour pairs. One typeface, the site's DM Sans; headings are the
+ * same face at weight 600 (owner, 2026-11-24).
  *
  * ## How the mode is chosen (no flash, no mismatch)
  *

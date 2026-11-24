@@ -119,7 +119,8 @@ describe('medschools shell', () => {
     expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain('<CookieConsent />');
     const route = read('app/routes/med.tsx');
     expect(route).toContain('medschools.css?url');
-    expect(route).toContain('fraunces.css?url');
+    // Headings are DM Sans at 600 (owner 2026-11-24): no Fraunces sheet or preload.
+    expect(route).not.toMatch(/fraunces|preloadFont/i);
     expect(route).not.toMatch(/inter/i);
   });
 });
