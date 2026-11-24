@@ -4,19 +4,7 @@
  * file whose count fell must lower its number, and an entry with none left must be deleted. Entries only come out.
  */
 export const STEEL_GHOST_BASELINE: Record<string, { batch: string; count: number }> = {
-  'components/events/EventCard.tsx': { batch: 'E4 rest', count: 1 },
-  'components/forecasting/ForecastingPanel.tsx': { batch: 'E4 rest', count: 2 },
-  'components/gifting/ExchangeDetail.tsx': { batch: 'E4 rest', count: 1 },
-  'components/gifting/ExchangesPage.tsx': { batch: 'E4 rest', count: 1 },
-  'components/library/AlbumUploader.tsx': { batch: 'E4 rest', count: 2 },
-  'components/marathon/MarathonPlanner.tsx': { batch: 'E4 rest', count: 1 },
-  'components/marathon/MarathonSchedule.tsx': { batch: 'E4 rest', count: 2 },
-  'components/moderation/AccountStandingPanel.tsx': { batch: 'E4 rest', count: 1 },
   'components/party/ConnectionsPages.tsx': { batch: 'E4 rest', count: 2 },
-  'components/party/PartyBar.tsx': { batch: 'E4 rest', count: 1 },
-  'components/posts-plus/SeriesIndexPage.tsx': { batch: 'E4 rest', count: 2 },
-  'components/posts-plus/TimeCapsuleList.tsx': { batch: 'E4 rest', count: 2 },
-  'components/predictions/PredictionCard.tsx': { batch: 'E4 rest', count: 1 },
   'components/profile/plus/TopFourModule.tsx': { batch: 'E4 rest', count: 1 },
   'components/profile/plus/rings/RingPage.tsx': { batch: 'E4 rest', count: 1 },
   'components/profile/plus/rings/RingsIndex.tsx': { batch: 'E4 rest', count: 2 },

@@ -29,9 +29,9 @@ const who = (u: ExchangeUser) => u.name ?? (u.handle ? `@${u.handle}` : '?');
 function MixtapePlayer({ tracks }: { tracks: MixtapeTrack[] }) {
   const { t } = useTranslation('f-gifting');
   return (
-    <ol className="space-y-2">
+    <ol>
       {tracks.map((tr, i) => (
-        <li key={tr.id} className="space-y-2 rounded-site px-4 py-3">
+        <li key={tr.id} className="rule-row space-y-2 py-3">
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="min-w-0 truncate">
               {i + 1}. {tr.title} <span className="text-site-text-muted">· {tr.artist}</span>

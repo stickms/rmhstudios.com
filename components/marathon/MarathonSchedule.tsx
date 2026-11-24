@@ -27,7 +27,7 @@ export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; d
         defaultValue: 'Schedule',
       })}
     >
-      <p role="status" className="rounded-site px-4 py-3 text-sm">
+      <p role="status" className="py-3 text-sm">
         {plan.impossible
           ? t('marathon-impossible', {
               defaultValue: 'Even watching around the clock this does not fit before the deadline.',
@@ -39,11 +39,11 @@ export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; d
               date: plan.finishDate ?? deadline,
             })}
       </p>
-      <ol className="space-y-2">
+      <ol>
         {plan.days
           .filter((d) => d.entries.length > 0)
           .map((d) => (
-            <li key={d.date} className="rounded-site px-4 py-3">
+            <li key={d.date} className="rule-row py-3">
               <h3 className="mb-2 flex justify-between text-sm font-semibold">
                 <span>
                   {fmt.date(new Date(`${d.date}T00:00:00`), {
