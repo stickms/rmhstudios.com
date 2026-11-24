@@ -15,7 +15,9 @@
 import type { LiveSignal } from '../live-signal.server';
 
 export const LIVE_STREAM_MAX_CONNECTIONS = 2_000;
-export const LIVE_STREAM_MAX_PER_IP = 4;
+// A campus or hospital network puts many applicants behind one address, so the per-address cap is generous: it stops
+// one client opening hundreds of streams, not a library full of readers. Over it, a reader falls back to polling.
+export const LIVE_STREAM_MAX_PER_IP = 32;
 export const LIVE_STREAM_HEARTBEAT_MS = 25_000;
 export const LIVE_STREAM_RETRY_MS = 15_000;
 const LIFETIME_MS = 30 * 60_000;

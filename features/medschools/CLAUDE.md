@@ -23,9 +23,10 @@ Eleven anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiR
 rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
 `schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `schools/$slug/secondaries`, `schools/$slug/facts` (phase
 C), `live`, `live/summary`, `today`. One more is a route file, not a registered module, because it is a stream:
-`GET /api/medschools/live/stream` (the live signal, see "The live signal" below). Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
-`medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
-in the server HTML with scripting off.
+`GET /api/medschools/live/stream` (the live signal, see "The live signal" below). Contracts live in
+`medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in `medschools.queries.ts` (no
+`createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist in the server HTML with
+scripting off.
 
 **The public endpoints stay user-independent (phase 4).** Nothing under `/api/medschools/schools*` or `live` reads a
 session, a preference or a list; a signed-in member's preferences are applied in the route loader, which prefetches the
@@ -52,23 +53,22 @@ longer govern this feature**; the admin page does not move with it (`components/
   `/med` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes the lean site stylesheet, not the app superset
   (`--app-*` utilities are already in it).
 - **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, a grid of the main column and the live
-  rail), `MedTopBar` (over the main column only: 44px round back button, always present: the session's history, else
-  `/` from the index and the index from everywhere else; the app's name; `HeaderActions`), `useMedMode` and
-  `ThemeToggle`. **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the title's row at
-  every width (the title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice (`Mic`), Live
-  activity (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link or button
-  with an accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on
-  `/med/practice`). The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle
-  (`/med/tracker`), My school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it
-  when it exists. On those pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
+  rail), `MedTopBar` (over the main column only: 44px round back button, always present: the session's history, else `/`
+  from the index and the index from everywhere else; the app's name; `HeaderActions`), `useMedMode` and `ThemeToggle`.
+  **Header (owner 2026-11-24):** `HeaderActions` is one group at the bar's end, on the title's row at every width (the
+  title ends in an ellipsis on a narrow phone; the icons never wrap): Interview practice (`Mic`), Live activity
+  (`Activity`), the member's area (`UserRound`) and the light/dark toggle, each a 44px round link or button with an
+  accessible name and a `title`. A page never links to itself (no Live on `/med/live`, no practice on `/med/practice`).
+  The member's area, signed in, is an `AnchoredMenu` (keyboard, Escape, focus back): My cycle (`/med/tracker`), My
+  school lists, Preferences (`/med/lists#preferences`), Ask about schools; "My stats" joins it when it exists. On those
+  pages the button is the ink fill and the item is `aria-current`. Signed out it is a link to
   `/login?callbackURL=<this page>`. The index's old link row (`Places`) is gone; the school page's member links moved
   into the same menu. **The rail** is in the server HTML at every width (frame, the open-live icon link
   `SquareArrowOutUpRight`, the search, the two filters and `RailSkeleton`'s eight static rows) and CSS shows the column
   from 1280px, so nothing shifts when it fills; it starts level with the top bar. Its list (`rail/RailFeed.tsx`) is a
   lazy chunk loaded and queried only at 1280px and up (`useMediaQuery`), replaces the skeleton with the M9 fade and
-  keeps its rows, dimmed, on a refetch. The Steel shell's overlays
-  (command palette, "/" shortcut, what's-new) are not here, as in the other apps; the margin takeover entry is gone and
-  `ActivityRail` is mounted by `MedApp`.
+  keeps its rows, dimmed, on a refetch. The Steel shell's overlays (command palette, "/" shortcut, what's-new) are not
+  here, as in the other apps; the margin takeover entry is gone and `ActivityRail` is mounted by `MedApp`.
 - **Mode.** Light or dark, device-local (`rmh-medschool-mode`, `{"dark":boolean}`, `engine/mode.ts`), defaulting to the
   OS preference; it does not follow the site Day/Night edition. RMH Music's design: `APP_ROUTE_THEME_BG` entry, the
   `lib/prepaint/theme-routes.ts` list, the device registry, `data-app-dark`.
@@ -151,10 +151,9 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 - **Surfaces:** one level of panel. Inside a panel, groups are rules and space (`.medapp-subrule`, `.medapp-group`,
   `.medapp-rows`); a list or prose may sit on the wash with no panel. Empty, failed and signed-out states are `MedEmpty`
   / `MedSignedOut`: centred, a 16px line, a 14px line, one action.
-- **Places:** the app's other pages are the top bar's icon buttons and the member's menu (`HeaderActions`). The
-  top bar's title is the app's name, "RMH Med Schools"; on the index it is the page's `<h1>` (the index has no title of
-  its own) and the left button is a house linking to the site home `/`; every other page has its own h1 and the back
-  arrow.
+- **Places:** the app's other pages are the top bar's icon buttons and the member's menu (`HeaderActions`). The top
+  bar's title is the app's name, "RMH Med Schools"; on the index it is the page's `<h1>` (the index has no title of its
+  own) and the left button is a house linking to the site home `/`; every other page has its own h1 and the back arrow.
 - **Rows:** the tracker's school rows and the lists' school rows have the name (`.medapp-name`: 600, no underline at
   rest) and meta, and one "⋯" (`MedIconButton`) holding every action (add milestone, edit notes, remove; note, move up,
   move down, remove), so nothing floats beside a row. A tracker school's milestones are `.medapp-steps`: every step the
@@ -181,10 +180,9 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   words (label in the status colour, the time under it, right-aligned) | the status disc at the far end, every cell on
   the row's centre line (owner 2026-11-24); on a narrow phone the school's words wrap (hyphenated under 360px) and the
   status keeps a readable width. The index column's parts are 16px apart (`.medapp-index`) and its rows 8px top and
-  bottom. The newest status (`LatestStatus`) comes from `latest` on `GET /schools`
-  (`latestPublicEvents` in `api/read.server.ts`: the live feed's rules, Admit and SDN only, never RMH, the list's
-  program set, the site cycle; user-independent). The time is `EventTime`: the server and the hydrating render print
-  the day.
+  bottom. The newest status (`LatestStatus`) comes from `latest` on `GET /schools` (`latestPublicEvents` in
+  `api/read.server.ts`: the live feed's rules, Admit and SDN only, never RMH, the list's program set, the site cycle;
+  user-independent). The time is `EventTime`: the server and the hydrating render print the day.
 - **The live page's "Today" column (owner 2026-11-24):** on `/med/live` only, `MedApp` mounts `rail/TodayRail` in the
   rail's frame instead of `ActivityRail` (which would repeat the page's feed); every other page keeps the rail. Four
   blocks, each a heading and rows on rules: "Reported in the last 24 hours" (one row per reported type, a toggle that
@@ -193,8 +191,8 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   the live feed's events, Admit and SDN, never RMH, active schools, the site cycle, `occurredAt` in the last 24 h, the
   `programs` and `state` filters; waves by `schoolWaves`, the live feed's own rule, on today's UTC day); "Your schools"
   joins `me/lists` + `me/tracker` (which schools) with the public list's `latest` (what happened) in the browser
-  (`rail/your-schools.ts`). The frame and a skeleton are server-rendered; the summary is a lazy chunk and every query
-  it owns is `enabled` only from 1280px, so a phone makes no request for it, an invalidation included.
+  (`rail/your-schools.ts`). The frame and a skeleton are server-rendered; the summary is a lazy chunk and every query it
+  owns is `enabled` only from 1280px, so a phone makes no request for it, an invalidation included.
 - **The rail:** its heading, search and the two multi-selects (event types, programs) are sticky inside the rail panel
   (`.medapp-rail-top`) while the list scrolls under them.
 - **Live rows (`LiveRow`, owner 2026-11-24):** one component for the live page and the rail (`compact`), so they cannot
@@ -204,38 +202,39 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   none. On a phone the live page's time moves under the words.
 - **The live signal (SSE, owner 2026-11-24):** the pages refresh when new reports land instead of waiting for a poll.
   Signal only, never data: (1) **publish** — after the worker COMMITS new Admit or SDN events (`commitAdmitEvents`'s
-  `newestCreated`, read by `run-admit-live`, `run-admit-history` and, after its transaction, `run-admit-forums`; the
-  SDN thread commit in `scrape/sdn/process-thread.ts`, after its transaction; never RMH, whose events are never public
-  one by one) it calls `signalNewLiveEvents(newest)` (`live-signal.server.ts`): `{ at }` on the realtime bus, channel
+  `newestCreated`, read by `run-admit-live`, `run-admit-history` and, after its transaction, `run-admit-forums`; the SDN
+  thread commit in `scrape/sdn/process-thread.ts`, after its transaction; never RMH, whose events are never public one
+  by one) it calls `signalNewLiveEvents(newest)` (`live-signal.server.ts`): `{ at }` on the realtime bus, channel
   `rt:medschools:live` (`createBus('medschools')`, key `live`), at most one per 5 s per process (the first at once, a
   burst as one trailing signal), and only when the newest created event is under 7 days old (a backfill of old events
   cannot change any page's head). It never throws; without Redis the bus is in-process and nothing reaches web (the
   compose file gives the worker web's `REDIS_URL`). (2) **stream** — `app/routes/api/medschools/live/stream.ts` over
-  `api/live-stream.server.ts`: `auth: 'none'`, no session read, `text/event-stream`, `Cache-Control: no-store,
-  no-transform`, `X-Accel-Buffering: no`; `retry: 15000` first, `event: new` / `data: {}` per signal, a `: ping`
-  comment every 25 s (below Cloudflare's 100 s idle limit and Apache's `ProxyTimeout 300`), a self-close after 30-35
-  min; at most 2000 streams per web process (503, `Retry-After: 120`) and 4 per address (429, `Retry-After: 60`),
-  answered before subscribing; every exit (abort, cancel, failed write, lifetime) unsubscribes and frees the slot.
-  (3) **client** — `ui/useLiveSignal.ts`: ONE `EventSource` per tab (a module singleton), open while some consumer is
-  mounted and enabled and the document is visible; closed on hidden and on `pagehide` (bfcache), reopened on visible /
-  a persisted `pageshow`, and a reopen after any gap invalidates once (signals may have been missed). Consumers: the
-  index (`IndexPage`, every width), `useLiveFeed` (the live page's list; the rail's `RailFeed`, mounted only from
-  1280px) and `TodaySummary` (`enabled` only from 1280px). On `new` it invalidates `['medschools','live']`,
-  `['medschools','live-summary']` and `['medschools','schools']` (the index's `latest`), debounced 2 s plus up to 3 s of
-  jitter, one refetch per window. React Query refetches only ACTIVE queries, and a disabled or unmounted one is not, so
-  at 390px only the page's own list refetches and the rail makes no request (checked in a browser). New live rows take
-  `useLiveFeed`'s arrival fade; a refetch keeps the rows (same key: no placeholder, no skeleton, no scroll change); an
-  index row's status changes in place. Polling stays as the fallback: 60 s without the stream, 5 min while it is
-  connected (a safety net for a signal lost in transit; the signal is how news arrives, and 60 s polls from every open
-  tab are the load the stream replaces). A refused stream (429 / 503) is retried after 1 min, doubling to 10, polling
-  meanwhile. No `EventSource` on the server render. Apache needs no SSE rule: `mod_deflate` compresses only its listed
-  types (not `text/event-stream`), and the feed's SSE works through the same `ProxyPass /`.
+  `api/live-stream.server.ts`: `auth: 'none'`, no session read, `text/event-stream`,
+  `Cache-Control: no-store, no-transform`, `X-Accel-Buffering: no`; `retry: 15000` first, `event: new` / `data: {}` per
+  signal, a `: ping` comment every 25 s (below Cloudflare's 100 s idle limit and Apache's `ProxyTimeout 300`), a
+  self-close after 30-35 min; at most 2000 streams per web process (503, `Retry-After: 120`) and 32 per address (429,
+  `Retry-After: 60`; a campus shares one), answered before subscribing; every exit (abort, cancel, failed write,
+  lifetime) unsubscribes and frees the slot. (3) **client** — `ui/useLiveSignal.ts`: ONE `EventSource` per tab (a module
+  singleton), open while some consumer is mounted and enabled and the document is visible; closed on hidden and on
+  `pagehide` (bfcache), reopened on visible / a persisted `pageshow`, and a reopen after any gap invalidates once
+  (signals may have been missed). Consumers: the index (`IndexPage`, every width), `useLiveFeed` (the live page's list;
+  the rail's `RailFeed`, mounted only from 1280px) and `TodaySummary` (`enabled` only from 1280px). On `new` it
+  invalidates `['medschools','live']`, `['medschools','live-summary']` and `['medschools','schools']` (the index's
+  `latest`), debounced 2 s plus up to 3 s of jitter, one refetch per window. React Query refetches only ACTIVE queries,
+  and a disabled or unmounted one is not, so at 390px only the page's own list refetches and the rail makes no request
+  (checked in a browser). New live rows take `useLiveFeed`'s arrival fade; a refetch keeps the rows (same key: no
+  placeholder, no skeleton, no scroll change); an index row's status changes in place. Polling stays as the fallback: 60
+  s without the stream, 5 min while it is connected (a safety net for a signal lost in transit; the signal is how news
+  arrives, and 60 s polls from every open tab are the load the stream replaces). A refused stream (429 / 503) is retried
+  after 1 min, doubling to 10, polling meanwhile. No `EventSource` on the server render. Apache needs no SSE rule:
+  `mod_deflate` compresses only its listed types (not `text/event-stream`), and the feed's SSE works through the same
+  `ProxyPass /`.
 - **Event times (`EventTime`, owner 2026-11-24):** every short event date (the index's newest status, live and rail
   rows, the tracker's steps and timeline) is a focusable `<time>` that shows the exact time on hover, focus or tap, in
-  the viewer's own zone ("Tue, Nov 24, 2026, 3:42 PM EST"). The server does not know that zone, so the tooltip is
-  built after hydration and the HTML has no server-zone string. A day-only event (`isDayOnlyEvent`: Admit or SDN at
-  exactly 00:00 UTC, the arrivals rule; a tracker milestone) shows the full date in UTC and "No time reported", never
-  an invented time. Inside a button (a tracker step) it is a `title` only. Pure parts in `ui/event-time.ts`.
+  the viewer's own zone ("Tue, Nov 24, 2026, 3:42 PM EST"). The server does not know that zone, so the tooltip is built
+  after hydration and the HTML has no server-zone string. A day-only event (`isDayOnlyEvent`: Admit or SDN at exactly
+  00:00 UTC, the arrivals rule; a tracker milestone) shows the full date in UTC and "No time reported", never an
+  invented time. Inside a button (a tracker step) it is a `title` only. Pure parts in `ui/event-time.ts`.
 - **States (owner 2026-11-24):** the index and the live page filter several states at once (`StateMultiSelect`:
   "California (CA)", sorted by name, a filter field, "All states" / "CA, NY" / "5 states"). `?state=CA,NY` is a sorted
   comma list (`parseStates`, at most `MAX_STATES` = 10), an old single code still parses, none is every state. The
@@ -245,9 +244,9 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   with a 16px filter field where it has one and a Done button.
 - **Loading (owner 2026-11-24):** once a school page has its school, `ui/prefetch-tabs.ts` fetches the other tabs'
   public queries in the background (one wave per school and program, at idle, one request at a time; skipped under
-  Save-Data, Data Saver, 2G or offline; never `me/**`, never a model call). The school's public queries are fresh for
-  5 minutes and kept 30 (`schoolScoped`). A same-page change (`cause: 'stay'`) reads the cached prefs in
-  `loadPrefs` and never waits on the private request. The router already preloads on intent (`app/router.tsx`).
+  Save-Data, Data Saver, 2G or offline; never `me/**`, never a model call). The school's public queries are fresh for 5
+  minutes and kept 30 (`schoolScoped`). A same-page change (`cause: 'stay'`) reads the cached prefs in `loadPrefs` and
+  never waits on the private request. The router already preloads on intent (`app/router.tsx`).
 - **Settings change in place (owner 2026-11-24):** every `navigate()` first calls `holdScroll()` (`ui/hold-scroll.ts`:
   the site's `useScrollRestoration` would otherwise read the new href as a fresh navigation and scroll to the top) and
   passes `replace: true, resetScroll: false`; the section body (`.medapp-tabbody`) is at least a screen tall, so a
@@ -349,9 +348,9 @@ day for several categories at once (owner 2026-11-24: its own `CategoryToggles`,
 canonical order, absent = every category and dropped from the URL, a single value still parses; each category from its
 own primary source, stacked in `CATEGORY_ORDER`; the readout lists each category's count and the total, and "Show data"
 has a column per category plus Total); then the `OptionGroup` for one category (`?type=`) and its `CumulativeLine`
-(per-source colours), then a native `<details>` table. Each chart is wrapped
-in `dir="ltr"` so the time axis stays left to right in `ar`. Each width gets its own viewBox (phone 252, mid 420, wide
-640 units: the phone one is sized so a 320 px phone shows it at about 1:1 inside the card), all rendered, CSS shows one.
+(per-source colours), then a native `<details>` table. Each chart is wrapped in `dir="ltr"` so the time axis stays left
+to right in `ar`. Each width gets its own viewBox (phone 252, mid 420, wide 640 units: the phone one is sized so a 320
+px phone shows it at about 1:1 inside the card), all rendered, CSS shows one.
 
 **d3 containment:** only `engine/chart-geometry.ts` imports `d3-scale` / `d3-shape`; only `ui/charts/*` imports that;
 only page components import `ui/charts`. Route files must not (`ui-rules.test.ts`), so d3, zod and the charts stay in
