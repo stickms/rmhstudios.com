@@ -676,8 +676,14 @@ export function NotificationsColumn({
                         </p>
                       </div>
                     </button>
-                    <Button variant="ghost" size="xs" onClick={snooze}>
-                      {t('snooze', { defaultValue: 'Later' })}
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={snooze}
+                      aria-label={t('snooze', { defaultValue: 'Later' })}
+                      title={t('snooze', { defaultValue: 'Later' })}
+                    >
+                      <Bell className="h-4 w-4" aria-hidden />
                     </Button>
                     <NotificationRowMenu
                       summary={rowSummary}
