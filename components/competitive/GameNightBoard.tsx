@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -95,7 +95,7 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
     }
   };
   return (
-    <Card className="p-4" pane>
+    <Section className="p-4">
       <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="gn-title">{t('gn-f-title', { defaultValue: 'Title' })}</Label>
@@ -166,7 +166,7 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
           </Button>
         </div>
       </form>
-    </Card>
+    </Section>
   );
 }
 
@@ -238,7 +238,7 @@ export function GameNightBoard() { const fmt = useLocaleFormat();
         />
       ) : (
         nights.map((n) => (
-          <Card key={n.id} className={cn('gap-3 px-4 py-4', arrival)} pane>
+          <Section key={n.id} className={cn('flex flex-col gap-3 py-4', arrival)}>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-semibold">{n.title}</h2>
               <span className="text-xs text-site-text-muted">
@@ -290,7 +290,7 @@ export function GameNightBoard() { const fmt = useLocaleFormat();
                   .join(' → '),
               })}
             </p>
-          </Card>
+          </Section>
         ))
       )}
       {isAdmin && <AdminCreate onCreated={load} />}

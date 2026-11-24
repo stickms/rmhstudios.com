@@ -6,7 +6,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -103,7 +103,7 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
     </div>
   );
   return (
-    <Card className="p-4" pane>
+    <Section className="p-4">
       <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
         {field('title', t('jam-f-title', { defaultValue: 'Title' }))}
         {voting.enabled ? (
@@ -132,7 +132,7 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
           </Button>
         </div>
       </form>
-    </Card>
+    </Section>
   );
 }
 
@@ -182,9 +182,9 @@ export function JamsList() { const fmt = useLocaleFormat();
             key={j.slug}
             to="/jams/$slug"
             params={{ slug: j.slug }}
-            className={cn(arrival, isNew(j.slug) && ARRIVE)}
+            className={cn('block rule-section row-hover', arrival, isNew(j.slug) && ARRIVE)}
           >
-            <Card className="gap-2 px-4 py-4" interactive>
+            <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-semibold truncate">{j.title}</h2>
                 <PhaseBadge phase={j.phase} />
@@ -197,7 +197,7 @@ export function JamsList() { const fmt = useLocaleFormat();
               {j.themeVoteOpen && (
                 <ThemeVoteOpenLabel />
               )}
-            </Card>
+            </div>
           </Link>
         ))
       )}

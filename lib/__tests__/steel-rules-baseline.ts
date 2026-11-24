@@ -6,15 +6,6 @@
  * is clean must be deleted. Nothing new goes in.
  */
 export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number }> = {
-  'app/routes/embed.post.$id.tsx': { wave: 'wave 4', count: 2 },
-  'app/routes/embed.replay.$id.tsx': { wave: 'wave 4', count: 2 },
-  'app/routes/login.tsx': { wave: 'wave 4', count: 1 },
-  'app/routes/offline.tsx': { wave: 'wave 4', count: 1 },
-  'app/routes/rmhcode/index.tsx': { wave: 'wave 4', count: 14 },
-  'components/blm/BlackLivesMatterPage.tsx': { wave: 'wave 4', count: 8 },
-  'components/competitive/GameNightBoard.tsx': { wave: 'wave 4', count: 1 },
-  'components/competitive/JamDetail.tsx': { wave: 'wave 4', count: 1 },
-  'components/competitive/JamsList.tsx': { wave: 'wave 4', count: 1 },
   'components/games/HowToPlay.tsx': { wave: 'wave 4', count: 1 },
   'components/games/NightrailTrickBoard.tsx': { wave: 'wave 4', count: 2 },
   'components/groupcall/GroupCallInviteDialog.tsx': { wave: 'wave 4', count: 2 },
