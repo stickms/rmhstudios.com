@@ -532,7 +532,11 @@ describe('the public secondaries endpoint', () => {
     expect(html).toContain(SECONDARIES_TEXT.same);
     expect(html).toContain('Source: Admit.org');
     expect(html).toContain('Rolling admissions');
-    expect(html).not.toMatch(/<(input|textarea)\b/);
+    // The tab itself offers no writing field. The live rail beside it (server-rendered on every page) has its own
+    // filter controls, so look only inside <main>.
+    const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+    expect(main).toContain(SECONDARIES_TEXT.same);
+    expect(main).not.toMatch(/<(input|textarea)\b/);
   });
 
   it('is written by an admin only, and what an admin writes shows in the public response', async () => {
