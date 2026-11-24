@@ -597,7 +597,7 @@ describe('lists and preferences', () => {
     // The program toggles are aria-pressed buttons; the member's preference narrows them, the public default does not.
     const pressed = (html: string) =>
       Object.fromEntries(
-        [...html.matchAll(/aria-pressed="(true|false)"[^>]*><span[^>]*>(MD|MD-PhD|DO|DO-PhD)<\/span>/g)].map((m) => [
+        [...html.matchAll(/aria-pressed="(true|false)"[^>]*>(?:<span[^>]*>)?(MD|MD-PhD|DO|DO-PhD)</g)].map((m) => [
           m[2],
           m[1],
         ]),
