@@ -13,7 +13,7 @@ import { ListSkeleton, SkeletonSwap } from '../skeletons';
  * Admissions facts: what the AAMC MSAR reports say about the school (who it accepts, MCAT window, interviews, deposit,
  * cost). Rows on rules in a paper panel, one block per report and each block ends with its own source line and a link to
  * the page the reports are listed on. Presentational over `AdmissionsFactsView`; it states what a report prints, it gives
- * no advice and draws no conclusion across blocks. Only an MD school has these reports: for a DO school nothing renders.
+ * no advice and draws no conclusion across blocks. It sits on the school page's Facts tab, under `Curriculum`. Only an MD school has these reports: for a DO school nothing renders.
  * MCAT and GPA figures are not here (they come from the schools' own class-profile pages, a later step).
  */
 export function AdmissionsFacts({ slug, degree }: { slug: string; degree: 'MD' | 'DO' }) {

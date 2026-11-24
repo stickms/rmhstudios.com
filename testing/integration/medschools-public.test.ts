@@ -26,8 +26,9 @@ const SLUG = MEDSCHOOL_FIXTURE_SLUG;
 const INACTIVE_SLUG = 'it-medschools-fixture-inactive';
 
 /**
- * The AAMC MSAR facts of the fixture school. Seeded before any request: the school page's loader prefetches the facts
- * URL, and the public response micro-cache would otherwise keep an empty list for that URL for 30 s.
+ * The AAMC MSAR facts and one Admit.org curriculum fact of the fixture school. Seeded before any request: the school
+ * page's loader prefetches the facts URL, and the public response micro-cache would otherwise keep an empty list for
+ * that URL for 30 s.
  */
 async function seedSchoolFacts(): Promise<void> {
   const q = (sql: string, params: unknown[]) => db().query(sql, params);
@@ -46,6 +47,13 @@ async function seedSchoolFacts(): Promise<void> {
      values ('it-fact-2', $1, 'REG', 2027, 'COA_IN_STATE', 69123, null, null, 'AAMC_MSAR_REPORT',
              'https://students-residents.aamc.org/media/7071/download?attachment',
              'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Tuition, Fees and Insurance Information', 7071, 2, '2026-11-24')
+     on conflict do nothing`,
+    [schoolId],
+  );
+  await q(
+    `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueText", "valueJson", source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
+     values ('it-fact-3', $1, 'REG', 0, 'CURRICULUM_CLERKSHIP_GRADING', 'H_HP_P_F', '{"text":"H/HP/P/F"}'::jsonb, 'ADMIT',
+             'https://admit.org', 'Admit.org', null, null, '2026-11-24')
      on conflict do nothing`,
     [schoolId],
   );
@@ -524,7 +532,11 @@ describe('the public school facts endpoint', () => {
     expect(res.status).toBe(200);
     expect(Object.keys(res.body).sort()).toEqual(FACTS_KEYS);
     expect(res.headers.get('cache-control')).toBe('public, max-age=600, s-maxage=3600, stale-while-revalidate=86400');
-    expect(res.body.facts.map((f: { kind: string }) => f.kind)).toEqual(['ACCEPTS_OUT_OF_STATE', 'COA_IN_STATE']);
+    expect(res.body.facts.map((f: { kind: string }) => f.kind)).toEqual([
+      'ACCEPTS_OUT_OF_STATE',
+      'COA_IN_STATE',
+      'CURRICULUM_CLERKSHIP_GRADING',
+    ]);
     for (const f of res.body.facts) expect(Object.keys(f).sort()).toEqual(FACT_KEYS);
     expect(res.body.facts[0]).toMatchObject({
       value: 'YES',
@@ -533,6 +545,17 @@ describe('the public school facts endpoint', () => {
       checkedOn: '2026-11-24',
     });
     expect(res.body.facts[1]).toMatchObject({ num: 69123, report: 'Tuition, Fees and Insurance Information' });
+    // Admit.org's curriculum rows come through with their own source label, no report and no entering class.
+    expect(res.body.facts[2]).toMatchObject({
+      value: 'H_HP_P_F',
+      printed: 'H/HP/P/F',
+      reportId: null,
+      report: '',
+      cycleYear: 0,
+      sourceLabel: 'Admit.org',
+      sourceUrl: 'https://admit.org',
+      checkedOn: '2026-11-24',
+    });
     expect(res.body.pageUrl).toMatch(/^https:\/\/students-residents\.aamc\.org\//);
     const text = JSON.stringify(res.body);
     for (const f of ['schoolId', '"page"', 'userId', 'it-fact-']) expect(text).not.toContain(f);
@@ -551,10 +574,19 @@ describe('the public school facts endpoint', () => {
     expect(JSON.stringify(a.body)).toBe(JSON.stringify((await anon.get(factsUrl())).body));
   });
 
-  it('renders the Admissions facts section in the server HTML of the Activity tab, with its source line', async () => {
-    const res = await anon.get(`/rmh-medschool/${SLUG}`);
+  it('renders Curriculum and Admissions facts in the server HTML of the Facts tab, each with its source line', async () => {
+    const res = await anon.get(`/rmh-medschool/${SLUG}?tab=facts`);
     expect(res.status).toBe(200);
     expect(String(res.body)).toContain('Admissions facts');
     expect(String(res.body)).toContain('Source: AAMC MSAR Report for Applicants and Advisors, 2027 entering class');
+    expect(String(res.body)).toContain('Curriculum');
+    expect(String(res.body)).toContain('H/HP/P/F');
+    expect(String(res.body)).toContain('Compiled by Admit.org; confirm with the school.');
+  });
+
+  it('keeps the Activity tab to activity: the facts moved to their own tab', async () => {
+    const res = await anon.get(`/rmh-medschool/${SLUG}`);
+    expect(res.status).toBe(200);
+    expect(String(res.body)).not.toContain('Admissions facts');
   });
 });

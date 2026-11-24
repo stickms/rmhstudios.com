@@ -295,6 +295,16 @@ Consequences:
   went from 3000 to 3500 for it. Requests use the shared Admit host's backfill session (3 s plus 0-1 s jitter,
   Retry-After, three-strike halt). No `DEEPSEEK_API_KEY`: counts are tracked, no post is fetched, cursors kept, PARTIAL.
   Detail: `features/medschools/CLAUDE.md`.
+  **Admit curriculum (roadmap item 11, phase C).** `medschools.admit-curriculum` (`exclusive`, `retryLimit: 0`, expires
+  after 15 min, tick guarded with `maxRuntimeMs` equal to that expiry and the run ending itself at 5 min), Saturday 02:25
+  UTC (`25 2 * * 6`, `MEDSCHOOLS_ADMIT_CURRICULUM_CRON`; fired by the `jobs` timekeeper), behind
+  `MEDSCHOOLS_ADMIT_ENABLED` and its own `MEDSCHOOLS_ADMIT_CURRICULUM_ENABLED`; a manual run bypasses both. It makes
+  **one** GraphQL request (`getAllSchoolCurriculum`, about 190 schools) on the shared Admit host, so the request and
+  its robots.txt check spend the persisted `ADMIT` daily budget and the host's spacing and three-strike halt apply. No
+  model call and no dedupe secret (the reply holds no person). A persisted 6 day minimum interval
+  (`lastRealRunWithin`, `outcome: 'skipped-min-interval'`) stops extra runs after a deploy; the worker queues the first
+  run at start while none has finished OK or PARTIAL (`admitCurriculumOwed`). Result: `MedSchoolFact` rows with source
+  `ADMIT` and a `MedSourceRun` (job `admit-curriculum`); detail in `features/medschools/CLAUDE.md`.
   **Forecast job (phase 5).** `medschools.forecast` (daily at 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`, `exclusive`,
   `retryLimit: 0`, expires after 20 min, tick guarded with `maxRuntimeMs` equal to that expiry and a `shouldStop` one
   minute before it; cron owned by the `jobs` timekeeper through `startScheduledConsumer`; no flag, no secret and **no

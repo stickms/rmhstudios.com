@@ -16,3 +16,5 @@ export type {
   NormalizedAdmitStats,
   ProgramFlag,
 } from './types';
+export { mapCurriculumRow } from './curriculum';
+export type { AdmitCurriculum, CurriculumFact } from './curriculum';

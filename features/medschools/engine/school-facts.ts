@@ -16,7 +16,7 @@
 export const MSAR_PAGE_URL =
   'https://students-residents.aamc.org/medical-school-admission-requirements/medical-school-admission-requirements-reports-applicants-and-advisors';
 
-export const FACT_SOURCES = ['AAMC_MSAR_REPORT', 'SCHOOL_PROFILE'] as const;
+export const FACT_SOURCES = ['AAMC_MSAR_REPORT', 'SCHOOL_PROFILE', 'ADMIT'] as const;
 export type FactSourceId = (typeof FACT_SOURCES)[number];
 
 /** The reports structured so far, by AAMC media id, with the name the AAMC page gives each link. */
@@ -131,6 +131,74 @@ export function factSourceLine(report: string, cycleYear: number, pdfSource: str
   return pdfSource && !SCHOOLS_THEMSELVES.test(pdfSource.trim()) ? `${base} (${pdfSource.replace(/\.$/, '')})` : base;
 }
 
+/**
+ * The curriculum facts of Admit.org's `getAllSchoolCurriculum` (source `ADMIT`). Not part of an AAMC report, so they are
+ * a catalogue of their own: no report id, and the entering class does not apply (`CURRICULUM_CYCLE`). A kind is held as
+ *  - `grading`: code from `PRECLINICAL_GRADING_CODES` or `CLERKSHIP_GRADING_CODES`, the verbatim string in `printed`;
+ *  - `years`: num is the length in years when the string reads "N Year(s)", the verbatim string in `printed`;
+ *  - `exams`: code NBME | IN_HOUSE | BOTH | OTHER, the verbatim string in `printed`;
+ *  - `yesno`: code YES | NO (Admit leaves it unset when it does not know: then there is no row, never a NO);
+ *  - `text`: the verbatim list in `printed`, items joined by "; ".
+ * Admit's own `internal_rank` is deliberately not a kind: it is never stored or shown.
+ */
+export const CURRICULUM_KINDS = {
+  CURRICULUM_PRECLINICAL_GRADING: { type: 'grading', label: 'Preclinical grading' },
+  CURRICULUM_PRECLINICAL_LENGTH: { type: 'years', label: 'Preclinical length' },
+  CURRICULUM_CLERKSHIP_GRADING: { type: 'grading', label: 'Clerkship grading' },
+  CURRICULUM_SHELF_EXAMS: { type: 'exams', label: 'Shelf exams' },
+  CURRICULUM_MSPE: { type: 'yesno', label: 'MSPE' },
+  CURRICULUM_LECTURE_ATTENDANCE: { type: 'yesno', label: 'Lecture attendance required' },
+  AOA_CHAPTER: { type: 'yesno', label: 'AOA chapter' },
+  HOME_HOSPITALS: { type: 'text', label: 'Home hospitals' },
+} as const satisfies Record<string, { type: 'grading' | 'years' | 'exams' | 'yesno' | 'text'; label: string }>;
+export type CurriculumKindId = keyof typeof CURRICULUM_KINDS;
+export const CURRICULUM_KIND_IDS = Object.keys(CURRICULUM_KINDS) as CurriculumKindId[];
+export const isCurriculumKind = (v: unknown): v is CurriculumKindId => typeof v === 'string' && v in CURRICULUM_KINDS;
+
+/** Curriculum facts are not about an entering class; this stands in the unique key so a weekly refresh updates in place. */
+export const CURRICULUM_CYCLE = 0;
+export const ADMIT_SOURCE_URL = 'https://admit.org';
+export const ADMIT_SOURCE_LABEL = 'Admit.org';
+
+export const PRECLINICAL_GRADING_CODES = ['PASS_FAIL', 'TIERED', 'OTHER'] as const;
+export const CLERKSHIP_GRADING_CODES = ['H_HP_P_F', 'H_P_F', 'P_F', 'OTHER'] as const;
+export const SHELF_EXAM_CODES = ['NBME', 'IN_HOUSE', 'BOTH', 'OTHER'] as const;
+
+const squash = (v: string): string => v.replace(/\s+/g, ' ').trim();
+
+/** Preclinical scale: only "P/F" is pass/fail; a scale of honors or letter grades is tiered; anything else is shown as written. */
+export function normalisePreclinicalGrading(raw: string): (typeof PRECLINICAL_GRADING_CODES)[number] {
+  const v = squash(raw).toUpperCase();
+  if (v === 'P/F') return 'PASS_FAIL';
+  if (/^(H|A)(\/[A-Z+]{1,3})+$/.test(v) && /(^|\/)(P|C)(\/|$)/.test(v) && /(^|\/)F$/.test(v)) return 'TIERED';
+  return 'OTHER';
+}
+
+/** Clerkship scale: the three scales applicants compare, exactly; every other string is `OTHER` and shown as written. */
+export function normaliseClerkshipGrading(raw: string): (typeof CLERKSHIP_GRADING_CODES)[number] {
+  const v = squash(raw).toUpperCase();
+  if (v === 'H/HP/P/F') return 'H_HP_P_F';
+  if (v === 'H/P/F') return 'H_P_F';
+  if (v === 'P/F') return 'P_F';
+  return 'OTHER';
+}
+
+export function normaliseShelfExams(raw: string): (typeof SHELF_EXAM_CODES)[number] {
+  const v = squash(raw).toLowerCase();
+  if (v === 'nbme based') return 'NBME';
+  if (v === 'in-house exams') return 'IN_HOUSE';
+  if (v === 'both') return 'BOTH';
+  return 'OTHER';
+}
+
+/** "1.5 Years" -> 1.5, "1 Year" -> 1; any other string has no number and is shown as written. */
+export function parseYears(raw: string): number | null {
+  const m = /^(\d{1,2}(?:\.\d)?) years?$/i.exec(squash(raw));
+  if (!m) return null;
+  const n = Number(m[1]);
+  return n > 0 && n <= 6 ? n : null;
+}
+
 /** A code as words, for the page. */
 export const FACT_CODE_LABEL: Record<string, string> = {
   YES: 'Yes',
@@ -144,4 +212,17 @@ export const FACT_CODE_LABEL: Record<string, string> = {
   RECOMMENDED: 'Recommended',
   REQUIRED: 'Required',
   SJT_ACCEPTED: 'Accepted in place of a situational judgment test',
+};
+
+/** Curriculum codes in plain words (the page's wording is i18n; these are the English defaults the importer tests read). */
+export const CURRICULUM_CODE_LABEL: Record<string, string> = {
+  PASS_FAIL: 'Pass / fail',
+  TIERED: 'Tiered grades',
+  H_HP_P_F: 'Honors, high pass, pass, fail',
+  H_P_F: 'Honors, pass, fail',
+  P_F: 'Pass / fail',
+  NBME: 'NBME shelf exams',
+  IN_HOUSE: 'In-house exams',
+  BOTH: 'NBME and in-house exams',
+  OTHER: '',
 };
