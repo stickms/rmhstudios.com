@@ -140,7 +140,68 @@ async function seedSchoolFacts(): Promise<void> {
     MDPHD_EVIDENCE,
     MDPHD_PAGE,
   );
+  // The school's own class profile (source SCHOOL_PROFILE): two classes, a repeated OTHER, an MD-PhD-only figure.
+  const profile = (
+    id: string,
+    program: string,
+    cycleYear: number,
+    kind: string,
+    text: string,
+    num: number | null,
+    json: object,
+  ) =>
+    q(
+      `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueText", "valueNum", "valueJson", note, source, "sourceUrl", "sourceLabel", "checkedOn")
+       values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, 'SCHOOL_PROFILE', $10, 'School class profile', '2026-11-24')
+       on conflict do nothing`,
+      [
+        id,
+        schoolId,
+        program,
+        cycleYear,
+        kind,
+        text,
+        num,
+        JSON.stringify({ text, qualifier: null, url: PROFILE_PAGE, unit: null, ...json }),
+        (json as { evidence: string }).evidence,
+        PROFILE_PAGE,
+      ],
+    );
+  await profile('it-profile-1', 'REG', 2026, 'PROFILE_MCAT_MEDIAN', '517', 517, {
+    label: 'Class of 2030',
+    evidence: 'Median MCAT 517',
+    order: 0,
+  });
+  await profile('it-profile-2', 'REG', 2026, 'PROFILE_APPLICANTS', '7,412', 7412, {
+    label: 'Class of 2030',
+    evidence: 'Applicants 7,412',
+    order: 1,
+  });
+  await profile('it-profile-3', 'REG', 2026, 'PROFILE_OTHER', '22%', null, {
+    label: 'Class of 2030',
+    qualifier: 'first-generation college students',
+    evidence: 'First generation 22%',
+    order: 2,
+  });
+  await profile('it-profile-4', 'REG', 2026, 'PROFILE_OTHER#2', '31%', null, {
+    label: 'Class of 2030',
+    qualifier: 'rural',
+    evidence: 'Rural 31%',
+    order: 3,
+  });
+  await profile('it-profile-5', 'PHD', 2026, 'PROFILE_APPLICANTS', '562', 562, {
+    label: 'Class of 2030',
+    qualifier: 'MD-PhD (MSTP)',
+    evidence: 'MSTP applicants 562',
+    order: 4,
+  });
+  await profile('it-profile-6', 'REG', 2025, 'PROFILE_MCAT_MEDIAN', '516', 516, {
+    label: 'Class of 2029',
+    evidence: 'Median MCAT 516',
+    order: 0,
+  });
 }
+const PROFILE_PAGE = 'https://fixture.edu/class-profile';
 const MDPHD_PAGE = 'https://fixture.edu/md-phd';
 const MDPHD_EVIDENCE = 'Years 1-2: preclinical; Years 3-6: PhD training; Years 7-8: clinical clerkships.';
 
@@ -713,7 +774,9 @@ describe('the public secondaries endpoint', () => {
 
 /* --------------------------- school facts: the AAMC MSAR report rows and their endpoint --------------------------- */
 
-const FACTS_KEYS = ['facts', 'mdphd', 'pageUrl'];
+const FACTS_KEYS = ['classes', 'facts', 'mdphd', 'pageUrl'];
+const PROFILE_CLASS_KEYS = ['checkedOn', 'enteringYear', 'label', 'stats', 'url'];
+const PROFILE_STAT_KEYS = ['evidence', 'kind', 'num', 'program', 'qualifier', 'value'];
 const MDPHD_KEYS = ['mstp', 'program', 'timeline'];
 const MDPHD_PROGRAM_KEYS = ['checkedOn', 'exists', 'name', 'source', 'sourceUrl'];
 const MDPHD_TIMELINE_KEYS = ['checkedOn', 'evidence', 'pattern', 'phases', 'sourceUrl', 'totalYears'];
@@ -836,6 +899,49 @@ describe('the public school facts endpoint', () => {
     const none = String((await anon.get(`/med/${SECONDARIES_NOTYET_SLUG}?tab=facts`)).body);
     expect(none).toContain('No combined program');
     expect(none).not.toContain('medapp-phasebar');
+  });
+
+  it('serves the class profile with pinned keys, newest class first, the figures as the page writes them', async () => {
+    const res = await anon.get(factsUrl());
+    const classes = res.body.classes;
+    expect(classes.map((c: { label: string; enteringYear: number }) => [c.label, c.enteringYear])).toEqual([
+      ['Class of 2030', 2026],
+      ['Class of 2029', 2025],
+    ]);
+    for (const c of classes) {
+      expect(Object.keys(c).sort()).toEqual(PROFILE_CLASS_KEYS);
+      for (const st of c.stats) expect(Object.keys(st).sort()).toEqual(PROFILE_STAT_KEYS);
+    }
+    expect(classes[0].url).toBe(PROFILE_PAGE);
+    expect(classes[0].checkedOn).toBe('2026-11-24');
+    expect(
+      classes[0].stats.map(
+        (x: { kind: string; value: string; program: string }) => `${x.program}:${x.kind}:${x.value}`,
+      ),
+    ).toEqual(['REG:MCAT_MEDIAN:517', 'REG:APPLICANTS:7,412', 'REG:OTHER:22%', 'REG:OTHER:31%', 'PHD:APPLICANTS:562']);
+    expect(classes[0].stats[1]).toEqual({
+      kind: 'APPLICANTS',
+      program: 'REG',
+      value: '7,412',
+      num: 7412,
+      qualifier: null,
+      evidence: 'Applicants 7,412',
+    });
+    // Profile rows never join the AAMC / Admit facts list, and no internal id leaks.
+    for (const f of res.body.facts) expect(f.kind).not.toMatch(/^PROFILE_/);
+    expect(JSON.stringify(classes)).not.toMatch(/it-profile-|schoolId|"order"/);
+    expect((await anon.get(factsUrl(SECONDARIES_NOTYET_SLUG))).body.classes).toEqual([]);
+  });
+
+  it('shows the Entering class panel first on the Facts tab in the server HTML, and none without a profile', async () => {
+    const html = String((await anon.get(`/med/${SLUG}?tab=facts`)).body);
+    expect(html).toContain('Entering class');
+    expect(html).toContain('Class of 2030 · entered 2026');
+    expect(html).toContain('Median MCAT');
+    expect(html).toContain('Figures as the school publishes them.');
+    expect(html.indexOf('school-profile-heading')).toBeLessThan(html.indexOf('school-curriculum-heading'));
+    const none = String((await anon.get(`/med/${SECONDARIES_NOTYET_SLUG}?tab=facts`)).body);
+    expect(none).not.toContain('school-profile-heading');
   });
 
   it('never depends on the viewer', async () => {

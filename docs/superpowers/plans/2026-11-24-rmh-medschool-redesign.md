@@ -2,8 +2,9 @@
 
 Written from a read-only pass over the repo; paths are repo-relative. Where a claim could not be verified, it says so.
 **Status (2026-11-24): phase A is built** (see "Phase A as built" below, which corrects this plan where the code
-differed), "Phase B1 as built", "Phase B2 as built" and "Phase B3 as built". Phases A and B are done; C and D are not
-started.
+differed), "Phase B1 as built", "Phase B2 as built" and "Phase B3 as built". Phases A and B are done. Phase C: step 1
+(the AAMC reports), the curriculum, the MD-PhD programs and step 2 (the schools' own class profiles, "Phase C step 2 as
+built") are built; the RMH tracker tiles and the admin corrections tab of section 4 are not. D is not started.
 
 ## Owner answers (2026-11-24)
 
@@ -543,6 +544,26 @@ other things." Admit.org's `getAllSchoolCurriculum` as `MedSchoolFact` rows with
   with a link, then one muted sentence: "Compiled by Admit.org; confirm with the school."
 - **Open.** What Admit's `mspe` flag means is not stated by the API (the row is labelled "MSPE" with Yes or No, as Admit
   names it); read it off Admit's curriculum page before giving it a longer label.
+
+## Phase C step 2 as built (class profiles)
+
+Entering-class statistics from each school's OWN class-profile page or PDF, on the Facts tab. Where the code differs
+from section 4 below:
+
+- **Data.** `data/medschools/class-profiles.json` (94 schools, 523 figures, checked 2026-11-24): researched by hand with
+  the site's static contact user agent, 3 s plus jitter, robots.txt honoured, refusals not worked around; every figure's
+  evidence re-fetched and found verbatim on its url. Official pages only, never the MSAR profiles, US News, Admit or
+  forums; values exactly as written, never computed or rounded; classes before 2024 dropped; 27 classes are undated.
+  Kinds are the research brief's (`MCAT_MEDIAN`, `MCAT_MEAN`, `MCAT_RANGE`, `MCAT_10_90`, `GPA_*`, `SGPA_*`,
+  `APPLICANTS`, `INTERVIEWED`, `MATRICULANTS`, `IN_STATE_PCT`, `IN_STATE_COUNT`, `OTHER`), not the P10/P90 set above:
+  pages publish means, medians and ranges, and the two are never merged.
+- **Storage, no migration.** `MedSchoolFact` rows, source `SCHOOL_PROFILE`, kind `PROFILE_<KIND>` (`#n` for the n-th
+  figure of one kind in a class and program: pages list several `OTHER` figures, and the unique key has no other slot),
+  `cycleYear` the entering year or 0 for an undated class (the label kept in `valueJson`), program `PHD` for an MD-PhD
+  only figure. Two classes of one school differ in `cycleYear`, so the unique key holds both.
+- **Read rule.** No priority between sources: the profile is its own panel with its own source line, beside the AAMC
+  reports, never merged with them. No "Not published" tiles: a figure the page does not state is simply absent.
+- **UI.** `ui/facts/EnteringClass.tsx`, first on the Facts tab, not an Overview tab (there is none since B2).
 
 ## 4. Phase C: public school stats
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { encodeFragmentTerm, normaliseQuote, pdfPageUrl, textFragmentUrl } from './text-fragment';
+import {
+  encodeFragmentTerm,
+  isPdfUrl,
+  normaliseQuote,
+  pdfPageUrl,
+  textFragmentUrl,
+  textFragmentsUrl,
+} from './text-fragment';
 
 describe('text fragments', () => {
   it('encodes the characters the fragment syntax reserves', () => {
@@ -43,5 +50,20 @@ describe('text fragments', () => {
     );
     expect(pdfPageUrl('https://aamc.test/a.pdf', null)).toBe('https://aamc.test/a.pdf');
     expect(pdfPageUrl('https://aamc.test/a.pdf', 0)).toBe('https://aamc.test/a.pdf');
+  });
+});
+
+describe('several text fragments on one page', () => {
+  it('joins one directive per quote, once each, and leaves the URL alone without quotes', () => {
+    expect(textFragmentsUrl('https://s.edu/p#top', ['Median MCAT 517', 'Applicants 7,412', 'Median MCAT 517'])).toBe(
+      'https://s.edu/p#:~:text=Median%20MCAT%20517&text=Applicants%207%2C412',
+    );
+    expect(textFragmentsUrl('https://s.edu/p', [null, ''])).toBe('https://s.edu/p');
+  });
+
+  it('knows a PDF by its path', () => {
+    expect(isPdfUrl('https://s.edu/files/Class%20Profile.pdf')).toBe(true);
+    expect(isPdfUrl('https://s.edu/profile.pdf?v=2')).toBe(true);
+    expect(isPdfUrl('https://s.edu/class-profile')).toBe(false);
   });
 });

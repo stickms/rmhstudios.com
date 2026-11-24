@@ -79,6 +79,8 @@ import { ensureMsarReportsImported } from '../../features/medschools/scrape/msar
 import mdphdProgramsJson from '../../data/medschools/mdphd-programs.json';
 import mstpT32Json from '../../data/medschools/mstp-t32.json';
 import { ensureMdPhdImported } from '../../features/medschools/scrape/mdphd';
+import classProfilesJson from '../../data/medschools/class-profiles.json';
+import { ensureClassProfilesImported } from '../../features/medschools/scrape/class-profiles';
 import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/medschools/scrape/run-sdn-live';
 import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
@@ -830,6 +832,12 @@ async function bootstrap(): Promise<boolean> {
       await ensureMdPhdImported(medPrisma, mdphdProgramsJson, mstpT32Json, log);
     } catch (e) {
       log.error(`Bootstrap: MD-PhD import failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    // Entering-class statistics from each school's own class-profile page: the same once-per-version bootstrap.
+    try {
+      await ensureClassProfilesImported(medPrisma, classProfilesJson, log);
+    } catch (e) {
+      log.error(`Bootstrap: class profiles import failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     return (
       CYCLETRACK_ENABLED &&

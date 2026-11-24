@@ -24,6 +24,7 @@ import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
 import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { Curriculum } from './facts/Curriculum';
+import { EnteringClass } from './facts/EnteringClass';
 import { MdPhdProgram } from './facts/MdPhdProgram';
 import { PageHead } from './shell/PageHead';
 import { SkeletonSwap } from './skeletons';
@@ -198,6 +199,7 @@ export function SchoolPage() {
                 <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
               ) : search.tab === 'facts' ? (
                 <>
+                  <EnteringClass slug={slug} schoolName={detail.school.shortName} degree={detail.school.degree} />
                   <Curriculum slug={slug} admitHref={detail.links.find((l) => l.source === 'ADMIT')?.href} />
                   <AdmissionsFacts slug={slug} degree={detail.school.degree} />
                   <MdPhdProgram slug={slug} degree={detail.school.degree} />

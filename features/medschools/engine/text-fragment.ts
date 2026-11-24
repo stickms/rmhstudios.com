@@ -53,6 +53,29 @@ export function textFragmentUrl(
   return `${withoutHash(url)}#:~:text=${directive}`;
 }
 
+/**
+ * `url#:~:text=…&text=…` highlighting several quotes on one page (a group of figures read from one profile): each quote
+ * is a directive of its own, as `textFragmentUrl` builds it, duplicates once. A browser highlights every one it finds and
+ * ignores the rest. No quotes returns the URL unchanged.
+ */
+export function textFragmentsUrl(url: string, quotes: ReadonlyArray<string | null | undefined>): string {
+  const seen = new Set<string>();
+  const directives: string[] = [];
+  for (const q of quotes) {
+    const one = textFragmentUrl(url, q);
+    const i = one.indexOf('#:~:text=');
+    if (i === -1) continue;
+    const d = one.slice(i + '#:~:'.length);
+    if (seen.has(d)) continue;
+    seen.add(d);
+    directives.push(d);
+  }
+  return directives.length === 0 ? url : `${withoutHash(url)}#:~:${directives.join('&')}`;
+}
+
+/** True for a PDF url: a text fragment does not apply there. */
+export const isPdfUrl = (url: string): boolean => /\.pdf(?:$|[?#])/i.test(url);
+
 /** `url#page=N` for a page of a PDF; the URL unchanged when the page is unknown. */
 export function pdfPageUrl(url: string, page: number | null | undefined): string {
   if (!page || !Number.isInteger(page) || page < 1) return url;

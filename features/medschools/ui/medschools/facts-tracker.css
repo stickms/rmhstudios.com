@@ -406,3 +406,88 @@
   flex: none;
   margin-block-start: 2px;
 }
+
+/* ── Facts: the entering class (the school's own class profile) ─────────── */
+/* The class's label with its source at the end, then the figures as tonal tiles: two to a row on a phone, as many as fit
+   from 640px. Numbers in tabular figures, exactly as the school writes them. */
+.medapp-profile__class {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+}
+.medapp-profile__label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--app-text-muted);
+}
+.medapp-figs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--app-med-space-2);
+  margin: 0;
+}
+@media (min-width: 640px) {
+  .medapp-figs {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  }
+}
+.medapp-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  padding: var(--app-med-space-3);
+  border-radius: var(--app-med-radius);
+  background-color: var(--app-med-tonal);
+}
+.medapp-fig dt {
+  margin: 0;
+  font-size: var(--app-med-text-meta);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--app-text-muted);
+}
+.medapp-fig dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.medapp-fig__value {
+  font-size: var(--app-med-text-section);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+.medapp-fig__note {
+  font-size: var(--app-med-text-meta);
+  line-height: 1.35;
+  color: var(--app-text-muted);
+}
+.medapp-profile__other {
+  font-variant-numeric: tabular-nums;
+}
+.medapp-profile__othervalue {
+  justify-content: flex-end;
+}
+.medapp-profile__phd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  padding-block-start: var(--app-med-space-3);
+  border-top: 1px solid var(--app-border);
+}
+.medapp-profile__prev,
+.medapp-profile__prev:last-child {
+  border-top: 1px solid var(--app-border);
+  border-bottom: 0;
+}
+.medapp-profile > .medapp-source {
+  margin: 0;
+}
+.medapp-profile__prev > .medapp-profile__class {
+  padding-block-end: var(--app-med-space-2);
+}

@@ -1,0 +1,5037 @@
+{
+  "source": "Each school's own class-profile page",
+  "method": "Each school's own pages and PDFs, fetched with curl and the site's static contact user agent MarlonJack/1.0 (contact: admin@rmhstudios.com), one request at a time, 3 s or more apart plus jitter, robots.txt honoured; a site that refused (403, 429, a bot challenge) was recorded as refused and not worked around. Every figure's evidence was then re-fetched from its url on the check date and kept only when found verbatim on the page (whitespace, quotes and dashes folded; letters and digits in order for tables; for an animated counter, the label in the text and the number in an HTML data attribute) with the value inside it.",
+  "checkedOn": "2026-11-24",
+  "rules": [
+    "Official pages only: the school's own domain and PDFs hosted there. Never the AAMC MSAR profiles, AACOMAS or the Choose DO explorer, US News, Admit.org, Student Doctor Network, forums, prep companies or Wikipedia, even where they quote the school.",
+    "Only what the page states: a value is exactly as the page writes it, never computed, inferred or rounded; mean and median are kept apart, and a figure whose statistic the page does not name is OTHER with the page's words as its qualifier.",
+    "Classes before the 2024 entering class are dropped. A class the page does not date (\"current\", \"most recent\") keeps the page's label and enteringYear null.",
+    "A figure for an MD-PhD (or DO-PhD, MSTP) program only says so in its qualifier."
+  ],
+  "verifier": "pnpm exec tsx scripts/medschools/check-class-profiles.ts re-fetches every class url politely and reports each figure found or not found",
+  "schools": [
+    {
+      "slug": "a-t-still-kirksville",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Five-year average, most recent reporting period",
+          "enteringYear": null,
+          "url": "https://www.atsu.edu/pdf/KCOM_DO_Program_Sheet_2026_DIG.pdf",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.68",
+              "unit": null,
+              "qualifier": "five-year average",
+              "evidence": "Cumulative GPA.............................3.68"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.61",
+              "unit": null,
+              "qualifier": "five-year average",
+              "evidence": "Science GPA.....................................3.61"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "503",
+              "unit": null,
+              "qualifier": "five-year average",
+              "evidence": "MCAT...................................................503"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "172",
+              "unit": null,
+              "qualifier": "class size, five-year average data",
+              "evidence": "Class size............................................172"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "alabama",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026",
+          "enteringYear": 2026,
+          "url": "https://www.uab.edu/medicine/home/admissions",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,835",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2026 2025 2024 Applied 3,835 4,207 4,330"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "498",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 498 481 493"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "194",
+              "unit": null,
+              "qualifier": "labelled Enrolled",
+              "evidence": "Enrolled 194 196 190"
+            },
+            {
+              "kind": "OTHER",
+              "value": "509",
+              "unit": null,
+              "qualifier": "MCAT Score (page does not say mean or median)",
+              "evidence": "MCAT Score 509 509 509"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.88",
+              "unit": null,
+              "qualifier": "labelled Average GPA",
+              "evidence": "Average GPA 3.88 3.87 3.83"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "169",
+              "unit": null,
+              "qualifier": "Alabama",
+              "evidence": "Alabama 169 161 155"
+            }
+          ]
+        },
+        {
+          "label": "2025",
+          "enteringYear": 2025,
+          "url": "https://www.uab.edu/medicine/home/admissions",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "4,207",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2026 2025 2024 Applied 3,835 4,207 4,330"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "481",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 498 481 493"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "196",
+              "unit": null,
+              "qualifier": "labelled Enrolled",
+              "evidence": "Enrolled 194 196 190"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.87",
+              "unit": null,
+              "qualifier": "labelled Average GPA",
+              "evidence": "Average GPA 3.88 3.87 3.83"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "alabama-com",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://www.acom.edu/admissions/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3815",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3815 Applications Received"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "1118",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "1118 Applicants Interviewed"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "203",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "203 Students Enrolled"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "503",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "503 Average MCAT Score"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.60",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.60 Total GPA Average"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "albany",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Most recent incoming class",
+          "enteringYear": null,
+          "url": "https://www.amc.edu/admissions/md-program-admissions/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "145",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class size of 145"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "The average MCAT score among students in our most recent incoming class was 512"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": "overall",
+              "evidence": "GPA for students in our most recent incoming class was 3.82 overall"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.77",
+              "unit": null,
+              "qualifier": "science",
+              "evidence": "3.82 overall and 3.77 in science"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "alice-walton",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://www.alwmedschool.org/admissions/class-profiles",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "48",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Each of our 48 students in the inaugural Class of 2029"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "513",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "513 Median MCAT"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.89",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.89 Mean GPA"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.87",
+              "unit": null,
+              "qualifier": "BCPM",
+              "evidence": "3.87 Mean BCPM GPA"
+            },
+            {
+              "kind": "OTHER",
+              "value": "19%",
+              "unit": null,
+              "qualifier": "first generation college students",
+              "evidence": "19% First Generation College Students"
+            },
+            {
+              "kind": "OTHER",
+              "value": "15%",
+              "unit": null,
+              "qualifier": "students from rural areas",
+              "evidence": "15% Students from Rural Areas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "arizona-phoenix",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://phoenixmed.arizona.edu/sites/default/files/education/admissions/co2030admissionsSummary-new.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,695",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "6,695 Applicants"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "488",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "488 Interviewed"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "145",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "145 Matriculated"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "515",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "515 91st"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "Overall GPA (statistic not specified)",
+              "evidence": "3.84 3.78"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.78",
+              "unit": null,
+              "qualifier": "BCPM GPA (statistic not specified)",
+              "evidence": "3.84 3.78"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "75%",
+              "unit": null,
+              "qualifier": "Arizona Residents",
+              "evidence": "Arizona Residents 75%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "arizona-state",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.asu.edu/future-students/admissions/class-profile",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "36",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class size 36"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "832",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications received 832"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "213",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviews completed 213"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT score 511"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "504-518",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MCAT score range 504-518"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.79",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Undergraduate total GPA 3.79"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.77",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Undergraduate science GPA 3.77"
+            },
+            {
+              "kind": "OTHER",
+              "value": "8%",
+              "unit": null,
+              "qualifier": "first-generation college students",
+              "evidence": "First-generation college students 8%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "arkansas",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "class that started in 2026",
+          "enteringYear": 2026,
+          "url": "https://medicine.uams.edu/admissions/apply/",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "510",
+              "unit": null,
+              "qualifier": "among those accepted",
+              "evidence": "Among those accepted, the average MCAT score was 510"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.86",
+              "unit": null,
+              "qualifier": "among those accepted",
+              "evidence": "Among those accepted, the average GPA was 3.86"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "277",
+              "unit": null,
+              "qualifier": "Arkansas applicants only; page says \"in 2026\"",
+              "evidence": "277 Arkansas applicants applied"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "221",
+              "unit": null,
+              "qualifier": "Arkansas applicants only; page says \"in 2026\"",
+              "evidence": "221 Arkansas applicants interviewed with COM faculty"
+            }
+          ]
+        },
+        {
+          "label": "fall 2025 freshmen",
+          "enteringYear": 2025,
+          "url": "https://medicine.uams.edu/admissions/apply/",
+          "stats": [
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "144",
+              "unit": null,
+              "qualifier": "Arkansas applicants who joined the COM as freshmen in fall 2025",
+              "evidence": "144 Arkansas applicants joined the COM as freshmen in fall 2025"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "belmont-university",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://www.belmont.edu/medicine/admissions/class-profile-ada.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "2,832",
+              "unit": null,
+              "qualifier": "total applications",
+              "evidence": "Total Applications: 2,832"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "257",
+              "unit": null,
+              "qualifier": "virtual interviews",
+              "evidence": "Virtual Interviews: 257"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "54",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2029 Size: 54 students"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "510",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median MCAT 510 504–520"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "504–520",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median MCAT 510 504–520"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median GPA 3.81 3.41–4.0"
+            },
+            {
+              "kind": "GPA_RANGE",
+              "value": "3.41–4.0",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median GPA 3.81 3.41–4.0"
+            },
+            {
+              "kind": "OTHER",
+              "value": "24.6",
+              "unit": null,
+              "qualifier": "average age",
+              "evidence": "Average Age 24.6 21–31"
+            },
+            {
+              "kind": "OTHER",
+              "value": "14",
+              "unit": null,
+              "qualifier": "1st generation college students (count)",
+              "evidence": "1st Generation College Students: 14"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "boston",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Fall 2025 Entering students",
+          "enteringYear": 2025,
+          "url": "https://www.bumc.bu.edu/camed/about/camed-by-the-numbers/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "11,484",
+              "unit": null,
+              "qualifier": "MD & MD/PhD Applicants",
+              "evidence": "MD & MD/PhD Applicants 11,484"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "138",
+              "unit": null,
+              "qualifier": "Total MD & MD/PhD Entering",
+              "evidence": "Total MD & MD/PhD Entering 138"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "brown",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "MD Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://admission.med.brown.edu/life-brown/class-profile",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "144",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "144 Matriculated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "california-health-sciences",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://osteopathic.chsu.edu/wp-content/uploads/sites/2/26_COM_Class30-InfoStats.pdf",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "507.1",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "507.1 Average"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.59",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Overall GPA 3.59"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.51",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Approximately 3.51 Average Science GPA"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "3,700",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3,700 162 36 Applicants"
+            }
+          ]
+        },
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://osteopathic.chsu.edu/wp-content/uploads/sites/2/25_COM_InfoStats_Class29-1.pdf",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505.3",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "505.3 Average"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.57",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Overall GPA 3.57"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.48",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Approximately 3.48 Average Science GPA"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "3,300",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3,300 162 44 Applicants"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "california-northstate",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.cnsu.edu/PDFs/COM%20Demographic%20Data%20Class%20of%202030.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,845",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications Received Interviewed Enrolled 3,845"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "475",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3,845 475 118"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "118",
+              "unit": null,
+              "qualifier": "Enrolled",
+              "evidence": "475 118"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "515",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT Score 515"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": "Average BCPM GPA",
+              "evidence": "Average BCPM GPA Average Overall GPA 3.85 3.84"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "Average Overall GPA",
+              "evidence": "3.85 3.84"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "109",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "In state Out of State 109"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "campbell",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "most recent class matriculated",
+          "enteringYear": null,
+          "url": "https://medicine.campbell.edu/admissions/student-profile/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "162",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size: 162"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505",
+              "unit": null,
+              "qualifier": "labelled MCAT Average",
+              "evidence": "MCAT Average: 505"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.52",
+              "unit": null,
+              "qualifier": "labelled Science GPA Average",
+              "evidence": "Science GPA Average: 3.52"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.60",
+              "unit": null,
+              "qualifier": "labelled Cumulative GPA Average",
+              "evidence": "Cumulative GPA Average: 3.60"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "53%",
+              "unit": null,
+              "qualifier": "North Carolina Resident",
+              "evidence": "North Carolina Resident: 53%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "central-michigan",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026 Entering Class Profile",
+          "enteringYear": 2026,
+          "url": "https://www.cmich.edu/academics/colleges/college-of-medicine/education/md/admissions/prospective/profiles",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "8,250",
+              "unit": null,
+              "qualifier": "number of applications",
+              "evidence": "Number of applications: 8,250"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "513",
+              "unit": null,
+              "qualifier": "campus interviews",
+              "evidence": "Number of campus interviews: 513"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "104",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Number in class: 104"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "87",
+              "unit": null,
+              "qualifier": "Michigan residents",
+              "evidence": "Michigan residents: 87"
+            }
+          ]
+        },
+        {
+          "label": "2025 Entering Class Profile",
+          "enteringYear": 2025,
+          "url": "https://www.cmich.edu/academics/colleges/college-of-medicine/education/md/admissions/prospective/profiles",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "8,513",
+              "unit": null,
+              "qualifier": "number of applications",
+              "evidence": "Number of applications: 8,513"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "484",
+              "unit": null,
+              "qualifier": "number of interviews",
+              "evidence": "Number of interviews: 484"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "104",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Number in class: 104"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "86",
+              "unit": null,
+              "qualifier": "Michigan residents",
+              "evidence": "Michigan residents: 86"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "chicago",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering class",
+          "enteringYear": null,
+          "url": "https://pritzker.uchicago.edu/admissions/class-profile",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "91",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "The 91 students who make up our entering class"
+            },
+            {
+              "kind": "OTHER",
+              "value": "84%",
+              "unit": null,
+              "qualifier": "took one or more years between undergraduate degree and medical school",
+              "evidence": "84% took one or more years between receiving their undergraduate degree and beginning medical school"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "columbia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "VP&S Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://www.vagelos.columbia.edu/about-us/facts-and-statistics",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,591",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "7,591 applicants, 745 interviewed, 140 new students"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "745",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "7,591 applicants, 745 interviewed, 140 new students"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "140",
+              "unit": null,
+              "qualifier": "new students",
+              "evidence": "7,591 applicants, 745 interviewed, 140 new students"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.57%",
+              "unit": null,
+              "qualifier": "first-generation college students",
+              "evidence": "3.57% First-generation college students"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "creighton",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://www.creighton.edu/medicine/programs/medicine-md/class-profile",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,253",
+              "unit": null,
+              "qualifier": "labelled applications",
+              "evidence": "7,253 applications 999 interviewed 251 accepted"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "999",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "7,253 applications 999 interviewed 251 accepted"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": "labelled average MCAT",
+              "evidence": "512 average MCAT"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.88",
+              "unit": null,
+              "qualifier": "median cumulative GPA",
+              "evidence": "median cumulative GPA of 3.88"
+            },
+            {
+              "kind": "OTHER",
+              "value": "251",
+              "unit": null,
+              "qualifier": "accepted",
+              "evidence": "7,253 applications 999 interviewed 251 accepted"
+            },
+            {
+              "kind": "OTHER",
+              "value": "10%",
+              "unit": null,
+              "qualifier": "first-generation college students",
+              "evidence": "10% of students are first-generation college students"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "dartmouth",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Accepted applications (no class year stated)",
+          "enteringYear": null,
+          "url": "https://geiselmed.dartmouth.edu/admissions/applying/admissions-requirements/",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "516",
+              "unit": null,
+              "qualifier": "accepted applications",
+              "evidence": "average MCAT score of 516"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.77",
+              "unit": null,
+              "qualifier": "accepted applications, undergraduate GPA",
+              "evidence": "average undergraduate GPA of 3.77"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "east-tennessee",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Class Statistics - as of April 27, 2026",
+          "enteringYear": null,
+          "url": "https://www.etsu.edu/com/admissions/collegeinfo/statistics.php",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "2,929",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications received: 2,929"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "440",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviews completed: 440"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.76",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "BCPM: 3.76"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total: 3.82"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 512"
+            }
+          ]
+        },
+        {
+          "label": "Entering Class Statistics - 2025",
+          "enteringYear": 2025,
+          "url": "https://www.etsu.edu/com/admissions/collegeinfo/statistics.php",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "4,009",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications received: 4,009"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "410",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviews completed: 410"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.70",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "BCPM: 3.70"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.77",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total: 3.77"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 509"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "edward-via-auburn",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Accepted applicants (no class year stated)",
+          "enteringYear": null,
+          "url": "https://www.vcom.edu/admissions/applying/requirements",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "between 500 and 506",
+              "unit": null,
+              "qualifier": "average MCAT score of those accepted",
+              "evidence": "The average MCAT score of those accepted falls between 500 and 506"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "edward-via-carolinas",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Accepted students (undated)",
+          "enteringYear": null,
+          "url": "https://www.vcom.edu/admissions/applying/requirements",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "between 500 and 506",
+              "unit": null,
+              "qualifier": "average MCAT score of those accepted falls between",
+              "evidence": "The average MCAT score of those accepted falls between 500 and 506"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "florida",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering students (current)",
+          "enteringYear": null,
+          "url": "https://admissions.med.ufl.edu/faq/",
+          "stats": [
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": "entering students",
+              "evidence": "Our average science GPA for entering students is 3.85"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "516",
+              "unit": null,
+              "qualifier": "currently",
+              "evidence": "our average MCAT is currently 516"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "florida-atlantic",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering M.D. Class Profile",
+          "enteringYear": null,
+          "url": "https://www.fau.edu/medicine/md/admissions/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "4,165",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications 4,165"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "515",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean MCAT 515"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean GPA 3.85"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": "Mean BCPM",
+              "evidence": "Mean BCPM 3.82"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "78",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Number Matriculated 78"
+            },
+            {
+              "kind": "OTHER",
+              "value": "28%",
+              "unit": null,
+              "qualifier": "Number of Out-of-State Students",
+              "evidence": "Number of Out-of-State Students 28%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "georgetown",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "M.D. Class Profile (Entering Class)",
+          "enteringYear": null,
+          "url": "https://meded.georgetown.edu/admissions/degrees-and-admissions/md/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "14,953",
+              "unit": null,
+              "qualifier": "total applications",
+              "evidence": "Total Applications: 14,953"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "1,112",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants Interviewed: 1,112"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "203",
+              "unit": null,
+              "qualifier": "incoming class size",
+              "evidence": "Incoming Class Size: 203"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.74",
+              "unit": null,
+              "qualifier": "mean overall GPA",
+              "evidence": "Mean Overall GPA: 3.74"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "514",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean MCAT Score: 514"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "hawaii",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026 Admitted Class Profile",
+          "enteringYear": 2026,
+          "url": "https://admissions.jabsom.hawaii.edu/student/2026-incoming-class-profile.html",
+          "stats": [
+            {
+              "kind": "INTERVIEWED",
+              "value": "297",
+              "unit": null,
+              "qualifier": "total",
+              "evidence": "Applicants Interviewed 198 99 297"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "77",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size: 77"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "513",
+              "unit": null,
+              "qualifier": "labelled Average MCAT Total",
+              "evidence": "Average MCAT Total: 513"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.79",
+              "unit": null,
+              "qualifier": "Average Cumulative GPA",
+              "evidence": "Average Cumulative GPA: 3.79"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.73",
+              "unit": null,
+              "qualifier": "Average Science Cumulative GPA",
+              "evidence": "Average Science Cumulative GPA: 3.73"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "70",
+              "unit": null,
+              "qualifier": "Hawai'i residents (page spells with okina)",
+              "evidence": "Residents: 70 Out-of-State Residents: 7"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "2,658",
+              "unit": null,
+              "qualifier": "total",
+              "evidence": "Number of Applicants 298 2,360 2,658"
+            }
+          ]
+        },
+        {
+          "label": "2025 Admitted Class Profile",
+          "enteringYear": 2025,
+          "url": "https://admissions.jabsom.hawaii.edu/apply/archived-class-profile/2025-class-profile.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "2,368",
+              "unit": null,
+              "qualifier": "total",
+              "evidence": "Number of Applicants 239 2,129 2,368"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "286",
+              "unit": null,
+              "qualifier": "total",
+              "evidence": "Applicants Interviewed 162 124 286"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "77",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size: 77"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": "labelled Average MCAT Total",
+              "evidence": "Average MCAT Total: 512"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.79",
+              "unit": null,
+              "qualifier": "Average Cumulative GPA",
+              "evidence": "Average Cumulative GPA: 3.79"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.73",
+              "unit": null,
+              "qualifier": "Average Science Cumulative GPA",
+              "evidence": "Average Science Cumulative GPA: 3.73"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "howard",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Matriculating class",
+          "enteringYear": null,
+          "url": "https://medicine.howard.edu/admissions",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505",
+              "unit": null,
+              "qualifier": "Matriculating Class Mean",
+              "evidence": "Matriculating Class Mean score is 505"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "illinois",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://medicine.uic.edu/admissions/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "11,310",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "11,310 Applications"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "511 Avg MCAT"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.82 Avg GPA"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "59%",
+              "unit": null,
+              "qualifier": "Illinois Residents",
+              "evidence": "59 % Illinois Residents"
+            },
+            {
+              "kind": "OTHER",
+              "value": "52%",
+              "unit": null,
+              "qualifier": "Women in the class",
+              "evidence": "52 % Women in the class"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "incarnate-word",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Incoming Class of 2026",
+          "enteringYear": 2026,
+          "url": "https://osteopathic-medicine.uiw.edu/admissions/doctor-of-osteopathic-medicine/frequently-asked-questions.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,741",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications: 3,741"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "802",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 802"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "162",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculated 162"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.7",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Cumulative GPA 3.7"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.6",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Science GPA 3.6"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "506",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 506"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "86%",
+              "unit": null,
+              "qualifier": "Texas Residents",
+              "evidence": "Texas Residents 86%"
+            }
+          ]
+        },
+        {
+          "label": "Entering class of 2024",
+          "enteringYear": 2024,
+          "url": "https://osteopathic-medicine.uiw.edu/admissions/doctor-of-osteopathic-medicine/frequently-asked-questions.html",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.6",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Cumulative GPA - 3.6"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.55",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Science GPA - 3.55"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "504",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MCAT Score - 504"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "indiana",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://medicine.iu.edu/md/admissions/class-selection",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,822",
+              "unit": null,
+              "qualifier": "applications received",
+              "evidence": "Class of 2029 7,822 Applications received"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "365",
+              "unit": null,
+              "qualifier": "labelled Students enrolled",
+              "evidence": "365 Students enrolled"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "321",
+              "unit": null,
+              "qualifier": "in state/out of state 321/44",
+              "evidence": "321/44 In state/Out of state"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "labelled Average GPA",
+              "evidence": "3.84 Average GPA"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512.4",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "512.4 Average MCAT"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "kaiser-permanente",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medschool.kp.org/admissions/our-students",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "50",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class size 50"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "515",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean MCAT 515"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "515",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median MCAT 515"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean GPA (total) 3.85"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.86",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median GPA (total) 3.86"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "64%",
+              "unit": null,
+              "qualifier": "California (State of Residence)",
+              "evidence": "California 64%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "kentucky",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.uky.edu/sites/default/files/2026-11/Class%20Profile.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "5,435",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Applications 5,435"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "639",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 639"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "214",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculated 214"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "157",
+              "unit": null,
+              "qualifier": "Kentucky Residents",
+              "evidence": "Kentucky Residents 157"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509.5",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 509.5"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.86",
+              "unit": null,
+              "qualifier": "Average UG Total GPA",
+              "evidence": "Average UG Total GPA 3.86"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": "Average UG Science GPA",
+              "evidence": "Average UG Science GPA 3.82"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "louisville",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "recent incoming class academic averages",
+          "enteringYear": null,
+          "url": "https://medicine.louisville.edu/SOMAdmissions/md-program-admissions",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "508",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "508 Average MCAT"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.78",
+              "unit": null,
+              "qualifier": "labelled Average GPA",
+              "evidence": "3.78 Average GPA"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.70",
+              "unit": null,
+              "qualifier": "labelled BCPM GPA",
+              "evidence": "3.70 BCPM GPA"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "loyola",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://www.luc.edu/stritch/admissions/whychooseloyola/class-profile/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "171",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "comprised of 171 students"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "more than 14,000",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "selected from more than 14,000 applicants"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.82 Mean Science GPA"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.86",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.86 Mean Overall GPA"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "513",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "513 Mean MCAT Score"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "marian",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "class of 2030",
+          "enteringYear": 2026,
+          "url": "https://www.marian.edu/_documents/DO%20Profile%20Sheet%20-%20Class%20of%202030.pdf",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "503",
+              "unit": null,
+              "qualifier": "PDF label AVERAGE MCAT SCORE",
+              "evidence": "503 3.78 3.72"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.78",
+              "unit": null,
+              "qualifier": "PDF label AVERAGE CUMULATIVE GPA",
+              "evidence": "503 3.78 3.72"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.72",
+              "unit": null,
+              "qualifier": "PDF label AVERAGE SCIENCE GPA",
+              "evidence": "503 3.78 3.72"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "842",
+              "unit": null,
+              "qualifier": "PDF label CANDIDATES INTERVIEWED",
+              "evidence": "842 162"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "162",
+              "unit": null,
+              "qualifier": "PDF label STUDENTS ENROLLED",
+              "evidence": "842 162"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "60%",
+              "unit": null,
+              "qualifier": "Indiana",
+              "evidence": "60 percent are from Indiana"
+            },
+            {
+              "kind": "OTHER",
+              "value": "10%",
+              "unit": null,
+              "qualifier": "first generation",
+              "evidence": "10 percent of students"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "marshall",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering students 2026",
+          "enteringYear": 2026,
+          "url": "https://jcesom.marshall.edu/admissions/admissions-criteria/",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "Overall GPA (table column 2026; statistic not specified)",
+              "evidence": "Overall GPA 3.84 3.81 3.8"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.8",
+              "unit": null,
+              "qualifier": "Science GPA (table column 2026; statistic not specified)",
+              "evidence": "Science GPA 3.8 3.75 3.74"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Score 512 506 504"
+            }
+          ]
+        },
+        {
+          "label": "Entering students 2025",
+          "enteringYear": 2025,
+          "url": "https://jcesom.marshall.edu/admissions/admissions-criteria/",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "Overall GPA (table column 2025; statistic not specified)",
+              "evidence": "Overall GPA 3.84 3.81 3.8"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.75",
+              "unit": null,
+              "qualifier": "Science GPA (table column 2025; statistic not specified)",
+              "evidence": "Science GPA 3.8 3.75 3.74"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "506",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Score 512 506 504"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "maryland",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026 entering class",
+          "enteringYear": 2026,
+          "url": "https://www.medschool.umaryland.edu/admissions/your-path-to-medical-school/frequently-asked-questions/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,806",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "6,806 applications were received for the 2026 entering class"
+            },
+            {
+              "kind": "OTHER",
+              "value": "175",
+              "unit": null,
+              "qualifier": "spots in the first year class",
+              "evidence": "There are 175 spots in the new first year class"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "accepted students",
+              "evidence": "had an average GPA of 3.84"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "514",
+              "unit": null,
+              "qualifier": "accepted students",
+              "evidence": "an average MCAT score of 514"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "mayo",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026 first-year class",
+          "enteringYear": 2026,
+          "url": "https://college.mayo.edu/academics/mayo-clinic-alix-school-of-medicine/md-program/how-to-apply/class-profile/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "5,499",
+              "unit": null,
+              "qualifier": "M.D. program",
+              "evidence": "Applications received: 5,499"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "681",
+              "unit": null,
+              "qualifier": "M.D. program",
+              "evidence": "Applicants interviewed: 681"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "562",
+              "unit": null,
+              "qualifier": "M.D.-Ph.D. program",
+              "evidence": "Applications received: 562"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "76",
+              "unit": null,
+              "qualifier": "M.D.-Ph.D. program",
+              "evidence": "Applicants interviewed: 76"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "521",
+              "unit": null,
+              "qualifier": "98th percentile",
+              "evidence": "521 median MCAT score (98th percentile)"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.97",
+              "unit": null,
+              "qualifier": "cumulative",
+              "evidence": "3.97 median cumulative GPA"
+            },
+            {
+              "kind": "OTHER",
+              "value": "8",
+              "unit": null,
+              "qualifier": "first-generation college graduates (count)",
+              "evidence": "8 first-generation college graduates"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "medical-college-of-georgia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://www.augusta.edu/colleges/medicine/admissions/documents/class-of-2029-fact-admissions-sheet.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,367",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Applications 3,367"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "304",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculated Students 304"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.8",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average GPA Overall 3.8"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 512"
+            },
+            {
+              "kind": "OTHER",
+              "value": "4",
+              "unit": null,
+              "qualifier": "Non-Georgia Residents",
+              "evidence": "Non-Georgia Residents 4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "medical-university-of-south-carolina",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://medicine.musc.edu/programs/doctor-medicine/admissions/apply",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,417",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2029 Applications In-State: 546 Out-of-State: 2,871 Total: 3,417"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "333",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2029 Interviews In-State: 290 Out-of-State: 43 Total: 333"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2029 Metrics Average MCAT: 511"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": "Average Undergraduate GPA",
+              "evidence": "Average Undergraduate GPA: 3.85"
+            },
+            {
+              "kind": "OTHER",
+              "value": "180",
+              "unit": null,
+              "qualifier": "acceptances (total)",
+              "evidence": "Out-of-State: 17 Total: 180"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "miami",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://med.miami.edu/medical-education/admissions/class-profile",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "9,912",
+              "unit": null,
+              "qualifier": "total applicants",
+              "evidence": "Total Applicants 9,912"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "686",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 686"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "202",
+              "unit": null,
+              "qualifier": "matriculated",
+              "evidence": "Matriculated 202"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "74",
+              "unit": null,
+              "qualifier": "in-state",
+              "evidence": "In-State 74"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": "average cumulative GPA",
+              "evidence": "Average Cumulative GPA 3.85"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.80",
+              "unit": null,
+              "qualifier": "average science GPA",
+              "evidence": "Average Science GPA 3.80"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "516",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "Average MCAT 516"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "midwestern-arizona",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "AZCOM Class of 2028",
+          "enteringYear": 2024,
+          "url": "https://www.midwestern.edu/academics/degrees-programs/doctor-osteopathic-medicine-program/doctor-osteopathic-medicine-do-arizona-college-osteopathic-medicine",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "256",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size: 256"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.58",
+              "unit": null,
+              "qualifier": "average overall GPA",
+              "evidence": "Average Overall GPA: 3.58"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.5",
+              "unit": null,
+              "qualifier": "average science GPA",
+              "evidence": "Average Science GPA: 3.5"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "504",
+              "unit": null,
+              "qualifier": "labelled Average Composite MCAT",
+              "evidence": "Average Composite MCAT: 504"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "82",
+              "unit": null,
+              "qualifier": "Arizona",
+              "evidence": "Arizona (82)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "midwestern-chicago",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://www.midwestern.edu/academics/degrees-programs/doctor-osteopathic-medicine-program/doctor-osteopathic-medicine-do-chicago-college-osteopathic-medicine",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.65",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Overall GPA: 3.65"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.61",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Science GPA: 3.61"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Composite MCAT: 509"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "51%",
+              "unit": null,
+              "qualifier": "Illinois (State of Residency)",
+              "evidence": "Illinois – 51%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "minnesota",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Incoming Class of 2026",
+          "enteringYear": 2026,
+          "url": "https://med.umn.edu/about/facts-figures",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "167",
+              "unit": null,
+              "qualifier": "Twin Cities campus incoming students",
+              "evidence": "Twin Cities 167"
+            },
+            {
+              "kind": "OTHER",
+              "value": "65",
+              "unit": null,
+              "qualifier": "Duluth campus incoming students",
+              "evidence": "Duluth 65"
+            },
+            {
+              "kind": "OTHER",
+              "value": "24",
+              "unit": null,
+              "qualifier": "St. Cloud campus incoming students",
+              "evidence": "St. Cloud 24"
+            },
+            {
+              "kind": "OTHER",
+              "value": "8",
+              "unit": null,
+              "qualifier": "MSTP incoming students",
+              "evidence": "MSTP 8"
+            },
+            {
+              "kind": "OTHER",
+              "value": "20.1%",
+              "unit": null,
+              "qualifier": "non-resident",
+              "evidence": "Non-Resident 20.1%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "missouri-kansas-city",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "B.A./M.D. program, typical year (no class year stated)",
+          "enteringYear": null,
+          "url": "https://med.umkc.edu/academics/degree-and-certificate-programs/ba-md/faqs.php",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "approximately 1,500",
+              "unit": null,
+              "qualifier": "initial applications to the B.A./M.D. program",
+              "evidence": "approximately 1,500 initial applications"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "approximately 350",
+              "unit": null,
+              "qualifier": "selected for interview, B.A./M.D. program",
+              "evidence": "approximately 350 students to participate in the interview process"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "105–110",
+              "unit": null,
+              "qualifier": "incoming class, B.A./M.D. program",
+              "evidence": "The incoming class will be 105–110 students"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "morehouse",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Class of 2025",
+          "enteringYear": 2025,
+          "url": "https://www.msm.edu/Admissions/doctor-of-medicine/fact-sheet.php",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,875",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Entering Class of 2025 Total Applied 6,875"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "110",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Applied 6,875 Matriculated 110"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.64",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculated 110 Average GPA 3.64"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.56",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Science GPA 3.56"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505.6",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 505.6"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "62",
+              "unit": null,
+              "qualifier": "Georgia Residents",
+              "evidence": "Georgia Residents 62"
+            }
+          ]
+        },
+        {
+          "label": "Entering Class of 2024",
+          "enteringYear": 2024,
+          "url": "https://www.msm.edu/Admissions/doctor-of-medicine/fact-sheet.php",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,858",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Entering Class of 2024 Total Applied 6,858"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "105",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Applied 6,858 Matriculated 105"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.64",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculated 105 Average GPA 3.64"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.59",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Science GPA 3.59"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "504",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT 504 Average Age 24 Georgia Residents 63"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "63",
+              "unit": null,
+              "qualifier": "Georgia Residents",
+              "evidence": "Georgia Residents 63"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "mount-sinai",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "MSTP admissions statistics",
+          "enteringYear": null,
+          "url": "https://icahn.mssm.edu/education/admissions/md-phd",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "~600",
+              "unit": null,
+              "qualifier": "MD-PhD (MSTP)",
+              "evidence": "Number of applications: ~600"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "~100",
+              "unit": null,
+              "qualifier": "MD-PhD (MSTP)",
+              "evidence": "Number of interviews: ~100"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "12",
+              "unit": null,
+              "qualifier": "MD-PhD (MSTP)",
+              "evidence": "Number of matriculates: 12"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.77",
+              "unit": null,
+              "qualifier": "MD-PhD (MSTP)",
+              "evidence": "Mean GPA: 3.77 (range 3.13-4.0)"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "517",
+              "unit": null,
+              "qualifier": "MD-PhD (MSTP)",
+              "evidence": "Mean MCAT: 517 (range 507-525)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "new-york-medical-college",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Typical first-year class (no class year stated)",
+          "enteringYear": null,
+          "url": "https://www.nymc.edu/som/admissions--aid/",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.6",
+              "unit": null,
+              "qualifier": "typical first-year class, average overall GPA",
+              "evidence": "average overall GPA of 3.6"
+            },
+            {
+              "kind": "OTHER",
+              "value": "90th percentile",
+              "unit": null,
+              "qualifier": "typical first-year class, median MCAT score at the 90th percentile",
+              "evidence": "median MCAT score at the 90th percentile"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "new-york-university-grossman",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Incoming class (undated)",
+          "enteringYear": null,
+          "url": "https://med.nyu.edu/education/md-degree/md-admissions/by-the-numbers",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "8,271",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Out of 8,271 applicants who applied to our MD program this year"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "821",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "821 were interviewed"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "106",
+              "unit": null,
+              "qualifier": "incl. MD, MD/PhD and OMS students",
+              "evidence": "106 matriculated"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "523",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "had a median MCAT score of 523"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "516–527",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "(range: 516–527)"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.98",
+              "unit": null,
+              "qualifier": "undergraduate",
+              "evidence": "Their median undergraduate GPA was 3.98"
+            },
+            {
+              "kind": "GPA_RANGE",
+              "value": "3.79–4.0",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "(range: 3.79–4.0)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "noorda",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "COM 2030 (Fall 2026)",
+          "enteringYear": 2026,
+          "url": "https://www.noorda.edu/outcomes/matriculants/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "192",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculants 190 169 193 192"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.52",
+              "unit": null,
+              "qualifier": "average cumulative undergraduate GPA",
+              "evidence": "Average Cumulative Undergraduate GPA 3.41 3.37 3.47 3.52"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.41",
+              "unit": null,
+              "qualifier": "average science GPA",
+              "evidence": "Average Science GPA 3.32 3.28 3.36 3.41"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "503",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "Average MCAT 503 502 502 503"
+            }
+          ]
+        },
+        {
+          "label": "COM 2029 (Fall 2025)",
+          "enteringYear": 2025,
+          "url": "https://www.noorda.edu/outcomes/matriculants/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "193",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculants 190 169 193 192"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.47",
+              "unit": null,
+              "qualifier": "average cumulative undergraduate GPA",
+              "evidence": "Average Cumulative Undergraduate GPA 3.41 3.37 3.47 3.52"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.36",
+              "unit": null,
+              "qualifier": "average science GPA",
+              "evidence": "Average Science GPA 3.32 3.28 3.36 3.41"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "502",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "Average MCAT 503 502 502 503"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "north-carolina",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Current class (no year stated)",
+          "enteringYear": null,
+          "url": "https://www.med.unc.edu/md/admissions/faqs/",
+          "stats": [
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.79",
+              "unit": null,
+              "qualifier": "mean cumulative GPA for science coursework, current class",
+              "evidence": "The current mean cumulative GPA for science coursework is 3.79"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.66",
+              "unit": null,
+              "qualifier": "mean cumulative GPA for non-science coursework, current class",
+              "evidence": "The current mean cumulative GPA for non-science coursework is 3.66"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": "matriculating class",
+              "evidence": "The average MCAT score for the matriculating class is 512"
+            },
+            {
+              "kind": "OTHER",
+              "value": "15-18%",
+              "unit": null,
+              "qualifier": "non-residents among matriculating students each year (approximately)",
+              "evidence": "Approximately 15-18% of matriculating students each year are non-residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "northeast-ohio",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Fall 2026 Entering Student Profile",
+          "enteringYear": 2026,
+          "url": "https://www.neomed.edu/wp-content/uploads/com-entering-student-profile.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,089",
+              "unit": null,
+              "qualifier": "Doctor of Medicine (MD) total applicants",
+              "evidence": "Doctor of Medicine (MD) 3,089 358 204"
+            },
+            {
+              "kind": "OTHER",
+              "value": "358",
+              "unit": null,
+              "qualifier": "Applicants accepted",
+              "evidence": "Doctor of Medicine (MD) 3,089 358 204"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "204",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Doctor of Medicine (MD) 3,089 358 204"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "76.5%",
+              "unit": null,
+              "qualifier": "Ohio resident",
+              "evidence": "204 53.9% 44.6% 1.5% 76.5% 23.5%"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.76",
+              "unit": null,
+              "qualifier": "average GPA (overall)",
+              "evidence": "Average GPA (Overall) 3.76"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.68",
+              "unit": null,
+              "qualifier": "average science GPA",
+              "evidence": "Average Science GPA 3.68"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": "row MCAT Score under Average / Score column",
+              "evidence": "MCAT Score 511"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "northern-colorado",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Inaugural class (Class of 2030)",
+          "enteringYear": 2026,
+          "url": "https://www.unco.edu/news/articles/university-of-northern-colorado-welcomes-inaugural-class-of-80-medical-students/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "80",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Welcomes Inaugural Class of 80 Medical Students"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "506",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "average MCAT score of 506"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.47",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "average cumulative GPA of 3.47"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.39",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "science GPA of 3.39"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "Fifty-four percent",
+              "unit": null,
+              "qualifier": "Colorado residents",
+              "evidence": "Fifty-four percent of the students are Colorado residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "northwestern",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Class of 2026",
+          "enteringYear": 2026,
+          "url": "https://www.feinberg.northwestern.edu/admissions/about/entering-class-profile.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "8,936",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "8,936 Applications received"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "681",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "681 Applicants invited to interview"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "141",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "141 Class size"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.95",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.95 Median GPA"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "520",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "520 Median MCAT"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "oakland",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "OUWB Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://oakland.edu/medicine/admissions/ouwb-class-profile/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "8,627",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "8,627 Applicants"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "500",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "500 Interviews"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "124",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "124 Class Size"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.90",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MEDIAN OVERALL GPA 3.90"
+            },
+            {
+              "kind": "SGPA_MEDIAN",
+              "value": "3.70",
+              "unit": null,
+              "qualifier": "median math & science GPA",
+              "evidence": "MEDIAN MATH & SCIENCE GPA 3.70"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MEDIAN MCAT SCORE 509"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "63%",
+              "unit": null,
+              "qualifier": "Michigan Residents",
+              "evidence": "63% Michigan Residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "ohio-university",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering class of 2026",
+          "enteringYear": 2026,
+          "url": "https://www.ohio.edu/medicine/med-admissions/requirements",
+          "stats": [
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.59",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "the average science GPA was 3.59"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.67",
+              "unit": null,
+              "qualifier": "overall",
+              "evidence": "and overall, 3.67"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505.08",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "The average MCAT score was 505.08"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "260",
+              "unit": null,
+              "qualifier": "Class size",
+              "evidence": "Class size – 260"
+            },
+            {
+              "kind": "OTHER",
+              "value": "11.2%",
+              "unit": null,
+              "qualifier": "First-generation college",
+              "evidence": "First-generation college – 11.2%"
+            },
+            {
+              "kind": "OTHER",
+              "value": "8.5%",
+              "unit": null,
+              "qualifier": "Out-of-state",
+              "evidence": "Out-of-state – 8.5%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "oregon-health-and-science",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering class (undated)",
+          "enteringYear": null,
+          "url": "https://www.ohsu.edu/school-of-medicine/md-program/admissions",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.66",
+              "unit": null,
+              "qualifier": "total",
+              "evidence": "An average total GPA of 3.66"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.57",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "An average science GPA of 3.57"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "An average MCAT of 509"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "6,000+",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total applications: 6,000+"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "543",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants interviewed: 543"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "Approx. 150",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class size: Approx. 150"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "82%",
+              "unit": null,
+              "qualifier": "Oregon residents",
+              "evidence": "Entering students: 82% Oregon residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pacific-northwest",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entrance Fall of 2026",
+          "enteringYear": 2026,
+          "url": "https://www.pnwu.edu/about/fast-facts-university/fast-facts-college-of-osteopathic-medicine/",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "2264",
+              "unit": null,
+              "qualifier": "Supplemental Applicants",
+              "evidence": "Supplemental Applicants 2284 1925 2264"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "144",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "COM Matriculants 145 145 144"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.6",
+              "unit": null,
+              "qualifier": "average cumulative GPA",
+              "evidence": "Average Cumulative GPA 3.6 3.6 3.6"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.5",
+              "unit": null,
+              "qualifier": "average science GPA",
+              "evidence": "Average Science GPA 3.5 3.5 3.5"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "500",
+              "unit": null,
+              "qualifier": "labelled Average MCAT Score (highest)",
+              "evidence": "Average MCAT Score (highest) 502 503 500"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "63.2%",
+              "unit": null,
+              "qualifier": "% from the NW",
+              "evidence": "% from the NW 60.7% 65.5% 63.2%"
+            }
+          ]
+        },
+        {
+          "label": "Entrance Fall of 2025",
+          "enteringYear": 2025,
+          "url": "https://www.pnwu.edu/about/fast-facts-university/fast-facts-college-of-osteopathic-medicine/",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "1925",
+              "unit": null,
+              "qualifier": "Supplemental Applicants",
+              "evidence": "Supplemental Applicants 2284 1925 2264"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "145",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "COM Matriculants 145 145 144"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "503",
+              "unit": null,
+              "qualifier": "labelled Average MCAT Score (highest)",
+              "evidence": "Average MCAT Score (highest) 502 503 500"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "penn-state",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2025 Profile",
+          "enteringYear": 2025,
+          "url": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/class-profiles",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "11,207",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "11,207 Applications"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "617",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "617 Students Interviewed"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "150",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "150 New MD Students"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "45%",
+              "unit": null,
+              "qualifier": "Pennsylvania Residents",
+              "evidence": "45% Pennsylvania Residents"
+            }
+          ]
+        },
+        {
+          "label": "2024 Facts and Figures",
+          "enteringYear": 2024,
+          "url": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/class-profiles",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "9,382",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applications Total: 9,382"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "700",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Students interviewed: 700"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "149",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "New students matriculated: 149"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "36%",
+              "unit": null,
+              "qualifier": "Pennsylvania residents (53 students)",
+              "evidence": "Pennsylvania residents: 36% (53 students)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pennsylvania",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026-27 Entering Class",
+          "enteringYear": 2026,
+          "url": "https://www.med.upenn.edu/admissions/entering-class-profile",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "154",
+              "unit": null,
+              "qualifier": "incl. MD/PhD",
+              "evidence": "Incoming Students: 154"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "522",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "SCI AO GPA MCAT CARS CPBS PSBB BBFL Median 3.98 4.00 3.98 522"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "521.4",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean 3.95 3.96 3.96 521.4"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.98",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "SCI AO GPA MCAT CARS CPBS PSBB BBFL Median 3.98 4.00 3.98 522"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.96",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean 3.95 3.96 3.96 521.4"
+            },
+            {
+              "kind": "GPA_RANGE",
+              "value": "3.66 - 4.00",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "GPA Range: 3.66 - 4.00"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "510 - 528",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MCAT Range: 510 - 528"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "philadelphia-com",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Class of 2026",
+          "enteringYear": 2026,
+          "url": "https://www.pcom.edu/academics/programs-and-degrees/doctor-of-osteopathic-medicine-philadelphia-campus/program-data.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "9,069",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Entering Class of 2026 Applied: 9,069"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "269",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Matriculated: 269"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505",
+              "unit": null,
+              "qualifier": "Average MCAT Scores (2026), overall",
+              "evidence": "Overall MCAT Score: 505"
+            },
+            {
+              "kind": "OTHER",
+              "value": "506",
+              "unit": null,
+              "qualifier": "accepted",
+              "evidence": "Accepted: 506"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "philadelphia-com-georgia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Class of 2026",
+          "enteringYear": 2026,
+          "url": "https://www.pcom.edu/academics/programs-and-degrees/doctor-of-osteopathic-medicine-georgia-campus/program-data.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,563",
+              "unit": null,
+              "qualifier": "labelled Applied",
+              "evidence": "Applied: 3,563"
+            },
+            {
+              "kind": "OTHER",
+              "value": "317",
+              "unit": null,
+              "qualifier": "Accepted",
+              "evidence": "Accepted: 317"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "135",
+              "unit": null,
+              "qualifier": "labelled Matriculated",
+              "evidence": "Matriculated: 135"
+            },
+            {
+              "kind": "OTHER",
+              "value": "504",
+              "unit": null,
+              "qualifier": "Average MCAT Scores (2026) Overall MCAT Score; mean/median unstated",
+              "evidence": "Overall MCAT Score: 504"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "philadelphia-com-south-georgia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "All PCOM classes entering in 2024",
+          "enteringYear": 2024,
+          "url": "https://www.pcom.edu/do/apply.html",
+          "stats": [
+            {
+              "kind": "SGPA_MEDIAN",
+              "value": "3.5",
+              "unit": null,
+              "qualifier": "undergraduate science GPA, median for all PCOM classes (all campuses)",
+              "evidence": "Undergraduate science GPA: 3.5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "quinnipiac",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://www.qu.edu/schools/medicine/apply-for-admission/class-profile/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "9,426",
+              "unit": null,
+              "qualifier": "AMCAS applications received",
+              "evidence": "AMCAS Applications Received 9,426 7,341 7,556"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "95",
+              "unit": null,
+              "qualifier": "labelled Class Size",
+              "evidence": "Class Size 95 95 95"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median MCAT Score 511 511 511"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.7",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median GPA 3.7 3.7 3.8"
+            }
+          ]
+        },
+        {
+          "label": "Class of 2028",
+          "enteringYear": 2024,
+          "url": "https://www.qu.edu/schools/medicine/apply-for-admission/class-profile/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,341",
+              "unit": null,
+              "qualifier": "AMCAS applications received",
+              "evidence": "AMCAS Applications Received 9,426 7,341 7,556"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "95",
+              "unit": null,
+              "qualifier": "labelled Class Size",
+              "evidence": "Class Size 95 95 95"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median MCAT Score 511 511 511"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.7",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Median GPA 3.7 3.7 3.8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "rochester",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class Profile (current class; year not stated)",
+          "enteringYear": null,
+          "url": "https://www.urmc.rochester.edu/education/md/admissions/our-people.aspx",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "104",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class size is 104 students"
+            },
+            {
+              "kind": "GPA_RANGE",
+              "value": "3.65 - 4.0",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "GPA range is 3.65 - 4.0"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "511 - 527",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MCAT range is 511 - 527"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "rosalind-franklin",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Allopathic Medicine (MD) - 2026 Entering Class",
+          "enteringYear": 2026,
+          "url": "https://www.rosalindfranklin.edu/academics/chicago-medical-school/degree-programs/allopathic-medicine-md/class-profile/",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "203",
+              "unit": null,
+              "qualifier": "labelled Class Size",
+              "evidence": "Class Size 203"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "16,269",
+              "unit": null,
+              "qualifier": "AMCAS applicants",
+              "evidence": "Number of AMCAS Applicants 16,269"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.72",
+              "unit": null,
+              "qualifier": "GPA - Cumulative (mean/median unstated)",
+              "evidence": "GPA - Cumulative 3.72"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.63",
+              "unit": null,
+              "qualifier": "GPA - Science (mean/median unstated)",
+              "evidence": "GPA - Science 3.63"
+            },
+            {
+              "kind": "OTHER",
+              "value": "508",
+              "unit": null,
+              "qualifier": "Entrance Exam (MCAT) (mean/median unstated)",
+              "evidence": "Entrance Exam (MCAT) 508"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "66%",
+              "unit": null,
+              "qualifier": "in-state residents (based on permanent address)",
+              "evidence": "In-State Residents (based on permanent address) 66%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "south-alabama",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://www.southalabama.edu/colleges/com/futurestudents/",
+          "stats": [
+            {
+              "kind": "OTHER",
+              "value": "34 males and 39 females",
+              "unit": null,
+              "qualifier": "gender counts",
+              "evidence": "34 males and 39 females"
+            },
+            {
+              "kind": "OTHER",
+              "value": "19%",
+              "unit": null,
+              "qualifier": "coming from rural Alabama counties",
+              "evidence": "19% coming from rural Alabama counties"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "south-carolina-columbia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://sc.edu/study/colleges_schools/medicine/education/md_program/admission_and_application/index.php",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3,254",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3,254 Total Applicants"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "102",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "102 new students matriculating in the entering class"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.80",
+              "unit": null,
+              "qualifier": "cumulative",
+              "evidence": "3.80 Average GPA (Cumulative)"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.76",
+              "unit": null,
+              "qualifier": "BCPM",
+              "evidence": "3.76 Average BCPM GPA (Sciences GPA)"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "509 Average MCAT"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "78",
+              "unit": null,
+              "qualifier": "South Carolina residents",
+              "evidence": "78 South Carolina Resi"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "suny-downstate",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class Profile (Entering First Year Class)",
+          "enteringYear": null,
+          "url": "https://www.downstate.edu/education-training/college-of-medicine/admissions/first-year-class.html",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "approximately 200",
+              "unit": null,
+              "qualifier": "stated as approximate",
+              "evidence": "Size of Entering First Year Class: approximately 200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "tennessee",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026 Admissions Cycle",
+          "enteringYear": 2026,
+          "url": "https://uthsc.edu/medicine/admissions/documents/com-profile-of-admissions-2026-final.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "2798",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2798 406 271 181"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "406",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2798 406 271 181"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "181",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2798 406 271 181"
+            }
+          ]
+        },
+        {
+          "label": "2025 Admissions Cycle",
+          "enteringYear": 2025,
+          "url": "https://uthsc.edu/medicine/admissions/documents/com-2025-medicine-profile-of-admissions.pdf",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "2744",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2744 415 277 174"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "415",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2744 415 277 174"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "174",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "2744 415 277 174"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "texas-christian-university",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Class of 2026 (Class of 2030)",
+          "enteringYear": 2026,
+          "url": "https://mdschool.tcu.edu/admissions/class-profiles/2026-class-profile/",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "513",
+              "unit": null,
+              "qualifier": "MCAT Exam Class Average",
+              "evidence": "513 Is The MCAT Exam Class Average"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "Overall Grade Point Average",
+              "evidence": "3.81 Is the Overall Grade Point Average"
+            },
+            {
+              "kind": "OTHER",
+              "value": "23",
+              "unit": null,
+              "qualifier": "students are California residents",
+              "evidence": "23 Students students are California residents"
+            }
+          ]
+        },
+        {
+          "label": "Entering Class of 2025 (Class of 2029)",
+          "enteringYear": 2025,
+          "url": "https://mdschool.tcu.edu/admissions/class-profiles/2025-class-profile/",
+          "stats": [
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": "MCAT Exam Class Average",
+              "evidence": "512 Is The MCAT Exam Class Average"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "Overall Grade Point Average",
+              "evidence": "3.81 Is the Overall Grade Point Average"
+            },
+            {
+              "kind": "OTHER",
+              "value": "21",
+              "unit": null,
+              "qualifier": "students are California residents",
+              "evidence": "21 Students students are California residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "texas-tech-foster",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "EY2025",
+          "enteringYear": 2025,
+          "url": "https://ttuhscep.edu/som/admissions/class-profile.aspx",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "4,814",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total applicants 4,814"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "656",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Number interviewed 656"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "130",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Entering class size 130"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "119",
+              "unit": null,
+              "qualifier": "Texas residents, matriculants",
+              "evidence": "Entering class size 130 Texas residents 119"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "matriculants",
+              "evidence": "Non-Texas residents 11 Average overall GPA 3.84"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "matriculants, BCPM",
+              "evidence": "11 Average overall GPA 3.84 Average science GPA (BCPM) 3.81"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": "matriculants",
+              "evidence": "3.81 Average MCAT score 509"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "toledo",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "M.D. 2026 Entering Class Profile",
+          "enteringYear": 2026,
+          "url": "https://www.utoledo.edu/med/md/classprofile.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,051",
+              "unit": null,
+              "qualifier": "applications received, total",
+              "evidence": "Non-Ohio Residents: 5,834 TOTAL: 7,051"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "175",
+              "unit": null,
+              "qualifier": "enrollment",
+              "evidence": "ENROLLMENT 175 students"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "62%",
+              "unit": null,
+              "qualifier": "Ohio residents",
+              "evidence": "62% Ohio Residents"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "109",
+              "unit": null,
+              "qualifier": "Ohio residents",
+              "evidence": "Ohio Residents (62%): 109"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "average total GPA",
+              "evidence": "Average Total GPA: 3.81"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.75",
+              "unit": null,
+              "qualifier": "average total science GPA",
+              "evidence": "Average Total Science GPA: 3.75"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "510",
+              "unit": null,
+              "qualifier": "average total MCAT (79th percentile)",
+              "evidence": "Average Total MCAT: 510 (79th percentile)"
+            },
+            {
+              "kind": "OTHER",
+              "value": "15%",
+              "unit": null,
+              "qualifier": "first generation",
+              "evidence": "15% First Generation"
+            }
+          ]
+        },
+        {
+          "label": "M.D. 2025 Entering Class Profile",
+          "enteringYear": 2025,
+          "url": "https://www.utoledo.edu/med/md/classprofile-2025.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,577",
+              "unit": null,
+              "qualifier": "applications received, total",
+              "evidence": "Non-Ohio Residents: 5,414 TOTAL: 6,577"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "175",
+              "unit": null,
+              "qualifier": "entering class size total",
+              "evidence": "Non-Ohio Residents (37%): 64 Male (49%): 86 Female (50%): 87 TOTAL: 175"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.78",
+              "unit": null,
+              "qualifier": "average total GPA",
+              "evidence": "Average Total GPA: 3.78"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.71",
+              "unit": null,
+              "qualifier": "average total science GPA",
+              "evidence": "Average Total Science GPA: 3.71"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "510",
+              "unit": null,
+              "qualifier": "average total MCAT (79th percentile)",
+              "evidence": "Average Total MCAT: 510 (79th percentile)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "touro-california",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://tu.edu/programs/osteopathic-medicine/admissions/class-statistics/",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.58",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2030 GPA & MCAT Average Cumulative GPA: 3.58"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.49",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average Science GPA: 3.49"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "507",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT: 507"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "89%",
+              "unit": null,
+              "qualifier": "In-State/Out-of-State: 89%/11%",
+              "evidence": "In-State/Out-of-State: 89%/11%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "touro-nevada",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering class (undated)",
+          "enteringYear": null,
+          "url": "https://tun.touro.edu/programs/osteopathic-medicine/-do-application--requirements/",
+          "stats": [
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.47",
+              "unit": null,
+              "qualifier": "science undergraduate",
+              "evidence": "the average science undergraduate and cumulative GPA of the entering class were 3.47 and 3.54, respectively"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.54",
+              "unit": null,
+              "qualifier": "cumulative",
+              "evidence": "3.47 and 3.54, respectively"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "506.9",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "The average MCAT score was 506.9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "tufts",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.tufts.edu/academics/medicine/class-profile",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "204",
+              "unit": null,
+              "qualifier": "total students enrolled in the MD Program (Class of 2030 section)",
+              "evidence": "Total students enrolled in the MD Program: 204"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.84",
+              "unit": null,
+              "qualifier": "mean total GPA",
+              "evidence": "Mean Total GPA: 3.84"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.80",
+              "unit": null,
+              "qualifier": "mean science GPA",
+              "evidence": "Mean Science GPA: 3.80"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "514",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean MCAT Score: 514"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "tulane",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.tulane.edu/education/undergraduate-medical-education-md-program/admissions/class-profile",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "15,877",
+              "unit": null,
+              "qualifier": "AMCAS applications",
+              "evidence": "Tulane received 15,877 AMCAS applications this year"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "190",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "for a class of 190 students"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MCAT score average was 509"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.71",
+              "unit": null,
+              "qualifier": "overall undergraduate GPA",
+              "evidence": "overall undergraduate GPA was 3.71"
+            }
+          ]
+        },
+        {
+          "label": "Fall 2024 class",
+          "enteringYear": 2024,
+          "url": "https://medicine.tulane.edu/admissions/md/faqs",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.61",
+              "unit": null,
+              "qualifier": "average cumulative GPA",
+              "evidence": "enrolled in the fall 2024 class was a 3.61"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "509",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "The average MCAT score was a 509"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "uniformed-services",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Incoming class (undated)",
+          "enteringYear": null,
+          "url": "https://medschool.usuhs.edu/admissions/application-requirements",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.7",
+              "unit": null,
+              "qualifier": "cumulative and science",
+              "evidence": "The average GPA of our incoming class is a 3.7 (cumulative and in the sciences)"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "510",
+              "unit": null,
+              "qualifier": "matriculants",
+              "evidence": "The average MCAT score for matriculants at USU is 510"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-davis",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://health.ucdavis.edu/media-resources/medical-school/documents/pdfs/admissions/som-demographics-class-of-2030-26-0426-digital%20(1).pdf",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.78",
+              "unit": null,
+              "qualifier": "Overall GPA",
+              "evidence": "Overall GPA 3.78"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.86",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Science GPA 3.86"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "513",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "MCAT 513"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-irvine",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2026 MS1/First-Year Class Profile",
+          "enteringYear": 2026,
+          "url": "https://medschool.uci.edu/education/medical-education/medical-degree-program/admissions",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,874",
+              "unit": null,
+              "qualifier": "total applications",
+              "evidence": "7,874 Total Applications"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "125",
+              "unit": null,
+              "qualifier": "labelled Matriculated",
+              "evidence": "Total Applications 125 Matriculated"
+            },
+            {
+              "kind": "GPA_MEDIAN",
+              "value": "3.87",
+              "unit": null,
+              "qualifier": "cumulative",
+              "evidence": "Cumulative: 3.87"
+            },
+            {
+              "kind": "SGPA_MEDIAN",
+              "value": "3.85",
+              "unit": null,
+              "qualifier": "science",
+              "evidence": "Science: 3.85"
+            },
+            {
+              "kind": "MCAT_MEDIAN",
+              "value": "516",
+              "unit": null,
+              "qualifier": "median total",
+              "evidence": "Median Total: 516"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "114",
+              "unit": null,
+              "qualifier": "in-state",
+              "evidence": "In-State: 114"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-california-san-diego",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Incoming Class of 2026",
+          "enteringYear": 2026,
+          "url": "https://medschool.ucsd.edu/education/md-combined/admissions/by-the-numbers.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "10,874",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "10,874 Applicants"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "973",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "973 Interviews"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "140",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "140 Students Matriculated"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.86",
+              "unit": null,
+              "qualifier": "Average Undergraduate GPA",
+              "evidence": "3.86 Average Undergraduate GPA"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.82 Average Science GPA"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "514.6",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "514.6 Average MCAT Score"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "76%",
+              "unit": null,
+              "qualifier": "California residents",
+              "evidence": "76% of students are California residents"
+            },
+            {
+              "kind": "OTHER",
+              "value": "23%",
+              "unit": null,
+              "qualifier": "First Generation College Students",
+              "evidence": "23% of students First Generation College Students"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-austin",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class snapshot (undated)",
+          "enteringYear": null,
+          "url": "https://dellmed.utexas.edu/education/how-to-apply/admissions-criteria",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "50",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "50 students per class"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "98%",
+              "unit": null,
+              "qualifier": "Texas residents",
+              "evidence": "98% Texas residents*"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.93",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average GPA: 3.93"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "517",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Average MCAT score: 517"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-medical-branch",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Admission policies FAQ (no class year)",
+          "enteringYear": null,
+          "url": "https://www.utmb.edu/som/admissions-information/ready-to-apply-info/admission-policies-faqs",
+          "stats": [
+            {
+              "kind": "GPA_MEAN",
+              "value": "approximately 3.78",
+              "unit": null,
+              "qualifier": "FAQ says approximately",
+              "evidence": "The average GPA is approximately 3.78"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "513",
+              "unit": null,
+              "qualifier": "FAQ answer",
+              "evidence": "the average MCAT is a 513"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "approximately 230",
+              "unit": null,
+              "qualifier": "approximate; each year",
+              "evidence": "approximately 230 students matriculate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-rio-grande",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Each entering class (no year stated)",
+          "enteringYear": null,
+          "url": "https://www.utrgv.edu/som/admissions/faq/index.htm",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "55",
+              "unit": null,
+              "qualifier": "students admitted to each entering class",
+              "evidence": "UTRGV SOM admits 55 students to each entering class"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-southwestern",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medschool.utsouthwestern.edu/admissions/class-profile.html",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "239",
+              "unit": null,
+              "qualifier": "Standard Class Size",
+              "evidence": "239 Standard Class Size"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.93",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "3.93 GPA Average"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "517",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "517 MCAT Average"
+            },
+            {
+              "kind": "OTHER",
+              "value": "10%",
+              "unit": null,
+              "qualifier": "First Generation College Students",
+              "evidence": "10% First Generation College Students"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "university-of-texas-tyler",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "EY 2026",
+          "enteringYear": 2026,
+          "url": "https://www.uttyler.edu/academics/colleges-schools/medicine/admissions/admissions-statistics/index.php",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "40",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size 40 40 40 40"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "matriculants average GPA",
+              "evidence": "Average GPA 3.75 3.65 3.81 3.81"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "505",
+              "unit": null,
+              "qualifier": "matriculants average MCAT",
+              "evidence": "Average MCAT 506 505 503 505"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "3317",
+              "unit": null,
+              "qualifier": "completed applications",
+              "evidence": "Completed Applications 2039 2074 2798 3317"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "236",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants Interviewed 272 305 309 236"
+            }
+          ]
+        },
+        {
+          "label": "EY 2025",
+          "enteringYear": 2025,
+          "url": "https://www.uttyler.edu/academics/colleges-schools/medicine/admissions/admissions-statistics/index.php",
+          "stats": [
+            {
+              "kind": "MATRICULANTS",
+              "value": "40",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size 40 40 40 40"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "matriculants average GPA",
+              "evidence": "Average GPA 3.75 3.65 3.81 3.81"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "503",
+              "unit": null,
+              "qualifier": "matriculants average MCAT",
+              "evidence": "Average MCAT 506 505 503 505"
+            },
+            {
+              "kind": "APPLICANTS",
+              "value": "2798",
+              "unit": null,
+              "qualifier": "completed applications",
+              "evidence": "Completed Applications 2039 2074 2798 3317"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "309",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants Interviewed 272 305 309 236"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "vanderbilt",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Most recent entering class",
+          "enteringYear": null,
+          "url": "https://medschool.vanderbilt.edu/md/admissions/process/",
+          "stats": [
+            {
+              "kind": "GPA_RANGE",
+              "value": "3.5-4.0",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "The GPA range for the most recent entering class was 3.5-4.0"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "74th and 100th percentile",
+              "unit": "percentile",
+              "qualifier": null,
+              "evidence": "the MCAT range was between the 74th and 100th percentile"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "virginia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://med.virginia.edu/md-program/admissions/about-uva-school-of-medicine/statistics-overview/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "7,248",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "7,248 people applied to UVA School of Medicine for the class of 2030"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "627",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "627 people interviewed at UVA School of Medicine for the class of 2030"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "155",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Students 155"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "54%",
+              "unit": null,
+              "qualifier": "Virginians",
+              "evidence": "54% Virginians"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "520",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Mean MCAT: 520"
+            },
+            {
+              "kind": "OTHER",
+              "value": "3.91",
+              "unit": null,
+              "qualifier": "Grade Point Average (statistic not specified)",
+              "evidence": "Grade Point Average 3.91"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "virginia-tech",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.vtc.vt.edu/admissions/class-statistics.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,542",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2030 AMCAS Applications: 6,542"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "332",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2030 AMCAS Applications: 6,542 Interviews Conducted: 332"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "64",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviews Conducted: 332 Matriculants: 64"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.66",
+              "unit": null,
+              "qualifier": "Undergrad GPAs",
+              "evidence": "Matriculants: 64 States Represented: 22 Average Age: 25 Undergrad GPAs: Average 3.66"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Undergrad GPAs: Average 3.66 MCAT Scores: Average 511"
+            }
+          ]
+        },
+        {
+          "label": "Class of 2029",
+          "enteringYear": 2025,
+          "url": "https://medicine.vtc.vt.edu/admissions/class-statistics.html",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,371",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2029 AMCAS Applications: 6,371"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "303",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class of 2029 AMCAS Applications: 6,371 Interviews Conducted: 303"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "56",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviews Conducted: 303 Matriculants: 56"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.67",
+              "unit": null,
+              "qualifier": "Undergrad GPAs",
+              "evidence": "Matriculants: 56 States Represented: 20 Average Age: 25 Undergrad GPAs: Average 3.67"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "512",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Undergrad GPAs: Average 3.67 MCAT Scores: Average 512"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "wake-forest",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "MD Class Profile Data 2030",
+          "enteringYear": 2026,
+          "url": "https://school.wakehealth.edu/education-and-training/md-program/class-profile",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "14,403",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants 14,403 12,801 12,139 12,066"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "724",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 724 718 498 500"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "193",
+              "unit": null,
+              "qualifier": "new matriculants",
+              "evidence": "New Matriculants North Carolina Out of State 193 46 147"
+            },
+            {
+              "kind": "IN_STATE_COUNT",
+              "value": "46",
+              "unit": null,
+              "qualifier": "North Carolina",
+              "evidence": "New Matriculants North Carolina Out of State 193 46 147"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "Average MCAT 511 511 511 512"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.82",
+              "unit": null,
+              "qualifier": "labelled Average GPA",
+              "evidence": "Average GPA 3.82 3.81 3.83 3.80"
+            }
+          ]
+        },
+        {
+          "label": "MD Class Profile Data 2029",
+          "enteringYear": 2025,
+          "url": "https://school.wakehealth.edu/education-and-training/md-program/class-profile",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "12,801",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants 14,403 12,801 12,139 12,066"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "718",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Interviewed 724 718 498 500"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "194",
+              "unit": null,
+              "qualifier": "new matriculants",
+              "evidence": "193 46 147 194 48 146"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "511",
+              "unit": null,
+              "qualifier": "labelled Average MCAT",
+              "evidence": "Average MCAT 511 511 511 512"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.81",
+              "unit": null,
+              "qualifier": "labelled Average GPA",
+              "evidence": "Average GPA 3.82 3.81 3.83 3.80"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "washington-state",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Entering Year 2026 / Class of 2030",
+          "enteringYear": 2026,
+          "url": "https://medicine.wsu.edu/md/apply/demographics/class-of-2030/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "1,669",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "1,669 Total AMCAS Applications"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "350",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "350 Total Interviewed"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "80",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "80 Matriculated Class"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "96.3%",
+              "unit": null,
+              "qualifier": "Washington Residents",
+              "evidence": "Washington Residents 96.3%"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.72",
+              "unit": null,
+              "qualifier": "Mean Overall GPA",
+              "evidence": "3.72 (Range: 2.53–4.00) Mean Overall GPA"
+            },
+            {
+              "kind": "GPA_RANGE",
+              "value": "2.53–4.00",
+              "unit": null,
+              "qualifier": "Overall GPA",
+              "evidence": "(Range: 2.53–4.00) Mean Overall GPA"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.62",
+              "unit": null,
+              "qualifier": "Mean BCPM GPA",
+              "evidence": "3.62 (Range: 2.58–4.00) Mean BCPM GPA"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "508.8",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "508.8 (Range: 496–524) Mean MCAT"
+            },
+            {
+              "kind": "MCAT_RANGE",
+              "value": "496–524",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "(Range: 496–524) Mean MCAT"
+            },
+            {
+              "kind": "OTHER",
+              "value": "16.3%",
+              "unit": null,
+              "qualifier": "first generation college graduate",
+              "evidence": "First Generation College Graduate (parents did not earn Bachelor's Degree) 16.3%"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "west-virginia",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "2030 Class Profile",
+          "enteringYear": 2026,
+          "url": "https://medicine.hsc.wvu.edu/md-admissions/2030-class-profile/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6104",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Applicants: 6104"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "548",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Total Interviews: 548"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "120",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Class Size: 120"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "46%",
+              "unit": null,
+              "qualifier": "WV Residents",
+              "evidence": "WV Residents: 46%"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.77",
+              "unit": null,
+              "qualifier": "Average BCPM GPA",
+              "evidence": "Average BCPM GPA: 3.77"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "510",
+              "unit": null,
+              "qualifier": "Average MCAT Total",
+              "evidence": "Average MCAT Total: 510"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "western-university-oregon",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Class of 2025 (class entering August 2025)",
+          "enteringYear": 2025,
+          "url": "https://www.westernu.edu/osteopathic/programs/doctor-of-osteopathic-medicine/competitive/",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "3356",
+              "unit": null,
+              "qualifier": "Oregon Campus column",
+              "evidence": "Applications Received 5433 3356 8789"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "466",
+              "unit": null,
+              "qualifier": "Oregon Campus column (Interviews Granted)",
+              "evidence": "Interviews Granted 881 466 1347"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "95",
+              "unit": null,
+              "qualifier": "Oregon Campus column (Students Enrolled)",
+              "evidence": "Students Enrolled 227 95 322"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "42%",
+              "unit": null,
+              "qualifier": "Oregon Campus column (% In-State Residents)",
+              "evidence": "% In-State Residents 90% 42% 76%"
+            },
+            {
+              "kind": "GPA_MEAN",
+              "value": "3.58",
+              "unit": null,
+              "qualifier": "Oregon Campus column (Average Overall GPA)",
+              "evidence": "Average Overall GPA 3.82 3.58 3.74"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.57",
+              "unit": null,
+              "qualifier": "Oregon Campus column (Average Science GPA)",
+              "evidence": "Average Science GPA 3.65 3.57 3.625"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "507",
+              "unit": null,
+              "qualifier": "Oregon Campus column (Average MCAT)",
+              "evidence": "Average MCAT 509 507 508"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "wright-state",
+      "checkedOn": "2026-11-24",
+      "classes": [
+        {
+          "label": "Profile of the Class of 2028",
+          "enteringYear": 2024,
+          "url": "https://medicine.wright.edu/admissions/prerequisites-and-application",
+          "stats": [
+            {
+              "kind": "APPLICANTS",
+              "value": "6,338",
+              "unit": null,
+              "qualifier": null,
+              "evidence": "Applicants: 6,338"
+            },
+            {
+              "kind": "MATRICULANTS",
+              "value": "130",
+              "unit": null,
+              "qualifier": "labelled Matriculated",
+              "evidence": "Matriculated: 130"
+            },
+            {
+              "kind": "INTERVIEWED",
+              "value": "468",
+              "unit": null,
+              "qualifier": "interviews granted",
+              "evidence": "Interviews granted: 468"
+            },
+            {
+              "kind": "IN_STATE_PCT",
+              "value": "66%",
+              "unit": null,
+              "qualifier": "matriculants from Ohio",
+              "evidence": "Percent of matriculants from Ohio: 66%"
+            },
+            {
+              "kind": "SGPA_MEAN",
+              "value": "3.68",
+              "unit": null,
+              "qualifier": "average undergraduate BCPM GPA",
+              "evidence": "Average undergraduate BCPM GPA: 3.68"
+            },
+            {
+              "kind": "MCAT_MEAN",
+              "value": "508.76",
+              "unit": null,
+              "qualifier": "average highest MCAT 2015 score",
+              "evidence": "Average highest MCAT 2015 score: 508.76"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
