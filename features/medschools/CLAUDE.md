@@ -150,7 +150,7 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 - **Surfaces:** one level of panel. Inside a panel, groups are rules and space (`.medapp-subrule`, `.medapp-group`,
   `.medapp-rows`); a list or prose may sit on the wash with no panel. Empty, failed and signed-out states are `MedEmpty`
   / `MedSignedOut`: centred, a 16px line, a 14px line, one action.
-- **Places:** the app's other pages are `Places` (`ui/shell/Places.tsx`): icon-and-label tertiary links, one line. The
+- **Places:** the app's other pages are the top bar's icon buttons and the member's menu (`HeaderActions`). The
   top bar's title is the app's name, "RMH Med Schools"; on the index it is the page's `<h1>` (the index has no title of
   its own) and the left button is a house linking to the site home `/`; every other page has its own h1 and the back
   arrow.
@@ -176,12 +176,39 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   a block whose answer makes the rest moot is one line ("Deposit · Not required"); yes / no / case by case is a small
   mark and the word; the DACA report's sentence shows once when it repeats the school's note. Definition rows: a word or
   figure on its label's line, a sentence under it; from 768px the label is a 12rem column.
-- **Newest status on the index:** each row ends with the school's newest public event (`LatestStatus`: the disc, the
-  words, the time ago), from `latest` on `GET /schools` (`latestPublicEvents` in `api/read.server.ts`: the live feed's
-  rules, Admit and SDN only, never RMH, the list's program set, the site cycle; user-independent). The time is worked
-  out at render, never on a timer: the server and the hydrating render print the day.
+- **Newest status on the index:** each row is one grid (`.medapp-schoolrow`): crest | the school's words | the status
+  words (label in the status colour, the time under it, right-aligned) | the status disc at the far end, every cell on
+  the row's centre line (owner 2026-11-24); on a narrow phone the school's words wrap (hyphenated under 360px) and the
+  status keeps a readable width. The index column's parts are 16px apart (`.medapp-index`) and its rows 8px top and
+  bottom. The newest status (`LatestStatus`) comes from `latest` on `GET /schools`
+  (`latestPublicEvents` in `api/read.server.ts`: the live feed's rules, Admit and SDN only, never RMH, the list's
+  program set, the site cycle; user-independent). The time is `EventTime`: the server and the hydrating render print
+  the day.
 - **The rail:** its heading, search and the two multi-selects (event types, programs) are sticky inside the rail panel
   (`.medapp-rail-top`) while the list scrolls under them.
+- **Live rows (`LiveRow`, owner 2026-11-24):** one component for the live page and the rail (`compact`), so they cannot
+  drift: the school's crest (initials without one) with the decision as a 20px status badge on its top-right corner
+  (ringed in the paper, `aria-hidden`: the status is written out), the name, the status in its colour, and the time at
+  the row's end on its centre line. The live page adds one muted line, program · city, state · source; the rail has
+  none. On a phone the live page's time moves under the words.
+- **Event times (`EventTime`, owner 2026-11-24):** every short event date (the index's newest status, live and rail
+  rows, the tracker's steps and timeline) is a focusable `<time>` that shows the exact time on hover, focus or tap, in
+  the viewer's own zone ("Tue, Nov 24, 2026, 3:42 PM EST"). The server does not know that zone, so the tooltip is
+  built after hydration and the HTML has no server-zone string. A day-only event (`isDayOnlyEvent`: Admit or SDN at
+  exactly 00:00 UTC, the arrivals rule; a tracker milestone) shows the full date in UTC and "No time reported", never
+  an invented time. Inside a button (a tracker step) it is a `title` only. Pure parts in `ui/event-time.ts`.
+- **States (owner 2026-11-24):** the index and the live page filter several states at once (`StateMultiSelect`:
+  "California (CA)", sorted by name, a filter field, "All states" / "CA, NY" / "5 states"). `?state=CA,NY` is a sorted
+  comma list (`parseStates`, at most `MAX_STATES` = 10), an old single code still parses, none is every state. The
+  schools and live readers take the same list, each code checked against `HOME_STATE_CODES`, deduped and sorted. The
+  home-state preference stays single.
+- **Multi-selects on a phone:** under 640px the panel is a full-width sheet under its toolbar (absolute, never fixed)
+  with a 16px filter field where it has one and a Done button.
+- **Loading (owner 2026-11-24):** once a school page has its school, `ui/prefetch-tabs.ts` fetches the other tabs'
+  public queries in the background (one wave per school and program, at idle, one request at a time; skipped under
+  Save-Data, Data Saver, 2G or offline; never `me/**`, never a model call). The school's public queries are fresh for
+  5 minutes and kept 30 (`schoolScoped`). A same-page change (`cause: 'stay'`) reads the cached prefs in
+  `loadPrefs` and never waits on the private request. The router already preloads on intent (`app/router.tsx`).
 - **Settings change in place (owner 2026-11-24):** every `navigate()` first calls `holdScroll()` (`ui/hold-scroll.ts`:
   the site's `useScrollRestoration` would otherwise read the new href as a fresh navigation and scroll to the top) and
   passes `replace: true, resetScroll: false`; the section body (`.medapp-tabbody`) is at least a screen tall, so a

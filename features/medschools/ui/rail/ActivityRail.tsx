@@ -1,24 +1,29 @@
-import { useState } from 'react';
+import { lazy, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Activity } from 'lucide-react';
+import { Activity, SquareArrowOutUpRight } from 'lucide-react';
 import type { MedEventTypeId } from '../../medschools.contract';
 import { MedSearch } from '../controls/MedSearch';
-import { ARRIVE } from '@/components/ui/arrive';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { useSentinel } from '@/hooks/useSentinel';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { parsePrograms, programsQueryValue, type ProgramKey } from '../../engine/programs';
 import { Q_MAX } from '../../engine/search';
 import type { LiveFilters } from '../../medschools.queries';
-import { LiveRow } from '../LiveRow';
 import { EventTypeMultiSelect, LIVE_EVENT_TYPES, ProgramMultiSelect } from '../ProgramMultiSelect';
 import { useEffectiveView } from '../useEffectiveView';
-import { useLiveFeed } from '../useLiveFeed';
+import { RailSkeleton } from './RailSkeleton';
+
+// The list and its live query are their own chunk, fetched only where the rail is displayed (>= 1280px).
+const RailFeed = lazy(() => import('./RailFeed'));
 
 const PAGE = 15;
 
 /**
- * The live activity rail: a paper panel in the app frame's right column on every /med page (>= 1280px). The
+ * The live activity rail: a paper panel in the app frame's right column on every /med page (>= 1280px). The frame
+ * (heading, the open-live link, the search and the two filters) and a static skeleton list are in the server HTML on
+ * every width, and CSS hides the column below 1280px, so the page's layout is right from the first paint (owner
+ * 2026-11-24). Only at 1280px and up does the client load the list's chunk and start the live query. The
  * newest reported events, a search over school and state, the event types and the programs as two compact
  * multi-selects on one line, the 60 s head refetch with the M9 fade for new rows, and older pages loaded as the end of
  * the list scrolls into view (one `IntersectionObserver`, on the sentinel only: it loads data, it decorates nothing).
@@ -33,6 +38,7 @@ export default function ActivityRail() {
   const [types, setTypes] = useState<MedEventTypeId[]>([...LIVE_EVENT_TYPES]);
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
+  const shown = useMediaQuery('(min-width: 1280px)');
   const push = useDebouncedCallback((v: string) => setQ(v.trim()), 250);
 
   const set = programs ?? view.programs;
@@ -53,8 +59,13 @@ export default function ActivityRail() {
             <Activity aria-hidden="true" className="size-4" />
             {t('rail-title', { defaultValue: 'Live activity' })}
           </h2>
-          <Link to="/med/live" className="medapp-link medapp-rail-open">
-            {t('rail-open', { defaultValue: 'Open live page' })}
+          <Link
+            to="/med/live"
+            className="medapp-round"
+            aria-label={t('rail-open-icon', { defaultValue: 'Open live activity' })}
+            title={t('rail-open-icon', { defaultValue: 'Open live activity' })}
+          >
+            <SquareArrowOutUpRight aria-hidden="true" size={18} />
           </Link>
         </div>
         <MedSearch
@@ -72,41 +83,13 @@ export default function ActivityRail() {
           <ProgramMultiSelect compact value={set} onChange={setPrograms} />
         </div>
       </div>
-      <RailFeed filters={filters} />
+      {shown ? (
+        <ArrivalSuspense fallback={<RailSkeleton />} wrap={false}>
+          <RailFeed filters={filters} />
+        </ArrivalSuspense>
+      ) : (
+        <RailSkeleton />
+      )}
     </section>
-  );
-}
-
-function RailFeed({ filters }: { filters: LiveFilters }) {
-  const { t } = useTranslation('medschools');
-  const { query, data, rows, arriving, cursor, loadingOlder, olderFailed, showOlder, stale } = useLiveFeed(filters);
-  const more = useSentinel(() => void showOlder(), {
-    enabled: !!cursor && !loadingOlder && !olderFailed,
-    watch: rows.length,
-    rootMargin: '200px 0px',
-  });
-
-  if (query.isError && !data) {
-    return <p className="medapp-sub">{t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}</p>;
-  }
-  if (!data) return <p className="medapp-sub">{t('rail-loading', { defaultValue: 'Loading' })}</p>;
-  if (rows.length === 0) {
-    return <p className="medapp-sub">{t('rail-empty', { defaultValue: 'Nothing matches yet.' })}</p>;
-  }
-  return (
-    <div className={stale ? 'medapp-swap medapp-stale' : 'medapp-swap'} aria-busy={stale || undefined}>
-      <ul className="medapp-rows">
-        {rows.map((r) => (
-          <LiveRow key={r.id} event={r} compact className={arriving(r.id) ? ARRIVE : undefined} />
-        ))}
-      </ul>
-      {cursor ? <div ref={more} aria-hidden="true" className="h-px" /> : null}
-      {loadingOlder ? <p className="medapp-sub">{t('rail-loading', { defaultValue: 'Loading' })}</p> : null}
-      {olderFailed ? (
-        <button type="button" className="medapp-link text-start text-xs" onClick={() => void showOlder()}>
-          {t('rail-older-retry', { defaultValue: 'Could not load more. Try again' })}
-        </button>
-      ) : null}
-    </div>
   );
 }

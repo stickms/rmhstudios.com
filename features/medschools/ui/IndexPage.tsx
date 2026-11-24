@@ -18,7 +18,6 @@ import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
-import { Places } from './shell/Places';
 import { LatestStatus } from './LatestStatus';
 import { MedEmpty } from './MedEmpty';
 
@@ -73,12 +72,7 @@ export function IndexPage() {
   const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
 
   return (
-    <>
-      <Places
-        label={t('index-nav-label', { defaultValue: 'Med Schools' })}
-        places={signedIn ? ['live', 'tracker', 'ask', 'lists', 'practice'] : ['live', 'practice']}
-      />
-
+    <div className="medapp-index">
       <div className="medapp-filters">
         <div className="medapp-toolbar">
           <MedSearch
@@ -178,6 +172,6 @@ export function IndexPage() {
           </SkeletonSwap>
         )}
       </div>
-    </>
+    </div>
   );
 }

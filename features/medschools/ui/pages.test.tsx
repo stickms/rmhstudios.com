@@ -243,13 +243,12 @@ describe('IndexPage', () => {
     h.session = { user: { id: 'u1' } };
     const signedIn = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
     expect(signedIn.match(/aria-label="Save [a-z]+ University School of Medicine to a list"/g)).toHaveLength(2);
-    expect(signedIn).toContain('href="/med/tracker"');
-    expect(signedIn).toContain('href="/med/lists"');
-    expect(signedIn).toContain('href="/med/ask"');
+    // The member's places moved into the top bar's profile menu (owner 2026-11-24): no link row on the index.
+    expect(signedIn).not.toContain('href="/med/tracker"');
     h.session = null;
     const out = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
     expect(out).not.toContain('to a list');
-    expect(out).not.toContain('href="/med/tracker"');
+    expect(out).not.toContain('href="/med/live"');
   });
 });
 
@@ -304,7 +303,7 @@ describe('LivePage', () => {
     const html = withClient(seedLive([ev('a1')]), <LivePage />);
     expect(html.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(4);
   });
-  it('shows only the UTC day for an SDN event stored at midnight, and a relative time otherwise', () => {
+  it('shows only the UTC day for an SDN or Admit event stored at midnight (the arrivals rule), and a time otherwise', () => {
     h.search = {};
     const html = withClient(
       seedLive([
@@ -316,7 +315,9 @@ describe('LivePage', () => {
     );
     expect(html).toContain('>Nov 18<');
     expect(html.match(/<time dateTime="2026-11-18"/g)).toHaveLength(1);
-    expect(html).toContain('<time dateTime="2026-11-19T00:00:00.000Z"'); // Admit keeps its exact time
+    expect(html).toContain('<time dateTime="2026-11-18T09:30:00.000Z"');
+    // Admit at exactly 00:00 UTC is a day, not a time (EventTime, owner 2026-11-24): no invented midnight.
+    expect(html).toContain('<time dateTime="2026-11-19" ');
   });
   it("resolveLiveFilters narrows the set to the filtered school's degree and drops a contradicting one", () => {
     const all = ['md', 'md-phd', 'do', 'do-phd'] as const;
@@ -372,7 +373,6 @@ describe('route files', () => {
     const q = root('../medschools.queries.ts');
     const body = q.slice(q.indexOf('export async function loadPrefs'));
     expect(body.indexOf('prefetchRouteQuery(queryClient, prefsQuery())')).toBeGreaterThan(-1);
-  });
     // A change on the same page (`cause: 'stay'`) reads the cached prefs and never waits (owner 2026-11-24: tab
     // switches must not put the router's pending frame up).
     for (const file of ['index', 'live', '$slug'])
@@ -388,6 +388,7 @@ describe('route files', () => {
     const prefs = { programs: ['md'], programFilter: 'ALL', degree: null, homeState: null, chartCategories: [] };
     qc.setQueryData(prefsQuery().queryKey, prefs as never);
     expect(await loadPrefs(qc, 'stay')).toEqual(prefs);
+  });
 
   it('the public endpoint requests the loaders make carry only documented public keys', () => {
     const key = JSON.stringify(schoolsQuery({ q: 'x', state: 'NC', programs: 'md' }).queryKey);

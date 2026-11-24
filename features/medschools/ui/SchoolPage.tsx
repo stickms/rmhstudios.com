@@ -25,7 +25,6 @@ import { SchoolFacts } from './SchoolFacts';
 import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { Curriculum } from './facts/Curriculum';
 import { PageHead } from './shell/PageHead';
-import { Places } from './shell/Places';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
@@ -59,6 +58,7 @@ export function SchoolPage() {
     program: view.program,
     show: view.show,
   };
+
   // One background wave per school (and program) once the page has its school: the other tabs' public data, so a tab
   // switch renders from the cache. Not keyed on the tab: switching tabs neither restarts nor cancels it.
   const qc = useQueryClient();
@@ -68,7 +68,6 @@ export function SchoolPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one wave per school and program, not per search change
     [ready, qc, slug, search.program],
   );
-
 
   const setSearch = (patch: SchoolSearchPatch) => {
     const { program, show, daily, ...rest } = patch;
@@ -149,12 +148,6 @@ export function SchoolPage() {
       <SkeletonSwap ready={!!detail}>
         {detail ? (
           <div className="medapp-school-body">
-            {session ? (
-              <Places
-                label={t('school-my-label', { defaultValue: 'My Med Schools' })}
-                places={['tracker', 'ask', 'lists']}
-              />
-            ) : null}
             <PrefsNote fromPrefs={view.fromPrefs} />
             <SchoolFacts school={detail.school} />
             {/* Links to the same page with another `tab`, so a nav with `aria-current`, not a tablist (as the shared

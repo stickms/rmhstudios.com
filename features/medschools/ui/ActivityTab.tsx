@@ -138,12 +138,14 @@ export function ActivityTab({
 
           <section className="medapp-section" aria-label={t('school-daily-section', { defaultValue: 'By day' })}>
             <DailyBars
-              legend={<CategoryToggles
+              legend={
+                <CategoryToggles
                   value={daily}
                   onChange={(next) => setSearch({ daily: next })}
                   bars
                   label={t('category-toggles-daily-label', { defaultValue: 'Show categories by day' })}
-                />}
+                />
+              }
               series={dailySeries}
               from={data.dayZeroOn}
               to={to}

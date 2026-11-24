@@ -707,9 +707,7 @@ describe('the Ask panel on a school page', () => {
     h.session = { user: { id: 'u1' } };
     const html = render(seedActivity(activity()));
     expect(html).toContain('Ask about Duke University School of Medicine');
-    expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('href="/med/tracker"'));
     expect(html.indexOf('Ask about Duke')).toBeGreaterThan(html.indexOf('>Activity<'));
-    expect(html).toContain('href="/med/ask"');
     expect(html.match(/data-variant="primary"/g)?.length ?? 0).toBe(1);
     // Three suggestions when pinned (the school page has no other plain buttons of this kind).
     expect(html).toContain('What are the MCAT and GPA medians?');

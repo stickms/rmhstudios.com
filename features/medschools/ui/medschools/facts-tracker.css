@@ -189,25 +189,6 @@
   font-size: var(--app-med-text-meta);
   color: var(--app-text-muted);
 }
-/* A link row of the app's places (index, school page): tertiary buttons on one line, scrolling sideways on a phone. */
-.medapp-places {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--app-med-space-1) var(--app-med-space-2);
-}
-@media (max-width: 767px) {
-  .medapp-places {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    margin-inline: calc(-1 * var(--app-med-gutter));
-    padding-inline: calc(var(--app-med-gutter) - var(--app-med-space-3));
-    scrollbar-width: none;
-  }
-  .medapp-places::-webkit-scrollbar {
-    display: none;
-  }
-}
 /* A list school's note sits under its name, past the crest (40px and the 12px gap). */
 .medapp-item__indent {
   inline-size: auto;
@@ -218,13 +199,4 @@
 }
 .medapp-rows > li:last-child > .medapp-item {
   border-bottom: 0;
-}
-/* A place link carries its icon, so it needs no underline; the hover fill is its affordance. */
-.medapp-places .medapp-btn--tertiary {
-  flex: none;
-  text-decoration: none;
-}
-/* The places under a page title belong to its heading: 12px under it, not a section gap. */
-.medapp-pagehead + .medapp-places {
-  margin-block-start: calc(var(--app-med-space-3) - var(--app-med-section-gap));
 }
