@@ -157,7 +157,7 @@ export function CanvasPage() {
               </ArrivalSuspense>
             )}
             {live && (
-              <section className="space-y-3 rounded-site px-4 py-3">
+              <section className="space-y-3 py-3">
                 <div
                   role="radiogroup"
                   aria-label={t('palette', {
