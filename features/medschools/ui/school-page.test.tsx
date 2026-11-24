@@ -488,6 +488,28 @@ describe('SchoolPage', () => {
     expect(html).toContain('5 votes');
   });
 
+  it("Practice offers the school's own questions, with the timer controls only once one is picked", () => {
+    h.search = { tab: 'interviews', itab: 'practice' };
+    const html = render((qc) =>
+      qc.setQueryData(
+        schoolQuery('duke').queryKey,
+        detail({ questions: [{ text: 'Why medicine?', source: 'ADMIT', votes: 5, cycleYear: 2026 }] }),
+      ),
+    );
+    expect(html).toContain('Random question');
+    expect(html).toContain('Next question');
+    expect(html).toContain('Pick a question to start.');
+    expect(html).toContain('General questions for any school');
+    expect(html).not.toContain('role="timer"');
+  });
+
+  it('Practice says plainly when the school has no questions', () => {
+    h.search = { tab: 'interviews', itab: 'practice' };
+    const html = render((qc) => qc.setQueryData(schoolQuery('duke').queryKey, detail()));
+    expect(html).toContain('No questions have been collected for this school yet.');
+    expect(html).not.toContain('Random question');
+  });
+
   it('History carries the When results arrive section, under the overlay and hidden without enough events', () => {
     const src = root('./HistoryTab.tsx');
     expect(src).toContain('ArrivalsSection');

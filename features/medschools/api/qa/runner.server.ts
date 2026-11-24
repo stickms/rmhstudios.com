@@ -6,7 +6,7 @@
  * Both calls take the question's signal (the request's, and the overall deadline) and never retry: the deadline is
  * under the client's timeout, so a retry could only make the member wait past it for an answer nobody reads.
  */
-import { MEDSCHOOLS_QA_ANSWER, MEDSCHOOLS_QA_ROUTE } from '@/lib/ai/prompts';
+import { MEDSCHOOLS_INTERVIEW_FOLLOWUPS, MEDSCHOOLS_QA_ANSWER, MEDSCHOOLS_QA_ROUTE } from '@/lib/ai/prompts';
 import { QA_THINK_DEADLINE_MS } from '../../ai-budget';
 import { jsonFromModelText, runTask } from '@/lib/ai/provider.server';
 
@@ -63,6 +63,39 @@ export const aiRunner: QaRunner = {
         maxRetries: 0,
         // Same task label, so spend is metered and counted against the same Q&A share. JSON mode stays on.
         ...(think ? { thinking: true, maxTokens: THINK_MAX_TOKENS, timeoutMs: QA_THINK_DEADLINE_MS } : {}),
+        ...(signal ? { signal } : {}),
+      }),
+    );
+  },
+};
+
+/** The interview follow-up generator's one model call (same task label, so the same Q&A share of the budget). */
+export interface FollowupRunner {
+  generate(
+    system: string,
+    user: string,
+    userId: string,
+    signal?: AbortSignal,
+    opts?: { think?: boolean },
+  ): Promise<unknown>;
+}
+
+/** A few short questions, so the plain call needs far fewer tokens than an answer. */
+const FOLLOWUP_MAX_TOKENS = 500;
+
+export const aiFollowupRunner: FollowupRunner = {
+  async generate(system, user, userId, signal, opts) {
+    const think = opts?.think === true;
+    return parsed(
+      await runTask(TASK, system, user, {
+        userId,
+        json: true,
+        promptId: MEDSCHOOLS_INTERVIEW_FOLLOWUPS.id,
+        promptVer: MEDSCHOOLS_INTERVIEW_FOLLOWUPS.version,
+        maxRetries: 0,
+        ...(think
+          ? { thinking: true, maxTokens: THINK_MAX_TOKENS, timeoutMs: QA_THINK_DEADLINE_MS }
+          : { maxTokens: FOLLOWUP_MAX_TOKENS }),
         ...(signal ? { signal } : {}),
       }),
     );

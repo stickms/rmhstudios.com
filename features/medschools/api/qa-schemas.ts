@@ -34,3 +34,16 @@ export const limitDecisionBody = z.object({
   adminNote: z.string().trim().max(500).refine(noControl, 'control characters').optional(),
 });
 export type LimitDecisionBody = z.infer<typeof limitDecisionBody>;
+
+/**
+ * Body of `POST /api/medschools/me/interview/followups`: one question (a stored school question or a general one), the
+ * member's optional notes (used for this one call, never stored) and, for a school question, the school's slug (checked
+ * against the active schools on the server). `think` is the same switch as the Q&A's.
+ */
+export const followupsBody = z.object({
+  question: z.string().trim().min(3).max(500).refine(noControl, 'control characters'),
+  notes: z.string().trim().max(2000).refine(noControl, 'control characters').optional(),
+  slug: z.string().regex(SLUG_RE).optional(),
+  think: z.boolean().optional(),
+});
+export type FollowupsBody = z.infer<typeof followupsBody>;

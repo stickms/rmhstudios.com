@@ -168,6 +168,7 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['POST', '/api/medschools/me/tracker/import/save', { cycleYear: CYCLE, rows: [] }],
   ['GET', '/api/medschools/me/ask'],
   ['POST', '/api/medschools/me/ask', { question: 'What is the median?' }],
+  ['POST', '/api/medschools/me/interview/followups', { question: 'Why medicine?' }],
   ['GET', '/api/medschools/me/qa-limit-request'],
   ['POST', '/api/medschools/me/qa-limit-request', { note: 'more please' }],
 ];
