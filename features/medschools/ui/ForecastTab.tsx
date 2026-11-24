@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { CHARTED_TYPES, formatUtcDay } from '../engine/public-read';
 import { cycleLabelIsolated } from '../engine/cycle';
@@ -11,6 +9,7 @@ import type { MedChartedTypeId, MedSchoolDetailDto } from '../medschools.contrac
 import { ForecastBand } from './charts/ForecastBand';
 import { useChartLabels } from './chartLabels';
 import { useMedLabels } from './labels';
+import { MedEmpty } from './MedEmpty';
 import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { SchoolChances } from './SchoolChances';
@@ -65,11 +64,11 @@ export function ForecastTab({
 
   if (query.isError) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="medapp-tab">
         {controls}
-        <EmptyState
+        <MedEmpty
           title={t('forecast-load-failed', { defaultValue: 'Could not load the forecast.' })}
-          action={<Button onClick={() => void query.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
+          onRetry={() => void query.refetch()}
         />
       </div>
     );
@@ -94,19 +93,19 @@ export function ForecastTab({
         : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="medapp-tab">
       {controls}
       <SkeletonSwap ready={!!data} skeleton={<ChartSkeleton />}>
         {data ? (
-          <div className="flex flex-col gap-4">
-            <h2 className="t-heading m-0">
+          <div className="medapp-section">
+            <h2 className="medapp-h2">
               {t('forecast-heading', {
                 defaultValue: '{{cycle}} cycle',
                 cycle: cycleLabelIsolated(data.cycleYear),
               })}
             </h2>
             {search.program === 'ALL' ? (
-              <p className="t-meta m-0">
+              <p className="medapp-meta">
                 {t('forecast-program-note', {
                   defaultValue: 'A forecast is made for one program at a time. Showing {{program}}.',
                   program: programFilterLabel(program, detail.school.degree),
@@ -132,25 +131,25 @@ export function ForecastTab({
                 }}
               />
             ) : (
-              <EmptyState title={t('forecast-empty-no-data', { defaultValue: 'No reported events yet this cycle.' })} />
+              <MedEmpty title={t('forecast-empty-no-data', { defaultValue: 'No reported events yet this cycle.' })} />
             )}
 
             {data.status === 'no-history' ? (
-              <p className="t-meta m-0">
+              <p className="medapp-meta">
                 {t('forecast-empty-no-history', {
                   defaultValue: 'Earlier cycles do not have enough reported events for a forecast.',
                 })}
               </p>
             ) : null}
             {data.status === 'pending' ? (
-              <p className="t-meta m-0">
+              <p className="medapp-meta">
                 {t('forecast-empty-pending', { defaultValue: 'The forecast is computed once a day.' })}
               </p>
             ) : null}
 
             {data.summary ? (
-              <ul className="m-0 list-none border-t border-site-border p-0">
-                <li className="t-body border-b border-site-border py-2">
+              <ul className="medapp-list medapp-panel">
+                <li className="medapp-text">
                   {t('forecast-total', {
                     defaultValue: '{{type}}: expected total {{p50}}, likely between {{p10}} and {{p90}}',
                     p50: nf.format(data.summary.total.p50),
@@ -159,7 +158,7 @@ export function ForecastTab({
                     type: eventLabel(type),
                   })}
                 </li>
-                <li className="t-body border-b border-site-border py-2">
+                <li className="medapp-text">
                   {t('forecast-half', {
                     defaultValue: 'Half of them by {{date}}, likely between {{from}} and {{to}}',
                     date: date(data.summary.halfOn.p50),
@@ -170,29 +169,29 @@ export function ForecastTab({
               </ul>
             ) : null}
 
-            <div className="flex flex-col gap-1">
+            <div className="medapp-stack">
               {data.asOf && (data.status === 'ready' || data.status === 'early') ? (
-                <p className="t-meta m-0">
+                <p className="medapp-meta">
                   {t('forecast-asof', { defaultValue: 'Forecast as of {{date}}.', date: date(data.asOf) })}
                 </p>
               ) : null}
-              {basisLine ? <p className="t-meta m-0">{basisLine}</p> : null}
+              {basisLine ? <p className="medapp-meta">{basisLine}</p> : null}
               {data.basis.length === 1 ? (
-                <p className="t-meta m-0">
+                <p className="medapp-meta">
                   {t('forecast-basis-narrow', {
                     defaultValue: 'With one earlier cycle the range is narrower than the real uncertainty.',
                   })}
                 </p>
               ) : null}
               {data.status === 'early' ? (
-                <p className="t-meta m-0">
+                <p className="medapp-meta">
                   {t('forecast-early', {
                     defaultValue: 'Early in the cycle, so the range is wide and rests on the totals of earlier cycles.',
                   })}
                 </p>
               ) : null}
               {data.dayZeroEstimated ? (
-                <p className="t-meta m-0">
+                <p className="medapp-meta">
                   {t('school-day-zero-estimated', {
                     defaultValue: 'Cycle start estimated as {{date}}.',
                     date: formatUtcDay(data.dayZeroOn, locale),

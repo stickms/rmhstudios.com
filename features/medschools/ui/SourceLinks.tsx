@@ -11,10 +11,10 @@ export function SourceLinks({ links, cycleYear }: { links: SourceLinkDto[]; cycl
   const shown = links.filter((l) => cycleYear === undefined || l.cycleYear === null || l.cycleYear === cycleYear);
   if (shown.length === 0) return null;
   return (
-    <ul className="m-0 list-none p-0">
+    <ul className="medapp-list medapp-list--plain">
       {shown.map((l) => (
-        <li key={l.href} className="t-meta">
-          <a href={l.href} target="_blank" rel="noopener noreferrer" className="underline">
+        <li key={l.href} className="medapp-meta">
+          <a href={l.href} target="_blank" rel="noopener noreferrer" className="medapp-link">
             {l.scope === 'summary'
               ? t('source-line-summary', {
                   defaultValue: 'Source: {{name}}, interview feedback',

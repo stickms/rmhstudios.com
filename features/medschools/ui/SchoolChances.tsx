@@ -19,11 +19,14 @@ export function SchoolChances({ slug, cycle }: { slug: string; cycle: number }) 
   const shown = (query.data?.chances ?? []).filter((c) => c.status !== 'closed');
   if (!session || shown.length === 0) return null;
   return (
-    <section className="flex flex-col gap-1" aria-label={t('chance-heading', { defaultValue: 'Your estimate' })}>
-      <h2 className="t-heading m-0">{t('chance-heading', { defaultValue: 'Your estimate' })}</h2>
+    <section
+      className="medapp-section medapp-section--panel"
+      aria-label={t('chance-heading', { defaultValue: 'Your estimate' })}
+    >
+      <h2 className="medapp-h2">{t('chance-heading', { defaultValue: 'Your estimate' })}</h2>
       {shown.map((c) => (
         <div key={c.applicationId}>
-          {shown.length > 1 ? <p className="t-label m-0 mt-2">{programFilterLabel(c.program)}</p> : null}
+          {shown.length > 1 ? <p className="medapp-label">{programFilterLabel(c.program)}</p> : null}
           <ChanceLine chance={c} />
         </div>
       ))}

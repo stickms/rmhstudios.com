@@ -65,7 +65,7 @@ function expectBasics(html: string, empty = false) {
     expect(html).toContain('role="group"');
     expect(html).toContain('tabindex="0"');
   }
-  expect(html).toContain('border-site-border bg-site-surface');
+  expect(html).toContain('class="medapp-chart"');
   expect(html).toContain('Reported events');
   expect(html.match(/<svg viewBox/g)).toHaveLength(3);
   expect(html).toContain('<details');
@@ -76,7 +76,7 @@ function expectBasics(html: string, empty = false) {
 }
 
 describe('DailyBars', () => {
-  const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--site-chart-1)', labels };
+  const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--app-med-chart-1)', labels };
   it('renders the frame, names exactly the sources passed, and reads Nov 20 whatever the zone', () => {
     const html = renderToString(<DailyBars primary={ct} {...props} />);
     expectBasics(html);
@@ -85,7 +85,7 @@ describe('DailyBars', () => {
     expect(html).not.toContain('RMH');
     expect(html).toContain('Nov 20');
     expect(html).toContain('<rect');
-    expect(html).toContain('fill="var(--site-chart-1)"');
+    expect(html).toContain('fill="var(--app-med-chart-1)"');
   });
   it('draws the primary source only: no comparison line, nothing dashed, no zero line before the first report', () => {
     const html = renderToString(<DailyBars primary={ct} {...props} />);
@@ -307,7 +307,7 @@ describe('wave marks', () => {
     const html = renderToString(<CategoryLines {...base} visible={['INTERVIEW', 'ACCEPTANCE']} waves={waves} />);
     const t = ticks(phone(html));
     expect(t).toHaveLength(1);
-    expect(t[0]).toContain('stroke="var(--site-text-muted)"');
+    expect(t[0]).toContain('stroke="var(--app-text-muted)"');
     expect(t[0]).toContain('stroke-width="1"');
     expect(t[0]).not.toMatch(/opacity|fill="(?!none)/);
     const x = Number(/x1="([\d.]+)"/.exec(t[0]!)![1]);
@@ -329,7 +329,7 @@ describe('wave marks', () => {
     expect(none).not.toContain('>Wave<');
   });
   it('DailyBars: a tick under the wave day bar and the legend entry; nothing without waves', () => {
-    const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--site-chart-1)', labels };
+    const props = { from: '2026-11-19', to: '2026-11-23', color: 'var(--app-med-chart-1)', labels };
     const html = renderToString(<DailyBars primary={ct} {...props} waves={[{ date: '2026-11-20', count: 4 }]} />);
     expect(ticks(phone(html))).toHaveLength(1);
     expect(html).toContain('>Wave<');
@@ -402,7 +402,7 @@ describe('ForecastBand', () => {
     expect(ticks.join(' ')).not.toMatch(/day/i);
     expect(ticks).toContain('0');
     expect(html).toContain('dir="ltr"');
-    expect(html).toContain('var(--site-chart-1)');
+    expect(html).toContain(CATEGORY_COLOR.INTERVIEW);
   });
 
   it('a legend of three entries, and a data table with one row a week plus the last day', () => {
@@ -411,7 +411,7 @@ describe('ForecastBand', () => {
     const rows = html.slice(html.indexOf('<tbody>')).match(/<tr>/g)!;
     // Day 0 to day 364 is 52 whole weeks: a row every 7 days, and the last day is the 53rd.
     expect(rows).toHaveLength(53);
-    expect(html).toContain('<td class="border-b border-site-border py-1 pe-3 text-site-text">May 31, 2026</td>');
+    expect(html).toContain('<td>May 31, 2026</td>');
   });
 
   it('an empty band draws the observed line only and no range legend', () => {
@@ -444,13 +444,13 @@ describe('static rules', () => {
       'ForecastBand.tsx',
     ]);
   });
-  it.each(files)('%s uses only site tokens (text, border, surface, chart) and no motion of its own', (f) => {
+  it.each(files)('%s uses only app tokens (text, border, surface, chart) and no motion of its own', (f) => {
     const src = readFileSync(path.join(dir, f), 'utf8');
     expect(src).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(src).not.toMatch(/\b(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color-mix)\(/);
     expect(src).not.toMatch(/\b(fill|stroke)=["'](?!none["']|var\()[a-z]/i);
     for (const m of src.matchAll(/var\((--[\w-]+)/g)) {
-      expect(m[1]).toMatch(/^--site-(text|text-muted|border|surface|chart-[1-5])$/);
+      expect(m[1]).toMatch(/^--app-(text|text-muted|border|surface|med-chart-[1-5])$/);
     }
     expect(src).not.toMatch(
       /animate|transition|requestAnimationFrame|useEffect|dangerouslySetInnerHTML|gradient|<filter|filter[=:]|backdrop|shadow|window\b|Observer/,
@@ -497,7 +497,7 @@ describe('ArrivalBars (when results arrive)', () => {
     renderToString(
       <ArrivalBars
         items={data}
-        color="var(--site-chart-3)"
+        color="var(--app-med-chart-3)"
         title="Acceptance by day of the week"
         unit="Reported events, US Eastern time"
         sourcesLine="Sources: Admit.org, Student Doctor Network"
@@ -509,7 +509,7 @@ describe('ArrivalBars (when results arrive)', () => {
     const html = render();
     expect(html).toContain('US Eastern time');
     expect(html.match(/<rect/g)!.length).toBeGreaterThanOrEqual(items.length);
-    expect(html).toContain('fill="var(--site-chart-3)"');
+    expect(html).toContain('fill="var(--app-med-chart-3-fill)" stroke="var(--app-med-chart-3)"');
     expect(html).toContain('<table');
     expect(html).toContain('>Monday<');
     expect(html).toContain('role="group"');
@@ -522,5 +522,50 @@ describe('ArrivalBars (when results arrive)', () => {
   it('an all-zero histogram says there is nothing, and draws no bars', () => {
     const html = render(items.map((i) => ({ ...i, count: 0 })));
     expect(html).toContain(labels.empty);
+  });
+});
+
+describe('chart colours, from the stylesheet', () => {
+  const css = readFileSync(path.resolve(__dirname, '../medschools.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /** The `--name: #hex` declarations of the first `{ ... }` after `selector`. */
+  const tokens = (selector: string): Record<string, string> => {
+    const at = css.indexOf(selector);
+    const body = css.slice(css.indexOf('{', at) + 1, css.indexOf('}', at));
+    return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\b/g)].map((m) => [m[1]!, m[2]!]));
+  };
+  const lum = (hex: string): number => {
+    const [r, g, b] = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    }) as [number, number, number];
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a: string, b: string): number => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x) as [number, number];
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const MODES = {
+    light: tokens('.app-theme.medapp-theme,\n:root:has(.medapp-theme)'),
+    dark: tokens(":root[data-app-dark='1'] .app-theme.medapp-theme"),
+  };
+
+  it.each(Object.entries(MODES))(
+    '%s: every line holds 3:1 on paper and on the ground, and the fills differ',
+    (_m, mode) => {
+      const lines = [1, 2, 3, 4, 5].map((i) => mode[`app-med-chart-${i}`]!);
+      expect(new Set(lines).size).toBe(5);
+      for (const [i, line] of lines.entries()) {
+        expect(contrast(line, mode['app-surface']!), `chart-${i + 1} on paper`).toBeGreaterThanOrEqual(3);
+        expect(contrast(line, mode['app-bg']!), `chart-${i + 1} on ground`).toBeGreaterThanOrEqual(3);
+        expect(mode[`app-med-chart-${i + 1}-fill`], `chart-${i + 1} fill`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      }
+    },
+  );
+
+  it('no site chart token is left anywhere in the app or its stylesheets', () => {
+    expect(css).not.toContain('--site-chart');
+    expect(readFileSync(path.resolve(__dirname, '../../../../app/globals/tokens-themes.css'), 'utf8')).not.toContain(
+      '--site-chart',
+    );
   });
 });

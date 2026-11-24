@@ -1,4 +1,5 @@
 import { barsGeometry, type ChartGeometry } from '../../engine/chart-geometry';
+import { fillOf } from './chartColors';
 import {
   ChartFrame,
   DataTable,
@@ -22,7 +23,7 @@ export interface ArrivalItem {
 
 /**
  * A histogram of arrivals (owner 2026-11-23), drawn the O7 way: one chart card, one series in the category's colour,
- * the `--site-chart-*` var passed in, a probe on hover, touch and the arrow keys, and the native table. One series, so
+ * the `--app-med-chart-*` var passed in, a probe on hover, touch and the arrow keys, and the native table. One series, so
  * there is no legend; the title names the category and the caption names the zone. Static: it has no tween because it
  * never changes on a toggle (a toggle fetches another category).
  */
@@ -97,7 +98,16 @@ export function ArrivalBars(p: {
               {hasData ? (
                 <g clipPath={`url(#${clipId})`}>
                   {geo.bars.map((b, i) => (
-                    <rect key={p.items[i]!.key} x={b.x} y={b.y} width={b.w} height={b.h} fill={p.color} />
+                    <rect
+                      key={p.items[i]!.key}
+                      x={b.x}
+                      y={b.y}
+                      width={b.w}
+                      height={b.h}
+                      fill={fillOf(p.color)}
+                      stroke={p.color}
+                      strokeWidth={1}
+                    />
                   ))}
                 </g>
               ) : (

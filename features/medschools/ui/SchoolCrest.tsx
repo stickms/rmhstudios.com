@@ -1,8 +1,13 @@
 import { crestSrc } from '../engine/crests';
 
-export type CrestSize = 20 | 24 | 40;
+export type CrestSize = 20 | 24 | 40 | 76;
 
-const BOX: Record<CrestSize, string> = { 20: 'medapp-crest--20', 24: 'medapp-crest--24', 40: 'medapp-crest--40' };
+const BOX: Record<CrestSize, string> = {
+  20: 'medapp-crest--20',
+  24: 'medapp-crest--24',
+  40: 'medapp-crest--40',
+  76: 'medapp-crest--76',
+};
 const SKIP = new Set(['the', 'of', 'at', 'and', 'for']);
 
 /** Up to two capitals from the significant words of a school name ("Harvard Medical School" is "HM"). */

@@ -468,6 +468,7 @@
   "school-inactive": "That school is inactive and cannot be mapped to.",
   "school-interviews-empty": "No interview details reported yet.",
   "school-load-failed": "Could not load this school.",
+  "school-my-label": "My Med Schools",
   "school-my-lists": "My lists",
   "school-my-tracker": "My tracker",
   "school-place": "{{degree}} · {{city}}, {{state}}",
