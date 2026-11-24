@@ -65,6 +65,8 @@ import sdnAliasesJson from '../../data/medschools/sdn-aliases.json';
 import sdnForumsJson from '../../data/medschools/sdn-forums.json';
 import schoolPagesJson from '../../data/medschools/school-pages.json';
 import { ensureSchoolPagesImported } from '../../features/medschools/scrape/school-pages';
+import msarReportsJson from '../../data/medschools/msar-reports.json';
+import { ensureMsarReportsImported } from '../../features/medschools/scrape/msar-reports';
 import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/medschools/scrape/run-sdn-live';
 import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
@@ -775,6 +777,12 @@ async function bootstrap(): Promise<boolean> {
       await ensureSchoolPagesImported(medPrisma, schoolPagesJson, log);
     } catch (e) {
       log.error(`Bootstrap: school pages import failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    // The AAMC MSAR report facts (owner-stated permission, 2026-11-24): the same once-per-file-version bootstrap.
+    try {
+      await ensureMsarReportsImported(medPrisma, msarReportsJson, log);
+    } catch (e) {
+      log.error(`Bootstrap: MSAR reports import failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     return (
       CYCLETRACK_ENABLED &&

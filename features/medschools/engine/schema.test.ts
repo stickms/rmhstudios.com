@@ -572,9 +572,52 @@ model MedTrackerApplication {
           d.includes('medschools') &&
           d !== mine &&
           !d.endsWith('_medschools_school_pages_turnaround') &&
-          !d.endsWith('_medschools_matriculated'),
+          !d.endsWith('_medschools_matriculated') &&
+          !d.endsWith('_medschools_school_facts'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
+    });
+  });
+  describe('school facts: institutional, sourced, no person', () => {
+    const body = () => parseModels(schema()).find((x) => x.model === 'MedSchoolFact');
+    it('is institutional data: no person column, no relation to User, not user-owned (nothing to erase)', () => {
+      const m = body();
+      expect(m).toBeDefined();
+      expect(
+        m?.fields.some((f) => PERSON_LIKE.test(f) || f === 'userId' || /handle|post|author|member\b/i.test(f)),
+      ).toBe(false);
+      expect(m?.body).not.toMatch(/\bUser\b/);
+      expect(USER_OWNED.has('MedSchoolFact')).toBe(false);
+    });
+
+    it('pins its columns and its unique key', () => {
+      const m = body();
+      expect(m?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'cycleYear',
+        'kind',
+        'valueNum',
+        'valueText',
+        'valueJson',
+        'note',
+        'source',
+        'sourceUrl',
+        'sourceLabel',
+        'reportId',
+        'page',
+        'checkedOn',
+      ]);
+      expect(m?.body).toContain('@@unique([schoolId, program, cycleYear, kind, source])');
+      expect(schema()).toMatch(/enum MedFactSource \{\s*AAMC_MSAR_REPORT\s*SCHOOL_PROFILE\s*\}/);
+    });
+
+    it('the migration is additive', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_school_facts')) ?? '';
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+      expect(sql).toContain('CREATE TABLE "med_school_fact"');
+      expect(sql).not.toMatch(/\bDROP\b|\bALTER TABLE "(?!med_school_fact)/i);
     });
   });
 });

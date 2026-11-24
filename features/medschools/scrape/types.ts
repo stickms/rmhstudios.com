@@ -235,6 +235,25 @@ export interface MedSchoolAdmissionsPolicyRow {
   source: 'ADMIT' | 'SDN' | 'SCHOOL';
 }
 
+/** A dated, sourced fact about a school (see `engine/school-facts.ts`). */
+export interface MedSchoolFactRow {
+  id: string;
+  schoolId: string;
+  program: MedProgram;
+  cycleYear: number;
+  kind: string;
+  valueNum: number | null;
+  valueText: string | null;
+  valueJson: unknown;
+  note: string | null;
+  source: 'AAMC_MSAR_REPORT' | 'SCHOOL_PROFILE';
+  sourceUrl: string;
+  sourceLabel: string;
+  reportId: number | null;
+  page: number | null;
+  checkedOn: Date;
+}
+
 export interface MedSecondaryTurnaroundRow {
   id: string;
   schoolId: string;
@@ -413,6 +432,11 @@ export interface MedPrisma {
   medSchoolAdmissionsPolicy: {
     findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedSchoolAdmissionsPolicyRow[]>;
     upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSchoolAdmissionsPolicyRow>;
+  };
+  medSchoolFact: {
+    findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedSchoolFactRow[]>;
+    upsert(args: { where: Where; create: Data; update: Data }): Promise<MedSchoolFactRow>;
+    deleteMany(args: { where: Where }): Promise<{ count: number }>;
   };
   medSecondaryTurnaround: {
     findMany(args?: { where?: Where; select?: Record<string, boolean> }): Promise<MedSecondaryTurnaroundRow[]>;

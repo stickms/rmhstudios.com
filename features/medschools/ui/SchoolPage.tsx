@@ -19,6 +19,7 @@ import { SecondariesTab } from './SecondariesTab';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
+import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { PageHead } from './shell/PageHead';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
@@ -171,7 +172,10 @@ export function SchoolPage() {
               <>
                 <div className="medapp-controls">{programControl}</div>
                 {search.tab === 'activity' ? (
-                  <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
+                  <>
+                    <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
+                    <AdmissionsFacts slug={slug} degree={detail.school.degree} />
+                  </>
                 ) : (
                   <InterviewsTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
                 )}
