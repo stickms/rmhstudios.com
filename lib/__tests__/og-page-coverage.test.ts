@@ -113,7 +113,6 @@ const BACKLOG: Record<string, string> = {
   'app/routes/library.$slug.tsx': 'hand-rolled meta',
   // Full-screen standalone pages with their own head.
   'app/routes/black-lives-matter.tsx': 'hand-rolled meta',
-  'app/routes/security.tsx': 'hand-rolled meta',
 };
 
 const results = pageRouteFiles()

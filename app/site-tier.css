@@ -197,8 +197,6 @@
 @source not "./routes/altair.tsx";
 @source not "./routes/altair";
 @source not "./routes/black-lives-matter.tsx";
-@source not "./routes/cookies.tsx";
-@source not "./routes/copyright.tsx";
 @source not "./routes/elections.tsx";
 @source not "./routes/daily.tsx";
 @source not "./routes/daily";
@@ -217,7 +215,6 @@
 @source not "./routes/laundry-sort.tsx";
 @source not "./routes/neon-driftway.tsx";
 @source not "./routes/nightrail.tsx";
-@source not "./routes/privacy.tsx";
 @source not "./routes/replays.$id.tsx";
 @source not "./routes/rmh-capital.tsx";
 @source not "./routes/rmh-capital";
@@ -240,7 +237,6 @@
 @source not "./routes/rmhtube";
 @source not "./routes/rmhtype.tsx";
 @source not "./routes/rmhtype";
-@source not "./routes/security.tsx";
 @source not "./routes/services.rebar-rutabaga.tsx";
 @source not "./routes/signal-forge.tsx";
 @source not "./routes/slice-it.tsx";
@@ -254,7 +250,6 @@
 @source not "./routes/synapse-storm.tsx";
 @source not "./routes/temple-of-joy.tsx";
 @source not "./routes/temple-of-joy";
-@source not "./routes/terms.tsx";
 @source not "./routes/vega.tsx";
 @source not "./routes/velum2099.tsx";
 @source not "./routes/versecraft.tsx";

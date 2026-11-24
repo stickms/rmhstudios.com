@@ -619,7 +619,7 @@ export const STATIC_CARDS: StaticCard[] = [
 ];
 
 /** Legal pages share one card — they are the same kind of page. */
-const LEGAL_PATHS = ['/terms', '/privacy', '/cookies', '/copyright'];
+const LEGAL_PATHS = ['/terms', '/privacy', '/cookies', '/copyright', '/security'];
 for (const path of LEGAL_PATHS) {
   STATIC_CARDS.push({
     path,

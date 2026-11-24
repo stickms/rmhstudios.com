@@ -105,6 +105,7 @@ export const STATIC_CARD_INDEX: readonly (readonly [string, string])[] = [
   ['/privacy', 'legal'],
   ['/cookies', 'legal'],
   ['/copyright', 'legal'],
+  ['/security', 'legal'],
 ];
 
 /** Longest path first, so the most specific match wins. */
