@@ -90,7 +90,7 @@ export function ItemStage({
       })}
       data-slot="item-stage"
       data-no-twemoji
-      className="flex flex-col gap-3 rounded-site border border-site-border bg-site-bg p-3"
+      className="flex flex-col gap-3 rounded-site border border-site-border bg-site-bg-subtle p-3"
     >
       {backdrop ? <ProfileBanner src={null} backdrop={backdrop} /> : null}
       <div className="flex min-w-0 items-center gap-3">

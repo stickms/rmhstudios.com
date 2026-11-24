@@ -8,7 +8,6 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +20,7 @@ import { BuildIssuesLink } from './BuildIssuesLink';
 import { BuildReleases } from './BuildReleases';
 import { ScreenshotStrip } from './ScreenshotStrip';
 import { PostAwards } from '@/components/awards/PostAwards';
-import { formatCount } from '@/lib/utils';
+import { cn, formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -383,8 +382,8 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
 
       {/* Paywall — paid build whose content the viewer hasn't unlocked */}
       {build.locked && (
-        <Card>
-          <CardContent className="text-center">
+        <div className="rule-section">
+          <div className="text-center">
             <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-site-surface">
               <Lock className="size-6 text-site-warning" aria-hidden />
             </div>
@@ -409,24 +408,24 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
                     defaultValue: 'Sign in to unlock',
                   })}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* README */}
       {!build.locked && build.readme && (
-        <Card className={unlockArrival}>
-          <CardContent>
+        <div className={cn('rule-section', unlockArrival)}>
+          <div>
             <h2 className="mb-4 text-lg font-semibold text-site-text">
               {t('readme', {
                 defaultValue: 'README',
               })}
             </h2>
-            <div className="prose max-w-none prose-headings:text-site-text prose-p:text-site-text-muted prose-li:text-site-text-muted prose-strong:text-site-text prose-code:text-site-text prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border">
+            <div className="prose max-w-none prose-headings:text-site-text prose-p:text-site-text-muted prose-li:text-site-text-muted prose-strong:text-site-text prose-code:text-site-text prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border prose-img:bg-site-bg-subtle">
               <ReactMarkdown>{build.readme}</ReactMarkdown>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Releases */}
@@ -449,11 +448,11 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
       )}
 
       {/* Comments */}
-      <Card>
-        <CardContent>
+      <div className="rule-section">
+        <div>
           <BuildComments buildId={build.id} />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

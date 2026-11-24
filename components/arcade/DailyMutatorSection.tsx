@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Flame, Play } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -56,9 +55,9 @@ export function DailyMutatorSection() {
           <Spinner />
         </div>
       ) : (
-        // One box with the column's own rhythm, so the challenge fades in as a whole.
+        // One block with the column's own rhythm, so the challenge fades in as a whole.
         <div className={cn('space-y-4', arrival)}>
-          <Card pane className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
                 <Flame className="h-4 w-4 text-site-accent" aria-hidden />
@@ -98,7 +97,7 @@ export function DailyMutatorSection() {
                 </span>
               ) : null}
             </div>
-          </Card>
+          </div>
 
           <section>
             <h2 className="site-section-label mb-3">{t('board-title', { defaultValue: 'Today’s leaderboard' })}</h2>
@@ -109,21 +108,22 @@ export function DailyMutatorSection() {
                 })}
               />
             ) : (
-              <ol className="space-y-2">
+              <ol>
                 {data.board.map((r) => (
                   <li key={r.rank}>
-                    <Card
-                      className={
-                        r.isMe
-                          ? 'flex-row justify-between px-4 py-3 ring-1 ring-site-accent'
-                          : 'flex-row justify-between px-4 py-3'
-                      }
+                    <div
+                      className={cn(
+                        'flex justify-between border-b border-site-border py-3',
+                        // The own row is marked by a 2px ink rule at the start edge; ps-2.5 + 2px border = ps-3, so
+                        // the text column does not shift against the other rows.
+                        r.isMe ? 'border-s-2 border-site-text ps-2.5 font-semibold' : 'ps-3',
+                      )}
                     >
                       <span className="text-sm text-site-text">
                         {r.rank}. {r.user.name ?? r.user.handle}
                       </span>
                       <span className="font-mono text-sm text-site-text">{fmt.number(r.score)}</span>
-                    </Card>
+                    </div>
                   </li>
                 ))}
               </ol>

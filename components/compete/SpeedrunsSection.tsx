@@ -25,7 +25,6 @@ import { toast } from '@/lib/toast';
 import { Timer } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
@@ -237,13 +236,13 @@ export function SpeedrunsSection() {
           )}
 
           {selected && (
-            <Card pane className="px-5 sm:px-6">
+            <div className="flex flex-col gap-2 border-b border-site-border py-4">
               <div className="flex flex-col gap-2">
                 <h2 className="text-lg font-medium text-site-text">{selected.name}</h2>
                 <p className="text-sm text-site-text-muted">{selected.rules}</p>
                 <TierNote tier={selected.tier} />
               </div>
-            </Card>
+            </div>
           )}
 
           {loadingBoard || !board ? (

@@ -145,7 +145,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
   );
 
   return (
-    <section className="surface-panel p-4 sm:p-5" aria-labelledby="homes-distance-heading" data-slot="distance-filter">
+    <section className="rule-section" aria-labelledby="homes-distance-heading" data-slot="distance-filter">
       <div className="flex flex-wrap items-center gap-2">
         <MapPin className="size-4 text-site-accent" aria-hidden />
         <h2 id="homes-distance-heading" className="text-sm font-semibold text-site-text">

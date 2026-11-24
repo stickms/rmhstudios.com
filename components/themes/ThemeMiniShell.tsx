@@ -146,7 +146,7 @@ export function ThemeMiniShell({
             </span>
             <span
               className={cn(
-                'rounded-site border border-site-border px-2 font-medium text-site-text',
+                'rounded-site border border-site-border bg-site-surface px-2 font-medium text-site-text',
                 tSm,
                 size === 'lg' ? 'py-1' : 'py-0.5',
               )}

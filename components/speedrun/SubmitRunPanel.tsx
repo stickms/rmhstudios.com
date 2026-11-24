@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
@@ -122,7 +121,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
   }
 
   return (
-    <Card pane className="px-5 sm:px-6">
+    <div className="border-b border-site-border py-4">
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-medium text-site-text">
           {t('speedrun-submit-title', {
@@ -187,6 +186,6 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
           })}
         </Button>
       </div>
-    </Card>
+    </div>
   );
 }

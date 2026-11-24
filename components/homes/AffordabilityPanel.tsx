@@ -138,11 +138,7 @@ export function AffordabilityPanel({ mode, samplePrice, filterActive = false, on
   const ratioPct = Math.round(profile.housingRatio * 100);
 
   return (
-    <section
-      className="surface-panel p-4 sm:p-5"
-      aria-labelledby="homes-afford-heading"
-      data-slot="affordability-panel"
-    >
+    <section className="rule-section" aria-labelledby="homes-afford-heading" data-slot="affordability-panel">
       <div className="flex flex-wrap items-center gap-2">
         <Calculator className="size-4 text-site-accent" aria-hidden />
         <h2 id="homes-afford-heading" className="text-sm font-semibold text-site-text">

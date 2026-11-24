@@ -4,7 +4,6 @@ import { toast } from '@/lib/toast';
 import { List as ListIcon, Plus, Pin } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -69,10 +68,9 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
           })}
         />
       ) : (
-        <ul className="space-y-3">
+        <ul>
           {lists.map((l) => (
-            <li key={l.id}>
-              <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+            <li key={l.id} className="row-hover flex items-center gap-3 border-b border-site-border py-3">
                 <Link
                   to="/lists/$id"
                   params={{ id: l.id }}
@@ -92,7 +90,6 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
                     </span>
                   </span>
                 </Link>
-              </Card>
             </li>
           ))}
         </ul>

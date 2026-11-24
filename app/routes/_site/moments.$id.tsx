@@ -82,7 +82,7 @@ function MomentPage() {
           <span className="text-sm text-site-text-muted">{byline}</span>
         </div>
 
-        <div className="overflow-hidden rounded-site border border-site-border">
+        <div className="overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
           <img
             src={`/api/og/moment/${id}`}
             alt={`${who}: ${moment.payload.value}`}

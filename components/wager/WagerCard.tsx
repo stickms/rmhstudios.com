@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Swords, Coins, ShieldCheck, Trophy } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -89,7 +88,7 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
   };
 
   return (
-    <Card className="gap-3 px-4 py-4" interactive>
+    <div className="flex flex-col gap-3 border-b border-site-border py-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Swords className="size-4 shrink-0 text-site-accent" aria-hidden />
@@ -185,6 +184,6 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
           </>
         )}
       </div>
-    </Card>
+    </div>
   );
 }

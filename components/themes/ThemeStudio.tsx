@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Palette, Plus, Coins, Check, Sparkles, Eye } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
+import { Cells } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs } from '@/components/ui/tabs';
@@ -148,10 +147,10 @@ export function ThemeStudio({
                 title={t('no-themes', { defaultValue: 'No themes yet' })}
               />
             ) : (
-              <ul className="space-y-2">
+              <ul>
                 {mine.map((theme) => (
                   <li key={theme.id}>
-                    <Card className="flex-row items-center gap-3 px-4 py-3">
+                    <div className="flex flex-row items-center gap-3 border-b border-site-border py-3">
                       <button
                         type="button"
                         onClick={() => setEditing(theme)}
@@ -178,7 +177,7 @@ export function ThemeStudio({
                         onRemove={remove}
                         t={t}
                       />
-                    </Card>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -189,7 +188,7 @@ export function ThemeStudio({
           // which left the copy about 110px on a phone — a two-word title over
           // four lines. The button goes full width underneath instead, which is
           // also the comfortable place to reach it.
-          <Card pane className="flex-col items-start gap-3 p-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col items-start gap-3 border-b border-site-border py-4 sm:flex-row sm:items-center">
             <div className="flex min-w-0 items-start gap-3">
               <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
               <div className="min-w-0 flex-1">
@@ -211,17 +210,17 @@ export function ThemeStudio({
                 {t('member-gate-cta', { defaultValue: 'Become a member' })}
               </ViewTransitionLink>
             </Button>
-          </Card>
+          </div>
         )
       ) : null}
 
       {/* ── Owned inventory: Apply / Remove (§14.2) ── */}
       {signedIn && owned.length > 0 ? (
         <SettingsSection title={t('owned-themes', { defaultValue: 'Your inventory' })}>
-          <ul className="space-y-2">
+          <ul>
             {owned.map((theme) => (
               <li key={theme.id}>
-                <Card className="flex-row items-center gap-3 px-4 py-3">
+                <div className="flex flex-row items-center gap-3 border-b border-site-border py-3">
                   <span className="w-24 shrink-0">
                     <ThemeMiniShell tokens={theme.tokens} size="sm" className="!h-14" />
                   </span>
@@ -243,7 +242,7 @@ export function ThemeStudio({
                     onRemove={remove}
                     t={t}
                   />
-                </Card>
+                </div>
               </li>
             ))}
           </ul>
@@ -268,14 +267,14 @@ export function ThemeStudio({
             title={t('shop-empty', { defaultValue: 'No themes for sale yet' })}
           />
         ) : (
-          <ul className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3', sorting && 'opacity-60')}>
+          <Cells columns={2} className={sorting ? 'opacity-60' : undefined}>
             {shop.map((t0) => {
               // The shop list is public and cached, so it never knows who is looking. A theme you bought or wrote
               // is yours: apply it rather than being offered it for sale again.
               const theme = ownsTheme(t0.id) ? { ...t0, owned: true } : t0;
               return (
               <li key={theme.id}>
-                <Card interactive className="gap-3 px-4 py-3">
+                <div className="flex flex-col gap-3">
                   <ThemeMiniShell tokens={theme.tokens} size="sm" />
                   <div className="flex items-start justify-between gap-2">
                     <span className="min-w-0">
@@ -318,11 +317,11 @@ export function ThemeStudio({
                       </Button>
                     )}
                   </div>
-                </Card>
+                </div>
               </li>
               );
             })}
-          </ul>
+          </Cells>
         )}
       </SettingsSection>
     </SettingsPageBody>
