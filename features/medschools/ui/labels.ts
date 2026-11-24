@@ -48,6 +48,8 @@ export function useMedLabels() {
         return t('tracker-milestone-secondary-received', { defaultValue: 'Secondary received' });
       case 'SECONDARY_SUBMITTED':
         return t('tracker-milestone-secondary-submitted', { defaultValue: 'Secondary submitted' });
+      case 'MATRICULATED':
+        return t('tracker-milestone-matriculated', { defaultValue: 'Matriculating' });
       default:
         return eventLabel(type);
     }

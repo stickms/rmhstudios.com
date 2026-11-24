@@ -604,6 +604,7 @@
   "tracker-milestone-date": "Date",
   "tracker-milestone-edit": "Edit {{milestone}}",
   "tracker-milestone-line": "{{type}}, {{date}}",
+  "tracker-milestone-matriculated": "Matriculating",
   "tracker-milestone-remove": "Remove",
   "tracker-milestone-remove-label": "Remove milestone",
   "tracker-milestone-secondary-received": "Secondary received",

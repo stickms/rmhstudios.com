@@ -1103,4 +1103,13 @@ describe('secondary turnaround', () => {
     expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before + 1);
     await a.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
   });
+
+  it('MATRICULATED is accepted privately and never becomes a public event', async () => {
+    expect((await putCycle(a, true)).status).toBe(200);
+    const appId = await addApp(a, PRIVATE_MD_SLUG);
+    const before = await rmhEventCount(PRIVATE_MD_ID);
+    expect((await putMilestone(a, appId, 'MATRICULATED', dayAgo(2))).status).toBe(200);
+    expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before);
+    await a.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
+  });
 });

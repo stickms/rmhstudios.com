@@ -461,6 +461,7 @@ describe('MilestoneForm', () => {
         'WAITLIST',
         'REJECTION',
         'ACCEPTANCE',
+        'MATRICULATED',
         'WITHDRAWN',
         'HOLD',
       ] as const

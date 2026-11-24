@@ -14,7 +14,7 @@ import { inviteChance, typicalWait, type SurvivalCurve } from '../engine/stats/k
 import { getTracker } from './tracker.server';
 
 const day = (d: Date): string => d.toISOString().slice(0, 10);
-const CLOSING = new Set(['REJECTION', 'WITHDRAWN', 'ACCEPTANCE']);
+const CLOSING = new Set(['REJECTION', 'WITHDRAWN', 'ACCEPTANCE', 'MATRICULATED']);
 
 /**
  * The stored step function, or null when the JSON is not `{ t, s, n }` of numbers and equal length. A row written before
