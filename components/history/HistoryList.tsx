@@ -4,9 +4,8 @@ import { historyEntityTypeLabels } from '@/components/history/entity-type-labels
 import { toast } from '@/lib/toast';
 import { History, Trash2, Play } from 'lucide-react';
 
-import { relativeTimeShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
 import { RelativeTime } from '@/components/ui/RelativeTime';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
@@ -258,7 +257,7 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
   );
 
   return (
-    <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+    <div className={cn('flex items-center gap-3 border-b border-site-border py-3', item.href && 'row-hover')}>
       {item.href ? (
         <a href={item.href} className="flex min-w-0 flex-1 items-center gap-3">
           {inner}
@@ -275,6 +274,6 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
           defaultValue: 'Remove',
         })}
       />
-    </Card>
+    </div>
   );
 }

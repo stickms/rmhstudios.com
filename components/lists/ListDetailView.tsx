@@ -7,7 +7,6 @@ import { toast } from '@/lib/toast';
 import { Pin, Trash2 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -175,10 +174,10 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
           })}
         />
       ) : (
-        <ul className={cn('space-y-3', arrival)}>
+        <ul className={arrival}>
           {posts.map((p) => (
-            <li key={p.id} className={isNew(p.id) ? ARRIVE : undefined}>
-              <Card interactive className="px-4 py-3 sm:py-3">
+            <li key={p.id} className={cn('row-hover border-b border-site-border py-3', isNew(p.id) && ARRIVE)}>
+              <div>
                 <Link
                   to="/thread/$rootId"
                   params={{
@@ -201,7 +200,7 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
                     {p.content}
                   </span>
                 </Link>
-              </Card>
+              </div>
             </li>
           ))}
         </ul>

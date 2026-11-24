@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Bookmark, FolderPlus, Trash2, FileX } from 'lucide-react';
 
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IconButton } from '@/components/ui/icon-button';
@@ -17,6 +16,7 @@ import { SaveNoteSearch } from '@/components/posts-plus/SaveNoteSearch';
 import { api } from '@/lib/contract/client';
 import { createSaveFolderApi, listSavesApi, unsaveItemApi } from '@/lib/saves/saves.contract';
 import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface HubData {
   items: HydratedSave[];
@@ -258,7 +258,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
 
   if (save.tombstone) {
     return (
-      <Card className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+      <div className="flex items-center gap-3 border-b border-site-border py-3">
         <FileX className="h-5 w-5 shrink-0 text-site-text-muted" aria-hidden />
         <span className="flex-1 text-sm text-site-text-muted">
           {t('unavailable', {
@@ -274,7 +274,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
             defaultValue: 'Remove',
           })}
         />
-      </Card>
+      </div>
     );
   }
 
@@ -302,7 +302,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
 
   return (
     <>
-      <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+      <div className={cn('flex items-center gap-3 border-b border-site-border py-3', save.href && 'row-hover')}>
         {save.href ? (
           <a href={save.href} className="flex min-w-0 flex-1 items-center gap-3">
             {body}
@@ -319,8 +319,8 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
             defaultValue: 'Remove',
           })}
         />
-      </Card>
-      <div className="px-4 pt-1 pb-1">
+      </div>
+      <div className="pt-1 pb-1">
         <SaveNoteEditor entityType={save.entityType} entityId={save.entityId} initial={save.note} />
       </div>
     </>
