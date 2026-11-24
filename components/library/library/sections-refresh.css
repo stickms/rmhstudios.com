@@ -556,25 +556,24 @@
   opacity: 1;
   animation: none;
 }
+/* The picture (S4): the stage the cover stands on carries the 1px border, the 8px radius and the placeholder ground.
+   Hover and focus turn the border to ink; the title underlines. */
 .lib-volume .lib-book__3d {
   min-height: var(--cover-h);
   height: var(--cover-h);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--site-text, #fff) 9%, transparent);
-  border-radius: var(--site-radius, 16px);
-  background:
-    radial-gradient(circle at 50% 28%, hsla(var(--book-hue, 240), 34%, 34%, 0.23), transparent 60%),
-    color-mix(in srgb, var(--site-surface, #222) 42%, transparent);
-  transition:
-    border-color 220ms ease,
-    background 220ms ease;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-bg-subtle);
+  transition: border-color 90ms ease;
 }
 .lib-volume:hover .lib-book__3d,
 .lib-volume .lib-book:focus-visible .lib-book__3d {
-  border-color: color-mix(in srgb, var(--site-text, #fff) 20%, transparent);
-  background:
-    radial-gradient(circle at 50% 28%, hsla(var(--book-hue, 240), 42%, 40%, 0.3), transparent 62%),
-    color-mix(in srgb, var(--site-surface, #222) 58%, transparent);
+  border-color: var(--site-text);
+}
+.lib-book:hover .lib-book__name,
+.lib-book:focus-visible .lib-book__name {
+  text-decoration: underline;
 }
 .lib-volume .lib-book__cover {
   width: min(72%, 184px);
@@ -1007,7 +1006,7 @@
      content section sits inside it, that inset applied to the sections and not
      to the strip — so the shelves were up to 32px narrower than the tabs and
      search directly above them, on a page where all three read as one column.
-     The playground does not clip, so the 3D orbit still has room to lift. */
+     The playground does not clip, so the cover's hover turn still has room. */
   /* Aligned with the page controls above it: 1rem from the column on wide screens, none on a phone (below 768px the
      controls are pinned to the screen edge and the frame already provides the gutter, so a gutter here put the
      catalog section 8px inside the search and tabs). */
@@ -1045,32 +1044,25 @@
   z-index: 1;
 }
 
-/* Each content family uses the same outer bubble and internal spacing rhythm.
-   The border is `.surface-card`'s own, NOT a transparent override: L1's 1px rim
-   is what grounds a surface, and without it these sections were a shadow with
-   no edge — the one place on the site where a repeated content card floated
-   instead of sitting. (High contrast used to patch the rim back on for exactly
-   that reason; it no longer has to.) */
+/* Each content family is a plain section set off from the one before by a floating rule above (S7, `rule-section`
+   is also on the element): no box, no fill, no padding that indents its content from the page edge. The first section
+   in the playground draws no rule. These margins are written here, not left to `.rule-section`, because an unlayered
+   rule such as `.lib__section` outranks the primitive's layered one. */
 .lib--glass-playground .lib-section-shell {
   max-width: var(--lib-content);
-  margin: var(--site-section-gap) auto 0;
-  padding: var(--site-panel-padding);
-  padding-inline: 0;
+  margin-block: 1.5rem 0;
+  margin-inline: auto;
+  padding: 1.5rem 0 0;
   overflow: visible;
-  border-radius: calc(var(--site-radius) * 1.25);
+}
+.lib--glass-playground .lib-section-shell:first-child {
+  margin-block-start: 0;
+  padding-block-start: 0;
 }
 
 .lib--glass-playground .lib__section--catalog {
   max-width: none;
   padding-inline: 0;
-}
-
-.lib--glass-playground .lib__section + .lib__section {
-  margin-top: var(--site-section-gap);
-}
-
-.lib--glass-playground .lib__section--catalog + .lib__section--catalog {
-  margin-top: var(--site-section-gap);
 }
 
 .lib--glass-playground .lib__section-head,
@@ -1079,7 +1071,7 @@
 .lib--glass-playground .lib-albums__head {
   max-width: none;
   margin: 0;
-  padding: 0 2px 14px;
+  padding: 0 0 14px;
   border: 0;
 }
 
@@ -1144,42 +1136,6 @@
   font-size: 0.6875rem;
 }
 
-/* Universal media bubbles. JS supplies the two rotation variables by delegated
-   pointer events; the regular glass system supplies the tracked light hotspot. */
-.lib-playground [data-library-orbit] {
-  --lib-orbit-x: 0deg;
-  --lib-orbit-y: 0deg;
-  --lib-orbit-lift: 0px;
-  transform: perspective(900px) translateY(var(--lib-orbit-lift)) rotateX(var(--lib-orbit-x))
-    rotateY(var(--lib-orbit-y));
-  transform-style: preserve-3d;
-  transition:
-    transform 0.38s var(--ease-glass),
-    box-shadow var(--site-transition-speed),
-    background-color var(--site-transition-speed);
-  will-change: transform;
-}
-
-.lib-playground [data-library-orbit][data-orbit-active] {
-  transition:
-    transform 70ms linear,
-    box-shadow var(--site-transition-speed),
-    background-color var(--site-transition-speed);
-}
-
-.lib-playground [data-library-orbit]:hover,
-.lib-playground [data-library-orbit]:focus-visible,
-.lib-playground [data-library-orbit]:focus-within {
-  --lib-orbit-lift: -4px;
-}
-
-.lib--glass-playground .lib-orbit-card {
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: var(--site-radius);
-}
-
 .lib--glass-playground .lib-album {
   gap: 12px;
 }
@@ -1195,45 +1151,27 @@
 .lib--glass-playground .lib-coll-tile__btn {
   gap: 0;
   height: 100%;
-  padding: 10px;
-  background-color: var(--site-surface);
 }
 
 .lib--glass-playground .lib-volume .lib-book__3d,
 .lib--glass-playground .lib-coll-tile__btn .lib-book__3d {
-  border: 0;
-  border-radius: calc(var(--site-radius) - 5px);
-  background:
-    radial-gradient(
-      /* Fixed centre. This used to read `--lib-orbit-glow-*`, written on every
-         pointer move — moving a gradient's position repaints the whole tile
-         (design.md §3). The tilt still tracks the finger; the light does not. */
-      circle at 50% 35%,
-      color-mix(in srgb, var(--site-accent) 16%, transparent),
-      transparent 58%
-    ),
-    var(--site-surface);
+  border-radius: var(--site-radius);
 }
 
 .lib--glass-playground .lib-volume .lib-book__meta,
 .lib--glass-playground .lib-coll-tile__btn .lib-book__meta {
   min-height: 150px;
-  padding: 14px 4px 2px;
+  padding: 12px 0 2px;
 }
 
 .lib--glass-playground .lib-playlists > .space-y-4 {
   padding: 0;
 }
 
-.lib--glass-playground .lib-playlists .lib-orbit-card {
-  background-color: var(--site-surface);
-}
-
 .lib--glass-playground .lib-edit__migrate {
   max-width: var(--lib-content);
-  margin: var(--site-section-gap) auto 0;
-  border-radius: var(--site-radius);
-  background: var(--site-surface);
+  margin: 1.5rem auto 0;
+  padding-inline: 0;
 }
 
 @media (max-width: 560px) {
@@ -1246,19 +1184,10 @@
     padding: 8px;
   }
 
-  .lib--glass-playground .lib-section-shell {
-    padding: var(--site-panel-padding);
-  }
-
   .lib--glass-playground .lib__shelf--catalog {
     --cover-h: 220px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-  }
-
-  .lib--glass-playground .lib-volume .lib-book,
-  .lib--glass-playground .lib-coll-tile__btn {
-    padding: 7px;
   }
 
   .lib--glass-playground .lib-volume .lib-book__meta {
@@ -1294,9 +1223,6 @@
 }
 
 /* A catalogue of readable covers and metadata; inspection stays in the viewer. */
-.lib-playground[data-library-layout='shelves'] [data-library-orbit] {
-  transform: none;
-}
 .lib-playground[data-library-layout='shelves'] .lib__shelf {
   align-items: start;
 }

@@ -91,7 +91,7 @@ const FLAT_BASELINE: Record<string, FlatCount> = {
   'components/library/library/sections-refresh.css': {
     bf: 10,
     fl: 0,
-    gr: 5,
+    gr: 2,
   }, // book cover art and the reader's chips over pictures
   // Phase 7 (long tail): shared global sheets that carry rules for games and standalone pages, and routes with no
   // recipe yet. Each is removed against section 10's X2 when its page is reviewed.

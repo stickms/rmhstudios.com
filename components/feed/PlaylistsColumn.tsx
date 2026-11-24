@@ -317,7 +317,7 @@ export function PlaylistsColumn({
               }
             />
           ) : (
-            <div className="space-y-2">
+            <div className={embedded ? undefined : 'space-y-2'}>
               {visiblePlaylists.map((pl) => {
                 const open = openId === pl.id;
                 return (
@@ -325,12 +325,11 @@ export function PlaylistsColumn({
                     key={pl.id}
                     className={
                       embedded
-                        ?'surface-press lib-orbit-card'
+                        ? 'rule-row'
                         : 'rounded-site border border-site-border bg-site-surface'
                     }
-                    data-library-orbit={embedded ? '' : undefined}
                   >
-                    <div className="flex items-center gap-2 p-3">
+                    <div className={cn('flex items-center gap-2', embedded ? 'py-3' : 'p-3')}>
                       <button
                         type="button"
                         onClick={() => toggle(pl.id)}

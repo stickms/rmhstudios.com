@@ -31,7 +31,7 @@ export function LibraryBlogRow({ posts, query = '' }: { posts: Partial<Post>[]; 
   if (!visible.length) return null;
 
   return (
-    <section className="lib__section lib-blog lib-section-shell">
+    <section className="lib__section lib-blog lib-section-shell rule-section">
       <div className="lib-blog__head">
         <h2 className="lib__section-title">
           {t('section-blog', {

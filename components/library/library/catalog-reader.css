@@ -104,10 +104,7 @@
   align-items: flex-end;
   justify-content: center;
   perspective: 1100px;
-  background: var(--site-surface);
-}
-.lib-volume:hover .lib-book__3d {
-  background: var(--site-surface);
+  background: var(--site-bg-subtle);
 }
 
 .lib-book__cover {

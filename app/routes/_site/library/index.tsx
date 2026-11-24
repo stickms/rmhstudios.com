@@ -546,7 +546,7 @@ function Library() {
               {shows('reads') && <LibraryBlogRow posts={blogPosts} query={query} />}
 
               {shows('books') && isAdmin && hasUnmigrated && (
-                <div className="lib-edit__migrate">
+                <div className="lib-edit__migrate rule-row">
                   <span>
                     {t('migrate-prompt', {
                       defaultValue:
@@ -582,7 +582,7 @@ function Library() {
               )}
 
               {shows('playlists') && (
-                <section className="lib__section lib__section--catalog lib__section--playlists relative lib-section-shell">
+                <section className="lib__section lib__section--catalog lib__section--playlists relative lib-section-shell rule-section">
                   <div className="lib__section-head">
                     <h2 className="lib__section-title">
                       {t('section-playlists', { defaultValue: 'Playlists' })}
@@ -741,7 +741,7 @@ function Section({
       : undefined;
 
   return (
-    <section className="lib__section lib__section--catalog relative lib-section-shell">
+    <section className="lib__section lib__section--catalog relative lib-section-shell rule-section">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
         <span className="lib__section-count">
@@ -834,8 +834,7 @@ function BookSpine({
       <Link
         to="/library/$slug"
         params={{ slug: book.slug }}
-        className="lib-book surface-press lib-orbit-card"
-        data-library-orbit=""
+        className="lib-book"
         style={style}
         draggable={dnd?.draggable ? false : undefined}
         // §5.48: the book cover liquidly expands into the reader's hero stage.

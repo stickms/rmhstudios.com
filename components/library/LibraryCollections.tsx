@@ -191,7 +191,7 @@ export function LibraryCollections({
   const openedLive = opened ? (collections.find((c) => c.id === opened.id) ?? opened) : null;
 
   return (
-    <section className="lib__section lib-collections relative lib-section-shell">
+    <section className="lib__section lib-collections relative lib-section-shell rule-section">
       <div className="lib-collections__head">
         <h2 className="lib__section-title">
           {t('section-collections', { defaultValue: 'Collections' })}
@@ -324,8 +324,7 @@ function CollectionTile({
     >
       <button
         type="button"
-        className="lib-book lib-coll-tile__btn surface-press lib-orbit-card"
-        data-library-orbit=""
+        className="lib-book lib-coll-tile__btn"
         onClick={onOpen}
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
       >
