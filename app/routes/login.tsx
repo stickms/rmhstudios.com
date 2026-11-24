@@ -21,6 +21,7 @@ import {
   XIcon,
 } from '@/components/ui/brand-icons';
 import type { SignInProviderId } from '@/lib/auth/providers';
+import { balanceProviderRows } from '@/lib/auth/provider-rows';
 import { getLoginConfig } from '@/lib/auth/sign-in-providers.functions';
 import { CAPTCHA_HEADER } from '@/lib/auth/turnstile';
 import { safeInternalPath } from '@/lib/auth/redirect';
@@ -571,9 +572,9 @@ function LoginPage() {
     },
   };
   const providers = enabledProviders.map((id) => ({ id, ...providerButtons[id] }));
-  // Two or three in one row; from four up, rows of four.
-  const providerGrid =
-    providers.length <= 2 ? 'grid-cols-2' : providers.length === 3 ? 'grid-cols-3' : 'grid-cols-4';
+  // Up to four in one row; more are spread evenly (five is three above two), each row centred.
+  const { rows: providerRows, columns: providerColumns } = balanceProviderRows(providers);
+  const providerCellWidth = `calc((100% - ${(providerColumns - 1) * 0.5}rem) / ${providerColumns})`;
 
   // A sign-in or an email link that came back here without finishing.
   const linkNotice = !linkError
@@ -724,16 +725,33 @@ function LoginPage() {
   );
 
   return (
-    // Phones get one calm, edge-to-edge auth surface; larger screens retain the
-    // floating flagship card over the aurora. The card owns mobile safe areas so
-    // long sign-up content can scroll naturally without clipped controls.
+    // A split page from the lg breakpoint (a tablet is too narrow for a half-width picture): the painting takes the first half (the start side, so it swaps in `ar`) and
+    // the form the second. Below lg there is no split: the painting becomes a band across the top of the page, in the
+    // flow rather than fixed (nothing is pinned to a screen edge, ios-edge-contract) and flat, because the site tier has
+    // no blur (Steel B2). The form scrolls with the page, so a long sign-up never clips a control.
     // <main> because /login renders outside the _site shell, which is where the
     // site's landmark and skip link live; a deep-linked visit had neither.
-    <main
-      className={cn('flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8', arrival)}
-    >
-      {/* The sign-in form: a plain block, full-viewport on a phone and a narrow column from the sm breakpoint. */}
-      <div className="relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:px-0 sm:py-8">
+    <main className={cn('flex min-h-dvh flex-col lg:grid lg:grid-cols-2', arrival)}>
+      {/* Decoration, so it is hidden from assistive tech and nothing depends on it loading. A picture takes a 1px
+          border (Steel R3); on the split it is the rule between the two halves. */}
+      <div
+        aria-hidden="true"
+        className="relative h-[30dvh] max-h-72 min-h-40 sm:max-h-96 shrink-0 overflow-hidden border-b border-site-border bg-site-bg-subtle lg:h-auto lg:max-h-none lg:min-h-0 lg:border-b-0 lg:border-e"
+      >
+        <img
+          src="/images/login-painting.svg"
+          alt=""
+          width={1200}
+          height={1200}
+          decoding="async"
+          fetchPriority="low"
+          className="absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]"
+        />
+      </div>
+
+      <div className="flex flex-1 items-center justify-center sm:px-4 sm:py-8">
+      {/* The sign-in form: a plain block, a full-width column on a phone and a narrow column from the sm breakpoint. */}
+      <div className="relative flex w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6 sm:max-w-sm sm:px-0 sm:py-8">
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
           <img src="/favicon.svg" alt="" width={48} height={48} className="mb-3 size-12" />
@@ -1059,25 +1077,30 @@ function LoginPage() {
 
           {/* Providers: a compact row of glass chips — brand glyphs keep full
               colour (they are content, not chrome). Labelled for assistive tech. */}
-          <div className={cn('grid gap-2', providerGrid)}>
-            {providers.map((p) => (
-              <Button
-                key={p.id}
-                type="button"
-                variant="default"
-                size="lg"
-                onClick={handleSocial(p.id)}
-                disabled={busy}
-                aria-label={p.label}
-                title={p.label}
-                className="w-full"
-              >
-                {pending === p.id ? (
-                  <Loader2 className="size-5 animate-spin" aria-hidden />
-                ) : (
-                  p.icon
-                )}
-              </Button>
+          <div className="space-y-2">
+            {providerRows.map((row) => (
+              <div key={row[0]?.id} className="flex justify-center gap-2">
+                {row.map((p) => (
+                  <Button
+                    key={p.id}
+                    type="button"
+                    variant="default"
+                    size="lg"
+                    onClick={handleSocial(p.id)}
+                    disabled={busy}
+                    aria-label={p.label}
+                    title={p.label}
+                    className="shrink-0"
+                    style={{ width: providerCellWidth }}
+                  >
+                    {pending === p.id ? (
+                      <Loader2 className="size-5 animate-spin" aria-hidden />
+                    ) : (
+                      p.icon
+                    )}
+                  </Button>
+                ))}
+              </div>
             ))}
           </div>
 
@@ -1140,6 +1163,7 @@ function LoginPage() {
           <ArrowLeft className="size-4" aria-hidden />
           {t('back-to-home', { defaultValue: 'Back to home' })}
         </Link>
+      </div>
       </div>
 
       {cropSrc && (
