@@ -493,7 +493,7 @@
   gap: var(--app-med-space-2);
   box-sizing: border-box;
   min-block-size: var(--app-med-control);
-  padding-inline: var(--app-med-space-4);
+  padding-inline: 14px;
   border-radius: var(--app-med-radius);
   border: 0;
   background-color: var(--app-med-tonal);
@@ -593,7 +593,7 @@
   min-block-size: calc(var(--app-med-control) - 8px);
   padding-inline: var(--app-med-space-3);
   border-radius: var(--app-med-radius-sm);
-  border: 0;
+  border: 1px solid transparent;
   background-color: transparent;
   color: var(--app-text-muted);
   font: inherit;
@@ -615,9 +615,15 @@
 .medapp-chip[aria-pressed='true'],
 .medapp-chip[aria-checked='true'],
 .medapp-chip[aria-current='page'] {
+  border-color: var(--app-border);
   background-color: var(--app-surface);
   color: var(--app-text);
   font-weight: 600;
+}
+/* A group that must show every option at once (the chart's category legend) wraps instead of scrolling. */
+.medapp-chips--wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 .medapp-chip[aria-disabled='true'] {
   cursor: default;
@@ -974,6 +980,7 @@
   box-sizing: border-box;
   min-block-size: calc(var(--app-med-control) - 8px);
   padding-inline: var(--app-med-space-4);
+  border: 1px solid transparent;
   border-radius: var(--app-med-radius-sm);
   color: var(--app-text-muted);
   font-size: var(--app-med-text-secondary);
@@ -988,6 +995,7 @@
   color: var(--app-text);
 }
 .medapp-pill[aria-current='page'] {
+  border-color: var(--app-border);
   background-color: var(--app-surface);
   color: var(--app-text);
   font-weight: 600;
@@ -996,6 +1004,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--app-med-space-5);
+  /* At least a screen tall, so switching to a shorter section (or one still loading) never shortens the document under
+     the reader and clamps the scroll back up the page. */
+  min-block-size: 100dvh;
 }
 .medapp-tab {
   display: flex;
@@ -2352,4 +2363,47 @@ span.medapp-check {
 .medapp-multi--compact:first-child .medapp-multi__panel {
   inset-inline-start: 0;
   inset-inline-end: auto;
+}
+
+/* ── Chart zoom: three small round buttons over the plot's end, and the grab cursor once zoomed ─ */
+.medapp-zoom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-block-end: var(--app-med-space-1);
+}
+.medapp-zoom__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  background-color: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-zoom__btn:hover:not(:disabled) {
+  background-color: var(--app-med-tonal-hover);
+  color: var(--app-text);
+}
+.medapp-zoom__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@media (pointer: coarse) {
+  .medapp-zoom__btn {
+    inline-size: 44px;
+    block-size: 44px;
+  }
+}
+.medapp-plot--zoomed {
+  cursor: grab;
+}
+.medapp-plot--zoomed:active {
+  cursor: grabbing;
 }

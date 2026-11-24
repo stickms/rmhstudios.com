@@ -93,7 +93,9 @@ describe('medschools shell', () => {
     // Nothing is fixed, and nothing is sticky flush to an edge of the screen. The one rule pinned at 0 is the rail's
     // heading, sticky inside the rail panel's own scroll box (the panel itself sits 16px off the top).
     expect(css).not.toMatch(/position:\s*fixed/);
-    const flush = [...css.matchAll(/([^{}]+)\{[^}]*position:\s*sticky\s*;[^}]*inset-block-start:\s*0/g)].map((m) => m[1]!.trim());
+    const flush = [...css.matchAll(/([^{}]+)\{[^}]*position:\s*sticky\s*;[^}]*inset-block-start:\s*0/g)].map((m) =>
+      m[1]!.trim(),
+    );
     expect(flush).toEqual(['.medapp-rail-top']);
     expect(css).not.toMatch(/@keyframes|animation:|filter:|backdrop-filter/);
     expect(css).toContain('/images/medschools/wash-light.webp');

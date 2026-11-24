@@ -46,6 +46,16 @@ describe('a setting change keeps the reader in place', () => {
     expect(count).toBeGreaterThanOrEqual(5);
   });
 
+  it("each of them first tells the site's scroll restoration the page is staying (holdScroll)", () => {
+    for (const [file, src] of sources) {
+      const calls = navigateCalls(src).length;
+      if (calls === 0) continue;
+      expect((src.match(/holdScroll\(\);\s*\n\s*(void |await )?navigate\(\{/g) ?? []).length, file).toBe(calls);
+    }
+    const school = sources.find(([f]) => f.endsWith('SchoolPage.tsx'))![1];
+    expect(school).toContain('onClick={holdScroll}');
+  });
+
   it('every link that only changes the search (the section links) keeps the scroll position', () => {
     for (const [file, src] of sources) {
       // A `<Link>` whose search is a function of the current one, up to its className.
@@ -69,7 +79,7 @@ describe('a setting change keeps the reader in place', () => {
       const at = queries.indexOf(`export const ${name}`);
       expect(at, name).toBeGreaterThan(-1);
       expect(queries.slice(at, queries.indexOf('\nexport', at + 1)), name).toMatch(
-        /placeholderData: (keepPreviousData|keepWithinSchool\(slug\))/,
+        /keeping\([\s\S]*(keepPreviousData|keepWithinSchool\(slug\)),?\s*\)/,
       );
     }
     for (const route of ['index.tsx', 'live.tsx', '$slug.tsx', 'tracker.tsx']) {

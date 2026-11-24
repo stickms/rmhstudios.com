@@ -1,4 +1,5 @@
 import { lazy, useState } from 'react';
+import { holdScroll } from '../hold-scroll';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -184,6 +185,7 @@ export function TrackerPage() {
           onAdd={async (year) => {
             await putCycle({ cycleYear: year, shareAnonymously: false });
             setAdding('none');
+            holdScroll();
             await navigate({
               to: '/rmh-medschool/tracker',
               search: { cycle: year },
@@ -204,6 +206,7 @@ export function TrackerPage() {
             onClose={() => setAdding('none')}
             onSaved={(year) => {
               setAdding('none');
+              holdScroll();
               void navigate({
                 to: '/rmh-medschool/tracker',
                 search: { cycle: year },
@@ -256,14 +259,15 @@ export function TrackerPage() {
                 <MedSelect
                   aria-label={t('tracker-cycle-label', { defaultValue: 'Cycle' })}
                   value={String(cycle.cycleYear)}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    holdScroll();
                     void navigate({
                       to: '/rmh-medschool/tracker',
                       search: { cycle: Number(e.target.value) },
                       replace: true,
                       resetScroll: false,
-                    })
-                  }
+                    });
+                  }}
                 >
                   {d.cycles.map((y) => (
                     <option key={y} value={y}>

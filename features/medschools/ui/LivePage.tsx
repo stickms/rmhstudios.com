@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { holdScroll } from './hold-scroll';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { MedSelect } from './controls/MedSelect';
@@ -48,6 +49,7 @@ export function LivePage() {
 
   const setSearch = (next: { type?: MedEventTypeId | undefined; school?: string | undefined }) => {
     const m = { ...search, ...next };
+    holdScroll();
     void navigate({
       to: '/rmh-medschool/live',
       // The preference key (`programs`) stays as the URL had them; only the page's own keys are rebuilt.

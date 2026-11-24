@@ -69,7 +69,11 @@ export function SourceRef({
     if (closeTimer.current) clearTimeout(closeTimer.current);
     closeTimer.current = null;
   };
+  // When the popover closes, the shared menu hands focus back to the icon if nothing else holds it; that focus is not
+  // the reader asking to see the source again.
+  const closedAt = useRef(0);
   const close = () => {
+    closedAt.current = Date.now();
     cancelClose();
     setState((s) => nextSourceRef(s, 'close'));
   };
@@ -105,7 +109,11 @@ export function SourceRef({
         onPointerLeave={(e) => {
           if (e.pointerType === 'mouse') closeSoon();
         }}
-        onFocus={() => setState((s) => nextSourceRef(s, 'peek'))}
+        onFocus={(e) => {
+          // Keyboard focus peeks; the focus the menu hands back on close (after a hover) does not reopen it.
+          if (Date.now() - closedAt.current < 400) return;
+          if (e.currentTarget.matches(':focus-visible')) setState((s) => nextSourceRef(s, 'peek'));
+        }}
         onBlur={(e) => {
           // Focus moving into the popover (the pinned link) keeps it open.
           if (!pinned && !e.relatedTarget?.closest?.('[data-med-source-pop]')) closeSoon();

@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { holdScroll } from './hold-scroll';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,7 @@ export function SchoolPage() {
     const { program, show, ...rest } = patch;
     const viewPatch: ViewPatch = { ...(program ? { program } : {}), ...(show ? { show } : {}) };
     const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
+    holdScroll();
     void navigate({
       to: '/rmh-medschool/$slug',
       params: { slug },
@@ -140,6 +142,7 @@ export function SchoolPage() {
                   replace
                   resetScroll={false}
                   activeOptions={{ exact: true, includeSearch: true }}
+                  onClick={holdScroll}
                   aria-current={search.tab === id ? 'page' : undefined}
                   className="medapp-pill"
                 >

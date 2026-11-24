@@ -44,7 +44,7 @@ export function CategoryToggles({
     <div
       role="group"
       aria-label={t('category-toggles-label', { defaultValue: 'Show categories' })}
-      className="medapp-chips"
+      className="medapp-chips medapp-chips--wrap"
     >
       {CATEGORY_ORDER.map((type) => {
         const pressed = value.includes(type);

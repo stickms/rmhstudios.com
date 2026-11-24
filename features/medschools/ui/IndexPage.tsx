@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { holdScroll } from './hold-scroll';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +45,7 @@ export function IndexPage() {
 
   const setSearch = (next: { q?: string | undefined; state?: string | undefined; list?: string | undefined }) => {
     const merged = { ...search, ...next };
+    holdScroll();
     void navigate({
       to: '/rmh-medschool',
       // The preference key (`programs`) stays as the URL had it; only the page's own keys are rebuilt.
