@@ -10,7 +10,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ComponentType } from 'react';
 import {
   DiscordIcon,
   GithubIcon,
@@ -22,9 +22,6 @@ import {
 } from '@/components/ui/brand-icons';
 import type { SignInProviderId } from '@/lib/auth/providers';
 import { balanceProviderRows } from '@/lib/auth/provider-rows';
-import { LOGIN_ART_KEY, loginArtSrc, pickLoginArt, type LoginArt } from '@/lib/auth/login-art';
-import { LOGIN_ART_PREVIEWS } from '@/lib/auth/login-art-previews';
-import { readString, writeString } from '@/lib/core/persist';
 import { getLoginConfig } from '@/lib/auth/sign-in-providers.functions';
 import { CAPTCHA_HEADER } from '@/lib/auth/turnstile';
 import { safeInternalPath } from '@/lib/auth/redirect';
@@ -114,28 +111,17 @@ function LoginPage() {
   const [showEmail, setShowEmail] = useState(false);
   const [pending, setPending] = useState<Pending>(null);
 
-  // The painting beside the form is one of several, picked at random on each visit. It is picked after hydration, not
-  // while rendering: the server's page is cached and has to be the same for everyone, and a choice made during render
-  // would not match what the client chooses. The last one shown is remembered, so two visits in a row never show the
-  // same picture. It develops in three steps so a slow connection sees something at once and the low quality never
-  // shows: a 48px preview (a few hundred bytes, inlined) as soon as the picture is chosen, then a soft 320px version
-  // (a few KB), then the real one, each fading in over the last (Steel M9). The blur is baked into those two small
-  // images, so the blur fades out step by step without a CSS filter (Steel B2).
-  const [art, setArt] = useState<LoginArt | null>(null);
-  const [softLoaded, setSoftLoaded] = useState(false);
-  const [artLoaded, setArtLoaded] = useState(false);
-  const previewArrive = useArrival(art !== null);
-  const softArrive = useArrival(softLoaded);
-  const artArrive = useArrival(artLoaded);
-  // Once per mount: React's development double-run of effects would otherwise pick twice, and the second pick only
-  // avoids the first, so it could land on the picture the previous visit showed.
-  const artPicked = useRef(false);
+  // The painting beside the form (components/auth/LoginPainting.tsx) is loaded after hydration instead of imported here:
+  // every route module is part of the client entry, so what this file imports at the top costs every page of the site.
+  const [Painting, setPainting] = useState<ComponentType | null>(null);
   useEffect(() => {
-    if (artPicked.current) return;
-    artPicked.current = true;
-    const next = pickLoginArt(readString(LOGIN_ART_KEY));
-    writeString(LOGIN_ART_KEY, next);
-    setArt(next);
+    let live = true;
+    void import('@/components/auth/LoginPainting').then((m) => {
+      if (live) setPainting(() => m.LoginPainting);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
   const busy = pending !== null;
   const [email, setEmail] = useState('');
@@ -765,54 +751,7 @@ function LoginPage() {
         aria-hidden="true"
         className="relative h-[30dvh] max-h-72 min-h-40 sm:max-h-96 shrink-0 overflow-hidden border-b border-site-border bg-site-bg-subtle lg:h-auto lg:max-h-none lg:min-h-0 lg:border-b-0 lg:border-e"
       >
-        {art ? (
-          <img
-            src={LOGIN_ART_PREVIEWS[art]}
-            alt=""
-            width={48}
-            height={48}
-            className={cn(
-              'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
-              previewArrive,
-            )}
-          />
-        ) : null}
-        {art ? (
-          <img
-            src={loginArtSrc(art, 320)}
-            alt=""
-            width={320}
-            height={320}
-            decoding="async"
-            onLoad={() => setSoftLoaded(true)}
-            className={cn(
-              'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
-              !softLoaded && 'invisible',
-              softArrive,
-            )}
-          />
-        ) : null}
-        {art ? (
-          // The large file from 640px up, where the picture is a band across a tablet or half of a desktop; the small
-          // one on a phone.
-          <picture>
-            <source media="(min-width: 640px)" srcSet={loginArtSrc(art, 1600)} type="image/webp" />
-            <img
-              src={loginArtSrc(art, 800)}
-              alt=""
-              width={800}
-              height={800}
-              decoding="async"
-              fetchPriority="low"
-              onLoad={() => setArtLoaded(true)}
-              className={cn(
-                'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
-                !artLoaded && 'invisible',
-                artArrive,
-              )}
-            />
-          </picture>
-        ) : null}
+        {Painting ? <Painting /> : null}
       </div>
 
       <div className="flex flex-1 items-center justify-center sm:px-4 sm:py-8">
