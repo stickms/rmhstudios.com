@@ -31,6 +31,7 @@
    ========================================================================== */
 @import 'tailwindcss';
 @import './globals.css';
+@import './styles/steel-rules.css';
 
 /* Build output (redesign B1): the island build writes dist-islands/ before this sheet builds.
    Gitignored, but the Docker context has no .gitignore, so it must be excluded by name. */
