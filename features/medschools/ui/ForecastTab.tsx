@@ -75,6 +75,30 @@ export function ForecastTab({
   }
 
   const date = (d: string) => formatUtcDay(d, locale);
+  // A range that collapses to one printed value reads "about 27" / "around Sep 28", never "between 27 and 27".
+  const totalLine = (q: { p10: number; p50: number; p90: number }) =>
+    nf.format(q.p10) === nf.format(q.p90)
+      ? t('forecast-total-point', {
+          defaultValue: '{{type}}: expected total about {{p50}}',
+          p50: nf.format(q.p50),
+          type: eventLabel(type),
+        })
+      : t('forecast-total', {
+          defaultValue: '{{type}}: expected total {{p50}}, likely between {{p10}} and {{p90}}',
+          p50: nf.format(q.p50),
+          p10: nf.format(q.p10),
+          p90: nf.format(q.p90),
+          type: eventLabel(type),
+        });
+  const halfLine = (q: { p10: string; p50: string; p90: string }) =>
+    date(q.p10) === date(q.p90)
+      ? t('forecast-half-point', { defaultValue: 'Half of them around {{date}}', date: date(q.p50) })
+      : t('forecast-half', {
+          defaultValue: 'Half of them by {{date}}, likely between {{from}} and {{to}}',
+          date: date(q.p50),
+          from: date(q.p10),
+          to: date(q.p90),
+        });
   const drawn = data && data.status !== 'no-data';
   const basisSources = data ? [...new Set(data.basis.map((b) => sourceName(b.source)))].join(', ') : '';
   const basisLine = !data
@@ -149,23 +173,8 @@ export function ForecastTab({
 
             {data.summary ? (
               <ul className="medapp-list medapp-panel">
-                <li className="medapp-text">
-                  {t('forecast-total', {
-                    defaultValue: '{{type}}: expected total {{p50}}, likely between {{p10}} and {{p90}}',
-                    p50: nf.format(data.summary.total.p50),
-                    p10: nf.format(data.summary.total.p10),
-                    p90: nf.format(data.summary.total.p90),
-                    type: eventLabel(type),
-                  })}
-                </li>
-                <li className="medapp-text">
-                  {t('forecast-half', {
-                    defaultValue: 'Half of them by {{date}}, likely between {{from}} and {{to}}',
-                    date: date(data.summary.halfOn.p50),
-                    from: date(data.summary.halfOn.p10),
-                    to: date(data.summary.halfOn.p90),
-                  })}
-                </li>
+                <li className="medapp-text">{totalLine(data.summary.total)}</li>
+                <li className="medapp-text">{halfLine(data.summary.halfOn)}</li>
               </ul>
             ) : null}
 
