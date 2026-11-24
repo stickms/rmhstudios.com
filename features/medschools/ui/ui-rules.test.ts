@@ -76,6 +76,32 @@ describe('medschools ui rules', () => {
     }
   });
 
+  it('reads no Steel token in the markup: no --site-* variable, no *-site-* utility, no t-* type class, no site Button, Select, SearchField, Switch, Textarea or PageLayout', () => {
+    const steel =
+      /(?:^|[\s"'`:!-])(?:[a-z-]+-)?site-[a-z-]+|--site-|(?:^|[\s"'`])t-(?:title|heading|body|post|prose|label|meta)(?=[\s"'`])/;
+    const controls =
+      /@\/components\/(?:ui\/(?:button|select|search-field|switch|textarea|input|icon-button|signed-out-prompt|skeleton|empty-state)|feed\/PageLayout)'/;
+    for (const f of [...uiFiles, 'app/routes/rmh-medschool.tsx']) {
+      const src = read(f).replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(
+        src.split('\n').filter((l) => steel.test(l) && !/^\s*\/\//.test(l)),
+        f,
+      ).toEqual([]);
+      if (!f.includes('/ui/controls/')) expect(src, f).not.toMatch(controls);
+    }
+  });
+
+  it('keeps the --site-* bridge to one block, on <html>, naming only the overlay pieces that need it', () => {
+    const css = read('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const decls = css.split('\n').filter((l) => /^\s*--site-[\w-]+:/.test(l));
+    expect(decls.length).toBeLessThanOrEqual(12);
+    const block = css.slice(css.indexOf(':root:has(.medapp-theme) {\n  --site-bg'));
+    expect(block.startsWith(':root:has(.medapp-theme) {')).toBe(true);
+    // Every declaration sits in that one block, and the page stylesheet reads no `var(--site-*)`.
+    expect(decls.length).toBe((block.slice(0, block.indexOf('}')).match(/--site-[\w-]+:/g) ?? []).length);
+    expect(css).not.toMatch(/var\(--site-/);
+  });
+
   it('draws a raw <table only in charts, ActivityTab and InterviewsTab', () => {
     for (const f of uiFiles) {
       if (/\/charts\/|ActivityTab|InterviewsTab/.test(f)) continue;

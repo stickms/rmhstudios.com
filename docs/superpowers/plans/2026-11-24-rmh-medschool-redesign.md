@@ -2,7 +2,8 @@
 
 Written from a read-only pass over the repo; paths are repo-relative. Where a claim could not be verified, it says so.
 **Status (2026-11-24): phase A is built** (see "Phase A as built" below, which corrects this plan where the code
-differed) "Phase B1 as built" and "Phase B2 as built". B3, C and D are not started.
+differed), "Phase B1 as built", "Phase B2 as built" and "Phase B3 as built". Phases A and B are done; C and D are not
+started.
 
 ## Owner answers (2026-11-24)
 
@@ -124,6 +125,42 @@ These settle the open questions in section 7 and override the plan text where th
   contents) and the index's `aria-pressed` chips, none the markup that changed; no edit was needed.
 - **Left for B3:** tracker, lists, ask, rolling, the import, the overlap section, `PracticePage`, and the last
   `--site-*` bridge consumers (the bridge stays until they move).
+
+## Phase B3 as built
+
+- **Pages.** `TrackerPage` (a "This cycle" paper panel: cycle select, add cycle, home state, the sharing switch; then
+  "Schools" with one ink primary, Add school, and the rows in a paper panel), `ApplicationRow` (`.medapp-item`: the
+  school link, status-coloured milestone chips with `StatusIcon` and `StatusText`, the silence and chance lines as
+  `.medapp-subrule`s), `MilestoneForm`, `AddSchool`, `SharingRow`, `Timeline` (a paper panel, rows on rules), the import
+  (`TrackerImport`, `ImportPreview`: a paper panel, native checkboxes in `.medapp-check`), `ListsPage`, `ListSection`
+  (one paper panel per list), `ListItemRow`, `PrefsSection`, `AskPage` and `AskPanel` (the form, answer, sources and
+  your estimate on `.medapp-list`), `PracticePage`, and the rolling and overlap disclosures (`.medapp-disclosure`: a
+  44px summary, rows on rules). Each page renders `PageHead` instead of `PageLayout`'s duplicate title row; the top bar
+  still owns back and the app name.
+- **Controls** (`ui/controls/`): `MedButton`, `MedIconButton`, `MedInput`, `MedTextarea`, `MedSearch`, `MedSelect`,
+  `MedSwitch`, plus `MedSignedOut` (replaces `SignedOutPrompt`) and `MedEmpty` with a description and an action. The
+  button is the existing `.medapp-chip` with `--quiet` and `--danger` modifiers, so there is one button shape and the
+  primary is the ink chip (one per view); `loading` disables and sets `aria-busy`, with no spinner (the app tier has no
+  keyframes). Fields are `.medapp-field` (44px, 14px radius, paper fill, 1px border; textarea 18px radius and
+  `dir="auto"`; the date input is 11rem wide); `aria-invalid` turns the border to the danger colour. `MedSearch` is
+  `type="search"` with a leading icon and a 44px clear button named "Clear search". `MedSelect` is the shared Radix
+  select in its existing `app` tier (typeahead, listbox ARIA, hidden native input, popup portaled into `.app-theme`),
+  trigger drawn as a field. `MedSwitch` is a `<button role="switch" aria-checked>` on a 52 x 44 target, a 48 x 28 track
+  and a 20px thumb that slides 140 ms; on is the ink fill plus the thumb at the far side. The focus ring is the app
+  tier's global `outline` for every control. `data-variant` stays on the button so the one-primary tests count it.
+- **The bridge is not fully gone.** The `--site-*` declarations left `.app-theme.medapp-theme` and the page: nothing
+  under `features/medschools/ui` reads a `--site-*` variable or `*-site-*` utility, none of the `t-*` type classes, and
+  none of the site `Button`, `Select`, `SearchField`, `Switch`, `Textarea`, `Input`, `IconButton`, `Skeleton`,
+  `EmptyState`, `SignedOutPrompt` or `PageLayout` (`ui-rules.test.ts` holds all of it, and caps the stylesheet to the
+  one block). What remains is **one block of ten names on `<html>` only** (`:root:has(.medapp-theme)`, after the
+  palettes) for pieces that portal outside the app root and are shared across the site, so a second copy was not cheap:
+  `AnchoredMenu` and `MenuItem` (the Save to list, list and school-action menus), `useConfirm` and `usePrompt` (their
+  `Dialog`, `Button` and `Input`), the sonner toaster, and the move buttons inside `SortableList`. A later change can
+  retire it by giving those an app tier, as `Select` has.
+- **Integration tests.** `testing/integration/medschools-*.test.ts` match text (`sign in`, the robots meta) and the
+  index's `aria-pressed` chips, none of the markup that changed; no edit was needed. The unit tests that counted
+  `bg-site-accent` or `>Ask</span>` now count `data-variant="primary"` and `>Ask</button>`.
+- **Left for C and D.** The stats page, the AI school list and the rest of the mockup's data screens.
 
 ## 0. What the code says (the findings that shape the plan)
 
