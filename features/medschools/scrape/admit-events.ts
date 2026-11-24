@@ -10,6 +10,7 @@
  * event with no program also takes the program a later sighting resolved. Nothing here sees a user id.
  */
 import type { MedEventType, MedProgram } from '../engine/types';
+import { newestOf } from '../live-signal.server';
 import type { TouchedCell } from './rollup-events';
 import type { MedAdmitMemberRow, MedPrisma } from './types';
 
@@ -82,6 +83,8 @@ export interface CommitResult {
   existing: number;
   /** Cells to re-roll: every touched event's old and new cell. Stored events are included, which repairs a failed roll-up. */
   touched: TouchedCell[];
+  /** The latest `occurredAt` among the created events, null when none was created: the caller's live signal, sent after its commit. */
+  newestCreated: Date | null;
 }
 
 /** Create the unseen events, move stored ones earlier when a candidate is older, and say which cells to roll up. */
@@ -95,7 +98,7 @@ export async function commitAdmitEvents(
   const missing = merged.map((c) => c.dedupeHash).filter((h) => !stored.has(h));
   if (missing.length > 0) for (const [h, e] of await findStoredEvents(prisma, missing)) stored.set(h, e);
 
-  const result: CommitResult = { created: 0, moved: 0, existing: 0, touched: [] };
+  const result: CommitResult = { created: 0, moved: 0, existing: 0, touched: [], newestCreated: null };
   const cell = (e: { schoolId: string; program: MedProgram | null; cycleYear: number; occurredAt: Date }) => {
     if (e.program !== null)
       result.touched.push({
@@ -144,6 +147,7 @@ export async function commitAdmitEvents(
       skipDuplicates: true,
     });
     result.created = res.count;
+    if (res.count > 0) result.newestCreated = newestOf(fresh.map((c) => c.occurredAt));
     for (const c of fresh) cell(c);
   }
   return result;

@@ -10,7 +10,7 @@
  *   INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration -- testing/integration/medschools-public.test.ts
  */
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { Client, closeDb, db } from './lib/client';
+import { BASE_URL, Client, closeDb, db } from './lib/client';
 import {
   MEDSCHOOL_FIXTURE_SLUG,
   SECONDARIES_NOTYET_SLUG,
@@ -194,6 +194,25 @@ describe('RMH Med Schools, public and anonymous', () => {
     expect(res.body.school.slug).toBe(SLUG);
     expect(anon.hasSession).toBe(false);
     expect(res.headers.get('cache-control')).toMatch(/public/);
+  });
+
+  it('opens the live signal stream anonymously: an uncacheable event stream that starts with its retry hint', async () => {
+    const ctrl = new AbortController();
+    const res = await fetch(`${BASE_URL}/api/medschools/live/stream`, {
+      headers: { accept: 'text/event-stream' },
+      signal: ctrl.signal,
+    });
+    try {
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toMatch(/^text\/event-stream/);
+      expect(res.headers.get('cache-control')).toBe('no-store, no-transform');
+      expect(res.headers.get('x-accel-buffering')).toBe('no');
+      expect(res.headers.get('set-cookie')).toBeNull();
+      const first = await res.body!.getReader().read();
+      expect(new TextDecoder().decode(first.value)).toContain('retry: 15000');
+    } finally {
+      ctrl.abort();
+    }
   });
 
   it('keeps the below-floor figures out of the school response', async () => {

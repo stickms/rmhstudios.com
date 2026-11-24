@@ -17,6 +17,7 @@ import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SkeletonSwap } from './skeletons';
+import { useLiveSignal } from './useLiveSignal';
 import { useMedLabels } from './labels';
 import { LatestStatus } from './LatestStatus';
 import { MedEmpty } from './MedEmpty';
@@ -37,6 +38,8 @@ export function IndexPage() {
   // The URL where it speaks, the viewer's preferences where it is silent (D13/D14).
   const { view, setSearch: setView } = useEffectiveView('index', search);
   const schools = useQuery(schoolsQuery(indexQuery(search, view)));
+  // The live signal refetches the list in place (each row's newest status), at every width; the rail is separate.
+  useLiveSignal();
   const { data: session } = useSession();
   const signedIn = !!session;
   const lists = useQuery({ ...listsQuery(), enabled: signedIn });

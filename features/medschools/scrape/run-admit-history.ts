@@ -31,6 +31,7 @@ import type { DailyBudget } from './request-budget';
 import { rollupEventCounts, type TouchedCell } from './rollup-events';
 import { brief, closeStaleRuns, recordAliasMiss } from './run-support';
 import { SOURCES } from './sources';
+import { signalNewLiveEvents } from '../live-signal.server';
 import type { Logger, MedPrisma } from './types';
 
 export interface AdmitHistoryDeps {
@@ -265,6 +266,8 @@ export async function runAdmitHistory(
 
       if (candidates.length > 0) {
         const res = await commitAdmitEvents(prisma, candidates);
+        // Committed: a recent event signals the open live pages (coalesced; an old one sends nothing).
+        signalNewLiveEvents(res.newestCreated);
         summary.eventsCreated += res.created;
         summary.eventsMoved += res.moved;
         summary.eventsExisting += res.existing;

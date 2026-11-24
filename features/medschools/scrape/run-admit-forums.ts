@@ -31,6 +31,7 @@ import { ADMIT_FORUMS_MIN_INTERVAL_MS, brief, closeStaleRuns, lastRealRunWithin,
 import type { BudgetGate } from './sdn/budget';
 import { chunkPosts, extractBatch, type ExtractedPost, type SdnAi } from './sdn/extract';
 import { SOURCES } from './sources';
+import { signalNewLiveEvents } from '../live-signal.server';
 import type { Logger, MedAdmitForumThreadRow, MedPrisma } from './types';
 
 export interface AdmitForumsDeps {
@@ -561,6 +562,8 @@ async function processThread(deps: ThreadDeps, thread: MedAdmitForumThreadRow, s
       });
       return out;
     });
+    // After the transaction commits, never inside it: a page that refetches on the signal must find the rows.
+    signalNewLiveEvents(res.newestCreated);
     counters.created += res.created;
     counters.moved += res.moved;
     counters.existing += res.existing;

@@ -54,6 +54,10 @@ const ALLOWED: Readonly<
     count: 1,
     reason: HEARTBEAT,
   },
+  'features/medschools/api/live-stream.server.ts': {
+    count: 1,
+    reason: `${HEARTBEAT} (the /api/medschools/live/stream signal, its route file's stream body)`,
+  },
   'app/routes/api/group-chats/$id/stream.ts': {
     count: 1,
     reason: HEARTBEAT,
