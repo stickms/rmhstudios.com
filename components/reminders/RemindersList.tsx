@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { AlarmClock, X } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
@@ -84,7 +83,7 @@ export function RemindersList() {
     <ul className={cn('space-y-2', arrival)}>
       {items.map((r) => (
         <li key={r.id}>
-          <Card interactive className="flex-row items-center gap-3 px-4 py-3">
+          <div className="row-hover flex flex-row items-center gap-3 border-b border-site-border py-3">
             <a href={r.url} className="flex min-w-0 flex-1 items-center gap-3">
               <AlarmClock className="h-5 w-5 shrink-0 text-site-text-muted" aria-hidden />
               <span className="min-w-0 flex-1">
@@ -110,7 +109,7 @@ export function RemindersList() {
                 defaultValue: 'Cancel reminder',
               })}
             />
-          </Card>
+          </div>
         </li>
       ))}
     </ul>

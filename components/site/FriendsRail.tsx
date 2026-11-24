@@ -40,7 +40,7 @@ export function FriendsRail() {
   if (friends === null) return null;
 
   return (
-    <section className="rounded-site surface-card p-5">
+    <section className="rule-section">
       <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text">
         <Users className="h-5 w-5 text-site-accent" aria-hidden />
         {t('friends-rail-title', {

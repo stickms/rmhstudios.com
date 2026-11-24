@@ -116,7 +116,7 @@ export function ArticleOutline({
   return (
     <details
       data-rf-skip=""
-      className="surface-card mb-6 max-w-2xl rounded-site-sm text-sm"
+      className="mb-6 max-w-2xl border-y border-site-border text-sm"
     >
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-2 font-semibold text-site-text">
         <ListTree

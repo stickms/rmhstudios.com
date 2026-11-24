@@ -77,7 +77,7 @@ export function GameReplayPlayer({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       {!versionMatch && (
-        <div className="surface-card w-full max-w-md px-4 py-3 text-center text-sm text-site-text-muted">
+        <div className="w-full max-w-md border-y border-site-border py-3 text-center text-sm text-site-text-muted">
           {t('replay-version-mismatch', {
             defaultValue:
               'This replay was recorded on an older version of the game. Showing a simplified timeline.',
@@ -87,7 +87,7 @@ export function GameReplayPlayer({
       )}
 
       {/* Stage */}
-      <div className="surface-panel flex min-h-[280px] w-full items-center justify-center p-6">
+      <div className="flex min-h-[280px] w-full items-center justify-center rounded-site border border-site-border bg-site-bg-subtle p-6">
         {total === 0 ? (
           <p className="text-sm text-site-text-muted">
             {t('replay-empty', { defaultValue: 'This replay has no recorded moves.' })}
@@ -286,7 +286,7 @@ function GenericTimeline({ inputs, step }: { inputs: unknown[]; step: number }) 
             <li
               key={index}
               className={cn(
-                'surface-card flex items-center gap-2 px-3 py-1.5 font-mono text-xs',
+                'flex items-center gap-2 px-3 py-1.5 font-mono text-xs',
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-text'
                   : played

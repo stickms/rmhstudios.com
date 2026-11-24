@@ -12,7 +12,7 @@ export function StoryBanner({ story }: { story: StoryRef }) {
       params={{
         slug: story.slug,
       }}
-      className="surface-card surface-press mt-4 inline-flex max-w-full items-center gap-2 rounded-site-sm px-3 py-2 text-sm text-site-text"
+      className="row-hover mt-4 inline-flex max-w-full items-center gap-2 border-y border-site-border px-3 py-2 text-sm text-site-text"
     >
       <Layers className="size-4 shrink-0 text-site-accent" aria-hidden />
       <span className="min-w-0 truncate">
