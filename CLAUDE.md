@@ -21,25 +21,25 @@ aliased over `i18next` and `react-i18next`). Node ≥26.13, pnpm workspace.
 
 ## Repository map
 
-| Path           | What                                                                                                                                                                                                                                                                                                                                                                                                               | Details                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `app/`         | TanStack Start routes: pages, API routes, `globals.css` (the `--site-*` theme tokens), router. `routeTree.gen.ts` is GENERATED and not in git — never edit (`pnpm gen`).                                                                                                                                                                                                                                                                       | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
-| `features/`    | **Feature-sliced code** (redesign A1): one folder per game/app — `feature.ts` manifest, `engine/` (old `lib/<id>`), `ui/` (old `components/<id>`), `server/` (socket handlers, registered by `server/socket-server/features.ts`). Imported as `@features/<id>/...`. Moved so far: `balatro`, `void-breaker`; the rest still live under `lib/<id>` + `components/<id>`.          Routes stay thin in `app/routes/`. | [`features/CLAUDE.md`](features/CLAUDE.md)       |
-| `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper; `shared/` = the full-screen app tier (`--app-*`, `AppShell`).                                                                                                                                                                                                                                              | [`components/CLAUDE.md`](components/CLAUDE.md)   |
-| `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, motion tokens, per-game logic, `.server.ts` server-only modules.                                                                                                                                                                                                                                                                                                  | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
-| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / medschools-worker / jobs (pg-boss) workers.                                                                                                                                                                                                                                        | [`server/CLAUDE.md`](server/CLAUDE.md)           |
-| `go-services/` | **Go** microservice fleet (Bazel + gazelle): `status` and `assets` run in prod; the gateway, Go hubs, workers and supervisor were removed (§5.2, D3).                                                                                                                                                                                                                                                              | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
-| `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                                                                                                                                                                                                                                     | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLobbyLink`, …).                                                                                                                                                                                                                                                                                                              | `lib/CLAUDE.md`                                  |
-| `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts/prisma.json`) + migrations.                                                                                                                                                                                                                                                                                                                | `lib/CLAUDE.md`                                  |
-| `locales/`     | English only (`en`, authoritative; namespace count in `docs/_generated/facts/i18n.json`). The other 8 shipped locales and the parked ones live on the `i18n/catalogs` branch; `pnpm i18n:pull` copies them in (`docs/translations.md`).                                                                                                                                                                                 | `lib/CLAUDE.md` §i18n                            |
-| `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                                                                                                                                                                                                                              | —                                                |
-| `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                                                                                                                                                                                                                               | —                                                |
-| `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                                                                                                                                                                                                                            | `docs/README.md`                                 |
-| `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                                                                                                                                                                                                                                                                          | [`docs/architecture.md`](docs/architecture.md)   |
-| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 9 languages.                                                                                                                                                                                                                                                                                              | [`docs/README.md`](docs/README.md)               |
-| `testing/`     | RMHBox phase tests (the mission-critical remainder) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register.                                                                                                                                                                                                                                           | [`docs/testing.md`](docs/testing.md)             |
-| `rmhcode/`     | `rmhcode` CLI (wraps Claude Code; publishes User Builds). The folder carries the package name: as `cli/`, `pnpm audit` matched it to the unrelated npm package `cli`.                                                                                                                                                                                                                                              | —                                                |
+| Path           | What                                                                                                                                                                                                                                                                                                                                                                                                      | Details                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `app/`         | TanStack Start routes: pages, API routes, `globals.css` (the `--site-*` theme tokens), router. `routeTree.gen.ts` is GENERATED and not in git — never edit (`pnpm gen`).                                                                                                                                                                                                                                  | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
+| `features/`    | **Feature-sliced code** (redesign A1): one folder per game/app — `feature.ts` manifest, `engine/` (old `lib/<id>`), `ui/` (old `components/<id>`), `server/` (socket handlers, registered by `server/socket-server/features.ts`). Imported as `@features/<id>/...`. Moved so far: `balatro`, `void-breaker`; the rest still live under `lib/<id>` + `components/<id>`. Routes stay thin in `app/routes/`. | [`features/CLAUDE.md`](features/CLAUDE.md)       |
+| `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper; `shared/` = the full-screen app tier (`--app-*`, `AppShell`).                                                                                                                                                                                                                                     | [`components/CLAUDE.md`](components/CLAUDE.md)   |
+| `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, motion tokens, per-game logic, `.server.ts` server-only modules.                                                                                                                                                                                                                                                                                         | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
+| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / medschools-worker / jobs (pg-boss) workers.                                                                                                                                                                                                                               | [`server/CLAUDE.md`](server/CLAUDE.md)           |
+| `go-services/` | **Go** microservice fleet (Bazel + gazelle): `status` and `assets` run in prod; the gateway, Go hubs, workers and supervisor were removed (§5.2, D3).                                                                                                                                                                                                                                                     | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
+| `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                                                                                                                                                                                                                            | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLobbyLink`, …).                                                                                                                                                                                                                                                                                                     | `lib/CLAUDE.md`                                  |
+| `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts/prisma.json`) + migrations.                                                                                                                                                                                                                                                                                                | `lib/CLAUDE.md`                                  |
+| `locales/`     | English only (`en`, authoritative; namespace count in `docs/_generated/facts/i18n.json`). The other 8 shipped locales and the parked ones live on the `i18n/catalogs` branch; `pnpm i18n:pull` copies them in (`docs/translations.md`).                                                                                                                                                                   | `lib/CLAUDE.md` §i18n                            |
+| `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                                                                                                                                                                                                                     | —                                                |
+| `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                                                                                                                                                                                                                      | —                                                |
+| `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                                                                                                                                                                                                                   | `docs/README.md`                                 |
+| `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                                                                                                                                                                                                                                                                 | [`docs/architecture.md`](docs/architecture.md)   |
+| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 9 languages.                                                                                                                                                                                                                                                                                     | [`docs/README.md`](docs/README.md)               |
+| `testing/`     | RMHBox phase tests (the mission-critical remainder) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register.                                                                                                                                                                                                                                  | [`docs/testing.md`](docs/testing.md)             |
+| `rmhcode/`     | `rmhcode` CLI (wraps Claude Code; publishes User Builds). The folder carries the package name: as `cli/`, `pnpm audit` matched it to the unrelated npm package `cli`.                                                                                                                                                                                                                                     | —                                                |
 
 ## Commands
 
@@ -62,8 +62,8 @@ pnpm audit:pages             # real-browser sweep: iOS edge-pinned layers + page
 make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
 ```
 
-Local ports: web 7005 · socket-server 7001 · rmhtube 7003 · rmhbox 7676 · status 7008 · assets 7007.
-Env: see `.env.example`; minimum is `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
+Local ports: web 7005 · socket-server 7001 · rmhtube 7003 · rmhbox 7676 · status 7008 · assets 7007. Env: see
+`.env.example`; minimum is `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
 
 ## The commit gate — run this before EVERY commit
 
@@ -118,22 +118,24 @@ Two rules about the gate itself:
    how the inconsistency it prevents comes back.
 
 **Merge conflicts: what is deliberately not in git.** Files that are a pure function of other files conflict whenever
-two branches change the inputs, so they are generated, not committed: `app/routeTree.gen.ts`, `lib/prepaint/generated.ts`
-and `docs/_generated/facts/*.json` (the repo's countable facts, one file per category) are written by `pnpm gen`, which
-`pnpm install`, `pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint` and the vitest run call for you (CI's
-`setup-deps` and the Dockerfile too). The ones that stay committed are written so a new entry touches only its own lines:
-`lib/api/route-table.server.ts` (imports named by path, routes bucketed by first letter), the inventories under
-`docs/site-reference/{pages,api}/` (one file per first letter, no counts) and `NAMESPACES` in `lib/i18n/config.ts`
-(sorted, one per line). Keep it that way: no running counters, no positional names, no totals in a shared file.
+two branches change the inputs, so they are generated, not committed: `app/routeTree.gen.ts`,
+`lib/prepaint/generated.ts` and `docs/_generated/facts/*.json` (the repo's countable facts, one file per category) are
+written by `pnpm gen`, which `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint` and the vitest run
+call for you (CI's `setup-deps` and the Dockerfile too). The ones that stay committed are written so a new entry touches
+only its own lines: `lib/api/route-table.server.ts` (imports named by path, routes bucketed by first letter), the
+inventories under `docs/site-reference/{pages,api}/` (one file per first letter, no counts) and `NAMESPACES` in
+`lib/i18n/config.ts` (sorted, one per line). Keep it that way: no running counters, no positional names, no totals in a
+shared file.
 
-Every commit also carries the smaller invariants: no secrets, no hand-edited generated files,
-no new type or lint warnings versus the base branch, and a message that explains _why_.
+Every commit also carries the smaller invariants: no secrets, no hand-edited generated files, no new type or lint
+warnings versus the base branch, and a message that explains _why_.
 
 ## Cross-cutting conventions (the ones agents break most)
 
 1. **Routing:** add files under `app/routes/`; the route tree regenerates on dev/build. Pages under `_site/` get the
-   Steel shell (`components/shell/SiteShell.tsx`); top-level routes are full-screen (games, login — intentional). The legal pages (`/terms`, `/privacy`, `/cookies`, `/copyright`, `/security`) are `_site` pages and use the shell.
-   Never edit `routeTree.gen.ts`.
+   Steel shell (`components/shell/SiteShell.tsx`); top-level routes are full-screen (games, login — intentional). The
+   legal pages (`/terms`, `/privacy`, `/cookies`, `/copyright`, `/security`) are `_site` pages and use the shell. Never
+   edit `routeTree.gen.ts`.
 2. **Server-only code:** `lib/**/*.server.ts` is stubbed out of the client bundle by a Vite plugin. Never import
    `.server` modules from client code.
 3. **API routes:** `.ts` files with `server.handlers.{GET,POST,...}`. Wrap every handler in `defineHandler` from
@@ -170,14 +172,18 @@ no new type or lint warnings versus the base branch, and a message that explains
    shadow or translucency anywhere on the site tier except the three chrome elements (the globe, the toggle thumb, the
    slider thumb; R2). **Rules before boxes (R3):** separate things with a 1px rule or with space; a bordered box is a
    control or a picture. Groups use the divider primitives in `components/ui/rules.tsx` (`Section`, `Columns`, `Cells`,
-   `Notice`, `Definitions`; S7 to S11), not a box. One ink primary button per view (R4). Type is the seven `t-*` classes (`t-title`, `t-heading`,
+   `Notice`, `Definitions`; S7 to S11; inset and floating per S12; `.rule-row` for a hand-written list row; no `px-*`
+   wrapper under `PageLayout`, S13; catalogues are news-style rows, `components/create/storefront.tsx`, S14), not a box.
+   `lib/__tests__/steel-rules.test.ts` fails a bordered group box, `surface-card`/`surface-panel`, a `ui/card` import
+   and a padded ghost wrapper on the site tier, with no allowlist; it cannot see a card drawn in a stylesheet, so audit
+   `.css` by hand. One ink primary button per view (R4). Type is the seven `t-*` classes (`t-title`, `t-heading`,
    `t-body`, `t-post`, `t-prose`, `t-label`, `t-meta`; `app/styles/steel-type.css`), weights 400/500/600, no
    letterspaced capitals. Use `components/ui/` primitives, `PageLayout`, lucide icons, sonner toasts. Surface roles are
    `surface-overlay` (the only raised surface), `surface-field`, `surface-chrome` and `surface-press`
    (`app/styles/steel-surfaces.css`, S6); a `_site` page writes no `surface-card` or `surface-panel` at all, because a
-   group of content is rows on rules (or the `rules.tsx` primitives), and those two names remain only on full-screen games and apps (L8), where
-   `components/shared/app-theme.css` draws them as the app tier's panels. **Before any UI commit** read
-   [`design.md`](design.md), [`docs/design-language.md`](docs/design-language.md) §0 and
+   group of content is rows on rules (or the `rules.tsx` primitives), and those two names remain only on full-screen
+   games and apps (L8), where `components/shared/app-theme.css` draws them as the app tier's panels. **Before any UI
+   commit** read [`design.md`](design.md), [`docs/design-language.md`](docs/design-language.md) §0 and
    [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is CI-enforced —
    `lib/__tests__/steel-tokens.test.ts`, `steel-flat.test.ts` and `design-consistency.test.ts` (hand-rolled tab strips,
    floating UI below the overlay tier) plus the eslint rules `local/no-transition-all` and
@@ -239,10 +245,11 @@ historical. **Values are exact: do not round, substitute or improve them. Sectio
 are still open — do not resolve them by assumption; ask.**
 
 **Identity: a professional tool that happens to have one remarkable object in it.** A flat, neutral page in one typeface
-(DM Sans; DM Mono for timestamps, counts and small data; a reader may choose their own from `lib/appearance/fonts.ts`), divided by hairline rules. Two editions, Day (`:root`,
-`.style-default`) and Night (`.style-graphite`), one set of `--site-*` names. No accent colour: the accent is the ink.
-Content hangs on the spine, a 1px vertical line (arrives in phase 4). Copy is short and literal; no exclamation marks,
-no emoji in site chrome, a verb or a verb and a noun on a button; every string through `t()`.
+(DM Sans; DM Mono for timestamps, counts and small data; a reader may choose their own from `lib/appearance/fonts.ts`),
+divided by hairline rules. Two editions, Day (`:root`, `.style-default`) and Night (`.style-graphite`), one set of
+`--site-*` names. No accent colour: the accent is the ink. Content hangs on the spine, a 1px vertical line (arrives in
+phase 4). Copy is short and literal; no exclamation marks, no emoji in site chrome, a verb or a verb and a noun on a
+button; every string through `t()`.
 
 **The five rules** (cite the ID): **R1** flat first, solid token colours, no gradient, blur, glow or translucency
 outside the chrome (a bought name colour or avatar frame may be a subtle, gradual gradient: three colours at most, 60°
@@ -322,10 +329,10 @@ chrome renderer, loaded at idle. The site tier creates exactly one WebGL context
 `MutationObserver` or decorative `ResizeObserver`, except the predictive link prefetcher (`lib/foresight-prefetch.ts`,
 ForesightJS; owner exception of 2026-11-15, B3), and no `requestAnimationFrame` callback is pending at rest (B3). Fonts
 are DM Sans and DM Mono in the site sheet, self-hosted; a face a reader chose is its own sheet, linked only for them
-(owner, 2026-11-23). **The site-tier CSS gets smaller in every phase (B5):** the ledger in
-section 17 of the plan records the built `site-tier-*.css` and the critical-path JavaScript for `/` before phase 1 and
-after each phase; `pnpm -s exec tsx scripts/check-bundle-budget.ts` must pass. The one ambient clock is the chrome
-globe's idle drift (a 15 Hz tick, 7 on handhelds), bounded by `testing/e2e/steel-rest.mjs`.
+(owner, 2026-11-23). **The site-tier CSS gets smaller in every phase (B5):** the ledger in section 17 of the plan
+records the built `site-tier-*.css` and the critical-path JavaScript for `/` before phase 1 and after each phase;
+`pnpm -s exec tsx scripts/check-bundle-budget.ts` must pass. The one ambient clock is the chrome globe's idle drift (a
+15 Hz tick, 7 on handhelds), bounded by `testing/e2e/steel-rest.mjs`.
 
 ## Runtime & deploy reality (summary — details in docs/architecture.md)
 
