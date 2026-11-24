@@ -125,6 +125,8 @@ const chance = (o: Partial<ChanceDto> & Pick<ChanceDto, 'applicationId'>): Chanc
   asOf: null,
   basis: null,
   points: [],
+  waitingWeeks: null,
+  typical: null,
   ...o,
 });
 
@@ -250,6 +252,62 @@ describe('TrackerPage signed in', () => {
 
   it('states that home state is never shared', () => {
     expect(render(dto())).toContain('Never shared.');
+  });
+});
+
+describe('TrackerPage timeline and silence check', () => {
+  const answer = (...chances: ChanceDto[]): MedChancesRes => ({ cycleYear: 2027, chances });
+  const waiting = chance({
+    applicationId: 'a1',
+    status: 'estimate',
+    completeOn: '2026-10-09',
+    waitingWeeks: 6,
+    typical: { halfWeek: 4, mostWeek: 9, lastWeek: 13, basis: 20 },
+  });
+
+  it('the timeline lists own milestones oldest first with the wait since the step before', () => {
+    const d = dto();
+    d.cycle!.applications[0]!.milestones = [
+      { type: 'COMPLETE', date: '2026-10-09' },
+      { type: 'INTERVIEW', date: '2026-11-12' },
+    ];
+    const html = render(d);
+    expect(html).toContain('data-timeline');
+    expect(html).toContain('Interview invite · Duke');
+    expect(html).toContain('34 days after Application complete');
+    expect(html.indexOf('Application complete · Duke')).toBeLessThan(html.indexOf('Interview invite · Duke'));
+  });
+
+  it('the silence check compares the wait with the school, in plain words', () => {
+    const d = dto();
+    d.cycle!.applications[0]!.milestones = [{ type: 'COMPLETE', date: '2026-10-09' }];
+    const html = render(d, true, answer(waiting));
+    expect(html).toContain('No reply yet: 6 weeks since complete.');
+    expect(html).toContain('Half of the invites tracked for this school came by week 4, and most by week 9.');
+    expect(html).toContain('data-silence="before-most"');
+    expect(html).not.toMatch(/you should|we recommend/i);
+  });
+
+  it('a school with no curve says so instead of guessing', () => {
+    const html = render(dto(), true, answer(chance({ applicationId: 'a1', status: 'thin', waitingWeeks: 6 })));
+    expect(html).toContain('Not enough shared data for this school yet.');
+    expect(html).toContain('data-silence="thin"');
+    expect(html).not.toContain('Half of the invites');
+  });
+
+  it('says so when the wait is past the weeks the curve covers; invited and closed rows have no check', () => {
+    const late = render(dto(), true, answer({ ...waiting, waitingWeeks: 20 }));
+    expect(late).toContain('past that');
+    const none = render(
+      dto(),
+      true,
+      answer(chance({ applicationId: 'a1', status: 'invited', invitedOn: '2026-11-20' })),
+    );
+    expect(none).not.toContain('data-silence');
+  });
+
+  it('is absent while the chances are loading (the tracker is whole)', () => {
+    expect(render(dto())).not.toContain('data-silence');
   });
 });
 

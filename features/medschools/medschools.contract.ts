@@ -454,6 +454,25 @@ export interface ChanceDto {
   basis: number | null;
   /** Calendar dates and percents in steps of 5; `estimate` only. */
   points: { on: string; percent: number }[];
+  /**
+   * Whole weeks since the complete date, while the application is still waiting (`estimate`, `beyond`, `thin`); null
+   * otherwise. The silence check's elapsed time, computed with the same `today` as the estimate.
+   */
+  waitingWeeks: number | null;
+  /** Where invites at this school fall in the wait (phase 5 curve, truncated at its last week), when a curve exists. */
+  typical: TypicalWaitDto | null;
+}
+
+/** Weeks from complete, read from the stored curve only: see `typicalWait` in `engine/stats/km.ts`. */
+export interface TypicalWaitDto {
+  /** The first week by which half of the invites seen in range had come. */
+  halfWeek: number;
+  /** The first week by which 80% had come. */
+  mostWeek: number;
+  /** The last week the curve is read to (at least 10 members still at risk). */
+  lastWeek: number;
+  /** Members behind the curve, floored to a multiple of 10 and at least 20. */
+  basis: number;
 }
 
 export interface MedChancesRes {

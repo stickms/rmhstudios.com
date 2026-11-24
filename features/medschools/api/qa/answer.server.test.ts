@@ -254,6 +254,8 @@ describe('my chance: the caller own estimate, never sent to the model', () => {
     asOf: '2026-11-22',
     basis: 40,
     points: [{ on: '2026-12-15', percent: 35 }],
+    waitingWeeks: null,
+    typical: null,
   };
   it('returns getChances rows for the resolved schools and keeps them out of the prompt', async () => {
     m.getChances.mockResolvedValue({ cycleYear: 2027, chances: [mine] });
@@ -425,7 +427,12 @@ describe('the lease and the deadline', () => {
 
 describe('a sentence that pools several schools', () => {
   it('takes numbers only from a cited fact of a school the sentence names', async () => {
-    const other: RetrievedFact = { ...F2, ref: 'f4', schoolSlug: 'baylor', text: 'Baylor MCAT median 515 (Admit.org).' };
+    const other: RetrievedFact = {
+      ...F2,
+      ref: 'f4',
+      schoolSlug: 'baylor',
+      text: 'Baylor MCAT median 515 (Admit.org).',
+    };
     m.retrieve.mockResolvedValue(
       retrieval([F1, F2, other], {
         schools: [
@@ -435,7 +442,10 @@ describe('a sentence that pools several schools', () => {
       }),
     );
     const { runner } = fakeRunner(route({ intent: 'compare', schools: ['Duke', 'Baylor'] }), {
-      segments: [seg('Duke MCAT median is 515.', 'f2', 'f4'), seg('Duke MCAT median is 511 and Baylor is 515.', 'f2', 'f4')],
+      segments: [
+        seg('Duke MCAT median is 515.', 'f2', 'f4'),
+        seg('Duke MCAT median is 511 and Baylor is 515.', 'f2', 'f4'),
+      ],
     });
     const r = await ask(runner);
     expect(r.segments.map((x) => x.text)).toEqual(['Duke MCAT median is 511 and Baylor is 515.']);

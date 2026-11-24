@@ -116,6 +116,23 @@ describe('getChances', () => {
     for (const p of [...d20, ...(await pointsFor('2026-10-27'))]) expect(p.percent % 5).toBe(0);
   });
 
+  it('carries the silence check inputs: whole waiting weeks and the curve-only typical weeks', async () => {
+    // Complete 20 days ago: 2 whole weeks. CURVE (maxDay 90): F = 0.3, 0.5, 0.7 -> half week 4, most week 6, last week 13.
+    apply('a', 'x', { COMPLETE: '2026-10-31' });
+    curveRow('x', { maxDay: 90 });
+    const c = (await getChances('a', {}, NOW)).chances[0]!;
+    expect(c.waitingWeeks).toBe(2);
+    expect(c.typical).toEqual({ halfWeek: 4, mostWeek: 6, lastWeek: 13, basis: 20 });
+  });
+
+  it('thin: waiting weeks but no typical; not waiting: neither', async () => {
+    apply('a', 'x', { COMPLETE: '2026-10-31' });
+    apply('a', 'y', { COMPLETE: '2026-10-31', INTERVIEW: '2026-11-10' });
+    const by = new Map((await getChances('a', {}, NOW)).chances.map((c) => [c.school.slug, c]));
+    expect(by.get('school-x')).toMatchObject({ status: 'thin', waitingWeeks: 2, typical: null });
+    expect(by.get('school-y')).toMatchObject({ status: 'invited', waitingWeeks: null, typical: null });
+  });
+
   it('a COMPLETE date in the future is not an estimate', async () => {
     apply('a', 'x', { COMPLETE: '2026-11-25' });
     curveRow('x');
@@ -187,6 +204,8 @@ describe('privacy', () => {
       'program',
       'school',
       'status',
+      'typical',
+      'waitingWeeks',
     ]);
     expect(Object.keys(res.chances[0]!.school).sort()).toEqual(['active', 'name', 'shortName', 'slug']);
     const text = JSON.stringify(res);

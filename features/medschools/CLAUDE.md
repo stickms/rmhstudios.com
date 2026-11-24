@@ -281,6 +281,17 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
   Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is
   an addition: signed out, loading or failed, the page is whole without it.
 
+## Timeline and silence check (roadmap item 4)
+
+Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-timeline-silence.md`. On the tracker page, no new endpoint.
+`engine/timeline.ts` (pure, client-safe): `buildTimeline` turns the caller's own `TrackerApplicationDto` rows into one
+dated line with each step's wait since the step before it; `silenceOf` reads a `ChanceDto`. `getChances` now also
+returns `waitingWeeks` and `typical` (`halfWeek`, `mostWeek`, `lastWeek`, `basis`), derived from the one `MedWaitCurve`
+row it already read by `typicalWait` (`engine/stats/km.ts`): the first week the invite share reaches 50% and 80% of its
+value at `maxDay`, nothing read past `maxDay`; null when no step is in range. No new aggregate, the R13 floors
+unchanged. A school with no curve says "Not enough shared data for this school yet" and is never compared. UI:
+`ui/tracker/Timeline.tsx`, `SilenceLine.tsx` (under each row, above `ChanceLine`).
+
 ## AI Q&A (phase 6)
 
 `/rmh-medschool/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt

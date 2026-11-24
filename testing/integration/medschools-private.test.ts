@@ -696,6 +696,8 @@ const CHANCE_KEYS = [
   'program',
   'school',
   'status',
+  'typical',
+  'waitingWeeks',
 ];
 
 describe('the personal invite chance (me/chances)', () => {
@@ -772,7 +774,13 @@ describe('the personal invite chance (me/chances)', () => {
     }
     // Only horizons whose week still has 10 members at risk are shown (R13): with this fixture that is the nearest ones.
     // Late invites exist in the fixture past alice's 39 days, so the chance does rise.
-    expect(est.points[est.points.length - 1].percent).toBeGreaterThan(0);
+    expect(est.points[est.points.length - 1].percent).toBeGreaterThan(0); // The silence check reads only whole weeks derived from the same curve, and the floored basis.
+    expect(est.waitingWeeks).toBe(Math.floor(40 / 7));
+    if (est.typical !== null) {
+      expect(Object.keys(est.typical).sort()).toEqual(['basis', 'halfWeek', 'lastWeek', 'mostWeek']);
+      expect(est.typical.basis).toBe(est.basis);
+      for (const k of ['halfWeek', 'mostWeek', 'lastWeek']) expect(Number.isInteger(est.typical[k])).toBe(true);
+    }
   });
 
   it("never carries another member's dates: bob sees his own and not alice's, and nobody sees a sharer's", async () => {
