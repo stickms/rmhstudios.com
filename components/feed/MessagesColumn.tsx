@@ -8,7 +8,6 @@ import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { SearchField } from '@/components/ui/search-field';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { Spine, SpineItem } from '@/components/ui/spine';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
@@ -359,7 +358,7 @@ export function MessagesColumn({
             {t('no-search-results', { defaultValue: 'No people or messages match your search.' })}
           </p>
         ) : (
-          <Spine className={searchArrival}>
+          <div className={searchArrival}>
             {searchResults.map((conv) => (
               <ConversationRow
                 key={conv.id}
@@ -371,7 +370,7 @@ export function MessagesColumn({
                 formatTime={formatTime}
               />
             ))}
-          </Spine>
+          </div>
         )
       ) : loading ? (
         <div className="flex items-center justify-center py-12">
@@ -384,10 +383,10 @@ export function MessagesColumn({
       ) : conversations.length === 0 ? (
         <>
           {/* Saved Messages (M2) is always there, even in an empty inbox. */}
-          <Spine className={listArrival}>
+          <div className={listArrival}>
             <RequestsEntry />
             <SavedMessagesRow />
-          </Spine>
+          </div>
           <EmptyState
             className={listArrival}
             title={t('no-messages-yet', { defaultValue: 'No messages yet' })}
@@ -403,8 +402,7 @@ export function MessagesColumn({
         </>
       ) : (
         <>
-          {/* One dot per unread thread (section 10, Inbox): the rows hang on the spine, read ones with no dot. */}
-          <Spine className={listArrival}>
+          <div className={listArrival}>
             {folder === 'all' && <RequestsEntry />}
             {folder === 'all' && <SavedMessagesRow />}
             {conversations.map((conv) => (
@@ -419,7 +417,7 @@ export function MessagesColumn({
                 formatTime={formatTime}
               />
             ))}
-          </Spine>
+          </div>
 
           {loadingMore && (
             <div className="flex items-center justify-center py-8">
@@ -492,7 +490,7 @@ function ConversationRow({
   const unread = conv.unreadCount > 0;
   const isSelf = conv.otherUser.id === currentUserId;
   return (
-    <SpineItem dot={unread} className={cn('row-hover', className)}>
+    <div className={cn('rule-row row-hover py-3.5', className)}>
       <Link
         to={`/messages/${conv.id}` as string}
         className="flex items-start gap-3 after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
@@ -546,7 +544,7 @@ function ConversationRow({
           )}
         </div>
       </Link>
-    </SpineItem>
+    </div>
   );
 }
 

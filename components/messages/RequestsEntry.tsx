@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router';
 import { Inbox } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
-import { SpineItem } from '@/components/ui/spine';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { api } from '@/lib/contract/client';
 import { messagesSidebarApi } from '@/lib/messages/messages-sidebar.contract';
@@ -27,7 +26,7 @@ export function RequestsEntry() {
   if (count === 0) return null;
 
   return (
-    <SpineItem dot={false} className="row-hover">
+    <div className="rule-row row-hover py-3.5">
       <Link
         to="/messages/requests"
         className="flex w-full items-start gap-3 text-start after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
@@ -42,6 +41,6 @@ export function RequestsEntry() {
           </span>
         </span>
       </Link>
-    </SpineItem>
+    </div>
   );
 }

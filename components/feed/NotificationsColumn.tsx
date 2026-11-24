@@ -9,7 +9,6 @@ import { Switch } from '@/components/ui/switch';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
-import { Spine, SpineItem } from '@/components/ui/spine';
 import { NotificationRowMenu } from '@/components/feed/NotificationRowMenu';
 import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { NOTIFICATIONS_READ_EVENT } from '@/hooks/useNotificationCount';
@@ -466,7 +465,8 @@ export function NotificationsColumn({
         </h1>
       )}
       {/* The toolbar: three words, no primary (section 10, Inbox). */}
-      <div className="flex flex-wrap items-center gap-1 pb-3">
+      {/* -ms-4 pulls the row out by the ghost buttons' own padding: the first label sits on the column edge and only the hover fill overhangs it. */}
+      <div className="-ms-4 flex flex-wrap items-center gap-1 pb-3">
         {push.supported && (
           <Button
             variant="ghost"
@@ -587,7 +587,7 @@ export function NotificationsColumn({
           }
         />
       ) : (
-        <Spine className={arrival}>
+        <div className={arrival}>
           {groups.map((g) => {
             const n = g.newest;
             const grouped = g.count > 1;
@@ -625,13 +625,9 @@ export function NotificationsColumn({
               previewText && sys
                 ? previewText
                 : `${actorName} ${verb}`.trim();
-            // One dot per unread item (section 10): a read notification is a plain row.
+            // An unread notification is bold; a read one is a plain row.
             return (
-              <SpineItem
-                key={g.key}
-                dot={!g.read}
-                className={cn('row-hover', isNew(g.key) && ARRIVE)}
-              >
+              <div key={g.key} className={cn('rule-row row-hover py-3.5', isNew(g.key) && ARRIVE)}>
                 <SwipeRow
                   trailing={{
                     icon: AlarmClock,
@@ -693,10 +689,10 @@ export function NotificationsColumn({
                     />
                   </div>
                 </SwipeRow>
-              </SpineItem>
+              </div>
             );
           })}
-        </Spine>
+        </div>
       )}
 
       {nextCursor && (

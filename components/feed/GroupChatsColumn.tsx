@@ -8,7 +8,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
-import { Spine, SpineItem } from '@/components/ui/spine';
 import { HandleInput } from './HandleInput';
 import { ColumnHeader } from './ColumnHeader';
 import { useTranslation } from 'react-i18next';
@@ -226,9 +225,9 @@ export function GroupChatsColumn({
           description={t('no-groups-match', { defaultValue: 'No groups match your search.' })}
         />
       ) : (
-        <Spine>
+        <div>
           {visibleGroups.map((g) => (
-            <SpineItem key={g.id} dot={!!g.unread} className="row-hover">
+            <div key={g.id} className="rule-row row-hover py-3.5">
               <Link
                 to={`/groups/${g.id}` as string}
                 className="block after:absolute after:inset-x-0 after:-inset-y-px after:content-['']"
@@ -245,9 +244,9 @@ export function GroupChatsColumn({
                     t('member-count', { count: g.memberCount, defaultValue_one: '{{count}} member', defaultValue: '{{count}} members' })}
                 </p>
               </Link>
-            </SpineItem>
+            </div>
           ))}
-        </Spine>
+        </div>
       )}
     </div>
   );
