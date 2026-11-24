@@ -8,6 +8,7 @@ import { m as motion } from 'framer-motion';
 import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { isPlaceholderEmail } from '@/lib/auth/providers';
+import { Notice } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
@@ -89,7 +90,7 @@ function AuthContent() {
     return (
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <div className="surface-panel rounded-site p-6 text-center">
+          <div className="text-center">
             <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-bg-subtle border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-to-authorize", { defaultValue: "Sign in to authorize rmhcode" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("sign-in-description", { defaultValue: "You need to sign in to your RMH account to authorize the CLI." })}</p>
@@ -104,7 +105,7 @@ function AuthContent() {
     return (
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <div className="rounded-site border border-site-danger/30 bg-site-danger/10 p-6 text-center">
+          <div className="text-center">
             <X className="w-12 h-12 text-site-danger mx-auto mb-4" />
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("invalid-auth-request", { defaultValue: "Invalid Authorization Request" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("invalid-auth-request-description", { defaultValue: "This page should be opened from the rmhcode CLI. Missing required parameters." })}</p>
@@ -119,8 +120,8 @@ function AuthContent() {
     return (
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full">
-          <div className="rounded-site border border-site-success/30 bg-site-success/10 p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-success/15 border border-site-success/30"><Check className="w-8 h-8 text-site-success" /></div></div>
+          <div className="text-center">
+            <div className="flex justify-center mb-4"><Check className="w-8 h-8 text-site-success" /></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("authorization-successful", { defaultValue: "Authorization Successful!" })}</h1>
             <p className="text-sm text-site-text-muted">{t("redirecting", { defaultValue: "Redirecting back to rmhcode CLI..." })}</p>
           </div>
@@ -132,7 +133,7 @@ function AuthContent() {
   return (
     <div className="app-ground bg-site-bg flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-        <div className="surface-panel rounded-site p-6">
+        <div>
           <div className="flex items-center gap-4 mb-6">
             <div className="p-4 rounded-site bg-site-bg-subtle border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
             <div><h1 className="text-xl font-semibold text-site-text">{t("authorize-rmhcode", { defaultValue: "Authorize rmhcode" })}</h1><p className="text-sm text-site-text-muted">{t("cli-requesting-access", { defaultValue: "CLI is requesting access to your account" })}</p></div>
@@ -151,7 +152,7 @@ function AuthContent() {
               <li className="flex items-center gap-2"><Check className="w-4 h-4 text-site-success" />{t("perm-publish", { defaultValue: "Publish projects on your behalf" })}</li>
             </ul>
           </div>
-          {error && <div className="p-3 rounded-site-sm bg-site-danger/10 border border-site-danger/30 text-sm text-site-danger mb-6">{error}</div>}
+          {error && <Notice tone="danger" className="mb-6">{error}</Notice>}
           <div className="flex gap-3">
             <Button onClick={handleDeny} variant="default" className="flex-1" disabled={authorizing}>{t("deny", { defaultValue: "Deny" })}</Button>
             <Button onClick={handleAuthorize} variant="default" className="flex-1" disabled={authorizing || !!error}>

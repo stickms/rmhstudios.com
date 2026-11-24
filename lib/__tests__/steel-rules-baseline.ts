@@ -6,12 +6,10 @@
  * is clean must be deleted. Nothing new goes in.
  */
 export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number }> = {
-  'app/routes/_site/rideshare/drive.tsx': { wave: 'wave 6', count: 2 },
   'app/routes/embed.post.$id.tsx': { wave: 'wave 4', count: 2 },
   'app/routes/embed.replay.$id.tsx': { wave: 'wave 4', count: 2 },
   'app/routes/login.tsx': { wave: 'wave 4', count: 1 },
   'app/routes/offline.tsx': { wave: 'wave 4', count: 1 },
-  'app/routes/rmhcode/auth.tsx': { wave: 'wave 6', count: 5 },
   'app/routes/rmhcode/index.tsx': { wave: 'wave 4', count: 14 },
   'components/blm/BlackLivesMatterPage.tsx': { wave: 'wave 4', count: 8 },
   'components/competitive/GameNightBoard.tsx': { wave: 'wave 4', count: 1 },
@@ -50,7 +48,6 @@ export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number 
   'components/studio/SampleBrowser.tsx': { wave: 'wave 4', count: 1 },
   'components/studio/creative/ChallengePanel.tsx': { wave: 'wave 4', count: 5 },
   'components/studio/creative/JamPanel.tsx': { wave: 'wave 4', count: 1 },
-  'components/themes/ThemeEditor.tsx': { wave: 'wave 6', count: 1 },
   'components/toolbox/contrast/ContrastTool.tsx': { wave: 'wave 4', count: 1 },
   'components/toolbox/diff/DiffTool.tsx': { wave: 'wave 4', count: 1 },
   'components/toolbox/regex/RegexTool.tsx': { wave: 'wave 4', count: 1 },
