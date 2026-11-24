@@ -140,7 +140,7 @@ export function AchievementTipsDialog({
             </p>
           ) : (
             tips.map((tip) => (
-              <div key={tip.id} className={cn('rounded-site p-4', arrival, isNew(tip.id) && ARRIVE)}>
+              <div key={tip.id} className={cn('p-4', arrival, isNew(tip.id) && ARRIVE)}>
                 <p className="whitespace-pre-wrap break-words text-sm text-site-text">{tip.body}</p>
                 <div className="mt-2 flex items-center justify-between text-xs text-site-text-muted">
                   <span className="truncate">{tip.author.name ?? tip.author.handle}</span>

@@ -246,7 +246,7 @@ export function PredictionCard({
 
   return (
     <div
-      className={`rounded-site p-5 flex flex-col gap-3`}
+      className={`py-5 flex flex-col gap-3`}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">

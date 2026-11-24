@@ -132,7 +132,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
   ];
 
   return (
-    <section className="rounded-site p-5 sm:p-6" aria-labelledby="request-board">
+    <section className="py-5 sm:py-6" aria-labelledby="request-board">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="request-board" className="text-xl font-semibold text-site-text">
@@ -201,7 +201,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
         </Select>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4">
         {loading && page.requests.length === 0 ? (
           <div className="flex justify-center py-10">
             <Spinner />

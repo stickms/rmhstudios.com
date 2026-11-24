@@ -498,7 +498,7 @@ export function TierEditor({
 
       {drafts.length ===
         0 && (
-        <div className="rounded-site p-6 text-center text-sm text-site-text-muted">
+        <div className="py-6 text-center text-sm text-site-text-muted">
           {t(
             'no-tiers-yet',
             {
@@ -509,7 +509,7 @@ export function TierEditor({
         </div>
       )}
 
-      <div className="space-y-4">
+      <div>
         {drafts.map(
           (
             d,
@@ -527,7 +527,7 @@ export function TierEditor({
                 key={
                   d.key
                 }
-                className="rounded-site p-5 space-y-4"
+                className="rule-row py-5 space-y-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-medium text-site-text-muted">

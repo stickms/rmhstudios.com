@@ -77,7 +77,7 @@ export function HorizontalScroller({
         'group/scroll relative min-w-0 max-w-full',
         //`.`(L1): a tray holding repeated children is exactly that tier,
         // and L1 has no blur so there is no budget cost to nesting one.
-        surface === 'fill' && 'relative rounded-site p-1.5',
+        surface === 'fill' && 'relative p-1.5',
         surface === 'pill' && 'rounded-full p-1',
         className,
       )}

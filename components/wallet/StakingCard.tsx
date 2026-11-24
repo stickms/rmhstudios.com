@@ -75,7 +75,7 @@ export function StakingCard() { const fmt = useLocaleFormat().number;
 
  if (loading) {
  return (
- <section className="rounded-site p-5">
+ <section className="py-5">
  <div className="flex justify-center py-4">
  <Spinner size={20} />
  </div>
@@ -88,7 +88,7 @@ export function StakingCard() { const fmt = useLocaleFormat().number;
  const validAmt = Number.isFinite(amt) && amt > 0;
 
  return (
- <section className={cn('rounded-site p-5', arrival)}>
+ <section className={cn('py-5', arrival)}>
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>

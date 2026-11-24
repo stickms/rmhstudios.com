@@ -130,7 +130,7 @@ export function EventCard({ event: initial, className }: { event: EventDTO; clas
   return (
     <li
       className={cn(
-'flex flex-col gap-3 rounded-site px-4 py-4',
+'flex flex-col gap-3 py-4',
         canceled && 'opacity-60',
         className,
       )}

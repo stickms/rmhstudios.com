@@ -110,7 +110,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
       aria-label={t('notes-label', {
         defaultValue: 'Context notes',
       })}
-      className="mt-2 min-h-16 space-y-3 rounded-site p-4"
+      className="mt-2 min-h-16 space-y-3 py-4"
     >
       <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
         <StickyNote className="size-4" aria-hidden />

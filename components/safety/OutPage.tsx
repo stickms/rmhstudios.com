@@ -39,7 +39,7 @@ export default function OutPage({ url }: { url: string }) {
             })}
           </p>
         ) : (
-          <div className="flex flex-col gap-4 rounded-site p-5">
+          <div className="flex flex-col gap-4 py-5">
             <div className="flex items-center gap-2 text-site-text">
               <ShieldAlert className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
               <h2 className="text-lg font-semibold">

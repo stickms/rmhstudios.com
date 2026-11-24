@@ -889,7 +889,7 @@ export function FashionStudio() {
           </section>
 
           {/* ── The figure ──────────────────────────────────────────────── */}
-          <section className="rounded-site flex flex-col gap-4 p-5">
+          <section className="flex flex-col gap-4 py-5">
             <SectionHeading
               icon={
                 User
@@ -1093,7 +1093,7 @@ export function FashionStudio() {
                 )}
               </p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col">
                 {worn.map(
                   ({
                     item,
@@ -1103,7 +1103,7 @@ export function FashionStudio() {
                       key={
                         garment.id
                       }
-                      className="flex flex-col gap-2 rounded-site px-4 py-3"
+                      className="rule-row flex flex-col gap-2 py-3"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-site-text">

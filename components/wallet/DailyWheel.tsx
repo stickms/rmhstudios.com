@@ -79,7 +79,7 @@ export function DailyWheel() {
  .join(',');
 
  return (
- <section className={cn('rounded-site relative p-5', arrival)}>
+ <section className={cn('relative py-5', arrival)}>
  <div className="mb-3 flex items-center gap-2">
  <Sparkles className="h-4 w-4 text-site-accent"/>
  <h2 className="text-sm font-semibold text-site-text">{t('daily-wheel', { defaultValue:'Daily wheel'})}</h2>

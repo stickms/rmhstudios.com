@@ -169,7 +169,7 @@ export function CohortsTab() { const fmt = useLocaleFormat();
           )}
         />
       ) : (
-        <div className="overflow-x-auto rounded-site p-4">
+        <div className="overflow-x-auto py-4">
           <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-center t-meta">
             <thead>
               <tr className="text-site-text-muted">

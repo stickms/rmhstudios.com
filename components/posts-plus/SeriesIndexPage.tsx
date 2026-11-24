@@ -93,13 +93,13 @@ export function SeriesIndexPage() {
   };
 
   const row = (s: Summary) => (
-    <li key={s.id}>
+    <li key={s.id} className="rule-row">
       <Link
         to="/series/$id"
         params={{
           id: s.id,
         }}
-        className="surface-press block rounded-site px-4 py-3"
+        className="row-hover block py-3"
       >
         <span className="block text-sm font-medium text-site-text">{s.title}</span>
         <span className="mt-1 block text-xs text-site-text-muted">
@@ -139,7 +139,7 @@ export function SeriesIndexPage() {
         ) : (
           <div className="space-y-[var(--site-section-gap)]">
             <form
-              className="flex gap-2 rounded-site px-4 py-3"
+              className="flex gap-2 py-3"
               onSubmit={(e) => {
                 e.preventDefault();
                 void create();
@@ -180,7 +180,7 @@ export function SeriesIndexPage() {
                   })}
                 />
               ) : (
-                <ul className="space-y-3">{data.mine.map(row)}</ul>
+                <ul>{data.mine.map(row)}</ul>
               )}
             </section>
 
@@ -191,7 +191,7 @@ export function SeriesIndexPage() {
                     defaultValue: 'Following',
                   })}
                 </h2>
-                <ul className="space-y-3">{data.following.map(row)}</ul>
+                <ul>{data.following.map(row)}</ul>
               </section>
             )}
           </div>

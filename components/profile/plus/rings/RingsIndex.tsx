@@ -22,7 +22,7 @@ function RingCard({ ring }: { ring: RingSummary }) {
   const { t } = useTranslation('f-profile-plus');
   return (
     <li>
-      <Link to={`/rings/${ring.slug}` as string} className="surface-press block rounded-site p-5">
+      <Link to={`/rings/${ring.slug}` as string} className="row-hover block py-5">
         <p className="truncate site-section-label">{ring.name}</p>
         {ring.description ? (
           <p dir="auto" className="mt-1 line-clamp-2 text-sm text-site-text-muted">
@@ -142,7 +142,7 @@ export default function RingsIndex() {
         </>
       )}
 
-      <section className="space-y-3 rounded-site p-5" aria-labelledby="rings-start">
+      <section className="space-y-3 py-5" aria-labelledby="rings-start">
         <h2 id="rings-start" className="site-section-label">
           {t('rings-start', {
             defaultValue: 'Start a ring',

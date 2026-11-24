@@ -126,7 +126,7 @@ const FriendSheetRow = memo(
       });
     const profileHref = `/u/${user.handle ?? user.id}`;
     return (
-      <li className="flex items-center gap-3 rounded-site px-2 py-2">
+      <li className="flex items-center gap-3 px-2 py-2">
         <SheetClose asChild>
           <Link to={profileHref} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3">
             <span className="relative shrink-0">

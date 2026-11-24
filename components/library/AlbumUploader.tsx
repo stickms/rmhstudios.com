@@ -276,7 +276,7 @@ export function AlbumUploader({
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="relative space-y-3 rounded-site p-5">
+    <div className="relative space-y-3 py-5">
       <div
         className={cn(
           'flex w-full cursor-pointer flex-col items-center gap-2 rounded-site border-2 border-dashed px-5 py-8 text-center text-site-text-muted transition-colors duration-site-fast',
@@ -336,7 +336,7 @@ export function AlbumUploader({
             )}
           </div>
 
-          <ul className="flex max-h-80 flex-col gap-3 overflow-y-auto sm:max-h-112">
+          <ul className="flex max-h-80 flex-col overflow-y-auto sm:max-h-112">
             {items.map((it) => (
               <UploadRow key={it.id} item={it} onRetry={retryItem} onRemove={removeItem} />
             ))}
@@ -375,7 +375,7 @@ function UploadRow({
   const pct = Math.round(it.progress * 100);
 
   return (
-    <li className="flex items-center gap-3 rounded-site px-3 py-3">
+    <li className="rule-row flex items-center gap-3 py-3">
       <div className="relative size-12 shrink-0 overflow-hidden rounded-site-sm bg-site-surface-active">
         {it.preview ? (
           <img src={it.preview} alt="" className="size-full object-cover" />
