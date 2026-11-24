@@ -882,12 +882,15 @@ export const getMedSchoolSecondariesApi = endpoint<{
  * One sourced fact about a school (see `engine/school-facts.ts`). `value` is a status code (`YES`, `CASE_BY_CASE`...), a
  * `YYYY-MM-DD` or `YYYY-MM` date, or the school's own words; `printed` is the text the report prints beside a code or
  * date; `note` is the school's accompanying sentence. Every fact carries its own source line and the day it was read.
+ * Two catalogues share the shape: AAMC report facts (a `reportId` and report name) and Admit.org curriculum facts
+ * (`reportId` null, `report` empty, `sourceLabel` "Admit.org", `cycleYear` 0 because they are not about an entering
+ * class; `printed` holds Admit's own string and `num` the preclinical length in years).
  */
 export interface MedSchoolFactDto {
   kind: string;
-  reportId: number;
+  reportId: number | null;
   report: string;
-  /** The entering class the report states. */
+  /** The entering class the report states; 0 for a curriculum fact. */
   cycleYear: number;
   value: string | null;
   printed: string | null;
@@ -901,9 +904,9 @@ export interface MedSchoolFactDto {
 }
 
 export interface MedSchoolFactsRes {
-  /** The AAMC page the reports are listed on: the link every source line points at. */
+  /** The AAMC page the reports are listed on: the link every AAMC source line points at (a curriculum fact links its own `sourceUrl`). */
   pageUrl: string;
-  /** Empty for a school the reports do not cover (every DO school) or have no row for. */
+  /** Empty for a school neither the AAMC reports nor Admit's curriculum table cover. A DO school has Admit's rows at most. */
   facts: MedSchoolFactDto[];
 }
 

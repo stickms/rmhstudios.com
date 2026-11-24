@@ -1411,3 +1411,10 @@ textarea.medapp-field--compact {
   display: block;
   margin-block-start: 2px;
 }
+
+/* Curriculum: the home hospitals, one to a line. */
+.medapp-plain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

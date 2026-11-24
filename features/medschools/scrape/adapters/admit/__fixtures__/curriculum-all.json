@@ -1,0 +1,119 @@
+{
+  "data": {
+    "getAllSchoolCurriculum": [
+      {
+        "school": {
+          "slug": "fixture-alpha"
+        },
+        "aoa": false,
+        "pc_grades": "P/F",
+        "pc_length": "1.5 Years",
+        "clerk_grades": "P/F",
+        "nbme_or_in_house": "Both",
+        "mspe": false,
+        "lecture_attendance_required": true,
+        "home_hospital": [
+          "Fixture alpha Children’s Hospital",
+          "Fixture alpha Hospital 2",
+          "Fixture alpha Hospital 3",
+          "Fixture alpha Hospital 4",
+          "Fixture alpha Hospital 5"
+        ]
+      },
+      {
+        "school": {
+          "slug": "fixture-bravo"
+        },
+        "aoa": true,
+        "pc_grades": "P/F",
+        "pc_length": "1.5 Years",
+        "clerk_grades": "H/HP/P/F",
+        "nbme_or_in_house": "Both",
+        "mspe": true,
+        "lecture_attendance_required": false,
+        "home_hospital": [
+          "Fixture bravo Hospital 1",
+          "Fixture bravo Hospital 2",
+          "Fixture bravo Hospital 3",
+          "Fixture bravo Hospital 4",
+          "Fixture bravo Hospital 5"
+        ]
+      },
+      {
+        "school": {
+          "slug": "fixture-charlie"
+        },
+        "aoa": true,
+        "pc_grades": "H/P/F",
+        "pc_length": "2 Years",
+        "clerk_grades": "  H/P/F ",
+        "nbme_or_in_house": "NBME Based",
+        "mspe": true,
+        "lecture_attendance_required": true,
+        "home_hospital": ["Fixture charlie Hospital 1"]
+      },
+      {
+        "school": {
+          "slug": "fixture-delta"
+        },
+        "aoa": true,
+        "pc_grades": "A/B/C/D/F",
+        "pc_length": "1.5 Years",
+        "clerk_grades": "H/HP/SP/MP/F",
+        "nbme_or_in_house": "In-House Exams",
+        "mspe": true,
+        "lecture_attendance_required": false,
+        "home_hospital": ["Fixture delta Hospital 1", "Fixture delta Hospital 2"]
+      },
+      {
+        "school": {
+          "slug": "fixture-echo"
+        },
+        "aoa": true,
+        "pc_grades": "P, ID, IDP, IDF",
+        "pc_length": "2 Years",
+        "clerk_grades": "H/HP/P/F",
+        "nbme_or_in_house": "Both",
+        "mspe": true,
+        "lecture_attendance_required": true,
+        "home_hospital": ["Fixture echo Hospital 1"]
+      },
+      {
+        "school": {
+          "slug": "fixture-foxtrot"
+        },
+        "aoa": true,
+        "pc_grades": "H/P/F",
+        "pc_length": "1.5 Years",
+        "clerk_grades": "H/S+/S/F",
+        "nbme_or_in_house": "Both",
+        "mspe": true,
+        "lecture_attendance_required": false,
+        "home_hospital": ["Fixture foxtrot Hospital 1"]
+      },
+      {
+        "school": {
+          "slug": "fixture-golf"
+        },
+        "aoa": null,
+        "pc_grades": null,
+        "pc_length": "1.5 Years",
+        "clerk_grades": null,
+        "nbme_or_in_house": null,
+        "mspe": null,
+        "lecture_attendance_required": null,
+        "home_hospital": null
+      },
+      {
+        "school": null,
+        "aoa": true
+      },
+      {
+        "school": {
+          "slug": "fixture-india"
+        },
+        "aoa": "yes"
+      }
+    ]
+  }
+}

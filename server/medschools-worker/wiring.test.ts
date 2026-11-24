@@ -475,6 +475,25 @@ describe('medschools-worker wiring', () => {
     expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitForumsConsumer?.pause()');
   });
 
+  it('registers medschools.admit-curriculum as its own exclusive weekly queue on the shared Admit host, with no secret gate', () => {
+    const src = flat();
+    expect(src).toContain("const ADMIT_CURRICULUM_QUEUE = 'medschools.admit-curriculum'");
+    expect(src).toContain('process.env.MEDSCHOOLS_ADMIT_CURRICULUM_CRON?.trim() || ADMIT_CURRICULUM_CRON');
+    const reg = slice(src, 'admitCurriculumConsumer = await startScheduledConsumer', 'secondariesConsumer = await');
+    expect(reg).toContain('queue: ADMIT_CURRICULUM_QUEUE');
+    expect(reg).toContain('expireInSeconds: ADMIT_CURRICULUM_EXPIRY_S');
+    expect(reg).toContain('retryLimit: 0');
+    expect(reg).toContain('handler: admitCurriculumTick');
+    const tick = slice(src, 'const admitCurriculumTick', 'const sdnLiveTick');
+    expect(tick).toContain("guarded( 'admit-curriculum'");
+    expect(tick).toContain('host: admitHost');
+    expect(tick).toContain('ADMIT_CURRICULUM_EXPIRY_S * 1000');
+    expect(tick).not.toContain('admitGate');
+    expect(tick).not.toContain('MEDSCHOOLS_DEDUPE_SECRET');
+    expect(src).toContain('admitCurriculumOwed(medPrisma)');
+    expect(src.slice(src.indexOf('async function shutdown'))).toContain('admitCurriculumConsumer?.pause()');
+  });
+
   it('the scrape gates are built from the cap left after the Q&A share, never the raw monthly cap', () => {
     const src = flat();
     expect(src).toContain('scrapeCapUsd(');

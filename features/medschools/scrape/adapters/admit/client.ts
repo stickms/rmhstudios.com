@@ -19,10 +19,13 @@ import {
   RESULT_STATUSES,
   RESULT_USERS,
   SCHOOL_CRESTS,
+  SCHOOL_CURRICULUM,
   SCHOOL_STATS,
   type AdmitOperation,
 } from './queries';
+import { mapCurriculumRow } from './curriculum';
 import {
+  curriculumRow,
   feedData,
   feedRow,
   historyEntry,
@@ -33,9 +36,11 @@ import {
   questionsData,
   resultUsersData,
   schoolCrestsData,
+  schoolCurriculumData,
   schoolStatsData,
 } from './schemas';
 import { admitMemberKey } from './member-key';
+import type { AdmitCurriculum } from './curriculum';
 import { mapStatus } from './statuses';
 import {
   mintLookupToken,
@@ -99,6 +104,11 @@ export interface AdmitClient {
   fetchSchoolStats(filter: MedResidence): Promise<NormalizedAdmitStats[]>;
   /** Every school with a result row, with its crest URL. Schools only: no user field is requested. */
   listSchoolCrests(): Promise<AdmitSchoolCrest[]>;
+  /**
+   * The whole curriculum table in ONE request. A reply with no valid row at all is a failure (never an empty table);
+   * a row failing validation is dropped and counted.
+   */
+  fetchCurriculum(): Promise<{ schools: AdmitCurriculum[]; malformedRows: number }>;
 }
 
 const DAY_MS = 86_400_000;
@@ -502,6 +512,25 @@ export function createAdmitClient(
         if (rows.length < SCHOOLS_PAGE) break;
       }
       return [...bySlug.values()];
+    },
+
+    async fetchCurriculum() {
+      const data = await run(SCHOOL_CURRICULUM, {}, schoolCurriculumData);
+      const bySlug = new Map<string, AdmitCurriculum>();
+      let malformedRows = 0;
+      for (const raw of data.getAllSchoolCurriculum) {
+        const parsed = curriculumRow.safeParse(raw);
+        if (!parsed.success) {
+          malformedRows++;
+          continue;
+        }
+        bySlug.set(parsed.data.school.slug, mapCurriculumRow(parsed.data));
+      }
+      if (bySlug.size === 0) {
+        session.noteFailure(`${SCHOOL_CURRICULUM.operationName}: no valid row`);
+        throw new AdmitResponseError(`${SCHOOL_CURRICULUM.operationName}: no valid row`);
+      }
+      return { schools: [...bySlug.values()], malformedRows };
     },
 
     async fetchSchoolStats(filter) {

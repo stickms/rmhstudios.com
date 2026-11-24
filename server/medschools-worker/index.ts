@@ -20,6 +20,9 @@
  *   medschools.admit-forums  every 3 hours, UTC (the cron is in admitForumsCron) — Admit's school forums, only the posts past each thread's
  *                             cursor; fetched at any hour, read by the model off-peak only (needs the dedupe secret).
  *
+ *   medschools.admit-curriculum  Saturday 02:25 UTC (the cron is in admitCurriculumCron) — Admit's curriculum table (grading, shelf
+ *                             exams, AOA, home hospitals) in ONE request, stored as ADMIT school facts (no model, no secret).
+ *
  *   medschools.sdn-live       daily (12:20 UTC) — Student Doctor Network RSS feeds, then the changed threads, with the
  *                             posts read by the extraction model (needs the dedupe secret; AI optional).
  *   medschools.sdn-backfill   monthly safety net, and queued by the live tick while the prior-year walk is owed
@@ -57,6 +60,12 @@ import {
   createForumsBudgetGate,
   forumsAiShare,
 } from '../../features/medschools/scrape/admit-forums-budget';
+import {
+  ADMIT_CURRICULUM_CRON,
+  ADMIT_CURRICULUM_MAX_RUNTIME_MS,
+  admitCurriculumOwed,
+  runAdmitCurriculum,
+} from '../../features/medschools/scrape/run-admit-curriculum';
 import { runAdmitLive } from '../../features/medschools/scrape/run-admit-live';
 import { runAdmitInterviews } from '../../features/medschools/scrape/run-admit-interviews';
 import { admitHistoryOwed, runAdmitHistory } from '../../features/medschools/scrape/run-admit-history';
@@ -186,6 +195,9 @@ const SECONDARIES_ENABLED = process.env.MEDSCHOOLS_SECONDARIES_ENABLED !== 'fals
 // switch; it is on by default and only needs a DeepSeek key, like the event extraction it rides on.
 const SECONDARIES_FORUM_ENABLED = process.env.MEDSCHOOLS_SECONDARIES_FORUM_ENABLED !== 'false';
 
+// Switches the Admit curriculum cron off on its own (it is also behind MEDSCHOOLS_ADMIT_ENABLED). Only a manual run bypasses it.
+const ADMIT_CURRICULUM_ENABLED = process.env.MEDSCHOOLS_ADMIT_CURRICULUM_ENABLED !== 'false';
+
 // Switches the Admit forums cron off on its own (it is also behind MEDSCHOOLS_ADMIT_ENABLED). Only a manual run bypasses it.
 const ADMIT_FORUMS_ENABLED = process.env.MEDSCHOOLS_ADMIT_FORUMS_ENABLED !== 'false';
 
@@ -210,6 +222,8 @@ const SECONDARIES_EXPIRY_S = 75 * 60;
 const RMH_PUBLISH_EXPIRY_S = 10 * 60;
 const FORECAST_EXPIRY_S = 20 * 60;
 const ADMIT_FORUMS_EXPIRY_S = 40 * 60;
+// One request and a few hundred small writes; the run ends itself at ADMIT_CURRICULUM_MAX_RUNTIME_MS, long before this.
+const ADMIT_CURRICULUM_EXPIRY_S = 15 * 60;
 const ADMIT_FORUMS_RUN_DEADLINE_MS = 30 * 60_000;
 const ADMIT_FORUMS_MAX_REQUESTS = intEnv('MEDSCHOOLS_ADMIT_FORUMS_MAX_REQUESTS', 80);
 const ADMIT_FORUMS_MAX_LLM_CALLS = intEnv('MEDSCHOOLS_ADMIT_FORUMS_MAX_LLM_CALLS', 60);
@@ -613,6 +627,30 @@ const admitForumsTick = guarded(
   ADMIT_FORUMS_EXPIRY_S * 1000,
 );
 
+// Admit's curriculum table (schools plan "Phase C curriculum"): one request a week, no model and no dedupe secret (no person
+// is in the reply), so it is behind the Admit flag and its own, never the secret. The request spends the ADMIT host budget.
+const admitCurriculumTick = guarded(
+  'admit-curriculum',
+  async (data) => {
+    const manual = data.manual === true;
+    if (!manual && (!ADMIT_ENABLED || !ADMIT_CURRICULUM_ENABLED)) return;
+    const r = await runAdmitCurriculum(
+      {
+        prisma: medPrisma,
+        host: admitHost,
+        shouldStop: () => stopping,
+        log,
+        maxRuntimeMs: Math.min(ADMIT_CURRICULUM_MAX_RUNTIME_MS, ADMIT_CURRICULUM_EXPIRY_S * 1000 - 60_000),
+      },
+      { trigger: manual ? 'MANUAL' : data.bootstrap === true ? 'BOOTSTRAP' : 'CRON' },
+    );
+    log.info(
+      `admit-curriculum run complete [${r.runId}] — status=${r.status} outcome=${r.outcome} fetched=${r.fetched} schools=${r.schools} unmatched=${r.unmatched} facts=${r.facts} removed=${r.removed} malformed=${r.malformedRows} requests=${r.requests}`,
+    );
+  },
+  ADMIT_CURRICULUM_EXPIRY_S * 1000,
+);
+
 const sdnLiveTick = guarded('sdn-live', async (data) => {
   if (!sdnGate('sdn-live', data)) return;
   const r = await runSdnLive(
@@ -824,6 +862,9 @@ const ADMIT_FORUMS_QUEUE = 'medschools.admit-forums';
 // Every 3 hours, UTC: 0 3 6 9 12 15 18 21. Fetching runs at any hour; the model reads only off-peak (the 03, 06 and 09
 // weekday runs look and hold). Persisted minimum interval 2.5 h, so a deploy never fires an extra one.
 const admitForumsCron = process.env.MEDSCHOOLS_ADMIT_FORUMS_CRON?.trim() || '0 */3 * * *';
+const ADMIT_CURRICULUM_QUEUE = 'medschools.admit-curriculum';
+// Saturday 02:25 UTC, off-peak; the persisted minimum interval is 6 days, so a deploy or a duplicate never spends the request twice.
+const admitCurriculumCron = process.env.MEDSCHOOLS_ADMIT_CURRICULUM_CRON?.trim() || ADMIT_CURRICULUM_CRON;
 const SDN_LIVE_QUEUE = 'medschools.sdn-live';
 const SDN_BACKFILL_QUEUE = 'medschools.sdn-backfill';
 const SDN_INTERVIEWS_QUEUE = 'medschools.sdn-interviews';
@@ -853,6 +894,7 @@ let interviewsConsumer: ScheduledConsumer | null =
   null;
 let admitHistoryConsumer: ScheduledConsumer | null = null;
 let admitForumsConsumer: ScheduledConsumer | null = null;
+let admitCurriculumConsumer: ScheduledConsumer | null = null;
 let sdnLiveConsumer: ScheduledConsumer | null = null;
 let sdnBackfillConsumer: ScheduledConsumer | null = null;
 let sdnInterviewsConsumer: ScheduledConsumer | null = null;
@@ -1088,6 +1130,20 @@ async function main() {
     log.error('pg-boss unavailable — exiting so the container restarts');
     process.exit(1);
   }
+  admitCurriculumConsumer = await startScheduledConsumer({
+    queue: ADMIT_CURRICULUM_QUEUE,
+    cron: admitCurriculumCron,
+    expireInSeconds: ADMIT_CURRICULUM_EXPIRY_S,
+    retryLimit: 0,
+    handler: admitCurriculumTick,
+    shouldStop: () => stopping,
+    log: consumerLog,
+  });
+  if (!admitCurriculumConsumer) {
+    if (stopping) return;
+    log.error('pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
   secondariesConsumer = await startScheduledConsumer({
     queue: SECONDARIES_QUEUE,
     cron: secondariesCron,
@@ -1108,7 +1164,7 @@ async function main() {
     return;
 
   log.info(
-    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED} secondaries="${secondariesCron}" queue+="${SECONDARIES_QUEUE}" secondariesEnabled=${SECONDARIES_ENABLED}`,
+    `Started — cycletrack="${cycletrackCron}" queues="${CYCLETRACK_QUEUE},${BACKFILL_QUEUE},${ADMIT_LIVE_QUEUE},${INTERVIEWS_QUEUE}" enabled=${CYCLETRACK_ENABLED} admit-live="${admitLiveCron}" interviews="${interviewsCron}" admit-history="${admitHistoryCron}" admitEnabled=${ADMIT_ENABLED} sdn-live="${sdnLiveCron}" sdn-backfill="${sdnBackfillCron}" sdn-interviews="${sdnInterviewsCron}" sdnEnabled=${SDN_ENABLED} queues+="${SDN_LIVE_QUEUE},${SDN_BACKFILL_QUEUE},${SDN_INTERVIEWS_QUEUE},${RMH_PUBLISH_QUEUE},${ADMIT_HISTORY_QUEUE}" rmh-publish="${RMH_PUBLISH_CRON}" forecast="${forecastCron}" admit-forums="${admitForumsCron}" forumsEnabled=${ADMIT_FORUMS_ENABLED} secondaries="${secondariesCron}" queue+="${SECONDARIES_QUEUE}" secondariesEnabled=${SECONDARIES_ENABLED} admit-curriculum="${admitCurriculumCron}" queue+="${ADMIT_CURRICULUM_QUEUE}" curriculumEnabled=${ADMIT_CURRICULUM_ENABLED}`,
   );
   // The profile-history backfill is owed until one pass has completed: queue it at once on the first deploy (and after
   // an interrupted first run) rather than wait for the 03:10 cron. Its first step is the one-time ADMIT re-key.
@@ -1120,6 +1176,17 @@ async function main() {
       }
     } catch (e) {
       log.warn(`Bootstrap: Admit history check failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  // The curriculum table is owed until one run has finished: queue the first one at start rather than wait for Saturday.
+  if (ADMIT_ENABLED && ADMIT_CURRICULUM_ENABLED) {
+    try {
+      if (await admitCurriculumOwed(medPrisma)) {
+        log.info('Bootstrap: Admit curriculum not yet fetched — queueing it');
+        await admitCurriculumConsumer.runNow({ bootstrap: true });
+      }
+    } catch (e) {
+      log.warn(`Bootstrap: Admit curriculum check failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
   if (
@@ -1175,6 +1242,7 @@ async function shutdown(
       rmhPublishConsumer?.pause(),
       forecastConsumer?.pause(),
       admitForumsConsumer?.pause(),
+      admitCurriculumConsumer?.pause(),
       secondariesConsumer?.pause(),
     ],
   );

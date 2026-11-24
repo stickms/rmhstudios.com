@@ -505,6 +505,45 @@ B3 and C can run in parallel after B2.
 - **Presentational only.** No data code changes, as the roadmap promised. All strings through `t()` in `medschools`;
   changing a shipped string's wording means a new key.
 
+## Phase C curriculum (owner 2026-11-24)
+
+"Include curriculum stats like pass/fail, and clerkship grades (pass fail or hp/p/fail etc) and AOA membership among
+other things." Admit.org's `getAllSchoolCurriculum` as `MedSchoolFact` rows with a new source, shown on the school page.
+
+- **Probe (one request, 2026-11-24).** No arguments, 191 schools, one row each, no null school. Fields: `school.slug`,
+  `aoa` (bool or null), `pc_grades`, `pc_length`, `clerk_grades`, `nbme_or_in_house` (strings or null), `mspe` and
+  `lecture_attendance_required` (bool or null), `home_hospital` (list of strings or null, at most 6). A null is "Admit
+  has no answer" (63 to 70 schools per field), never "no". Vocabularies seen: `pc_grades` `P/F` 109, `H/P/F` 7,
+  `H/HP/P/F` 4, and one each of `H/HP/P/BP/F`, `H/NH/P/F`, `P, ID, IDP, IDF`, `S/SAR/US/W`, `A/B/C/D/F`, `A/B/C/F`;
+  `pc_length` `1.5 Years` 79, `2 Years` 58, `1 Year` 10; `clerk_grades` `H/HP/P/F` 70, `P/F` 20, `H/P/F` 16, `A/B/C/D/F`
+  6, `H/NH/P/F` 3, `H/HP/P/LP/F` 3 and eight one-offs (`H/NH/HP/P/F`, `H/HP/LP/F`, `H/HP/P/BP/F`, `H/S+/S/F`,
+  `H/S/SAR/US/W`, `H/HP/SP/MP/F`, `H/PF`, `A/B/C/F`); `nbme_or_in_house` `Both` 68, `In-House Exams` 38,
+  `NBME Based` 18. All 191 slugs are in the shipped Admit alias file. `internal_rank` is Admit's own ranking: the query
+  does not select it and nothing stores or shows it.
+- **Normalised, verbatim kept.** Clerkship `H_HP_P_F`, `H_P_F`, `P_F` (exact strings only) else `OTHER`; preclinical
+  `PASS_FAIL` (`P/F`), `TIERED` (honors or letter scales) else `OTHER`; shelf `NBME`, `IN_HOUSE`, `BOTH`; length in
+  years when it reads "N Year(s)". Every grading, length and shelf row keeps Admit's string in `valueJson.text`, which
+  the endpoint already returns as `printed`, so **the facts endpoint's pinned key set did not change**: `reportId` is
+  now nullable (null for Admit rows, `report` empty, `cycleYear` 0 because the table is not about an entering class).
+- **Storage.** Migration `20261209090000_medschools_admit_curriculum` adds the enum value `ADMIT` and nothing else.
+  Kinds `CURRICULUM_PRECLINICAL_GRADING`, `_PRECLINICAL_LENGTH`, `_CLERKSHIP_GRADING`, `_SHELF_EXAMS`, `_MSPE`,
+  `_LECTURE_ATTENDANCE`, `AOA_CHAPTER`, `HOME_HOSPITALS` are a second catalogue in `engine/school-facts.ts`
+  (`CURRICULUM_KINDS`); the endpoint serves a row only when its kind belongs to its own source's catalogue. `sourceUrl`
+  is `https://admit.org` (Admit's per-school page pattern is still unknown, `ADMIT_SCHOOL_URL`), `checkedOn` the fetch
+  day. Upsert per school x kind; a kind Admit stopped publishing for a school in the reply is deleted; only `ADMIT` rows
+  are ever read or deleted; a school missing from a reply keeps its rows; an empty or invalid reply writes nothing.
+- **Job.** `medschools.admit-curriculum`, Saturday 02:25 UTC, one request through the shared Admit host (so it spends
+  the persisted `ADMIT` daily budget), 6 day persisted minimum interval, first run queued at worker start while none has
+  finished, `MedSourceRun` job `admit-curriculum`. No model, no secret. `server/CLAUDE.md`, `.env.example`.
+- **UI: a Facts tab (sixth tab).** `ui/facts/Curriculum.tsx` and `AdmissionsFacts` sit together on `?tab=facts`; the
+  Activity tab is charts and the live list again. The Admissions facts panel alone was already eight blocks long under
+  the charts; adding Curriculum above it would have put both below two charts and a table on a phone. The tab is the
+  four edits (`SCHOOL_TABS`, query prefetch, label and switch, component). Curriculum shows for MD and DO schools alike
+  when Admit has the school; Admissions facts stays MD only. The source line reads "Source: Admit.org, checked <date>"
+  with a link, then one muted sentence: "Compiled by Admit.org; confirm with the school."
+- **Open.** What Admit's `mspe` flag means is not stated by the API (the row is labelled "MSPE" with Yes or No, as Admit
+  names it); read it off Admit's curriculum page before giving it a longer label.
+
 ## 4. Phase C: public school stats
 
 - **Table.** Add `MedSchoolFact` to `prisma/schema/medschools.prisma`, one shared sourced-fact shape per the roadmap's

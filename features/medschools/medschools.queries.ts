@@ -76,7 +76,7 @@ export const secondariesQuery = (slug: string, q: { program: MedProgramFilter })
     { staleTime: 5 * 60_000 },
   );
 
-/** The Admissions facts section (the AAMC MSAR reports). Public, so the loader prefetches the same key as anyone's. */
+/** The Facts tab: Admissions facts (the AAMC MSAR reports) and Curriculum (Admit.org). Public, so the loader prefetches the same key as anyone's. */
 export const schoolFactsQuery = (slug: string) =>
   contractQuery(['medschools', 'facts', slug], getMedSchoolFactsApi, { params: { slug } }, { staleTime: 30 * 60_000 });
 
@@ -247,8 +247,6 @@ export async function loadSchoolHead(
   }).program;
   if (deps.tab === 'activity') {
     await prefetchRouteQuery(queryClient, activityQuery(slug, { program, cycle: deps.cycle }));
-    // Only an MD school has the reports' facts; the section is hidden for a DO school, so nothing is fetched for one.
-    if (detail.school.degree === 'MD') await prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
   } else if (deps.tab === 'history') {
     await prefetchRouteQuery(queryClient, historyQuery(slug, { program, type: deps.type as MedChartedTypeId }));
   } else if (deps.tab === 'forecast') {
@@ -257,6 +255,9 @@ export async function loadSchoolHead(
     await prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
   } else if (deps.tab === 'secondaries') {
     await prefetchRouteQuery(queryClient, secondariesQuery(slug, { program }));
+  } else if (deps.tab === 'facts') {
+    // One query for both sections (the AAMC reports and Admit's curriculum), for an MD and a DO school alike.
+    await prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
   }
   const { school } = detail;
   return {

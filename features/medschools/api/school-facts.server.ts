@@ -1,5 +1,13 @@
 import { prisma } from '@/lib/prisma.server';
-import { FACT_KINDS, MSAR_PAGE_URL, MSAR_REPORTS, isFactKind, type MsarReportId } from '../engine/school-facts';
+import {
+  CURRICULUM_KIND_IDS,
+  FACT_KINDS,
+  MSAR_PAGE_URL,
+  MSAR_REPORTS,
+  isCurriculumKind,
+  isFactKind,
+  type MsarReportId,
+} from '../engine/school-facts';
 import type { MedSchoolFactDto, MedSchoolFactsRes } from '../medschools.contract';
 
 const SLUG_RE = /^[a-z0-9-]{1,80}$/;
@@ -7,8 +15,10 @@ const day = (d: Date): string => d.toISOString().slice(0, 10);
 
 /**
  * The facts of one active school, in the catalogue's order. Explicit `select`: nothing but the columns the DTO names.
- * One value per kind (the unique key is school x program x cycle x kind x source; today there is one source and one
- * cycle per kind), and nothing is averaged or merged across sources.
+ * One value per kind (the unique key is school x program x cycle x kind x source; each kind has one source and one
+ * cycle), and nothing is averaged or merged across sources. Two catalogues: the AAMC report facts (source
+ * `AAMC_MSAR_REPORT`, with a report id) and Admit's curriculum facts (source `ADMIT`, `reportId` null). A row is shown
+ * only when its kind belongs to the catalogue of its own source, so a stray kind never reaches the page.
  */
 export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | null> {
   if (!SLUG_RE.test(slug)) return null;
@@ -18,6 +28,7 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
     where: { schoolId: school.id, program: 'REG' },
     select: {
       kind: true,
+      source: true,
       reportId: true,
       cycleYear: true,
       valueText: true,
@@ -29,15 +40,19 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
       checkedOn: true,
     },
   });
-  const order = Object.keys(FACT_KINDS);
+  const order: string[] = [...Object.keys(FACT_KINDS), ...CURRICULUM_KIND_IDS];
   const facts: MedSchoolFactDto[] = rows
-    .filter((r) => isFactKind(r.kind) && r.reportId !== null)
+    .filter((r) =>
+      r.source === 'ADMIT'
+        ? isCurriculumKind(r.kind)
+        : r.source === 'AAMC_MSAR_REPORT' && isFactKind(r.kind) && r.reportId !== null,
+    )
     .map((r) => {
       const json = r.valueJson as { text?: unknown } | null;
       return {
         kind: r.kind,
-        reportId: r.reportId!,
-        report: MSAR_REPORTS[r.reportId as MsarReportId] ?? '',
+        reportId: r.reportId,
+        report: r.reportId === null ? '' : (MSAR_REPORTS[r.reportId as MsarReportId] ?? ''),
         cycleYear: r.cycleYear,
         value: r.valueText,
         printed: json && typeof json.text === 'string' ? json.text : null,

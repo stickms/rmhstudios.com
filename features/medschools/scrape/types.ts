@@ -246,7 +246,7 @@ export interface MedSchoolFactRow {
   valueText: string | null;
   valueJson: unknown;
   note: string | null;
-  source: 'AAMC_MSAR_REPORT' | 'SCHOOL_PROFILE';
+  source: 'AAMC_MSAR_REPORT' | 'SCHOOL_PROFILE' | 'ADMIT';
   sourceUrl: string;
   sourceLabel: string;
   reportId: number | null;
