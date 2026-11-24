@@ -6,6 +6,7 @@ import type { QueryOf } from '@/lib/contract/endpoint';
 import {
   getMedListsApi,
   getMedLiveApi,
+  getMedLiveSummaryApi,
   getMedAskStatusApi,
   getMedQaLimitRequestApi,
   getMedChancesApi,
@@ -148,6 +149,19 @@ export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type
 
 export const liveQuery = (q: LiveFilters) =>
   keeping(contractQuery(['medschools', 'live', q], getMedLiveApi, { query: q }, { staleTime: 0 }), keepPreviousData);
+
+export type LiveSummaryFilters = QueryOf<typeof getMedLiveSummaryApi>;
+
+/**
+ * The live page's "Today" column: public, refreshed every 60 s like the feed, the previous answer kept (dimmed) while a
+ * changed filter loads. The column passes `enabled: false` below 1280px, so nothing (an invalidation included) fetches
+ * it on a phone.
+ */
+export const liveSummaryQuery = (q: LiveSummaryFilters) =>
+  keeping(
+    contractQuery(['medschools', 'live-summary', q], getMedLiveSummaryApi, { query: q }, { staleTime: 15_000 }),
+    keepPreviousData,
+  );
 
 /* ------------------------- private (me/**) -------------------------
  * Every personal key starts with `['medschools', 'me']`: the mutations invalidate that prefix and a sign-out clears

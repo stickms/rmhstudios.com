@@ -589,6 +589,7 @@ import { route as r_lib_market_api_market_listings } from '@/lib/market/api/mark
 import { route as r_lib_market_api_market_listings_id } from '@/lib/market/api/market.listings.$id.server';
 import { route as r_lib_market_api_market_listings_id_buy } from '@/lib/market/api/market.listings.$id.buy.server';
 import { route as r_features_medschools_api_medschools_live } from '@/features/medschools/api/medschools.live.server';
+import { route as r_features_medschools_api_medschools_live_summary } from '@/features/medschools/api/medschools.live.summary.server';
 import { route as r_features_medschools_api_medschools_me_ask } from '@/features/medschools/api/medschools.me.ask.server';
 import { route as r_features_medschools_api_medschools_me_chances } from '@/features/medschools/api/medschools.me.chances.server';
 import { route as r_features_medschools_api_medschools_me_interview_followups } from '@/features/medschools/api/medschools.me.interview.followups.server';
@@ -1795,6 +1796,7 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_lib_market_api_market_listings_id, // /api/market/listings/$id
   r_lib_market_api_market_listings_id_buy, // /api/market/listings/$id/buy
   r_features_medschools_api_medschools_live, // /api/medschools/live
+  r_features_medschools_api_medschools_live_summary, // /api/medschools/live/summary
   r_features_medschools_api_medschools_me_ask, // /api/medschools/me/ask
   r_features_medschools_api_medschools_me_chances, // /api/medschools/me/chances
   r_features_medschools_api_medschools_me_interview_followups, // /api/medschools/me/interview/followups

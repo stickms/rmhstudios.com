@@ -183,6 +183,7 @@ afterAll(async () => {
 /** The pinned public key sets: a new key on any of these is a privacy review, not a drive-by. */
 const LIVE_EVENT_KEYS = ['eventType', 'id', 'occurredAt', 'program', 'school', 'source', 'wave'];
 const LIVE_SCHOOL_KEYS = ['city', 'degree', 'name', 'shortName', 'slug', 'state'];
+const LIVE_SUMMARY_KEYS = ['active', 'asOf', 'counts', 'since', 'waves'];
 /** Fields that identify a post or a person, or are internal. None may appear in any page or response. */
 const FORBIDDEN = ['dedupeHash', 'cursorPostHash', 'ingestedAt', 'fixture-q-', 'fixture-event-', '"contributors"'];
 
@@ -238,6 +239,43 @@ describe('RMH Med Schools, public and anonymous', () => {
     expect(none.body.events.length).toBeGreaterThan(0);
     expect(none.body.events.every((e: { program: string | null }) => e.program === null)).toBe(true);
     for (const f of FORBIDDEN) expect(JSON.stringify(res.body)).not.toContain(f);
+  });
+
+  it("serves the live page's Today summary: pinned keys, Admit and SDN events of the last 24 hours, never RMH", async () => {
+    const res = await anon.get('/api/medschools/live/summary');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toMatch(/public/);
+    expect(Object.keys(res.body).sort()).toEqual(LIVE_SUMMARY_KEYS);
+    expect(Date.parse(res.body.asOf) - Date.parse(res.body.since)).toBe(24 * 3_600_000);
+    for (const c of res.body.counts) {
+      expect(Object.keys(c).sort()).toEqual(['count', 'eventType']);
+      expect(c.count).toBeGreaterThan(0);
+    }
+    for (const list of [res.body.waves, res.body.active]) {
+      for (const r of list) {
+        expect(Object.keys(r).sort()).toEqual(['count', 'school']);
+        expect(Object.keys(r.school).sort()).toEqual(LIVE_SCHOOL_KEYS);
+      }
+    }
+    expect(res.body.active.length).toBeLessThanOrEqual(5);
+    expect(res.body.active.map((a: { school: { slug: string } }) => a.school.slug)).not.toContain(INACTIVE_SLUG);
+    // The fixture school's count is exactly its Admit and SDN events in the window: the RMH event is never counted.
+    const mine = res.body.active.find((a: { school: { slug: string } }) => a.school.slug === SLUG);
+    if (mine) {
+      const expected = await db().query(
+        `select count(*)::int as n from med_cycle_event e join med_school s on s.id = e."schoolId"
+         where s.slug = $1 and e.source in ('ADMIT', 'SDN') and e."occurredAt" >= $2 and e."occurredAt" <= $3`,
+        [SLUG, new Date(res.body.since), new Date(res.body.asOf)],
+      );
+      expect(mine.count).toBe((expected.rows[0] as { n: number }).n);
+    }
+    const text = JSON.stringify(res.body);
+    for (const f of FORBIDDEN) expect(text).not.toContain(f);
+    expect(text).not.toContain('RMH');
+    // The same filters as the live feed; a bad one is a 400.
+    expect((await anon.get('/api/medschools/live/summary?programs=md,do-phd&state=NC')).status).toBe(200);
+    expect((await anon.get('/api/medschools/live/summary?state=ZZ')).status).toBe(400);
+    expect((await anon.get('/api/medschools/live/summary?programs=phd')).status).toBe(400);
   });
 
   it('filters the live feed and the index by the program set (programs=md,do-phd)', async () => {

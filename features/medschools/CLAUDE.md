@@ -19,10 +19,10 @@ Signed-out readable, in the full-screen app frame of the redesign (see "Design")
 | `/med/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging                                |
 | `/med/$slug` | One school: Activity, History, Forecast, Interviews, Secondaries, Facts tabs (`?tab=`, `?program=` …) |
 
-Ten anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
+Eleven anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
 rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
 `schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `schools/$slug/secondaries`, `schools/$slug/facts` (phase
-C), `live`, `today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
+C), `live`, `live/summary`, `today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
 `medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
 in the server HTML with scripting off.
 
@@ -184,6 +184,16 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   (`latestPublicEvents` in `api/read.server.ts`: the live feed's rules, Admit and SDN only, never RMH, the list's
   program set, the site cycle; user-independent). The time is `EventTime`: the server and the hydrating render print
   the day.
+- **The live page's "Today" column (owner 2026-11-24):** on `/med/live` only, `MedApp` mounts `rail/TodayRail` in the
+  rail's frame instead of `ActivityRail` (which would repeat the page's feed); every other page keeps the rail. Four
+  blocks, each a heading and rows on rules: "Reported in the last 24 hours" (one row per reported type, a toggle that
+  sets the page's `type`, `aria-pressed` while it does), "Waves now" (hidden when none), "Most active, last 24 hours"
+  (top 5) and, signed in only, "Your schools". The first three are `GET /live/summary` (`api/live-summary.server.ts`:
+  the live feed's events, Admit and SDN, never RMH, active schools, the site cycle, `occurredAt` in the last 24 h, the
+  `programs` and `state` filters; waves by `schoolWaves`, the live feed's own rule, on today's UTC day); "Your schools"
+  joins `me/lists` + `me/tracker` (which schools) with the public list's `latest` (what happened) in the browser
+  (`rail/your-schools.ts`). The frame and a skeleton are server-rendered; the summary is a lazy chunk and every query
+  it owns is `enabled` only from 1280px, so a phone makes no request for it, an invalidation included.
 - **The rail:** its heading, search and the two multi-selects (event types, programs) are sticky inside the rail panel
   (`.medapp-rail-top`) while the list scrolls under them.
 - **Live rows (`LiveRow`, owner 2026-11-24):** one component for the live page and the rail (`compact`), so they cannot

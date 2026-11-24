@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useLocation } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import AppShell from '@/components/shared/AppShell';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
@@ -7,13 +8,15 @@ import { MedTopBar } from './MedTopBar';
 import { useMedModeRoot } from './useMedMode';
 
 import ActivityRail from '../rail/ActivityRail';
+import TodayRail from '../rail/TodayRail';
 
 /**
  * The full-screen app frame for every `/med` page (the layout route `app/routes/med.tsx` renders it
  * around its `<Outlet/>`). It replaces the `_site` shell: the Steel shell, its margin column and its overlays are not
  * here, so this frame mounts what a public page still needs from them: the cookie notice, the toaster (AppShell), and
  * the live rail that used to sit in the shell's margin. The rail's frame and skeleton render on the server at every
- * width and CSS shows the column from 1280px; its list and query load only there (`rail/ActivityRail`).
+ * width and CSS shows the column from 1280px; its list and query load only there (`rail/ActivityRail`). On `/med/live`
+ * the column is the "Today" summary instead (`rail/TodayRail`, owner 2026-11-24): the rail would repeat the page's feed.
  *
  * The page is a document, `.app-page` (the whole document scrolls), in the `--app-*` palette of `medschools.css`. The
  * painterly wash is that sheet's `background-image` on the same element: in the flow, static, never fixed.
@@ -21,6 +24,7 @@ import ActivityRail from '../rail/ActivityRail';
 export function MedApp({ children }: { children: ReactNode }) {
   const { t } = useTranslation('medschools');
   useMedModeRoot();
+  const live = useLocation({ select: (l) => l.pathname.replace(/\/+$/, '') === '/med/live' });
   return (
     <AppShell appClassName="medapp-theme">
       <div className="app-page medapp-page">
@@ -33,9 +37,15 @@ export function MedApp({ children }: { children: ReactNode }) {
                 {children}
               </main>
             </div>
-            <aside className="medapp-rail" aria-label={t('shell-rail-label', { defaultValue: 'Live activity' })}>
-              <ActivityRail />
-            </aside>
+            {live ? (
+              <aside className="medapp-rail" aria-label={t('live-today-label', { defaultValue: 'Today' })}>
+                <TodayRail />
+              </aside>
+            ) : (
+              <aside className="medapp-rail" aria-label={t('shell-rail-label', { defaultValue: 'Live activity' })}>
+                <ActivityRail />
+              </aside>
+            )}
           </div>
         </div>
       </div>

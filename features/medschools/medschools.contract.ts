@@ -286,6 +286,27 @@ export interface MedLiveRes {
   asOf: string;
 }
 
+/** A school as the live rows and the live summary name it (the same small public shape). */
+export type LiveSchoolDto = LiveEventDto['school'];
+
+/**
+ * The live page's "Today" column (owner 2026-11-24): reported events of the last 24 hours, from the live feed's source
+ * and rules (Admit and SDN only, never RMH; active schools; the site cycle; the `programs` and `state` filters). Counts
+ * of reported events, never applicants. User-independent and publicly cached.
+ */
+export interface MedLiveSummaryRes {
+  /** When this was computed (ISO). */
+  asOf: string;
+  /** The window's start, 24 hours before `asOf` (ISO). */
+  since: string;
+  /** One entry per event type with any report in the window, most first. */
+  counts: { eventType: MedEventTypeId; count: number }[];
+  /** Schools with an interview wave on today's UTC day (D10), largest first; `count` is that day's invites. */
+  waves: { school: LiveSchoolDto; count: number }[];
+  /** The five schools with the most reported events in the window. */
+  active: { school: LiveSchoolDto; count: number }[];
+}
+
 export interface MedTodayRes {
   date: string | null;
   isToday: boolean;
@@ -357,6 +378,16 @@ export const getMedLiveApi = endpoint<{
   };
   res: MedLiveRes;
 }>()({ method: 'GET', path: '/api/medschools/live' });
+
+export const getMedLiveSummaryApi = endpoint<{
+  query: {
+    /** The program set (see `listMedSchoolsApi`). */
+    programs?: string | undefined;
+    /** One or more state codes, comma separated. */
+    state?: string | undefined;
+  };
+  res: MedLiveSummaryRes;
+}>()({ method: 'GET', path: '/api/medschools/live/summary' });
 
 export const getMedTodayApi = endpoint<{
   query: { program?: MedProgramFilter | undefined; degree?: MedDegreeId | undefined };

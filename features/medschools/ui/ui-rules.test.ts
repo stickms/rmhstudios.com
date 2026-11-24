@@ -149,6 +149,9 @@ describe('medschools ui rules', () => {
     expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain(
       "import ActivityRail from '../rail/ActivityRail'",
     );
+    // On /med/live the column is the "Today" summary (owner 2026-11-24), its own lazy chunk, gated the same way.
+    expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain("import TodayRail from '../rail/TodayRail'");
+    expect(read('features/medschools/ui/rail/TodayRail.tsx')).toContain("lazy(() => import('./TodaySummary'))");
     const rail = read('features/medschools/ui/rail/ActivityRail.tsx');
     expect(rail).toContain("lazy(() => import('./RailFeed'))");
     expect(rail).toContain("useMediaQuery('(min-width: 1280px)')");

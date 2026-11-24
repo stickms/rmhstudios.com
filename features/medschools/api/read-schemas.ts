@@ -75,6 +75,9 @@ export const liveQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
+/** The live page's "Today" column: the live feed's program set and states (no type: the column counts every type). */
+export const liveSummaryQuery = z.object({ programs: programsParam.optional(), state: state.optional() });
+
 export const todayQuery = z.object({ program: program.optional(), degree: degree.optional() });
 
 export type ListSchoolsQuery = z.infer<typeof listSchoolsQuery>;
@@ -83,4 +86,5 @@ export type HistoryQuery = z.infer<typeof historyQuery>;
 export type ForecastQuery = z.infer<typeof forecastQuery>;
 export type ArrivalsQuery = z.infer<typeof arrivalsQuery>;
 export type LiveQuery = z.infer<typeof liveQuery>;
+export type LiveSummaryQuery = z.infer<typeof liveSummaryQuery>;
 export type TodayQuery = z.infer<typeof todayQuery>;
