@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { Rss } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -20,6 +21,8 @@ import {
 import { PageTabs } from './PageTabs';
 import { Spine } from '@/components/ui/spine';
 import { SearchField } from '@/components/ui/search-field';
+import { IconButton } from '@/components/ui/icon-button';
+import { SurpriseButton } from '@/components/discovery/SurpriseButton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
   SEARCH_TAB_KINDS,
@@ -121,7 +124,7 @@ export function ExploreColumn({
   userBuilds?: DiscoveryUserBuild[];
   blogPosts?: DiscoveryBlogPost[];
 }) {
-  const { t } = useTranslation('feed');
+  const { t } = useTranslation(['feed', 'site']);
   const { data: session } = useSession();
   const tabLabel = useTabLabel();
   const kindHeading = useKindHeading();
@@ -274,18 +277,30 @@ export function ExploreColumn({
         onChange={(id) => setTab(id as SearchTab)}
         aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
         search={
-          <SearchField
-            ref={fieldRef}
-            value={query}
-            onValueChange={setQuery}
-            aria-label={t('search-input-aria-label', {
-              defaultValue: 'Search people, posts, builds, and blog',
-            })}
-            placeholder={t('search-placeholder-universal', {
-              defaultValue: 'Search anything — people, posts, games, writing…',
-            })}
-            trailing={loading ? <Spinner size={16} className="text-site-text-muted" /> : undefined}
-          />
+          <div className="flex items-center gap-2">
+            <SearchField
+              ref={fieldRef}
+              containerClassName="min-w-0 flex-1"
+              value={query}
+              onValueChange={setQuery}
+              aria-label={t('search-input-aria-label', {
+                defaultValue: 'Search people, posts, builds, and blog',
+              })}
+              placeholder={t('search-placeholder-universal', {
+                defaultValue: 'Search anything — people, posts, games, writing…',
+              })}
+              trailing={loading ? <Spinner size={16} className="text-site-text-muted" /> : undefined}
+            />
+            {/* Two quick actions as icon buttons beside the field. "Your feeds" is only for signed-in readers. */}
+            {session && (
+              <IconButton asChild variant="default" size="icon" label={t('explore-feeds', { ns: 'site', defaultValue: 'Your feeds' })}>
+                <Link to="/feeds">
+                  <Rss aria-hidden />
+                </Link>
+              </IconButton>
+            )}
+            <SurpriseButton iconOnly />
+          </div>
         }
       />
 

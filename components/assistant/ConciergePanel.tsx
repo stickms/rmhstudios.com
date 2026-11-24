@@ -7,6 +7,7 @@ import { Sparkles, Send, ArrowRight } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import { useSession } from '@/components/Providers';
 import { cn } from '@/lib/utils';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
@@ -214,7 +215,7 @@ export function ConciergePanel({ className }: { className?: string }) {
   return (
     <div className={cn('flex flex-col min-h-0 h-full', className)}>
       {/* Conversation */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto py-4">
         {empty ? (
           <div className="mx-auto max-w-2xl py-10 text-center">
             <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
@@ -281,10 +282,14 @@ export function ConciergePanel({ className }: { className?: string }) {
       </div>
 
       {/* Composer */}
-      <div className="border-t border-site-border bg-site-bg/60 px-4 py-3">
+      <div className="border-t border-site-border bg-site-bg/60 py-3">
         <div className="mx-auto max-w-2xl">
-          {/* Suggested-question chips */}
-          <div className="mb-3 flex flex-wrap gap-2">
+          {/* Suggested questions: one row that scrolls sideways, like the news page's category tags. */}
+          <HorizontalScroller
+            aria-label={t('concierge-suggestions', { defaultValue: 'Suggested questions' })}
+            surface="none"
+            className="mb-3"
+          >
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.key}
@@ -297,14 +302,14 @@ export function ConciergePanel({ className }: { className?: string }) {
                     }),
                   )
                 }
-                className="surface-press inline-flex min-h-11 items-center rounded-full px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
+                className="surface-press inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-site-border px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-text hover:text-site-text disabled:opacity-50"
               >
                 {t(s.key, {
                   defaultValue: s.text,
                 })}
               </button>
             ))}
-          </div>
+          </HorizontalScroller>
           <form onSubmit={onSubmit} className="flex items-end gap-2">
             <Textarea
               value={input}

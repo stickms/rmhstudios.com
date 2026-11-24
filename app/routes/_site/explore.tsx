@@ -1,11 +1,8 @@
-import { Link, createFileRoute, stripSearchParams } from '@tanstack/react-router';
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
-import { Rss } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Button } from '@/components/ui/button';
 import { ExploreColumn } from '@/components/feed/ExploreColumn';
-import { SurpriseButton } from '@/components/discovery/SurpriseButton';
 import { SavedSearches } from '@/components/search/SavedSearches';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -88,14 +85,6 @@ function ExplorePage() {
         defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
       })}
     >
-      <div className="flex justify-end gap-2 pb-3">
-        <Link to="/feeds">
-          <Button size="sm" variant="default">
-            <Rss aria-hidden /> {t('explore-feeds', { defaultValue: 'Your feeds' })}
-          </Button>
-        </Link>
-        <SurpriseButton />
-      </div>
       <SavedSearches currentQuery={q} />
       <ExploreColumn
         initialQuery={q}

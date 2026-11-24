@@ -18,7 +18,7 @@ export function HelpPage() {
   const { t } = useTranslation('site');
   return (
     <PageFrame noDockPadding>
-      <div className="conversation">
+      <div className="conversation conversation--flush-bottom">
         <NoGlobe />
         <header data-slot="page-header" className="conversation__head">
           <Button

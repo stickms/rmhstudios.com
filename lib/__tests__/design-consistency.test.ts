@@ -487,7 +487,7 @@ const CSS_DEBT: Record<
     radius: 10,
   },
   'components/library/library/sections-refresh.css': {
-    hex: 23,
+    hex: 18,
     radius: 2,
   },
   'components/rmhtech/rmhtech.css': {

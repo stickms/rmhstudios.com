@@ -19,8 +19,9 @@ describe('layoutRows', () => {
     expect(flags([short('a'), long('b'), short('c'), short('d')])).toEqual(['a:W', 'b:W', 'c:0*', 'd:1*']);
   });
 
-  it('widens an odd last item and marks it as the last row', () => {
-    expect(flags([short('a'), short('b'), short('c')])).toEqual(['a:0', 'b:1', 'c:W*']);
+  it('keeps an odd last item at half width and marks it as the last row', () => {
+    expect(flags([short('a'), short('b'), short('c')])).toEqual(['a:0', 'b:1', 'c:0*']);
+    expect(flags([short('a')])).toEqual(['a:0*']);
   });
 
   it('treats an item with no description as short, and an empty list as empty', () => {
