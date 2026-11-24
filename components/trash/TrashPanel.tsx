@@ -260,7 +260,7 @@ export function TrashPanel() {
         />
       ) : (
         <>
-          <ul className={cn('flex flex-col gap-3', arrival)}>
+          <ul className={cn('flex flex-col', arrival)}>
             {items.map((item) => (
               <TrashRow
                 key={`${item.kind}:${item.id}`}
