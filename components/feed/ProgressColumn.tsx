@@ -121,7 +121,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Level card */}
- <section className="rounded-site p-5">
+ <section className="py-5">
  <div className="flex items-center justify-between gap-3">
  <div className="flex items-center gap-3">
  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
@@ -217,7 +217,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  })}
  </p>
 
- <div className="space-y-3">
+ <div>
  {pass.tiers.map((t) => (
  <TierRow
  key={t.tier}
@@ -258,7 +258,7 @@ function QuestSection({
  <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
- <div className="space-y-3">
+ <div>
  {quests.map((q) => {
  const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
  // Goal-gradient (Clark Hull, 1932): effort rises as the goal gets close, so
@@ -268,7 +268,7 @@ function QuestSection({
  return (
  <div
  key={q.id}
- className="flex items-start gap-3 rounded-site px-4 py-3"
+ className="rule-row flex items-start gap-3 py-3"
  >
  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
  <Target className="h-4 w-4"/>
@@ -368,7 +368,7 @@ function TierRow({
  const { t } = useTranslation('feed');
  return (
  <div
- className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site px-4 py-3 ${
+ className={`rule-row grid grid-cols-[auto_1fr_1fr] items-center gap-3 py-3 ${
  reached ?'':'opacity-70'
  }`}
  >

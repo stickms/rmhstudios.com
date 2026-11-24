@@ -28,7 +28,7 @@ export function HubLinkRow({
   description: string;
 }) {
   const className =
-'surface-press group flex items-start gap-4 rounded-site p-5';
+'row-hover group flex items-start gap-4 py-5';
   const body = (
     <>
       <span className="flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-accent">

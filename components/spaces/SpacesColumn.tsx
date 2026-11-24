@@ -160,7 +160,7 @@ export function SpacesColumn() {
         ) : (
           <ul className={cn(DIRECTORY_LIST_CLASS, arrival)}>
             {spaces.map((s: LiveSpaceSummary) => (
-              <li key={s.id}>
+              <li key={s.id} className="rule-row">
                 <DirectoryItem
                   to={
                     s.voiceOnly && s.community ? `/c/${s.community.slug}` : `/spaces/${s.id}`

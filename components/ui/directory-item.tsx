@@ -25,7 +25,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /** The list a set of items sits in. The gutter and gap the Communities list has always used. */
-export const DIRECTORY_LIST_CLASS = 'flex flex-col gap-3 px-4 pb-12';
+export const DIRECTORY_LIST_CLASS = 'flex flex-col pb-12';
 
 /** The tag beside an item's name (a role, "Live"). */
 export function DirectoryTag({ children }: { children: ReactNode }) {
@@ -68,7 +68,7 @@ export function DirectoryItem({
     <Link
       to={to as string}
       data-slot="directory-item"
-      className="row-hover relative flex items-start gap-4 border-b border-site-border py-5"
+      className="row-hover relative flex items-start gap-4 py-5"
     >
       <div
         className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-site text-3xl"

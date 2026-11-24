@@ -255,13 +255,13 @@ export function AchievementsColumn({
  <h2 className="site-section-label mb-3">
  {CATEGORY_LABELS[cat]}
  </h2>
- <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+ <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
  {list.map((a) => {
  const incremental = a.target > 1 && !a.unlocked;
  return (
  <div
  key={a.id}
- className={`flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
+ className={`flex items-start gap-3 rule-row py-3 transition-colors ${
  a.unlocked ?'':'opacity-70'
  }`}
  >

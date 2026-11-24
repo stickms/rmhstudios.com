@@ -59,7 +59,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
 
   return (
     <section
-      className="mt-2 rounded-site px-4 py-3"
+      className="mt-2 py-3"
       aria-label={t('thread-panel-label', { defaultValue: 'Post as thread' })}
     >
       <div className="flex items-start gap-2">

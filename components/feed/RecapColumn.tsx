@@ -96,7 +96,7 @@ export function RecapColumn({
  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
  <div key={key}>
- <div className={`rounded-site p-5 text-center`}>
+ <div className={`py-5 text-center`}>
  <Icon className="mx-auto h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{recap[key] as number}</p>
  <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
@@ -108,7 +108,7 @@ export function RecapColumn({
 
  {recap.topPost && (
  <div>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <p className="mb-2 text-xs font-semibold text-site-text-muted">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
  <p dir="auto" className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
  <p className="mt-2 text-xs text-site-text-muted">

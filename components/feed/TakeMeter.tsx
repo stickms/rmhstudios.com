@@ -73,7 +73,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
   return (
     <div
       ref={ref}
-      className="mt-2 min-h-28 rounded-site px-4 py-3"
+      className="mt-2 min-h-28 py-3"
       role="group"
       aria-label={t('take-label', { defaultValue: 'Take meter' })}
     >

@@ -40,7 +40,7 @@ export function FollowListSection({ value: current, onChange }: { value: string;
     },
   };
   return (
-    <section className="rounded-site p-5">
+    <section className="py-5">
       <fieldset>
         <legend className="mb-4 flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">

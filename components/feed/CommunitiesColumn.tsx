@@ -221,8 +221,8 @@ export function CommunitiesColumn({
             if (c.locked) {
               // Listed + locked: metadata and the way in, nothing of the content.
               return (
-                <li key={c.id}>
-                  <div className="flex flex-col gap-3 rounded-site relative p-5">
+                <li key={c.id} className="rule-row py-3">
+                  <div className="flex flex-col gap-3 relative">
                     <Link
                       to={`/c/${c.slug}` as string}
                       className="row-hover block"
@@ -247,7 +247,7 @@ export function CommunitiesColumn({
                     ? t('joined-badge', { defaultValue: 'Joined' })
                     : null;
             return (
-              <li key={c.id}>
+              <li key={c.id} className="rule-row">
                 <DirectoryItem
                   to={`/c/${c.slug}`}
                   media={c.icon || '👥'}
