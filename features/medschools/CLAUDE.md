@@ -69,8 +69,29 @@ longer govern this feature**; the admin page does not move with it (`components/
   from the mockup's blobs; a `background-image` of `.medapp-page`, in the flow, never fixed, never animated, fading to
   the exact ground at each tile's top and bottom (iOS fills its bars from the ground). Dropped under
   `prefers-reduced-data`.
-- **Left for B.** The pages keep their Steel markup (`PageLayout`, `t-*`); B1 to B3 restyle them. `PageLayout`'s own
-  title and back link duplicate the top bar until then.
+- **Phase B1 (built).** The index, live page, activity rail and their controls are on `--app-*` / `--app-med-*` and the
+  `.medapp-*` classes at the foot of `medschools.css`: pill chips (`.medapp-chip`: `aria-pressed` / `aria-checked` is a
+  filled wash, a stronger border and weight 600; 36px, 44px on touch), a paper panel (`.medapp-panel`) holding the rows,
+  `PageHead` (`ui/shell/`) for the one `<h1>` in place of `PageLayout`'s title row and duplicate back link. `SchoolCrest`,
+  `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList`, `PrefsNote`, `WaveNote` and
+  `skeletons` no longer read `--site-*`. **Left for B2 and B3:** the school page and its tabs, the charts, the tracker,
+  lists, ask, secondaries and rolling pages still keep their Steel markup (`PageLayout`, `t-*`, the bridge) and their
+  duplicate title row.
+- **Status (`ui/status/`).** `status.ts` maps the public `MedEventType` and the tracker milestones onto eight keys:
+  acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
+  interview orange, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
+  beside its words), `StatusText` the words in the same hue; colour is never the only cue, the label always prints. The
+  public feed's `SECONDARY` is "secondary **received**" (the school sent one), so it reads "Secondary"; only the private
+  `SECONDARY_SUBMITTED` milestone reads "Secondary submitted", in the same light blue. `status.test.tsx` reads
+  `medschools.css` and holds text at 4.5:1 and icon ink at 3:1 on the paper, the ground and (ink) its own swatch, light
+  and dark; none of the mockup's values needed darkening.
+- **Matriculating.** `MATRICULATED` is a private tracker milestone, added after `ACCEPTANCE` by the additive migration
+  `20261207090000_medschools_matriculated`. Like `SECONDARY_SUBMITTED` it is `SHAREABLE: null`, so share-sync writes no
+  event or count for it and no public figure, aggregate or survival curve reads it. It is purple in the member's own
+  tracker row and timeline, measured from the acceptance, a closing decision for the chance line, and takes the
+  acceptance's cycle rule on import. The live feed shows it only if a source ever reports it (none does).
+- **Wash on phones.** The tile is rendered with a 34px blur and blobs 1.3 times larger, and `.medapp-page` sizes it
+  `max(100%, 900px)` wide, so a phone shows a centred crop with broad soft blobs; each asset is under 30 KB.
 
 ## The read rules (`engine/public-read.ts`, pure and client-safe)
 

@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import type { MedDegreeId, MedProgramFilter } from '../medschools.contract';
 import { useMedLabels } from './labels';
 
@@ -44,26 +42,20 @@ export function ProgramToggles({
   const on = programToOn(value);
   const onCount = Number(on.reg) + Number(on.phd);
   return (
-    <div
-      role="group"
-      aria-label={t('program-toggles-label', { defaultValue: 'Programs' })}
-      className="flex flex-wrap gap-2"
-    >
+    <div role="group" aria-label={t('program-toggles-label', { defaultValue: 'Programs' })} className="medapp-chips">
       {(['reg', 'phd'] as const).map((which) => {
         const pressed = on[which];
         return (
-          <Button
+          <button
             key={which}
             type="button"
-            variant="default"
-            size="sm"
+            className="medapp-chip"
             aria-pressed={pressed}
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
-            className={cn(pressed ? 'border-site-text font-semibold' : 'text-site-text-muted')}
             onClick={() => onChange(toggleProgram(value, which))}
           >
             {programFilterLabel(which === 'reg' ? 'REG' : 'PHD', degree)}
-          </Button>
+          </button>
         );
       })}
     </div>

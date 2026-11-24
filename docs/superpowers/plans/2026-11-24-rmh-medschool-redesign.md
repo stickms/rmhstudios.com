@@ -2,7 +2,7 @@
 
 Written from a read-only pass over the repo; paths are repo-relative. Where a claim could not be verified, it says so.
 **Status (2026-11-24): phase A is built** (see "Phase A as built" below, which corrects this plan where the code
-differed). B1 to B3, C and D are not started.
+differed) and "Phase B1 as built". B2, B3, C and D are not started.
 
 ## Owner answers (2026-11-24)
 
@@ -45,6 +45,38 @@ These settle the open questions in section 7 and override the plan text where th
   pastels; the bridge maps `--site-chart-n` to the line colour so existing charts keep working. B2 retires
   `--site-chart-*`.
 - **`withdrawn`** has a neutral status pair, as proposed.
+
+## Phase B1 as built
+
+- **Status primitives** (`features/medschools/ui/status/`): `status.ts` (eight keys, icon paths from the mockup, the
+  label key of each), `StatusIcon`, `StatusText`. Mapping: ACCEPTANCE green, REJECTION red, HOLD dark blue, SECONDARY
+  light blue, WAITLIST yellow, INTERVIEW orange, WITHDRAWN neutral, and the tracker's MATRICULATED purple;
+  SECONDARY_SUBMITTED shares the light blue, SUBMITTED and COMPLETE have no colour. **The live feed's SECONDARY is
+  "secondary received"** (sources report the school sending one; the tracker's own SECONDARY milestone is "Secondary
+  received"), so it is labelled "Secondary", not "submitted"; only the private SECONDARY_SUBMITTED milestone says
+  "Secondary submitted".
+- **Contrast test** (`status.test.tsx`) parses `medschools.css`: text 4.5:1 on paper and ground, ink 3:1 on its swatch,
+  paper and ground, in light and dark, for every key. All sixteen pairs passed with the mockup's values, so no token was
+  darkened (the lowest: light green text on the ground, 4.56:1; light green ink on its swatch, 3.94:1). A lighter
+  light-blue text for "secondary" (2A78B5) would have failed 4.5:1 on the ground, so the mockup's 2F6795 stays; hold and
+  secondary are told apart by swatch, icon and label.
+- **Matriculating** (owner answer 1): `MATRICULATED` after `ACCEPTANCE` in `MedMilestoneType`, migration
+  `20261207090000_medschools_matriculated` (one `ALTER TYPE ... ADD VALUE`). Private like SECONDARY_SUBMITTED
+  (`SHAREABLE: null`; the share-sync test and an integration test hold that no event is written). Wired through the
+  milestone list (and so the zod schemas, the milestone form and the import's type list), the timeline (measured from
+  the acceptance), the chance line (closing), the import cycle rule (the acceptance's), the AI import prompt and the
+  label. The tracker row and the timeline draw it, and the other coloured milestones, with `StatusIcon` and `StatusText`.
+- **Live rows** are name-first: the school's full name, then the status in its colour (weight 600) with the swatch at
+  the left, then a muted 12px line of program, place, time and source. `compact` (the rail) drops the source and the
+  swatch shrinks to 32px.
+- **Restyled onto the app tokens:** `LiveRow`, `LivePage`, `ActivityRail` (a paper panel), `IndexPage`, `SchoolCrest`,
+  `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList` (a 44px round button), `PrefsNote`,
+  `WaveNote`, `skeletons`. `PageLayout` is untouched (other site pages use it); these two pages render `PageHead` instead.
+  The index gained a "Live activity" chip so the page is reachable from the index.
+- **Wash:** 34px blur, blobs 1.3 times larger, `background-size: max(100%, 900px) auto` (a phone shows a 900px crop).
+  `wash-light.webp` 25.2 KB, `wash-dark.webp` 19.7 KB.
+- **Left for B2:** the school page and tabs, the charts (retire `--site-chart-*`). **B3:** the tracker, lists, ask,
+  secondaries, rolling, the import, and the last `--site-*` bridge consumers; their title rows still duplicate the top bar.
 
 ## 0. What the code says (the findings that shape the plan)
 

@@ -112,9 +112,9 @@ describe('useEffectiveView', () => {
 });
 
 describe('PrefsNote', () => {
-  it('renders the t-meta line and a link only while a default came from preferences', () => {
+  it('renders the muted note and a link only while a default came from preferences', () => {
     const on = renderToString(<PrefsNote fromPrefs />);
-    expect(on).toContain('t-meta');
+    expect(on).toContain('medapp-note');
     expect(on).toContain('Filters from your preferences.');
     expect(on).toContain('href="/rmh-medschool/lists#preferences"');
     expect(renderToString(<PrefsNote fromPrefs={false} />)).toBe('');

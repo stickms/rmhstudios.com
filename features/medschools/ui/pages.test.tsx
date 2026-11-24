@@ -165,7 +165,7 @@ describe('IndexPage', () => {
     h.search = {};
     const html = withClient(seedIndex([]), <IndexPage />);
     expect(html).not.toContain('/rmh-medschool/duke');
-    expect(html).toContain('data-slot="empty-state"');
+    expect(html).toContain('No schools match.');
   });
 
   it('SSR parity: a preference fills a silent URL, the public query sits under the explicit key, not the empty one', () => {

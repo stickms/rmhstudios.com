@@ -273,9 +273,23 @@ describe('TrackerPage timeline and silence check', () => {
     ];
     const html = render(d);
     expect(html).toContain('data-timeline');
-    expect(html).toContain('Interview invite · Duke');
+    expect(html).toContain('>Interview invite</span>');
+    expect(html).toContain('· Duke');
     expect(html).toContain('34 days after Application complete');
-    expect(html.indexOf('Application complete · Duke')).toBeLessThan(html.indexOf('Interview invite · Duke'));
+    expect(html.indexOf('Application complete · Duke')).toBeLessThan(html.indexOf('>Interview invite</span>'));
+  });
+
+  it('a Matriculating milestone is purple in the tracker row and the timeline, with its words', () => {
+    const d = dto();
+    d.cycle!.applications[0]!.milestones = [
+      { type: 'ACCEPTANCE', date: '2027-01-10' },
+      { type: 'MATRICULATED', date: '2027-03-02' },
+    ];
+    const html = render(d);
+    expect(html.match(/medapp-status--matric/g)!.length).toBeGreaterThanOrEqual(4);
+    expect(html).toContain('>Matriculating</span>');
+    expect(html).toContain('Matriculating, Mar 2');
+    expect(html).toContain('51 days after Acceptance');
   });
 
   it('the silence check compares the wait with the school, in plain words', () => {

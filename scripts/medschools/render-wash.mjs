@@ -27,6 +27,11 @@ const H = 1600;
 /** The tile is drawn at half size: the wash is low-frequency, so the browser's upscale costs nothing visible. */
 const SCALE = 0.5;
 const FADE = 240;
+/** Phones show a crop of the tile at 900 px wide (`background-size` in medschools.css), so the edges are blurred well past the
+ * mockup's 6 px: a broad, soft wash reads as paint at 390 px where a tight one reads as a hard-edged shape. */
+const BLUR = 34;
+/** Blob radii are scaled up so a phone-width crop still holds a whole blob or two. */
+const GROW = 1.3;
 
 const MODES = {
   light: { colors: ['#E9D5EC', '#CFE3EF', '#F6DCC8', '#D8EAD3'], opacity: 0.85 },
@@ -47,10 +52,10 @@ const html = (mode) => `<!doctype html><html><body style="margin:0;background:tr
   <defs><filter id="paint" x="-20%" y="-20%" width="140%" height="140%">
     <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="7"/>
     <feDisplacementMap in="SourceGraphic" scale="60"/>
-    <feGaussianBlur stdDeviation="6"/>
+    <feGaussianBlur stdDeviation="${BLUR}"/>
   </filter></defs>
   <g filter="url(#paint)" opacity="${MODES[mode].opacity}">
-    ${BLOBS.map((b, i) => `<ellipse cx="${b.cx * W}" cy="${b.cy * H}" rx="${b.rx}" ry="${b.ry}" fill="${MODES[mode].colors[i]}"/>`).join('\n    ')}
+    ${BLOBS.map((b, i) => `<ellipse cx="${b.cx * W}" cy="${b.cy * H}" rx="${b.rx * GROW}" ry="${b.ry * GROW}" fill="${MODES[mode].colors[i]}"/>`).join('\n    ')}
   </g>
 </svg></div></body></html>`;
 
