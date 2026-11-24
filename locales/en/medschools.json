@@ -165,6 +165,7 @@
   "event-interview-short": "Interview",
   "event-rejection": "Rejection",
   "event-secondary": "Secondary",
+  "event-time-no-time": "No time reported",
   "event-type-count": "{{n}} types",
   "event-waitlist": "Waitlist",
   "event-withdrawn": "Withdrawn",

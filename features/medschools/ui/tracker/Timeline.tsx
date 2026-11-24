@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
-import { formatUtcDay } from '../../engine/public-read';
 import { buildTimeline } from '../../engine/timeline';
 import type { TrackerApplicationDto } from '../../medschools.contract';
+import { EventTime } from '../EventTime';
 import { useMedLabels } from '../labels';
 import { StatusText } from '../status/StatusText';
 import { statusOfMilestone } from '../status/status';
@@ -34,7 +34,7 @@ export function Timeline({ applications }: { applications: readonly TrackerAppli
           const status = statusOfMilestone(r.type);
           return (
             <li key={`${r.applicationId}-${r.type}`}>
-              <time dateTime={r.date}>{formatUtcDay(r.date, locale)}</time>
+              <EventTime iso={r.date} dayOnly />
               <StepIcon type={r.type} />
               <span className="medapp-timeline__body">
                 {status ? (

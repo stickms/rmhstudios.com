@@ -143,7 +143,7 @@ export function IndexPage() {
             ) : (
               <ul className="medapp-panel medapp-rows">
                 {rows.map((s) => (
-                  <li key={s.slug} className="medapp-row items-center">
+                  <li key={s.slug} className="medapp-row medapp-schoolrow">
                     <SchoolCrest slug={s.slug} name={s.name} size={40} />
                     <div className="medapp-row__body">
                       <p className="medapp-row__name">
