@@ -18,7 +18,7 @@ import { useLiveFeed } from '../useLiveFeed';
 const PAGE = 15;
 
 /**
- * The live activity rail: a paper panel in the app frame's right column on every /rmh-medschool page (>= 1280px). The
+ * The live activity rail: a paper panel in the app frame's right column on every /med page (>= 1280px). The
  * newest reported events, a search over school and state, the event types and the programs as two compact
  * multi-selects on one line, the 60 s head refetch with the M9 fade for new rows, and older pages loaded as the end of
  * the list scrolls into view (one `IntersectionObserver`, on the sentinel only: it loads data, it decorates nothing).
@@ -53,7 +53,7 @@ export default function ActivityRail() {
             <Activity aria-hidden="true" className="size-4" />
             {t('rail-title', { defaultValue: 'Live activity' })}
           </h2>
-          <Link to="/rmh-medschool/live" className="medapp-link medapp-rail-open">
+          <Link to="/med/live" className="medapp-link medapp-rail-open">
             {t('rail-open', { defaultValue: 'Open live page' })}
           </Link>
         </div>

@@ -59,7 +59,7 @@ describe('GET /api/og/med-school/$slug', () => {
       eyebrow: 'RMH Med Schools',
       title: 'Duke University School of Medicine',
       subtitle: 'MD · Durham, NC',
-      path: '/rmh-medschool/duke',
+      path: '/med/duke',
       stats: [{ value: '120', label: 'reported interview events, 2026\u20132027 cycle', lead: true }],
     });
   });

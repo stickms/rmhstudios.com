@@ -11,7 +11,7 @@
  *
  * Light is the base. Dark applies under `@media (prefers-color-scheme: dark)` unless `<html data-app-dark="0">`, and
  * under `<html data-app-dark="1">`. The server-rendered HTML is right for the system with no script; the pre-paint
- * script stamps `data-app-dark` from a stored choice (`/rmh-medschool` in `APP_ROUTE_THEME_BG`, `stores/themeStore.ts`,
+ * script stamps `data-app-dark` from a stored choice (`/med` in `APP_ROUTE_THEME_BG`, `stores/themeStore.ts`,
  * whose two grounds are `--app-bg` below). See `ui/shell/useMedMode.ts`.
  *
  * ## Every colour is an `--app-*` token

@@ -6,13 +6,13 @@ import { trackerQuery, waitUnlessStay } from '@features/medschools/medschools.qu
 import { TrackerPage } from '@features/medschools/ui/tracker/TrackerPage';
 
 /**
- * /rmh-medschool/tracker: the signed-in member's private tracker. Private (noindex, not in the sitemap), and its data
+ * /med/tracker: the signed-in member's private tracker. Private (noindex, not in the sitemap), and its data
  * comes from `me/**`, which declares no cache. Signed out, the loader's fetch fails quietly and the page shows the
  * site's sign-in prompt (precedent: `wallet.tsx`).
  */
-export const Route = createFileRoute('/rmh-medschool/tracker')({
+export const Route = createFileRoute('/med/tracker')({
   head: definePage({
-    path: '/rmh-medschool/tracker',
+    path: '/med/tracker',
     title: 'My tracker | RMH Studios',
     description: 'Your private medical school application tracker: schools, dates and optional anonymous sharing.',
     noIndex: true,

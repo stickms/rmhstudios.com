@@ -49,7 +49,7 @@ describe('engine/secondaries boundaries', () => {
 
   it('the client imports only cycle-ranges and theme-ids from engine/secondaries', () => {
     const offenders: string[] = [];
-    const dirs = [join(ROOT, 'ui'), 'app/routes/rmh-medschool'].filter((d) => {
+    const dirs = [join(ROOT, 'ui'), 'app/routes/med'].filter((d) => {
       try {
         return statSync(d).isDirectory();
       } catch {

@@ -1,10 +1,10 @@
 /**
- * Light / dark for `/rmh-medschool`: the browser half (`engine/mode.ts` is the pure half). RMH Music's design, one for
+ * Light / dark for `/med`: the browser half (`engine/mode.ts` is the pure half). RMH Music's design, one for
  * one (`components/rmhmusic/useRmhMusicMode.ts`), so read its header for the whole argument; the short version:
  *
  * The COLOURS never wait for this module. `medschools.css` defines both palettes: light is the base, dark applies under
  * `prefers-color-scheme: dark` (unless `<html data-app-dark="0">`) and under `<html data-app-dark="1">`, so the
- * server-rendered HTML is right for the system with no script. The pre-paint script (the `/rmh-medschool` entry of
+ * server-rendered HTML is right for the system with no script. The pre-paint script (the `/med` entry of
  * `APP_ROUTE_THEME_BG`) applies a stored choice, the document ground and `color-scheme` before first paint. This
  * module adds the runtime: the toggle, following the system while nothing is stored, and a client navigation INTO the
  * app, where no pre-paint script runs. The toggle's pressed state is `null` on the server and the hydrating render.
@@ -15,7 +15,7 @@ import { isAppThemeRoute } from '@/components/Providers';
 import { APP_ROUTE_THEME_BG, APP_THEME_BG, appRouteGround, paintDocumentGround } from '@/stores/themeStore';
 import { MODE_STORAGE_KEY, resolveMode, serializeMode, type Mode } from '../../engine/mode';
 
-const BASE = '/rmh-medschool';
+const BASE = '/med';
 const GROUND = APP_ROUTE_THEME_BG[BASE]!;
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 

@@ -49,7 +49,7 @@ const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
       sourceName: 'CycleTrack',
       schoolSlug: 'duke',
       updatedAt: '2026-11-21T04:00:00.000Z',
-      href: '/rmh-medschool/duke?tab=activity',
+      href: '/med/duke?tab=activity',
       sourceHref: 'https://example.test/duke',
     },
     {
@@ -58,7 +58,7 @@ const res = (over: Partial<MedAskRes> = {}): MedAskRes => ({
       sourceName: 'Admit.org',
       schoolSlug: 'duke',
       updatedAt: null,
-      href: '/rmh-medschool/duke?tab=interviews',
+      href: '/med/duke?tab=interviews',
       sourceHref: null,
     },
   ],
@@ -288,7 +288,7 @@ describe('AnswerView', () => {
     expect(html).toContain('pointer-coarse:min-h-11');
     expect(html).toContain('source refreshed');
     expect(html).toContain('update time unknown');
-    expect(html).toContain('href="/rmh-medschool/duke?tab=activity"');
+    expect(html).toContain('href="/med/duke?tab=activity"');
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).toContain('Based on Duke');
   });
@@ -315,7 +315,7 @@ describe('AnswerView', () => {
     const html = renderToString(
       <AnswerView res={res({ segments: [], citations: [], status: 'no-data', notice: 'thin', mine: [] })} />,
     );
-    expect(html).toContain('href="/rmh-medschool/tracker"');
+    expect(html).toContain('href="/med/tracker"');
     expect(html).not.toContain('RMH has no data for this question.');
   });
 
@@ -341,9 +341,9 @@ describe('AnswerView', () => {
 
 describe('the sign-in return path', () => {
   it('returns to the school panel from a school page and keeps ?q= on the Ask page', () => {
-    expect(signInReturnPath('duke', 'ignored')).toBe('/rmh-medschool/duke#ask');
-    expect(signInReturnPath(undefined, '')).toBe('/rmh-medschool/ask');
-    expect(signInReturnPath(undefined, ' Duke MCAT? & more ')).toBe('/rmh-medschool/ask?q=Duke%20MCAT%3F%20%26%20more');
+    expect(signInReturnPath('duke', 'ignored')).toBe('/med/duke#ask');
+    expect(signInReturnPath(undefined, '')).toBe('/med/ask');
+    expect(signInReturnPath(undefined, ' Duke MCAT? & more ')).toBe('/med/ask?q=Duke%20MCAT%3F%20%26%20more');
   });
 });
 

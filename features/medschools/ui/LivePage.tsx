@@ -34,7 +34,7 @@ const EVENT_TYPES: readonly MedEventTypeId[] = [
   'HOLD',
 ];
 
-/** /rmh-medschool/live: the latest reported events across schools, newest first. */
+/** /med/live: the latest reported events across schools, newest first. */
 export function LivePage() {
   const { t } = useTranslation('medschools');
   const { eventLabel } = useMedLabels();
@@ -51,7 +51,7 @@ export function LivePage() {
     const m = { ...search, ...next };
     holdScroll();
     void navigate({
-      to: '/rmh-medschool/live',
+      to: '/med/live',
       // The preference key (`programs`) stays as the URL had them; only the page's own keys are rebuilt.
       search: ((prev: Record<string, unknown>) => ({
         ...prev,

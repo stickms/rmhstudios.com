@@ -59,9 +59,9 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   'void-breaker',
   // The `--app-*` full-screen app tier
   'rmhbox',
-  // RMH Med Schools: `rmh-medschool.tsx` + `rmh-medschool/**`, the layout and its pages (owner, roadmap item 11;
+  // RMH Med Schools: `med.tsx` + `med/**`, the layout and its pages (owner, roadmap item 11;
   // see the note beside `medschools` above).
-  'rmh-medschool',
+  'med',
   'rmhmusic',
   'rmhstudy',
   'rmhtube',

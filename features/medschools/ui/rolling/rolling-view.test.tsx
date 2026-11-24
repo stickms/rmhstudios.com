@@ -140,8 +140,8 @@ describe('RollingSection', () => {
     );
     expect(html).toContain('seats can fill as the cycle goes on.');
     expect(html).toContain('Rolling: the school says offers are made on a rolling basis.');
-    expect(html).toContain('/rmh-medschool/duke?tab=secondaries');
-    expect(html).toContain('/rmh-medschool/yale?tab=secondaries&amp;program=PHD');
+    expect(html).toContain('/med/duke?tab=secondaries');
+    expect(html).toContain('/med/yale?tab=secondaries&amp;program=PHD');
   });
 
   it('the tracker source has its own key', () => {

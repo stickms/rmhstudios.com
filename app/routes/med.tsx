@@ -1,5 +1,5 @@
 /**
- * RMH Med Schools layout route: the full-screen app frame around `/rmh-medschool` and everything under it.
+ * RMH Med Schools layout route: the full-screen app frame around `/med` and everything under it.
  *
  * Public and indexable, so there is no auth gate (the private pages gate themselves) and no `appRouteHead` (it needs a
  * catalog entry; this app is listed in the Services hub, not the catalog). Each child route writes its own `head()`;
@@ -17,7 +17,7 @@ import frauncesCss from '@/app/fonts/fraunces.css?url';
 import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
 import { preloadFont } from '@/lib/fonts/self-hosted';
 
-export const Route = createFileRoute('/rmh-medschool')({
+export const Route = createFileRoute('/med')({
   head: () => ({
     links: [
       { rel: 'stylesheet', href: medschoolsCss },

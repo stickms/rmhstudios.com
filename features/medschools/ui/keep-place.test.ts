@@ -83,7 +83,7 @@ describe('a setting change keeps the reader in place', () => {
       );
     }
     for (const route of ['index.tsx', 'live.tsx', '$slug.tsx', 'tracker.tsx']) {
-      const src = readFileSync(join(root, '..', '..', '..', 'app', 'routes', 'rmh-medschool', route), 'utf8');
+      const src = readFileSync(join(root, '..', '..', '..', 'app', 'routes', 'med', route), 'utf8');
       expect(src, route).toMatch(/cause/);
     }
   });

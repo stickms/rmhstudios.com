@@ -90,7 +90,7 @@ describe('schoolFacts', () => {
     expect(f.text).not.toMatch(/null|undefined|\b0\b/);
     expect(f.updatedAt).toBe(stamps.counts.ADMIT);
     expect(f.sourceHref).toBe('https://admit.example/duke');
-    expect(f.href).toBe('/rmh-medschool/duke?tab=interviews');
+    expect(f.href).toBe('/med/duke?tab=interviews');
     expect(f.untrusted).toBe(false);
   });
   it('names PhD and a DO school by its own degree, and in-state rows as such', () => {
@@ -257,7 +257,7 @@ describe('activityFacts', () => {
     expect(facts.some((f) => /applicants/i.test(f.text))).toBe(false);
     expect(facts[2]!.text).toContain('7 reported withdrawn events');
     expect(facts).toHaveLength(3);
-    expect(facts.every((f) => f.href === '/rmh-medschool/duke?tab=activity')).toBe(true);
+    expect(facts.every((f) => f.href === '/med/duke?tab=activity')).toBe(true);
   });
   it('says what the ALL filter counts and links a source where known', () => {
     const facts = activityFacts(head, { ...activity, program: 'ALL' }, stamps, [
@@ -289,7 +289,7 @@ describe('historyFacts', () => {
     const facts = historyFacts(head, h, stamps);
     expect(facts).toHaveLength(1);
     expect(facts[0]!.text).toBe('Duke, MD, 2025–2026 cycle, CycleTrack: 398 reported interview events in total.');
-    expect(facts[0]!.href).toBe('/rmh-medschool/duke?tab=history');
+    expect(facts[0]!.href).toBe('/med/duke?tab=history');
   });
 });
 
@@ -343,7 +343,7 @@ describe('numberRefs and capFacts', () => {
     source: 'ADMIT' as const,
     sourceName: 'Admit.org',
     updatedAt: null,
-    href: '/rmh-medschool/duke',
+    href: '/med/duke',
     sourceHref: null,
   });
   it('issues f1..fn in order and drops repeated text', () => {

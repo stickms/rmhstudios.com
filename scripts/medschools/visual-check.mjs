@@ -78,10 +78,10 @@ const AR_SIZES = [
   [390, 844],
   [1280, 800],
 ];
-const SCHOOL = '/rmh-medschool/harvard';
+const SCHOOL = '/med/harvard';
 const PAGES = [
-  ['index', '/rmh-medschool', false, async () => {}],
-  ['live', '/rmh-medschool/live', false, async () => {}, { text: [/Part of a wave/] }],
+  ['index', '/med', false, async () => {}],
+  ['live', '/med/live', false, async () => {}, { text: [/Part of a wave/] }],
   [
     'harvard-activity-tooltip',
     SCHOOL,
@@ -122,7 +122,7 @@ const PAGES = [
   ],
   [
     'duke-forecast-signed-in',
-    '/rmh-medschool/duke?tab=forecast',
+    '/med/duke?tab=forecast',
     true,
     async () => {},
     { forecast: true, text: [/Your estimate/, /chance of an interview invite/] },
@@ -133,7 +133,7 @@ const PAGES = [
   ['harvard-interviews-format', `${SCHOOL}?tab=interviews&itab=format`, false, async () => {}],
   [
     'do-school-programs',
-    '/rmh-medschool/philadelphia-com',
+    '/med/philadelphia-com',
     false,
     async (p) => {
       // The DO school offers DO and DO-PhD: switch one off to show the toggled state and the redrawn chart.
@@ -147,12 +147,12 @@ const PAGES = [
   ],
   [
     'tracker',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     async () => {},
     { text: [/chance of an interview invite/, /Not enough data yet for an estimate/] },
   ],
-  ['lists', '/rmh-medschool/lists', true, async () => {}],
+  ['lists', '/med/lists', true, async () => {}],
 ];
 
 /* ------------------------------ Secondaries and the essay overlap ------------------------------ */
@@ -208,14 +208,14 @@ const SECONDARIES_PAGES = [
   ],
   [
     'michigan-secondaries-not-yet',
-    '/rmh-medschool/michigan?tab=secondaries',
+    '/med/michigan?tab=secondaries',
     false,
     async () => {},
     { ...NO_FIELD, text: [/prompts are not out yet/] },
   ],
   [
     'stanford-secondaries-first-year',
-    '/rmh-medschool/stanford?tab=secondaries',
+    '/med/stanford?tab=secondaries',
     false,
     async () => {},
     {
@@ -226,35 +226,35 @@ const SECONDARIES_PAGES = [
   ],
   [
     'hopkins-secondaries-empty',
-    '/rmh-medschool/johns-hopkins?tab=secondaries',
+    '/med/johns-hopkins?tab=secondaries',
     false,
     async () => {},
     { ...NO_FIELD, text: [/No secondary prompts on file/, /nothing found/] },
   ],
   [
     'duke-secondaries-turnaround',
-    '/rmh-medschool/duke?tab=secondaries',
+    '/med/duke?tab=secondaries',
     false,
     async () => {},
     { ...NO_FIELD, isolates: true, text: [/Turnaround/, /median of \d+ days/, /24 members who shared/] },
   ],
   [
     'do-secondaries',
-    '/rmh-medschool/philadelphia-com?tab=secondaries',
+    '/med/philadelphia-com?tab=secondaries',
     false,
     async () => {},
     { ...NO_FIELD, text: [/DO-PhD prompts/], textAbsent: [/MD-PhD prompts/] },
   ],
   [
     'lists-overlap',
-    '/rmh-medschool/lists',
+    '/med/lists',
     true,
     openOverlap,
     { absent: OVERLAP_NO_FIELD, text: [/Essay overlap/, /Shortest limit/, /schools?\b/, /No prompts found yet/] },
   ],
   [
     'tracker-overlap',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     openOverlap,
     { absent: OVERLAP_NO_FIELD, text: [/Essay overlap/, /Secondary received/] },
@@ -264,8 +264,8 @@ PAGES.push(...SECONDARIES_PAGES);
 
 /* ------------------------------ the Ask pages (phase 6) ------------------------------ */
 
-const ASK_PAGE = '/rmh-medschool/ask';
-const DUKE = '/rmh-medschool/duke';
+const ASK_PAGE = '/med/ask';
+const DUKE = '/med/duke';
 /** What the page must NOT draw: the signed-out Ask page has no field, and no page here draws a stray form control twice. */
 const FLAT = { flat: true };
 
@@ -467,9 +467,20 @@ PAGES.push(...ASK_PAGES);
  */
 const agoDay = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 const monthDay = (n) =>
-  new Date(Date.now() - n * 86_400_000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-const IMPORT_DATES = { sameDuke: agoDay(55), conflictDuke: agoDay(45), newDuke: agoDay(10), harvard: agoDay(50), noYear: monthDay(18) };
-const nameOf = async (slug) => (await ai.pool.query('select name from med_school where slug = $1', [slug])).rows[0]?.name;
+  new Date(Date.now() - n * 86_400_000).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+const IMPORT_DATES = {
+  sameDuke: agoDay(55),
+  conflictDuke: agoDay(45),
+  newDuke: agoDay(10),
+  harvard: agoDay(50),
+  noYear: monthDay(18),
+};
+const nameOf = async (slug) =>
+  (await ai.pool.query('select name from med_school where slug = $1', [slug])).rows[0]?.name;
 const importText = async () => {
   const [duke, harvard] = [await nameOf('duke'), await nameOf('harvard')];
   return {
@@ -515,7 +526,10 @@ const resetImport = async () => {
   const tracker = await (await fetch(`${BASE}/api/medschools/me/tracker`, { headers })).json();
   const app = tracker.cycle?.applications?.find((a) => a.school.slug === 'harvard');
   for (const m of app?.milestones ?? [])
-    await fetch(`${BASE}/api/medschools/me/tracker/applications/${app.id}/milestones/${m.type}`, { method: 'DELETE', headers });
+    await fetch(`${BASE}/api/medschools/me/tracker/applications/${app.id}/milestones/${m.type}`, {
+      method: 'DELETE',
+      headers,
+    });
 };
 /** The day's count is the `medschools-qa-ask` rows; an import reserves one like a question does. */
 const plantAsk = (n) =>
@@ -544,7 +558,7 @@ const readImport = async (p) => {
 const IMPORT_PAGES = [
   [
     'import-open',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     openImport,
     {
@@ -554,13 +568,19 @@ const IMPORT_PAGES = [
         await clearLedger();
         await resetImport();
       },
-      text: [/Import from a file/, /sent to our AI provider/, /does not keep the file/, /Choose a file/, /Read my dates/],
+      text: [
+        /Import from a file/,
+        /sent to our AI provider/,
+        /does not keep the file/,
+        /Choose a file/,
+        /Read my dates/,
+      ],
       present: ['textarea'],
     },
   ],
   [
     'import-preview',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     readImport,
     {
@@ -579,7 +599,7 @@ const IMPORT_PAGES = [
   ],
   [
     'import-saved',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     async (p) => {
       const names = await readImport(p);
@@ -594,7 +614,7 @@ const IMPORT_PAGES = [
   ],
   [
     'import-cap-refused',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     async (p) => {
       const names = await importText();
@@ -612,7 +632,7 @@ const IMPORT_PAGES = [
   ],
   [
     'import-unsupported',
-    '/rmh-medschool/tracker',
+    '/med/tracker',
     true,
     async (p) => {
       await openImport(p);

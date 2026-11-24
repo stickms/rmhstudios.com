@@ -51,7 +51,7 @@ export function OverlapSection({
                   labels={labels}
                   school={(slug, program, name) => (
                     <Link
-                      to="/rmh-medschool/$slug"
+                      to="/med/$slug"
                       params={{ slug }}
                       search={{
                         ...SCHOOL_SEARCH_DEFAULTS,

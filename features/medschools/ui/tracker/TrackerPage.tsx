@@ -114,7 +114,7 @@ function AddCycle({
 }
 
 /**
- * /rmh-medschool/tracker: the member's private tracker. Signed out, the site's sign-in prompt and no request (a 401
+ * /med/tracker: the member's private tracker. Signed out, the site's sign-in prompt and no request (a 401
  * after load, an expired session, turns into the same prompt: D17). Nothing here is optimistic: every change awaits the
  * server, refetches the tracker, and only then closes its form or moves its switch.
  */
@@ -154,7 +154,7 @@ export function TrackerPage() {
           description={t('tracker-signed-out-body', {
             defaultValue: 'Your tracker is private to your account. Sign in to keep your schools and dates.',
           })}
-          callbackURL="/rmh-medschool/tracker"
+          callbackURL="/med/tracker"
         />
       </>
     );
@@ -187,7 +187,7 @@ export function TrackerPage() {
             setAdding('none');
             holdScroll();
             await navigate({
-              to: '/rmh-medschool/tracker',
+              to: '/med/tracker',
               search: { cycle: year },
               replace: true,
               resetScroll: false,
@@ -208,7 +208,7 @@ export function TrackerPage() {
               setAdding('none');
               holdScroll();
               void navigate({
-                to: '/rmh-medschool/tracker',
+                to: '/med/tracker',
                 search: { cycle: year },
                 replace: true,
                 resetScroll: false,
@@ -262,7 +262,7 @@ export function TrackerPage() {
                   onChange={(e) => {
                     holdScroll();
                     void navigate({
-                      to: '/rmh-medschool/tracker',
+                      to: '/med/tracker',
                       search: { cycle: Number(e.target.value) },
                       replace: true,
                       resetScroll: false,

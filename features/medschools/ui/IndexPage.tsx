@@ -23,7 +23,7 @@ import { LatestStatus } from './LatestStatus';
 import { MedEmpty } from './MedEmpty';
 
 /**
- * /rmh-medschool: the school index. A paper panel of rows (the redesign's list, D14). A school with no
+ * /med: the school index. A paper panel of rows (the redesign's list, D14). A school with no
  * reported figure prints nothing in the figure slot: ~200 "no data" lines were noise.
  */
 export function IndexPage() {
@@ -47,7 +47,7 @@ export function IndexPage() {
     const merged = { ...search, ...next };
     holdScroll();
     void navigate({
-      to: '/rmh-medschool',
+      to: '/med',
       // The preference key (`programs`) stays as the URL had it; only the page's own keys are rebuilt.
       search: ((prev: Record<string, unknown>) => ({
         ...prev,
@@ -147,7 +147,7 @@ export function IndexPage() {
                     <SchoolCrest slug={s.slug} name={s.name} size={40} />
                     <div className="medapp-row__body">
                       <p className="medapp-row__name">
-                        <Link to="/rmh-medschool/$slug" params={{ slug: s.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
+                        <Link to="/med/$slug" params={{ slug: s.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
                           {s.name}
                         </Link>
                       </p>

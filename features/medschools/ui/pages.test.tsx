@@ -122,8 +122,8 @@ describe('IndexPage', () => {
   it('lists schools as links with a count and the source name, and has no primary button', () => {
     h.search = {};
     const html = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
-    expect(html).toContain('href="/rmh-medschool/duke"');
-    expect(html).toContain('href="/rmh-medschool/unc"');
+    expect(html).toContain('href="/med/duke"');
+    expect(html).toContain('href="/med/unc"');
     expect(html).toContain('120 reported invites, CycleTrack');
     expect(html).toContain('MD · Durham, NC');
     expect(html).not.toContain('data-variant="primary"');
@@ -158,14 +158,14 @@ describe('IndexPage', () => {
   it('prints nothing in the figure slot of a school with no data', () => {
     h.search = {};
     const html = withClient(seedIndex([school('duke'), school('quiet', { reported: null })]), <IndexPage />);
-    expect(html).toContain('href="/rmh-medschool/quiet"');
+    expect(html).toContain('href="/med/quiet"');
     expect(html).not.toContain('No reported invites');
     expect(html.match(/reported invites/g)).toHaveLength(1);
   });
   it('shows the empty state for no schools', () => {
     h.search = {};
     const html = withClient(seedIndex([]), <IndexPage />);
-    expect(html).not.toContain('/rmh-medschool/duke');
+    expect(html).not.toContain('/med/duke');
     expect(html).toContain('No schools match.');
   });
 
@@ -181,7 +181,7 @@ describe('IndexPage', () => {
         <IndexPage />
       </QueryClientProvider>,
     );
-    expect(html).toContain('href="/rmh-medschool/duke"');
+    expect(html).toContain('href="/med/duke"');
     expect(html.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(1);
     expect(html).toContain('Filters from your preferences.');
     expect(qc.getQueryData(schoolsQuery({}).queryKey)).toBeUndefined();
@@ -222,10 +222,10 @@ describe('IndexPage', () => {
         <IndexPage />
       </QueryClientProvider>,
     );
-    expect(html).toContain('href="/rmh-medschool/duke"');
-    expect(html).toContain('href="/rmh-medschool/wake"');
-    expect(html).not.toContain('href="/rmh-medschool/unc"');
-    expect(html).not.toContain('href="/rmh-medschool/ecu"');
+    expect(html).toContain('href="/med/duke"');
+    expect(html).toContain('href="/med/wake"');
+    expect(html).not.toContain('href="/med/unc"');
+    expect(html).not.toContain('href="/med/ecu"');
     expect(qc.getQueryCache().findAll({ queryKey: ['medschools', 'schools'] })).toHaveLength(1);
     h.session = null;
   });
@@ -233,8 +233,8 @@ describe('IndexPage', () => {
     h.search = { list: 'all' };
     h.session = null;
     const html = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
-    expect(html).toContain('href="/rmh-medschool/duke"');
-    expect(html).toContain('href="/rmh-medschool/unc"');
+    expect(html).toContain('href="/med/duke"');
+    expect(html).toContain('href="/med/unc"');
     expect(html).toContain('This link filters to a saved list.');
   });
 
@@ -243,13 +243,13 @@ describe('IndexPage', () => {
     h.session = { user: { id: 'u1' } };
     const signedIn = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
     expect(signedIn.match(/aria-label="Save [a-z]+ University School of Medicine to a list"/g)).toHaveLength(2);
-    expect(signedIn).toContain('href="/rmh-medschool/tracker"');
-    expect(signedIn).toContain('href="/rmh-medschool/lists"');
-    expect(signedIn).toContain('href="/rmh-medschool/ask"');
+    expect(signedIn).toContain('href="/med/tracker"');
+    expect(signedIn).toContain('href="/med/lists"');
+    expect(signedIn).toContain('href="/med/ask"');
     h.session = null;
     const out = withClient(seedIndex([school('duke'), school('unc')]), <IndexPage />);
     expect(out).not.toContain('to a list');
-    expect(out).not.toContain('href="/rmh-medschool/tracker"');
+    expect(out).not.toContain('href="/med/tracker"');
   });
 });
 
@@ -286,7 +286,7 @@ describe('LivePage', () => {
     );
     expect(html).toContain('Interview invite');
     expect(html).toContain('Withdrawn');
-    expect(html).toContain('href="/rmh-medschool/duke"');
+    expect(html).toContain('href="/med/duke"');
     expect(html).toContain('Program not reported');
     expect(html).toContain('MD · Durham, NC');
     expect(html).toContain('Admit.org');
@@ -344,11 +344,11 @@ describe('LivePage', () => {
 
 describe('route files', () => {
   for (const [file, path, parser, component] of [
-    ['index', '/rmh-medschool/', 'validateIndexSearch', 'IndexPage'],
-    ['live', '/rmh-medschool/live', 'validateLiveSearch', 'LivePage'],
+    ['index', '/med/', 'validateIndexSearch', 'IndexPage'],
+    ['live', '/med/live', 'validateLiveSearch', 'LivePage'],
   ] as const) {
     it(`${file}.tsx is a thin route`, () => {
-      const src = squash(root(`../../../app/routes/rmh-medschool/${file}.tsx`));
+      const src = squash(root(`../../../app/routes/med/${file}.tsx`));
       expect(src).toContain(`createFileRoute('${path}')`);
       expect(src).toContain('head:definePage(');
       expect(src).toContain(`validateSearch:${parser}`);
@@ -363,7 +363,7 @@ describe('route files', () => {
 
   it('every public loader awaits the private prefs first, then prefetches public queries with explicit parameters', () => {
     for (const file of ['index', 'live', '$slug']) {
-      const src = root(`../../../app/routes/rmh-medschool/${file}.tsx`);
+      const src = root(`../../../app/routes/med/${file}.tsx`);
       const at = src.indexOf('loadPrefs(');
       expect(at, file).toBeGreaterThan(-1);
       expect(src.indexOf('await loadPrefs(') < src.search(/prefetch\w*\(|loadSchoolHead\(/), file).toBe(true);
@@ -382,18 +382,18 @@ describe('route files', () => {
 
   it('/tracker and /lists have their own route files next to $slug', () => {
     for (const f of ['tracker', 'lists', 'ask', '$slug']) {
-      expect(() => root(`../../../app/routes/rmh-medschool/${f}.tsx`)).not.toThrow();
+      expect(() => root(`../../../app/routes/med/${f}.tsx`)).not.toThrow();
     }
   });
 });
 
-describe('/rmh-medschool/ask', () => {
+describe('/med/ask', () => {
   it('is a noindex route that is in no sitemap list and no Services hub', () => {
-    const route = root('../../../app/routes/rmh-medschool/ask.tsx');
+    const route = root('../../../app/routes/med/ask.tsx');
     expect(route).toContain('noIndex: true');
     expect(route).toContain('definePage');
-    expect(root('../../../lib/sitemap.ts')).toContain("'/rmh-medschool/ask': 'personal'");
-    expect(root('../../../app/routes/_site/services/index.tsx')).not.toContain('/rmh-medschool/ask');
+    expect(root('../../../lib/sitemap.ts')).toContain("'/med/ask': 'personal'");
+    expect(root('../../../app/routes/_site/services/index.tsx')).not.toContain('/med/ask');
   });
 
   it('parseAskSearch fills but never submits: a clean q of at most 400 characters', () => {

@@ -94,7 +94,8 @@ export async function submitLimitRequest(
   now: Date = new Date(),
 ): Promise<MedQaLimitRequestStateRes> {
   const current = await getLimitRequestState(userId, isAdmin, now);
-  if (current.state === 'not-needed' || current.state === 'approved') throw new AppError('MEDSCHOOLS_QA_LIMIT_NOT_NEEDED');
+  if (current.state === 'not-needed' || current.state === 'approved')
+    throw new AppError('MEDSCHOOLS_QA_LIMIT_NOT_NEEDED');
   if (current.state === 'pending') throw new AppError('MEDSCHOOLS_QA_LIMIT_PENDING');
   if (current.state === 'declined') throw new AppError('MEDSCHOOLS_QA_LIMIT_WAIT');
   try {
@@ -152,8 +153,16 @@ export async function listLimitRequests(): Promise<{
   recent: MedQaLimitRequestRowDto[];
 }> {
   const [pending, active, declined, revoked] = await Promise.all([
-    prisma.medQaLimitRequest.findMany({ where: { status: 'PENDING' }, orderBy: { createdAt: 'asc' }, select: ROW_SELECT }),
-    prisma.medQaLimitRequest.findMany({ where: { status: 'APPROVED' }, orderBy: { decidedAt: 'desc' }, select: ROW_SELECT }),
+    prisma.medQaLimitRequest.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      select: ROW_SELECT,
+    }),
+    prisma.medQaLimitRequest.findMany({
+      where: { status: 'APPROVED' },
+      orderBy: { decidedAt: 'desc' },
+      select: ROW_SELECT,
+    }),
     prisma.medQaLimitRequest.findMany({
       where: { status: 'DECLINED' },
       orderBy: { decidedAt: 'desc' },
@@ -169,7 +178,11 @@ export async function listLimitRequests(): Promise<{
   ]);
   const when = (r: DbRow) => (r.revokedAt ?? r.decidedAt ?? r.createdAt).getTime();
   const recent = ([...declined, ...revoked] as DbRow[]).sort((a, b) => when(b) - when(a)).slice(0, RECENT);
-  return { pending: (pending as DbRow[]).map(toDto), active: (active as DbRow[]).map(toDto), recent: recent.map(toDto) };
+  return {
+    pending: (pending as DbRow[]).map(toDto),
+    active: (active as DbRow[]).map(toDto),
+    recent: recent.map(toDto),
+  };
 }
 
 export type LimitAction = 'approve' | 'decline' | 'revoke';
@@ -219,7 +232,7 @@ export async function decideLimitRequest(
       entityType: 'medschools-qa-limit',
       entityId: input.id,
       preview: note ? notice(`${key}-note`, { note }) : notice(key, {}),
-      link: '/rmh-medschool/ask',
+      link: '/med/ask',
     }),
   ).catch(() => {});
 }

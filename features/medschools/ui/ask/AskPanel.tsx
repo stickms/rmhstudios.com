@@ -48,9 +48,9 @@ function PendingView({ think }: { think: boolean }) {
  * (`?q=`) so it is not lost on the way through the sign-in screen.
  */
 export function signInReturnPath(slug: string | undefined, question: string): string {
-  if (slug) return `/rmh-medschool/${encodeURIComponent(slug)}#ask`;
+  if (slug) return `/med/${encodeURIComponent(slug)}#ask`;
   const q = question.trim();
-  return q ? `/rmh-medschool/ask?q=${encodeURIComponent(q)}` : '/rmh-medschool/ask';
+  return q ? `/med/ask?q=${encodeURIComponent(q)}` : '/med/ask';
 }
 
 /**

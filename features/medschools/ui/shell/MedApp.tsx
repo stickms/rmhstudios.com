@@ -12,7 +12,7 @@ import { useMedModeRoot } from './useMedMode';
 const ActivityRail = lazy(() => import('../rail/ActivityRail'));
 
 /**
- * The full-screen app frame for every `/rmh-medschool` page (the layout route `app/routes/rmh-medschool.tsx` renders it
+ * The full-screen app frame for every `/med` page (the layout route `app/routes/med.tsx` renders it
  * around its `<Outlet/>`). It replaces the `_site` shell: the Steel shell, its margin column and its overlays are not
  * here, so this frame mounts what a public page still needs from them: the cookie notice, the toaster (AppShell), and
  * the live rail that used to sit in the shell's margin.

@@ -12,7 +12,7 @@ export function PrefsNote({ fromPrefs }: { fromPrefs: boolean }) {
   return (
     <p className="medapp-note">
       {t('prefs-from-note', { defaultValue: 'Filters from your preferences.' })}{' '}
-      <Link to="/rmh-medschool/lists" hash="preferences" className="medapp-link">
+      <Link to="/med/lists" hash="preferences" className="medapp-link">
         {t('prefs-from-link', { defaultValue: 'Change preferences' })}
       </Link>
     </p>

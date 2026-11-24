@@ -18,7 +18,14 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { Client, closeDb, db } from './lib/client';
 import { createFreshMember, removeFreshMembers, type FreshMember } from './lib/fresh-member';
-import { FAKE_REASONING, startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
+import {
+  FAKE_REASONING,
+  startFakeDeepseek,
+  userJson,
+  type FakeCall,
+  type FakeDeepseek,
+  type FakeScript,
+} from './lib/fake-deepseek';
 import {
   ASK_INJECTION,
   MEDSCHOOL_FIXTURE_SLUG,
@@ -191,7 +198,7 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
       expect(shownRefs.has(cit.ref)).toBe(true);
       expect(cited.has(cit.ref)).toBe(true);
       expect(cit.schoolSlug).toBe(MEDSCHOOL_FIXTURE_SLUG);
-      expect(cit.href).toMatch(new RegExp(`^/rmh-medschool/${MEDSCHOOL_FIXTURE_SLUG}\\?tab=`));
+      expect(cit.href).toMatch(new RegExp(`^/med/${MEDSCHOOL_FIXTURE_SLUG}\\?tab=`));
     }
     for (const ref of cited) expect(res.body.citations.some((x) => x.ref === ref)).toBe(true);
     // The CycleTrack figure was shown; the RMH cell (99 on 2 contributors, never published) was not.
