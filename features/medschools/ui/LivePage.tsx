@@ -107,7 +107,9 @@ export function LivePage() {
         <PrefsNote fromPrefs={view.fromPrefs} />
       </div>
       {/* One feed across filter changes: the old rows stay, dimmed, until the new filter's first page replaces them. */}
-      <LiveList filters={filters} />
+      <div className="medapp-fill">
+        <LiveList filters={filters} />
+      </div>
     </>
   );
 }

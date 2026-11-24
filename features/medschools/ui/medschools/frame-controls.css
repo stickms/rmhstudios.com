@@ -170,6 +170,35 @@
   max-block-size: calc(100dvh - 32px);
   overflow-y: auto;
 }
+/* The two columns end on one line (owner 2026-11-24). From 1280px the grid is at least the viewport's height (less the
+   frame's padding), the main column's page and its list panel (`.medapp-fill`) grow to its foot, and the rail is the
+   main column's height: size containment keeps the rail's own rows from setting the row's height, and its panel is
+   that height, capped at the viewport while it sticks on a long page, so it reaches the main column's foot on a
+   short page and stops there on a long one. */
+@media (min-width: 1280px) {
+  .medapp-grid {
+    min-block-size: calc(100dvh - var(--app-med-space-3) - var(--app-med-space-7));
+  }
+  .medapp-main {
+    flex: 1 0 auto;
+  }
+  .medapp-rail {
+    contain: size;
+  }
+  .medapp-rail .medapp-panel--rail {
+    box-sizing: border-box;
+    block-size: min(calc(100dvh - 32px), 100%);
+  }
+  .medapp-fill,
+  .medapp-fill > .medapp-swap {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .medapp-fill > .medapp-swap > .medapp-panel:first-child {
+    flex: 1 0 auto;
+  }
+}
 /* A page's sections, 32px apart (40 from 768px): the same rhythm as the main column, for a page whose body is one
    element (a skeleton swap). */
 .medapp-sections {
