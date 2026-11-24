@@ -332,10 +332,12 @@ describe('LivePage', () => {
       programs: 'md,do',
     });
   });
-  it('uses mergeLiveHead and refetches every 60 s', () => {
+  it('uses mergeLiveHead, refetches on the live signal and polls (60 s, 5 min while the stream is up)', () => {
     const src = root('./useLiveFeed.ts');
     expect(src).toContain('mergeLiveHead');
-    expect(squash(src)).toContain('refetchInterval:60_000');
+    expect(squash(src)).toContain('constconnected=useLiveSignal(enabled)');
+    expect(squash(src)).toContain('refetchInterval:livePollInterval(connected)');
+    expect(squash(root('./useLiveSignal.ts'))).toContain('LIVE_POLL_FALLBACK_MS=60_000');
     expect(squash(src)).toContain('refetchIntervalInBackground:false');
     // A gap between the fetched head and the old rows drops the older pages.
     expect(src).toContain('merged.gap');

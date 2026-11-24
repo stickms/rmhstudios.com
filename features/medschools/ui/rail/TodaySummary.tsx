@@ -26,6 +26,7 @@ import { StatusText } from '../status/StatusText';
 import { statusOfEvent } from '../status/status';
 import { useEffectiveView } from '../useEffectiveView';
 import { TodaySkeleton } from './TodaySkeleton';
+import { livePollInterval, useLiveSignal } from '../useLiveSignal';
 import { memberSlugs, yourSchools } from './your-schools';
 
 /**
@@ -45,10 +46,12 @@ export default function TodaySummary({ enabled }: { enabled: boolean }) {
     ...(programs ? { programs } : {}),
     ...(search.states?.length ? { state: search.states.join(',') } : {}),
   };
+  // The live signal refreshes the summary (and "Your schools", through the school list); only from 1280px.
+  const connected = useLiveSignal(enabled);
   const query = useQuery({
     ...liveSummaryQuery(filters),
     enabled,
-    refetchInterval: 60_000,
+    refetchInterval: livePollInterval(connected),
     refetchIntervalInBackground: false,
   });
   const data = query.data;

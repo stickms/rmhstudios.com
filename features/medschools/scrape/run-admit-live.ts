@@ -21,6 +21,7 @@ import {
 import { ensureAdmitRekey } from './admit-rekey';
 import { rollupEventCounts } from './rollup-events';
 import type { Logger, MedPrisma } from './types';
+import { signalNewLiveEvents } from '../live-signal.server';
 
 export interface AdmitLiveDeps {
   prisma: MedPrisma;
@@ -288,6 +289,8 @@ export async function runAdmitLive(
 
     // Diffing against the stored counts makes unchanged cells a no-op, so this is safe on every run.
     const res = await commitAdmitEvents(prisma, candidates, stored);
+    // Committed: the open live pages refetch on this bare, coalesced signal (it never fails the run).
+    signalNewLiveEvents(res.newestCreated);
     summary.created = res.created;
     summary.moved = res.moved;
     if (res.touched.length > 0)

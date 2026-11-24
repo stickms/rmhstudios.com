@@ -16,6 +16,7 @@ import type { Logger, MedPrisma, MedSdnThreadRow } from '../types';
 import type { BudgetGate } from './budget';
 import { chunkPosts, extractBatch, type ExtractedPost, type ExtractRejected, type SdnAi } from './extract';
 import type { PromptSink } from './secondaries';
+import { newestOf, signalNewLiveEvents } from '../../live-signal.server';
 
 export interface RunLimits {
   maxPages: number;
@@ -243,6 +244,8 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
         qs: qs.count,
       };
     });
+    // After the transaction commits: a page that refetches on the signal must find the rows. Coalesced, never throws.
+    if (counts.ev > 0) signalNewLiveEvents(newestOf(events.map((e) => e.occurredAt as Date)));
     eventsCreated += counts.ev;
     questionsCreated += counts.qs;
     for (const [k, c] of cells) touched.set(`${thread.schoolId}|${k}`, c);
