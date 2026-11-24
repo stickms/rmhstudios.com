@@ -63,6 +63,7 @@
   "concierge-error": "Couldn't reach the guide. Try again.",
   "concierge-input-label": "Your question for the concierge",
   "concierge-placeholder": "Ask about RMH Studios…",
+  "concierge-suggestions": "Suggested questions",
   "concierge-send": "Send",
   "concierge-signin": "Sign in to ask the concierge.",
   "concierge-slow": "Slow down a moment and try again.",

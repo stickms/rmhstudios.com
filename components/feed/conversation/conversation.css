@@ -20,6 +20,13 @@
   .conversation {
     block-size: calc(100svh - 26px - 64px);
   }
+  /* Help (owner, 2026-11-24): the question field ends as far from the bottom of the window as the title starts from the
+     top. The column grows by the 50px it gave up to `.site-main`'s 64px bottom padding and gives it back as a negative
+     margin, so the page does not scroll: 14px is left below the field's own 12px, 26px in all. */
+  .conversation--flush-bottom {
+    block-size: calc(100svh - 26px - 14px);
+    margin-block-end: -50px;
+  }
 }
 
 .conversation__head {
