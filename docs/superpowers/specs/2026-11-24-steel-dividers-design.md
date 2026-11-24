@@ -56,8 +56,8 @@ never wrote down, ships it as shared primitives, and moves pages onto it.
   activity) sit side by side only where the container is at least `@3xl`: a 1px vertical rule centred in a 1.5rem gap
   between the columns. Below `@3xl` they stack, and a horizontal rule takes the vertical rule's place.
   *Ruling made during implementation:* the `3-2` ratio splits the columns exactly 3:2 by flex-grow, and the rule is a
-  `::before` centred in the gap (not `border-s` with `ps-6`). This is reversible in one CSS rule (the `::before` block in
-  `app/styles/steel-rules.css`).
+  `::before` centred in the gap (not `border-s` with `ps-6`). This is reversible with a two-rule change in
+  `app/styles/steel-rules.css` (the `::before` block and the `column-gap` on `.rule-cols`).
 - **S9 Cells.** A grid of tiles (Games and apps, Shop, Library shelves) puts 1px rules between cells, not boxes
   around them: a rule below every row but the last and a vertical rule between columns, never at the outer edge. The
   picture inside a tile keeps S4.
