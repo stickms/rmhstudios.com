@@ -114,11 +114,11 @@ import { dataSaverFromRequest } from '../../lib/data-saver-request';
  *                   returns `null` outright for a signed-out visitor. This is
  *                   the entry to re-audit first if this list ever goes wrong.
  *   `/rmh-research/reports/optimization` app/routes/rmh-research_.reports.optimization.tsx — static `OptimizationPage`.
- *   `/security`     app/routes/security.tsx — static `SecurityPage`.
- *   `/privacy`      app/routes/privacy.tsx      ┐ all four are `LegalLayout` +
- *   `/terms`        app/routes/terms.tsx        │ literal `t()` strings, no
- *   `/cookies`      app/routes/cookies.tsx      │ loader and no session.
- *   `/copyright`    app/routes/copyright.tsx    ┘
+ *   `/security`     app/routes/_site/security.tsx — static `SecurityPage`.
+ *   `/privacy`      app/routes/_site/privacy.tsx ┐ all four are `LegalLayout` +
+ *   `/terms`        app/routes/_site/terms.tsx   │ literal `t()` strings, no
+ *   `/cookies`      app/routes/_site/cookies.tsx │ loader and no session.
+ *   `/copyright`    app/routes/_site/copyright.tsx ┘
  *
  * Deliberately NOT here:
  *   `/apps`  — app/routes/_site/apps/index.tsx throws `redirect({ to: '/games',

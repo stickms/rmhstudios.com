@@ -36,7 +36,7 @@ export function RoadmapSection() {
           is content-true. `content-visibility:auto` on each era keeps ~30
           sections cheap to render. */}
       <div className="relative border-t border-site-border px-4 pb-8 pt-10">
-        <div className="space-y-10">
+        <div>
           {roadmap.map((section) => (
             <EraSection key={section.year} section={section} />
           ))}

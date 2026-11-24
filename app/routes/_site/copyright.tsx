@@ -3,7 +3,7 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
-export const Route = createFileRoute('/copyright')({
+export const Route = createFileRoute('/_site/copyright')({
   // Static text: the first load ships no JavaScript (lib/static-document.ts).
   staticData: { staticDocument: true },
   head: () => ({
