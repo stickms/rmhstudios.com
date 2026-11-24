@@ -120,8 +120,7 @@ function AlbumCard({ album }: { album: Album }) {
         params={{
           albumId: album.id,
         }}
-        className="lib-album surface-press lib-orbit-card"
-        data-library-orbit=""
+        className="lib-album"
         aria-label={t('open-album', {
           title: album.title,
           defaultValue: 'Open {{title}}',

@@ -2,14 +2,15 @@
  * LibraryBlogRow — the devlog/blog strip at the top of the combined library page.
  *
  * Blog entries used to live on their own /blog page; they now lead the library
- * as a single horizontally-scrolling row (most recent on the left), with the
- * collections and book shelves below. Each card links to the full entry at
+ * as text rows on rules (most recent first, three across on a wide page), with the
+ * collections and book shelves below. Each row links to the full entry at
  * /blog/$slug.
  */
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
 import type { Post } from '@/lib/blog';
+import { Cells } from '@/components/ui/rules';
 import { useReveal } from './LibraryReveal';
 import { useLiquidLink } from '@/hooks/useLiquidLink';
 import { liquidVTName } from '@/lib/view-transition';
@@ -38,48 +39,48 @@ export function LibraryBlogRow({ posts, query = '' }: { posts: Partial<Post>[]; 
           })}
         </h2>
       </div>
-      <div className="lib-blog__row" role="list">
+      <Cells columns={3} className="lib-blog__row">
         {visible.map((post) => (
           <BlogCard key={post.slug} post={post} />
         ))}
-      </div>
+      </Cells>
     </section>
   );
 }
 
-function BlogCard({ post }: { post: Partial<Post> }) {
+function BlogCard({ post, ...rest }: { post: Partial<Post>; 'data-last-row'?: string }) {
   const revealRef = useReveal();
   const liquidOpen = useLiquidLink();
   const slug = post.slug ?? '';
   return (
-    <Link
-      ref={revealRef}
-      to={`/blog/${post.slug}` as string}
-      // §5.48: liquidly expand the card into the article header on click.
-      onClick={(e) =>
-        liquidOpen(e, liquidVTName('blog', slug), {
-          to: `/blog/${slug}`,
-        })
-      }
-      className="lib-blog__card lib-reveal surface-press lib-orbit-card"
-      data-library-orbit=""
-      role="listitem"
-    >
-      {post.tags && post.tags.length > 0 && (
-        <div className="lib-blog__tags">
-          {post.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="lib-blog__tag">
-              {tag}
-            </span>
-          ))}
+    <li {...rest}>
+      <Link
+        ref={revealRef}
+        to={`/blog/${post.slug}` as string}
+        // §5.48: liquidly expand the row into the article header on click.
+        onClick={(e) =>
+          liquidOpen(e, liquidVTName('blog', slug), {
+            to: `/blog/${slug}`,
+          })
+        }
+        className="lib-blog__card lib-reveal row-hover"
+      >
+        {post.tags && post.tags.length > 0 && (
+          <div className="lib-blog__tags">
+            {post.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="lib-blog__tag">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+        <h3 className="lib-blog__title">{post.title}</h3>
+        {post.description && <p className="lib-blog__desc">{post.description}</p>}
+        <div className="lib-blog__date">
+          <Calendar size={12} aria-hidden="true" />
+          <span>{post.date}</span>
         </div>
-      )}
-      <h3 className="lib-blog__title">{post.title}</h3>
-      {post.description && <p className="lib-blog__desc">{post.description}</p>}
-      <div className="lib-blog__date">
-        <Calendar size={12} aria-hidden="true" />
-        <span>{post.date}</span>
-      </div>
-    </Link>
+      </Link>
+    </li>
   );
 }
