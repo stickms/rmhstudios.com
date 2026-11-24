@@ -1,8 +1,8 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { MedButton } from '../controls/MedButton';
+import { MedSwitch } from '../controls/MedSwitch';
+import { MedTextarea } from '../controls/MedField';
 import { suggestionsFor } from './suggestions';
 
 export const QUESTION_MAX = 400;
@@ -87,22 +87,21 @@ export function AskForm({
         if (canAsk) onSubmit();
       }}
     >
-      <label htmlFor={id} className="t-label">
+      <label htmlFor={id} className="medapp-label">
         {t('ask-field-label', { defaultValue: 'Your question' })}
       </label>
-      <Textarea
+      <MedTextarea
         id={id}
         value={question}
         maxLength={QUESTION_MAX}
         rows={3}
-        className="min-h-20"
         disabled={pending}
         onChange={(e) => onQuestion(e.target.value)}
         aria-describedby={`${id}-count`}
       />
       {thinkingAvailable && onThink ? (
         <div className="flex items-start gap-3">
-          <Switch
+          <MedSwitch
             id={`${id}-think`}
             checked={think}
             onCheckedChange={onThink}
@@ -111,25 +110,27 @@ export function AskForm({
             aria-describedby={`${id}-think-help`}
           />
           <div className="flex min-w-0 flex-col">
-            <span id={`${id}-think-label`} className="t-label">
+            <span id={`${id}-think-label`} className="medapp-label">
               {t('ask-think-label', { defaultValue: 'Think it through' })}
             </span>
-            <span id={`${id}-think-help`} className="t-meta">
-              {t('ask-think-help-90s', { defaultValue: 'Slower, more careful answer. Can take up to a minute and a half.' })}
+            <span id={`${id}-think-help`} className="medapp-meta">
+              {t('ask-think-help-90s', {
+                defaultValue: 'Slower, more careful answer. Can take up to a minute and a half.',
+              })}
             </span>
           </div>
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button type="submit" variant="primary" loading={pending} disabled={!canAsk && !pending}>
+        <MedButton type="submit" variant="primary" loading={pending} disabled={!canAsk && !pending}>
           {t('ask-submit', { defaultValue: 'Ask' })}
-        </Button>
+        </MedButton>
         {pending ? (
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <MedButton type="button" variant="ghost" onClick={onCancel}>
             {t('ask-cancel', { defaultValue: 'Cancel' })}
-          </Button>
+          </MedButton>
         ) : null}
-        <p id={`${id}-count`} className="t-meta m-0 ms-auto">
+        <p id={`${id}-count`} className="medapp-meta ms-auto">
           {t('ask-char-count', {
             defaultValue: '{{n}} of {{max}}',
             n: iso(question.length),
@@ -138,11 +139,11 @@ export function AskForm({
         </p>
       </div>
       {admin ? (
-        <p className="t-meta m-0" data-testid="ask-remaining">
+        <p className="medapp-meta" data-testid="ask-remaining">
           {t('ask-admin-unlimited', { defaultValue: 'Admin: no daily limit' })}
         </p>
       ) : remaining !== null && cap !== null ? (
-        <p className="t-meta m-0" data-testid="ask-remaining">
+        <p className="medapp-meta" data-testid="ask-remaining">
           {t('ask-remaining', {
             defaultValue: '{{n}} of {{cap}} questions left today',
             n: iso(remaining),
@@ -151,26 +152,26 @@ export function AskForm({
         </p>
       ) : null}
       {!configured ? (
-        <p className="t-meta m-0" role="status">
+        <p className="medapp-meta" role="status">
           {t('ask-unconfigured', { defaultValue: 'Questions are not available right now.' })}
         </p>
       ) : null}
-      <p className="t-meta m-0">
+      <p className="medapp-meta">
         {t('ask-privacy', {
           defaultValue: 'Your question is sent to our AI provider to write the answer. RMH does not keep it.',
         })}
       </p>
       {showSuggestions ? (
         <div>
-          <p className="t-label m-0 mt-2">{t('ask-suggest-heading', { defaultValue: 'Try one' })}</p>
-          <ul className="m-0 mt-1 list-none border-t border-site-border p-0">
+          <p className="medapp-label mt-2">{t('ask-suggest-heading', { defaultValue: 'Try one' })}</p>
+          <ul className="medapp-list mt-1">
             {suggestionsFor(pinned).map((s) => {
               const text = suggestionText(s.key);
               return (
-                <li key={s.key} className="border-b border-site-border">
+                <li key={s.key} className="medapp-list__pick">
                   <button
                     type="button"
-                    className="t-body min-h-11 w-full py-2 text-start hover:bg-site-bg-subtle disabled:opacity-45"
+                    className="medapp-pick medapp-text"
                     disabled={pending}
                     onClick={() => onQuestion(text)}
                   >

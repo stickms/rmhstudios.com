@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Select } from '@/components/ui/select';
+import { MedSelect } from '../controls/MedSelect';
 import { CHARTED_TYPES } from '../../engine/public-read';
 import { ALL_PROGRAMS, normalizePrograms, type ProgramKey } from '../../engine/programs';
 import type { Prefs } from '../../engine/prefs';
@@ -39,28 +39,31 @@ export function PrefsSection({
   });
 
   return (
-    <section id="preferences" aria-labelledby="medschools-prefs-heading" className="flex flex-col scroll-mt-6">
-      <h2 id="medschools-prefs-heading" className="t-heading m-0 border-b border-site-border pb-2">
+    <section
+      id="preferences"
+      aria-labelledby="medschools-prefs-heading"
+      className="medapp-section medapp-section--panel scroll-mt-6"
+    >
+      <h2 id="medschools-prefs-heading" className="medapp-h2 border-b border-app-border pb-2">
         {t('prefs-heading', { defaultValue: 'Preferences' })}
       </h2>
-      <p className="t-meta m-0 mt-2">
+      <p className="medapp-meta mt-2">
         {t('prefs-note', {
           defaultValue: "These fill in a page's defaults only when its address does not say otherwise.",
         })}
       </p>
 
-      <div className="flex flex-col gap-2 border-b border-site-border py-3">
-        <span className="t-label">{t('prefs-programs', { defaultValue: 'Programs' })}</span>
+      <div className="flex flex-col gap-2 border-b border-app-border py-3">
+        <span className="medapp-label">{t('prefs-programs', { defaultValue: 'Programs' })}</span>
         <ProgramSetToggles value={programs} onChange={(next) => onChange(draft({ programs: next }))} />
       </div>
 
-      <div className="flex flex-col gap-2 border-b border-site-border py-3">
-        <label className="t-label" htmlFor="medschools-pref-home">
+      <div className="flex flex-col gap-2 border-b border-app-border py-3">
+        <label className="medapp-label" htmlFor="medschools-pref-home">
           {t('prefs-home-state', { defaultValue: 'Home state' })}
         </label>
-        <Select
+        <MedSelect
           id="medschools-pref-home"
-          controlSize="sm"
           disabled={busy}
           value={prefs.homeState ?? ''}
           onChange={(e) => onChange(draft({ homeState: e.target.value || null }))}
@@ -71,11 +74,11 @@ export function PrefsSection({
               {c}
             </option>
           ))}
-        </Select>
+        </MedSelect>
       </div>
 
       <div className="flex flex-col gap-2 py-3">
-        <span className="t-label">{t('prefs-categories', { defaultValue: 'Chart categories' })}</span>
+        <span className="medapp-label">{t('prefs-categories', { defaultValue: 'Chart categories' })}</span>
         <CategoryToggles
           value={categories}
           onChange={(next) => onChange(draft({ chartCategories: next.length === CHARTED_TYPES.length ? [] : next }))}

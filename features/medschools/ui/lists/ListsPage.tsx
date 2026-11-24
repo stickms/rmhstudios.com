@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { MedButton } from '../controls/MedButton';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -27,6 +24,9 @@ import {
   type MedListDto,
 } from '../../medschools.contract';
 import { ME_KEY, listsQuery, prefsQuery } from '../../medschools.queries';
+import { MedEmpty } from '../MedEmpty';
+import { MedSignedOut } from '../MedSignedOut';
+import { PageHead } from '../shell/PageHead';
 import { SkeletonSwap } from '../skeletons';
 import { ListSection } from './ListSection';
 import { PrefsSection, type PrefsDraft } from './PrefsSection';
@@ -55,31 +55,29 @@ export function ListsPage() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [trackerNote, setTrackerNote] = useState<string | null>(null);
 
-  const title = t('lists-title', { defaultValue: 'My lists' });
-  const breadcrumbs = [
-    { label: t('index-title', { defaultValue: 'RMH Med Schools' }), to: '/rmh-medschool' },
-    { label: title },
-  ];
+  const head = <PageHead title={t('lists-title', { defaultValue: 'My lists' })} />;
   const expired = lists.error instanceof HttpError && lists.error.status === 401;
 
   if (!signedIn && isPending) {
     return (
-      <PageLayout title={title} breadcrumbs={breadcrumbs}>
+      <>
+        {head}
         <SkeletonSwap ready={false}>{null}</SkeletonSwap>
-      </PageLayout>
+      </>
     );
   }
   if (!signedIn || expired) {
     return (
-      <PageLayout title={title} breadcrumbs={breadcrumbs}>
-        <SignedOutPrompt
+      <>
+        {head}
+        <MedSignedOut
           title={t('lists-signed-out-title', { defaultValue: 'Sign in to keep lists' })}
           description={t('lists-signed-out-body', {
             defaultValue: 'Your lists and preferences are private to your account.',
           })}
           callbackURL="/rmh-medschool/lists"
         />
-      </PageLayout>
+      </>
     );
   }
 
@@ -186,32 +184,33 @@ export function ListsPage() {
   };
 
   return (
-    <PageLayout title={title} breadcrumbs={breadcrumbs}>
+    <>
+      {head}
       <div className="mb-4">
-        <Button variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
+        <MedButton variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
           {t('lists-new', { defaultValue: 'New list' })}
-        </Button>
+        </MedButton>
       </div>
       <SkeletonSwap ready={!!lists.data}>
         {stale ? (
-          <p className="t-meta m-0 mb-3" role="status">
+          <p className="medapp-meta mb-3" role="status">
             {t('lists-stale', { defaultValue: 'Your lists changed in another tab. Showing the current order.' })}
           </p>
         ) : null}
         {trackerNote ? (
-          <p className="t-meta m-0 mb-3" role="status">
+          <p className="medapp-meta mb-3" role="status">
             {trackerNote}
           </p>
         ) : null}
         {all.length === 0 ? (
-          <EmptyState
+          <MedEmpty
             title={t('lists-none-title', { defaultValue: 'No lists yet' })}
             description={t('lists-none-body', {
               defaultValue: 'Use the bookmark on a school to save it, or create a list first.',
             })}
           />
         ) : (
-          <div className="flex flex-col gap-10">
+          <div className="medapp-tab">
             {all.map((list, i) => (
               <ListSection
                 key={list.id}
@@ -242,6 +241,6 @@ export function ListsPage() {
       <div className="mt-10">
         <PrefsSection prefs={prefs.data ?? DEFAULT_VIEW_PREFS} busy={savingPrefs} onChange={(d) => void savePrefs(d)} />
       </div>
-    </PageLayout>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Switch } from '@/components/ui/switch';
+import { MedSwitch } from '../controls/MedSwitch';
 import { toast } from '@/lib/toast';
 import { errorField } from '@/lib/http';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -53,36 +53,36 @@ export function SharingRow({
   };
 
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-site-border py-4">
+    <div className="medapp-subrule flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <p id={labelId} className="t-body m-0 font-medium">
+        <p id={labelId} className="medapp-text font-medium">
           {t('share-label', { defaultValue: 'Share my milestones anonymously' })}
         </p>
-        <p id={noteId} className="t-meta m-0 mt-1">
+        <p id={noteId} className="medapp-meta mt-1">
           {t('share-explanation', {
             defaultValue:
               'When this is on, each milestone you add (secondary, interview invite, waitlist, rejection, acceptance, withdrawn, hold) is shared as one anonymous event: the school, the program, the type and the day. The public pages never link it to you. Your submission and completion dates and your home state are never shared, and a public figure appears only when at least 3 people reported the same thing on the same day. Public figures update once a day. Turn it off, or delete the milestone, and the event is removed at once; the public totals follow at the next daily update.',
           })}
         </p>
-        <p id={waitId} className="t-meta m-0 mt-2">
+        <p id={waitId} className="medapp-meta mt-2">
           {t('share-wait-note', {
             defaultValue:
               'When sharing is on, the time between your complete date and an invite also feeds an estimate shown for this school once at least 20 members contribute. Only the estimate is shown, never a date or a row.',
           })}
         </p>
-        <p className="t-meta m-0 mt-2">
+        <p className="medapp-meta mt-2">
           {t('share-turnaround-note', {
             defaultValue:
               'Your secondary received and submitted dates are never shared as events. When sharing is on, the days between them also feed a turnaround figure for the school, shown once at least 20 members contribute. Only that figure is shown, never a date or a row.',
           })}
         </p>
         {unavailable ? (
-          <p className="t-meta m-0 mt-2" role="status">
+          <p className="medapp-meta mt-2" role="status">
             {t('share-unavailable', { defaultValue: 'Sharing is unavailable right now.' })}
           </p>
         ) : null}
         {tooNew && !unavailable ? (
-          <p className="t-meta m-0 mt-2" role="status">
+          <p className="medapp-meta mt-2" role="status">
             {t('share-too-new', {
               defaultValue: 'Sharing needs an account at least {{days}} days old. You can turn it on once yours is.',
               days: SHARE_MIN_ACCOUNT_AGE_DAYS,
@@ -90,7 +90,7 @@ export function SharingRow({
           </p>
         ) : null}
       </div>
-      <Switch
+      <MedSwitch
         checked={checked}
         disabled={busy || unavailable || tooNew}
         onCheckedChange={(next) => void toggle(next)}

@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { Button } from '@/components/ui/button';
+import { MedButton } from './controls/MedButton';
 import { GENERAL_QUESTIONS, type GeneralCategory, type GeneralProgram } from '../engine/general-questions';
 import { generalQuestionText } from './general-question-text';
 import { OptionGroup } from './OptionGroup';
 import { PracticePanel } from './practice/PracticePanel';
+import { PageHead } from './shell/PageHead';
 
 /** /rmh-medschool/practice: the general, non-school questions by program, with practice mode. Readable signed out. */
 export function PracticePage() {
@@ -42,21 +42,15 @@ export function PracticePage() {
       })),
     [program, t],
   );
-  const title = t('practice-page-title', { defaultValue: 'Interview practice' });
   return (
-    <PageLayout
-      title={title}
-      breadcrumbs={[
-        { label: t('index-title', { defaultValue: 'RMH Med Schools' }), to: '/rmh-medschool' },
-        { label: title },
-      ]}
-    >
-      <p className="t-body m-0 mb-4 max-w-prose">
+    <>
+      <PageHead title={t('practice-page-title', { defaultValue: 'Interview practice' })} />
+      <p className="medapp-text mb-4 max-w-prose">
         {t('practice-page-intro', {
           defaultValue:
             'Questions an interviewer may ask at any school. Choose one, set a timer and answer out loud. For a school’s own reported questions, open its Interviews tab.',
         })}{' '}
-        <Link to="/rmh-medschool" className="underline">
+        <Link to="/rmh-medschool" className="medapp-link">
           {t('ask-browse', { defaultValue: 'Browse schools' })}
         </Link>
       </p>
@@ -75,25 +69,21 @@ export function PracticePage() {
         />
       </div>
       <PracticePanel questions={rows} selectKey={selected} />
-      <ul
-        className="m-0 mt-8 list-none border-t border-site-border p-0"
-        aria-label={t('practice-list-label', { defaultValue: 'All questions' })}
-      >
-        {rows.map((q) => (
-          <li
-            key={q.key}
-            className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-site-border py-2"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="t-body m-0 break-words">{q.text}</p>
-              <p className="t-meta m-0">{category(q.category)}</p>
-            </div>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(q.key)}>
-              {t('practice-this', { defaultValue: 'Practise this' })}
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </PageLayout>
+      <div className="medapp-panel mt-6">
+        <ul className="medapp-rows" aria-label={t('practice-list-label', { defaultValue: 'All questions' })}>
+          {rows.map((q) => (
+            <li key={q.key} className="medapp-row items-center justify-between">
+              <div className="medapp-row__body">
+                <p className="medapp-text break-words">{q.text}</p>
+                <p className="medapp-meta">{category(q.category)}</p>
+              </div>
+              <MedButton type="button" variant="ghost" onClick={() => setSelected(q.key)}>
+                {t('practice-this', { defaultValue: 'Practise this' })}
+              </MedButton>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { MedButton } from '../controls/MedButton';
+import { MedInput } from '../controls/MedField';
+import { MedSelect } from '../controls/MedSelect';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { milestoneDateWindow, unsetMilestoneTypes, type MilestoneType } from '../../engine/tracker';
 import { useMedLabels } from '../labels';
@@ -53,29 +53,28 @@ export function MilestoneForm({
 
   if (types.length === 0) {
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <p className="t-meta m-0">
+      <div className="medapp-chips mt-3 items-center">
+        <p className="medapp-meta">
           {t('tracker-milestones-all-set', { defaultValue: 'Every milestone is already set for this school.' })}
         </p>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+        <MedButton type="button" variant="ghost" onClick={onCancel}>
           {t('tracker-cancel', { defaultValue: 'Cancel' })}
-        </Button>
+        </MedButton>
       </div>
     );
   }
 
   return (
     <form
-      className="mt-3 flex flex-wrap items-end gap-2"
+      className="medapp-form mt-3"
       onSubmit={(e) => {
         e.preventDefault();
         if (date) void run(async () => onSave(type, date));
       }}
     >
-      <label className="flex flex-col gap-1">
-        <span className="t-label">{t('tracker-milestone-type', { defaultValue: 'Milestone' })}</span>
-        <Select
-          controlSize="sm"
+      <label className="medapp-fieldset">
+        <span className="medapp-label">{t('tracker-milestone-type', { defaultValue: 'Milestone' })}</span>
+        <MedSelect
           aria-label={t('tracker-milestone-type', { defaultValue: 'Milestone' })}
           value={type}
           disabled={!!editing || busy}
@@ -86,11 +85,11 @@ export function MilestoneForm({
               {milestoneLabel(ty)}
             </option>
           ))}
-        </Select>
+        </MedSelect>
       </label>
-      <label className="flex flex-col gap-1">
-        <span className="t-label">{t('tracker-milestone-date', { defaultValue: 'Date' })}</span>
-        <Input
+      <label className="medapp-fieldset">
+        <span className="medapp-label">{t('tracker-milestone-date', { defaultValue: 'Date' })}</span>
+        <MedInput
           type="date"
           required
           min={min}
@@ -98,14 +97,13 @@ export function MilestoneForm({
           value={date}
           disabled={busy}
           onChange={(e) => setDate(e.target.value)}
-          className="h-9 w-44 pointer-coarse:h-11"
         />
       </label>
-      <Button type="submit" loading={busy} disabled={!date}>
+      <MedButton type="submit" loading={busy} disabled={!date}>
         {t('tracker-save', { defaultValue: 'Save' })}
-      </Button>
+      </MedButton>
       {onRemove ? (
-        <Button
+        <MedButton
           type="button"
           variant="danger"
           disabled={busy}
@@ -113,13 +111,13 @@ export function MilestoneForm({
           onClick={() => void run(onRemove)}
         >
           {t('tracker-milestone-remove', { defaultValue: 'Remove' })}
-        </Button>
+        </MedButton>
       ) : null}
-      <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+      <MedButton type="button" variant="ghost" disabled={busy} onClick={onCancel}>
         {t('tracker-cancel', { defaultValue: 'Cancel' })}
-      </Button>
+      </MedButton>
       {error ? (
-        <p className="t-meta m-0 w-full" role="alert">
+        <p className="medapp-meta w-full" role="alert">
           {error}
         </p>
       ) : null}

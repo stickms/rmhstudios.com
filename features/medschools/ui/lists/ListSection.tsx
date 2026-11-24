@@ -2,8 +2,8 @@ import { useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { Button } from '@/components/ui/button';
-import { IconButton } from '@/components/ui/icon-button';
+import { MedButton } from '../controls/MedButton';
+import { MedIconButton } from '../controls/MedIconButton';
 import { MenuItem } from '@/components/ui/menu';
 import { SortableList } from '@/components/ui/sortable-list';
 import type { MedListDto } from '../../medschools.contract';
@@ -44,10 +44,10 @@ export function ListSection({
   const [menu, setMenu] = useState(false);
   const [adding, setAdding] = useState(false);
   return (
-    <section aria-label={list.name} className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2 border-b border-site-border pb-2">
-        <h2 className="t-heading m-0 w-full min-w-0 break-words sm:w-auto sm:flex-1">{list.name}</h2>
-        <span className="t-meta">
+    <section aria-label={list.name} className="medapp-section medapp-section--panel">
+      <div className="flex flex-wrap items-center gap-2 border-b border-app-border pb-3">
+        <h2 className="medapp-h2 w-full min-w-0 break-words sm:w-auto sm:flex-1">{list.name}</h2>
+        <span className="medapp-meta">
           {t('lists-count', {
             count: list.items.length,
             defaultValue_one: '{{count}} school',
@@ -55,9 +55,9 @@ export function ListSection({
             defaultValue: '{{count}} schools',
           })}
         </span>
-        <Button
+        <MedButton
           variant="ghost"
-          size="sm"
+
           loading={adding}
           disabled={list.items.length === 0}
           onClick={() => {
@@ -66,14 +66,13 @@ export function ListSection({
           }}
         >
           {t('lists-add-to-tracker', { defaultValue: 'Add this list to my tracker' })}
-        </Button>
-        <IconButton
+        </MedButton>
+        <MedIconButton
           ref={triggerRef}
           icon={MoreHorizontal}
           label={t('lists-actions', { defaultValue: 'Actions for {{name}}', name: list.name })}
           aria-haspopup="menu"
           aria-expanded={menu}
-          showTooltip={false}
           onClick={() => setMenu((v) => !v)}
         />
         <AnchoredMenu
@@ -125,7 +124,7 @@ export function ListSection({
         </AnchoredMenu>
       </div>
       {list.items.length === 0 ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('lists-empty', { defaultValue: 'No schools yet. Use the bookmark on a school to save it here.' })}
         </p>
       ) : (
@@ -136,8 +135,8 @@ export function ListSection({
           className="gap-0"
           // A phone has 288 px: the row's own side padding and the drag handle (the up and down buttons stay) would leave
           // the school name and the note about 150 px; the move buttons stack for the same reason.
-          rowClassName="px-0"
-          handleClassName="max-sm:hidden"
+          rowClassName="px-0 text-app-text"
+          handleClassName="max-sm:hidden text-app-text-muted"
           controlsClassName="max-sm:flex-col"
           renderItem={(item) => (
             <ListItemRow
@@ -148,8 +147,12 @@ export function ListSection({
           )}
         />
       )}
-      {list.items.length > 0 ? <RollingSection source={{ source: 'list', list: list.id }} /> : null}
-      {list.items.length > 0 ? <OverlapSection source={{ source: 'list', list: list.id }} /> : null}
+      {list.items.length > 0 ? (
+        <div className="medapp-disclosures">
+          <RollingSection source={{ source: 'list', list: list.id }} />
+          <OverlapSection source={{ source: 'list', list: list.id }} />
+        </div>
+      ) : null}
     </section>
   );
 }

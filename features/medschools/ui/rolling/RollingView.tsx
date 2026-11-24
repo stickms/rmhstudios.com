@@ -21,13 +21,13 @@ export function RollingView({
   const { t } = useTranslation('medschools');
   if (data.entries.length === 0) {
     return (
-      <p className="t-meta m-0">
+      <p className="medapp-meta">
         {t('rolling-empty', { defaultValue: 'Add schools to see what each one says about rolling decisions.' })}
       </p>
     );
   }
   return (
-    <ul className="m-0 list-none border-t border-site-border p-0">
+    <ul className="medapp-list">
       {data.entries.map((e) => (
         <Row key={`${e.slug}:${e.program}`} entry={e} school={school} tracker={data.source === 'tracker'} />
       ))}
@@ -64,21 +64,21 @@ function Row({
             })
           : t('rolling-says-unknown', { defaultValue: 'The school’s page does not say.' });
   return (
-    <li className="m-0 flex flex-col gap-1 border-b border-site-border py-3">
-      <p className="t-body m-0 break-words">
+    <li className="flex flex-col gap-1">
+      <p className="medapp-text break-words">
         <span className="font-medium">{school(e.slug, e.program, e.schoolName)}</span>
         {' · '}
         {program}
       </p>
-      <p className="t-body m-0">{says}</p>
+      <p className="medapp-text">{says}</p>
       {e.evidence ? (
-        <p className="t-meta m-0 break-words">
+        <p className="medapp-meta break-words">
           {t('admissions-quote', { defaultValue: '“{{text}}”', text: e.evidence })}
         </p>
       ) : null}
       {e.url && e.checkedOn ? (
-        <p className="t-meta m-0">
-          <a href={e.url} target="_blank" rel="noopener noreferrer" className="underline">
+        <p className="medapp-meta">
+          <a href={e.url} target="_blank" rel="noopener noreferrer" className="medapp-link">
             {t('admissions-source', {
               defaultValue: 'Source: {{school}} admissions page, checked {{date}}',
               school: e.schoolName,
@@ -88,7 +88,7 @@ function Row({
         </p>
       ) : null}
       {tracker && e.submitted === false ? (
-        <p className="t-meta m-0">{t('rolling-not-started', { defaultValue: 'No step recorded here yet.' })}</p>
+        <p className="medapp-meta">{t('rolling-not-started', { defaultValue: 'No step recorded here yet.' })}</p>
       ) : null}
     </li>
   );

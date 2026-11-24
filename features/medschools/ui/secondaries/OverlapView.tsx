@@ -23,7 +23,7 @@ export function OverlapView({
   const single = data.groups.filter((g) => g.schools < 2);
   if (data.groups.length === 0 && data.withoutPrompts.length === 0) {
     return (
-      <p className="t-meta m-0">
+      <p className="medapp-meta">
         {data.schoolCount === 0
           ? t('overlap-empty', { defaultValue: 'Add schools to see their prompts grouped by theme.' })
           : t('overlap-empty-prompts', { defaultValue: 'None of these schools has prompts on file yet.' })}
@@ -36,10 +36,8 @@ export function OverlapView({
         <Group key={g.theme} group={g} labels={labels} school={school} />
       ))}
       {single.length > 0 ? (
-        <details className="flex flex-col">
-          <summary className="t-body flex min-h-11 cursor-pointer items-center font-medium">
-            {t('overlap-single', { defaultValue: 'Asked by one school' })}
-          </summary>
+        <details className="medapp-disclosure">
+          <summary>{t('overlap-single', { defaultValue: 'Asked by one school' })}</summary>
           <div className="flex flex-col gap-6 pt-2">
             {single.map((g) => (
               <Group key={g.theme} group={g} labels={labels} school={school} />
@@ -48,7 +46,7 @@ export function OverlapView({
         </details>
       ) : null}
       {data.withoutPrompts.length > 0 ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('overlap-none-found', {
             defaultValue: 'No prompts found yet: {{names}}',
             names: data.withoutPrompts.map((s) => s.name).join(', '),
@@ -70,8 +68,8 @@ function Group({
 }) {
   const { t } = useTranslation('medschools');
   return (
-    <section className="flex flex-col gap-1">
-      <h3 className="t-heading m-0">
+    <section className="medapp-section">
+      <h3 className="medapp-h3">
         {t('overlap-group', {
           defaultValue: '{{theme}} · {{schools}}',
           theme: labels.theme(group.theme),
@@ -84,7 +82,7 @@ function Group({
         })}
       </h3>
       {group.shortestWords !== null && group.schools >= 2 ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('overlap-shortest', {
             defaultValue: 'Shortest limit: {{limit}}. Writing to that limit covers all {{n}}.',
             limit: labels.limit({ kind: 'WORDS', value: group.shortestWords }),
@@ -92,12 +90,12 @@ function Group({
           })}
         </p>
       ) : null}
-      <ul className="m-0 list-none border-t border-site-border p-0">
+      <ul className="medapp-list">
         {group.entries.map((e) => (
-          <li key={`${e.slug}-${e.promptId}`} className="m-0 flex flex-col gap-1 border-b border-site-border py-3">
-            <p className="t-body m-0 font-medium">{school(e.slug, e.program, e.schoolName)}</p>
-            <p className="t-body m-0 break-words">{e.text}</p>
-            <p className="t-meta m-0 flex flex-wrap gap-x-3">
+          <li key={`${e.slug}-${e.promptId}`} className="flex flex-col gap-1">
+            <p className="medapp-text font-medium">{school(e.slug, e.program, e.schoolName)}</p>
+            <p className="medapp-text break-words">{e.text}</p>
+            <p className="medapp-meta flex flex-wrap gap-x-3">
               {e.limit ? <span className="font-mono">{labels.limit(e.limit)}</span> : null}
               {e.optional ? <span>{labels.optional}</span> : null}
               {e.basis === 'last-cycle' ? (

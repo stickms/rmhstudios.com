@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { SearchField } from '@/components/ui/search-field';
+import { MedSearch } from './controls/MedSearch';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import type { InterviewProfileDto, MedSchoolDetailDto, MedSourceId, SchoolStatsDto } from '../medschools.contract';
 import { PRIMARY_ORDER } from '../engine/public-read';
@@ -266,7 +266,7 @@ function Questions({ detail }: { detail: MedSchoolDetailDto }) {
   const shown = needle ? all.filter((q) => q.text.toLowerCase().includes(needle)) : all;
   return (
     <div className="medapp-section">
-      <SearchField
+      <MedSearch
         aria-label={t('interviews-questions-search', { defaultValue: 'Search questions' })}
         placeholder={t('interviews-questions-search', { defaultValue: 'Search questions' })}
         maxLength={Q_MAX}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import { MedButton } from '../controls/MedButton';
 import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { rollingQuery } from '../../medschools.queries';
 import { SkeletonSwap } from '../skeletons';
@@ -26,24 +26,22 @@ export function RollingSection({
   const query = useQuery({ ...rollingQuery(source), enabled: open });
   const data = query.data;
   return (
-    <details className="border-b border-site-border" onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary className="t-body flex min-h-11 cursor-pointer items-center font-medium">
-        {t('rolling-title', { defaultValue: 'Where applying early matters' })}
-      </summary>
+    <details className="medapp-disclosure" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{t('rolling-title', { defaultValue: 'Where applying early matters' })}</summary>
       {open ? (
         <div className="flex flex-col gap-3 pb-4 pt-1">
-          <p className="t-meta m-0">
+          <p className="medapp-meta">
             {t('rolling-intro', {
               defaultValue:
                 'What each school’s own admissions page says about rolling decisions. At a school with rolling admissions, seats can fill as the cycle goes on.',
             })}
           </p>
           {query.isError ? (
-            <p className="t-meta m-0">
+            <p className="medapp-meta">
               {t('rolling-load-failed', { defaultValue: 'Could not load this.' })}{' '}
-              <Button variant="ghost" size="sm" onClick={() => void query.refetch()}>
+              <MedButton variant="ghost" onClick={() => void query.refetch()}>
                 {t('retry', { defaultValue: 'Try again' })}
-              </Button>
+              </MedButton>
             </p>
           ) : (
             <SkeletonSwap ready={!!data}>
@@ -59,7 +57,7 @@ export function RollingSection({
                         tab: 'secondaries' as const,
                         ...(program === 'PHD' ? { program: 'PHD' as const } : {}),
                       }}
-                      className="underline"
+                      className="medapp-link"
                     >
                       {name}
                     </Link>

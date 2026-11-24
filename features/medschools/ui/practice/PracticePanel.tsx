@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Textarea } from '@/components/ui/textarea';
+import { MedTextarea } from '../controls/MedField';
 import { FOLLOWUP_NOTES_MAX } from '../../engine/followups';
 import { pickNextIndex, pickRandomIndex } from '../../engine/practice';
 import { FollowupsSection } from './FollowupsSection';
@@ -73,7 +73,7 @@ export function PracticePanel({
             <label htmlFor={`${id}-notes`} className="medapp-label">
               {t('practice-notes-label', { defaultValue: 'Your notes' })}
             </label>
-            <Textarea
+            <MedTextarea
               id={`${id}-notes`}
               rows={5}
               value={notes}

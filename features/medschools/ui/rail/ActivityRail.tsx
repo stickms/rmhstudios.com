@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { SearchField } from '@/components/ui/search-field';
-import { Select } from '@/components/ui/select';
+import { MedSearch } from '../controls/MedSearch';
+import { MedSelect } from '../controls/MedSelect';
 import { ARRIVE } from '@/components/ui/arrive';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useSentinel } from '@/hooks/useSentinel';
@@ -63,7 +63,7 @@ export default function ActivityRail() {
           {t('rail-open', { defaultValue: 'Open live page' })}
         </Link>
       </div>
-      <SearchField
+      <MedSearch
         aria-label={t('rail-search-label', { defaultValue: 'Search activity' })}
         placeholder={t('rail-search-placeholder', { defaultValue: 'School or state' })}
         maxLength={Q_MAX}
@@ -73,8 +73,7 @@ export default function ActivityRail() {
           push(v);
         }}
       />
-      <Select
-        controlSize="sm"
+      <MedSelect
         aria-label={t('rail-kind-label', { defaultValue: 'Event' })}
         value={kind}
         onChange={(e) => setKind(e.target.value as Kind)}
@@ -86,7 +85,7 @@ export default function ActivityRail() {
           </option>
         ))}
         <option value="DECISIONS">{t('rail-kind-decisions', { defaultValue: 'Decisions' })}</option>
-      </Select>
+      </MedSelect>
       <ProgramSetToggles size="xs" className="gap-1" value={set} onChange={setPrograms} />
       {/* Keyed by the filters: a new filter set starts with its own rows and older pages. */}
       <RailFeed key={JSON.stringify(filters)} filters={filters} />

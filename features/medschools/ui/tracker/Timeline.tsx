@@ -22,28 +22,29 @@ export function Timeline({ applications }: { applications: readonly TrackerAppli
   const nf = new Intl.NumberFormat(locale);
 
   return (
-    <section className="mt-6" aria-labelledby="med-timeline-heading" data-timeline="">
-      <h2 id="med-timeline-heading" className="t-heading m-0">
+    <section
+      className="medapp-section medapp-section--panel mt-6"
+      aria-labelledby="med-timeline-heading"
+      data-timeline=""
+    >
+      <h2 id="med-timeline-heading" className="medapp-h2">
         {t('timeline-heading', { defaultValue: 'Timeline' })}
       </h2>
-      <p className="t-meta m-0 mt-1">
+      <p className="medapp-meta">
         {t('timeline-note', { defaultValue: 'Your own dates, oldest first. Only you can see this.' })}
       </p>
-      <ol className="m-0 mt-2 list-none border-t border-site-border p-0">
+      <ol className="medapp-list">
         {rows.map((r) => {
           const status = statusOfMilestone(r.type);
           return (
-            <li
-              key={`${r.applicationId}-${r.type}`}
-              className="flex flex-wrap items-baseline gap-x-3 gap-y-0 border-b border-site-border py-2"
-            >
-              <time dateTime={r.date} className="t-meta w-16 shrink-0">
+            <li key={`${r.applicationId}-${r.type}`} className="flex flex-wrap items-baseline gap-x-3 gap-y-0">
+              <time dateTime={r.date} className="medapp-meta w-16 shrink-0">
                 {formatUtcDay(r.date, locale)}
               </time>
-              <span className="t-body flex min-w-40 flex-1 items-center gap-2">
+              <span className="medapp-text flex min-w-40 flex-1 items-center gap-2">
                 {status ? <StatusIcon status={status} size="sm" /> : null}
                 {status ? (
-                  <span className="flex gap-1">
+                  <span className="flex flex-wrap gap-x-1">
                     <StatusText status={status}>{milestoneLabel(r.type)}</StatusText>
                     <span>
                       {t('timeline-entry-school', { defaultValue: '· {{school}}', school: r.school.shortName })}
@@ -60,7 +61,7 @@ export function Timeline({ applications }: { applications: readonly TrackerAppli
                 )}
               </span>
               {r.waitDays !== null && r.since ? (
-                <span className="t-meta">
+                <span className="medapp-meta">
                   {t('timeline-wait', {
                     count: r.waitDays,
                     n: nf.format(r.waitDays),

@@ -60,9 +60,11 @@ longer govern this feature**; the admin page does not move with it (`components/
   `lib/prepaint/theme-routes.ts` list, the device registry, `data-app-dark`.
 - **Tokens (`ui/medschools.css`).** `--app-*` for light and dark; `--app-med-*` for the wash, the seven status pairs
   (`swatch`, `ink`, `text`; plus a neutral `withdrawn`) and the chart series (`-n` line, `-n-fill` pastel fill). Every
-  colour is a token (the hex gate strips only `--app-*` declarations). A `--site-*` **bridge** points the Steel names at
-  this palette, also on `<html>` while the app is open so portaled dialogs match; phase B restyles the components onto
-  `--app-*` and the bridge goes when the last one has moved.
+  colour is a token (the hex gate strips only `--app-*` declarations). Nothing in `ui/` reads `--site-*`
+  (`ui-rules.test.ts` holds it for the markup and caps the stylesheet's `--site-*` declarations to one block): only a
+  small **overlay bridge** at the end of the palettes, on `<html>` while the app is open, points the Steel names the
+  shared anchored menu, confirm and prompt dialogs, toaster and `SortableList` buttons read at this palette (they portal
+  outside the app root and are not worth a second copy).
 - **Type.** Body is DM Sans (the site font); Fraunces for headings only (`--app-font-display`), self-hosted
   (`app/fonts/fraunces.css`, preloaded by the layout).
 - **The wash.** `public/images/medschools/wash-{light,dark}.webp`, pre-rendered by `scripts/medschools/render-wash.mjs`
@@ -74,14 +76,20 @@ longer govern this feature**; the admin page does not move with it (`components/
   filled wash, a stronger border and weight 600; 36px, 44px on touch), a paper panel (`.medapp-panel`) holding the rows,
   `PageHead` (`ui/shell/`) for the one `<h1>` in place of `PageLayout`'s title row and duplicate back link.
   `SchoolCrest`, `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList`, `PrefsNote`,
-  `WaveNote` and `skeletons` no longer read `--site-*`. **Left for B3:** the tracker, lists, ask, secondaries and
-  rolling pages still keep their Steel markup (`PageLayout`, `t-*`, the bridge) and their duplicate title row.
+  `WaveNote` and `skeletons` no longer read `--site-*`. Phase B3 finished the rest.
 - **Phase B2 (built).** The school page: `PageHead` with `crest` and `actions`, `SchoolFacts` as wash tiles, and the
   sections as `<nav class="medapp-pills">` of links with `aria-current` (not a tablist; the design-consistency gate
   greps `role="tablist"`, `aria-selected`, `layoutId` and accent underline bars only). Every tab, the charts
-  (`.medapp-chart`) and the Interviews practice sub-tab are on `--app-*`; `MedEmpty` is the empty and error panel. Still
-  on the bridge for B3: the tracker, lists, ask, rolling, import, overlap, `PracticePage`, and `SearchField`, `Switch`,
-  `Textarea` inside restyled tabs.
+  (`.medapp-chart`) and the Interviews practice sub-tab are on `--app-*`; `MedEmpty` is the empty and error panel.
+- **Phase B3 (built).** The tracker (with its import, timeline, silence and chance lines), lists, Ask, Practice and the
+  rolling and overlap disclosures are on `--app-*` with `PageHead` and paper panels around groups (rows on rules inside,
+  `.medapp-list`, `.medapp-item`, `.medapp-subrule`, `.medapp-disclosure`). Form controls are the app's own, in
+  `ui/controls/`: `MedButton` (the chip: primary, secondary, ghost, danger), `MedIconButton` (44px round, label is the
+  name and the `title`), `MedInput` and `MedTextarea` (`.medapp-field`: 44px, 14px radius, paper, 1px border),
+  `MedSearch`, `MedSelect` (the shared Radix select in its `app` tier, so the list portals into `.app-theme`) and
+  `MedSwitch` (`role="switch"`, 44px target). They are native elements with the app tier's global focus ring. A page
+  uses these, `MedEmpty` and `MedSignedOut`, never the site's `Button`, `Select`, `SearchField`, `Switch`, `Textarea`,
+  `PageLayout` or `SignedOutPrompt` (the rules test fails on the import).
 - **Status (`ui/status/`).** `status.ts` maps the public `MedEventType` and the tracker milestones onto eight keys:
   acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
   interview orange, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
