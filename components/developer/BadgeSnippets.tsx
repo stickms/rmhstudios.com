@@ -35,25 +35,27 @@ export function BadgeSnippets({ userId }: { userId: string }) {
             'Public SVG badges for your README or site. They show your best score and rank, or your streak, and refresh every few minutes.',
         })}
       </p>
-      {rows.map((r) => {
-        const md = `![${r.label}](${origin}${r.path})`;
-        return (
-          <div key={r.path} className="rule-row flex items-center gap-2 py-2">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-site-text-muted">{r.label}</p>
-              <code className="block truncate text-xs text-site-text">{md}</code>
+      <div>
+        {rows.map((r) => {
+          const md = `![${r.label}](${origin}${r.path})`;
+          return (
+            <div key={r.path} className="rule-row flex items-center gap-2 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-site-text-muted">{r.label}</p>
+                <code className="block truncate text-xs text-site-text">{md}</code>
+              </div>
+              <CopyButton
+                value={md}
+                variant="default"
+                size="icon-sm"
+                label={t('badges-copy', {
+                  defaultValue: 'Copy Markdown',
+                })}
+              />
             </div>
-            <CopyButton
-              value={md}
-              variant="default"
-              size="icon-sm"
-              label={t('badges-copy', {
-                defaultValue: 'Copy Markdown',
-              })}
-            />
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </section>
   );
 }

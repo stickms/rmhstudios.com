@@ -126,7 +126,7 @@ export function WhyTrending({ tag }: { tag: string }) {
                   <ul>
                     {why.starters.map((p) => (
                       <li key={p.id} className="rule-row">
-                        <Link to={p.href} onClick={() => setOpen(false)} className="row-hover block py-3">
+                        <Link to={p.href} onClick={() => setOpen(false)} className="row-hover block py-4">
                           <p className="text-sm text-site-text">{p.snippet}</p>
                           <p className="mt-1 text-xs text-site-text-muted">{p.author}</p>
                         </Link>

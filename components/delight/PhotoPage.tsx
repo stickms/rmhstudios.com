@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { fetchJson } from '@/lib/http';
+import { Cells } from '@/components/ui/rules';
 import { addDays } from '@/lib/delight/shared';
 import { cn } from '@/lib/utils';
 
@@ -151,9 +152,9 @@ export function PhotoPage() {
               title={t('potd-none', { defaultValue: 'No nominations yet. Be the first!' })}
             />
           ) : (
-            <ul className={cn('grid gap-x-3 sm:grid-cols-2', arrival)}>
+            <Cells columns={2} className={arrival}>
               {d.nominations.map((n) => (
-                <li key={n.id} className="rule-row space-y-3 py-4">
+                <li key={n.id} className="space-y-3 py-3">
                   <img
                     src={n.imageUrl}
                     alt={n.caption}
@@ -204,7 +205,7 @@ export function PhotoPage() {
                   </div>
                 </li>
               ))}
-            </ul>
+            </Cells>
           )}
         </section>
 
@@ -213,9 +214,9 @@ export function PhotoPage() {
             <h2 id="potd-past" className="site-section-label mb-3">
               {t('potd-past', { defaultValue: 'Recent winners' })}
             </h2>
-            <ul className="grid grid-cols-2 gap-x-3 sm:grid-cols-3">
+            <Cells columns={2}>
               {older.map((w) => (
-                <li key={w.id} className="rule-row space-y-2 py-4">
+                <li key={w.id} className="space-y-2 py-3">
                   <img
                     src={w.imageUrl}
                     alt={w.caption}
@@ -225,7 +226,7 @@ export function PhotoPage() {
                   <p className="truncate text-xs text-site-text-muted">{w.dayKey}</p>
                 </li>
               ))}
-            </ul>
+            </Cells>
           </section>
         )}
       </div>
