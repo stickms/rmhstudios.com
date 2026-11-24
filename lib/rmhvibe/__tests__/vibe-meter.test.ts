@@ -206,9 +206,10 @@ describe('createPreviewer', () => {
 
   it('builds nothing before the entry file exists', async () => {
     const p = createPreviewer();
+    // util.ts alone would pass pickEntry's fallback; the previewer must still wait for the real entry. No build may
+    // start, so this holds however fast a build would be (it used to depend on the build being slower than two ticks).
     p.feed(raw(['util.ts'], 'index.tsx'));
-    await flush();
-    await flush();
+    await new Promise((r) => setTimeout(r, 400));
     expect(p.take()).toBeNull();
   });
 

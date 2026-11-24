@@ -25,9 +25,36 @@ const anon = new Client();
 const SLUG = MEDSCHOOL_FIXTURE_SLUG;
 const INACTIVE_SLUG = 'it-medschools-fixture-inactive';
 
+/**
+ * The AAMC MSAR facts of the fixture school. Seeded before any request: the school page's loader prefetches the facts
+ * URL, and the public response micro-cache would otherwise keep an empty list for that URL for 30 s.
+ */
+async function seedSchoolFacts(): Promise<void> {
+  const q = (sql: string, params: unknown[]) => db().query(sql, params);
+  const school = await q('select id from med_school where slug = $1', [SLUG]);
+  const schoolId = (school.rows[0] as { id: string }).id;
+  await q(
+    `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueText", note, source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
+     values ('it-fact-1', $1, 'REG', 2027, 'ACCEPTS_OUT_OF_STATE', 'YES', 'Fixture note.', 'AAMC_MSAR_REPORT',
+             'https://students-residents.aamc.org/media/6996/download?attachment',
+             'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Applications Accepted Information', 6996, 2, '2026-11-24')
+     on conflict do nothing`,
+    [schoolId],
+  );
+  await q(
+    `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueNum", "valueText", "valueJson", source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
+     values ('it-fact-2', $1, 'REG', 2027, 'COA_IN_STATE', 69123, null, null, 'AAMC_MSAR_REPORT',
+             'https://students-residents.aamc.org/media/7071/download?attachment',
+             'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Tuition, Fees and Insurance Information', 7071, 2, '2026-11-24')
+     on conflict do nothing`,
+    [schoolId],
+  );
+}
+
 beforeAll(async () => {
   await seedMedSchoolsFixture();
   await seedSecondariesFixture();
+  await seedSchoolFacts();
   await db().query(
     `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
      values ($1, $1, 'Inactive Fixture', 'Inactive', 'MD', 'Durham', 'NC', false, now())`,
@@ -470,5 +497,64 @@ describe('the public secondaries endpoint', () => {
     const res = await anon.get(secondariesUrl(SLUG, '?cb=admin'));
     const texts = res.body.groups.flatMap((g: { prompts: { text: string }[] }) => g.prompts.map((p) => p.text));
     expect(texts).toContain('Describe a time you changed your mind.');
+  });
+});
+
+/* --------------------------- school facts: the AAMC MSAR report rows and their endpoint --------------------------- */
+
+const FACTS_KEYS = ['facts', 'pageUrl'];
+const FACT_KEYS = [
+  'checkedOn',
+  'cycleYear',
+  'kind',
+  'note',
+  'num',
+  'printed',
+  'report',
+  'reportId',
+  'sourceLabel',
+  'sourceUrl',
+  'value',
+];
+const factsUrl = (slug = SLUG) => `/api/medschools/schools/${slug}/facts`;
+
+describe('the public school facts endpoint', () => {
+  it('has the pinned key sets and a long public cache, and no page or internal id', async () => {
+    const res = await anon.get(factsUrl());
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body).sort()).toEqual(FACTS_KEYS);
+    expect(res.headers.get('cache-control')).toBe('public, max-age=600, s-maxage=3600, stale-while-revalidate=86400');
+    expect(res.body.facts.map((f: { kind: string }) => f.kind)).toEqual(['ACCEPTS_OUT_OF_STATE', 'COA_IN_STATE']);
+    for (const f of res.body.facts) expect(Object.keys(f).sort()).toEqual(FACT_KEYS);
+    expect(res.body.facts[0]).toMatchObject({
+      value: 'YES',
+      note: 'Fixture note.',
+      cycleYear: 2027,
+      checkedOn: '2026-11-24',
+    });
+    expect(res.body.facts[1]).toMatchObject({ num: 69123, report: 'Tuition, Fees and Insurance Information' });
+    expect(res.body.pageUrl).toMatch(/^https:\/\/students-residents\.aamc\.org\//);
+    const text = JSON.stringify(res.body);
+    for (const f of ['schoolId', '"page"', 'userId', 'it-fact-']) expect(text).not.toContain(f);
+  });
+
+  it('is empty for a school the reports do not cover and 404 for an unknown or inactive slug', async () => {
+    const none = await anon.get(factsUrl(SECONDARIES_NOTYET_SLUG));
+    expect(none.status).toBe(200);
+    expect(none.body.facts).toEqual([]);
+    expect((await anon.get(factsUrl('does-not-exist'))).status).toBe(404);
+    expect((await anon.get(factsUrl(INACTIVE_SLUG))).status).toBe(404);
+  });
+
+  it('never depends on the viewer', async () => {
+    const a = await anon.get(`${factsUrl()}?cb=viewer`);
+    expect(JSON.stringify(a.body)).toBe(JSON.stringify((await anon.get(factsUrl())).body));
+  });
+
+  it('renders the Admissions facts section in the server HTML of the Activity tab, with its source line', async () => {
+    const res = await anon.get(`/rmh-medschool/${SLUG}`);
+    expect(res.status).toBe(200);
+    expect(String(res.body)).toContain('Admissions facts');
+    expect(String(res.body)).toContain('Source: AAMC MSAR Report for Applicants and Advisors, 2027 entering class');
   });
 });

@@ -129,6 +129,7 @@ model MedSchool {
   secondaryChecks      MedSecondaryCheck[]
   admissionsPolicies   MedSchoolAdmissionsPolicy[]
   secondaryTurnarounds MedSecondaryTurnaround[]
+  facts                MedSchoolFact[]
 
   @@index([degree, state])
   @@map("med_school")
@@ -752,4 +753,43 @@ model MedSecondaryTurnaround {
 
   @@unique([schoolId, program])
   @@map("med_secondary_turnaround")
+}
+
+/// Where a school fact came from. `AAMC_MSAR_REPORT`: the AAMC MSAR "Reports for Applicants and Advisors" (a curated
+/// import under the owner's stated permission, 2026-11-24). `SCHOOL_PROFILE`: reserved for the school's own class-profile
+/// page (phase C step 2).
+enum MedFactSource {
+  AAMC_MSAR_REPORT
+  SCHOOL_PROFILE
+}
+
+/// A dated, sourced fact about a school's admissions (see `features/medschools/engine/school-facts.ts` for the kinds).
+/// Institutional data, no person: no relation to User, nothing to erase. One row per school x program x entering class x
+/// kind x source. `program` is not null (REG is the MD program) because a nullable column in a unique index lets
+/// duplicates through in Postgres. `valueText` is a status code or the school's own words; `valueJson` keeps the printed
+/// text beside a code; `note` is the school's accompanying sentence. `sourceLabel` is the attribution without "Source: ".
+model MedSchoolFact {
+  id          String        @id @default(cuid())
+  schoolId    String
+  program     MedProgram    @default(REG)
+  /// The entering class the report states (2027 is the 2026-2027 cycle).
+  cycleYear   Int
+  kind        String
+  valueNum    Float?
+  valueText   String?
+  valueJson   Json?
+  note        String?
+  source      MedFactSource
+  sourceUrl   String
+  sourceLabel String
+  /// The AAMC media id of the report, and the PDF page the row is on.
+  reportId    Int?
+  page        Int?
+  checkedOn   DateTime      @db.Date
+
+  school MedSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, program, cycleYear, kind, source])
+  @@index([schoolId])
+  @@map("med_school_fact")
 }

@@ -878,6 +878,41 @@ export const getMedSchoolSecondariesApi = endpoint<{
   res: MedSchoolSecondariesRes;
 }>()({ method: 'GET', path: '/api/medschools/schools/$slug/secondaries' });
 
+/**
+ * One sourced fact about a school (see `engine/school-facts.ts`). `value` is a status code (`YES`, `CASE_BY_CASE`...), a
+ * `YYYY-MM-DD` or `YYYY-MM` date, or the school's own words; `printed` is the text the report prints beside a code or
+ * date; `note` is the school's accompanying sentence. Every fact carries its own source line and the day it was read.
+ */
+export interface MedSchoolFactDto {
+  kind: string;
+  reportId: number;
+  report: string;
+  /** The entering class the report states. */
+  cycleYear: number;
+  value: string | null;
+  printed: string | null;
+  num: number | null;
+  note: string | null;
+  sourceUrl: string;
+  /** "AAMC MSAR Report for Applicants and Advisors, 2027 entering class, <report>": the page prints "Source: " before it. */
+  sourceLabel: string;
+  /** YYYY-MM-DD, the day the report was read. */
+  checkedOn: string;
+}
+
+export interface MedSchoolFactsRes {
+  /** The AAMC page the reports are listed on: the link every source line points at. */
+  pageUrl: string;
+  /** Empty for a school the reports do not cover (every DO school) or have no row for. */
+  facts: MedSchoolFactDto[];
+}
+
+/** 404 for an unknown or inactive slug. Public and user-independent. */
+export const getMedSchoolFactsApi = endpoint<{ res: MedSchoolFactsRes }>()({
+  method: 'GET',
+  path: '/api/medschools/schools/$slug/facts',
+});
+
 export interface MedSecondaryOverlapEntryDto {
   slug: string;
   schoolName: string;

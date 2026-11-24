@@ -54,6 +54,7 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/medschools/schools/:slug` | `GET` | `features/medschools/api/medschools.schools.$slug.server.ts` |
 | `/api/medschools/schools/:slug/activity` | `GET` | `features/medschools/api/medschools.schools.$slug.activity.server.ts` |
 | `/api/medschools/schools/:slug/arrivals` | `GET` | `features/medschools/api/medschools.schools.$slug.arrivals.server.ts` |
+| `/api/medschools/schools/:slug/facts` | `GET` | `features/medschools/api/medschools.schools.$slug.facts.server.ts` |
 | `/api/medschools/schools/:slug/forecast` | `GET` | `features/medschools/api/medschools.schools.$slug.forecast.server.ts` |
 | `/api/medschools/schools/:slug/history` | `GET` | `features/medschools/api/medschools.schools.$slug.history.server.ts` |
 | `/api/medschools/schools/:slug/secondaries` | `GET` | `features/medschools/api/medschools.schools.$slug.secondaries.server.ts` |

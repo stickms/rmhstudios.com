@@ -19,12 +19,12 @@ Signed-out readable, in the full-screen app frame of the redesign (see "Design")
 | `/rmh-medschool/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging                         |
 | `/rmh-medschool/$slug` | One school: Activity, History, Forecast, Interviews, Secondaries tabs (`?tab=`, `?program=` …) |
 
-Nine anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
+Ten anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
 rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
-`schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `schools/$slug/secondaries`, `live`, `today`. Contracts
-live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in `medschools.queries.ts` (no
-`createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist in the server HTML with
-scripting off.
+`schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `schools/$slug/secondaries`, `schools/$slug/facts` (phase
+C), `live`, `today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
+`medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
+in the server HTML with scripting off.
 
 **The public endpoints stay user-independent (phase 4).** Nothing under `/api/medschools/schools*` or `live` reads a
 session, a preference or a list; a signed-in member's preferences are applied in the route loader, which prefetches the
@@ -516,6 +516,35 @@ Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner a
 - **Verification.** `testing/integration/medschools-public.test.ts` and `-private.test.ts` (secondaries, overlap,
   turnaround floors); `scripts/medschools/visual-check.mjs` (`--page secondaries`, `--page overlap`) after
   `seed-visual.ts`.
+
+## School facts: the AAMC MSAR reports (roadmap item 11, phase C step 1)
+
+Plan: "Phase C step 1 as built" in `docs/superpowers/plans/2026-11-24-rmh-medschool-redesign.md`.
+
+- **Source and permission.** The AAMC MSAR "Reports for Applicants and Advisors"
+  (`students-residents.aamc.org/medical-school-admission-requirements/...reports-applicants-and-advisors`). The owner
+  states that RMH has AAMC's permission to use anything on that page (2026-11-24); the PDFs say they "may be reproduced
+  and distributed with attribution for individual, educational, and noncommercial purposes only". So every figure is
+  shown as "Source: AAMC MSAR Report for Applicants and Advisors, <year> entering class, <report name>" with a link to
+  the page (`factSourceLine`). **This does not cover the MSAR profiles (`mec.aamc.org/msar-ui`): never fetch or use
+  them.** MD (AMCAS) schools only; a DO school has no Admissions facts section and nothing is invented for one.
+- **Data and import.** `data/medschools/msar-reports.json` (header: source, permission, method, fetch date, per-report
+  year) is a one-time curated import like the school pages: validated by `scrape/msar-reports.ts`, loaded at worker
+  start by `ensureMsarReportsImported` once per file hash (`MedSourceRun` job `msar-reports-import`), idempotent, the
+  table equals the file. The file is in the Dockerfile server-builder COPY line. **No scraper and no request to AAMC
+  anywhere.** Rebuild it from PDFs downloaded by hand (one at a time, 3 s or more apart, never committed):
+  `python3 -I scripts/medschools/msar_extract.py <pdfs> <raw>`, then
+  `pnpm exec tsx scripts/medschools/parse-msar-reports.ts <raw> <pdfs>`, then
+  `pnpm exec tsx scripts/medschools/check-msar-reports.ts <pdfs>` (the verifier: every text on its PDF page, every
+  structured value from its text, the file reproducible). `data/medschools/msar-aliases.json` maps AAMC school names to
+  slugs; an unmapped name is listed as unmatched, never guessed.
+- **Model.** `MedSchoolFact` (`program` not null, default `REG`; kinds are validated strings from
+  `engine/school-facts.ts`; `source` `AAMC_MSAR_REPORT` now, `SCHOOL_PROFILE` for the class-profile pages of step 2).
+  Institutional, no user, no erasure. The report's own year is kept per fact (the Deposit report is 2026, PREview prints
+  none).
+- **Read.** Public `GET schools/$slug/facts` (`api/school-facts.server.ts`): user-independent, pinned keys, `facts: []`
+  for a school without any. UI: `ui/facts/AdmissionsFacts.tsx` on the Activity tab; a block per report, each with its
+  source line. MCAT and GPA tiles are not here yet (step 2).
 
 ## Rolling guidance (roadmap item 5)
 
