@@ -65,7 +65,7 @@ describe('EnteringClassView', () => {
 
   it('labels the newest class with its entering year, and shows exactly the stated figures as tiles, in order', () => {
     expect(html).toContain('Entering class');
-    expect(html).toContain('Class of 2030 · entered 2026');
+    expect(html).toContain('Entered 2026');
     const firstClass = html.slice(0, html.indexOf('<details'));
     const tiles = [...firstClass.matchAll(/data-kind="([A-Z_0-9]+)"/g)].map((x) => x[1]);
     expect(tiles).toEqual([
@@ -112,7 +112,7 @@ describe('EnteringClassView', () => {
     expect(html).toContain('<details class="medapp-disclosure medapp-profile__prev">');
     const prev = html.slice(html.indexOf('<details'));
     expect(prev).toContain('Previous class');
-    expect(prev).toContain('Class of 2029 · entered 2025');
+    expect(prev).toContain('Entered 2025');
     expect(dts(prev)).toEqual(['Median MCAT', 'Applicants']);
     expect(render([newest])).not.toContain('<details');
   });

@@ -12,7 +12,7 @@ import { SourceRef } from '../SourceRef';
 
 /**
  * "Entering class" (phase C step 2): the newest entering class as the school's OWN class-profile page states it, first
- * on the Facts tab. Its label ("Class of 2030 · entered 2026", or the page's own words and "Year not stated"), compact
+ * on the Facts tab. Its label ("Entered 2026", or the page's own words and "Year not stated"), compact
  * figure tiles for MCAT, GPA, science GPA, applicants, interviewed, class size and in state, then the page's other
  * figures as definition rows named by their qualifier, and a figure for the MD-PhD (DO-PhD) program only in its own
  * group. A previous class is a native disclosure with the same layout. Only what the page states, exactly as written:
@@ -35,11 +35,14 @@ const TILE_ORDER: ProfileKindId[] = [
   'MCAT_MEAN',
   'MCAT_RANGE',
   'MCAT_10_90',
+  'MCAT_SCORE',
   'GPA_MEDIAN',
   'GPA_MEAN',
   'GPA_RANGE',
+  'GPA_SCORE',
   'SGPA_MEDIAN',
   'SGPA_MEAN',
+  'SGPA_SCORE',
   'APPLICANTS',
   'INTERVIEWED',
   'MATRICULANTS',
@@ -127,6 +130,12 @@ function useKindLabel() {
         return t('profile-sgpa-median', { defaultValue: 'Median science GPA' });
       case 'SGPA_MEAN':
         return t('profile-sgpa-mean', { defaultValue: 'Mean science GPA' });
+      case 'MCAT_SCORE':
+        return t('profile-mcat', { defaultValue: 'MCAT' });
+      case 'GPA_SCORE':
+        return t('profile-gpa', { defaultValue: 'GPA' });
+      case 'SGPA_SCORE':
+        return t('profile-sgpa', { defaultValue: 'Science GPA' });
       case 'APPLICANTS':
         return t('profile-applicants', { defaultValue: 'Applicants' });
       case 'INTERVIEWED':
@@ -162,11 +171,8 @@ function ClassFigures({
   const classLine =
     cls.enteringYear === null
       ? t('profile-class-undated', { defaultValue: '{{label}} · Year not stated', label: cls.label })
-      : t('profile-class-dated', {
-          defaultValue: '{{label}} · entered {{year}}',
-          label: cls.label,
-          year: String(cls.enteringYear),
-        });
+      : // The page's own label ("MD Class Profile Data 2030", "Class of 2029") only repeats the year in other words.
+        t('profile-class-entered', { defaultValue: 'Entered {{year}}', year: String(cls.enteringYear) });
   const ref = (stats: MedClassProfileStatDto[]) => {
     const quotes = [...new Set(stats.map((s) => s.evidence))];
     return (

@@ -236,7 +236,7 @@ export const CURRICULUM_CODE_LABEL: Record<string, string> = {
  *  - `score`: an MCAT total ("517"); `gpa`: a grade point average ("3.89"); `count`: a number of people ("7,412");
  *    `percent`: a share ("38%"); `range`: a range as written ("500-525", "3.41–4.0"); `text`: anything else.
  * MCAT and GPA kinds keep the page's statistic apart: median, mean and range are different kinds, and a figure whose
- * statistic the page does not name is `OTHER` with the page's words as its qualifier.
+ * statistic the page does not name is `MCAT_SCORE`, `GPA_SCORE` or `SGPA_SCORE` (plain "MCAT", "GPA").
  */
 export const PROFILE_KINDS = {
   MCAT_MEDIAN: { type: 'score', label: 'Median MCAT' },
@@ -248,6 +248,10 @@ export const PROFILE_KINDS = {
   GPA_RANGE: { type: 'range', label: 'GPA range' },
   SGPA_MEDIAN: { type: 'gpa', label: 'Median science GPA' },
   SGPA_MEAN: { type: 'gpa', label: 'Mean science GPA' },
+  // The page gives the figure but not whether it is a mean or a median: shown as plain "MCAT", "GPA", never guessed.
+  MCAT_SCORE: { type: 'score', label: 'MCAT' },
+  GPA_SCORE: { type: 'gpa', label: 'GPA' },
+  SGPA_SCORE: { type: 'gpa', label: 'Science GPA' },
   APPLICANTS: { type: 'count', label: 'Applicants' },
   INTERVIEWED: { type: 'count', label: 'Interviewed' },
   MATRICULANTS: { type: 'count', label: 'Class size' },

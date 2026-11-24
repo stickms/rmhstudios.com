@@ -794,16 +794,18 @@ status and its curriculum timeline.
 ## School facts: class profiles (phase C step 2)
 
 "Entering class": MCAT, GPA, applicants, class size and in-state figures from each school's OWN class-profile page, the
-first panel on the Facts tab. Plan: "Phase C step 2 as built" in `docs/superpowers/plans/2026-11-24-rmh-medschool-redesign.md`.
+first panel on the Facts tab. Plan: "Phase C step 2 as built" in
+`docs/superpowers/plans/2026-11-24-rmh-medschool-redesign.md`.
 
 - **Data.** `data/medschools/class-profiles.json`: a header (`source`, `method`, `checkedOn`, `rules`, `verifier`) and
-  `schools` (only those with data, sorted by slug), each with `classes` (`label` as the page gives it, `enteringYear`
-  or null, `url`, `stats`: `kind`, `value` exactly as written, `unit`, `qualifier`, `evidence` verbatim from the page).
+  `schools` (only those with data, sorted by slug), each with `classes` (`label` as the page gives it, `enteringYear` or
+  null, `url`, `stats`: `kind`, `value` exactly as written, `unit`, `qualifier`, `evidence` verbatim from the page).
   Researched by hand once (curl, the static contact user agent, 3 s plus jitter, robots.txt, a refusal recorded and not
   worked around) and every figure re-fetched and found on its url. **Rules:** official pages only (the school's domain
   and its PDFs), never the MSAR profiles, AACOMAS / Choose DO, US News, Admit.org, SDN, forums or prep companies; never
-  computed, inferred or rounded; mean, median and range kept apart (an unnamed statistic is `OTHER` with the page's
-  words); classes before the 2024 entering class dropped. In the Dockerfile server-builder COPY line.
+  computed, inferred or rounded; mean, median and range kept apart (an unnamed statistic is `MCAT_SCORE`, `GPA_SCORE` or
+  `SGPA_SCORE`, shown as plain "MCAT", "GPA", "Science GPA"); qualifiers are the page's own scope, never research notes;
+  classes before the 2024 entering class dropped. In the Dockerfile server-builder COPY line.
 - **Validation** (`scrape/class-profiles.ts`, zod): https on a school-owned host (`isThirdPartyHost` of
   `school-pages.ts` plus rankings, Choose DO and prep sites), kinds from `PROFILE_KINDS` (`engine/school-facts.ts`),
   value non-empty, the evidence carries the value's digits (`evidenceHasValue`, the verifier's rule; a value in words
@@ -814,28 +816,28 @@ first panel on the Facts tab. Plan: "Phase C step 2 as built" in `docs/superpowe
   `class-profiles-import`), idempotent; deletes only `SCHOOL_PROFILE` rows the file no longer produces. One
   `MedSchoolFact` per figure: kind `PROFILE_<KIND>`, and `PROFILE_<KIND>#n` for the n-th figure of one kind in a class
   and program (several `OTHER` figures; the unique key school x program x cycle x kind x source has no other slot, so
-  this needs no migration; `profileKindOf` reads it back). `cycleYear` is the entering year, or
-  `PROFILE_UNDATED_CYCLE` (0) for a class the page does not date ("current", "most recent"), its label kept; two
-  classes of one school differ in `cycleYear`. Program `PHD` when the qualifier says the figure is for the MD-PhD
-  (DO-PhD, MSTP) program only (`isPhdOnlyQualifier`; "MD & MD/PhD", "incl. MD/PhD" stay `REG`), else `REG`.
-  `valueText` is the page's string (always shown), `valueNum` only a plain number of the kind (`parseProfileNumber`:
-  never "~600", "6,000+", a range or words), `valueJson` `{ text, label, qualifier, evidence, url, unit, order }`,
-  `note` the evidence.
+  this needs no migration; `profileKindOf` reads it back). `cycleYear` is the entering year, or `PROFILE_UNDATED_CYCLE`
+  (0) for a class the page does not date ("current", "most recent"), its label kept; two classes of one school differ in
+  `cycleYear`. Program `PHD` when the qualifier says the figure is for the MD-PhD (DO-PhD, MSTP) program only
+  (`isPhdOnlyQualifier`; "MD & MD/PhD", "incl. MD/PhD" stay `REG`), else `REG`. `valueText` is the page's string (always
+  shown), `valueNum` only a plain number of the kind (`parseProfileNumber`: never "~600", "6,000+", a range or words),
+  `valueJson` `{ text, label, qualifier, evidence, url, unit, order }`, `note` the evidence.
 - **Read.** The public `GET schools/$slug/facts` adds `classes` (pinned keys in `medschools-public.test.ts`):
   `{ label, enteringYear, url, checkedOn, stats: [{ kind, program, value, num, qualifier, evidence }] }`, newest first,
   an undated ("current") class ahead of the dated ones, figures in the page's order (`classProfilesOf`). Profile rows
   never join `facts`. User-independent; `[]` for a school with no profile.
 - **UI.** `ui/facts/EnteringClass.tsx`, the paper panel "Entering class" above Curriculum, MD and DO alike; nothing at
-  all for a school without a profile. The newest class's line ("Class of 2030 · entered 2026"; undated: the page's
-  label and "Year not stated"), then tonal figure tiles (`.medapp-figs`, two to a row on a phone, tabular figures):
-  "Median MCAT" / "Mean MCAT" / "MCAT range" exactly per kind, GPA and science GPA the same, then Applicants,
-  Interviewed, Class size, In state; only figures the page states, never a computed one. Under a tile, the qualifier
-  when it is the page's own scope ("five-year average", "virtual interviews", "Oregon Campus column"); a research note
-  on the wording ("labelled Average MCAT") or the page's own words for the kind ("MCAT Exam Class Average", "new
-  matriculants") is not shown (`profileQualifierNote`, its `RESTATING` words). `OTHER` figures are definition rows named by their
-  qualifier, each with its own source. MD-PhD-only figures are a group of their own ("MD-PhD program", "DO-PhD
-  program"). A previous class is a native `details` ("Previous class"). Sources: `SourceRef` on the class line (every
-  tile's evidence highlighted: `textFragmentsUrl`, several `text=` directives; a PDF opens plain), "Source: <short
+  all for a school without a profile. The newest class's line ("Entered 2026": the page's own label only repeats the
+  year; undated: the page's label, cleaned of research notes, and "Year not stated"), then tonal figure tiles
+  (`.medapp-figs`, two to a row on a phone, tabular figures): "Median MCAT" / "Mean MCAT" / "MCAT range" exactly per
+  kind, GPA and science GPA the same, then Applicants, Interviewed, Class size, In state; only figures the page states,
+  never a computed one. Under a tile, the qualifier when it is the page's own scope ("five-year average", "virtual
+  interviews", "Oregon Campus column"); a research note on the wording ("labelled Average MCAT") or the page's own words
+  for the kind ("MCAT Exam Class Average", "new matriculants") is not shown (`profileQualifierNote`, its `RESTATING`
+  words). `OTHER` figures are definition rows named by their qualifier, each with its own source. MD-PhD-only figures
+  are a group of their own ("MD-PhD program", "DO-PhD program"). A previous class is a native `details` ("Previous
+  class"). Sources: `SourceRef` on the class line (every tile's evidence highlighted: `textFragmentsUrl`, several
+  `text=` directives; a PDF opens plain), "Source: <short
   name>'s class profile, checked <date>" and "Figures as the school publishes them." Strings `profile-*`.
 - **Re-checking.** `pnpm exec tsx scripts/medschools/check-class-profiles.ts [--only slug,slug] [--json out.json]`
   re-fetches every class url (one at a time, 3 s plus jitter, the worker's user agent, robots.txt, `pdftotext` for a
