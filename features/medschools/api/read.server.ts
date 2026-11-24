@@ -189,6 +189,7 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
   }
   const degrees = new Set(set.map((k) => programPair(k).degree));
   const filtered = filterSchools(all, { q: q.q, state: q.state }).filter((s) => degrees.has(s.degree));
+  const latest = await latestPublicEvents(cycleYear, set);
   return {
     cycleYear,
     program,
@@ -204,9 +205,45 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
         city: s.city,
         state: s.state,
         reported: primary ? { source: primary, count: list.get(primary) ?? 0 } : null,
+        latest: latest.get(s.id) ?? null,
       };
     }),
   };
+}
+
+/**
+ * Each active school's newest public event of the cycle (owner 2026-11-24: the index shows it at the end of the row).
+ * Exactly the events the live feed shows: Admit and SDN only (an RMH event is never public one by one, D5; it reaches
+ * the public only as floored daily counts), active schools, the same program set (every program on also takes events
+ * with no program). One `DISTINCT ON` over the cycle's rows. Nothing about the viewer is read, so the response stays
+ * user-independent and cacheable. `dayOnly`: an event stored at exactly 00:00 UTC carries a calendar day, not a time
+ * (the arrivals rule), so the page prints the day instead of a time ago.
+ */
+async function latestPublicEvents(
+  cycleYear: number,
+  set: ProgramKey[],
+): Promise<Map<string, { eventType: MedEventType; occurredAt: string; dayOnly: boolean }>> {
+  const all = isAllPrograms(set);
+  const pairs = all ? [''] : set.map((k) => `${programPair(k).program}:${programPair(k).degree}`);
+  const rows = await prisma.$queryRaw<{ schoolId: string; eventType: MedEventType; occurredAt: Date }[]>`
+    SELECT DISTINCT ON (e."schoolId") e."schoolId" AS "schoolId", e."eventType" AS "eventType", e."occurredAt" AS "occurredAt"
+    FROM "med_cycle_event" e
+    JOIN "med_school" s ON s."id" = e."schoolId"
+    WHERE e."cycleYear" = ${cycleYear}
+      AND e."source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource")
+      AND s."active" = true
+      AND (${all} OR (e."program"::text || ':' || s."degree"::text) = ANY(${pairs}::text[]))
+    ORDER BY e."schoolId", e."occurredAt" DESC, e."id" DESC`;
+  return new Map(
+    rows.map((r) => [
+      r.schoolId,
+      {
+        eventType: r.eventType,
+        occurredAt: truncateToMinute(r.occurredAt),
+        dayOnly: r.occurredAt.toISOString().slice(10) === 'T00:00:00.000Z',
+      },
+    ]),
+  );
 }
 
 /** What the link-preview card draws (Task 8): the school and one floored figure, never a program-less or suppressed one. */
@@ -430,7 +467,9 @@ export async function getActivity(
   const today = utcDayOf(now);
   const cellsOf = (shown: readonly MedProgram[]) =>
     sumPrograms(
-      rows.filter((r) => shown.length === 2 || shown.includes(r.program)).flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
+      rows
+        .filter((r) => shown.length === 2 || shown.includes(r.program))
+        .flatMap((r) => publicCell({ ...r, date: day(r.date) }) ?? []),
       today,
     );
   const cells = cellsOf(programsOf(program));

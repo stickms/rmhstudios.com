@@ -1,0 +1,443 @@
+/* ── Panels and rows ─────────────────────────────────────────────────────── */
+/* One level only: a panel never holds another bordered panel. Inside, groups are separated by rules and space. */
+.medapp-panel {
+  box-sizing: border-box;
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-med-radius-lg);
+  padding-block: var(--app-med-space-1);
+  padding-inline: var(--app-med-panel-pad);
+}
+.medapp-panel--padded {
+  padding: var(--app-med-panel-pad);
+}
+/* The rail scrolls inside itself; its heading and filters stay at the top (`.medapp-rail-top`, sticky inside the
+   panel, on the paper), so the panel has no top padding of its own. */
+.medapp-panel--rail {
+  padding: 0 var(--app-med-space-4) var(--app-med-space-4);
+}
+.medapp-rail-top {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+  padding-block: var(--app-med-space-4) var(--app-med-space-3);
+  border-bottom: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+.medapp-rail-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--app-med-space-2);
+}
+.medapp-rail-open {
+  font-size: var(--app-med-text-meta);
+}
+.medapp-rows {
+  margin: 0;
+  list-style: none;
+}
+.medapp-rows:not(.medapp-panel) {
+  padding: 0;
+}
+.medapp-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-med-space-3);
+  padding-block: var(--app-med-row-pad);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-rows > .medapp-row:last-child {
+  border-bottom: 0;
+}
+.medapp-row__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.medapp-row__name {
+  margin: 0;
+  font-size: var(--app-med-text-body);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--app-text);
+}
+.medapp-row__name a {
+  color: inherit;
+  text-decoration: none;
+}
+.medapp-row__name a:hover {
+  text-decoration: underline;
+}
+.medapp-row__status {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.35;
+}
+.medapp-row__meta {
+  margin: 2px 0 0;
+  font-size: var(--app-med-text-meta);
+  line-height: 1.45;
+  color: var(--app-text-muted);
+}
+.medapp-row--compact .medapp-row__name {
+  font-size: 15px;
+}
+.medapp-row--compact .medapp-status-icon {
+  inline-size: 32px;
+  block-size: 32px;
+}
+
+/* ── Status: a swatch disc with an icon, and the words in the same hue ──── */
+.medapp-status--accept {
+  --medapp-st-swatch: var(--app-med-accept-swatch);
+  --medapp-st-ink: var(--app-med-accept-ink);
+  --medapp-st-text: var(--app-med-accept-text);
+}
+.medapp-status--reject {
+  --medapp-st-swatch: var(--app-med-reject-swatch);
+  --medapp-st-ink: var(--app-med-reject-ink);
+  --medapp-st-text: var(--app-med-reject-text);
+}
+.medapp-status--hold {
+  --medapp-st-swatch: var(--app-med-hold-swatch);
+  --medapp-st-ink: var(--app-med-hold-ink);
+  --medapp-st-text: var(--app-med-hold-text);
+}
+.medapp-status--secondary {
+  --medapp-st-swatch: var(--app-med-secondary-swatch);
+  --medapp-st-ink: var(--app-med-secondary-ink);
+  --medapp-st-text: var(--app-med-secondary-text);
+}
+.medapp-status--waitlist {
+  --medapp-st-swatch: var(--app-med-waitlist-swatch);
+  --medapp-st-ink: var(--app-med-waitlist-ink);
+  --medapp-st-text: var(--app-med-waitlist-text);
+}
+.medapp-status--matric {
+  --medapp-st-swatch: var(--app-med-matric-swatch);
+  --medapp-st-ink: var(--app-med-matric-ink);
+  --medapp-st-text: var(--app-med-matric-text);
+}
+.medapp-status--interview {
+  --medapp-st-swatch: var(--app-med-interview-swatch);
+  --medapp-st-ink: var(--app-med-interview-ink);
+  --medapp-st-text: var(--app-med-interview-text);
+}
+.medapp-status--withdrawn {
+  --medapp-st-swatch: var(--app-med-withdrawn-swatch);
+  --medapp-st-ink: var(--app-med-withdrawn-ink);
+  --medapp-st-text: var(--app-med-withdrawn-text);
+}
+/* A step with no status colour (application submitted, complete): the same disc, in the quiet ground and muted ink, so
+   every step in a list has the same shape. Its words stay in the body colour. */
+.medapp-status--plain {
+  --medapp-st-swatch: var(--app-bg-subtle);
+  --medapp-st-ink: var(--app-text-muted);
+  --medapp-st-text: var(--app-text);
+}
+.medapp-status-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: 50%;
+  /* A true circle: the app tier's squircle default would draw a rounded square. */
+  corner-shape: round;
+  background-color: var(--medapp-st-swatch);
+  color: var(--medapp-st-ink);
+}
+.medapp-status-icon--sm {
+  inline-size: 28px;
+  block-size: 28px;
+}
+.medapp-status-icon--sm svg {
+  inline-size: 14px;
+  block-size: 14px;
+}
+.medapp-status-text {
+  color: var(--medapp-st-text);
+  font-weight: 600;
+}
+
+/* ── School crest, notes, toolbars ───────────────────────────────────────── */
+.medapp-crest {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--app-bg-subtle);
+  border: 1px solid var(--app-border);
+  color: var(--app-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.medapp-crest--20 {
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: 6px;
+}
+.medapp-crest--24 {
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 8px;
+}
+.medapp-crest--40 {
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: var(--app-med-radius-sm);
+}
+.medapp-crest img {
+  object-fit: contain;
+}
+.medapp-note {
+  margin: 0;
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.5;
+  color: var(--app-text-muted);
+}
+.medapp-note a,
+.medapp-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* A filter toolbar: the fields share one height and one centre line. A phone puts the search on its own line and the
+   rest beside each other; from 768px it is one row. */
+.medapp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-2);
+}
+.medapp-toolbar > * {
+  flex: 1 1 140px;
+  min-inline-size: 0;
+}
+.medapp-toolbar > .medapp-toolbar__grow {
+  flex-basis: 100%;
+}
+@media (min-width: 768px) {
+  .medapp-toolbar > .medapp-toolbar__grow {
+    flex: 1 1 280px;
+  }
+  .medapp-toolbar > :not(.medapp-toolbar__grow) {
+    flex: 0 1 220px;
+  }
+}
+/* The filters of a page (toolbar, program pills, the preferences line) as one group, 12px apart. */
+.medapp-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  min-width: 0;
+}
+.medapp-skeleton {
+  display: block;
+  border-radius: var(--app-med-radius-sm);
+  background-color: var(--app-bg-subtle);
+}
+.medapp-empty {
+  margin: 0;
+  text-align: center;
+  font-size: var(--app-med-text-body);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--app-text);
+}
+.medapp-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.medapp-rail-head h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+.medapp-rail-head h2 svg {
+  color: var(--app-text-muted);
+}
+
+/* ── School page: header, section pills, key facts ───────────────────────── */
+.medapp-pagehead--school {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-4);
+}
+.medapp-pagehead__text {
+  display: flex;
+  flex: 1 1 220px;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--app-med-space-1);
+}
+.medapp-pagehead--school h1 {
+  font-size: clamp(26px, 6vw, 36px);
+  line-height: 1.12;
+}
+.medapp-pagehead--school .medapp-sub {
+  font-size: 15px;
+}
+.medapp-pagehead__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-2);
+}
+.medapp-crest--76 {
+  inline-size: 76px;
+  block-size: 76px;
+  border-radius: var(--app-med-radius-lg);
+  font-family: var(--app-font-display);
+  font-size: 30px;
+}
+@media (max-width: 479px) {
+  .medapp-crest--76 {
+    inline-size: 56px;
+    block-size: 56px;
+    border-radius: var(--app-med-radius);
+    font-size: 22px;
+  }
+}
+/* The section navigation: the segmented container of links, the current one on paper. Not a tablist: each is a link to
+   the same page with another `tab`, so it is a `nav` with `aria-current`. One line that scrolls sideways on a phone. */
+.medapp-pills {
+  display: flex;
+  gap: 2px;
+  box-sizing: border-box;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: var(--app-med-radius);
+  background-color: var(--app-med-tonal);
+  scrollbar-width: none;
+}
+.medapp-pills::-webkit-scrollbar {
+  display: none;
+}
+.medapp-pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  box-sizing: border-box;
+  min-block-size: calc(var(--app-med-control) - 8px);
+  padding-inline: var(--app-med-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--app-med-radius-sm);
+  color: var(--app-text-muted);
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-pill:hover {
+  background-color: var(--app-med-tonal);
+  color: var(--app-text);
+}
+.medapp-pill[aria-current='page'] {
+  border-color: var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  font-weight: 600;
+}
+.medapp-school-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
+}
+/* A section's body, under the section links: at least a screen tall, so switching to a shorter section (or one still
+   loading) never shortens the document under the reader and clamps the scroll back up the page. */
+.medapp-tabbody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
+  min-block-size: 100dvh;
+}
+.medapp-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
+}
+/* The school's key facts: wash tiles side by side from 640px; on a phone one wash panel of label / value rows, so three
+   short facts do not stack into three tall cards. */
+.medapp-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--app-med-space-3);
+  margin: 0;
+}
+.medapp-tile {
+  padding: var(--app-med-space-4) 20px;
+  border-radius: var(--app-med-radius-lg);
+  background-color: var(--app-med-wash-2);
+  color: var(--app-med-on-wash);
+  overflow-wrap: anywhere;
+}
+.medapp-tile:nth-child(3n + 2) {
+  background-color: var(--app-med-wash-1);
+}
+.medapp-tile:nth-child(3n) {
+  background-color: var(--app-med-wash-4);
+}
+.medapp-tile dt {
+  margin: 0;
+  font-size: var(--app-med-text-meta);
+  font-weight: 500;
+}
+.medapp-tile dd {
+  margin: var(--app-med-space-1) 0 0;
+  font-size: var(--app-med-text-body);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.medapp-tile a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 639px) {
+  .medapp-tiles {
+    display: block;
+    padding-inline: var(--app-med-space-4);
+    border-radius: var(--app-med-radius-lg);
+    background-color: var(--app-med-wash-2);
+    color: var(--app-med-on-wash);
+  }
+  .medapp-tile,
+  .medapp-tile:nth-child(3n + 2),
+  .medapp-tile:nth-child(3n) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--app-med-space-4);
+    padding: var(--app-med-space-3) 0;
+    border-radius: 0;
+    background-color: transparent;
+    border-bottom: 1px solid color-mix(in srgb, var(--app-med-on-wash) 14%, transparent);
+  }
+  .medapp-tile:last-child {
+    border-bottom: 0;
+  }
+  .medapp-tile dt {
+    flex: none;
+  }
+  .medapp-tile dd {
+    margin: 0;
+    min-inline-size: 0;
+    text-align: end;
+    font-size: 15px;
+  }
+}

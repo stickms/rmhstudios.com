@@ -1,5 +1,5 @@
 import { notFound } from '@tanstack/react-router';
-import type { QueryClient } from '@tanstack/react-query';
+import { keepPreviousData, type QueryClient } from '@tanstack/react-query';
 import { HttpError } from '@/lib/http';
 import { contractQuery, prefetchRouteQuery } from '@/lib/route/route-query';
 import type { QueryOf } from '@/lib/contract/endpoint';
@@ -35,45 +35,83 @@ const CHARTED: readonly string[] = ['INTERVIEW', 'SECONDARY', 'WAITLIST', 'REJEC
 /** Client-safe option factories for the public pages. No server functions here (queries-server-fn-ratchet). */
 
 export type IndexQuery = QueryOf<typeof listMedSchoolsApi>;
+
+/**
+ * A filter or setting change keeps the last answer on screen until the new one lands (owner 2026-11-24: never blank the
+ * page, never show a skeleton for a change of filter); the page dims it meanwhile through `isPlaceholderData`. A school
+ * keeps only its own answers: moving to another school never shows the previous school's figures.
+ */
+/** A query's options with what it shows while a new key loads (`contractQuery` takes only the cache options). */
+const keeping = <O extends object, P>(options: O, placeholderData: P) => ({ ...options, placeholderData });
+
+const keepWithinSchool =
+  (slug: string) =>
+  <T>(previous: T | undefined, previousQuery?: { queryKey: readonly unknown[] }): T | undefined =>
+    previousQuery?.queryKey[2] === slug ? previous : undefined;
+
+/** A route loader's wait: a search change on the same page (`cause: 'stay'`) never waits, so the router's pending
+ * frame never replaces the page; the query fills in behind the old content. A first visit waits, so the HTML is whole. */
+export async function waitUnlessStay(cause: 'enter' | 'stay' | 'preload' | undefined, work: Promise<unknown>) {
+  if (cause === 'stay') {
+    void work.catch(() => undefined);
+    return;
+  }
+  await work;
+}
 export type LiveFilters = QueryOf<typeof getMedLiveApi>;
 
 export const schoolsQuery = (q: IndexQuery) =>
-  contractQuery(['medschools', 'schools', q], listMedSchoolsApi, { query: q }, { staleTime: 60_000 });
+  keeping(
+    contractQuery(['medschools', 'schools', q], listMedSchoolsApi, { query: q }, { staleTime: 60_000 }),
+    keepPreviousData,
+  );
 
 export const schoolQuery = (slug: string) =>
   contractQuery(['medschools', 'school', slug], getMedSchoolApi, { params: { slug } }, { staleTime: 60_000 });
 
 export const activityQuery = (slug: string, q: { program: MedProgramFilter; cycle?: number | undefined }) =>
-  contractQuery(
-    ['medschools', 'activity', slug, q],
-    getMedSchoolActivityApi,
-    { params: { slug }, query: q },
-    { staleTime: 60_000 },
+  keeping(
+    contractQuery(
+      ['medschools', 'activity', slug, q],
+      getMedSchoolActivityApi,
+      { params: { slug }, query: q },
+      { staleTime: 60_000 },
+    ),
+    keepWithinSchool(slug),
   );
 
 export const historyQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
-  contractQuery(
-    ['medschools', 'history', slug, q],
-    getMedSchoolHistoryApi,
-    { params: { slug }, query: q },
-    { staleTime: 60_000 },
+  keeping(
+    contractQuery(
+      ['medschools', 'history', slug, q],
+      getMedSchoolHistoryApi,
+      { params: { slug }, query: q },
+      { staleTime: 60_000 },
+    ),
+    keepWithinSchool(slug),
   );
 
 export const forecastQuery = (slug: string, q: { program: 'REG' | 'PHD'; type: MedChartedTypeId }) =>
-  contractQuery(
-    ['medschools', 'forecast', slug, q],
-    getMedSchoolForecastApi,
-    { params: { slug }, query: q },
-    { staleTime: 5 * 60_000 },
+  keeping(
+    contractQuery(
+      ['medschools', 'forecast', slug, q],
+      getMedSchoolForecastApi,
+      { params: { slug }, query: q },
+      { staleTime: 5 * 60_000 },
+    ),
+    keepWithinSchool(slug),
   );
 
 /** The Secondaries tab: prompts, marks and attribution. Public, so the loader prefetches the same key as anyone's. */
 export const secondariesQuery = (slug: string, q: { program: MedProgramFilter }) =>
-  contractQuery(
-    ['medschools', 'secondaries', slug, q],
-    getMedSchoolSecondariesApi,
-    { params: { slug }, query: q },
-    { staleTime: 5 * 60_000 },
+  keeping(
+    contractQuery(
+      ['medschools', 'secondaries', slug, q],
+      getMedSchoolSecondariesApi,
+      { params: { slug }, query: q },
+      { staleTime: 5 * 60_000 },
+    ),
+    keepWithinSchool(slug),
   );
 
 /** The Facts tab: Admissions facts (the AAMC MSAR reports) and Curriculum (Admit.org). Public, so the loader prefetches the same key as anyone's. */
@@ -81,15 +119,18 @@ export const schoolFactsQuery = (slug: string) =>
   contractQuery(['medschools', 'facts', slug], getMedSchoolFactsApi, { params: { slug } }, { staleTime: 30 * 60_000 });
 
 export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
-  contractQuery(
-    ['medschools', 'arrivals', slug, q],
-    getMedSchoolArrivalsApi,
-    { params: { slug }, query: q },
-    { staleTime: 5 * 60_000 },
+  keeping(
+    contractQuery(
+      ['medschools', 'arrivals', slug, q],
+      getMedSchoolArrivalsApi,
+      { params: { slug }, query: q },
+      { staleTime: 5 * 60_000 },
+    ),
+    keepWithinSchool(slug),
   );
 
 export const liveQuery = (q: LiveFilters) =>
-  contractQuery(['medschools', 'live', q], getMedLiveApi, { query: q }, { staleTime: 0 });
+  keeping(contractQuery(['medschools', 'live', q], getMedLiveApi, { query: q }, { staleTime: 0 }), keepPreviousData);
 
 /* ------------------------- private (me/**) -------------------------
  * Every personal key starts with `['medschools', 'me']`: the mutations invalidate that prefix and a sign-out clears
@@ -131,11 +172,14 @@ export const rollingQuery = (q: { source: 'list'; list: string } | { source: 'tr
 
 /** The tracker for one cycle year, or the newest the user has when `cycle` is omitted. Never cached by the server. */
 export const trackerQuery = (cycle?: number) =>
-  contractQuery(
-    [...ME_KEY, 'tracker', cycle ?? null] as const,
-    getMedTrackerApi,
-    { query: cycle === undefined ? {} : { cycle } },
-    { staleTime: 0 },
+  keeping(
+    contractQuery(
+      [...ME_KEY, 'tracker', cycle ?? null] as const,
+      getMedTrackerApi,
+      { query: cycle === undefined ? {} : { cycle } },
+      { staleTime: 0 },
+    ),
+    keepPreviousData,
   );
 
 /**
@@ -233,6 +277,7 @@ export async function loadSchoolHead(
   slug: string,
   deps: { tab: SchoolTab; program?: ProgramFilter | undefined; type: string; cycle?: number | undefined },
   prefs: Prefs | null = null,
+  cause?: 'enter' | 'stay' | 'preload',
 ): Promise<SchoolHead | null> {
   let detail;
   try {
@@ -245,20 +290,23 @@ export async function loadSchoolHead(
   const program = applyPrefs('school', { program: deps.program }, prefs, {
     schoolDegree: detail.school.degree,
   }).program;
+  // The tab's own query: awaited on a first visit (the chart is in the HTML), not on a change of tab or setting.
+  let tab: Promise<unknown> = Promise.resolve();
   if (deps.tab === 'activity') {
-    await prefetchRouteQuery(queryClient, activityQuery(slug, { program, cycle: deps.cycle }));
+    tab = prefetchRouteQuery(queryClient, activityQuery(slug, { program, cycle: deps.cycle }));
   } else if (deps.tab === 'history') {
-    await prefetchRouteQuery(queryClient, historyQuery(slug, { program, type: deps.type as MedChartedTypeId }));
+    tab = prefetchRouteQuery(queryClient, historyQuery(slug, { program, type: deps.type as MedChartedTypeId }));
   } else if (deps.tab === 'forecast') {
     // The same key the tab asks for (ALL reads REG, D12; a category the charts do not draw reads Interview).
     const type = (CHARTED.includes(deps.type as MedChartedTypeId) ? deps.type : 'INTERVIEW') as MedChartedTypeId;
-    await prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
+    tab = prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
   } else if (deps.tab === 'secondaries') {
-    await prefetchRouteQuery(queryClient, secondariesQuery(slug, { program }));
+    tab = prefetchRouteQuery(queryClient, secondariesQuery(slug, { program }));
   } else if (deps.tab === 'facts') {
     // One query for both sections (the AAMC reports and Admit's curriculum), for an MD and a DO school alike.
-    await prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
+    tab = prefetchRouteQuery(queryClient, schoolFactsQuery(slug));
   }
+  await waitUnlessStay(cause, tab);
   const { school } = detail;
   return {
     slug: school.slug,

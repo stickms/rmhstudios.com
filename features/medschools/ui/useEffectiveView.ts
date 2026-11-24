@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
+import { holdScroll } from './hold-scroll';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import {
@@ -32,6 +33,7 @@ export function useEffectiveView(
   const navigate = useNavigate();
 
   const setSearch = (patch: ViewPatch) => {
+    holdScroll();
     void navigate({
       to: '.',
       search: ((prev: Record<string, unknown>) => patchSearch(kind, prev, view, patch, prefs)) as never,

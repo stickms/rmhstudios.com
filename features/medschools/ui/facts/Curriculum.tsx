@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { GraduationCap } from 'lucide-react';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { formatUtcDay } from '../../engine/public-read';
 import { isCurriculumKind, type CurriculumKindId } from '../../engine/school-facts';
 import type { MedSchoolFactDto, MedSchoolFactsRes } from '../../medschools.contract';
 import { schoolFactsQuery } from '../../medschools.queries';
 import { MedEmpty } from '../MedEmpty';
+import { SourceRef } from '../SourceRef';
 import { ListSkeleton, SkeletonSwap } from '../skeletons';
 
 /**
@@ -16,7 +18,7 @@ import { ListSkeleton, SkeletonSwap } from '../skeletons';
  * ranks nothing (Admit's own ranking is never stored). Shown for MD and DO schools alike, whenever Admit has the school.
  * Shares the school-facts query with `AdmissionsFacts`, so the tab makes one request.
  */
-export function Curriculum({ slug }: { slug: string }) {
+export function Curriculum({ slug, admitHref }: { slug: string; admitHref?: string | undefined }) {
   const { t } = useTranslation('medschools');
   const query = useQuery(schoolFactsQuery(slug));
   if (query.isError) {
@@ -29,12 +31,12 @@ export function Curriculum({ slug }: { slug: string }) {
   }
   return (
     <SkeletonSwap ready={!!query.data} skeleton={<ListSkeleton rows={4} />}>
-      {query.data ? <CurriculumView data={query.data} /> : null}
+      {query.data ? <CurriculumView data={query.data} admitHref={admitHref} /> : null}
     </SkeletonSwap>
   );
 }
 
-export function CurriculumView({ data }: { data: MedSchoolFactsRes }) {
+export function CurriculumView({ data, admitHref }: { data: MedSchoolFactsRes; admitHref?: string | undefined }) {
   const { t } = useTranslation('medschools');
   const { number, locale } = useLocaleFormat();
   const by = new Map<string, MedSchoolFactDto>(
@@ -62,7 +64,7 @@ export function CurriculumView({ data }: { data: MedSchoolFactsRes }) {
     return (
       <>
         {gloss}
-        {f.printed ? <span className="medapp-meta medapp-defs__note">{f.printed}</span> : null}
+        {f.printed ? <span className="medapp-meta"> · {f.printed}</span> : null}
       </>
     );
   };
@@ -144,31 +146,38 @@ export function CurriculumView({ data }: { data: MedSchoolFactsRes }) {
   const first = shown[0]!.f;
   // The newest day any row was read: the weekly refresh moves them together, so this is the table's own date.
   const checked = shown.map((x) => x.f.checkedOn).sort()[shown.length - 1]!;
+  const checkedText = formatUtcDay(checked, locale, { year: 'numeric', month: 'long', day: 'numeric' });
+  const sourceLine = t('curriculum-source', {
+    defaultValue: 'Source: {{source}}, checked {{date}}',
+    source: first.sourceLabel,
+    date: checkedText,
+  });
+  const confirmLine = t('curriculum-confirm', { defaultValue: 'Compiled by Admit.org; confirm with the school.' });
   return (
     <section className="medapp-section medapp-section--panel" aria-labelledby="school-curriculum-heading">
-      <h2 id="school-curriculum-heading" className="medapp-h2">
-        {t('curriculum-heading', { defaultValue: 'Curriculum' })}
-      </h2>
-      <dl className="medapp-defs medapp-defs--stack">
+      <div className="medapp-srcrow">
+        <h2 id="school-curriculum-heading" className="medapp-h2">
+          <span className="medapp-headicon">
+            <GraduationCap aria-hidden="true" className="size-5" />
+            {t('curriculum-heading', { defaultValue: 'Curriculum' })}
+          </span>
+        </h2>
+        <SourceRef
+          name={first.sourceLabel}
+          detail={t('curriculum-source-detail', { defaultValue: 'Checked {{date}}', date: checkedText })}
+          note={confirmLine}
+          href={admitHref ?? first.sourceUrl}
+          attribution={`${sourceLine}. ${confirmLine}`}
+        />
+      </div>
+      <dl className="medapp-defs medapp-defs--facts">
         {shown.map(({ r, f, v }) => (
-          <div key={r.kind}>
+          <div key={r.kind} className={f.kind === 'HOME_HOSPITALS' ? 'is-stack' : undefined}>
             <dt>{r.label}</dt>
             <dd>{f.kind === 'HOME_HOSPITALS' ? hospitalList(v) : v}</dd>
           </div>
         ))}
       </dl>
-      <p className="medapp-meta">
-        <a href={first.sourceUrl} target="_blank" rel="noopener noreferrer">
-          {t('curriculum-source', {
-            defaultValue: 'Source: {{source}}, checked {{date}}',
-            source: first.sourceLabel,
-            date: formatUtcDay(checked, locale, { year: 'numeric', month: 'long', day: 'numeric' }),
-          })}
-        </a>
-      </p>
-      <p className="medapp-meta">
-        {t('curriculum-confirm', { defaultValue: 'Compiled by Admit.org; confirm with the school.' })}
-      </p>
     </section>
   );
 }

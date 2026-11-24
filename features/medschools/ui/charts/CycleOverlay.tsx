@@ -69,7 +69,7 @@ export function CycleOverlay(p: {
   const probe: Probe | undefined = hasData
     ? {
         count: domain[1] - domain[0] + 1,
-        x: (g, i) => plotX(domain[0] + i, domain, g),
+        x: (g, i, view) => plotX(domain[0] + i, view ?? domain, g),
         at: (i) => {
           const x = domain[0] + i;
           return {
@@ -111,7 +111,8 @@ export function CycleOverlay(p: {
         })}
         hint={labels.hint}
         probe={probe}
-        render={(g, clipId) => (
+        domain={hasData ? domain : undefined}
+        render={(g, clipId, view) => (
           <>
             <defs>
               <PlotClip id={clipId} g={g} />
@@ -123,13 +124,15 @@ export function CycleOverlay(p: {
             />
             <XAxis
               g={g}
-              ticks={hasData ? xTicks(domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateLabel(t.v) })) : []}
+              ticks={
+                hasData ? xTicks(view ?? domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateLabel(t.v) })) : []
+              }
             />
             {hasData ? (
               <g clipPath={`url(#${clipId})`}>
                 {/* Oldest first, so the newest cycle is drawn on top. */}
                 {[...withData].reverse().map((l) => {
-                  const { d } = linePath(l.pts, domain, tween.value, true, g);
+                  const { d } = linePath(l.pts, view ?? domain, tween.value, true, g);
                   return d ? (
                     <path
                       key={l.c.cycleYear}

@@ -94,7 +94,7 @@ export function ForecastBand(p: {
   const probe: Probe | undefined = hasData
     ? {
         count: lastDay - firstDay + 1,
-        x: (g, i) => plotX(firstDay + i, domain, g),
+        x: (g, i, view) => plotX(firstDay + i, view ?? domain, g),
         initial: Math.max(0, Math.min(lastDay, bandStart ?? lastObserved) - firstDay),
         at: (i) => {
           const day = firstDay + i;
@@ -153,8 +153,12 @@ export function ForecastBand(p: {
     ...(finalMedian !== null ? [{ name: legendLabels.median, total: finalMedian }] : []),
   ];
 
-  const path = (pts: { x: number; y: number }[], g: Parameters<typeof linePath>[4], step: boolean) =>
-    linePath(pts, domain, tween.value, step, g).d;
+  const path = (
+    pts: { x: number; y: number }[],
+    g: Parameters<typeof linePath>[4],
+    step: boolean,
+    view?: readonly [number, number],
+  ) => linePath(pts, view ? [view[0], view[1]] : domain, tween.value, step, g).d;
 
   return (
     <ChartFrame
@@ -186,7 +190,8 @@ export function ForecastBand(p: {
         summary={labels.summary({ lines })}
         hint={labels.hint}
         probe={probe}
-        render={(g, clipId) => (
+        domain={hasData ? domain : undefined}
+        render={(g, clipId, view) => (
           <>
             <defs>
               <PlotClip id={clipId} g={g} />
@@ -198,14 +203,16 @@ export function ForecastBand(p: {
             />
             <XAxis
               g={g}
-              ticks={hasData ? xTicks(domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateOf(t.v) })) : []}
+              ticks={
+                hasData ? xTicks(view ?? domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateOf(t.v) })) : []
+              }
             />
             {hasData ? (
               <g clipPath={`url(#${clipId})`}>
                 {hasBand ? (
                   <>
                     <path
-                      d={path(high, g, false)}
+                      d={path(high, g, false, view)}
                       fill="none"
                       stroke={color}
                       strokeWidth={BOUND.width}
@@ -213,7 +220,7 @@ export function ForecastBand(p: {
                       strokeLinejoin="round"
                     />
                     <path
-                      d={path(low, g, false)}
+                      d={path(low, g, false, view)}
                       fill="none"
                       stroke={color}
                       strokeWidth={BOUND.width}
@@ -221,7 +228,7 @@ export function ForecastBand(p: {
                       strokeLinejoin="round"
                     />
                     <path
-                      d={path(med, g, false)}
+                      d={path(med, g, false, view)}
                       fill="none"
                       stroke={color}
                       strokeWidth={MEDIAN.width}
@@ -231,7 +238,13 @@ export function ForecastBand(p: {
                   </>
                 ) : null}
                 {hasObserved ? (
-                  <path d={path(obsLine, g, true)} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+                  <path
+                    d={path(obsLine, g, true, view)}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                  />
                 ) : null}
               </g>
             ) : (

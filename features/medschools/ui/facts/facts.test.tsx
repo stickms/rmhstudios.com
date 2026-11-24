@@ -27,6 +27,7 @@ const fact = (kind: string, over: Partial<MedSchoolFactDto> = {}): MedSchoolFact
   sourceUrl: 'https://students-residents.aamc.org/media/6996/download?attachment',
   sourceLabel: 'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Applications Accepted Information',
   checkedOn: '2026-11-24',
+  page: null,
   ...over,
 });
 
@@ -60,7 +61,7 @@ describe('AdmissionsFactsView', () => {
 
   it('prints each fact, the school note and the dates in the reader language', () => {
     expect(html).toContain('Admissions facts');
-    expect(html).toContain('Out-of-state applicants');
+    expect(html).toContain('<dt>Out of state</dt>');
     expect(html).toContain('Case by case');
     expect(html).toContain('Strong preference to residents.');
     expect(html).toContain('September 12, 2026');
@@ -70,14 +71,63 @@ describe('AdmissionsFactsView', () => {
     expect(html).toContain('Two one-on-one interviews.');
   });
 
-  it('puts the source line, with its own entering class, and a link to the AAMC page on every block', () => {
-    const blocks = html.split('medapp-subrule').slice(1);
+  it('never repeats the heading or the boilerplate in a row label', () => {
+    expect(html).not.toMatch(/<dt>[^<]*applicants<\/dt>/);
+    expect(html).not.toMatch(/<dt>Deposit[^<]*<\/dt>/);
+    expect(html).toContain('<dt>Due</dt>');
+    expect(html).toContain('<dt>Latest</dt>');
+    expect(html).toContain('<dt>Total</dt><dd>In-state $69,123</dd>');
+  });
+
+  it('puts the source, with its own entering class, at the end of every block heading; the PDF opens at the page', () => {
+    const blocks = html.split('class="medapp-group"').slice(1);
     expect(blocks.length).toBe(5);
     for (const b of blocks) {
       expect(b).toContain('Source: AAMC MSAR Report for Applicants and Advisors, ');
-      expect(b).toContain(`href="${MSAR_PAGE_URL}"`);
+      expect(b).toContain('data-slot="med-source-ref"');
     }
     expect(html).toContain('2026 entering class, Deposit Due Date');
+    const paged = renderToString(
+      <AdmissionsFactsView
+        data={{ pageUrl: MSAR_PAGE_URL, facts: [fact('ACCEPTS_CANADIAN', { value: 'NO', page: 7 })] }}
+      />,
+    );
+    expect(paged).toContain('data-href="https://students-residents.aamc.org/media/6996/download?attachment#page=7"');
+  });
+
+  it('collapses a block whose answer makes the rest moot, and merges in-state and out-of-state', () => {
+    const out = renderToString(
+      <AdmissionsFactsView
+        data={{
+          pageUrl: MSAR_PAGE_URL,
+          facts: [
+            fact('DEPOSIT_REQUIRED', { reportId: 7066, value: 'NO' }),
+            fact('DEPOSIT_DUE', { reportId: 7066, value: '2026-04-30' }),
+            fact('TUITION_IN_STATE', { reportId: 7071, num: 40000 }),
+            fact('TUITION_OUT_OF_STATE', { reportId: 7071, num: 60000 }),
+            fact('DEPOSIT_IN_STATE', { reportId: 7066, num: 100 }),
+          ],
+        }}
+      />,
+    );
+    expect(out).toContain('<h3 class="medapp-h3">Deposit</h3><span class="medapp-factline">Not required</span>');
+    expect(out).not.toContain('April 30, 2026');
+    expect(out).toContain('<dt>Tuition and fees</dt><dd>In-state $40,000 · Out-of-state $60,000</dd>');
+  });
+
+  it('shows the DACA sentence once when the report repeats the school note', () => {
+    const out = renderToString(
+      <AdmissionsFactsView
+        data={{
+          pageUrl: MSAR_PAGE_URL,
+          facts: [
+            fact('ACCEPTS_DACA', { value: 'YES', note: 'We consider DACA applicants.' }),
+            fact('DACA_DETAILS', { reportId: 7031, value: 'We consider DACA applicants.' }),
+          ],
+        }}
+      />,
+    );
+    expect(out.match(/We consider DACA applicants\./g)).toHaveLength(1);
   });
 
   it('leaves out a fact the report did not give and never prints a blank', () => {

@@ -1,0 +1,378 @@
+/* ── Sources: one quiet icon at the trailing end of a row, its popover on the overlay ─ */
+.medapp-srcref-wrap {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: auto;
+}
+.medapp-srcref {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  margin-block: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  background-color: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-srcref:hover,
+.medapp-srcref[aria-expanded='true'] {
+  background-color: var(--app-med-tonal-hover);
+  color: var(--app-text);
+}
+@media (pointer: coarse) {
+  .medapp-srcref {
+    inline-size: 44px;
+    block-size: 44px;
+    margin: -10px -10px -10px 0;
+  }
+}
+/* A heading or value row that carries a source: the words, then the icon at the far end. */
+.medapp-srcrow {
+  display: flex;
+  align-items: center;
+  gap: var(--app-med-space-3);
+  min-inline-size: 0;
+}
+/* The popover portals to <body>, outside the app root, so it reads only the palette (`--app-*` is on <html> too). */
+.medapp-srcpop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  color: var(--app-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.medapp-srcpop__name {
+  margin: 0;
+  font-weight: 600;
+}
+.medapp-srcpop__meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+.medapp-srcpop__quote {
+  margin: 2px 0;
+  padding-inline-start: 10px;
+  border-inline-start: 2px solid var(--app-border-bright);
+  color: var(--app-text);
+}
+.medapp-srcpop__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-block-size: 36px;
+  margin-block-start: 2px;
+  color: var(--app-text);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Facts: a definition list. A word or a figure sits on its label's line, at the end; a sentence goes under its label.
+   From 768px the label is a column at the start and every value lines up beside it. A row's note (the school's own
+   sentence) runs under it at full width. */
+.medapp-defs--facts > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--app-med-space-4);
+  padding-block: 10px;
+}
+.medapp-defs--facts > div.is-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.medapp-defs--facts dd {
+  text-align: end;
+}
+.medapp-defs--facts > div.is-stack dd,
+.medapp-defs--facts dd.medapp-defs__note {
+  text-align: start;
+}
+.medapp-defs--facts dd.medapp-defs__note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text-muted);
+}
+@media (min-width: 768px) {
+  .medapp-defs--facts > div,
+  .medapp-defs--facts > div.is-stack {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    column-gap: var(--app-med-space-5);
+    align-items: baseline;
+  }
+  .medapp-defs--facts dd,
+  .medapp-defs--facts > div.is-stack dd {
+    text-align: start;
+  }
+  .medapp-defs--facts dd.medapp-defs__note {
+    grid-column: 2;
+  }
+}
+.medapp-answer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.medapp-answer svg {
+  color: var(--app-text-muted);
+}
+.medapp-factline {
+  margin-inline-start: auto;
+  font-size: 15px;
+  color: var(--app-text);
+}
+.medapp-factline + .medapp-srcref-wrap {
+  margin-inline-start: 0;
+}
+.medapp-text--sm {
+  font-size: 15px;
+}
+/* A heading with its icon in front. */
+.medapp-headicon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.medapp-headicon > svg {
+  flex: none;
+  color: var(--app-text-muted);
+}
+.medapp-group > .medapp-srcrow {
+  min-block-size: 32px;
+}
+/* A row of source links under a chart or a tab: "Sources" and each source as a short icon link. */
+.medapp-sourcelinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--app-med-space-1);
+  margin: 0;
+  font-size: var(--app-med-text-meta);
+  color: var(--app-text-muted);
+}
+.medapp-sourcelinks > span {
+  margin-inline-end: var(--app-med-space-1);
+}
+.medapp-sourcelink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding-inline: var(--app-med-space-2);
+  border-radius: var(--app-med-radius-sm);
+  color: var(--app-text-muted);
+  text-decoration: none;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-sourcelink:hover {
+  background-color: var(--app-med-tonal-hover);
+  color: var(--app-text);
+}
+@media (pointer: coarse) {
+  .medapp-sourcelink {
+    min-block-size: 44px;
+  }
+}
+.medapp-srcrefs {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+.medapp-srcrefs > .medapp-srcref-wrap {
+  margin-inline-start: 0;
+}
+/* The previous answer, kept on screen while a changed filter loads: dimmed, never blanked, never a skeleton. */
+.medapp-swap {
+  transition: opacity 90ms var(--app-ease);
+}
+.medapp-stale {
+  opacity: 0.55;
+}
+/* A school's newest public status at the end of its index row. */
+.medapp-latest {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--app-med-space-2);
+  max-inline-size: 48%;
+}
+.medapp-latest__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-inline-size: 0;
+  font-size: var(--app-med-text-meta);
+  line-height: 1.3;
+  text-align: end;
+}
+.medapp-latest__label {
+  white-space: nowrap;
+}
+.medapp-latest__when {
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Multi-select: a field-shaped trigger and a panel of checkboxes under it ─ */
+.medapp-multi {
+  position: relative;
+  min-inline-size: 0;
+}
+.medapp-multi__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-2);
+  padding-inline-end: 12px;
+  text-align: start;
+  cursor: pointer;
+}
+.medapp-multi__summary {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.medapp-multi__chevron {
+  flex: none;
+  color: var(--app-text-muted);
+}
+.medapp-multi__trigger[aria-expanded='true'] .medapp-multi__chevron {
+  transform: rotate(180deg);
+}
+.medapp-multi__panel {
+  position: absolute;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-start: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  min-inline-size: 100%;
+  inline-size: max-content;
+  max-inline-size: min(18rem, calc(100vw - 32px));
+  padding: 6px;
+  border-radius: var(--app-med-radius);
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+  box-shadow: var(--app-shadow);
+}
+.medapp-multi__panel[hidden] {
+  display: none;
+}
+.medapp-multi__row {
+  min-block-size: 40px;
+  padding-inline: 8px;
+  border-radius: var(--app-med-radius-sm);
+  font-size: var(--app-med-text-secondary);
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-multi__row:hover {
+  background-color: var(--app-med-tonal);
+}
+@media (pointer: coarse) {
+  .medapp-multi__row {
+    min-block-size: 44px;
+  }
+}
+.medapp-multi--compact .medapp-multi__trigger {
+  min-block-size: 36px;
+  block-size: 36px;
+  padding-inline-start: 10px;
+  font-size: var(--app-med-text-secondary);
+}
+.medapp-multi--compact .medapp-multi__panel {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+.medapp-multi--compact:first-child .medapp-multi__panel {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}
+
+/* ── Chart zoom: three small round buttons over the plot's end, and the grab cursor once zoomed ─ */
+.medapp-zoom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-block-end: var(--app-med-space-1);
+}
+.medapp-zoom__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  background-color: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-zoom__btn:hover:not(:disabled) {
+  background-color: var(--app-med-tonal-hover);
+  color: var(--app-text);
+}
+.medapp-zoom__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@media (pointer: coarse) {
+  .medapp-zoom__btn {
+    inline-size: 44px;
+    block-size: 44px;
+  }
+}
+.medapp-plot--zoomed {
+  cursor: grab;
+}
+.medapp-plot--zoomed:active {
+  cursor: grabbing;
+}
+
+/* One level of panel: a panel that lands inside another (the sign-in prompt in the Ask panel, an empty state in a
+   section) loses its own box and keeps only its spacing. */
+:is(.medapp-panel, .medapp-section--panel, .medapp-chart) :is(.medapp-panel, .medapp-section--panel) {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  padding-inline: 0;
+}
+
+/* On a phone the newest status takes its own line under the school, past the crest, so the name keeps the width. */
+@media (max-width: 479px) {
+  .medapp-row:has(> .medapp-latest) {
+    flex-wrap: wrap;
+    row-gap: var(--app-med-space-2);
+  }
+  .medapp-row:has(> .medapp-latest) > .medapp-row__body {
+    flex: 1 1 0;
+  }
+  .medapp-latest {
+    order: 3;
+    flex-basis: 100%;
+    max-inline-size: none;
+    padding-inline-start: 52px;
+  }
+  .medapp-latest__text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 6px;
+  }
+}

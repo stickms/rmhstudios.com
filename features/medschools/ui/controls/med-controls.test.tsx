@@ -17,17 +17,17 @@ import { MedSwitch } from './MedSwitch';
 const noop = () => undefined;
 
 describe('MedButton', () => {
-  it('is a native button of the chip family, secondary by default, never submitting by accident', () => {
+  it('is a native button, secondary (the tonal fill) by default, never submitting by accident', () => {
     const html = renderToString(<MedButton>Save</MedButton>);
     expect(html).toContain('<button type="button"');
-    expect(html).toContain('class="medapp-chip"');
+    expect(html).toContain('class="medapp-btn"');
     expect(html).toContain('data-variant="secondary"');
   });
-  it('maps the variants to the chip modifiers', () => {
-    expect(renderToString(<MedButton variant="primary">Go</MedButton>)).toContain('medapp-chip medapp-chip--primary');
-    expect(renderToString(<MedButton variant="ghost">Go</MedButton>)).toContain('medapp-chip--quiet');
-    expect(renderToString(<MedButton variant="danger">Go</MedButton>)).toContain('medapp-chip--danger');
-    expect(renderToString(<MedButton size="xs">Go</MedButton>)).toContain('medapp-chip--xs');
+  it('maps the variants to the button modifiers, never the pill of a toggle', () => {
+    expect(renderToString(<MedButton variant="primary">Go</MedButton>)).toContain('medapp-btn medapp-btn--primary');
+    expect(renderToString(<MedButton variant="tertiary">Go</MedButton>)).toContain('medapp-btn medapp-btn--tertiary');
+    expect(renderToString(<MedButton variant="danger">Go</MedButton>)).toContain('medapp-btn medapp-btn--danger');
+    expect(renderToString(<MedButton>Go</MedButton>)).not.toContain('medapp-chip');
   });
   it('loading disables the button and says it is busy', () => {
     const html = renderToString(<MedButton loading>Save</MedButton>);

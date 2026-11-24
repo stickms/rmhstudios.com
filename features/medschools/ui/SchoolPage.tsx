@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { holdScroll } from './hold-scroll';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
@@ -22,10 +23,24 @@ import { SchoolFacts } from './SchoolFacts';
 import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { Curriculum } from './facts/Curriculum';
 import { PageHead } from './shell/PageHead';
+import { Places } from './shell/Places';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
 /** /rmh-medschool/$slug. A tab is an entry in `SCHOOL_TABS`, a label below and a branch of the switch at the end. */
+/**
+ * On a phone the section links are one line that scrolls sideways: bring the current one into that line's view when the
+ * page opens on a later section (Facts, Secondaries). Moves only the row's own scroll, never the page.
+ */
+function showCurrentPill(nav: HTMLElement | null): void {
+  const pill = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+  if (!nav || !pill || nav.scrollWidth <= nav.clientWidth) return;
+  const end = pill.offsetLeft + pill.offsetWidth;
+  if (pill.offsetLeft < nav.scrollLeft || end > nav.scrollLeft + nav.clientWidth) {
+    nav.scrollLeft = Math.max(0, end - nav.clientWidth + 8);
+  }
+}
+
 export function SchoolPage() {
   const { t } = useTranslation('medschools');
   const navigate = useNavigate();
@@ -47,6 +62,7 @@ export function SchoolPage() {
     const { program, show, ...rest } = patch;
     const viewPatch: ViewPatch = { ...(program ? { program } : {}), ...(show ? { show } : {}) };
     const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
+    holdScroll();
     void navigate({
       to: '/rmh-medschool/$slug',
       params: { slug },
@@ -120,23 +136,20 @@ export function SchoolPage() {
         {detail ? (
           <div className="medapp-school-body">
             {session ? (
-              <nav className="medapp-chips" aria-label={t('school-my-label', { defaultValue: 'My Med Schools' })}>
-                <Link to="/rmh-medschool/tracker" className="medapp-chip">
-                  {t('school-my-tracker', { defaultValue: 'My tracker' })}
-                </Link>
-                <Link to="/rmh-medschool/ask" className="medapp-chip">
-                  {t('school-ask-link', { defaultValue: 'Ask' })}
-                </Link>
-                <Link to="/rmh-medschool/lists" className="medapp-chip">
-                  {t('school-my-lists', { defaultValue: 'My lists' })}
-                </Link>
-              </nav>
+              <Places
+                label={t('school-my-label', { defaultValue: 'My Med Schools' })}
+                places={['tracker', 'ask', 'lists']}
+              />
             ) : null}
             <PrefsNote fromPrefs={view.fromPrefs} />
             <SchoolFacts school={detail.school} />
             {/* Links to the same page with another `tab`, so a nav with `aria-current`, not a tablist (as the shared
                 `Tabs` renders its link mode). */}
-            <nav className="medapp-pills" aria-label={t('school-tabs-label', { defaultValue: 'School sections' })}>
+            <nav
+              ref={showCurrentPill}
+              className="medapp-pills"
+              aria-label={t('school-tabs-label', { defaultValue: 'School sections' })}
+            >
               {SCHOOL_TABS.map((id) => (
                 <Link
                   key={id}
@@ -146,6 +159,7 @@ export function SchoolPage() {
                   replace
                   resetScroll={false}
                   activeOptions={{ exact: true, includeSearch: true }}
+                  onClick={holdScroll}
                   aria-current={search.tab === id ? 'page' : undefined}
                   className="medapp-pill"
                 >
@@ -153,39 +167,43 @@ export function SchoolPage() {
                 </Link>
               ))}
             </nav>
-            {search.tab === 'history' ? (
-              <HistoryTab
-                slug={slug}
-                detail={detail}
-                search={search}
-                setSearch={setSearch}
-                programControl={programControl}
-              />
-            ) : search.tab === 'forecast' ? (
-              <ForecastTab
-                slug={slug}
-                detail={detail}
-                search={search}
-                setSearch={setSearch}
-                programControl={programControl}
-              />
-            ) : search.tab === 'secondaries' ? (
-              <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
-            ) : search.tab === 'facts' ? (
-              <>
-                <Curriculum slug={slug} />
-                <AdmissionsFacts slug={slug} degree={detail.school.degree} />
-              </>
-            ) : (
-              <>
-                <div className="medapp-controls">{programControl}</div>
-                {search.tab === 'activity' ? (
-                  <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
-                ) : (
-                  <InterviewsTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
-                )}
-              </>
-            )}
+            {/* At least a screen tall: switching to a shorter section, or one still loading, never shortens the page
+                under the reader and pulls the scroll back up. */}
+            <div className="medapp-tabbody">
+              {search.tab === 'history' ? (
+                <HistoryTab
+                  slug={slug}
+                  detail={detail}
+                  search={search}
+                  setSearch={setSearch}
+                  programControl={programControl}
+                />
+              ) : search.tab === 'forecast' ? (
+                <ForecastTab
+                  slug={slug}
+                  detail={detail}
+                  search={search}
+                  setSearch={setSearch}
+                  programControl={programControl}
+                />
+              ) : search.tab === 'secondaries' ? (
+                <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
+              ) : search.tab === 'facts' ? (
+                <>
+                  <Curriculum slug={slug} admitHref={detail.links.find((l) => l.source === 'ADMIT')?.href} />
+                  <AdmissionsFacts slug={slug} degree={detail.school.degree} />
+                </>
+              ) : (
+                <>
+                  <div className="medapp-controls">{programControl}</div>
+                  {search.tab === 'activity' ? (
+                    <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
+                  ) : (
+                    <InterviewsTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
+                  )}
+                </>
+              )}
+            </div>
             {session ? (
               <div className="medapp-panel medapp-panel--padded">
                 <AskPanel slug={slug} schoolName={detail.school.name} heading="section" />

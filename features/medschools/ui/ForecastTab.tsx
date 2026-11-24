@@ -95,7 +95,7 @@ export function ForecastTab({
   return (
     <div className="medapp-tab">
       {controls}
-      <SkeletonSwap ready={!!data} skeleton={<ChartSkeleton />}>
+      <SkeletonSwap ready={!!data} stale={query.isPlaceholderData} skeleton={<ChartSkeleton />}>
         {data ? (
           <div className="medapp-section">
             <h2 className="medapp-h2">

@@ -38,6 +38,7 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
       sourceUrl: true,
       sourceLabel: true,
       checkedOn: true,
+      page: true,
     },
   });
   const order: string[] = [...Object.keys(FACT_KINDS), ...CURRICULUM_KIND_IDS];
@@ -61,6 +62,7 @@ export async function getSchoolFacts(slug: string): Promise<MedSchoolFactsRes | 
         sourceUrl: r.sourceUrl,
         sourceLabel: r.sourceLabel,
         checkedOn: day(r.checkedOn),
+        page: r.page,
       };
     })
     .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));

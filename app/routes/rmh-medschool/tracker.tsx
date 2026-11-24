@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { parseTrackerSearch } from '@features/medschools/engine/search';
-import { trackerQuery } from '@features/medschools/medschools.queries';
+import { trackerQuery, waitUnlessStay } from '@features/medschools/medschools.queries';
 import { TrackerPage } from '@features/medschools/ui/tracker/TrackerPage';
 
 /**
@@ -19,6 +19,10 @@ export const Route = createFileRoute('/rmh-medschool/tracker')({
   }),
   validateSearch: parseTrackerSearch,
   loaderDeps: ({ search }) => search,
-  loader: ({ context, deps }) => prefetchRouteQuery(context.queryClient, trackerQuery(deps.cycle)),
+  // A cycle change (`cause: 'stay'`) does not wait: the old cycle stays on screen, dimmed, until the new one lands.
+  loader: async ({ context, deps, cause }) => {
+    await waitUnlessStay(cause, prefetchRouteQuery(context.queryClient, trackerQuery(deps.cycle)));
+    return undefined;
+  },
   component: TrackerPage,
 });

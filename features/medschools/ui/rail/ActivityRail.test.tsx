@@ -62,14 +62,17 @@ describe('ActivityRail', () => {
     expect(html.match(/<li/g)).toHaveLength(2);
   });
 
-  it('has a search, an event filter and the four program toggles', () => {
+  it('has a search, then the event types and the programs as two multi-selects', () => {
     const html = render([ev('a1')]);
     expect(html).toContain('type="search"');
     expect(html).toContain('aria-label="Search activity"');
     expect(html).toContain('aria-label="Event"');
     expect(html).toContain('aria-label="Programs"');
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(4);
-    expect(html).toContain('>Decisions<');
+    const programs = html.slice(html.indexOf('role="group" aria-label="Programs"'));
+    expect(programs.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(4);
+    // Every event type is a checkbox with its status disc; all on reads "All events".
+    expect(html).toContain('aria-label="Event: All events"');
+    expect(html.match(/medapp-status-icon medapp-status-icon--sm/g)!.length).toBeGreaterThanOrEqual(7);
   });
 
   it('draws the sentinel only while more pages exist', () => {

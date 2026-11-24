@@ -84,7 +84,7 @@ describe('CategoryToggles pressed state', () => {
     const html = renderToString(<CategoryToggles value={['INTERVIEW']} onChange={noop} />);
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(4);
-    expect(html.match(/medapp-chip medapp-chip--xs/g)).toHaveLength(5);
+    expect(html.match(/class="medapp-chip"/g)).toHaveLength(5);
   });
 });
 

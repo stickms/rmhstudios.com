@@ -1,0 +1,325 @@
+/* ── Sections inside a tab ───────────────────────────────────────────────── */
+.medapp-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-head-gap);
+  min-width: 0;
+}
+.medapp-section--panel {
+  box-sizing: border-box;
+  padding: var(--app-med-panel-pad);
+  border-radius: var(--app-med-radius-lg);
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+.medapp-h2 {
+  margin: 0;
+  font-size: var(--app-med-text-section);
+  line-height: 1.25;
+  color: var(--app-text);
+}
+.medapp-h3 {
+  margin: 0;
+  font-size: var(--app-med-text-body);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--app-text);
+}
+/* A section's heading row: the title (and its count under it) at the start, the actions at the end, on the title's
+   centre line. */
+.medapp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+  min-width: 0;
+}
+.medapp-head__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.medapp-head__text .medapp-h2 {
+  overflow-wrap: anywhere;
+}
+.medapp-label {
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--app-text-muted);
+}
+.medapp-meta {
+  margin: 0;
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.5;
+  color: var(--app-text-muted);
+}
+.medapp-meta a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.medapp-text {
+  margin: 0;
+  font-size: var(--app-med-text-body);
+  line-height: 1.5;
+  color: var(--app-text);
+  overflow-wrap: anywhere;
+}
+/* Readable measure for prose and answers. */
+.medapp-prose {
+  max-inline-size: 65ch;
+}
+.medapp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+  min-width: 0;
+}
+.medapp-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-3) var(--app-med-space-5);
+}
+/* Rows on rules inside a panel. */
+.medapp-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-list > li {
+  padding-block: var(--app-med-space-3);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-list > li:last-child {
+  border-bottom: 0;
+}
+.medapp-list--between > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 16px;
+}
+.medapp-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text);
+}
+.medapp-table th,
+.medapp-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--app-border);
+  text-align: start;
+  font-weight: 400;
+}
+.medapp-table thead th {
+  font-size: var(--app-med-text-meta);
+  color: var(--app-text-muted);
+}
+.medapp-table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+.medapp-table .is-num {
+  padding-inline-start: 12px;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.medapp-table .is-primary {
+  font-weight: 600;
+}
+.medapp-table .is-muted {
+  color: var(--app-text-muted);
+}
+.medapp-table--chart {
+  margin-block-start: 8px;
+  font-size: var(--app-med-text-meta);
+}
+.medapp-table--chart th,
+.medapp-table--chart td {
+  padding: 4px 12px 4px 0;
+}
+.medapp-bar-track {
+  block-size: 8px;
+  inline-size: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-bg-subtle);
+}
+.medapp-bar-track > span {
+  display: block;
+  block-size: 100%;
+}
+.medapp-category-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Charts: a paper panel, a legend, the drawing, the data table ────────── */
+.medapp-chart {
+  margin: 0;
+  padding: var(--app-med-panel-pad);
+  border-radius: var(--app-med-radius-lg);
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+.medapp-chart__title {
+  display: block;
+  font-family: var(--app-font-display);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--app-text);
+}
+.medapp-chart__sub {
+  display: block;
+  margin-block-start: var(--app-med-space-1);
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.45;
+  color: var(--app-text-muted);
+}
+.medapp-chart__legend {
+  margin-block-start: var(--app-med-head-gap);
+}
+.medapp-chart__legend:empty {
+  display: none;
+}
+.medapp-chart__plot {
+  margin-block-start: var(--app-med-head-gap);
+}
+.medapp-chart__details {
+  margin-block-start: var(--app-med-space-3);
+}
+.medapp-chart__details summary {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  cursor: pointer;
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text-muted);
+}
+.medapp-plot {
+  border-radius: var(--app-med-radius-sm);
+}
+.medapp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--app-med-text-meta);
+  line-height: 1.3;
+  color: var(--app-text-muted);
+}
+/* The probe's tooltip sits over the plot (absolute inside the plot, never fixed): paper, a rule, no shadow. */
+.medapp-tip {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  padding: 10px 14px;
+  border-radius: var(--app-med-radius);
+  border: 1px solid var(--app-border-bright);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+}
+.medapp-tip__label {
+  font-size: var(--app-med-text-meta);
+  font-weight: 600;
+}
+.medapp-tip__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-tip__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--app-med-text-meta);
+  color: var(--app-text-muted);
+}
+.medapp-tip__row > :nth-child(2) {
+  margin-inline-end: auto;
+}
+.medapp-tip__value {
+  font-weight: 600;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+.medapp-list--plain > li {
+  padding-block: 2px;
+  border-bottom: 0;
+}
+/* Definition rows on rules: the label at the start, the value at the end. */
+.medapp-defs {
+  margin: 0;
+}
+.medapp-defs > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--app-med-space-4);
+  padding-block: var(--app-med-space-3);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-defs > div:last-child {
+  border-bottom: 0;
+}
+.medapp-defs dt {
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text-muted);
+}
+.medapp-defs dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: end;
+  overflow-wrap: anywhere;
+  color: var(--app-text);
+}
+.medapp-quote {
+  padding-block: var(--app-med-space-3);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-quote:last-child {
+  border-bottom: 0;
+}
+.medapp-timer {
+  padding-block-end: var(--app-med-space-4);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-clock {
+  margin: 0;
+  font-family: var(--app-font-mono);
+  font-size: 32px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+}
+.medapp-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+/* Rows of a prompt list stack their lines tightly. */
+.medapp-list > li > .medapp-text + .medapp-meta,
+.medapp-list > li > .medapp-meta + .medapp-meta {
+  margin-block-start: var(--app-med-space-1);
+}

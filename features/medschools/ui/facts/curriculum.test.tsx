@@ -27,6 +27,7 @@ const fact = (kind: string, over: Partial<MedSchoolFactDto> = {}): MedSchoolFact
   sourceUrl: 'https://admit.org',
   sourceLabel: 'Admit.org',
   checkedOn: '2026-11-24',
+  page: null,
   ...over,
 });
 
@@ -86,7 +87,7 @@ describe('CurriculumView', () => {
 
   it('ends with the source line and its link, and the one muted sentence', () => {
     expect(html).toContain('Source: Admit.org, checked November 24, 2026');
-    expect(html).toContain('href="https://admit.org"');
+    expect(html).toContain('data-href="https://admit.org"');
     expect(html).toContain('Compiled by Admit.org; confirm with the school.');
     expect(html).not.toContain('AAMC');
   });

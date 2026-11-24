@@ -159,7 +159,7 @@ export default function TrackerImport({
           {heading}
         </h2>
         {stage !== 'saved' ? (
-          <MedButton variant="ghost" disabled={saving} onClick={onClose}>
+          <MedButton variant="tertiary" disabled={saving} onClick={onClose}>
             {t('tracker-cancel', { defaultValue: 'Cancel' })}
           </MedButton>
         ) : null}
@@ -195,7 +195,7 @@ export default function TrackerImport({
             {file ? (
               <MedButton
                 type="button"
-                variant="ghost"
+                variant="tertiary"
                 disabled={stage === 'reading'}
                 onClick={() => {
                   if (fileInput.current) fileInput.current.value = '';
@@ -226,7 +226,7 @@ export default function TrackerImport({
             {stage === 'reading' ? (
               <MedButton
                 type="button"
-                variant="ghost"
+                variant="tertiary"
                 onClick={() => {
                   abort.current?.abort();
                   setStage('input');
@@ -315,7 +315,7 @@ export default function TrackerImport({
               {t('import-add', { defaultValue: 'Add to my tracker' })}
             </MedButton>
             <MedButton
-              variant="ghost"
+              variant="tertiary"
               disabled={saving}
               onClick={() => {
                 setStage('input');
