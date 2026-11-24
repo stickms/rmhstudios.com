@@ -208,7 +208,7 @@ export function AnalyticsDashboard() {
               key={
                 label
               }
-              className="rounded-site px-4 py-3"
+              className="py-1"
             >
               <div className="flex items-center gap-2 text-site-text-muted">
                 <Icon
@@ -232,7 +232,7 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Engagement rate */}
-      <div className="rounded-site px-4 py-3">
+      <div>
         <div className="flex items-center gap-2 text-site-text-muted">
           <TrendingUp
             className="size-4"
@@ -266,7 +266,7 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Posts-per-day chart (last 30 days) */}
-      <div className="rounded-site px-4 py-3">
+      <div>
         <h2 className="site-section-label mb-3">
           {t(
             'posts-last-30-days',
@@ -331,16 +331,12 @@ export function AnalyticsDashboard() {
             )}
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul>
             {data.topPosts.map(
               (
                 p,
               ) => (
-                <li
-                  key={
-                    p.id
-                  }
-                >
+                <li key={p.id} className="rule-row">
                   <Link
                     to="/u/$userid/post/$postid"
                     params={{
@@ -349,7 +345,7 @@ export function AnalyticsDashboard() {
                       postid:
                         p.id,
                     }}
-                    className="surface-press block rounded-site px-4 py-3"
+                    className="row-hover block py-3"
                   >
                     <p className="line-clamp-2 text-sm text-site-text">
                       {p.content ||

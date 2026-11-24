@@ -82,8 +82,8 @@ export function RankedSummary() {
           });
 
   return (
-    <section className="rounded-site">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <section>
+      <div className="flex flex-wrap items-center gap-3 py-3">
         <span
           className="surface-field flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
           aria-hidden="true"
@@ -137,7 +137,7 @@ export function RankedSummary() {
       </div>
 
       {open && (
-        <div className="border-t border-site-border px-4 py-3">
+        <div className="border-t border-site-border py-3">
           {hasRatings ? (
             <ul className={cn('flex flex-col gap-2', arrival)}>
               {ratings.map((r) => (

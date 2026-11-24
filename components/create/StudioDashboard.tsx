@@ -131,9 +131,9 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <Cells columns={3}>
           {sources.map(({ key, label, bar }) => (
-            <div key={key} className="surface-field rounded-site px-3 py-3">
+            <li key={key}>
               <div className="flex items-center gap-1.5 text-xs text-site-text-muted">
                 <span className={`inline-block size-2.5 rounded-full ${bar}`} aria-hidden />
                 {label}
@@ -141,9 +141,9 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
               <div className="mt-1 text-xl font-semibold tabular-nums text-site-text">
                 {fmt.number(bySource[key])}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </Cells>
 
         {/* Monthly breakdown as segmented bars */}
         {windowTotal > 0 ? (
@@ -198,11 +198,11 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
             })}
           </p>
         ) : (
-          <div className="space-y-3">
+          <div>
             {recentTips.map((tip) => (
               <div
                 key={tip.id}
-                className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
+                className="rule-row flex items-center justify-between gap-3 py-3"
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-site-text">

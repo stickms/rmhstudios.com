@@ -681,7 +681,7 @@ export function EarningsTab() {
               },
             )}
           </h3>
-          <div className="space-y-3">
+          <div>
             {requests.map(
               (
                 r,
@@ -690,7 +690,7 @@ export function EarningsTab() {
                   key={
                     r.id
                   }
-                  className="flex items-center justify-between rounded-site px-4 py-3 text-sm"
+                  className="rule-row flex items-center justify-between py-3 text-sm"
                 >
                   <span>
                     {r.kind ===
