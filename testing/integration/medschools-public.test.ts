@@ -57,7 +57,92 @@ async function seedSchoolFacts(): Promise<void> {
      on conflict do nothing`,
     [schoolId],
   );
+  // The MD-PhD rows (program PHD, cycle 0): the fixture school has a program, a verified 2-4-2 timeline and an MSTP
+  // grant; the secondaries "not yet" school's page says it has no combined program.
+  const phd = (
+    id: string,
+    school: string,
+    kind: string,
+    source: string,
+    valueText: string,
+    valueNum: number | null,
+    valueJson: unknown,
+    note: string | null,
+    sourceUrl: string,
+  ) =>
+    q(
+      `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueText", "valueNum", "valueJson", note, source, "sourceUrl", "sourceLabel", "checkedOn")
+       values ($1, $2, 'PHD', 0, $3, $4, $5, $6::jsonb, $7, $8, $9, 'fixture', '2026-11-24')
+       on conflict do nothing`,
+      [id, school, kind, valueText, valueNum, JSON.stringify(valueJson), note, source, sourceUrl],
+    );
+  await phd(
+    'it-mdphd-1',
+    schoolId,
+    'MDPHD_PROGRAM',
+    'SCHOOL_PAGE',
+    'YES',
+    null,
+    { name: 'Fixture MSTP' },
+    null,
+    MDPHD_PAGE,
+  );
+  await phd(
+    'it-mdphd-2',
+    schoolId,
+    'MDPHD_TIMELINE',
+    'SCHOOL_PAGE',
+    '2-4-2',
+    8,
+    {
+      phases: [
+        { phase: 'preclinical', years: 2, label: 'Years 1-2' },
+        { phase: 'research', years: 4, label: 'Years 3-6' },
+        { phase: 'clinical', years: 2, label: 'Years 7-8' },
+      ],
+    },
+    MDPHD_EVIDENCE,
+    MDPHD_PAGE,
+  );
+  await phd(
+    'it-mdphd-3',
+    schoolId,
+    'MSTP_T32',
+    'NIH_REPORTER',
+    'LISTED',
+    2026,
+    { grant: 'T32GM000001', projectNum: '5T32GM000001-02', applId: 1, organization: 'FIXTURE' },
+    null,
+    'https://reporter.nih.gov/project-details/1',
+  );
+  const none = await q('select id from med_school where slug = $1', [SECONDARIES_NOTYET_SLUG]);
+  const noneId = (none.rows[0] as { id: string }).id;
+  await phd(
+    'it-mdphd-4',
+    noneId,
+    'MDPHD_PROGRAM',
+    'SCHOOL_PAGE',
+    'NO',
+    null,
+    { name: null },
+    null,
+    'https://fixture.edu/md',
+  );
+  // A stray timeline on the "no program" school must never be served.
+  await phd(
+    'it-mdphd-5',
+    noneId,
+    'MDPHD_TIMELINE',
+    'SCHOOL_PAGE',
+    '2-4-2',
+    8,
+    { phases: [] },
+    MDPHD_EVIDENCE,
+    MDPHD_PAGE,
+  );
 }
+const MDPHD_PAGE = 'https://fixture.edu/md-phd';
+const MDPHD_EVIDENCE = 'Years 1-2: preclinical; Years 3-6: PhD training; Years 7-8: clinical clerkships.';
 
 /**
  * An RMH event of the fixture school, later than every public one: the index's "newest status" must never show it (an
@@ -571,7 +656,11 @@ describe('the public secondaries endpoint', () => {
 
 /* --------------------------- school facts: the AAMC MSAR report rows and their endpoint --------------------------- */
 
-const FACTS_KEYS = ['facts', 'pageUrl'];
+const FACTS_KEYS = ['facts', 'mdphd', 'pageUrl'];
+const MDPHD_KEYS = ['mstp', 'program', 'timeline'];
+const MDPHD_PROGRAM_KEYS = ['checkedOn', 'exists', 'name', 'source', 'sourceUrl'];
+const MDPHD_TIMELINE_KEYS = ['checkedOn', 'evidence', 'pattern', 'phases', 'sourceUrl', 'totalYears'];
+const MDPHD_MSTP_KEYS = ['checkedOn', 'fiscalYear', 'grant', 'listed', 'sourceUrl'];
 const FACT_KEYS = [
   'checkedOn',
   'cycleYear',
@@ -632,6 +721,64 @@ describe('the public school facts endpoint', () => {
     expect(none.body.facts).toEqual([]);
     expect((await anon.get(factsUrl('does-not-exist'))).status).toBe(404);
     expect((await anon.get(factsUrl(INACTIVE_SLUG))).status).toBe(404);
+  });
+
+  it('serves the MD-PhD program with pinned keys, and its rows never join the facts list', async () => {
+    const res = await anon.get(factsUrl());
+    const m = res.body.mdphd;
+    expect(Object.keys(m).sort()).toEqual(MDPHD_KEYS);
+    expect(Object.keys(m.program).sort()).toEqual(MDPHD_PROGRAM_KEYS);
+    expect(Object.keys(m.timeline).sort()).toEqual(MDPHD_TIMELINE_KEYS);
+    expect(Object.keys(m.mstp).sort()).toEqual(MDPHD_MSTP_KEYS);
+    expect(m.program).toMatchObject({
+      exists: true,
+      name: 'Fixture MSTP',
+      source: 'SCHOOL_PAGE',
+      checkedOn: '2026-11-24',
+    });
+    expect(m.timeline).toMatchObject({
+      pattern: '2-4-2',
+      totalYears: 8,
+      evidence: MDPHD_EVIDENCE,
+      sourceUrl: MDPHD_PAGE,
+    });
+    expect(m.timeline.phases.map((p: { phase: string }) => p.phase)).toEqual(['preclinical', 'research', 'clinical']);
+    expect(m.mstp).toEqual({
+      listed: true,
+      grant: 'T32GM000001',
+      fiscalYear: 2026,
+      sourceUrl: 'https://reporter.nih.gov/project-details/1',
+      checkedOn: '2026-11-24',
+    });
+    for (const k of ['MDPHD_PROGRAM', 'MDPHD_TIMELINE', 'MSTP_T32'])
+      expect(res.body.facts.map((f: { kind: string }) => f.kind)).not.toContain(k);
+    expect(JSON.stringify(m)).not.toMatch(/it-mdphd-|applId|projectNum|organization/);
+  });
+
+  it('gives a school with no combined program no MD-PhD facts: the one row, no timeline, no MSTP status', async () => {
+    const res = await anon.get(factsUrl(SECONDARIES_NOTYET_SLUG));
+    expect(res.body.mdphd).toEqual({
+      program: {
+        exists: false,
+        name: null,
+        source: 'SCHOOL_PAGE',
+        sourceUrl: 'https://fixture.edu/md',
+        checkedOn: '2026-11-24',
+      },
+      timeline: null,
+      mstp: null,
+    });
+  });
+
+  it('shows the MD-PhD group in the server HTML of the Facts tab', async () => {
+    const html = String((await anon.get(`/med/${SLUG}?tab=facts`)).body);
+    expect(html).toContain('MD-PhD program');
+    expect(html).toContain('Fixture MSTP');
+    expect(html).toContain('T32GM000001');
+    expect(html).toContain('Preclinical 2 years, then PhD research 4 years, then clinical 2 years');
+    const none = String((await anon.get(`/med/${SECONDARIES_NOTYET_SLUG}?tab=facts`)).body);
+    expect(none).toContain('No combined program');
+    expect(none).not.toContain('medapp-phasebar');
   });
 
   it('never depends on the viewer', async () => {

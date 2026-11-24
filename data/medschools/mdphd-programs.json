@@ -1,0 +1,3155 @@
+{
+  "source": "Each school's own MD-PhD (or DO-PhD) program page, read by hand; for a school with no combined program, the school's own degree or program page.",
+  "method": "One page set per school (at most about six requests, 3 s or more apart plus jitter, the user agent MarlonJack/1.0 (contact: admin@rmhstudios.com)). A timeline is kept only when its evidence was re-fetched and found on the cited page after normalising whitespace, quotes and dashes (or, for tables, letters and digits in order); phase lengths are only those the page states, and a range stays a range in the phase label. Built by scripts/medschools/build-mdphd-data.ts.",
+  "checkedOn": "2026-11-24",
+  "ownerDecisions": [
+    "Programs differ in layout (2-4-2, 3-4-1, 1.5-4-2.5 ...): show the school's own timeline where its page states it.",
+    "A program that does not state its layout is drawn as the typical 2-4-2, labelled \"Typical layout; the program does not publish its own\", never as the school's statement.",
+    "Not every school has a combined program: a school whose page shows none gets one quiet row; a school not decided here shows nothing.",
+    "MSTP (NIH T32) status comes from NIH RePORTER (data/medschools/mstp-t32.json); a program not found there is \"not listed\", never \"no\".",
+    "Every record cites its source: the program page for existence and the timeline, RePORTER for MSTP status."
+  ],
+  "verifier": "pnpm exec tsx scripts/medschools/check-mdphd.ts re-fetches every timeline url politely and asserts the evidence is on it (run by hand; CI has no network).",
+  "schools": [
+    {
+      "slug": "alabama",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://www.uab.edu/medicine/home/mstp/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "combination of medical school classes and graduate degree courses during the first two years of training"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "complete and defend their PhD thesis"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "clinical rotations in the last 1-2 years"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The majority of UAB MSTP students average 7-8 years before graduation, and students usually complete and defend their PhD thesis before beginning their clinical rotations in the last 1-2 years. … A unique component of the UAB MSTP training is the combination of medical school classes and graduate degree courses during the first two years of training.",
+        "url": "https://www.uab.edu/medicine/home/mstp/admissions/faq",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "albany",
+      "exists": true,
+      "name": "MD/PhD",
+      "url": "https://www.amc.edu/?p=3143",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "a second two or three year period of graduate study and thesis preparation"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "a final two years of ambulatory and hospital-based clinical clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students complete the first two years of medical school followed by a second two or three year period of graduate study and thesis preparation and a final two years of ambulatory and hospital-based clinical clerkships.",
+        "url": "https://www.amc.edu/?p=3143",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "alice-walton",
+      "exists": false,
+      "name": null,
+      "url": "https://www.alwmedschool.org/education/md-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "arizona-phoenix",
+      "exists": true,
+      "name": "MD/PhD Program (PhD in Clinical Translational Sciences)",
+      "url": "https://phoenixmed.arizona.edu/md-phd/faqs",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Medical School 1&2: first two years in the MD curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD, begins after USMLE Step 1 at end of second year"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Medical School 3&4: re-enter third and fourth year clerkships after PhD"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "What is the estimated time for completing the program? Seven to eight years, including the MD and MD/PhD curricula",
+        "url": "https://phoenixmed.arizona.edu/md-phd/faqs",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "arizona-tucson",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://medicine.arizona.edu/education/degree-programs/dual-degree-md-programs/mdphd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "Medical school curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Attend PhD courses and start PhD research project"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Complete clinical clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "which is at minimum seven years in duration.",
+        "url": "https://medicine.arizona.edu/education/degree-programs/dual-degree-md-programs/mdphd",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "arkansas",
+      "exists": true,
+      "name": "M.D./Ph.D. Dual Degree Training Program",
+      "url": "https://medicine.uams.edu/admissions/dual-degree-programs/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "initial two preclinical years of the College of Medicine curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Graduate School for the Ph.D."
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "last two years of clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Seven to eight years of academic study are usually required to complete the rigorous requirements of the CREST M.D./Ph.D. program. … Upon completion of graduate research and defense of the trainee’s dissertation, students re-enter medical school to complete their last two years of clinical training, comprised of required and elective clinical clerkships.",
+        "url": "https://medicine.uams.edu/admissions/dual-degree-programs/md-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "baylor",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://www.bcm.edu/education/programs/md-phd-program/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate program for course work and thesis research"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "clinical clerkship curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "After completing the first two years of medical school, students enter the graduate program for course work and thesis research. … After successfully defending their thesis and receiving their Ph.D., students return to medical school to complete the clinical clerkship curriculum. … The goal of the MSTP is to complete both degrees within 8 years, but completion of training at BCM typically ranges from seven-nine years",
+        "url": "https://www.bcm.edu/education/programs/md-phd-program/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "boston",
+      "exists": true,
+      "name": "MD/PhD Combined Degree",
+      "url": "https://www.bu.edu/academics/busm/programs/md-phd-combined-degree",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of the standard Chobanian & Avedisian SOM curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate years"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "returning to the third year of the medical school curriculum"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "The program requires a minimum of seven years and an average of eight years of study to complete both the Doctor of Medicine (MD) and Doctor of Philosophy (PhD). … Students admitted directly to the MD/PhD program will begin their training with the first two years of the standard Chobanian & Avedisian SOM curriculum.",
+        "url": "https://www.bu.edu/academics/busm/programs/md-phd-combined-degree",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "brown",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://md-phd.biomed.brown.edu/application-information/program-timeline",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate work"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "clinical Clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "students are expected to successfully fulfill all components of the MD/PhD program within eight years of matriculation to the Warren Alpert Medical School … Once graduate work is done and the PhD has been successfully defended, return to medical school to complete clinical Clerkships!",
+        "url": "https://md-phd.biomed.brown.edu/application-information/program-timeline",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "buffalo",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://medicine.buffalo.edu/education/mdphd/about/program_overview.html",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "carle-illinois",
+      "exists": true,
+      "name": "MD/PhD Medical Scholars Program (MSP)",
+      "url": "https://medicine.illinois.edu/admissions/medical-scholars-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "case-western",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://case.edu/medicine/mstp/academics",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": null,
+        "evidence": "Our Medical Scientist Training Program (MSTP)—a MD/PhD combined degree program—takes approximately seven to eight years to complete. The PhD thesis is usually defended during the fifth or sixth year, while the MD is awarded upon graduation from the program.",
+        "url": "https://case.edu/medicine/mstp/academics",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "chicago",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://pritzker.uchicago.edu/mstp/mstp-program-overview",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1,
+            "label": "first year of the program combines both medical and graduate school classes"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD thesis research work"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "return to the second year of medical school"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "The first year of the program combines both medical and graduate school classes. Students then typically begin their PhD thesis research work and return to the second year of medical school after a successful defense. … On average, MSTP trainees complete both degrees in eight years.",
+        "url": "https://pritzker.uchicago.edu/mstp/mstp-program-overview",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "cincinnati",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://med.uc.edu/education/medical-student-education/dual-programs/mstptraining/about/overview",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate school training in one of 11 graduate programs, until PhD thesis completed"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "final two years of clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "MSTP students at the University of Cincinnati College of Medicine complete their first two years of medical school and then shift their study to graduate school training in one of 11 graduate programs . Upon successful completion of a PhD thesis, students then return to medical school to complete their final two years of clinical training.",
+        "url": "https://med.uc.edu/education/medical-student-education/dual-programs/mstptraining/about/overview",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "colorado",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://medschool.cuanschutz.edu/mstp",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 3,
+            "label": "first three years of training provide integrated training in medicine and science"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "~4 years of thesis work"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "12-16 months of advanced clinical work"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The first three years of training provide integrated training in medicine and science through MSTP-specific curriculum. Students complete a year of core clerkship training as well as graduate core curriculum during this time. They then complete ~4 years of thesis work, followed by 12-16 months of advanced clinical work.",
+        "url": "https://medschool.cuanschutz.edu/mstp",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "columbia",
+      "exists": true,
+      "name": "MD-PhD Dual Degree Program",
+      "url": "https://www.vagelos.columbia.edu/education/academic-programs/md-dual-degrees-and-special-programs/md-phd-dual-degree-program/our-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "MD Program Part 1 (Years 1 and 2)"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Years 3, 4, 5 (or 6): The Graduate Years"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "The Final Year: The Major Clinical Year"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The MD-PhD program is broken into three parts:",
+        "url": "https://www.vagelos.columbia.edu/education/academic-programs/md-dual-degrees-and-special-programs/md-phd-dual-degree-program/our-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "connecticut",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://medicaleducation.uconn.edu/degrees-and-programs/degree-programs/m-d-ph-d/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "1.5-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "first 18 months with the regular MD students"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "four years to complete their Ph.D. dissertation research"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "final two years of clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "students matriculate for the first 18 months with the regular MD students before they pursue their graduate studies, taking four years to complete their Ph.D. dissertation research and then return for clinical clerkships. … After completing the graduate phase and PhD requirements, students return to medical school for the final two years of clinical training and medical school.",
+        "url": "https://medicaleducation.uconn.edu/degrees-and-programs/degree-programs/m-d-ph-d/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "cooper-rowan",
+      "exists": true,
+      "name": "MD/PhD Program (PhD in Biomedical Engineering)",
+      "url": "https://cmsru.rowan.edu/education/medical-education-programs/md-phd-program.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": 7,
+        "evidence": "seven-year Doctor of Medicine and Doctor of Philosophy (MD/PhD) dual-degree program",
+        "url": "https://cmsru.rowan.edu/education/medical-education-programs/md-phd-program.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "cornell",
+      "exists": true,
+      "name": "Tri-Institutional MD-PhD Program",
+      "url": "https://teach.weill.cornell.edu/mdphd/curriculum/program-glance",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years: 18 months of foundational coursework and 6 months of required clerkships"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate school phase (3.5-4.5 years)"
+          },
+          {
+            "phase": "clinical",
+            "years": 1.5,
+            "label": "final phase (18 months): return to medical school for required clerkships and electives"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "In the first two years of the program, MD-PhD students follow the Weill Cornell Medical College curriculum , including 18 months of foundational coursework and 6 months of required clerkships. In addition, students take graduate level classes that expose them to modern developments in biomedical and translational research. During this time, MD-PhD students complete three laboratory rotations. During the graduate school phase (3.5-4.5 years), MD-PhD students take limited coursework and conduct original research in order to satisfy the requirements for the PhD degree. During the final phase (18 months), MD-PhD students return to medical school to complete their required clerkships and participate in electives before applying for residency.",
+        "url": "https://teach.weill.cornell.edu/mdphd/curriculum/program-glance",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "creighton",
+      "exists": true,
+      "name": "Medicine (MD) + Biomedical Sciences (PhD)",
+      "url": "https://www.creighton.edu/graduate/dual-degree-programs",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "dartmouth",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://geiselmed.dartmouth.edu/mdphd/program/training/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-P-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "M1 & M2 (Geisel School years 1 and 2)"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD graduate training"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "M3 & M4 (Geisel School years 3 and 4)"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Broadly stated, students complete M1 & M2 (Geisel School years 1 and 2), then their PhD graduate training, and finally M3 & M4 (Geisel School years 3 and 4). This is referred to here as a \"2-P-2\" structure.",
+        "url": "https://geiselmed.dartmouth.edu/mdphd/program/training/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "des-moines",
+      "exists": true,
+      "name": "Dual DO/PhD (Biomedical Sciences) dual degree option",
+      "url": "https://www.dmu.edu/phdbs/dual-degree/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "drexel",
+      "exists": true,
+      "name": "MD/PhD Physician Scientist Training Program",
+      "url": "https://drexel.edu/medicine/academics/dual-degree-programs/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 3,
+            "label": "after the third year of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "next three to four years"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "final year of medical school"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "In the new curriculum, the entry point into PhD phase of the program is after the third year of medical school. … The next three to four years focus on individualized advanced coursework, dissertation research and seminars within the PhD program to which the research training mentor is affiliated. … After completing the PhD, students complete the final year of medical school, which involves required and elective clinical rotations and the opportunity for additional research.",
+        "url": "https://drexel.edu/medicine/academics/dual-degree-programs/md-phd/curriculum/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "duke",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://medschool.duke.edu/education/health-professions-education-programs/medical-scientist-training-program/about-mstp",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1,
+            "label": "year of coursework"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "a clinical year"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "straight into the PhD setting"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "another clinical year"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "The year of coursework is followed by a clinical year, then a year of research, and, finally, another clinical year. … While the straight-MD student spends their third year in a significant year-long research project, the MSTP student moves straight into the PhD setting in lieu of the third-year project; the MD research project requirement is fulfilled by the PhD dissertation. … The program, which leads to both the MD and PhD degrees and typically takes eight years for completion, integrates the clinical curriculum of the School of Medicine with graduate education in one of the sciences basic to medicine.",
+        "url": "https://medschool.duke.edu/education/health-professions-education-programs/medical-scientist-training-program/about-mstp",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "emory",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MD/PhD)",
+      "url": "https://med.emory.edu/education/md-phd/index.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": 8.2,
+        "evidence": "Average time to complete program (both MD and PhD degrees): 8.2 years",
+        "url": "https://med.emory.edu/education/md-phd/index.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "florida",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://mdphd.med.ufl.edu/program/didactic-components/md-phd-curriculum-timeline/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "1.75-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.75,
+            "label": "21-month Medical School pre-clinical phase (MS1-MS2)"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "four (occasionally three or five) Graduate School years (GS1-GS4)"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "two-year Medical School clinical phase (MS3-MS4)"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "throughout the typical eight-year program. The Program Plan includes: the 21-month Medical School pre-clinical phase (MS1-MS2); the four (occasionally three or five) Graduate School years (GS1-GS4); and the two-year Medical School clinical phase (MS3-MS4).",
+        "url": "https://mdphd.med.ufl.edu/program/didactic-components/md-phd-curriculum-timeline/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "florida-atlantic",
+      "exists": true,
+      "name": "FAU-Max Planck Florida (MPFI) joint M.D./Ph.D. program",
+      "url": "https://www.fau.edu/medicine/programs/dual-degree/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1,
+            "label": "first year: standard medical school pre-clinical curriculum at FAU"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Ph.D. research at MPFI, begun in the summer of the first year, typically 4-5 years"
+          },
+          {
+            "phase": "clinical",
+            "years": 3,
+            "label": "re-enter medical school for the last three years of the M.D. curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "In the first year of the program, students complete the standard medical school pre-clinical curriculum during the Fall and Spring semesters at FAU College of Medicine earning credits toward both the M.D. and Ph.D. degrees. Beginning in Summer of the first year, students begin their Ph.D. research at MPFI and enter the doctoral program full-time and typically complete the required coursework and thesis dissertation in the laboratory of a MPFI faculty member in 4-5 years.",
+        "url": "https://www.fau.edu/medicine/programs/dual-degree/md-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "georgetown",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://meded.georgetown.edu/?p=14528",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": 8,
+        "evidence": "Average time to completion is eight years.",
+        "url": "https://meded.georgetown.edu/?p=14528",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "georgia",
+      "exists": true,
+      "name": "MD/PhD (University System of Georgia)",
+      "url": "https://medicalpartnership.usg.edu/education/dual-degree-programs/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "harvard",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://www.hms.harvard.edu/md_phd/program/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": null,
+        "evidence": "while you are training as a physician and a scientist for 7 to 9 years",
+        "url": "https://www.hms.harvard.edu/md_phd/program/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "hofstra",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://medicine.hofstra.edu/education/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "Summer before MS1: orientation, research methods and study design, research technologies"
+          },
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Year 1 and Year 2: medical school curriculum (MS1, MS2), Step 1 in May of Year 2"
+          },
+          {
+            "phase": "other",
+            "years": null,
+            "label": "Summer before MS2: lab rotations"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Year 3 (PhD 1) through Year 5-6 (PhD 3); a clinical clerkship is available before thesis research"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Year 6-7 MS3 and Year 7-8 MS4 medical school curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Year 2 Scientific Basis of Medical Practice II Medical School Curriculum (MS2) STEP ONE in May Year 3 (PhD 1) Clinical clerkship available before beginning thesis research.",
+        "url": "https://medicine.hofstra.edu/education/md-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "howard",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://medicine.howard.edu/admission-aid/application-instructions-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "illinois",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://chicago.medicine.uic.edu/education/masters-doctoral/mstp/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": 8,
+        "evidence": "Sample of our 8-year MD/PhD timeline",
+        "url": "https://chicago.medicine.uic.edu/education/masters-doctoral/mstp/timeline/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "indiana",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://medicine.iu.edu/dual-degrees/md-phd/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "summer research rotations"
+          },
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "pre-clinical, systems-based knowledge stage (Phase 1 of the MD curriculum)"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "During years three through six"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "clinical clerkship (Phase 2 of the MD curriculum)"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "A typical academic plan permits most students to complete the combined degree in seven to eight years. … The Medical Scientist Training Program spans three distinct stages of training : the pre-clinical, systems-based knowledge stage (Phase 1 of the MD curriculum), the graduate school coursework and dissertation research stage, and the clinical clerkship (Phase 2 of the MD curriculum) and sub-internship/elective stage (Phase 3 of the MD curriculum). … During years three through six, MSTP students focus on graduate school courses, PhD research and defense",
+        "url": "https://medicine.iu.edu/dual-degrees/md-phd/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "iowa",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://mstp.medicine.uiowa.edu/curriculum/mstp-overall-training-plan",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "three-semester preclinical phase"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "all core clinical clerkships with the Carver College of Medicine, then Step 1 and Step 2 study block"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD training, 3.5 to 4.5 years, typically beginning the summer after third year of medical school"
+          },
+          {
+            "phase": "clinical",
+            "years": 1.5,
+            "label": "~18 months of elective clinical clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "After the three-semester preclinical phase of training, MSTP students continue on to complete all core clinical clerkships with the Carver College of Medicine. After completing their third year of medical school and their core clinical clerkships they complete a Step 1 and Step 2 study block and take Step 1 and Step 2 of the United States Medical Licensing Exam (USMLE). Next, they enter the PhD phase of training, typically beginning their thesis research in the summer following their third year of medical school. After 3.5 to 4.5 years of PhD training, students transition back to complete ~18 months of elective clinical clerkships, typically graduating in the spring semester of Year 7 or Year 8.",
+        "url": "https://mstp.medicine.uiowa.edu/curriculum/mstp-overall-training-plan",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "jefferson",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://www.jefferson.edu/academics/colleges-schools-institutes/skmc/programs/md-phd/curriculum.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "SKMC Phase 1"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "The PhD degree is usually completed within four years"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Phase 2 and Phase 3"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "The PhD degree is usually completed within four years, although there is the possibility of a fifth year if requested by the student and mentor. In any event, the defense of the PhD thesis must be completed before returning to SKMC. After completing the PhD degree, the student returns to SKMC for Phase 2 and Phase 3 ; completing clinical studies. … Program Length 8 years",
+        "url": "https://www.jefferson.edu/academics/colleges-schools-institutes/skmc/programs/md-phd/curriculum.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "kaiser-permanente",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://medschool.kp.org/admissions/md-phd-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "complete their first two years of medical instruction at KPSOM"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "complete their PhD training in four years"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "return to KPSOM to complete the last two years of clinical training"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "MD-PhD students will generally be expected to complete their PhD training in four years. After completing their PhD training, students return to KPSOM to complete the last two years of clinical training.",
+        "url": "https://medschool.kp.org/admissions/md-phd-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "kansas",
+      "exists": true,
+      "name": "M.D.-Ph.D. Program",
+      "url": "https://www.kumc.edu/school-of-medicine/academics/degree-programs/m.d.-ph.d.-program.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "two years of a basic medical science curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Years Three through Five"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "third and fourth years of medical school"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Year One Matriculation begins with two years of a basic medical science curriculum as well as introductory laboratory research rotations in the summer before and the summer after your first year of medical courses. … Years Three through Five Depending on individual progress, you focus primarily on the research problem and selected graduate curriculum. … Following completion of your dissertation, you come back to medical school and complete your third and fourth years of medical school.",
+        "url": "https://www.kumc.edu/school-of-medicine/academics/degree-programs/m.d.-ph.d.-program/curriculum.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "kentucky",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://medicine.uky.edu/sites/mdphd/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "two mandatory research rotations in the summers"
+          },
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "medical school through USMLE Step 1 in the spring of M2"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "graduate years (G1-4)"
+          }
+        ],
+        "totalYears": 7.3,
+        "evidence": "Our average length of training is 7.3 years. … This phase culminates in passing the USMLE STEP 1 Examination in the spring of the second year of medical school (M2), after which Track A MD/PhD students transition to graduate school. … During the graduate years (G1-4), students complete requirements as determined by their particular graduate department, including coursework, qualifying exams, and dissertation defense.",
+        "url": "https://medicine.uky.edu/sites/mdphd/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "loma-linda",
+      "exists": true,
+      "name": "Medical Scientist Program",
+      "url": "https://llu.edu/academics/programs/school-medicine/medical-scientist-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD part of the curriculum"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "last two years of training"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "Students typically begin the combined degree program through completing two years of medical school, culminated by successful completion of Step 1 of the USMLE examination. Students will then transition to the PhD part of the curriculum, where they will take and pass required classes, successfully pass written and oral qualifying examinations, and complete and successfully defend a doctoral dissertation. Students will then transition back to the MD program, where they will complete the last two years of training, completing all of the standard clinical rotations, and take and pass Step 2 of the USMLE. … In most cases, the sequence should take approximately eight years to complete.",
+        "url": "https://medicine.llu.edu/research/graduate-programs/mdphd-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "louisville",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://medicine.louisville.edu/curriculum-overview",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "M1–M2: Preclinical Medical Training"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Graduate training typically lasts 2–4 years"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Transition Back to Medical School"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students typically complete the program in seven to eight years: M1–M2: Preclinical Medical Training … During the M1 and M2 years, students complete the preclinical medical curriculum, participate in MD-PhD Program seminars and physician-scientist development activities and begin exploring PhD programs. … G1–G4: Graduate Training and Dissertation Research Graduate training typically lasts 2–4 years.",
+        "url": "https://medicine.louisville.edu/curriculum-overview",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "loyola",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://luc.edu/stritch/mdphd/programdescription/overview",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Year 1 (MD 1) and Year 2 (MD 2)"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Year 3 (PhD 1) through Year 6 (PhD 4)"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Year 7 (MD 3) and Year 8 (MD 4)"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "We anticipate physician-scientists-in-training to complete their MD/PhD in seven to eight years",
+        "url": "https://www.luc.edu/stritch/mdphd/currentstudents/timeline/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "lsu-new-orleans",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://graduatestudies.lsuhsc.edu/md_phd/default.aspx",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "medical curriculum for two years"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "three to four years as graduate students acquiring the PhD"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "two years completing medical school"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "During their course of study, students will pursue the medical curriculum for two years, spend three to four years as graduate students acquiring the PhD, and finally spend two years completing medical school for the MD degree.",
+        "url": "https://graduatestudies.lsuhsc.edu/md_phd/default.aspx",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "lsu-shreveport",
+      "exists": true,
+      "name": "MD-PhD Degree Program",
+      "url": "https://schoolofgradstudies.lsuhs.edu/academics/md-phd-degree-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "18 months of preclinical course work"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "3 to 4 YEARS"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "COMPLETE - 1 YEAR"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students enter medical school in August and complete 18 months of preclinical course work, ending in April of their second year of medical school. The USMLE STEP 1 Exam is taken in May or June, followed by the third year of medical school (clinical clerkships). CONTINUE - 3 to 4 YEARS After completion of the USMLE STEP 2 Exam, students matriculate into the School of Graduate Studies to conduct their PhD research. COMPLETE - 1 YEAR Following successful defense of their PhD dissertation, students return to the clinic to complete their final year of clerkships.",
+        "url": "https://schoolofgradstudies.lsuhs.edu/academics/md-phd-degree-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "marshall",
+      "exists": true,
+      "name": "MD/PhD in Biomedical Research",
+      "url": "https://jcesom.marshall.edu/health-sciences-graduate-programs/medical-doctor-md-doctor-of-philosophy-phd-in-biomedical-research/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "maryland",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://mdphd.umaryland.edu/training-plan/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "two years of pre-clinical training in the medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "thesis work in 3 to 4 years"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students normally enter the program as medical students and complete the two years of pre-clinical training in the medical school. Students then enter the formal training of the PhD years, pursuing the PhD program of their choice. (Find more information on available PhD Programs .) Regardless of which PhD program they choose, students complete their thesis work in 3 to 4 years.",
+        "url": "https://mdphd.umaryland.edu/training-plan/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "mayo",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MD-PhD)",
+      "url": "https://college.mayo.edu/academics/biomedical-research-training/medical-scientist-training-program-md-phd/curriculum/curriculum-timeline/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "month-long laboratory rotation the summer before the start of medical school"
+          },
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "Pre-Clerkship curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "three or four years"
+          },
+          {
+            "phase": "clinical",
+            "years": 1.5,
+            "label": "approximately 18 months of advanced and elective clinical clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Training begins with a month-long laboratory rotation the summer before the start of medical school. … You re-enter medical school after three or four years spent fulfilling Ph.D. requirements and successfully defending your Ph.D. dissertation (based on re-entry path selected). During this clinical training phase, approximately 18 months of advanced and elective clinical clerkships are required.",
+        "url": "https://college.mayo.edu/academics/biomedical-research-training/medical-scientist-training-program-md-phd/curriculum/curriculum-timeline/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "medical-college-of-georgia",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://www.augusta.edu/colleges/medicine/mdphd/curriculum.php",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "Pre-Clerkship 18 months"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Graduate Training, Years 3-6"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Clerkship & Enrichment, Years 7-8"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Pre-Clerkship 18 months Graduate Training, Years 3-6 Augusta University, Georgia Institute of Technology, Georgia State University, University of Georgia Clerkship & Enrichment, Years 7-8",
+        "url": "https://www.augusta.edu/colleges/medicine/mdphd/curriculum.php",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "medical-college-of-wisconsin",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://www.mcw.edu/education/medical-scientist-training-program/medical-years",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "medical-university-of-south-carolina",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://medicine.musc.edu/programs/medical-scientist-training-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "meharry",
+      "exists": true,
+      "name": "Dual MD/PhD Program",
+      "url": "https://meharry.edu/program/dual-md-phd-program/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of coursework"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "The Ph.D. adds three to four years to the M.D. education"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The Ph.D. adds three to four years to the M.D. education so that a student will graduate with both degrees in seven to eight years.",
+        "url": "https://meharry.edu/program/dual-md-phd-program/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "miami",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://med.miami.edu/graduate-studies/doctoral-programs/medical-scientist-training-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1,
+            "label": "MS1: pre-clinical curriculum and journal club, with a summer research rotation"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "MS2: transition to clerkship, two 12-week clerkships, then USMLE Step 1"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "GRD: graduate coursework, qualifying exam, dissertation research, 3-4 years"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "MS3/MS4: two additional clerkships, electives, sub-internships, USMLE Step 2"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The Medical Scientist Training Program (MSTP) Curriculum Overview is structured into four main stages: MS1, MS2, GRD years, and MS3/MS4. The MS1 stage includes a summer research rotation and Journal Club, followed by a pre-clinical curriculum. The MS2 stage begins with a transition to clerkship, featuring two 12-week clerkships and preparation for the USMLE STEP 1 exam. The GRD stage spans 3-4 years and involves graduate coursework of the program selected, qualifying exams, fellowship application, dissertation research, publications, and longitudinal clinical experiences.",
+        "url": "https://med.miami.edu/graduate-studies/doctoral-programs/medical-scientist-training-program/curriculum-and-requirements",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "minnesota",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MD/PhD)",
+      "url": "https://med.umn.edu/education-training/medical-scientist-training-program-mdphd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "one laboratory rotation with an MSTP faculty preceptor before the first year of medical school"
+          },
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "Foundations phase (1.5 years)"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "option of 1-2 clinical clerkships after USMLE Step 1, before dedicated research time"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD graduate phase, with a Clinical Continuity and Mentoring Program from its second year"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "return to medical school clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The Foundations phase (1.5 years) will move through nine organ systems of the human body and explore the foundational basic and clinical science that prepares students for clinical training.",
+        "url": "https://med.umn.edu/education-training/medical-scientist-training-program-mdphd/about-program/training-experience/curriculum-timeline",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "mississippi",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://umc.edu/graduateschool/Degree-Programs/MD-PhD/MD-PhD-Overview.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "3-3-1",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 3,
+            "label": "first three years of medical school (M1-M3)"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "three years of graduate study (G1-G3)"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "final year of medicine (M4)"
+          }
+        ],
+        "totalYears": 7,
+        "evidence": "The MD-PhD Program is a seven-year program consisting of the first three years of medical school (M1-M3) followed by three years of graduate study (G1-G3) and the final year of medicine (M4).",
+        "url": "https://umc.edu/graduateschool/Degree-Programs/MD-PhD/MD-PhD-Overview.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "missouri-columbia",
+      "exists": true,
+      "name": "Tom and Anne Smith MD-PhD Program",
+      "url": "https://medicine.missouri.edu/offices-programs/education/md-phd-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-3-3",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Years 1-2: School of Medicine patient-based learning curriculum"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "Years 3-5: Doctoral degree course work"
+          },
+          {
+            "phase": "clinical",
+            "years": 3,
+            "label": "Years 6-8: Medical school clerkships and doctoral degree dissertation"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The typical course of study is as follows: Years 1-2: School of Medicine patient-based learning curriculum Years 3-5: Doctoral degree course work Years 6-8: Medical school clerkships and doctoral degree dissertation",
+        "url": "https://medicine.missouri.edu/offices-programs/education/md-phd-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "morehouse",
+      "exists": true,
+      "name": "M.D./Ph.D. in Biomedical Sciences",
+      "url": "https://www.msm.edu/Admissions/dualdegreeprograms.php",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of preclinical training"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "additional Ph.D. coursework and dissertation research"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "return to medical school for clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Qualified medical students may enter this program after completing their first two years of preclinical training. After completing additional Ph.D. coursework, students embark on their dissertation research and then return to medical school for their clinical training once that research has been completed.",
+        "url": "https://www.msm.edu/Admissions/dualdegreeprograms.php",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "mount-sinai",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://icahn.mssm.edu/education/md-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "laboratory rotation the summer before the first year of medical school"
+          },
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "pre-clerkship phase, then USMLE Step 1"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "three core clerkship blocks before the PhD"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "full-time PhD phase"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "post-clerkship clinical phase after the PhD"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "The MSTP curriculum spans approximately eight years and integrates medical education, doctoral research, and physician-scientist professional development.",
+        "url": "https://icahn.mssm.edu/education/md-phd/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "nebraska",
+      "exists": true,
+      "name": "MD-PhD Scholars Program",
+      "url": "https://www.unmc.edu/com/admissions/academic-programs/md-phd-program/history.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "the second year of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "the graduate studies portion of the program"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "two years of clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "After the second year of medical school, the student begins the graduate studies portion of the program. This part of the program lasts about three to four years.",
+        "url": "https://www.unmc.edu/com/admissions/academic-programs/md-phd-program/about.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "nevada-reno",
+      "exists": true,
+      "name": "M.D./Ph.D. dual degree",
+      "url": "https://med.unr.edu/education/medical-education/dual-degree-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "two years of didactic medical education"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate coursework and research"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The program is designed to be completed in six to seven years … The program begins with two years of didactic medical education and the USMLE Step 1, followed by graduate coursework and research.",
+        "url": "https://med.unr.edu/education/medical-education/dual-degree-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "new-england",
+      "exists": false,
+      "name": null,
+      "url": "https://www.une.edu/com/programs",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "new-mexico",
+      "exists": true,
+      "name": "MD/PhD program",
+      "url": "https://hsc.unm.edu/medicine/education/reo/graduate/md-phd/mdphd-mileposts.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "First 2 Years: The program begins with Phase I of the UNM School of Medicine curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Next 3-4 Years"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Last 2 Years"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "First 2 Years: The program begins with Phase I of the UNM School of Medicine curriculum. Next 3-4 Years: The student takes graduate courses and completes their PhD dissertation research. Last 2 Years: The program ends with Phase II and III of the UNM School of Medicine curriculum and fulfillment of a teaching requirement.",
+        "url": "https://hsc.unm.edu/medicine/education/reo/graduate/md-phd/mdphd-mileposts.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "new-york-institute-of-technology",
+      "exists": true,
+      "name": "Medical and Biological Sciences D.O./Ph.D.",
+      "url": "https://www.nyit.edu/academics/degrees/osteopathic-medicine-do-medical-and-biological-sciences-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-3-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "Years three through five"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "final two years"
+          }
+        ],
+        "totalYears": 7,
+        "evidence": "A streamlined, seven-year track positions you with the highly sought-after expertise to pursue career opportunities in healthcare, industry, academia, and government institutions. … During your first two years, you will complete the pre-clinical coursework taken by first- and second-year medical students.",
+        "url": "https://www.nyit.edu/academics/degrees/osteopathic-medicine-do-medical-and-biological-sciences-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "new-york-medical-college",
+      "exists": true,
+      "name": "M.D.-Ph.D. program",
+      "url": "https://www.nymc.edu/som/education/md/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "the second year of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Ph.D. component of the joint-degree program"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Phases Two and Three of the M.D. curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "formally admitted to the Ph.D. component of the joint-degree program",
+        "url": "https://www.nymc.edu/som/education/md/md-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "new-york-university-grossman",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://med.nyu.edu/research/vilcek-institute-graduate-biomedical-sciences/md-phd-program/academics/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "north-carolina",
+      "exists": true,
+      "name": "MD-PhD Program",
+      "url": "https://med.unc.edu/mdphd/about/program-overview",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "2"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "4"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "2"
+          }
+        ],
+        "totalYears": 8.16,
+        "evidence": "The MD-PhD curriculum at UNC follows a timeline similar to the traditional MSTP style of 2-4-2. Our average time to graduation is 8.16 years",
+        "url": "https://med.unc.edu/mdphd/about/program-overview",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "north-dakota",
+      "exists": true,
+      "name": "Doctor of Medicine/Biomedical Sciences (M.D./Ph.D.)",
+      "url": "https://und.edu/programs/biomedical-sciences-md-phd/requirements.html",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "north-texas",
+      "exists": true,
+      "name": "DO/PhD Doctor of Osteopathic Medicine/PhD in Biomedical Sciences",
+      "url": "https://www.unthealth.edu/academics/do-phd-doctor-of-osteopathic-medicine-phd-in-biomedical-sciences.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": null,
+        "evidence": "Program Details Six to seven years",
+        "url": "https://www.unthealth.edu/academics/do-phd-doctor-of-osteopathic-medicine-phd-in-biomedical-sciences.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "northeast-ohio",
+      "exists": true,
+      "name": "M.D./Ph.D. program",
+      "url": "https://www.neomed.edu/medicine/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "northwestern",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MD-PhD)",
+      "url": "https://www.feinberg.northwestern.edu/sites/mstp/curriculum/index.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "Phase 1 of the Feinberg MD curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "three or more years"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Phases 2 and 3 of Feinberg’s MD curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Northwestern University Medical Scientist Training Program (MSTP) students earn an MD degree from Feinberg School of Medicine and a PhD degree of their choosing from The Graduate School in three stages over seven to eight years. … For three or more years, students work to fulfill the requirements of whichever graduate program they choose for their PhD.",
+        "url": "https://www.feinberg.northwestern.edu/sites/mstp/curriculum/index.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "nova-southeastern-com",
+      "exists": false,
+      "name": null,
+      "url": "https://osteopathic.nova.edu/degrees/doctoral/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "ohio-state",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://medicine.osu.edu/education/dual-degree/mstp/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "ohio-university",
+      "exists": true,
+      "name": "D.O./Ph.D. Program",
+      "url": "https://www.ohio.edu/medicine/med-education/dual-degree/do-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years (OMS I-II) of the curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "doctoral studies"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "final two years (OMS III/IV) of their training"
+          }
+        ],
+        "totalYears": 7,
+        "evidence": "The D.O./Ph.D. program typically requires seven years to complete. The first two years (OMS I-II) of the curriculum integrate biomedical and social-behavioral foundations of medicine",
+        "url": "https://www.ohio.edu/medicine/med-education/dual-degree/do-phd",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "oklahoma",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://graduate.ouhsc.edu/Programs/PhD-Programs/MD-PhD-Program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "oklahoma-state",
+      "exists": true,
+      "name": "DO-PhD",
+      "url": "https://medicine.okstate.edu/biomedical/do-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "oregon-health-and-science",
+      "exists": true,
+      "name": "MD/Ph.D. Training Program",
+      "url": "https://www.ohsu.edu/school-of-medicine/md-phd-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of the M.D. program"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Ph.D. program"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "transition back into medical school to complete their clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "A typical student will spend 7-8 years completing these requirements, however actual time will vary depending on each individual's rate of progress in fulfilling the requirements for both M.D. and Ph.D. degrees. … Beginning in August, the traditional M.D./Ph.D. student will complete the first two years of the M.D. program and take their Step 1 exam, and then move into their Ph.D. program. After all Ph.D. requirements are met, including qualifying exams and the completion of a doctoral dissertation that is submitted to the library, students will then transition back into medical school to complete their clinical training and prepare for residency.",
+        "url": "https://www.ohsu.edu/school-of-medicine/md-phd-program/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "penn-state",
+      "exists": true,
+      "name": "MD/PhD Medical Scientist Training Program",
+      "url": "https://med.psu.edu/education/degree-programs/md-phd/details",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "First Two Years"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "four to five years"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "M3 and M4 years"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "Students typically complete the program in eight years. … Students typically finish their thesis research in four to five years. … Upon completion of your PhD dissertation, you’ll return to medical school (M3 and M4 years) to complete your clinical rotations and choose a residency program.",
+        "url": "https://med.psu.edu/education/degree-programs/md-phd/details",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "pennsylvania",
+      "exists": true,
+      "name": "MD-PhD program (MSTP)",
+      "url": "https://www.med.upenn.edu/mstp/curriculum-overview.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "Medical school courses"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "years 4 through 6"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "resume clinical clerkships and electives"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "years 4 through 6 Throughout years 4 through 6 Students are working on their thesis research … years 7 and 8 Year 7 Students defend their dissertation, typically during the summer at the start of year 7.",
+        "url": "https://www.med.upenn.edu/mstp/curriculum-overview.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "pittsburgh",
+      "exists": true,
+      "name": "Medical Scientist Training Program, MD/PhD",
+      "url": "https://www.mdphd.pitt.edu/our-programs/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "graduate research goals within four years"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Third and Fourth Years of Medical School"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The Graduate Research Years of the MSTP After the first two years of medical school, each student selects a graduate program for study. … Typically, students can achieve their graduate research goals within four years. … Third and Fourth Years of Medical School MSTP students reenter their medical training when their thesis has been completed and defended.",
+        "url": "https://www.mdphd.pitt.edu/our-programs/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "rochester",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://www.urmc.rochester.edu/education/md-phd/prospective-students/program-overview",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school basic sciences (dual credit)"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Ph.D.: most students defend in 3-5 years"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "return to clerkships after dissertation defense"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Typically, qualifying exams are taken in year 2 of graduate school, and most students defend in 3–5 years.",
+        "url": "https://www.urmc.rochester.edu/education/md-phd/prospective-students/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "rosalind-franklin",
+      "exists": true,
+      "name": "Combined PhD With MD",
+      "url": "https://www.rosalindfranklin.edu/academics/school-of-graduate-and-postdoctoral-studies/prospective-students/common-questions/combined-phd-with-md-dpm-or-pharmd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "last two years of clinical programming"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Entry level candidates are awarded this support starting with their first two years of medical school",
+        "url": "https://www.rosalindfranklin.edu/academics/school-of-graduate-and-postdoctoral-studies/prospective-students/common-questions/combined-phd-with-md-dpm-or-pharmd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "rowan",
+      "exists": true,
+      "name": "DO/PhD in Neuroscience",
+      "url": "https://www.rowan.edu/tbes/graduate-programs/neuroscience/do-phd-program/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Years 1 - 2: DO Program at Rowan-Virtua SOM"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "Years 3 - 5: PhD program at Rowan-Virtua TBES*"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Years 6 - 7: DO program at Rowan-Virtua SOM"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Years 3 - 5: PhD program at Rowan-Virtua TBES* Thesis research and additional courses Years 6 - 7: DO program at Rowan-Virtua SOM",
+        "url": "https://www.rowan.edu/tbes/graduate-programs/neuroscience/do-phd-program/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "rutgers-new-jersey",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://njms.rutgers.edu/admissions/MD_PhD/Curriculum.php",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "The first phase (M1-M2: the first and second years of medical school)"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "The second phase (Thesis Research G1-G3/4)"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "The third phase (M3/M4, third and fourth years of medical school)"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The MD-PhD Program consists of three phases of training The first phase (M1-M2: the first and second years of medical school)",
+        "url": "https://njms.rutgers.edu/admissions/MD_PhD/Curriculum.php",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "rutgers-robert-wood-johnson",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://rwjms.rutgers.edu/education/md/dual-degree-programs",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "saint-louis",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://www.slu.edu/medicine/medical-education/md-phd/faq-resources.php",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "1.5-4-2.5",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "Your preclinical medical education"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Your graduate school studies and Ph.D. dissertation"
+          },
+          {
+            "phase": "clinical",
+            "years": 2.5,
+            "label": "Your medical school clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "You will typically follow a 1.5 - 4 - 2.5 track: 1.5 years: Your preclinical medical education 4 years: Your graduate school studies and Ph.D. dissertation 2.5 years: Your medical school clinical training",
+        "url": "https://www.slu.edu/medicine/medical-education/md-phd/faq-resources.php",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "south-carolina-columbia",
+      "exists": true,
+      "name": "Biomedical Sciences / Medicine, Ph.D. / M.D. (Medical Scientist Training Program)",
+      "url": "https://academicbulletins.sc.edu/graduate/dual-degree-programs/biomedical-sciences-medicine-phd-md",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "three years of laboratory research"
+          }
+        ],
+        "totalYears": 7,
+        "evidence": "The seven-year MD-PhD curriculum consists of basic science courses and clerkships in applied clinical medicine, together with three years of laboratory research",
+        "url": "https://academicbulletins.sc.edu/graduate/dual-degree-programs/biomedical-sciences-medicine-phd-md",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "south-dakota",
+      "exists": true,
+      "name": "Physician Scientist Program (M.D./Ph.D.)",
+      "url": "https://www.usd.edu/medicine/mdphd-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "The first three semesters you'll focus on the M.D. program"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Over the next three to four years you'll complete the Ph.D."
+          },
+          {
+            "phase": "clinical",
+            "years": 2.5,
+            "label": "Then, you'll spend your final two and a half years completing the M.D. program"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The first three semesters you'll focus on the M.D. program. Over the next three to four years you'll complete the Ph.D.",
+        "url": "https://www.usd.edu/medicine/mdphd-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "stanford",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://med.stanford.edu/mstp/structure.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "research",
+            "years": null,
+            "label": "full-time graduate training"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "resumption of the clinical curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "On average, PhD thesis research draws to a close in the fifth year of training, allowing most MD-PhD students to complete both degrees in 7-8 years",
+        "url": "https://med.stanford.edu/mstp/structure.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "stony-brook",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://renaissance.stonybrookmedicine.edu/mstp/program/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "Students typically spend the first 1.5 years undertaking preclinical course work in the School of Medicine"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Three to four years of continuous study"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students typically spend the first 1.5 years undertaking preclinical course work in the School of Medicine culminating in taking Step I of the United States Medical Licensing Examination (USMLE)",
+        "url": "https://renaissance.stonybrookmedicine.edu/mstp/program/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "suny-downstate",
+      "exists": true,
+      "name": "MD/PhD",
+      "url": "https://www.downstate.edu/education-training/college-of-medicine/programs/md-phd.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "during the first 18 months of your studies"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Over the next three to four years, you will focus on your research through the School of Graduate Studies"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "you'll return to the College of Medicine to earn your MD"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Over the next three to four years, you will focus on your research through the School of Graduate Studies, ultimately writing your doctoral thesis",
+        "url": "https://www.downstate.edu/education-training/college-of-medicine/programs/md-phd.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "temple",
+      "exists": true,
+      "name": "MD/PhD Dual Degree",
+      "url": "https://medicine.temple.edu/education/mdphd-dual-degree",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "MD Foundations & Rotations"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "PhD Research & Training"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Clinical Medical Training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "MD/PhD Program Timeline The MD/PhD program typically takes students 7-8 years to complete.",
+        "url": "https://medicine.temple.edu/education/mdphd-dual-degree",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "tennessee",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://www.uthsc.edu/medicine/admissions/md-phd.php",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "The first and last two year periods of the program contain the medical curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "the intervening three or four years are devoted to graduate study"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "last two year periods of the program contain the medical curriculum"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The first and last two year periods of the program contain the medical curriculum; the intervening three or four years are devoted to graduate study in selected departments of the College of Medicine under the auspices of the College of Graduate Health Sciences",
+        "url": "https://www.uthsc.edu/medicine/admissions/md-phd.php",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "texas-a-m",
+      "exists": true,
+      "name": "Doctor of Medicine and Doctor of Philosophy Combined Degree Program",
+      "url": "https://catalog.tamu.edu/graduate/colleges-schools-interdisciplinary/medicine/interdepartmental/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "preclinical medical training (~2 years)"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "graduate research training (typically 4 years)"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "clinical rotations (~2 years)"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "1) preclinical medical training (~2 years) - graduate research training (typically 4 years) - clinical rotations (~2 years) referred to as 2-4-2",
+        "url": "https://catalog.tamu.edu/graduate/colleges-schools-interdisciplinary/medicine/interdepartmental/md-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "texas-christian-university",
+      "exists": true,
+      "name": "MD, PhD in Biomedical Engineering (with UT Arlington)",
+      "url": "https://mdschool.tcu.edu/graduate-mdphdbioengr/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "texas-tech-lubbock",
+      "exists": true,
+      "name": "M.D./Ph.D. dual degree (TTUHSC School of Medicine and Graduate School of Biomedical Sciences)",
+      "url": "https://www.ttuhsc.edu/programs/mdphd-dual-degree",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "second or third year of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD degree program in the Graduate School"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "At the end of either the second or third year of medical school, students in this program will defer continuation in the medical school curriculum and enroll full-time in the PhD degree program in the Graduate School. Recent graduates from this program have completed the PhD component in 3-4 years.",
+        "url": "https://www.ttuhsc.edu/programs/mdphd-dual-degree",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "toledo",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://www.utoledo.edu/med/mdphd/overview.html",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "second year of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "three-four years of intensive research activity"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "final two years of clinical training"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Upon completing the second year of medical school, M.D./Ph.D. students spend several weeks preparing for and taking Step I of the United States Medical Licensing Examination (USMLE). Following completion of this exam, students enter the graduate school to begin their dissertation studies. … Typically after three-four years of intensive research activity, the M.D./Ph.D. student has accumulated enough data to write the dissertation in preparation of its defense and completion of the Ph.D. side of the program. … Students are strongly encouraged to complete and defend their Ph.D. dissertation prior to returning to medical school for the final two years of clinical training.",
+        "url": "https://www.utoledo.edu/med/mdphd/overview.html",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "touro-california",
+      "exists": false,
+      "name": null,
+      "url": "https://tu.edu/programs/osteopathic-medicine/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "touro-nevada",
+      "exists": false,
+      "name": null,
+      "url": "https://tun.touro.edu/programs/osteopathic-medicine/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "touro-new-york",
+      "exists": false,
+      "name": null,
+      "url": "https://tourocom.touro.edu/do/academics/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "tufts",
+      "exists": true,
+      "name": "MD/PhD - MSTP",
+      "url": "https://gsbs.tufts.edu/academics/mstp-mdphd/mdphd-curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Research During Medical School Years 1 & 2"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "PhD thesis"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "required and elective clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The PhD thesis is defended before students return to complete the medical school curriculum.",
+        "url": "https://gsbs.tufts.edu/academics/mstp-mdphd/mdphd-curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "tulane",
+      "exists": true,
+      "name": "Physician Scientist Program (PSP)",
+      "url": "https://catalog.tulane.edu/medicine/combined-degrees/md-phd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "2 years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "3-4 years in the BMS PhD program"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "2 years of medical school"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "All PSP students will complete 2 years of medical school, followed by 3-4 years in the BMS PhD program, followed by 2 years of medical school.",
+        "url": "https://catalog.tulane.edu/medicine/combined-degrees/md-phd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "uniformed-services",
+      "exists": true,
+      "name": "MD/PhD program",
+      "url": "https://medschool.usuhs.edu/node/62996",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [],
+        "totalYears": 7,
+        "evidence": ">85% of students complete the MD/PhD program in seven years … Students enter the program as civilian graduate students, and commission into their respective military branches (Army, Navy, Air Force, or Public Health Service) three years into their training.",
+        "url": "https://medschool.usuhs.edu/node/62996",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-california-davis",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://health.ucdavis.edu/medical-school/academic-programs/MD-program/md-phd/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Years 1–2: Pre-Clinical Medical Training"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Years 3–6"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Years 7–8: Clinical Medical Training"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "Program Timeline Years 1–2: Pre-Clinical Medical Training Complete pre-clinical curriculum Participate in a summer research rotation (between Years 1 and 2) Apply to Ph.D. graduate programs Take USMLE Step 1 Years 3–6: Ph.D. Training Enter a graduate program of choice Complete Ph.D. coursework, research, and dissertation (typically 4 years) Apply for fellowships (e.g., F30) Funded students receive a $5,000 stipend bonus during the final two years of medical school Years 7–8: Clinical Medical Training Transition back to medical school after Ph.D. completion Complete clinical clerkships (Years 3 and 4 of M.D. curriculum) Total time to completion: Most students finish in 8 years",
+        "url": "https://health.ucdavis.edu/medical-school/academic-programs/MD-program/md-phd/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-california-irvine",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://mstp.uci.edu/overview-history",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "the two basic science years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "graduate courses and research"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Most students choose to begin their studies with the two basic science years of medical school, but some choose to begin with graduate courses and research and others have integrated medical school courses and research throughout their graduate career.",
+        "url": "https://mstp.uci.edu/overview-history",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-california-los-angeles",
+      "exists": true,
+      "name": "UCLA-Caltech Medical Scientist Training Program",
+      "url": "https://mstp.healthsciences.ucla.edu/directors-welcome",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "university-of-california-riverside",
+      "exists": true,
+      "name": "M.D./Ph.D. Combined Degree",
+      "url": "https://biomed.ucr.edu/mdphd-combined-degree",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "first two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "approximately three years in the Ph.D. program"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "return to complete the M.D. degree"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students in the program normally complete the first two years of medical school, followed by approximately three years in the Ph.D. program, then return to complete the M.D. degree.",
+        "url": "https://biomed.ucr.edu/mdphd-combined-degree",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-california-san-diego",
+      "exists": true,
+      "name": "MSTP (MD & PhD)",
+      "url": "https://medschool.ucsd.edu/education/mstp/program/Pages/curriculum.aspx",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Year 1 and Year 2"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Graduate Years"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Year 3 and Year 4"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "Most trainees earn both MD and PhD degrees in about 8 years.",
+        "url": "https://medschool.ucsd.edu/education/mstp/program/Pages/curriculum.aspx",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-central-florida",
+      "exists": true,
+      "name": "Combined MD/PhD degree (track in the Interdisciplinary PhD program in Biomedical Sciences)",
+      "url": "https://med.ucf.edu/academics/md-program/joint-degrees/mdphd-joint-degree/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-3-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Year 1 (Medical School), Year 2 (Medical School)"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "Year 3 (Graduate School), Year 4 (Graduate School), Year 5 (Graduate School)"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Year 6 (Medical School), Year 7 (Medical School)"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students in this program get a head-start on research during dedicated time in the first two years of the MD curriculum.",
+        "url": "https://med.ucf.edu/academics/md-program/joint-degrees/mdphd-joint-degree/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-nevada-las-vegas",
+      "exists": false,
+      "name": null,
+      "url": "https://unlv.edu/medicine/md-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "university-of-south-florida",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://health.usf.edu/medicine/graduatestudies/md-phd-program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "two years of intensive preclinical studies"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "four years of in-depth research training"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "two years of hands-on clinical rotations"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Our program provides an integrated approach to medical and research training with two years of intensive preclinical studies, four years of in-depth research training, and two years of hands-on clinical rotations.",
+        "url": "https://health.usf.edu/medicine/graduatestudies/md-phd-program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-southern-california",
+      "exists": true,
+      "name": "USC-Caltech MD-PhD Program",
+      "url": "https://keck.usc.edu/md-phd-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "university-of-texas-houston",
+      "exists": true,
+      "name": "MD/PhD Program",
+      "url": "https://gsbs.uth.edu/mdphd/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 3,
+            "label": "first three years of Medical School"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Years 4-7 (varies among students)"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "4th year Medical School electives and clerkships"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Students entering the MD/PhD Program complete the first three years of Medical School before beginning their dissertation research, and the last year in the Program is devoted to completing 4th year Medical School electives and clerkships. … The 3-4-1 sequence was a major draw of the program for me.",
+        "url": "https://gsbs.uth.edu/mdphd/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-texas-medical-branch",
+      "exists": true,
+      "name": "MD-PhD Combined Degree Program",
+      "url": "https://www.utmb.edu/mdphd/program-overview/curriculum",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "Research rotation"
+          },
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Year 1: First year medical school curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Dissertation research"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Years 7-8"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Summer Prior to Year 1: Research rotation Year 1: First year medical school curriculum plus supplemental graduate courses that complement the medical school curriculum. Summer after year 1: Research rotation. Year 2: Second year medical school curriculum. USMLE Step 1 taken at the end of 2nd year. A third research rotation is an option at the end of year 2 or the student may begin dissertation research. Year 3: Dissertation research plus completion of graduate school courses. Qualifying exams are taken at the end of year 3. Year 4-5: Dissertation research. Year 6: Dissertation is defended at end of the 5th year or beginning of 6th year. Years 7-8: Required medical school clinical clerkships and clinical electives.",
+        "url": "https://www.utmb.edu/mdphd/program-overview/curriculum",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-texas-san-antonio",
+      "exists": true,
+      "name": "South Texas Medical Scientist Training Program (STX-MSTP)",
+      "url": "https://uthscsa.edu/biomedical-sciences/programs/md-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "research",
+            "years": null,
+            "label": "summer lab rotations (MS1-2)"
+          },
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Medical School Years 1 and 2: Preclinical coursework & STEP 1"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Graduate School Years 1,2,3,4: Discipline coursework, qualifying exam, and dissertation"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Medical School Years 3 and 4: Clerkships, electives, and STEP 2"
+          }
+        ],
+        "totalYears": 7.95,
+        "evidence": "The STX-MSTP’s average time to graduation is 7.95 years with the following typical timeline:",
+        "url": "https://uthscsa.edu/biomedical-sciences/sites/biomedical-sciences/files/2023-09/MD-PhD_Brochure_2023_0.pdf",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "university-of-texas-southwestern",
+      "exists": true,
+      "name": "Perot Family Scholars Medical Scientist Training Program",
+      "url": "https://gsbs.utsouthwestern.edu/programs/mstp/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "university-of-texas-tyler",
+      "exists": false,
+      "name": null,
+      "url": "https://www.uttyler.edu/academics/programs/doctor-of-medicine-md",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "utah",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://medicine.utah.edu/programs/combined/md-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "vanderbilt",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://medschool.vanderbilt.edu/mstp/curriculum-2/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "two years of medical school"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "three to four years of graduate research (G1–G4)"
+          },
+          {
+            "phase": "clinical",
+            "years": 1,
+            "label": "one immersion year"
+          }
+        ],
+        "totalYears": 7,
+        "evidence": "The curriculum path, typically completed in seven years, includes two years of medical school ( M1 and M2 ), three to four years of graduate research (G1–G4), and then a return to medical school to complete one immersion year (clinical training combined with didactic training).",
+        "url": "https://medschool.vanderbilt.edu/mstp/curriculum-2/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "virginia",
+      "exists": true,
+      "name": "Medical Scientist Training Program",
+      "url": "https://med.virginia.edu/education/md-program/ume-md-curriculum/combined-degree-program",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "virginia-commonwealth",
+      "exists": true,
+      "name": "M.D.-Ph.D. Program",
+      "url": "https://medschool.vcu.edu/education/dual-degree/mdphd/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "the M1 and M2 years"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Graduate (Ph.D.) phase"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Return to clinical years (M3 and M4)"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Because the M1 and M2 years are completed in 18 months",
+        "url": "https://medschool.vcu.edu/education/dual-degree/mdphd/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "wake-forest",
+      "exists": true,
+      "name": "MD/PhD Dual Degree Program",
+      "url": "https://school.wakehealth.edu/Education-and-Training/Joint-Degree-Programs/MD-PhD-Dual-Degree-Program",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "First lab/research rotation"
+          },
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "First Year of Medical School Curriculum"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "Third – Fifth Year: Graduate Studies"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Sixth – Seventh Year"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "Dissertation research typically will be completed in years 3 – 5 and, if needed, a portion of year 6. … Third – Fifth Year: Graduate Studies Complete advanced basic science coursework and conduct research. … Sixth – Seventh Year: Third and Fourth Year Clinical Rotations of Medical School Curriculum",
+        "url": "https://school.wakehealth.edu/Education-and-Training/Joint-Degree-Programs/MD-PhD-Dual-Degree-Program",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "washington",
+      "exists": true,
+      "name": "Medical Scientist Training Program (MSTP)",
+      "url": "https://mstp.washington.edu/program/curriculum/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-4-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1,
+            "label": "Year 1: Medical School Year 1 (MS1)"
+          },
+          {
+            "phase": "other",
+            "years": null,
+            "label": "Summer after MS1: Lab rotation(s)"
+          },
+          {
+            "phase": "preclinical",
+            "years": 1,
+            "label": "Year 2: Medical School Year 2 (MS2)"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "PhD research"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Medical school clerkships (MS3 and MS4)"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "Years 3 to 6: PhD research – PhD awarded at the end of this period. Years 7 and 8: Medical school clerkships (MS3 and MS4) – MD awarded at the end of this period.",
+        "url": "https://mstp.washington.edu/program/curriculum/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "washington-university-saint-louis",
+      "exists": true,
+      "name": "Roy Vagelos Medical Scientist Training Program",
+      "url": "https://mstp.wustl.edu/academics/curriculum/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "one required research rotation in July of your first year"
+          },
+          {
+            "phase": "preclinical",
+            "years": null,
+            "label": "Phase One of the MD curriculum"
+          },
+          {
+            "phase": "research",
+            "years": 4,
+            "label": "Phase length: 48 months"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Phase Two consists of six 8-week core clinical clerkships"
+          }
+        ],
+        "totalYears": 8,
+        "evidence": "On average, students complete the dual MD/PhD program in eight years, with learning occurring in four phases. … Phase length: 62 weeks Before beginning your PhD research, you may complete additional research rotations as needed and/or use up to four weeks of study/preparation time for the USMLE Step 1 Exam. … Phase length: 48 months Phase Two consists of six 8-week core clinical clerkships .",
+        "url": "https://mstp.wustl.edu/academics/curriculum/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "wayne-state",
+      "exists": true,
+      "name": "M.D./Ph.D. Program",
+      "url": "https://www.med.wayne.edu/admissions/degrees/md-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "west-virginia",
+      "exists": true,
+      "name": "MD/PhD Scholars Program",
+      "url": "https://hsc.wvu.edu/research-and-graduate-education/graduate-education/phd-programs/mdphd-scholars-program/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "west-virginia-som",
+      "exists": false,
+      "name": null,
+      "url": "https://www.wvsom.edu/academics",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "western-university-california",
+      "exists": false,
+      "name": null,
+      "url": "https://www.westernu.edu/osteopathic/programs/doctor-of-osteopathic-medicine",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "western-university-oregon",
+      "exists": false,
+      "name": null,
+      "url": "https://www.westernu.edu/lp/oregon/do/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "wisconsin",
+      "exists": true,
+      "name": "University of Wisconsin Medical Scientist Training Program (MSTP)",
+      "url": "https://www.med.wisc.edu/education/md-phd/program-structure-and-timeline/",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "other",
+            "years": null,
+            "label": "Research lab rotations take place during the summer after the first year"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "Graduate School (3.5 to 4.5 years)"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "Phase 3"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "The University of Wisconsin Medical Scientist Training Program (MSTP) typically takes between seven and eight years to complete, with flexibility based on an individual’s PhD research and dissertation timeline. … Graduate School (3.5 to 4.5 years) PhD coursework begins, including research and training; clinical experiences continue (with a faculty mentor in specialty area of interest).",
+        "url": "https://www.med.wisc.edu/education/md-phd/program-structure-and-timeline/",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "wright-state",
+      "exists": true,
+      "name": "Combined M.D. and Ph.D.",
+      "url": "https://medicine.wright.edu/md-program/combined-md-and-phd",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": "2-3-2",
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 2,
+            "label": "Medical school basic science curriculum"
+          },
+          {
+            "phase": "research",
+            "years": 3,
+            "label": "Ph.D. research and appropriate (but limited) advanced course work"
+          },
+          {
+            "phase": "clinical",
+            "years": 2,
+            "label": "Medical school clinical curriculum"
+          }
+        ],
+        "totalYears": 7,
+        "evidence": "Earn Both an M.D. and a Ph.D. in Seven Years",
+        "url": "https://medicine.wright.edu/md-program/combined-md-and-phd",
+        "checkedOn": "2026-11-24"
+      }
+    },
+    {
+      "slug": "xavier-com",
+      "exists": false,
+      "name": null,
+      "url": "https://www.xavier.edu/college-of-medicine/academics/",
+      "checkedOn": "2026-11-24",
+      "timeline": null
+    },
+    {
+      "slug": "yale",
+      "exists": true,
+      "name": "Yale School of Medicine MD-PhD Program",
+      "url": "https://medicine.yale.edu/mdphd/education/timeline",
+      "checkedOn": "2026-11-24",
+      "timeline": {
+        "pattern": null,
+        "phases": [
+          {
+            "phase": "preclinical",
+            "years": 1.5,
+            "label": "first 18-months of the pre-clinical medical school curriculum"
+          },
+          {
+            "phase": "research",
+            "years": null,
+            "label": "complete program or department-specific coursework, teaching and qualifying examination requirements in Years 3 and 4"
+          },
+          {
+            "phase": "clinical",
+            "years": null,
+            "label": "returning to the wards"
+          }
+        ],
+        "totalYears": null,
+        "evidence": "During the first 18-months of the pre-clinical medical school curriculum, MD-PhD students complete courses co-listed in the medical school and graduate school. … Students are required to submit a first author paper and successfully write, defend and submit their PhD dissertation before returning to the wards in October or January of their penultimate year of training.",
+        "url": "https://medicine.yale.edu/mdphd/education/timeline",
+        "checkedOn": "2026-11-24"
+      }
+    }
+  ]
+}

@@ -76,6 +76,9 @@ import schoolPagesJson from '../../data/medschools/school-pages.json';
 import { ensureSchoolPagesImported } from '../../features/medschools/scrape/school-pages';
 import msarReportsJson from '../../data/medschools/msar-reports.json';
 import { ensureMsarReportsImported } from '../../features/medschools/scrape/msar-reports';
+import mdphdProgramsJson from '../../data/medschools/mdphd-programs.json';
+import mstpT32Json from '../../data/medschools/mstp-t32.json';
+import { ensureMdPhdImported } from '../../features/medschools/scrape/mdphd';
 import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/medschools/scrape/run-sdn-live';
 import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
@@ -821,6 +824,12 @@ async function bootstrap(): Promise<boolean> {
       await ensureMsarReportsImported(medPrisma, msarReportsJson, log);
     } catch (e) {
       log.error(`Bootstrap: MSAR reports import failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    // MD-PhD programs (school pages, read by hand) and NIH MSTP grants (RePORTER): the same once-per-version bootstrap.
+    try {
+      await ensureMdPhdImported(medPrisma, mdphdProgramsJson, mstpT32Json, log);
+    } catch (e) {
+      log.error(`Bootstrap: MD-PhD import failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     return (
       CYCLETRACK_ENABLED &&

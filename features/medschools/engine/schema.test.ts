@@ -574,7 +574,8 @@ model MedTrackerApplication {
           !d.endsWith('_medschools_school_pages_turnaround') &&
           !d.endsWith('_medschools_matriculated') &&
           !d.endsWith('_medschools_school_facts') &&
-          !d.endsWith('_medschools_admit_curriculum'),
+          !d.endsWith('_medschools_admit_curriculum') &&
+          !d.endsWith('_medschools_mdphd_sources'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
     });
@@ -611,7 +612,9 @@ model MedTrackerApplication {
         'checkedOn',
       ]);
       expect(m?.body).toContain('@@unique([schoolId, program, cycleYear, kind, source])');
-      expect(schema()).toMatch(/enum MedFactSource \{\s*AAMC_MSAR_REPORT\s*SCHOOL_PROFILE\s*ADMIT\s*\}/);
+      expect(schema()).toMatch(
+        /enum MedFactSource \{\s*AAMC_MSAR_REPORT\s*SCHOOL_PROFILE\s*ADMIT\s*SCHOOL_PAGE\s*NIH_REPORTER\s*\}/,
+      );
     });
 
     it('the migration is additive', () => {
@@ -629,6 +632,18 @@ model MedTrackerApplication {
         .join(' ');
       expect(sql).toBe(`ALTER TYPE "MedFactSource" ADD VALUE 'ADMIT';`);
       expect(dir > '20261208090000_medschools_school_facts').toBe(true);
+    });
+
+    it('the MD-PhD migration only adds the SCHOOL_PAGE and NIH_REPORTER enum values', () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_mdphd_sources')) ?? '';
+      const sql = readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8')
+        .split('\n')
+        .filter((l) => !l.startsWith('--') && l.trim() !== '')
+        .join(' ');
+      expect(sql).toBe(
+        `ALTER TYPE "MedFactSource" ADD VALUE 'SCHOOL_PAGE'; ALTER TYPE "MedFactSource" ADD VALUE 'NIH_REPORTER';`,
+      );
+      expect(dir > '20261209090000_medschools_admit_curriculum').toBe(true);
     });
 
     it('the fact kinds a source may write are validated strings, and Admit rank is none of them', async () => {

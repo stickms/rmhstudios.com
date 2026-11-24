@@ -699,6 +699,60 @@ vocabularies seen are there).
   schools alike when Admit has the school, source line "Source: Admit.org, checked <date>" and "Compiled by Admit.org;
   confirm with the school.". The Admissions facts panel moved off the Activity tab with it.
 
+### MD-PhD programs (owner 2026-11-24)
+
+The Facts tab's last group, "MD-PhD program" ("DO-PhD program" at a DO school): the program's name, its NIH MSTP (T32)
+status and its curriculum timeline.
+
+- **Sources.** `data/medschools/mdphd-programs.json` (131 schools: each school's own program page, read by hand, one
+  page set per school, 3 s or more apart, the honest user agent) and `data/medschools/mstp-t32.json` (NIH RePORTER: the
+  active NIGMS T32 Medical Scientist Training Program grants, 64 schools). Both carry a header with source, method, date
+  and the owner decisions, and both are built by `scripts/medschools/build-mdphd-data.ts` from the research records and
+  the RePORTER replies (not committed). Every record cites its source: the program page for existence, the timeline and
+  its quote; RePORTER for MSTP status. A "no program" answer is kept only when it cites the page read and was not
+  flagged low confidence; a school neither file decides shows nothing.
+- **Timelines are verified or absent.** A timeline is kept only when its evidence was re-fetched and found on the cited
+  page (`engine/mdphd-evidence.ts`: verbatim after folding whitespace, quotes and dashes, every piece of four words or
+  more around an ellipsis, letters and digits in order as the fallback for tables). Phase lengths are only those the
+  page states; a range stays a range in the phase's words ("3.5 to 4.5 years") and is read from there at render
+  (`phaseRange`); the programme's total is the stated one or a range in the quote (`statedTotal`), never a sum. Extra
+  phases keep the page's order (a rotation before year 1 is listed beside the bar; clerkships before the PhD at Mount
+  Sinai and Iowa are segments in place).
+- **The 2-4-2 rule.** A program that publishes no layout (or one naming no PhD research and medical phase) is drawn as
+  the typical 2-4-2 (`TYPICAL_TIMELINE`): dashed and unfilled, a dashed "2-4-2" and an info line "Typical layout; the
+  program does not publish its own", and its accessible name starts "Typical layout:". It has no source icon because it
+  is not the school's statement; a length the page does state shows on its own "Length" row with the quote.
+- **The bar.** `engine/mdphd.ts` `barModel` merges neighbouring phases of one kind (a rotation between MS1 and MS2 does
+  not split preclinical), `segmentShares` makes widths proportional only when every segment has a length (else equal,
+  "Length not stated"). One CSS grid holds the segments and the names and lengths under them; the whole figure is one
+  `role="img"` named by the sentence ("Preclinical 2 years, then PhD research 4 years, then clinical 2 years"). Colours
+  are `--app-med-phase-*` (aliases of the status pastels: preclinical the neutral pair, research the secondary blue,
+  clinical the acceptance green), each segment edged in its ink; `ui/facts/mdphd.test.tsx` holds the edge at 3:1 on
+  paper and on its fill in both modes.
+- **MSTP from RePORTER.** Funded reads "Funded · T32GM… · FY 2026" with the grant's RePORTER page as the source; a
+  program not found there reads "Not listed as an NIH MSTP" and "checked <date>", never "No". Grants are matched to
+  slugs by hand in `data/medschools/mstp-aliases.json`, by core project number; every core in the input must be a grant
+  or an exclusion with its reason, so a new grant is a decision. Excluded: the veterinary DVM-PhD programs (Colorado
+  State, Cornell Ithaca, UC Davis), non-MSTP grants, superseded older awards, and NYU's grant (last FY 2024, ended
+  2025-06-30). Multi-school institutions follow the grant's own words: South Texas is UT Health San Antonio, UTHealth
+  Houston is McGovern, UCLA-Caltech is UCLA, the MSU College of Osteopathic Medicine MSTP is the DO school, the
+  University of Arizona's is Tucson, the Tri-I MST Program is Weill Cornell; Cleveland Clinic Lerner is not mapped from
+  Case Western's grant. A school known only from a grant counts as a program (source NIH, no timeline).
+- **Model and import.** `MedSchoolFact` rows with `program` PHD and `cycleYear` 0: `MDPHD_PROGRAM` (YES | NO),
+  `MDPHD_TIMELINE` (the pattern, total years, phases in `valueJson`, the quote in `note`), `MSTP_T32` (LISTED with the
+  grant, or NOT_LISTED). Sources `SCHOOL_PAGE` and `NIH_REPORTER` came with the additive migration
+  `20261210090000_medschools_mdphd_sources`. `scrape/mdphd.ts` validates both files (zod; no DVM grant, no grant for a
+  school whose page says it has no program) and `ensureMdPhdImported` runs at worker start once per hash of the pair
+  (`MedSourceRun` job `mdphd-import`); it is idempotent and deletes only its own kinds and sources when they disappear.
+  Both files are in the Dockerfile server-builder COPY line.
+- **Read.** The same public `GET schools/$slug/facts` returns `mdphd` (null when nothing is known): `program`,
+  `timeline` and `mstp`, pinned by `testing/integration/medschools-public.test.ts`; a "no program" school gets the one
+  row and nothing else, and the PHD rows never join `facts`. UI: `ui/facts/MdPhdProgram.tsx`.
+- **Re-checking.** `pnpm exec tsx scripts/medschools/check-mdphd.ts [--only slug,slug] [--json out.json]` re-fetches
+  every timeline page (one at a time, 3 s plus jitter, the worker's user agent, `pdftotext` for a PDF) and fails when a
+  quote is gone. Run it by hand before editing the file; CI does not run it (no network). To change the data, rebuild
+  with `build-mdphd-data.ts`, run the checker, and deploy: the worker re-imports a changed pair at start.
+
 ## Rolling guidance (roadmap item 5)
 
 "Where applying early matters": a native disclosure under each list and the tracker's current cycle

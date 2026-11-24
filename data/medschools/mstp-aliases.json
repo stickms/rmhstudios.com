@@ -1,0 +1,118 @@
+{
+  "about": "Hand-made map from NIH RePORTER core project numbers (NIGMS T32, Medical Scientist Training Program) to RMH Med Schools slugs. Read by scripts/medschools/build-mdphd-data.ts to write data/medschools/mstp-t32.json. Every core project in the RePORTER input must appear here, either under grants (an active MD-PhD or DO-PhD MSTP, matched to one school) or under excluded (with the reason). A grant whose school is not certain is never mapped: it goes under excluded as unmatched. Checked by hand on 2026-11-24.",
+  "grants": {
+    "T32GM149364": { "slug": "albert-einstein" },
+    "T32GM136611": { "slug": "baylor" },
+    "T32GM158483": { "slug": "boston" },
+    "T32GM152319": {
+      "slug": "case-western",
+      "why": "Case Western Reserve University's MSTP. The Cleveland Clinic Lerner College of Medicine is not mapped: the grant names Case Western only."
+    },
+    "T32GM145440": { "slug": "columbia" },
+    "T32GM145449": { "slug": "duke" },
+    "T32GM142617": { "slug": "emory" },
+    "T32GM165247": { "slug": "georgetown" },
+    "T32GM144273": { "slug": "harvard" },
+    "T32GM154667": {
+      "slug": "michigan-state-com",
+      "why": "The title names the Michigan State University College of Osteopathic Medicine MSTP (a DO-PhD program), so it is the DO school, not the MD college."
+    },
+    "T32GM161671": { "slug": "hofstra", "why": "The title names the Zucker School of Medicine at Hofstra/Northwell." },
+    "T32GM146636": { "slug": "mount-sinai" },
+    "T32GM148382": { "slug": "indiana", "why": "Indiana Medical Scientist/Engineer Training Program: the MSTP of the IU School of Medicine." },
+    "T32GM136577": { "slug": "johns-hopkins" },
+    "T32GM154638": { "slug": "medical-college-of-wisconsin" },
+    "T32GM152837": { "slug": "meharry" },
+    "T32GM144295": { "slug": "northwestern" },
+    "T32GM139784": { "slug": "ohio-state" },
+    "T32GM141938": { "slug": "oregon-health-and-science" },
+    "T32GM149380": { "slug": "penn-state" },
+    "T32GM145402": { "slug": "stanford" },
+    "T32GM158461": { "slug": "stony-brook" },
+    "T32GM146621": { "slug": "tufts" },
+    "T32GM159591": { "slug": "massachussetts", "why": "UMass Chan Medical School, Worcester." },
+    "T32GM152316": { "slug": "north-carolina" },
+    "T32GM156741": { "slug": "alabama" },
+    "T32GM152342": {
+      "slug": "university-of-california-los-angeles",
+      "why": "UCLA-Caltech MSTP: the MD is UCLA's, so it is the UCLA school."
+    },
+    "T32GM154642": { "slug": "university-of-california-san-diego" },
+    "T32GM141323": { "slug": "university-of-california-san-francisco" },
+    "T32GM154637": { "slug": "university-of-california-irvine" },
+    "T32GM149200": { "slug": "cincinnati" },
+    "T32GM149361": { "slug": "colorado" },
+    "T32GM163993": { "slug": "florida" },
+    "T32GM145767": { "slug": "illinois", "why": "University of Illinois at Chicago, the University of Illinois College of Medicine." },
+    "T32GM139776": { "slug": "iowa" },
+    "T32GM138077": { "slug": "kansas" },
+    "T32GM164032": { "slug": "louisville" },
+    "T32GM136561": { "slug": "maryland" },
+    "T32GM145462": { "slug": "miami" },
+    "T32GM156550": { "slug": "michigan" },
+    "T32GM156735": { "slug": "minnesota" },
+    "T32GM152836": { "slug": "nebraska" },
+    "T32GM152941": { "slug": "new-mexico", "why": "The title names the UNM LEAD MSTP." },
+    "T32GM148377": { "slug": "pennsylvania" },
+    "T32GM144300": { "slug": "pittsburgh" },
+    "T32GM152318": { "slug": "rochester" },
+    "T32GM150524": {
+      "slug": "university-of-texas-houston",
+      "why": "UTHealth Houston (University of Texas Health Science Center at Houston): McGovern Medical School."
+    },
+    "T32GM145432": {
+      "slug": "university-of-texas-san-antonio",
+      "why": "South Texas MSTP of UT Health San Antonio (Long School of Medicine)."
+    },
+    "T32GM156694": { "slug": "virginia" },
+    "T32GM153182": { "slug": "washington" },
+    "T32GM158473": { "slug": "university-of-texas-southwestern" },
+    "T32GM145431": { "slug": "utah" },
+    "T32GM152284": { "slug": "vanderbilt" },
+    "T32GM144294": { "slug": "virginia-commonwealth" },
+    "T32GM136651": { "slug": "yale" },
+    "T32GM145408": { "slug": "mayo", "why": "Title: MSTP at Mayo Clinic Rochester (gap-fill query)." },
+    "T32GM152311": {
+      "slug": "medical-university-of-south-carolina",
+      "why": "Title: Training Program for Medical Scientists; the abstract names the MSTP at MUSC (gap-fill query)."
+    },
+    "T32GM141830": {
+      "slug": "arizona-tucson",
+      "why": "Title: Interdisciplinary Training of Future Physician Scientists; the abstract names the MSTP at the University of Arizona, and the Tucson college's MD-PhD page is the one that calls itself the Medical Scientist Training Program (Phoenix's MD-PhD is a separate PhD in Clinical Translational Sciences)."
+    },
+    "T32GM150375": { "slug": "chicago", "why": "Title: Medical Scientist National Research Service Award (gap-fill query)." },
+    "T32GM140935": {
+      "slug": "wisconsin",
+      "why": "Title: Integrated Training For Physician-Scientists; the abstract names the MSTP at UW-Madison (gap-fill query)."
+    },
+    "T32GM154644": {
+      "slug": "washington-university-saint-louis",
+      "why": "Title: National Research Service Award-Medical Scientist (gap-fill query)."
+    },
+    "T32GM152349": {
+      "slug": "cornell",
+      "why": "Weill Cornell/Rockefeller/Sloan Kettering MST Program (Tri-I MD-PhD); the MD is Weill Cornell's (gap-fill query)."
+    },
+    "T32GM163810": { "slug": "mississippi", "why": "Title: University of Mississippi Medical Center MSTP (gap-fill query)." },
+    "T32GM164020": {
+      "slug": "tulane",
+      "why": "Title: Interdisciplinary Training of Future Physician Scientists; the abstract calls it Tulane's MSTP application for MD-PhD students (new award, FY 2026, gap-fill query)."
+    }
+  },
+  "excluded": {
+    "T32GM136628": "DVM-PhD: Colorado State University's dual-degree program for veterinarians.",
+    "T32GM150453": "DVM-PhD: Cornell University (Ithaca) Combined DVM-PhD program.",
+    "T32GM136559": "DVM-PhD: UC Davis DVM/PhD program.",
+    "T32GM008616": "Not an MSTP: University of Michigan surgical scientist training grant.",
+    "T32GM144274": "Not an MSTP: University of South Florida surgeon-scientist training grant.",
+    "T32GM080202": "Superseded: Medical College of Wisconsin's earlier MSTP grant (last FY 2024), now T32GM154638.",
+    "T32GM008444": "Superseded: Stony Brook's earlier MSTP grant (last FY 2024), now T32GM158461.",
+    "T32GM008361": "Superseded: UAB's earlier MSTP grant (last FY 2024), now T32GM156741.",
+    "T32GM007198": "Superseded: UC San Diego's earlier MSTP grant (last FY 2024), now T32GM154642.",
+    "T32GM007863": "Superseded: University of Michigan's earlier MSTP grant (last FY 2024), now T32GM156550.",
+    "T32GM008244": "Superseded: University of Minnesota's earlier MSTP grant (last FY 2024), now T32GM156735.",
+    "T32GM007267": "Superseded: University of Virginia's earlier MSTP grant (last FY 2024), now T32GM156694.",
+    "T32GM008014": "Superseded: UT Southwestern's earlier MSTP grant (last FY 2024), now T32GM158473.",
+    "T32GM136573": "Not active: NYU's MSTP grant was last funded in FY 2024 and its project period ended 2025-06-30; no FY 2025 or 2026 award was found."
+  }
+}

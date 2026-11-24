@@ -1,0 +1,740 @@
+{
+  "source": "NIH RePORTER API v2 (api.reporter.nih.gov/v2/projects/search)",
+  "sourceUrl": "https://reporter.nih.gov/",
+  "query": "Activity code T32, agency NIGMS, fiscal years 2024-2026: (1) project title containing \"Scientist Training\" (210 project-year rows); (2) gap-fill by organisation name for schools with an MD-PhD program missing from (1), and abstract text \"Medical Scientist Training Program\", titles and abstracts read by hand.",
+  "fetchedOn": "2026-11-24",
+  "method": "Reduced to the latest award per core project. Kept: active MD-PhD or DO-PhD MSTP grants, matched to slugs by hand in data/medschools/mstp-aliases.json (a multi-school institution only where the grant names the school). Excluded with reasons: veterinary DVM-PhD programs (Colorado State, Cornell Ithaca, UC Davis), non-MSTP training grants, earlier grants superseded by a newer award, and a grant whose project period has ended with no newer award. Fewer than 30 requests, 3 s or more apart, user agent MarlonJack/1.0 (contact: admin@rmhstudios.com). The RePORTER link of a grant is https://reporter.nih.gov/project-details/<applId>.",
+  "grants": [
+    {
+      "slug": "alabama",
+      "core": "T32GM156741",
+      "projectNum": "3T32GM156741-02S1",
+      "applId": 11534736,
+      "organization": "UNIVERSITY OF ALABAMA AT BIRMINGHAM",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "albert-einstein",
+      "core": "T32GM149364",
+      "projectNum": "5T32GM149364-04",
+      "applId": 11374164,
+      "organization": "ALBERT EINSTEIN COLLEGE OF MEDICINE",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "arizona-tucson",
+      "core": "T32GM141830",
+      "projectNum": "2T32GM141830-06",
+      "applId": 11281269,
+      "organization": "UNIVERSITY OF ARIZONA",
+      "title": "Interdisciplinary Training of Future Physician Scientists",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30",
+      "why": "Title: Interdisciplinary Training of Future Physician Scientists; the abstract names the MSTP at the University of Arizona, and the Tucson college's MD-PhD page is the one that calls itself the Medical Scientist Training Program (Phoenix's MD-PhD is a separate PhD in Clinical Translational Sciences)."
+    },
+    {
+      "slug": "baylor",
+      "core": "T32GM136611",
+      "projectNum": "3T32GM136611-07S1",
+      "applId": 11534719,
+      "organization": "BAYLOR COLLEGE OF MEDICINE",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "boston",
+      "core": "T32GM158483",
+      "projectNum": "5T32GM158483-02",
+      "applId": 11345303,
+      "organization": "BOSTON UNIVERSITY MEDICAL CAMPUS",
+      "title": "Medical Scientist Training Program (MSTP)",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "case-western",
+      "core": "T32GM152319",
+      "projectNum": "5T32GM152319-03",
+      "applId": 11362477,
+      "organization": "CASE WESTERN RESERVE UNIVERSITY",
+      "title": "Medical Scientist Training Program at Case Western Reserve University",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30",
+      "why": "Case Western Reserve University's MSTP. The Cleveland Clinic Lerner College of Medicine is not mapped: the grant names Case Western only."
+    },
+    {
+      "slug": "chicago",
+      "core": "T32GM150375",
+      "projectNum": "5T32GM150375-04",
+      "applId": 11362621,
+      "organization": "UNIVERSITY OF CHICAGO",
+      "title": "Medical Scientist National Research Service Award",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30",
+      "why": "Title: Medical Scientist National Research Service Award (gap-fill query)."
+    },
+    {
+      "slug": "cincinnati",
+      "core": "T32GM149200",
+      "projectNum": "5T32GM149200-04",
+      "applId": 11383465,
+      "organization": "UNIVERSITY OF CINCINNATI",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "colorado",
+      "core": "T32GM149361",
+      "projectNum": "5T32GM149361-04",
+      "applId": 11370879,
+      "organization": "UNIVERSITY OF COLORADO DENVER",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "columbia",
+      "core": "T32GM145440",
+      "projectNum": "5T32GM145440-05",
+      "applId": 11374143,
+      "organization": "COLUMBIA UNIVERSITY HEALTH SCIENCES",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "cornell",
+      "core": "T32GM152349",
+      "projectNum": "5T32GM152349-03",
+      "applId": 11377236,
+      "organization": "WEILL MEDICAL COLL OF CORNELL UNIV",
+      "title": "Weill Cornell/Rockefeller/Sloan Kettering MST Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30",
+      "why": "Weill Cornell/Rockefeller/Sloan Kettering MST Program (Tri-I MD-PhD); the MD is Weill Cornell's (gap-fill query)."
+    },
+    {
+      "slug": "duke",
+      "core": "T32GM145449",
+      "projectNum": "3T32GM145449-05S1",
+      "applId": 11550858,
+      "organization": "DUKE UNIVERSITY",
+      "title": "Medical Scientist Training Program Training Grant",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "emory",
+      "core": "T32GM142617",
+      "projectNum": "5T32GM142617-05",
+      "applId": 11368367,
+      "organization": "EMORY UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "florida",
+      "core": "T32GM163993",
+      "projectNum": "1T32GM163993-01",
+      "applId": 11334157,
+      "organization": "UNIVERSITY OF FLORIDA",
+      "title": "Medical Scientist Training Program at the University of Florida",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30"
+    },
+    {
+      "slug": "georgetown",
+      "core": "T32GM165247",
+      "projectNum": "1T32GM165247-01",
+      "applId": 11420320,
+      "organization": "GEORGETOWN UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30"
+    },
+    {
+      "slug": "harvard",
+      "core": "T32GM144273",
+      "projectNum": "3T32GM144273-05S1",
+      "applId": 11518532,
+      "organization": "HARVARD MEDICAL SCHOOL",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "hofstra",
+      "core": "T32GM161671",
+      "projectNum": "1T32GM161671-01",
+      "applId": 11264651,
+      "organization": "HOFSTRA UNIVERSITY",
+      "title": "T32 Medical Scientist Training Program (MSTP) at the Zucker School of Medicine at Hofstra/Northwell",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30",
+      "why": "The title names the Zucker School of Medicine at Hofstra/Northwell."
+    },
+    {
+      "slug": "illinois",
+      "core": "T32GM145767",
+      "projectNum": "5T32GM145767-03",
+      "applId": 11362313,
+      "organization": "UNIVERSITY OF ILLINOIS AT CHICAGO",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30",
+      "why": "University of Illinois at Chicago, the University of Illinois College of Medicine."
+    },
+    {
+      "slug": "indiana",
+      "core": "T32GM148382",
+      "projectNum": "3T32GM148382-04S1",
+      "applId": 11550826,
+      "organization": "INDIANA UNIVERSITY INDIANAPOLIS",
+      "title": "Indiana Medical Scientist/Engineer Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30",
+      "why": "Indiana Medical Scientist/Engineer Training Program: the MSTP of the IU School of Medicine."
+    },
+    {
+      "slug": "iowa",
+      "core": "T32GM139776",
+      "projectNum": "2T32GM139776-06",
+      "applId": 11263943,
+      "organization": "UNIVERSITY OF IOWA",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30"
+    },
+    {
+      "slug": "johns-hopkins",
+      "core": "T32GM136577",
+      "projectNum": "3T32GM136577-07S2",
+      "applId": 11593116,
+      "organization": "JOHNS HOPKINS UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "kansas",
+      "core": "T32GM138077",
+      "projectNum": "5T32GM138077-07",
+      "applId": 11463620,
+      "organization": "UNIVERSITY OF KANSAS MEDICAL CENTER",
+      "title": "Kansas Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "louisville",
+      "core": "T32GM164032",
+      "projectNum": "1T32GM164032-01",
+      "applId": 11335966,
+      "organization": "UNIVERSITY OF LOUISVILLE",
+      "title": "University of Louisville Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30"
+    },
+    {
+      "slug": "maryland",
+      "core": "T32GM136561",
+      "projectNum": "5T32GM136561-07",
+      "applId": 11375445,
+      "organization": "UNIVERSITY OF MARYLAND BALTIMORE",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "massachussetts",
+      "core": "T32GM159591",
+      "projectNum": "5T32GM159591-02",
+      "applId": 11386645,
+      "organization": "UNIV OF MASSACHUSETTS MED SCH WORCESTER",
+      "title": "Medical Scientist Training at UMCMS",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30",
+      "why": "UMass Chan Medical School, Worcester."
+    },
+    {
+      "slug": "mayo",
+      "core": "T32GM145408",
+      "projectNum": "5T32GM145408-04",
+      "applId": 11362501,
+      "organization": "MAYO CLINIC ROCHESTER",
+      "title": "MSTP at Mayo Clinic Rochester",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30",
+      "why": "Title: MSTP at Mayo Clinic Rochester (gap-fill query)."
+    },
+    {
+      "slug": "medical-college-of-wisconsin",
+      "core": "T32GM154638",
+      "projectNum": "5T32GM154638-02",
+      "applId": 11360585,
+      "organization": "MEDICAL COLLEGE OF WISCONSIN",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "medical-university-of-south-carolina",
+      "core": "T32GM152311",
+      "projectNum": "5T32GM152311-02",
+      "applId": 11345495,
+      "organization": "MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+      "title": "Training Program for Medical Scientists",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30",
+      "why": "Title: Training Program for Medical Scientists; the abstract names the MSTP at MUSC (gap-fill query)."
+    },
+    {
+      "slug": "meharry",
+      "core": "T32GM152837",
+      "projectNum": "5T32GM152837-02",
+      "applId": 11386405,
+      "organization": "MEHARRY MEDICAL COLLEGE",
+      "title": "The Meharry Medical College Medical Scientist Training Program (MMC-MSTP)",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "miami",
+      "core": "T32GM145462",
+      "projectNum": "5T32GM145462-05",
+      "applId": 11348236,
+      "organization": "UNIVERSITY OF MIAMI SCHOOL OF MEDICINE",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "michigan",
+      "core": "T32GM156550",
+      "projectNum": "5T32GM156550-02",
+      "applId": 11370150,
+      "organization": "UNIVERSITY OF MICHIGAN AT ANN ARBOR",
+      "title": "Michigan Medical Scientist Training Program 2025-2030",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "michigan-state-com",
+      "core": "T32GM154667",
+      "projectNum": "5T32GM154667-02",
+      "applId": 11370132,
+      "organization": "HENRY FORD HEALTH + MICHIGAN STATE UNIVERSITY HEALTH SCIENCES",
+      "title": "Michigan State University College of Osteopathic Medicine Medical Scientist Training Program (MSTP)",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30",
+      "why": "The title names the Michigan State University College of Osteopathic Medicine MSTP (a DO-PhD program), so it is the DO school, not the MD college."
+    },
+    {
+      "slug": "minnesota",
+      "core": "T32GM156735",
+      "projectNum": "3T32GM156735-02S1",
+      "applId": 11581882,
+      "organization": "UNIVERSITY OF MINNESOTA",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "mississippi",
+      "core": "T32GM163810",
+      "projectNum": "1T32GM163810-01",
+      "applId": 11333774,
+      "organization": "UNIVERSITY OF MISSISSIPPI MED CTR",
+      "title": "University of Mississippi Medical Center MSTP",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30",
+      "why": "Title: University of Mississippi Medical Center MSTP (gap-fill query)."
+    },
+    {
+      "slug": "mount-sinai",
+      "core": "T32GM146636",
+      "projectNum": "5T32GM146636-05",
+      "applId": 11374126,
+      "organization": "ICAHN SCHOOL OF MEDICINE AT MOUNT SINAI",
+      "title": "Mount Sinai Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "nebraska",
+      "core": "T32GM152836",
+      "projectNum": "5T32GM152836-03",
+      "applId": 11381825,
+      "organization": "UNIVERSITY OF NEBRASKA MEDICAL CENTER",
+      "title": "Medical Scientist Training Program at the University of Nebraska",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30"
+    },
+    {
+      "slug": "new-mexico",
+      "core": "T32GM152941",
+      "projectNum": "5T32GM152941-03",
+      "applId": 11372176,
+      "organization": "UNIVERSITY OF NEW MEXICO HEALTH SCIS CTR",
+      "title": "University of New Mexico Leading Equity and Diversity in the Medical Scientist Training Program (UNM LEAD MSTP)",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30",
+      "why": "The title names the UNM LEAD MSTP."
+    },
+    {
+      "slug": "north-carolina",
+      "core": "T32GM152316",
+      "projectNum": "3T32GM152316-03S1",
+      "applId": 11591358,
+      "organization": "UNIV OF NORTH CAROLINA CHAPEL HILL",
+      "title": "UNC Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30"
+    },
+    {
+      "slug": "northwestern",
+      "core": "T32GM144295",
+      "projectNum": "5T32GM144295-05",
+      "applId": 11376169,
+      "organization": "NORTHWESTERN UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "ohio-state",
+      "core": "T32GM139784",
+      "projectNum": "2T32GM139784-06",
+      "applId": 11191087,
+      "organization": "OHIO STATE UNIVERSITY",
+      "title": "Medical Scientist Training Program - The Ohio State University",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30"
+    },
+    {
+      "slug": "oregon-health-and-science",
+      "core": "T32GM141938",
+      "projectNum": "5T32GM141938-05",
+      "applId": 11112528,
+      "organization": "OREGON HEALTH & SCIENCE UNIVERSITY",
+      "title": "Medical Scientist Training Program of Oregon Health & Science University",
+      "fiscalYear": 2025,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "penn-state",
+      "core": "T32GM149380",
+      "projectNum": "5T32GM149380-04",
+      "applId": 11337467,
+      "organization": "PENNSYLVANIA STATE UNIV HERSHEY MED CTR",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "pennsylvania",
+      "core": "T32GM148377",
+      "projectNum": "5T32GM148377-04",
+      "applId": 11362029,
+      "organization": "UNIVERSITY OF PENNSYLVANIA",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "pittsburgh",
+      "core": "T32GM144300",
+      "projectNum": "5T32GM144300-05",
+      "applId": 11362195,
+      "organization": "UNIVERSITY OF PITTSBURGH AT PITTSBURGH",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "rochester",
+      "core": "T32GM152318",
+      "projectNum": "3T32GM152318-03S1",
+      "applId": 11617923,
+      "organization": "UNIVERSITY OF ROCHESTER",
+      "title": "University of Rochester Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30"
+    },
+    {
+      "slug": "stanford",
+      "core": "T32GM145402",
+      "projectNum": "3T32GM145402-05S1",
+      "applId": 11550837,
+      "organization": "STANFORD UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "stony-brook",
+      "core": "T32GM158461",
+      "projectNum": "5T32GM158461-02",
+      "applId": 11352584,
+      "organization": "STATE UNIVERSITY NEW YORK STONY BROOK",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "tufts",
+      "core": "T32GM146621",
+      "projectNum": "5T32GM146621-04",
+      "applId": 11362661,
+      "organization": "TUFTS UNIVERSITY BOSTON",
+      "title": "Medical Scientist Training Program at Tufts University",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "tulane",
+      "core": "T32GM164020",
+      "projectNum": "1T32GM164020-01",
+      "applId": 11335391,
+      "organization": "TULANE UNIVERSITY OF LOUISIANA",
+      "title": "Interdisciplinary Training of Future Physician Scientists",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30",
+      "why": "Title: Interdisciplinary Training of Future Physician Scientists; the abstract calls it Tulane's MSTP application for MD-PhD students (new award, FY 2026, gap-fill query)."
+    },
+    {
+      "slug": "university-of-california-irvine",
+      "core": "T32GM154637",
+      "projectNum": "5T32GM154637-02",
+      "applId": 11355463,
+      "organization": "UNIVERSITY OF CALIFORNIA-IRVINE",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "university-of-california-los-angeles",
+      "core": "T32GM152342",
+      "projectNum": "5T32GM152342-03",
+      "applId": 11375976,
+      "organization": "UNIVERSITY OF CALIFORNIA LOS ANGELES",
+      "title": "UCLA-Caltech Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30",
+      "why": "UCLA-Caltech MSTP: the MD is UCLA's, so it is the UCLA school."
+    },
+    {
+      "slug": "university-of-california-san-diego",
+      "core": "T32GM154642",
+      "projectNum": "5T32GM154642-02",
+      "applId": 11378072,
+      "organization": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+      "title": "UC San Diego Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "university-of-california-san-francisco",
+      "core": "T32GM141323",
+      "projectNum": "2T32GM141323-06",
+      "applId": 11333068,
+      "organization": "UNIVERSITY OF CALIFORNIA, SAN FRANCISCO",
+      "title": "Medical Scientist Training Program (T32 NRSA Training Grant)",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30"
+    },
+    {
+      "slug": "university-of-texas-houston",
+      "core": "T32GM150524",
+      "projectNum": "5T32GM150524-04",
+      "applId": 11368368,
+      "organization": "UNIVERSITY OF TEXAS HLTH SCI CTR HOUSTON",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30",
+      "why": "UTHealth Houston (University of Texas Health Science Center at Houston): McGovern Medical School."
+    },
+    {
+      "slug": "university-of-texas-san-antonio",
+      "core": "T32GM145432",
+      "projectNum": "3T32GM145432-04S1",
+      "applId": 11533914,
+      "organization": "UNIVERSITY OF TEXAS HLTH SCIENCE CENTER",
+      "title": "South Texas Medical Scientist Training Program (STX-MSTP)",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30",
+      "why": "South Texas MSTP of UT Health San Antonio (Long School of Medicine)."
+    },
+    {
+      "slug": "university-of-texas-southwestern",
+      "core": "T32GM158473",
+      "projectNum": "5T32GM158473-02",
+      "applId": 11373506,
+      "organization": "UT SOUTHWESTERN MEDICAL CENTER",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "utah",
+      "core": "T32GM145431",
+      "projectNum": "3T32GM145431-04S1",
+      "applId": 11581869,
+      "organization": "UTAH STATE HIGHER EDUCATION SYSTEM--UNIVERSITY OF UTAH",
+      "title": "University of Utah Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2028-06-30"
+    },
+    {
+      "slug": "vanderbilt",
+      "core": "T32GM152284",
+      "projectNum": "5T32GM152284-03",
+      "applId": 11384362,
+      "organization": "VANDERBILT UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30"
+    },
+    {
+      "slug": "virginia",
+      "core": "T32GM156694",
+      "projectNum": "5T32GM156694-02",
+      "applId": 11370113,
+      "organization": "UNIVERSITY OF VIRGINIA",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    },
+    {
+      "slug": "virginia-commonwealth",
+      "core": "T32GM144294",
+      "projectNum": "5T32GM144294-05",
+      "applId": 11382723,
+      "organization": "VIRGINIA COMMONWEALTH UNIVERSITY",
+      "title": "VCU Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2027-06-30"
+    },
+    {
+      "slug": "washington",
+      "core": "T32GM153182",
+      "projectNum": "5T32GM153182-03",
+      "applId": 11371400,
+      "organization": "UNIVERSITY OF WASHINGTON",
+      "title": "University of Washington Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2029-06-30"
+    },
+    {
+      "slug": "washington-university-saint-louis",
+      "core": "T32GM154644",
+      "projectNum": "5T32GM154644-02",
+      "applId": 11361539,
+      "organization": "WASHINGTON UNIVERSITY",
+      "title": "National Research Service Award-Medical Scientist",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30",
+      "why": "Title: National Research Service Award-Medical Scientist (gap-fill query)."
+    },
+    {
+      "slug": "wisconsin",
+      "core": "T32GM140935",
+      "projectNum": "3T32GM140935-06S1",
+      "applId": 11581886,
+      "organization": "UNIVERSITY OF WISCONSIN-MADISON",
+      "title": "Integrated Training For Physician-Scientists",
+      "fiscalYear": 2026,
+      "projectEnd": "2031-06-30",
+      "why": "Title: Integrated Training For Physician-Scientists; the abstract names the MSTP at UW-Madison (gap-fill query)."
+    },
+    {
+      "slug": "yale",
+      "core": "T32GM136651",
+      "projectNum": "5T32GM136651-07",
+      "applId": 11370090,
+      "organization": "YALE UNIVERSITY",
+      "title": "Medical Scientist Training Program",
+      "fiscalYear": 2026,
+      "projectEnd": "2030-06-30"
+    }
+  ],
+  "excluded": [
+    {
+      "core": "T32GM007198",
+      "organization": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+      "reason": "Superseded: UC San Diego's earlier MSTP grant (last FY 2024), now T32GM154642."
+    },
+    {
+      "core": "T32GM007267",
+      "organization": "UNIVERSITY OF VIRGINIA",
+      "reason": "Superseded: University of Virginia's earlier MSTP grant (last FY 2024), now T32GM156694."
+    },
+    {
+      "core": "T32GM007863",
+      "organization": "UNIVERSITY OF MICHIGAN AT ANN ARBOR",
+      "reason": "Superseded: University of Michigan's earlier MSTP grant (last FY 2024), now T32GM156550."
+    },
+    {
+      "core": "T32GM008014",
+      "organization": "UT SOUTHWESTERN MEDICAL CENTER",
+      "reason": "Superseded: UT Southwestern's earlier MSTP grant (last FY 2024), now T32GM158473."
+    },
+    {
+      "core": "T32GM008244",
+      "organization": "UNIVERSITY OF MINNESOTA",
+      "reason": "Superseded: University of Minnesota's earlier MSTP grant (last FY 2024), now T32GM156735."
+    },
+    {
+      "core": "T32GM008361",
+      "organization": "UNIVERSITY OF ALABAMA AT BIRMINGHAM",
+      "reason": "Superseded: UAB's earlier MSTP grant (last FY 2024), now T32GM156741."
+    },
+    {
+      "core": "T32GM008444",
+      "organization": "STATE UNIVERSITY NEW YORK STONY BROOK",
+      "reason": "Superseded: Stony Brook's earlier MSTP grant (last FY 2024), now T32GM158461."
+    },
+    {
+      "core": "T32GM008616",
+      "organization": "UNIVERSITY OF MICHIGAN AT ANN ARBOR",
+      "reason": "Not an MSTP: University of Michigan surgical scientist training grant."
+    },
+    {
+      "core": "T32GM080202",
+      "organization": "MEDICAL COLLEGE OF WISCONSIN",
+      "reason": "Superseded: Medical College of Wisconsin's earlier MSTP grant (last FY 2024), now T32GM154638."
+    },
+    {
+      "core": "T32GM136559",
+      "organization": "UNIVERSITY OF CALIFORNIA AT DAVIS",
+      "reason": "DVM-PhD: UC Davis DVM/PhD program."
+    },
+    {
+      "core": "T32GM136573",
+      "organization": "NEW YORK UNIVERSITY SCHOOL OF MEDICINE",
+      "reason": "Not active: NYU's MSTP grant was last funded in FY 2024 and its project period ended 2025-06-30; no FY 2025 or 2026 award was found."
+    },
+    {
+      "core": "T32GM136628",
+      "organization": "COLORADO STATE UNIVERSITY",
+      "reason": "DVM-PhD: Colorado State University's dual-degree program for veterinarians."
+    },
+    {
+      "core": "T32GM144274",
+      "organization": "UNIVERSITY OF SOUTH FLORIDA",
+      "reason": "Not an MSTP: University of South Florida surgeon-scientist training grant."
+    },
+    {
+      "core": "T32GM150453",
+      "organization": "CORNELL UNIVERSITY",
+      "reason": "DVM-PhD: Cornell University (Ithaca) Combined DVM-PhD program."
+    }
+  ]
+}

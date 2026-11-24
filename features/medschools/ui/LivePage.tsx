@@ -68,8 +68,9 @@ export function LivePage() {
     });
   };
 
+  // One column at the index's 16px rhythm (owner 2026-11-24): title, filters and list read as one block.
   return (
-    <>
+    <div className="medapp-index medapp-fill">
       <PageHead title={t('live-title', { defaultValue: 'Live reported events' })} />
       <div className="medapp-filters">
         <div className="medapp-toolbar">
@@ -107,8 +108,10 @@ export function LivePage() {
         <PrefsNote fromPrefs={view.fromPrefs} />
       </div>
       {/* One feed across filter changes: the old rows stay, dimmed, until the new filter's first page replaces them. */}
-      <LiveList filters={filters} />
-    </>
+      <div className="medapp-fill">
+        <LiveList filters={filters} />
+      </div>
+    </div>
   );
 }
 

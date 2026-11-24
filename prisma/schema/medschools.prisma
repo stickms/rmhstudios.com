@@ -758,10 +758,14 @@ model MedSecondaryTurnaround {
 /// Where a school fact came from. `AAMC_MSAR_REPORT`: the AAMC MSAR "Reports for Applicants and Advisors" (a curated
 /// import under the owner's stated permission, 2026-11-24). `SCHOOL_PROFILE`: reserved for the school's own class-profile
 /// page (phase C step 2). `ADMIT`: Admit.org's school curriculum table (`getAllSchoolCurriculum`, one request a week).
+/// `SCHOOL_PAGE`: the school's own MD-PhD program page (curated, `data/medschools/mdphd-programs.json`). `NIH_REPORTER`:
+/// NIH RePORTER's NIGMS T32 MSTP grants (curated, `data/medschools/mstp-t32.json`).
 enum MedFactSource {
   AAMC_MSAR_REPORT
   SCHOOL_PROFILE
   ADMIT
+  SCHOOL_PAGE
+  NIH_REPORTER
 }
 
 /// A dated, sourced fact about a school's admissions (see `features/medschools/engine/school-facts.ts` for the kinds).

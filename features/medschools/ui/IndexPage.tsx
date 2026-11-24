@@ -72,7 +72,7 @@ export function IndexPage() {
   const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
 
   return (
-    <div className="medapp-index">
+    <div className="medapp-index medapp-fill">
       <div className="medapp-filters">
         <div className="medapp-toolbar">
           <MedSearch
@@ -118,7 +118,7 @@ export function IndexPage() {
         <PrefsNote fromPrefs={view.fromPrefs} />
       </div>
 
-      <div>
+      <div className="medapp-fill">
         {schools.isError ? (
           <MedEmpty
             title={t('index-load-failed', { defaultValue: 'Could not load the schools.' })}
