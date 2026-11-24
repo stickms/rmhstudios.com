@@ -219,7 +219,7 @@ export function RankedColumn({
  {signedIn && (
  <>
  {/* Issue a challenge */}
- <section className={`rounded-site p-5`}>
+ <section className={`py-5`}>
  <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
  </h2>
@@ -263,11 +263,11 @@ export function RankedColumn({
  <h2 className="site-section-label mb-3">
  {t('challenges-for-you', { defaultValue:'Challenges for you'})}
  </h2>
- <div className="space-y-2">
+ <div>
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site px-3 py-3`}
+ className={`flex items-center gap-2 rule-row py-3`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -317,11 +317,11 @@ export function RankedColumn({
  <h2 className="site-section-label mb-3">
  {t('your-challenges', { defaultValue:'Your challenges'})}
  </h2>
- <div className="space-y-2">
+ <div>
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site px-3 py-3`}
+ className={`flex items-center gap-2 rule-row py-3`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -347,11 +347,11 @@ export function RankedColumn({
  <h2 className="site-section-label mb-3">
  {t('your-ratings', { defaultValue:'Your ratings'})}
  </h2>
- <div className="space-y-2">
+ <div>
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site px-3 py-3`}
+ className={`flex items-center justify-between gap-2 rule-row py-3`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -397,11 +397,11 @@ export function RankedColumn({
  ) : lb.length === 0 ? (
  <EmptyState className={lbArrival} icon={Trophy} title={t('no-ranked-players', { defaultValue:'No ranked players yet.'})} />
  ) : (
- <div className={cn('space-y-2', lbArrival)}>
+ <div className={cn(lbArrival)}>
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site px-3 py-3`}
+ className={`flex items-center gap-3 rule-row py-3`}
  >
  <span className="w-5 text-center text-xs font-semibold text-site-text-muted">
  {row.rank}

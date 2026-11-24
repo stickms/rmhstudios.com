@@ -115,14 +115,14 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  })}
  />
  ) : (
- <div className={`grid gap-3 sm:grid-cols-2 ${loading ?'opacity-60':''}`}>
+ <div className={`grid gap-x-3 sm:grid-cols-2 ${loading ?'opacity-60':''}`}>
  {decks.map((deck) => {
  const st = status[deck.id];
  const added = st ==='done'|| deck.alreadyCloned;
  return (
  <div
  key={deck.id}
- className="flex flex-col rounded-site relative p-5"
+ className="rule-row flex flex-col relative py-3"
  >
  <Link to="/study/$deckId"params={{ deckId: deck.id }} className="min-w-0">
  <h2 className="truncate text-sm font-semibold text-site-text hover:text-site-accent">

@@ -211,13 +211,13 @@ function Section({
  <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
- <div className="space-y-3">
+ <div>
  {rows.map((r) => {
  const AudienceIcon = AUDIENCE_ICON[r.audience];
  return (
  <div
  key={r.id}
- className={`rounded-site px-4 py-3`}
+ className={`rule-row py-3`}
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (

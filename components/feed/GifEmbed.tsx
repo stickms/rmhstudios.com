@@ -165,7 +165,7 @@ export function GifEmbed({ url, className ='', linked = true, gifAlt }: GifEmbed
  return (
  <div
  className={cn(
- 'rounded-site overflow-hidden p-5 flex items-center justify-center gap-2',
+ 'overflow-hidden py-5 flex items-center justify-center gap-2',
  className,
  arrival,
  )}

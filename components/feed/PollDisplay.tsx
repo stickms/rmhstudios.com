@@ -169,7 +169,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 
  return (
- <div className="relative mt-3 rounded-site px-4 py-3">
+ <div className="relative mt-3 py-3">
  <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
 
  {isClosed && (

@@ -222,7 +222,7 @@ export function CommunitiesColumn({
               // Listed + locked: metadata and the way in, nothing of the content.
               return (
                 <li key={c.id}>
-                  <div className="flex flex-col gap-3 rounded-site relative p-5">
+                  <div className="rule-row flex flex-col gap-3 relative py-3">
                     <Link
                       to={`/c/${c.slug}` as string}
                       className="row-hover block"
