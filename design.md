@@ -90,8 +90,9 @@ case (Y2). Links inside running text are underlined, navigation words are not (Y
 
 Content sits on `--site-bg`; a list is rows on 1px rules; columns are divided by a 1px vertical rule; pictures take
 `--site-bg-subtle`, a 1px border and 8px radius. Groups are set off with the divider primitives (`components/ui/rules.tsx`,
-plan S7 to S11): `Section` (a full-width rule above a `t-heading`), `Columns` (side by side at `@3xl`, a 1px vertical rule
-between), `Cells` (rules between grid cells, none at the outer edge), `Notice` (an inline status on a rule, a 2px start edge
+plan S7 to S11): `Section` (a full-width rule above a `t-heading`; the first `Section` in its parent has none), `Columns` (side by side at
+`@3xl`, a 1px vertical rule centred in the gap between them), `Cells` (`<li>` children, rules between grid cells, none at
+the outer edge, one column below a 30rem container), `Notice` (an inline status on a rule, a 2px start edge
 in the danger or success colour) and `Definitions` (label and value rows on rules, a vertical rule at `@xl`). An overlay
 (menu, dialog, popover) is the only raised surface:
 `--site-surface`, 1px border, 8px radius, the overlay shadow, no blur; the scrim behind a dialog is `--site-bg` at 80%.

@@ -23,7 +23,8 @@ const GAP = ['gap', 'gap-y'] as const;
  * column with the shared spacing. The API (`pane`, `interactive`, the parts) is kept so call sites compile; phases 4
  * and 5 remove the call sites page by page, and `pane` and `interactive` change nothing in the meantime.
  *
- * Site pages use `rules.tsx` (Section, Columns, Cells, Notice, Definitions; S7 to S11) to set a group off; Card remains
+ * Site pages are moving to `rules.tsx` (Section, Columns, Cells, Notice, Definitions; S7 to S11) wave by wave; the
+ * steel-rules gate's baseline (`lib/__tests__/steel-rules-baseline.ts`) lists the files not yet converted. Card stays
  * for the app tier.
  */
 function Card({

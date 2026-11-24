@@ -275,14 +275,18 @@ a viewer; both were tried and rejected.
 - S6. The existing role classes are remapped, not kept as materials: `surface-card` and `surface-panel` become "no
   background, no border"; `surface-field` and `surface-press` become the flat control surface; `surface-overlay` becomes
   S5; `surface-chrome` (bars) becomes `--site-bg` with a 1px rule on its inner edge.
-- S7. Section. A section is a heading (`t-heading`) with a full-width 1px rule above it and `space-6` above the rule. The
-  first section on a page has no rule above. Sections stack with no box. (`Section`, `.rule-section`.)
+- S7. Section. A section is a heading (`t-heading`) with a full-width 1px rule above it and `space-6` above the rule. A `Section` that is the first child of its parent has no rule above (`:first-child`); a `Section` after a page
+  title or any other sibling draws its rule. Sections stack with no box. (`Section`, `.rule-section`.)
 - S8. Columns. Two or three peer groups (the news lead beside its neighbours, a profile's stats beside its activity) sit
-  side by side only where the container is at least `@3xl`; a 1px vertical rule (`border-s`) divides them with `ps-6`
-  after it. Below that width they stack and a horizontal rule takes the vertical rule's place. (`Columns`, `.rule-cols`.)
+  side by side only where the container is at least `@3xl`: a 1px vertical rule centred in a 1.5rem gap between the
+  columns. It is drawn as a `::before` on the column after the first, not a border or padding. Only the `3-2` ratio
+  (`data-ratio`) splits the columns unequally, exactly 3:2 by flex-grow. Below `@3xl` they stack, and a horizontal rule
+  takes the vertical rule's place. (`Columns`, `.rule-cols`.)
 - S9. Cells. A grid of tiles (Games and apps, Shop, Library shelves) puts 1px rules between cells, not boxes around
   them: a rule below every row but the last and a vertical rule between columns, never at the outer edge. The picture
-  inside a tile keeps S4. (`Cells`, `.rule-cells`.)
+  inside a tile keeps S4. `Cells` renders a `<ul>` whose children must be `<li>` (the CSS targets `li`). Below a
+  30rem container the cells collapse to one column, a rule under every cell but the last; from 30rem the `columns`
+  count applies. (`Cells`, `.rule-cells`.)
 - S10. Notice. An inline error, warning or success is a row on a rule with a 2px inline-start rule in the danger or
   success colour and the words doing the work. This is the owner-approval of the proposal in D8. (`Notice`,
   `.rule-notice`. The 2px start rule is the one stated exception to "1px always".)
