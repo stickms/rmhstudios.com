@@ -309,8 +309,9 @@
   margin-block-start: 26px;
 }
 /* The foot: reference pages in two fixed columns of `t-meta` links, so it wraps the same way on every page. On a short
-   page it sits at the bottom of the column; on a long one it stays in view above the bottom edge of the window, on the
-   page ground so a list scrolling behind it is covered, not overprinted. The sticky offset is the column's own 22px
+   page it sits at the bottom of the column; on a long one it stays in view above the bottom edge of the window. It has no
+   background of its own: a theme's page wash (a gradient) shows through it, and a solid fill would show as a patch on
+   it. The sticky offset is the column's own 22px
    bottom padding, so the foot is in the same place in both cases and does not jump between pages. It is never flush
    with the edge (iOS edge contract), like the sidebar's 16px off the top. */
 .site-margin__foot {
@@ -321,7 +322,6 @@
   padding-block: 14px 8px;
   position: sticky;
   inset-block-end: 22px;
-  background: var(--site-bg);
 }
 .site-margin__foot-link {
   color: var(--site-text-muted);
