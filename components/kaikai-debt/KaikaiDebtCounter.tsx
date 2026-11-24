@@ -176,7 +176,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
           reading a ledger. What it is NOT is a different design system: the bar
           is the same `.surface-chrome` every sticky header on the site uses, at
           the same measure, in the same tokens. */}
-      <header className="surface-chrome sticky top-3 z-20 mx-3 rounded-site border-b border-site-border">
+      <header className="surface-chrome sticky top-3 z-20 mx-3 border-b border-site-border">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-3 sm:gap-3">
           <Link
             to="/"
@@ -221,7 +221,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
               })}
             </p>
           </div>
-          <section className="py-3">
+          <section className="px-4 py-3">
             <DebtCounter basisCents={basisCents} asOfMs={snapshot.asOfMs} />
 
             {/* The credit score, directly under the total it is a consequence

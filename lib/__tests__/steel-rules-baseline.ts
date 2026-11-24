@@ -12,4 +12,5 @@ export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number 
   'components/studio/SampleBrowser.tsx': { wave: 'wave 4', count: 1 },
   'components/studio/creative/ChallengePanel.tsx': { wave: 'wave 4', count: 5 },
   'components/studio/creative/JamPanel.tsx': { wave: 'wave 4', count: 1 },
+  'components/toolbox/contrast/ContrastTool.tsx': { wave: 'wave 4', count: 1 },
 };

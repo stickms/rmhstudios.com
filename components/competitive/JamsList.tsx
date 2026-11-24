@@ -182,7 +182,7 @@ export function JamsList() { const fmt = useLocaleFormat();
             key={j.slug}
             to="/jams/$slug"
             params={{ slug: j.slug }}
-            className={cn('block rule-section row-hover', arrival, isNew(j.slug) && ARRIVE)}
+            className={cn('block border-b border-site-border py-3 row-hover', arrival, isNew(j.slug) && ARRIVE)}
           >
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">

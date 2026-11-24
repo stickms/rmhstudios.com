@@ -96,7 +96,7 @@ function Desk({
   body: string;
 }) {
   return (
-    <article className="flex flex-col gap-1.5 border-b border-site-border py-4">
+    <article className="flex flex-col gap-1.5 border-b border-site-border px-4 py-4">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         {role}

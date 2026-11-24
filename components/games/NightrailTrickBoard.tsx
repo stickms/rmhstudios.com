@@ -123,7 +123,7 @@ export function NightrailTrickBoard({ winner, signedIn }: { winner: TrickView | 
             })}
           </p>
         ) : (
-          <ul className={cn(arrival)}>
+          <ul className={arrival}>
             {data.tricks.map((trick) => (
               <li key={trick.id} className="flex items-center gap-3 border-b border-site-border py-3">
                 <TrickLine trick={trick} />

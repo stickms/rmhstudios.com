@@ -170,7 +170,7 @@ export default function TokenGenerator() {
               <div
                 key={token.id}
                 className={cn(
-                  'flex items-center justify-between border-b border-site-border py-3',
+                  'flex items-center justify-between border-b border-site-border px-3 py-3',
                   isExpired(token.expiresAt) && 'bg-site-danger/10 border-site-danger/30',
                   isNew(token.id) && ARRIVE,
                 )}

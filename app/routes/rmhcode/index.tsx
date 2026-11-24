@@ -221,7 +221,7 @@ function RmhCodePage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 pt-12 pb-12 space-y-12">
+      <div className="max-w-4xl mx-auto px-4 pt-12 pb-12">
         <motion.div {...inViewProps} className="rule-section">
           <div>
             <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2"><Key className="w-5 h-5 text-site-accent" />{t("cli-auth-title", { defaultValue: "CLI Authentication" })}</h2>

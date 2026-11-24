@@ -25,8 +25,7 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-// Reuse the security page's liquid-glass "store style" design system verbatim
-// so the standalone pages are visually consistent (same `sec-*` classes).
+// Reuse the security page's `sec-*` stylesheet so the standalone pages match.
 import '@/components/security/security.css';
 import { Button } from '@/components/ui/button';
 import { PinnedHero } from '@/components/feed/PinnedHero';

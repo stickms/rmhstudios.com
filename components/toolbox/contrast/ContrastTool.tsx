@@ -136,7 +136,7 @@ export function ContrastTool({
       {fg && bg && ratio !== null && (
         <>
           <div
-            className="flex flex-col gap-2 p-5"
+            className="flex flex-col gap-2 rounded-site border border-site-border p-5"
             style={{ color: toHex(fg), backgroundColor: toHex(bg) }}
           >
             <p className="t-heading">{t('contrast-sample-large', { defaultValue: 'Large text sample' })}</p>

@@ -522,7 +522,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) { const fmt = 
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5 py-2">
+    <div className="flex flex-col gap-0.5 px-2.5 py-2">
       <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="font-display text-sm font-semibold text-site-text tabular-nums">{value}</dd>
     </div>
