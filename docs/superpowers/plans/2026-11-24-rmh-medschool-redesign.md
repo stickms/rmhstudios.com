@@ -65,18 +65,20 @@ These settle the open questions in section 7 and override the plan text where th
   (`SHAREABLE: null`; the share-sync test and an integration test hold that no event is written). Wired through the
   milestone list (and so the zod schemas, the milestone form and the import's type list), the timeline (measured from
   the acceptance), the chance line (closing), the import cycle rule (the acceptance's), the AI import prompt and the
-  label. The tracker row and the timeline draw it, and the other coloured milestones, with `StatusIcon` and `StatusText`.
+  label. The tracker row and the timeline draw it, and the other coloured milestones, with `StatusIcon` and
+  `StatusText`.
 - **Live rows** are name-first: the school's full name, then the status in its colour (weight 600) with the swatch at
   the left, then a muted 12px line of program, place, time and source. `compact` (the rail) drops the source and the
   swatch shrinks to 32px.
 - **Restyled onto the app tokens:** `LiveRow`, `LivePage`, `ActivityRail` (a paper panel), `IndexPage`, `SchoolCrest`,
-  `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList` (a 44px round button), `PrefsNote`,
-  `WaveNote`, `skeletons`. `PageLayout` is untouched (other site pages use it); these two pages render `PageHead` instead.
-  The index gained a "Live activity" chip so the page is reachable from the index.
+  `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList` (a 44px round button),
+  `PrefsNote`, `WaveNote`, `skeletons`. `PageLayout` is untouched (other site pages use it); these two pages render
+  `PageHead` instead. The index gained a "Live activity" chip so the page is reachable from the index.
 - **Wash:** 34px blur, blobs 1.3 times larger, `background-size: max(100%, 900px) auto` (a phone shows a 900px crop).
   `wash-light.webp` 25.2 KB, `wash-dark.webp` 19.7 KB.
 - **Left for B2:** the school page and tabs, the charts (retire `--site-chart-*`). **B3:** the tracker, lists, ask,
-  secondaries, rolling, the import, and the last `--site-*` bridge consumers; their title rows still duplicate the top bar.
+  secondaries, rolling, the import, and the last `--site-*` bridge consumers; their title rows still duplicate the top
+  bar.
 
 ## 0. What the code says (the findings that shape the plan)
 

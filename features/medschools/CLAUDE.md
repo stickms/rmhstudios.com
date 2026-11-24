@@ -72,11 +72,11 @@ longer govern this feature**; the admin page does not move with it (`components/
 - **Phase B1 (built).** The index, live page, activity rail and their controls are on `--app-*` / `--app-med-*` and the
   `.medapp-*` classes at the foot of `medschools.css`: pill chips (`.medapp-chip`: `aria-pressed` / `aria-checked` is a
   filled wash, a stronger border and weight 600; 36px, 44px on touch), a paper panel (`.medapp-panel`) holding the rows,
-  `PageHead` (`ui/shell/`) for the one `<h1>` in place of `PageLayout`'s title row and duplicate back link. `SchoolCrest`,
-  `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList`, `PrefsNote`, `WaveNote` and
-  `skeletons` no longer read `--site-*`. **Left for B2 and B3:** the school page and its tabs, the charts, the tracker,
-  lists, ask, secondaries and rolling pages still keep their Steel markup (`PageLayout`, `t-*`, the bridge) and their
-  duplicate title row.
+  `PageHead` (`ui/shell/`) for the one `<h1>` in place of `PageLayout`'s title row and duplicate back link.
+  `SchoolCrest`, `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList`, `PrefsNote`,
+  `WaveNote` and `skeletons` no longer read `--site-*`. **Left for B2 and B3:** the school page and its tabs, the
+  charts, the tracker, lists, ask, secondaries and rolling pages still keep their Steel markup (`PageLayout`, `t-*`, the
+  bridge) and their duplicate title row.
 - **Status (`ui/status/`).** `status.ts` maps the public `MedEventType` and the tracker milestones onto eight keys:
   acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
   interview orange, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
