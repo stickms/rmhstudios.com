@@ -600,6 +600,7 @@ import { route as r_features_medschools_api_medschools_me_lists_id_item_order } 
 import { route as r_features_medschools_api_medschools_me_lists_id_items_itemId } from '@/features/medschools/api/medschools.me.lists.$id.items.$itemId.server';
 import { route as r_features_medschools_api_medschools_me_prefs } from '@/features/medschools/api/medschools.me.prefs.server';
 import { route as r_features_medschools_api_medschools_me_qa_limit_request } from '@/features/medschools/api/medschools.me.qa-limit-request.server';
+import { route as r_features_medschools_api_medschools_me_rolling } from '@/features/medschools/api/medschools.me.rolling.server';
 import { route as r_features_medschools_api_medschools_me_secondaries_overlap } from '@/features/medschools/api/medschools.me.secondaries.overlap.server';
 import { route as r_features_medschools_api_medschools_me_tracker } from '@/features/medschools/api/medschools.me.tracker.server';
 import { route as r_features_medschools_api_medschools_me_tracker_applications } from '@/features/medschools/api/medschools.me.tracker.applications.server';
@@ -1803,6 +1804,7 @@ const API_ROUTES_M: readonly ApiRoute[] = [
   r_features_medschools_api_medschools_me_lists_id_items_itemId, // /api/medschools/me/lists/$id/items/$itemId
   r_features_medschools_api_medschools_me_prefs, // /api/medschools/me/prefs
   r_features_medschools_api_medschools_me_qa_limit_request, // /api/medschools/me/qa-limit-request
+  r_features_medschools_api_medschools_me_rolling, // /api/medschools/me/rolling
   r_features_medschools_api_medschools_me_secondaries_overlap, // /api/medschools/me/secondaries/overlap
   r_features_medschools_api_medschools_me_tracker, // /api/medschools/me/tracker
   r_features_medschools_api_medschools_me_tracker_applications, // /api/medschools/me/tracker/applications
