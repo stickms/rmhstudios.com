@@ -480,6 +480,11 @@
   padding-block-start: var(--app-med-space-3);
   border-top: 1px solid var(--app-border);
 }
+/* A class with only MD-PhD figures (an MSTP page): no rule between its line and the group. */
+.medapp-srcrow + .medapp-profile__phd {
+  padding-block-start: 0;
+  border-top: 0;
+}
 .medapp-profile__prev,
 .medapp-profile__prev:last-child {
   border-top: 1px solid var(--app-border);
