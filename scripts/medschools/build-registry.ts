@@ -3,7 +3,9 @@
  * /explorer/first table (degree) and each school page's <title> (location,
  * capture finding (a)). One-off and slow on purpose (backfill spacing through
  * the polite host). Settle anything in `review` via data/medschools/overrides.json
- * and re-run; exits 2 while `review` is non-empty.
+ * and re-run; exits 2 while `review` is non-empty. Schools CycleTrack does not
+ * list (checked against the LCME and COCA directories) are hand-maintained in
+ * data/medschools/registry-extra.json and carried into the output unchanged.
  *
  * Usage: pnpm exec tsx scripts/medschools/build-registry.ts
  */
@@ -46,11 +48,14 @@ async function main() {
     string,
     Partial<RegistrySchool>
   >;
+  const extras = (JSON.parse(readFileSync(join(DATA, 'registry-extra.json'), 'utf8')) as { schools: RegistrySchool[] })
+    .schools;
   const { schools, excluded, review } = buildRegistry({
     schoolKeys,
     first,
     titles,
     overrides,
+    extras,
   });
 
   const file: RegistryFile = {

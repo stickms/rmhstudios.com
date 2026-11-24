@@ -258,6 +258,17 @@
       ]
     },
     {
+      "slug": "brigham-young",
+      "name": "Brigham Young University School of Medicine",
+      "shortName": "Brigham Young",
+      "degree": "MD",
+      "city": "Provo",
+      "state": "UT",
+      "country": "US",
+      "website": "https://medicine.byu.edu/",
+      "aliases": []
+    },
+    {
       "slug": "brown",
       "name": "Brown University",
       "shortName": "Brown",
@@ -304,6 +315,17 @@
           "sourceKey": "Burrell COM"
         }
       ]
+    },
+    {
+      "slug": "burrell-com-florida",
+      "name": "Burrell College of Health Sciences School of Osteopathic Medicine (Melbourne)",
+      "shortName": "Burrell COM - Florida",
+      "degree": "DO",
+      "city": "Melbourne",
+      "state": "FL",
+      "country": "US",
+      "website": "https://burrell.edu/florida/",
+      "aliases": []
     },
     {
       "slug": "california-health-sciences",
@@ -624,6 +646,17 @@
           "sourceKey": "Creighton"
         }
       ]
+    },
+    {
+      "slug": "d-youville-university-com",
+      "name": "D'Youville University College of Osteopathic Medicine",
+      "shortName": "D'Youville University COM",
+      "degree": "DO",
+      "city": "Buffalo",
+      "state": "NY",
+      "country": "US",
+      "website": "https://www.dyu.edu/medicine",
+      "aliases": []
     },
     {
       "slug": "dartmouth",
@@ -1250,6 +1283,17 @@
       ]
     },
     {
+      "slug": "kansas-city-university-com-joplin",
+      "name": "Kansas City University College of Osteopathic Medicine (Joplin)",
+      "shortName": "Kansas City University COM - Joplin",
+      "degree": "DO",
+      "city": "Joplin",
+      "state": "MO",
+      "country": "US",
+      "website": "https://www.kansascity.edu/programs/college-of-osteopathic-medicine",
+      "aliases": []
+    },
+    {
       "slug": "kansas-com",
       "name": "Kansas College of Osteopathic Medicine",
       "shortName": "Kansas COM",
@@ -1330,6 +1374,39 @@
       ]
     },
     {
+      "slug": "lake-erie-elmira",
+      "name": "Lake Erie College of Osteopathic Medicine (Elmira)",
+      "shortName": "Lake Erie - Elmira",
+      "degree": "DO",
+      "city": "Elmira",
+      "state": "NY",
+      "country": "US",
+      "website": "https://lecom.edu/communities/elmira/",
+      "aliases": []
+    },
+    {
+      "slug": "lake-erie-jacksonville",
+      "name": "Lake Erie College of Osteopathic Medicine (Jacksonville)",
+      "shortName": "Lake Erie - Jacksonville",
+      "degree": "DO",
+      "city": "Jacksonville",
+      "state": "FL",
+      "country": "US",
+      "website": "https://lecom.edu/college-of-osteopathic-medicine/jacksonville-fl/",
+      "aliases": []
+    },
+    {
+      "slug": "lake-erie-seton-hill",
+      "name": "Lake Erie College of Osteopathic Medicine (Seton Hill)",
+      "shortName": "Lake Erie - Seton Hill",
+      "degree": "DO",
+      "city": "Greensburg",
+      "state": "PA",
+      "country": "US",
+      "website": "https://lecom.edu/communities/greensburg/",
+      "aliases": []
+    },
+    {
       "slug": "liberty",
       "name": "Liberty University",
       "shortName": "Liberty",
@@ -1360,6 +1437,28 @@
           "sourceKey": "Lincoln Memorial"
         }
       ]
+    },
+    {
+      "slug": "lincoln-memorial-knoxville",
+      "name": "Lincoln Memorial University-DeBusk College of Osteopathic Medicine (Knoxville)",
+      "shortName": "Lincoln Memorial - Knoxville",
+      "degree": "DO",
+      "city": "Knoxville",
+      "state": "TN",
+      "country": "US",
+      "website": "https://www.lmunet.edu/debusk-college-of-osteopathic-medicine/do/dcom-at-lmu-knoxville/",
+      "aliases": []
+    },
+    {
+      "slug": "lincoln-memorial-orange-park",
+      "name": "Lincoln Memorial University-DeBusk College of Osteopathic Medicine (Orange Park)",
+      "shortName": "Lincoln Memorial - Orange Park",
+      "degree": "DO",
+      "city": "Orange Park",
+      "state": "FL",
+      "country": "US",
+      "website": "https://www.lmunet.edu/debusk-college-of-osteopathic-medicine/do/dcom-in-orange-park/about-orange-park",
+      "aliases": []
     },
     {
       "slug": "loma-linda",
@@ -1904,6 +2003,17 @@
           "sourceKey": "New York Institute of Technology"
         }
       ]
+    },
+    {
+      "slug": "new-york-institute-of-technology-arkansas",
+      "name": "New York Institute of Technology College of Osteopathic Medicine (Arkansas State)",
+      "shortName": "New York Institute of Technology - Arkansas",
+      "degree": "DO",
+      "city": "Jonesboro",
+      "state": "AR",
+      "country": "US",
+      "website": "https://www.nyit.edu/medicine/college-of-osteopathic-medicine/arkansas/",
+      "aliases": []
     },
     {
       "slug": "new-york-medical-college",
@@ -2818,6 +2928,28 @@
       ]
     },
     {
+      "slug": "touro-middletown",
+      "name": "Touro College of Osteopathic Medicine (Middletown)",
+      "shortName": "Touro - Middletown",
+      "degree": "DO",
+      "city": "Middletown",
+      "state": "NY",
+      "country": "US",
+      "website": "https://tourocom.touro.edu/do/",
+      "aliases": []
+    },
+    {
+      "slug": "touro-montana",
+      "name": "Touro College of Osteopathic Medicine (Montana)",
+      "shortName": "Touro - Montana",
+      "degree": "DO",
+      "city": "Great Falls",
+      "state": "MT",
+      "country": "US",
+      "website": "https://tourocom.touro.edu/do/",
+      "aliases": []
+    },
+    {
       "slug": "touro-nevada",
       "name": "Touro University (Nevada)",
       "shortName": "Touro - Nevada",
@@ -3520,6 +3652,17 @@
           "sourceKey": "Xavier COM"
         }
       ]
+    },
+    {
+      "slug": "xavier-ochsner",
+      "name": "Xavier Ochsner College of Medicine",
+      "shortName": "Xavier Ochsner",
+      "degree": "MD",
+      "city": "New Orleans",
+      "state": "LA",
+      "country": "US",
+      "website": "https://www.xula.edu/xocom/",
+      "aliases": []
     },
     {
       "slug": "yale",

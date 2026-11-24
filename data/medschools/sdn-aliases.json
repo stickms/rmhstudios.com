@@ -1,39 +1,18 @@
 {
   "generatedAt": "2026-11-20T16:40:48.583Z",
   "ignoredStems": [
-    "BYU School of Medicine",
-    "Burrell College of Health Sciences School of Osteopathic Medicine - Melbourne (Burrell-COM-Melbourne)",
-    "D'Youville University College of Osteopathic Medicine",
-    "Kansas City University College of Osteopathic Medicine - Joplin (KCU-Joplin)",
-    "Lake Erie College of Osteopathic Medicine - Elmira (LECOM-Elmira)",
-    "Lake Erie College of Osteopathic Medicine - Seton Hill (LECOM-Seton-Hill)",
-    "Lincoln Memorial University - Debusk College of Osteopathic Medicine - Knoxville (LMU-DCOM-Knoxville)",
     "Mayo Clinic - Arizona",
     "Michigan State University College of Osteopathic Medicine - Clinton Township (MSUCOM-Clinton-Township)",
     "Michigan State University College of Osteopathic Medicine - Detroit (MSUCOM-Detroit)",
-    "New York Institute of Technology College of Osteopathic Medicine at Arkansas State University (NYITCOM-at-Arkansas)",
     "Nova Southeastern University Dr. Kiran C. Patel College of Osteopathic Medicine in Clearwater (NSU-KPCOM-Clearwater)",
     "Oklahoma State University College of Osteopathic Medicine at Cherokee Nation (OSUCOM-Tahlequah)",
     "Ponce Health Sciences University - Saint Louis MO",
     "Rocky Vista University College of Osteopathic Medicine - Southern Utah Campus (RVUCOM-Southern)",
     "Rowan-Virtua School of Osteopathic Medicine Sewell Campus (Rowan-Virtua-SOM-Sewell)",
-    "Touro College of Osteopathic Medicine - Middletown (TouroCOM-Middletown)",
-    "Touro College of Osteopathic Medicine - Montana (TouroCOM-Montana)",
-    "Xavier Oschner College of Medicine",
-    "summary:BYUSOM/brigham-young-university-school-of-medicine",
-    "summary:Burrell-BCSOM-Melbourne/burrell-college-of-health-professions-school-of-osteopathic-medicine-melbourne",
-    "summary:DYUCOM-DO/d-youville-university-college-of-osteopathic-medicine",
-    "summary:KCU-Joplin/kansas-city-university-college-of-osteopathic-medicine-joplin",
-    "summary:LECOM-Elmira/lake-erie-college-of-osteopathic-medicine-elmira",
-    "summary:LECOM-Jacksonville/lake-erie-college-of-osteopathic-medicine-jacksonville",
-    "summary:LECOM-Seton-Hill/lake-erie-college-of-osteopathic-medicine-seton-hill",
-    "summary:LMU-DCOM-Knoxville/lincoln-memorial-university-debusk-college-of-osteopathic-medicine-knoxville",
-    "summary:LMU-DCOM-Orange-Park/lincoln-memorial-university-debusk-college-of-osteopathic-medicine-orange-park",
     "summary:MAYO-AZ/mayo-clinic-college-of-medicine-science-arizona-campus",
     "summary:MSUCOM-Clinton-Township/michigan-state-university-college-of-osteopathic-medicine-clinton-township",
     "summary:MSUCOM-Detroit/michigan-state-university-college-of-osteopathic-medicine-detroit",
     "summary:NSU-KPCOM-Clearwater/nova-southeastern-university-dr-kiran-c-patel-college-of-osteopathic-medicine-in-clearwater",
-    "summary:NYITCOM-at-Arkansas/new-york-institute-of-technology-college-of-osteopathic-medicine-at-arkansas-state-university",
     "summary:OSUCOM-Tahlequah/oklahoma-state-university-college-of-osteopathic-medicine-at-cherokee-nation",
     "summary:OU-HCOM-Cleveland/ohio-university-heritage-college-of-osteopathic-medicine-cleveland",
     "summary:OU-HCOM-Dublin/ohio-university-heritage-college-of-osteopathic-medicine-dublin",
@@ -41,11 +20,8 @@
     "summary:RVUCOM-Southern/rocky-vista-university-college-of-osteopathic-medicine-southern-utah-campus",
     "summary:Rowan-Virtua-SOM-Sewell/rowan-virtua-school-of-osteopathic-medicine-sewell-campus",
     "summary:TAUSOEM/texas-a-m-university-school-of-engineering-medicine",
-    "summary:TouroCOM-Middletown/touro-college-of-osteopathic-medicine-middletown",
-    "summary:TouroCOM-Montana/touro-college-of-osteopathic-medicine-montana",
     "summary:UMN-Duluth/university-of-minnesota-duluth-medical-school",
-    "summary:UOMMS-CC/university-of-minnesota-medical-school-centracare-campus",
-    "summary:XOCOM/xavier-ochsner-college-of-medicine"
+    "summary:UOMMS-CC/university-of-minnesota-medical-school-centracare-campus"
   ],
   "aliases": [
     {
@@ -209,6 +185,16 @@
       }
     },
     {
+      "cycletrackKey": "Brigham Young",
+      "threadStems": [
+        "BYU School of Medicine"
+      ],
+      "summary": {
+        "code": "BYUSOM",
+        "slug": "brigham-young-university-school-of-medicine"
+      }
+    },
+    {
       "cycletrackKey": "Brown",
       "threadStems": [
         "Brown University- Warren Alpert Medical School"
@@ -236,6 +222,16 @@
       "summary": {
         "code": "Burrell-BCSOM",
         "slug": "burrell-college-of-health-professions-school-of-osteopathic-medicine"
+      }
+    },
+    {
+      "cycletrackKey": "Burrell COM - Florida",
+      "threadStems": [
+        "Burrell College of Health Sciences School of Osteopathic Medicine - Melbourne (Burrell-COM-Melbourne)"
+      ],
+      "summary": {
+        "code": "Burrell-BCSOM-Melbourne",
+        "slug": "burrell-college-of-health-professions-school-of-osteopathic-medicine-melbourne"
       }
     },
     {
@@ -425,6 +421,16 @@
       "summary": {
         "code": "CREIGHTON",
         "slug": "creighton-university-school-of-medicine"
+      }
+    },
+    {
+      "cycletrackKey": "D'Youville University COM",
+      "threadStems": [
+        "D'Youville University College of Osteopathic Medicine"
+      ],
+      "summary": {
+        "code": "DYUCOM-DO",
+        "slug": "d-youville-university-college-of-osteopathic-medicine"
       }
     },
     {
@@ -818,6 +824,16 @@
       }
     },
     {
+      "cycletrackKey": "Kansas City University COM - Joplin",
+      "threadStems": [
+        "Kansas City University College of Osteopathic Medicine - Joplin (KCU-Joplin)"
+      ],
+      "summary": {
+        "code": "KCU-Joplin",
+        "slug": "kansas-city-university-college-of-osteopathic-medicine-joplin"
+      }
+    },
+    {
       "cycletrackKey": "Kansas COM",
       "threadStems": [
         "Kansas Health Science University - Kansas College of Osteopathic Medicine (KansasCOM)"
@@ -868,6 +884,34 @@
       }
     },
     {
+      "cycletrackKey": "Lake Erie - Elmira",
+      "threadStems": [
+        "Lake Erie College of Osteopathic Medicine - Elmira (LECOM-Elmira)"
+      ],
+      "summary": {
+        "code": "LECOM-Elmira",
+        "slug": "lake-erie-college-of-osteopathic-medicine-elmira"
+      }
+    },
+    {
+      "cycletrackKey": "Lake Erie - Jacksonville",
+      "threadStems": [],
+      "summary": {
+        "code": "LECOM-Jacksonville",
+        "slug": "lake-erie-college-of-osteopathic-medicine-jacksonville"
+      }
+    },
+    {
+      "cycletrackKey": "Lake Erie - Seton Hill",
+      "threadStems": [
+        "Lake Erie College of Osteopathic Medicine - Seton Hill (LECOM-Seton-Hill)"
+      ],
+      "summary": {
+        "code": "LECOM-Seton-Hill",
+        "slug": "lake-erie-college-of-osteopathic-medicine-seton-hill"
+      }
+    },
+    {
       "cycletrackKey": "Liberty",
       "threadStems": [
         "Liberty University College of Osteopathic Medicine (LUCOM)"
@@ -885,6 +929,24 @@
       "summary": {
         "code": "LMU-DCOM",
         "slug": "lincoln-memorial-university-debusk-college-of-osteopathic-medicine"
+      }
+    },
+    {
+      "cycletrackKey": "Lincoln Memorial - Knoxville",
+      "threadStems": [
+        "Lincoln Memorial University - Debusk College of Osteopathic Medicine - Knoxville (LMU-DCOM-Knoxville)"
+      ],
+      "summary": {
+        "code": "LMU-DCOM-Knoxville",
+        "slug": "lincoln-memorial-university-debusk-college-of-osteopathic-medicine-knoxville"
+      }
+    },
+    {
+      "cycletrackKey": "Lincoln Memorial - Orange Park",
+      "threadStems": [],
+      "summary": {
+        "code": "LMU-DCOM-Orange-Park",
+        "slug": "lincoln-memorial-university-debusk-college-of-osteopathic-medicine-orange-park"
       }
     },
     {
@@ -1225,6 +1287,16 @@
       "summary": {
         "code": "NYITCOM-Long-Island",
         "slug": "new-york-institute-of-technology-college-of-osteopathic-medicine-ny"
+      }
+    },
+    {
+      "cycletrackKey": "New York Institute of Technology - Arkansas",
+      "threadStems": [
+        "New York Institute of Technology College of Osteopathic Medicine at Arkansas State University (NYITCOM-at-Arkansas)"
+      ],
+      "summary": {
+        "code": "NYITCOM-at-Arkansas",
+        "slug": "new-york-institute-of-technology-college-of-osteopathic-medicine-at-arkansas-state-university"
       }
     },
     {
@@ -1798,6 +1870,26 @@
       }
     },
     {
+      "cycletrackKey": "Touro - Middletown",
+      "threadStems": [
+        "Touro College of Osteopathic Medicine - Middletown (TouroCOM-Middletown)"
+      ],
+      "summary": {
+        "code": "TouroCOM-Middletown",
+        "slug": "touro-college-of-osteopathic-medicine-middletown"
+      }
+    },
+    {
+      "cycletrackKey": "Touro - Montana",
+      "threadStems": [
+        "Touro College of Osteopathic Medicine - Montana (TouroCOM-Montana)"
+      ],
+      "summary": {
+        "code": "TouroCOM-Montana",
+        "slug": "touro-college-of-osteopathic-medicine-montana"
+      }
+    },
+    {
       "cycletrackKey": "Touro - Nevada",
       "threadStems": [
         "Touro University Nevada College of Osteopathic Medicine (TUNCOM)"
@@ -2235,6 +2327,16 @@
       "summary": {
         "code": "XUCOM-DO",
         "slug": "xavier-university-college-of-osteopathic-medicine"
+      }
+    },
+    {
+      "cycletrackKey": "Xavier Ochsner",
+      "threadStems": [
+        "Xavier Oschner College of Medicine"
+      ],
+      "summary": {
+        "code": "XOCOM",
+        "slug": "xavier-ochsner-college-of-medicine"
       }
     },
     {

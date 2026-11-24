@@ -9,7 +9,9 @@ import {
   seedSdnIgnoredMisses,
   seedCycles,
   seedRegistryIfEmpty,
+  registryKeyOf,
   type RegistryFile,
+  type RegistrySchool,
 } from './registry';
 import { createFakePrisma, loadFixture } from './test-support';
 
@@ -128,6 +130,33 @@ describe('buildRegistry', () => {
     const slugs = r.schools.map((s) => s.slug).sort();
     expect(new Set(slugs).size).toBe(2);
     expect(slugs.some((s) => s.endsWith('-dc') || s.endsWith('-tx'))).toBe(true);
+  });
+
+  it('carries hand-maintained extras unchanged and refuses one CycleTrack already lists or whose slug is taken', () => {
+    const extra: RegistrySchool = {
+      slug: 'new-campus',
+      name: 'New Campus College of Osteopathic Medicine',
+      shortName: 'New Campus',
+      degree: 'DO',
+      city: 'Elmira',
+      state: 'NY',
+      country: 'US',
+      website: 'https://example.edu/',
+      aliases: [],
+    };
+    const one = {
+      schoolKeys: ['Yale'],
+      first: [row('Yale', 'MD')],
+      titles: { Yale: page('Yale School of Medicine', 'MD', 'New Haven', 'CT') },
+      overrides: {},
+    };
+    const r = buildRegistry({ ...one, extras: [extra] });
+    expect(r.schools.map((s) => s.slug)).toEqual(['new-campus', 'yale']);
+    expect(r.schools[0]).toEqual(extra);
+    expect(registryKeyOf(r.schools[0]!)).toBe('New Campus');
+    expect(registryKeyOf(r.schools[1]!)).toBe('Yale');
+    expect(() => buildRegistry({ ...one, extras: [{ ...extra, shortName: 'Yale' }] })).toThrow(/CycleTrack lists it/);
+    expect(() => buildRegistry({ ...one, extras: [{ ...extra, slug: 'yale' }] })).toThrow(/taken/);
   });
 
   it('sends a degree conflict to review and settles it via override', () => {
@@ -502,6 +531,50 @@ describe('SDN alias seeding', () => {
     expect(sdnKeys(tables)).toEqual(['Yale', 'Yale School of Medicine', 'summary:YALE/yale-school-of-medicine']);
     expect(await seedSdnAliases(prisma, data)).toMatchObject({ created: 0 });
     expect(sdnKeys(tables)).toHaveLength(3);
+  });
+
+  it('attaches keys to a registry extra (no CYCLETRACK alias) by its shortName', async () => {
+    const { prisma, tables } = createFakePrisma();
+    const extra: RegistrySchool = {
+      slug: 'new-campus',
+      name: 'New Campus College of Osteopathic Medicine',
+      shortName: 'New Campus',
+      degree: 'DO',
+      city: 'Elmira',
+      state: 'NY',
+      country: 'US',
+      website: null,
+      aliases: [],
+    };
+    await seedRegistryIfEmpty(prisma, { ...file, schools: [...file.schools, extra] });
+    const id = (tables.medSchool as Array<{ id: string; slug: string }>).find((r) => r.slug === 'new-campus')!.id;
+    expect(
+      await seedSdnAliases(prisma, sdn([{ cycletrackKey: 'New Campus', threadStems: ['New Campus COM'] }])),
+    ).toEqual({ created: 1, unmatched: [], skipped: [] });
+    expect(
+      await seedAdmitAliases(prisma, {
+        generatedAt: '2026-11-24T00:00:00.000Z',
+        aliases: [{ cycletrackKey: 'New Campus', admitSlug: 'new-campus-com' }],
+      }),
+    ).toMatchObject({ created: 1, unmatched: [] });
+    const rows = tables.medSchoolAlias as Array<{ source: string; sourceKey: string; schoolId: string }>;
+    expect(
+      rows
+        .filter((r) => r.schoolId === id)
+        .map((r) => `${r.source}:${r.sourceKey}`)
+        .sort(),
+    ).toEqual(['ADMIT:new-campus-com', 'SDN:New Campus COM']);
+  });
+
+  it('never reaches a CycleTrack school by its shortName, only by its CycleTrack key', async () => {
+    const { prisma } = createFakePrisma();
+    const renamed = { ...file.schools[0]!, shortName: 'Yale Renamed' };
+    await seedRegistryIfEmpty(prisma, { ...file, schools: [renamed] });
+    expect(await seedSdnAliases(prisma, sdn([{ cycletrackKey: 'Yale Renamed', threadStems: ['X'] }]))).toEqual({
+      created: 0,
+      unmatched: ['X'],
+      skipped: [],
+    });
   });
 
   it('an existing key owned by another school is skipped and reported, never moved', async () => {
