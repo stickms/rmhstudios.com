@@ -5,12 +5,4 @@
  */
 export const STEEL_GHOST_BASELINE: Record<string, { batch: string; count: number }> = {
   'components/party/ConnectionsPages.tsx': { batch: 'E4 rest', count: 2 },
-  'components/themes/ThemeMiniShell.tsx': { batch: 'E4 rest', count: 2 },
-  'components/tournaments/BracketView.tsx': { batch: 'E4 rest', count: 3 },
-  'components/ui/horizontal-scroller.tsx': { batch: 'E4 rest', count: 1 },
-  'components/ui/skeletons/PostCardSkeleton.tsx': { batch: 'E4 rest', count: 1 },
-  'components/ui/sortable-list.tsx': { batch: 'E4 rest', count: 1 },
-  'components/user-builds/BuildSidebar.tsx': { batch: 'E4 rest', count: 1 },
-  'components/wallet/DailyWheel.tsx': { batch: 'E4 rest', count: 1 },
-  'components/wallet/StakingCard.tsx': { batch: 'E4 rest', count: 2 },
 };

@@ -116,7 +116,7 @@ function SortableRow<T extends SortableItem>({
       dragControls={controls}
       transition={transition}
       // L1 . row — cheap, unlimited, matches list surfaces.
-      className={cn('flex items-center gap-2 rounded-site px-3 py-2 text-site-text', rowClassName)}
+      className={cn('flex items-center gap-2 px-3 py-2 text-site-text', rowClassName)}
     >
       {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
       <span
