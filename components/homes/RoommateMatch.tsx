@@ -117,7 +117,7 @@ export function RoommateMatch({
     !isSignedIn
   ) {
     return (
-      <section className="mt-4 rounded-site p-5">
+      <section className="mt-4 py-5">
         {
           heading
         }
@@ -170,7 +170,7 @@ export function RoommateMatch({
   return (
     <section
       className={cn(
-        'mt-4 rounded-site p-5',
+        'mt-4 py-5',
         arrival,
       )}
     >
@@ -589,7 +589,7 @@ function Quiz({
 
   return (
     <form
-      className="mt-3 space-y-3 rounded-site p-5"
+      className="mt-3 space-y-3 py-5"
       onSubmit={(
         e,
       ) => {

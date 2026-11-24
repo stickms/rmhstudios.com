@@ -239,7 +239,7 @@ export default function MyHighlightsPanel() {
         arrival,
       )}
     >
-      <ul className="space-y-3">
+      <ul>
         {items.map(
           (
             row,
@@ -249,7 +249,7 @@ export default function MyHighlightsPanel() {
                 row.id
               }
               className={cn(
-                'rounded-site p-5',
+                'rule-row py-5',
                 isNew(
                   row.id,
                 ) &&

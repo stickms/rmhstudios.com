@@ -91,7 +91,7 @@ export default function ShelvesPanel() { const fmt = useLocaleFormat();
         return (
           <section
             key={shelf}
-            className="rounded-site p-5"
+            className="py-5"
             aria-labelledby={`rf-shelf-${shelf}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
