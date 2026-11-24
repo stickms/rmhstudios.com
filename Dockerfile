@@ -115,7 +115,7 @@ COPY features ./features/
 # medschools-worker imports its seed JSON statically; esbuild inlines it, so only these files
 # are needed here (the runtime image carries no data lookup for it).
 COPY data/medschools/schools.json data/medschools/cycles.json data/medschools/admit-aliases.json ./data/medschools/
-COPY data/medschools/sdn-aliases.json data/medschools/sdn-forums.json ./data/medschools/
+COPY data/medschools/sdn-aliases.json data/medschools/sdn-forums.json data/medschools/school-pages.json ./data/medschools/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube +
 # ladder-worker + homes-worker + medschools-worker + jobs) are bundled here.

@@ -213,3 +213,64 @@ export async function importSchoolPages(
   if (out.missingSchools.length > 0) log.warn(`school-pages: unknown slugs skipped: ${out.missingSchools.join(', ')}`);
   return out;
 }
+
+export const SCHOOL_PAGES_JOB = 'school-pages-import';
+
+/** A stable fingerprint of the file's content: a new version of the data imports again, the same one never does. */
+export function schoolPagesHash(raw: unknown): string {
+  // FNV-1a over the JSON text; collision resistance is not a security property here, only "did the file change".
+  const text = JSON.stringify(raw);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${text.length}-${h.toString(16)}`;
+}
+
+/**
+ * The worker's bootstrap step for the curated school pages: imports `data/medschools/school-pages.json` once per
+ * version of the file (a `MedSourceRun` with job `school-pages-import`, status OK and the file's hash is the done
+ * flag). The import is idempotent and never rewinds a newer check, so a failed or repeated run is harmless; this only
+ * keeps it from re-reading 221 schools on every restart. No operator step is needed after a deploy.
+ */
+export async function ensureSchoolPagesImported(
+  prisma: MedPrisma,
+  raw: unknown,
+  log: Pick<Logger, 'info' | 'warn' | 'error'>,
+  now: () => Date = () => new Date(),
+): Promise<'imported' | 'current' | 'invalid' | 'failed'> {
+  const parsed = schoolPagesFileSchema.safeParse(raw);
+  if (!parsed.success) {
+    log.error(`School pages: data file is invalid (${parsed.error.issues.length} issues); nothing imported`);
+    return 'invalid';
+  }
+  const hash = schoolPagesHash(raw);
+  const last = await prisma.medSourceRun.findFirst({
+    where: { source: 'RMH', job: SCHOOL_PAGES_JOB, status: 'OK' },
+    orderBy: { startedAt: 'desc' },
+  });
+  const lastHash = (last?.stats as { hash?: unknown } | null | undefined)?.hash;
+  if (lastHash === hash) return 'current';
+  const run = await prisma.medSourceRun.create({
+    data: { source: 'RMH', job: SCHOOL_PAGES_JOB, trigger: 'BOOTSTRAP', status: 'RUNNING' },
+  });
+  try {
+    const sum = await importSchoolPages(prisma, parsed.data, log);
+    await prisma.medSourceRun.update({
+      where: { id: run.id },
+      data: { status: 'OK', finishedAt: now(), stats: { hash, ...sum } },
+    });
+    log.info(
+      `School pages: imported ${sum.schools} schools, ${sum.created} new prompts, ${sum.policies} admissions facts (${sum.rejected} rejected)`,
+    );
+    return 'imported';
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    await prisma.medSourceRun
+      .update({ where: { id: run.id }, data: { status: 'FAILED', finishedAt: now(), error } })
+      .catch(() => undefined);
+    log.error(`School pages: import failed: ${error}`);
+    return 'failed';
+  }
+}
