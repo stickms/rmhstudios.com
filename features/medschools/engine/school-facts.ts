@@ -16,7 +16,7 @@
 export const MSAR_PAGE_URL =
   'https://students-residents.aamc.org/medical-school-admission-requirements/medical-school-admission-requirements-reports-applicants-and-advisors';
 
-export const FACT_SOURCES = ['AAMC_MSAR_REPORT', 'SCHOOL_PROFILE', 'ADMIT'] as const;
+export const FACT_SOURCES = ['AAMC_MSAR_REPORT', 'SCHOOL_PROFILE', 'ADMIT', 'SCHOOL_PAGE', 'NIH_REPORTER'] as const;
 export type FactSourceId = (typeof FACT_SOURCES)[number];
 
 /** The reports structured so far, by AAMC media id, with the name the AAMC page gives each link. */

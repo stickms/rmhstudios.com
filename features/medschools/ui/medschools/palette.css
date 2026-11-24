@@ -53,6 +53,14 @@
   --app-med-withdrawn-swatch: #e7e1d6;
   --app-med-withdrawn-ink: #5f5a68;
   --app-med-withdrawn-text: #5f5a68;
+  /* MD-PhD timeline phases: the status palette's pastels for the fill and its ink for the edge (aliases, so the dark
+     blocks below need no copy: each resolves against that mode's status pair). Preclinical is the neutral pair. */
+  --app-med-phase-preclinical: var(--app-med-withdrawn-swatch);
+  --app-med-phase-preclinical-edge: var(--app-med-withdrawn-ink);
+  --app-med-phase-research: var(--app-med-secondary-swatch);
+  --app-med-phase-research-edge: var(--app-med-secondary-ink);
+  --app-med-phase-clinical: var(--app-med-accept-swatch);
+  --app-med-phase-clinical-edge: var(--app-med-accept-ink);
   --app-med-chart-1: #2f6795;
   --app-med-secondary-fill: #8db9de;
   --app-med-chart-2: #9a4e22;

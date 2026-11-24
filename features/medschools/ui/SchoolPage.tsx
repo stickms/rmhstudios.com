@@ -24,6 +24,7 @@ import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
 import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { Curriculum } from './facts/Curriculum';
+import { MdPhdProgram } from './facts/MdPhdProgram';
 import { PageHead } from './shell/PageHead';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
@@ -199,6 +200,7 @@ export function SchoolPage() {
                 <>
                   <Curriculum slug={slug} admitHref={detail.links.find((l) => l.source === 'ADMIT')?.href} />
                   <AdmissionsFacts slug={slug} degree={detail.school.degree} />
+                  <MdPhdProgram slug={slug} degree={detail.school.degree} />
                 </>
               ) : (
                 <>

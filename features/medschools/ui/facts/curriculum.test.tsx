@@ -33,6 +33,7 @@ const fact = (kind: string, over: Partial<MedSchoolFactDto> = {}): MedSchoolFact
 
 const data: MedSchoolFactsRes = {
   pageUrl: MSAR_PAGE_URL,
+  mdphd: null,
   facts: [
     fact('CURRICULUM_PRECLINICAL_GRADING', { value: 'PASS_FAIL', printed: 'P/F' }),
     fact('CURRICULUM_PRECLINICAL_LENGTH', { num: 1.5, printed: '1.5 Years' }),
@@ -93,14 +94,16 @@ describe('CurriculumView', () => {
   });
 
   it('is empty-stated, with no source line, for a school Admit does not list', () => {
-    const none = renderToString(<CurriculumView data={{ pageUrl: MSAR_PAGE_URL, facts: [data.facts.at(-1)!] }} />);
+    const none = renderToString(
+      <CurriculumView data={{ pageUrl: MSAR_PAGE_URL, mdphd: null, facts: [data.facts.at(-1)!] }} />,
+    );
     expect(none).toContain('No curriculum details for this school yet.');
     expect(none).not.toContain('Source:');
   });
 
   it('leaves out a row Admit does not answer, and never prints a rank', () => {
     const some = renderToString(
-      <CurriculumView data={{ pageUrl: MSAR_PAGE_URL, facts: [fact('AOA_CHAPTER', { value: 'YES' })] }} />,
+      <CurriculumView data={{ pageUrl: MSAR_PAGE_URL, mdphd: null, facts: [fact('AOA_CHAPTER', { value: 'YES' })] }} />,
     );
     expect(some).toContain('<dt>AOA chapter</dt><dd>Yes</dd>');
     expect(some).not.toContain('Clerkship grading');

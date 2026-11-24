@@ -910,11 +910,59 @@ export interface MedSchoolFactDto {
   page: number | null;
 }
 
+/** One phase of an MD-PhD timeline as the program page states it (`engine/mdphd.ts`). */
+export interface MedMdPhdPhaseDto {
+  phase: 'preclinical' | 'research' | 'clinical' | 'other';
+  /** A single stated length; null for a range (in `label`) or no length. */
+  years: number | null;
+  /** The page's own description of the phase. */
+  label: string;
+}
+
+/**
+ * The school's combined degree program (MD-PhD, or DO-PhD at a DO school). `program.exists` false is the program page's
+ * "no combined program" and comes with no timeline and no MSTP status. `program.source` is the school's page, or NIH
+ * RePORTER for a program known only from its MSTP grant (then `name` is null and there is no timeline).
+ */
+export interface MedMdPhdDto {
+  program: {
+    exists: boolean;
+    name: string | null;
+    source: 'SCHOOL_PAGE' | 'NIH_REPORTER';
+    sourceUrl: string;
+    /** YYYY-MM-DD */
+    checkedOn: string;
+  };
+  /** The page's own layout, only where its words were found verbatim on re-fetch; null means none is published. */
+  timeline: {
+    /** "2-4-2", "1.5-4-2.5", the school's own "2-P-2"; null when the page states no pattern. */
+    pattern: string | null;
+    totalYears: number | null;
+    phases: MedMdPhdPhaseDto[];
+    /** The page's words the timeline was read from (the source link highlights them). */
+    evidence: string;
+    sourceUrl: string;
+    checkedOn: string;
+  } | null;
+  /** NIH MSTP (NIGMS T32) status from RePORTER; null when the school has no program. */
+  mstp: {
+    listed: boolean;
+    /** The core project number, e.g. "T32GM145408"; null when not listed. */
+    grant: string | null;
+    fiscalYear: number | null;
+    /** The grant's RePORTER page, or RePORTER's search page when not listed. */
+    sourceUrl: string;
+    checkedOn: string;
+  } | null;
+}
+
 export interface MedSchoolFactsRes {
   /** The AAMC page the reports are listed on: the link every AAMC source line points at (a curriculum fact links its own `sourceUrl`). */
   pageUrl: string;
   /** Empty for a school neither the AAMC reports nor Admit's curriculum table cover. A DO school has Admit's rows at most. */
   facts: MedSchoolFactDto[];
+  /** The combined MD-PhD (or DO-PhD) program; null when nothing is known, so the page shows nothing. */
+  mdphd: MedMdPhdDto | null;
 }
 
 /** 404 for an unknown or inactive slug. Public and user-independent. */

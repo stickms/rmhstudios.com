@@ -33,6 +33,7 @@ const fact = (kind: string, over: Partial<MedSchoolFactDto> = {}): MedSchoolFact
 
 const data: MedSchoolFactsRes = {
   pageUrl: MSAR_PAGE_URL,
+  mdphd: null,
   facts: [
     fact('ACCEPTS_OUT_OF_STATE', { value: 'YES', note: 'Strong preference to residents.' }),
     fact('ACCEPTS_INTERNATIONAL', { value: 'CASE_BY_CASE' }),
@@ -89,7 +90,7 @@ describe('AdmissionsFactsView', () => {
     expect(html).toContain('2026 entering class, Deposit Due Date');
     const paged = renderToString(
       <AdmissionsFactsView
-        data={{ pageUrl: MSAR_PAGE_URL, facts: [fact('ACCEPTS_CANADIAN', { value: 'NO', page: 7 })] }}
+        data={{ pageUrl: MSAR_PAGE_URL, mdphd: null, facts: [fact('ACCEPTS_CANADIAN', { value: 'NO', page: 7 })] }}
       />,
     );
     expect(paged).toContain('data-href="https://students-residents.aamc.org/media/6996/download?attachment#page=7"');
@@ -100,6 +101,7 @@ describe('AdmissionsFactsView', () => {
       <AdmissionsFactsView
         data={{
           pageUrl: MSAR_PAGE_URL,
+          mdphd: null,
           facts: [
             fact('DEPOSIT_REQUIRED', { reportId: 7066, value: 'NO' }),
             fact('DEPOSIT_DUE', { reportId: 7066, value: '2026-04-30' }),
@@ -120,6 +122,7 @@ describe('AdmissionsFactsView', () => {
       <AdmissionsFactsView
         data={{
           pageUrl: MSAR_PAGE_URL,
+          mdphd: null,
           facts: [
             fact('ACCEPTS_DACA', { value: 'YES', note: 'We consider DACA applicants.' }),
             fact('DACA_DETAILS', { reportId: 7031, value: 'We consider DACA applicants.' }),
@@ -136,7 +139,7 @@ describe('AdmissionsFactsView', () => {
   });
 
   it('says so when a school has none', () => {
-    const empty = renderToString(<AdmissionsFactsView data={{ pageUrl: MSAR_PAGE_URL, facts: [] }} />);
+    const empty = renderToString(<AdmissionsFactsView data={{ pageUrl: MSAR_PAGE_URL, mdphd: null, facts: [] }} />);
     expect(empty).toContain('No admissions facts for this school yet.');
     expect(empty).not.toContain('Source:');
   });

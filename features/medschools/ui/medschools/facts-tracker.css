@@ -200,3 +200,209 @@
 .medapp-rows > li:last-child > .medapp-item {
   border-bottom: 0;
 }
+/* ── Facts: the MD-PhD program ───────────────────────────────────────────── */
+/* A row is its label over its value on a phone; from 768px the label is the facts' 12rem column. The value and its
+   source share a line, the source icon at the far end. */
+.medapp-defs > .medapp-mdphd__row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--app-med-space-1);
+  padding-block: 10px;
+}
+.medapp-defs > .medapp-mdphd__row > dd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+  text-align: start;
+}
+@media (min-width: 768px) {
+  .medapp-defs > .medapp-mdphd__row {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    column-gap: var(--app-med-space-5);
+    align-items: baseline;
+  }
+}
+.medapp-mdphd__value {
+  min-inline-size: 0;
+}
+.medapp-mdphd__mark {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--app-med-space-2);
+}
+.medapp-mdphd__mark > svg {
+  flex: none;
+  margin-block-start: 3px;
+  color: var(--app-text-muted);
+}
+.medapp-mdphd__mark.is-funded > svg {
+  color: var(--app-med-accept-text);
+}
+.medapp-mdphd__checked {
+  display: block;
+}
+.medapp-defs > .medapp-mdphd__row.is-timeline > dd {
+  display: block;
+}
+.medapp-mdphd__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-3);
+  min-inline-size: 0;
+}
+.medapp-mdphd__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+}
+.medapp-mdphd__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-1) var(--app-med-space-3);
+  min-inline-size: 0;
+}
+.medapp-mdphd__pattern {
+  padding: 2px 10px;
+  border: 1px solid var(--app-border-bright);
+  border-radius: var(--app-med-radius-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--app-text);
+}
+.medapp-mdphd__pattern.is-typical {
+  border-style: dashed;
+  font-weight: 500;
+  color: var(--app-text-muted);
+}
+.medapp-mdphd__typical {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.medapp-mdphd__typical > svg {
+  flex: none;
+}
+.medapp-mdphd__note {
+  margin: 0;
+}
+/* The phase bar: one grid, the segments on the first row and their names and lengths under them, so each label sits
+   under its own segment. Each segment is the phase's pastel with a 1px edge in its ink (the edge holds 3:1 on paper);
+   the typical layout is the same shape, dashed and unfilled, so it never reads as the school's own. */
+.medapp-phasebar {
+  display: grid;
+  column-gap: 3px;
+  row-gap: var(--app-med-space-2);
+  direction: ltr;
+}
+.medapp-phasebar__seg {
+  block-size: 14px;
+  border: 1px solid;
+  border-radius: 7px;
+}
+.medapp-phase--preclinical {
+  background-color: var(--app-med-phase-preclinical);
+  border-color: var(--app-med-phase-preclinical-edge);
+}
+.medapp-phase--research {
+  background-color: var(--app-med-phase-research);
+  border-color: var(--app-med-phase-research-edge);
+}
+.medapp-phase--clinical {
+  background-color: var(--app-med-phase-clinical);
+  border-color: var(--app-med-phase-clinical-edge);
+}
+.medapp-phasebar.is-typical .medapp-phasebar__seg {
+  background-color: transparent;
+  border-style: dashed;
+}
+.medapp-phasefig {
+  container-type: inline-size;
+  min-inline-size: 0;
+}
+.medapp-phasebar__label {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  padding-inline-end: var(--app-med-space-2);
+  line-height: 1.3;
+  /* Never inside a word: a label that does not fit moves to the legend, it is not broken (the facts' dd allows it). */
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+.medapp-phasebar.is-legend .medapp-phasebar__label {
+  display: none;
+}
+/* The legend: a swatch, the name and the years on one line each. Shown when a segment is too narrow for its label, and
+   in any panel narrower than 26rem (a phone), where three labels cannot sit under their segments. */
+.medapp-phasebar__legend {
+  display: none;
+  flex-direction: column;
+  gap: var(--app-med-space-1);
+  margin: var(--app-med-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: normal;
+  hyphens: manual;
+}
+.medapp-phasebar__legend.is-legend {
+  display: flex;
+}
+.medapp-phasebar__legend > li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-med-space-2);
+}
+.medapp-phasebar__swatch {
+  flex: none;
+  inline-size: 12px;
+  block-size: 12px;
+  border: 1px solid;
+  border-radius: 4px;
+  align-self: center;
+}
+.medapp-phasebar__swatch.is-typical {
+  background-color: transparent;
+  border-style: dashed;
+}
+@container (max-width: 26rem) {
+  .medapp-phasebar__label {
+    display: none;
+  }
+  .medapp-phasebar__legend {
+    display: flex;
+  }
+}
+.medapp-phasebar__name {
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  color: var(--app-text);
+}
+.medapp-phasebar__years {
+  font-size: var(--app-med-text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text-muted);
+}
+.medapp-mdphd__extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text-muted);
+}
+.medapp-mdphd__extras > li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-med-space-2);
+}
+.medapp-mdphd__extras svg {
+  flex: none;
+  margin-block-start: 2px;
+}
