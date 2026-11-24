@@ -7,26 +7,64 @@
      rule-cells     a grid of cells with rules only between them, never on the outer edge
      rule-notice    a status line: a rule below and a 2px start edge in the tone colour
      rule-defs      label and value rows on rules, label first
+     rule-row       one hand-written row on a rule, for a list that is not a Cells grid
+
+   The look is inset and floating (owner, 2026-11-24): a horizontal rule stops --rule-inset short of each side of its
+   block, and a vertical rule stops --rule-gap short of the rules above and below, so lines never touch. Each rule is a
+   1px pseudo-element, not a border, because a border cannot be inset. Set either variable to 0 and the rules run to the
+   edge and meet.
 
    Layout switches use @container on the descendants of a container. A container cannot restyle itself from its own
    @container block, so each container is a flex-wrap box and the breakpoint changes its children's flex-basis and
-   borders. Every edge is a logical property, so right-to-left reverses with no extra rule. Every colour is a
+   rules. Every edge is a logical property, so right-to-left reverses with no extra rule. Every colour is a
    section-2 token; no effects. */
+
+:root {
+  --rule-inset: 0.75rem;
+  --rule-gap: 0.75rem;
+}
 
 @layer components {
   /* S7: a section is set off by a rule above; the first in a parent drops it. */
   .rule-section {
-    border-block-start: 1px solid var(--site-border);
+    position: relative;
     padding-block-start: 1.5rem;
     margin-block-start: 1.5rem;
   }
+  .rule-section::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: var(--rule-inset);
+    block-size: 1px;
+    background: var(--site-border);
+  }
   .rule-section:first-child {
-    border-block-start: 0;
     padding-block-start: 0;
     margin-block-start: 0;
   }
+  .rule-section:first-child::before {
+    display: none;
+  }
 
-  /* S8: columns. Narrow: stacked, a rule between children. Wide: side by side, a start rule between columns. */
+  /* A hand-written row on a rule (a list entry that is its own link or markup, not a Cells item): the same inset,
+     floating rule under it as the primitives draw. The last row in its list has none. */
+  .rule-row {
+    position: relative;
+  }
+  .rule-row::after {
+    content: '';
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: var(--rule-inset);
+    block-size: 1px;
+    background: var(--site-border);
+  }
+  .rule-row:last-child::after {
+    display: none;
+  }
+
+  /* S8: columns. Narrow: stacked, a rule between children. Wide: side by side, a floating rule between columns. */
   .rule-cols {
     container-type: inline-size;
     display: flex;
@@ -34,13 +72,21 @@
     column-gap: 1.5rem;
   }
   .rule-cols > * {
+    position: relative;
     flex: 1 0 100%;
     min-inline-size: 0;
   }
   .rule-cols > * + * {
-    border-block-start: 1px solid var(--site-border);
     padding-block-start: 1.5rem;
     margin-block-start: 1.5rem;
+  }
+  .rule-cols > * + *::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: var(--rule-inset);
+    block-size: 1px;
+    background: var(--site-border);
   }
 
   @container (min-width: 48rem) {
@@ -56,27 +102,23 @@
     /* The gutter is the container's column-gap, not padding or a border on the item: a flex item's padding is a floor on
        its base size, which skews a flex-grow split. The rule is drawn in the middle of that gap. Only a sibling after the
        first gets it, so a single child never draws one. */
-    .rule-cols > * {
-      position: relative;
-    }
     .rule-cols > * + * {
-      border-block-start: 0;
       margin-block-start: 0;
       padding-block-start: 0;
     }
     .rule-cols > * + *::before {
-      content: '';
-      position: absolute;
-      inset-block: 0;
+      inset-block: var(--rule-gap);
+      inset-inline: auto;
       inset-inline-start: -0.75rem;
       inline-size: 1px;
-      background: var(--site-border);
+      block-size: auto;
     }
   }
 
   /* S9: cells. A grid of cells with rules only between them. Narrow: one column, a rule under every cell but the last.
-     Wide: the data-columns count, a rule under every cell outside the last row and a start rule on every cell that is not
-     first in its row. The item carries data-last-row (set by Cells) so the last row never draws a bottom rule. */
+     Wide: the data-columns count, a rule under every cell outside the last row and a floating start rule on every cell
+     that is not first in its row. The item carries data-last-row (set by Cells) so the last row never draws a bottom
+     rule. */
   .rule-cells {
     container-type: inline-size;
     display: flex;
@@ -86,13 +128,21 @@
     list-style: none;
   }
   .rule-cells > li {
+    position: relative;
     flex: 0 0 100%;
     min-inline-size: 0;
     padding-block: 0.75rem;
-    border-block-end: 1px solid var(--site-border);
   }
-  .rule-cells > li:last-child {
-    border-block-end: 0;
+  .rule-cells > li::after {
+    content: '';
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: var(--rule-inset);
+    block-size: 1px;
+    background: var(--site-border);
+  }
+  .rule-cells > li:last-child::after {
+    display: none;
   }
 
   @container (min-width: 30rem) {
@@ -105,35 +155,46 @@
     .rule-cells[data-columns='4'] > li {
       flex-basis: 25%;
     }
-    .rule-cells > li[data-last-row] {
-      border-block-end: 0;
+    .rule-cells > li[data-last-row]::after {
+      display: none;
     }
-    .rule-cells[data-columns='2'] > li:nth-child(2n) {
-      border-inline-start: 1px solid var(--site-border);
-      padding-inline-start: 1rem;
-    }
-    .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1)) {
-      border-inline-start: 1px solid var(--site-border);
-      padding-inline-start: 1rem;
-    }
+    .rule-cells[data-columns='2'] > li:nth-child(2n),
+    .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1)),
     .rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1)) {
-      border-inline-start: 1px solid var(--site-border);
       padding-inline-start: 1rem;
+    }
+    .rule-cells[data-columns='2'] > li:nth-child(2n)::before,
+    .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1))::before,
+    .rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1))::before {
+      content: '';
+      position: absolute;
+      inset-block: var(--rule-gap);
+      inset-inline-start: 0;
+      inline-size: 1px;
+      background: var(--site-border);
     }
   }
 
   /* S10: a notice is a status line: a rule below, and a 2px start edge in the tone colour. No fill. */
   .rule-notice {
-    border-block-end: 1px solid var(--site-border);
+    position: relative;
     border-inline-start: 2px solid var(--site-danger);
     padding-block: 0.75rem;
     padding-inline-start: 0.75rem;
+  }
+  .rule-notice::after {
+    content: '';
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: var(--rule-inset);
+    block-size: 1px;
+    background: var(--site-border);
   }
   .rule-notice[data-tone='success'] {
     border-inline-start-color: var(--site-success);
   }
 
-  /* S11: definitions. Rows on rules. Wide: the label and the value side by side, a start rule before the value. */
+  /* S11: definitions. Rows on rules. Wide: the label and the value side by side, a floating rule before the value. */
   .rule-defs {
     container-type: inline-size;
     display: flex;
@@ -141,9 +202,17 @@
     margin: 0;
   }
   .rule-defs > div {
+    position: relative;
     flex: 1 0 100%;
     padding-block: 0.75rem;
-    border-block-end: 1px solid var(--site-border);
+  }
+  .rule-defs > div::after {
+    content: '';
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: var(--rule-inset);
+    block-size: 1px;
+    background: var(--site-border);
   }
   .rule-defs > div > dt,
   .rule-defs > div > dd {
@@ -157,8 +226,16 @@
       column-gap: 0;
       align-items: baseline;
     }
+    /* The label column is one third of the row (1fr : 2fr), so the rule sits at a third of the way across. */
+    .rule-defs > div::before {
+      content: '';
+      position: absolute;
+      inset-block: var(--rule-gap);
+      inset-inline-start: calc(100% / 3);
+      inline-size: 1px;
+      background: var(--site-border);
+    }
     .rule-defs > div > dd {
-      border-inline-start: 1px solid var(--site-border);
       padding-inline-start: 1.5rem;
     }
   }
