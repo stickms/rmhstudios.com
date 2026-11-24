@@ -12,12 +12,14 @@ import { indexQuery, listsQuery, schoolsQuery } from '../medschools.queries';
 import { useSession } from '@/components/session/session-context';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
-import { ProgramSetToggles } from './ProgramSetToggles';
+import { ProgramMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
-import { PageHead } from './shell/PageHead';
+import { Places } from './shell/Places';
+import { LatestStatus } from './LatestStatus';
+import { MedEmpty } from './MedEmpty';
 
 /**
  * /rmh-medschool: the school index. A paper panel of rows (the redesign's list, D14). A school with no
@@ -69,95 +71,73 @@ export function IndexPage() {
 
   return (
     <>
-      <PageHead title={t('index-title', { defaultValue: 'RMH Med Schools' })} />
-      <nav className="medapp-chips mb-4" aria-label={t('index-nav-label', { defaultValue: 'Med Schools' })}>
-        <Link to="/rmh-medschool/live" className="medapp-chip">
-          {t('index-live', { defaultValue: 'Live activity' })}
-        </Link>
-        {signedIn ? (
-          <>
-            <Link to="/rmh-medschool/tracker" className="medapp-chip">
-              {t('index-my-tracker', { defaultValue: 'My tracker' })}
-            </Link>
-            <Link to="/rmh-medschool/ask" className="medapp-chip">
-              {t('index-ask', { defaultValue: 'Ask' })}
-            </Link>
-            <Link to="/rmh-medschool/lists" className="medapp-chip">
-              {t('index-my-lists', { defaultValue: 'My lists' })}
-            </Link>
-          </>
-        ) : null}
-        <Link to="/rmh-medschool/practice" className="medapp-chip">
-          {t('index-practice', { defaultValue: 'Interview practice' })}
-        </Link>
-      </nav>
+      <Places
+        label={t('index-nav-label', { defaultValue: 'Med Schools' })}
+        places={signedIn ? ['live', 'tracker', 'ask', 'lists', 'practice'] : ['live', 'practice']}
+      />
 
-      <div className="medapp-toolbar">
-        <MedSearch
-          containerClassName="w-full sm:w-auto sm:min-w-48 sm:flex-1"
-          aria-label={t('index-search-label', { defaultValue: 'Search schools' })}
-          placeholder={t('index-search-placeholder', { defaultValue: 'Search schools' })}
-          maxLength={Q_MAX}
-          value={text}
-          onValueChange={(v) => {
-            setText(v);
-            pushQuery(v);
-          }}
-        />
-        <MedSelect
-          aria-label={t('index-state-label', { defaultValue: 'State' })}
-          value={search.state ?? ''}
-          onChange={(e) => setSearch({ state: e.target.value || undefined })}
-        >
-          <option value="">{t('index-state-all', { defaultValue: 'All states' })}</option>
-          {(schools.data?.states ?? []).map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </MedSelect>
-      </div>
-      <ProgramSetToggles value={view.programs} onChange={(programs) => setView({ programs })} />
-      {myLists.length > 0 ? (
-        <div className="mt-3">
+      <div className="medapp-filters">
+        <div className="medapp-toolbar">
+          <MedSearch
+            containerClassName="medapp-toolbar__grow"
+            aria-label={t('index-search-label', { defaultValue: 'Search schools' })}
+            placeholder={t('index-search-placeholder', { defaultValue: 'Search schools' })}
+            maxLength={Q_MAX}
+            value={text}
+            onValueChange={(v) => {
+              setText(v);
+              pushQuery(v);
+            }}
+          />
           <MedSelect
-            aria-label={t('index-list-label', { defaultValue: 'My lists' })}
-            value={listSlugs || search.list === 'all' ? (search.list ?? '') : ''}
-            onChange={(e) => setSearch({ list: e.target.value || undefined })}
+            aria-label={t('index-state-label', { defaultValue: 'State' })}
+            value={search.state ?? ''}
+            onChange={(e) => setSearch({ state: e.target.value || undefined })}
           >
-            <option value="">{t('index-list-none', { defaultValue: 'All schools' })}</option>
-            <option value="all">{t('index-list-all', { defaultValue: 'All my lists' })}</option>
-            {myLists.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
+            <option value="">{t('index-state-all', { defaultValue: 'All states' })}</option>
+            {(schools.data?.states ?? []).map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
           </MedSelect>
+          <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
+          {myLists.length > 0 ? (
+            <MedSelect
+              aria-label={t('index-list-label', { defaultValue: 'My lists' })}
+              value={listSlugs || search.list === 'all' ? (search.list ?? '') : ''}
+              onChange={(e) => setSearch({ list: e.target.value || undefined })}
+            >
+              <option value="">{t('index-list-none', { defaultValue: 'All schools' })}</option>
+              <option value="all">{t('index-list-all', { defaultValue: 'All my lists' })}</option>
+              {myLists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </MedSelect>
+          ) : null}
         </div>
-      ) : null}
-      {search.list && !signedIn ? (
-        <p className="medapp-note">
-          {t('index-list-signed-out', {
-            defaultValue: 'This link filters to a saved list. Sign in to see your lists; all schools are shown.',
-          })}
-        </p>
-      ) : null}
-      <PrefsNote fromPrefs={view.fromPrefs} />
+        {search.list && !signedIn ? (
+          <p className="medapp-note">
+            {t('index-list-signed-out', {
+              defaultValue: 'This link filters to a saved list. Sign in to see your lists; all schools are shown.',
+            })}
+          </p>
+        ) : null}
+        <PrefsNote fromPrefs={view.fromPrefs} />
+      </div>
 
-      <div className="mt-4">
+      <div>
         {schools.isError ? (
-          <div className="medapp-panel medapp-panel--padded">
-            <p className="medapp-empty">{t('index-load-failed', { defaultValue: 'Could not load the schools.' })}</p>
-            <button type="button" className="medapp-chip" onClick={() => void schools.refetch()}>
-              {t('retry', { defaultValue: 'Try again' })}
-            </button>
-          </div>
+          <MedEmpty
+            title={t('index-load-failed', { defaultValue: 'Could not load the schools.' })}
+            onRetry={() => void schools.refetch()}
+          />
         ) : (
-          <SkeletonSwap ready={!!schools.data}>
+          <SkeletonSwap ready={!!schools.data} stale={schools.isPlaceholderData}>
             {schools.data && rows.length === 0 ? (
-              <div className="medapp-panel">
-                <p className="medapp-empty">{t('index-empty', { defaultValue: 'No schools match.' })}</p>
-              </div>
+              <MedEmpty title={t('index-empty', { defaultValue: 'No schools match.' })} />
             ) : (
               <ul className="medapp-panel medapp-rows">
                 {rows.map((s) => (
@@ -190,6 +170,7 @@ export function IndexPage() {
                         </p>
                       ) : null}
                     </div>
+                    {s.latest ? <LatestStatus latest={s.latest} /> : null}
                     <SaveToList
                       school={{ slug: s.slug, name: s.name }}
                       program={schoolProgramOf(view.programs, s.degree)}

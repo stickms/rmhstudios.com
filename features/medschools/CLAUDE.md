@@ -71,6 +71,8 @@ longer govern this feature**; the admin page does not move with it (`components/
   from the mockup's blobs; a `background-image` of `.medapp-page`, in the flow, never fixed, never animated, fading to
   the exact ground at each tile's top and bottom (iOS fills its bars from the ground). Dropped under
   `prefers-reduced-data`.
+- (The B1 to B3 notes below are as built; the controls, pills and spacing they describe were reworked by "The system",
+  further down.)
 - **Phase B1 (built).** The index, live page, activity rail and their controls are on `--app-*` / `--app-med-*` and the
   `.medapp-*` classes at the foot of `medschools.css`: pill chips (`.medapp-chip`: `aria-pressed` / `aria-checked` is a
   filled wash, a stronger border and weight 600; 36px, 44px on touch), a paper panel (`.medapp-panel`) holding the rows,
@@ -105,6 +107,75 @@ longer govern this feature**; the admin page does not move with it (`components/
   acceptance's cycle rule on import. The live feed shows it only if a source ever reports it (none does).
 - **Wash on phones.** The tile is rendered with a 34px blur and blobs 1.3 times larger, and `.medapp-page` sizes it
   `max(100%, 900px)` wide, so a phone shows a centred crop with broad soft blobs; each asset is under 30 KB.
+
+### The system (design polish, owner 2026-11-24)
+
+One spacing scale, one type ramp, one radius family, one control height per context, as `--app-med-*` tokens on
+`.medapp-theme` (the head of `ui/medschools.css`) and `.medapp-*` classes. "Human, not AI": restraint, real hierarchy,
+few borders, no wall of identical cards, no pill soup, no panels in panels.
+
+- **Space:** 4 / 8 / 12 / 16 / 24 / 32 / 48 (`--app-med-space-1`..`-7`). Gutter 16, 24 from 768px; section gap 24, 32
+  from 768px (`.medapp-main` and `.medapp-sections` are flex columns with that gap, so a page writes no `mt-*` between
+  sections); panel padding 16, 20 from 768px; a row 12 top and bottom; a heading 12 above its content.
+- **Type:** page title 28 (32 from 768px, Fraunces), section title 20 (Fraunces), body 16, secondary 14 (`.medapp-meta`:
+  all help copy, never smaller), meta 13 (row meta, chart text 12-13 inside charts only). Body line height 1.5.
+- **Radius:** 10 (`--app-med-radius-sm`: an option inside a group, a step, a note), 14 (`--app-med-radius`: buttons,
+  fields, groups, menus), 24 (`--app-med-radius-lg`: panels, charts, tiles); circles only for the round icon buttons and
+  the status discs.
+- **Controls:** `--app-med-control` is 44px on touch or a phone and 40px with a fine pointer from 768px; a row of
+  controls shares it. Buttons are `.medapp-btn` (`MedButton`, `medButtonClass` for a link drawn as one): primary the ink
+  fill (one per view), secondary a soft tonal fill (`--app-med-tonal`, the ink at 6%; hover 10%, press 15%), never
+  outlined; tertiary a text button with an underline and the tonal hover; danger the tonal shape in the danger colour.
+  Icon buttons are `MedIconButton` (round, tonal, the control height; the top bar's are always 44px). Fields
+  (`MedInput`, `MedSelect`, `MedSearch`) keep a 1px rule, 16px text (iOS zooms below that) and the select's chevron.
+  Labels sit above fields (`.medapp-fieldset`, 14px medium, 8px gap); `.medapp-fields` is two columns from 640px.
+- **Choices:** a group of toggles or a single choice is one segmented container (`.medapp-chips`, the tonal well, with
+  `.medapp-chip` options; the school's section links are `.medapp-pills` in the same shape): pressed / checked / current
+  is the paper fill and weight 600, never colour alone; one line that scrolls sideways when it does not fit. Filters
+  with many values are `MedMultiSelect` (a field-shaped trigger that says "All events", "3 types", "MD, MD-PhD" and a
+  panel of native checkboxes, in the HTML while closed): `ProgramMultiSelect` and `EventTypeMultiSelect`.
+- **Surfaces:** one level of panel. Inside a panel, groups are rules and space (`.medapp-subrule`, `.medapp-group`,
+  `.medapp-rows`); a list or prose may sit on the wash with no panel. Empty, failed and signed-out states are `MedEmpty`
+  / `MedSignedOut`: centred, a 16px line, a 14px line, one action.
+- **Places:** the app's other pages are `Places` (`ui/shell/Places.tsx`): icon-and-label tertiary links, one line. The
+  top bar's title is the app's name, "RMH Med Schools"; on the index it is the page's `<h1>` (the index has no title of
+  its own) and the left button is a house linking to the site home `/`; every other page has its own h1 and the back
+  arrow.
+- **Rows:** the tracker's school rows and the lists' school rows have the name (`.medapp-name`: 600, no underline at
+  rest) and meta, and one "⋯" (`MedIconButton`) holding every action (add milestone, edit notes, remove; note, move up,
+  move down, remove), so nothing floats beside a row. A tracker school's milestones are `.medapp-steps`: every step the
+  same shape (`StepIcon`: the status disc, or a neutral disc for submitted and complete), its words and the date at the
+  end. The timeline is `.medapp-timeline`: a 56px date column (tabular), the disc, the words with the wait under them. A
+  note is text that opens its editor (`.medapp-notebtn`). The lists reorder from their menus; `SortableList` is not used
+  here.
+- **Sharing:** the sharing row shows one summary line under the switch; the full privacy wording (all three paragraphs,
+  unchanged) is behind "How sharing works" (`.medapp-more`, a native `details`), and stays the switch's accessible
+  description.
+- **Sources (`ui/SourceRef.tsx`):** a source is one quiet book icon at the trailing end of its heading or value row.
+  Hover or focus shows the source on the overlay surface (`AnchoredMenu` as a non-modal dialog), a press or tap pins it
+  and focuses "Open source" (a tap never navigates), Escape closes. The full "Source: …" attribution is in the server
+  HTML as the button's visually hidden description (the AAMC permission requires it). The link is a deep link:
+  `textFragmentUrl` (`engine/text-fragment.ts`, `#:~:text=start,end`) where we hold the page's words, `pdfPageUrl`
+  (`#page=N`, the facts DTO's `page`) for an AAMC report. Chart sources are `SourceLinks`: "Sources" and short icon
+  links whose accessible name is the full line.
+- **Facts copy:** a row never repeats its heading ("Due" under "Deposit") or a word every row shares ("Out of state",
+  not "Out-of-state applicants"); related figures share a line ("In-state $X · Out-of-state $Y", "Until Apr 30, 2026");
+  a block whose answer makes the rest moot is one line ("Deposit · Not required"); yes / no / case by case is a small
+  mark and the word; the DACA report's sentence shows once when it repeats the school's note. Definition rows: a word or
+  figure on its label's line, a sentence under it; from 768px the label is a 12rem column.
+- **Newest status on the index:** each row ends with the school's newest public event (`LatestStatus`: the disc, the
+  words, the time ago), from `latest` on `GET /schools` (`latestPublicEvents` in `api/read.server.ts`: the live feed's
+  rules, Admit and SDN only, never RMH, the list's program set, the site cycle; user-independent). The time is worked
+  out at render, never on a timer: the server and the hydrating render print the day.
+- **The rail:** its heading, search and the two multi-selects (event types, programs) are sticky inside the rail panel
+  (`.medapp-rail-top`) while the list scrolls under them.
+- **Settings change in place (owner 2026-11-24):** every `navigate()` passes `replace: true, resetScroll: false`, the
+  section links `resetScroll={false}`; the filtered queries keep their previous answer while the next loads
+  (`placeholderData`: `keepPreviousData`, or `keepWithinSchool` so another school's figures never show), dimmed by
+  `SkeletonSwap`'s `stale` (`.medapp-stale`, opacity, `aria-busy`), never a skeleton; the loaders do not wait on a
+  search change (`waitUnlessStay(cause, …)`: `cause: 'stay'`), so the router's pending frame never replaces the page.
+  The live feed keeps one list across filter changes (`useLiveFeed` replaces its rows when the new filter's first page
+  lands). `ui/keep-place.test.ts` holds the static half.
 
 ## The read rules (`engine/public-read.ts`, pure and client-safe)
 

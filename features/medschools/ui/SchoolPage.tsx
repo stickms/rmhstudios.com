@@ -22,6 +22,7 @@ import { SchoolFacts } from './SchoolFacts';
 import { AdmissionsFacts } from './facts/AdmissionsFacts';
 import { Curriculum } from './facts/Curriculum';
 import { PageHead } from './shell/PageHead';
+import { Places } from './shell/Places';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
@@ -120,17 +121,10 @@ export function SchoolPage() {
         {detail ? (
           <div className="medapp-school-body">
             {session ? (
-              <nav className="medapp-chips" aria-label={t('school-my-label', { defaultValue: 'My Med Schools' })}>
-                <Link to="/rmh-medschool/tracker" className="medapp-chip">
-                  {t('school-my-tracker', { defaultValue: 'My tracker' })}
-                </Link>
-                <Link to="/rmh-medschool/ask" className="medapp-chip">
-                  {t('school-ask-link', { defaultValue: 'Ask' })}
-                </Link>
-                <Link to="/rmh-medschool/lists" className="medapp-chip">
-                  {t('school-my-lists', { defaultValue: 'My lists' })}
-                </Link>
-              </nav>
+              <Places
+                label={t('school-my-label', { defaultValue: 'My Med Schools' })}
+                places={['tracker', 'ask', 'lists']}
+              />
             ) : null}
             <PrefsNote fromPrefs={view.fromPrefs} />
             <SchoolFacts school={detail.school} />
@@ -173,7 +167,7 @@ export function SchoolPage() {
               <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
             ) : search.tab === 'facts' ? (
               <>
-                <Curriculum slug={slug} />
+                <Curriculum slug={slug} admitHref={detail.links.find((l) => l.source === 'ADMIT')?.href} />
                 <AdmissionsFacts slug={slug} degree={detail.school.degree} />
               </>
             ) : (

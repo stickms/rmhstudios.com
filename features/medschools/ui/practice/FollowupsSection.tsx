@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useSession } from '@/components/session/session-context';
 import { MedSwitch } from '../controls/MedSwitch';
+import { medButtonClass } from '../controls/MedButton';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { QA_THINK_CLIENT_TIMEOUT_MS } from '../../ai-budget';
 import { postMedInterviewFollowupsApi, type MedInterviewFollowupsRes } from '../../medschools.contract';
@@ -83,7 +84,7 @@ export function FollowupsSection({
       <div className="medapp-controls">
         <button
           type="button"
-          className="medapp-chip"
+          className={medButtonClass()}
           aria-busy={run.isPending}
           disabled={!configured || remaining === 0 || run.isPending}
           onClick={() => run.mutate()}

@@ -60,7 +60,7 @@ export function HistoryTab({
   const sharedLinks = detail.links.filter((l) => l.cycleYear === null);
 
   return (
-    <SkeletonSwap ready={!!query.data} skeleton={<ChartSkeleton />}>
+    <SkeletonSwap ready={!!query.data} stale={query.isPlaceholderData} skeleton={<ChartSkeleton />}>
       <div className="medapp-tab">
         <div className="medapp-controls">
           {programControl}

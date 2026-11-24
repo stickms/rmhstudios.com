@@ -2,6 +2,7 @@ import { useEffect, useReducer } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PRACTICE_SECONDS, formatClock, initialTimer, timerReducer, type PracticeSeconds } from '../../engine/practice';
 import { OptionGroup } from '../OptionGroup';
+import { medButtonClass } from '../controls/MedButton';
 
 /**
  * The practice countdown. It starts only when the member presses Start (a response to input, R5), changes once a second
@@ -46,15 +47,15 @@ export function PracticeTimer({ resetKey }: { resetKey: string }) {
       >
         {formatClock(s.remaining)}
       </p>
-      <div className="medapp-chips">
+      <div className="medapp-actions">
         {running ? (
-          <button type="button" className="medapp-chip" onClick={() => dispatch({ type: 'pause' })}>
+          <button type="button" className={medButtonClass()} onClick={() => dispatch({ type: 'pause' })}>
             {t('practice-pause', { defaultValue: 'Pause' })}
           </button>
         ) : (
           <button
             type="button"
-            className="medapp-chip medapp-chip--primary"
+            className={medButtonClass('primary')}
             disabled={s.status === 'done'}
             onClick={() => dispatch({ type: 'start' })}
           >
@@ -65,7 +66,7 @@ export function PracticeTimer({ resetKey }: { resetKey: string }) {
         )}
         <button
           type="button"
-          className="medapp-chip"
+          className={medButtonClass('tertiary')}
           disabled={s.status === 'idle'}
           onClick={() => dispatch({ type: 'reset' })}
         >

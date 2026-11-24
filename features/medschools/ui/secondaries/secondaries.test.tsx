@@ -204,7 +204,8 @@ describe('Secondaries tab on the school page', () => {
     expect(html).toContain('Compared with the \u20662025\u20132026\u2069 cycle.');
     expect(html).toContain('Source: Admit.org, checked Nov 20, 2026');
     expect(html).toContain('Source: Duke website, checked Nov 23, 2026');
-    expect(html).toContain('href="https://med.duke.edu/secondary"');
+    // The sources are icons at the end of each group's heading: the deep link rides on the button, the attribution is text.
+    expect(html).toContain('data-href="https://med.duke.edu/secondary"');
   });
 
   it('a not-yet group says so, and shows no status words', () => {

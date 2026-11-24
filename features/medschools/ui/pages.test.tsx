@@ -80,6 +80,7 @@ const school = (slug: string, o: Partial<MedSchoolListItemDto> = {}): MedSchoolL
   city: 'Durham',
   state: 'NC',
   reported: { source: 'CYCLETRACK', count: 120 },
+  latest: null,
   ...o,
 });
 
@@ -140,7 +141,7 @@ describe('IndexPage', () => {
     expect(html).toContain('role="group"');
     expect(html).toContain('aria-label="Programs"');
     for (const label of ['>MD<', '>MD-PhD<', '>DO<', '>DO-PhD<']) expect(html).toContain(label);
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(4);
+    expect(html.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(4);
   });
   it('pluralises and groups the reported count', () => {
     h.search = {};
@@ -181,7 +182,7 @@ describe('IndexPage', () => {
       </QueryClientProvider>,
     );
     expect(html).toContain('href="/rmh-medschool/duke"');
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(html.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(1);
     expect(html).toContain('Filters from your preferences.');
     expect(qc.getQueryData(schoolsQuery({}).queryKey)).toBeUndefined();
     expect(programsQueryValue(['md-phd'])).toBe('md-phd');
@@ -203,7 +204,7 @@ describe('IndexPage', () => {
         <IndexPage />
       </QueryClientProvider>,
     );
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(4);
+    expect(html.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(4);
     expect(html).not.toContain('Filters from your preferences.');
     h.session = null;
   });
@@ -301,7 +302,7 @@ describe('LivePage', () => {
   it('has the four program toggles', () => {
     h.search = {};
     const html = withClient(seedLive([ev('a1')]), <LivePage />);
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(4);
+    expect(html.match(/<input type="checkbox" class="medapp-check"[^>]*checked=""/g)).toHaveLength(4);
   });
   it('shows only the UTC day for an SDN event stored at midnight, and a relative time otherwise', () => {
     h.search = {};

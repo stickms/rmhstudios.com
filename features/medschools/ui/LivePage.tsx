@@ -12,7 +12,7 @@ import {
   schoolsQuery,
   type LiveFilters,
 } from '../medschools.queries';
-import { ProgramSetToggles } from './ProgramSetToggles';
+import { ProgramMultiSelect } from './ProgramMultiSelect';
 import { useLiveFeed } from './useLiveFeed';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
@@ -20,6 +20,8 @@ import { SkeletonSwap } from './skeletons';
 import { LiveRow } from './LiveRow';
 import { useMedLabels } from './labels';
 import { PageHead } from './shell/PageHead';
+import { MedEmpty } from './MedEmpty';
+import { MedButton } from './controls/MedButton';
 
 const EVENT_TYPES: readonly MedEventTypeId[] = [
   'INTERVIEW',
@@ -62,62 +64,58 @@ export function LivePage() {
   return (
     <>
       <PageHead title={t('live-title', { defaultValue: 'Live reported events' })} />
-      <div className="medapp-toolbar">
-        <MedSelect
-          aria-label={t('live-type-label', { defaultValue: 'Event' })}
-          value={search.type ?? ''}
-          onChange={(e) => setSearch({ type: (e.target.value || undefined) as MedEventTypeId | undefined })}
-        >
-          <option value="">{t('live-type-all', { defaultValue: 'All events' })}</option>
-          {EVENT_TYPES.map((ty) => (
-            <option key={ty} value={ty}>
-              {eventLabel(ty)}
-            </option>
-          ))}
-        </MedSelect>
-        <MedSelect
-          aria-label={t('live-school-label', { defaultValue: 'School' })}
-          value={search.school ?? ''}
-          onChange={(e) => setSearch({ school: e.target.value || undefined })}
-        >
-          <option value="">{t('live-school-all', { defaultValue: 'All schools' })}</option>
-          {(schools.data?.schools ?? []).map((s) => (
-            <option key={s.slug} value={s.slug}>
-              {s.shortName}
-            </option>
-          ))}
-        </MedSelect>
+      <div className="medapp-filters">
+        <div className="medapp-toolbar">
+          <MedSelect
+            aria-label={t('live-type-label', { defaultValue: 'Event' })}
+            value={search.type ?? ''}
+            onChange={(e) => setSearch({ type: (e.target.value || undefined) as MedEventTypeId | undefined })}
+          >
+            <option value="">{t('live-type-all', { defaultValue: 'All events' })}</option>
+            {EVENT_TYPES.map((ty) => (
+              <option key={ty} value={ty}>
+                {eventLabel(ty)}
+              </option>
+            ))}
+          </MedSelect>
+          <MedSelect
+            aria-label={t('live-school-label', { defaultValue: 'School' })}
+            value={search.school ?? ''}
+            onChange={(e) => setSearch({ school: e.target.value || undefined })}
+          >
+            <option value="">{t('live-school-all', { defaultValue: 'All schools' })}</option>
+            {(schools.data?.schools ?? []).map((s) => (
+              <option key={s.slug} value={s.slug}>
+                {s.shortName}
+              </option>
+            ))}
+          </MedSelect>
+          <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
+        </div>
+        <PrefsNote fromPrefs={view.fromPrefs} />
       </div>
-      <ProgramSetToggles value={view.programs} onChange={(programs) => setView({ programs })} />
-      <PrefsNote fromPrefs={view.fromPrefs} />
-      <div className="mt-4">
-        {/* Keyed by the filters: a new filter set starts with its own rows and older pages. */}
-        <LiveList key={JSON.stringify(filters)} filters={filters} />
-      </div>
+      {/* One feed across filter changes: the old rows stay, dimmed, until the new filter's first page replaces them. */}
+      <LiveList filters={filters} />
     </>
   );
 }
 
 function LiveList({ filters }: { filters: LiveFilters }) {
   const { t } = useTranslation('medschools');
-  const { query, data, rows, arriving, cursor, loadingOlder, olderFailed, showOlder } = useLiveFeed(filters);
+  const { query, data, rows, arriving, cursor, loadingOlder, olderFailed, showOlder, stale } = useLiveFeed(filters);
 
   if (query.isError && !data) {
     return (
-      <div className="medapp-panel medapp-panel--padded">
-        <p className="medapp-empty">{t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}</p>
-        <button type="button" className="medapp-chip" onClick={() => void query.refetch()}>
-          {t('retry', { defaultValue: 'Try again' })}
-        </button>
-      </div>
+      <MedEmpty
+        title={t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}
+        onRetry={() => void query.refetch()}
+      />
     );
   }
   return (
-    <SkeletonSwap ready={!!data}>
+    <SkeletonSwap ready={!!data} stale={stale}>
       {rows.length === 0 ? (
-        <div className="medapp-panel">
-          <p className="medapp-empty">{t('live-empty', { defaultValue: 'Nothing reported yet.' })}</p>
-        </div>
+        <MedEmpty title={t('live-empty', { defaultValue: 'Nothing reported yet.' })} />
       ) : (
         <>
           <div className="medapp-panel">
@@ -128,16 +126,10 @@ function LiveList({ filters }: { filters: LiveFilters }) {
             </ul>
           </div>
           {cursor ? (
-            <div className="mt-4">
-              <button
-                type="button"
-                className="medapp-chip"
-                aria-busy={loadingOlder}
-                disabled={loadingOlder}
-                onClick={() => void showOlder()}
-              >
+            <div className="medapp-stack mt-4 items-start">
+              <MedButton loading={loadingOlder} onClick={() => void showOlder()}>
                 {t('live-older', { defaultValue: 'Show older' })}
-              </button>
+              </MedButton>
               {olderFailed ? (
                 <p className="medapp-note">
                   {t('live-older-failed', { defaultValue: 'Could not load older events.' })}

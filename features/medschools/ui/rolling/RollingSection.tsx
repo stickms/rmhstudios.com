@@ -29,7 +29,7 @@ export function RollingSection({
     <details className="medapp-disclosure" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>{t('rolling-title', { defaultValue: 'Where applying early matters' })}</summary>
       {open ? (
-        <div className="flex flex-col gap-3 pb-4 pt-1">
+        <div className="medapp-disclosure__body">
           <p className="medapp-meta">
             {t('rolling-intro', {
               defaultValue:
@@ -39,7 +39,7 @@ export function RollingSection({
           {query.isError ? (
             <p className="medapp-meta">
               {t('rolling-load-failed', { defaultValue: 'Could not load this.' })}{' '}
-              <MedButton variant="ghost" onClick={() => void query.refetch()}>
+              <MedButton variant="tertiary" onClick={() => void query.refetch()}>
                 {t('retry', { defaultValue: 'Try again' })}
               </MedButton>
             </p>

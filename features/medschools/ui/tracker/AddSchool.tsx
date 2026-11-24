@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { MedButton } from '../controls/MedButton';
+import { MedIconButton } from '../controls/MedIconButton';
+import { X } from 'lucide-react';
 import { MedSearch } from '../controls/MedSearch';
 import { MedSelect } from '../controls/MedSelect';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -55,11 +57,11 @@ export function AddSchool({
   };
 
   return (
-    <div className="medapp-panel medapp-panel--padded mt-3">
+    <div className="medapp-panel medapp-panel--padded">
       {picked ? (
-        <div className="medapp-form">
-          <div className="medapp-item__title">
-            <p className="medapp-text">{picked.name}</p>
+        <div className="medapp-stack">
+          <div>
+            <p className="medapp-name">{picked.name}</p>
             <p className="medapp-meta">
               {t('index-school-meta', {
                 defaultValue: '{{degree}} · {{city}}, {{state}}',
@@ -69,27 +71,34 @@ export function AddSchool({
               })}
             </p>
           </div>
-          <MedSelect
-            aria-label={t('program-select-label', { defaultValue: 'Program' })}
-            value={program}
-            disabled={busy}
-            onChange={(e) => setProgram(e.target.value === 'PHD' ? 'PHD' : 'REG')}
-          >
-            <option value="REG">{programFilterLabel('REG', picked.degree)}</option>
-            <option value="PHD">{programFilterLabel('PHD', picked.degree)}</option>
-          </MedSelect>
-          <MedButton variant="primary" loading={busy} onClick={() => void submit()}>
-            {t('tracker-add-confirm', { defaultValue: 'Add' })}
-          </MedButton>
-          <MedButton variant="ghost" disabled={busy} onClick={() => setPicked(null)}>
-            {t('tracker-add-change', { defaultValue: 'Change school' })}
-          </MedButton>
+          <div className="medapp-form mt-2">
+            <label className="medapp-fieldset">
+              <span className="medapp-label">{t('program-select-label', { defaultValue: 'Program' })}</span>
+              <MedSelect
+                aria-label={t('program-select-label', { defaultValue: 'Program' })}
+                value={program}
+                disabled={busy}
+                onChange={(e) => setProgram(e.target.value === 'PHD' ? 'PHD' : 'REG')}
+              >
+                <option value="REG">{programFilterLabel('REG', picked.degree)}</option>
+                <option value="PHD">{programFilterLabel('PHD', picked.degree)}</option>
+              </MedSelect>
+            </label>
+            <div className="medapp-actions">
+              <MedButton variant="primary" loading={busy} onClick={() => void submit()}>
+                {t('tracker-add-confirm', { defaultValue: 'Add' })}
+              </MedButton>
+              <MedButton variant="tertiary" disabled={busy} onClick={() => setPicked(null)}>
+                {t('tracker-add-change', { defaultValue: 'Change school' })}
+              </MedButton>
+            </div>
+          </div>
         </div>
       ) : (
         <>
-          <div className="medapp-form">
+          <div className="medapp-head">
             <MedSearch
-              containerClassName="min-w-48 flex-1"
+              containerClassName="min-w-0 flex-1"
               aria-label={t('tracker-add-search', { defaultValue: 'Search schools to add' })}
               placeholder={t('tracker-add-search', { defaultValue: 'Search schools to add' })}
               maxLength={Q_MAX}
@@ -97,9 +106,7 @@ export function AddSchool({
               onValueChange={setQ}
               autoFocus
             />
-            <MedButton variant="ghost" onClick={onCancel}>
-              {t('tracker-cancel', { defaultValue: 'Cancel' })}
-            </MedButton>
+            <MedIconButton icon={X} label={t('tracker-cancel', { defaultValue: 'Cancel' })} onClick={onCancel} />
           </div>
           {needle && schools.data && matches.length === 0 ? (
             <p className="medapp-meta mt-3">{t('tracker-add-none', { defaultValue: 'No school matches.' })}</p>

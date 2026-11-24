@@ -594,13 +594,15 @@ describe('lists and preferences', () => {
 
     const signedIn = String((await c.client.get('/rmh-medschool')).body);
     const signedOut = String((await anon.get('/rmh-medschool')).body);
-    // The program toggles are aria-pressed buttons; the member's preference narrows them, the public default does not.
+    // The programs are a multi-select of checkboxes (in the HTML while closed); the member's preference narrows them,
+    // the public default does not.
     const pressed = (html: string) =>
       Object.fromEntries(
-        [...html.matchAll(/aria-pressed="(true|false)"[^>]*>(?:<span[^>]*>)?(MD|MD-PhD|DO|DO-PhD)</g)].map((m) => [
-          m[2],
-          m[1],
-        ]),
+        [
+          ...html.matchAll(
+            /<input type="checkbox" class="medapp-check"([^>]*)\/><span>(MD|MD-PhD|DO|DO-PhD)<\/span>/g,
+          ),
+        ].map((m) => [m[2], String(m[1]!.includes('checked=""'))]),
       );
     expect(pressed(signedIn)).toEqual({ MD: 'false', 'MD-PhD': 'true', DO: 'false', 'DO-PhD': 'false' });
     expect(pressed(signedOut)).toEqual({ MD: 'true', 'MD-PhD': 'true', DO: 'true', 'DO-PhD': 'true' });

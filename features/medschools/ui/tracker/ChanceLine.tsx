@@ -78,19 +78,17 @@ export function ChanceLine({ chance }: { chance: ChanceDto | undefined }) {
   }
   if (lines.length === 0 && horizons.length === 0) return null;
   return (
-    <div className="medapp-subrule" data-chance={chance.status}>
+    <div className="medapp-aside" data-chance={chance.status}>
       {lead ? <p className="medapp-meta">{lead}</p> : null}
       {horizons.length > 0 ? (
-        <ul className="medapp-list mt-1">
+        <ul className="medapp-horizons">
           {horizons.map((h) => (
-            <li key={h} className="medapp-text">
-              {h}
-            </li>
+            <li key={h}>{h}</li>
           ))}
         </ul>
       ) : null}
       {lines.map((line) => (
-        <p key={line} className="medapp-meta mt-1">
+        <p key={line} className="medapp-meta">
           {line}
         </p>
       ))}

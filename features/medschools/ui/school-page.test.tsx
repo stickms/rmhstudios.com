@@ -374,7 +374,8 @@ describe('SchoolPage', () => {
     expect(html).not.toContain('Admit.org (primary)');
     expect(html).toContain('2025: cycle start estimated as June 1.');
     // Two cycles, drawn once per width (phone, mid, wide).
-    expect(html.match(/<path/g)).toHaveLength(2 * 3);
+    // (Icons, such as the source links' book, are not chart lines.)
+    expect(html.replace(/<svg[^>]*class="lucide[\s\S]*?<\/svg>/g, '').match(/<path/g)).toHaveLength(2 * 3);
   });
 
   const profile = {

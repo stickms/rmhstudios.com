@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ArrowRight, Shuffle } from 'lucide-react';
+import { MedButton } from '../controls/MedButton';
 import { MedTextarea } from '../controls/MedField';
 import { FOLLOWUP_NOTES_MAX } from '../../engine/followups';
 import { pickNextIndex, pickRandomIndex } from '../../engine/practice';
@@ -55,17 +57,19 @@ export function PracticePanel({
       className="medapp-section medapp-section--panel"
       aria-label={t('practice-title', { defaultValue: 'Practice' })}
     >
-      <div className="medapp-chips">
-        <button type="button" className="medapp-chip" onClick={() => choose(pickRandomIndex(questions.length, index))}>
+      <div className="medapp-actions">
+        <MedButton onClick={() => choose(pickRandomIndex(questions.length, index))}>
+          <Shuffle aria-hidden="true" className="size-4" />
           {t('practice-random', { defaultValue: 'Random question' })}
-        </button>
-        <button type="button" className="medapp-chip" onClick={() => choose(pickNextIndex(questions.length, index))}>
+        </MedButton>
+        <MedButton onClick={() => choose(pickNextIndex(questions.length, index))}>
           {t('practice-next', { defaultValue: 'Next question' })}
-        </button>
+          <ArrowRight aria-hidden="true" className="size-4 rtl:-scale-x-100" />
+        </MedButton>
       </div>
       {current ? (
         <div className="medapp-section">
-          <p className="medapp-h3" aria-live="polite">
+          <p className="medapp-h2" aria-live="polite">
             {current.text}
           </p>
           <PracticeTimer resetKey={current.key} />

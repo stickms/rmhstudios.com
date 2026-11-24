@@ -2,9 +2,11 @@ import { lazy, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Plus } from 'lucide-react';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { MedButton } from '../controls/MedButton';
 import { MedSelect } from '../controls/MedSelect';
+import { cn } from '@/lib/utils';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useSession } from '@/components/session/session-context';
 import { api } from '@/lib/contract/client';
@@ -51,10 +53,12 @@ function AddCycle({
   years,
   onAdd,
   onCancel,
+  className,
 }: {
   years: number[];
   onAdd: (year: number) => Promise<void>;
   onCancel: () => void;
+  className?: string;
 }) {
   const { t } = useTranslation('medschools');
   const refusal = useRefusalText();
@@ -65,7 +69,7 @@ function AddCycle({
 
   return (
     <form
-      className="medapp-form medapp-panel medapp-panel--padded"
+      className={cn('medapp-form', className)}
       onSubmit={(e) => {
         e.preventDefault();
         setBusy(true);
@@ -76,26 +80,31 @@ function AddCycle({
         });
       }}
     >
-      <MedSelect
-        aria-label={t('tracker-cycle-new-label', { defaultValue: 'Cycle to add' })}
-        value={String(year)}
-        disabled={busy}
-        onChange={(e) => setYear(Number(e.target.value))}
-      >
-        {years.map((y) => (
-          <option key={y} value={y}>
-            {cycleLabelIsolated(y)}
-          </option>
-        ))}
-      </MedSelect>
-      <MedButton type="submit" loading={busy}>
-        {t('tracker-cycle-create', { defaultValue: 'Create cycle' })}
-      </MedButton>
-      <MedButton type="button" variant="ghost" disabled={busy} onClick={onCancel}>
-        {t('tracker-cancel', { defaultValue: 'Cancel' })}
-      </MedButton>
+      <label className="medapp-fieldset">
+        <span className="medapp-label">{t('tracker-cycle-new-label', { defaultValue: 'Cycle to add' })}</span>
+        <MedSelect
+          aria-label={t('tracker-cycle-new-label', { defaultValue: 'Cycle to add' })}
+          value={String(year)}
+          disabled={busy}
+          onChange={(e) => setYear(Number(e.target.value))}
+        >
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {cycleLabelIsolated(y)}
+            </option>
+          ))}
+        </MedSelect>
+      </label>
+      <div className="medapp-actions">
+        <MedButton type="submit" loading={busy}>
+          {t('tracker-cycle-create', { defaultValue: 'Create cycle' })}
+        </MedButton>
+        <MedButton type="button" variant="tertiary" disabled={busy} onClick={onCancel}>
+          {t('tracker-cancel', { defaultValue: 'Cancel' })}
+        </MedButton>
+      </div>
       {error ? (
-        <p className="medapp-meta w-full" role="alert">
+        <p className="medapp-meta basis-full" role="alert">
           {error}
         </p>
       ) : null}
@@ -167,14 +176,20 @@ export function TrackerPage() {
 
   const body = (d: TrackerDto) => {
     const years = candidateCycles(new Date(), d.cycles);
-    const addCycleForm =
+    const addCycleForm = (className?: string) =>
       adding === 'cycle' ? (
         <AddCycle
+          {...(className ? { className } : {})}
           years={years}
           onAdd={async (year) => {
             await putCycle({ cycleYear: year, shareAnonymously: false });
             setAdding('none');
-            await navigate({ to: '/rmh-medschool/tracker', search: { cycle: year }, replace: true });
+            await navigate({
+              to: '/rmh-medschool/tracker',
+              search: { cycle: year },
+              replace: true,
+              resetScroll: false,
+            });
           }}
           onCancel={() => setAdding('none')}
         />
@@ -189,7 +204,12 @@ export function TrackerPage() {
             onClose={() => setAdding('none')}
             onSaved={(year) => {
               setAdding('none');
-              void navigate({ to: '/rmh-medschool/tracker', search: { cycle: year }, replace: true });
+              void navigate({
+                to: '/rmh-medschool/tracker',
+                search: { cycle: year },
+                replace: true,
+                resetScroll: false,
+              });
             }}
           />
         </ArrivalSuspense>
@@ -205,78 +225,90 @@ export function TrackerPage() {
               defaultValue: 'Add a cycle to start tracking schools and dates. Only you can see it.',
             })}
             action={
-              <>
-                <MedButton variant="primary" onClick={() => setAdding('cycle')}>
-                  {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
-                </MedButton>
-                <MedButton onClick={() => setAdding('import')}>
-                  {t('import-open', { defaultValue: 'Import from a file' })}
-                </MedButton>
-              </>
+              adding === 'cycle' ? (
+                addCycleForm('w-full text-start')
+              ) : (
+                <>
+                  <MedButton variant="primary" onClick={() => setAdding('cycle')}>
+                    {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
+                  </MedButton>
+                  <MedButton variant="tertiary" onClick={() => setAdding('import')}>
+                    {t('import-open', { defaultValue: 'Import from a file' })}
+                  </MedButton>
+                </>
+              )
             }
           />
-          {addCycleForm}
         </>
       );
     }
 
     return (
-      <>
-        <section className="medapp-panel medapp-panel--padded" aria-labelledby="med-cycle-heading">
-          <h2 id="med-cycle-heading" className="medapp-h3">
+      <div className="medapp-sections">
+        <section className="medapp-section medapp-section--panel" aria-labelledby="med-cycle-heading">
+          <h2 id="med-cycle-heading" className="medapp-h2">
             {t('tracker-cycle-heading', { defaultValue: 'This cycle' })}
           </h2>
-          <div className="medapp-form mt-3">
-            <MedSelect
-              aria-label={t('tracker-cycle-label', { defaultValue: 'Cycle' })}
-              containerClassName="min-w-36"
-              value={String(cycle.cycleYear)}
-              onChange={(e) =>
-                void navigate({
-                  to: '/rmh-medschool/tracker',
-                  search: { cycle: Number(e.target.value) },
-                  replace: true,
-                })
-              }
-            >
-              {d.cycles.map((y) => (
-                <option key={y} value={y}>
-                  {cycleLabelIsolated(y)}
-                </option>
-              ))}
-            </MedSelect>
-            {years.length > 0 ? (
-              <MedButton variant="ghost" onClick={() => setAdding('cycle')}>
-                {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
-              </MedButton>
-            ) : null}
-            <label className="medapp-fieldset ms-auto">
-              <span className="medapp-label">{t('tracker-home-state', { defaultValue: 'Home state' })}</span>
-              <MedSelect
-                aria-label={t('tracker-home-state', { defaultValue: 'Home state' })}
-                containerClassName="min-w-32"
-                value={cycle.homeState ?? ''}
-                onChange={(e) =>
-                  void putCycle({
-                    cycleYear: cycle.cycleYear,
-                    homeState: e.target.value || null,
-                    shareAnonymously: cycle.shareAnonymously,
-                  }).catch((err: unknown) => toast.error(refusal(err)))
-                }
-              >
-                <option value="">{t('tracker-home-state-none', { defaultValue: 'Not set' })}</option>
-                {HOME_STATE_CODES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </MedSelect>
+          <div className="medapp-fields">
+            <label className="medapp-fieldset">
+              <span className="medapp-label">{t('tracker-cycle-label', { defaultValue: 'Cycle' })}</span>
+              <span className="medapp-inline">
+                <MedSelect
+                  aria-label={t('tracker-cycle-label', { defaultValue: 'Cycle' })}
+                  value={String(cycle.cycleYear)}
+                  onChange={(e) =>
+                    void navigate({
+                      to: '/rmh-medschool/tracker',
+                      search: { cycle: Number(e.target.value) },
+                      replace: true,
+                      resetScroll: false,
+                    })
+                  }
+                >
+                  {d.cycles.map((y) => (
+                    <option key={y} value={y}>
+                      {cycleLabelIsolated(y)}
+                    </option>
+                  ))}
+                </MedSelect>
+                {years.length > 0 ? (
+                  <MedButton disabled={adding === 'cycle'} onClick={() => setAdding('cycle')}>
+                    <Plus aria-hidden="true" className="size-4" />
+                    {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
+                  </MedButton>
+                ) : null}
+              </span>
             </label>
+            <div className="medapp-fieldset">
+              <label className="medapp-fieldset">
+                <span className="medapp-label">{t('tracker-home-state', { defaultValue: 'Home state' })}</span>
+                <MedSelect
+                  aria-label={t('tracker-home-state', { defaultValue: 'Home state' })}
+                  value={cycle.homeState ?? ''}
+                  onChange={(e) =>
+                    void putCycle({
+                      cycleYear: cycle.cycleYear,
+                      homeState: e.target.value || null,
+                      shareAnonymously: cycle.shareAnonymously,
+                    }).catch((err: unknown) => toast.error(refusal(err)))
+                  }
+                >
+                  <option value="">{t('tracker-home-state-none', { defaultValue: 'Not set' })}</option>
+                  {HOME_STATE_CODES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </MedSelect>
+              </label>
+              <p className="medapp-meta">
+                {t('tracker-home-state-note', {
+                  defaultValue: 'Home state is used only for your own view. Never shared.',
+                })}
+              </p>
+            </div>
           </div>
-          <p className="medapp-meta mt-2">
-            {t('tracker-home-state-note', { defaultValue: 'Home state is used only for your own view. Never shared.' })}
-          </p>
-          {addCycleForm}
+          {addCycleForm('medapp-subrule')}
           <SharingRow
             checked={cycle.shareAnonymously}
             sharingAvailable={d.sharingAvailable}
@@ -291,80 +323,85 @@ export function TrackerPage() {
           />
         </section>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="medapp-h2">{t('tracker-schools-heading', { defaultValue: 'Schools' })}</h2>
-          <div className="medapp-chips">
-            <MedButton onClick={() => setAdding('import')}>
-              {t('import-open', { defaultValue: 'Import from a file' })}
-            </MedButton>
-            <MedButton variant="primary" onClick={() => setAdding('school')}>
-              {t('tracker-add-school', { defaultValue: 'Add school' })}
-            </MedButton>
-          </div>
-        </div>
-
-        {adding === 'school' ? (
-          <AddSchool
-            onAdd={async (school, program) => {
-              await api(addMedApplicationApi, {
-                body: { cycleYear: cycle.cycleYear, schoolSlug: school.slug, program },
-              });
-              await refresh();
-              setAdding('none');
-            }}
-            onCancel={() => setAdding('none')}
-          />
-        ) : null}
-
-        <div className="mt-3">
-          {cycle.applications.length === 0 ? (
-            <MedEmpty
-              title={t('tracker-no-schools-title', { defaultValue: 'No schools yet' })}
-              description={t('tracker-no-schools-body', {
-                defaultValue: 'Add the schools you applied to, then a date for each step as it happens.',
-              })}
-            />
-          ) : (
-            <div className="medapp-panel">
-              <ul className="medapp-rows">
-                {cycle.applications.map((app) => (
-                  <ApplicationRow
-                    key={app.id}
-                    app={app}
-                    cycleYear={cycle.cycleYear}
-                    sharing={cycle.shareAnonymously}
-                    chance={chances.data?.chances.find((c) => c.applicationId === app.id)}
-                    onSaveMilestone={async (type: MilestoneType, date) => {
-                      await api(putMedMilestoneApi, { params: { id: app.id, type }, body: { date } });
-                      await refresh();
-                    }}
-                    onRemoveMilestone={async (type: MilestoneType) => {
-                      await api(deleteMedMilestoneApi, { params: { id: app.id, type } });
-                      await refresh();
-                    }}
-                    onSaveNotes={async (notes) => {
-                      await api(patchMedApplicationApi, { params: { id: app.id }, body: { notes } });
-                      await refresh();
-                    }}
-                    onRemove={async () => {
-                      await api(deleteMedApplicationApi, { params: { id: app.id } });
-                      await refresh();
-                    }}
-                  />
-                ))}
-              </ul>
+        <section className="medapp-section" aria-labelledby="med-schools-heading">
+          <div className="medapp-head flex-wrap">
+            <h2 id="med-schools-heading" className="medapp-h2">
+              {t('tracker-schools-heading', { defaultValue: 'Schools' })}
+            </h2>
+            <div className="medapp-actions">
+              <MedButton variant="tertiary" onClick={() => setAdding('import')}>
+                {t('import-open', { defaultValue: 'Import from a file' })}
+              </MedButton>
+              <MedButton variant="primary" onClick={() => setAdding('school')}>
+                <Plus aria-hidden="true" className="size-4" />
+                {t('tracker-add-school', { defaultValue: 'Add school' })}
+              </MedButton>
             </div>
-          )}
-        </div>
+          </div>
+
+          {adding === 'school' ? (
+            <AddSchool
+              onAdd={async (school, program) => {
+                await api(addMedApplicationApi, {
+                  body: { cycleYear: cycle.cycleYear, schoolSlug: school.slug, program },
+                });
+                await refresh();
+                setAdding('none');
+              }}
+              onCancel={() => setAdding('none')}
+            />
+          ) : null}
+
+          <div>
+            {cycle.applications.length === 0 ? (
+              <MedEmpty
+                title={t('tracker-no-schools-title', { defaultValue: 'No schools yet' })}
+                description={t('tracker-no-schools-body', {
+                  defaultValue: 'Add the schools you applied to, then a date for each step as it happens.',
+                })}
+              />
+            ) : (
+              <div className="medapp-panel">
+                <ul className="medapp-rows">
+                  {cycle.applications.map((app) => (
+                    <ApplicationRow
+                      key={app.id}
+                      app={app}
+                      cycleYear={cycle.cycleYear}
+                      sharing={cycle.shareAnonymously}
+                      chance={chances.data?.chances.find((c) => c.applicationId === app.id)}
+                      onSaveMilestone={async (type: MilestoneType, date) => {
+                        await api(putMedMilestoneApi, { params: { id: app.id, type }, body: { date } });
+                        await refresh();
+                      }}
+                      onRemoveMilestone={async (type: MilestoneType) => {
+                        await api(deleteMedMilestoneApi, { params: { id: app.id, type } });
+                        await refresh();
+                      }}
+                      onSaveNotes={async (notes) => {
+                        await api(patchMedApplicationApi, { params: { id: app.id }, body: { notes } });
+                        await refresh();
+                      }}
+                      onRemove={async () => {
+                        await api(deleteMedApplicationApi, { params: { id: app.id } });
+                        await refresh();
+                      }}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </section>
         {cycle.applications.length > 0 ? <Timeline applications={cycle.applications} /> : null}
         {/* the overlap reads the current cycle's schools, so it is offered on that cycle only */}
         {cycle.applications.length > 0 && cycle.cycleYear === cycleYearOf(new Date(), 'SECONDARY') ? (
-          <div className="medapp-panel mt-6">
+          <div className="medapp-panel">
             <RollingSection source={{ source: 'tracker' }} />
             <OverlapSection source={{ source: 'tracker' }} />
           </div>
         ) : null}
-      </>
+      </div>
     );
   };
 
@@ -377,7 +414,9 @@ export function TrackerPage() {
           onRetry={() => void query.refetch()}
         />
       ) : (
-        <SkeletonSwap ready={!!data}>{data ? body(data) : null}</SkeletonSwap>
+        <SkeletonSwap ready={!!data} stale={query.isPlaceholderData}>
+          {data ? body(data) : null}
+        </SkeletonSwap>
       )}
     </>
   );

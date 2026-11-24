@@ -98,6 +98,11 @@ export interface MedSchoolListItemDto {
   city: string;
   state: string;
   reported: { source: MedSourceId; count: number } | null;
+  /**
+   * The school's newest public event this cycle (the live feed's rules: Admit and SDN only, never RMH; the list's
+   * program set), or null. `occurredAt` is to the minute; `dayOnly` when the source gave a day, not a time.
+   */
+  latest: { eventType: MedEventTypeId; occurredAt: string; dayOnly: boolean } | null;
 }
 
 export interface SourceLinkDto {
@@ -901,6 +906,8 @@ export interface MedSchoolFactDto {
   sourceLabel: string;
   /** YYYY-MM-DD, the day the report was read. */
   checkedOn: string;
+  /** The report PDF's page the fact is printed on (the source link opens it there); null for a curriculum fact. */
+  page: number | null;
 }
 
 export interface MedSchoolFactsRes {

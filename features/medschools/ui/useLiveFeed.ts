@@ -19,16 +19,26 @@ export function useLiveFeed(filters: LiveFilters, opts: { enabled?: boolean } = 
     refetchIntervalInBackground: false,
   });
   const data = query.data;
+  // A filter change keeps the old rows on screen (dimmed by the caller through `stale`) until the new filter's first
+  // page lands, then replaces them: the list never blanks and the page never jumps.
+  const key = JSON.stringify(filters);
+  const stale = query.isPlaceholderData;
 
   // Head: the newest page, which every refetch merges into by id.
   const [head, setHead] = useState<LiveEventDto[]>(() => data?.events ?? []);
   const [seen, setSeen] = useState(data?.events);
+  const [headKey, setHeadKey] = useState(key);
   // Tail: older pages appended after the head. `cursor` undefined means the head's own nextCursor applies.
   const [tail, setTail] = useState<{ rows: LiveEventDto[]; cursor: string | null | undefined }>({
     rows: [],
     cursor: undefined,
   });
-  if (data && data.events !== seen) {
+  if (data && !stale && headKey !== key) {
+    setHeadKey(key);
+    setSeen(data.events);
+    setHead(data.events);
+    setTail({ rows: [], cursor: undefined });
+  } else if (data && !stale && data.events !== seen) {
     setSeen(data.events);
     const merged = mergeLiveHead(head, data.events);
     setHead(merged.rows);
@@ -38,7 +48,7 @@ export function useLiveFeed(filters: LiveFilters, opts: { enabled?: boolean } = 
   }
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [olderFailed, setOlderFailed] = useState(false);
-  const cursor = tail.cursor !== undefined ? tail.cursor : (data?.nextCursor ?? null);
+  const cursor = stale ? null : tail.cursor !== undefined ? tail.cursor : (data?.nextCursor ?? null);
 
   const headIds = new Set(head.map((r) => r.id));
   const rows = [...head, ...tail.rows.filter((r) => !headIds.has(r.id))];
@@ -58,5 +68,5 @@ export function useLiveFeed(filters: LiveFilters, opts: { enabled?: boolean } = 
     }
   };
 
-  return { query, data, rows, arriving, cursor, loadingOlder, olderFailed, showOlder };
+  return { query, data, rows, arriving, cursor, loadingOlder, olderFailed, showOlder, stale };
 }

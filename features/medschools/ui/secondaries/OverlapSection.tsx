@@ -30,7 +30,7 @@ export function OverlapSection({
     <details className="medapp-disclosure" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>{t('overlap-title', { defaultValue: 'Essay overlap' })}</summary>
       {open ? (
-        <div className="flex flex-col gap-3 pb-4 pt-1">
+        <div className="medapp-disclosure__body">
           <p className="medapp-meta">
             {t('overlap-intro', {
               defaultValue: 'The secondary prompts of these schools, grouped by theme, so one essay can serve several.',
@@ -39,7 +39,7 @@ export function OverlapSection({
           {query.isError ? (
             <p className="medapp-meta">
               {t('overlap-load-failed', { defaultValue: 'Could not load the overlap.' })}{' '}
-              <MedButton variant="ghost" onClick={() => void query.refetch()}>
+              <MedButton variant="tertiary" onClick={() => void query.refetch()}>
                 {t('retry', { defaultValue: 'Try again' })}
               </MedButton>
             </p>

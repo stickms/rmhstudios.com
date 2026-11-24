@@ -126,7 +126,7 @@ export function AskForm({
           {t('ask-submit', { defaultValue: 'Ask' })}
         </MedButton>
         {pending ? (
-          <MedButton type="button" variant="ghost" onClick={onCancel}>
+          <MedButton type="button" variant="tertiary" onClick={onCancel}>
             {t('ask-cancel', { defaultValue: 'Cancel' })}
           </MedButton>
         ) : null}

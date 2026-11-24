@@ -72,6 +72,7 @@ export function ActivityTab({
   return (
     <SkeletonSwap
       ready={!!data}
+      stale={query.isPlaceholderData}
       skeleton={
         <div className="medapp-tab">
           <ChartSkeleton />

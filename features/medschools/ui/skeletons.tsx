@@ -26,18 +26,28 @@ export function ChartSkeleton() {
 
 /**
  * Shows `skeleton` until `ready`, then the content, which fades in only when the skeleton was seen (M9). Content that
- * is ready on first render (server rendered, cached) gets no fade.
+ * is ready on first render (server rendered, cached) gets no fade. A changed filter never brings the skeleton back: the
+ * query keeps its previous answer (`placeholderData`) and the caller passes `stale` to dim it until the new one lands.
  */
 export function SkeletonSwap({
   ready,
   skeleton = <ListSkeleton />,
+  stale = false,
   children,
 }: {
   ready: boolean;
   /** Defaults to the list-row skeleton. */
   skeleton?: ReactNode;
+  /** The content is the previous answer while a changed filter loads: dimmed and busy, never replaced by a skeleton. */
+  stale?: boolean;
   children: ReactNode;
 }) {
   const arrival = useArrival(ready);
-  return ready ? <div className={cn(arrival)}>{children}</div> : <>{skeleton}</>;
+  return ready ? (
+    <div className={cn(arrival, 'medapp-swap', stale && 'medapp-stale')} aria-busy={stale || undefined}>
+      {children}
+    </div>
+  ) : (
+    <>{skeleton}</>
+  );
 }

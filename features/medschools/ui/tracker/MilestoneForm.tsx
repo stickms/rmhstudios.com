@@ -53,11 +53,11 @@ export function MilestoneForm({
 
   if (types.length === 0) {
     return (
-      <div className="medapp-chips mt-3 items-center">
+      <div className="medapp-actions medapp-subrule">
         <p className="medapp-meta">
           {t('tracker-milestones-all-set', { defaultValue: 'Every milestone is already set for this school.' })}
         </p>
-        <MedButton type="button" variant="ghost" onClick={onCancel}>
+        <MedButton type="button" variant="tertiary" onClick={onCancel}>
           {t('tracker-cancel', { defaultValue: 'Cancel' })}
         </MedButton>
       </div>
@@ -66,7 +66,7 @@ export function MilestoneForm({
 
   return (
     <form
-      className="medapp-form mt-3"
+      className="medapp-form medapp-subrule"
       onSubmit={(e) => {
         e.preventDefault();
         if (date) void run(async () => onSave(type, date));
@@ -99,25 +99,27 @@ export function MilestoneForm({
           onChange={(e) => setDate(e.target.value)}
         />
       </label>
-      <MedButton type="submit" loading={busy} disabled={!date}>
-        {t('tracker-save', { defaultValue: 'Save' })}
-      </MedButton>
-      {onRemove ? (
-        <MedButton
-          type="button"
-          variant="danger"
-          disabled={busy}
-          aria-label={t('tracker-milestone-remove-label', { defaultValue: 'Remove milestone' })}
-          onClick={() => void run(onRemove)}
-        >
-          {t('tracker-milestone-remove', { defaultValue: 'Remove' })}
+      <div className="medapp-actions">
+        <MedButton type="submit" loading={busy} disabled={!date}>
+          {t('tracker-save', { defaultValue: 'Save' })}
         </MedButton>
-      ) : null}
-      <MedButton type="button" variant="ghost" disabled={busy} onClick={onCancel}>
-        {t('tracker-cancel', { defaultValue: 'Cancel' })}
-      </MedButton>
+        {onRemove ? (
+          <MedButton
+            type="button"
+            variant="danger"
+            disabled={busy}
+            aria-label={t('tracker-milestone-remove-label', { defaultValue: 'Remove milestone' })}
+            onClick={() => void run(onRemove)}
+          >
+            {t('tracker-milestone-remove', { defaultValue: 'Remove' })}
+          </MedButton>
+        ) : null}
+        <MedButton type="button" variant="tertiary" disabled={busy} onClick={onCancel}>
+          {t('tracker-cancel', { defaultValue: 'Cancel' })}
+        </MedButton>
+      </div>
       {error ? (
-        <p className="medapp-meta w-full" role="alert">
+        <p className="medapp-meta basis-full" role="alert">
           {error}
         </p>
       ) : null}

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { textFragmentUrl } from '../engine/text-fragment';
+import { SourceRef } from './SourceRef';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { cycleLabelIsolated } from '../engine/cycle';
 import type {
@@ -56,7 +58,7 @@ export function SecondariesTab({
   return (
     <div className="medapp-tab">
       {controls}
-      <SkeletonSwap ready={!!data} skeleton={<ListSkeleton rows={6} />}>
+      <SkeletonSwap ready={!!data} stale={query.isPlaceholderData} skeleton={<ListSkeleton rows={6} />}>
         {data ? <Loaded data={data} detail={detail} /> : null}
       </SkeletonSwap>
     </div>
@@ -72,7 +74,14 @@ function Loaded({ data, detail }: { data: MedSchoolSecondariesRes; detail: MedSc
     <div className="medapp-tab">
       {anyPrompts ? (
         data.groups.map((g) => (
-          <Group key={g.program} group={g} detail={detail} labels={labels} schoolName={schoolName} />
+          <Group
+            key={g.program}
+            group={g}
+            detail={detail}
+            labels={labels}
+            schoolName={schoolName}
+            sources={<SourceRefs data={data} labels={labels} schoolName={schoolName} />}
+          />
         ))
       ) : (
         <MedEmpty
@@ -81,7 +90,7 @@ function Loaded({ data, detail }: { data: MedSchoolSecondariesRes; detail: MedSc
       )}
       <Admissions policies={data.admissions} detail={detail} labels={labels} />
       <Turnaround rows={data.turnaround} detail={detail} labels={labels} />
-      <Sources data={data} labels={labels} schoolName={schoolName} />
+      {anyPrompts ? null : <Sources data={data} labels={labels} schoolName={schoolName} />}
       {anyPrompts ? (
         <p className="medapp-meta">
           {t('secondaries-cycle-note', {
@@ -100,11 +109,13 @@ function Group({
   detail,
   labels,
   schoolName,
+  sources,
 }: {
   group: MedSecondaryGroupDto;
   detail: MedSchoolDetailDto;
   labels: SecondaryLabels;
   schoolName: string;
+  sources: ReactNode;
 }) {
   const { t } = useTranslation('medschools');
   const { programFilterLabel } = useMedLabels();
@@ -113,14 +124,17 @@ function Group({
   const showStatus = !notYet && group.prompts.some((p) => p.status !== null);
   return (
     <section className="medapp-section medapp-section--panel" aria-labelledby={`secondaries-group-${group.program}`}>
-      <h2 id={`secondaries-group-${group.program}`} className="medapp-h2">
-        {group.program === 'REG'
-          ? t('secondaries-group-reg', { defaultValue: 'Regular prompts' })
-          : t('secondaries-group-phd', {
-              defaultValue: '{{program}} prompts',
-              program: programFilterLabel('PHD', detail.school.degree),
-            })}
-      </h2>
+      <div className="medapp-srcrow">
+        <h2 id={`secondaries-group-${group.program}`} className="medapp-h2">
+          {group.program === 'REG'
+            ? t('secondaries-group-reg', { defaultValue: 'Regular prompts' })
+            : t('secondaries-group-phd', {
+                defaultValue: '{{program}} prompts',
+                program: programFilterLabel('PHD', detail.school.degree),
+              })}
+        </h2>
+        {sources}
+      </div>
       {group.program === 'PHD' ? (
         <p className="medapp-meta">
           {t('secondaries-phd-note', {
@@ -171,22 +185,29 @@ function Admissions({
       <ul className="medapp-list">
         {policies.map((p) => (
           <li key={p.program}>
-            <p className="medapp-text">
-              {policies.length > 1 ? `${programFilterLabel(p.program, detail.school.degree)}: ` : ''}
-              {p.rolling
-                ? t('admissions-rolling', { defaultValue: 'Rolling admissions' })
-                : t('admissions-set-dates', { defaultValue: 'Decisions on set dates' })}
-            </p>
-            <p className="medapp-meta">{t('admissions-quote', { defaultValue: '“{{text}}”', text: p.evidence })}</p>
-            <p className="medapp-meta">
-              <a href={p.url} target="_blank" rel="noopener noreferrer" className="medapp-link">
-                {t('admissions-source', {
+            <div className="medapp-srcrow">
+              <p className="medapp-text font-medium">
+                {policies.length > 1 ? `${programFilterLabel(p.program, detail.school.degree)}: ` : ''}
+                {p.rolling
+                  ? t('admissions-rolling', { defaultValue: 'Rolling admissions' })
+                  : t('admissions-set-dates', { defaultValue: 'Decisions on set dates' })}
+              </p>
+              <SourceRef
+                name={t('admissions-source-name', {
+                  defaultValue: '{{school}} admissions page',
+                  school: detail.school.shortName,
+                })}
+                detail={t('source-checked', { defaultValue: 'Checked {{date}}', date: labels.date(p.checkedOn) })}
+                quote={p.evidence}
+                href={textFragmentUrl(p.url, p.evidence)}
+                attribution={t('admissions-source', {
                   defaultValue: 'Source: {{school}} admissions page, checked {{date}}',
                   school: detail.school.shortName,
                   date: labels.date(p.checkedOn),
                 })}
-              </a>
-            </p>
+              />
+            </div>
+            <p className="medapp-meta">{t('admissions-quote', { defaultValue: '“{{text}}”', text: p.evidence })}</p>
           </li>
         ))}
       </ul>
@@ -240,6 +261,67 @@ function Turnaround({
   );
 }
 
+function sourceText(
+  t: ReturnType<typeof useTranslation>['t'],
+  s: MedSchoolSecondariesRes['sources'][number],
+  labels: SecondaryLabels,
+  schoolName: string,
+): string {
+  return s.status === 'EMPTY'
+    ? t('secondaries-source-empty', {
+        defaultValue: 'Source: {{name}}, checked {{date}}, nothing found',
+        name: labels.sourceName(s.source, schoolName),
+        date: s.checkedAt ? labels.date(s.checkedAt) : '',
+      })
+    : t('secondaries-source-line', {
+        defaultValue: 'Source: {{name}}, checked {{date}}',
+        name: labels.sourceName(s.source, schoolName),
+        date: s.checkedAt ? labels.date(s.checkedAt) : '',
+      });
+}
+
+/** The school's prompt sources as icons at the end of a heading row; a source with no page is attribution text only. */
+function SourceRefs({
+  data,
+  labels,
+  schoolName,
+}: {
+  data: MedSchoolSecondariesRes;
+  labels: SecondaryLabels;
+  schoolName: string;
+}) {
+  const { t } = useTranslation('medschools');
+  if (data.sources.length === 0) return null;
+  return (
+    <span className="medapp-srcrefs">
+      {data.sources.map((s) =>
+        s.url ? (
+          <SourceRef
+            key={s.source}
+            name={labels.sourceName(s.source, schoolName)}
+            detail={
+              s.checkedAt
+                ? s.status === 'EMPTY'
+                  ? t('source-checked-empty', {
+                      defaultValue: 'Checked {{date}}, nothing found',
+                      date: labels.date(s.checkedAt),
+                    })
+                  : t('source-checked', { defaultValue: 'Checked {{date}}', date: labels.date(s.checkedAt) })
+                : undefined
+            }
+            href={s.url}
+            attribution={sourceText(t, s, labels, schoolName)}
+          />
+        ) : (
+          <span key={s.source} className="sr-only">
+            {sourceText(t, s, labels, schoolName)}
+          </span>
+        ),
+      )}
+    </span>
+  );
+}
+
 function Sources({
   data,
   labels,
@@ -252,32 +334,9 @@ function Sources({
   const { t } = useTranslation('medschools');
   if (data.sources.length === 0) return null;
   return (
-    <ul className="medapp-list medapp-list--plain">
-      {data.sources.map((s) => {
-        const text =
-          s.status === 'EMPTY'
-            ? t('secondaries-source-empty', {
-                defaultValue: 'Source: {{name}}, checked {{date}}, nothing found',
-                name: labels.sourceName(s.source, schoolName),
-                date: s.checkedAt ? labels.date(s.checkedAt) : '',
-              })
-            : t('secondaries-source-line', {
-                defaultValue: 'Source: {{name}}, checked {{date}}',
-                name: labels.sourceName(s.source, schoolName),
-                date: s.checkedAt ? labels.date(s.checkedAt) : '',
-              });
-        return (
-          <li key={s.source} className="medapp-meta">
-            {s.url ? (
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="medapp-link">
-                {text}
-              </a>
-            ) : (
-              text
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <div className="medapp-srcrow">
+      <span className="medapp-meta">{t('sources-label', { defaultValue: 'Sources' })}</span>
+      <SourceRefs data={data} labels={labels} schoolName={schoolName} />
+    </div>
   );
 }

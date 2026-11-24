@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Plus } from 'lucide-react';
 import { MedButton } from '../controls/MedButton';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { usePrompt } from '@/components/ui/prompt-dialog';
@@ -185,20 +186,23 @@ export function ListsPage() {
 
   return (
     <>
-      {head}
-      <div className="mb-4">
-        <MedButton variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
-          {t('lists-new', { defaultValue: 'New list' })}
-        </MedButton>
-      </div>
+      <PageHead
+        title={t('lists-title', { defaultValue: 'My lists' })}
+        actions={
+          <MedButton variant="primary" disabled={all.length >= LIMITS.lists} onClick={() => void newList()}>
+            <Plus aria-hidden="true" className="size-4" />
+            {t('lists-new', { defaultValue: 'New list' })}
+          </MedButton>
+        }
+      />
       <SkeletonSwap ready={!!lists.data}>
         {stale ? (
-          <p className="medapp-meta mb-3" role="status">
+          <p className="medapp-meta mb-4" role="status">
             {t('lists-stale', { defaultValue: 'Your lists changed in another tab. Showing the current order.' })}
           </p>
         ) : null}
         {trackerNote ? (
-          <p className="medapp-meta mb-3" role="status">
+          <p className="medapp-meta mb-4" role="status">
             {trackerNote}
           </p>
         ) : null}
@@ -210,7 +214,7 @@ export function ListsPage() {
             })}
           />
         ) : (
-          <div className="medapp-tab">
+          <div className="medapp-sections">
             {all.map((list, i) => (
               <ListSection
                 key={list.id}
@@ -238,9 +242,7 @@ export function ListsPage() {
         )}
       </SkeletonSwap>
 
-      <div className="mt-10">
-        <PrefsSection prefs={prefs.data ?? DEFAULT_VIEW_PREFS} busy={savingPrefs} onChange={(d) => void savePrefs(d)} />
-      </div>
+      <PrefsSection prefs={prefs.data ?? DEFAULT_VIEW_PREFS} busy={savingPrefs} onChange={(d) => void savePrefs(d)} />
     </>
   );
 }

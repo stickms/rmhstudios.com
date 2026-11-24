@@ -59,10 +59,29 @@ async function seedSchoolFacts(): Promise<void> {
   );
 }
 
+/**
+ * An RMH event of the fixture school, later than every public one: the index's "newest status" must never show it (an
+ * RMH event is never public one by one). Seeded before any request, so the response micro-cache cannot hold a list
+ * read before it existed.
+ */
+async function seedRmhLatest(): Promise<void> {
+  await db().query(
+    `insert into med_cycle_event (id, "schoolId", "cycleYear", program, "eventType", "occurredAt", source, "dedupeHash")
+     select 'it-medschools-rmh-latest', e."schoolId", e."cycleYear", 'REG', 'WAITLIST',
+            date_trunc('day', now()) + interval '23 hours', 'RMH', 'fixture-event-it-rmh-latest'
+     from med_cycle_event e join med_school s on s.id = e."schoolId"
+     where s.slug = $1 and e.source = 'ADMIT'
+     limit 1
+     on conflict do nothing`,
+    [SLUG],
+  );
+}
+
 beforeAll(async () => {
   await seedMedSchoolsFixture();
   await seedSecondariesFixture();
   await seedSchoolFacts();
+  await seedRmhLatest();
   await db().query(
     `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
      values ($1, $1, 'Inactive Fixture', 'Inactive', 'MD', 'Durham', 'NC', false, now())`,
@@ -161,6 +180,22 @@ describe('RMH Med Schools, public and anonymous', () => {
       const res = await anon.get(`/api/medschools/schools?${bad}`);
       expect(res.status, bad).toBeLessThan(500);
     }
+  });
+
+  it("lists each school's newest public status: pinned keys, the live feed's sources only, the list's programs", async () => {
+    type Row = { slug: string; latest: { eventType: string; occurredAt: string; dayOnly: boolean } | null };
+    const row = async (query = '') =>
+      ((await anon.get(`/api/medschools/schools${query}`)).body.schools as Row[]).find((r) => r.slug === SLUG)!;
+    const all = await row();
+    expect(Object.keys(all.latest!).sort()).toEqual(['dayOnly', 'eventType', 'occurredAt']);
+    // The newest is the RMH waitlist at 23:00 today, which is never public: the newest public one is today's 01:00
+    // Admit acceptance (PHD), one of three tied at that minute.
+    expect(all.latest!.eventType).not.toBe('WAITLIST');
+    expect(all.latest!.eventType).toBe('ACCEPTANCE');
+    expect(all.latest!.occurredAt).toMatch(/T01:00:00\.000Z$/);
+    expect(all.latest!.dayOnly).toBe(false);
+    // MD only (REG): the PHD acceptance is out, an MD interview is the newest.
+    expect((await row('?programs=md')).latest!.eventType).toBe('INTERVIEW');
   });
 
   it('answers hostile input with a 4xx or an empty list, never a 500', async () => {
@@ -517,6 +552,7 @@ const FACT_KEYS = [
   'kind',
   'note',
   'num',
+  'page',
   'printed',
   'report',
   'reportId',

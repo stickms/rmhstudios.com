@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MedButton } from '../controls/MedButton';
@@ -15,11 +15,11 @@ import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { LIMITS, type MilestoneType } from '../../engine/tracker';
 import type { ChanceDto, TrackerApplicationDto } from '../../medschools.contract';
 import { useMedLabels } from '../labels';
-import { StatusIcon } from '../status/StatusIcon';
 import { StatusText } from '../status/StatusText';
 import { statusOfMilestone } from '../status/status';
 import { ChanceLine } from './ChanceLine';
 import { MilestoneForm } from './MilestoneForm';
+import { StepIcon } from './StepIcon';
 import { SilenceLine } from './SilenceLine';
 
 type Panel =
@@ -105,12 +105,12 @@ export function ApplicationRow({
               to="/rmh-medschool/$slug"
               params={{ slug: school.slug }}
               search={SCHOOL_SEARCH_DEFAULTS}
-              className="medapp-text medapp-link"
+              className="medapp-name"
             >
               {school.name}
             </Link>
           ) : (
-            <span className="medapp-text">{school.name}</span>
+            <span className="medapp-name">{school.name}</span>
           )}
           <p className="medapp-meta">
             {t('tracker-school-meta', {
@@ -122,9 +122,6 @@ export function ApplicationRow({
           </p>
         </div>
         <div className="medapp-item__actions">
-          <MedButton variant="ghost" onClick={() => setPanel({ kind: 'milestone' })}>
-            {t('tracker-add-milestone', { defaultValue: 'Add milestone' })}
-          </MedButton>
           <MedIconButton
             ref={triggerRef}
             icon={MoreHorizontal}
@@ -138,8 +135,17 @@ export function ApplicationRow({
             onClose={() => setMenuOpen(false)}
             anchorRef={triggerRef}
             label={t('tracker-row-menu', { defaultValue: 'School actions' })}
-            className="w-44"
+            className="w-48"
           >
+            <MenuItem
+              icon={Plus}
+              onSelect={() => {
+                setMenuOpen(false);
+                setPanel({ kind: 'milestone' });
+              }}
+            >
+              {t('tracker-add-milestone', { defaultValue: 'Add milestone' })}
+            </MenuItem>
             <MenuItem
               icon={Pencil}
               onSelect={() => {
@@ -165,42 +171,64 @@ export function ApplicationRow({
       </div>
 
       {app.milestones.length > 0 ? (
-        <ul className="medapp-chips mt-2">
+        <ul className="medapp-steps">
           {app.milestones.map((m) => {
             const label = t('tracker-milestone-line', {
               defaultValue: '{{type}}, {{date}}',
               type: milestoneLabel(m.type),
               date: formatUtcDay(m.date, locale),
             });
-            // A decision or update is drawn in its status colour with its icon; the words always print.
+            // Every step has the same shape: its disc, its words (in the status hue when it has one), the date at the end.
             const status = statusOfMilestone(m.type);
             return (
               <li key={m.type}>
-                <MedButton
-                  variant="ghost"
-                  size="xs"
+                <button
+                  type="button"
+                  className="medapp-step"
                   aria-label={t('tracker-milestone-edit', { defaultValue: 'Edit {{milestone}}', milestone: label })}
                   onClick={() => setPanel({ kind: 'milestone', editing: m })}
                 >
-                  {status ? (
-                    <>
-                      <StatusIcon status={status} size="sm" />
-                      <StatusText status={status}>{label}</StatusText>
-                    </>
-                  ) : (
-                    label
-                  )}
-                </MedButton>
+                  <StepIcon type={m.type} />
+                  <span className="medapp-step__label">
+                    {status ? (
+                      <StatusText status={status}>{milestoneLabel(m.type)}</StatusText>
+                    ) : (
+                      milestoneLabel(m.type)
+                    )}
+                  </span>
+                  <time dateTime={m.date} className="medapp-date">
+                    {formatUtcDay(m.date, locale)}
+                  </time>
+                </button>
               </li>
             );
           })}
         </ul>
-      ) : null}
+      ) : (
+        <div className="mt-2">
+          <MedButton variant="tertiary" className="-ms-3" onClick={() => setPanel({ kind: 'milestone' })}>
+            <Plus aria-hidden="true" className="size-4" />
+            {t('tracker-add-milestone', { defaultValue: 'Add milestone' })}
+          </MedButton>
+        </div>
+      )}
 
       <SilenceLine chance={chance} />
       <ChanceLine chance={chance} />
 
-      {app.notes && panel.kind !== 'notes' ? <p className="medapp-meta mt-2 whitespace-pre-wrap">{app.notes}</p> : null}
+      {app.notes && panel.kind !== 'notes' ? (
+        <button
+          type="button"
+          className="medapp-notebtn"
+          onClick={() => {
+            setNotes(app.notes ?? '');
+            setPanel({ kind: 'notes' });
+          }}
+        >
+          <span className="sr-only">{`${t('tracker-edit-notes', { defaultValue: 'Edit notes' })} `}</span>
+          {app.notes}
+        </button>
+      ) : null}
 
       {panel.kind === 'milestone' ? (
         <MilestoneForm
@@ -226,7 +254,7 @@ export function ApplicationRow({
 
       {panel.kind === 'notes' ? (
         <form
-          className="medapp-stack mt-3"
+          className="medapp-stack medapp-subrule"
           onSubmit={(e) => {
             e.preventDefault();
             void guarded(async () => {
@@ -243,11 +271,11 @@ export function ApplicationRow({
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
           />
-          <div className="medapp-chips">
+          <div className="medapp-actions">
             <MedButton type="submit" loading={busy}>
               {t('tracker-save', { defaultValue: 'Save' })}
             </MedButton>
-            <MedButton type="button" variant="ghost" disabled={busy} onClick={close}>
+            <MedButton type="button" variant="tertiary" disabled={busy} onClick={close}>
               {t('tracker-cancel', { defaultValue: 'Cancel' })}
             </MedButton>
           </div>

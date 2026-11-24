@@ -276,7 +276,8 @@ describe('TrackerPage timeline and silence check', () => {
     expect(html).toContain('>Interview invite</span>');
     expect(html).toContain('· Duke');
     expect(html).toContain('34 days after Application complete');
-    expect(html.indexOf('Application complete · Duke')).toBeLessThan(html.indexOf('>Interview invite</span>'));
+    const timeline = html.slice(html.indexOf('data-timeline'));
+    expect(timeline.indexOf('Application complete · Duke')).toBeLessThan(timeline.indexOf('>Interview invite</span>'));
   });
 
   it('a Matriculating milestone is purple in the tracker row and the timeline, with its words', () => {

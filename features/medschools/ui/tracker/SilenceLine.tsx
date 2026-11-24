@@ -45,10 +45,10 @@ export function SilenceLine({ chance }: { chance: ChanceDto | undefined }) {
   }
 
   return (
-    <div className="medapp-subrule" data-silence={s.kind === 'silent' ? s.position : s.kind}>
-      <p className="medapp-text">{waited}</p>
+    <div className="medapp-aside" data-silence={s.kind === 'silent' ? s.position : s.kind}>
+      <p className="medapp-text font-medium">{waited}</p>
       {lines.map((line) => (
-        <p key={line} className="medapp-meta mt-1">
+        <p key={line} className="medapp-meta">
           {line}
         </p>
       ))}
