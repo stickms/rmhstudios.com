@@ -419,17 +419,15 @@ export function Legend({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Card                                                                       */
+/* Chart frame                                                                */
 /* -------------------------------------------------------------------------- */
 
 /**
  * The frame one chart sits in: a heading, an optional control row, the plot, and
  * the readout layer.
  *
- * `.surface-card` rather than `.surface-panel` — these are repeated content (there
- * are a dozen of them), and L2 has no backdrop blur, which is what keeps the
- * panel inside the ≤8-blurred-surfaces budget no matter how many charts get
- * added to it.
+ * A rule-set section, not a box: the frame sits on the page under a 1px rule (S7).
+ * Nothing on it blurs, so a dozen charts cost nothing against the blur budget.
  */
 export function ChartCard({
   title,
@@ -447,7 +445,7 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn('surface-card flex flex-col gap-3 rounded-site p-2.5 sm:p-4', className)}>
+    <section className={cn('rule-section flex flex-col gap-3', className)}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 className="font-display text-sm font-semibold text-site-text">{title}</h3>
@@ -492,7 +490,7 @@ export function ChartToggle({
       title={title}
       onClick={() => onPressedChange(!pressed)}
       className={cn(
-        'surface-card surface-press flex min-h-8 items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
+        'surface-press flex min-h-8 items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
         pressed ? 'border-site-accent bg-site-accent text-site-accent-fg' : 'text-site-text-muted hover:text-site-text',
       )}
     >

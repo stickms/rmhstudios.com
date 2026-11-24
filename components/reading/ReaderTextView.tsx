@@ -263,7 +263,7 @@ export default function ReaderTextView({
               {arrived === 'missing' || (passage && !linkedUnit) ? <PassageMissingNote /> : null}
               {noText ? (
                 <div
-                  className={cn('surface-card rounded-site p-5 text-site-text-muted', arrival)}
+                  className={cn('border-y border-site-border py-5 text-site-text-muted', arrival)}
                   role="note"
                 >
                   <p className="font-semibold text-site-text">

@@ -184,7 +184,7 @@ export function AdSlot({ placement, className }: AdSlotProps) {
       // copy of the same word in an `aria-label`.
       role="complementary"
       aria-labelledby={labelId}
-      className={cn('surface-card overflow-hidden rounded-site p-4', className)}
+      className={cn('overflow-hidden border-b border-site-border py-4', className)}
     >
       <p id={labelId} className="site-kicker mb-2 text-site-text-muted">
         {t('ad-label', {

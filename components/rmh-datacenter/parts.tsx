@@ -2,14 +2,12 @@
  * The two shapes this section repeats, so it repeats them the same way.
  *
  * Both are thin arrangements of site tokens rather than new surfaces: `Stat` is
- * an L1 `Card` (repeated content, the cheapest tier) and `SectionHeading` is
- * type. They exist because six pages otherwise re-type the same three class
+ * a cell on a rule (S9, rendered inside `Cells`) and `SectionHeading` is type. They exist because six pages otherwise re-type the same three class
  * strings and drift — which is exactly how this section came to have its own
  * design system the first time.
  */
 
 import type { ReactNode } from 'react';
-import { Card } from '@/components/ui/card';
 
 /**
  * A figure with its label and a line of context.
@@ -26,14 +24,17 @@ export function Stat({
   value,
   note,
   tone = 'health',
+  'data-last-row': lastRow,
 }: {
   label: string;
   value: string;
   note: string;
   tone?: 'health' | 'load';
+  /** Set by `Cells` on the last row of a grid; a list item, so a cell draws no rule below the last row. */
+  'data-last-row'?: string;
 }) {
   return (
-    <Card className="flex flex-col gap-2 p-4">
+    <li data-last-row={lastRow} className="flex flex-col gap-2">
       <span className="text-xs font-medium text-site-accent">{label}</span>
       <span
         className={
@@ -45,7 +46,7 @@ export function Stat({
         {value}
       </span>
       <span className="text-sm text-site-text-muted">{note}</span>
-    </Card>
+    </li>
   );
 }
 

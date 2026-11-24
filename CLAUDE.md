@@ -169,12 +169,13 @@ no new type or lint warnings versus the base branch, and a message that explains
    parallel `--app-*` contract in `components/shared/app-theme.css`. **Flat first (R1):** no gradient, blur, glow,
    shadow or translucency anywhere on the site tier except the three chrome elements (the globe, the toggle thumb, the
    slider thumb; R2). **Rules before boxes (R3):** separate things with a 1px rule or with space; a bordered box is a
-   control or a picture. One ink primary button per view (R4). Type is the seven `t-*` classes (`t-title`, `t-heading`,
+   control or a picture. Groups use the divider primitives in `components/ui/rules.tsx` (`Section`, `Columns`, `Cells`,
+   `Notice`, `Definitions`; S7 to S11), not a box. One ink primary button per view (R4). Type is the seven `t-*` classes (`t-title`, `t-heading`,
    `t-body`, `t-post`, `t-prose`, `t-label`, `t-meta`; `app/styles/steel-type.css`), weights 400/500/600, no
    letterspaced capitals. Use `components/ui/` primitives, `PageLayout`, lucide icons, sonner toasts. Surface roles are
    `surface-overlay` (the only raised surface), `surface-field`, `surface-chrome` and `surface-press`
    (`app/styles/steel-surfaces.css`, S6); a `_site` page writes no `surface-card` or `surface-panel` at all, because a
-   group of content is rows on rules, and those two names remain only on full-screen games and apps (L8), where
+   group of content is rows on rules (or the `rules.tsx` primitives), and those two names remain only on full-screen games and apps (L8), where
    `components/shared/app-theme.css` draws them as the app tier's panels. **Before any UI commit** read
    [`design.md`](design.md), [`docs/design-language.md`](docs/design-language.md) §0 and
    [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is CI-enforced —

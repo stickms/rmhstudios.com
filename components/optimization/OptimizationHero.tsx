@@ -40,7 +40,7 @@ export function OptimizationHero() {
           {STATS.map((s, i) => (
             <div
               key={s.label}
-              className="surface-card sec-stat sec-reveal"
+              className="sec-stat sec-reveal"
               style={{ '--sec-delay': `${i * 70}ms` } as CSSProperties}
             >
               <p className="sec-stat__num">{s.num}</p>

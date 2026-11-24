@@ -33,7 +33,7 @@ export function FriendsStrip({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`surface-card flex h-14 w-full items-center gap-3 rounded-site px-3 text-start ${className ?? ''}`}
+        className={`surface-field flex h-14 w-full items-center gap-3 rounded-site px-3 text-start ${className ?? ''}`}
         aria-label={t('friends-strip-label', {
           defaultValue_one: '{{count}} friend online',
           defaultValue: '{{count}} friends online',

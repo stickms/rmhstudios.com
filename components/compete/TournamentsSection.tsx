@@ -12,12 +12,11 @@ import { Trophy, Plus, Coins, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
+import { Cells } from '@/components/ui/rules';
 import { CreateTournamentDialog } from '@/components/tournaments/CreateTournamentDialog';
 import { tournamentsQuery, type TournamentStatus } from '@/lib/tournaments/tournaments.queries';
 
@@ -79,10 +78,10 @@ export function TournamentsSection() {
           }
         />
       ) : (
-        <div className={cn('grid gap-3 sm:grid-cols-2', arrival)}>
+        <Cells columns={2} className={arrival}>
           {items.map((tourney) => (
-            <Link key={tourney.id} to="/tournaments/$id" params={{ id: tourney.id }}>
-              <Card className="h-full gap-3 px-4 py-4" interactive>
+            <li key={tourney.id}>
+              <Link to="/tournaments/$id" params={{ id: tourney.id }} className="row-hover flex h-full flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="font-semibold truncate">{tourney.name}</h2>
@@ -115,10 +114,10 @@ export function TournamentsSection() {
                     {tourney.playerCount}/{tourney.maxPlayers}
                   </span>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+            </li>
           ))}
-        </div>
+        </Cells>
       )}
 
       {creating && <CreateTournamentDialog open={creating} onClose={() => setCreating(false)} />}

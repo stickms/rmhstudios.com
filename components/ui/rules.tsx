@@ -13,17 +13,19 @@ interface SectionProps {
   title?: React.ReactNode;
   id?: string;
   className?: string;
+  /** The id of an element that names the section, when the section has no `title` of its own. */
+  labelledBy?: string;
   children: React.ReactNode;
 }
 
 /** A block set off from the one before it by a rule above (S7). The first in its parent draws no rule. */
-export function Section({ title, id, className, children }: SectionProps) {
+export function Section({ title, id, className, labelledBy, children }: SectionProps) {
   const headingId = React.useId();
   return (
     <section
       id={id}
       className={cn('rule-section', className)}
-      aria-labelledby={title ? headingId : undefined}
+      aria-labelledby={labelledBy ?? (title ? headingId : undefined)}
     >
       {title ? (
         <h2 id={headingId} className="t-heading text-site-text">
@@ -57,8 +59,9 @@ interface CellsProps {
 }
 
 /**
- * A grid of cells with rules only between them (S9). Each item is marked `data-last-row` when it sits in the last row
- * of a full grid, so a ragged last row never draws a bottom rule on the outer edge.
+ * A grid of cells with rules only between them (S9). Each child must be an `<li>` (the CSS targets `li`). Each item is
+ * marked `data-last-row` when it sits in the last row of a full grid, so a ragged last row never draws a bottom rule on
+ * the outer edge. Below a 30rem container the cells collapse to one column.
  */
 export function Cells({ columns = 2, className, children }: CellsProps) {
   const items = React.Children.toArray(children);
@@ -83,11 +86,7 @@ interface NoticeProps {
 /** A status line: a rule below and a 2px start edge in the tone colour (S10). Danger is an alert, success a status. */
 export function Notice({ tone, children, className }: NoticeProps) {
   return (
-    <div
-      className={cn('rule-notice', className)}
-      data-tone={tone}
-      role={tone === 'danger' ? 'alert' : 'status'}
-    >
+    <div className={cn('rule-notice', className)} data-tone={tone} role={tone === 'danger' ? 'alert' : 'status'}>
       {children}
     </div>
   );

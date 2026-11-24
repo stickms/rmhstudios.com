@@ -5,7 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -190,7 +190,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
   const viewerId = session?.user?.id ?? '';
   return (
     <div className={cn('space-y-4 max-w-3xl', arrival)}>
-      <Card className="gap-3 px-4 py-4" pane>
+      <Section className="flex flex-col gap-3 py-4">
         <div className="flex items-center justify-between gap-2">
           <p dir="auto" className="text-sm">{jam.description}</p>
           <PhaseBadge phase={jam.phase} />
@@ -209,13 +209,13 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
             when: fmt.dateTime(new Date(jam.ratingEndsAt)),
           })}
         </p>
-      </Card>
+      </Section>
 
       {jam.themeVoting && jam.phase === 'upcoming' && <JamThemeVote slug={slug} signedIn={signedIn} />}
       {jam.themeVoting && jam.phase !== 'upcoming' && <JamThemeResults slug={slug} />}
 
       {jam.phase === 'open' && signedIn && !jam.teamEntryId && (
-        <Card className="gap-3 px-4 py-4" pane>
+        <Section className="flex flex-col gap-3 py-4">
           <h2 className="site-section-label">
             {t('jam-submit', { defaultValue: 'Submit a build' })}
           </h2>
@@ -250,7 +250,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
               </Button>
             </div>
           )}
-        </Card>
+        </Section>
       )}
 
       {jam.phase !== 'upcoming' && (
@@ -266,7 +266,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
             </p>
           )}
           {jam.entries.map((e, i) => (
-            <Card key={e.id} className="gap-2 px-4 py-4">
+            <Section key={e.id} className="flex flex-col gap-2 py-4">
               <div className="flex items-center justify-between gap-2">
                 <Link
                   to="/builds/$slug"
@@ -315,7 +315,7 @@ export function JamDetail({ slug }: { slug: string }) { const fmt = useLocaleFor
                   onChanged={() => void load()}
                 />
               )}
-            </Card>
+            </Section>
           ))}
         </div>
       )}

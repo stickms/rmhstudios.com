@@ -12,9 +12,9 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Cells, Section } from '@/components/ui/rules';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { DatacenterTabs } from './DatacenterTabs';
 import { SectionHeading, SpecRow } from './parts';
 
@@ -32,17 +32,17 @@ export default function PlatformPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/platform" />
 
-      <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="rounded-site p-5 sm:p-6">
+      <div className="px-4 pt-4 pb-12">
+        <Section>
           <p className="max-w-prose text-site-text-muted">
             {t('plat-lede', {
               defaultValue:
                 'The same halls, the same power train and the same network, sold at five different depths — from an empty cage you rack yourself to a pod of accelerators we run for you. Moving between them is a contract change, not a migration.',
             })}
           </p>
-        </section>
+        </Section>
 
-        <section id="colocation" className="rounded-site p-5 sm:p-6">
+        <Section id="colocation">
           <SectionHeading
             kicker="PL-01"
             heading={t('plat-colo-heading', {
@@ -97,9 +97,9 @@ export default function PlatformPage() {
               })}
             </SpecRow>
           </dl>
-        </section>
+        </Section>
 
-        <section id="bare-metal" className="rounded-site p-5 sm:p-6">
+        <Section id="bare-metal">
           <SectionHeading
             kicker="PL-02"
             heading={t('plat-metal-heading', {
@@ -112,7 +112,7 @@ export default function PlatformPage() {
                 'Single-tenant servers with no hypervisor between your workload and the silicon: no noisy neighbour, no steal time, and a NUMA topology that is the one on the datasheet.',
             })}
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Cells columns={3} className="mt-4">
             {[
               [
                 'GP',
@@ -151,17 +151,17 @@ export default function PlatformPage() {
                 }),
               ],
             ].map(([code, name, desc, chip]) => (
-              <Card key={code} className="flex flex-col items-start gap-2 p-4">
+              <li key={code} className="flex flex-col items-start gap-2">
                 <span className="text-xs font-medium text-site-accent">{code}</span>
                 <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
                 <Badge variant="default">{chip}</Badge>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </Cells>
+        </Section>
 
-        <section id="accelerated" className="rounded-site p-5 sm:p-6">
+        <Section id="accelerated">
           <SectionHeading
             kicker="PL-03"
             heading={t('plat-gpu-heading', {
@@ -216,9 +216,9 @@ export default function PlatformPage() {
               })}
             </SpecRow>
           </dl>
-        </section>
+        </Section>
 
-        <section id="storage" className="rounded-site p-5 sm:p-6">
+        <Section id="storage">
           <SectionHeading
             kicker="PL-04"
             heading={t('plat-store-heading', {
@@ -263,9 +263,9 @@ export default function PlatformPage() {
               })}
             </SpecRow>
           </dl>
-        </section>
+        </Section>
 
-        <section id="resilience" className="rounded-site p-5 sm:p-6">
+        <Section id="resilience">
           <SectionHeading
             kicker="PL-05"
             heading={t('plat-dr-heading', {
@@ -278,7 +278,7 @@ export default function PlatformPage() {
                 'A warm standby on a different grid interconnection and a different fibre path, replicated over the backbone at no egress cost. The contract requires two rehearsed failovers a year, because an untested plan is a document rather than a recovery.',
             })}
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Cells columns={3} className="mt-4">
             {[
               [
                 'RPO',
@@ -310,16 +310,16 @@ export default function PlatformPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-4">
+              <li key={code} className="flex flex-col gap-2">
                 <span className="text-xs font-medium text-site-accent">{code}</span>
                 <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </Cells>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('plat-cta-kicker', {
               defaultValue: 'Quoting',
@@ -344,7 +344,7 @@ export default function PlatformPage() {
               </Link>
             </Button>
           </div>
-        </section>
+        </Section>
       </div>
     </PageLayout>
   );

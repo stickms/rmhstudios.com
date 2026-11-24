@@ -430,7 +430,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
 
  {/* Quoted post preview */}
  {quoteItem && (
- <div className="surface-card mt-2 rounded-site px-4 py-3">
+ <div className="mt-2 border-s border-site-border ps-3 py-1">
  <p className="text-xs font-semibold text-site-text">
  {quoteItem.user?.name || quoteItem.user?.handle ||'Someone'}
  </p>
@@ -442,7 +442,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent ='', ini
 
  {/* Poll creator */}
  {attachment ==='poll'&& (
- <div className="surface-card mt-2 rounded-site px-4 py-3">
+ <div className="mt-2 border-s border-site-border ps-3 py-1">
  <div className="flex items-center justify-between mb-2">
  <span className="site-section-label">
  Poll

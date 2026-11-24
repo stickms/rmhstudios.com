@@ -85,7 +85,7 @@ export function HoldemLobby({ coins }: Props) {
       </div>
 
       {showCreate ? (
-        <div className="surface-card flex flex-col gap-2 p-3 rounded-site-sm">
+        <div className="rule-section flex flex-col gap-2">
           <input
             type="text"
             placeholder={t("table-name-placeholder", { defaultValue: "Table name (optional)" })}
@@ -155,7 +155,7 @@ export function HoldemLobby({ coins }: Props) {
           {roomList.map((room) => (
             <button key={room.roomId} onClick={() => handleJoin(room.roomId)}
               disabled={room.playerCount >= room.maxPlayers}
-              className="surface-card surface-press flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
+              className="row-hover flex items-center justify-between border-b border-site-border py-3 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-muted">

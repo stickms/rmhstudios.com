@@ -15,7 +15,7 @@ import {
   requestRedemptionApi,
   type RedemptionRow,
 } from '@/lib/creator/earnings.contract';
-import { Card } from '@/components/ui/card';
+import { Cells, Section } from '@/components/ui/rules';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { Tabs } from '@/components/ui/tabs';
@@ -267,8 +267,8 @@ export function EarningsTab() {
       </div>
 
       {/* Stat tiles — L1 fills: repeated content takes no backdrop blur (design-language §5). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card className="p-4">
+      <Cells columns={3} className="mt-4">
+        <li>
           <div className="text-xs font-medium text-site-text-muted">
             {t(
               'redeemable',
@@ -290,8 +290,8 @@ export function EarningsTab() {
               : (earnings?.redeemable ??
                 0)}
           </div>
-        </Card>
-        <Card className="p-4">
+        </li>
+        <li>
           <div className="text-xs font-medium text-site-text-muted">
             {t(
               'lifetime',
@@ -312,8 +312,8 @@ export function EarningsTab() {
               : (earnings?.lifetimeEarned ??
                 0)}
           </div>
-        </Card>
-        <Card className="p-4 col-span-2 sm:col-span-1">
+        </li>
+        <li>
           <div className="text-xs font-medium text-site-text-muted">
             {t(
               'balance',
@@ -334,14 +334,11 @@ export function EarningsTab() {
               : (earnings?.spendable ??
                 0)}
           </div>
-        </Card>
-      </div>
+        </li>
+      </Cells>
 
       {/* Redeem form */}
-      <Card
-        className="p-4 space-y-4"
-        pane
-      >
+      <Section className="space-y-4">
         <h3 className="site-section-label">
           {t(
             'redeem',
@@ -665,7 +662,7 @@ export function EarningsTab() {
             )}
           </p>
         )}
-      </Card>
+      </Section>
 
       {/* History */}
       {requests.length >

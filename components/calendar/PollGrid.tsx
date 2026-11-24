@@ -439,7 +439,7 @@ function PollGridImpl(props: PollGridProps) {
       onKeyDown={onKeyDown}
       onFocus={onFocus}
       onClick={onClick}
-      className="grid max-h-[70vh] gap-px overflow-auto rounded-site border border-site-border bg-site-border/40"
+      className="grid max-h-[70vh] gap-px overflow-auto bg-site-border/40"
       style={{
         gridTemplateColumns: `3.5rem repeat(${layout.days.length}, minmax(2.75rem, 1fr))`,
         touchAction: props.dragToPaint && mode === 'paint' ? 'none' : undefined,

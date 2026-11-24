@@ -1,5 +1,4 @@
-// Reuse the security page's liquid-glass "store style" design system verbatim
-// so the two standalone pages are visually identical (same `sec-*` classes).
+// Reuse the security page's `sec-*` stylesheet so the standalone pages match.
 import '@/components/security/security.css';
 import { OptimizationNav } from './OptimizationNav';
 import { OptimizationHero } from './OptimizationHero';

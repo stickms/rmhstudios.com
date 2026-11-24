@@ -92,7 +92,7 @@ function EmbedPost() {
   if (!post) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-site-bg p-4">
-        <div className="surface-card px-5 py-4 text-sm text-site-text-muted">
+        <div className="px-5 py-4 text-sm text-site-text-muted">
           {t("post-not-embeddable", { defaultValue: "This post isn’t available to embed." })}
         </div>
       </main>
@@ -101,7 +101,7 @@ function EmbedPost() {
 
   return (
     <main className="bg-site-bg p-3">
-      <article className="surface-card mx-auto max-w-xl p-4">
+      <article className="mx-auto max-w-xl p-4">
         <div className="flex items-center gap-3">
           {post.user.image ? (
             <img src={post.user.image} alt="" className="size-11 rounded-full object-cover" />

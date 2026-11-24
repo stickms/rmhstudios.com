@@ -154,7 +154,7 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
         ) : (
           <div className="flex flex-col gap-2">
             {/* Card preview */}
-            <div className="mb-1 overflow-hidden rounded-site border border-site-border">
+            <div className="mb-1 overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
               <img
                 src={`/api/og/moment/${moment.id}`}
                 alt={payload.value}

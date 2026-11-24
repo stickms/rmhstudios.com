@@ -21,6 +21,7 @@ import {
 import { toast } from '@/lib/toast';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Notice } from '@/components/ui/rules';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -247,17 +248,16 @@ function ApplicationForm({
       </div>
 
       {rejected?.rejectionReason && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-site border border-site-danger/30 bg-site-danger/10 p-5 text-sm text-site-danger"
-        >
-          <XCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
-          <div className="space-y-1">
-            <p className="font-semibold">{t('previous-application-rejected', { defaultValue: "Your previous application wasn't approved" })}</p>
-            <p>{rejected.rejectionReason}</p>
-            <p>{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
+        <Notice tone="danger">
+          <div className="flex items-start gap-3 text-sm text-site-danger">
+            <XCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+            <div className="space-y-1">
+              <p className="font-semibold">{t('previous-application-rejected', { defaultValue: "Your previous application wasn't approved" })}</p>
+              <p>{rejected.rejectionReason}</p>
+              <p>{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
+            </div>
           </div>
-        </div>
+        </Notice>
       )}
 
       <div className="rounded-site p-5">
@@ -386,7 +386,7 @@ function DriverDashboard({
   return (
     <div className="space-y-4">
       {/* Approved banner + availability toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-site border border-site-success/30 bg-site-success/10 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-site-border pb-5">
         <div className="flex items-center gap-3">
           <CheckCircle2 className="h-6 w-6 shrink-0 text-site-success" />
           <div className="min-w-0">

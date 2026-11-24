@@ -25,8 +25,7 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-// Reuse the security page's liquid-glass "store style" design system verbatim
-// so the standalone pages are visually consistent (same `sec-*` classes).
+// Reuse the security page's `sec-*` stylesheet so the standalone pages match.
 import '@/components/security/security.css';
 import { Button } from '@/components/ui/button';
 import { PinnedHero } from '@/components/feed/PinnedHero';
@@ -429,7 +428,7 @@ page.setAttribute('data-animate', '');
           {VALUES.map((v, i) => (
             <div
               key={v.word}
-              className="surface-card sec-stat sec-reveal"
+              className="sec-stat sec-reveal"
               style={{ '--sec-delay': `${i * 70}ms` } as CSSProperties}
             >
               <p className="sec-stat__num">{v.word}</p>
@@ -472,7 +471,7 @@ page.setAttribute('data-animate', '');
                 return (
                   <article
                     key={p.title}
-                    className="surface-card sec-card sec-reveal"
+                    className="sec-card sec-reveal"
                     style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                   >
                     <span className="sec-card__icon">
@@ -501,7 +500,7 @@ page.setAttribute('data-animate', '');
                 make the news and the thousand small ones that don’t.
               </p>
             </div>
-            <div className="surface-card sec-spec sec-reveal">
+            <div className="sec-spec sec-reveal">
               {PRINCIPLES.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -562,7 +561,7 @@ page.setAttribute('data-animate', '');
                 Here’s where it lives in the foundation itself.
               </p>
             </div>
-            <div className="surface-card sec-spec sec-reveal">
+            <div className="sec-spec sec-reveal">
               {PRODUCT_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -626,7 +625,7 @@ page.setAttribute('data-animate', '');
             <ol className="sec-steps">
               {ACCOUNTABILITY.map((s, i) => (
                 <li
-                  className="surface-card sec-step sec-reveal"
+                  className="sec-step sec-reveal"
                   key={s.title}
                   style={{ '--sec-delay': `${(i % 2) * 80}ms` } as CSSProperties}
                 >
@@ -662,7 +661,7 @@ page.setAttribute('data-animate', '');
                   href={r.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="surface-card sec-card sec-reveal"
+                  className="sec-card sec-reveal"
                   style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                 >
                   <span className="sec-card__icon">
@@ -724,7 +723,7 @@ page.setAttribute('data-animate', '');
             </div>
             <div className="sec-faq sec-reveal">
               {BLM_FAQ.map((f) => (
-                <details className="surface-card sec-faq__item" key={f.q}>
+                <details className="sec-faq__item" key={f.q}>
                   <summary className="sec-faq__q">{f.q}</summary>
                   <p className="sec-faq__a">{f.a}</p>
                 </details>
@@ -736,7 +735,7 @@ page.setAttribute('data-animate', '');
         {/* ─── Closing ──────────────────────────────────────────────────── */}
         <section className="sec-section sec-section--hair" aria-labelledby="blm-closing-title">
           <div className="sec-shell">
-            <div className="surface-panel sec-disclosure sec-reveal">
+            <div className="sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
                 <p className="sec-eyebrow">Still, and always</p>

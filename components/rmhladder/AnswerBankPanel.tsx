@@ -5,10 +5,9 @@
  * ATS asks; the essays are the free-text answers that repeat verbatim; the STAR
  * stories are what the interview prep sheet matches against a posting.
  *
- * The panel is L2 `.surface-panel` (one per page). Each essay and story is a
- * repeated row and therefore L1 `.surface-card` — zero backdrop blur, because a
- * user with twenty stories would otherwise be compositing twenty blurred
- * surfaces on one screen.
+ * The panel is a `Section` (a rule above it, no box). Each essay and story is a
+ * row on a 1px rule, so a user with twenty stories gets twenty rules, not
+ * twenty boxes.
  *
  * Sensitive fields (salary expectation, work authorization, sponsorship) carry
  * a visible marker. They are personal data with real consequences, and a user
@@ -34,13 +33,13 @@ import {
   type StarStory,
 } from '@/lib/rmhladder/answer-bank';
 import { Button } from '@/components/ui/button';
+import { Section } from '@/components/ui/rules';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
 
 const EMPTY_ESSAY: EssayAnswer = {
   question: '',
@@ -151,7 +150,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
 
   if (loading) {
     return (
-      <section className="surface-panel flex min-h-32 items-center justify-center p-5">
+      <div className="flex min-h-32 items-center justify-center">
         <Spinner
           size={20}
           className="text-site-text-muted"
@@ -159,12 +158,12 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
             defaultValue: 'Loading…',
           })}
         />
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className={cn('surface-panel p-4 sm:p-5', arrival)} aria-labelledby="ladder-answers-heading">
+    <Section className={arrival} labelledBy="ladder-answers-heading">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="ladder-answers-heading" className="site-section-label">
           {t('ladder.answersTitle', {
@@ -293,9 +292,9 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
           </Button>
         </div>
 
-        <div className="mt-3 grid gap-3">
+        <div className="mt-3">
           {bank.essays.map((essay, i) => (
-            <div key={`essay-${i}`} className="surface-card p-3">
+            <div key={`essay-${i}`} className="border-b border-site-border py-3 last:border-b-0">
               <div className="flex items-start gap-2">
                 <Input
                   aria-label={t('ladder.answersEssayQuestion', {
@@ -407,9 +406,9 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
           })}
         </p>
 
-        <div className="mt-3 grid gap-3">
+        <div className="mt-3">
           {bank.stories.map((story, i) => (
-            <div key={`story-${i}`} className="surface-card p-3">
+            <div key={`story-${i}`} className="border-b border-site-border py-3 last:border-b-0">
               <div className="flex items-start gap-2">
                 <Input
                   aria-label={t('ladder.answersStoryTitle', {
@@ -485,6 +484,6 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
           )}
         </div>
       </div>
-    </section>
+    </Section>
   );
 }

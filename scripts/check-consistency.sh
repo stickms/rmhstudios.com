@@ -479,6 +479,7 @@ else
     lib/__tests__/handheld-tier.test.ts
     lib/__tests__/steel-flat.test.ts
     lib/__tests__/steel-tokens.test.ts
+    lib/__tests__/steel-rules.test.ts
     lib/__tests__/site-infinite-animation.test.ts
     lib/__tests__/doc-pointers.test.ts
     lib/__tests__/appearance-jelly-motion.test.ts

@@ -25,7 +25,7 @@ type GifPickerProps = ComponentProps<typeof GifPickerInner>;
 
 function GifPickerSkeleton({ className = '', listClassName = 'max-h-72' }: GifPickerProps) {
   return (
-    <div className={`surface-card rounded-site p-4 ${className}`} aria-hidden>
+    <div className={`p-4 ${className}`} aria-hidden>
       <Skeleton className="mb-2 h-9 w-full rounded-site-sm" />
       <div className={`${listClassName} overflow-hidden`}>
         <div className="grid grid-cols-2 gap-1">

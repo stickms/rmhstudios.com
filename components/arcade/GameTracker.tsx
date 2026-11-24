@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Swords } from 'lucide-react';
 
-import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Select } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -132,7 +132,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
   const median = data?.stats.medianMinutes;
 
   return (
-    <Card className="min-h-28 gap-3 p-4">
+    <Section className="flex min-h-28 flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
         {signedIn ? (
           <label className="flex min-w-44 flex-1 flex-col gap-2 text-xs text-site-text-muted">
@@ -208,6 +208,6 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
               })}
         </p>
       ) : null}
-    </Card>
+    </Section>
   );
 }

@@ -19,7 +19,7 @@ export function OptimizationResultSections() {
           <ol className="sec-steps">
             {DEPLOY_STEPS.map((s, i) => (
               <li
-                className="surface-card sec-step sec-reveal"
+                className="sec-step sec-reveal"
                 key={s.title}
                 style={
                   {
@@ -52,7 +52,7 @@ export function OptimizationResultSections() {
           </div>
 
           <div
-            className="surface-card sec-bounty-table-wrap sec-reveal"
+            className="sec-bounty-table-wrap sec-reveal"
             role="region"
             aria-labelledby="opt-milestones-title"
             tabIndex={0}

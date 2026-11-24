@@ -16,8 +16,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Cells, Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { CAMPUSES, TOTAL_HALLS, TOTAL_MW } from '@/lib/datacenter/campuses';
 import { CapacityMeter } from './CapacityMeter';
 import { DatacenterTabs } from './DatacenterTabs';
@@ -83,17 +83,17 @@ export default function FacilitiesPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/facilities" />
 
-      <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="rounded-site p-5 sm:p-6">
+      <div className="px-4 pt-4 pb-12">
+        <Section>
           <p className="max-w-prose text-site-text-muted">
             {t('fac-lede', {
               defaultValue:
                 'Not leased suites inside somebody else’s building. We hold the freehold, the generators and the fibre entering the site, which is why a maintenance window here is one we schedule rather than one we are notified about.',
             })}
           </p>
-        </section>
+        </Section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Cells columns={4} className="mt-6">
           <Stat
             label={t('fac-stat-sites', { defaultValue: 'Campuses' })}
             value={String(CAMPUSES.length)}
@@ -115,12 +115,12 @@ export default function FacilitiesPage() {
             value="210 MW"
             note={t('fac-stat-expansion-desc', { defaultValue: 'Permitted and awaiting build' })}
           />
-        </div>
+        </Cells>
 
         {CAMPUSES.map((c) => {
           const copy = prose[c.id];
           return (
-            <section key={c.id} id={c.id} className="rounded-site p-5 sm:p-6">
+            <Section key={c.id} id={c.id}>
               <SectionHeading kicker={`${c.code} · ${c.region}`} heading={names[c.id]} />
               <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_minmax(0,18rem)]">
                 <div className="min-w-0">
@@ -173,18 +173,18 @@ export default function FacilitiesPage() {
                   })}
                 </SpecRow>
               </dl>
-            </section>
+            </Section>
           );
         })}
 
-        <section>
+        <Section>
           <SectionHeading
             kicker={t('fac-sec-kicker', { defaultValue: 'Getting in' })}
             heading={t('fac-sec-heading', {
               defaultValue: 'Five layers between the road and your cage',
             })}
           />
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Cells columns={3} className="mt-4">
             {[
               [
                 'L1 · L2',
@@ -211,18 +211,18 @@ export default function FacilitiesPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-4">
+              <li key={code} className="flex flex-col gap-2">
                 <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
                 <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </Cells>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('fac-cta-kicker', { defaultValue: 'Site tour' })}
             heading={t('fac-cta-heading', { defaultValue: 'Walk the hall before you sign for it' })}
@@ -241,7 +241,7 @@ export default function FacilitiesPage() {
               </Link>
             </Button>
           </div>
-        </section>
+        </Section>
       </div>
     </PageLayout>
   );

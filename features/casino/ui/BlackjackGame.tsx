@@ -129,11 +129,11 @@ export function BlackjackGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="w-full flex flex-col lg:flex-row lg:items-start gap-4">
-        <div className="surface-panel flex-1 min-w-0 rounded-site-sm p-3 sm:p-5">
+        <div className="flex-1 min-w-0 p-3 sm:p-5">
           <BlackjackTable />
         </div>
         <div className="w-full lg:w-80 shrink-0 flex flex-col gap-3">
-          <div className="surface-panel rounded-site-sm p-3 sm:p-4">
+          <div className="p-3 sm:p-4">
             <BlackjackControls coins={coins} />
           </div>
           <BlackjackSessionStats />

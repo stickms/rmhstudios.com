@@ -36,7 +36,7 @@ export function ControllerPad({ code }: { code: string }) {
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   });
   const key =
-    'surface-card flex select-none items-center justify-center text-site-text active:bg-site-accent active:text-site-accent-fg';
+    'flex select-none items-center justify-center text-site-text active:bg-site-accent active:text-site-accent-fg';
 
   if (status !== 'ready') {
     return (

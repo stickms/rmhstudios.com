@@ -255,7 +255,7 @@ export function BreachesSection() {
 
       <section className="sec-stats" aria-label="The incident at a glance">
         {STATS.map((s) => (
-          <div key={s.label} className="surface-card sec-stat">
+          <div key={s.label} className="sec-stat">
             <p className="sec-stat__num">{s.num}</p>
             <p className="sec-stat__label">{s.label}</p>
           </div>
@@ -268,7 +268,7 @@ export function BreachesSection() {
           Five facts, none of them flattering. Every one was read back out of this repository&apos;s own history before
           it was written here.
         </p>
-        <div className="surface-card sec-spec">
+        <div className="sec-spec">
           {WHAT_HAPPENED.map((s) => (
             <div className="sec-spec__row" key={s.term}>
               <div className="sec-spec__term">{s.term}</div>
@@ -283,7 +283,7 @@ export function BreachesSection() {
         <p>The interesting part of this timeline is not the mistake. It is how ordinary every step after it was.</p>
         <ol className="sec-steps">
           {TIMELINE.map((s, i) => (
-            <li className="surface-card sec-step" key={s.title}>
+            <li className="sec-step" key={s.title}>
               <span className="sec-step__num">{i + 1}</span>
               <div>
                 <h3 className="sec-step__title">{s.title}</h3>
@@ -304,7 +304,7 @@ export function BreachesSection() {
           {ROOT_CAUSES.map((c) => {
             const Icon = c.icon;
             return (
-              <article key={c.title} className="surface-card sec-card">
+              <article key={c.title} className="sec-card">
                 <span className="sec-card__icon">
                   <Icon aria-hidden="true" />
                 </span>
@@ -323,7 +323,7 @@ export function BreachesSection() {
           from something that looks like our deploy bot is a good phish — and it is a narrow one.
         </p>
         <div className="sec-rules">
-          <div className="surface-card sec-rule">
+          <div className="sec-rule">
             <h3 className="sec-rule__title">
               <span className="sec-rule__icon">
                 <XCircle aria-hidden="true" />
@@ -336,7 +336,7 @@ export function BreachesSection() {
               ))}
             </ul>
           </div>
-          <div className="surface-card sec-rule">
+          <div className="sec-rule">
             <h3 className="sec-rule__title">
               <span className="sec-rule__icon">
                 <CheckCircle2 aria-hidden="true" />
@@ -349,7 +349,7 @@ export function BreachesSection() {
               ))}
             </ul>
           </div>
-          <div className="surface-card sec-rule">
+          <div className="sec-rule">
             <h3 className="sec-rule__title">
               <span className="sec-rule__icon">
                 <ShieldAlert aria-hidden="true" />
@@ -371,7 +371,7 @@ export function BreachesSection() {
           This is the lesson worth taking from an otherwise unremarkable mistake, so it gets its own section rather than
           a footnote.
         </p>
-        <div className="surface-card sec-spec">
+        <div className="sec-spec">
           {PERSISTENCE.map((s) => (
             <div className="sec-spec__row" key={s.term}>
               <div className="sec-spec__term">{s.term}</div>
@@ -422,7 +422,7 @@ export function BreachesSection() {
         <h2 id="brc-faq-title">About the incident.</h2>
         <div className="sec-faq">
           {FAQ.map((f) => (
-            <details className="surface-card sec-faq__item" key={f.q}>
+            <details className="sec-faq__item" key={f.q}>
               <summary className="sec-faq__q">{f.q}</summary>
               <p className="sec-faq__a">{f.a}</p>
             </details>

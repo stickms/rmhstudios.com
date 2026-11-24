@@ -162,7 +162,7 @@ export function HighlightsSection({
         },
       )}
       className={cn(
-        'surface-card mt-10 space-y-5 rounded-site p-5 text-sm',
+        'rule-section mt-10 space-y-5 text-sm',
         className,
       )}
     >

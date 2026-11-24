@@ -22,7 +22,8 @@ A change is done when all of this is true, in both editions, at 390px and at 128
    article, conversation, inbox, explore, settings) or, per X2, a titled page of rows on rules with no spine. A gap with
    no fitting recipe is recorded in plan section 18, not invented around.
 2. **Flat first (R1, R3).** Content sits on `--site-bg`. A group of things is rows with a 1px `--site-border` rule
-   between them, or space. A bordered box is for a control or a picture. No gradient, blur, glow, translucency or
+   between them, or space; the divider primitives in `components/ui/rules.tsx` (`Section`, `Columns`, `Cells`, `Notice`,
+   `Definitions`; plan S7 to S11) are how a page sets a group off. A bordered box is for a control or a picture. No gradient, blur, glow, translucency or
    shadow, except an overlay's shadow (T4) and the three chrome elements (R2).
 3. **One ink primary per view (R4).** `<Button variant="primary">` marks the main action; every other button is bordered
    or borderless.

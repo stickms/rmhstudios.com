@@ -12,7 +12,6 @@ import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
@@ -222,7 +221,7 @@ function TournamentDetailPage() {
     >
       <div className={cn('max-w-4xl space-y-4', arrival)}>
         {/* Summary */}
-        <Card className="flex-row flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4" pane>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-site-border py-4">
           <div>
             <div className="text-xs font-medium text-site-text-muted">
               {t('game', { defaultValue: 'Game' })}
@@ -257,11 +256,11 @@ function TournamentDetailPage() {
                 : t('free', { defaultValue: 'Free' })}
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Winner banner */}
         {tourney.status === 'COMPLETE' && winner && (
-          <Card className="flex-row items-center gap-3 px-4 py-4" pane>
+          <div className="flex items-center gap-3 border-b border-site-border py-4">
             <Trophy className="size-8 shrink-0 text-site-warning" aria-hidden />
             <div>
               <div className="text-xs font-medium text-site-text-muted">
@@ -269,7 +268,7 @@ function TournamentDetailPage() {
               </div>
               <div className="text-lg font-semibold">{winner.user?.name}</div>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Actions */}
