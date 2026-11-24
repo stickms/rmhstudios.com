@@ -66,7 +66,7 @@ export function Cells({ columns = 2, className, children }: CellsProps) {
   return (
     <ul className={cn('rule-cells', className)} data-columns={columns}>
       {items.map((child, index) =>
-        React.isValidElement<React.HTMLAttributes<HTMLLIElement>>(child)
+        React.isValidElement<React.HTMLAttributes<HTMLLIElement> & { 'data-last-row'?: string }>(child)
           ? React.cloneElement(child, { 'data-last-row': index >= lastRowStart ? '' : undefined })
           : child,
       )}
