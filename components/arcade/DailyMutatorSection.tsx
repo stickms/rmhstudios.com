@@ -113,10 +113,11 @@ export function DailyMutatorSection() {
                   <li key={r.rank}>
                     <div
                       className={cn(
-                        'flex justify-between border-b border-site-border py-3',
-                        // The own row is marked by a 2px ink rule at the start edge; ps-2.5 + 2px border = ps-3, so
+                        'flex items-baseline justify-between border-b border-site-border py-3',
+                        // The own row is marked by a 2px ink rule on the start edge only: border-s-site-text, because a
+                        // plain border-site-text would turn the bottom rule to ink too. ps-2.5 + 2px border = ps-3, so
                         // the text column does not shift against the other rows.
-                        r.isMe ? 'border-s-2 border-site-text ps-2.5 font-semibold' : 'ps-3',
+                        r.isMe ? 'border-s-2 border-s-site-text ps-2.5 font-semibold' : 'ps-3',
                       )}
                     >
                       <span className="text-sm text-site-text">

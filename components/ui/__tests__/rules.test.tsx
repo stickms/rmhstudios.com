@@ -133,41 +133,78 @@ describe('Definitions', () => {
   });
 });
 
+/** Every rule block whose selector is exactly `selector` (a selector can appear in a narrow and a wide block). */
+function bodiesOf(selector: string): string[] {
+  const hits = ruleBlocks().filter(([s]) => s === selector);
+  if (hits.length === 0) throw new Error(`no rule for selector: ${selector}`);
+  return hits.map(([, body]) => body);
+}
+
 describe('steel-rules.css', () => {
-  it('resets the first section and draws no vertical rule outside a container query', () => {
-    expect(css).toMatch(/\.rule-section:first-child\s*\{[^}]*border-block-start:\s*0/);
-    expect(css).toMatch(/\.rule-section:first-child\s*\{[^}]*padding-block-start:\s*0/);
-    expect(css).toMatch(/\.rule-section:first-child\s*\{[^}]*margin-block-start:\s*0/);
-    const outside = css
-      .replace(/@container[^{]*\{(?:[^{}]|\{[^{}]*\})*\}/g, '')
-      .replace(/\.rule-notice[^{]*\{[^}]*\}/g, '');
-    expect(outside).not.toMatch(/border-inline-start/);
+  it('resets the first section: no rule, no padding and no margin', () => {
+    expect(bodyOf('.rule-section:first-child')).toMatch(/padding-block-start:\s*0/);
+    expect(bodyOf('.rule-section:first-child')).toMatch(/margin-block-start:\s*0/);
+    expect(bodyOf('.rule-section:first-child::before')).toMatch(/display:\s*none/);
   });
 
-  it('draws Cells rules only between cells: start rules on inner columns, no bottom rule on the last row', () => {
-    expect(bodyOf(".rule-cells[data-columns='2'] > li:nth-child(2n)")).toMatch(/border-inline-start:\s*1px/);
-    expect(bodyOf(".rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1))")).toMatch(/border-inline-start:\s*1px/);
-    expect(bodyOf(".rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1))")).toMatch(/border-inline-start:\s*1px/);
+  it('draws no vertical rule outside a container query', () => {
+    // A vertical rule is a 1px-wide pseudo-element (`inline-size: 1px`); the wide layouts are the only place for one.
+    const outside = css.replace(/@container[^{]*\{(?:[^{}]|\{[^{}]*\})*\}/g, '');
+    expect(outside).not.toMatch(/inline-size:\s*1px/);
+  });
+
+  it('floats every rule: horizontals stop short of the sides, verticals short of the rules above and below', () => {
+    for (const selector of [
+      '.rule-section::before',
+      '.rule-cols > * + *::before',
+      '.rule-cells > li::after',
+      '.rule-notice::after',
+      '.rule-defs > div::after',
+      '.rule-row::after',
+    ]) {
+      expect(bodiesOf(selector).join(' '), selector).toMatch(/inset-inline:\s*var\(--rule-inset\)/);
+    }
+    for (const selector of [
+      '.rule-cols > * + *::before',
+      '.rule-defs > div::before',
+      ".rule-cells[data-columns='2'] > li:nth-child(2n)::before, .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1))::before, .rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1))::before",
+    ]) {
+      expect(bodiesOf(selector).join(' '), selector).toMatch(/inset-block:\s*var\(--rule-gap\)/);
+    }
+    expect(css).toMatch(/--rule-inset:\s*0\.75rem/);
+    expect(css).toMatch(/--rule-gap:\s*0\.75rem/);
+  });
+
+  it('draws Cells rules only between cells: vertical rules on inner columns, no bottom rule on the last row', () => {
+    const inner = bodiesOf(
+      ".rule-cells[data-columns='2'] > li:nth-child(2n)::before, .rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1))::before, .rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1))::before",
+    ).join(' ');
+    expect(inner).toMatch(/inline-size:\s*1px/);
+    expect(inner).toMatch(/inset-inline-start:\s*0/);
     // The outer edge: the last item and every last-row item lose their bottom rule.
-    expect(bodyOf('.rule-cells > li:last-child')).toMatch(/border-block-end:\s*0/);
-    expect(bodyOf('.rule-cells > li[data-last-row]')).toMatch(/border-block-end:\s*0/);
-    // No rule is drawn on an inline-end edge, and no cell rule on the first column's start edge.
-    expect(css).not.toMatch(/border-inline-end/);
+    expect(bodyOf('.rule-cells > li:last-child::after')).toMatch(/display:\s*none/);
+    expect(bodyOf('.rule-cells > li[data-last-row]::after')).toMatch(/display:\s*none/);
+    // No rule on an inline-end edge, and no vertical rule on the first column.
+    expect(css).not.toMatch(/inset-inline-end|border-inline-end/);
     for (const [selector, body] of ruleBlocks()) {
-      if (selector.includes('rule-cells') && /border-inline-start/.test(body)) {
+      if (selector.includes('rule-cells') && /inline-size:\s*1px/.test(body)) {
         expect(selector).not.toMatch(/:first-child|:nth-child\(1\)|nth-child\(n\)/);
       }
     }
   });
 
-  it('draws the Columns gutter only after a sibling, never on a single child', () => {
-    // The vertical rule is a pseudo-element on `* + *`, so a lone child has no preceding sibling to draw it.
-    expect(bodyOf('.rule-cols > * + *::before')).toMatch(/inset-inline-start:\s*-0\.75rem/);
+  it('draws the Columns rules only after a sibling, never on a single child', () => {
+    // Every Columns rule is a pseudo-element on `* + *`, so a lone child has no preceding sibling to draw it.
     for (const [selector, body] of ruleBlocks()) {
-      if (selector.includes('rule-cols') && /border-inline-start/.test(body)) {
-        throw new Error(`a Columns rule applies without a sibling combinator: ${selector}`);
+      if (selector.includes('rule-cols') && /::before/.test(selector)) {
+        expect(selector).toContain('* + *');
+      }
+      if (selector.includes('rule-cols') && !selector.includes('* + *')) {
+        expect(body, selector).not.toMatch(/inline-size:\s*1px/);
       }
     }
+    expect(bodiesOf('.rule-cols > * + *::before').join(' ')).toMatch(/inline-size:\s*1px/);
+    expect(bodiesOf('.rule-cols > * + *::before').join(' ')).toMatch(/inset-inline-start:\s*-0\.75rem/);
   });
 
   it('keeps the 3:2 split exact: the gutter is the column gap, not padding on a flex item', () => {
