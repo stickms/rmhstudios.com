@@ -330,7 +330,13 @@ const BUDGETS = {
   // entry 715,093 B, critical path 937,275 B raw and 246,097 B brotli, site CSS 31,287 B. Each raised line keeps
   // the feature's bytes plus about 0.9 KB raw (0.4 KB brotli) of headroom, as the lines above did.
   siteCssBrotli: 32_800,
-  entryRaw: 716_000,
+  // RMH Med Schools design polish (2026-11-24): entry RAISED 716,000 -> 716,800 B (OPT-01, named in the PR body).
+  // The feature that bought the bytes is "settings change in place": the four /rmh-medschool route loaders read
+  // TanStack's `cause` and import `waitUnlessStay` (features/medschools/medschools.queries.ts), so a filter, tab or
+  // toggle change keeps the page on screen instead of the pending screen. CI measured the entry at 699.2 KB against a
+  // 699.2 KB line (+0.0%), i.e. a few hundred bytes over; no library, page component or chart entered the entry
+  // (check-entry-composition --strict is unchanged). The line keeps about 0.8 KB of headroom.
+  entryRaw: 716_800,
   criticalPathRaw: 938_200,
   criticalPathBrotli: 247_500, // 2026-11-23: +~0.7 KB brotli (achievement catalog, icon and device registries) from the Vault games' move into the library; OPT-01, named in the PR body
 };
