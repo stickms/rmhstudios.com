@@ -16,6 +16,7 @@ export type MilestoneType =
   | 'WAITLIST'
   | 'REJECTION'
   | 'ACCEPTANCE'
+  | 'MATRICULATED'
   | 'WITHDRAWN'
   | 'HOLD';
 
@@ -29,12 +30,13 @@ export const MILESTONE_TYPES: readonly MilestoneType[] = [
   'WAITLIST',
   'REJECTION',
   'ACCEPTANCE',
+  'MATRICULATED',
   'WITHDRAWN',
   'HOLD',
 ];
 
 /**
- * Which milestones can leave the private tables, and as what. `SUBMITTED`, `COMPLETE` and `SECONDARY_SUBMITTED` are never
+ * Which milestones can leave the private tables, and as what. `SUBMITTED`, `COMPLETE`, `SECONDARY_SUBMITTED` and `MATRICULATED` are never
  * shared (phase 5 and the secondaries turnaround aggregate them server-side from private rows under its own floor); home state never leaves either.
  */
 export const SHAREABLE: Record<MilestoneType, MedEventType | null> = {
@@ -46,6 +48,7 @@ export const SHAREABLE: Record<MilestoneType, MedEventType | null> = {
   WAITLIST: 'WAITLIST',
   REJECTION: 'REJECTION',
   ACCEPTANCE: 'ACCEPTANCE',
+  MATRICULATED: null,
   WITHDRAWN: 'WITHDRAWN',
   HOLD: 'HOLD',
 };

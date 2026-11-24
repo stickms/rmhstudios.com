@@ -6,12 +6,15 @@ import { cn } from '@/lib/utils';
 import { formatUtcDay } from '../engine/public-read';
 import { SCHOOL_SEARCH_DEFAULTS } from '../engine/search';
 import type { LiveEventDto } from '../medschools.contract';
-import { SchoolCrest } from './SchoolCrest';
 import { useMedLabels } from './labels';
+import { StatusIcon } from './status/StatusIcon';
+import { StatusText } from './status/StatusText';
+import { statusOfEvent } from './status/status';
 
 /**
- * One reported event: what, where, when, from which source. No person is named (D8).
- * Two lines on every width, so rows have one shape: the event and the school, then the program, the time and the source.
+ * One reported event: which school, what happened, when, from which source. No person is named (D8).
+ * Name first (the mockup's order): the school, then the status in its own colour with its icon at the left, then one
+ * muted line of program, place, time and source. The status is always written out, so colour is never the only cue.
  */
 export function LiveRow({
   event,
@@ -20,50 +23,45 @@ export function LiveRow({
 }: {
   event: LiveEventDto;
   className?: string | undefined;
-  /** The rail: no source line (it is 272px wide and the page names its sources). */
+  /** The rail: no source in the meta line (it is 320px wide and the page names its sources). */
   compact?: boolean | undefined;
 }) {
   const { t } = useTranslation('medschools');
   const { eventLabel, programLabel, sourceName } = useMedLabels();
   const lf = useLocaleFormat();
+  const status = statusOfEvent(event.eventType);
   // SDN events dated before their post are stored at UTC midnight (day precision only): a relative time would be a lie.
   const dayOnly = event.source === 'SDN' && event.occurredAt.slice(10) === 'T00:00:00.000Z';
   return (
-    <li className={cn('flex items-start gap-3 border-b border-site-border py-3', className)}>
-      <span className="mt-px">
-        <SchoolCrest slug={event.school.slug} name={event.school.shortName} size={20} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-3">
-          <span className="t-body">{eventLabel(event.eventType)}</span>
-          <Link
-            to="/rmh-medschool/$slug"
-            params={{ slug: event.school.slug }}
-            search={SCHOOL_SEARCH_DEFAULTS}
-            className="t-body"
-          >
-            {event.school.shortName}
+    <li className={cn('medapp-row', compact && 'medapp-row--compact', className)}>
+      <StatusIcon status={status} />
+      <div className="medapp-row__body">
+        <p className="medapp-row__name">
+          <Link to="/rmh-medschool/$slug" params={{ slug: event.school.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
+            {event.school.name}
           </Link>
-        </div>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="t-meta">
-            {t('live-row-place', {
-              defaultValue: '{{program}} · {{city}}, {{state}}',
-              program: programLabel(event.program, event.school.degree),
-              city: event.school.city,
-              state: event.school.state,
-            })}
-          </span>
+        </p>
+        <p className="medapp-row__status">
+          <StatusText status={status}>{eventLabel(event.eventType)}</StatusText>
+        </p>
+        <p className="medapp-row__meta">
+          {t('live-row-place', {
+            defaultValue: '{{program}} · {{city}}, {{state}}',
+            program: programLabel(event.program, event.school.degree),
+            city: event.school.city,
+            state: event.school.state,
+          })}
+          {' · '}
           {dayOnly ? (
-            <time dateTime={event.occurredAt.slice(0, 10)} className="t-meta">
+            <time dateTime={event.occurredAt.slice(0, 10)}>
               {formatUtcDay(event.occurredAt.slice(0, 10), lf.locale)}
             </time>
           ) : (
-            <RelativeTime date={event.occurredAt} format={(ts) => lf.relative(ts)} className="t-meta" />
+            <RelativeTime date={event.occurredAt} format={(ts) => lf.relative(ts)} />
           )}
-          {compact ? null : <span className="t-meta">{sourceName(event.source)}</span>}
-          {event.wave ? <span className="t-meta">{t('live-wave', { defaultValue: 'Part of a wave' })}</span> : null}
-        </div>
+          {compact ? null : <> · {sourceName(event.source)}</>}
+          {event.wave ? <> · {t('live-wave', { defaultValue: 'Part of a wave' })}</> : null}
+        </p>
       </div>
     </li>
   );

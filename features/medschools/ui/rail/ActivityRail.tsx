@@ -29,7 +29,7 @@ const KIND_TYPES: Record<Exclude<Kind, ''>, string> = {
 const PAGE = 15;
 
 /**
- * The live activity rail: the shell's right margin on every /rmh-medschool page (>= 1280px). The newest reported
+ * The live activity rail: a paper panel in the app frame's right column on every /rmh-medschool page (>= 1280px). The newest reported
  * events, a search over school, state, event and program, the 60 s head refetch with the M9 fade for new rows, and older
  * pages loaded as the end of the list scrolls into view (one `IntersectionObserver`, on the sentinel only: it loads
  * data, it decorates nothing). The filters here are the rail's own; the program toggles start from the page's `programs`
@@ -56,12 +56,10 @@ export default function ActivityRail() {
   };
 
   return (
-    <section aria-labelledby="medschools-rail-heading" className="site-margin__rail flex flex-col gap-3 text-site-text">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 id="medschools-rail-heading" className="t-label m-0">
-          {t('rail-title', { defaultValue: 'Live activity' })}
-        </h2>
-        <Link to="/rmh-medschool/live" className="t-meta underline">
+    <section aria-labelledby="medschools-rail-heading" className="medapp-panel medapp-panel--rail flex flex-col gap-3">
+      <div className="medapp-rail-head">
+        <h2 id="medschools-rail-heading">{t('rail-title', { defaultValue: 'Live activity' })}</h2>
+        <Link to="/rmh-medschool/live" className="medapp-link text-xs">
           {t('rail-open', { defaultValue: 'Open live page' })}
         </Link>
       </div>
@@ -106,23 +104,23 @@ function RailFeed({ filters }: { filters: LiveFilters }) {
   });
 
   if (query.isError && !data) {
-    return <p className="t-meta m-0">{t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}</p>;
+    return <p className="medapp-sub">{t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}</p>;
   }
-  if (!data) return <p className="t-meta m-0">{t('rail-loading', { defaultValue: 'Loading' })}</p>;
+  if (!data) return <p className="medapp-sub">{t('rail-loading', { defaultValue: 'Loading' })}</p>;
   if (rows.length === 0) {
-    return <p className="t-meta m-0">{t('rail-empty', { defaultValue: 'Nothing matches yet.' })}</p>;
+    return <p className="medapp-sub">{t('rail-empty', { defaultValue: 'Nothing matches yet.' })}</p>;
   }
   return (
     <>
-      <ul className="m-0 list-none p-0">
+      <ul className="medapp-rows">
         {rows.map((r) => (
           <LiveRow key={r.id} event={r} compact className={arriving(r.id) ? ARRIVE : undefined} />
         ))}
       </ul>
       {cursor ? <div ref={more} aria-hidden="true" className="h-px" /> : null}
-      {loadingOlder ? <p className="t-meta m-0">{t('rail-loading', { defaultValue: 'Loading' })}</p> : null}
+      {loadingOlder ? <p className="medapp-sub">{t('rail-loading', { defaultValue: 'Loading' })}</p> : null}
       {olderFailed ? (
-        <button type="button" className="t-meta text-start underline" onClick={() => void showOlder()}>
+        <button type="button" className="medapp-link text-start text-xs" onClick={() => void showOlder()}>
           {t('rail-older-retry', { defaultValue: 'Could not load more. Try again' })}
         </button>
       ) : null}

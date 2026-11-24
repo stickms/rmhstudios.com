@@ -27,5 +27,5 @@ export function WaveNote({ waves }: { waves: readonly WaveDto[] }) {
     }),
   );
   const list = new Intl.ListFormat(locale, { type: 'unit', style: 'short' }).format(items);
-  return <p className="t-meta m-0">{t('wave-note', { defaultValue: 'Waves: {{list}}', list })}</p>;
+  return <p className="medapp-sub">{t('wave-note', { defaultValue: 'Waves: {{list}}', list })}</p>;
 }

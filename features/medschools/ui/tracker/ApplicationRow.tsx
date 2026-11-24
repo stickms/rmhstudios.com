@@ -15,6 +15,9 @@ import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { LIMITS, type MilestoneType } from '../../engine/tracker';
 import type { ChanceDto, TrackerApplicationDto } from '../../medschools.contract';
 import { useMedLabels } from '../labels';
+import { StatusIcon } from '../status/StatusIcon';
+import { StatusText } from '../status/StatusText';
+import { statusOfMilestone } from '../status/status';
 import { ChanceLine } from './ChanceLine';
 import { MilestoneForm } from './MilestoneForm';
 import { SilenceLine } from './SilenceLine';
@@ -170,6 +173,8 @@ export function ApplicationRow({
               type: milestoneLabel(m.type),
               date: formatUtcDay(m.date, locale),
             });
+            // A decision or update is drawn in its status colour with its icon; the words always print.
+            const status = statusOfMilestone(m.type);
             return (
               <li key={m.type}>
                 <Button
@@ -178,7 +183,14 @@ export function ApplicationRow({
                   aria-label={t('tracker-milestone-edit', { defaultValue: 'Edit {{milestone}}', milestone: label })}
                   onClick={() => setPanel({ kind: 'milestone', editing: m })}
                 >
-                  {label}
+                  {status ? (
+                    <>
+                      <StatusIcon status={status} size="sm" />
+                      <StatusText status={status}>{label}</StatusText>
+                    </>
+                  ) : (
+                    label
+                  )}
                 </Button>
               </li>
             );

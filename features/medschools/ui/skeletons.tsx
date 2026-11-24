@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-/** One list row's shape: a name and a figure on a rule. */
+/** One list row's shape: a disc, a name and a line, in a paper panel. */
 export function ListSkeleton({ rows = 8 }: { rows?: number }) {
   return (
-    <div aria-hidden="true">
+    <div aria-hidden="true" className="medapp-panel">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center justify-between gap-4 border-b border-site-border py-3">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-12" />
+        <div key={i} className="medapp-row items-center">
+          <span className="medapp-skeleton size-9 rounded-full" />
+          <div className="medapp-row__body flex flex-col gap-2">
+            <span className="medapp-skeleton h-4 w-48 max-w-full" />
+            <span className="medapp-skeleton h-3 w-32 max-w-full" />
+          </div>
         </div>
       ))}
     </div>
@@ -19,7 +21,7 @@ export function ListSkeleton({ rows = 8 }: { rows?: number }) {
 
 /** The shape of one chart. */
 export function ChartSkeleton() {
-  return <Skeleton className="h-56 w-full" aria-hidden="true" />;
+  return <span className="medapp-skeleton h-56 w-full" aria-hidden="true" />;
 }
 
 /**

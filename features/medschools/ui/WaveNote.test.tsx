@@ -26,7 +26,7 @@ describe('WaveNote', () => {
         ]}
       />,
     );
-    expect(html).toContain('t-meta');
+    expect(html).toContain('medapp-sub');
     expect(html).toContain('Waves: Nov 12 (1 invite), Nov 4 (41 invites), Oct 28 (37 invites)');
     expect(html).not.toContain('Sep 1');
   });

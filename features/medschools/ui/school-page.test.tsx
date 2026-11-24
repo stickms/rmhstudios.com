@@ -216,7 +216,7 @@ describe('SchoolPage', () => {
   it('the school header carries the crest (decorative) beside the place line, and the name is the only title', () => {
     h.search = {};
     const html = render(seedActivity(activity()));
-    expect(html).toContain('size-10');
+    expect(html).toContain('medapp-crest--40');
     expect(html).toMatch(/<img[^>]+alt=""/);
     expect(html.match(/<h1>/g)).toHaveLength(1);
   });
@@ -331,8 +331,8 @@ describe('SchoolPage', () => {
       html.indexOf('</div>', html.indexOf('aria-label="Programs"')),
     );
     expect(group.match(/<button/g)).toHaveLength(2);
-    expect(group).toContain('>DO</span>');
-    expect(group).toContain('>DO-PhD</span>');
+    expect(group).toContain('>DO<');
+    expect(group).toContain('>DO-PhD<');
     expect(group).not.toContain('MD');
     // The default program is All: both toggles are on.
     expect(group.match(/aria-pressed="true"/g)).toHaveLength(2);

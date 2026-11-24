@@ -2,11 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { schoolProgramOf } from '../engine/programs';
@@ -20,9 +17,10 @@ import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SkeletonSwap } from './skeletons';
 import { useMedLabels } from './labels';
+import { PageHead } from './shell/PageHead';
 
 /**
- * /rmh-medschool: the school index. Rows on rules (D14); nothing here is a primary action (R4). A school with no
+ * /rmh-medschool: the school index. A paper panel of rows (the redesign's list, D14). A school with no
  * reported figure prints nothing in the figure slot: ~200 "no data" lines were noise.
  */
 export function IndexPage() {
@@ -70,30 +68,31 @@ export function IndexPage() {
   const rows = (schools.data?.schools ?? []).filter((s) => !listSlugs || listSlugs.has(s.slug));
 
   return (
-    <PageLayout title={t('index-title', { defaultValue: 'RMH Med Schools' })}>
-      <p className="t-meta m-0">
+    <>
+      <PageHead title={t('index-title', { defaultValue: 'RMH Med Schools' })} />
+      <nav className="medapp-chips mb-4" aria-label={t('index-nav-label', { defaultValue: 'Med Schools' })}>
+        <Link to="/rmh-medschool/live" className="medapp-chip">
+          {t('index-live', { defaultValue: 'Live activity' })}
+        </Link>
         {signedIn ? (
           <>
-            <Link to="/rmh-medschool/tracker" className="underline">
+            <Link to="/rmh-medschool/tracker" className="medapp-chip">
               {t('index-my-tracker', { defaultValue: 'My tracker' })}
             </Link>
-            {' · '}
-            <Link to="/rmh-medschool/ask" className="underline">
+            <Link to="/rmh-medschool/ask" className="medapp-chip">
               {t('index-ask', { defaultValue: 'Ask' })}
             </Link>
-            {' · '}
-            <Link to="/rmh-medschool/lists" className="underline">
+            <Link to="/rmh-medschool/lists" className="medapp-chip">
               {t('index-my-lists', { defaultValue: 'My lists' })}
             </Link>
-            {' · '}
           </>
         ) : null}
-        <Link to="/rmh-medschool/practice" className="underline">
+        <Link to="/rmh-medschool/practice" className="medapp-chip">
           {t('index-practice', { defaultValue: 'Interview practice' })}
         </Link>
-      </p>
+      </nav>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="medapp-toolbar">
         <SearchField
           containerClassName="w-full sm:w-auto sm:min-w-48 sm:flex-1"
           aria-label={t('index-search-label', { defaultValue: 'Search schools' })}
@@ -119,7 +118,7 @@ export function IndexPage() {
           ))}
         </Select>
       </div>
-      <ProgramSetToggles className="mt-3" value={view.programs} onChange={(programs) => setView({ programs })} />
+      <ProgramSetToggles value={view.programs} onChange={(programs) => setView({ programs })} />
       {myLists.length > 0 ? (
         <div className="mt-3">
           <Select
@@ -139,7 +138,7 @@ export function IndexPage() {
         </div>
       ) : null}
       {search.list && !signedIn ? (
-        <p className="t-meta m-0 mt-3">
+        <p className="medapp-note">
           {t('index-list-signed-out', {
             defaultValue: 'This link filters to a saved list. Sign in to see your lists; all schools are shown.',
           })}
@@ -149,32 +148,30 @@ export function IndexPage() {
 
       <div className="mt-4">
         {schools.isError ? (
-          <EmptyState
-            title={t('index-load-failed', { defaultValue: 'Could not load the schools.' })}
-            action={<Button onClick={() => void schools.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
-          />
+          <div className="medapp-panel medapp-panel--padded">
+            <p className="medapp-empty">{t('index-load-failed', { defaultValue: 'Could not load the schools.' })}</p>
+            <button type="button" className="medapp-chip" onClick={() => void schools.refetch()}>
+              {t('retry', { defaultValue: 'Try again' })}
+            </button>
+          </div>
         ) : (
           <SkeletonSwap ready={!!schools.data}>
             {schools.data && rows.length === 0 ? (
-              <EmptyState title={t('index-empty', { defaultValue: 'No schools match.' })} />
+              <div className="medapp-panel">
+                <p className="medapp-empty">{t('index-empty', { defaultValue: 'No schools match.' })}</p>
+              </div>
             ) : (
-              <ul className="m-0 list-none p-0">
+              <ul className="medapp-panel medapp-rows">
                 {rows.map((s) => (
-                  <li
-                    key={s.slug}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-site-border py-3"
-                  >
-                    <SchoolCrest slug={s.slug} name={s.name} size={24} />
-                    <div className="min-w-44 flex-1">
-                      <Link
-                        to="/rmh-medschool/$slug"
-                        params={{ slug: s.slug }}
-                        search={SCHOOL_SEARCH_DEFAULTS}
-                        className="t-body"
-                      >
-                        {s.name}
-                      </Link>
-                      <p className="t-meta m-0">
+                  <li key={s.slug} className="medapp-row items-center">
+                    <SchoolCrest slug={s.slug} name={s.name} size={40} />
+                    <div className="medapp-row__body">
+                      <p className="medapp-row__name">
+                        <Link to="/rmh-medschool/$slug" params={{ slug: s.slug }} search={SCHOOL_SEARCH_DEFAULTS}>
+                          {s.name}
+                        </Link>
+                      </p>
+                      <p className="medapp-row__meta">
                         {t('index-school-meta', {
                           defaultValue: '{{degree}} · {{city}}, {{state}}',
                           degree: s.degree,
@@ -182,19 +179,19 @@ export function IndexPage() {
                           state: s.state,
                         })}
                       </p>
+                      {s.reported ? (
+                        <p className="medapp-row__meta">
+                          {t('index-reported', {
+                            count: s.reported.count,
+                            n: nf.format(s.reported.count),
+                            defaultValue_one: '{{n}} reported invite, {{source}}',
+                            defaultValue_other: '{{n}} reported invites, {{source}}',
+                            defaultValue: '{{n}} reported invites, {{source}}',
+                            source: sourceName(s.reported.source),
+                          })}
+                        </p>
+                      ) : null}
                     </div>
-                    {s.reported ? (
-                      <span className="t-meta ps-9 sm:ps-0">
-                        {t('index-reported', {
-                          count: s.reported.count,
-                          n: nf.format(s.reported.count),
-                          defaultValue_one: '{{n}} reported invite, {{source}}',
-                          defaultValue_other: '{{n}} reported invites, {{source}}',
-                          defaultValue: '{{n}} reported invites, {{source}}',
-                          source: sourceName(s.reported.source),
-                        })}
-                      </span>
-                    ) : null}
                     <SaveToList
                       school={{ slug: s.slug, name: s.name }}
                       program={schoolProgramOf(view.programs, s.degree)}
@@ -206,6 +203,6 @@ export function IndexPage() {
           </SkeletonSwap>
         )}
       </div>
-    </PageLayout>
+    </>
   );
 }

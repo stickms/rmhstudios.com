@@ -201,6 +201,9 @@ function ruleOf(type: MilestoneType): MedEventType {
     case 'WITHDRAWN':
     case 'HOLD':
       return type;
+    // Matriculating follows an acceptance, so it belongs to the class the acceptance does (decisions roll on Sept 1).
+    case 'MATRICULATED':
+      return 'ACCEPTANCE';
     default:
       return 'SECONDARY';
   }

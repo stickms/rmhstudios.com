@@ -1,6 +1,4 @@
 import { useRef, type KeyboardEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 export interface Option<T extends string> {
   value: T;
@@ -22,8 +20,9 @@ export function nextOptionIndex(key: string, index: number, count: number, rtl: 
 /**
  * A horizontal single-select button group (owner O7): `role="radiogroup"`, each option `role="radio"` with
  * `aria-checked`, one tab stop (roving tabindex), arrow keys move and select and wrap, and the row wraps on a phone.
- * It filters what the page shows, it does not navigate, so it is not a tab strip (`Tabs`). Buttons are the `Button`
- * primitive (36px, 44px on touch); the chosen one has an ink border and weight, the others a rule: never colour alone.
+ * It filters what the page shows, it does not navigate, so it is not a tab strip (`Tabs`). Options are
+ * `.medapp-chip` pills (36px, 44px on touch); the chosen one is filled with a stronger border and weight 600, the
+ * others muted: never colour alone.
  */
 export function OptionGroup<T extends string>({
   label,
@@ -54,23 +53,21 @@ export function OptionGroup<T extends string>({
   };
 
   return (
-    <div ref={group} role="radiogroup" aria-label={label} className="flex flex-wrap gap-2" onKeyDown={onKeyDown}>
+    <div ref={group} role="radiogroup" aria-label={label} className="medapp-chips" onKeyDown={onKeyDown}>
       {options.map((o, i) => {
         const checked = i === selected;
         return (
-          <Button
+          <button
             key={o.value}
             type="button"
             role="radio"
             aria-checked={checked}
             tabIndex={checked ? 0 : -1}
-            variant="default"
-            size="sm"
-            className={cn(checked ? 'border-site-text font-semibold' : 'text-site-text-muted')}
+            className="medapp-chip"
             onClick={() => onChange(o.value)}
           >
             {o.label}
-          </Button>
+          </button>
         );
       })}
     </div>

@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PROGRAM_KEYS, toggleProgramKey, type ProgramKey } from '../engine/programs';
 import { useMedLabels } from './labels';
@@ -8,8 +7,8 @@ import { useMedLabels } from './labels';
  * The index, live feed, activity rail and preferences' program control (owner 2026-11-23): four independent toggles,
  * MD, MD-PhD, DO and DO-PhD, in one labelled group. At least one stays on; all four on is "no filter" (it is also the
  * only set that includes events that did not report a program). The same shape as `CategoryToggles` and
- * `ProgramToggles`: `aria-pressed` buttons, never a tab strip, pressed is an ink border and weight and never colour
- * alone. `size="xs"` is the compact variant the narrow rail uses.
+ * `ProgramToggles`: `aria-pressed` buttons, never a tab strip, pressed is a filled wash, a stronger border and weight 600
+ * (`.medapp-chip`), never colour alone. `size="xs"` is the compact variant the narrow rail uses.
  */
 export function ProgramSetToggles({
   value,
@@ -29,23 +28,21 @@ export function ProgramSetToggles({
     <div
       role="group"
       aria-label={t('program-set-label', { defaultValue: 'Programs' })}
-      className={cn('flex flex-wrap gap-2', className)}
+      className={cn('medapp-chips', className)}
     >
       {PROGRAM_KEYS.map((key) => {
         const pressed = value.includes(key);
         return (
-          <Button
+          <button
             key={key}
             type="button"
-            variant="default"
-            size={size}
+            className={cn('medapp-chip', size === 'xs' && 'medapp-chip--xs')}
             aria-pressed={pressed}
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
-            className={cn(pressed ? 'border-site-text font-semibold' : 'text-site-text-muted')}
             onClick={() => onChange(toggleProgramKey(value, key))}
           >
             {programKeyLabel(key)}
-          </Button>
+          </button>
         );
       })}
     </div>

@@ -25,8 +25,8 @@ enum MedProgram {
   PHD
 }
 
-/// A step in a private tracker application. Only the seven public event types are ever shared: SUBMITTED, COMPLETE and
-/// SECONDARY_SUBMITTED never leave the private tables. SECONDARY reads "Secondary received" in the UI.
+/// A step in a private tracker application. Only the seven public event types are ever shared: SUBMITTED, COMPLETE,
+/// SECONDARY_SUBMITTED and MATRICULATED never leave the private tables. SECONDARY reads "Secondary received" in the UI.
 enum MedMilestoneType {
   SUBMITTED
   COMPLETE
@@ -36,6 +36,7 @@ enum MedMilestoneType {
   WAITLIST
   REJECTION
   ACCEPTANCE
+  MATRICULATED
   WITHDRAWN
   HOLD
 }
