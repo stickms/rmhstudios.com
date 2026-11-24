@@ -4,15 +4,17 @@
  *
  * A violation is one of three source shapes, on a site-tier `.tsx` file under `components/`, `features/` or
  * `app/routes/`:
- *  - a bordered group box: a class string with an all-sides `border` and a `rounded-site` (or `rounded-md/lg/xl`)
- *    and no control, picture or overlay marker (see `isControlOrPicture`);
- *  - a retired surface role: `surface-card` or `surface-panel` in a class string;
+ *  - a bordered group box: the class text of one element (a `className` value, or a `cn(` / `clsx(` / `cva(` call's
+ *    arguments, with every string literal inside it joined) has an all-sides `border` and a `rounded-site` (or
+ *    `rounded-md/lg/xl`) and no control, picture or overlay marker (see `isControlOrPicture`);
+ *  - a retired surface role: `surface-card` or `surface-panel` in that class text;
  *  - the retired wrapper: an import of `components/ui/card`.
  *
- * The frozen violators live in `steel-rules-baseline.ts`, each with the wave that removes it. The gate is a ratchet: a
- * file in the baseline may not gain a violation (it is not re-listed), a file not in the baseline may not have one, and
- * an entry whose file is clean must leave the list. Run `STEEL_RULES_UPDATE=1 pnpm exec vitest run
- * lib/__tests__/steel-rules.test.ts` to print the current violating files when regenerating the baseline.
+ * The frozen violators live in `steel-rules-baseline.ts`: per file, the wave that removes it and how many violations it
+ * has now. A file may not exceed its recorded count (a new violation in an old file fails), a file not in the baseline
+ * may not have one, a file whose count fell must lower its recorded number, and an entry with no violations left must be
+ * deleted. To regenerate after a change, run `STEEL_RULES_UPDATE=1 pnpm exec vitest run lib/__tests__/steel-rules.test.ts`
+ * and read the `STEEL_RULES_AT` lines it prints.
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -60,7 +62,7 @@ const CONTROL_MARKERS = [
 const FIXED_H = /(?:^|\s)(?:\S*:)*h-\d/;
 const FIXED_W = /(?:^|\s)(?:\S*:)*w-\d/;
 
-/** True when the class string carries a marker that makes its border a control, a picture or an overlay. */
+/** True when the class text carries a marker that makes its border a control, a picture or an overlay. */
 function isControlOrPicture(classes: string): boolean {
   if (CONTROL_MARKERS.some((re) => re.test(classes))) return true;
   return FIXED_H.test(classes) && FIXED_W.test(classes);
@@ -104,51 +106,129 @@ function enclosingTag(src: string, idx: number): string {
 /** Blank comments in place (newlines kept, so line numbers hold). `://` in a URL is not a comment. */
 function stripComments(src: string): string {
   const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-  return src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|[^:\\])\/\/[^\n]*/g, (m, pre: string) => pre + blank(m.slice(pre.length)));
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/(^|[^:\\])\/\/[^\n]*/g, (m, pre: string) => pre + blank(m.slice(pre.length)));
 }
 
 const STRING_LITERAL = /"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g;
 
+/** The text of one string literal match. */
+function literalText(m: RegExpMatchArray): string {
+  return m[1] ?? m[2] ?? m[3] ?? '';
+}
+
+/** Index of the quote that closes the string literal opened at `i` (or the line end for '/" strings). */
+function skipQuoted(src: string, i: number): number {
+  const q = src[i];
+  for (let j = i + 1; j < src.length; j++) {
+    if (src[j] === '\\') {
+      j++;
+      continue;
+    }
+    if (src[j] === q) return j;
+    if (q !== '`' && src[j] === '\n') return j;
+  }
+  return src.length;
+}
+
+/** Index just past the bracket that closes the `(` or `{` at `open`, skipping quoted text. */
+function closeIndex(src: string, open: number): number {
+  const opener = src[open];
+  const closer = opener === '(' ? ')' : '}';
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === '`') {
+      i = skipQuoted(src, i);
+    } else if (c === opener) {
+      depth++;
+    } else if (c === closer) {
+      depth--;
+      if (depth === 0) return i + 1;
+    }
+  }
+  return src.length;
+}
+
+interface Span {
+  start: number;
+  end: number;
+}
+
 /**
- * The site-tier scanner, a pure function of one file's source. `file` is only used to label the violations.
- * Exported so the gate's own rules are unit-tested on inline snippets.
+ * The class contexts of one file: each `className` attribute value (a quoted value or a `{…}` expression) and each
+ * `cn(` / `clsx(` / `cva(` call, as a balanced span. A context nested in an earlier one is part of it.
+ */
+const CONTEXT_OPEN = /\bclassName\s*=\s*(?=["{])|\b(?:cn|clsx|cva)\s*\(/g;
+
+function classContexts(code: string): Span[] {
+  const spans: Span[] = [];
+  let covered = 0;
+  for (const m of code.matchAll(CONTEXT_OPEN)) {
+    const start = m.index ?? 0;
+    if (start < covered) continue;
+    const head = m[0];
+    let end: number;
+    if (head.endsWith('(')) {
+      end = closeIndex(code, start + head.length - 1);
+    } else {
+      const at = start + head.length;
+      if (code[at] === '{') {
+        end = closeIndex(code, at);
+      } else {
+        const close = code.indexOf('"', at + 1);
+        end = close < 0 ? code.length : close + 1;
+      }
+    }
+    spans.push({ start, end });
+    covered = end;
+  }
+  return spans;
+}
+
+/** Every string literal inside a span, joined: the class text the span composes. */
+function classTextOf(code: string, span: Span): string {
+  const parts: string[] = [];
+  for (const m of code.slice(span.start, span.end).matchAll(STRING_LITERAL)) parts.push(literalText(m));
+  return parts.join(' ');
+}
+
+/**
+ * The site-tier scanner, a pure function of one file's source. `file` is only used to label the violations. Exported so
+ * the gate's own rules are unit-tested on inline snippets.
  */
 export function scanSteelRules(src: string, file: string): SteelRuleViolation[] {
   const code = stripComments(src);
+  const spans = classContexts(code);
   const out: SteelRuleViolation[] = [];
 
-  for (const m of code.matchAll(STRING_LITERAL)) {
-    const value = m[1] ?? m[2] ?? m[3] ?? '';
-    const idx = m.index ?? 0;
-    if (!ROUNDED.test(value) || !BORDER_ALL.test(value)) {
-      // Not a bordered radius box, but it may still be a retired role.
-      if (RETIRED_ROLE.test(value)) {
-        out.push({
-          file,
-          line: lineAt(code, idx),
-          kind: 'retired-surface-role',
-          detail: 'surface-card / surface-panel is retired on the site tier',
-        });
-      }
-      continue;
+  const check = (text: string, at: number) => {
+    const line = lineAt(code, at);
+    if (RETIRED_ROLE.test(text)) {
+      out.push({
+        file,
+        line,
+        kind: 'retired-surface-role',
+        detail: 'surface-card / surface-panel is retired on the site tier',
+      });
     }
-    if (isControlOrPicture(value) || isControlTag(enclosingTag(code, idx))) {
-      if (RETIRED_ROLE.test(value)) {
-        out.push({
-          file,
-          line: lineAt(code, idx),
-          kind: 'retired-surface-role',
-          detail: 'surface-card / surface-panel is retired on the site tier',
-        });
-      }
-      continue;
-    }
+    if (!ROUNDED.test(text) || !BORDER_ALL.test(text)) return;
+    if (isControlOrPicture(text) || isControlTag(enclosingTag(code, at))) return;
     out.push({
       file,
-      line: lineAt(code, idx),
+      line,
       kind: 'bordered-group-box',
       detail: 'bordered group box (border + rounded radius, no control, picture or overlay marker)',
     });
+  };
+
+  for (const span of spans) check(classTextOf(code, span), span.start);
+  // String literals outside any class context (a `const` holding classes, say) are checked on their own.
+  for (const m of code.matchAll(STRING_LITERAL)) {
+    const idx = m.index ?? 0;
+    if (spans.some((s) => idx >= s.start && idx < s.end)) continue;
+    check(literalText(m), idx);
   }
 
   for (const m of code.matchAll(/import\s[^;]*?from\s+['"][^'"]*\/ui\/card['"]/g)) {
@@ -210,6 +290,26 @@ describe('scanSteelRules (the scanner itself)', () => {
     const v = scanSteelRules('<div className="border rounded-site bg-site-bg-subtle aspect-video" />', 'x.tsx');
     expect(v).toEqual([]);
   });
+
+  it('flags a bordered box whose border and radius are split across the literals of a cn() call', () => {
+    const v = scanSteelRules('const x = cn("border p-4", "rounded-site");', 'x.tsx');
+    expect(v.map((r) => r.kind)).toEqual(['bordered-group-box']);
+  });
+
+  it('flags a bordered box whose radius comes from a conditional inside cn()', () => {
+    const v = scanSteelRules('const x = cn("border", cond && "rounded-site");', 'x.tsx');
+    expect(v.map((r) => r.kind)).toEqual(['bordered-group-box']);
+  });
+
+  it('does not flag a bordered Button whose classes are composed with cn()', () => {
+    const v = scanSteelRules('<Button className={cn("border rounded-site", x)}>Save</Button>', 'x.tsx');
+    expect(v).toEqual([]);
+  });
+
+  it('does not flag a bordered picture whose bg-site-bg-subtle is composed in cn()', () => {
+    const v = scanSteelRules("<div className={cn('border rounded-site', 'bg-site-bg-subtle')} />", 'x.tsx');
+    expect(v).toEqual([]);
+  });
 });
 
 describe('steel rules on the site tier', () => {
@@ -218,32 +318,53 @@ describe('steel rules on the site tier', () => {
     expect(SITE_FILES).toContain(join('components', 'feed', 'PageLayout.tsx'));
   });
 
-  it('every violation is in STEEL_RULES_BASELINE (no new bordered group boxes, retired roles or ui/card imports)', () => {
+  it('no file outside the baseline has a violation (no new bordered group boxes, retired roles or ui/card imports)', () => {
     const offenders: string[] = [];
     for (const [file, violations] of scanAll()) {
       if (STEEL_RULES_BASELINE[file] !== undefined) continue;
-      for (const v of violations) {
-        offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
-      }
+      for (const v of violations) offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
   });
 
-  it('every baseline entry still violates (a clean file leaves the list)', () => {
+  it('no baselined file has more violations than its recorded count (the ratchet only goes down)', () => {
     const byFile = scanAll();
-    const stale = Object.keys(STEEL_RULES_BASELINE).filter((file) => !byFile.has(file));
-    expect(stale, `Remove these from steel-rules-baseline.ts (they are clean now): ${stale.join(', ')}`).toEqual([]);
+    const grew: string[] = [];
+    for (const [file, violations] of byFile) {
+      const entry = STEEL_RULES_BASELINE[file];
+      if (entry && violations.length > entry.count) {
+        grew.push(`${file}: ${violations.length} violations, recorded ${entry.count}. ${POINTER}`);
+      }
+    }
+    expect(grew, grew.join('\n')).toEqual([]);
   });
 
-  it('every baseline entry names a wave', () => {
-    const bad = Object.entries(STEEL_RULES_BASELINE).filter(([, wave]) => !/^wave \d+$/.test(wave));
-    expect(bad).toEqual([]);
+  it('every baseline entry still matches its recorded count (a clean file leaves the list; a smaller count is lowered)', () => {
+    const byFile = scanAll();
+    const problems: string[] = [];
+    for (const [file, entry] of Object.entries(STEEL_RULES_BASELINE)) {
+      const now = byFile.get(file)?.length ?? 0;
+      if (now === 0) problems.push(`${file}: clean now, delete the entry`);
+      else if (now < entry.count)
+        problems.push(`${file}: ${now} violations now, lower its recorded count from ${entry.count}`);
+    }
+    expect(problems, problems.join('\n')).toEqual([]);
   });
 
-  it('prints the violating files when STEEL_RULES_UPDATE=1 (baseline regeneration only)', () => {
+  it('every baseline entry names a wave and a positive count', () => {
+    const bad = Object.entries(STEEL_RULES_BASELINE).filter(
+      ([, e]) => !/^wave \d+$/.test(e.wave) || !Number.isInteger(e.count) || e.count < 1,
+    );
+    expect(bad.map(([f]) => f)).toEqual([]);
+  });
+
+  it('prints each violation when STEEL_RULES_UPDATE=1 (baseline regeneration only)', () => {
     if (process.env.STEEL_RULES_UPDATE !== '1') return;
-    const lines = [...scanAll().keys()].sort().map((f) => `STEEL_RULES_FILE ${f}`);
-    console.log(lines.join('\n'));
+    const lines: string[] = [];
+    for (const [file, violations] of scanAll()) {
+      for (const v of violations) lines.push(`STEEL_RULES_AT ${file}:${v.line}:${v.kind}`);
+    }
+    process.stdout.write(lines.join('\n') + '\n');
   });
 });
 
