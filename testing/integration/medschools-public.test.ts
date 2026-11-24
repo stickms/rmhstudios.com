@@ -25,9 +25,36 @@ const anon = new Client();
 const SLUG = MEDSCHOOL_FIXTURE_SLUG;
 const INACTIVE_SLUG = 'it-medschools-fixture-inactive';
 
+/**
+ * The AAMC MSAR facts of the fixture school. Seeded before any request: the school page's loader prefetches the facts
+ * URL, and the public response micro-cache would otherwise keep an empty list for that URL for 30 s.
+ */
+async function seedSchoolFacts(): Promise<void> {
+  const q = (sql: string, params: unknown[]) => db().query(sql, params);
+  const school = await q('select id from med_school where slug = $1', [SLUG]);
+  const schoolId = (school.rows[0] as { id: string }).id;
+  await q(
+    `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueText", note, source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
+     values ('it-fact-1', $1, 'REG', 2027, 'ACCEPTS_OUT_OF_STATE', 'YES', 'Fixture note.', 'AAMC_MSAR_REPORT',
+             'https://students-residents.aamc.org/media/6996/download?attachment',
+             'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Applications Accepted Information', 6996, 2, '2026-11-24')
+     on conflict do nothing`,
+    [schoolId],
+  );
+  await q(
+    `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueNum", "valueText", "valueJson", source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
+     values ('it-fact-2', $1, 'REG', 2027, 'COA_IN_STATE', 69123, null, null, 'AAMC_MSAR_REPORT',
+             'https://students-residents.aamc.org/media/7071/download?attachment',
+             'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Tuition, Fees and Insurance Information', 7071, 2, '2026-11-24')
+     on conflict do nothing`,
+    [schoolId],
+  );
+}
+
 beforeAll(async () => {
   await seedMedSchoolsFixture();
   await seedSecondariesFixture();
+  await seedSchoolFacts();
   await db().query(
     `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
      values ($1, $1, 'Inactive Fixture', 'Inactive', 'MD', 'Durham', 'NC', false, now())`,
@@ -492,28 +519,6 @@ const FACT_KEYS = [
 const factsUrl = (slug = SLUG) => `/api/medschools/schools/${slug}/facts`;
 
 describe('the public school facts endpoint', () => {
-  beforeAll(async () => {
-    const q = (sql: string, params: unknown[]) => db().query(sql, params);
-    const school = await q('select id from med_school where slug = $1', [SLUG]);
-    const schoolId = (school.rows[0] as { id: string }).id;
-    await q(
-      `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueText", note, source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
-       values ('it-fact-1', $1, 'REG', 2027, 'ACCEPTS_OUT_OF_STATE', 'YES', 'Fixture note.', 'AAMC_MSAR_REPORT',
-               'https://students-residents.aamc.org/media/6996/download?attachment',
-               'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Applications Accepted Information', 6996, 2, '2026-11-24')
-       on conflict do nothing`,
-      [schoolId],
-    );
-    await q(
-      `insert into med_school_fact (id, "schoolId", program, "cycleYear", kind, "valueNum", "valueText", "valueJson", source, "sourceUrl", "sourceLabel", "reportId", page, "checkedOn")
-       values ('it-fact-2', $1, 'REG', 2027, 'COA_IN_STATE', 69123, null, null, 'AAMC_MSAR_REPORT',
-               'https://students-residents.aamc.org/media/7071/download?attachment',
-               'AAMC MSAR Report for Applicants and Advisors, 2027 entering class, Tuition, Fees and Insurance Information', 7071, 2, '2026-11-24')
-       on conflict do nothing`,
-      [schoolId],
-    );
-  });
-
   it('has the pinned key sets and a long public cache, and no page or internal id', async () => {
     const res = await anon.get(factsUrl());
     expect(res.status).toBe(200);
