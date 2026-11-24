@@ -438,7 +438,8 @@
   display: inline-block;
 }
 .medapp-when__time {
-  cursor: help;
+  /* The tooltip is a quiet extra: the date keeps the ordinary text cursor (owner 2026-11-24). */
+  cursor: inherit;
   border-radius: var(--app-med-radius-sm);
 }
 .medapp-when__tip {
