@@ -31,6 +31,7 @@
     container-type: inline-size;
     display: flex;
     flex-wrap: wrap;
+    column-gap: 1.5rem;
   }
   .rule-cols > * {
     flex: 1 0 100%;
@@ -52,12 +53,24 @@
     .rule-cols[data-ratio='3-2'] > *:nth-child(2) {
       flex-grow: 2;
     }
+    /* The gutter is the container's column-gap, not padding or a border on the item: a flex item's padding is a floor on
+       its base size, which skews a flex-grow split. The rule is drawn in the middle of that gap. Only a sibling after the
+       first gets it, so a single child never draws one. */
+    .rule-cols > * {
+      position: relative;
+    }
     .rule-cols > * + * {
       border-block-start: 0;
       margin-block-start: 0;
       padding-block-start: 0;
-      border-inline-start: 1px solid var(--site-border);
-      padding-inline-start: 1.5rem;
+    }
+    .rule-cols > * + *::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: -0.75rem;
+      inline-size: 1px;
+      background: var(--site-border);
     }
   }
 

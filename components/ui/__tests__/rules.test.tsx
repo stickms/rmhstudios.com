@@ -9,6 +9,21 @@ import { Cells, Columns, Definition, Definitions, Notice, Section } from '../rul
 const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(resolve(here, '../../../app/styles/steel-rules.css'), 'utf8');
 
+/** Every `selector { body }` pair in the stylesheet, innermost first (so @container contents are included). */
+function ruleBlocks(): Array<[string, string]> {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  return [...bare.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
+    (m) => [m[1]!.trim().replace(/\s+/g, ' '), m[2]!] as [string, string],
+  );
+}
+
+/** The body of the one rule whose selector is exactly `selector`; fails the test if there is none. */
+function bodyOf(selector: string): string {
+  const hit = ruleBlocks().find(([s]) => s === selector);
+  if (!hit) throw new Error(`no rule for selector: ${selector}`);
+  return hit[1];
+}
+
 describe('Section', () => {
   it('renders a titled section with an h2 heading labelled by aria-labelledby', () => {
     const html = renderToStaticMarkup(
@@ -129,9 +144,41 @@ describe('steel-rules.css', () => {
     expect(outside).not.toMatch(/border-inline-start/);
   });
 
-  it('keeps the outer edge of Cells free of rules', () => {
-    expect(css).not.toMatch(/\.rule-cells[^{]*:first-child[^{]*\{[^}]*border-block-start/);
-    expect(css).not.toMatch(/\.rule-cells[^{]*:last-child[^{]*\{[^}]*border-block-end:\s*1px/);
+  it('draws Cells rules only between cells: start rules on inner columns, no bottom rule on the last row', () => {
+    expect(bodyOf(".rule-cells[data-columns='2'] > li:nth-child(2n)")).toMatch(/border-inline-start:\s*1px/);
+    expect(bodyOf(".rule-cells[data-columns='3'] > li:not(:nth-child(3n + 1))")).toMatch(/border-inline-start:\s*1px/);
+    expect(bodyOf(".rule-cells[data-columns='4'] > li:not(:nth-child(4n + 1))")).toMatch(/border-inline-start:\s*1px/);
+    // The outer edge: the last item and every last-row item lose their bottom rule.
+    expect(bodyOf('.rule-cells > li:last-child')).toMatch(/border-block-end:\s*0/);
+    expect(bodyOf('.rule-cells > li[data-last-row]')).toMatch(/border-block-end:\s*0/);
+    // No rule is drawn on an inline-end edge, and no cell rule on the first column's start edge.
+    expect(css).not.toMatch(/border-inline-end/);
+    for (const [selector, body] of ruleBlocks()) {
+      if (selector.includes('rule-cells') && /border-inline-start/.test(body)) {
+        expect(selector).not.toMatch(/:first-child|:nth-child\(1\)|nth-child\(n\)/);
+      }
+    }
+  });
+
+  it('draws the Columns gutter only after a sibling, never on a single child', () => {
+    // The vertical rule is a pseudo-element on `* + *`, so a lone child has no preceding sibling to draw it.
+    expect(bodyOf('.rule-cols > * + *::before')).toMatch(/inset-inline-start:\s*-0\.75rem/);
+    for (const [selector, body] of ruleBlocks()) {
+      if (selector.includes('rule-cols') && /border-inline-start/.test(body)) {
+        throw new Error(`a Columns rule applies without a sibling combinator: ${selector}`);
+      }
+    }
+  });
+
+  it('keeps the 3:2 split exact: the gutter is the column gap, not padding on a flex item', () => {
+    expect(bodyOf('.rule-cols')).toMatch(/column-gap:\s*1\.5rem/);
+    expect(bodyOf(".rule-cols[data-ratio='3-2'] > *:nth-child(1)")).toMatch(/flex-grow:\s*3/);
+    expect(bodyOf(".rule-cols[data-ratio='3-2'] > *:nth-child(2)")).toMatch(/flex-grow:\s*2/);
+    for (const [selector, body] of ruleBlocks()) {
+      if (selector.includes('rule-cols')) {
+        expect(body, selector).not.toMatch(/padding-inline-start/);
+      }
+    }
   });
 
   it('uses only logical properties and no effects', () => {
