@@ -332,7 +332,27 @@ function CollectionTile({
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
       >
         <div className="lib-book__3d">
-          <span className="lib-coll-tile__stack" aria-hidden="true" />
+          {/* Up to two more books fanned out behind the cover, so the collection reads as three. */}
+          {c.books.slice(0, Math.min(2, Math.max(count - 1, 0))).map((b, i) => (
+            <span
+              key={b.slug}
+              className={`lib-coll-tile__back lib-coll-tile__back--${i + 1}`}
+              aria-hidden="true"
+            >
+              {b.coverUrl && (
+                <BlurImage
+                  src={b.coverUrl}
+                  alt=""
+                  fit="cover"
+                  width={150}
+                  sizes="150px"
+                  loading="eager"
+                  className="absolute inset-0 h-full w-full rounded-[3px_6px_6px_3px]"
+                  imgClassName="h-full w-full object-top"
+                />
+              )}
+            </span>
+          ))}
           <div className={`lib-book__cover ${c.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
             {c.coverUrl ? (
@@ -460,6 +480,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
               fit="cover"
               width={150}
               sizes="150px"
+              loading="eager"
               className={COVER_WRAP}
               imgClassName={COVER_IMG}
             />

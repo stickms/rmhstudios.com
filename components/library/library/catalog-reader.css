@@ -223,7 +223,8 @@
    shape; the spine band + page badge sit on top. */
 .lib-book__cover.has-cover {
   padding: 0;
-  background: #fff;
+  /* Shown only until the art paints; a flat token, never a white flash. */
+  background: var(--site-bg-subtle);
 }
 
 .lib-book__edge {
@@ -858,26 +859,28 @@
   cursor: pointer;
   text-align: inherit;
 }
-/* Stacked-pages hint behind the cover so a collection reads as a set of books. */
-.lib-coll-tile__stack {
+/* Two more books fanned out behind the cover (member covers), each with a book's depth shadow. */
+.lib-coll-tile__back {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 78%;
-  height: 92%;
-  transform: translateX(-50%) rotate(-4deg);
-  transform-origin: bottom center;
+  width: min(100%, 150px);
+  height: calc(var(--cover-h) - 14px);
+  margin-left: calc(min(100%, 150px) / -2);
+  overflow: hidden;
   border-radius: 3px 6px 6px 3px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(2, 10, 28, 0.22));
-  /* Soft, straight-down glass depth to match the book covers (was a harsh
-     0 6px 14px rgba(0,0,0,0.35) blob). */
-  box-shadow: 0 10px 22px rgba(2, 10, 28, 0.26);
+  background: var(--site-bg-subtle);
+  box-shadow:
+    0 8px 20px rgba(2, 10, 28, 0.38),
+    0 2px 5px rgba(2, 10, 28, 0.26);
+  transform-origin: bottom center;
   z-index: 0;
-  transition: box-shadow 420ms ease;
 }
-/* When the volume lifts + spins on hover, keep the stack's shadow soft. */
-.lib-coll-tile__btn:hover .lib-coll-tile__stack {
-  box-shadow: 0 14px 28px rgba(2, 10, 28, 0.3);
+.lib-coll-tile__back--1 {
+  transform: translateX(-14px) rotate(-6deg);
+}
+.lib-coll-tile__back--2 {
+  transform: translateX(14px) rotate(6deg);
 }
 .lib-coll-tile .lib-book__cover {
   position: relative;

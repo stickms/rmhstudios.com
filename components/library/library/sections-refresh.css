@@ -979,10 +979,12 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
   }
+  /* Page count left, format (PDF) right, on one line. */
   .lib-book__facts {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
   }
   .lib-book__description {
     -webkit-line-clamp: 2;
