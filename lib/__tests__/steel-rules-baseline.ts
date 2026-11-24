@@ -6,17 +6,6 @@
  * is clean must be deleted. Nothing new goes in.
  */
 export const STEEL_RULES_BASELINE: Record<string, { wave: string; count: number }> = {
-  'components/kaikai-debt/AddDebtForm.tsx': { wave: 'wave 4', count: 2 },
-  'components/kaikai-debt/AskDebtPanel.tsx': { wave: 'wave 4', count: 2 },
-  'components/kaikai-debt/DebtDesks.tsx': { wave: 'wave 4', count: 2 },
-  'components/kaikai-debt/DebtLogRow.tsx': { wave: 'wave 4', count: 1 },
-  'components/kaikai-debt/KaikaiDebtCounter.tsx': { wave: 'wave 4', count: 3 },
-  'components/kaikai-debt/stats/CreditScore.tsx': { wave: 'wave 4', count: 2 },
-  'components/kaikai-debt/stats/DebtAnalytics.tsx': { wave: 'wave 4', count: 1 },
-  'components/kaikai-debt/stats/Leaderboards.tsx': { wave: 'wave 4', count: 1 },
-  'components/kaikai-debt/stats/StatTiles.tsx': { wave: 'wave 4', count: 1 },
-  'components/kaikai-debt/stats/StatsTable.tsx': { wave: 'wave 4', count: 1 },
-  'components/kaikai-debt/stats/chart-kit.tsx': { wave: 'wave 4', count: 2 },
   'components/optimization/OptimizationClosingSections.tsx': { wave: 'wave 4', count: 2 },
   'components/optimization/OptimizationHero.tsx': { wave: 'wave 4', count: 1 },
   'components/optimization/OptimizationResultSections.tsx': { wave: 'wave 4', count: 2 },

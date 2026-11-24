@@ -22,7 +22,7 @@ export function DebtDesks() {
   const { t } = useTranslation('c-kaikai-debt');
 
   return (
-    <section className="surface-panel flex flex-col gap-3 rounded-site p-5" aria-labelledby="kd-desks-title">
+    <section className="rule-section flex flex-col gap-3" aria-labelledby="kd-desks-title">
       <div className="flex flex-col gap-1">
         <h2 id="kd-desks-title" className="font-display text-lg font-semibold text-site-text">
           {t('desks.title', {
@@ -96,7 +96,7 @@ function Desk({
   body: string;
 }) {
   return (
-    <article className="surface-card flex flex-col gap-1.5 rounded-site p-4">
+    <article className="flex flex-col gap-1.5 border-b border-site-border py-4">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         {role}
