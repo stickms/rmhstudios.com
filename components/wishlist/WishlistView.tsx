@@ -5,7 +5,6 @@ import { removeWishApi } from '@/lib/wishlist/wishlist.contract';
 import { toast } from '@/lib/toast';
 import { Heart, Trash2, Gift } from 'lucide-react';
 
-import { Card } from '@/components/ui/card';
 import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { WishlistItemView } from '@/lib/wishlist/types';
@@ -36,10 +35,10 @@ export function WishlistView({ initial }: { initial: WishlistItemView[] }) {
   }
 
   return (
-    <ul className="space-y-3">
+    <ul>
       {items.map((item) => (
         <li key={item.id}>
-          <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+          <div className="flex flex-row items-center gap-3 border-b border-site-border py-3">
             <Gift className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
             <span className="min-w-0 flex-1">
               {item.href ? (
@@ -67,7 +66,7 @@ export function WishlistView({ initial }: { initial: WishlistItemView[] }) {
               onClick={() => remove(item)}
               label={t('remove', { defaultValue: 'Remove' })}
             />
-          </Card>
+          </div>
         </li>
       ))}
     </ul>

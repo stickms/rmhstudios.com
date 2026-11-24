@@ -68,7 +68,7 @@ export function DirectoryItem({
     <Link
       to={to as string}
       data-slot="directory-item"
-      className="relative flex items-start gap-4 rounded-site border border-site-border p-5 transition-[border-color,background-color] duration-site hover:border-site-text hover:bg-site-surface-hover"
+      className="row-hover relative flex items-start gap-4 border-b border-site-border py-5"
     >
       <div
         className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-site text-3xl"

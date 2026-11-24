@@ -2,7 +2,6 @@ import * as React from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
@@ -68,7 +67,7 @@ export function WidgetFrame({
   const arrival = useArrival(!initialLoading);
 
   return (
-    <Card data-slot="widget-frame" className={cn('gap-0 py-0 overflow-hidden', className)}>
+    <div data-slot="widget-frame" className={cn('flex flex-col overflow-hidden text-site-text', className)}>
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-site-border">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
           {Icon ? <Icon className="h-4 w-4 text-site-text-muted" aria-hidden /> : null}
@@ -106,6 +105,6 @@ export function WidgetFrame({
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
