@@ -33,7 +33,8 @@ feature lives in that feature's directory; genuinely shared primitives live in
   `rounded-lg`/`-xl`/`-2xl` fail CI on the site tier.
 - **Content has no surface; only floating UI and fields do.** On a `_site` page content sits
   on the page and a list is rows on 1px rules (S1, S2, R3): no card, no box, no
-  `surface-card`. The roles in `app/styles/steel-surfaces.css` are `.surface-overlay` for
+  `surface-card`. Groups use the divider primitives in `components/ui/rules.tsx` (`Section`, `Columns`, `Cells`,
+  `Notice`, `Definitions`; S7 to S11), which emit `rule-*` classes from `app/styles/steel-rules.css`. The roles in `app/styles/steel-surfaces.css` are `.surface-overlay` for
   anything floating (dialogs, popovers, menus, toasts: CI-enforced, floating UI below the
   overlay tier fails), `.surface-field` for fields, `.surface-chrome` for a bar and
   `.surface-press` for a pressable host. `surface-card` and `surface-panel` exist only for
@@ -124,7 +125,8 @@ cannot see, and it is the half that decides whether the change looks native:
       spinner, empty state or copy button is this repo's most common defect
       (design-language.md §0.3). Check `ui/` before writing anything.
 - [ ] **Rows on rules, not boxes** — a group of content is rows with a 1px rule between
-      them, hung on the spine where the recipe says so. `.surface-overlay` is for anything
+      them, hung on the spine where the recipe says so. Use `Section`, `Columns`, `Cells`,
+      `Notice` or `Definitions` from `components/ui/rules.tsx` rather than a hand-written rule. `.surface-overlay` is for anything
       floating, `.surface-field` for fields. Never a hand-rolled
       `bg-site-surface border rounded-site` box around content (R3).
 - [ ] **Ink tracks its surface** (`bg-site-accent` → `text-site-accent-fg`),

@@ -57,8 +57,9 @@ interface CellsProps {
 }
 
 /**
- * A grid of cells with rules only between them (S9). Each item is marked `data-last-row` when it sits in the last row
- * of a full grid, so a ragged last row never draws a bottom rule on the outer edge.
+ * A grid of cells with rules only between them (S9). Each child must be an `<li>` (the CSS targets `li`). Each item is
+ * marked `data-last-row` when it sits in the last row of a full grid, so a ragged last row never draws a bottom rule on
+ * the outer edge. Below a 30rem container the cells collapse to one column.
  */
 export function Cells({ columns = 2, className, children }: CellsProps) {
   const items = React.Children.toArray(children);

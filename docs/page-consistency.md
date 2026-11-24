@@ -110,7 +110,9 @@ Work through this for every new or edited page.
 - [ ] Colours, borders and text only via `site-*` utilities; radii via `rounded-site` and `rounded-site-sm`. No shadow
       on content.
 - [ ] **Rows on rules, not boxes (R3).** A list is rows with `border-b border-site-border`; columns are divided by a 1px
-      vertical rule. A bordered box is for a control or a picture. Do not write `surface-card` or `surface-panel` on a
+      vertical rule. Use the divider primitives in `components/ui/rules.tsx`: `Section` for a group under a heading, `Columns`
+      for peer groups, `Cells` for a picture grid, `Notice` for an inline status, `Definitions` for label and value rows
+      (S7 to S11). A bordered box is for a control or a picture. Do not write `surface-card` or `surface-panel` on a
       `_site` page; do not hand-roll `bg-site-surface border rounded-site` around content.
 - [ ] Floating UI (menu, popover, dialog, toast) carries `surface-overlay` (or uses the `components/ui/` primitive that
       does); fields are `surface-field` or the `Input`, `Textarea`, `Select` primitives.

@@ -32,7 +32,7 @@ never wrote down, ships it as shared primitives, and moves pages onto it.
 
 ## Constraints
 
-- Rule colour is `--site-border`, width 1px, always. Logical properties only (`border-s`, `border-e`, `ps-`, `pe-`) so
+- Rule colour is `--site-border`, width 1px, always. Logical properties only (`border-inline-start`, `inset-inline-start`, `ps-`, `pe-`) so
   RTL works. Vertical rules appear by container query (`@container`, as news does), never by viewport breakpoint,
   because the shell's margin column changes available width.
 - Every value is an existing token; no new colour. No spine change.
@@ -50,10 +50,14 @@ never wrote down, ships it as shared primitives, and moves pages onto it.
 ## The divider vocabulary (new plan rules S7 to S11)
 
 - **S7 Section.** A section is a heading (`t-heading`) with a full-width 1px rule above it and `space-6` above the
-  rule. The first section on a page has no rule above. Sections stack with no box.
+  rule. A `Section` that is the first child of its parent has no rule above (`:first-child`); a `Section` after a page
+  title or any other sibling draws its rule. Sections stack with no box.
 - **S8 Columns.** Two or three peer groups (the news lead beside its neighbours, a profile's stats beside its
-  activity) sit side by side only where the container is at least `@3xl`; a 1px vertical rule (`border-s`) divides
-  them with `ps-6` after it. Below that width they stack and a horizontal rule takes the vertical rule's place.
+  activity) sit side by side only where the container is at least `@3xl`: a 1px vertical rule centred in a 1.5rem gap
+  between the columns. Below `@3xl` they stack, and a horizontal rule takes the vertical rule's place.
+  *Ruling made during implementation:* the `3-2` ratio splits the columns exactly 3:2 by flex-grow, and the rule is a
+  `::before` centred in the gap (not `border-s` with `ps-6`). This is reversible with a two-rule change in
+  `app/styles/steel-rules.css` (the `::before` block and the `column-gap` on `.rule-cols`).
 - **S9 Cells.** A grid of tiles (Games and apps, Shop, Library shelves) puts 1px rules between cells, not boxes
   around them: a rule below every row but the last and a vertical rule between columns, never at the outer edge. The
   picture inside a tile keeps S4.
