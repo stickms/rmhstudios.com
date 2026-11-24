@@ -22,6 +22,9 @@ import {
 } from '@/components/ui/brand-icons';
 import type { SignInProviderId } from '@/lib/auth/providers';
 import { balanceProviderRows } from '@/lib/auth/provider-rows';
+import { LOGIN_ART_KEY, loginArtSrc, pickLoginArt, type LoginArt } from '@/lib/auth/login-art';
+import { LOGIN_ART_PREVIEWS } from '@/lib/auth/login-art-previews';
+import { readString, writeString } from '@/lib/core/persist';
 import { getLoginConfig } from '@/lib/auth/sign-in-providers.functions';
 import { CAPTCHA_HEADER } from '@/lib/auth/turnstile';
 import { safeInternalPath } from '@/lib/auth/redirect';
@@ -110,6 +113,27 @@ function LoginPage() {
   // so the first view is just passkey + providers. Sign-up shows it outright.
   const [showEmail, setShowEmail] = useState(false);
   const [pending, setPending] = useState<Pending>(null);
+
+  // The painting beside the form is one of several, picked at random on each visit. It is picked after hydration, not
+  // while rendering: the server's page is cached and has to be the same for everyone, and a choice made during render
+  // would not match what the client chooses. The last one shown is remembered, so two visits in a row never show the
+  // same picture. It loads in two steps so a slow connection sees something at once: a 48px preview (a few hundred
+  // bytes, inlined, scaled up so the browser's own smoothing blurs it: no CSS filter, Steel B2) shows as soon as the
+  // picture is chosen, and the real one fades in over it when it has downloaded (Steel M9).
+  const [art, setArt] = useState<LoginArt | null>(null);
+  const [artLoaded, setArtLoaded] = useState(false);
+  const previewArrive = useArrival(art !== null);
+  const artArrive = useArrival(artLoaded);
+  // Once per mount: React's development double-run of effects would otherwise pick twice, and the second pick only
+  // avoids the first, so it could land on the picture the previous visit showed.
+  const artPicked = useRef(false);
+  useEffect(() => {
+    if (artPicked.current) return;
+    artPicked.current = true;
+    const next = pickLoginArt(readString(LOGIN_ART_KEY));
+    writeString(LOGIN_ART_KEY, next);
+    setArt(next);
+  }, []);
   const busy = pending !== null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -732,21 +756,45 @@ function LoginPage() {
     // <main> because /login renders outside the _site shell, which is where the
     // site's landmark and skip link live; a deep-linked visit had neither.
     <main className={cn('flex min-h-dvh flex-col lg:grid lg:grid-cols-2', arrival)}>
-      {/* Decoration, so it is hidden from assistive tech and nothing depends on it loading. A picture takes a 1px
+      {/* Decoration, so it is hidden from assistive tech and nothing depends on it loading (the flat placeholder is the fallback). A picture takes a 1px
           border (Steel R3); on the split it is the rule between the two halves. */}
       <div
         aria-hidden="true"
         className="relative h-[30dvh] max-h-72 min-h-40 sm:max-h-96 shrink-0 overflow-hidden border-b border-site-border bg-site-bg-subtle lg:h-auto lg:max-h-none lg:min-h-0 lg:border-b-0 lg:border-e"
       >
-        <img
-          src="/images/login-painting.svg"
-          alt=""
-          width={1200}
-          height={1200}
-          decoding="async"
-          fetchPriority="low"
-          className="absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]"
-        />
+        {art ? (
+          <img
+            src={LOGIN_ART_PREVIEWS[art]}
+            alt=""
+            width={48}
+            height={48}
+            className={cn(
+              'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
+              previewArrive,
+            )}
+          />
+        ) : null}
+        {art ? (
+          // The large file from 640px up, where the picture is a band across a tablet or half of a desktop; the small
+          // one on a phone.
+          <picture>
+            <source media="(min-width: 640px)" srcSet={loginArtSrc(art, 1600)} type="image/webp" />
+            <img
+              src={loginArtSrc(art, 800)}
+              alt=""
+              width={800}
+              height={800}
+              decoding="async"
+              fetchPriority="low"
+              onLoad={() => setArtLoaded(true)}
+              className={cn(
+                'absolute inset-0 size-full object-cover object-[50%_46%] lg:object-[50%_50%]',
+                !artLoaded && 'invisible',
+                artArrive,
+              )}
+            />
+          </picture>
+        ) : null}
       </div>
 
       <div className="flex flex-1 items-center justify-center sm:px-4 sm:py-8">
