@@ -1,0 +1,378 @@
+/**
+ * RMH Med Schools: the app tier's palette, in light and dark.
+ *
+ * The owner approved the redesign as a full-screen app (roadmap item 11, owner 2026-11-23 and 2026-11-24), so this
+ * sheet follows the RMH Music precedent (`components/rmhmusic/rmhmusic.css`): structure from `components/shared/
+ * app-theme.css`, hues from here. Values are the approved mockup's (`renderVals()` in Main.dc.html): cream paper and
+ * ink-navy night, a pastel painterly wash, seven status colour pairs. Body type is the site's DM Sans; Fraunces is for
+ * headings only (owner, 2026-11-24).
+ *
+ * ## How the mode is chosen (no flash, no mismatch)
+ *
+ * Light is the base. Dark applies under `@media (prefers-color-scheme: dark)` unless `<html data-app-dark="0">`, and
+ * under `<html data-app-dark="1">`. The server-rendered HTML is right for the system with no script; the pre-paint
+ * script stamps `data-app-dark` from a stored choice (`/rmh-medschool` in `APP_ROUTE_THEME_BG`, `stores/themeStore.ts`,
+ * whose two grounds are `--app-bg` below). See `ui/shell/useMedMode.ts`.
+ *
+ * ## Every colour is an `--app-*` token
+ *
+ * `lib/__tests__/design-consistency.test.ts` strips only `--(app|site)-*` declarations from the hex count in app-tier
+ * CSS, so a colour lives in a token and is read with `var()`. The domain tokens are `--app-med-*`: the wash (1-4 and
+ * the ink on it), the status pairs (`swatch` is the disc, `ink` the icon on it, `text` the words in the same hue) and
+ * the chart series (`-n` the line, `-n-fill` the pastel fill).
+ *
+ * ## The `--site-*` bridge
+ *
+ * The existing pages are Steel components that read `--site-*`. `/rmh-medschool` is an app route, so no site theme
+ * class is applied; the bridge below points the `--site-*` names at this palette so those components render in it now
+ * and the restyle (phase B) can go component by component. The tokens are also set on `<html>` while the app is on
+ * screen (`:root:has(.medapp-theme)`), because a dialog or popover portals to `<body>`, outside the app's root.
+ *
+ * ## The wash
+ *
+ * A pre-rendered, vertically tileable WebP with an alpha channel (`scripts/medschools/render-wash.mjs`): the mockup's
+ * painted blobs, filtered once in Chromium instead of by SVG filters in the page. It is the `background-image` of the
+ * page element, in the flow: never `position: fixed` (iOS Safari fills its bars from edge-pinned layers), never
+ * animated, no script. Each tile fades to nothing at its top and bottom, so the first and last pixels of the document
+ * are exactly the ground. Dropped under `prefers-reduced-data`.
+ */
+
+@import '../../../components/shared/app-theme.css';
+
+/* ── Light: paper (the base) ─────────────────────────────────────────────── */
+.app-theme.medapp-theme,
+:root:has(.medapp-theme) {
+  --app-bg: #F6F1E7;
+  --app-bg-subtle: #EFE8DA;
+  --app-surface: #FFFCF6;
+  --app-surface-hover: #F3ECDF;
+  --app-surface-active: #EAE1D1;
+  --app-border: #E2D9CB;
+  --app-border-bright: #8C8497;
+  --app-text: #2A2731;
+  --app-text-muted: #5F5A68;
+  --app-text-dim: #6F6A78;
+  --app-accent: #2A2731;
+  --app-accent-fg: #FFFCF6;
+  --app-accent-hover: #3F3A49;
+  --app-success: #3E7A4C;
+  --app-danger: #B4483E;
+  --app-warning: #7D5F0E;
+  --app-info: #2F6795;
+  --app-rare: #6A4BA0;
+  --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --app-toast-bg: var(--app-surface);
+  --app-glass-bg: var(--app-surface);
+  --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
+  --app-med-wash-1: #E9D5EC;
+  --app-med-wash-2: #CFE3EF;
+  --app-med-wash-3: #F6DCC8;
+  --app-med-wash-4: #D8EAD3;
+  --app-med-on-wash: #2A2731;
+  --app-med-wash-image: url('/images/medschools/wash-light.webp');
+  --app-med-accept-swatch: #CFE8D2;
+  --app-med-accept-ink: #3E7A4C;
+  --app-med-accept-text: #3E7A4C;
+  --app-med-reject-swatch: #F3D2CC;
+  --app-med-reject-ink: #B4483E;
+  --app-med-reject-text: #B4483E;
+  --app-med-hold-swatch: #CBD6EA;
+  --app-med-hold-ink: #2F4A7A;
+  --app-med-hold-text: #2F4A7A;
+  --app-med-secondary-swatch: #D6E9F7;
+  --app-med-secondary-ink: #2F6795;
+  --app-med-secondary-text: #2F6795;
+  --app-med-waitlist-swatch: #F6E7B4;
+  --app-med-waitlist-ink: #7D5F0E;
+  --app-med-waitlist-text: #7D5F0E;
+  --app-med-matric-swatch: #E3D9F2;
+  --app-med-matric-ink: #6A4BA0;
+  --app-med-matric-text: #6A4BA0;
+  --app-med-interview-swatch: #F7DCC8;
+  --app-med-interview-ink: #9A4E22;
+  --app-med-interview-text: #9A4E22;
+  --app-med-withdrawn-swatch: #E7E1D6;
+  --app-med-withdrawn-ink: #5F5A68;
+  --app-med-withdrawn-text: #5F5A68;
+  --app-med-chart-1: #2F6795;
+  --app-med-chart-1-fill: #8DB9DE;
+  --app-med-chart-2: #9A4E22;
+  --app-med-chart-2-fill: #E8A87C;
+  --app-med-chart-3: #3E7A4C;
+  --app-med-chart-3-fill: #6FA67A;
+  --app-med-chart-4: #B4483E;
+  --app-med-chart-4-fill: #D7756B;
+  --app-med-chart-5: #7D5F0E;
+  --app-med-chart-5-fill: #E0C25A;
+  color-scheme: light;
+
+  /* Shape: the mockup's rounded paper. */
+  --app-radius: 24px;
+  --app-radius-sm: 16px;
+  --app-radius-lg: 28px;
+
+  /* Type: Fraunces for headings only; the body is the site's DM Sans (the AppShell tier already points
+     `--app-font-body` at `--site-font-body`). */
+  --app-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+
+  /* The bridge (see the header). It reads the `--app-*` values above, so it holds for both modes. */
+  --site-bg: var(--app-bg);
+  --site-bg-subtle: var(--app-bg-subtle);
+  --site-surface: var(--app-surface);
+  --site-surface-hover: var(--app-surface-hover);
+  --site-surface-active: var(--app-surface-active);
+  --site-border: var(--app-border);
+  --site-text: var(--app-text);
+  --site-text-muted: var(--app-text-muted);
+  --site-accent: var(--app-accent);
+  --site-accent-fg: var(--app-accent-fg);
+  --site-accent-hover: var(--app-accent-hover);
+  --site-success: var(--app-success);
+  --site-success-fg: var(--app-bg);
+  --site-danger: var(--app-danger);
+  --site-danger-fg: var(--app-bg);
+  --site-warning: var(--app-warning);
+  --site-warning-fg: var(--app-bg);
+  --site-radius: 20px;
+  --site-radius-sm: 12px;
+  --site-control-radius: 22px;
+  --site-chart-1: var(--app-med-chart-1);
+  --site-chart-2: var(--app-med-chart-2);
+  --site-chart-3: var(--app-med-chart-3);
+  --site-chart-4: var(--app-med-chart-4);
+  --site-chart-5: var(--app-med-chart-5);
+}
+
+/* ── Dark: ink-navy night ────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-dark='0']) .app-theme.medapp-theme,
+  :root:not([data-app-dark='0']):has(.medapp-theme) {
+    --app-bg: #1B1E2A;
+    --app-bg-subtle: #171A25;
+    --app-surface: #282C3C;
+    --app-surface-hover: #31364A;
+    --app-surface-active: #3A3F55;
+    --app-border: #3A3F52;
+    --app-border-bright: #6B7190;
+    --app-text: #F2EDE4;
+    --app-text-muted: #B9B3C6;
+    --app-text-dim: #9C97AB;
+    --app-accent: #F2EDE4;
+    --app-accent-fg: #1B1E2A;
+    --app-accent-hover: #FFFFFF;
+    --app-success: #9FD6AB;
+    --app-danger: #F0A79D;
+    --app-warning: #EBCF73;
+    --app-info: #9CCBEE;
+    --app-rare: #C8B3EE;
+    --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
+    --app-toast-bg: var(--app-surface);
+    --app-glass-bg: var(--app-surface);
+    --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
+    --app-med-wash-1: #4A3F6B;
+    --app-med-wash-2: #3E5B73;
+    --app-med-wash-3: #5B4A5E;
+    --app-med-wash-4: #3F5A4C;
+    --app-med-on-wash: #F6F1E8;
+    --app-med-wash-image: url('/images/medschools/wash-dark.webp');
+    --app-med-accept-swatch: #3F6B4B;
+    --app-med-accept-ink: #CDEBD3;
+    --app-med-accept-text: #9FD6AB;
+    --app-med-reject-swatch: #6E3B38;
+    --app-med-reject-ink: #F4C7C0;
+    --app-med-reject-text: #F0A79D;
+    --app-med-hold-swatch: #2F4A7A;
+    --app-med-hold-ink: #D5E0F5;
+    --app-med-hold-text: #A9C0EC;
+    --app-med-secondary-swatch: #355A75;
+    --app-med-secondary-ink: #D2E8F8;
+    --app-med-secondary-text: #9CCBEE;
+    --app-med-waitlist-swatch: #6B5A26;
+    --app-med-waitlist-ink: #F6E4A8;
+    --app-med-waitlist-text: #EBCF73;
+    --app-med-matric-swatch: #4F3F73;
+    --app-med-matric-ink: #E1D5F7;
+    --app-med-matric-text: #C8B3EE;
+    --app-med-interview-swatch: #6E4A33;
+    --app-med-interview-ink: #F7D7C0;
+    --app-med-interview-text: #F0B48C;
+    --app-med-withdrawn-swatch: #3A3F52;
+    --app-med-withdrawn-ink: #D6D1E0;
+    --app-med-withdrawn-text: #B9B3C6;
+    --app-med-chart-1: #9CCBEE;
+    --app-med-chart-1-fill: #4F86B3;
+    --app-med-chart-2: #F0B48C;
+    --app-med-chart-2-fill: #B8794C;
+    --app-med-chart-3: #9FD6AB;
+    --app-med-chart-3-fill: #4E8A5D;
+    --app-med-chart-4: #F0A79D;
+    --app-med-chart-4-fill: #B4574D;
+    --app-med-chart-5: #EBCF73;
+    --app-med-chart-5-fill: #A98B2E;
+    color-scheme: dark;
+  }
+}
+:root[data-app-dark='1'] .app-theme.medapp-theme,
+:root[data-app-dark='1']:has(.medapp-theme) {
+  --app-bg: #1B1E2A;
+  --app-bg-subtle: #171A25;
+  --app-surface: #282C3C;
+  --app-surface-hover: #31364A;
+  --app-surface-active: #3A3F55;
+  --app-border: #3A3F52;
+  --app-border-bright: #6B7190;
+  --app-text: #F2EDE4;
+  --app-text-muted: #B9B3C6;
+  --app-text-dim: #9C97AB;
+  --app-accent: #F2EDE4;
+  --app-accent-fg: #1B1E2A;
+  --app-accent-hover: #FFFFFF;
+  --app-success: #9FD6AB;
+  --app-danger: #F0A79D;
+  --app-warning: #EBCF73;
+  --app-info: #9CCBEE;
+  --app-rare: #C8B3EE;
+  --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --app-toast-bg: var(--app-surface);
+  --app-glass-bg: var(--app-surface);
+  --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
+  --app-med-wash-1: #4A3F6B;
+  --app-med-wash-2: #3E5B73;
+  --app-med-wash-3: #5B4A5E;
+  --app-med-wash-4: #3F5A4C;
+  --app-med-on-wash: #F6F1E8;
+  --app-med-wash-image: url('/images/medschools/wash-dark.webp');
+  --app-med-accept-swatch: #3F6B4B;
+  --app-med-accept-ink: #CDEBD3;
+  --app-med-accept-text: #9FD6AB;
+  --app-med-reject-swatch: #6E3B38;
+  --app-med-reject-ink: #F4C7C0;
+  --app-med-reject-text: #F0A79D;
+  --app-med-hold-swatch: #2F4A7A;
+  --app-med-hold-ink: #D5E0F5;
+  --app-med-hold-text: #A9C0EC;
+  --app-med-secondary-swatch: #355A75;
+  --app-med-secondary-ink: #D2E8F8;
+  --app-med-secondary-text: #9CCBEE;
+  --app-med-waitlist-swatch: #6B5A26;
+  --app-med-waitlist-ink: #F6E4A8;
+  --app-med-waitlist-text: #EBCF73;
+  --app-med-matric-swatch: #4F3F73;
+  --app-med-matric-ink: #E1D5F7;
+  --app-med-matric-text: #C8B3EE;
+  --app-med-interview-swatch: #6E4A33;
+  --app-med-interview-ink: #F7D7C0;
+  --app-med-interview-text: #F0B48C;
+  --app-med-withdrawn-swatch: #3A3F52;
+  --app-med-withdrawn-ink: #D6D1E0;
+  --app-med-withdrawn-text: #B9B3C6;
+  --app-med-chart-1: #9CCBEE;
+  --app-med-chart-1-fill: #4F86B3;
+  --app-med-chart-2: #F0B48C;
+  --app-med-chart-2-fill: #B8794C;
+  --app-med-chart-3: #9FD6AB;
+  --app-med-chart-3-fill: #4E8A5D;
+  --app-med-chart-4: #F0A79D;
+  --app-med-chart-4-fill: #B4574D;
+  --app-med-chart-5: #EBCF73;
+  --app-med-chart-5-fill: #A98B2E;
+  color-scheme: dark;
+}
+
+/* ── Frame ───────────────────────────────────────────────────────────────── */
+.medapp-page {
+  background-color: var(--app-bg);
+  background-image: var(--app-med-wash-image);
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-size: 100% auto;
+  color: var(--app-text);
+  font-family: var(--app-font-body);
+}
+@media (prefers-reduced-data: reduce) {
+  .medapp-page {
+    background-image: none;
+  }
+}
+.medapp-frame {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-block: 20px 48px;
+  padding-inline-start: calc(16px + var(--app-safe-left));
+  padding-inline-end: calc(16px + var(--app-safe-right));
+}
+@media (min-width: 768px) {
+  .medapp-frame {
+    padding-inline-start: calc(24px + var(--app-safe-left));
+    padding-inline-end: calc(24px + var(--app-safe-right));
+  }
+}
+.medapp-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block-end: 28px;
+}
+.medapp-bar__gap {
+  flex: 1 1 auto;
+}
+.medapp-title {
+  font-family: var(--app-font-display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--app-text);
+}
+/* A 44px round control: the back link and the light / dark switch. */
+.medapp-round {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  flex: none;
+  border-radius: 22px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-round:hover {
+  background-color: var(--app-surface-hover);
+}
+.medapp-round:active {
+  background-color: var(--app-surface-active);
+}
+.medapp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+@media (min-width: 1280px) {
+  .medapp-grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+.medapp-main {
+  min-width: 0;
+}
+/* Headings only: the display face. Weight 600, never bold-synthesised. */
+.medapp-main :is(h1, h2, h3) {
+  font-family: var(--app-font-display);
+  font-weight: 600;
+}
+.medapp-rail {
+  min-width: 0;
+}
+/* The activity rail stays in view 16px off the top (not flush with the edge) and scrolls inside itself, so "load more
+   on scroll" works however short the page is. The same rule the Steel shell's margin used. */
+.medapp-rail .site-margin__rail {
+  position: sticky;
+  inset-block-start: 16px;
+  max-block-size: calc(100dvh - 32px);
+  overflow-y: auto;
+}

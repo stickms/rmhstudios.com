@@ -914,6 +914,8 @@ async function main() {
         ([style, rel]) => {
           try {
             localStorage.setItem('rmh-style', style);
+            // Since the app redesign (phase A) the pages' light/dark is the app's own device key, not the edition.
+            localStorage.setItem('rmh-medschool-mode', JSON.stringify({ dark: style === 'graphite' }));
             localStorage.setItem('rmh-cookie-consent', 'essential');
             localStorage.setItem('rmh-lang-picked-v1', '1');
             localStorage.setItem('rmh-welcome-seen-v1', '1');
@@ -949,7 +951,8 @@ async function main() {
         });
         const found = [];
         if (r.scrollWidth > r.clientWidth) found.push(`sideways scroll ${r.scrollWidth}>${r.clientWidth}`);
-        // The edition that was asked for must be the one painted (Day is light, Night is dark).
+        // The mode that was asked for must be the one painted: Day is light and Night dark, now via `rmh-medschool-mode`
+        // (`--app-bg` paper or ink-navy); `html` carries `data-app-dark` instead of a site edition class.
         if (mode === 'night' && !(r.bodyLum !== null && r.bodyLum < 0.1))
           found.push(`Night painted light (body luminance ${r.bodyLum}, html "${r.htmlClass}")`);
         if (mode === 'day' && !(r.bodyLum !== null && r.bodyLum > 0.8))

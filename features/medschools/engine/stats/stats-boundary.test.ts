@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -21,8 +21,12 @@ describe('engine/stats boundary', () => {
     }
   });
   it('is not imported by ui/ or the school routes (bundle rule)', () => {
-    const roots = [join(here, '../../ui'), join(here, '../../../../app/routes/_site/rmh-medschool')];
+    const roots = [join(here, '../../ui'), join(here, '../../../../app/routes/rmh-medschool')];
     for (const root of roots) {
+      // The routes moved out of `_site/` for the app redesign (roadmap item 11). A root that no longer exists must
+      // fail here, not make the loop quietly check nothing.
+      expect(existsSync(root), root).toBe(true);
+      expect(walk(root).filter((x) => /\.tsx?$/.test(x)).length, root).toBeGreaterThan(0);
       for (const f of walk(root).filter((x) => /\.tsx?$/.test(x))) {
         for (const spec of importsOf(readFileSync(f, 'utf8'))) {
           expect(spec, f).not.toMatch(/engine\/stats/);

@@ -141,9 +141,9 @@ const seedActivity =
   };
 
 describe('route file', () => {
-  const src = root('../../../app/routes/_site/rmh-medschool/$slug.tsx');
+  const src = root('../../../app/routes/rmh-medschool/$slug.tsx');
   it('is thin: validateSearch, strip defaults, notFound through the loader, card and breadcrumbs, no charts', () => {
-    expect(src).toContain("createFileRoute('/_site/rmh-medschool/$slug')");
+    expect(src).toContain("createFileRoute('/rmh-medschool/$slug')");
     expect(src).toContain('validateSearch: validateSchoolSearch');
     expect(src).toContain('stripSearchParams(SCHOOL_SEARCH_DEFAULTS)');
     expect(src).toContain('definePage');

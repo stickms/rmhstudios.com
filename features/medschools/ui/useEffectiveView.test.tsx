@@ -135,7 +135,7 @@ describe('static rules', () => {
   });
   it('the route files import nothing from charts, d3 or zod', () => {
     for (const f of ['index.tsx', 'live.tsx', '$slug.tsx']) {
-      const src = readFileSync(new URL(`../../../app/routes/_site/rmh-medschool/${f}`, import.meta.url), 'utf8');
+      const src = readFileSync(new URL(`../../../app/routes/rmh-medschool/${f}`, import.meta.url), 'utf8');
       expect(src).not.toMatch(/ui\/charts|chart-geometry|from 'd3-|from 'zod'/);
     }
   });

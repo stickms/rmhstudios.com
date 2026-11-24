@@ -6,7 +6,7 @@ import { PracticePage } from '@features/medschools/ui/PracticePage';
  * /rmh-medschool/practice: general interview questions by program, with practice mode. Noindex and out of the sitemap
  * like Ask; no loader (a static set), and practice needs no account.
  */
-export const Route = createFileRoute('/_site/rmh-medschool/practice')({
+export const Route = createFileRoute('/rmh-medschool/practice')({
   head: definePage({
     path: '/rmh-medschool/practice',
     title: 'Interview practice | RMH Studios',

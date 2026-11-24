@@ -12,6 +12,8 @@ import { FULLSCREEN_TIER_DIRS } from '../../eslint-local-rules/design-scope.js';
 /** The `--app-*` full-screen apps: in FULLSCREEN_TIER_DIRS for the palette rules, but held to the CSS gates. */
 export const APP_TIER_DIRS = new Set([
   'shared',
+  // RMH Med Schools (roadmap item 11): `features/medschools/ui/medschools.css` is held to these gates.
+  'medschools',
   'rmhbox',
   'rmhcode',
   'rmhmusic',
