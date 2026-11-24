@@ -2,16 +2,19 @@
  * Steel dividers gate (docs/superpowers/specs/2026-11-24-steel-dividers-design.md, S7-S11): a site-tier page sets its
  * groups off with 1px rules, not with bordered boxes.
  *
- * A violation is one of three source shapes, on a site-tier `.tsx` file under `components/`, `features/` or
+ * A violation is one of four source shapes, on a site-tier `.tsx` file under `components/`, `features/` or
  * `app/routes/`:
  *  - a bordered group box: the class text of one element (a `className` value, or a `cn(` / `clsx(` / `cva(` call's
  *    arguments, with every string literal inside it joined) has an all-sides `border` and a `rounded-site` (or
  *    `rounded-md/lg/xl`) and no control, picture or overlay marker (see `isControlOrPicture`);
+ *  - a ghost box: `rounded-site` with horizontal padding and nothing visible (no fill, ring, shadow or all-sides
+ *    border), the padding left behind when a card became rows on rules, which indents content away from the page title;
  *  - a retired surface role: `surface-card` or `surface-panel` in that class text;
  *  - the retired wrapper: an import of `components/ui/card`.
  *
- * The gate has no allowlist: every site-tier file is clean (the baseline of pages that still had boxes was worked
- * down to nothing, one wave at a time, and deleted). Three kinds of element are not group boxes and are never flagged:
+ * The gate has no allowlist for any kind: every site-tier file is clean (the baselines of pages that still had boxes or
+ * ghost boxes were worked down to nothing, batch by batch, and deleted). A class picked from an upper-case lookup
+ * table (`BAND[i]`) may carry a fill the scan cannot read, so it is not a ghost box. Three kinds of element are not group boxes and are never flagged:
  * a control, picture or overlay (by class marker or tag); a keycap (`kbd`), a `figure` (it holds a picture) and an
  * element with an inline `style` colour (a swatch of the user's own colour); and a class string that uses the app-tier
  * (`*-app-*`, `rounded-app*`) or a brand (`*-rebar-*`) palette, which is another tier's look (L8), not the site's.
@@ -20,7 +23,6 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isSiteTier } from '../../eslint-local-rules/design-scope.js';
-import { STEEL_GHOST_BASELINE } from './steel-ghost-baseline';
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ['components', 'features', join('app', 'routes')];
@@ -86,6 +88,8 @@ const VISIBLE_SURFACE = [
   token('surface-field'),
   token('surface-chrome'),
 ];
+/** A constant-named table indexed in the class expression: its entries can hold the fill the scanner cannot see. */
+const LOOKUP_CLASS = /\b[A-Z][A-Z0-9_]*\[/;
 const FIXED_H = /(?:^|\s)(?:\S*:)*h-\d/;
 const FIXED_W = /(?:^|\s)(?:\S*:)*w-\d/;
 
@@ -236,7 +240,7 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
   const spans = classContexts(code);
   const out: SteelRuleViolation[] = [];
 
-  const check = (text: string, at: number) => {
+  const check = (text: string, at: number, raw = '') => {
     const line = lineAt(code, at);
     if (OTHER_PALETTE.test(text)) return;
     if (RETIRED_ROLE.test(text)) {
@@ -259,6 +263,8 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
     }
     if (!ROUNDED_SITE.test(text) || !HORIZONTAL_PAD.test(text)) return;
     if (VISIBLE_SURFACE.some((re) => re.test(text))) return;
+    // A class picked from a lookup table (`BAND[i]`, `TONE[kind]`) may carry the fill, which a string scan cannot read.
+    if (LOOKUP_CLASS.test(raw)) return;
     if (isControlOrPicture(text) || isControlTag(enclosingTag(code, at))) return;
     out.push({
       file,
@@ -269,7 +275,7 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
     });
   };
 
-  for (const span of spans) check(classTextOf(code, span), span.start);
+  for (const span of spans) check(classTextOf(code, span), span.start, code.slice(span.start, span.end));
   // String literals outside any class context (a `const` holding classes, say) are checked on their own.
   for (const m of code.matchAll(STRING_LITERAL)) {
     const idx = m.index ?? 0;
@@ -399,6 +405,10 @@ describe('scanSteelRules (the scanner itself)', () => {
     expect(scanSteelRules('<Button className="rounded-site px-4" />', 'x.tsx')).toEqual([]);
     expect(scanSteelRules('<div className="rounded-app p-4" />', 'x.tsx')).toEqual([]);
   });
+  it('does not flag a class picked from a lookup table, which may carry the fill', () => {
+    expect(scanSteelRules("<div className={cn('rounded-site px-4 py-3', BAND[i % 4])} />", 'x.tsx')).toEqual([]);
+    expect(scanSteelRules("<div className={cn('rounded-site px-4 py-3', band[i % 4])} />", 'x.tsx')).toHaveLength(1);
+  });
 });
 
 describe('steel rules on the site tier', () => {
@@ -408,12 +418,11 @@ describe('steel rules on the site tier', () => {
   });
 
   it(
-    'no site-tier file has a bordered group box, a retired surface role or a ui/card import',
+    'no site-tier file has a bordered group box, a ghost box, a retired surface role or a ui/card import',
     () => {
       const offenders: string[] = [];
       for (const [file, violations] of scanAll()) {
         for (const v of violations) {
-          if (v.kind === 'ghost-box') continue;
           offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
         }
       }
@@ -421,50 +430,6 @@ describe('steel rules on the site tier', () => {
     },
     SCAN_TIMEOUT_MS,
   );
-
-  it(
-    'no file gains a ghost box: rounded-site with horizontal padding and nothing visible',
-    () => {
-      const grew: string[] = [];
-      for (const [file, violations] of scanAll()) {
-        const ghosts = violations.filter((v) => v.kind === 'ghost-box');
-        const allowed = STEEL_GHOST_BASELINE[file]?.count ?? 0;
-        if (ghosts.length > allowed) {
-          const where = ghosts.map((g) => g.line).join(', ');
-          grew.push(
-            `${file}: ${ghosts.length} ghost boxes (lines ${where}), baseline ${allowed}. Drop the horizontal padding and the radius.`,
-          );
-        }
-      }
-      expect(grew, grew.join('\n')).toEqual([]);
-    },
-    SCAN_TIMEOUT_MS,
-  );
-
-  it(
-    'every ghost baseline entry still matches its count (a clean file leaves the list; a smaller count is lowered)',
-    () => {
-      const byFile = scanAll();
-      const problems: string[] = [];
-      for (const [file, entry] of Object.entries(STEEL_GHOST_BASELINE)) {
-        const now = byFile.get(file)?.filter((v) => v.kind === 'ghost-box').length ?? 0;
-        if (now === 0) problems.push(`${file}: clean now, delete the entry`);
-        else if (now < entry.count) problems.push(`${file}: ${now} now, lower its count from ${entry.count}`);
-      }
-      expect(problems, problems.join('\n')).toEqual([]);
-    },
-    SCAN_TIMEOUT_MS,
-  );
-
-  it('prints the ghost boxes when STEEL_GHOST_UPDATE=1 (baseline regeneration only)', () => {
-    if (process.env.STEEL_GHOST_UPDATE !== '1') return;
-    const counts: Record<string, number> = {};
-    for (const [file, violations] of scanAll()) {
-      const n = violations.filter((v) => v.kind === 'ghost-box').length;
-      if (n) counts[file] = n;
-    }
-    process.stdout.write(`STEEL_GHOST_COUNTS ${JSON.stringify(counts)}\n`);
-  });
 });
 
 describe('steel rules in the stylesheet', () => {
