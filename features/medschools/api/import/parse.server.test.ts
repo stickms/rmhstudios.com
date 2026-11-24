@@ -10,15 +10,28 @@ const m = vi.hoisted(() => ({
 vi.mock('../qa/budget.server', () => ({ admitQuestion: m.admitQuestion }));
 // The real runner imports the provider (and Prisma); the tests pass their own.
 vi.mock('./runner.server', () => ({ aiImportRunner: {} }));
-vi.mock('./directory.server', () => ({
-  importDirectory: async () => ({
-    dir: [
-      { slug: 'harvard', name: 'Harvard Medical School', shortName: 'Harvard', state: 'MA', interviewFormat: null, degree: 'MD' },
-      { slug: 'johns-hopkins', name: 'Johns Hopkins University School of Medicine', shortName: 'Johns Hopkins', state: 'MD', interviewFormat: null, degree: 'MD' },
-    ],
-    aliases: new Map(),
-  }),
+const DIR = [
+  {
+    slug: 'harvard',
+    name: 'Harvard Medical School',
+    shortName: 'Harvard',
+    state: 'MA',
+    interviewFormat: null,
+    degree: 'MD',
+  },
+  {
+    slug: 'johns-hopkins',
+    name: 'Johns Hopkins University School of Medicine',
+    shortName: 'Johns Hopkins',
+    state: 'MD',
+    interviewFormat: null,
+    degree: 'MD',
+  },
+];
+const d = vi.hoisted(() => ({
+  importDirectory: vi.fn(async (_opts?: { fresh?: boolean }) => ({ dir: [] as unknown[], aliases: new Map() })),
 }));
+vi.mock('./directory.server', () => ({ importDirectory: d.importDirectory }));
 
 import { MEDSCHOOLS_IMPORT, SAFETY_FRAME } from '@/lib/ai/prompts';
 import { AppError } from '@/lib/errors/codes';
@@ -64,11 +77,34 @@ beforeEach(() => {
   m.release.mockReset().mockResolvedValue(undefined);
   m.refund.mockReset().mockResolvedValue(undefined);
   m.admitQuestion.mockReset().mockResolvedValue(gate);
-  logs = (['log', 'warn', 'error', 'info'] as const).map((k) => vi.spyOn(console, k).mockImplementation(() => undefined));
+  logs = (['log', 'warn', 'error', 'info'] as const).map((k) =>
+    vi.spyOn(console, k).mockImplementation(() => undefined),
+  );
 });
 afterEach(() => vi.restoreAllMocks());
 
 describe('parseImport', () => {
+  beforeEach(() => {
+    d.importDirectory.mockReset();
+    d.importDirectory.mockImplementation(async () => ({ dir: DIR, aliases: new Map() }));
+  });
+
+  it('a name the cached directory does not know is looked up once more, fresh (a school added within the cache TTL)', async () => {
+    d.importDirectory.mockImplementation(async (opts?: { fresh?: boolean }) => ({
+      dir: opts?.fresh ? DIR : DIR.filter((s) => s.slug !== 'harvard'),
+      aliases: new Map(),
+    }));
+    const r = await parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(reply).runner, now: NOW });
+    expect(r.rows[0]).toMatchObject({ school: { slug: 'harvard' } });
+    expect(d.importDirectory).toHaveBeenCalledTimes(2);
+    expect(d.importDirectory).toHaveBeenLastCalledWith({ fresh: true });
+  });
+
+  it('every name matched: the cached directory is enough', async () => {
+    await parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(reply).runner, now: NOW });
+    expect(d.importDirectory).toHaveBeenCalledTimes(1);
+  });
+
   it('reads a file into a preview with ONE model call, the injection frame, and the lease released', async () => {
     const { runner, calls } = runnerOf(reply);
     const r = await parseImport({ userId: 'u1', input: csv }, { runner, now: NOW });
@@ -83,7 +119,9 @@ describe('parseImport', () => {
     expect(system).toContain(MEDSCHOOLS_IMPORT.instructions);
     // the file's text is data, one row per line
     expect(user!.startsWith('<user-content>')).toBe(true);
-    expect(JSON.parse(user!.replace(/^<user-content>\n|\n<\/user-content>$/g, '')).text).toContain('Harvard Medical School | MD | 2026-06-12');
+    expect(JSON.parse(user!.replace(/^<user-content>\n|\n<\/user-content>$/g, '')).text).toContain(
+      'Harvard Medical School | MD | 2026-06-12',
+    );
     expect(m.admitQuestion).toHaveBeenCalledWith('u1', NOW, { isAdmin: false });
     expect(m.release).toHaveBeenCalledTimes(1);
   });
@@ -94,7 +132,12 @@ describe('parseImport', () => {
   });
 
   it('a refused gate (cap, busy, paused, budget) stops before the model', async () => {
-    for (const c of ['MEDSCHOOLS_QA_DAILY_CAP', 'MEDSCHOOLS_QA_BUSY', 'MEDSCHOOLS_QA_PAUSED', 'AI_BUDGET_EXCEEDED'] as const) {
+    for (const c of [
+      'MEDSCHOOLS_QA_DAILY_CAP',
+      'MEDSCHOOLS_QA_BUSY',
+      'MEDSCHOOLS_QA_PAUSED',
+      'AI_BUDGET_EXCEEDED',
+    ] as const) {
       m.admitQuestion.mockRejectedValueOnce(new AppError(c));
       const { runner, calls } = runnerOf(reply);
       expect(await code(parseImport({ userId: 'u1', input: csv }, { runner, now: NOW }))).toBe(c);
@@ -104,26 +147,56 @@ describe('parseImport', () => {
 
   it('a file we cannot read, or that has no digits, costs no question', async () => {
     const { runner, calls } = runnerOf(reply);
-    expect(await code(parseImport({ userId: 'u1', input: { kind: 'file', buffer: Buffer.from('x'), mimeType: 'image/png', filename: 'a.png' } }, { runner, now: NOW }))).toBe('MEDSCHOOLS_IMPORT_UNSUPPORTED');
-    expect(await code(parseImport({ userId: 'u1', input: { kind: 'paste', text: 'no dates in this at all' } }, { runner, now: NOW }))).toBe('MEDSCHOOLS_IMPORT_EMPTY');
+    expect(
+      await code(
+        parseImport(
+          { userId: 'u1', input: { kind: 'file', buffer: Buffer.from('x'), mimeType: 'image/png', filename: 'a.png' } },
+          { runner, now: NOW },
+        ),
+      ),
+    ).toBe('MEDSCHOOLS_IMPORT_UNSUPPORTED');
+    expect(
+      await code(
+        parseImport({ userId: 'u1', input: { kind: 'paste', text: 'no dates in this at all' } }, { runner, now: NOW }),
+      ),
+    ).toBe('MEDSCHOOLS_IMPORT_EMPTY');
     expect(m.admitQuestion).not.toHaveBeenCalled();
     expect(calls).toHaveLength(0);
   });
 
   it('nothing grounded is "nothing found", and the lease is still released', async () => {
-    const invented = { rows: [{ schoolName: 'Harvard Medical School', milestones: [{ type: 'SUBMITTED', date: '2026-01-01', raw: '2026-01-01' }] }] };
-    expect(await code(parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(invented).runner, now: NOW }))).toBe('MEDSCHOOLS_IMPORT_EMPTY');
+    const invented = {
+      rows: [
+        {
+          schoolName: 'Harvard Medical School',
+          milestones: [{ type: 'SUBMITTED', date: '2026-01-01', raw: '2026-01-01' }],
+        },
+      ],
+    };
+    expect(await code(parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(invented).runner, now: NOW }))).toBe(
+      'MEDSCHOOLS_IMPORT_EMPTY',
+    );
     expect(m.release).toHaveBeenCalledTimes(1);
   });
 
   it('a provider failure is surfaced, the lease released', async () => {
-    const r = parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(new AppError('AI_UNAVAILABLE')).runner, now: NOW });
+    const r = parseImport(
+      { userId: 'u1', input: csv },
+      { runner: runnerOf(new AppError('AI_UNAVAILABLE')).runner, now: NOW },
+    );
     expect(await code(r)).toBe('AI_UNAVAILABLE');
     expect(m.release).toHaveBeenCalledTimes(1);
   });
 
   it('an unmatched school comes back flagged, not guessed', async () => {
-    const out = { rows: [{ schoolName: 'Springfield Academy of Healing', milestones: [{ type: 'SUBMITTED', date: '2026-06-12', raw: '2026-06-12' }] }] };
+    const out = {
+      rows: [
+        {
+          schoolName: 'Springfield Academy of Healing',
+          milestones: [{ type: 'SUBMITTED', date: '2026-06-12', raw: '2026-06-12' }],
+        },
+      ],
+    };
     const r = await parseImport({ userId: 'u1', input: csv }, { runner: runnerOf(out).runner, now: NOW });
     // The file never wrote that name, so it is not shown: a neutral label and the picker, never the model's words.
     expect(r.rows[0]).toMatchObject({ school: null, schoolName: '' });
@@ -136,23 +209,36 @@ describe('parseImport', () => {
 
   it('a long paste is cut and the member is told', async () => {
     const paste = `Harvard 2026-06-12\n${'filler 2026-06-12\n'.repeat(5_000)}`;
-    const r = await parseImport({ userId: 'u1', input: { kind: 'paste', text: paste } }, { runner: runnerOf(reply).runner, now: NOW });
+    const r = await parseImport(
+      { userId: 'u1', input: { kind: 'paste', text: paste } },
+      { runner: runnerOf(reply).runner, now: NOW },
+    );
     expect(r.truncated).toBe(true);
   });
 
   it('the model sees the file and the response and the logs hold none of it', async () => {
     const essay = 'zzzessay my grandmother tended her garden 2026-06-12';
     const { runner } = runnerOf({
-      rows: [{ schoolName: 'Harvard Medical School', notes: essay, milestones: [{ type: 'SUBMITTED', date: '2026-06-12', raw: '2026-06-12' }] }],
+      rows: [
+        {
+          schoolName: 'Harvard Medical School',
+          notes: essay,
+          milestones: [{ type: 'SUBMITTED', date: '2026-06-12', raw: '2026-06-12' }],
+        },
+      ],
     });
-    const r = await parseImport({ userId: 'u1', input: { kind: 'paste', text: `Harvard Medical School | 2026-06-12\n${essay}` } }, { runner, now: NOW });
+    const r = await parseImport(
+      { userId: 'u1', input: { kind: 'paste', text: `Harvard Medical School | 2026-06-12\n${essay}` } },
+      { runner, now: NOW },
+    );
     expect(JSON.stringify(r)).not.toContain('zzzessay');
-    for (const l of logs) for (const c of l.mock.calls) expect(JSON.stringify(c)).not.toMatch(/zzzessay|Harvard|grandmother|2026-06-12/);
+    for (const l of logs)
+      for (const c of l.mock.calls) expect(JSON.stringify(c)).not.toMatch(/zzzessay|Harvard|grandmother|2026-06-12/);
   });
 });
 
 describe('an unreadable model reply', () => {
-  it('refunds the day\'s question and ends in AI_UNAVAILABLE', async () => {
+  it("refunds the day's question and ends in AI_UNAVAILABLE", async () => {
     const { runner } = runnerOf(new UnreadableReplyError());
     expect(await code(parseImport({ userId: 'u1', input: csv }, { runner, now: NOW }))).toBe('AI_UNAVAILABLE');
     expect(m.refund).toHaveBeenCalledTimes(1);

@@ -36,7 +36,10 @@ describe('tracker import privacy pins', () => {
     for (const f of files) {
       const src = code(f);
       if (f.endsWith('directory.server.ts')) {
-        expect(src).toMatch(/cached<Loaded>\(\s*'medschools:import:directory'/);
+        // The key is one constant string (never built from input), read through KEY for the fresh reload too.
+        expect(src).toMatch(/const KEY = 'medschools:import:directory';/);
+        expect(src).toMatch(/cached<Loaded>\(\s*KEY,/);
+        expect(src).not.toMatch(/KEY\s*[+`]|`medschools:import/);
         continue;
       }
       expect(src, f).not.toMatch(/\bcached\w*\(|\blruL1\(|microCache|putL1\(|redis/i);

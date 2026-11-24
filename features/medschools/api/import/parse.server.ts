@@ -27,8 +27,7 @@ import { UnreadableReplyError } from './unreadable';
 import { validateImport } from './validate';
 
 export type ImportInput =
-  | { kind: 'file'; buffer: Buffer; mimeType: string; filename: string }
-  | { kind: 'paste'; text: string };
+  { kind: 'file'; buffer: Buffer; mimeType: string; filename: string } | { kind: 'paste'; text: string };
 
 export interface ParseImportArgs {
   userId: string;
@@ -61,7 +60,12 @@ export async function parseImport(
   return runUnderLease(gate, QA_DEADLINE_MS, i.signal, async (signal) => {
     let raw: unknown;
     try {
-      raw = await runner.run(systemFor(MEDSCHOOLS_IMPORT), asData(JSON.stringify({ text: prepared.text })), i.userId, signal);
+      raw = await runner.run(
+        systemFor(MEDSCHOOLS_IMPORT),
+        asData(JSON.stringify({ text: prepared.text })),
+        i.userId,
+        signal,
+      );
     } catch (err) {
       // The model answered and the answer cannot be read (cut off at the token limit, or prose): not the member's doing,
       // so the day's question goes back. Any other failure (provider down, deadline) keeps it: the call was made.
@@ -72,8 +76,13 @@ export async function parseImport(
       throw err;
     }
     assertLive(signal);
-    const { dir, aliases } = await importDirectory();
-    const valid = validateImport(raw, { text: prepared.text, dir, aliases, now });
+    let directory = await importDirectory();
+    let valid = validateImport(raw, { text: prepared.text, dir: directory.dir, aliases: directory.aliases, now });
+    // A name that matched nothing may be a school the cached directory has not seen yet: read it fresh, once.
+    if (valid.rows.some((r) => !r.school)) {
+      directory = await importDirectory({ fresh: true });
+      valid = validateImport(raw, { text: prepared.text, dir: directory.dir, aliases: directory.aliases, now });
+    }
     summary(valid.rows.length ? 'ok' : 'empty', {
       rows: valid.rows.length,
       matched: valid.rows.filter((r) => r.school).length,
@@ -89,7 +98,13 @@ export async function parseImport(
         key: r.key,
         schoolName: r.schoolName,
         school: r.school
-          ? { slug: r.school.slug, name: r.school.name, shortName: r.school.shortName, degree: r.school.degree, state: r.school.state }
+          ? {
+              slug: r.school.slug,
+              name: r.school.name,
+              shortName: r.school.shortName,
+              degree: r.school.degree,
+              state: r.school.state,
+            }
           : null,
         program: r.program,
         milestones: r.milestones,
