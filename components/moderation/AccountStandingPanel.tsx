@@ -286,11 +286,11 @@ export function AccountStandingPanel() {
             })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul>
             {standing.strikes.map((s) => {
               const href = entityHref(s);
               return (
-                <li key={s.id} className="rounded-site px-4 py-3">
+                <li key={s.id} className="rule-row py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {s.appealStatus === 'OVERTURNED' ? (
                       <Badge variant="success">

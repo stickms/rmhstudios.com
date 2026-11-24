@@ -150,7 +150,7 @@ export function SignedOutLobby({
 
   return (
     <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="rounded-site p-5">
+      <div className="py-5">
         <div className="flex items-start gap-3">
           <LogIn
             className="mt-0.5 h-5 w-5 shrink-0 text-site-accent"
@@ -257,7 +257,7 @@ export function SignedOutLobby({
           ) : (
             <ul
               className={cn(
-                'flex flex-col gap-2',
+                'flex flex-col',
                 arrival,
               )}
             >
@@ -272,7 +272,7 @@ export function SignedOutLobby({
                       room.roomId
                     }
                     className={cn(
-                      'flex items-center justify-between gap-3 rounded-site p-4',
+                      'rule-row flex items-center justify-between gap-3 py-4',
                       isNew(
                         room.roomId,
                       ) &&

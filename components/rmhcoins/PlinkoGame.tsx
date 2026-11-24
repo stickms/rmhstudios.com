@@ -5,6 +5,7 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { placePlinkoBetApi } from '@/lib/coins.contract';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { CoinIcon } from '../ui/CoinIcon';
 import {
   physicsTick,
@@ -399,9 +400,10 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                  `-fg` token, which tracks each theme's green and red. This used
                  to say `text-black`, which was invisible on the themes whose
                  success colour is a dark forest green. */
-              className={`px-4 py-2.5 rounded-site font-semibold text-sm sm:text-lg ${
-                resultWon ? 'bg-site-success' : 'bg-site-danger'
-              }`}
+              className={cn(
+                'rounded-site px-4 py-2.5 font-semibold text-sm sm:text-lg',
+                resultWon ? 'bg-site-success' : 'bg-site-danger',
+              )}
             >
               {resultMessage}
             </div>

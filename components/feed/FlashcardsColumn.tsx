@@ -143,7 +143,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className={`flex min-w-0 items-center gap-3 rounded-site p-4`}
+      className={`row-hover rule-row flex min-w-0 items-center gap-3 py-3`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
@@ -308,7 +308,7 @@ export function FlashcardsColumn({
               }
             />
           ) : (
-            <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
+            <div>{popular.map((d) => DeckCard(d, true))}</div>
           )}
         </section>
       </div>

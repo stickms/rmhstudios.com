@@ -140,12 +140,12 @@ export function RentSplitCalculator({
         </div>
       </div>
 
-      <ul className="mt-4 space-y-3">
+      <ul className="mt-4">
         {rooms.map((room, i) => {
           const d = details[i];
           const factors = room.features.map((f) => `× ${FEATURE_WEIGHTS[f]} ${featureLabel[f].toLowerCase()}`);
           return (
-            <li key={i} className="rounded-site p-5">
+            <li key={i} className="rule-row py-5">
               <div className="flex flex-wrap items-end gap-3">
                 <label className="min-w-32 flex-1 space-y-2 text-sm">
                   <span className="text-site-text-muted">

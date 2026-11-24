@@ -163,7 +163,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport, view
             // Closed unplayed when the tournament was cancelled: muted, no winner, no report.
             const cancelled = m.state === 'CANCELLED';
             return (
-              <div key={m.id} className="flex flex-col gap-2 rounded-site p-4">
+              <div key={m.id} className="flex flex-col gap-2 p-4">
                 {cancelled && (
                   <span className="px-1 text-xs text-site-text-muted">
                     {t('match-cancelled', {
@@ -283,12 +283,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport, view
             <h2 id={`bracket-section-${section.id}`} className="t-heading">
               {titles[section.id]}
             </h2>
-            <div
-              role="region"
-              aria-label={titles[section.id]}
-              tabIndex={0}
-              className="max-w-full overflow-x-auto rounded-site p-1"
-            >
+            <div role="region" aria-label={titles[section.id]} tabIndex={0} className="max-w-full overflow-x-auto p-1">
               {renderColumns(section.rounds, (column, index, total) => doubleLabel(section.id, column, index, total))}
             </div>
           </section>
@@ -304,7 +299,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport, view
         defaultValue: 'Tournament bracket',
       })}
       tabIndex={0}
-      className="max-w-full overflow-x-auto rounded-site p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
+      className="max-w-full overflow-x-auto p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
     >
       {renderColumns(rounds, (column, _index, total) => roundLabel(column[0], total))}
     </div>

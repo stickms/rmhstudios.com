@@ -262,7 +262,7 @@ export function DeckStudyColumn({
  </span>
  </header>
  <div className="p-4">
- <div className="flex min-h-64 flex-col items-center justify-center rounded-site relative p-8 text-center">
+ <div className="flex min-h-64 flex-col items-center justify-center relative py-8 text-center">
  {isReverseCard(card) && <p className="t-meta mb-2">{ts('reverse-label', { defaultValue:'Reverse'})}</p>}
  {card.kind === 'occlusion' && card.occlusionReview && card.frontImage ? (
  <OcclusionReview image={card.frontImage} prompt={card.front} data={card.occlusionReview} revealed={revealed}/>
@@ -373,7 +373,7 @@ export function DeckStudyColumn({
  {signedIn && <TestHistory deckId={deckId} />}
 
  {deck.isOwner && (
- <div className="rounded-site relative p-4">
+ <div className="relative py-4">
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>

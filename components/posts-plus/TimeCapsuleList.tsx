@@ -130,9 +130,9 @@ export function TimeCapsuleList() {
         })}
       </h2>
 
-      <ul className="space-y-3">
+      <ul>
         {data.sealed.map((c) => (
-          <li key={c.id} className="flex items-start gap-3 rounded-site px-4 py-3">
+          <li key={c.id} className="rule-row flex items-start gap-3 py-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm text-site-text line-clamp-3 whitespace-pre-wrap">
                 {c.content || extras(c).join(' · ')}
@@ -157,7 +157,7 @@ export function TimeCapsuleList() {
           </li>
         ))}
         {data.opened.map((c) => (
-          <li key={c.id} className="flex items-start gap-3 rounded-site px-4 py-3 opacity-90">
+          <li key={c.id} className="rule-row flex items-start gap-3 py-3 opacity-90">
             <PackageOpen className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-sm text-site-text line-clamp-2 whitespace-pre-wrap">{c.content}</p>

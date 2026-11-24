@@ -342,7 +342,7 @@ function RequestRidePage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-4">
-              <div className="relative rounded-site p-5">
+              <div className="relative py-5">
                 <h2 className="site-section-label mb-3">
                   {t('where-to-heading', { defaultValue: 'Where to?' })}
                 </h2>
@@ -375,7 +375,7 @@ function RequestRidePage() {
                 )}
               </div>
 
-              <div className="relative rounded-site p-5">
+              <div className="relative py-5">
                 <h2 className="site-section-label mb-3">
                   {t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}
                 </h2>
@@ -394,7 +394,7 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="relative rounded-site p-5">
+              <div className="relative py-5">
                 <label htmlFor="ride-notes" className="mb-2 block text-sm font-medium text-site-text">
                   {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
@@ -412,7 +412,7 @@ function RequestRidePage() {
               </div>
 
               {/* Schedule for later */}
-              <div className="relative rounded-site p-5">
+              <div className="relative py-5">
                 <div className="flex items-center justify-between gap-3">
                   <span
                     id="ride-schedule-label"
@@ -474,13 +474,13 @@ function RequestRidePage() {
               <CalendarClock className="h-4 w-4 text-site-accent" aria-hidden />{' '}
               {t('upcoming-rides-heading', { defaultValue: 'Upcoming rides' })}
             </h2>
-            <ul className="space-y-3">
+            <ul>
               {upcomingRides.map((ride) => (
                 <motion.li
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between gap-3 relative rounded-site p-5"
+                  className="rule-row flex items-center justify-between gap-3 relative py-5"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -548,7 +548,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative rounded-site p-5"
+                  className="rule-row relative py-5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">

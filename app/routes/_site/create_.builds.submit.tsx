@@ -144,12 +144,12 @@ function SubmitBuildContent() {
       }
       wide
     >
-      <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
-        <div className="rounded-site p-5 sm:p-6">
+      <div className={cn('space-y-[var(--site-section-gap)] pt-4 pb-12', arrival)}>
+        <div className="py-5 sm:py-6">
           <BuildForm key={build?.id} build={build ?? undefined} />
         </div>
         {!isEditing && (
-          <div className="space-y-2 rounded-site px-4 py-3">
+          <div className="space-y-2 py-3">
             <h2 className="site-section-label">
               {t('prefer-the-cli', { defaultValue: 'Prefer the CLI?' })}
             </h2>

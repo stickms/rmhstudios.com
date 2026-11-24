@@ -61,7 +61,7 @@ export function PollEditor({
   };
 
   return (
-    <div className="mt-2 rounded-site px-4 py-3">
+    <div className="mt-2 py-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-site-text-muted">
           {t('poll-heading', { defaultValue: 'Poll' })}

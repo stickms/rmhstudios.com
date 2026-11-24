@@ -89,13 +89,13 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
             })}
           />
         ) : (
-          <ul className={cn('space-y-3', arrival)}>
+          <ul className={arrival}>
             {polls.map((p) => (
-              <li key={p.id}>
+              <li key={p.id} className="rule-row">
                 <Link
                   to="/when/$id"
                   params={{ id: p.id }}
-                  className="flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                  className="row-hover flex items-center justify-between gap-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-site-text">
@@ -186,7 +186,7 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-site p-5">
+    <form onSubmit={submit} className="space-y-4 py-5">
       <h2 className="text-lg font-medium text-site-text">
         {t('form-title', { defaultValue: 'New availability poll' })}
       </h2>

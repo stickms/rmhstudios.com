@@ -162,7 +162,7 @@ export default function RmhLadderShell({
           : undefined
       }
     >
-      <div className="rmhladder min-w-0 px-4 pt-4 pb-12">
+      <div className="rmhladder min-w-0 pt-4 pb-12">
         {/* §5.45: the sub-nav rides a standalone glass sheet (pill) below the page
             title; the sign-in CTA stays a sibling outside the sheet, pushed right. */}
         <div className="mb-4 flex items-center gap-2">

@@ -128,7 +128,7 @@ export function RMHCoinsPage() {
   return (
     <div className={cn('flex w-full flex-col gap-4', arrival)}>
       {/* Balance bar — a balance once you have one, the offer of one before. */}
-      <div className="flex items-center justify-between gap-3 rounded-site px-4 py-3">
+      <div className="flex items-center justify-between gap-3 py-3">
         {signedIn ? (
           <>
             <div className="flex items-center gap-2">

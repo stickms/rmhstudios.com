@@ -388,7 +388,7 @@ export function PartyBar({
     // rather than in the JSX: a `{/* … */}` immediately before a `t()` call
     // makes i18next-parser skip that key.)
     return (
-      <section className="relative rounded-site px-4 py-3">
+      <section className="relative py-3">
         <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2">
           <Users
             className="h-4 w-4 shrink-0 text-site-accent"

@@ -2,16 +2,19 @@
  * Steel dividers gate (docs/superpowers/specs/2026-11-24-steel-dividers-design.md, S7-S11): a site-tier page sets its
  * groups off with 1px rules, not with bordered boxes.
  *
- * A violation is one of three source shapes, on a site-tier `.tsx` file under `components/`, `features/` or
+ * A violation is one of four source shapes, on a site-tier `.tsx` file under `components/`, `features/` or
  * `app/routes/`:
  *  - a bordered group box: the class text of one element (a `className` value, or a `cn(` / `clsx(` / `cva(` call's
  *    arguments, with every string literal inside it joined) has an all-sides `border` and a `rounded-site` (or
  *    `rounded-md/lg/xl`) and no control, picture or overlay marker (see `isControlOrPicture`);
+ *  - a ghost box: `rounded-site` with horizontal padding and nothing visible (no fill, ring, shadow or all-sides
+ *    border), the padding left behind when a card became rows on rules, which indents content away from the page title;
  *  - a retired surface role: `surface-card` or `surface-panel` in that class text;
  *  - the retired wrapper: an import of `components/ui/card`.
  *
- * The gate has no allowlist: every site-tier file is clean (the baseline of pages that still had boxes was worked
- * down to nothing, one wave at a time, and deleted). Three kinds of element are not group boxes and are never flagged:
+ * The gate has no allowlist for any kind: every site-tier file is clean (the baselines of pages that still had boxes or
+ * ghost boxes were worked down to nothing, batch by batch, and deleted). A class picked from an upper-case lookup
+ * table (`BAND[i]`) may carry a fill the scan cannot read, so it is not a ghost box. Three kinds of element are not group boxes and are never flagged:
  * a control, picture or overlay (by class marker or tag); a keycap (`kbd`), a `figure` (it holds a picture) and an
  * element with an inline `style` colour (a swatch of the user's own colour); and a class string that uses the app-tier
  * (`*-app-*`, `rounded-app*`) or a brand (`*-rebar-*`) palette, which is another tier's look (L8), not the site's.
@@ -32,7 +35,7 @@ const POINTER =
   join('docs', 'superpowers', 'specs', '2026-11-24-steel-dividers-design.md') +
   ').';
 
-export type SteelRuleKind = 'bordered-group-box' | 'retired-surface-role' | 'card-import';
+export type SteelRuleKind = 'bordered-group-box' | 'retired-surface-role' | 'card-import' | 'ghost-box';
 
 export interface SteelRuleViolation {
   file: string;
@@ -70,6 +73,23 @@ const CONTROL_MARKERS = [
   /(?:^|\s)(?:\S*:)*aspect-/,
   /(?:^|\s)(?:\S*:)*size-\d/,
 ];
+/**
+ * A ghost box: `rounded-site` with horizontal padding and nothing to see (no fill, ring, shadow or all-sides border).
+ * It is what is left of a card once its box is gone, and the padding indents the content away from the page edge that
+ * the title sits on. Vertical padding alone is fine (it is spacing); a row that needs a hover fill uses `row-hover`.
+ */
+const ROUNDED_SITE = /(?:^|\s)(?:\S*:)*rounded-site(?![\w-])/;
+const HORIZONTAL_PAD = /(?:^|\s)(?:\S*:)*(?:p|px|ps|pe|pl|pr)-\d/;
+const VISIBLE_SURFACE = [
+  /(?:^|\s)(?:\S*:)*bg-/,
+  /(?:^|\s)(?:\S*:)*ring(?:-|\s|$)/,
+  /(?:^|\s)(?:\S*:)*shadow/,
+  token('surface-overlay'),
+  token('surface-field'),
+  token('surface-chrome'),
+];
+/** A constant-named table indexed in the class expression: its entries can hold the fill the scanner cannot see. */
+const LOOKUP_CLASS = /\b[A-Z][A-Z0-9_]*\[/;
 const FIXED_H = /(?:^|\s)(?:\S*:)*h-\d/;
 const FIXED_W = /(?:^|\s)(?:\S*:)*w-\d/;
 
@@ -220,7 +240,7 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
   const spans = classContexts(code);
   const out: SteelRuleViolation[] = [];
 
-  const check = (text: string, at: number) => {
+  const check = (text: string, at: number, raw = '') => {
     const line = lineAt(code, at);
     if (OTHER_PALETTE.test(text)) return;
     if (RETIRED_ROLE.test(text)) {
@@ -231,17 +251,31 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
         detail: 'surface-card / surface-panel is retired on the site tier',
       });
     }
-    if (!ROUNDED.test(text) || !BORDER_ALL.test(text)) return;
+    if (ROUNDED.test(text) && BORDER_ALL.test(text)) {
+      if (isControlOrPicture(text) || isControlTag(enclosingTag(code, at))) return;
+      out.push({
+        file,
+        line,
+        kind: 'bordered-group-box',
+        detail: 'bordered group box (border + rounded radius, no control, picture or overlay marker)',
+      });
+      return;
+    }
+    if (!ROUNDED_SITE.test(text) || !HORIZONTAL_PAD.test(text)) return;
+    if (VISIBLE_SURFACE.some((re) => re.test(text))) return;
+    // A class picked from a lookup table (`BAND[i]`, `TONE[kind]`) may carry the fill, which a string scan cannot read.
+    if (LOOKUP_CLASS.test(raw)) return;
     if (isControlOrPicture(text) || isControlTag(enclosingTag(code, at))) return;
     out.push({
       file,
       line,
-      kind: 'bordered-group-box',
-      detail: 'bordered group box (border + rounded radius, no control, picture or overlay marker)',
+      kind: 'ghost-box',
+      detail:
+        'rounded-site with horizontal padding and no fill, ring, shadow or border: drop the padding (and the radius)',
     });
   };
 
-  for (const span of spans) check(classTextOf(code, span), span.start);
+  for (const span of spans) check(classTextOf(code, span), span.start, code.slice(span.start, span.end));
   // String literals outside any class context (a `const` holding classes, say) are checked on their own.
   for (const m of code.matchAll(STRING_LITERAL)) {
     const idx = m.index ?? 0;
@@ -356,6 +390,25 @@ describe('scanSteelRules (the scanner itself)', () => {
     expect(scanSteelRules('<div className="border rounded-site border-site-border p-4" />', 'x.tsx')).toHaveLength(1);
     expect(scanSteelRules('<div className="surface-card p-4" />', 'x.tsx')).toHaveLength(1);
   });
+  it('flags a ghost box: rounded-site with horizontal padding and nothing visible', () => {
+    expect(scanSteelRules('<div className="rounded-site p-5" />', 'x.tsx').map((v) => v.kind)).toEqual(['ghost-box']);
+    expect(scanSteelRules('<div className="rounded-site px-4 py-3" />', 'x.tsx')).toHaveLength(1);
+    expect(scanSteelRules('<div className={cn("space-y-3", "rounded-site ps-4")} />', 'x.tsx')).toHaveLength(1);
+  });
+
+  it('does not flag vertical padding, a fill, a ring, an overlay or a control', () => {
+    expect(scanSteelRules('<div className="rounded-site py-3" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-site px-4 bg-site-bg-subtle" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-site px-4 hover:bg-site-bg-subtle" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-site p-4 ring-1 ring-site-accent" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="surface-overlay rounded-site p-4" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<Button className="rounded-site px-4" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="rounded-app p-4" />', 'x.tsx')).toEqual([]);
+  });
+  it('does not flag a class picked from a lookup table, which may carry the fill', () => {
+    expect(scanSteelRules("<div className={cn('rounded-site px-4 py-3', BAND[i % 4])} />", 'x.tsx')).toEqual([]);
+    expect(scanSteelRules("<div className={cn('rounded-site px-4 py-3', band[i % 4])} />", 'x.tsx')).toHaveLength(1);
+  });
 });
 
 describe('steel rules on the site tier', () => {
@@ -365,11 +418,13 @@ describe('steel rules on the site tier', () => {
   });
 
   it(
-    'no site-tier file has a bordered group box, a retired surface role or a ui/card import',
+    'no site-tier file has a bordered group box, a ghost box, a retired surface role or a ui/card import',
     () => {
       const offenders: string[] = [];
       for (const [file, violations] of scanAll()) {
-        for (const v of violations) offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
+        for (const v of violations) {
+          offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
+        }
       }
       expect(offenders, offenders.join('\n')).toEqual([]);
     },

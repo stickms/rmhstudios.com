@@ -59,7 +59,7 @@ export function ThemeMiniShell({
         // §17.3: `contain: layout paint` isolates each mini shell's recalc/repaint
         // so a grid of them (or a root theme-preview swap) can't cascade a
         // full-document style/layout storm through every glass surface inside them.
-        'pointer-events-none relative isolate overflow-hidden rounded-site select-none [contain:layout_paint]',
+        'pointer-events-none relative isolate overflow-hidden select-none [contain:layout_paint]',
         size === 'lg' ? 'min-h-[320px] p-4' : 'h-[132px] p-2',
         className,
       )}
@@ -106,7 +106,7 @@ export function ThemeMiniShell({
           </div>
 
           {/* One feed card */}
-          <div className={cn(feature, 'rounded-site', size === 'lg' ? 'p-3' : 'p-2')}>
+          <div className={cn(feature, size === 'lg' ? 'p-3' : 'p-2')}>
             <div className="flex items-center gap-1.5">
               <span className={cn('rounded-full bg-site-bg-subtle', size === 'lg' ? 'h-5 w-5' : 'h-3 w-3')} />
               <span className={cn('font-semibold text-site-text', tSm)}>Card title</span>

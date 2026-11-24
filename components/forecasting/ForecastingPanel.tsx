@@ -150,7 +150,7 @@ function CalibrationCard() {
       );
   }, []);
   return (
-    <section className="rounded-site p-5 flex flex-col gap-3">
+    <section className="py-5 flex flex-col gap-3">
       <h2 className="site-section-label">
         {t(
           'calibration',
@@ -298,7 +298,7 @@ function SeasonCard({
         null,
     );
   return (
-    <section className="rounded-site p-5 flex flex-col gap-3">
+    <section className="py-5 flex flex-col gap-3">
       <h2 className="site-section-label">
         {t(
           'season',

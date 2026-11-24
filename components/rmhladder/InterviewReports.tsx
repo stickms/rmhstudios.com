@@ -285,7 +285,7 @@ function InterviewForm({
 
   return (
     <form
-      className="mt-3 space-y-3 rounded-site p-5"
+      className="mt-3 space-y-3 py-5"
       onSubmit={(e) => {
         e.preventDefault();
         submit.mutate();

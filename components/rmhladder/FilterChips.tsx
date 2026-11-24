@@ -168,7 +168,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
 
   return (
     <div
-      className="space-y-3 rounded-site p-5"
+      className="space-y-3 py-5"
       role="search"
       aria-label={t('ladder.jobFilters', {
         defaultValue: 'Job filters',

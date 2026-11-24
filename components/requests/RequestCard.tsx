@@ -67,7 +67,7 @@ export function RequestCard({ request, signedIn, isAdmin, onChanged, onVoted, cl
   }
 
   return (
-    <article className={cn('rounded-site px-4 py-3', className)}>
+    <article className={cn('rule-row py-3', className)}>
       <div className="flex items-start gap-3">
         <Button
           variant={request.hasVoted ? 'default' : 'default'}

@@ -157,7 +157,7 @@ export function FeedsPage({
       )}
       <div
         // ListsManager carries its own page gutters.
-        className={cn(!(session && tab === 'lists') && 'space-y-6 px-4 pt-4 pb-12')}
+        className={!(session && tab === 'lists') ? 'space-y-6 pt-4 pb-12' : ''}
         {...(session
           ? { role: 'tabpanel', id: `feeds-panel-${tab}`, 'aria-labelledby': `feeds-tab-${tab}` }
           : {})}

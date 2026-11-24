@@ -46,7 +46,7 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
 
   return (
     <aside
-      className={cn('max-w-2xl rounded-site p-5 sm:p-5', arrival)}
+      className={cn('max-w-2xl py-5', arrival)}
       aria-label={t('takeaways-title', {
         defaultValue: 'Key takeaways',
       })}

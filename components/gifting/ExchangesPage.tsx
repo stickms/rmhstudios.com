@@ -14,7 +14,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useArrival } from '@/components/ui/arrive';
 import { apiJson, errorCode } from '@/components/wallet/api';
 import type { ExchangeKind, ExchangeSummary } from '@/lib/gifting/exchange';
-import { cn } from '@/lib/utils';
 
 const KEY = ['gift-exchanges'] as const;
 
@@ -216,15 +215,15 @@ export default function ExchangesPage() {
             })}
           />
         ) : (
-          <ul className={cn('space-y-2', arrival)}>
+          <ul className={arrival}>
             {data.exchanges.map((e) => (
-              <li key={e.id}>
+              <li key={e.id} className="rule-row">
                 <Link
                   to="/exchange/$id"
                   params={{
                     id: e.id,
                   }}
-                  className="flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:text-site-accent"
+                  className="row-hover flex items-center justify-between gap-3 py-3 hover:text-site-accent"
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     {e.kind === 'MIXTAPE' ? (

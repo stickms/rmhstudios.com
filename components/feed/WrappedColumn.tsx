@@ -115,7 +115,7 @@ export function WrappedColumn({
  <div className="space-y-6 pt-4 pb-12">
  {/* Level badge — leads the below-fold content. */}
  <div>
- <div className="flex items-center gap-3 rounded-site px-4 py-3">
+ <div className="flex items-center gap-3 py-3">
  <Star className="h-5 w-5 text-site-accent"/>
  <span className="text-sm font-semibold text-site-text">
  {t('level-value', { level: data.level, defaultValue:'Level {{level}}'})}
@@ -131,7 +131,7 @@ export function WrappedColumn({
  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {tiles.map((tile) => (
  <div key={tile.label}>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <tile.icon className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{tile.value}</p>
  <p className="text-xs text-site-text-muted">{tile.label}</p>
@@ -139,7 +139,7 @@ export function WrappedColumn({
  </div>
  ))}
  <div>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <CoinIcon className="h-5 w-5"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.coinsEarned)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
@@ -148,21 +148,21 @@ export function WrappedColumn({
  {data.play ? (
  <>
  <div>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <Gamepad2 className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{hours(data.play.seconds)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-time-played', { defaultValue:'Time played'})}</p>
  </div>
  </div>
  <div>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <Layers className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.play.cardDrops)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
  </div>
  </div>
  <div>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <Award className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{fmt(data.play.badges)}</p>
  <p className="text-xs text-site-text-muted">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
@@ -172,7 +172,7 @@ export function WrappedColumn({
  ) : null}
  {data.busiestMonth && (
  <div>
- <div className={`rounded-site p-5`}>
+ <div className={`py-5`}>
  <CalendarDays className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-semibold text-site-text">{data.busiestMonth}</p>
  <p className="text-xs text-site-text-muted">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
@@ -188,9 +188,9 @@ export function WrappedColumn({
  <h2 className="site-section-label mb-3">
  {t('wrapped-top-games', { defaultValue:'Most played'})}
  </h2>
- <ol className="space-y-2">
+ <ol>
  {data.play.top.map((g, i) => (
- <li key={g.gameId} className="flex items-center justify-between gap-3 rounded-site px-4 py-3">
+ <li key={g.gameId} className="flex items-center justify-between gap-3 rule-row py-3">
  <Link to="/games/$gameId" params={{ gameId: g.gameId }} className="text-site-text">
  {i + 1}. {g.title}
  </Link>
@@ -207,7 +207,7 @@ export function WrappedColumn({
  </h2>
  <Link
  to={`/u/me/post/${data.topPost.id}`as string}
- className={`block rounded-site p-5`}
+ className={`row-hover block py-3`}
  >
  <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
  {data.topPost.content || t('media-post-fallback', { defaultValue:'(media post)'})}
