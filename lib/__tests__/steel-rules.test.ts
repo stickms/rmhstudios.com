@@ -265,15 +265,23 @@ function collectTsx(dir: string, out: string[] = []): string[] {
 
 const SITE_FILES = SCAN_DIRS.flatMap((d) => collectTsx(d)).filter(isSiteTier);
 
+/** A whole-tier scan reads and scans every site file, so it runs once per test file, not once per test. */
+let scanCache: Map<string, SteelRuleViolation[]> | undefined;
+
 /** Violations by file, for the whole site tier. */
 function scanAll(): Map<string, SteelRuleViolation[]> {
+  if (scanCache) return scanCache;
   const byFile = new Map<string, SteelRuleViolation[]>();
   for (const file of SITE_FILES) {
     const v = scanSteelRules(readFileSync(join(ROOT, file), 'utf8'), file);
     if (v.length) byFile.set(file, v);
   }
+  scanCache = byFile;
   return byFile;
 }
+
+/** The first whole-tier scan is slow on a shared CI runner (the default 5 s timed out there). */
+const SCAN_TIMEOUT_MS = 60_000;
 
 describe('scanSteelRules (the scanner itself)', () => {
   it('flags a bordered group box', () => {
@@ -325,7 +333,7 @@ describe('steel rules on the site tier', () => {
       for (const v of violations) offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
-  });
+  }, SCAN_TIMEOUT_MS);
 
   it('no baselined file has more violations than its recorded count (the ratchet only goes down)', () => {
     const byFile = scanAll();
@@ -337,7 +345,7 @@ describe('steel rules on the site tier', () => {
       }
     }
     expect(grew, grew.join('\n')).toEqual([]);
-  });
+  }, SCAN_TIMEOUT_MS);
 
   it('every baseline entry still matches its recorded count (a clean file leaves the list; a smaller count is lowered)', () => {
     const byFile = scanAll();
@@ -349,7 +357,7 @@ describe('steel rules on the site tier', () => {
         problems.push(`${file}: ${now} violations now, lower its recorded count from ${entry.count}`);
     }
     expect(problems, problems.join('\n')).toEqual([]);
-  });
+  }, SCAN_TIMEOUT_MS);
 
   it('every baseline entry names a wave and a positive count', () => {
     const bad = Object.entries(STEEL_RULES_BASELINE).filter(
