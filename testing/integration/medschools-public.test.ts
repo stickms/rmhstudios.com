@@ -563,7 +563,7 @@ const FACT_KEYS = [
 const factsUrl = (slug = SLUG) => `/api/medschools/schools/${slug}/facts`;
 
 describe('the public school facts endpoint', () => {
-  it('has the pinned key sets and a long public cache, and no page or internal id', async () => {
+  it('has the pinned key sets and a long public cache, and no internal id', async () => {
     const res = await anon.get(factsUrl());
     expect(res.status).toBe(200);
     expect(Object.keys(res.body).sort()).toEqual(FACTS_KEYS);
@@ -594,7 +594,10 @@ describe('the public school facts endpoint', () => {
     });
     expect(res.body.pageUrl).toMatch(/^https:\/\/students-residents\.aamc\.org\//);
     const text = JSON.stringify(res.body);
-    for (const f of ['schoolId', '"page"', 'userId', 'it-fact-']) expect(text).not.toContain(f);
+    // `page` is the AAMC PDF page the fact was read on (public; the source link opens the PDF there), null for Admit.
+    expect(res.body.facts[0].page).toBe(2);
+    expect(res.body.facts[2].page).toBeNull();
+    for (const f of ['schoolId', 'userId', 'it-fact-']) expect(text).not.toContain(f);
   });
 
   it('is empty for a school the reports do not cover and 404 for an unknown or inactive slug', async () => {
