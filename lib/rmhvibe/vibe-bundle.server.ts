@@ -429,6 +429,15 @@ export function hasVibeEntry(files: Record<string, string>): boolean {
   }
 }
 
+/**
+ * True when `files` holds a conventional entry (`index.tsx`, `main.tsx`, `App.tsx`, ...) with real source. The
+ * in-progress previewer waits for one: `pickEntry` would also accept the first helper the model finished (`util.ts`),
+ * and a preview bundled from a helper is a blank page. The finished page keeps `pickEntry`'s fallback.
+ */
+export function hasConventionalVibeEntry(files: Record<string, string>): boolean {
+  return ENTRY_CANDIDATES.some((c) => hasSource(files, c));
+}
+
 function loaderFor(p: string): 'ts' | 'tsx' | 'jsx' | 'js' | 'css' | 'json' {
   if (p.endsWith('.tsx')) return 'tsx';
   if (p.endsWith('.ts')) return 'ts';
