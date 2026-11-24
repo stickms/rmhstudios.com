@@ -217,20 +217,22 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
 React SVG, server-rendered (the charts are in the HTML with scripting off). **Owner O7 (2026-11-23)** supersedes O2's
 ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays open for the rest of the site.
 
-- **Colour (O7.1, moved in B2).** `--app-med-chart-1`..`-5` (line, at least 3:1 on paper and ground in both modes,
-  pinned by `charts.test.tsx` from `medschools.css`) and `-n-fill` (the pastel, used for `ArrivalBars` bodies) in
-  `ui/medschools.css`; the `--site-chart-*` tokens are gone. Mappings are fixed in `ui/charts/chartColors.ts` and never
-  depend on rank or on what is switched on: categories take their status hue (Secondary 1 blue, Interview 2 orange,
-  Acceptance 3 green, Rejection 4 red, Waitlist 5 yellow); sources (per-type charts) CycleTrack 1, Admit 2, SDN 3, RMH
-  4, MDApplicants 5; History cycles newest first 1..5. A component writes `var(--app-med-chart-n)` through those maps,
-  never a hex. Dash and weight stay as the secondary cue. Text is always `--app-text` / `--app-text-muted`. The dataviz
-  validator's contrast check passes; its chroma, dark-lightness and CVD checks do not for these status hues (see "Phase
-  B2 as built" in the redesign plan).
+- **Colour (O7.1; status colours, owner 2026-11-24).** A category draws in its STATUS colour: `CATEGORY_COLOR` in
+  `ui/charts/chartColors.ts` is `var(--app-med-<stem>-text)` (the stem from `ui/status/status.ts`), the token the row's
+  status words use, and its bar body is `var(--app-med-<stem>-fill)` (`fillOf`), so a category's line, bar and legend
+  swatch match its row icon everywhere (acceptance green, rejection red, hold dark blue, secondary light blue, waitlist
+  yellow, interview orange, matriculation purple, withdrawn neutral). Sources (per-type charts: CycleTrack 1, Admit 2,
+  SDN 3, RMH 4, MDApplicants 5) and History cycles (newest first 1..5) are a different concept and keep the slots
+  `--app-med-chart-1`..`-5`. `charts.test.tsx` holds both from `medschools.css`: every slot and every category colour at
+  least 3:1 on paper and ground in both modes, and every category with a fill. A component never writes a hex. Dash and
+  weight stay as the secondary cue. Text is always `--app-text` / `--app-text-muted`. The dataviz validator's contrast
+  check passes; its chroma, dark-lightness and CVD checks do not for these status hues (see "Phase B2 as built" in the
+  redesign plan).
 - **Card and legend (O7.2).** `ChartFrame` is a paper panel (`.medapp-chart`: `--app-surface`, 1px `--app-border`);
   caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per series) is present for two
   or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as `legend`: aria-pressed
   buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one stays on). There are no
-  end labels. The daily bars are one series, named by the title and the sources line.
+  end labels. The daily bars have their own category toggles (solid block swatches, `bars`).
 - **Tween (O7.3).** `tween.ts` (pure, injected scheduler) and `useTween.ts`: the y scale moves from the old to the new
   top in 280 ms, ease-out (`easeOutCubic`), when a toggle, program or source changes it. Lines, bars and gridlines
   follow the animated scale (`yTicksTween`: shared ticks stay, new ones fade in, old ones fade out); an interrupted
@@ -263,8 +265,12 @@ ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays o
   multi-select pair for the school's own degree; the URL param stays `ALL | REG | PHD`. `ProgramSelect` and
   `DegreeProgramSelect` remain for the index and live pages.
 
-The first Activity chart is `CategoryLines` with `CategoryToggles` (O4: `?show=`); then `DailyBars` for one chosen type
-(in that type's colour), `CumulativeLine` (per-source colours), then a native `<details>` table. Each chart is wrapped
+The first Activity chart is `CategoryLines` with `CategoryToggles` (O4: `?show=`); then `DailyBars`, stacked bars per
+day for several categories at once (owner 2026-11-24: its own `CategoryToggles`, `?daily=interview,acceptance` in
+canonical order, absent = every category and dropped from the URL, a single value still parses; each category from its
+own primary source, stacked in `CATEGORY_ORDER`; the readout lists each category's count and the total, and "Show data"
+has a column per category plus Total); then the `OptionGroup` for one category (`?type=`) and its `CumulativeLine`
+(per-source colours), then a native `<details>` table. Each chart is wrapped
 in `dir="ltr"` so the time axis stays left to right in `ar`. Each width gets its own viewBox (phone 252, mid 420, wide
 640 units: the phone one is sized so a 320 px phone shows it at about 1:1 inside the card), all rendered, CSS shows one.
 

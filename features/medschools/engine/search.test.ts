@@ -49,6 +49,20 @@ describe('parseSchoolSearch', () => {
       ...CHARTED_TYPES,
     ]);
   });
+  it('daily is a list of categories in canonical order; a single value still parses; absent is every category', () => {
+    expect(parseSchoolSearch({ daily: 'interview' }).daily).toEqual(['INTERVIEW']);
+    expect(parseSchoolSearch({ daily: 'ACCEPTANCE,interview,bogus' }).daily).toEqual(['INTERVIEW', 'ACCEPTANCE']);
+    expect('daily' in parseSchoolSearch({})).toBe(false);
+    expect('daily' in parseSchoolSearch({ daily: 'hold' })).toBe(false);
+    expect(validateSchoolSearch({ daily: 'acceptance,secondary' }).daily).toBe('secondary,acceptance');
+    // All five is the default, so the canonical URL drops it.
+    expect('daily' in validateSchoolSearch({ daily: CHARTED_TYPES.join(',') })).toBe(false);
+    // The old single-category `type` link still parses, for the cumulative chart and the other tabs.
+    expect(parseSchoolSearch({ type: 'rejection', daily: 'rejection' })).toMatchObject({
+      type: 'REJECTION',
+      daily: ['REJECTION'],
+    });
+  });
   it('cycle, type, source', () => {
     expect(parseSchoolSearch({ cycle: '2027' }).cycle).toBe(2027);
     expect(parseSchoolSearch({ cycle: 2027 }).cycle).toBe(2027); // the router parses ?cycle=2027 into a number

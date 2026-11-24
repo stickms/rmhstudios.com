@@ -25,6 +25,7 @@ export function useChartLabels(): (title: string) => ChartLabels {
     comparison: t('chart-comparison', { defaultValue: 'Comparison' }),
     date: t('chart-date', { defaultValue: 'Date' }),
     count: t('chart-count', { defaultValue: 'Reported events' }),
+    total: t('chart-total', { defaultValue: 'Total' }),
     cumulative: t('chart-cumulative', { defaultValue: 'cumulative' }),
     empty: t('chart-empty', { defaultValue: 'No reported events yet' }),
     showData: t('chart-show-data', { defaultValue: 'Show data' }),

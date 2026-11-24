@@ -3,9 +3,9 @@ import { holdScroll } from './hold-scroll';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
-import { SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
+import { CHARTED_TYPES, SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
 import { patchSearch, type ViewPatch } from '../engine/prefs';
-import { parseSchoolSearch } from '../engine/search';
+import { parseSchoolSearch, showParam } from '../engine/search';
 import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
 import { AskPanel } from './ask/AskPanel';
@@ -59,7 +59,7 @@ export function SchoolPage() {
   };
 
   const setSearch = (patch: SchoolSearchPatch) => {
-    const { program, show, ...rest } = patch;
+    const { program, show, daily, ...rest } = patch;
     const viewPatch: ViewPatch = { ...(program ? { program } : {}), ...(show ? { show } : {}) };
     const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     holdScroll();
@@ -70,6 +70,8 @@ export function SchoolPage() {
       search: ((prev: Record<string, unknown>) => ({
         ...patchSearch('school', prev, view, viewPatch, prefs),
         ...own,
+        // The "by day" categories travel as a comma list in canonical order; all five is the default and is dropped.
+        ...(daily ? { daily: daily.length < CHARTED_TYPES.length ? showParam(daily) : undefined } : {}),
       })) as never,
       replace: true,
       resetScroll: false,

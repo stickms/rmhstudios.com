@@ -54,15 +54,15 @@
   --app-med-withdrawn-ink: #5f5a68;
   --app-med-withdrawn-text: #5f5a68;
   --app-med-chart-1: #2f6795;
-  --app-med-chart-1-fill: #8db9de;
+  --app-med-secondary-fill: #8db9de;
   --app-med-chart-2: #9a4e22;
-  --app-med-chart-2-fill: #e8a87c;
+  --app-med-interview-fill: #e8a87c;
   --app-med-chart-3: #3e7a4c;
-  --app-med-chart-3-fill: #6fa67a;
+  --app-med-accept-fill: #6fa67a;
   --app-med-chart-4: #b4483e;
-  --app-med-chart-4-fill: #d7756b;
+  --app-med-reject-fill: #d7756b;
   --app-med-chart-5: #7d5f0e;
-  --app-med-chart-5-fill: #e0c25a;
+  --app-med-waitlist-fill: #e0c25a;
   color-scheme: light;
 
   /* Shape: the mockup's rounded paper. */
@@ -132,15 +132,15 @@
     --app-med-withdrawn-ink: #d6d1e0;
     --app-med-withdrawn-text: #b9b3c6;
     --app-med-chart-1: #9ccbee;
-    --app-med-chart-1-fill: #4f86b3;
+    --app-med-secondary-fill: #4f86b3;
     --app-med-chart-2: #f0b48c;
-    --app-med-chart-2-fill: #b8794c;
+    --app-med-interview-fill: #b8794c;
     --app-med-chart-3: #9fd6ab;
-    --app-med-chart-3-fill: #4e8a5d;
+    --app-med-accept-fill: #4e8a5d;
     --app-med-chart-4: #f0a79d;
-    --app-med-chart-4-fill: #b4574d;
+    --app-med-reject-fill: #b4574d;
     --app-med-chart-5: #ebcf73;
-    --app-med-chart-5-fill: #a98b2e;
+    --app-med-waitlist-fill: #a98b2e;
     color-scheme: dark;
   }
 }
@@ -199,15 +199,15 @@
   --app-med-withdrawn-ink: #d6d1e0;
   --app-med-withdrawn-text: #b9b3c6;
   --app-med-chart-1: #9ccbee;
-  --app-med-chart-1-fill: #4f86b3;
+  --app-med-secondary-fill: #4f86b3;
   --app-med-chart-2: #f0b48c;
-  --app-med-chart-2-fill: #b8794c;
+  --app-med-interview-fill: #b8794c;
   --app-med-chart-3: #9fd6ab;
-  --app-med-chart-3-fill: #4e8a5d;
+  --app-med-accept-fill: #4e8a5d;
   --app-med-chart-4: #f0a79d;
-  --app-med-chart-4-fill: #b4574d;
+  --app-med-reject-fill: #b4574d;
   --app-med-chart-5: #ebcf73;
-  --app-med-chart-5-fill: #a98b2e;
+  --app-med-waitlist-fill: #a98b2e;
   color-scheme: dark;
 }
 

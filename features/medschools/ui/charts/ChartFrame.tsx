@@ -41,6 +41,8 @@ export interface ChartLabels {
   comparison: string;
   date: string;
   count: string;
+  /** "Total": the sum row of a stacked chart's readout and table. Falls back to `count`. */
+  total?: string;
   cumulative: string;
   /** Shown instead of a line or bars when there is nothing to draw. */
   empty: string;

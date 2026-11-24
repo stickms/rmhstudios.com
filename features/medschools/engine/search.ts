@@ -126,23 +126,34 @@ export function validateLiveSearch(raw: Record<string, unknown>): Omit<
   return { ...rest, ...(programs ? { programs: programsValue(programs) } : {}) };
 }
 
+/** A comma list of charted categories (`interview,acceptance`), case-insensitive, back in `CHARTED_TYPES` order. */
+function typeList(v: unknown): MedEventType[] {
+  const wanted = new Set(
+    (str(v) ?? '')
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean),
+  );
+  return CHARTED_TYPES.filter((t) => wanted.has(t));
+}
+
 export function parseSchoolSearch(raw: Record<string, unknown>): {
   tab: SchoolTab;
   program?: ProgramFilter;
   /** Absent when the URL names no known category: a preference may fill it, else every category. */
   show?: MedEventType[];
+  /**
+   * The categories the "by day" chart stacks (owner 2026-11-24), `daily=interview,acceptance` in `CHARTED_TYPES`
+   * order; one value (`daily=interview`) is a list of one. Absent (or naming no known category) means every category.
+   */
+  daily?: MedEventType[];
   type: MedEventType;
   source?: MedSource;
   cycle?: number;
   itab: InterviewTab;
 } {
-  const wanted = new Set(
-    (str(raw.show) ?? '')
-      .split(',')
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean),
-  );
-  const shown = CHARTED_TYPES.filter((t) => wanted.has(t));
+  const shown = typeList(raw.show);
+  const daily = typeList(raw.daily);
   const prog = program(raw.program);
   const source = pick(raw.source, SOURCES);
   const c = str(raw.cycle)?.trim();
@@ -151,6 +162,7 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
     tab: pick(raw.tab, SCHOOL_TABS, false) ?? 'activity',
     ...(prog ? { program: prog } : {}),
     ...(shown.length ? { show: shown } : {}),
+    ...(daily.length ? { daily } : {}),
     type: pick(raw.type, CHARTED_TYPES) ?? 'INTERVIEW',
     itab: pick(raw.itab, INTERVIEW_TABS, false) ?? 'overview',
     ...(source ? { source } : {}),
@@ -165,12 +177,18 @@ export function parseSchoolSearch(raw: Record<string, unknown>): {
  */
 export function validateSchoolSearch(raw: Record<string, unknown>): Omit<
   ReturnType<typeof parseSchoolSearch>,
-  'show'
+  'show' | 'daily'
 > & {
   show?: string;
+  daily?: string;
 } {
-  const { show, ...rest } = parseSchoolSearch(raw);
-  return { ...rest, ...(show ? { show: showParam(show) } : {}) };
+  const { show, daily, ...rest } = parseSchoolSearch(raw);
+  return {
+    ...rest,
+    ...(show ? { show: showParam(show) } : {}),
+    // Every category is the default: the key is dropped so the canonical link stays short.
+    ...(daily && daily.length < CHARTED_TYPES.length ? { daily: showParam(daily) } : {}),
+  };
 }
 
 /** The tracker page's search: the cycle year to show (the newest the user has when absent). */

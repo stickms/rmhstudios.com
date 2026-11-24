@@ -105,9 +105,10 @@ describe('medschools shell', () => {
     const css = readCss('features/medschools/ui/medschools.css');
     for (const k of ['accept', 'reject', 'hold', 'secondary', 'waitlist', 'matric', 'interview', 'withdrawn'])
       for (const part of ['swatch', 'ink', 'text']) expect(css).toContain(`--app-med-${k}-${part}:`);
+    // A charted category's bars fill with its own pastel (owner 2026-11-24: charts use the status colours).
+    for (const k of ['accept', 'reject', 'secondary', 'waitlist', 'interview']) expect(css).toContain(`--app-med-${k}-fill:`);
     for (let i = 1; i <= 5; i++) {
       expect(css).toContain(`--app-med-chart-${i}:`);
-      expect(css).toContain(`--app-med-chart-${i}-fill:`);
       expect(css).not.toContain(`--site-chart-${i}`);
     }
     expect(css).toContain("[data-app-dark='1']");
