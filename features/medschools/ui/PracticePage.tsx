@@ -44,40 +44,46 @@ export function PracticePage() {
   );
   return (
     <>
-      <PageHead title={t('practice-page-title', { defaultValue: 'Interview practice' })} />
-      <p className="medapp-text mb-4 max-w-prose">
-        {t('practice-page-intro', {
-          defaultValue:
-            'Questions an interviewer may ask at any school. Choose one, set a timer and answer out loud. For a school’s own reported questions, open its Interviews tab.',
-        })}{' '}
-        <Link to="/rmh-medschool" className="medapp-link">
-          {t('ask-browse', { defaultValue: 'Browse schools' })}
-        </Link>
-      </p>
-      <div className="mb-6">
-        <OptionGroup<GeneralProgram>
-          label={t('practice-program-label', { defaultValue: 'Program' })}
-          value={program}
-          options={[
-            { value: 'REG', label: t('practice-program-reg', { defaultValue: 'MD or DO' }) },
-            { value: 'PHD', label: t('practice-program-phd', { defaultValue: 'MD-PhD or DO-PhD' }) },
-          ]}
-          onChange={(p) => {
-            setProgram(p);
-            setSelected(undefined);
-          }}
-        />
+      <PageHead
+        title={t('practice-page-title', { defaultValue: 'Interview practice' })}
+        sub={
+          <>
+            {t('practice-page-intro', {
+              defaultValue:
+                'Questions an interviewer may ask at any school. Choose one, set a timer and answer out loud. For a school’s own reported questions, open its Interviews tab.',
+            })}{' '}
+            <Link to="/rmh-medschool" className="medapp-link">
+              {t('ask-browse', { defaultValue: 'Browse schools' })}
+            </Link>
+          </>
+        }
+      />
+      <div className="medapp-block">
+        <div>
+          <OptionGroup<GeneralProgram>
+            label={t('practice-program-label', { defaultValue: 'Program' })}
+            value={program}
+            options={[
+              { value: 'REG', label: t('practice-program-reg', { defaultValue: 'MD or DO' }) },
+              { value: 'PHD', label: t('practice-program-phd', { defaultValue: 'MD-PhD or DO-PhD' }) },
+            ]}
+            onChange={(p) => {
+              setProgram(p);
+              setSelected(undefined);
+            }}
+          />
+        </div>
+        <PracticePanel questions={rows} selectKey={selected} />
       </div>
-      <PracticePanel questions={rows} selectKey={selected} />
-      <div className="medapp-panel mt-6">
+      <div className="medapp-panel">
         <ul className="medapp-rows" aria-label={t('practice-list-label', { defaultValue: 'All questions' })}>
           {rows.map((q) => (
-            <li key={q.key} className="medapp-row items-center justify-between">
+            <li key={q.key} className="medapp-row items-center justify-between gap-4">
               <div className="medapp-row__body">
                 <p className="medapp-text break-words">{q.text}</p>
-                <p className="medapp-meta">{category(q.category)}</p>
+                <p className="medapp-row__meta">{category(q.category)}</p>
               </div>
-              <MedButton type="button" variant="ghost" onClick={() => setSelected(q.key)}>
+              <MedButton type="button" variant="tertiary" onClick={() => setSelected(q.key)}>
                 {t('practice-this', { defaultValue: 'Practise this' })}
               </MedButton>
             </li>

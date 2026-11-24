@@ -14,6 +14,7 @@ import {
 import { dayOfCycle } from '../../engine/cycle';
 import { SOURCE_NAMES, formatUtcDay } from '../../engine/public-read';
 import type { MedChartedTypeId, MedSourceId } from '../../medschools.contract';
+import { inView } from '../../engine/chart-zoom';
 import { CATEGORY_STYLE } from './chartColors';
 import {
   ChartFrame,
@@ -95,7 +96,7 @@ export function CategoryLines(p: {
   const probe: Probe | undefined = hasData
     ? {
         count: lastDay - firstDay + 1,
-        x: (g, i) => plotX(firstDay + i, domain, g),
+        x: (g, i, view) => plotX(firstDay + i, view ?? domain, g),
         at: (i) => {
           const day = firstDay + i;
           const wave = marks.find((w) => w.day === day);
@@ -155,7 +156,8 @@ export function CategoryLines(p: {
         })}
         hint={labels.hint}
         probe={probe}
-        render={(g, clipId) => (
+        domain={hasData ? domain : undefined}
+        render={(g, clipId, view) => (
           <>
             <defs>
               <PlotClip id={clipId} g={g} />
@@ -167,13 +169,15 @@ export function CategoryLines(p: {
             />
             <XAxis
               g={g}
-              ticks={hasData ? xTicks(domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateOf(t.v) })) : []}
+              ticks={
+                hasData ? xTicks(view ?? domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateOf(t.v) })) : []
+              }
             />
             {hasData ? (
               <g clipPath={`url(#${clipId})`}>
                 {shown.map((s) => {
                   const st = CATEGORY_STYLE[s.eventType];
-                  const { d } = linePath(extendStep(s.line, lastDay), domain, tween.value, true, g);
+                  const { d } = linePath(extendStep(s.line, lastDay), view ?? domain, tween.value, true, g);
                   return d ? (
                     <path
                       key={s.eventType}
@@ -190,9 +194,11 @@ export function CategoryLines(p: {
             ) : (
               <EmptyNote g={g} text={labels.empty} />
             )}
-            {marks.map((w) => (
-              <WaveTick key={w.day} x={plotX(w.day, domain, g)} g={g} />
-            ))}
+            {marks
+              .filter((w) => !view || inView(w.day, view))
+              .map((w) => (
+                <WaveTick key={w.day} x={plotX(w.day, view ?? domain, g)} g={g} />
+              ))}
           </>
         )}
       />

@@ -5,18 +5,24 @@ import { Swatch } from './charts/ChartFrame';
 import { useMedLabels } from './labels';
 
 /** Canonical order, the order the chart and the table use. */
-const ORDER: readonly MedChartedTypeId[] = ['SECONDARY', 'INTERVIEW', 'WAITLIST', 'REJECTION', 'ACCEPTANCE'];
+export const CATEGORY_ORDER: readonly MedChartedTypeId[] = [
+  'SECONDARY',
+  'INTERVIEW',
+  'WAITLIST',
+  'REJECTION',
+  'ACCEPTANCE',
+];
 
 /** Press one category. Result is in canonical order; the last one that is on cannot be turned off (O4). */
 export function toggleCategory(value: readonly MedEventTypeId[], type: MedChartedTypeId): MedChartedTypeId[] {
   const on = new Set<MedEventTypeId>(value);
   if (on.has(type)) {
-    if (ORDER.filter((c) => on.has(c)).length <= 1) return ORDER.filter((c) => on.has(c));
+    if (CATEGORY_ORDER.filter((c) => on.has(c)).length <= 1) return CATEGORY_ORDER.filter((c) => on.has(c));
     on.delete(type);
   } else {
     on.add(type);
   }
-  return ORDER.filter((c) => on.has(c));
+  return CATEGORY_ORDER.filter((c) => on.has(c));
 }
 
 /**
@@ -33,14 +39,14 @@ export function CategoryToggles({
 }) {
   const { t } = useTranslation('medschools');
   const { eventLabel } = useMedLabels();
-  const onCount = ORDER.filter((c) => value.includes(c)).length;
+  const onCount = CATEGORY_ORDER.filter((c) => value.includes(c)).length;
   return (
     <div
       role="group"
       aria-label={t('category-toggles-label', { defaultValue: 'Show categories' })}
-      className="medapp-chips"
+      className="medapp-chips medapp-chips--wrap"
     >
-      {ORDER.map((type) => {
+      {CATEGORY_ORDER.map((type) => {
         const pressed = value.includes(type);
         return (
           <button
@@ -48,7 +54,7 @@ export function CategoryToggles({
             type="button"
             // Pressed is a filled chip with weight 600, unpressed muted text and a dimmed swatch: state is never
             // colour alone (A2).
-            className="medapp-chip medapp-chip--xs"
+            className="medapp-chip"
             aria-pressed={pressed}
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
             onClick={() => onChange(toggleCategory(value, type))}

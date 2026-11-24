@@ -1,0 +1,282 @@
+/* ── Light: paper (the base) ─────────────────────────────────────────────── */
+.app-theme.medapp-theme,
+:root:has(.medapp-theme) {
+  --app-bg: #f6f1e7;
+  --app-bg-subtle: #efe8da;
+  --app-surface: #fffcf6;
+  --app-surface-hover: #f3ecdf;
+  --app-surface-active: #eae1d1;
+  --app-border: #e2d9cb;
+  --app-border-bright: #8c8497;
+  --app-text: #2a2731;
+  --app-text-muted: #5f5a68;
+  --app-text-dim: #6f6a78;
+  --app-accent: #2a2731;
+  --app-accent-fg: #fffcf6;
+  --app-accent-hover: #3f3a49;
+  --app-success: #3e7a4c;
+  --app-danger: #b4483e;
+  --app-warning: #7d5f0e;
+  --app-info: #2f6795;
+  --app-rare: #6a4ba0;
+  --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --app-toast-bg: var(--app-surface);
+  --app-glass-bg: var(--app-surface);
+  --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
+  --app-med-wash-1: #e9d5ec;
+  --app-med-wash-2: #cfe3ef;
+  --app-med-wash-3: #f6dcc8;
+  --app-med-wash-4: #d8ead3;
+  --app-med-on-wash: #2a2731;
+  --app-med-wash-image: url('/images/medschools/wash-light.webp');
+  --app-med-accept-swatch: #cfe8d2;
+  --app-med-accept-ink: #3e7a4c;
+  --app-med-accept-text: #3e7a4c;
+  --app-med-reject-swatch: #f3d2cc;
+  --app-med-reject-ink: #b4483e;
+  --app-med-reject-text: #b4483e;
+  --app-med-hold-swatch: #cbd6ea;
+  --app-med-hold-ink: #2f4a7a;
+  --app-med-hold-text: #2f4a7a;
+  --app-med-secondary-swatch: #d6e9f7;
+  --app-med-secondary-ink: #2f6795;
+  --app-med-secondary-text: #2f6795;
+  --app-med-waitlist-swatch: #f6e7b4;
+  --app-med-waitlist-ink: #7d5f0e;
+  --app-med-waitlist-text: #7d5f0e;
+  --app-med-matric-swatch: #e3d9f2;
+  --app-med-matric-ink: #6a4ba0;
+  --app-med-matric-text: #6a4ba0;
+  --app-med-interview-swatch: #f7dcc8;
+  --app-med-interview-ink: #9a4e22;
+  --app-med-interview-text: #9a4e22;
+  --app-med-withdrawn-swatch: #e7e1d6;
+  --app-med-withdrawn-ink: #5f5a68;
+  --app-med-withdrawn-text: #5f5a68;
+  --app-med-chart-1: #2f6795;
+  --app-med-chart-1-fill: #8db9de;
+  --app-med-chart-2: #9a4e22;
+  --app-med-chart-2-fill: #e8a87c;
+  --app-med-chart-3: #3e7a4c;
+  --app-med-chart-3-fill: #6fa67a;
+  --app-med-chart-4: #b4483e;
+  --app-med-chart-4-fill: #d7756b;
+  --app-med-chart-5: #7d5f0e;
+  --app-med-chart-5-fill: #e0c25a;
+  color-scheme: light;
+
+  /* Shape: the mockup's rounded paper. */
+  --app-radius: 24px;
+  --app-radius-sm: 16px;
+  --app-radius-lg: 28px;
+
+  /* Type: Fraunces for headings only; the body is the site's DM Sans (the AppShell tier already points
+     `--app-font-body` at `--site-font-body`). */
+  --app-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+}
+
+/* ── Dark: ink-navy night ────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-dark='0']) .app-theme.medapp-theme,
+  :root:not([data-app-dark='0']):has(.medapp-theme) {
+    --app-bg: #1b1e2a;
+    --app-bg-subtle: #171a25;
+    --app-surface: #282c3c;
+    --app-surface-hover: #31364a;
+    --app-surface-active: #3a3f55;
+    --app-border: #3a3f52;
+    --app-border-bright: #6b7190;
+    --app-text: #f2ede4;
+    --app-text-muted: #b9b3c6;
+    --app-text-dim: #9c97ab;
+    --app-accent: #f2ede4;
+    --app-accent-fg: #1b1e2a;
+    --app-accent-hover: #ffffff;
+    --app-success: #9fd6ab;
+    --app-danger: #f0a79d;
+    --app-warning: #ebcf73;
+    --app-info: #9ccbee;
+    --app-rare: #c8b3ee;
+    --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
+    --app-toast-bg: var(--app-surface);
+    --app-glass-bg: var(--app-surface);
+    --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
+    --app-med-wash-1: #4a3f6b;
+    --app-med-wash-2: #3e5b73;
+    --app-med-wash-3: #5b4a5e;
+    --app-med-wash-4: #3f5a4c;
+    --app-med-on-wash: #f6f1e8;
+    --app-med-wash-image: url('/images/medschools/wash-dark.webp');
+    --app-med-accept-swatch: #3f6b4b;
+    --app-med-accept-ink: #cdebd3;
+    --app-med-accept-text: #9fd6ab;
+    --app-med-reject-swatch: #6e3b38;
+    --app-med-reject-ink: #f4c7c0;
+    --app-med-reject-text: #f0a79d;
+    --app-med-hold-swatch: #2f4a7a;
+    --app-med-hold-ink: #d5e0f5;
+    --app-med-hold-text: #a9c0ec;
+    --app-med-secondary-swatch: #355a75;
+    --app-med-secondary-ink: #d2e8f8;
+    --app-med-secondary-text: #9ccbee;
+    --app-med-waitlist-swatch: #6b5a26;
+    --app-med-waitlist-ink: #f6e4a8;
+    --app-med-waitlist-text: #ebcf73;
+    --app-med-matric-swatch: #4f3f73;
+    --app-med-matric-ink: #e1d5f7;
+    --app-med-matric-text: #c8b3ee;
+    --app-med-interview-swatch: #6e4a33;
+    --app-med-interview-ink: #f7d7c0;
+    --app-med-interview-text: #f0b48c;
+    --app-med-withdrawn-swatch: #3a3f52;
+    --app-med-withdrawn-ink: #d6d1e0;
+    --app-med-withdrawn-text: #b9b3c6;
+    --app-med-chart-1: #9ccbee;
+    --app-med-chart-1-fill: #4f86b3;
+    --app-med-chart-2: #f0b48c;
+    --app-med-chart-2-fill: #b8794c;
+    --app-med-chart-3: #9fd6ab;
+    --app-med-chart-3-fill: #4e8a5d;
+    --app-med-chart-4: #f0a79d;
+    --app-med-chart-4-fill: #b4574d;
+    --app-med-chart-5: #ebcf73;
+    --app-med-chart-5-fill: #a98b2e;
+    color-scheme: dark;
+  }
+}
+:root[data-app-dark='1'] .app-theme.medapp-theme,
+:root[data-app-dark='1']:has(.medapp-theme) {
+  --app-bg: #1b1e2a;
+  --app-bg-subtle: #171a25;
+  --app-surface: #282c3c;
+  --app-surface-hover: #31364a;
+  --app-surface-active: #3a3f55;
+  --app-border: #3a3f52;
+  --app-border-bright: #6b7190;
+  --app-text: #f2ede4;
+  --app-text-muted: #b9b3c6;
+  --app-text-dim: #9c97ab;
+  --app-accent: #f2ede4;
+  --app-accent-fg: #1b1e2a;
+  --app-accent-hover: #ffffff;
+  --app-success: #9fd6ab;
+  --app-danger: #f0a79d;
+  --app-warning: #ebcf73;
+  --app-info: #9ccbee;
+  --app-rare: #c8b3ee;
+  --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --app-toast-bg: var(--app-surface);
+  --app-glass-bg: var(--app-surface);
+  --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
+  --app-med-wash-1: #4a3f6b;
+  --app-med-wash-2: #3e5b73;
+  --app-med-wash-3: #5b4a5e;
+  --app-med-wash-4: #3f5a4c;
+  --app-med-on-wash: #f6f1e8;
+  --app-med-wash-image: url('/images/medschools/wash-dark.webp');
+  --app-med-accept-swatch: #3f6b4b;
+  --app-med-accept-ink: #cdebd3;
+  --app-med-accept-text: #9fd6ab;
+  --app-med-reject-swatch: #6e3b38;
+  --app-med-reject-ink: #f4c7c0;
+  --app-med-reject-text: #f0a79d;
+  --app-med-hold-swatch: #2f4a7a;
+  --app-med-hold-ink: #d5e0f5;
+  --app-med-hold-text: #a9c0ec;
+  --app-med-secondary-swatch: #355a75;
+  --app-med-secondary-ink: #d2e8f8;
+  --app-med-secondary-text: #9ccbee;
+  --app-med-waitlist-swatch: #6b5a26;
+  --app-med-waitlist-ink: #f6e4a8;
+  --app-med-waitlist-text: #ebcf73;
+  --app-med-matric-swatch: #4f3f73;
+  --app-med-matric-ink: #e1d5f7;
+  --app-med-matric-text: #c8b3ee;
+  --app-med-interview-swatch: #6e4a33;
+  --app-med-interview-ink: #f7d7c0;
+  --app-med-interview-text: #f0b48c;
+  --app-med-withdrawn-swatch: #3a3f52;
+  --app-med-withdrawn-ink: #d6d1e0;
+  --app-med-withdrawn-text: #b9b3c6;
+  --app-med-chart-1: #9ccbee;
+  --app-med-chart-1-fill: #4f86b3;
+  --app-med-chart-2: #f0b48c;
+  --app-med-chart-2-fill: #b8794c;
+  --app-med-chart-3: #9fd6ab;
+  --app-med-chart-3-fill: #4e8a5d;
+  --app-med-chart-4: #f0a79d;
+  --app-med-chart-4-fill: #b4574d;
+  --app-med-chart-5: #ebcf73;
+  --app-med-chart-5-fill: #a98b2e;
+  color-scheme: dark;
+}
+
+/* The overlay bridge (see the header): the names the shared menu, dialogs, toaster and sortable buttons read. It reads the
+   `--app-*` values above, so it holds for light and dark, and it is on <html>, where a portal resolves it. */
+:root:has(.medapp-theme) {
+  --site-bg: var(--app-bg);
+  --site-bg-subtle: var(--app-bg-subtle);
+  --site-surface: var(--app-surface);
+  --site-border: var(--app-border);
+  --site-text: var(--app-text);
+  --site-text-muted: var(--app-text-muted);
+  --site-accent: var(--app-accent);
+  --site-accent-fg: var(--app-accent-fg);
+  --site-success: var(--app-success);
+  --site-danger: var(--app-danger);
+  --site-radius: 14px;
+  --site-radius-sm: 10px;
+}
+
+/* ── The system (design polish, owner 2026-11-24) ───────────────────────────
+   One spacing scale, one type ramp, one control height per context. Every page reads these names; a value that is not
+   here is a decision, not a habit.
+   - Space: 4 / 8 / 12 / 16 / 24 / 32 / 48 (`--app-med-space-1`..`-7`).
+   - Gutter 16 on a phone, 24 from 768px; a section gap of 24, then 32; panel padding 16, then 20; a row 12 top and
+     bottom; a heading 12 above its content.
+   - Radius: 10 (an option inside a group, a step, a note), 14 (buttons, fields, groups, menus), 24 (panels, charts,
+     tiles); circles only for the round icon buttons and status discs.
+   - Fills: buttons and groups are tonal (`--app-med-tonal`, the ink at 6%; hover 10%, press 15%), never outlined; only
+     fields keep a rule.
+   - Type: page title 28 (32 from 768px), section title 20, body 16, secondary 14, meta 13 (12 only inside charts).
+     Help copy is secondary (14), never meta.
+   - Controls: 44px on touch or a phone, 40px with a fine pointer from 768px; a row of controls shares one height. */
+.medapp-theme {
+  --app-med-space-1: 4px;
+  --app-med-space-2: 8px;
+  --app-med-space-3: 12px;
+  --app-med-space-4: 16px;
+  --app-med-space-5: 24px;
+  --app-med-space-6: 32px;
+  --app-med-space-7: 48px;
+  --app-med-gutter: 16px;
+  --app-med-section-gap: 24px;
+  --app-med-panel-pad: 16px;
+  --app-med-row-pad: 12px;
+  --app-med-head-gap: 12px;
+  --app-med-control: 44px;
+  --app-med-radius-sm: 10px;
+  --app-med-radius: 14px;
+  --app-med-radius-lg: 24px;
+  --app-med-tonal: color-mix(in srgb, var(--app-text) 6%, transparent);
+  --app-med-tonal-hover: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --app-med-tonal-press: color-mix(in srgb, var(--app-text) 15%, transparent);
+  --app-med-text-title: 28px;
+  --app-med-text-section: 20px;
+  --app-med-text-body: 16px;
+  --app-med-text-secondary: 14px;
+  --app-med-text-meta: 13px;
+}
+@media (min-width: 768px) {
+  .medapp-theme {
+    --app-med-gutter: 24px;
+    --app-med-section-gap: 32px;
+    --app-med-panel-pad: 20px;
+    --app-med-text-title: 32px;
+  }
+}
+@media (min-width: 768px) and (pointer: fine) {
+  .medapp-theme {
+    --app-med-control: 40px;
+  }
+}

@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { readCss } from '@/lib/__tests__/css-source';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { MODE_STORAGE_KEY, resolveMode, serializeMode } from '../../engine/mode';
-import { backTargetFor } from './back-target';
+import { backTargetFor, isMedIndex } from './back-target';
+
+const route = vi.hoisted(() => ({ pathname: '/rmh-medschool/live' }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_k: string, o?: { defaultValue?: string }) => o?.defaultValue ?? _k }),
@@ -14,16 +17,18 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useRouterState: ({ select }: { select: (s: unknown) => unknown }) =>
-    select({ location: { pathname: '/rmh-medschool/live' } }),
+    select({ location: { pathname: route.pathname } }),
   useRouter: () => ({ history: { back: () => undefined } }),
 }));
 
 const read = (f: string) => readFileSync(f, 'utf8');
 
 describe('medschools shell', () => {
-  it('chooses a back target: the index goes up to Services, everything else to the index', () => {
-    expect(backTargetFor('/rmh-medschool')).toBe('/services');
-    expect(backTargetFor('/rmh-medschool/')).toBe('/services');
+  it('chooses the left button: the index links home to the site, everything else goes back to the index', () => {
+    expect(backTargetFor('/rmh-medschool')).toBe('/');
+    expect(backTargetFor('/rmh-medschool/')).toBe('/');
+    expect(isMedIndex('/rmh-medschool/')).toBe(true);
+    expect(isMedIndex('/rmh-medschool/live')).toBe(false);
     for (const p of [
       '/rmh-medschool/live',
       '/rmh-medschool/duke',
@@ -39,10 +44,25 @@ describe('medschools shell', () => {
     const html = renderToStaticMarkup(<MedTopBar />);
     expect(html).toContain('href="/rmh-medschool"');
     expect(html).toContain('aria-label="Back to all schools"');
-    expect(html).toContain('Med Schools');
+    expect(html).toContain('<span class="medapp-title">RMH Med Schools</span>');
+    expect(html).not.toContain('<h1');
     // The theme toggle renders on the server with no pressed state (the mode lives in this device's storage).
     expect(html).toContain('aria-label="Dark mode"');
     expect(html).not.toContain('aria-pressed');
+  });
+
+  it('draws a home link on the index, to the site home, and makes the app name the page h1', async () => {
+    const { MedTopBar } = await import('./MedTopBar');
+    route.pathname = '/rmh-medschool';
+    try {
+      const html = renderToStaticMarkup(<MedTopBar />);
+      expect(html).toContain('href="/"');
+      expect(html).toContain('aria-label="RMH home"');
+      expect(html).not.toContain('Back to all schools');
+      expect(html).toContain('<h1 class="medapp-title">RMH Med Schools</h1>');
+    } finally {
+      route.pathname = '/rmh-medschool/live';
+    }
   });
 
   it('stores the mode as {"dark": boolean}, follows the system otherwise, and shares its key with the pre-paint entry', () => {
@@ -59,7 +79,7 @@ describe('medschools shell', () => {
   });
 
   it('paints both grounds the stylesheet declares as --app-bg', () => {
-    const css = read('features/medschools/ui/medschools.css').toLowerCase();
+    const css = readCss('features/medschools/ui/medschools.css').toLowerCase();
     const theme = read('stores/themeStore.ts').toLowerCase();
     const entry = /'\/rmh-medschool': \{[^}]*\}/.exec(theme)?.[0] ?? '';
     for (const hex of ['#f6f1e7', '#1b1e2a']) {
@@ -69,9 +89,15 @@ describe('medschools shell', () => {
   });
 
   it('keeps the wash static: in the flow, no fixed layer, no animation, a tile for each mode', () => {
-    const css = read('features/medschools/ui/medschools.css');
+    const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
     expect(css).toMatch(/\.medapp-page\s*\{[^}]*background-image: var\(--app-med-wash-image\)/);
-    expect(css).not.toMatch(/position:\s*(fixed|sticky)\s*;[^}]*inset-block-start:\s*0/);
+    // Nothing is fixed, and nothing is sticky flush to an edge of the screen. The one rule pinned at 0 is the rail's
+    // heading, sticky inside the rail panel's own scroll box (the panel itself sits 16px off the top).
+    expect(css).not.toMatch(/position:\s*fixed/);
+    const flush = [...css.matchAll(/([^{}]+)\{[^}]*position:\s*sticky\s*;[^}]*inset-block-start:\s*0/g)].map((m) =>
+      m[1]!.trim(),
+    );
+    expect(flush).toEqual(['.medapp-rail-top']);
     expect(css).not.toMatch(/@keyframes|animation:|filter:|backdrop-filter/);
     expect(css).toContain('/images/medschools/wash-light.webp');
     expect(css).toContain('/images/medschools/wash-dark.webp');
@@ -79,7 +105,7 @@ describe('medschools shell', () => {
   });
 
   it('defines the status pairs, chart slots and the --site bridge in both modes', () => {
-    const css = read('features/medschools/ui/medschools.css');
+    const css = readCss('features/medschools/ui/medschools.css');
     for (const k of ['accept', 'reject', 'hold', 'secondary', 'waitlist', 'matric', 'interview', 'withdrawn'])
       for (const part of ['swatch', 'ink', 'text']) expect(css).toContain(`--app-med-${k}-${part}:`);
     for (let i = 1; i <= 5; i++) {

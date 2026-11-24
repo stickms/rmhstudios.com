@@ -1,4 +1,17 @@
-import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
+import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ZOOM_STEP, panView, zoomView, type Domain } from '../../engine/chart-zoom';
 import { GEOMETRIES, TICK_ROOM, heightOf, nearestIndex, type ChartGeometry } from '../../engine/chart-geometry';
 
 /**
@@ -181,16 +194,28 @@ export interface ProbeRow {
 /** What the crosshair can land on: `count` stops, each with an x in plot pixels and the readout at that stop. */
 export interface Probe {
   count: number;
-  x: (g: ChartGeometry, i: number) => number;
+  /** Stop `i`'s x in plot pixels, in the zoomed `view` when there is one (see `ResponsivePlot`'s `domain`). */
+  x: (g: ChartGeometry, i: number, view?: Domain) => number;
   at: (i: number) => { label: string; rows: ProbeRow[] };
   /** The stop to show when the plot gets keyboard focus. */
   initial?: number;
 }
 
+const noSubscribe = () => () => undefined;
+
 /**
  * The drawing in every geometry (phone, mid, wide), server-rendered, one shown by CSS. No measuring and no script:
- * the markup is the same on the server and the client until a probe is active. `xTitle` is the short axis cue under
- * the tick labels. `probe` adds the crosshair and tooltip (pointer, touch, and the arrow keys on the focused plot).
+ * the markup is the same on the server and the client until a probe is active or the chart is zoomed. `xTitle` is the
+ * short axis cue under the tick labels. `probe` adds the crosshair and tooltip (pointer, touch, and the arrow keys on
+ * the focused plot).
+ *
+ * `domain` makes the time axis zoomable (owner 2026-11-24): the view is a range over it (`engine/chart-zoom.ts`),
+ * passed to `render` and to the probe's `x`, and the chart draws in it (the plot clip hides what falls outside). Zoom
+ * with the buttons over the plot, `+` and `-` on the focused plot, a pinch (two fingers, or a trackpad, which the
+ * browser sends as a ctrl-wheel) or ctrl / cmd + wheel; drag with a mouse, or two fingers, to pan once zoomed; reset
+ * with the button or `0`. A plain wheel still scrolls the page, and one finger still scrubs the probe with the page
+ * scrolling vertically (`touch-pan-y`). The view is component state: it stays while a toggle or a setting changes the
+ * lines, and is clamped to the new domain. The server and the first client render draw the whole domain.
  */
 export function ResponsivePlot({
   render,
@@ -198,16 +223,67 @@ export function ResponsivePlot({
   probe,
   summary,
   hint,
+  domain,
 }: {
-  render: (g: ChartGeometry, clipId: string) => ReactNode;
+  render: (g: ChartGeometry, clipId: string, view?: Domain) => ReactNode;
   xTitle?: string;
   probe?: Probe;
   summary: string;
   hint: string;
+  /** The full x domain, when the axis can zoom and pan. */
+  domain?: Domain;
 }) {
+  const { t } = useTranslation('medschools');
   const uid = useId().replace(/[^\w-]/g, '');
+  const client = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
+  const [zoom, setZoom] = useState<[number, number] | null>(null);
+  // A changed domain (another program, another category) keeps the zoomed range where it still fits.
+  const view = domain && zoom ? (zoomView(zoom, domain, 1) ?? undefined) : undefined;
+  const zoomBy = domain
+    ? (factor: number, anchor = 0.5) => setZoom((z) => zoomView(z && view ? view : null, domain, factor, anchor))
+    : undefined;
+  const panBy = domain ? (fraction: number) => setZoom(() => panView(view ?? null, domain, fraction)) : undefined;
+  const reset = () => setZoom(null);
+  const zoomable = !!domain && !!zoomBy && !!panBy;
   return (
     <>
+      {zoomable && client ? (
+        <div className="medapp-zoom" role="group" aria-label={t('chart-zoom-label', { defaultValue: 'Zoom' })}>
+          <button
+            type="button"
+            className="medapp-zoom__btn"
+            aria-label={t('chart-zoom-in', { defaultValue: 'Zoom in' })}
+            title={t('chart-zoom-in', { defaultValue: 'Zoom in' })}
+            onClick={() => zoomBy(ZOOM_STEP)}
+          >
+            <ZoomIn aria-hidden="true" className="size-4" />
+          </button>
+          <button
+            type="button"
+            className="medapp-zoom__btn"
+            aria-label={t('chart-zoom-out', { defaultValue: 'Zoom out' })}
+            title={t('chart-zoom-out', { defaultValue: 'Zoom out' })}
+            disabled={!view}
+            onClick={() => zoomBy(1 / ZOOM_STEP)}
+          >
+            <ZoomOut aria-hidden="true" className="size-4" />
+          </button>
+          <button
+            type="button"
+            className="medapp-zoom__btn"
+            aria-label={t('chart-zoom-reset', { defaultValue: 'Show the whole cycle' })}
+            title={t('chart-zoom-reset', { defaultValue: 'Show the whole cycle' })}
+            disabled={!view}
+            onClick={reset}
+          >
+            <RotateCcw aria-hidden="true" className="size-4" />
+          </button>
+        </div>
+      ) : null}
       {GEOMETRIES.map((g) => (
         <PlotSvg
           key={g.id}
@@ -217,7 +293,13 @@ export function ResponsivePlot({
           render={render}
           probe={probe}
           summary={summary}
-          hint={hint}
+          hint={
+            zoomable
+              ? `${hint} ${t('chart-zoom-hint', { defaultValue: 'Plus and minus zoom; zero shows the whole cycle.' })}`
+              : hint
+          }
+          view={view}
+          {...(zoomable ? { zoomBy, panBy, reset } : {})}
         />
       ))}
     </>
@@ -232,16 +314,27 @@ function PlotSvg({
   probe,
   summary,
   hint,
+  view,
+  zoomBy,
+  panBy,
+  reset,
 }: {
   g: ChartGeometry;
   clipId: string;
   xTitle: string | undefined;
-  render: (g: ChartGeometry, clipId: string) => ReactNode;
+  render: (g: ChartGeometry, clipId: string, view?: Domain) => ReactNode;
   probe: Probe | undefined;
   summary: string;
   hint: string;
+  view: Domain | undefined;
+  zoomBy?: (factor: number, anchor?: number) => void;
+  panBy?: (fraction: number) => void;
+  reset?: () => void;
 }) {
   const [active, setActive] = useState<number | null>(null);
+  // Pointers down on the plot: one mouse drag pans; two touches pinch (their spread) and pan (their midpoint).
+  const pointers = useRef(new Map<number, { x: number; type: string }>());
+  const gesture = useRef<{ spread: number; mid: number; panned: boolean } | null>(null);
   const [byKey, setByKey] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLDivElement>(null);
@@ -250,7 +343,7 @@ function PlotSvg({
   const count = probe?.count ?? 0;
   const stop = active !== null && probe && active < count ? active : null;
   const at = stop !== null && probe ? probe.at(stop) : null;
-  const crossX = stop !== null && probe ? probe.x(g, stop) : 0;
+  const crossX = stop !== null && probe ? probe.x(g, stop, view) : 0;
 
   // The tooltip follows the crosshair and flips to its other side (and stays inside the card) once it would overflow.
   useLayoutEffect(() => {
@@ -270,13 +363,95 @@ function PlotSvg({
     const r = el.getBoundingClientRect();
     if (r.width === 0) return;
     const vx = ((e.clientX - r.left) / r.width) * g.w;
-    const xs = Array.from({ length: count }, (_, i) => probe.x(g, i));
+    const xs = Array.from({ length: count }, (_, i) => probe.x(g, i, view));
     const i = nearestIndex(xs, vx);
     if (i >= 0) {
       setByKey(false);
       setActive(i);
     }
   };
+
+  /** Client x as a fraction of the plot area (0 its start, 1 its end), for a zoom anchor or a pan. */
+  const plotFraction = (clientX: number): number => {
+    const r = wrap.current?.getBoundingClientRect();
+    if (!r || r.width === 0) return 0.5;
+    const vx = ((clientX - r.left) / r.width) * g.w;
+    return Math.min(1, Math.max(0, (vx - g.plot.left) / (g.plot.right - g.plot.left)));
+  };
+  const plotWidthPx = (): number => {
+    const r = wrap.current?.getBoundingClientRect();
+    return r ? (r.width * (g.plot.right - g.plot.left)) / g.w : 1;
+  };
+
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    pointers.current.set(e.pointerId, { x: e.clientX, type: e.pointerType });
+    const ps = [...pointers.current.values()];
+    if (zoomBy && ps.length === 2) {
+      gesture.current = { spread: Math.abs(ps[0]!.x - ps[1]!.x), mid: (ps[0]!.x + ps[1]!.x) / 2, panned: false };
+      setActive(null);
+      return;
+    }
+    if (e.pointerType === 'mouse' && view && panBy) {
+      gesture.current = { spread: 0, mid: e.clientX, panned: false };
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    if (probe) pick(e);
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const was = pointers.current.get(e.pointerId);
+    if (was) pointers.current.set(e.pointerId, { x: e.clientX, type: was.type });
+    const ps = [...pointers.current.values()];
+    const gs = gesture.current;
+    if (gs && ps.length === 2 && zoomBy && panBy) {
+      const spread = Math.abs(ps[0]!.x - ps[1]!.x);
+      const mid = (ps[0]!.x + ps[1]!.x) / 2;
+      if (gs.spread > 0 && spread > 0 && Math.abs(spread - gs.spread) > 4) {
+        zoomBy(gs.spread / spread, plotFraction(mid));
+        gs.spread = spread;
+      }
+      if (Math.abs(mid - gs.mid) > 2) {
+        panBy(-(mid - gs.mid) / plotWidthPx());
+        gs.mid = mid;
+      }
+      return;
+    }
+    if (gs && ps.length === 1 && was?.type === 'mouse' && panBy && view) {
+      const dx = e.clientX - gs.mid;
+      if (Math.abs(dx) > 3 || gs.panned) {
+        gs.panned = true;
+        panBy(-dx / plotWidthPx());
+        gs.mid = e.clientX;
+        setActive(null);
+        return;
+      }
+    }
+    if (probe) pick(e);
+  };
+  const endPointer = (e: PointerEvent<HTMLDivElement>) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2 && gesture.current?.spread) gesture.current = null;
+    if (pointers.current.size === 0) gesture.current = null;
+  };
+  // A plain wheel scrolls the page; a pinch on a trackpad (a ctrl-wheel) or ctrl / cmd + wheel zooms the time axis.
+  // A native, non-passive listener: React's wheel handler is passive, and the browser would zoom the page instead.
+  const wheel = useRef<(e: globalThis.WheelEvent) => void>(() => undefined);
+  wheel.current = (e) => {
+    if (!zoomBy || !(e.ctrlKey || e.metaKey) || e.deltaY === 0) return;
+    e.preventDefault();
+    zoomBy(e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP, plotFraction(e.clientX));
+  };
+  const zoomOn = !!zoomBy;
+  // The wrapper's ref binds that listener (React 19 runs the returned cleanup when the node goes or `zoomOn` changes).
+  const bindWrap = useCallback(
+    (el: HTMLDivElement | null) => {
+      wrap.current = el;
+      if (!el || !zoomOn) return;
+      const on = (e: globalThis.WheelEvent) => wheel.current(e);
+      el.addEventListener('wheel', on, { passive: false });
+      return () => el.removeEventListener('wheel', on);
+    },
+    [zoomOn],
+  );
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!probe || count === 0) return;
@@ -291,6 +466,18 @@ function PlotSvg({
     else if (e.key === 'Escape') {
       setActive(null);
       return;
+    } else if (zoomBy && (e.key === '+' || e.key === '=')) {
+      e.preventDefault();
+      zoomBy(ZOOM_STEP);
+      return;
+    } else if (zoomBy && (e.key === '-' || e.key === '_')) {
+      e.preventDefault();
+      zoomBy(1 / ZOOM_STEP);
+      return;
+    } else if (reset && e.key === '0') {
+      e.preventDefault();
+      reset();
+      return;
     }
     if (next === null) return;
     e.preventDefault();
@@ -302,17 +489,20 @@ function PlotSvg({
     // The plot is one keyboard-operable composite (arrow keys move the crosshair), a focusable named group.
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
-      ref={wrap}
+      ref={bindWrap}
       role={probe ? 'group' : undefined}
       aria-label={probe ? summary : undefined}
       aria-describedby={probe ? hintId : undefined}
       tabIndex={probe ? 0 : undefined}
-      className={`${SHOWN_AT[g.id]} relative touch-pan-y medapp-plot`}
-      onPointerMove={probe ? pick : undefined}
-      onPointerDown={probe ? pick : undefined}
+      className={`${SHOWN_AT[g.id]} relative touch-pan-y medapp-plot${view ? ' medapp-plot--zoomed' : ''}`}
+      onPointerMove={probe || zoomBy ? onPointerMove : undefined}
+      onPointerDown={probe || zoomBy ? onPointerDown : undefined}
+      onPointerUp={zoomBy ? endPointer : undefined}
+      onPointerCancel={zoomBy ? endPointer : undefined}
       onPointerLeave={
-        probe
+        probe || zoomBy
           ? (e) => {
+              if (zoomBy) endPointer(e);
               if (e.pointerType === 'mouse' && document.activeElement !== wrap.current) setActive(null);
             }
           : undefined
@@ -329,7 +519,7 @@ function PlotSvg({
         aria-hidden={probe ? true : undefined}
         focusable="false"
       >
-        {render(g, clipId)}
+        {render(g, clipId, view)}
         {xTitle ? (
           <text
             x={(g.plot.left + g.plot.right) / 2}

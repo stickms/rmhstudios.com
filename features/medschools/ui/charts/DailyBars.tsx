@@ -1,5 +1,6 @@
 import { SOURCE_NAMES, formatUtcDay } from '../../engine/public-read';
 import { barsGeometry, fillDays, yTicksTween, type ChartGeometry } from '../../engine/chart-geometry';
+import type { Domain } from '../../engine/chart-zoom';
 import type { ActivityTypeDto } from '../../medschools.contract';
 import {
   ChartFrame,
@@ -38,10 +39,13 @@ export function DailyBars(p: {
   const days = fillDays(p.primary.days, p.from, p.to);
   const hasData = p.primary.days.some((d) => d.count > 0);
   const n = days.length;
-  const tickIdx = (count: number) => {
-    if (n < 2) return n === 1 ? [0] : [];
-    return [...new Set(Array.from({ length: count }, (_, i) => Math.round(((n - 1) * i) / (count - 1))))];
+  const tickIdx = (count: number, m = n) => {
+    if (m < 2) return m === 1 ? [0] : [];
+    return [...new Set(Array.from({ length: count }, (_, i) => Math.round(((m - 1) * i) / (count - 1))))];
   };
+  /** The days a zoomed view shows (the axis is the day's index), or every day. */
+  const sliceOf = (view?: Domain): [number, number] =>
+    view ? [Math.max(0, Math.ceil(view[0])), Math.min(n - 1, Math.floor(view[1]))] : [0, n - 1];
   const target = barsGeometry(hasData ? days : [], 0).top;
   const tween = useTween(target);
 
@@ -56,17 +60,22 @@ export function DailyBars(p: {
   const name = SOURCE_NAMES[p.primary.source];
   // One geometry per drawing per frame: the probe asks for every bar's x on each pointer move.
   const geos = new Map<string, ReturnType<typeof barsGeometry>>();
-  const geoOf = (g: ChartGeometry) => {
-    let geo = geos.get(g.id);
-    if (!geo) geos.set(g.id, (geo = barsGeometry(hasData ? days : [], 0, g, tween.value)));
+  const geoOf = (g: ChartGeometry, view?: Domain) => {
+    const [a, b] = sliceOf(view);
+    const key = `${g.id}:${a}:${b}`;
+    let geo = geos.get(key);
+    if (!geo) geos.set(key, (geo = barsGeometry(hasData ? days.slice(a, b + 1) : [], 0, g, tween.value)));
     return geo;
   };
 
   const probe: Probe | undefined = hasData
     ? {
         count: n,
-        x: (g, i) => {
-          const b = geoOf(g).bars[i]!;
+        x: (g, i, view) => {
+          const [a, last] = sliceOf(view);
+          // A day outside the zoomed view is off the plot, so the probe never lands on it.
+          if (i < a || i > last) return -1e6;
+          const b = geoOf(g, view).bars[i - a]!;
           return b.x + b.w / 2;
         },
         at: (i) => {
@@ -112,12 +121,15 @@ export function DailyBars(p: {
         summary={labels.summary({ lines: [{ name, total: p.primary.days.reduce((t, d) => t + d.count, 0) }] })}
         hint={labels.hint}
         probe={probe}
-        render={(g, clipId) => {
-          const geo = geoOf(g);
+        domain={n > 1 ? [0, n - 1] : undefined}
+        render={(g, clipId, view) => {
+          const geo = geoOf(g, view);
+          const [a] = sliceOf(view);
+          const shownDays = days.slice(a, a + geo.bars.length);
           const xs = hasData
-            ? tickIdx(g.xTickCount).map((i) => {
+            ? tickIdx(g.xTickCount, shownDays.length).map((i) => {
                 const b = geo.bars[i]!;
-                return { x: b.x + b.w / 2, label: formatUtcDay(days[i]!.date, labels.locale) };
+                return { x: b.x + b.w / 2, label: formatUtcDay(shownDays[i]!.date, labels.locale) };
               })
             : [];
           return (
@@ -134,14 +146,14 @@ export function DailyBars(p: {
               {hasData ? (
                 <g clipPath={`url(#${clipId})`}>
                   {geo.bars.map((b, i) => (
-                    <rect key={days[i]!.date} x={b.x} y={b.y} width={b.w} height={b.h} fill={p.color} />
+                    <rect key={shownDays[i]!.date} x={b.x} y={b.y} width={b.w} height={b.h} fill={p.color} />
                   ))}
                 </g>
               ) : (
                 <EmptyNote g={g} text={labels.empty} />
               )}
               {hasData
-                ? days.flatMap((d, i) => {
+                ? shownDays.flatMap((d, i) => {
                     const b = geo.bars[i];
                     return b && waveOf.has(d.date) ? [<WaveTick key={d.date} x={b.x + b.w / 2} g={g} />] : [];
                   })

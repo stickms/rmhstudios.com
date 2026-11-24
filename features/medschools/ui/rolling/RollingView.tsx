@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { textFragmentUrl } from '../../engine/text-fragment';
+import { SourceRef } from '../SourceRef';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import type { MedRollingEntryDto, MedRollingGuidanceRes } from '../../medschools.contract';
 import { useMedLabels } from '../labels';
@@ -65,26 +67,30 @@ function Row({
           : t('rolling-says-unknown', { defaultValue: 'The school’s page does not say.' });
   return (
     <li className="flex flex-col gap-1">
-      <p className="medapp-text break-words">
-        <span className="font-medium">{school(e.slug, e.program, e.schoolName)}</span>
-        {' · '}
-        {program}
-      </p>
-      <p className="medapp-text">{says}</p>
-      {e.evidence ? (
-        <p className="medapp-meta break-words">
-          {t('admissions-quote', { defaultValue: '“{{text}}”', text: e.evidence })}
+      <div className="medapp-srcrow">
+        <p className="medapp-text break-words">
+          <span className="font-medium">{school(e.slug, e.program, e.schoolName)}</span>
+          {' · '}
+          {program}
         </p>
-      ) : null}
-      {e.url && e.checkedOn ? (
-        <p className="medapp-meta">
-          <a href={e.url} target="_blank" rel="noopener noreferrer" className="medapp-link">
-            {t('admissions-source', {
+        {e.url && e.checkedOn ? (
+          <SourceRef
+            name={t('admissions-source-name', { defaultValue: '{{school}} admissions page', school: e.schoolName })}
+            detail={t('source-checked', { defaultValue: 'Checked {{date}}', date: day(e.checkedOn) })}
+            quote={e.evidence}
+            href={textFragmentUrl(e.url, e.evidence)}
+            attribution={t('admissions-source', {
               defaultValue: 'Source: {{school}} admissions page, checked {{date}}',
               school: e.schoolName,
               date: day(e.checkedOn),
             })}
-          </a>
+          />
+        ) : null}
+      </div>
+      <p className="medapp-text">{says}</p>
+      {e.evidence ? (
+        <p className="medapp-meta break-words">
+          {t('admissions-quote', { defaultValue: '“{{text}}”', text: e.evidence })}
         </p>
       ) : null}
       {tracker && e.submitted === false ? (

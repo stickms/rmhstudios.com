@@ -1,19 +1,18 @@
 import { useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ListPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MedButton } from '../controls/MedButton';
 import { MedIconButton } from '../controls/MedIconButton';
 import { MenuItem } from '@/components/ui/menu';
-import { SortableList } from '@/components/ui/sortable-list';
 import type { MedListDto } from '../../medschools.contract';
 import { RollingSection } from '../rolling/RollingSection';
 import { OverlapSection } from '../secondaries/OverlapSection';
 import { ListItemRow } from './ListItemRow';
 
 /**
- * One saved list: the name with its actions (rename and delete in a menu), the count, "Add to my tracker", then the
- * schools as rows on rules, reorderable (`SortableList`: drag, or the always-present up and down buttons).
+ * One saved list: the name with its count under it and one "⋯" holding add to my tracker, rename, move and delete;
+ * then the schools as rows on rules, each with its own "⋯" (note, move up and down, remove), so nothing floats beside a
+ * row; then the closed rolling and overlap disclosures.
  */
 export function ListSection({
   list,
@@ -28,7 +27,7 @@ export function ListSection({
   onRemoveItem,
 }: {
   list: MedListDto;
-  /** Move the list one place up (-1) or down (1): the lists reorder from this menu, the schools by SortableList. */
+  /** Move the list one place up (-1) or down (1): the lists reorder from this menu, the schools from their own. */
   onMove: (by: -1 | 1) => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -43,36 +42,34 @@ export function ListSection({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [menu, setMenu] = useState(false);
   const [adding, setAdding] = useState(false);
+  const moveItem = (from: number, by: -1 | 1) => {
+    const ids = list.items.map((i) => i.id);
+    const to = from + by;
+    if (to < 0 || to >= ids.length) return;
+    [ids[from], ids[to]] = [ids[to]!, ids[from]!];
+    onReorderItems(ids);
+  };
   return (
     <section aria-label={list.name} className="medapp-section medapp-section--panel">
-      <div className="flex flex-wrap items-center gap-2 border-b border-app-border pb-3">
-        <h2 className="medapp-h2 w-full min-w-0 break-words sm:w-auto sm:flex-1">{list.name}</h2>
-        <span className="medapp-meta">
-          {t('lists-count', {
-            count: list.items.length,
-            defaultValue_one: '{{count}} school',
-            defaultValue_other: '{{count}} schools',
-            defaultValue: '{{count}} schools',
-          })}
-        </span>
-        <MedButton
-          variant="ghost"
-
-          loading={adding}
-          disabled={list.items.length === 0}
-          onClick={() => {
-            setAdding(true);
-            onAddToTracker().finally(() => setAdding(false));
-          }}
-        >
-          {t('lists-add-to-tracker', { defaultValue: 'Add this list to my tracker' })}
-        </MedButton>
+      <div className="medapp-head">
+        <div className="medapp-head__text">
+          <h2 className="medapp-h2">{list.name}</h2>
+          <span className="medapp-meta">
+            {t('lists-count', {
+              count: list.items.length,
+              defaultValue_one: '{{count}} school',
+              defaultValue_other: '{{count}} schools',
+              defaultValue: '{{count}} schools',
+            })}
+          </span>
+        </div>
         <MedIconButton
           ref={triggerRef}
           icon={MoreHorizontal}
           label={t('lists-actions', { defaultValue: 'Actions for {{name}}', name: list.name })}
           aria-haspopup="menu"
           aria-expanded={menu}
+          aria-busy={adding || undefined}
           onClick={() => setMenu((v) => !v)}
         />
         <AnchoredMenu
@@ -80,8 +77,19 @@ export function ListSection({
           onClose={() => setMenu(false)}
           anchorRef={triggerRef}
           label={t('lists-actions-menu', { defaultValue: 'List actions' })}
-          className="w-44"
+          className="w-60"
         >
+          <MenuItem
+            icon={ListPlus}
+            disabled={list.items.length === 0 || adding}
+            onSelect={() => {
+              setMenu(false);
+              setAdding(true);
+              onAddToTracker().finally(() => setAdding(false));
+            }}
+          >
+            {t('lists-add-to-tracker', { defaultValue: 'Add this list to my tracker' })}
+          </MenuItem>
           <MenuItem
             icon={Pencil}
             onSelect={() => {
@@ -128,24 +136,20 @@ export function ListSection({
           {t('lists-empty', { defaultValue: 'No schools yet. Use the bookmark on a school to save it here.' })}
         </p>
       ) : (
-        <SortableList
-          items={list.items}
-          itemLabel={(i) => i.school.shortName}
-          onReorder={(next) => onReorderItems(next.map((i) => i.id))}
-          className="gap-0"
-          // A phone has 288 px: the row's own side padding and the drag handle (the up and down buttons stay) would leave
-          // the school name and the note about 150 px; the move buttons stack for the same reason.
-          rowClassName="px-0 text-app-text"
-          handleClassName="max-sm:hidden text-app-text-muted"
-          controlsClassName="max-sm:flex-col"
-          renderItem={(item) => (
-            <ListItemRow
-              item={item}
-              onSaveNote={(note) => onSaveNote(item.id, note)}
-              onRemove={() => onRemoveItem(item.id)}
-            />
-          )}
-        />
+        <ul className="medapp-rows medapp-rows--ruled">
+          {list.items.map((item, i) => (
+            <li key={item.id}>
+              <ListItemRow
+                item={item}
+                onSaveNote={(note) => onSaveNote(item.id, note)}
+                onRemove={() => onRemoveItem(item.id)}
+                onMove={(by) => moveItem(i, by)}
+                canMoveUp={i > 0}
+                canMoveDown={i < list.items.length - 1}
+              />
+            </li>
+          ))}
+        </ul>
       )}
       {list.items.length > 0 ? (
         <div className="medapp-disclosures">

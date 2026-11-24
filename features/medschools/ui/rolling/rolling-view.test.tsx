@@ -66,9 +66,12 @@ describe('RollingView', () => {
     expect(html).toContain('Rolling: the school says offers are made on a rolling basis.');
     expect(html).toContain('Set dates: the school says decisions are made on set dates.');
     expect(html).toContain('“We review duke applications as they arrive.”');
-    expect(html).toContain('href="https://duke.example/admissions"');
+    // The source is the icon at the end of the school's line: it opens the page at the quote (a text fragment).
+    expect(html).toContain(
+      'data-href="https://duke.example/admissions#:~:text=We%20review%20duke%20applications%20as%20they%20arrive."',
+    );
     expect(html).toContain('Source: duke School admissions page, checked Nov 20, 2026');
-    expect(html).toContain('class="medapp-link"');
+    expect(html).toContain('data-slot="med-source-ref"');
   });
 
   it('keeps the order it is given', () => {

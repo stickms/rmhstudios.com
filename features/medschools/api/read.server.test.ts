@@ -514,6 +514,38 @@ describe('listSchools', () => {
     expect(ok.schools.map((s) => [s.slug, s.reported])).toEqual([['duke', { source: 'ADMIT', count: 7 }]]);
     expect(ok.program).toBe('ALL');
   });
+
+  it("carries each school's newest public event: the live feed's sources only, the list's program set, a day-only flag", async () => {
+    m.medSchool.findMany.mockResolvedValue([school]);
+    m.medCycleCount.findFirst.mockResolvedValue({ cycleYear: 2027 });
+    m.medCycleCount.groupBy.mockResolvedValue([]);
+    m.$queryRaw.mockResolvedValue([
+      { schoolId: 's1', eventType: 'INTERVIEW', occurredAt: new Date('2026-11-24T13:07:42.123Z') },
+    ]);
+    const res = await listSchools({}, NOW);
+    expect(res.schools[0]!.latest).toEqual({
+      eventType: 'INTERVIEW',
+      occurredAt: '2026-11-24T13:07:00.000Z',
+      dayOnly: false,
+    });
+    const call = m.$queryRaw.mock.calls.at(-1)! as unknown as [TemplateStringsArray, ...unknown[]];
+    const sql = call[0].join('?');
+    expect(sql).toContain(`"source" IN ('ADMIT'::"MedSource", 'SDN'::"MedSource")`);
+    expect(sql).not.toContain('RMH');
+    expect(sql).toContain('DISTINCT ON');
+    // Every program on: no program filter (`true`); a set: its (program, degree) pairs.
+    expect(call).toContain(true);
+    await listSchools({ programs: 'md' }, NOW);
+    const narrowed = m.$queryRaw.mock.calls.at(-1)! as unknown as unknown[];
+    expect(narrowed).toContainEqual(['REG:MD']);
+
+    m.$queryRaw.mockResolvedValue([
+      { schoolId: 's1', eventType: 'ACCEPTANCE', occurredAt: new Date('2026-11-20T00:00:00.000Z') },
+    ]);
+    expect((await listSchools({}, NOW)).schools[0]!.latest?.dayOnly).toBe(true);
+    m.$queryRaw.mockResolvedValue([]);
+    expect((await listSchools({}, NOW)).schools[0]!.latest).toBeNull();
+  });
 });
 
 describe('the program set on the list and the live feed (owner 2026-11-23)', () => {
@@ -1008,7 +1040,9 @@ describe('waves (D10)', () => {
 
     it('a burst after a quiet spell is a wave: the read goes back to the cycle, not a window around the page', async () => {
       // Reports 2 a day for ten days in September, nothing for over two months, then 12 on Nov 15.
-      const september = Array.from({ length: 10 }, (_, i) => cnt('ADMIT', `2027-09-${String(i + 1).padStart(2, '0')}`, 2));
+      const september = Array.from({ length: 10 }, (_, i) =>
+        cnt('ADMIT', `2027-09-${String(i + 1).padStart(2, '0')}`, 2),
+      );
       m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-15T10:00:00Z')]);
       m.medCycleCount.findMany.mockResolvedValue(withSchool([...september, cnt('ADMIT', '2027-11-15', 12)]));
       const res = await getLive({}, NOW);
@@ -1018,7 +1052,7 @@ describe('waves (D10)', () => {
       expect(args.where).not.toHaveProperty('date');
     });
 
-    it('the first report is the cycle\'s: a school that began reporting a week ago has no wave from its first days', async () => {
+    it("the first report is the cycle's: a school that began reporting a week ago has no wave from its first days", async () => {
       const fresh = [dayN(10), dayN(11), dayN(12)].map((x) => cnt('ADMIT', x, 6));
       m.medCycleEvent.findMany.mockResolvedValue([ev('a', 'INTERVIEW', '2027-11-11T10:00:00Z')]);
       m.medCycleCount.findMany.mockResolvedValue(withSchool(fresh));

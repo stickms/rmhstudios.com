@@ -73,7 +73,7 @@ export function CumulativeLine(p: {
   const probe: Probe | undefined = hasData
     ? {
         count: lastDay - firstDay + 1,
-        x: (g, i) => plotX(firstDay + i, domain, g),
+        x: (g, i, view) => plotX(firstDay + i, view ?? domain, g),
         at: (i) => {
           const day = firstDay + i;
           return {
@@ -130,7 +130,8 @@ export function CumulativeLine(p: {
         })}
         hint={labels.hint}
         probe={probe}
-        render={(g, clipId) => (
+        domain={hasData ? domain : undefined}
+        render={(g, clipId, view) => (
           <>
             <defs>
               <PlotClip id={clipId} g={g} />
@@ -142,13 +143,15 @@ export function CumulativeLine(p: {
             />
             <XAxis
               g={g}
-              ticks={hasData ? xTicks(domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateOf(t.v) })) : []}
+              ticks={
+                hasData ? xTicks(view ?? domain, g.xTickCount, g).map((t) => ({ x: t.x, label: dateOf(t.v) })) : []
+              }
             />
             {hasData ? (
               <g clipPath={`url(#${clipId})`}>
                 {all.map((s, i) => {
                   const st = style(s);
-                  const { d } = linePath(extendStep(cum[i]!, lastDay), domain, tween.value, true, g);
+                  const { d } = linePath(extendStep(cum[i]!, lastDay), view ?? domain, tween.value, true, g);
                   return d ? (
                     <path
                       key={s.source}

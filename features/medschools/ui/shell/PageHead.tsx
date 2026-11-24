@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
  * A page's own heading. The top bar owns the back button and the app name, so a page no longer draws `PageLayout`'s
  * title row (and its duplicate back link); it keeps one `<h1>` (set in the display face by `.medapp-main h1`) and an
  * optional one-line sub. A school page also passes its `crest` (before the name) and its `actions` (after it): the
- * header then lays out as one row that wraps on a phone.
+ * header then lays out as one row that wraps on a phone. A page with `actions` and no crest (My lists' "New list") puts
+ * its action at the end of the title's line.
  */
 export function PageHead({
   title,
@@ -24,6 +25,14 @@ export function PageHead({
     </>
   );
   if (!crest && !actions) return <header className="medapp-pagehead">{text}</header>;
+  if (!crest) {
+    return (
+      <header className="medapp-pagehead medapp-pagehead--action">
+        <div className="medapp-pagehead__text">{text}</div>
+        <div className="medapp-pagehead__actions">{actions}</div>
+      </header>
+    );
+  }
   return (
     <header className="medapp-pagehead medapp-pagehead--school">
       {crest}

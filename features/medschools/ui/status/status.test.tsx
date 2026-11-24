@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { readCss } from '@/lib/__tests__/css-source';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { MILESTONE_TYPES } from '../../engine/tracker';
@@ -7,7 +8,7 @@ import { StatusIcon } from './StatusIcon';
 import { StatusText } from './StatusText';
 import { STATUS, STATUS_KEYS, statusOfEvent, statusOfMilestone } from './status';
 
-const css = readFileSync('features/medschools/ui/medschools.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const css = readCss('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
 const en = JSON.parse(readFileSync('locales/en/medschools.json', 'utf8')) as Record<string, string>;
 
 /** The `--name: #hex` declarations of the first `{ ... }` after `selector`. */

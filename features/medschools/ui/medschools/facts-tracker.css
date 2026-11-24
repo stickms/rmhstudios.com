@@ -1,0 +1,230 @@
+/* ── Facts: definition rows grouped under headings ───────────────────────── */
+/* A label over its value on a phone; from 768px the label in a fixed column at the start and the value beside it, so a
+   school's sentence reads at full width either way. */
+.medapp-defs--stack > div {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--app-med-space-1);
+}
+.medapp-defs--stack dd {
+  text-align: start;
+}
+@media (min-width: 768px) {
+  .medapp-defs--stack > div {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: var(--app-med-space-5);
+    align-items: baseline;
+  }
+}
+.medapp-defs__note {
+  display: block;
+  margin-block-start: var(--app-med-space-1);
+}
+/* A group of facts under its heading, the source set apart under it. */
+.medapp-group + .medapp-group {
+  margin-block-start: var(--app-med-space-1);
+  padding-block-start: var(--app-med-space-4);
+  border-top: 1px solid var(--app-border);
+}
+.medapp-group > .medapp-h3,
+.medapp-group > .medapp-srcrow {
+  margin-block-end: var(--app-med-space-1);
+}
+.medapp-source {
+  margin: var(--app-med-space-3) 0 0;
+  font-size: var(--app-med-text-meta);
+  line-height: 1.5;
+  color: var(--app-text-muted);
+}
+.medapp-source a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.medapp-source + .medapp-source {
+  margin-block-start: var(--app-med-space-1);
+}
+
+/* Curriculum: the home hospitals, one to a line. */
+.medapp-plain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Tracker: a school's steps, the timeline ─────────────────────────────── */
+/* A school's milestones: every step the same shape (disc, words, date at the end), one column on a phone, two from
+   768px. Each is a button that opens its edit form. */
+.medapp-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--app-med-space-5);
+  margin: var(--app-med-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 768px) {
+  .medapp-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.medapp-step {
+  display: flex;
+  align-items: center;
+  gap: var(--app-med-space-3);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: var(--app-med-space-1) var(--app-med-space-2);
+  margin-inline: calc(-1 * var(--app-med-space-2));
+  border: 0;
+  border-radius: var(--app-med-radius-sm);
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  font-size: 15px;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-steps > li {
+  min-inline-size: 0;
+}
+.medapp-step:hover {
+  background-color: var(--app-surface-hover);
+}
+.medapp-step__label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+.medapp-date {
+  flex: none;
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* What the numbers say under a school (silence, chance): a quiet block under a rule, lines of 14px. */
+.medapp-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-1);
+  margin-block-start: var(--app-med-space-3);
+  padding-block-start: var(--app-med-space-3);
+  border-top: 1px solid var(--app-border);
+}
+.medapp-aside + .medapp-aside {
+  margin-block-start: var(--app-med-space-2);
+  padding-block-start: 0;
+  border-top: 0;
+}
+.medapp-horizons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-med-space-1) var(--app-med-space-5);
+  margin: var(--app-med-space-1) 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+/* A note on a school, shown as text that opens its editor. */
+.medapp-notebtn {
+  display: block;
+  inline-size: 100%;
+  margin-block-start: var(--app-med-space-2);
+  padding: var(--app-med-space-2) var(--app-med-space-3);
+  border: 0;
+  border-radius: var(--app-med-radius-sm);
+  background-color: var(--app-bg-subtle);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.5;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-notebtn:hover {
+  background-color: var(--app-surface-hover);
+}
+/* The timeline: a fixed date column, the step's disc, then the words with the wait under them. */
+.medapp-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-timeline > li {
+  display: grid;
+  grid-template-columns: 56px 28px minmax(0, 1fr);
+  column-gap: var(--app-med-space-3);
+  align-items: start;
+  padding-block: var(--app-med-space-3);
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-timeline > li:last-child {
+  border-bottom: 0;
+}
+.medapp-timeline time {
+  padding-block-start: 4px;
+  font-size: var(--app-med-text-secondary);
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.medapp-timeline__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  padding-block-start: 2px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.medapp-timeline__wait {
+  font-size: var(--app-med-text-meta);
+  color: var(--app-text-muted);
+}
+/* A link row of the app's places (index, school page): tertiary buttons on one line, scrolling sideways on a phone. */
+.medapp-places {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-1) var(--app-med-space-2);
+}
+@media (max-width: 767px) {
+  .medapp-places {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: calc(-1 * var(--app-med-gutter));
+    padding-inline: calc(var(--app-med-gutter) - var(--app-med-space-3));
+    scrollbar-width: none;
+  }
+  .medapp-places::-webkit-scrollbar {
+    display: none;
+  }
+}
+/* A list school's note sits under its name, past the crest (40px and the 12px gap). */
+.medapp-item__indent {
+  inline-size: auto;
+  margin-inline-start: 52px;
+}
+.medapp-rows--ruled {
+  border-top: 1px solid var(--app-border);
+}
+.medapp-rows > li:last-child > .medapp-item {
+  border-bottom: 0;
+}
+/* A place link carries its icon, so it needs no underline; the hover fill is its affordance. */
+.medapp-places .medapp-btn--tertiary {
+  flex: none;
+  text-decoration: none;
+}
+/* The places under a page title belong to its heading: 12px under it, not a section gap. */
+.medapp-pagehead + .medapp-places {
+  margin-block-start: calc(var(--app-med-space-3) - var(--app-med-section-gap));
+}

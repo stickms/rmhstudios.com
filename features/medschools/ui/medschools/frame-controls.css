@@ -1,0 +1,323 @@
+/* ── Frame ───────────────────────────────────────────────────────────────── */
+.medapp-page {
+  background-color: var(--app-bg);
+  background-image: var(--app-med-wash-image);
+  background-repeat: repeat-y;
+  background-position: center top;
+  /* A phone shows a centred crop of the tile at 900px wide, so the blobs are broad and soft rather than small and
+     sharp; wider screens fit the tile to the width. */
+  background-size: max(100%, 900px) auto;
+  color: var(--app-text);
+  font-family: var(--app-font-body);
+  font-size: var(--app-med-text-body);
+  line-height: 1.5;
+}
+@media (prefers-reduced-data: reduce) {
+  .medapp-page {
+    background-image: none;
+  }
+}
+.medapp-frame {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-block: var(--app-med-space-3) var(--app-med-space-7);
+  padding-inline-start: calc(var(--app-med-gutter) + var(--app-safe-left));
+  padding-inline-end: calc(var(--app-med-gutter) + var(--app-safe-right));
+}
+/* The top bar: 44px round controls at both ends and the title on their centre line, everywhere. */
+.medapp-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--app-med-space-3);
+  margin-block-end: var(--app-med-space-5);
+}
+.medapp-bar__gap {
+  flex: 1 1 auto;
+}
+.medapp-title {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--app-font-display);
+  font-size: clamp(18px, 5.4vw, var(--app-med-text-section));
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--app-text);
+}
+.medapp-bar .medapp-round {
+  inline-size: 44px;
+  block-size: 44px;
+}
+/* A round icon control at the context's control height (44px on touch, 40px with a fine pointer). The label is its
+   accessible name; its boundary is the tonal fill, so it never reads as a stray glyph. */
+.medapp-round {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--app-med-control);
+  block-size: var(--app-med-control);
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  border: 0;
+  background-color: var(--app-med-tonal);
+  color: var(--app-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-round:hover {
+  background-color: var(--app-med-tonal-hover);
+}
+.medapp-round:active {
+  background-color: var(--app-med-tonal-press);
+}
+.medapp-round:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.medapp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--app-med-section-gap);
+}
+@media (min-width: 1280px) {
+  .medapp-grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+.medapp-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-section-gap);
+}
+/* Headings only: the display face. Weight 600, never bold-synthesised. */
+.medapp-main :is(h1, h2, h3) {
+  font-family: var(--app-font-display);
+  font-weight: 600;
+}
+.medapp-rail {
+  min-width: 0;
+}
+/* The activity rail stays in view 16px off the top (not flush with the edge) and scrolls inside itself, so "load more
+   on scroll" works however short the page is. The same rule the Steel shell's margin used. */
+.medapp-rail .medapp-panel--rail {
+  position: sticky;
+  inset-block-start: 16px;
+  max-block-size: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+/* A page's sections, 32px apart (40 from 768px): the same rhythm as the main column, for a page whose body is one
+   element (a skeleton swap). */
+.medapp-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-section-gap);
+  min-width: 0;
+}
+/* A block of a section: its parts 24px apart. */
+.medapp-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
+  min-width: 0;
+}
+
+/* ── Page heading (the top bar owns the back button; the page owns its h1) ─ */
+.medapp-pagehead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-2);
+}
+.medapp-pagehead h1 {
+  margin: 0;
+  font-size: var(--app-med-text-title);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--app-text);
+  overflow-wrap: anywhere;
+}
+.medapp-sub {
+  margin: 0;
+  max-inline-size: 65ch;
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.5;
+  color: var(--app-text-muted);
+}
+/* A page heading with an action at the end (My lists' "New list"): one line, the action on the title's centre. */
+.medapp-pagehead--action {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-med-space-3);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+/* One shape for every button: the control height, the 14px radius, 14px text at weight 500, and no outline. Primary is
+   the ink fill (one per view); secondary a soft tonal fill; tertiary a text button with an underline that still has the
+   full hit area and the tonal hover / press fill; danger the same tonal shape in the danger colour. */
+.medapp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-med-space-2);
+  box-sizing: border-box;
+  min-block-size: var(--app-med-control);
+  padding-inline: 14px;
+  border-radius: var(--app-med-radius);
+  border: 0;
+  background-color: var(--app-med-tonal);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-btn:hover {
+  background-color: var(--app-med-tonal-hover);
+}
+.medapp-btn:active {
+  background-color: var(--app-med-tonal-press);
+}
+.medapp-btn--primary {
+  background-color: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-weight: 600;
+}
+.medapp-btn--primary:hover,
+.medapp-btn--primary:active {
+  background-color: var(--app-accent-hover);
+}
+.medapp-btn--tertiary {
+  padding-inline: var(--app-med-space-3);
+  background-color: transparent;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--app-border-bright);
+}
+.medapp-btn--tertiary:hover {
+  background-color: var(--app-med-tonal-hover);
+  text-decoration-color: currentColor;
+}
+.medapp-btn--danger {
+  background-color: color-mix(in srgb, var(--app-danger) 12%, transparent);
+  color: var(--app-danger);
+}
+.medapp-btn--danger:hover,
+.medapp-btn--danger:active {
+  background-color: color-mix(in srgb, var(--app-danger) 20%, transparent);
+}
+.medapp-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.medapp-btn[aria-busy='true'] {
+  cursor: progress;
+}
+.medapp-btn svg {
+  flex: none;
+}
+/* A row of buttons: one height, on one centre line, 8px apart. */
+.medapp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-med-space-2);
+}
+
+/* ── Segmented choices: toggles and filters ──────────────────────────────── */
+/* A group of choices is one container (the tonal well, 14px radius) holding its options (10px radius), like a segmented
+   control: never separate floating pills. Pressed / checked / current is the paper fill and weight 600, so the state
+   never rests on colour alone. One line; it scrolls sideways when it does not fit. Container height = control height. */
+.medapp-chips {
+  display: inline-flex;
+  align-self: flex-start;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 2px;
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  min-block-size: var(--app-med-control);
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: var(--app-med-radius);
+  background-color: var(--app-med-tonal);
+  scrollbar-width: none;
+  vertical-align: middle;
+}
+.medapp-chips::-webkit-scrollbar {
+  display: none;
+}
+.medapp-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-med-space-2);
+  box-sizing: border-box;
+  min-block-size: calc(var(--app-med-control) - 8px);
+  padding-inline: var(--app-med-space-3);
+  border-radius: var(--app-med-radius-sm);
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--app-text-muted);
+  font: inherit;
+  font-size: var(--app-med-text-secondary);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-chip:hover {
+  background-color: var(--app-med-tonal);
+  color: var(--app-text);
+}
+.medapp-chip:active {
+  background-color: var(--app-med-tonal-hover);
+}
+.medapp-chip[aria-pressed='true'],
+.medapp-chip[aria-checked='true'],
+.medapp-chip[aria-current='page'] {
+  border-color: var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  font-weight: 600;
+}
+/* A group that must show every option at once (the chart's category legend) wraps instead of scrolling. */
+.medapp-chips--wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+.medapp-chip[aria-disabled='true'] {
+  cursor: default;
+}
+.medapp-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+/* The rail's compact options (a 320px desktop column, a fine pointer). */
+.medapp-chips--xs {
+  min-block-size: 36px;
+}
+.medapp-chips--xs .medapp-chip {
+  min-block-size: 28px;
+  padding-inline: var(--app-med-space-2);
+  font-size: var(--app-med-text-meta);
+}
+.medapp-chip svg {
+  flex: none;
+}

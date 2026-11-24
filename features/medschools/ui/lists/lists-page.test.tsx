@@ -131,17 +131,24 @@ describe('ListsPage', () => {
       expect(html).not.toContain('href="/rmh-medschool/gone"');
     });
 
-    it('the note field is capped at 500 characters and counted by code point', () => {
+    it('shows a note as text that opens its editor (closed until asked for), and counts by code point', () => {
       h.session = { user: { id: 'u1' } };
-      expect(render()).toContain('maxLength="500"');
+      const html = render();
+      expect(html).toContain('class="medapp-notebtn medapp-item__indent"');
+      expect(html).toContain('Visit in March');
+      expect(html).not.toContain('<textarea');
+      expect(readFileSync(new URL('./ListItemRow.tsx', import.meta.url), 'utf8')).toContain('maxLength={LIMITS.note}');
       expect(codePointCount('a\u{1F600}b')).toBe(3);
     });
 
-    it('has exactly one primary button, New list, and an Add to my tracker per list', () => {
+    it('has exactly one primary button, New list, and one actions menu per list and per school', () => {
       h.session = { user: { id: 'u1' } };
       const html = render();
       expect(html.match(/data-variant="primary"/g)).toHaveLength(1);
-      expect(html.match(/Add this list to my tracker/g)).toHaveLength(2);
+      expect(html.match(/aria-label="Actions for (Reach|Safety)"/g)).toHaveLength(2);
+      expect(html.match(/aria-label="Actions for (duke|wake|gone)"/g)).toHaveLength(3);
+      // Nothing floats beside a row: no trash button and no move arrows outside the menus.
+      expect(html).not.toMatch(/aria-label="(Remove|Move up|Move down)/);
     });
 
     it('each list with schools has a closed Essay overlap disclosure, and an empty list has none', () => {
@@ -173,11 +180,12 @@ describe('ListsPage', () => {
     });
   });
 
-  it('uses SortableList for reordering and no second drag implementation', () => {
+  it('reorders lists and schools from their menus (Move up, Move down), with no drag implementation', () => {
     const src = ['ListsPage.tsx', 'ListSection.tsx', 'ListItemRow.tsx', 'PrefsSection.tsx']
       .map((f) => readFileSync(new URL(`./${f}`, import.meta.url), 'utf8'))
       .join('\n');
-    expect(src).toContain('SortableList');
-    expect(src).not.toMatch(/layoutId|framer-motion|react-dnd|dnd-kit/);
+    expect(src.match(/lists-move-up/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(src.match(/lists-move-down/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(src).not.toMatch(/layoutId|framer-motion|react-dnd|dnd-kit|SortableList/);
   });
 });

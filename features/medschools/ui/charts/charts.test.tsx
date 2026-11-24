@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { readCss } from '@/lib/__tests__/css-source';
 import path from 'node:path';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -429,6 +430,37 @@ describe('ForecastBand', () => {
   });
 });
 
+describe('zoom and pan (owner 2026-11-24)', () => {
+  const src = readFileSync(path.join(__dirname, 'ChartFrame.tsx'), 'utf8');
+  it('draws the whole domain on the server, with no zoom buttons until the client has hydrated', () => {
+    expect(src).toMatch(/const client = useSyncExternalStore\(\s*noSubscribe,\s*\(\) => true,\s*\(\) => false,?\s*\)/);
+    expect(src).toMatch(/zoomable && client \?/);
+  });
+  it('zooms only on a pinch or ctrl / cmd + wheel (a plain wheel scrolls the page), through a non-passive listener', () => {
+    expect(src).toContain("addEventListener('wheel', on, { passive: false })");
+    expect(src).toMatch(/!\(e\.ctrlKey \|\| e\.metaKey\)/);
+  });
+  it('keeps vertical page scrolling on touch, and names its buttons and keys', () => {
+    expect(src).toContain('touch-pan-y');
+    for (const k of ["'chart-zoom-in'", "'chart-zoom-out'", "'chart-zoom-reset'", "'chart-zoom-hint'"])
+      expect(src).toContain(k);
+  });
+  it('every time chart passes its domain, and draws and probes in the view', () => {
+    for (const f of [
+      'CategoryLines.tsx',
+      'CumulativeLine.tsx',
+      'CycleOverlay.tsx',
+      'ForecastBand.tsx',
+      'DailyBars.tsx',
+    ]) {
+      const c = readFileSync(path.join(__dirname, f), 'utf8');
+      expect(c, f).toMatch(/domain=\{/);
+      expect(c, f).toMatch(/render=\{\(g, clipId, view\)/);
+      expect(c, f).toMatch(/x: \(g, i, view\)/);
+    }
+  });
+});
+
 describe('static rules', () => {
   const dir = __dirname;
   const files = readdirSync(dir).filter((f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx'));
@@ -526,7 +558,7 @@ describe('ArrivalBars (when results arrive)', () => {
 });
 
 describe('chart colours, from the stylesheet', () => {
-  const css = readFileSync(path.resolve(__dirname, '../medschools.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = readCss(path.resolve(__dirname, '../medschools.css')).replace(/\/\*[\s\S]*?\*\//g, '');
   /** The `--name: #hex` declarations of the first `{ ... }` after `selector`. */
   const tokens = (selector: string): Record<string, string> => {
     const at = css.indexOf(selector);
