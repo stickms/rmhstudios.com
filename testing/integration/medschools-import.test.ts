@@ -23,9 +23,11 @@ import { startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type Fak
 import {
   PRIVATE_MD_ID,
   PRIVATE_MD_SLUG,
+  removeMedSchoolsFixture,
   removeTrackerFixture,
   rmhEventCount,
   seedFillerSchools,
+  seedMedSchoolsFixture,
   seedTrackerFixture,
 } from './lib/medschools-fixture';
 
@@ -140,6 +142,8 @@ beforeAll(async () => {
   b = await createFreshMember('import-b', { createdAt: old });
   c = await createFreshMember('import-c', { createdAt: old });
   await seedTrackerFixture([a.id, b.id, c.id]);
+  // The file's own fixture school: it must not depend on another file having left one behind (file order varies in CI).
+  await seedMedSchoolsFixture();
 });
 afterAll(async () => {
   const ids = [a?.id, b?.id, c?.id].filter((x): x is string => !!x);
@@ -147,6 +151,7 @@ afterAll(async () => {
     await clearLedger(ids);
     await removeTrackerFixture(ids);
   }
+  await removeMedSchoolsFixture();
   await removeFreshMembers([a, b, c]);
   await closeDb();
 });
@@ -241,6 +246,7 @@ describe.skipIf(!PORT)('tracker import: with the fake provider', () => {
     expect(paste.headers.get('cache-control') ?? '').toMatch(/no-store/);
     expect(paste.headers.get('cache-control') ?? '').not.toMatch(NOT_PUBLIC);
     const fixture = rowFor(paste.body, 'it-medschools-fixture');
+    expect(fixture, JSON.stringify(paste.body.rows)).toBeDefined();
     expect(fixture?.milestones.map((m) => m.type)).toEqual(['SUBMITTED', 'COMPLETE', 'INTERVIEW']);
     expect(rowFor(paste.body, PRIVATE_MD_SLUG)).toBeDefined();
     // A school that did not match comes back as written, with no school, for the member to pick.
