@@ -1,14 +1,13 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
 import { CHARTED_TYPES, PRIMARY_ORDER, overlaySource } from '../engine/public-read';
 import { historyQuery } from '../medschools.queries';
 import type { MedChartedTypeId, MedSchoolDetailDto, MedSourceId } from '../medschools.contract';
 import { CycleOverlay } from './charts/CycleOverlay';
 import { useChartLabels } from './chartLabels';
 import { useMedLabels } from './labels';
+import { MedEmpty } from './MedEmpty';
 import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { ArrivalsSection } from './ArrivalsSection';
@@ -38,9 +37,9 @@ export function HistoryTab({
 
   if (query.isError) {
     return (
-      <EmptyState
+      <MedEmpty
         title={t('school-history-failed', { defaultValue: 'Could not load the history.' })}
-        action={<Button onClick={() => void query.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
+        onRetry={() => void query.refetch()}
       />
     );
   }
@@ -62,8 +61,8 @@ export function HistoryTab({
 
   return (
     <SkeletonSwap ready={!!query.data} skeleton={<ChartSkeleton />}>
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap gap-x-6 gap-y-3">
+      <div className="medapp-tab">
+        <div className="medapp-controls">
           {programControl}
           <OptionGroup
             label={t('school-type-label', { defaultValue: 'Category' })}
@@ -84,7 +83,7 @@ export function HistoryTab({
           ) : null}
         </div>
         {lines.length === 0 || !chosen ? (
-          <EmptyState title={t('school-history-empty', { defaultValue: 'No earlier cycles have data yet.' })} />
+          <MedEmpty title={t('school-history-empty', { defaultValue: 'No earlier cycles have data yet.' })} />
         ) : (
           <>
             <CycleOverlay
@@ -99,7 +98,7 @@ export function HistoryTab({
             />
             <div>
               {lines.some((l) => l.estimated) ? (
-                <p className="t-meta m-0">
+                <p className="medapp-meta">
                   {t('school-history-estimated', {
                     defaultValue: '{{year}}: cycle start estimated as June 1.',
                     year: lines

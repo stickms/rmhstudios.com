@@ -39,9 +39,6 @@ vi.mock('@/components/feed/PageLayout', () => ({
     </main>
   ),
 }));
-vi.mock('@/components/ui/signed-out-prompt', () => ({
-  SignedOutPrompt: ({ callbackURL }: { callbackURL: string }) => <div data-callback={callbackURL} />,
-}));
 vi.mock('@/components/ui/select', () => ({
   Select: ({
     value,
@@ -109,7 +106,8 @@ describe('ListsPage', () => {
   it('signed out: the sign-in prompt returns to this page, and nothing else renders', () => {
     h.session = null;
     const html = render();
-    expect(html).toContain('data-callback="/rmh-medschool/lists"');
+    expect(html).toContain('Sign in to keep lists');
+    expect(html).toContain('href="/login"');
     expect(html).not.toContain('Reach');
   });
 

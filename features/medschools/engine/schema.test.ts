@@ -303,7 +303,7 @@ model MedTrackerApplication {
       expect(uniques('MedSchoolListItem')).toContainEqual(['listId', 'schoolId', 'program']);
     });
 
-    it('MedProgramFilter is ALL | REG | PHD and MedMilestoneType has the ten types', () => {
+    it('MedProgramFilter is ALL | REG | PHD and MedMilestoneType has the eleven types', () => {
       const vals = (e: string) =>
         (new RegExp(`enum ${e} \\{([\\s\\S]*?)\\}`).exec(schema())?.[1] ?? '').split(/\s+/).filter(Boolean);
       expect(vals('MedProgramFilter')).toEqual(['ALL', 'REG', 'PHD']);
@@ -316,6 +316,7 @@ model MedTrackerApplication {
         'WAITLIST',
         'REJECTION',
         'ACCEPTANCE',
+        'MATRICULATED',
         'WITHDRAWN',
         'HOLD',
       ]);
@@ -567,7 +568,11 @@ model MedTrackerApplication {
       const mine = dirs.find((d) => d.endsWith('_medschools_secondaries')) ?? '';
       // The school-pages and turnaround tables are this feature's own follow-up and sort after it, on purpose.
       const others = dirs.filter(
-        (d) => d.includes('medschools') && d !== mine && !d.endsWith('_medschools_school_pages_turnaround'),
+        (d) =>
+          d.includes('medschools') &&
+          d !== mine &&
+          !d.endsWith('_medschools_school_pages_turnaround') &&
+          !d.endsWith('_medschools_matriculated'),
       );
       for (const o of others) expect(mine > o, o).toBe(true);
     });

@@ -10,6 +10,9 @@
 # (ProtectSystem=strict), so deploy.sh can clean Docker's data but not host files
 # such as /var/lib/apport/coredump, and it only runs when someone pushes.
 #
+# A deploy that runs short of disk can ask for a progressive root cleanup of the same
+# script through rmh-disk-cleanup-urgent.{path,service}; this timer unit is unchanged.
+#
 # ── Install (once, as root) ──────────────────────────────────────────────────
 #   sudo cp deploy/systemd/rmh-disk-cleanup.{service,timer} /etc/systemd/system/
 #   sudo systemctl daemon-reload

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
 import { CHARTED_TYPES, SHORT_SOURCE_NAMES, formatUtcDay, toCumulativeByDay } from '../engine/public-read';
 import { cycleEndOn, cycleLabelIsolated } from '../engine/cycle';
 import { buildTotalsMatrix } from '../engine/totals';
@@ -15,10 +13,14 @@ import { CumulativeLine } from './charts/CumulativeLine';
 import { DailyBars } from './charts/DailyBars';
 import { useChartLabels } from './chartLabels';
 import { useMedLabels } from './labels';
+import { MedEmpty } from './MedEmpty';
 import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { ChartSkeleton, SkeletonSwap } from './skeletons';
 import { SourceLinks } from './SourceLinks';
+import { StatusIcon } from './status/StatusIcon';
+import { StatusText } from './status/StatusText';
+import { statusOfEvent } from './status/status';
 import { WaveNote } from './WaveNote';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 
@@ -47,9 +49,9 @@ export function ActivityTab({
 
   if (query.isError) {
     return (
-      <EmptyState
+      <MedEmpty
         title={t('school-activity-failed', { defaultValue: 'Could not load the activity.' })}
-        action={<Button onClick={() => void query.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
+        onRetry={() => void query.refetch()}
       />
     );
   }
@@ -71,24 +73,24 @@ export function ActivityTab({
     <SkeletonSwap
       ready={!!data}
       skeleton={
-        <div className="flex flex-col gap-6">
+        <div className="medapp-tab">
           <ChartSkeleton />
           <ChartSkeleton />
         </div>
       }
     >
       {data && !hasAny ? (
-        <EmptyState title={t('school-activity-empty', { defaultValue: 'No reported events yet this cycle.' })} />
+        <MedEmpty title={t('school-activity-empty', { defaultValue: 'No reported events yet this cycle.' })} />
       ) : data ? (
-        <div className="flex flex-col gap-8">
-          <h2 className="t-heading m-0">
+        <div className="medapp-tab">
+          <h2 className="medapp-h2">
             {t('school-activity-heading', {
               defaultValue: '{{cycle}} cycle',
               cycle: cycleLabelIsolated(data.cycleYear),
             })}
           </h2>
           <section
-            className="flex flex-col gap-3"
+            className="medapp-section"
             aria-label={t('school-categories-section', { defaultValue: 'Categories' })}
           >
             <CategoryLines
@@ -125,11 +127,11 @@ export function ActivityTab({
           <WaveNote waves={data.waves} />
 
           <section
-            className="flex flex-col gap-3"
+            className="medapp-section"
             aria-label={t('school-type-section', { defaultValue: 'One category by day' })}
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="t-label">{t('school-type-visible-label', { defaultValue: 'Category' })}</span>
+            <div className="medapp-controls">
+              <span className="medapp-label">{t('school-type-visible-label', { defaultValue: 'Category' })}</span>
               <OptionGroup
                 label={t('school-type-label', { defaultValue: 'Category' })}
                 value={search.type as MedChartedTypeId}
@@ -169,7 +171,7 @@ export function ActivityTab({
                 />
               </>
             ) : (
-              <p className="t-meta m-0">
+              <p className="medapp-meta">
                 {t('school-type-empty', {
                   defaultValue: 'No reported {{type}} events yet this cycle.',
                   type: eventLabel(search.type).toLowerCase(),
@@ -177,7 +179,7 @@ export function ActivityTab({
               </p>
             )}
             {data.dayZeroEstimated ? (
-              <p className="t-meta m-0">
+              <p className="medapp-meta">
                 {t('school-day-zero-estimated', {
                   defaultValue: 'Cycle start estimated as {{date}}.',
                   date: formatUtcDay(data.dayZeroOn, locale),
@@ -186,24 +188,18 @@ export function ActivityTab({
             ) : null}
           </section>
 
-          <section aria-labelledby="medschools-totals">
-            <h2 id="medschools-totals" className="t-heading m-0">
+          <section aria-labelledby="medschools-totals" className="medapp-section medapp-section--panel">
+            <h2 id="medschools-totals" className="medapp-h2">
               {t('school-totals-title', { defaultValue: 'Totals this cycle' })}
             </h2>
             {matrix.rows.length > 0 ? (
               <>
-                <table className="t-body mt-2 w-full border-collapse">
+                <table className="medapp-table">
                   <thead>
                     <tr>
-                      <th scope="col" className="t-meta border-b border-site-border py-2 pe-3 text-start font-normal">
-                        {t('school-totals-category', { defaultValue: 'Category' })}
-                      </th>
+                      <th scope="col">{t('school-totals-category', { defaultValue: 'Category' })}</th>
                       {matrix.sources.map((src) => (
-                        <th
-                          key={src}
-                          scope="col"
-                          className="t-meta border-b border-site-border py-2 ps-3 text-end font-normal"
-                        >
+                        <th key={src} scope="col" className="is-num">
                           {SHORT_SOURCE_NAMES[src]}
                         </th>
                       ))}
@@ -212,14 +208,14 @@ export function ActivityTab({
                   <tbody>
                     {matrix.rows.map((row) => (
                       <tr key={row.eventType}>
-                        <th scope="row" className="border-b border-site-border py-2 pe-3 text-start font-normal">
-                          {eventLabel(row.eventType)}
+                        <th scope="row">
+                          <span className="medapp-category-row">
+                            <StatusIcon status={statusOfEvent(row.eventType)} size="sm" />
+                            <StatusText status={statusOfEvent(row.eventType)}>{eventLabel(row.eventType)}</StatusText>
+                          </span>
                         </th>
                         {row.cells.map((cell, i) => (
-                          <td
-                            key={matrix.sources[i]}
-                            className={`border-b border-site-border py-2 ps-3 text-end tabular-nums ${cell?.primary ? 'font-semibold' : 'text-site-text-muted'}`}
-                          >
+                          <td key={matrix.sources[i]} className={`is-num ${cell?.primary ? 'is-primary' : 'is-muted'}`}>
                             {cell ? (
                               <>
                                 {nf.format(cell.total)}
@@ -244,7 +240,7 @@ export function ActivityTab({
                     ))}
                   </tbody>
                 </table>
-                <p className="t-meta mt-2 mb-0">
+                <p className="medapp-meta">
                   {t('school-totals-note', {
                     defaultValue:
                       'Reported events this cycle. Bold marks the primary source, the one the daily chart draws.',
@@ -255,7 +251,7 @@ export function ActivityTab({
           </section>
 
           {data.unreportedProgram > 0 && data.unreportedProgramSource ? (
-            <p className="t-meta m-0">
+            <p className="medapp-meta">
               {t('school-unreported-program', {
                 count: data.unreportedProgram,
                 defaultValue_one:

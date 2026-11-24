@@ -75,7 +75,15 @@ async function addMs(
   m: {
     id: string;
     applicationId: string;
-    type: 'INTERVIEW' | 'SECONDARY' | 'SECONDARY_SUBMITTED' | 'COMPLETE' | 'SUBMITTED' | 'HOLD' | 'ACCEPTANCE';
+    type:
+      | 'INTERVIEW'
+      | 'SECONDARY'
+      | 'SECONDARY_SUBMITTED'
+      | 'COMPLETE'
+      | 'SUBMITTED'
+      | 'HOLD'
+      | 'ACCEPTANCE'
+      | 'MATRICULATED';
     date?: Date;
   },
 ) {
@@ -141,7 +149,7 @@ function expectConsistent(w: World) {
   for (const m of rows(w, 'medTrackerMilestone')) {
     const a = apps.get(m.applicationId);
     const c = a && cycles.get(a.cycleId);
-    if (!a || !c || !c.shareAnonymously || m.type === 'COMPLETE' || m.type === 'SUBMITTED' || m.type === 'SECONDARY_SUBMITTED') continue;
+    if (!a || !c || !c.shareAnonymously || m.type === 'COMPLETE' || m.type === 'SUBMITTED' || m.type === 'SECONDARY_SUBMITTED' || m.type === 'MATRICULATED') continue;
     const day = (m.date as Date).toISOString().slice(0, 10);
     want.set(hash(m.id as string), `${a.schoolId}|${a.program}|${c.cycleYear}|${day}|${m.type}`);
   }
@@ -223,11 +231,12 @@ describe('basic sharing', () => {
     expectConsistent(w);
   });
 
-  it('SUBMITTED, COMPLETE and SECONDARY_SUBMITTED never leave the private tables', async () => {
+  it('SUBMITTED, COMPLETE, SECONDARY_SUBMITTED and MATRICULATED never leave the private tables', async () => {
     const w = world();
     const { applicationId } = await simple(w, 'u1', { type: 'COMPLETE' });
     await addMs(w, 'u1', { id: 'ms-sub', applicationId, type: 'SUBMITTED' });
     await addMs(w, 'u1', { id: 'ms-sec-sub', applicationId, type: 'SECONDARY_SUBMITTED' });
+    await addMs(w, 'u1', { id: 'ms-matric', applicationId, type: 'MATRICULATED' });
     expect(events(w)).toHaveLength(0);
     expect(rmhCounts(w)).toHaveLength(0);
   });

@@ -51,10 +51,10 @@ export function Citations({
 
   return (
     <section className="mt-6" aria-labelledby="ask-sources-heading">
-      <h3 id="ask-sources-heading" className="t-label m-0">
+      <h3 id="ask-sources-heading" className="medapp-label">
         {t('ask-sources-heading', { defaultValue: 'Sources' })}
       </h3>
-      <ol className="m-0 mt-1 list-none border-t border-site-border p-0">
+      <ol className="medapp-list mt-1">
         {citations.map((c, i) => {
           const n = i + 1;
           const school = schools.find((s) => s.slug === c.schoolSlug)?.shortName ?? null;
@@ -64,14 +64,14 @@ export function Citations({
               : t('ask-source-updated', { defaultValue: 'updated {{date}}', date: day(c.updatedAt) })
             : t('ask-source-unknown', { defaultValue: 'update time unknown' });
           return (
-            <li key={c.ref} id={citeId(n)} className="border-b border-site-border py-3">
-              <p className="t-body m-0 font-medium">
-                <span className="t-meta">{n}</span> {labelText(c.label)}
+            <li key={c.ref} id={citeId(n)}>
+              <p className="medapp-text font-medium">
+                <span className="medapp-meta">{n}</span> {labelText(c.label)}
               </p>
-              <p className="t-meta m-0 mt-1 wrap-anywhere">
+              <p className="medapp-meta mt-1 wrap-anywhere">
                 {[school, c.sourceName, when].filter(Boolean).join(' · ')}
               </p>
-              <p className="t-body m-0 mt-1 flex flex-wrap gap-x-4">
+              <p className="medapp-text mt-1 flex flex-wrap gap-x-4">
                 <Link to={c.href as never} className="inline-flex items-center underline pointer-coarse:min-h-11">
                   {t('ask-source-open', { defaultValue: 'Open on RMH' })}
                 </Link>

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { IconButton } from '@/components/ui/icon-button';
-import { Textarea } from '@/components/ui/textarea';
+import { MedIconButton } from '../controls/MedIconButton';
+import { MedTextarea } from '../controls/MedField';
 import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { LIMITS } from '../../engine/tracker';
 import type { MedListItemDto } from '../../medschools.contract';
@@ -56,14 +56,14 @@ export function ListItemRow({
               to="/rmh-medschool/$slug"
               params={{ slug: school.slug }}
               search={SCHOOL_SEARCH_DEFAULTS}
-              className="t-body"
+              className="medapp-text medapp-link"
             >
               {school.name}
             </Link>
           ) : (
-            <span className="t-body">{school.name}</span>
+            <span className="medapp-text">{school.name}</span>
           )}
-          <p className="t-meta m-0">
+          <p className="medapp-meta">
             {t('lists-item-meta', {
               defaultValue: '{{degree}} · {{state}} · {{program}}',
               degree: school.degree,
@@ -72,13 +72,13 @@ export function ListItemRow({
             })}
           </p>
           {school.active ? null : (
-            <p className="t-meta m-0">{t('lists-item-inactive', { defaultValue: 'No longer listed' })}</p>
+            <p className="medapp-meta">{t('lists-item-inactive', { defaultValue: 'No longer listed' })}</p>
           )}
         </div>
-        <IconButton
+        <MedIconButton
           icon={Trash2}
           label={t('lists-item-remove', { defaultValue: 'Remove {{name}}', name: school.shortName })}
-          showTooltip={false}
+
           disabled={busy}
           onClick={() => {
             setBusy(true);
@@ -86,19 +86,19 @@ export function ListItemRow({
           }}
         />
       </div>
-      <Textarea
+      <MedTextarea
         aria-label={t('lists-item-note', { defaultValue: 'Note on {{name}}', name: school.shortName })}
         placeholder={t('lists-item-note-placeholder', { defaultValue: 'Add a note' })}
         maxLength={LIMITS.note}
         rows={2}
-        className="min-h-16 py-1.5"
+        className="medapp-field--compact"
         value={note}
         disabled={busy}
         onChange={(e) => setNote(e.target.value)}
         onBlur={commit}
       />
       {note.length > 0 ? (
-        <p className="t-meta m-0 text-end">
+        <p className="medapp-meta text-end">
           {t('lists-item-note-count', {
             defaultValue: '{{n}} of {{max}}',
             n: codePointCount(note),

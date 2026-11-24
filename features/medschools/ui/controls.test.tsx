@@ -70,11 +70,11 @@ describe('ProgramSetToggles (index, live, rail, preferences)', () => {
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(4);
     for (const l of ['>MD<', '>MD-PhD<', '>DO<', '>DO-PhD<']) expect(html).toContain(l);
   });
-  it('shows pressed by an ink border and weight, not by colour alone, and marks the last one on', () => {
+  it('marks pressed by aria-pressed (styled as a filled chip with weight 600), not by colour alone, and marks the last one on', () => {
     const html = renderToString(<ProgramSetToggles value={['do']} onChange={noop} />);
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(3);
-    expect(html.match(/border-site-text font-semibold/g)).toHaveLength(1);
+    expect(html.match(/class="medapp-chip"/g)).toHaveLength(4);
     expect(html.match(/aria-disabled="true"/g)).toHaveLength(1);
   });
 });
@@ -82,8 +82,9 @@ describe('ProgramSetToggles (index, live, rail, preferences)', () => {
 describe('CategoryToggles pressed state', () => {
   it('draws pressed and unpressed differently, not by colour alone', () => {
     const html = renderToString(<CategoryToggles value={['INTERVIEW']} onChange={noop} />);
-    expect(html.match(/border-site-text font-semibold/g)).toHaveLength(1);
-    expect(html.match(/border-site-border text-site-text-muted/g)).toHaveLength(4);
+    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(html.match(/aria-pressed="false"/g)).toHaveLength(4);
+    expect(html.match(/medapp-chip medapp-chip--xs/g)).toHaveLength(5);
   });
 });
 
@@ -109,9 +110,9 @@ describe('OptionGroup (owner O7: a horizontal single-select button group)', () =
     const beta = /<button[^>]*>(?:(?!<\/button>).)*Beta/.exec(html)![0];
     expect(beta).toContain('tabindex="0"');
   });
-  it('wraps on a phone and uses the Button primitive (44px on touch)', () => {
-    expect(html).toContain('flex-wrap');
-    expect(html).toContain('pointer-coarse:h-11');
+  it('wraps on a phone and uses the pill chip (44px on touch)', () => {
+    expect(html).toContain('medapp-chips');
+    expect(html).toContain('medapp-chip');
   });
   it('arrow keys move and wrap, left and right swap in a right-to-left row', () => {
     expect(nextOptionIndex('ArrowRight', 1, 3, false)).toBe(2);

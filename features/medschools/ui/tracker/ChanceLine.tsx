@@ -4,7 +4,7 @@ import { formatUtcDay } from '../../engine/public-read';
 import type { ChanceDto } from '../../medschools.contract';
 
 /**
- * One application's invite chance, as a `t-meta` lead line under a rule (R3), a row per horizon ("by Nov 30 · 12%"), then where the estimate comes
+ * One application's invite chance, as a `medapp-meta` lead line under a rule (R3), a row per horizon ("by Nov 30 · 12%"), then where the estimate comes
  * from. Calendar dates through the page locale, whole percents, never "day N". A closed application (rejected,
  * withdrawn, accepted) says nothing: the estimate is for someone still waiting.
  */
@@ -78,19 +78,19 @@ export function ChanceLine({ chance }: { chance: ChanceDto | undefined }) {
   }
   if (lines.length === 0 && horizons.length === 0) return null;
   return (
-    <div className="mt-2 border-t border-site-border pt-2" data-chance={chance.status}>
-      {lead ? <p className="t-meta m-0">{lead}</p> : null}
+    <div className="medapp-subrule" data-chance={chance.status}>
+      {lead ? <p className="medapp-meta">{lead}</p> : null}
       {horizons.length > 0 ? (
-        <ul className="m-0 mt-1 list-none p-0">
+        <ul className="medapp-list mt-1">
           {horizons.map((h) => (
-            <li key={h} className="t-body border-b border-site-border py-1">
+            <li key={h} className="medapp-text">
               {h}
             </li>
           ))}
         </ul>
       ) : null}
       {lines.map((line) => (
-        <p key={line} className="t-meta m-0 mt-1">
+        <p key={line} className="medapp-meta mt-1">
           {line}
         </p>
       ))}

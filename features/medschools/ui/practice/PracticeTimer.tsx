@@ -1,6 +1,5 @@
 import { useEffect, useReducer } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
 import { PRACTICE_SECONDS, formatClock, initialTimer, timerReducer, type PracticeSeconds } from '../../engine/practice';
 import { OptionGroup } from '../OptionGroup';
 
@@ -32,7 +31,7 @@ export function PracticeTimer({ resetKey }: { resetKey: string }) {
       defaultValue: '{{count}} minutes',
     });
   return (
-    <div className="flex flex-col gap-3 border-b border-site-border pb-4">
+    <div className="medapp-section medapp-timer">
       <OptionGroup<`${PracticeSeconds}`>
         label={t('practice-length-label', { defaultValue: 'Time to answer' })}
         value={`${s.duration}`}
@@ -40,39 +39,39 @@ export function PracticeTimer({ resetKey }: { resetKey: string }) {
         onChange={(v) => dispatch({ type: 'duration', seconds: Number(v) as PracticeSeconds })}
       />
       <p
-        className="t-title m-0 font-mono tabular-nums"
+        className="medapp-clock"
         role="timer"
         aria-label={t('practice-clock-label', { defaultValue: 'Time left' })}
         data-status={s.status}
       >
         {formatClock(s.remaining)}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="medapp-chips">
         {running ? (
-          <Button type="button" variant="default" onClick={() => dispatch({ type: 'pause' })}>
+          <button type="button" className="medapp-chip" onClick={() => dispatch({ type: 'pause' })}>
             {t('practice-pause', { defaultValue: 'Pause' })}
-          </Button>
+          </button>
         ) : (
-          <Button
+          <button
             type="button"
-            variant="primary"
+            className="medapp-chip medapp-chip--primary"
             disabled={s.status === 'done'}
             onClick={() => dispatch({ type: 'start' })}
           >
             {s.status === 'paused'
               ? t('practice-resume', { defaultValue: 'Resume' })
               : t('practice-start', { defaultValue: 'Start' })}
-          </Button>
+          </button>
         )}
-        <Button
+        <button
           type="button"
-          variant="default"
+          className="medapp-chip"
           disabled={s.status === 'idle'}
           onClick={() => dispatch({ type: 'reset' })}
         >
           {t('practice-reset', { defaultValue: 'Reset' })}
-        </Button>
-        <span role="status" className="t-meta">
+        </button>
+        <span role="status" className="medapp-meta">
           {s.status === 'done' ? t('practice-done', { defaultValue: 'Time is up.' }) : ''}
         </span>
       </div>

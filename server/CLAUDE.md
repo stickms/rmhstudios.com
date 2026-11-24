@@ -213,7 +213,7 @@ Consequences:
   acceptances stay in that August's class. (3) Admit school stats (`getSchoolStats`) are a cumulative snapshot over all
   reported cycles, refreshed daily and stored under the current cycle at fetch time; readers must label them "Admit.org,
   all reported cycles". (4) Alias misses: the admin page is `/admin/medschools`
-  (`features/medschools/ui/AliasMissesPanel`; endpoints `/api/admin/medschools/alias-misses` with `/map` and `/ignore`,
+  (`components/admin/medschools/AliasMissesPanel`; endpoints `/api/admin/medschools/alias-misses` with `/map` and `/ignore`,
   registered modules in `features/medschools/api/`). Mapping keeps the one-key-per-source rule (a school has one alias
   key per source; an existing alias is never moved). Alias seeding is not gated by `MEDSCHOOLS_ADMIT_ENABLED`. (5) A
   GraphQL `errors` reply to a profile lookup defers that user and does not count toward the three-strike halt. (6)

@@ -425,21 +425,49 @@ prune_rollback_images() {
 #   gentle — stopped containers, dangling images, BuildKit cache older than
 #            DEPLOY_BUILD_CACHE_KEEP_HOURS (default 72). Always safe, runs every deploy.
 #   hard [target_gb] — escalates one step at a time and STOPS as soon as free space
-#            reaches target_gb: all BuildKit cache, then rollback trimmed to 1, and
-#            only last every unused image — which also removes the :rollback image
-#            the post-deploy rollback depends on, so it is the last resort.
+#            reaches target_gb, logging the free space after each tier:
+#              1. all BuildKit cache;
+#              2. host cleanup as root (core dumps, journald, apt cache, stale deploy temp
+#                 files, then old SHA release images) — see below;
+#              3. rollback images trimmed to 1;
+#              4. every unused image, which also removes the :rollback image the
+#                 post-deploy rollback depends on, so it is the last resort.
+# Tier 2 exists because this script runs in the webhook's sandbox (ProtectSystem=strict)
+# and cannot touch host files. It writes a request into REPO_DIR/.deploy-run, which
+# rmh-disk-cleanup-urgent.path turns into a root run of deploy/disk-cleanup.sh in target
+# mode (deploy/host-cleanup-request.sh holds the request/wait helper). Without that unit
+# installed one line says how, and the Docker-only tiers run exactly as before. The
+# pull-retry on "no space left" comes through here too. Sets HOST_CLEANUP_OUTCOME.
 # The BuildKit cache is the one thing no deploy step ever cleaned: it was left by
 # the old build-on-host era and sat at 11.6 GB on a 45 GB disk.
+HOST_CLEANUP_OUTCOME="host cleanup not needed"
 reclaim_disk() {
-    local tier="${1:-gentle}" target="${2:-0}"
+    local tier="${1:-gentle}" target="${2:-0}" rc
     "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
     "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
     if [ "$tier" = hard ]; then
         "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+        log "Reclaim tier 1 (all BuildKit cache): $(free_disk_gb)G free."
         [ "$target" -gt 0 ] && [ "$(free_disk_gb)" -ge "$target" ] && return 0
+        if [ "$target" -gt 0 ]; then
+            [ -f "$REPO_DIR/deploy/host-cleanup-request.sh" ] && . "$REPO_DIR/deploy/host-cleanup-request.sh"
+            if declare -F request_host_cleanup > /dev/null; then
+                log "Reclaim tier 2: asking root for host cleanup (up to ${DEPLOY_HOST_CLEANUP_WAIT_SECONDS:-300}s)..."
+                request_host_cleanup "$target" && rc=0 || rc=$?
+                log "Reclaim tier 2 (${HOST_CLEANUP_OUTCOME}): $(free_disk_gb)G free."
+                if [ "$rc" -eq 2 ]; then
+                    log "  To let deploys clean host files too: sudo cp deploy/systemd/rmh-disk-cleanup-urgent.{path,service} /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now rmh-disk-cleanup-urgent.path"
+                fi
+            else
+                HOST_CLEANUP_OUTCOME="host cleanup unavailable (deploy/host-cleanup-request.sh missing)"
+            fi
+            [ "$(free_disk_gb)" -ge "$target" ] && return 0
+        fi
         prune_rollback_images 1
+        log "Reclaim tier 3 (rollback images trimmed to 1): $(free_disk_gb)G free."
         [ "$target" -gt 0 ] && [ "$(free_disk_gb)" -ge "$target" ] && return 0
         "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+        log "Reclaim tier 4 (all unused images): $(free_disk_gb)G free."
     else
         "$DOCKER_BIN" builder prune -f --filter "until=${DEPLOY_BUILD_CACHE_KEEP_HOURS:-72}h" > /dev/null 2>&1 || true
         prune_rollback_images
@@ -795,14 +823,14 @@ NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_PULL_RESERVE_GB ))
 DISK_FREE_GB=$(free_disk_gb)
 log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to pull and keep ${DEPLOY_HEADROOM_GB}G headroom)."
 if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-    log "Low disk — reclaiming BuildKit cache, then rollback images, then unused images, until ${NEED_FREE_GB}G is free."
+    log "Low disk — reclaiming BuildKit cache, then host files (as root), then rollback images, then unused images, until ${NEED_FREE_GB}G is free."
     reclaim_disk hard "$NEED_FREE_GB"
     DISK_FREE_GB=$(free_disk_gb)
     # Fail closed on the full requirement, not just the headroom: pulling into less
     # than the incoming layers need fills the disk MID-pull, which takes down
     # Postgres and every container's writable layer with it (2026-10-25).
     if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-        log "ERROR: only ${DISK_FREE_GB}G free after reclaiming — need ≥ ${NEED_FREE_GB}G to pull safely. Refusing; nothing was changed."
+        log "ERROR: only ${DISK_FREE_GB}G free after reclaiming — need ≥ ${NEED_FREE_GB}G to pull safely (${HOST_CLEANUP_OUTCOME}). Refusing; nothing was changed."
         log "  Find the space: bash deploy/disk-report.sh; sudo du -xh / --max-depth=2 | sort -h | tail -25"
         update_deploy_status fail "insufficient disk to pull safely"
         exit 1

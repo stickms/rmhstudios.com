@@ -1,0 +1,22 @@
+# rmhstudios — urgent disk cleanup, started by rmh-disk-cleanup-urgent.path (one-shot).
+#
+# Runs deploy/disk-cleanup-urgent.sh as root: it reads "<target_gb> <nonce>" from
+# .deploy-run/disk-request (strictly validated, target clamped to the disk size), runs the
+# safe cleanup in target mode (deploy/disk-cleanup.sh: BuildKit cache, core dumps, journald,
+# apt cache, stale deploy temp files, then old release images; never :latest, :rollback, a
+# running container's image or a home directory), stops once the target is free, and
+# answers in .deploy-run/disk-done. It does not skip for the deploy lock (the deploy asked,
+# between pulls) and chowns nothing. Install steps: rmh-disk-cleanup-urgent.path.
+[Unit]
+Description=rmhstudios urgent disk cleanup (requested by a deploy)
+After=docker.service
+
+[Service]
+Type=oneshot
+# Repo checkout path on the VPS (deploy.sh REPO_DIR).
+WorkingDirectory=/home/rmhstudios/rmhstudios.com
+ExecStart=/usr/bin/env bash deploy/disk-cleanup-urgent.sh
+# A deploy is waiting on this: short timeout, but still out of the way of the site.
+TimeoutStartSec=4min
+Nice=19
+IOSchedulingClass=idle

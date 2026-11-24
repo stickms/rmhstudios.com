@@ -209,6 +209,17 @@ export const APP_ROUTE_THEME_BG: Record<
     light: '#f6f0e1',
     system: true,
   },
+  // RMH Med Schools. Grounds mirror `--app-bg` in `features/medschools/ui/medschools.css` (the owner-approved
+  // mockup's cream paper by day, ink-navy by night). Same shape as RMH Music: a first visit follows
+  // `prefers-color-scheme`; the top bar's toggle stores `{"dark":true|false}` under this key
+  // (`features/medschools/engine/mode.ts`), device-local, and the boolean wins once it is there.
+  '/rmh-medschool': {
+    key: 'rmh-medschool-mode',
+    darkFlag: 'dark',
+    dark: '#1b1e2a',
+    light: '#f6f1e7',
+    system: true,
+  },
   // Temple of Joy. Grounds mirror `--toj-ground` in
   // `components/temple-of-joy/temple-of-joy.css` — Dawn's cream page and
   // Vespers' near-black one.

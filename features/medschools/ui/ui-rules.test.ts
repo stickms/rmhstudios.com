@@ -2,11 +2,13 @@ import { existsSync, globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Static rules for the RMH Med Schools public UI (Phase 3). The three route files are held to the bundle rule; every
- * ui file to the Steel and i18n rules the review would otherwise catch by eye.
+ * Static rules for the RMH Med Schools UI. The route files are held to the bundle rule; every ui file to the i18n,
+ * no-fetch and app-tier rules the review would otherwise catch by eye. The pages are a full-screen app now (roadmap
+ * item 11): the Steel content rules this file used to hold (no rounded, shadow, backdrop, uppercase) came out with the
+ * tier move, and the app-tier rules below replace them: palette tokens only, no hex, no keyframes, nothing `fixed`.
  */
-const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask'].map(
-  (n) => `app/routes/_site/rmh-medschool/${n}.tsx`,
+const ROUTES = ['index', 'live', '$slug', 'tracker', 'lists', 'ask', 'practice'].map(
+  (n) => `app/routes/rmh-medschool/${n}.tsx`,
 );
 const uiFiles = globSync('features/medschools/ui/**/*.tsx')
   .map(String)
@@ -59,12 +61,45 @@ describe('medschools ui rules', () => {
     for (const f of uiFiles) expect(read(f), f).not.toMatch(/\bfetch\(/);
   });
 
-  it('keeps to Steel on content', () => {
-    for (const f of uiFiles) {
+  it('keeps to the app tier: palette tokens only, no hex, no keyframes, nothing position: fixed', () => {
+    const css = read('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    // Every colour is an `--app-*` token declaration; any other hex means a colour that escaped the palette.
+    const stray = css.split('\n').filter((l) => /#[0-9a-fA-F]{3,8}\b/.test(l) && !/^\s*--(app|site)-[\w-]+:/.test(l));
+    expect(stray.filter((l) => !/^\s*(\/?\*|\*)/.test(l))).toEqual([]);
+    expect(css).not.toMatch(/@keyframes|position:\s*fixed|!important/);
+    for (const f of [...uiFiles, 'app/routes/rmh-medschool.tsx']) {
       const src = read(f);
-      expect(src, f).not.toMatch(/surface-card|surface-panel|backdrop|shadow-|rounded-(xl|2xl|full)/);
-      expect(src, f).not.toMatch(/font-(bold|extrabold)|uppercase|tracking-/);
+      // No raw palette colour, no hex in markup, no fixed layer (iOS fills its bars from edge-pinned layers).
+      expect(src, f).not.toMatch(/#[0-9a-fA-F]{6}\b|\b(?:bg|text|border)-(?:red|blue|green|gray|slate|zinc)-\d/);
+      expect(src, f).not.toMatch(/(?:className|class)=[^>]*\b(?:fixed|sticky)\b|position:\s*fixed/);
+      expect(src, f).not.toMatch(/font-(bold|extrabold)/);
     }
+  });
+
+  it('reads no Steel token in the markup: no --site-* variable, no *-site-* utility, no t-* type class, no site Button, Select, SearchField, Switch, Textarea or PageLayout', () => {
+    const steel =
+      /(?:^|[\s"'`:!-])(?:[a-z-]+-)?site-[a-z-]+|--site-|(?:^|[\s"'`])t-(?:title|heading|body|post|prose|label|meta)(?=[\s"'`])/;
+    const controls =
+      /@\/components\/(?:ui\/(?:button|select|search-field|switch|textarea|input|icon-button|signed-out-prompt|skeleton|empty-state)|feed\/PageLayout)'/;
+    for (const f of [...uiFiles, 'app/routes/rmh-medschool.tsx']) {
+      const src = read(f).replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(
+        src.split('\n').filter((l) => steel.test(l) && !/^\s*\/\//.test(l)),
+        f,
+      ).toEqual([]);
+      if (!f.includes('/ui/controls/')) expect(src, f).not.toMatch(controls);
+    }
+  });
+
+  it('keeps the --site-* bridge to one block, on <html>, naming only the overlay pieces that need it', () => {
+    const css = read('features/medschools/ui/medschools.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const decls = css.split('\n').filter((l) => /^\s*--site-[\w-]+:/.test(l));
+    expect(decls.length).toBeLessThanOrEqual(12);
+    const block = css.slice(css.indexOf(':root:has(.medapp-theme) {\n  --site-bg'));
+    expect(block.startsWith(':root:has(.medapp-theme) {')).toBe(true);
+    // Every declaration sits in that one block, and the page stylesheet reads no `var(--site-*)`.
+    expect(decls.length).toBe((block.slice(0, block.indexOf('}')).match(/--site-[\w-]+:/g) ?? []).length);
+    expect(css).not.toMatch(/var\(--site-/);
   });
 
   it('draws a raw <table only in charts, ActivityTab and InterviewsTab', () => {
@@ -81,7 +116,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the private tracker route private and thin (noindex, definePage, prefetched, no zod)', () => {
-    const src = read('app/routes/_site/rmh-medschool/tracker.tsx');
+    const src = read('app/routes/rmh-medschool/tracker.tsx');
     expect(src).toContain('noIndex: true');
     expect(src).toContain('definePage');
     expect(src).toContain('prefetchRouteQuery');
@@ -89,7 +124,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the private lists route private and thin (noindex, definePage, prefetched, no zod)', () => {
-    const src = read('app/routes/_site/rmh-medschool/lists.tsx');
+    const src = read('app/routes/rmh-medschool/lists.tsx');
     expect(src).toContain('noIndex: true');
     expect(src).toContain('definePage');
     expect(src).toContain('prefetchRouteQuery');
@@ -97,7 +132,7 @@ describe('medschools ui rules', () => {
   });
 
   it('keeps the ask route private and thin (noindex, definePage, no engine/qa, no zod, no charts)', () => {
-    const src = read('app/routes/_site/rmh-medschool/ask.tsx');
+    const src = read('app/routes/rmh-medschool/ask.tsx');
     expect(src).toContain('noIndex: true');
     expect(src).toContain('definePage');
     expect(src).not.toMatch(/from 'zod'|ui\/charts|d3-|engine\/qa/);
@@ -109,9 +144,18 @@ describe('medschools ui rules', () => {
     expect(src).not.toMatch(/new (Intersection|Resize|Mutation)Observer|requestAnimationFrame/);
   });
 
-  it('the shell hands the margin to a section by path, not by a branch per feature', () => {
-    expect(read('components/shell/margin-takeover.ts')).toContain("prefix: '/rmh-medschool'");
-    expect(read('components/shell/MarginColumn.tsx')).toContain('takeoverFor');
+  it('the app frame mounts the live rail itself; the Steel shell no longer hands it the margin', () => {
+    expect(read('features/medschools/ui/shell/MedApp.tsx')).toContain("import('../rail/ActivityRail')");
+    expect(read('components/shell/margin-takeover.ts')).not.toContain("prefix: '/rmh-medschool'");
+  });
+
+  it('is a top-level layout route with its own error and not-found frames and no auth gate', () => {
+    const src = read('app/routes/rmh-medschool.tsx');
+    expect(src).toContain("createFileRoute('/rmh-medschool')");
+    expect(src).toContain('errorComponent');
+    expect(src).toContain('notFoundComponent');
+    expect(src).not.toMatch(/beforeLoad|createServerFn|redirect\(/);
+    expect(existsSync('app/routes/_site/rmh-medschool')).toBe(false);
   });
 
   it('keeps createServerFn out of the query factories', () => {

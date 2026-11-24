@@ -56,8 +56,8 @@ export function ArrivalsSection({
   const sources = t('arrivals-sources', { defaultValue: 'Sources: Admit.org, Student Doctor Network' });
 
   return (
-    <section aria-labelledby="medschools-arrivals-heading" className="flex flex-col gap-4">
-      <h2 id="medschools-arrivals-heading" className="t-heading m-0">
+    <section aria-labelledby="medschools-arrivals-heading" className="medapp-section">
+      <h2 id="medschools-arrivals-heading" className="medapp-h2">
         {t('arrivals-heading', { defaultValue: 'When results arrive' })}
       </h2>
       <ArrivalBars
@@ -79,18 +79,15 @@ export function ArrivalsSection({
         labels={chartLabels('')}
       />
       {data.cycles.length > 0 ? (
-        <div>
-          <h3 className="t-label m-0">
+        <div className="medapp-section medapp-section--panel">
+          <h3 className="medapp-h3">
             {t('arrivals-typical', { defaultValue: 'Typical dates by cycle ({{zone}})', zone })}
           </h3>
-          <ul className="m-0 list-none p-0">
+          <ul className="medapp-list medapp-list--between">
             {data.cycles.map((c) => (
-              <li
-                key={c.cycleYear}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-site-border py-2"
-              >
-                <span className="t-body">{cycleLabelIsolated(c.cycleYear)}</span>
-                <span className="t-meta">
+              <li key={c.cycleYear}>
+                <span className="medapp-text">{cycleLabelIsolated(c.cycleYear)}</span>
+                <span className="medapp-meta">
                   {t('arrivals-cycle-row', {
                     defaultValue: 'First report {{first}} · Half reported by {{median}} · {{n}} reports',
                     first: day(c.firstOn),

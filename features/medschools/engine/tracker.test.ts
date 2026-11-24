@@ -35,6 +35,7 @@ describe('SHAREABLE', () => {
     expect(SHAREABLE.SUBMITTED).toBeNull();
     expect(SHAREABLE.COMPLETE).toBeNull();
     expect(SHAREABLE.SECONDARY_SUBMITTED).toBeNull();
+    expect(SHAREABLE.MATRICULATED).toBeNull();
   });
 
   it('covers every milestone type, in display order', () => {
@@ -47,6 +48,7 @@ describe('SHAREABLE', () => {
       'WAITLIST',
       'REJECTION',
       'ACCEPTANCE',
+      'MATRICULATED',
       'WITHDRAWN',
       'HOLD',
     ]);

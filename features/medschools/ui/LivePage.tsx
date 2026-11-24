@@ -1,10 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
+import { MedSelect } from './controls/MedSelect';
 import { ARRIVE } from '@/components/ui/arrive';
 import { parseLiveSearch } from '../engine/search';
 import type { MedEventTypeId } from '../medschools.contract';
@@ -22,6 +19,7 @@ import { useEffectiveView } from './useEffectiveView';
 import { SkeletonSwap } from './skeletons';
 import { LiveRow } from './LiveRow';
 import { useMedLabels } from './labels';
+import { PageHead } from './shell/PageHead';
 
 const EVENT_TYPES: readonly MedEventTypeId[] = [
   'INTERVIEW',
@@ -62,10 +60,10 @@ export function LivePage() {
   };
 
   return (
-    <PageLayout title={t('live-title', { defaultValue: 'Live reported events' })}>
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Select
-          controlSize="sm"
+    <>
+      <PageHead title={t('live-title', { defaultValue: 'Live reported events' })} />
+      <div className="medapp-toolbar">
+        <MedSelect
           aria-label={t('live-type-label', { defaultValue: 'Event' })}
           value={search.type ?? ''}
           onChange={(e) => setSearch({ type: (e.target.value || undefined) as MedEventTypeId | undefined })}
@@ -76,9 +74,8 @@ export function LivePage() {
               {eventLabel(ty)}
             </option>
           ))}
-        </Select>
-        <Select
-          controlSize="sm"
+        </MedSelect>
+        <MedSelect
           aria-label={t('live-school-label', { defaultValue: 'School' })}
           value={search.school ?? ''}
           onChange={(e) => setSearch({ school: e.target.value || undefined })}
@@ -89,15 +86,15 @@ export function LivePage() {
               {s.shortName}
             </option>
           ))}
-        </Select>
+        </MedSelect>
       </div>
-      <ProgramSetToggles className="mt-3" value={view.programs} onChange={(programs) => setView({ programs })} />
+      <ProgramSetToggles value={view.programs} onChange={(programs) => setView({ programs })} />
       <PrefsNote fromPrefs={view.fromPrefs} />
       <div className="mt-4">
         {/* Keyed by the filters: a new filter set starts with its own rows and older pages. */}
         <LiveList key={JSON.stringify(filters)} filters={filters} />
       </div>
-    </PageLayout>
+    </>
   );
 }
 
@@ -107,30 +104,42 @@ function LiveList({ filters }: { filters: LiveFilters }) {
 
   if (query.isError && !data) {
     return (
-      <EmptyState
-        title={t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}
-        action={<Button onClick={() => void query.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
-      />
+      <div className="medapp-panel medapp-panel--padded">
+        <p className="medapp-empty">{t('live-load-failed', { defaultValue: 'Could not load the live feed.' })}</p>
+        <button type="button" className="medapp-chip" onClick={() => void query.refetch()}>
+          {t('retry', { defaultValue: 'Try again' })}
+        </button>
+      </div>
     );
   }
   return (
     <SkeletonSwap ready={!!data}>
       {rows.length === 0 ? (
-        <EmptyState title={t('live-empty', { defaultValue: 'Nothing reported yet.' })} />
+        <div className="medapp-panel">
+          <p className="medapp-empty">{t('live-empty', { defaultValue: 'Nothing reported yet.' })}</p>
+        </div>
       ) : (
         <>
-          <ul className="m-0 list-none p-0">
-            {rows.map((r) => (
-              <LiveRow key={r.id} event={r} className={arriving(r.id) ? ARRIVE : undefined} />
-            ))}
-          </ul>
+          <div className="medapp-panel">
+            <ul className="medapp-rows">
+              {rows.map((r) => (
+                <LiveRow key={r.id} event={r} className={arriving(r.id) ? ARRIVE : undefined} />
+              ))}
+            </ul>
+          </div>
           {cursor ? (
             <div className="mt-4">
-              <Button loading={loadingOlder} onClick={() => void showOlder()}>
+              <button
+                type="button"
+                className="medapp-chip"
+                aria-busy={loadingOlder}
+                disabled={loadingOlder}
+                onClick={() => void showOlder()}
+              >
                 {t('live-older', { defaultValue: 'Show older' })}
-              </Button>
+              </button>
               {olderFailed ? (
-                <p className="t-meta mt-2">
+                <p className="medapp-note">
                   {t('live-older-failed', { defaultValue: 'Could not load older events.' })}
                 </p>
               ) : null}

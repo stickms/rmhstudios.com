@@ -1,12 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { MedButton } from '../../controls/MedButton';
+import { MedSelect } from '../../controls/MedSelect';
+import { MedTextarea } from '../../controls/MedField';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
@@ -46,9 +45,9 @@ function PreviewSkeleton() {
   return (
     <div aria-hidden="true">
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="flex items-center justify-between gap-4 border-b border-site-border py-4">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-20" />
+        <div key={i} className="flex items-center justify-between gap-4 border-b border-app-border py-4">
+          <span className="medapp-skeleton h-4 w-48" />
+          <span className="medapp-skeleton h-4 w-20" />
         </div>
       ))}
     </div>
@@ -154,27 +153,27 @@ export default function TrackerImport({
   const hasInput = file !== null || text.trim().length > 0;
 
   return (
-    <section aria-labelledby="import-heading" className="border-t border-site-border pt-4">
+    <section aria-labelledby="import-heading" className="medapp-panel medapp-panel--padded">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="import-heading" className="t-heading m-0">
+        <h2 id="import-heading" className="medapp-h2">
           {heading}
         </h2>
         {stage !== 'saved' ? (
-          <Button variant="ghost" disabled={saving} onClick={onClose}>
+          <MedButton variant="ghost" disabled={saving} onClick={onClose}>
             {t('tracker-cancel', { defaultValue: 'Cancel' })}
-          </Button>
+          </MedButton>
         ) : null}
       </div>
 
       {stage === 'input' || stage === 'reading' ? (
         <div className="mt-3">
-          <p className="t-body m-0">
+          <p className="medapp-text">
             {t('import-notice', {
               defaultValue:
                 "The file's text is sent to our AI provider to read it. RMH does not keep the file, and nothing is saved until you press Add.",
             })}
           </p>
-          <p className="t-meta m-0 mt-1">
+          <p className="medapp-meta mt-1">
             {t('import-dates-only', { defaultValue: 'Only application dates are read. Essays and notes are ignored.' })}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -185,20 +184,16 @@ export default function TrackerImport({
               accept={IMPORT_ACCEPT}
               onChange={(e) => pick(e.target.files?.[0] ?? null)}
             />
-            <Button
-              type="button"
-              disabled={stage === 'reading'}
-              onClick={() => fileInput.current?.click()}
-            >
+            <MedButton type="button" disabled={stage === 'reading'} onClick={() => fileInput.current?.click()}>
               {t('import-choose', { defaultValue: 'Choose a file' })}
-            </Button>
-            <span className="t-meta min-w-0 break-words">
+            </MedButton>
+            <span className="medapp-meta min-w-0 break-words">
               {file
                 ? file.name
                 : t('import-accepted', { defaultValue: 'A spreadsheet, Word document, PDF or text file, up to 2 MB' })}
             </span>
             {file ? (
-              <Button
+              <MedButton
                 type="button"
                 variant="ghost"
                 disabled={stage === 'reading'}
@@ -208,12 +203,12 @@ export default function TrackerImport({
                 }}
               >
                 {t('import-remove-file', { defaultValue: 'Remove file' })}
-              </Button>
+              </MedButton>
             ) : null}
           </div>
-          <label className="mt-4 flex flex-col gap-1">
-            <span className="t-label">{t('import-paste-label', { defaultValue: 'Or paste the text' })}</span>
-            <Textarea
+          <label className="medapp-fieldset mt-4">
+            <span className="medapp-label">{t('import-paste-label', { defaultValue: 'Or paste the text' })}</span>
+            <MedTextarea
               rows={6}
               value={text}
               maxLength={IMPORT_LIMITS.pasteChars}
@@ -225,21 +220,27 @@ export default function TrackerImport({
             />
           </label>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button type="button" loading={stage === 'reading'} disabled={!hasInput} onClick={() => void read()}>
+            <MedButton type="button" loading={stage === 'reading'} disabled={!hasInput} onClick={() => void read()}>
               {t('import-read', { defaultValue: 'Read my dates' })}
-            </Button>
+            </MedButton>
             {stage === 'reading' ? (
-              <Button type="button" variant="ghost" onClick={() => {
+              <MedButton
+                type="button"
+                variant="ghost"
+                onClick={() => {
                   abort.current?.abort();
                   setStage('input');
-                }}>
+                }}
+              >
                 {t('import-stop', { defaultValue: 'Stop' })}
-              </Button>
+              </MedButton>
             ) : null}
           </div>
           {stage === 'reading' ? (
             <div role="status" className="mt-4">
-              <p className="t-meta m-0">{t('import-reading', { defaultValue: 'Reading your dates. This can take a minute.' })}</p>
+              <p className="medapp-meta">
+                {t('import-reading', { defaultValue: 'Reading your dates. This can take a minute.' })}
+              </p>
               <PreviewSkeleton />
             </div>
           ) : null}
@@ -248,11 +249,10 @@ export default function TrackerImport({
 
       {stage === 'preview' && preview ? (
         <div className="mt-3">
-          <div className="flex flex-wrap items-center gap-2 border-b border-site-border pb-3">
-            <label className="flex items-center gap-2">
-              <span className="t-label">{t('tracker-cycle-label', { defaultValue: 'Cycle' })}</span>
-              <Select
-                controlSize="sm"
+          <div className="medapp-form border-b border-app-border pb-3">
+            <label className="medapp-fieldset">
+              <span className="medapp-label">{t('tracker-cycle-label', { defaultValue: 'Cycle' })}</span>
+              <MedSelect
                 aria-label={t('tracker-cycle-label', { defaultValue: 'Cycle' })}
                 value={String(cycle)}
                 onChange={(e) => {
@@ -266,9 +266,9 @@ export default function TrackerImport({
                     {cycleLabelIsolated(y)}
                   </option>
                 ))}
-              </Select>
+              </MedSelect>
             </label>
-            <p className="t-meta m-0 min-w-0 flex-1">
+            <p className="medapp-meta min-w-0 flex-1">
               {preview.cycleFrom === 'dates'
                 ? t('import-cycle-dates', { defaultValue: 'Chosen from the dates in your file.' })
                 : preview.cycleFrom === 'hint'
@@ -277,12 +277,12 @@ export default function TrackerImport({
             </p>
           </div>
           {preview.truncated ? (
-            <p className="t-meta m-0 mt-2">
+            <p className="medapp-meta mt-2">
               {t('import-truncated', { defaultValue: 'The file was long, so only the first part was read.' })}
             </p>
           ) : null}
           {preview.dropped > 0 ? (
-            <p className="t-meta m-0 mt-2">
+            <p className="medapp-meta mt-2">
               {t('import-dropped', {
                 dropped: preview.dropped,
                 defaultValue: '{{dropped}} dates were left out: not in your file, not real, or outside the cycle.',
@@ -293,12 +293,12 @@ export default function TrackerImport({
             <PreviewSkeleton />
           ) : tracker.isError ? (
             <div className="py-4">
-              <p className="t-body m-0" role="alert">
+              <p className="medapp-text" role="alert">
                 {t('import-tracker-failed', { defaultValue: 'Could not check your tracker for dates already there.' })}
               </p>
-              <Button className="mt-2" onClick={() => void tracker.refetch()}>
+              <MedButton className="mt-2" onClick={() => void tracker.refetch()}>
                 {t('retry', { defaultValue: 'Try again' })}
-              </Button>
+              </MedButton>
             </div>
           ) : (
             <div className={cn(rowsArrival)}>
@@ -306,15 +306,15 @@ export default function TrackerImport({
             </div>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button
+            <MedButton
               variant="primary"
               loading={saving}
               disabled={totals.dates === 0 || !tracker.isSuccess}
               onClick={() => void save()}
             >
               {t('import-add', { defaultValue: 'Add to my tracker' })}
-            </Button>
-            <Button
+            </MedButton>
+            <MedButton
               variant="ghost"
               disabled={saving}
               onClick={() => {
@@ -324,8 +324,8 @@ export default function TrackerImport({
               }}
             >
               {t('import-back', { defaultValue: 'Start over' })}
-            </Button>
-            <p className="t-meta m-0 min-w-0 flex-1" aria-live="polite">
+            </MedButton>
+            <p className="medapp-meta min-w-0 flex-1" aria-live="polite">
               {totals.dates === 0
                 ? t('import-nothing', { defaultValue: 'Nothing is ticked to add.' })
                 : t('import-summary', {
@@ -339,7 +339,7 @@ export default function TrackerImport({
             </p>
           </div>
           {preview.remainingToday !== null && preview.dailyCap !== null ? (
-            <p className="t-meta m-0 mt-2">
+            <p className="medapp-meta mt-2">
               {t('import-remaining', {
                 left: preview.remainingToday,
                 cap: preview.dailyCap,
@@ -352,7 +352,7 @@ export default function TrackerImport({
 
       {stage === 'saved' && saved ? (
         <div className="mt-3">
-          <p className="t-body m-0" role="status">
+          <p className="medapp-text" role="status">
             {t('import-saved', {
               added: saved.added,
               overwritten: saved.overwritten,
@@ -360,23 +360,24 @@ export default function TrackerImport({
             })}
           </p>
           {saved.unchanged + saved.conflicts + saved.invalid > 0 ? (
-            <p className="t-meta m-0 mt-1">
+            <p className="medapp-meta mt-1">
               {t('import-saved-rest', {
                 unchanged: saved.unchanged,
                 conflicts: saved.conflicts,
                 invalid: saved.invalid,
-                defaultValue: '{{unchanged}} were already there, {{conflicts}} kept your date, {{invalid}} could not be added.',
+                defaultValue:
+                  '{{unchanged}} were already there, {{conflicts}} kept your date, {{invalid}} could not be added.',
               })}
             </p>
           ) : null}
-          <Button className="mt-4" onClick={() => onSaved(saved.cycleYear)}>
+          <MedButton className="mt-4" onClick={() => onSaved(saved.cycleYear)}>
             {t('import-done', { defaultValue: 'Back to my tracker' })}
-          </Button>
+          </MedButton>
         </div>
       ) : null}
 
       {error ? (
-        <p className="t-body m-0 mt-3 text-site-danger" role="alert">
+        <p className="medapp-text mt-3 text-app-danger" role="alert">
           {error}
         </p>
       ) : null}

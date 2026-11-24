@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { cycleLabelIsolated } from '../engine/cycle';
 import type {
@@ -14,6 +12,7 @@ import type {
 } from '../medschools.contract';
 import { secondariesQuery } from '../medschools.queries';
 import { useMedLabels } from './labels';
+import { MedEmpty } from './MedEmpty';
 import type { SchoolSearch } from './school-search';
 import { useSecondaryLabels, type SecondaryLabels } from './secondaries/labels';
 import { SecondaryPromptRow } from './secondaries/SecondaryPromptRow';
@@ -40,22 +39,22 @@ export function SecondariesTab({
   const { t } = useTranslation('medschools');
   const query = useQuery(secondariesQuery(slug, { program: search.program }));
   const data = query.data;
-  const controls = <div className="flex flex-wrap items-center gap-2">{programControl}</div>;
+  const controls = <div className="medapp-controls">{programControl}</div>;
 
   if (query.isError) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="medapp-tab">
         {controls}
-        <EmptyState
+        <MedEmpty
           title={t('secondaries-load-failed', { defaultValue: 'Could not load the secondary prompts.' })}
-          action={<Button onClick={() => void query.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>}
+          onRetry={() => void query.refetch()}
         />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="medapp-tab">
       {controls}
       <SkeletonSwap ready={!!data} skeleton={<ListSkeleton rows={6} />}>
         {data ? <Loaded data={data} detail={detail} /> : null}
@@ -70,13 +69,13 @@ function Loaded({ data, detail }: { data: MedSchoolSecondariesRes; detail: MedSc
   const schoolName = detail.school.shortName;
   const anyPrompts = data.groups.length > 0;
   return (
-    <div className="flex flex-col gap-8">
+    <div className="medapp-tab">
       {anyPrompts ? (
         data.groups.map((g) => (
           <Group key={g.program} group={g} detail={detail} labels={labels} schoolName={schoolName} />
         ))
       ) : (
-        <EmptyState
+        <MedEmpty
           title={t('secondaries-empty', { defaultValue: 'No secondary prompts on file for this school yet.' })}
         />
       )}
@@ -84,7 +83,7 @@ function Loaded({ data, detail }: { data: MedSchoolSecondariesRes; detail: MedSc
       <Turnaround rows={data.turnaround} detail={detail} labels={labels} />
       <Sources data={data} labels={labels} schoolName={schoolName} />
       {anyPrompts ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('secondaries-cycle-note', {
             defaultValue: 'A cycle such as {{cycle}} is the application year of the class that enters in {{year}}.',
             cycle: cycleLabelIsolated(data.cycleYear),
@@ -113,8 +112,8 @@ function Group({
   // A first year of data has nothing to compare with; before the school publishes, nothing is "gone".
   const showStatus = !notYet && group.prompts.some((p) => p.status !== null);
   return (
-    <section className="flex flex-col gap-2" aria-labelledby={`secondaries-group-${group.program}`}>
-      <h2 id={`secondaries-group-${group.program}`} className="t-heading m-0">
+    <section className="medapp-section medapp-section--panel" aria-labelledby={`secondaries-group-${group.program}`}>
+      <h2 id={`secondaries-group-${group.program}`} className="medapp-h2">
         {group.program === 'REG'
           ? t('secondaries-group-reg', { defaultValue: 'Regular prompts' })
           : t('secondaries-group-phd', {
@@ -123,7 +122,7 @@ function Group({
             })}
       </h2>
       {group.program === 'PHD' ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('secondaries-phd-note', {
             defaultValue:
               "These are in addition to or instead of the regular prompts. Check the school's instructions.",
@@ -131,21 +130,21 @@ function Group({
         </p>
       ) : null}
       {notYet ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('secondaries-not-yet', {
             defaultValue: "This cycle's prompts are not out yet. These are from the {{cycle}} cycle.",
             cycle: cycleLabelIsolated(group.shownCycle),
           })}
         </p>
       ) : showStatus && group.comparedWith !== null ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('secondaries-compared', {
             defaultValue: 'Compared with the {{cycle}} cycle.',
             cycle: cycleLabelIsolated(group.comparedWith),
           })}
         </p>
       ) : null}
-      <ul className="m-0 list-none border-t border-site-border p-0">
+      <ul className="medapp-list">
         {group.prompts.map((p) => (
           <SecondaryPromptRow key={p.id} prompt={p} labels={labels} schoolName={schoolName} showStatus={showStatus} />
         ))}
@@ -167,22 +166,20 @@ function Admissions({
   const { programFilterLabel } = useMedLabels();
   if (policies.length === 0) return null;
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="t-heading m-0">{t('admissions-heading', { defaultValue: 'When decisions are made' })}</h2>
-      <ul className="m-0 list-none border-t border-site-border p-0">
+    <section className="medapp-section medapp-section--panel">
+      <h2 className="medapp-h2">{t('admissions-heading', { defaultValue: 'When decisions are made' })}</h2>
+      <ul className="medapp-list">
         {policies.map((p) => (
-          <li key={p.program} className="m-0 flex flex-col gap-1 border-b border-site-border py-3">
-            <p className="t-body m-0">
+          <li key={p.program}>
+            <p className="medapp-text">
               {policies.length > 1 ? `${programFilterLabel(p.program, detail.school.degree)}: ` : ''}
               {p.rolling
                 ? t('admissions-rolling', { defaultValue: 'Rolling admissions' })
                 : t('admissions-set-dates', { defaultValue: 'Decisions on set dates' })}
             </p>
-            <p className="t-meta m-0 break-words">
-              {t('admissions-quote', { defaultValue: '“{{text}}”', text: p.evidence })}
-            </p>
-            <p className="t-meta m-0">
-              <a href={p.url} target="_blank" rel="noopener noreferrer" className="underline">
+            <p className="medapp-meta">{t('admissions-quote', { defaultValue: '“{{text}}”', text: p.evidence })}</p>
+            <p className="medapp-meta">
+              <a href={p.url} target="_blank" rel="noopener noreferrer" className="medapp-link">
                 {t('admissions-source', {
                   defaultValue: 'Source: {{school}} admissions page, checked {{date}}',
                   school: detail.school.shortName,
@@ -211,12 +208,12 @@ function Turnaround({
   const { number } = useLocaleFormat();
   if (rows.length === 0) return null;
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="t-heading m-0">{t('turnaround-heading', { defaultValue: 'Turnaround' })}</h2>
-      <ul className="m-0 list-none border-t border-site-border p-0">
+    <section className="medapp-section medapp-section--panel">
+      <h2 className="medapp-h2">{t('turnaround-heading', { defaultValue: 'Turnaround' })}</h2>
+      <ul className="medapp-list">
         {rows.map((r) => (
-          <li key={r.program} className="m-0 flex flex-col gap-1 border-b border-site-border py-3">
-            <p className="t-body m-0">
+          <li key={r.program}>
+            <p className="medapp-text">
               {rows.length > 1 ? `${programFilterLabel(r.program, detail.school.degree)}: ` : ''}
               {t('turnaround-median', {
                 count: r.medianDays,
@@ -226,7 +223,7 @@ function Turnaround({
                 defaultValue: 'Members return the secondary in a median of {{n}} days.',
               })}
             </p>
-            <p className="t-meta m-0">
+            <p className="medapp-meta">
               {t('turnaround-range', {
                 defaultValue:
                   'The middle half took {{low}} to {{high}} days, from {{members}} members who shared. Updated {{date}}.',
@@ -255,7 +252,7 @@ function Sources({
   const { t } = useTranslation('medschools');
   if (data.sources.length === 0) return null;
   return (
-    <ul className="m-0 list-none p-0">
+    <ul className="medapp-list medapp-list--plain">
       {data.sources.map((s) => {
         const text =
           s.status === 'EMPTY'
@@ -270,9 +267,9 @@ function Sources({
                 date: s.checkedAt ? labels.date(s.checkedAt) : '',
               });
         return (
-          <li key={s.source} className="t-meta">
+          <li key={s.source} className="medapp-meta">
             {s.url ? (
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">
+              <a href={s.url} target="_blank" rel="noopener noreferrer" className="medapp-link">
                 {text}
               </a>
             ) : (

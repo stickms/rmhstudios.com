@@ -1,19 +1,27 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
-import { SearchField } from '@/components/ui/search-field';
-import { Select } from '@/components/ui/select';
+import { MedInput } from '../../controls/MedField';
+import { MedSearch } from '../../controls/MedSearch';
+import { MedSelect } from '../../controls/MedSelect';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { Q_MAX } from '../../../engine/search';
 import { formatUtcDay } from '../../../engine/public-read';
 import { milestoneDateWindow, type MilestoneType } from '../../../engine/tracker';
 import { schoolsQuery } from '../../../medschools.queries';
 import { useMedLabels } from '../../labels';
-import { editDate, statusOf, writes, type EditMilestone, type EditRow, type Existing, type PickedSchool } from './model';
+import {
+  editDate,
+  statusOf,
+  writes,
+  type EditMilestone,
+  type EditRow,
+  type Existing,
+  type PickedSchool,
+} from './model';
 
 const MAX_MATCHES = 6;
-const CHECKBOX = 'size-4 shrink-0 accent-site-text pointer-coarse:size-5';
+const CHECKBOX = 'medapp-check';
 
 /** A school the file named that the directory did not match: search the list and pick one. */
 function SchoolPicker({ name, onPick }: { name: string; onPick: (school: PickedSchool) => void }) {
@@ -28,7 +36,7 @@ function SchoolPicker({ name, onPick }: { name: string; onPick: (school: PickedS
     : [];
   return (
     <div className="mt-2">
-      <SearchField
+      <MedSearch
         containerClassName="max-w-96"
         aria-label={t('import-pick-search', { name, defaultValue: 'Pick the school for "{{name}}"' })}
         placeholder={t('import-pick-placeholder', { defaultValue: 'Search schools' })}
@@ -37,20 +45,20 @@ function SchoolPicker({ name, onPick }: { name: string; onPick: (school: PickedS
         onValueChange={setQ}
       />
       {needle && schools.data && matches.length === 0 ? (
-        <p className="t-meta m-0 mt-2">{t('tracker-add-none', { defaultValue: 'No school matches.' })}</p>
+        <p className="medapp-meta mt-2">{t('tracker-add-none', { defaultValue: 'No school matches.' })}</p>
       ) : null}
-      <ul className="m-0 mt-1 list-none p-0">
+      <ul className="medapp-list mt-1">
         {matches.map((s) => (
-          <li key={s.slug} className="border-b border-site-border last:border-b-0">
+          <li key={s.slug} className="medapp-list__pick">
             <button
               type="button"
-              className="flex min-h-11 w-full flex-col items-start justify-center py-2 text-start hover:bg-site-bg-subtle"
+              className="medapp-pick"
               onClick={() =>
                 onPick({ slug: s.slug, name: s.name, shortName: s.shortName, degree: s.degree, state: s.state })
               }
             >
-              <span className="t-body">{s.name}</span>
-              <span className="t-meta">
+              <span className="medapp-text">{s.name}</span>
+              <span className="medapp-meta">
                 {t('index-school-meta', {
                   defaultValue: '{{degree}} · {{city}}, {{state}}',
                   degree: s.degree,
@@ -88,7 +96,9 @@ function MilestoneLine({
   const { min, max } = milestoneDateWindow(cycleYear, now);
   const label = milestoneLabel(m.type);
   const was = existing?.get(m.type);
-  const school = row.school?.shortName ?? (row.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' }));
+  const school =
+    row.school?.shortName ??
+    (row.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' }));
   const day = (d: string) => formatUtcDay(d, locale, { month: 'short', day: 'numeric', year: 'numeric' });
 
   // The line's tick: add a date that is new, replace one that differs. Same and invalid dates are not writable.
@@ -124,11 +134,11 @@ function MilestoneLine({
             onChange={(e) => tick?.set(e.target.checked)}
           />
         ) : (
-          <span className="size-4 shrink-0 pointer-coarse:size-5" aria-hidden="true" />
+          <span className="medapp-check" aria-hidden="true" />
         )}
-        <span className="t-body">{label}</span>
+        <span className="medapp-text">{label}</span>
       </label>
-      <Input
+      <MedInput
         type="date"
         min={min}
         max={max}
@@ -136,9 +146,8 @@ function MilestoneLine({
         disabled={!row.include}
         aria-label={t('import-date-label', { label, school, defaultValue: '{{label}} date for {{school}}' })}
         onChange={(e) => e.target.value && onChange({ date: e.target.value })}
-        className="h-9 w-44 pointer-coarse:h-11"
       />
-      <p className="t-meta m-0 basis-full ps-6 pointer-coarse:ps-7">
+      <p className="medapp-meta basis-full ps-6 pointer-coarse:ps-7">
         {status === 'same'
           ? t('import-same', { defaultValue: 'Already on your tracker with this date.' })
           : status === 'conflict' && was !== undefined
@@ -193,12 +202,12 @@ export function ImportPreview({
     );
 
   return (
-    <ul className="m-0 list-none border-t border-site-border p-0">
+    <ul className="medapp-list">
       {rows.map((r) => {
         const existing = r.school ? existingOf(r.school.slug, r.program) : undefined;
         const willWrite = r.milestones.filter((m) => writes(r, m, statusOf(m, existing, cycleYear, now))).length;
         return (
-          <li key={r.key} className="border-b border-site-border py-3">
+          <li key={r.key}>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <label className="flex min-h-11 min-w-48 flex-1 items-center gap-2 pointer-coarse:min-h-11">
                 <input
@@ -207,17 +216,20 @@ export function ImportPreview({
                   checked={r.include}
                   disabled={!r.school}
                   aria-label={t('import-row-label', {
-                    school: r.school?.name ?? (r.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' })),
+                    school:
+                      r.school?.name ??
+                      (r.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' })),
                     defaultValue: 'Include {{school}}',
                   })}
                   onChange={(e) => patchRow(r.key, { include: e.target.checked })}
                 />
                 <span className="min-w-0">
-                  <span className="t-body block">{r.school
+                  <span className="medapp-text block">
+                    {r.school
                       ? r.school.name
                       : r.schoolName || t('import-unrecognised-school', { defaultValue: 'Unrecognised school' })}
                   </span>
-                  <span className="t-meta block">
+                  <span className="medapp-meta block">
                     {r.school
                       ? t('import-row-meta', {
                           degree: r.school.degree,
@@ -229,8 +241,7 @@ export function ImportPreview({
                 </span>
               </label>
               {r.school ? (
-                <Select
-                  controlSize="sm"
+                <MedSelect
                   aria-label={t('program-select-label', { defaultValue: 'Program' })}
                   value={r.program}
                   disabled={!r.include}
@@ -238,7 +249,7 @@ export function ImportPreview({
                 >
                   <option value="REG">{programFilterLabel('REG', r.school.degree)}</option>
                   <option value="PHD">{programFilterLabel('PHD', r.school.degree)}</option>
-                </Select>
+                </MedSelect>
               ) : null}
             </div>
             {!r.school ? (
@@ -263,7 +274,7 @@ export function ImportPreview({
                   ))}
                 </ul>
                 {r.include && willWrite === 0 ? (
-                  <p className="t-meta m-0 mt-1 ps-6 pointer-coarse:ps-7">
+                  <p className="medapp-meta mt-1 ps-6 pointer-coarse:ps-7">
                     {t('import-row-nothing', { defaultValue: 'Nothing here will be added.' })}
                   </p>
                 ) : null}

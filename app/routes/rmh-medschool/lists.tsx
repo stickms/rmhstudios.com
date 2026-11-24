@@ -9,7 +9,7 @@ import { ListsPage } from '@features/medschools/ui/lists/ListsPage';
  * data comes from `me/**`, which declares no cache. Signed out, the loader's fetches fail quietly and the page shows
  * the site's sign-in prompt (precedent: `tracker.tsx`, `wallet.tsx`).
  */
-export const Route = createFileRoute('/_site/rmh-medschool/lists')({
+export const Route = createFileRoute('/rmh-medschool/lists')({
   head: definePage({
     path: '/rmh-medschool/lists',
     title: 'My lists | RMH Studios',

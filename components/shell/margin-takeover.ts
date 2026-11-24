@@ -12,12 +12,12 @@ export interface MarginTakeover {
   Rail: LazyExoticComponent<ComponentType>;
 }
 
-export const MARGIN_TAKEOVERS: readonly MarginTakeover[] = [
-  {
-    prefix: '/rmh-medschool',
-    Rail: lazy(() => import('@features/medschools/ui/rail/ActivityRail')),
-  },
-];
+/**
+ * No section takes the margin today. `/rmh-medschool` did until it became a full-screen app (roadmap item 11, owner
+ * 2026-11-23): it has no Steel shell, so its live rail is mounted by `features/medschools/ui/shell/MedApp.tsx` instead.
+ * The mechanism stays for the next section that wants one.
+ */
+export const MARGIN_TAKEOVERS: readonly MarginTakeover[] = [];
 
 export function takeoverFor(pathname: string): MarginTakeover | null {
   return MARGIN_TAKEOVERS.find((t) => pathname === t.prefix || pathname.startsWith(`${t.prefix}/`)) ?? null;

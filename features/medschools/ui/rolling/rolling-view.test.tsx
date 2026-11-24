@@ -68,7 +68,7 @@ describe('RollingView', () => {
     expect(html).toContain('“We review duke applications as they arrive.”');
     expect(html).toContain('href="https://duke.example/admissions"');
     expect(html).toContain('Source: duke School admissions page, checked Nov 20, 2026');
-    expect(html).toContain('class="underline"');
+    expect(html).toContain('class="medapp-link"');
   });
 
   it('keeps the order it is given', () => {

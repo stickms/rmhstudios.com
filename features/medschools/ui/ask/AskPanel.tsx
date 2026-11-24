@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useSession } from '@/components/session/session-context';
-import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
-import { Skeleton } from '@/components/ui/skeleton';
+import { MedSignedOut } from '../MedSignedOut';
 import { useArrival } from '@/components/ui/arrive';
 import { readString, writeString } from '@/lib/core/persist';
 import { errorField } from '@/lib/http';
@@ -27,16 +26,16 @@ function PendingView({ think }: { think: boolean }) {
   }, [think]);
   return (
     <div role="status" aria-busy="true" className="mt-6">
-      <p className="t-meta m-0">
+      <p className="medapp-meta">
         {think
           ? t('ask-pending-thinking', { defaultValue: 'Thinking… {{n}} s', n: `\u2068${elapsed}\u2069` })
           : t('ask-pending', { defaultValue: 'Checking the data. This takes a few seconds.' })}
       </p>
-      <div aria-hidden="true" className="mt-2 border-t border-site-border">
+      <div aria-hidden="true" className="mt-2 border-t border-app-border">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="border-b border-site-border py-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="mt-2 h-4 w-2/3" />
+          <div key={i} className="flex flex-col gap-2 border-b border-app-border py-3">
+            <span className="medapp-skeleton h-4 w-full" />
+            <span className="medapp-skeleton h-4 w-2/3" />
           </div>
         ))}
       </div>
@@ -97,7 +96,7 @@ export function AskPanel({
   if (!signedIn) {
     if (sessionPending) return null;
     return (
-      <SignedOutPrompt
+      <MedSignedOut
         title={t('ask-signed-out-title', { defaultValue: 'Sign in to ask a question' })}
         description={t('ask-signed-out-body', {
           defaultValue: 'Answers use RMH’s public data. You need an account to ask.',
@@ -137,11 +136,13 @@ export function AskPanel({
       className="flex flex-col gap-3"
       aria-label={title ? undefined : t('ask-heading', { defaultValue: 'Ask the data' })}
     >
-      {title ? <h2 className="t-heading m-0">{title}</h2> : null}
+      {title ? <h2 className="medapp-h2">{title}</h2> : null}
       <AskForm
         question={question}
         onQuestion={setQuestion}
-        onSubmit={() => run.ask({ question: question.trim(), ...(slug ? { slug } : {}), ...(thinkNow ? { think: true } : {}) })}
+        onSubmit={() =>
+          run.ask({ question: question.trim(), ...(slug ? { slug } : {}), ...(thinkNow ? { think: true } : {}) })
+        }
         onCancel={run.cancel}
         pending={run.state === 'pending'}
         configured={configured}
@@ -157,7 +158,7 @@ export function AskPanel({
       <LimitRequest tier={status.data?.tier ?? null} />
       {run.state === 'pending' ? <PendingView think={thinkNow} /> : null}
       {errorText ? (
-        <p className="t-body m-0 border-t border-site-border pt-3" role="alert">
+        <p className="medapp-text border-t border-app-border pt-3" role="alert">
           {errorText}
         </p>
       ) : null}

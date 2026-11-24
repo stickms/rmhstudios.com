@@ -597,7 +597,7 @@ describe('lists and preferences', () => {
     // The program toggles are aria-pressed buttons; the member's preference narrows them, the public default does not.
     const pressed = (html: string) =>
       Object.fromEntries(
-        [...html.matchAll(/aria-pressed="(true|false)"[^>]*><span[^>]*>(MD|MD-PhD|DO|DO-PhD)<\/span>/g)].map((m) => [
+        [...html.matchAll(/aria-pressed="(true|false)"[^>]*>(?:<span[^>]*>)?(MD|MD-PhD|DO|DO-PhD)</g)].map((m) => [
           m[2],
           m[1],
         ]),
@@ -1101,6 +1101,15 @@ describe('secondary turnaround', () => {
     expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before);
     expect((await putMilestone(a, appId, 'SECONDARY', dayAgo(9))).status).toBe(200);
     expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before + 1);
+    await a.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
+  });
+
+  it('MATRICULATED is accepted privately and never becomes a public event', async () => {
+    expect((await putCycle(a, true)).status).toBe(200);
+    const appId = await addApp(a, PRIVATE_MD_SLUG);
+    const before = await rmhEventCount(PRIVATE_MD_ID);
+    expect((await putMilestone(a, appId, 'MATRICULATED', dayAgo(2))).status).toBe(200);
+    expect(await rmhEventCount(PRIVATE_MD_ID)).toBe(before);
     await a.client.request('DELETE', `/api/medschools/me/tracker/cycle?cycleYear=${CYCLE}`);
   });
 });

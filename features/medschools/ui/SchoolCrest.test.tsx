@@ -13,7 +13,7 @@ describe('SchoolCrest', () => {
     expect(html).toContain('loading="lazy"');
     expect(html).toContain('decoding="async"');
     expect(html).toContain('width="40"');
-    expect(html).toContain('bg-site-bg-subtle');
+    expect(html).toContain('medapp-crest');
   });
   it('renders aria-hidden initials without a crest', () => {
     const html = renderToString(<SchoolCrest slug="no-such-school" name="The University of Nowhere" />);
@@ -25,11 +25,11 @@ describe('SchoolCrest', () => {
     expect(crestInitials('Harvard Medical School')).toBe('HM');
     expect(crestInitials('')).toBe('');
   });
-  it('uses site tokens only', () => {
+  it('uses app tokens only', () => {
     const src = readFileSync('features/medschools/ui/SchoolCrest.tsx', 'utf8');
     expect(src).not.toMatch(
       /rounded-(sm|md|lg|xl|full)\b|#[0-9a-f]{3,6}\b|\b(bg|text|border)-(white|black|gray|slate|zinc|neutral)/,
     );
-    expect(src).toContain('rounded-site-sm');
+    expect(src).toContain('medapp-crest');
   });
 });

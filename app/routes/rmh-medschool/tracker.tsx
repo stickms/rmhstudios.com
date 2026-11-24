@@ -10,7 +10,7 @@ import { TrackerPage } from '@features/medschools/ui/tracker/TrackerPage';
  * comes from `me/**`, which declares no cache. Signed out, the loader's fetch fails quietly and the page shows the
  * site's sign-in prompt (precedent: `wallet.tsx`).
  */
-export const Route = createFileRoute('/_site/rmh-medschool/tracker')({
+export const Route = createFileRoute('/rmh-medschool/tracker')({
   head: definePage({
     path: '/rmh-medschool/tracker',
     title: 'My tracker | RMH Studios',

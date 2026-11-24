@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import type { MedChartedTypeId, MedEventTypeId } from '../medschools.contract';
 import { CATEGORY_STYLE } from './charts/chartColors';
 import { Swatch } from './charts/ChartFrame';
@@ -40,29 +38,24 @@ export function CategoryToggles({
     <div
       role="group"
       aria-label={t('category-toggles-label', { defaultValue: 'Show categories' })}
-      className="flex flex-wrap gap-2"
+      className="medapp-chips"
     >
       {ORDER.map((type) => {
         const pressed = value.includes(type);
         return (
-          <Button
+          <button
             key={type}
             type="button"
-            variant="ghost"
-            size="xs"
-            aria-pressed={pressed}
-            // Pressed is an ink border and weight, unpressed a rule, muted text and a dimmed swatch: state is never
+            // Pressed is a filled chip with weight 600, unpressed muted text and a dimmed swatch: state is never
             // colour alone (A2).
-            className={cn(
-              'border',
-              pressed ? 'border-site-text font-semibold' : 'border-site-border text-site-text-muted',
-            )}
+            className="medapp-chip medapp-chip--xs"
+            aria-pressed={pressed}
             aria-disabled={pressed && onCount <= 1 ? true : undefined}
             onClick={() => onChange(toggleCategory(value, type))}
           >
             <Swatch {...CATEGORY_STYLE[type]} dim={!pressed} />
             {eventLabel(type)}
-          </Button>
+          </button>
         );
       })}
     </div>

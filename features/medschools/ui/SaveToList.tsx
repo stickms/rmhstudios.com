@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bookmark, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { IconButton } from '@/components/ui/icon-button';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { usePrompt } from '@/components/ui/prompt-dialog';
 import { useRefusalText } from '@/components/errors/useRefusalText';
@@ -90,16 +89,17 @@ export function SaveToList({
 
   return (
     <>
-      <IconButton
+      <button
         ref={triggerRef}
-        icon={Bookmark}
-        label={t('save-trigger', { defaultValue: 'Save {{name}} to a list', name: school.name })}
+        type="button"
+        className="medapp-round"
+        aria-label={t('save-trigger', { defaultValue: 'Save {{name}} to a list', name: school.name })}
         aria-haspopup="menu"
         aria-expanded={open}
-        showTooltip={false}
-        className="pointer-coarse:min-h-11"
         onClick={() => setOpen((v) => !v)}
-      />
+      >
+        <Bookmark aria-hidden size={18} />
+      </button>
       <AnchoredMenu
         open={open}
         onClose={() => setOpen(false)}

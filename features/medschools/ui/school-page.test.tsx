@@ -141,9 +141,9 @@ const seedActivity =
   };
 
 describe('route file', () => {
-  const src = root('../../../app/routes/_site/rmh-medschool/$slug.tsx');
+  const src = root('../../../app/routes/rmh-medschool/$slug.tsx');
   it('is thin: validateSearch, strip defaults, notFound through the loader, card and breadcrumbs, no charts', () => {
-    expect(src).toContain("createFileRoute('/_site/rmh-medschool/$slug')");
+    expect(src).toContain("createFileRoute('/rmh-medschool/$slug')");
     expect(src).toContain('validateSearch: validateSchoolSearch');
     expect(src).toContain('stripSearchParams(SCHOOL_SEARCH_DEFAULTS)');
     expect(src).toContain('definePage');
@@ -153,11 +153,12 @@ describe('route file', () => {
     expect(src).not.toMatch(/ui\/charts|chart-geometry|d3-/);
     expect(root('../medschools.queries.ts')).toContain('throw notFound()');
   });
-  it('SchoolPage uses the shared tab strip in link mode, with no hand-rolled strip', () => {
+  it('SchoolPage draws its sections as a nav of links with aria-current, never a tablist', () => {
     const page = root('./SchoolPage.tsx');
-    expect(page).toContain('PageTabs');
-    expect(page).toContain('renderTab');
-    expect(page).not.toMatch(/aria-selected|layoutId/);
+    expect(page).toContain('medapp-pills');
+    expect(page).toContain("aria-current={search.tab === id ? 'page' : undefined}");
+    for (const banned of ['role="tab' + 'list"', 'aria-' + 'selected', 'layout' + 'Id', 'Page' + 'Tabs'])
+      expect(page).not.toContain(banned);
   });
   it('SchoolLink is gone: links are typed', () => {
     expect(() => root('./SchoolLink.tsx')).toThrow();
@@ -209,14 +210,14 @@ describe('SchoolPage', () => {
     expect(table).toContain('>Admit<');
     expect(table).toContain('>SDN<');
     expect(table).not.toContain('Student Doctor Network</th>');
-    expect(table).toContain('font-semibold');
+    expect(table).toContain('is-primary');
     expect(table).toContain('(primary)');
   });
 
   it('the school header carries the crest (decorative) beside the place line, and the name is the only title', () => {
     h.search = {};
     const html = render(seedActivity(activity()));
-    expect(html).toContain('size-10');
+    expect(html).toContain('medapp-crest--76');
     expect(html).toMatch(/<img[^>]+alt=""/);
     expect(html.match(/<h1>/g)).toHaveLength(1);
   });
@@ -249,7 +250,7 @@ describe('SchoolPage', () => {
       qc.setQueryData(schoolQuery('duke').queryKey, detail());
       qc.setQueryData(historyQuery('duke', { program: 'ALL', type: 'INTERVIEW' }).queryKey, hist);
     });
-    const row = html.slice(html.indexOf('flex flex-wrap gap-x-6 gap-y-3'));
+    const row = html.slice(html.indexOf('medapp-controls'));
     const head = row.slice(0, row.indexOf('<figure'));
     // The program toggles (a group), then the category and source single-select groups (O7).
     expect(head).toContain('aria-label="Programs"');
@@ -331,8 +332,8 @@ describe('SchoolPage', () => {
       html.indexOf('</div>', html.indexOf('aria-label="Programs"')),
     );
     expect(group.match(/<button/g)).toHaveLength(2);
-    expect(group).toContain('>DO</span>');
-    expect(group).toContain('>DO-PhD</span>');
+    expect(group).toContain('>DO<');
+    expect(group).toContain('>DO-PhD<');
     expect(group).not.toContain('MD');
     // The default program is All: both toggles are on.
     expect(group.match(/aria-pressed="true"/g)).toHaveLength(2);

@@ -3,11 +3,11 @@ import { Link } from '@tanstack/react-router';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { Button } from '@/components/ui/button';
+import { MedButton } from '../controls/MedButton';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { IconButton } from '@/components/ui/icon-button';
+import { MedIconButton } from '../controls/MedIconButton';
 import { MenuItem } from '@/components/ui/menu';
-import { Textarea } from '@/components/ui/textarea';
+import { MedTextarea } from '../controls/MedField';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { formatUtcDay } from '../../engine/public-read';
@@ -15,6 +15,9 @@ import { SCHOOL_SEARCH_DEFAULTS } from '../../engine/search';
 import { LIMITS, type MilestoneType } from '../../engine/tracker';
 import type { ChanceDto, TrackerApplicationDto } from '../../medschools.contract';
 import { useMedLabels } from '../labels';
+import { StatusIcon } from '../status/StatusIcon';
+import { StatusText } from '../status/StatusText';
+import { statusOfMilestone } from '../status/status';
 import { ChanceLine } from './ChanceLine';
 import { MilestoneForm } from './MilestoneForm';
 import { SilenceLine } from './SilenceLine';
@@ -94,22 +97,22 @@ export function ApplicationRow({
   };
 
   return (
-    <li className="border-b border-site-border py-3">
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-        <div className="min-w-44 flex-1">
+    <li className="medapp-item">
+      <div className="medapp-item__head">
+        <div className="medapp-item__title">
           {school.active ? (
             <Link
               to="/rmh-medschool/$slug"
               params={{ slug: school.slug }}
               search={SCHOOL_SEARCH_DEFAULTS}
-              className="t-body"
+              className="medapp-text medapp-link"
             >
               {school.name}
             </Link>
           ) : (
-            <span className="t-body">{school.name}</span>
+            <span className="medapp-text">{school.name}</span>
           )}
-          <p className="t-meta m-0">
+          <p className="medapp-meta">
             {t('tracker-school-meta', {
               defaultValue: '{{degree}} · {{state}} · {{program}}',
               degree: school.degree,
@@ -118,17 +121,16 @@ export function ApplicationRow({
             })}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => setPanel({ kind: 'milestone' })}>
+        <div className="medapp-item__actions">
+          <MedButton variant="ghost" onClick={() => setPanel({ kind: 'milestone' })}>
             {t('tracker-add-milestone', { defaultValue: 'Add milestone' })}
-          </Button>
-          <IconButton
+          </MedButton>
+          <MedIconButton
             ref={triggerRef}
             icon={MoreHorizontal}
             label={t('tracker-row-actions', { defaultValue: 'Actions for {{school}}', school: school.shortName })}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            showTooltip={false}
             onClick={() => setMenuOpen((v) => !v)}
           />
           <AnchoredMenu
@@ -163,23 +165,32 @@ export function ApplicationRow({
       </div>
 
       {app.milestones.length > 0 ? (
-        <ul className="m-0 mt-1 -ms-3 flex list-none flex-wrap gap-x-1 gap-y-0 p-0">
+        <ul className="medapp-chips mt-2">
           {app.milestones.map((m) => {
             const label = t('tracker-milestone-line', {
               defaultValue: '{{type}}, {{date}}',
               type: milestoneLabel(m.type),
               date: formatUtcDay(m.date, locale),
             });
+            // A decision or update is drawn in its status colour with its icon; the words always print.
+            const status = statusOfMilestone(m.type);
             return (
               <li key={m.type}>
-                <Button
+                <MedButton
                   variant="ghost"
                   size="xs"
                   aria-label={t('tracker-milestone-edit', { defaultValue: 'Edit {{milestone}}', milestone: label })}
                   onClick={() => setPanel({ kind: 'milestone', editing: m })}
                 >
-                  {label}
-                </Button>
+                  {status ? (
+                    <>
+                      <StatusIcon status={status} size="sm" />
+                      <StatusText status={status}>{label}</StatusText>
+                    </>
+                  ) : (
+                    label
+                  )}
+                </MedButton>
               </li>
             );
           })}
@@ -189,7 +200,7 @@ export function ApplicationRow({
       <SilenceLine chance={chance} />
       <ChanceLine chance={chance} />
 
-      {app.notes && panel.kind !== 'notes' ? <p className="t-meta m-0 mt-2 whitespace-pre-wrap">{app.notes}</p> : null}
+      {app.notes && panel.kind !== 'notes' ? <p className="medapp-meta mt-2 whitespace-pre-wrap">{app.notes}</p> : null}
 
       {panel.kind === 'milestone' ? (
         <MilestoneForm
@@ -215,7 +226,7 @@ export function ApplicationRow({
 
       {panel.kind === 'notes' ? (
         <form
-          className="mt-3 flex flex-col gap-2"
+          className="medapp-stack mt-3"
           onSubmit={(e) => {
             e.preventDefault();
             void guarded(async () => {
@@ -224,7 +235,7 @@ export function ApplicationRow({
             });
           }}
         >
-          <Textarea
+          <MedTextarea
             aria-label={t('tracker-notes-label', { defaultValue: 'Notes' })}
             maxLength={LIMITS.trackerNotes}
             value={notes}
@@ -232,19 +243,19 @@ export function ApplicationRow({
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
           />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" loading={busy}>
+          <div className="medapp-chips">
+            <MedButton type="submit" loading={busy}>
               {t('tracker-save', { defaultValue: 'Save' })}
-            </Button>
-            <Button type="button" variant="ghost" disabled={busy} onClick={close}>
+            </MedButton>
+            <MedButton type="button" variant="ghost" disabled={busy} onClick={close}>
               {t('tracker-cancel', { defaultValue: 'Cancel' })}
-            </Button>
+            </MedButton>
           </div>
         </form>
       ) : null}
 
       {error ? (
-        <p className="t-meta m-0 mt-2" role="alert">
+        <p className="medapp-meta mt-2" role="alert">
           {error}
         </p>
       ) : null}

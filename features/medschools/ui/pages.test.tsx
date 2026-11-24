@@ -165,7 +165,7 @@ describe('IndexPage', () => {
     h.search = {};
     const html = withClient(seedIndex([]), <IndexPage />);
     expect(html).not.toContain('/rmh-medschool/duke');
-    expect(html).toContain('data-slot="empty-state"');
+    expect(html).toContain('No schools match.');
   });
 
   it('SSR parity: a preference fills a silent URL, the public query sits under the explicit key, not the empty one', () => {
@@ -343,11 +343,11 @@ describe('LivePage', () => {
 
 describe('route files', () => {
   for (const [file, path, parser, component] of [
-    ['index', '/_site/rmh-medschool/', 'validateIndexSearch', 'IndexPage'],
-    ['live', '/_site/rmh-medschool/live', 'validateLiveSearch', 'LivePage'],
+    ['index', '/rmh-medschool/', 'validateIndexSearch', 'IndexPage'],
+    ['live', '/rmh-medschool/live', 'validateLiveSearch', 'LivePage'],
   ] as const) {
     it(`${file}.tsx is a thin route`, () => {
-      const src = squash(root(`../../../app/routes/_site/rmh-medschool/${file}.tsx`));
+      const src = squash(root(`../../../app/routes/rmh-medschool/${file}.tsx`));
       expect(src).toContain(`createFileRoute('${path}')`);
       expect(src).toContain('head:definePage(');
       expect(src).toContain(`validateSearch:${parser}`);
@@ -362,7 +362,7 @@ describe('route files', () => {
 
   it('every public loader awaits the private prefs first, then prefetches public queries with explicit parameters', () => {
     for (const file of ['index', 'live', '$slug']) {
-      const src = root(`../../../app/routes/_site/rmh-medschool/${file}.tsx`);
+      const src = root(`../../../app/routes/rmh-medschool/${file}.tsx`);
       const at = src.indexOf('loadPrefs(');
       expect(at, file).toBeGreaterThan(-1);
       expect(src.indexOf('await loadPrefs(') < src.search(/prefetch\w*\(|loadSchoolHead\(/), file).toBe(true);
@@ -381,14 +381,14 @@ describe('route files', () => {
 
   it('/tracker and /lists have their own route files next to $slug', () => {
     for (const f of ['tracker', 'lists', 'ask', '$slug']) {
-      expect(() => root(`../../../app/routes/_site/rmh-medschool/${f}.tsx`)).not.toThrow();
+      expect(() => root(`../../../app/routes/rmh-medschool/${f}.tsx`)).not.toThrow();
     }
   });
 });
 
 describe('/rmh-medschool/ask', () => {
   it('is a noindex route that is in no sitemap list and no Services hub', () => {
-    const route = root('../../../app/routes/_site/rmh-medschool/ask.tsx');
+    const route = root('../../../app/routes/rmh-medschool/ask.tsx');
     expect(route).toContain('noIndex: true');
     expect(route).toContain('definePage');
     expect(root('../../../lib/sitemap.ts')).toContain("'/rmh-medschool/ask': 'personal'");

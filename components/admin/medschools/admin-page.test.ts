@@ -9,7 +9,7 @@ const panel = read('./AliasMissesPanel.tsx');
 const page = read('./AdminMedSchoolsPage.tsx');
 const limits = read('./QaLimitRequestsPanel.tsx');
 const link = read('./AdminMedSchoolsLink.tsx');
-const adminSearch = read('../engine/admin-search.ts');
+const adminSearch = read('../../../features/medschools/engine/admin-search.ts');
 
 describe('medschools admin page', () => {
   it('route file registers /_site/admin/medschools with the panel', () => {

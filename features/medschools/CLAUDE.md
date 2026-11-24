@@ -11,7 +11,7 @@ public pages (phase 3) read it.
 
 ## What is public (phase 3)
 
-Signed-out readable, in the `_site` shell (Steel), not a full-screen app:
+Signed-out readable, in the full-screen app frame of the redesign (see "Design"), not the `_site` shell:
 
 | Route                  | Page                                                                                           |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
@@ -36,6 +36,75 @@ but not an aggregate of tracker rows: see "AI Q&A (phase 6)".
 (`lib/search/catalog.ts`), **not** in the games/apps catalog. There is no `catalog.ts`, no card art, no image manifest
 row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts` pins this. `/rmh-medschool` and
 `/rmh-medschool/live` are `STATIC_ROUTES` in `lib/sitemap.ts`; school pages are the `medschools` sitemap chunk.
+
+## Design: a full-screen app (roadmap item 11, phase A)
+
+Owner-approved 2026-11-23 and moved up 2026-11-24 (roadmap item 11; Steel §18 D13 is answered by it). The pages left the
+`_site` Steel shell for the `--app-*` app tier, so the Steel content rules (rows on rules, no radius, no shadow) **no
+longer govern this feature**; the admin page does not move with it (`components/admin/medschools/`, still Steel). Plan:
+`docs/superpowers/plans/2026-11-24-rmh-medschool-redesign.md`.
+
+- **Routes.** `app/routes/rmh-medschool.tsx` is a top-level layout (`MedApp` around an `<Outlet/>`, its own
+  `errorComponent` and `notFoundComponent`, no auth gate); the pages are `app/routes/rmh-medschool/*` with unchanged
+  URLs. `features/medschools` is in `FULLSCREEN_TIER_DIRS` and `rmh-medschool` in `FULLSCREEN_ROUTE_SEGMENTS`
+  (`eslint-local-rules/design-scope.js`) and in `APP_TIER_DIRS` (`lib/__tests__/css-tiers.ts`, so the CSS stays under
+  the `!important`, keyframes and hex gates). `/rmh-medschool` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes
+  the lean site stylesheet, not the app superset (`--app-*` utilities are already in it).
+- **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, the live rail at >= 1280px), `MedTopBar`
+  (44px round back button, always present: the session's history, else `/services` from the index and the index from
+  everywhere else; Fraunces title; the light/dark toggle), `useMedMode` and `ThemeToggle`. The Steel shell's overlays
+  (command palette, "/" shortcut, what's-new) are not here, as in the other apps; the margin takeover entry is gone and
+  `ActivityRail` is mounted by `MedApp`.
+- **Mode.** Light or dark, device-local (`rmh-medschool-mode`, `{"dark":boolean}`, `engine/mode.ts`), defaulting to the
+  OS preference; it does not follow the site Day/Night edition. RMH Music's design: `APP_ROUTE_THEME_BG` entry, the
+  `lib/prepaint/theme-routes.ts` list, the device registry, `data-app-dark`.
+- **Tokens (`ui/medschools.css`).** `--app-*` for light and dark; `--app-med-*` for the wash, the seven status pairs
+  (`swatch`, `ink`, `text`; plus a neutral `withdrawn`) and the chart series (`-n` line, `-n-fill` pastel fill). Every
+  colour is a token (the hex gate strips only `--app-*` declarations). Nothing in `ui/` reads `--site-*`
+  (`ui-rules.test.ts` holds it for the markup and caps the stylesheet's `--site-*` declarations to one block): only a
+  small **overlay bridge** at the end of the palettes, on `<html>` while the app is open, points the Steel names the
+  shared anchored menu, confirm and prompt dialogs, toaster and `SortableList` buttons read at this palette (they portal
+  outside the app root and are not worth a second copy).
+- **Type.** Body is DM Sans (the site font); Fraunces for headings only (`--app-font-display`), self-hosted
+  (`app/fonts/fraunces.css`, preloaded by the layout).
+- **The wash.** `public/images/medschools/wash-{light,dark}.webp`, pre-rendered by `scripts/medschools/render-wash.mjs`
+  from the mockup's blobs; a `background-image` of `.medapp-page`, in the flow, never fixed, never animated, fading to
+  the exact ground at each tile's top and bottom (iOS fills its bars from the ground). Dropped under
+  `prefers-reduced-data`.
+- **Phase B1 (built).** The index, live page, activity rail and their controls are on `--app-*` / `--app-med-*` and the
+  `.medapp-*` classes at the foot of `medschools.css`: pill chips (`.medapp-chip`: `aria-pressed` / `aria-checked` is a
+  filled wash, a stronger border and weight 600; 36px, 44px on touch), a paper panel (`.medapp-panel`) holding the rows,
+  `PageHead` (`ui/shell/`) for the one `<h1>` in place of `PageLayout`'s title row and duplicate back link.
+  `SchoolCrest`, `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList`, `PrefsNote`,
+  `WaveNote` and `skeletons` no longer read `--site-*`. Phase B3 finished the rest.
+- **Phase B2 (built).** The school page: `PageHead` with `crest` and `actions`, `SchoolFacts` as wash tiles, and the
+  sections as `<nav class="medapp-pills">` of links with `aria-current` (not a tablist; the design-consistency gate
+  greps `role="tablist"`, `aria-selected`, `layoutId` and accent underline bars only). Every tab, the charts
+  (`.medapp-chart`) and the Interviews practice sub-tab are on `--app-*`; `MedEmpty` is the empty and error panel.
+- **Phase B3 (built).** The tracker (with its import, timeline, silence and chance lines), lists, Ask, Practice and the
+  rolling and overlap disclosures are on `--app-*` with `PageHead` and paper panels around groups (rows on rules inside,
+  `.medapp-list`, `.medapp-item`, `.medapp-subrule`, `.medapp-disclosure`). Form controls are the app's own, in
+  `ui/controls/`: `MedButton` (the chip: primary, secondary, ghost, danger), `MedIconButton` (44px round, label is the
+  name and the `title`), `MedInput` and `MedTextarea` (`.medapp-field`: 44px, 14px radius, paper, 1px border),
+  `MedSearch`, `MedSelect` (the shared Radix select in its `app` tier, so the list portals into `.app-theme`) and
+  `MedSwitch` (`role="switch"`, 44px target). They are native elements with the app tier's global focus ring. A page
+  uses these, `MedEmpty` and `MedSignedOut`, never the site's `Button`, `Select`, `SearchField`, `Switch`, `Textarea`,
+  `PageLayout` or `SignedOutPrompt` (the rules test fails on the import).
+- **Status (`ui/status/`).** `status.ts` maps the public `MedEventType` and the tracker milestones onto eight keys:
+  acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
+  interview orange, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
+  beside its words), `StatusText` the words in the same hue; colour is never the only cue, the label always prints. The
+  public feed's `SECONDARY` is "secondary **received**" (the school sent one), so it reads "Secondary"; only the private
+  `SECONDARY_SUBMITTED` milestone reads "Secondary submitted", in the same light blue. `status.test.tsx` reads
+  `medschools.css` and holds text at 4.5:1 and icon ink at 3:1 on the paper, the ground and (ink) its own swatch, light
+  and dark; none of the mockup's values needed darkening.
+- **Matriculating.** `MATRICULATED` is a private tracker milestone, added after `ACCEPTANCE` by the additive migration
+  `20261207090000_medschools_matriculated`. Like `SECONDARY_SUBMITTED` it is `SHAREABLE: null`, so share-sync writes no
+  event or count for it and no public figure, aggregate or survival curve reads it. It is purple in the member's own
+  tracker row and timeline, measured from the acceptance, a closing decision for the chance line, and takes the
+  acceptance's cycle rule on import. The live feed shows it only if a source ever reports it (none does).
+- **Wash on phones.** The tile is rendered with a 34px blur and blobs 1.3 times larger, and `.medapp-page` sizes it
+  `max(100%, 900px)` wide, so a phone shows a centred crop with broad soft blobs; each asset is under 30 KB.
 
 ## The read rules (`engine/public-read.ts`, pure and client-safe)
 
@@ -75,22 +144,20 @@ row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts`
 React SVG, server-rendered (the charts are in the HTML with scripting off). **Owner O7 (2026-11-23)** supersedes O2's
 ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays open for the rest of the site.
 
-- **Colour (O7.1).** `--site-chart-1`..`-5` in `app/globals/tokens-themes.css` (Day and Night, exact values pinned in
-  `lib/__tests__/steel-tokens.test.ts`, which also holds that only this feature reads them). The slots are the first
-  five of the dataviz skill's reference palette, validated with its `validate_palette.js` against `--site-surface` (the
-  chart card) in each edition: adjacent CVD 9.1 Day / 8.4 Night, normal-vision 19.6 / 19.3; all five are at least 3:1 in
-  Night, and three (aqua, yellow, magenta) are 2.2-2.8:1 in Day, which the relief rule allows because every chart has a
-  legend, a dash cue and a data table. The mappings are fixed in `ui/charts/chartColors.ts` and never depend on rank or
-  on what is switched on: Interview 1 (blue), Rejection 2, Acceptance 3, Secondary 4, Waitlist 5; sources (per-type
-  charts) CycleTrack 1, Admit 2, SDN 3, RMH 4, MDApplicants 5; History cycles newest first 1..5. A component writes
-  `var(--site-chart-n)` through those maps, never a hex or a raw palette class. Dash and weight stay as the secondary
-  cue. Text is always `--site-text` / `--site-text-muted`, never a series colour. A bought theme does not restyle the
-  chart tokens (they follow the edition).
-- **Card and legend (O7.2).** `ChartFrame` is a card: `--site-surface`, 1px `--site-border`, `rounded-site`, `p-3`
-  (phone) / `sm:p-4`; caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per
-  series) is present for two or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as
-  `legend`: aria-pressed buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one
-  stays on). There are no end labels. The daily bars are one series, named by the title and the sources line.
+- **Colour (O7.1, moved in B2).** `--app-med-chart-1`..`-5` (line, at least 3:1 on paper and ground in both modes,
+  pinned by `charts.test.tsx` from `medschools.css`) and `-n-fill` (the pastel, used for `ArrivalBars` bodies) in
+  `ui/medschools.css`; the `--site-chart-*` tokens are gone. Mappings are fixed in `ui/charts/chartColors.ts` and never
+  depend on rank or on what is switched on: categories take their status hue (Secondary 1 blue, Interview 2 orange,
+  Acceptance 3 green, Rejection 4 red, Waitlist 5 yellow); sources (per-type charts) CycleTrack 1, Admit 2, SDN 3, RMH
+  4, MDApplicants 5; History cycles newest first 1..5. A component writes `var(--app-med-chart-n)` through those maps,
+  never a hex. Dash and weight stay as the secondary cue. Text is always `--app-text` / `--app-text-muted`. The dataviz
+  validator's contrast check passes; its chroma, dark-lightness and CVD checks do not for these status hues (see "Phase
+  B2 as built" in the redesign plan).
+- **Card and legend (O7.2).** `ChartFrame` is a paper panel (`.medapp-chart`: `--app-surface`, 1px `--app-border`);
+  caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per series) is present for two
+  or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as `legend`: aria-pressed
+  buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one stays on). There are no
+  end labels. The daily bars are one series, named by the title and the sources line.
 - **Tween (O7.3).** `tween.ts` (pure, injected scheduler) and `useTween.ts`: the y scale moves from the old to the new
   top in 280 ms, ease-out (`easeOutCubic`), when a toggle, program or source changes it. Lines, bars and gridlines
   follow the animated scale (`yTicksTween`: shared ticks stay, new ones fade in, old ones fade out); an interrupted
@@ -381,8 +448,8 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
 - **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
   `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
   (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
-  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred
-  (R13): a question may name a state and an interview format instead.
+  The admin page is `components/admin/medschools/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed
+  (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
 - **Tests.** Unit:
   `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
   `testing/integration/medschools-ask.test.ts` with `testing/integration/lib/fake-deepseek.ts` (the app is started with
@@ -519,8 +586,8 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
 
 ## Testing and verification
 
-- Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds Steel, i18n
-  and bundle rules for every ui file and the three routes.
+- Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds the app-tier,
+  i18n and bundle rules for every ui file and the route files.
 - Black box, public: `testing/integration/medschools-public.test.ts` (pinned key sets, no RMH or `contributors` in
   responses, no hashes in the HTML, the `programs` set on the index and live feed, the removed "today" block, 404 for
   unknown slugs, sitemap). It writes its own fixture school; CI's database is empty.
@@ -549,8 +616,9 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   `localStorage['rmh-style']` (`graphite` is Night), but a signed-in visit paints the ACCOUNT's saved edition over the
   device's (`lib/prepaint/account-seed.ts`), and the idle sync saves whatever the last visit used, so a Night pass that
   follows a Day pass paints Day on the tracker and lists pages unless the account is set first
-  (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they are ordinary
-  `_site` pages and `lib/prepaint/theme-routes.ts` does not exclude them.
+  (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they were ordinary
+  `_site` pages when this was written; since phase A they are an app route whose light/dark is `rmh-medschool-mode`, so
+  `visual-check.mjs` still asserts Steel R1 and edition classes and is due an update (phase B).
 - **Ask pages in the visual pass (phase 6).** `visual-check.mjs --fake-ai` also shoots the Ask page (signed out, idle,
   answered, partial, declined, my-chance, the wait, the cap reached and the 429 refusal) and the school page's panel
   (idle, answered). It hosts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` itself, so the app must be
@@ -575,11 +643,11 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
   preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/rmh-medschool/lists` holds
   the lists and the preferences (`#preferences`).
-- **Activity rail.** `components/shell/margin-takeover.ts` maps a path prefix to a lazy rail that replaces the shell
-  margin's search and lists (>= 1280px only; neither rendered nor fetched below). `ui/rail/ActivityRail.tsx` uses
-  `useLiveFeed` (60 s head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to
-  load older pages: data loading only, so B3's no-decorative-observer rule is untouched. Server side it is the live
-  endpoint with `q` (name, short name or an exact state code), `state` and `types`.
+- **Activity rail.** `ui/shell/MedApp.tsx` mounts the lazy rail beside the page (>= 1280px only; neither rendered nor
+  fetched below; it used to be the Steel shell's margin takeover). `ui/rail/ActivityRail.tsx` uses `useLiveFeed` (60 s
+  head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to load older pages: data
+  loading only, so B3's no-decorative-observer rule is untouched. Server side it is the live endpoint with `q` (name,
+  short name or an exact state code), `state` and `types`.
 - **When results arrive.** `GET /schools/$slug/arrivals`: weekday and Eastern-hour counts and per-cycle first and median
   report days, aggregated in SQL from ADMIT and SDN events with an exact time (SDN midnights are day-only and excluded).
   Aggregates only; a cycle needs 3 events; the arrays are empty (and the section hidden) under 10 events.
