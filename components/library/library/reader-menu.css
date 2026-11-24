@@ -1,0 +1,46 @@
+/* ─── Phone ⋯ menu ───────────────────────────────────────────────────────────── */
+.lib-reader__more-menu {
+  width: min(86vw, 320px);
+  max-width: min(86vw, 320px);
+  max-height: min(70vh, 520px);
+}
+.lib-reader__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--site-radius-sm);
+  background: none;
+  color: var(--site-text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.lib-reader__row:hover {
+  background: var(--site-bg-subtle);
+}
+.lib-reader__row.is-on {
+  color: var(--site-accent);
+}
+.lib-reader__row-chevron {
+  margin-left: auto;
+  color: var(--site-text-muted);
+}
+.lib-reader__row-chevron[data-open] {
+  transform: rotate(180deg);
+}
+.lib-reader__fold-body {
+  padding: 4px 0 8px 8px;
+  border-left: 1px solid var(--site-border);
+  margin-left: 18px;
+}
+/* The fold-out content brings its own wide-popover sizing; inline it fills the row. */
+.lib-reader__fold-body .lib-reader__marks-menu {
+  width: auto;
+}

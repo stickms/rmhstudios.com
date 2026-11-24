@@ -369,48 +369,100 @@ export function BookCanvas({
     return w * (single ? 0.7 : 0.42);
   };
 
+  // The turn starts on the first real horizontal movement, not on touch-down, so the
+  // swipe itself picks the direction (left = forward, right = back) and the leaf then
+  // tracks the finger 1:1 from that point. A touch that never moves is a tap: the
+  // edge you tapped turns the page.
+  const pending = useRef(false);
+  const lastX = useRef(0);
+  const lastT = useRef(0);
+  const velocity = useRef(0); // px/ms, signed like dx
+  const TAP_SLOP = 8;
+
   const onPointerDown = (e: React.PointerEvent) => {
     // Let the on-screen arrows (and any control) handle their own clicks — without
     // this, the wrapper would start a drag-turn on pointerdown and cancel it on
     // pointerup, swallowing the button click.
     if ((e.target as HTMLElement).closest('button, a, input')) return;
-    if (turn || anim.current.active) return;
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const rightHalf = e.clientX - rect.left > rect.width / 2;
-    const dir: Dir = rightHalf ? 'next' : 'prev';
-    if (!beginTurn(dir, true)) return;
-    dragging.current = true;
+    if (turnRef.current && !anim.current.active) return;
+    pending.current = true;
+    dragging.current = false;
     moved.current = false;
     dragStartX.current = e.clientX;
     dragStartY.current = e.clientY;
+    lastX.current = e.clientX;
+    lastT.current = e.timeStamp;
+    velocity.current = 0;
     tilt.current = 0;
     wrapRef.current?.setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging.current || !turn) return;
+    if (!pending.current && !dragging.current) return;
     const dx = e.clientX - dragStartX.current;
     const dy = e.clientY - dragStartY.current;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved.current = true;
+    if (pending.current) {
+      if (Math.abs(dx) < TAP_SLOP && Math.abs(dy) < TAP_SLOP) return;
+      moved.current = true;
+      // Mostly vertical: not a page turn. Let go so the stage can scroll.
+      if (Math.abs(dy) > Math.abs(dx)) {
+        pending.current = false;
+        return;
+      }
+      const dir: Dir = dx < 0 ? 'next' : 'prev';
+      if (!beginTurn(dir, true)) {
+        pending.current = false;
+        return;
+      }
+      pending.current = false;
+      dragging.current = true;
+      // Measure from where the turn began so the leaf starts flat under the finger.
+      dragStartX.current = e.clientX;
+      dragStartY.current = e.clientY;
+      lastX.current = e.clientX;
+      lastT.current = e.timeStamp;
+      return;
+    }
+    const t = turnRef.current;
+    if (!t) return;
+    const ddx = e.clientX - dragStartX.current;
+    const ddy = e.clientY - dragStartY.current;
     // Forward turns advance as you drag left; backward turns as you drag right.
-    const signed = turn.dir === 'next' ? -dx : dx;
+    const signed = t.dir === 'next' ? -ddx : ddx;
     progress.current = Math.min(1, Math.max(0, signed / dragSpan()));
+    const dt = e.timeStamp - lastT.current;
+    if (dt > 0) {
+      const v = ((e.clientX - lastX.current) / dt) * (t.dir === 'next' ? -1 : 1);
+      velocity.current = velocity.current * 0.6 + v * 0.4;
+    }
+    lastX.current = e.clientX;
+    lastT.current = e.timeStamp;
     // Vertical follow: drag up/down leans the page the same way (clamped).
     const h = wrapRef.current?.clientHeight ?? 600;
-    tilt.current = Math.max(-1, Math.min(1, dy / (h * 0.5)));
+    tilt.current = Math.max(-1, Math.min(1, ddy / (h * 0.5)));
   };
 
   const endDrag = (e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    dragging.current = false;
     try {
       wrapRef.current?.releasePointerCapture(e.pointerId);
     } catch {
       /* pointer may already be released */
     }
-    // A tap (no real drag) completes the turn; a drag uses the halfway threshold.
-    const target = !moved.current ? 1 : progress.current > 0.5 ? 1 : 0;
+    if (pending.current) {
+      pending.current = false;
+      // Never crossed the slop: a tap on the right half turns forward, left half back.
+      if (e.type === 'pointerup' && !moved.current) {
+        const rect = wrapRef.current?.getBoundingClientRect();
+        if (rect) beginTurn(e.clientX - rect.left > rect.width / 2 ? 'next' : 'prev', false);
+      }
+      return;
+    }
+    if (!dragging.current) return;
+    dragging.current = false;
+    tilt.current = 0;
+    // Past halfway, or flicked quickly the way the page is turning, completes the turn.
+    const flick = velocity.current > 0.5 && progress.current > 0.04;
+    const target = e.type === 'pointercancel' ? 0 : progress.current > 0.5 || flick ? 1 : 0;
     anim.current = {
       active: true,
       target,

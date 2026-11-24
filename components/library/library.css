@@ -2,5 +2,6 @@
    imported in source order and together are the one stylesheet this file used to be (redesign E4). */
 
 @import './library/catalog-reader.css';
+@import './library/reader-menu.css';
 @import './library/book-riffle.css';
 @import './library/sections-refresh.css';
