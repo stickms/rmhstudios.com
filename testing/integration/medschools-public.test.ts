@@ -936,7 +936,7 @@ describe('the public school facts endpoint', () => {
   it('shows the Entering class panel first on the Facts tab in the server HTML, and none without a profile', async () => {
     const html = String((await anon.get(`/med/${SLUG}?tab=facts`)).body);
     expect(html).toContain('Entering class');
-    expect(html).toContain('Class of 2030 · entered 2026');
+    expect(html).toContain('Entered 2026');
     expect(html).toContain('Median MCAT');
     expect(html).toContain('Figures as the school publishes them.');
     expect(html.indexOf('school-profile-heading')).toBeLessThan(html.indexOf('school-curriculum-heading'));
