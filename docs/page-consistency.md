@@ -110,10 +110,15 @@ Work through this for every new or edited page.
 - [ ] Colours, borders and text only via `site-*` utilities; radii via `rounded-site` and `rounded-site-sm`. No shadow
       on content.
 - [ ] **Rows on rules, not boxes (R3).** A list is rows with `border-b border-site-border`; columns are divided by a 1px
-      vertical rule. Use the divider primitives in `components/ui/rules.tsx`: `Section` for a group under a heading, `Columns`
-      for peer groups, `Cells` for a picture grid, `Notice` for an inline status, `Definitions` for label and value rows
-      (S7 to S11). A bordered box is for a control or a picture. Do not write `surface-card` or `surface-panel` on a
-      `_site` page; do not hand-roll `bg-site-surface border rounded-site` around content.
+      vertical rule. Use the divider primitives in `components/ui/rules.tsx`: `Section` for a group under a heading,
+      `Columns` for peer groups, `Cells` for a picture grid, `Notice` for an inline status, `Definitions` for label and
+      value rows (S7 to S11). A bordered box is for a control or a picture. Do not write `surface-card` or
+      `surface-panel` on a `_site` page; do not hand-roll `bg-site-surface border rounded-site` around content.
+- [ ] **Inset, floating rules; no gutter wrappers (S12, S13).** Rules come from the primitives or `.rule-row` (never a
+      full-width `border-b`); `.rule-row` only on a direct child of a single-column list. Do not wrap page content in
+      `px-*` or `p-4` under `PageLayout`: the frame already pads it (`lib/__tests__/steel-rules.test.ts`, kind
+      `ghost-box`). A card drawn by a stylesheet (not a TSX class) is invisible to that gate: grep the feature's `.css`
+      for a bordered, rounded, filled box before you call a page done.
 - [ ] Floating UI (menu, popover, dialog, toast) carries `surface-overlay` (or uses the `components/ui/` primitive that
       does); fields are `surface-field` or the `Input`, `Textarea`, `Select` primitives.
 - [ ] **Ink tracks its surface.** On a filled surface use its paired foreground (`bg-site-accent` takes

@@ -47,7 +47,7 @@ export function LibraryAlbums({
   if (allAlbums.length === 0 && !isAdmin) return null;
 
   return (
-    <section className="lib__section lib-albums relative lib-section-shell">
+    <section className="lib__section lib-albums relative lib-section-shell rule-section">
       <div className="lib__section-head lib-albums__head">
         <h2 className="lib__section-title">
           {t('section-albums', {
@@ -120,8 +120,7 @@ function AlbumCard({ album }: { album: Album }) {
         params={{
           albumId: album.id,
         }}
-        className="lib-album surface-press lib-orbit-card"
-        data-library-orbit=""
+        className="lib-album"
         aria-label={t('open-album', {
           title: album.title,
           defaultValue: 'Open {{title}}',

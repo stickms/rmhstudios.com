@@ -42,6 +42,26 @@
 .store-hero__title,
 .store-row__title,
 .store-hero__desc,
+.store-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+/* The badge (a category, a like count) is a small chip in the text line, not an overlay on the picture: the picture
+   is only 6rem wide and the chip covered most of its corner. */
+.store-row__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  font-weight: 500;
+  color: var(--site-text);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-sm);
+  white-space: nowrap;
+}
+
 .store-row__desc {
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -357,6 +377,11 @@
   width: 6rem;
   aspect-ratio: 4 / 3;
 }
+/* Generated art is square (persona avatars are 512 x 512): show all of it, not a landscape crop of the middle. */
+.store-row__art[data-shape='square'] {
+  width: 5rem;
+  aspect-ratio: 1 / 1;
+}
 @container (min-width: 36rem) {
   .store-rows {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -366,6 +391,9 @@
   }
   .store-row[data-wide] .store-row__art {
     width: 9rem;
+  }
+  .store-row[data-wide] .store-row__art[data-shape='square'] {
+    width: 7rem;
   }
   /* A pair shares a row: the first row of the pair keeps a gap before the rule, the second a gap after it. */
   .store-row[data-col='0']:not([data-wide]) {
@@ -387,6 +415,11 @@
   .store-row[data-last]::after {
     display: none;
   }
+}
+
+/* A group another list follows (the featured rows above the catalogue) keeps the rule under its last row. */
+.store-rows-wrap[data-trailing] .store-row:is(:last-child, [data-last])::after {
+  display: block;
 }
 
 /* ⓘ details button (curated builds), over the corner of the picture. */

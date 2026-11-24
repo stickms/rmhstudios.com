@@ -296,6 +296,32 @@ a viewer; both were tried and rejected.
   `t-label` and the value in `t-body`, a vertical rule between them only at `@xl` and wider. (`Definitions` and
   `Definition`, `.rule-defs`.)
 
+- S12. Inset and floating (owner, 2026-11-24). A horizontal rule stops `--rule-inset` (0.75rem) short of each side of
+  its block and a vertical rule stops `--rule-gap` (0.75rem) short of the rules above and below, so rules never touch
+  each other or the page edge. Each rule is a 1px `::before` or `::after`, never a border (a border cannot be inset).
+  Set both variables to 0 and the rules run edge to edge. A hand-written row that is not a `Cells` item takes `rule-row`
+  (a rule under it, none under the last child); use it only on a direct child of a single-column list, never on an
+  only-child wrapper inside an `<li>` and never in a grid of two or more columns (use `Cells`).
+- S13. No gutter inside the page frame. `PageLayout` already supplies the page's horizontal padding, so a page's content
+  does not add `px-*` or `p-4` of its own: a wrapper that does indents the content away from the title's left edge. The
+  gate calls a padded, borderless, unfilled wrapper a ghost box (below).
+- S14. Storefronts (`components/create/storefront.tsx`, the news-style catalogue). A catalogue is rows, not tiles:
+  `layoutRows(items)` pairs two short descriptions per row and gives a description over 100 characters a row to itself;
+  a lone narrow item before a wide one is widened, a lone last item stays half width (never stretched). A badge is an
+  inline chip in the row's meta line, never over the picture. Art whose source is square (persona avatars, 512x512) sets
+  `shape: 'square'` so it keeps one aspect ratio. A featured group ends with `trailingRule`.
+- S15. Hub lists (Services, Ventures, and any list of destinations) are `<Cells columns={2}>` of `row-hover` link rows.
+  A short sidebar label may differ from the page title (`tKey` plus `label`, e.g. `nav-ventures-short` "Ventures"
+  against the page's "RMH Ventures").
+
+The gate for all of this is `lib/__tests__/steel-rules.test.ts` (`scanSteelRules`). It fails four kinds with no
+allowlist: `bordered-group-box`, `retired-surface-role` (`surface-card`, `surface-panel`), `card-import` (`ui/card`) and
+`ghost-box`. Exemptions are a control, a picture or an overlay (and `kbd`, `figure`, inline-colour swatches), app-tier
+or brand palettes (`rounded-app`, `*-app-*`, `*-rebar-*`), and a class taken from an upper-case lookup table
+(`BAND[i]`). The scanner skips `${}` inside template literals, so a conditional fill is written with `cn(...)`. It reads
+TSX class strings only: a card drawn in a stylesheet is not seen by it, so a stylesheet is audited by hand (the
+Library's `lib--glass-playground` cards were such a case and were removed on 2026-11-24).
+
 Rules never touch the page edge on a phone: they run the width of the content column (18px gutter, L1). The primitives
 live in `components/ui/rules.tsx` and `app/styles/steel-rules.css`; `Card` is not a divider and remains for the app
 tier.

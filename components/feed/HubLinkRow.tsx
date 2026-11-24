@@ -3,7 +3,7 @@ import { ArrowRight, type LucideIcon } from 'lucide-react';
 
 /**
  * One destination on a hub page (/services, /ventures): icon, name, one line,
- * and the whole card is the link.
+ * and the whole row is the link.
  *
  * The hubs used to put each destination behind a tab and show one summary card
  * at a time, so five of six were hidden on every visit and the tab labels —
@@ -28,7 +28,7 @@ export function HubLinkRow({
   description: string;
 }) {
   const className =
-'row-hover group flex items-start gap-4 py-5';
+'row-hover group flex items-start gap-4 py-2';
   const body = (
     <>
       <span className="flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-accent">

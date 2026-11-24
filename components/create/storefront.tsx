@@ -47,6 +47,8 @@ export type StoreItem = {
   meta?: ReactNode;
   /** Call-to-action label for the hero / spotlight ("Play now", "Open"). */
   cta?: string;
+  /** Picture shape in a catalogue row: landscape by default; `square` for generated 1:1 art (persona avatars). */
+  shape?: 'square';
   /** Emoji fallback (personas) shown when there is no cover. */
   emoji?: string | null;
   /** Primary link — internal (full router path string) … */
@@ -276,7 +278,8 @@ type RowSlot = { item: StoreItem; wide: boolean; col: 0 | 1; last: boolean };
 
 /**
  * Lay the items out two to a row where they fit, in the order given. An item with a long description takes a whole
- * row; a short one before it, left without a partner, takes a whole row too, so no row has a hole. `col` says which
+ * row; a short one before it, left without a partner, takes a whole row too, so no row has a hole mid-list (a lone
+ * last item keeps half width). `col` says which
  * side of a pair an item is on (the second side draws the vertical rule) and `last` marks the items of the final row,
  * which draw no rule under them.
  */
@@ -297,7 +300,7 @@ export function layoutRows(items: StoreItem[]): RowSlot[] {
   }
   const final = slots[slots.length - 1];
   if (final) {
-    if (col === 1) final.wide = true;
+    // A lone last item stays half width: stretching a short entry across the row leaves a wide empty gap.
     final.last = true;
     const partner = slots[slots.length - 2];
     if (!final.wide && final.col === 1 && partner) partner.last = true;
@@ -323,13 +326,17 @@ function StoreRow({ slot, className }: { slot: RowSlot; className?: string | und
     >
       <PrimaryWrapper item={item} className="store-row__link" ariaLabel={item.title}>
         <div className="store-row__text">
-          {item.meta && <p className="store-row__meta t-meta">{item.meta}</p>}
+          {(item.badge || item.meta) && (
+            <div className="store-row__meta t-meta">
+              {item.badge && <span className="store-row__badge">{item.badge}</span>}
+              {item.meta && <span>{item.meta}</span>}
+            </div>
+          )}
           <p className="store-row__title t-heading">{item.title}</p>
           {item.description && <p className="store-row__desc t-body">{item.description}</p>}
         </div>
-        <div className="store-art store-row__art">
+        <div className="store-art store-row__art" data-shape={item.shape}>
           <Art item={item} {...coverFor(item)} />
-          {item.badge && <span className="store-art__badge">{item.badge}</span>}
         </div>
       </PrimaryWrapper>
       {item.detailsTo && (
@@ -351,14 +358,17 @@ function StoreRows({
   items,
   className,
   isNew,
+  trailingRule,
 }: {
   items: StoreItem[];
   className?: string | undefined;
   isNew?: ((id: string) => boolean) | undefined;
+  /** Draw the rule under the last row too, for a group that another list follows. */
+  trailingRule?: boolean | undefined;
 }) {
   const slots = useMemo(() => layoutRows(items), [items]);
   return (
-    <div className="store-rows-wrap">
+    <div className="store-rows-wrap" data-trailing={trailingRule ? '' : undefined}>
       <ul className={cn('store-rows', className)}>
         {slots.map((slot) => (
           <StoreRow key={slot.item.id} slot={slot} className={isNew?.(slot.item.id) ? ARRIVE : undefined} />
@@ -431,7 +441,7 @@ export function Storefront({
                 defaultValue: 'Featured',
               })}
             >
-              <StoreRows items={spotlight} />
+              <StoreRows items={spotlight} trailingRule />
             </section>
           )}
 

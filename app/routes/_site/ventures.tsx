@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Atom, Brain, FlaskConical, Landmark, Server, Shield, Vote, type LucideIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { HubLinkRow } from '@/components/feed/HubLinkRow';
+import { Cells } from '@/components/ui/rules';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
 /**
@@ -148,7 +149,7 @@ function VenturesPage() {
         defaultValue: 'The brands and programmes built around RMH Studios.',
       })}
     >
-      <ul className="space-y-3 px-4 pt-4 pb-12">
+      <Cells columns={2} className="pt-4 pb-12">
         {VENTURES.map((v) => (
           <li key={v.id}>
             <HubLinkRow
@@ -160,7 +161,7 @@ function VenturesPage() {
             />
           </li>
         ))}
-      </ul>
+      </Cells>
     </PageLayout>
   );
 }
