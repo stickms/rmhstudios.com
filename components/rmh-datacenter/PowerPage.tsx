@@ -59,7 +59,7 @@ export default function PowerPage() {
           </p>
         </Section>
 
-        <Cells columns={2} className="mt-6">
+        <Cells columns={4} className="mt-6">
           <Stat
             label={t('pow-stat-pue', {
               defaultValue: 'Fleet PUE',

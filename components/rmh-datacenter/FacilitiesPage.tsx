@@ -93,7 +93,7 @@ export default function FacilitiesPage() {
           </p>
         </Section>
 
-        <Cells columns={2} className="mt-6">
+        <Cells columns={4} className="mt-6">
           <Stat
             label={t('fac-stat-sites', { defaultValue: 'Campuses' })}
             value={String(CAMPUSES.length)}

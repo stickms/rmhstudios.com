@@ -5,10 +5,9 @@
  * ATS asks; the essays are the free-text answers that repeat verbatim; the STAR
  * stories are what the interview prep sheet matches against a posting.
  *
- * The panel is L2 `.surface-panel` (one per page). Each essay and story is a
- * repeated row and therefore L1 `.surface-card` — zero backdrop blur, because a
- * user with twenty stories would otherwise be compositing twenty blurred
- * surfaces on one screen.
+ * The panel is a `Section` (a rule above it, no box). Each essay and story is a
+ * row on a 1px rule, so a user with twenty stories gets twenty rules, not
+ * twenty boxes.
  *
  * Sensitive fields (salary expectation, work authorization, sponsorship) carry
  * a visible marker. They are personal data with real consequences, and a user

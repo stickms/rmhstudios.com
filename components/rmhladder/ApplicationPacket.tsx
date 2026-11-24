@@ -11,8 +11,8 @@
  * extension. The packet is text you copy; the final button is on the employer's
  * site and the user presses it. The footer says so, on screen, permanently.
  *
- * Rows are repeated content, so they are L1 `.surface-card` — no backdrop blur on
- * a list that can run to twenty rows.
+ * The packet is a `Section`; each field is a row on a 1px rule, so a list that can
+ * run to twenty rows stays flat.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';

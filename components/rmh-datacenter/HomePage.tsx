@@ -2,8 +2,8 @@
  * RMH Datacenter — the overview.
  *
  * On the site's own design language: `PageLayout`, the shared tab strip, and
- * glass by role (`Card`for repeated content,`.`for the singular
- * panels). The section shipped first as a microsite with its own palette,
+ * the divider primitives (`Section`, `Cells`, `Columns`; S7 to S11) for every
+ * group, with rows on rules rather than boxes. The section shipped first as a microsite with its own palette,
  * typography and chrome; that was a second design system inside one product,
  * and every figure on it had to be re-styled to say what a figure says
  * everywhere else. The numbers now come from `--site-*` like every other number
@@ -139,7 +139,7 @@ export default function HomePage() {
           </div>
         </Section>
 
-        <Cells columns={2} className="mt-6">
+        <Cells columns={4} className="mt-6">
           <Stat
             label={t('stat-sites-label', { defaultValue: 'Campuses' })}
             value={String(CAMPUSES.length)}

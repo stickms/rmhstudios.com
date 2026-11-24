@@ -22,6 +22,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { CopyButton } from '@/components/ui/copy-button';
+import { Notice } from '@/components/ui/rules';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { WILDCARD_SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
@@ -189,7 +190,8 @@ export function KeysManager() { const fmt = useLocaleFormat();
       </h2>
 
       {newKey && (
-        <div className="space-y-2 border-b border-site-border py-3">
+        <Notice tone="success">
+          <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-site-accent">
               {t('keys-copy-now', { defaultValue: "Copy your key now — it won't be shown again." })}
@@ -212,7 +214,8 @@ export function KeysManager() { const fmt = useLocaleFormat();
               label={t('keys-copy-key', { defaultValue: 'Copy API key' })}
             />
           </div>
-        </div>
+          </div>
+        </Notice>
       )}
 
       {/* Create form */}

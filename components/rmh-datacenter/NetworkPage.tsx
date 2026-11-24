@@ -71,7 +71,7 @@ export default function NetworkPage() {
           </p>
         </Section>
 
-        <Cells columns={2} className="mt-6">
+        <Cells columns={4} className="mt-6">
           <Stat
             label={t('net-stat-backbone', {
               defaultValue: 'Backbone',

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Eye } from 'lucide-react';
 
-import { Notice } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -159,14 +158,14 @@ export function ThemeEditor({
 
           {/* Contrast guardrails */}
           {issues.length > 0 ? (
-            <Notice tone="danger" className="text-xs"><ul className="space-y-1">
+            <div className="border-b border-site-border py-3"><ul className="space-y-1 text-xs text-site-warning">
               {issues.map((i) => (
                 <li key={i.pair}>
                   {knownLabel(pairLabels, i.pair) ?? i.pair}:{' '}
                   {i.ratio}:1 ({t('contrast-need', { defaultValue: 'need' })} {i.need}:1)
                 </li>
               ))}
-            </ul></Notice>
+            </ul></div>
           ) : (
             <p className="text-xs text-site-success">
               {t('gate-pass', { defaultValue: 'Passes contrast checks ✓' })}

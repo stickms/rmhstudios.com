@@ -97,7 +97,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
   return (
     <div className="space-y-[var(--site-section-gap)]">
       {/* Headline stats */}
-      <Cells columns={2} className="mt-4">
+      <Cells columns={4} className="mt-4">
         <StatTile
           label={t('supporters', { defaultValue: 'Supporters' })}
           value={supporterCount}
