@@ -144,7 +144,7 @@ function ResultAnnouncement({ result }: { result: BaccaratResult }) {
   const c = cfg[result];
 
   return (
-    <div className={`text-center py-2.5 sm:py-3 px-4 sm:px-6 rounded-site border ${c.bg} animate-pulse`}>
+    <div className={`text-center py-2.5 sm:py-3 px-4 sm:px-6 border-y ${c.bg} animate-pulse`}>
       <span className={`text-lg sm:text-xl font-bold ${c.color}`}>{c.label}</span>
     </div>
   );
@@ -293,7 +293,7 @@ export function BaccaratTable() {
               return (
                 <div
                   key={p.userId}
-                  className={`surface-card flex flex-col gap-1 p-2 rounded-site-sm ${
+                  className={`flex flex-col gap-1 p-2 ${
                     isMe ? 'bg-site-bg-subtle border-site-accent/30' : ''
                   }`}
                 >
