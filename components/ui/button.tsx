@@ -40,6 +40,24 @@ const buttonVariants = cva(
         'icon-compact': 'hit-slop size-8 pointer-coarse:mx-1.5',
       },
     },
+    compoundVariants: [
+      // A ghost button has no border or fill at rest, so its padding reads as an indent: the label sits 16px in from the
+      // column edge while everything around it is flush. The first ghost text button in a row bleeds out by its own
+      // padding, so the label lands on the edge and only the hover fill overhangs the parent. Rows that are not
+      // start-aligned (`justify-end`, `justify-center`, `justify-between`) keep their padding.
+      {
+        variant: 'ghost',
+        size: ['default', 'sm', 'lg', 'compact'],
+        className:
+          'first:-ms-4 has-[>svg]:first:-ms-3 [.justify-between>&]:first:ms-0 [.justify-center>&]:first:ms-0 [.justify-end>&]:first:ms-0 [.justify-around>&]:first:ms-0',
+      },
+      {
+        variant: 'ghost',
+        size: 'xs',
+        className:
+          'first:-ms-3 has-[>svg]:first:-ms-2 [.justify-between>&]:first:ms-0 [.justify-center>&]:first:ms-0 [.justify-end>&]:first:ms-0 [.justify-around>&]:first:ms-0',
+      },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
