@@ -154,7 +154,41 @@ export function overlaySource(cycles: { cycleYear: number; sources: MedSource[] 
   );
 }
 
-export function filterSchools<T extends { name: string; shortName: string; state: string; degree: string }>(
+/** Lower case, accents and punctuation folded to spaces: "Keck School of Medicine" and "keck-school-of-medicine" meet. */
+const foldSearch = (v: string): string =>
+  v
+    .normalize('NFKD')
+    .replace(/\p{M}+/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+const SMALL_WORDS = new Set(['of', 'the', 'at', 'and', 'in', 'for', 'a', 'an']);
+/** "University of Southern California" -> "usc", "Johns Hopkins University" -> "jhu": each main word's first letter. */
+export const initialsOf = (v: string): string =>
+  foldSearch(v)
+    .split(' ')
+    .filter((w) => w && !SMALL_WORDS.has(w) && !/^\d/.test(w))
+    .map((w) => w[0])
+    .join('');
+
+/**
+ * Whether a search matches a school: a fragment of its name, short name or any other name it is known by (`terms`:
+ * the source aliases, e.g. Admit's "Keck School of Medicine of the University of Southern California"), or, for three
+ * letters or more, exactly the initials of one of them ("USC", "JHU", "UCSF").
+ */
+export function schoolMatches(s: { name: string; shortName: string; terms?: readonly string[] }, q: string): boolean {
+  const needle = foldSearch(q);
+  // Only punctuation ("([") folds to nothing: it names no school.
+  if (!needle) return q.trim() === '';
+  const names = [s.name, s.shortName, ...(s.terms ?? [])];
+  if (names.some((n) => foldSearch(n).includes(needle))) return true;
+  const compact = needle.replace(/ /g, '');
+  return compact.length >= 3 && !needle.includes(' ') && names.some((n) => initialsOf(n) === compact);
+}
+
+export function filterSchools<
+  T extends { name: string; shortName: string; state: string; degree: string; terms?: readonly string[] },
+>(
   schools: readonly T[],
   f: { q?: string | undefined; degree?: string; state?: string; states?: readonly string[] | undefined },
 ): T[] {
@@ -163,7 +197,7 @@ export function filterSchools<T extends { name: string; shortName: string; state
   const states = new Set([...(f.states ?? []), ...(f.state ? [f.state] : [])].map((x) => x.toUpperCase()));
   return schools.filter(
     (s) =>
-      (!q || s.name.toLowerCase().includes(q) || s.shortName.toLowerCase().includes(q)) &&
+      (!q || schoolMatches(s, q)) &&
       (!f.degree || s.degree === f.degree) &&
       (states.size === 0 || states.has(s.state.toUpperCase())),
   );

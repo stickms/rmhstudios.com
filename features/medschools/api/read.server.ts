@@ -8,6 +8,7 @@ import {
   decodeLiveCursor,
   encodeLiveCursor,
   filterSchools,
+  schoolMatches,
   floorSplit,
   pickPrimary,
   resolveCycleYear,
@@ -165,7 +166,18 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
   const [all, cycleYear] = await Promise.all([
     prisma.medSchool.findMany({
       where: { active: true },
-      select: { id: true, slug: true, name: true, shortName: true, degree: true, city: true, state: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        shortName: true,
+        degree: true,
+        city: true,
+        state: true,
+        // The names the sources know a school by ("Keck School of Medicine of the University of Southern California"):
+        // search only, never in the response.
+        aliases: { select: { sourceKey: true } },
+      },
       orderBy: { name: 'asc' },
     }),
     siteCycle(now),
@@ -191,7 +203,10 @@ export async function listSchools(q: ListSchoolsQuery, now: Date = new Date()): 
     bySchool.set(s.schoolId, list);
   }
   const degrees = new Set(set.map((k) => programPair(k).degree));
-  const filtered = filterSchools(all, { q: q.q, states: statesOf(q.state) }).filter((s) => degrees.has(s.degree));
+  const searchable = all.map((s) => ({ ...s, terms: (s.aliases ?? []).map((a) => a.sourceKey) }));
+  const filtered = filterSchools(searchable, { q: q.q, states: statesOf(q.state) }).filter((s) =>
+    degrees.has(s.degree),
+  );
   const latest = await latestPublicEvents(cycleYear, set);
   return {
     cycleYear,
@@ -844,6 +859,17 @@ export function liveProgramWhere(set: readonly ProgramKey[] | undefined) {
 /** `CA,NY` -> the codes, deduped and sorted; for the live summary. */
 export const liveStatesOf = statesOf;
 
+/** The active schools a search names (`schoolMatches` over each school's names and source aliases). */
+async function schoolIdsMatching(text: string): Promise<string[]> {
+  const rows = await prisma.medSchool.findMany({
+    where: { active: true },
+    select: { id: true, name: true, shortName: true, aliases: { select: { sourceKey: true } } },
+  });
+  return rows
+    .filter((r) => schoolMatches({ ...r, terms: (r.aliases ?? []).map((a) => a.sourceKey) }, text))
+    .map((r) => r.id);
+}
+
 export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<MedLiveRes> {
   const limit = q.limit ?? 50;
   const cursor = q.cursor ? decodeLiveCursor(q.cursor) : null;
@@ -856,14 +882,14 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
   const legacyWhere =
     set || legacyProgram === 'ALL' ? {} : legacyProgram === 'NONE' ? { program: null } : { program: legacyProgram };
   const text = q.q?.trim();
+  // The index's matcher (`schoolMatches`: any name a source knows the school by, or its initials, "USC", "Keck"), run
+  // over the active schools (a couple of hundred rows); "NC" is a state as well as a fragment of a name.
   const textWhere = text
     ? [
         {
           school: {
             OR: [
-              { name: { contains: text, mode: 'insensitive' as const } },
-              { shortName: { contains: text, mode: 'insensitive' as const } },
-              // "NC" is a state; two letters are matched exactly as well as a fragment of a name.
+              { id: { in: await schoolIdsMatching(text) } },
               ...(text.length === 2 ? [{ state: text.toUpperCase() }] : []),
             ],
           },

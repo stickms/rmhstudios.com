@@ -15,6 +15,7 @@ import {
   toCumulativeByDay,
   overlaySource,
   filterSchools,
+  schoolMatches,
   encodeLiveCursor,
   decodeLiveCursor,
   mergeLiveHead,
@@ -282,5 +283,28 @@ describe('publicCell (the daily snapshot is the only RMH figure the public sees)
   it('then the floor applies to the published contributors', () => {
     const cells = [row({ publishedContributors: 2 }), row({ date: '2026-11-11' })].flatMap((r) => publicCell(r) ?? []);
     expect(applyKFloor(cells, '2026-11-20').map((c) => c.date)).toEqual(['2026-11-11']);
+  });
+});
+
+describe('schoolMatches (owner 2026-11-24: USC was unfindable as "USC" or "Keck")', () => {
+  const usc = {
+    name: 'University of Southern California',
+    shortName: 'University of Southern California',
+    terms: ['keck-school-of-medicine-of-the-university-of-southern-california', 'University of Southern California'],
+  };
+  it('finds a school by any name a source knows it by, folding punctuation', () => {
+    expect(schoolMatches(usc, 'Keck')).toBe(true);
+    expect(schoolMatches(usc, 'keck school of medicine')).toBe(true);
+    expect(schoolMatches(usc, 'southern cal')).toBe(true);
+  });
+  it('finds a school by its initials from three letters, exactly', () => {
+    expect(schoolMatches(usc, 'USC')).toBe(true);
+    expect(schoolMatches(usc, 'usc')).toBe(true);
+    expect(schoolMatches(usc, 'US')).toBe(false);
+    expect(schoolMatches(usc, 'USCX')).toBe(false);
+    expect(schoolMatches({ name: 'Johns Hopkins University', shortName: 'Johns Hopkins' }, 'JHU')).toBe(true);
+  });
+  it('does not match an unrelated school', () => {
+    expect(schoolMatches({ name: 'Duke University', shortName: 'Duke' }, 'Keck')).toBe(false);
   });
 });

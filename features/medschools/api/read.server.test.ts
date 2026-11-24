@@ -600,7 +600,16 @@ describe('the program set on the list and the live feed (owner 2026-11-23)', () 
     expect(a.where.school).toEqual({ active: true, state: { in: ['NC', 'TX'] } });
   });
 
-  it('searches school name, short name and an exact state code; filters state and several event types', async () => {
+  it('searches any name a school is known by (the index matcher), an exact state code; filters state and types', async () => {
+    m.medSchool.findMany.mockResolvedValue([
+      { id: 's-duke', name: 'Duke University', shortName: 'Duke', aliases: [] },
+      {
+        id: 's-usc',
+        name: 'University of Southern California',
+        shortName: 'USC',
+        aliases: [{ sourceKey: 'keck-school-of-medicine-of-the-university-of-southern-california' }],
+      },
+    ]);
     await getLive({ q: 'Duk', state: 'NC', types: 'acceptance,rejection' }, NOW);
     const a = m.medCycleEvent.findMany.mock.calls[0]![0] as {
       where: { eventType: unknown; school: unknown; AND: unknown[] };
@@ -610,15 +619,15 @@ describe('the program set on the list and the live feed (owner 2026-11-23)', () 
     expect(a.where.AND).toEqual([
       {
         school: {
-          OR: [
-            { name: { contains: 'Duk', mode: 'insensitive' } },
-            { shortName: { contains: 'Duk', mode: 'insensitive' } },
-          ],
+          OR: [{ id: { in: ['s-duke'] } }],
         },
       },
     ]);
+    await getLive({ q: 'Keck' }, NOW);
+    const k = m.medCycleEvent.findMany.mock.calls[1]![0] as { where: { AND: { school: { OR: unknown[] } }[] } };
+    expect(k.where.AND[0]!.school.OR).toEqual([{ id: { in: ['s-usc'] } }]);
     await getLive({ q: 'nc' }, NOW);
-    const b = m.medCycleEvent.findMany.mock.calls[1]![0] as { where: { AND: { school: { OR: unknown[] } }[] } };
+    const b = m.medCycleEvent.findMany.mock.calls[2]![0] as { where: { AND: { school: { OR: unknown[] } }[] } };
     expect(b.where.AND[0]!.school.OR).toContainEqual({ state: 'NC' });
   });
 });
