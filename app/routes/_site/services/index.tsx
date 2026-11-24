@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { HubLinkRow } from '@/components/feed/HubLinkRow';
+import { Cells } from '@/components/ui/rules';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
 /**
@@ -164,13 +165,13 @@ function ServicesPage() {
         defaultValue: 'Housing, career, and transportation tools built around the community.',
       })}
     >
-      <ul className="space-y-3 px-4 pt-4 pb-12">
+      <Cells columns={2} className="pt-4 pb-12">
         {SERVICES.map((service) => (
           <li key={service.id}>
             <ServiceRow service={service} />
           </li>
         ))}
-      </ul>
+      </Cells>
     </PageLayout>
   );
 }
