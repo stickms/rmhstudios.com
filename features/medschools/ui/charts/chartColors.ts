@@ -1,20 +1,27 @@
 import type { MedChartedTypeId, MedSourceId } from '../../medschools.contract';
 
 /**
- * The fixed colour mappings of the RMH Med Schools charts (owner O7, 2026-11-23; Steel section 18 D13). Colours are the
- * `--site-chart-1`..`-5` tokens (Day and Night values in `app/globals/tokens-themes.css`, validated with the dataviz
- * skill's validator); a component never writes a hex. Colour follows the entity, never its rank or position: Interview
- * is always chart-1 on every chart and page, whichever categories are switched on, and a source is always the same
- * colour on every per-type chart. Dash and width stay as the secondary cue (colour is never the only cue).
+ * The fixed colour mappings of the RMH Med Schools charts. Colours are the `--app-med-chart-1`..`-5` tokens (the lines;
+ * `-n-fill` is the pastel for fills), set per mode in `ui/medschools.css`. Every line is at least 3:1 against paper and
+ * ground in both modes (`charts.test.tsx` pins it from the stylesheet). A component never writes a hex. Colour follows
+ * the entity, never its rank or position: a category is the same colour on every chart and page whichever categories
+ * are switched on, and a source is always the same colour on every per-type chart. Dash and width stay as the
+ * secondary cue (colour is never the only cue).
+ *
+ * The slots are hued like the status colours (`ui/status`), so a category's line matches the swatch of its rows:
+ * 1 blue (secondary), 2 orange (interview), 3 green (acceptance), 4 red (rejection), 5 yellow (waitlist).
  */
-export const chartVar = (slot: 1 | 2 | 3 | 4 | 5): string => `var(--site-chart-${slot})`;
+export const chartVar = (slot: 1 | 2 | 3 | 4 | 5): string => `var(--app-med-chart-${slot})`;
 
-/** One colour per event category. Order of slots follows the validated palette, not the canonical category order. */
+/** The pastel of a line colour (`var(--app-med-chart-3)` gives `var(--app-med-chart-3-fill)`), for the body of a bar. */
+export const fillOf = (color: string): string => color.replace(/\)$/, '-fill)');
+
+/** One colour per event category, the hue of its status colour. */
 export const CATEGORY_COLOR: Record<MedChartedTypeId, string> = {
-  INTERVIEW: chartVar(1),
-  REJECTION: chartVar(2),
+  SECONDARY: chartVar(1),
+  INTERVIEW: chartVar(2),
   ACCEPTANCE: chartVar(3),
-  SECONDARY: chartVar(4),
+  REJECTION: chartVar(4),
   WAITLIST: chartVar(5),
 };
 

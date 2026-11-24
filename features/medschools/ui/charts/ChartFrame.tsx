@@ -2,14 +2,14 @@ import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type Poin
 import { GEOMETRIES, TICK_ROOM, heightOf, nearestIndex, type ChartGeometry } from '../../engine/chart-geometry';
 
 /**
- * The shared frame for the RMH Med Schools charts. A chart is a card (owner O7, 2026-11-23): `--site-surface`, 1px
- * `--site-border`, 8px radius, a legend above the plot, then the drawing, then the native table. The drawing is
+ * The shared frame for the RMH Med Schools charts. A chart is a card (owner O7, 2026-11-23): `--app-surface`, 1px
+ * `--app-border`, 8px radius, a legend above the plot, then the drawing, then the native table. The drawing is
  * server-rendered in three geometries (CSS shows one) and is the same markup on the server and the client; the only
  * client behaviour is the hover / touch / keyboard probe (a crosshair and a tooltip) and the y-scale tween the chart
  * itself runs (`tween.ts`). The caller passes every word already translated, as `components/ui/line-chart.tsx` does.
  *
- * Text is `--site-text` / `--site-text-muted`, never a series colour; series colours are the `--site-chart-*` tokens
- * (`chartColors.ts`). Axes and gridlines are `--site-border`.
+ * Text is `--app-text` / `--app-text-muted`, never a series colour; series colours are the `--app-med-chart-*` tokens
+ * (`chartColors.ts`). Axes and gridlines are `--app-border`.
  */
 
 export interface ChartLabels {
@@ -90,16 +90,16 @@ export function Swatch({
 /** The wave mark's key: a short vertical tick in the muted ink, as drawn on the plot. */
 export function WaveKey({ label }: { label: string }) {
   return (
-    <span className="t-meta flex items-center gap-2">
+    <span className="medapp-legend__item">
       <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true" focusable="false" className="shrink-0">
-        <line x1="11" x2="11" y1="0" y2="8" stroke="var(--site-text-muted)" strokeWidth={1} />
+        <line x1="11" x2="11" y1="0" y2="8" stroke="var(--app-text-muted)" strokeWidth={1} />
       </svg>
       <span>{label}</span>
     </span>
   );
 }
 
-/** The tick drawn at a wave day: 1px, `--site-text-muted`, rising 8 units from the x axis, no fill. */
+/** The tick drawn at a wave day: 1px, `--app-text-muted`, rising 8 units from the x axis, no fill. */
 export function WaveTick({ x, g }: { x: number; g: ChartGeometry }) {
   return (
     <line
@@ -107,7 +107,7 @@ export function WaveTick({ x, g }: { x: number; g: ChartGeometry }) {
       x2={x}
       y1={g.plot.bottom}
       y2={g.plot.bottom - 8}
-      stroke="var(--site-text-muted)"
+      stroke="var(--app-text-muted)"
       strokeWidth={1}
       fill="none"
       data-wave=""
@@ -119,9 +119,9 @@ export function WaveTick({ x, g }: { x: number; g: ChartGeometry }) {
 export function ChartLegend({ items }: { items: LegendItem[] }) {
   if (items.length < 2) return null;
   return (
-    <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
+    <ul className="medapp-legend">
       {items.map((i) => (
-        <li key={i.key} className="t-meta flex items-center gap-2">
+        <li key={i.key} className="medapp-legend__item">
           <Swatch color={i.color} dash={i.dash} width={i.width ?? 2} />
           <span>{i.label}</span>
         </li>
@@ -142,18 +142,18 @@ export function ChartFrame(p: {
   children: ReactNode;
 }) {
   return (
-    <figure className="m-0 rounded-site border border-site-border bg-site-surface p-3 sm:p-4">
+    <figure className="medapp-chart">
       <figcaption>
-        <span className="t-label block">{p.title}</span>
-        <span className="t-meta block">{`${p.unit} · ${p.sourcesLine}`}</span>
+        <span className="medapp-chart__title">{p.title}</span>
+        <span className="medapp-chart__sub">{`${p.unit} · ${p.sourcesLine}`}</span>
       </figcaption>
-      {p.legend ? <div className="mt-3 empty:hidden">{p.legend}</div> : null}
+      {p.legend ? <div className="medapp-chart__legend">{p.legend}</div> : null}
       {/* The time axis reads left to right in every language (D13). */}
-      <div dir="ltr" className="mt-3">
+      <div dir="ltr" className="medapp-chart__plot">
         {p.children}
       </div>
-      <details className="mt-3">
-        <summary className="t-meta cursor-pointer">{p.tableLabel}</summary>
+      <details className="medapp-chart__details">
+        <summary>{p.tableLabel}</summary>
         {p.table}
       </details>
     </figure>
@@ -307,7 +307,7 @@ function PlotSvg({
       aria-label={probe ? summary : undefined}
       aria-describedby={probe ? hintId : undefined}
       tabIndex={probe ? 0 : undefined}
-      className={`${SHOWN_AT[g.id]} relative touch-pan-y rounded-site`}
+      className={`${SHOWN_AT[g.id]} relative touch-pan-y medapp-plot`}
       onPointerMove={probe ? pick : undefined}
       onPointerDown={probe ? pick : undefined}
       onPointerLeave={
@@ -336,7 +336,7 @@ function PlotSvg({
             y={g.plot.bottom + TICK_ROOM + 12}
             textAnchor="middle"
             fontSize={g.font}
-            fill="var(--site-text-muted)"
+            fill="var(--app-text-muted)"
           >
             {xTitle}
           </text>
@@ -348,7 +348,7 @@ function PlotSvg({
               x2={crossX}
               y1={g.plot.top}
               y2={g.plot.bottom}
-              stroke="var(--site-text-muted)"
+              stroke="var(--app-text-muted)"
               strokeWidth={1}
             />
             {at.rows.map((r) => {
@@ -360,7 +360,7 @@ function PlotSvg({
                   cy={y}
                   r={4}
                   fill={r.color}
-                  stroke="var(--site-surface)"
+                  stroke="var(--app-surface)"
                   strokeWidth={2}
                 />
               );
@@ -377,16 +377,16 @@ function PlotSvg({
         <div
           ref={tip}
           role={byKey ? 'status' : undefined}
-          className="surface-overlay pointer-events-none absolute z-10 w-max max-w-full px-3 py-2"
+          className="medapp-tip"
           style={{ top: `${(g.plot.top / h) * 100}%`, left: 0 }}
         >
-          <div className="t-label m-0 text-site-text">{at.label}</div>
-          <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+          <div className="medapp-tip__label">{at.label}</div>
+          <ul className="medapp-tip__rows">
             {at.rows.map((r) => (
-              <li key={r.key} className="t-meta flex items-center gap-2">
+              <li key={r.key} className="medapp-tip__row">
                 <Swatch color={r.color} dash={r.dash} />
                 <span className="me-auto">{r.name}</span>
-                <span className="font-semibold text-site-text tabular-nums">{r.text}</span>
+                <span className="medapp-tip__value">{r.text}</span>
               </li>
             ))}
           </ul>
@@ -396,7 +396,7 @@ function PlotSvg({
   );
 }
 
-const textProps = (g: ChartGeometry) => ({ fontSize: g.font, fill: 'var(--site-text-muted)' }) as const;
+const textProps = (g: ChartGeometry) => ({ fontSize: g.font, fill: 'var(--app-text-muted)' }) as const;
 
 /** The plot rectangle as a clip, so a scale mid-tween never draws a line or bar above the plot. */
 export function PlotClip({ id, g }: { id: string; g: ChartGeometry }) {
@@ -425,7 +425,7 @@ export function YAxis({
     <g>
       {ticks.map((t) => (
         <g key={t.v} opacity={t.opacity ?? 1}>
-          <line x1={g.plot.left} x2={g.plot.right} y1={t.y} y2={t.y} stroke="var(--site-border)" strokeWidth={1} />
+          <line x1={g.plot.left} x2={g.plot.right} y1={t.y} y2={t.y} stroke="var(--app-border)" strokeWidth={1} />
           <text x={g.plot.left - 6} y={t.y} dy="0.32em" textAnchor="end" {...textProps(g)}>
             {format(t.v)}
           </text>
@@ -471,15 +471,11 @@ export function EmptyNote({ text, g }: { text: string; g: ChartGeometry }) {
 /** The native text alternative: every number the drawing shows, in rows on rules. */
 export function DataTable({ head, rows }: { head: string[]; rows: (string | number)[][] }) {
   return (
-    <table className="t-meta mt-2 w-full border-collapse">
+    <table className="medapp-table medapp-table--chart">
       <thead>
         <tr>
           {head.map((h, i) => (
-            <th
-              key={`${i}-${h}`}
-              scope="col"
-              className="border-b border-site-border py-1 pe-3 text-start font-normal text-site-text-muted"
-            >
+            <th key={`${i}-${h}`} scope="col">
               {h}
             </th>
           ))}
@@ -489,9 +485,7 @@ export function DataTable({ head, rows }: { head: string[]; rows: (string | numb
         {rows.map((r) => (
           <tr key={String(r[0])}>
             {r.map((c, i) => (
-              <td key={`${String(r[0])}-${i}`} className="border-b border-site-border py-1 pe-3 text-site-text">
-                {c}
-              </td>
+              <td key={`${String(r[0])}-${i}`}>{c}</td>
             ))}
           </tr>
         ))}

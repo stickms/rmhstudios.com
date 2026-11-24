@@ -84,7 +84,8 @@ describe('medschools shell', () => {
       for (const part of ['swatch', 'ink', 'text']) expect(css).toContain(`--app-med-${k}-${part}:`);
     for (let i = 1; i <= 5; i++) {
       expect(css).toContain(`--app-med-chart-${i}:`);
-      expect(css).toContain(`--site-chart-${i}: var(--app-med-chart-${i});`);
+      expect(css).toContain(`--app-med-chart-${i}-fill:`);
+      expect(css).not.toContain(`--site-chart-${i}`);
     }
     expect(css).toContain("[data-app-dark='1']");
     expect(css).toContain("not([data-app-dark='0'])");

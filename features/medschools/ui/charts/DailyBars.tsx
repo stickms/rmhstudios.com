@@ -20,7 +20,7 @@ type ActivitySeries = ActivityTypeDto['sources'][number];
 
 /**
  * Daily reported events for one event type, from the primary source only, as thin bars in the category's colour (O7;
- * `color` is a `--site-chart-*` var from `chartColors.ts`). One series, so there is no legend: the title names the
+ * `color` is a `--app-med-chart-*` var from `chartColors.ts`). One series, so there is no legend: the title names the
  * category and the caption the source. The other sources are compared in the cumulative chart below. The y axis
  * starts at 0 and tweens when the data changes.
  */
@@ -87,7 +87,7 @@ export function DailyBars(p: {
                     {
                       key: 'wave',
                       name: labels.wave.probe(wave),
-                      color: 'var(--site-text-muted)',
+                      color: 'var(--app-text-muted)',
                       text: '',
                       y: () => null,
                     },

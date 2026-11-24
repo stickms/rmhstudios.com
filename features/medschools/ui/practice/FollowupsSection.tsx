@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useSession } from '@/components/session/session-context';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { QA_THINK_CLIENT_TIMEOUT_MS } from '../../ai-budget';
@@ -49,7 +48,7 @@ export function FollowupsSection({
 
   if (!signedIn) {
     return (
-      <p className="t-meta m-0">
+      <p className="medapp-meta">
         {t('practice-followups-signed-out', { defaultValue: 'Sign in to get follow-up questions.' })}
       </p>
     );
@@ -57,18 +56,18 @@ export function FollowupsSection({
   const remaining = run.data?.remainingToday ?? status.data?.remainingToday ?? null;
   const configured = status.data?.configured ?? true;
   return (
-    <section className="flex flex-col gap-3" aria-labelledby={`${id}-h`}>
-      <h3 id={`${id}-h`} className="t-heading m-0">
+    <section className="medapp-section" aria-labelledby={`${id}-h`}>
+      <h3 id={`${id}-h`} className="medapp-h3">
         {t('practice-followups-title', { defaultValue: 'Follow-up questions' })}
       </h3>
-      <p className="t-meta m-0">
+      <p className="medapp-meta">
         {t('practice-followups-help', {
           defaultValue:
             'The model suggests what an interviewer might ask next. Your question and notes are sent for this one request and are not stored. Each suggestion uses one of your daily questions.',
         })}
       </p>
       {status.data?.thinkingAvailable ? (
-        <div className="flex items-center gap-3">
+        <div className="medapp-controls">
           <Switch
             id={`${id}-think`}
             checked={think}
@@ -76,23 +75,23 @@ export function FollowupsSection({
             disabled={run.isPending}
             aria-labelledby={`${id}-tl`}
           />
-          <span id={`${id}-tl`} className="t-label">
+          <span id={`${id}-tl`} className="medapp-label">
             {t('ask-think-label', { defaultValue: 'Think it through' })}
           </span>
         </div>
       ) : null}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
+      <div className="medapp-controls">
+        <button
           type="button"
-          variant="default"
-          loading={run.isPending}
-          disabled={!configured || remaining === 0}
+          className="medapp-chip"
+          aria-busy={run.isPending}
+          disabled={!configured || remaining === 0 || run.isPending}
           onClick={() => run.mutate()}
         >
           {t('practice-followups-submit', { defaultValue: 'Suggest follow-ups' })}
-        </Button>
+        </button>
         {remaining !== null ? (
-          <span className="t-meta">
+          <span className="medapp-meta">
             {t('practice-followups-left', {
               count: remaining,
               defaultValue_one: '{{count}} question left today',
@@ -103,19 +102,19 @@ export function FollowupsSection({
         ) : null}
       </div>
       {!configured ? (
-        <p className="t-meta m-0">
+        <p className="medapp-meta">
           {t('practice-followups-off', { defaultValue: 'Suggestions are not available right now.' })}
         </p>
       ) : null}
       {run.isError ? (
-        <p className="t-body m-0" role="alert">
+        <p className="medapp-text" role="alert">
           {refusal(run.error)}
         </p>
       ) : null}
       {run.data ? (
-        <ol className="m-0 list-none border-t border-site-border p-0">
+        <ol className="medapp-list">
           {run.data.followups.map((f, i) => (
-            <li key={i} className="t-body border-b border-site-border py-2 break-words">
+            <li key={i} className="medapp-text">
               {f}
             </li>
           ))}

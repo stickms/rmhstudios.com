@@ -42,68 +42,68 @@
 /* ── Light: paper (the base) ─────────────────────────────────────────────── */
 .app-theme.medapp-theme,
 :root:has(.medapp-theme) {
-  --app-bg: #F6F1E7;
-  --app-bg-subtle: #EFE8DA;
-  --app-surface: #FFFCF6;
-  --app-surface-hover: #F3ECDF;
-  --app-surface-active: #EAE1D1;
-  --app-border: #E2D9CB;
-  --app-border-bright: #8C8497;
-  --app-text: #2A2731;
-  --app-text-muted: #5F5A68;
-  --app-text-dim: #6F6A78;
-  --app-accent: #2A2731;
-  --app-accent-fg: #FFFCF6;
-  --app-accent-hover: #3F3A49;
-  --app-success: #3E7A4C;
-  --app-danger: #B4483E;
-  --app-warning: #7D5F0E;
-  --app-info: #2F6795;
-  --app-rare: #6A4BA0;
+  --app-bg: #f6f1e7;
+  --app-bg-subtle: #efe8da;
+  --app-surface: #fffcf6;
+  --app-surface-hover: #f3ecdf;
+  --app-surface-active: #eae1d1;
+  --app-border: #e2d9cb;
+  --app-border-bright: #8c8497;
+  --app-text: #2a2731;
+  --app-text-muted: #5f5a68;
+  --app-text-dim: #6f6a78;
+  --app-accent: #2a2731;
+  --app-accent-fg: #fffcf6;
+  --app-accent-hover: #3f3a49;
+  --app-success: #3e7a4c;
+  --app-danger: #b4483e;
+  --app-warning: #7d5f0e;
+  --app-info: #2f6795;
+  --app-rare: #6a4ba0;
   --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
   --app-toast-bg: var(--app-surface);
   --app-glass-bg: var(--app-surface);
   --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
-  --app-med-wash-1: #E9D5EC;
-  --app-med-wash-2: #CFE3EF;
-  --app-med-wash-3: #F6DCC8;
-  --app-med-wash-4: #D8EAD3;
-  --app-med-on-wash: #2A2731;
+  --app-med-wash-1: #e9d5ec;
+  --app-med-wash-2: #cfe3ef;
+  --app-med-wash-3: #f6dcc8;
+  --app-med-wash-4: #d8ead3;
+  --app-med-on-wash: #2a2731;
   --app-med-wash-image: url('/images/medschools/wash-light.webp');
-  --app-med-accept-swatch: #CFE8D2;
-  --app-med-accept-ink: #3E7A4C;
-  --app-med-accept-text: #3E7A4C;
-  --app-med-reject-swatch: #F3D2CC;
-  --app-med-reject-ink: #B4483E;
-  --app-med-reject-text: #B4483E;
-  --app-med-hold-swatch: #CBD6EA;
-  --app-med-hold-ink: #2F4A7A;
-  --app-med-hold-text: #2F4A7A;
-  --app-med-secondary-swatch: #D6E9F7;
-  --app-med-secondary-ink: #2F6795;
-  --app-med-secondary-text: #2F6795;
-  --app-med-waitlist-swatch: #F6E7B4;
-  --app-med-waitlist-ink: #7D5F0E;
-  --app-med-waitlist-text: #7D5F0E;
-  --app-med-matric-swatch: #E3D9F2;
-  --app-med-matric-ink: #6A4BA0;
-  --app-med-matric-text: #6A4BA0;
-  --app-med-interview-swatch: #F7DCC8;
-  --app-med-interview-ink: #9A4E22;
-  --app-med-interview-text: #9A4E22;
-  --app-med-withdrawn-swatch: #E7E1D6;
-  --app-med-withdrawn-ink: #5F5A68;
-  --app-med-withdrawn-text: #5F5A68;
-  --app-med-chart-1: #2F6795;
-  --app-med-chart-1-fill: #8DB9DE;
-  --app-med-chart-2: #9A4E22;
-  --app-med-chart-2-fill: #E8A87C;
-  --app-med-chart-3: #3E7A4C;
-  --app-med-chart-3-fill: #6FA67A;
-  --app-med-chart-4: #B4483E;
-  --app-med-chart-4-fill: #D7756B;
-  --app-med-chart-5: #7D5F0E;
-  --app-med-chart-5-fill: #E0C25A;
+  --app-med-accept-swatch: #cfe8d2;
+  --app-med-accept-ink: #3e7a4c;
+  --app-med-accept-text: #3e7a4c;
+  --app-med-reject-swatch: #f3d2cc;
+  --app-med-reject-ink: #b4483e;
+  --app-med-reject-text: #b4483e;
+  --app-med-hold-swatch: #cbd6ea;
+  --app-med-hold-ink: #2f4a7a;
+  --app-med-hold-text: #2f4a7a;
+  --app-med-secondary-swatch: #d6e9f7;
+  --app-med-secondary-ink: #2f6795;
+  --app-med-secondary-text: #2f6795;
+  --app-med-waitlist-swatch: #f6e7b4;
+  --app-med-waitlist-ink: #7d5f0e;
+  --app-med-waitlist-text: #7d5f0e;
+  --app-med-matric-swatch: #e3d9f2;
+  --app-med-matric-ink: #6a4ba0;
+  --app-med-matric-text: #6a4ba0;
+  --app-med-interview-swatch: #f7dcc8;
+  --app-med-interview-ink: #9a4e22;
+  --app-med-interview-text: #9a4e22;
+  --app-med-withdrawn-swatch: #e7e1d6;
+  --app-med-withdrawn-ink: #5f5a68;
+  --app-med-withdrawn-text: #5f5a68;
+  --app-med-chart-1: #2f6795;
+  --app-med-chart-1-fill: #8db9de;
+  --app-med-chart-2: #9a4e22;
+  --app-med-chart-2-fill: #e8a87c;
+  --app-med-chart-3: #3e7a4c;
+  --app-med-chart-3-fill: #6fa67a;
+  --app-med-chart-4: #b4483e;
+  --app-med-chart-4-fill: #d7756b;
+  --app-med-chart-5: #7d5f0e;
+  --app-med-chart-5-fill: #e0c25a;
   color-scheme: light;
 
   /* Shape: the mockup's rounded paper. */
@@ -136,146 +136,141 @@
   --site-radius: 20px;
   --site-radius-sm: 12px;
   --site-control-radius: 22px;
-  --site-chart-1: var(--app-med-chart-1);
-  --site-chart-2: var(--app-med-chart-2);
-  --site-chart-3: var(--app-med-chart-3);
-  --site-chart-4: var(--app-med-chart-4);
-  --site-chart-5: var(--app-med-chart-5);
 }
 
 /* ── Dark: ink-navy night ────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-app-dark='0']) .app-theme.medapp-theme,
   :root:not([data-app-dark='0']):has(.medapp-theme) {
-    --app-bg: #1B1E2A;
-    --app-bg-subtle: #171A25;
-    --app-surface: #282C3C;
-    --app-surface-hover: #31364A;
-    --app-surface-active: #3A3F55;
-    --app-border: #3A3F52;
-    --app-border-bright: #6B7190;
-    --app-text: #F2EDE4;
-    --app-text-muted: #B9B3C6;
-    --app-text-dim: #9C97AB;
-    --app-accent: #F2EDE4;
-    --app-accent-fg: #1B1E2A;
-    --app-accent-hover: #FFFFFF;
-    --app-success: #9FD6AB;
-    --app-danger: #F0A79D;
-    --app-warning: #EBCF73;
-    --app-info: #9CCBEE;
-    --app-rare: #C8B3EE;
+    --app-bg: #1b1e2a;
+    --app-bg-subtle: #171a25;
+    --app-surface: #282c3c;
+    --app-surface-hover: #31364a;
+    --app-surface-active: #3a3f55;
+    --app-border: #3a3f52;
+    --app-border-bright: #6b7190;
+    --app-text: #f2ede4;
+    --app-text-muted: #b9b3c6;
+    --app-text-dim: #9c97ab;
+    --app-accent: #f2ede4;
+    --app-accent-fg: #1b1e2a;
+    --app-accent-hover: #ffffff;
+    --app-success: #9fd6ab;
+    --app-danger: #f0a79d;
+    --app-warning: #ebcf73;
+    --app-info: #9ccbee;
+    --app-rare: #c8b3ee;
     --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
     --app-toast-bg: var(--app-surface);
     --app-glass-bg: var(--app-surface);
     --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
-    --app-med-wash-1: #4A3F6B;
-    --app-med-wash-2: #3E5B73;
-    --app-med-wash-3: #5B4A5E;
-    --app-med-wash-4: #3F5A4C;
-    --app-med-on-wash: #F6F1E8;
+    --app-med-wash-1: #4a3f6b;
+    --app-med-wash-2: #3e5b73;
+    --app-med-wash-3: #5b4a5e;
+    --app-med-wash-4: #3f5a4c;
+    --app-med-on-wash: #f6f1e8;
     --app-med-wash-image: url('/images/medschools/wash-dark.webp');
-    --app-med-accept-swatch: #3F6B4B;
-    --app-med-accept-ink: #CDEBD3;
-    --app-med-accept-text: #9FD6AB;
-    --app-med-reject-swatch: #6E3B38;
-    --app-med-reject-ink: #F4C7C0;
-    --app-med-reject-text: #F0A79D;
-    --app-med-hold-swatch: #2F4A7A;
-    --app-med-hold-ink: #D5E0F5;
-    --app-med-hold-text: #A9C0EC;
-    --app-med-secondary-swatch: #355A75;
-    --app-med-secondary-ink: #D2E8F8;
-    --app-med-secondary-text: #9CCBEE;
-    --app-med-waitlist-swatch: #6B5A26;
-    --app-med-waitlist-ink: #F6E4A8;
-    --app-med-waitlist-text: #EBCF73;
-    --app-med-matric-swatch: #4F3F73;
-    --app-med-matric-ink: #E1D5F7;
-    --app-med-matric-text: #C8B3EE;
-    --app-med-interview-swatch: #6E4A33;
-    --app-med-interview-ink: #F7D7C0;
-    --app-med-interview-text: #F0B48C;
-    --app-med-withdrawn-swatch: #3A3F52;
-    --app-med-withdrawn-ink: #D6D1E0;
-    --app-med-withdrawn-text: #B9B3C6;
-    --app-med-chart-1: #9CCBEE;
-    --app-med-chart-1-fill: #4F86B3;
-    --app-med-chart-2: #F0B48C;
-    --app-med-chart-2-fill: #B8794C;
-    --app-med-chart-3: #9FD6AB;
-    --app-med-chart-3-fill: #4E8A5D;
-    --app-med-chart-4: #F0A79D;
-    --app-med-chart-4-fill: #B4574D;
-    --app-med-chart-5: #EBCF73;
-    --app-med-chart-5-fill: #A98B2E;
+    --app-med-accept-swatch: #3f6b4b;
+    --app-med-accept-ink: #cdebd3;
+    --app-med-accept-text: #9fd6ab;
+    --app-med-reject-swatch: #6e3b38;
+    --app-med-reject-ink: #f4c7c0;
+    --app-med-reject-text: #f0a79d;
+    --app-med-hold-swatch: #2f4a7a;
+    --app-med-hold-ink: #d5e0f5;
+    --app-med-hold-text: #a9c0ec;
+    --app-med-secondary-swatch: #355a75;
+    --app-med-secondary-ink: #d2e8f8;
+    --app-med-secondary-text: #9ccbee;
+    --app-med-waitlist-swatch: #6b5a26;
+    --app-med-waitlist-ink: #f6e4a8;
+    --app-med-waitlist-text: #ebcf73;
+    --app-med-matric-swatch: #4f3f73;
+    --app-med-matric-ink: #e1d5f7;
+    --app-med-matric-text: #c8b3ee;
+    --app-med-interview-swatch: #6e4a33;
+    --app-med-interview-ink: #f7d7c0;
+    --app-med-interview-text: #f0b48c;
+    --app-med-withdrawn-swatch: #3a3f52;
+    --app-med-withdrawn-ink: #d6d1e0;
+    --app-med-withdrawn-text: #b9b3c6;
+    --app-med-chart-1: #9ccbee;
+    --app-med-chart-1-fill: #4f86b3;
+    --app-med-chart-2: #f0b48c;
+    --app-med-chart-2-fill: #b8794c;
+    --app-med-chart-3: #9fd6ab;
+    --app-med-chart-3-fill: #4e8a5d;
+    --app-med-chart-4: #f0a79d;
+    --app-med-chart-4-fill: #b4574d;
+    --app-med-chart-5: #ebcf73;
+    --app-med-chart-5-fill: #a98b2e;
     color-scheme: dark;
   }
 }
 :root[data-app-dark='1'] .app-theme.medapp-theme,
 :root[data-app-dark='1']:has(.medapp-theme) {
-  --app-bg: #1B1E2A;
-  --app-bg-subtle: #171A25;
-  --app-surface: #282C3C;
-  --app-surface-hover: #31364A;
-  --app-surface-active: #3A3F55;
-  --app-border: #3A3F52;
-  --app-border-bright: #6B7190;
-  --app-text: #F2EDE4;
-  --app-text-muted: #B9B3C6;
-  --app-text-dim: #9C97AB;
-  --app-accent: #F2EDE4;
-  --app-accent-fg: #1B1E2A;
-  --app-accent-hover: #FFFFFF;
-  --app-success: #9FD6AB;
-  --app-danger: #F0A79D;
-  --app-warning: #EBCF73;
-  --app-info: #9CCBEE;
-  --app-rare: #C8B3EE;
+  --app-bg: #1b1e2a;
+  --app-bg-subtle: #171a25;
+  --app-surface: #282c3c;
+  --app-surface-hover: #31364a;
+  --app-surface-active: #3a3f55;
+  --app-border: #3a3f52;
+  --app-border-bright: #6b7190;
+  --app-text: #f2ede4;
+  --app-text-muted: #b9b3c6;
+  --app-text-dim: #9c97ab;
+  --app-accent: #f2ede4;
+  --app-accent-fg: #1b1e2a;
+  --app-accent-hover: #ffffff;
+  --app-success: #9fd6ab;
+  --app-danger: #f0a79d;
+  --app-warning: #ebcf73;
+  --app-info: #9ccbee;
+  --app-rare: #c8b3ee;
   --app-accent-dim: color-mix(in srgb, var(--app-text) 8%, transparent);
   --app-toast-bg: var(--app-surface);
   --app-glass-bg: var(--app-surface);
   --app-scrim: color-mix(in srgb, var(--app-bg) 80%, transparent);
-  --app-med-wash-1: #4A3F6B;
-  --app-med-wash-2: #3E5B73;
-  --app-med-wash-3: #5B4A5E;
-  --app-med-wash-4: #3F5A4C;
-  --app-med-on-wash: #F6F1E8;
+  --app-med-wash-1: #4a3f6b;
+  --app-med-wash-2: #3e5b73;
+  --app-med-wash-3: #5b4a5e;
+  --app-med-wash-4: #3f5a4c;
+  --app-med-on-wash: #f6f1e8;
   --app-med-wash-image: url('/images/medschools/wash-dark.webp');
-  --app-med-accept-swatch: #3F6B4B;
-  --app-med-accept-ink: #CDEBD3;
-  --app-med-accept-text: #9FD6AB;
-  --app-med-reject-swatch: #6E3B38;
-  --app-med-reject-ink: #F4C7C0;
-  --app-med-reject-text: #F0A79D;
-  --app-med-hold-swatch: #2F4A7A;
-  --app-med-hold-ink: #D5E0F5;
-  --app-med-hold-text: #A9C0EC;
-  --app-med-secondary-swatch: #355A75;
-  --app-med-secondary-ink: #D2E8F8;
-  --app-med-secondary-text: #9CCBEE;
-  --app-med-waitlist-swatch: #6B5A26;
-  --app-med-waitlist-ink: #F6E4A8;
-  --app-med-waitlist-text: #EBCF73;
-  --app-med-matric-swatch: #4F3F73;
-  --app-med-matric-ink: #E1D5F7;
-  --app-med-matric-text: #C8B3EE;
-  --app-med-interview-swatch: #6E4A33;
-  --app-med-interview-ink: #F7D7C0;
-  --app-med-interview-text: #F0B48C;
-  --app-med-withdrawn-swatch: #3A3F52;
-  --app-med-withdrawn-ink: #D6D1E0;
-  --app-med-withdrawn-text: #B9B3C6;
-  --app-med-chart-1: #9CCBEE;
-  --app-med-chart-1-fill: #4F86B3;
-  --app-med-chart-2: #F0B48C;
-  --app-med-chart-2-fill: #B8794C;
-  --app-med-chart-3: #9FD6AB;
-  --app-med-chart-3-fill: #4E8A5D;
-  --app-med-chart-4: #F0A79D;
-  --app-med-chart-4-fill: #B4574D;
-  --app-med-chart-5: #EBCF73;
-  --app-med-chart-5-fill: #A98B2E;
+  --app-med-accept-swatch: #3f6b4b;
+  --app-med-accept-ink: #cdebd3;
+  --app-med-accept-text: #9fd6ab;
+  --app-med-reject-swatch: #6e3b38;
+  --app-med-reject-ink: #f4c7c0;
+  --app-med-reject-text: #f0a79d;
+  --app-med-hold-swatch: #2f4a7a;
+  --app-med-hold-ink: #d5e0f5;
+  --app-med-hold-text: #a9c0ec;
+  --app-med-secondary-swatch: #355a75;
+  --app-med-secondary-ink: #d2e8f8;
+  --app-med-secondary-text: #9ccbee;
+  --app-med-waitlist-swatch: #6b5a26;
+  --app-med-waitlist-ink: #f6e4a8;
+  --app-med-waitlist-text: #ebcf73;
+  --app-med-matric-swatch: #4f3f73;
+  --app-med-matric-ink: #e1d5f7;
+  --app-med-matric-text: #c8b3ee;
+  --app-med-interview-swatch: #6e4a33;
+  --app-med-interview-ink: #f7d7c0;
+  --app-med-interview-text: #f0b48c;
+  --app-med-withdrawn-swatch: #3a3f52;
+  --app-med-withdrawn-ink: #d6d1e0;
+  --app-med-withdrawn-text: #b9b3c6;
+  --app-med-chart-1: #9ccbee;
+  --app-med-chart-1-fill: #4f86b3;
+  --app-med-chart-2: #f0b48c;
+  --app-med-chart-2-fill: #b8794c;
+  --app-med-chart-3: #9fd6ab;
+  --app-med-chart-3-fill: #4e8a5d;
+  --app-med-chart-4: #f0a79d;
+  --app-med-chart-4-fill: #b4574d;
+  --app-med-chart-5: #ebcf73;
+  --app-med-chart-5-fill: #a98b2e;
   color-scheme: dark;
 }
 
@@ -669,4 +664,441 @@
   margin: 0;
   font-size: 18px;
   line-height: 1.2;
+}
+
+/* ── School page: header, section pills, fact tiles ──────────────────────── */
+.medapp-pagehead--school {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 20px;
+  margin-block-end: 20px;
+}
+.medapp-pagehead__text {
+  display: flex;
+  flex: 1 1 260px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+.medapp-pagehead--school h1 {
+  font-size: clamp(26px, 5.5vw, 40px);
+  line-height: 1.1;
+}
+.medapp-pagehead--school .medapp-sub {
+  font-size: 15px;
+}
+.medapp-pagehead__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.medapp-crest--76 {
+  inline-size: 76px;
+  block-size: 76px;
+  border-radius: 24px;
+  font-family: var(--app-font-display);
+  font-size: 30px;
+}
+@media (max-width: 479px) {
+  .medapp-crest--76 {
+    inline-size: 56px;
+    block-size: 56px;
+    border-radius: 18px;
+    font-size: 22px;
+  }
+}
+/* The section navigation: links in a paper capsule, the current one a filled wash pill. Not a tablist: each pill is a
+   link to the same page with another `tab`, so it is a `nav` with `aria-current`. */
+.medapp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  padding: 6px;
+  border-radius: 28px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+.medapp-pill {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 40px;
+  padding-inline: 18px;
+  border-radius: 22px;
+  color: var(--app-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-pill:hover {
+  background-color: var(--app-surface-hover);
+}
+.medapp-pill[aria-current='page'] {
+  background-color: var(--app-med-wash-2);
+  color: var(--app-med-on-wash);
+  font-weight: 600;
+}
+@media (pointer: coarse) {
+  .medapp-pill {
+    min-block-size: 44px;
+  }
+}
+.medapp-school-body,
+.medapp-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.medapp-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+.medapp-tile {
+  padding: 16px 20px;
+  border-radius: 22px;
+  background-color: var(--app-med-wash-2);
+  color: var(--app-med-on-wash);
+  overflow-wrap: anywhere;
+}
+.medapp-tile:nth-child(3n + 2) {
+  background-color: var(--app-med-wash-1);
+}
+.medapp-tile:nth-child(3n) {
+  background-color: var(--app-med-wash-4);
+}
+.medapp-tile dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.medapp-tile dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.medapp-tile a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* ── Sections inside a tab ───────────────────────────────────────────────── */
+.medapp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.medapp-section--panel {
+  padding: 22px;
+  border-radius: 26px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+.medapp-h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--app-text);
+}
+.medapp-h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--app-text);
+}
+.medapp-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-text-muted);
+}
+.medapp-meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--app-text-muted);
+}
+.medapp-meta a {
+  color: inherit;
+  text-decoration: underline;
+}
+.medapp-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--app-text);
+  overflow-wrap: anywhere;
+}
+.medapp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.medapp-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+/* Rows on rules inside a panel. */
+.medapp-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-list > li {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-list > li:last-child {
+  border-bottom: 0;
+}
+.medapp-list--between > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 16px;
+}
+.medapp-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--app-text);
+}
+.medapp-table th,
+.medapp-table td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--app-border);
+  text-align: start;
+  font-weight: 400;
+}
+.medapp-table thead th {
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+.medapp-table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+.medapp-table .is-num {
+  padding-inline-start: 12px;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.medapp-table .is-primary {
+  font-weight: 600;
+}
+.medapp-table .is-muted {
+  color: var(--app-text-muted);
+}
+.medapp-table--chart {
+  margin-block-start: 8px;
+  font-size: 13px;
+}
+.medapp-table--chart th,
+.medapp-table--chart td {
+  padding: 4px 12px 4px 0;
+}
+.medapp-bar-track {
+  block-size: 8px;
+  inline-size: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-bg-subtle);
+}
+.medapp-bar-track > span {
+  display: block;
+  block-size: 100%;
+}
+.medapp-category-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Charts: a paper panel, a legend, the drawing, the data table ────────── */
+.medapp-chart {
+  margin: 0;
+  padding: 16px;
+  border-radius: 26px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+}
+@media (min-width: 640px) {
+  .medapp-chart {
+    padding: 22px;
+  }
+}
+.medapp-chart__title {
+  display: block;
+  font-family: var(--app-font-display);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--app-text);
+}
+.medapp-chart__sub {
+  display: block;
+  margin-block-start: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--app-text-muted);
+}
+.medapp-chart__legend {
+  margin-block-start: 12px;
+}
+.medapp-chart__legend:empty {
+  display: none;
+}
+.medapp-chart__plot {
+  margin-block-start: 12px;
+}
+.medapp-chart__details {
+  margin-block-start: 12px;
+}
+.medapp-chart__details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+.medapp-plot {
+  border-radius: 12px;
+}
+.medapp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--app-text-muted);
+}
+/* The probe's tooltip sits over the plot (absolute inside the plot, never fixed): paper, a rule, no shadow. */
+.medapp-tip {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--app-border-bright);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+}
+.medapp-tip__label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.medapp-tip__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.medapp-tip__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+.medapp-tip__row > :nth-child(2) {
+  margin-inline-end: auto;
+}
+.medapp-tip__value {
+  font-weight: 600;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+.medapp-list--plain > li {
+  padding-block: 2px;
+  border-bottom: 0;
+}
+/* Definition rows on rules: a label at the start, the value at the end. */
+.medapp-defs {
+  margin: 0;
+}
+.medapp-defs > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-defs > div:last-child {
+  border-bottom: 0;
+}
+.medapp-defs dt {
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+.medapp-defs dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  text-align: end;
+  overflow-wrap: anywhere;
+  color: var(--app-text);
+}
+.medapp-quote {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-quote:last-child {
+  border-bottom: 0;
+}
+.medapp-chip--primary {
+  border-color: var(--app-accent);
+  background-color: var(--app-accent);
+  color: var(--app-accent-fg);
+}
+.medapp-chip--primary:hover {
+  background-color: var(--app-accent-hover);
+}
+.medapp-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.medapp-timer {
+  padding-block-end: 12px;
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-clock {
+  margin: 0;
+  font-family: var(--app-font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+}
+.medapp-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+/* Rows of a prompt list stack their lines tightly. */
+.medapp-list > li > .medapp-text + .medapp-meta,
+.medapp-list > li > .medapp-meta + .medapp-meta {
+  margin-block-start: 4px;
 }

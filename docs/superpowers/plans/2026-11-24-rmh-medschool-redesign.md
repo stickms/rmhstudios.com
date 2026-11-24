@@ -2,7 +2,7 @@
 
 Written from a read-only pass over the repo; paths are repo-relative. Where a claim could not be verified, it says so.
 **Status (2026-11-24): phase A is built** (see "Phase A as built" below, which corrects this plan where the code
-differed) and "Phase B1 as built". B2, B3, C and D are not started.
+differed) "Phase B1 as built" and "Phase B2 as built". B3, C and D are not started.
 
 ## Owner answers (2026-11-24)
 
@@ -79,6 +79,51 @@ These settle the open questions in section 7 and override the plan text where th
 - **Left for B2:** the school page and tabs, the charts (retire `--site-chart-*`). **B3:** the tracker, lists, ask,
   secondaries, rolling, the import, and the last `--site-*` bridge consumers; their title rows still duplicate the top
   bar.
+
+## Phase B2 as built
+
+- **School page.** `PageHead` gained optional `crest` and `actions`: with either it lays out as one wrapping row (crest
+  76px, 56px on a phone; Fraunces name `clamp(26px, 5.5vw, 40px)`; actions after the name). The meta line is degree and
+  place; the DTO carries no public/private flag, so none is shown. Actions are `SaveToList` only (Follow is phase 7).
+  The `PageLayout` title row is gone; the top bar's back already goes to "Back to all schools" from every non-index page
+  (`back-target.ts`, unchanged). `SchoolFacts` is now wash-coloured tiles (format, type, website); the mockup's MCAT and
+  GPA tiles are phase C data.
+- **Section navigation.** A `<nav class="medapp-pills" aria-label="School sections">` of `Link`s with
+  `aria-current="page"`, the current one a filled wash pill, in a paper capsule. It is the same semantics as the shared
+  `Tabs` in link mode, so there is no `role="tablist"`, `aria-selected` or `layoutId` and `design-consistency.test.ts`
+  (rules 1 to 4 grep exactly those) needed no change. `activeOptions={{ exact: true, includeSearch: true }}` stops
+  TanStack marking the Activity link (whose default `tab` is stripped from its URL) active on every tab.
+  `school-page.test.tsx` pins the markup.
+- **Tabs restyled** onto `.medapp-*` (`medapp-tab` stack, `medapp-section--panel` paper panels, rows on rules inside,
+  `medapp-h2` Fraunces headings, `medapp-meta`, `medapp-text`, `medapp-table`, `medapp-defs`): Activity (the totals
+  table's category cells are `StatusIcon` sm plus `StatusText`), History, Forecast, Interviews with Overview, Questions,
+  Format and feedback, and Practice (`PracticePanel`, `PracticeTimer`, `FollowupsSection`; buttons are chips, the start
+  button `.medapp-chip--primary`), Secondaries (and `SecondaryPromptRow`), `SchoolChances`, `SourceLinks`,
+  `ArrivalsSection`, `WaveNote`. `MedEmpty` is the shared empty and error panel (replaces `EmptyState` plus `Button`).
+  Still on the bridge, for B3: `SearchField` (questions), `Switch` and `Textarea` (practice), `ChanceLine`, `AskPanel`
+  (wrapped in a paper panel), `PracticePage`.
+- **Charts.** `ChartFrame` is `.medapp-chart` (paper, 26px radius, Fraunces title, `.medapp-legend`, `.medapp-tip` for
+  the tooltip, `.medapp-table--chart` for the data table); text, axes, crosshair and dots read `--app-text-muted`,
+  `--app-border`, `--app-surface`. `ArrivalBars` draw the `-fill` pastel with a 1px line-colour edge (`fillOf` in
+  `chartColors.ts`); lines and daily bars use the line colour. **Category colours now follow the status hues**
+  (secondary blue 1, interview orange 2, acceptance green 3, rejection red 4, waitlist yellow 5), so a line matches the
+  swatch of its rows (Phase A's mapping had rejection orange and secondary red). Sources and cycles keep slots 1 to 5.
+- **Contrast (dataviz validator, `validate_palette.js`).** Light lines on paper `#FFFCF6`: 5.87, 5.88, 5.01, 5.21, 5.83;
+  on the ground `#F6F1E7` the lowest is 4.56. Dark lines on paper `#282C3C`: 8.04, 7.66, 8.37, 7.07, 9.04. All at least
+  3:1 (`charts.test.tsx` now pins this from the stylesheet). The validator's other checks do not pass for this palette:
+  chroma floor (three light slots, 0.094 to 0.098 against 0.10), the dark lightness band (the dark lines are light
+  pastels, L 0.80 to 0.86), and adjacent CVD and normal-vision separation (light worst adjacent 4.5 CVD and 12.9 normal;
+  dark 2.8 and 12.8). These are the owner-approved status hues; every series keeps its dash, a legend and a data table
+  as the secondary cues. Reported rather than changed.
+- **`--site-chart-*` retired.** Only medschools read it (the old steel-tokens test held that), so the five tokens left
+  `app/globals/tokens-themes.css` (Day and Night), the bridge lines left `medschools.css`, and the steel-tokens table
+  rows and the "Owner O7: the chart palette" describe block were removed. `charts.test.tsx` replaces them: contrast from
+  the stylesheet and no `--site-chart` in either file.
+- **Dialogs.** The Save to list menu (`AnchoredMenu`, portaled) renders in the app palette in both modes (screenshot).
+- **Integration tests.** `testing/integration/medschools-*.test.ts` match text (`Reported events`, `Source:`, tab
+  contents) and the index's `aria-pressed` chips, none the markup that changed; no edit was needed.
+- **Left for B3:** tracker, lists, ask, rolling, the import, the overlap section, `PracticePage`, and the last
+  `--site-*` bridge consumers (the bridge stays until they move).
 
 ## 0. What the code says (the findings that shape the plan)
 

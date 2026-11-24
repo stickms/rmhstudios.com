@@ -119,7 +119,7 @@ export function CategoryLines(p: {
                     {
                       key: 'wave',
                       name: labels.wave.probe(wave.count),
-                      color: 'var(--site-text-muted)',
+                      color: 'var(--app-text-muted)',
                       text: '',
                       y: () => null,
                     },

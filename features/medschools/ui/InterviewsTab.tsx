@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { EmptyState } from '@/components/ui/empty-state';
 import { SearchField } from '@/components/ui/search-field';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import type { InterviewProfileDto, MedSchoolDetailDto, MedSourceId, SchoolStatsDto } from '../medschools.contract';
@@ -11,6 +10,7 @@ import { INTERVIEW_TABS, Q_MAX, type InterviewTab } from '../engine/search';
 import { activityQuery } from '../medschools.queries';
 import { CATEGORY_COLOR } from './charts/chartColors';
 import { useMedLabels } from './labels';
+import { MedEmpty } from './MedEmpty';
 import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
 import { PracticePanel } from './practice/PracticePanel';
@@ -21,11 +21,11 @@ type Row = { key: string; label: string; value: string };
 function RowList({ rows }: { rows: Row[] }) {
   if (rows.length === 0) return null;
   return (
-    <dl className="m-0">
+    <dl className="medapp-defs">
       {rows.map((r) => (
-        <div key={r.key} className="flex items-baseline justify-between gap-4 border-b border-site-border py-2">
-          <dt className="t-meta">{r.label}</dt>
-          <dd className="t-body m-0 min-w-0 break-words text-end">{r.value}</dd>
+        <div key={r.key}>
+          <dt>{r.label}</dt>
+          <dd>{r.value}</dd>
         </div>
       ))}
     </dl>
@@ -74,7 +74,7 @@ export function InterviewsTab({
     }
   };
   return (
-    <div className="flex flex-col gap-6">
+    <div className="medapp-tab">
       <OptionGroup
         label={t('interviews-tabs-label', { defaultValue: 'Interview sections' })}
         value={itab}
@@ -169,14 +169,14 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
   const statSources = PRIMARY_ORDER.filter((s) => stats.some((x) => x.source === s));
   const hasStats = stats.some((s) => statRows(s).length > 0);
 
-  if (!hasInvites && perYear === null && !hasStats) return <EmptyState title={NONE(t)} />;
+  if (!hasInvites && perYear === null && !hasStats) return <MedEmpty title={NONE(t)} />;
 
   const pct = perYear ? fillOf(reported, perYear) : 0;
   return (
-    <div className="flex flex-col gap-6">
+    <div className="medapp-tab">
       {hasInvites || perYear !== null ? (
-        <section aria-labelledby="medschools-int-compare" className="flex flex-col gap-2">
-          <h2 id="medschools-int-compare" className="t-heading m-0">
+        <section aria-labelledby="medschools-int-compare" className="medapp-section medapp-section--panel">
+          <h2 id="medschools-int-compare" className="medapp-h2">
             {t('interviews-reported-heading', {
               count: reported,
               n: nf.format(reported),
@@ -187,7 +187,7 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
           </h2>
           {perYear !== null ? (
             <>
-              <p className="t-body m-0">
+              <p className="medapp-text">
                 {t('interviews-per-year', {
                   defaultValue: 'About {{m}} interviews a year',
                   m: nf.format(perYear),
@@ -201,14 +201,11 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
                 aria-valuemin={0}
                 aria-valuemax={perYear}
                 aria-valuenow={Math.min(reported, perYear)}
-                className="h-2 w-full overflow-hidden rounded-site-sm border border-site-border bg-site-bg-subtle"
+                className="medapp-bar-track"
               >
-                <div
-                  className="h-full"
-                  style={{ inlineSize: `${Math.round(pct * 100)}%`, background: CATEGORY_COLOR.INTERVIEW }}
-                />
+                <span style={{ inlineSize: `${Math.round(pct * 100)}%`, background: CATEGORY_COLOR.INTERVIEW }} />
               </div>
-              <p className="t-meta m-0">
+              <p className="medapp-meta">
                 {t('interviews-projected', {
                   defaultValue: 'Projected from the number of interviews reported over all cycles. Source: Admit.org',
                 })}
@@ -223,8 +220,8 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
           .map((s, i) => {
             const rows = statRows(s);
             return rows.length === 0 ? null : (
-              <div key={`${src}-${i}`}>
-                <h3 className="t-label m-0">{statHeading(s)}</h3>
+              <div key={`${src}-${i}`} className="medapp-section medapp-section--panel">
+                <h3 className="medapp-h3">{statHeading(s)}</h3>
                 <RowList rows={rows} />
               </div>
             );
@@ -242,16 +239,16 @@ function Practice({ slug, detail }: { slug: string; detail: MedSchoolDetailDto }
     [detail.questions],
   );
   return (
-    <div className="flex flex-col gap-4">
+    <div className="medapp-section">
       {questions.length === 0 ? (
-        <EmptyState
+        <MedEmpty
           title={t('practice-school-empty', { defaultValue: 'No questions have been collected for this school yet.' })}
         />
       ) : (
         <PracticePanel questions={questions} slug={slug} />
       )}
-      <p className="t-meta m-0">
-        <Link to="/rmh-medschool/practice" className="underline">
+      <p className="medapp-meta">
+        <Link to="/rmh-medschool/practice" className="medapp-link">
           {t('practice-general-link', { defaultValue: 'General questions for any school' })}
         </Link>
       </p>
@@ -265,10 +262,10 @@ function Questions({ detail }: { detail: MedSchoolDetailDto }) {
   const [text, setText] = useState('');
   const needle = text.trim().toLowerCase();
   const all = detail.questions;
-  if (all.length === 0) return <EmptyState title={NONE(t)} />;
+  if (all.length === 0) return <MedEmpty title={NONE(t)} />;
   const shown = needle ? all.filter((q) => q.text.toLowerCase().includes(needle)) : all;
   return (
-    <div className="flex flex-col gap-3">
+    <div className="medapp-section">
       <SearchField
         aria-label={t('interviews-questions-search', { defaultValue: 'Search questions' })}
         placeholder={t('interviews-questions-search', { defaultValue: 'Search questions' })}
@@ -277,13 +274,13 @@ function Questions({ detail }: { detail: MedSchoolDetailDto }) {
         onValueChange={setText}
       />
       {shown.length === 0 ? (
-        <p className="t-meta m-0">{t('interviews-questions-none', { defaultValue: 'No question matches.' })}</p>
+        <p className="medapp-meta">{t('interviews-questions-none', { defaultValue: 'No question matches.' })}</p>
       ) : (
-        <ul className="m-0 list-none p-0">
+        <ul className="medapp-list medapp-panel">
           {shown.map((q, i) => (
-            <li key={`q-${i}`} className="border-b border-site-border py-2">
-              <p className="t-body m-0 break-words">{q.text}</p>
-              <p className="t-meta m-0">
+            <li key={`q-${i}`}>
+              <p className="medapp-text">{q.text}</p>
+              <p className="medapp-meta">
                 {[
                   sourceName(q.source),
                   q.cycleYear === null ? null : String(q.cycleYear),
@@ -314,7 +311,7 @@ function FormatAndFeedback({ detail }: { detail: MedSchoolDetailDto }) {
   const nf = new Intl.NumberFormat(locale);
   const n = (v: number | null) => (v === null ? null : nf.format(v));
   const sources = PRIMARY_ORDER.filter((s) => detail.profiles.some((p) => p.source === s));
-  if (sources.length === 0) return <EmptyState title={NONE(t)} />;
+  if (sources.length === 0) return <MedEmpty title={NONE(t)} />;
 
   const profileRows = (p: InterviewProfileDto): Row[] => {
     const rows: [string, string, string | null][] = [
@@ -337,10 +334,10 @@ function FormatAndFeedback({ detail }: { detail: MedSchoolDetailDto }) {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="medapp-tab">
       {sources.map((src) => (
-        <section key={src} className="flex flex-col gap-4" aria-labelledby={`medschools-int-${src}`}>
-          <h2 id={`medschools-int-${src}`} className="t-heading m-0">
+        <section key={src} className="medapp-section medapp-section--panel" aria-labelledby={`medschools-int-${src}`}>
+          <h2 id={`medschools-int-${src}`} className="medapp-h2">
             {sourceName(src)}
           </h2>
           {detail.profiles
@@ -353,8 +350,8 @@ function FormatAndFeedback({ detail }: { detail: MedSchoolDetailDto }) {
                   ...p.feedbackPositive.map((x) => ['pos', x] as const),
                   ...p.feedbackNegative.map((x) => ['neg', x] as const),
                 ].map(([kind, text], j) => (
-                  <p key={`${kind}-${j}`} className="t-body m-0 border-b border-site-border py-2">
-                    <span className="t-meta">
+                  <p key={`${kind}-${j}`} className="medapp-text medapp-quote">
+                    <span className="medapp-meta">
                       {kind === 'before'
                         ? t('school-feedback-before', { defaultValue: 'Before' })
                         : kind === 'pos'

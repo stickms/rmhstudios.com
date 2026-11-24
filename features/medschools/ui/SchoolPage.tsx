@@ -2,17 +2,13 @@ import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { PageTabs } from '@/components/feed/PageTabs';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import type { TabItem } from '@/components/ui/tabs';
 import { SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
 import { patchSearch, type ViewPatch } from '../engine/prefs';
 import { parseSchoolSearch } from '../engine/search';
 import { schoolQuery } from '../medschools.queries';
 import { ActivityTab } from './ActivityTab';
 import { AskPanel } from './ask/AskPanel';
+import { MedEmpty } from './MedEmpty';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
 import { ForecastTab } from './ForecastTab';
@@ -23,6 +19,7 @@ import { SecondariesTab } from './SecondariesTab';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SchoolFacts } from './SchoolFacts';
+import { PageHead } from './shell/PageHead';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
@@ -75,7 +72,6 @@ export function SchoolPage() {
         return t('school-tab-secondaries', { defaultValue: 'Secondaries' });
     }
   };
-  const tabs: TabItem[] = SCHOOL_TABS.map((id) => ({ id, label: tabLabel(id) }));
 
   const programControl = detail ? (
     <ProgramToggles
@@ -87,78 +83,72 @@ export function SchoolPage() {
 
   if (detailQuery.isError || (!detail && !detailQuery.isPending)) {
     return (
-      <PageLayout title={t('school-title-fallback', { defaultValue: 'Med school' })}>
-        <EmptyState
+      <>
+        <PageHead title={t('school-title-fallback', { defaultValue: 'Med school' })} />
+        <MedEmpty
           title={t('school-load-failed', { defaultValue: 'Could not load this school.' })}
-          action={
-            <Button onClick={() => void detailQuery.refetch()}>{t('retry', { defaultValue: 'Try again' })}</Button>
-          }
+          onRetry={() => void detailQuery.refetch()}
         />
-      </PageLayout>
+      </>
     );
   }
 
   return (
-    <PageLayout
-      title={detail?.school.name ?? t('school-title-fallback', { defaultValue: 'Med school' })}
-      breadcrumbs={[
-        { label: t('index-title', { defaultValue: 'RMH Med Schools' }), to: '/rmh-medschool' },
-        { label: detail?.school.shortName ?? slug },
-      ]}
-    >
+    <>
+      <PageHead
+        title={detail?.school.name ?? t('school-title-fallback', { defaultValue: 'Med school' })}
+        crest={detail ? <SchoolCrest slug={slug} name={detail.school.name} size={76} /> : undefined}
+        sub={
+          detail
+            ? t('school-place', {
+                defaultValue: '{{degree}} · {{city}}, {{state}}',
+                degree: detail.school.degree,
+                city: detail.school.city,
+                state: detail.school.state,
+              })
+            : undefined
+        }
+        actions={
+          detail ? <SaveToList school={{ slug, name: detail.school.name }} program={search.program} /> : undefined
+        }
+      />
       <SkeletonSwap ready={!!detail}>
         {detail ? (
-          <div className="flex flex-col gap-4">
-            <div className="mb-2 flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <SchoolCrest slug={slug} name={detail.school.name} size={40} />
-                <p className="t-meta m-0">
-                  {t('school-place', {
-                    defaultValue: '{{degree}} · {{city}}, {{state}}',
-                    degree: detail.school.degree,
-                    city: detail.school.city,
-                    state: detail.school.state,
-                  })}
-                </p>
-              </div>
-              <SchoolFacts school={detail.school} />
-              {session ? (
-                <p className="t-meta m-0 flex flex-wrap items-center gap-x-3">
-                  <SaveToList school={{ slug, name: detail.school.name }} program={search.program} />
-                  <Link to="/rmh-medschool/tracker" className="underline">
-                    {t('school-my-tracker', { defaultValue: 'My tracker' })}
-                  </Link>
-                  <Link to="/rmh-medschool/ask" className="underline">
-                    {t('school-ask-link', { defaultValue: 'Ask' })}
-                  </Link>
-                  <Link to="/rmh-medschool/lists" className="underline">
-                    {t('school-my-lists', { defaultValue: 'My lists' })}
-                  </Link>
-                </p>
-              ) : null}
-              <PrefsNote fromPrefs={view.fromPrefs} />
-            </div>
-            <div>
-              <PageTabs
-                tabs={tabs}
-                value={search.tab}
-                aria-label={t('school-tabs-label', { defaultValue: 'School sections' })}
-                renderTab={(tab, props) => (
-                  <Link
-                    to="/rmh-medschool/$slug"
-                    params={{ slug }}
-                    search={((prev: Record<string, unknown>) => ({ ...prev, tab: tab.id })) as never}
-                    replace
-                    resetScroll={false}
-                    id={props.id}
-                    aria-current={props['aria-current']}
-                    className={`${props.className} min-h-11`}
-                  >
-                    {props.children}
-                  </Link>
-                )}
-              />
-            </div>
+          <div className="medapp-school-body">
+            {session ? (
+              <nav className="medapp-chips" aria-label={t('school-my-label', { defaultValue: 'My Med Schools' })}>
+                <Link to="/rmh-medschool/tracker" className="medapp-chip">
+                  {t('school-my-tracker', { defaultValue: 'My tracker' })}
+                </Link>
+                <Link to="/rmh-medschool/ask" className="medapp-chip">
+                  {t('school-ask-link', { defaultValue: 'Ask' })}
+                </Link>
+                <Link to="/rmh-medschool/lists" className="medapp-chip">
+                  {t('school-my-lists', { defaultValue: 'My lists' })}
+                </Link>
+              </nav>
+            ) : null}
+            <PrefsNote fromPrefs={view.fromPrefs} />
+            <SchoolFacts school={detail.school} />
+            {/* Links to the same page with another `tab`, so a nav with `aria-current`, not a tablist (as the shared
+                `Tabs` renders its link mode). */}
+            <nav className="medapp-pills" aria-label={t('school-tabs-label', { defaultValue: 'School sections' })}>
+              {SCHOOL_TABS.map((id) => (
+                <Link
+                  key={id}
+                  to="/rmh-medschool/$slug"
+                  params={{ slug }}
+                  search={((prev: Record<string, unknown>) => ({ ...prev, tab: id })) as never}
+                  replace
+                  resetScroll={false}
+                  activeOptions={{ exact: true, includeSearch: true }}
+                  aria-current={search.tab === id ? 'page' : undefined}
+                  className="medapp-pill"
+                >
+                  {tabLabel(id)}
+                </Link>
+              ))}
+            </nav>
             {search.tab === 'history' ? (
               <HistoryTab
                 slug={slug}
@@ -179,7 +169,7 @@ export function SchoolPage() {
               <SecondariesTab slug={slug} detail={detail} search={search} programControl={programControl} />
             ) : (
               <>
-                <div className="flex flex-wrap items-center gap-2">{programControl}</div>
+                <div className="medapp-controls">{programControl}</div>
                 {search.tab === 'activity' ? (
                   <ActivityTab slug={slug} detail={detail} search={search} setSearch={setSearch} />
                 ) : (
@@ -188,13 +178,13 @@ export function SchoolPage() {
               </>
             )}
             {session ? (
-              <div className="mt-4 border-t border-site-border pt-4">
+              <div className="medapp-panel medapp-panel--padded">
                 <AskPanel slug={slug} schoolName={detail.school.name} heading="section" />
               </div>
             ) : null}
           </div>
         ) : null}
       </SkeletonSwap>
-    </PageLayout>
+    </>
   );
 }

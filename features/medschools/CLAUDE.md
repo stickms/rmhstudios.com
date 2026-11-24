@@ -61,8 +61,8 @@ longer govern this feature**; the admin page does not move with it (`components/
 - **Tokens (`ui/medschools.css`).** `--app-*` for light and dark; `--app-med-*` for the wash, the seven status pairs
   (`swatch`, `ink`, `text`; plus a neutral `withdrawn`) and the chart series (`-n` line, `-n-fill` pastel fill). Every
   colour is a token (the hex gate strips only `--app-*` declarations). A `--site-*` **bridge** points the Steel names at
-  this palette (and `--site-chart-n` at `--app-med-chart-n`), also on `<html>` while the app is open so portaled dialogs
-  match; phase B restyles the components onto `--app-*` and the bridge goes when the last one has moved.
+  this palette, also on `<html>` while the app is open so portaled dialogs match; phase B restyles the components onto
+  `--app-*` and the bridge goes when the last one has moved.
 - **Type.** Body is DM Sans (the site font); Fraunces for headings only (`--app-font-display`), self-hosted
   (`app/fonts/fraunces.css`, preloaded by the layout).
 - **The wash.** `public/images/medschools/wash-{light,dark}.webp`, pre-rendered by `scripts/medschools/render-wash.mjs`
@@ -74,9 +74,14 @@ longer govern this feature**; the admin page does not move with it (`components/
   filled wash, a stronger border and weight 600; 36px, 44px on touch), a paper panel (`.medapp-panel`) holding the rows,
   `PageHead` (`ui/shell/`) for the one `<h1>` in place of `PageLayout`'s title row and duplicate back link.
   `SchoolCrest`, `ProgramToggles`, `ProgramSetToggles`, `CategoryToggles`, `OptionGroup`, `SaveToList`, `PrefsNote`,
-  `WaveNote` and `skeletons` no longer read `--site-*`. **Left for B2 and B3:** the school page and its tabs, the
-  charts, the tracker, lists, ask, secondaries and rolling pages still keep their Steel markup (`PageLayout`, `t-*`, the
-  bridge) and their duplicate title row.
+  `WaveNote` and `skeletons` no longer read `--site-*`. **Left for B3:** the tracker, lists, ask, secondaries and
+  rolling pages still keep their Steel markup (`PageLayout`, `t-*`, the bridge) and their duplicate title row.
+- **Phase B2 (built).** The school page: `PageHead` with `crest` and `actions`, `SchoolFacts` as wash tiles, and the
+  sections as `<nav class="medapp-pills">` of links with `aria-current` (not a tablist; the design-consistency gate
+  greps `role="tablist"`, `aria-selected`, `layoutId` and accent underline bars only). Every tab, the charts
+  (`.medapp-chart`) and the Interviews practice sub-tab are on `--app-*`; `MedEmpty` is the empty and error panel. Still
+  on the bridge for B3: the tracker, lists, ask, rolling, import, overlap, `PracticePage`, and `SearchField`, `Switch`,
+  `Textarea` inside restyled tabs.
 - **Status (`ui/status/`).** `status.ts` maps the public `MedEventType` and the tracker milestones onto eight keys:
   acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
   interview orange, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
@@ -131,22 +136,20 @@ longer govern this feature**; the admin page does not move with it (`components/
 React SVG, server-rendered (the charts are in the HTML with scripting off). **Owner O7 (2026-11-23)** supersedes O2's
 ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays open for the rest of the site.
 
-- **Colour (O7.1).** `--site-chart-1`..`-5` in `app/globals/tokens-themes.css` (Day and Night, exact values pinned in
-  `lib/__tests__/steel-tokens.test.ts`, which also holds that only this feature reads them). The slots are the first
-  five of the dataviz skill's reference palette, validated with its `validate_palette.js` against `--site-surface` (the
-  chart card) in each edition: adjacent CVD 9.1 Day / 8.4 Night, normal-vision 19.6 / 19.3; all five are at least 3:1 in
-  Night, and three (aqua, yellow, magenta) are 2.2-2.8:1 in Day, which the relief rule allows because every chart has a
-  legend, a dash cue and a data table. The mappings are fixed in `ui/charts/chartColors.ts` and never depend on rank or
-  on what is switched on: Interview 1 (blue), Rejection 2, Acceptance 3, Secondary 4, Waitlist 5; sources (per-type
-  charts) CycleTrack 1, Admit 2, SDN 3, RMH 4, MDApplicants 5; History cycles newest first 1..5. A component writes
-  `var(--site-chart-n)` through those maps, never a hex or a raw palette class. Dash and weight stay as the secondary
-  cue. Text is always `--site-text` / `--site-text-muted`, never a series colour. A bought theme does not restyle the
-  chart tokens (they follow the edition).
-- **Card and legend (O7.2).** `ChartFrame` is a card: `--site-surface`, 1px `--site-border`, `rounded-site`, `p-3`
-  (phone) / `sm:p-4`; caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per
-  series) is present for two or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as
-  `legend`: aria-pressed buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one
-  stays on). There are no end labels. The daily bars are one series, named by the title and the sources line.
+- **Colour (O7.1, moved in B2).** `--app-med-chart-1`..`-5` (line, at least 3:1 on paper and ground in both modes,
+  pinned by `charts.test.tsx` from `medschools.css`) and `-n-fill` (the pastel, used for `ArrivalBars` bodies) in
+  `ui/medschools.css`; the `--site-chart-*` tokens are gone. Mappings are fixed in `ui/charts/chartColors.ts` and never
+  depend on rank or on what is switched on: categories take their status hue (Secondary 1 blue, Interview 2 orange,
+  Acceptance 3 green, Rejection 4 red, Waitlist 5 yellow); sources (per-type charts) CycleTrack 1, Admit 2, SDN 3, RMH
+  4, MDApplicants 5; History cycles newest first 1..5. A component writes `var(--app-med-chart-n)` through those maps,
+  never a hex. Dash and weight stay as the secondary cue. Text is always `--app-text` / `--app-text-muted`. The dataviz
+  validator's contrast check passes; its chroma, dark-lightness and CVD checks do not for these status hues (see "Phase
+  B2 as built" in the redesign plan).
+- **Card and legend (O7.2).** `ChartFrame` is a paper panel (`.medapp-chart`: `--app-surface`, 1px `--app-border`);
+  caption, legend, plot, native `<details>` table. A legend (`ChartLegend`: a line swatch per series) is present for two
+  or more series; the Activity category legend IS the toggle row (`CategoryToggles` passed as `legend`: aria-pressed
+  buttons in a `role="group"`, each with its swatch, the swatch dimmed when off, at least one stays on). There are no
+  end labels. The daily bars are one series, named by the title and the sources line.
 - **Tween (O7.3).** `tween.ts` (pure, injected scheduler) and `useTween.ts`: the y scale moves from the old to the new
   top in 280 ms, ease-out (`easeOutCubic`), when a toggle, program or source changes it. Lines, bars and gridlines
   follow the animated scale (`yTicksTween`: shared ticks stay, new ones fade in, old ones fade out); an interrupted
