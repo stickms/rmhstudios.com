@@ -186,6 +186,9 @@ describe('filterSchools', () => {
   it('combines with AND', () => {
     expect(filterSchools(schools, { degree: 'DO', state: 'TX' }).map((s) => s.shortName)).toEqual(['TCOM']);
     expect(filterSchools(schools, { degree: 'DO', state: 'NC' })).toEqual([]);
+    expect(filterSchools(schools, { states: ['NC', 'TX'] })).toHaveLength(3);
+    expect(filterSchools(schools, { states: ['nc'] }).map((s) => s.shortName)).toEqual(['Duke']);
+    expect(filterSchools(schools, { states: [] })).toHaveLength(3);
   });
 });
 

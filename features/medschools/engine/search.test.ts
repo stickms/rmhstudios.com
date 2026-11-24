@@ -8,6 +8,8 @@ import {
   parseLiveSearch,
   parseSchoolSearch,
   parseTrackerSearch,
+  parseStates,
+  MAX_STATES,
   showParam,
   validateIndexSearch,
   validateLiveSearch,
@@ -95,7 +97,7 @@ describe('parseIndexSearch', () => {
   it('keeps good ones, and a list id or all', () => {
     expect(parseIndexSearch({ q: ' duke ', state: 'tx', programs: 'do-phd', list: 'all' })).toEqual({
       q: 'duke',
-      state: 'TX',
+      states: ['TX'],
       programs: ['do-phd'],
       list: 'all',
     });
@@ -104,6 +106,17 @@ describe('parseIndexSearch', () => {
   it('the route validator writes the program set back as the comma list, never an array', () => {
     expect(validateIndexSearch({ programs: 'do,md-phd', q: 'x' })).toEqual({ q: 'x', programs: 'md-phd,do' });
     expect(validateLiveSearch({ degree: 'DO', program: 'PHD' })).toEqual({ programs: 'do-phd' });
+  });
+  it('states is a sorted, deduped list of codes; an old single-state link still parses; none is every state', () => {
+    expect(parseIndexSearch({ state: 'ny,CA,ny' }).states).toEqual(['CA', 'NY']);
+    expect(parseIndexSearch({ state: 'CA' }).states).toEqual(['CA']);
+    expect(parseIndexSearch({ state: 'CA,zz9,N' }).states).toEqual(['CA']);
+    expect('states' in parseIndexSearch({ state: '' })).toBe(false);
+    expect(parseStates('AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI,ID')).toHaveLength(MAX_STATES);
+    expect(parseLiveSearch({ state: 'tx,nc' }).states).toEqual(['NC', 'TX']);
+    // The route validators write the canonical comma list back.
+    expect(validateIndexSearch({ state: 'ny,ca' })).toEqual({ state: 'CA,NY' });
+    expect(validateLiveSearch({ state: 'NC' })).toEqual({ state: 'NC' });
   });
   it('caps q length', () => {
     expect(parseIndexSearch({ q: 'a'.repeat(10_000) }).q?.length).toBeLessThanOrEqual(100);

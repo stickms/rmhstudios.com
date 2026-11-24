@@ -69,19 +69,42 @@ const listParam = (v: unknown): string | undefined => {
   return s && /^[a-z0-9]{1,40}$/.test(s) ? s : undefined;
 };
 
+/** The most states one filter names (the API's cap too). */
+export const MAX_STATES = 10;
+
+/**
+ * `state=CA,NY` (owner 2026-11-24: several states at once): two-letter codes, upper-cased, deduped, sorted, at most
+ * `MAX_STATES`; an old single-state link (`state=CA`) is a list of one. Empty means every state. The API checks each
+ * code against the known list.
+ */
+export function parseStates(v: unknown): string[] {
+  const s = str(v);
+  if (!s) return [];
+  return [
+    ...new Set(
+      s
+        .split(',')
+        .map((x) => x.trim().toUpperCase())
+        .filter((x) => /^[A-Z]{2}$/.test(x)),
+    ),
+  ]
+    .sort()
+    .slice(0, MAX_STATES);
+}
+
 export function parseIndexSearch(raw: Record<string, unknown>): {
   q?: string;
-  state?: string;
+  states?: string[];
   programs?: ProgramKey[];
   list?: string;
 } {
   const q = str(raw.q)?.trim().slice(0, Q_MAX);
-  const st = str(raw.state)?.trim();
+  const states = parseStates(raw.state);
   const programs = programSetOf(raw);
   const list = listParam(raw.list);
   return {
     ...(q ? { q } : {}),
-    ...(st && /^[A-Za-z]{2}$/.test(st) ? { state: st.toUpperCase() } : {}),
+    ...(states.length ? { states } : {}),
     ...(programs ? { programs } : {}),
     ...(list ? { list } : {}),
   };
@@ -93,37 +116,50 @@ export function parseIndexSearch(raw: Record<string, unknown>): {
  */
 export function validateIndexSearch(raw: Record<string, unknown>): Omit<
   ReturnType<typeof parseIndexSearch>,
-  'programs'
+  'programs' | 'states'
 > & {
   programs?: string;
+  state?: string;
 } {
-  const { programs, ...rest } = parseIndexSearch(raw);
-  return { ...rest, ...(programs ? { programs: programsValue(programs) } : {}) };
+  const { programs, states, ...rest } = parseIndexSearch(raw);
+  return {
+    ...rest,
+    ...(states ? { state: states.join(',') } : {}),
+    ...(programs ? { programs: programsValue(programs) } : {}),
+  };
 }
 
 export function parseLiveSearch(raw: Record<string, unknown>): {
   type?: MedEventType;
   school?: string;
+  states?: string[];
   programs?: ProgramKey[];
 } {
   const type = pick(raw.type, ALL_TYPES);
   const school = str(raw.school);
+  const states = parseStates(raw.state);
   const programs = programSetOf(raw);
   return {
     ...(type ? { type } : {}),
     ...(school && /^[a-z0-9-]{1,80}$/.test(school) ? { school } : {}),
+    ...(states.length ? { states } : {}),
     ...(programs ? { programs } : {}),
   };
 }
 
 export function validateLiveSearch(raw: Record<string, unknown>): Omit<
   ReturnType<typeof parseLiveSearch>,
-  'programs'
+  'programs' | 'states'
 > & {
   programs?: string;
+  state?: string;
 } {
-  const { programs, ...rest } = parseLiveSearch(raw);
-  return { ...rest, ...(programs ? { programs: programsValue(programs) } : {}) };
+  const { programs, states, ...rest } = parseLiveSearch(raw);
+  return {
+    ...rest,
+    ...(states ? { state: states.join(',') } : {}),
+    ...(programs ? { programs: programsValue(programs) } : {}),
+  };
 }
 
 /** A comma list of charted categories (`interview,acceptance`), case-insensitive, back in `CHARTED_TYPES` order. */

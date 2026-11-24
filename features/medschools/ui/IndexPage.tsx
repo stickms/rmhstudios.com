@@ -13,7 +13,7 @@ import { indexQuery, listsQuery, schoolsQuery } from '../medschools.queries';
 import { useSession } from '@/components/session/session-context';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
-import { ProgramMultiSelect } from './ProgramMultiSelect';
+import { ProgramMultiSelect, StateMultiSelect } from './ProgramMultiSelect';
 import { SaveToList } from './SaveToList';
 import { SchoolCrest } from './SchoolCrest';
 import { SkeletonSwap } from './skeletons';
@@ -43,7 +43,7 @@ export function IndexPage() {
   const lists = useQuery({ ...listsQuery(), enabled: signedIn });
   const myLists = signedIn ? (lists.data?.lists ?? []) : [];
 
-  const setSearch = (next: { q?: string | undefined; state?: string | undefined; list?: string | undefined }) => {
+  const setSearch = (next: { q?: string | undefined; states?: string[] | undefined; list?: string | undefined }) => {
     const merged = { ...search, ...next };
     holdScroll();
     void navigate({
@@ -52,7 +52,8 @@ export function IndexPage() {
       search: ((prev: Record<string, unknown>) => ({
         ...prev,
         q: merged.q || undefined,
-        state: merged.state || undefined,
+        // A comma list of sorted codes (`state=CA,NY`); none is every state.
+        state: merged.states?.length ? merged.states.join(',') : undefined,
         list: merged.list || undefined,
       })) as never,
       replace: true,
@@ -91,18 +92,11 @@ export function IndexPage() {
               pushQuery(v);
             }}
           />
-          <MedSelect
-            aria-label={t('index-state-label', { defaultValue: 'State' })}
-            value={search.state ?? ''}
-            onChange={(e) => setSearch({ state: e.target.value || undefined })}
-          >
-            <option value="">{t('index-state-all', { defaultValue: 'All states' })}</option>
-            {(schools.data?.states ?? []).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </MedSelect>
+          <StateMultiSelect
+            states={schools.data?.states ?? []}
+            value={search.states ?? []}
+            onChange={(states) => setSearch({ states })}
+          />
           <ProgramMultiSelect value={view.programs} onChange={(programs) => setView({ programs })} />
           {myLists.length > 0 ? (
             <MedSelect

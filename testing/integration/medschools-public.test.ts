@@ -212,6 +212,28 @@ describe('RMH Med Schools, public and anonymous', () => {
     }
   });
 
+  it('filters by several states at once (owner 2026-11-24): known codes only, at most ten, a single code still works', async () => {
+    type School = { slug: string; state: string };
+    const schools = async (state: string) => anon.get(`/api/medschools/schools?state=${state}`);
+    const one = await schools('NC');
+    expect(one.status).toBe(200);
+    expect((one.body.schools as School[]).every((s) => s.state === 'NC')).toBe(true);
+    expect((one.body.schools as School[]).some((s) => s.slug === SLUG)).toBe(true);
+    const two = await schools('TX,NC');
+    expect(two.status).toBe(200);
+    expect((two.body.schools as School[]).every((s) => s.state === 'NC' || s.state === 'TX')).toBe(true);
+    expect((two.body.schools as School[]).some((s) => s.slug === SLUG)).toBe(true);
+    expect((await schools('TX')).body.schools.some((s: School) => s.slug === SLUG)).toBe(false);
+    expect((await schools('NC,ZZ')).status).toBe(400);
+    expect((await schools('AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI')).status).toBe(400);
+    const live = await anon.get('/api/medschools/live?state=NC,TX&limit=100');
+    expect(live.status).toBe(200);
+    expect(
+      (live.body.events as { school: { state: string } }[]).every((e) => ['NC', 'TX'].includes(e.school.state)),
+    ).toBe(true);
+    expect((await anon.get('/api/medschools/live?state=NC,ZZ')).status).toBe(400);
+  });
+
   it('server-renders the school page with charts, the unit and the source, and nothing identifying', async () => {
     const res = await anon.get(`/med/${SLUG}`);
     expect(res.status).toBe(200);

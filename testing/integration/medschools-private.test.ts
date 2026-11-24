@@ -640,6 +640,7 @@ describe('the public arrivals and live endpoints', () => {
       'q=fixture',
       'q=NC',
       'state=NC',
+      'state=NC,TX',
       'types=interview,acceptance',
       'programs=md',
       'programs=md-phd,do',

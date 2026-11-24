@@ -199,13 +199,14 @@ export const qaLimitRequestQuery = () =>
 
 /** The schools-list request for a parsed index search and its effective view. */
 export function indexQuery(
-  search: { q?: string | undefined; state?: string | undefined },
+  search: { q?: string | undefined; states?: readonly string[] | undefined },
   view: { programs: readonly ProgramKey[] },
 ): IndexQuery {
   const programs = programsQueryValue(view.programs);
   return {
     ...(search.q ? { q: search.q } : {}),
-    ...(search.state ? { state: search.state } : {}),
+    // Canonical (sorted, deduped by the parser), so one choice is one cache key.
+    ...(search.states?.length ? { state: search.states.join(',') } : {}),
     ...(programs ? { programs } : {}),
   };
 }
@@ -218,7 +219,7 @@ export type LiveSearch = {
 
 /** The live loader's search from the parsed URL and the effective view. */
 export function liveSearchOf(
-  search: { type?: LiveFilters['type']; school?: string | undefined },
+  search: { type?: LiveFilters['type']; school?: string | undefined; states?: readonly string[] | undefined },
   view: { programs: readonly ProgramKey[] },
 ): LiveSearch {
   return {
@@ -230,6 +231,7 @@ export function liveSearchOf(
 
 /**
  * What the live feed asks the API for, given the page's search and the school list (O5). With one school selected, the
+  states?: readonly string[];
  * set is narrowed to that school's own degree; a set with nothing of its degree is dropped (the feed shows the school).
  */
 export function resolveLiveFilters(search: LiveSearch, schoolDegree: MedDegreeId | undefined): LiveFilters {
@@ -241,6 +243,7 @@ export function resolveLiveFilters(search: LiveSearch, schoolDegree: MedDegreeId
     ...(search.school ? { school: search.school } : {}),
     ...(programs ? { programs } : {}),
   };
+    ...(search.states?.length ? { states: search.states } : {}),
 }
 
 /** The degree of the school the live feed is filtered to, read from the (cached) school list. */
@@ -256,6 +259,7 @@ export async function prefetchLivePage(queryClient: QueryClient, search: LiveSea
     queryClient,
     liveQuery(resolveLiveFilters(search, schoolDegreeOf(list?.schools, search.school))),
   );
+    ...(search.states?.length ? { state: search.states.join(',') } : {}),
 }
 
 /** What `head()` needs to name a school; the loader returns it so the title is right before the page hydrates. */

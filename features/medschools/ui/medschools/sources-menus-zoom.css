@@ -309,6 +309,47 @@
 .medapp-multi__panel[hidden] {
   display: none;
 }
+/* The panel's Done button shows on a phone only, where the panel is a full-width sheet. */
+.medapp-multi__done {
+  display: none;
+}
+/* On a phone the panel is a full-width sheet under the toolbar (the control lets go of the panel's containing block, so
+   the toolbar holds it), with a large filter field and an obvious Done at its foot. Absolute, never fixed. */
+@media (max-width: 639px) {
+  .medapp-toolbar,
+  .medapp-rail-filters {
+    position: relative;
+  }
+  .medapp-toolbar .medapp-multi,
+  .medapp-rail-filters .medapp-multi {
+    position: static;
+  }
+  .medapp-toolbar .medapp-multi__panel,
+  .medapp-rail-filters .medapp-multi__panel {
+    inset-inline: 0;
+    inset-block-start: calc(100% + var(--app-med-space-1));
+    inline-size: auto;
+    max-inline-size: none;
+    padding: var(--app-med-space-2);
+  }
+  .medapp-multi__done {
+    display: flex;
+    inline-size: 100%;
+    margin-block-start: var(--app-med-space-2);
+  }
+  .medapp-multi .medapp-multi__panel--long {
+    max-block-size: min(28rem, 70vh);
+  }
+}
+/* A long list (the states) scrolls inside its panel under its filter field. */
+.medapp-multi__panel--long {
+  max-block-size: min(22rem, 60vh);
+  overflow-y: auto;
+}
+.medapp-multi__filter {
+  inline-size: 100%;
+  margin-block-end: var(--app-med-space-1);
+}
 .medapp-multi__row {
   min-block-size: 40px;
   padding-inline: 8px;

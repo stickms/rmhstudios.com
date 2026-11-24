@@ -25,6 +25,9 @@ export function MedMultiSelect<V extends string>({
   keepOne = true,
   className,
   compact = false,
+  searchLabel,
+  max,
+  doneLabel,
 }: {
   /** The accessible name of the trigger and the group. */
   label: string;
@@ -37,9 +40,16 @@ export function MedMultiSelect<V extends string>({
   className?: string;
   /** The rail's narrower trigger. */
   compact?: boolean;
+  /** A long list (the states): a filter field at the top of the panel, named by this. */
+  searchLabel?: string | undefined;
+  /** The most options that can be on at once; the rest are disabled while the cap is reached. */
+  max?: number | undefined;
+  /** The panel's close button on a phone ("Done"). */
+  doneLabel: string;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -61,9 +71,13 @@ export function MedMultiSelect<V extends string>({
     };
   }, [open]);
 
+  const full = max !== undefined && value.length >= max;
+  const needle = filter.trim().toLowerCase();
+  const shown = needle ? options.filter((o) => o.label.toLowerCase().includes(needle)) : options;
   const toggle = (v: V) => {
     const on = value.includes(v);
     if (on && keepOne && value.length <= 1) return;
+    if (!on && full) return;
     const next = on ? value.filter((x) => x !== v) : [...value, v];
     // The options' own order, whatever order they were pressed in.
     onChange(options.map((o) => o.value).filter((x) => next.includes(x)));
@@ -87,8 +101,24 @@ export function MedMultiSelect<V extends string>({
         <span className="medapp-multi__summary">{summary(value)}</span>
         <ChevronDown aria-hidden="true" className="medapp-multi__chevron size-4" />
       </button>
-      <div id={`${id}-panel`} role="group" aria-label={label} className="medapp-multi__panel" hidden={!open}>
-        {options.map((o) => {
+      <div
+        id={`${id}-panel`}
+        role="group"
+        aria-label={label}
+        className={cn('medapp-multi__panel', searchLabel && 'medapp-multi__panel--long')}
+        hidden={!open}
+      >
+        {searchLabel ? (
+          <input
+            type="search"
+            className="medapp-field medapp-multi__filter"
+            aria-label={searchLabel}
+            placeholder={searchLabel}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+        ) : null}
+        {shown.map((o) => {
           const on = value.includes(o.value);
           return (
             <label key={o.value} className="medapp-checkrow medapp-multi__row">
@@ -96,7 +126,7 @@ export function MedMultiSelect<V extends string>({
                 type="checkbox"
                 className="medapp-check"
                 checked={on}
-                aria-disabled={on && keepOne && value.length <= 1 ? true : undefined}
+                aria-disabled={(on && keepOne && value.length <= 1) || (!on && full) ? true : undefined}
                 onChange={() => toggle(o.value)}
               />
               {o.icon}
@@ -104,6 +134,17 @@ export function MedMultiSelect<V extends string>({
             </label>
           );
         })}
+        {/* A phone shows the panel as a full-width sheet under the toolbar: an obvious way out. */}
+        <button
+          type="button"
+          className="medapp-btn medapp-multi__done"
+          onClick={() => {
+            setOpen(false);
+            triggerRef.current?.focus();
+          }}
+        >
+          {doneLabel}
+        </button>
       </div>
     </div>
   );
