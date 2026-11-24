@@ -435,7 +435,19 @@ esbuild list + `test -f`, `docker-compose.yml` service (`mem_limit` 512m — LLM
    so the scrape side runs inside the rest. Nothing about a question or an answer is stored, cached or logged.
    Cross-school questions use state and format filters, not embeddings (deferred). Detail:
    `features/medschools/CLAUDE.md`.
-7. Follow a school + wave notifications.
+7. Secondaries tab (roadmap item 2, shipped). A fifth school tab lists each school's secondary prompts, regular and
+   MD-PhD / DO-PhD apart, with limit, optional flag, the cycles seen (2026-2027 style ranges) and a same / reworded /
+   new / not-seen-this-cycle mark computed at read, plus an essay overlap by theme on lists and the tracker (`me/**`,
+   never cached). Sources: Admit's secondary-essays page and SDN's essay-questions page (polite deterministic parsers,
+   no model), SDN forum posts (off-peak, reject-not-redact) and each school's own pages as a **one-time curated import**
+   (`data/medschools/school-pages.json`, read and verified by hand on 2026-11-23; no recurring job fetches a school
+   website, so section 7's "school websites are not scraped" holds for automated jobs). The same file carries
+   rolling-admissions statements (`MedSchoolAdmissionsPolicy`). Secondary turnaround (received to submitted, new private
+   `SECONDARY_SUBMITTED` milestone, never a public event) is aggregated by the forecast job at 20 sharing members
+   (`MedSecondaryTurnaround`). New tables: `MedSecondaryPrompt`, `MedSecondaryObservation`, `MedSecondaryCheck`,
+   `MedSchoolAdmissionsPolicy`, `MedSecondaryTurnaround`. No private essay draft is stored anywhere. Detail:
+   `features/medschools/CLAUDE.md`.
+8. Follow a school + wave notifications.
 
 ## 15. Calls made by the designer (owner may override)
 

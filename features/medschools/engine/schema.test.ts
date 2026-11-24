@@ -32,7 +32,13 @@ function parseModels(schemaText: string): Parsed[] {
  * The only models that may carry their owner's `userId`. A name list, not a prefix: `MedTrackerApplication`,
  * `MedTrackerMilestone` and `MedSchoolListItem` reach their owner only through a parent.
  */
-const USER_OWNED = new Set(['MedTrackerCycle', 'MedSchoolList', 'MedUserPrefs', 'MedSchoolFollow', 'MedQaLimitRequest']);
+const USER_OWNED = new Set([
+  'MedTrackerCycle',
+  'MedSchoolList',
+  'MedUserPrefs',
+  'MedSchoolFollow',
+  'MedQaLimitRequest',
+]);
 
 /** `Model.field` for every column that could hold a person identifier. */
 function forbiddenColumns(schemaText: string): string[] {
@@ -297,7 +303,7 @@ model MedTrackerApplication {
       expect(uniques('MedSchoolListItem')).toContainEqual(['listId', 'schoolId', 'program']);
     });
 
-    it('MedProgramFilter is ALL | REG | PHD and MedMilestoneType has the nine types', () => {
+    it('MedProgramFilter is ALL | REG | PHD and MedMilestoneType has the ten types', () => {
       const vals = (e: string) =>
         (new RegExp(`enum ${e} \\{([\\s\\S]*?)\\}`).exec(schema())?.[1] ?? '').split(/\s+/).filter(Boolean);
       expect(vals('MedProgramFilter')).toEqual(['ALL', 'REG', 'PHD']);
@@ -305,6 +311,7 @@ model MedTrackerApplication {
         'SUBMITTED',
         'COMPLETE',
         'SECONDARY',
+        'SECONDARY_SUBMITTED',
         'INTERVIEW',
         'WAITLIST',
         'REJECTION',
@@ -394,7 +401,11 @@ model MedTrackerApplication {
         .filter((m) => /^Med(Ask|Qa|Qna|Chat|Conversation)/i.test(m.model))
         .map((m) => m.model);
       expect(names).toEqual(['MedQaLimitRequest']);
-      expect(parseModels(schema()).find((m) => m.model === 'MedQaLimitRequest')?.fields.sort()).toEqual([
+      expect(
+        parseModels(schema())
+          .find((m) => m.model === 'MedQaLimitRequest')
+          ?.fields.sort(),
+      ).toEqual([
         'adminNote',
         'createdAt',
         'decidedAt',
@@ -409,13 +420,156 @@ model MedTrackerApplication {
       ]);
     });
 
-    it('no Med model has a column that could hold a question or an answer (the scraped, anonymised interview questions excepted)', () => {
+    it('no Med model has a column that could hold a question or an answer (the scraped, anonymised interview questions and the secondary prompts excepted)', () => {
       const hits: string[] = [];
       for (const { model, fields } of parseModels(schema())) {
-        if (model === 'MedInterviewQuestion') continue;
+        // The anonymised interview questions and the secondary-application prompts (institutional text, no person) are
+        // the two places a "question" or "prompt" column is the point; the secondaries tests pin their exact columns.
+        if (model === 'MedInterviewQuestion' || /^MedSecondary/.test(model)) continue;
         for (const f of fields) if (/question|answer|prompt|query|chat|transcript/i.test(f)) hits.push(`${model}.${f}`);
       }
       expect(hits).toEqual([]);
+    });
+  });
+  describe('secondaries: institutional prompts, no person and no drafts', () => {
+    const model = (name: string) => parseModels(schema()).find((x) => x.model === name);
+    const uniques = (name: string) =>
+      (model(name)?.body.split('\n') ?? [])
+        .filter((l) => l.includes('@@unique'))
+        .map(
+          (l) =>
+            /\[([^\]]+)\]/
+              .exec(l)?.[1]
+              ?.split(',')
+              .map((x) => x.trim()) ?? [],
+        );
+    const vals = (e: string) =>
+      (new RegExp(`enum ${e} \\{([\\s\\S]*?)\\}`).exec(schema())?.[1] ?? '')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith('//'));
+    const migration = () => {
+      const dir = readdirSync('prisma/migrations').find((d) => d.endsWith('_medschools_secondaries'));
+      expect(dir).toBeDefined();
+      return readFileSync(`prisma/migrations/${dir}/migration.sql`, 'utf8');
+    };
+    const NAMES = ['MedSecondaryPrompt', 'MedSecondaryObservation', 'MedSecondaryCheck'];
+
+    it('the three models exist, carry no person column or userId, and are not user-owned', () => {
+      for (const name of NAMES) {
+        const m = model(name);
+        expect(m, name).toBeDefined();
+        expect(
+          m?.fields.some((f) => PERSON_LIKE.test(f) || f === 'userId' || /handle|post|author|draft|note/i.test(f)),
+        ).toBe(false);
+        expect(USER_OWNED.has(name)).toBe(false);
+      }
+    });
+
+    it('pins the uniques the store upserts on', () => {
+      expect(uniques('MedSecondaryPrompt')).toContainEqual(['schoolId', 'program', 'key']);
+      expect(uniques('MedSecondaryObservation')).toContainEqual(['promptId', 'cycleYear', 'source']);
+      expect(uniques('MedSecondaryCheck')).toContainEqual(['schoolId', 'source']);
+    });
+
+    it('pins every column (nothing person-shaped, and no draft or note, can be added silently)', () => {
+      expect(model('MedSecondaryPrompt')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'key',
+        'text',
+        // (`themes String[]` is skipped by `parseModels`, which treats every `[]` line as a relation.)
+        'themesVersion',
+        'createdAt',
+        'updatedAt',
+      ]);
+      expect(model('MedSecondaryObservation')?.fields).toEqual([
+        'id',
+        'promptId',
+        'cycleYear',
+        'source',
+        'limitKind',
+        'limitValue',
+        'optional',
+        'sourceRef',
+        'firstSeenAt',
+        'lastCheckedAt',
+      ]);
+      expect(model('MedSecondaryCheck')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'source',
+        'checkedAt',
+        'status',
+        'promptCount',
+      ]);
+    });
+
+    it('the admissions-policy and turnaround tables are institutional text and counts: no person column, pinned', () => {
+      for (const name of ['MedSchoolAdmissionsPolicy', 'MedSecondaryTurnaround']) {
+        const m = model(name);
+        expect(m, name).toBeDefined();
+        expect(
+          m?.fields.some((f) => PERSON_LIKE.test(f) || f === 'userId' || /handle|post|author|member\b/i.test(f)),
+        ).toBe(false);
+        expect(USER_OWNED.has(name)).toBe(false);
+      }
+      expect(model('MedSchoolAdmissionsPolicy')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'rolling',
+        'evidence',
+        'url',
+        'checkedOn',
+        'source',
+      ]);
+      expect(model('MedSecondaryTurnaround')?.fields).toEqual([
+        'id',
+        'schoolId',
+        'program',
+        'asOf',
+        'computedAt',
+        'members',
+        'p25Days',
+        'medianDays',
+        'p75Days',
+      ]);
+      expect(uniques('MedSchoolAdmissionsPolicy')).toContainEqual(['schoolId', 'program']);
+      expect(uniques('MedSecondaryTurnaround')).toContainEqual(['schoolId', 'program']);
+    });
+
+    it('themes is a plain string array', () => {
+      expect(model('MedSecondaryPrompt')?.body).toMatch(/\bthemes\s+String\[\]/);
+    });
+
+    it('the enums are exact: three sources (ADMIT, SDN, SCHOOL), not a value on MedSource', () => {
+      expect(vals('MedPromptSource')).toEqual(['ADMIT', 'SDN', 'SCHOOL']);
+      expect(vals('MedLimitKind')).toEqual(['WORDS', 'CHARS']);
+      expect(vals('MedCheckStatus')).toEqual(['OK', 'EMPTY', 'UNAVAILABLE']);
+      expect(vals('MedSource')).not.toContain('SCHOOL');
+    });
+
+    it('the migration creates the three tables and enums, adds the private milestone, and drops nothing', () => {
+      const sql = migration();
+      for (const t of ['med_secondary_prompt', 'med_secondary_observation', 'med_secondary_check']) {
+        expect(sql).toContain(`CREATE TABLE "${t}"`);
+      }
+      for (const e of ['MedPromptSource', 'MedLimitKind', 'MedCheckStatus'])
+        expect(sql).toContain(`CREATE TYPE "${e}"`);
+      expect(sql).toContain(`ALTER TYPE "MedMilestoneType" ADD VALUE 'SECONDARY_SUBMITTED'`);
+      expect(sql).not.toMatch(/\bDROP\b/i);
+    });
+
+    it('the migration sorts after every other medschools migration', () => {
+      const dirs = readdirSync('prisma/migrations').filter((d) => /^\d{14}_/.test(d));
+      const mine = dirs.find((d) => d.endsWith('_medschools_secondaries')) ?? '';
+      // The school-pages and turnaround tables are this feature's own follow-up and sort after it, on purpose.
+      const others = dirs.filter(
+        (d) => d.includes('medschools') && d !== mine && !d.endsWith('_medschools_school_pages_turnaround'),
+      );
+      for (const o of others) expect(mine > o, o).toBe(true);
     });
   });
 });

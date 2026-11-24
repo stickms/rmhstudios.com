@@ -15,8 +15,9 @@
  * ungrounded number is dropped; the member's own estimate is returned beside the answer and never shown to the model;
  * and no text of the question is stored anywhere in the database.
  */
-import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
-import { Client, closeDb, db, type TestUser } from './lib/client';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { Client, closeDb, db } from './lib/client';
+import { createFreshMember, removeFreshMembers, type FreshMember } from './lib/fresh-member';
 import { FAKE_REASONING, startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
 import {
   ASK_INJECTION,
@@ -33,12 +34,22 @@ const ASK = '/api/medschools/me/ask';
 const NOT_PUBLIC = /public|s-maxage|max-age=[1-9]/i;
 const DAY = 86_400_000;
 
-type Member = TestUser & { client: Client };
-const member = (u: TestUser): Member => ({ ...u, client: new Client(u.cookies) });
+// Fresh members, not the global cast: the `ai` rate-limit buckets, the daily-cap rows, the lease and the 60 s tier cache
+// are all per user, and every later file that asks as alice, bob or carol would otherwise start with what this one left.
+type Member = FreshMember;
 let a: Member;
 let b: Member;
 let c: Member;
 const anon = new Client();
+
+beforeAll(async () => {
+  a = await createFreshMember('ask-a');
+  b = await createFreshMember('ask-b');
+  c = await createFreshMember('ask-c');
+});
+afterAll(async () => {
+  await removeFreshMembers([a, b, c]);
+});
 
 interface AskBody {
   status: string;
@@ -103,10 +114,6 @@ const goodScript: FakeScript = (call) => {
 };
 
 describe('medschools Q&A: no model needed', () => {
-  beforeAll(() => {
-    [a] = [member(inject('alice'))];
-  });
-
   it('signed out: POST and GET are 401, carry no school data and no public cache header', async () => {
     for (const res of [await anon.post(ASK, { question: 'What is the median?' }), await anon.get(ASK)]) {
       expect(res.status).toBe(401);
@@ -142,7 +149,6 @@ describe.skipIf(!PORT)('medschools Q&A: with the fake provider', () => {
   const ids = () => [a.id, b.id, c.id];
 
   beforeAll(async () => {
-    [a, b, c] = [member(inject('alice')), member(inject('bob')), member(inject('carol'))];
     fake = await startFakeDeepseek(PORT, goodScript);
     await seedMedSchoolsFixture();
     await seedAskFixture();

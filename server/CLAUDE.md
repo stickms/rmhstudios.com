@@ -303,6 +303,33 @@ Consequences:
   sub-k RMH figure never moves a band), then `run-wait-curves.ts` rebuilds the aggregate `MedWaitCurve` rows (only where
   20 distinct sharing members and 10 invites contribute; weekly steps; a stored row is replaced only on a change of 3 or more, R13). Ledger `MedSourceRun` source `RMH`, job `forecast`; a non-manual run is
   skipped inside 20 h of an OK one; an ended cycle is not rewritten. Log lines carry counts only.
+  **Secondaries job (secondaries tab).** `medschools.secondaries` (Sunday and Wednesday 05:35 UTC,
+  `MEDSCHOOLS_SECONDARIES_CRON`, `exclusive`, `retryLimit: 0`, expires after 75 min, tick guarded with `maxRuntimeMs` equal to
+  that expiry and a `shouldStop` one minute before it; cron owned by the `jobs` timekeeper through `startScheduledConsumer`;
+  **no model call and no dedupe secret**). `features/medschools/scrape/run-secondaries.ts` makes two passes in one run, each
+  with its own `MedSourceRun` row (job `secondaries`, source `ADMIT` then `SDN`): one page per active school and source,
+  stalest check first, a school read inside 60 h skipped. Hosts: `SOURCES.ADMIT_WEB` (`med.admit.org`, Admit's public
+  website, a different origin from the API host; 3 s plus 0-1 s jitter; its own daily budget `MEDSCHOOLS_ADMIT_WEB_DAILY_REQUESTS`,
+  default 700, about three full runs) and the existing `SOURCES.SDN_WWW` host, whose session for this job is held to the
+  same 3 s plus 0-1 s (the host's own 1.5 s is for interviews). Robots.txt, `Retry-After`, the three-strike halt and the
+  static user agent are the polite host's; every response goes through `assertPage`, so a Cloudflare or error page is a
+  failure on the session. A persisted minimum interval (`lastRealRunWithin`, 60 h, `outcome: 'skipped-min-interval'`, a
+  ledger read error fails closed, a manual run bypasses it) stops extra runs after a deploy. **Missing data is not zero:** a
+  page that gives nothing recognisable (markup changed, more than 40 prompts under a cycle, an empty page for a school
+  that has stored prompts) leaves the stored rows untouched and marks `MedSecondaryCheck` UNAVAILABLE; five unreadable pages
+  in a row end the pass. Observations are never deleted. Flags: `MEDSCHOOLS_SECONDARIES_ENABLED=false` turns the cron off
+  (a manual run still works); each pass is also behind `MEDSCHOOLS_ADMIT_ENABLED` / `MEDSCHOOLS_SDN_ENABLED`. The tick re-tags
+  prompts first (a no-op unless the keyword table's `THEMES_VERSION` moved). The page markup is UNVERIFIED against a live
+  fetch (plan Facts 1). **Forum prompts (the only model call here).** The SDN live and backfill reads hand each chunk the
+  event extraction has already committed to a second call (`scrape/sdn/secondaries.ts`, registry prompt
+  `MEDSCHOOLS_SECONDARIES`, label `medschools-extract:secondaries`): posts that mention prompts or limits, asked for the
+  school's essay questions quoted as text. A candidate is stored only if its post quotes it and it passes the
+  reject-not-redact scrub (`engine/secondaries/scrub.ts`); only the thread URL is kept, never a post. **Off-peak only**
+  (`isDeepseekPeak` is checked before every call, the retry included), inside its own share of the scrape cap
+  (`MEDSCHOOLS_SECONDARIES_AI_SHARE`, default 0.1, invalid closes it; `scrape/secondaries-budget.ts`), counted in the run's
+  `MEDSCHOOLS_SDN_MAX_LLM_CALLS` / `..._BACKFILL_MAX_LLM_CALLS`, fails closed on a ledger error, and can never lose an
+  event or move a cursor (it runs after the chunk's commit and its failure is swallowed).
+  `MEDSCHOOLS_SECONDARIES_FORUM_ENABLED=false` turns it off. Detail: `features/medschools/CLAUDE.md`.
 - **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss** consumer that drains queues and runs
   background work that used to block request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest` cron. D3 ports from the Go supervisor:

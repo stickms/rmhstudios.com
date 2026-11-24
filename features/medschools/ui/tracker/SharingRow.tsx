@@ -70,6 +70,12 @@ export function SharingRow({
               'When sharing is on, the time between your complete date and an invite also feeds an estimate shown for this school once at least 20 members contribute. Only the estimate is shown, never a date or a row.',
           })}
         </p>
+        <p className="t-meta m-0 mt-2">
+          {t('share-turnaround-note', {
+            defaultValue:
+              'Your secondary received and submitted dates are never shared as events. When sharing is on, the days between them also feed a turnaround figure for the school, shown once at least 20 members contribute. Only that figure is shown, never a date or a row.',
+          })}
+        </p>
         {unavailable ? (
           <p className="t-meta m-0 mt-2" role="status">
             {t('share-unavailable', { defaultValue: 'Sharing is unavailable right now.' })}

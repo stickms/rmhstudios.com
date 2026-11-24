@@ -28,12 +28,13 @@ const base = {
 };
 
 describe('SHAREABLE', () => {
-  it('maps the seven public types to themselves and keeps SUBMITTED and COMPLETE private', () => {
+  it('maps the seven public types to themselves and keeps SUBMITTED, COMPLETE and SECONDARY_SUBMITTED private', () => {
     for (const t of ['SECONDARY', 'INTERVIEW', 'WAITLIST', 'REJECTION', 'ACCEPTANCE', 'WITHDRAWN', 'HOLD'] as const) {
       expect(SHAREABLE[t]).toBe(t);
     }
     expect(SHAREABLE.SUBMITTED).toBeNull();
     expect(SHAREABLE.COMPLETE).toBeNull();
+    expect(SHAREABLE.SECONDARY_SUBMITTED).toBeNull();
   });
 
   it('covers every milestone type, in display order', () => {
@@ -41,6 +42,7 @@ describe('SHAREABLE', () => {
       'SUBMITTED',
       'COMPLETE',
       'SECONDARY',
+      'SECONDARY_SUBMITTED',
       'INTERVIEW',
       'WAITLIST',
       'REJECTION',

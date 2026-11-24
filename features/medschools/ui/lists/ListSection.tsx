@@ -7,6 +7,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { MenuItem } from '@/components/ui/menu';
 import { SortableList } from '@/components/ui/sortable-list';
 import type { MedListDto } from '../../medschools.contract';
+import { OverlapSection } from '../secondaries/OverlapSection';
 import { ListItemRow } from './ListItemRow';
 
 /**
@@ -146,6 +147,7 @@ export function ListSection({
           )}
         />
       )}
+      {list.items.length > 0 ? <OverlapSection source={{ source: 'list', list: list.id }} /> : null}
     </section>
   );
 }

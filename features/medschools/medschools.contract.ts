@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
+import type { importSaveBody, importTextBody } from './api/import-schemas';
 import type { askBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
@@ -465,6 +466,76 @@ export const getMedChancesApi = endpoint<{
   res: MedChancesRes;
 }>()({ method: 'GET', path: '/api/medschools/me/chances' });
 
+/* ------------------------- tracker import (me/tracker/import) ------------------------- */
+/* A member's file or pasted text, read by the model into tracker dates; the preview is returned, nothing is stored. */
+
+export interface MedImportMilestoneDto {
+  type: MilestoneType;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  /** The file did not write the year; the cycle rules chose it. */
+  yearInferred: boolean;
+  /** A numeric date that reads as two different days (03/04). */
+  ambiguous: boolean;
+  /** The cell or phrase the date came from, cut to 40 characters. */
+  from: string;
+}
+
+export interface MedImportRowDto {
+  /** Stable within this preview: the matched slug or the folded name, and the program. */
+  key: string;
+  /** The school's name as the file wrote it. */
+  schoolName: string;
+  /** The directory school it matched, or null: "couldn't match" and the member picks. */
+  school: { slug: string; name: string; shortName: string; degree: MedDegreeId; state: string } | null;
+  program: 'REG' | 'PHD';
+  milestones: MedImportMilestoneDto[];
+}
+
+export interface MedImportPreviewRes {
+  cycleYear: number;
+  /** How the cycle was chosen: the file's dated milestones, the model's hint, or the current cycle. */
+  cycleFrom: 'dates' | 'hint' | 'default';
+  /** Rows or text were cut to fit the limits. */
+  truncated: boolean;
+  /** Dates dropped because they were not in the file, not real, or outside the cycle. */
+  dropped: number;
+  rows: MedImportRowDto[];
+  tier: 'free' | 'approved' | 'member' | 'admin';
+  remainingToday: number | null;
+  dailyCap: number | null;
+}
+
+export interface MedImportSaveRes {
+  cycleYear: number;
+  schoolsAdded: number;
+  added: number;
+  overwritten: number;
+  /** Already the same date on the tracker. */
+  unchanged: number;
+  /** A different date was on the tracker and the row was not ticked to replace it. */
+  conflicts: number;
+  /** Not written: a date outside the cycle, or a school that is not on the list. */
+  invalid: number;
+}
+
+/** Multipart `file` (a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` up to 2 MB). Pasted text uses `parseMedImportTextApi`. */
+export const parseMedImportFileApi = endpoint<{ body: FormData; res: MedImportPreviewRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/tracker/import/parse',
+});
+
+/** The same endpoint with a JSON body: pasted text. */
+export const parseMedImportTextApi = endpoint<{ body: z.infer<typeof importTextBody>; res: MedImportPreviewRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/tracker/import/parse',
+});
+
+export const saveMedImportApi = endpoint<{ body: z.infer<typeof importSaveBody>; res: MedImportSaveRes }>()({
+  method: 'POST',
+  path: '/api/medschools/me/tracker/import/save',
+});
+
 /* ------------------------- AI Q&A (phase 6, me/ask) ------------------------- */
 
 /** A row an answer cites: where the figure came from and when that source was last refreshed. */
@@ -680,3 +751,134 @@ export const putMedPrefsApi = endpoint<{ body: z.infer<typeof putPrefsBody>; res
   method: 'PUT',
   path: '/api/medschools/me/prefs',
 });
+
+/* ------------------------- Secondaries (public tab, me/ overlap, admin entry) ------------------------- */
+
+/** Where a prompt was read: Admit.org, Student Doctor Network, or the school's own page. */
+export type MedPromptSourceId = 'ADMIT' | 'SDN' | 'SCHOOL';
+export type MedPromptStatus = 'same' | 'reworded' | 'new' | 'gone' | 'last-cycle';
+export interface MedPromptLimitDto {
+  kind: 'WORDS' | 'CHARS';
+  value: number;
+}
+
+export interface MedSecondaryPromptDto {
+  id: string;
+  text: string;
+  limit: MedPromptLimitDto | null;
+  optional: boolean;
+  /** Theme ids (`engine/secondaries/theme-ids.ts`), at least one (`other` when no rule matched). */
+  themes: string[];
+  /** `null` = nothing to compare with (a first year of data). */
+  status: MedPromptStatus | null;
+  previousText: string | null;
+  /** Entry years the prompt was observed in, ascending; the UI writes them as `2026–2027` ranges. */
+  cycles: number[];
+  /** The sources that saw it in the cycle shown. */
+  sources: MedPromptSourceId[];
+  /** ISO instant of the newest check of those sources. */
+  lastCheckedAt: string;
+}
+
+export interface MedSecondaryGroupDto {
+  program: 'REG' | 'PHD';
+  /** `current` = this cycle's prompts; `not-yet` = none seen this cycle, the newest earlier cycle's list is shown. */
+  state: 'current' | 'not-yet';
+  shownCycle: number;
+  comparedWith: number | null;
+  prompts: MedSecondaryPromptDto[];
+}
+
+export interface MedSecondarySourceDto {
+  source: MedPromptSourceId;
+  url: string | null;
+  /** ISO instant of the newest read of this source for this school; null when it was never read. */
+  checkedAt: string | null;
+  status: 'OK' | 'EMPTY' | 'UNAVAILABLE';
+}
+
+/** What the school's own admissions page says about rolling decisions (a curated, dated import). */
+export interface MedAdmissionsPolicyDto {
+  program: 'REG' | 'PHD';
+  /** true = rolling decisions; false = decisions on set dates. */
+  rolling: boolean;
+  /** The page's own sentence. */
+  evidence: string;
+  url: string;
+  /** YYYY-MM-DD. */
+  checkedOn: string;
+}
+
+/** Secondary turnaround (received to submitted): present only when at least 20 members who share contribute. */
+export interface MedSecondaryTurnaroundDto {
+  program: 'REG' | 'PHD';
+  members: number;
+  p25Days: number;
+  medianDays: number;
+  p75Days: number;
+  asOf: string;
+}
+
+export interface MedSchoolSecondariesRes {
+  /** The cycle the site is showing. */
+  cycleYear: number;
+  groups: MedSecondaryGroupDto[];
+  sources: MedSecondarySourceDto[];
+  admissions: MedAdmissionsPolicyDto[];
+  turnaround: MedSecondaryTurnaroundDto[];
+}
+
+export const getMedSchoolSecondariesApi = endpoint<{
+  query: { program?: MedProgramFilter | undefined };
+  res: MedSchoolSecondariesRes;
+}>()({ method: 'GET', path: '/api/medschools/schools/$slug/secondaries' });
+
+export interface MedSecondaryOverlapEntryDto {
+  slug: string;
+  schoolName: string;
+  program: 'REG' | 'PHD';
+  promptId: string;
+  text: string;
+  limit: MedPromptLimitDto | null;
+  optional: boolean;
+  basis: 'current' | 'last-cycle';
+}
+
+export interface MedSecondaryOverlapGroupDto {
+  theme: string;
+  schools: number;
+  shortestWords: number | null;
+  longestWords: number | null;
+  entries: MedSecondaryOverlapEntryDto[];
+}
+
+export interface MedSecondaryOverlapRes {
+  cycleYear: number;
+  source: 'list' | 'tracker';
+  groups: MedSecondaryOverlapGroupDto[];
+  withoutPrompts: { slug: string; name: string }[];
+  schoolCount: number;
+}
+
+/** The caller's own list or tracker schools. Personal: never cached; another member's list id is a 404. */
+export const getMedSecondaryOverlapApi = endpoint<{
+  query: { source: 'list' | 'tracker'; list?: string | undefined };
+  res: MedSecondaryOverlapRes;
+}>()({ method: 'GET', path: '/api/medschools/me/secondaries/overlap' });
+
+/** An admin's correction of a school's own prompts (the page URL is stored, never fetched). */
+export const postMedSecondariesAdminApi = endpoint<{
+  body: {
+    schoolId: string;
+    program: 'REG' | 'PHD';
+    cycleYear: number;
+    sourceUrl: string;
+    prompts: {
+      text: string;
+      limitKind?: 'WORDS' | 'CHARS' | undefined;
+      limitValue?: number | undefined;
+      optional?: boolean | undefined;
+    }[];
+  };
+  res: { prompts: number; created: number; rejected: number };
+}>()({ method: 'POST', path: '/api/admin/medschools/secondaries' });

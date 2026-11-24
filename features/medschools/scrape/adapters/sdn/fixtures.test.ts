@@ -6,7 +6,13 @@ import { SDN_HOSTILE_NEEDLES } from '../../test-support';
 const DIR = join(__dirname, '__fixtures__');
 const read = (f: string) => readFileSync(join(DIR, f), 'utf8');
 
-const HOSTILE = ['thread-hostile.html', 'rss-hostile.xml', 'listing-hostile.html', 'summary-hostile.html'];
+const HOSTILE = [
+  'thread-hostile.html',
+  'rss-hostile.xml',
+  'listing-hostile.html',
+  'summary-hostile.html',
+  'essays-hostile.html',
+];
 const REQUIRED = [
   'forum-1198.rss',
   'forum-1199.rss',
@@ -26,6 +32,13 @@ const REQUIRED = [
   'rss-hostile.xml',
   'listing-hostile.html',
   'summary-hostile.html',
+  'essays-hms.html',
+  'essays-wustl.html',
+  'essays-acom.html',
+  'essays-empty.html',
+  'essays-changed.html',
+  'essays-hostile.html',
+  'thread-secondary-prompts.html',
 ];
 const TRIMMED_THREADS = [
   'thread-small-p1.html',

@@ -13,6 +13,9 @@ import schoolsJson from '../../data/medschools/schools.json';
 import cyclesJson from '../../data/medschools/cycles.json';
 import { seedRegistryIfEmpty, seedCycles } from '../../features/medschools/scrape/registry';
 import { runForecast } from '../../features/medschools/scrape/run-forecast';
+import { recordCheck, recordPrompts } from '../../features/medschools/scrape/secondaries-store';
+import type { MedPrisma } from '../../features/medschools/scrape/types';
+import type { NormalizedPrompt } from '../../features/medschools/engine/secondaries/types';
 
 function guard(): string {
   const url = process.env.DATABASE_URL ?? '';
@@ -430,6 +433,9 @@ async function main() {
     const milestones = [
       { type: 'SUBMITTED' as const, date: new Date(completeAt - 12 * DAY) },
       { type: 'COMPLETE' as const, date: new Date(completeAt) },
+      // Secondary received a few days after complete, submitted 3 to 14 days later (the turnaround figure's input).
+      { type: 'SECONDARY' as const, date: new Date(completeAt + 5 * DAY) },
+      { type: 'SECONDARY_SUBMITTED' as const, date: new Date(completeAt + (8 + (i % 12)) * DAY) },
       ...(invited ? [{ type: 'INTERVIEW' as const, date: new Date(completeAt + wait * DAY) }] : []),
       ...(rejected ? [{ type: 'REJECTION' as const, date: new Date(completeAt + 40 * DAY) }] : []),
     ];
@@ -444,9 +450,130 @@ async function main() {
   }
   console.log('sharing members', MEMBERS, 'at duke; first complete', iso(TODAY - 25 * DAY));
 
+  // ---- secondaries: FIXTURE prompts through the real store, so the marks are the engine's own ----
+  // harvard: two cycles of regular and MD-PhD prompts with every mark (same, reworded, new, not seen), an optional one, a
+  // character limit and a gap in the years; the school's own page and an admissions statement. duke: the same shape plus the
+  // turnaround of its 24 members. michigan: only last cycle's list (not out yet). stanford: this cycle only (a first year, no
+  // marks). johns-hopkins: nothing found. philadelphia-com (DO): regular and DO-PhD prompts.
+  const siteCycle = cycleYear;
+  const db = prisma as unknown as MedPrisma;
+  const sids = ALL.map((slug) => byslug.get(slug)!.id);
+  await prisma.medSecondaryPrompt.deleteMany({ where: { schoolId: { in: sids } } });
+  await prisma.medSecondaryCheck.deleteMany({ where: { schoolId: { in: sids } } });
+  await prisma.medSchoolAdmissionsPolicy.deleteMany({ where: { schoolId: { in: sids } } });
+  const P = (
+    year: number,
+    program: 'REG' | 'PHD',
+    text: string,
+    limit: NormalizedPrompt['limit'] = { kind: 'WORDS', value: 250 },
+    optional = false,
+    sourceRef: string | null = null,
+  ): NormalizedPrompt => ({ cycleYear: year, program, text, limit, optional, sourceRef });
+  const T = {
+    same: 'Describe your research experience and what you learned from it.',
+    before: 'Describe a challenge you have faced and how you overcame it.',
+    after: 'Tell us about a challenge you faced and how you overcame it.',
+    added: 'Why are you interested in our medical school and what will you add to it?',
+    dropped: 'Describe a hobby you pursue outside of school and what it taught you.',
+    optional: 'Is there anything else you would like us to know about your application?',
+    longer:
+      'Please reflect on a time when your values were tested, describing the situation, the people involved, what you decided to do and why, how others responded, and what you would do differently if you faced the same choice today.',
+    phd: 'Why do you want to pursue a combined MD-PhD degree and what is your research goal?',
+    phd2: 'Describe the research that shaped your decision to seek an MD-PhD, and your role in it.',
+  };
+  const full = (
+    cy: number,
+    ref: string,
+  ): { admit: NormalizedPrompt[]; sdn: NormalizedPrompt[]; school: NormalizedPrompt[] } => ({
+    admit: [
+      P(cy - 3, 'REG', T.dropped),
+      P(cy - 2, 'REG', T.dropped),
+      P(cy - 2, 'REG', T.same),
+      P(cy - 1, 'REG', T.same),
+      P(cy - 1, 'REG', T.before),
+      P(cy - 1, 'REG', T.dropped),
+      P(cy, 'REG', T.same),
+      P(cy, 'REG', T.after),
+      P(cy, 'REG', T.added, { kind: 'WORDS', value: 500 }),
+      P(cy, 'REG', T.optional, { kind: 'CHARS', value: 1500 }, true),
+      P(cy, 'REG', T.longer, { kind: 'WORDS', value: 1 }),
+      P(cy - 1, 'PHD', T.phd, { kind: 'WORDS', value: 400 }),
+      P(cy, 'PHD', T.phd, { kind: 'WORDS', value: 400 }),
+      P(cy, 'PHD', T.phd2, { kind: 'WORDS', value: 300 }),
+    ],
+    sdn: [P(cy, 'REG', T.same), P(cy - 1, 'REG', T.before)],
+    school: [P(cy, 'REG', T.added, { kind: 'WORDS', value: 500 }, false, ref)],
+  });
+  const writeFull = async (slug: string, ref: string) => {
+    const id = byslug.get(slug)!.id;
+    const f = full(siteCycle, ref);
+    await recordPrompts(db, { schoolId: id, source: 'ADMIT', now: NOW, prompts: f.admit, siteCycle });
+    await recordPrompts(db, { schoolId: id, source: 'SDN', now: NOW, prompts: f.sdn, siteCycle });
+    await recordPrompts(db, { schoolId: id, source: 'SCHOOL', now: NOW, prompts: f.school, siteCycle });
+    for (const source of ['ADMIT', 'SDN', 'SCHOOL'] as const)
+      await recordCheck(db, { schoolId: id, source, now: NOW, status: 'OK', promptCount: 5 });
+    await prisma.medSchoolAlias.upsert({
+      where: { source_sourceKey: { source: 'ADMIT', sourceKey: slug } },
+      create: { schoolId: id, source: 'ADMIT', sourceKey: slug },
+      update: {},
+    });
+  };
+  await writeFull('harvard', 'https://med.harvard.example.edu/secondary');
+  await writeFull('duke', 'https://med.duke.example.edu/secondary');
+  const only = async (slug: string, year: number, texts: [string, 'REG' | 'PHD'][]) =>
+    recordPrompts(db, {
+      schoolId: byslug.get(slug)!.id,
+      source: 'ADMIT',
+      now: NOW,
+      prompts: texts.map(([t, program]) => P(year, program, t)),
+      siteCycle,
+    });
+  await only('michigan', siteCycle - 1, [
+    [T.before, 'REG'],
+    [T.same, 'REG'],
+  ]);
+  await only('stanford', siteCycle, [
+    [T.before, 'REG'],
+    [T.same, 'REG'],
+    [T.phd, 'PHD'],
+  ]);
+  await only('philadelphia-com', siteCycle, [
+    [T.same, 'REG'],
+    [T.phd, 'PHD'],
+  ]);
+  await only('philadelphia-com', siteCycle - 1, [[T.same, 'REG']]);
+  await recordCheck(db, {
+    schoolId: byslug.get('johns-hopkins')!.id,
+    source: 'ADMIT',
+    now: NOW,
+    status: 'EMPTY',
+    promptCount: 0,
+  });
+  for (const [slug, program, rolling, evidence] of [
+    ['harvard', 'REG', true, 'Admissions decisions are made on a rolling basis beginning in October.'],
+    ['harvard', 'PHD', false, 'MD-PhD applicants are notified of decisions on March 1.'],
+    ['duke', 'REG', false, 'All applicants receive decisions on the same date in March.'],
+  ] as const)
+    await prisma.medSchoolAdmissionsPolicy.create({
+      data: {
+        schoolId: byslug.get(slug)!.id,
+        program,
+        rolling,
+        evidence,
+        url: `https://med.${slug}.example.edu/admissions`,
+        checkedOn: new Date(Date.UTC(2026, 10, 23)),
+        source: 'SCHOOL',
+      },
+    });
+  console.log(
+    'secondaries: fixture prompts for',
+    ['harvard', 'duke', 'michigan', 'stanford', 'philadelphia-com'].join(', '),
+  );
+
   // ---- the forecast job and the wait curves, run directly (what the worker's daily queue does) ----
   await prisma.medForecast.deleteMany({ where: { schoolId: { in: ids } } });
   await prisma.medWaitCurve.deleteMany({ where: { schoolId: { in: ids } } });
+  await prisma.medSecondaryTurnaround.deleteMany({ where: { schoolId: { in: ids } } });
   const log = { info: console.log, warn: console.warn, error: console.error };
   const forecast = await runForecast({ prisma: prisma as never, db: prisma, log }, { trigger: 'MANUAL' });
   console.log('forecast', JSON.stringify(forecast));

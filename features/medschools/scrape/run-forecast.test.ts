@@ -218,7 +218,7 @@ describe('runForecast', () => {
       inviteOn: i % 2 ? '2026-11-10' : null,
       endOn: null,
     });
-    const s = setup(() => Array.from({ length: 22 }, (_, i) => member(i)));
+    const s = setup(() => Array.from({ length: 26 }, (_, i) => member(i)));
     s.school('a');
     s.season({ schoolId: 'a', cycleYear: 2027, total: 150, until: '2027-01-14' });
     s.season({ schoolId: 'a', cycleYear: 2026, total: 200 });
@@ -226,7 +226,7 @@ describe('runForecast', () => {
     expect(r).toMatchObject({ status: 'OK', fitted: 1, curves: 1, curvesRemoved: 0 });
     const w = (s.f.tables.medWaitCurve as { asOf: Date; members: number }[])[0];
     expect(w?.asOf.toISOString().slice(0, 10)).toBe('2027-01-14');
-    expect(w?.members).toBe(22);
+    expect(w?.members).toBe(26); // created at 23 members and 13 invites (hysteresis)
   });
 
   it('a failing wait-curve step makes the run PARTIAL and keeps the forecasts', async () => {

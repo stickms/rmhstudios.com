@@ -21,3 +21,8 @@ export function canonicalThreadUrl(slug: string, id: number): string {
 export function summaryPageUrl(code: string, slug: string): string {
   return `${SOURCES.SDN_WWW.origin}/schools-database/medical-school/interview-feedback/summary/${code}/${slug}`;
 }
+
+/** The school's secondary-prompts page by cycle on the school database. `code` and `slug` are the summary key's pair. */
+export function essayQuestionsUrl(code: string, slug: string): string {
+  return `${SOURCES.SDN_WWW.origin}/schools-database/medical-school/essay-questions/${code}/${slug}`;
+}

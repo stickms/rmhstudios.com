@@ -8,7 +8,6 @@
  * returned beside the answer.
  */
 import { MEDSCHOOLS_QA_ANSWER, MEDSCHOOLS_QA_ROUTE, asData, systemFor } from '@/lib/ai/prompts';
-import { AppError } from '@/lib/errors/codes';
 import type { ChanceDto, MedAskCitationDto, MedAskRes } from '../../medschools.contract';
 import { qaDeadlineMs } from '../../ai-budget';
 import { groundAnswer, type SchoolNames } from '../../engine/qa/ground';
@@ -16,6 +15,7 @@ import { cleanForPrompt } from '../../engine/qa/sanitize';
 import { filterSchools, parseRoute, resolveSchools } from '../../engine/qa/route';
 import { getChances } from '../chances.server';
 import { admitQuestion } from './budget.server';
+import { assertLive, runUnderLease } from './lease.server';
 import { schoolDirectory } from './freshness.server';
 import { retrieve } from './retrieve.server';
 import { aiRunner, type QaRunner } from './runner.server';
@@ -67,8 +67,6 @@ async function mineFor(
   }
 }
 
-class Deadline extends Error {}
-
 export async function answerQuestion(i: AskInput, deps: { runner?: QaRunner; now?: Date } = {}): Promise<MedAskRes> {
   const now = deps.now ?? new Date();
   // Gates and the atomic reservation (daily count and one-in-flight lease, across processes) before any model call.
@@ -77,34 +75,9 @@ export async function answerQuestion(i: AskInput, deps: { runner?: QaRunner; now
   const think = i.think === true && thinkingAvailable();
   // One deadline for the whole question, under the client's own timeout for that kind of question (the thinking one is
   // longer, and its answer call gets whatever the route call and retrieval left), plus the request's own signal.
-  const deadline = AbortSignal.timeout(qaDeadlineMs(think));
-  const signal = i.signal ? AbortSignal.any([i.signal, deadline]) : deadline;
-  const work = run(i, deps.runner ?? aiRunner, now, gate, signal, think);
-  // The lease ends when the work really ends, not when the caller stopped waiting.
-  const done = work
-    .then(
-      () => undefined,
-      () => undefined,
-    )
-    .then(() => gate.release());
-  let onAbort!: () => void;
-  const aborted = new Promise<never>((_, reject) => {
-    onAbort = () => reject(new Deadline());
-    if (signal.aborted) onAbort();
-    else signal.addEventListener('abort', onAbort, { once: true });
-  });
-  aborted.catch(() => undefined);
-  try {
-    return await Promise.race([work, aborted]);
-  } catch (e) {
-    if (e instanceof Deadline) throw new AppError('AI_UNAVAILABLE');
-    throw e;
-  } finally {
-    signal.removeEventListener('abort', onAbort);
-    // When the work ended on its own, the lease is gone before the member can send the next question; when the caller
-    // stopped waiting first, it is released as soon as the work really stops.
-    if (!signal.aborted) await done;
-  }
+  return runUnderLease(gate, qaDeadlineMs(think), i.signal, (signal) =>
+    run(i, deps.runner ?? aiRunner, now, gate, signal, think),
+  );
 }
 
 async function run(
@@ -117,9 +90,7 @@ async function run(
 ): Promise<MedAskRes> {
   // The reservation already counts this question.
   const base: Base = { tier: gate.tier, remainingToday: gate.remainingToday, dailyCap: gate.dailyCap };
-  const live = () => {
-    if (signal.aborted) throw new Deadline();
-  };
+  const live = () => assertLive(signal);
   const question = cleanForPrompt(i.question, MAX_QUESTION);
   const dir = await schoolDirectory();
   const pinned = i.slug ? dir.find((s) => s.slug === i.slug) : undefined;

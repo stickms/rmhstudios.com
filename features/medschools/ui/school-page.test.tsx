@@ -166,7 +166,7 @@ describe('route file', () => {
 });
 
 describe('SchoolPage', () => {
-  it('renders the four tabs in order, Forecast between History and Interviews', () => {
+  it('renders the five tabs in order, Secondaries last, Forecast between History and Interviews', () => {
     h.search = {};
     const html = render(seedActivity(activity()));
     expect(html).toContain('>Activity<');
@@ -175,6 +175,7 @@ describe('SchoolPage', () => {
     expect(html).toContain('>Forecast<');
     expect(html.indexOf('>History<')).toBeLessThan(html.indexOf('>Forecast<'));
     expect(html.indexOf('>Forecast<')).toBeLessThan(html.indexOf('>Interviews<'));
+    expect(html.indexOf('>Interviews<')).toBeLessThan(html.indexOf('>Secondaries<'));
     expect(html).toContain('<h1>Duke University School of Medicine</h1>');
     expect(html).toContain('MD · Durham, NC');
   });

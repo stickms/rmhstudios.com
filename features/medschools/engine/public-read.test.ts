@@ -42,7 +42,7 @@ describe('constants', () => {
     expect(K_FLOOR).toBe(3);
     expect(SOURCE_NAMES.ADMIT).toBe('Admit.org');
     expect(SOURCE_NAMES.SDN).toBe('Student Doctor Network');
-    expect(SCHOOL_TABS).toEqual(['activity', 'history', 'forecast', 'interviews']);
+    expect(SCHOOL_TABS).toEqual(['activity', 'history', 'forecast', 'interviews', 'secondaries']);
   });
 });
 

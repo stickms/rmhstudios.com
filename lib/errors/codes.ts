@@ -1031,6 +1031,22 @@ export const ERROR_CODES = {
     i18n: 'errors:medschoolsQaLimitNotNeeded',
     text: 'Your account already has a higher limit than a request can give',
   },
+  // --- med schools tracker import ---------------------------------------------------
+  MEDSCHOOLS_IMPORT_UNSUPPORTED: {
+    http: 415,
+    i18n: 'errors:medschoolsImportUnsupported',
+    text: 'That file could not be read. Use a spreadsheet (.xlsx or .csv), a Word document (.docx), a PDF or a text file',
+  },
+  MEDSCHOOLS_IMPORT_TOO_LARGE: {
+    http: 413,
+    i18n: 'errors:medschoolsImportTooLarge',
+    text: 'That file is over 2 MB. Export just the sheet with your dates and try again',
+  },
+  MEDSCHOOLS_IMPORT_EMPTY: {
+    http: 422,
+    i18n: 'errors:medschoolsImportEmpty',
+    text: 'No application dates were found in that file',
+  },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

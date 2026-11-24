@@ -571,6 +571,25 @@ function sentence(t: Translate, code: ErrorCode, p: Record<string, string | numb
         defaultValue: 'Your account already has a higher limit than a request can give',
         ...p,
       });
+    case 'MEDSCHOOLS_IMPORT_UNSUPPORTED':
+      return t('medschoolsImportUnsupported', {
+        ns: 'errors',
+        defaultValue:
+          'That file could not be read. Use a spreadsheet (.xlsx or .csv), a Word document (.docx), a PDF or a text file',
+        ...p,
+      });
+    case 'MEDSCHOOLS_IMPORT_TOO_LARGE':
+      return t('medschoolsImportTooLarge', {
+        ns: 'errors',
+        defaultValue: 'That file is over 2 MB. Export just the sheet with your dates and try again',
+        ...p,
+      });
+    case 'MEDSCHOOLS_IMPORT_EMPTY':
+      return t('medschoolsImportEmpty', {
+        ns: 'errors',
+        defaultValue: 'No application dates were found in that file',
+        ...p,
+      });
   }
 }
 

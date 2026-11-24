@@ -10,6 +10,12 @@
 /** `AiUsage.task` of every Q&A call (route and answer), the budget's unit. */
 export const QA_TASK = 'medschools-qa';
 /**
+ * `AiUsage.task` of the tracker import's one model call. Its spend counts against the Q&A share of the monthly budget
+ * (`assertSharedBudget` sums both tasks), and an import takes one of the member's daily questions (the reservation rows
+ * are `QA_TASK`'s), so a member cannot spend around the Q&A caps by importing.
+ */
+export const IMPORT_TASK = 'medschools-import';
+/**
  * `AiUsage.promptId` of the reservation row written (zero tokens, zero cost) under a per-member advisory lock BEFORE any
  * model call: one per question, so it is the per-member daily count, atomic across processes and independent of whether
  * the provider's own metering write succeeds (plan R18).

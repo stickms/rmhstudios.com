@@ -7,6 +7,7 @@ const DIR = join(__dirname, '__fixtures__');
 const files = readdirSync(DIR);
 const read = (f: string) => readFileSync(join(DIR, f), 'utf8');
 const HOSTILE = new Set([
+  'secondary-essays-hostile.html',
   'recent-updates-hostile.json',
   'profile-flag-hostile.json',
   'profile-history-hostile.json',
@@ -29,6 +30,14 @@ const REQUIRED = [
   'interview-feedback-harvard.json',
   'recent-updates-hostile.json',
   'profile-flag-hostile.json',
+  'secondary-essays-harvard.html',
+  'secondary-essays-wustl.html',
+  'secondary-essays-rowan.html',
+  'secondary-essays-alabama.html',
+  'secondary-essays-toomany.html',
+  'secondary-essays-hostile.html',
+  'secondary-essays-empty.html',
+  'secondary-essays-changed.html',
 ];
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
 
@@ -37,7 +46,7 @@ describe('admit fixtures', () => {
     for (const f of REQUIRED) expect(files, f).toContain(f);
   });
 
-  it.each(files)('%s parses as JSON', (f) => {
+  it.each(files.filter((f) => f.endsWith('.json')))('%s parses as JSON', (f) => {
     expect(() => JSON.parse(read(f))).not.toThrow();
   });
 
