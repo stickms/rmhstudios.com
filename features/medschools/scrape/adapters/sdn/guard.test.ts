@@ -54,6 +54,15 @@ describe('SDN guard', () => {
       }),
     ).toBe(false);
   });
+  it('an essay-questions page saying just a moment is not a challenge (it carries its own data marker)', () => {
+    expect(
+      isCloudflareChallenge({
+        status: 200,
+        body: '<script id="essay-questions-data" type="application/json">[]</script><p>Just a moment, thanks</p>',
+      }),
+    ).toBe(false);
+  });
+
   it('assertPage counts a challenge as a failure on the session and throws', () => {
     const s = session();
     expect(() =>

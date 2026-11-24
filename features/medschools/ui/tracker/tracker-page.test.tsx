@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
+import { cycleYearOf } from '../../engine/cycle';
 
 process.env.TZ = 'America/Los_Angeles';
 
@@ -337,6 +338,17 @@ describe('TrackerPage invite chance', () => {
     }
   });
 
+  it('the overlap disclosure is on the current cycle only, and says secondaries received and submitted are private', () => {
+    const current = cycleYearOf(new Date(), 'SECONDARY');
+    const d = dto({ cycles: [current], cycle: { ...dto().cycle!, cycleYear: current } });
+    expect(render(d, true, undefined, current)).toContain('Essay overlap');
+    const old = dto({ cycles: [current - 1], cycle: { ...dto().cycle!, cycleYear: current - 1 } });
+    expect(render(old, true, undefined, current - 1)).not.toContain('Essay overlap');
+    expect(render(d, true, undefined, current)).toContain(
+      'Your secondary received and submitted dates are never shared as events.',
+    );
+  });
+
   it('the tracker still has one ink primary with chance rows on it', () => {
     expect(primaries(render(dto(), true, answer(estimate)))).toBe(1);
   });
@@ -384,6 +396,7 @@ describe('MilestoneForm', () => {
         'SUBMITTED',
         'COMPLETE',
         'SECONDARY',
+        'SECONDARY_SUBMITTED',
         'INTERVIEW',
         'WAITLIST',
         'REJECTION',

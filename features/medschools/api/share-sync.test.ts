@@ -75,7 +75,7 @@ async function addMs(
   m: {
     id: string;
     applicationId: string;
-    type: 'INTERVIEW' | 'SECONDARY' | 'COMPLETE' | 'SUBMITTED' | 'HOLD' | 'ACCEPTANCE';
+    type: 'INTERVIEW' | 'SECONDARY' | 'SECONDARY_SUBMITTED' | 'COMPLETE' | 'SUBMITTED' | 'HOLD' | 'ACCEPTANCE';
     date?: Date;
   },
 ) {
@@ -112,7 +112,7 @@ async function simple(
   w: World,
   u: string,
   o: {
-    type?: 'INTERVIEW' | 'SECONDARY' | 'COMPLETE' | 'SUBMITTED';
+    type?: 'INTERVIEW' | 'SECONDARY' | 'SECONDARY_SUBMITTED' | 'COMPLETE' | 'SUBMITTED';
     schoolId?: string;
     share?: boolean;
     date?: Date;
@@ -141,7 +141,7 @@ function expectConsistent(w: World) {
   for (const m of rows(w, 'medTrackerMilestone')) {
     const a = apps.get(m.applicationId);
     const c = a && cycles.get(a.cycleId);
-    if (!a || !c || !c.shareAnonymously || m.type === 'COMPLETE' || m.type === 'SUBMITTED') continue;
+    if (!a || !c || !c.shareAnonymously || m.type === 'COMPLETE' || m.type === 'SUBMITTED' || m.type === 'SECONDARY_SUBMITTED') continue;
     const day = (m.date as Date).toISOString().slice(0, 10);
     want.set(hash(m.id as string), `${a.schoolId}|${a.program}|${c.cycleYear}|${day}|${m.type}`);
   }
@@ -223,10 +223,11 @@ describe('basic sharing', () => {
     expectConsistent(w);
   });
 
-  it('SUBMITTED and COMPLETE never leave the private tables', async () => {
+  it('SUBMITTED, COMPLETE and SECONDARY_SUBMITTED never leave the private tables', async () => {
     const w = world();
     const { applicationId } = await simple(w, 'u1', { type: 'COMPLETE' });
     await addMs(w, 'u1', { id: 'ms-sub', applicationId, type: 'SUBMITTED' });
+    await addMs(w, 'u1', { id: 'ms-sec-sub', applicationId, type: 'SECONDARY_SUBMITTED' });
     expect(events(w)).toHaveLength(0);
     expect(rmhCounts(w)).toHaveLength(0);
   });

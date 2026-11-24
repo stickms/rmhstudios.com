@@ -332,3 +332,208 @@ export async function waitCurveColumns(): Promise<string[]> {
   );
   return r.rows.map((x) => x.column_name as string);
 }
+
+/* ───────────────────────── secondaries (the Secondaries tab and the overlap) ───────────────────────── */
+
+export const SECONDARIES_NOTYET_SLUG = 'it-medschools-secondaries-notyet';
+const SECONDARIES_NOTYET_ID = 'it-medschools-secondaries-notyet-school';
+export const SECONDARIES_TEXT = {
+  same: 'Describe your research experience and what you learned from it.',
+  previous: 'Describe a challenge you have faced and how you overcame it.',
+  reworded: 'Tell us about a challenge you faced and how you overcame it.',
+  added: 'Why are you interested in our medical school?',
+  gone: 'Describe a hobby you pursue outside of school.',
+  optional: 'Is there anything else you would like us to know about your application?',
+  phd: 'Why do you want to pursue a combined MD-PhD degree and what is your research goal?',
+  /** A diversity prompt of the second fixture school, so the overlap of a two-school list has a shared theme. */
+  diversityA: 'Describe how your background would contribute to the diversity of our class.',
+  diversityB: 'How would your experiences contribute to diversity in our entering class?',
+} as const;
+
+/**
+ * Prompts, observations and checks for the fixture school (`seedMedSchoolsFixture` first), the "not yet" school and the
+ * tracker fixture's MD school: same, reworded, new and gone marks across the last two cycles, an optional CHARS prompt, a
+ * PHD prompt, a school-page observation, an admissions policy and a turnaround row. Every row is a FIXTURE. Cleanup is
+ * `removeMedSchoolsFixture` / `removeTrackerFixture` (every row cascades from `med_school`), plus `removeSecondariesFixture`.
+ */
+export async function seedSecondariesFixture(
+  schools: { fixtureId?: string; mdId?: string } = {},
+  now: Date = new Date(),
+): Promise<void> {
+  await removeSecondariesFixture();
+  const q = (text: string, values: unknown[] = []) => db().query(text, values);
+  const cycle = currentCycle(now);
+  const fixtureId = schools.fixtureId ?? SCHOOL_ID;
+  const checked = new Date(now.getTime() - 2 * DAY).toISOString();
+
+  let n = 0;
+  const prompt = async (
+    schoolId: string,
+    program: 'REG' | 'PHD',
+    text: string,
+    themes: string[],
+    obs: Array<{
+      cycle: number;
+      source?: string;
+      kind?: 'WORDS' | 'CHARS';
+      value?: number;
+      optional?: boolean;
+      ref?: string;
+    }>,
+  ) => {
+    n += 1;
+    const id = `it-secondaries-p${n}`;
+    await q(
+      `insert into med_secondary_prompt (id, "schoolId", program, key, text, themes, "themesVersion", "updatedAt")
+       values ($1, $2, $3::"MedProgram", $4, $5, $6, 1, now())`,
+      [id, schoolId, program, `it-${n}`, text, themes],
+    );
+    for (const [i, o] of obs.entries()) {
+      await q(
+        `insert into med_secondary_observation
+           (id, "promptId", "cycleYear", source, "limitKind", "limitValue", optional, "sourceRef", "lastCheckedAt")
+         values ($1, $2, $3, $4::"MedPromptSource", $5::"MedLimitKind", $6, $7, $8, $9::timestamp)`,
+        [
+          `${id}-o${i}`,
+          id,
+          o.cycle,
+          o.source ?? 'ADMIT',
+          o.kind ?? 'WORDS',
+          o.value ?? 250,
+          o.optional ?? false,
+          o.ref ?? null,
+          checked,
+        ],
+      );
+    }
+  };
+
+  await prompt(
+    fixtureId,
+    'REG',
+    SECONDARIES_TEXT.same,
+    ['research'],
+    [{ cycle: cycle - 1 }, { cycle }, { cycle, source: 'SDN' }],
+  );
+  await prompt(fixtureId, 'REG', SECONDARIES_TEXT.previous, ['challenge'], [{ cycle: cycle - 1 }]);
+  await prompt(fixtureId, 'REG', SECONDARIES_TEXT.reworded, ['challenge'], [{ cycle }]);
+  await prompt(fixtureId, 'REG', SECONDARIES_TEXT.added, ['why-school'], [{ cycle }]);
+  await prompt(fixtureId, 'REG', SECONDARIES_TEXT.gone, ['other'], [{ cycle: cycle - 2 }, { cycle: cycle - 1 }]);
+  await prompt(
+    fixtureId,
+    'REG',
+    SECONDARIES_TEXT.optional,
+    ['additional-info'],
+    [{ cycle, kind: 'CHARS', value: 1500, optional: true }],
+  );
+  await prompt(
+    fixtureId,
+    'PHD',
+    SECONDARIES_TEXT.phd,
+    ['research', 'future-goals'],
+    [{ cycle, source: 'SCHOOL', value: 500, ref: 'https://med.fixture.example.edu/secondary' }],
+  );
+  await q(
+    `insert into med_secondary_check (id, "schoolId", source, "checkedAt", status, "promptCount")
+     values ('it-secondaries-check-1', $1, 'ADMIT', $2::timestamp, 'OK', 6),
+            ('it-secondaries-check-2', $1, 'SCHOOL', $2::timestamp, 'OK', 1)`,
+    [fixtureId, checked],
+  );
+  await q(
+    `insert into med_school_admissions_policy (id, "schoolId", program, rolling, evidence, url, "checkedOn", source)
+     values ('it-secondaries-policy-1', $1, 'REG', true, 'Decisions are made on a rolling basis.',
+             'https://med.fixture.example.edu/admissions', '2026-11-23', 'SCHOOL')`,
+    [fixtureId],
+  );
+
+  await q(
+    `insert into med_school (id, slug, name, "shortName", degree, city, state, active, "updatedAt")
+     values ($1, $2, 'Not Yet University School of Medicine', 'Not Yet', 'MD', 'Durham', 'NC', true, now())
+     on conflict do nothing`,
+    [SECONDARIES_NOTYET_ID, SECONDARIES_NOTYET_SLUG],
+  );
+  await prompt(SECONDARIES_NOTYET_ID, 'REG', SECONDARIES_TEXT.previous, ['challenge'], [{ cycle: cycle - 1 }]);
+
+  if (schools.mdId) {
+    await prompt(schools.mdId, 'REG', SECONDARIES_TEXT.diversityA, ['diversity'], [{ cycle, value: 300 }]);
+  }
+  await prompt(fixtureId, 'REG', SECONDARIES_TEXT.diversityB, ['diversity'], [{ cycle, value: 250 }]);
+}
+
+export async function removeSecondariesFixture(): Promise<void> {
+  await db().query('delete from med_school where id = $1', [SECONDARIES_NOTYET_ID]);
+  await db().query(`delete from med_secondary_prompt where id like 'it-secondaries-p%'`);
+  await db().query(`delete from med_secondary_check where id like 'it-secondaries-check-%'`);
+  await db().query(`delete from med_school_admissions_policy where id like 'it-secondaries-policy-%'`);
+}
+
+const TURN_PREFIX = 'it-medschools-turn-';
+
+/**
+ * `n` FIXTURE members who share, each with one REG application at `schoolId` carrying a secondary received date and a
+ * secondary submitted date `days(i)` later. Sign-up is limited, so users are written straight to Postgres.
+ */
+export async function seedTurnaroundMembers(
+  schoolId: string,
+  cycleYear: number,
+  n: number,
+  from = 0,
+  days: (i: number) => number = (i) => 3 + (i % 9),
+  now: Date = new Date(),
+): Promise<void> {
+  const q = (text: string, values: unknown[] = []) => db().query(text, values);
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const iso = (ago: number) => new Date(today - ago * DAY).toISOString().slice(0, 10);
+  for (let i = from; i < from + n; i += 1) {
+    const uid = `${TURN_PREFIX}${i}`;
+    await q(`insert into "user" (id, email, name, "updatedAt") values ($1, $2, $3, now())`, [
+      uid,
+      `${uid}@example.test`,
+      `Turnaround ${i}`,
+    ]);
+    await q(
+      `insert into med_tracker_cycle (id, "userId", "cycleYear", "shareAnonymously", "everShared", "updatedAt")
+       values ($1, $2, $3, true, true, now())`,
+      [`${uid}-cycle`, uid, cycleYear],
+    );
+    await q(`insert into med_tracker_application (id, "cycleId", "schoolId", program) values ($1, $2, $3, 'REG')`, [
+      `${uid}-app`,
+      `${uid}-cycle`,
+      schoolId,
+    ]);
+    const received = 40 + (i % 7);
+    for (const [type, date] of [
+      ['SECONDARY', iso(received)],
+      ['SECONDARY_SUBMITTED', iso(received - days(i))],
+    ] as const) {
+      await q(
+        `insert into med_tracker_milestone (id, "applicationId", type, date, "updatedAt")
+         values ($1, $2, $3::"MedMilestoneType", $4::date, now())`,
+        [`${uid}-${type}`, `${uid}-app`, type, date],
+      );
+    }
+  }
+}
+
+export async function setTurnaroundSharing(index: number, on: boolean): Promise<void> {
+  await db().query(`update med_tracker_cycle set "shareAnonymously" = $2 where "userId" = $1`, [
+    `${TURN_PREFIX}${index}`,
+    on,
+  ]);
+}
+
+export async function removeTurnaroundMembers(): Promise<void> {
+  await db().query(`delete from "user" where id like $1`, [`${TURN_PREFIX}%`]);
+}
+
+export async function turnaroundRows(schoolId: string): Promise<Record<string, unknown>[]> {
+  const r = await db().query(`select * from med_secondary_turnaround where "schoolId" = $1`, [schoolId]);
+  return r.rows;
+}
+
+export async function turnaroundColumns(): Promise<string[]> {
+  const r = await db().query(
+    `select column_name from information_schema.columns where table_name = 'med_secondary_turnaround' order by ordinal_position`,
+  );
+  return r.rows.map((x) => x.column_name as string);
+}

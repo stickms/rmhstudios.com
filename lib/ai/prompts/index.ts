@@ -615,6 +615,32 @@ export const MEDSCHOOLS_EXTRACT: PromptSpec = {
   maxChars: 8_000,
 };
 
+/**
+ * RMH Med Schools: secondary-application essay prompts quoted in public forum posts. The same input shape as
+ * `MEDSCHOOLS_EXTRACT` (a JSON array of `{ ref, postedOn, text }`, no author, no id); a second model call on the posts the
+ * SDN live job already reads, metered under the `medschools-extract` task with its own label
+ * (`medschools-extract:secondaries`) so it has its own share of the monthly budget. Output is parsed by a strict zod
+ * schema in `features/medschools/scrape/sdn/secondaries.ts`, which also requires every prompt to be quoted in its post and
+ * rejects (never redacts) anything person-shaped, so this wording is guidance and not the only guard.
+ */
+export const MEDSCHOOLS_SECONDARIES: PromptSpec = {
+  id: 'medschools-secondaries',
+  version: 1,
+  task: 'medschools-extract',
+  instructions: [
+    'The input is a JSON array of forum posts: [{ "ref": number, "postedOn": "YYYY-MM-DD", "text": string }].',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"prompts":[{"postRef":<ref>,"text":"...","program":"REG|PHD"}]}',
+    'A prompt is an essay question a medical school asks in its secondary application, when a post quotes it as text.',
+    '"text" is the school\'s question copied exactly as the post writes it, word and character limit included.',
+    "Never return an applicant's answer, essay draft, advice, opinion, question to other members or any commentary, and never text that names or describes a person.",
+    '"program" only if the post says the prompt is for MD-PhD or MSTP applicants (PHD) or for regular MD or DO applicants (REG); otherwise omit it.',
+    'At most 8 prompts per post. Omit any post with nothing to report.',
+    '[user], [email], [link] and [phone] are redactions, not content.',
+  ].join('\n'),
+  maxChars: 8_000,
+};
+
 export const MEDSCHOOLS_QA_ROUTE_ID = 'medschools-qa-route';
 export const MEDSCHOOLS_QA_ANSWER_ID = 'medschools-qa-answer';
 
@@ -666,6 +692,31 @@ export const MEDSCHOOLS_QA_ANSWER: PromptSpec = {
   forbid: ['As an AI', 'Here is', 'applicants'],
 };
 
+export const MEDSCHOOLS_IMPORT_ID = 'medschools-import';
+
+/**
+ * RMH Med Schools tracker import: read a member's own application-cycle file (a sheet, a document, pasted text) and
+ * return only the tracker's dates. The user turn is `{ text }` as data; school names come back as written and the server
+ * resolves them (`features/medschools/api/import/validate.ts`), keeps a date only when its `raw` quote is in the text and
+ * says the date, and ignores everything this prompt asks for beyond that, so the wording is guidance.
+ */
+export const MEDSCHOOLS_IMPORT: PromptSpec = {
+  id: MEDSCHOOLS_IMPORT_ID,
+  version: 1,
+  task: 'medschools-import',
+  instructions: [
+    'The input is JSON: { "text": string }, the text of a member\'s own medical school application tracker (a spreadsheet read row by row with " | " between cells, a document, or pasted notes).',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"rows":[{"schoolName":"as written","program":"MD|DO|MD-PhD|DO-PhD","milestones":[{"type":"SUBMITTED|COMPLETE|SECONDARY|SECONDARY_SUBMITTED|INTERVIEW|WAITLIST|REJECTION|ACCEPTANCE|WITHDRAWN|HOLD","date":"YYYY-MM-DD"|null,"raw":"the cell or phrase the date came from"}],"notes":""}],"cycleHint":2027|null}',
+    'One row per school and program. Types: SUBMITTED is the primary application sent to the school; COMPLETE is the application marked complete; SECONDARY is the secondary received or invited; SECONDARY_SUBMITTED is the secondary sent back; INTERVIEW is an interview invitation; WAITLIST, REJECTION, ACCEPTANCE, WITHDRAWN and HOLD are decisions.',
+    'Only dates. Never copy an essay, a prompt, a note, a contact or any other text. Leave "notes" an empty string.',
+    '"raw" is a short quote of at most 40 characters copied exactly from the input: the cell or words that hold that date. Never write a date that is not in the input; if the date is not there, leave the milestone out.',
+    '"date" is YYYY-MM-DD. When the input gives no year, use the application year you can infer from the other dates, else null. "cycleHint" is the entry year of the cycle (2026-2027 is 2027) when the input says one, else null.',
+    'School names exactly as written, never shortened or guessed. If the input holds no application dates, return {"rows":[],"cycleHint":null}.',
+  ].join('\n'),
+  maxChars: 24_000,
+};
+
 /**
  * RMH News: the summary a reader sees on an article they opened (lib/news-wire/summary.server.ts). Written once per
  * article from the outlet's own text and cached, so it runs only for articles somebody actually clicked.
@@ -712,7 +763,9 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   EMAIL_DESIGN,
   CHARACTER_ADVISOR,
   MEDSCHOOLS_EXTRACT,
+  MEDSCHOOLS_SECONDARIES,
   MEDSCHOOLS_QA_ROUTE,
   MEDSCHOOLS_QA_ANSWER,
+  MEDSCHOOLS_IMPORT,
   NEWS_SUMMARY,
 ] as const;

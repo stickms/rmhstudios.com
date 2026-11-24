@@ -58,7 +58,7 @@ export class Client {
   async request<T = JsonBody>(
     method: string,
     path: string,
-    opts: { json?: unknown; headers?: Record<string, string> } = {},
+    opts: { json?: unknown; form?: FormData; headers?: Record<string, string> } = {},
   ): Promise<Res<T>> {
     const headers: Record<string, string> = { origin: BASE_URL, ...opts.headers };
     if (this.jar.size) headers.cookie = [...this.jar].map(([k, v]) => `${k}=${v}`).join('; ');
@@ -66,7 +66,7 @@ export class Client {
     const res = await fetch(`${BASE_URL}${path}`, {
       method,
       headers,
-      body: opts.json === undefined ? undefined : JSON.stringify(opts.json),
+      body: opts.form ?? (opts.json === undefined ? undefined : JSON.stringify(opts.json)),
       redirect: 'manual',
     });
     for (const line of res.headers.getSetCookie()) {
@@ -93,6 +93,10 @@ export class Client {
   }
   post<T = JsonBody>(path: string, json?: unknown, headers?: Record<string, string>) {
     return this.request<T>('POST', path, { json: json ?? {}, headers });
+  }
+  /** A multipart POST (the field names and files are the caller's); no content-type, fetch adds the boundary. */
+  postForm<T = JsonBody>(path: string, form: FormData, headers?: Record<string, string>) {
+    return this.request<T>('POST', path, { form, headers });
   }
   delete<T = JsonBody>(path: string, headers?: Record<string, string>) {
     return this.request<T>('DELETE', path, { headers });

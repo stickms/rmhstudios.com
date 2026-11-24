@@ -8,13 +8,14 @@
 import { dedupeHash } from '../../engine/dedupe';
 import { normalizeQuestion, passesPrefilter } from '../../engine/sdn-rules';
 import type { MedProgram } from '../../engine/types';
-import { SdnPageError, assertPage, parseThreadPage, threadPageUrl } from '../adapters/sdn';
+import { SdnPageError, assertPage, canonicalThreadUrl, parseThreadPage, threadPageUrl } from '../adapters/sdn';
 import type { ParsedThreadPage, SdnPost } from '../adapters/sdn';
 import { SourceHaltedError, type PoliteClient } from '../http';
 import type { TouchedCell } from '../rollup-events';
 import type { Logger, MedPrisma, MedSdnThreadRow } from '../types';
 import type { BudgetGate } from './budget';
 import { chunkPosts, extractBatch, type ExtractedPost, type ExtractRejected, type SdnAi } from './extract';
+import type { PromptSink } from './secondaries';
 
 export interface RunLimits {
   maxPages: number;
@@ -38,6 +39,11 @@ export interface ThreadDeps {
   limits: RunLimits;
   state: RunState;
   shouldStop(): boolean;
+  /**
+   * The secondary-prompt extractor (secondaries plan, Task 10): a second model call on a chunk the event extraction has
+   * already committed. Absent, the thread's behaviour is exactly what it was without it.
+   */
+  prompts?: PromptSink;
 }
 
 /**
@@ -65,6 +71,9 @@ export interface ThreadResult {
   outcome: ThreadOutcome;
   eventsCreated: number;
   questionsCreated: number;
+  /** Secondary-prompt observations created or changed by the sink, and candidates it rejected (numbers only). */
+  promptsStored: number;
+  promptsRejected: number;
   touched: TouchedCell[];
   counters: ThreadCounters;
 }
@@ -89,11 +98,17 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
   };
   let eventsCreated = 0;
   let questionsCreated = 0;
+  let promptsStored = 0;
+  let promptsRejected = 0;
+  /** Set when the sink says stop (peak, its own budget, an outage, the run's call cap): it asks no more this thread. */
+  let sinkOff = false;
   const touched = new Map<string, TouchedCell>();
   const finish = (outcome: ThreadOutcome): ThreadResult => ({
     outcome,
     eventsCreated,
     questionsCreated,
+    promptsStored,
+    promptsRejected,
     touched: [...touched.values()],
     counters,
   });
@@ -110,6 +125,36 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
     counters.llmCalls++;
     return true;
   };
+
+  /**
+   * The secondary-prompt sink on a chunk whose events and cursor are already committed, so whatever happens here can never
+   * lose an event or move the cursor. Its model calls count against the run's cap (`state.llmCalls`) but not against this
+   * thread's event counters. A failure is logged as a static line and the thread carries on.
+   */
+  async function extractPrompts(chunk: SdnPost[], parsed: ParsedThreadPage): Promise<void> {
+    const sink = deps.prompts;
+    if (!sink || sinkOff || !chunk.some((p) => sink.wants(p))) return;
+    try {
+      const r = await sink.extract(chunk, {
+        cycleYear: thread.cycleYear,
+        schoolId: thread.schoolId,
+        threadUrl: canonicalThreadUrl(thread.slug, thread.threadId),
+        kind,
+        containsHandle: parsed.containsHandle,
+        reserve: () => {
+          if (state.llmCalls >= limits.maxLlmCalls) return false;
+          state.llmCalls++;
+          return true;
+        },
+      });
+      promptsStored += r.stored;
+      promptsRejected += r.rejected;
+      if (r.stop) sinkOff = true;
+    } catch {
+      sinkOff = true;
+      log.warn('sdn thread: secondary prompts failed; events and cursor kept');
+    }
+  }
 
   /** Commits one chunk: events, questions and the cursor together, or nothing. */
   async function commit(page: number, span: SdnPost[], results: Map<SdnPost, ExtractedPost>): Promise<void> {
@@ -369,6 +414,7 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
         log.error('sdn thread: chunk write failed; cursor kept');
         return finish('failed');
       }
+      if (chunk.length > 0) await extractPrompts(chunk, parsed);
     }
 
     if (page < parsed.lastPage) {
@@ -394,5 +440,7 @@ export async function processThread(deps: ThreadDeps, thread: MedSdnThreadRow): 
       return finish('failed');
     }
   }
+  if (promptsStored > 0 || promptsRejected > 0)
+    log.info(`sdn thread: secondary prompts stored=${promptsStored} rejected=${promptsRejected}`);
   return finish('caught-up');
 }

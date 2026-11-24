@@ -13,17 +13,18 @@ public pages (phase 3) read it.
 
 Signed-out readable, in the `_site` shell (Steel), not a full-screen app:
 
-| Route                  | Page                                                                    |
-| ---------------------- | ----------------------------------------------------------------------- |
-| `/rmh-medschool`       | School index (rows on rules) with search, degree, state and program     |
-| `/rmh-medschool/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging  |
-| `/rmh-medschool/$slug` | One school: Activity, History, Forecast, Interviews tabs (`?tab=`, `?program=` …) |
+| Route                  | Page                                                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `/rmh-medschool`       | School index (rows on rules) with search, degree, state and program                            |
+| `/rmh-medschool/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging                         |
+| `/rmh-medschool/$slug` | One school: Activity, History, Forecast, Interviews, Secondaries tabs (`?tab=`, `?program=` …) |
 
-Eight anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
+Nine anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
 rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
-`schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `live`, `today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
-`medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
-in the server HTML with scripting off.
+`schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `schools/$slug/secondaries`, `live`, `today`. Contracts
+live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in `medschools.queries.ts` (no
+`createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist in the server HTML with
+scripting off.
 
 **The public endpoints stay user-independent (phase 4).** Nothing under `/api/medschools/schools*` or `live` reads a
 session, a preference or a list; a signed-in member's preferences are applied in the route loader, which prefetches the
@@ -146,30 +147,31 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
   dedupe secret, inside a closure in `adapters/admit/client.ts`; the id never leaves the adapter and is never stored),
   so one member counts once per type per school per cycle whichever path saw it first: the live feed or the
   profile-history backfill (`scrape/run-admit-history.ts`, queue `medschools.admit-history`). A feed row with no author
-  keeps the per-update key. **First report wins, earliest day kept** (`scrape/admit-events.ts`, `replacesTime`): when a later
-  sighting of an existing key falls on an earlier calendar day (UTC), the stored date moves back; a smaller timestamp
-  on the same day never does (a profile-history date is day-only, stored at UTC midnight by the adapter, and must not
-  displace an exact live-feed time; on the same day an exact time replaces a midnight). Arrivals leave out ADMIT and
-  SDN events stored at exactly 00:00 UTC (day-only), so the live feed's own exact times still count. When it moves, the roll-up re-rolls both days; the
-  roll-up now deletes a cell whose events are gone, so a moved event is never counted on two days (the key holds the
-  cycle year, so a move never changes cycle). A stored event with no program takes the program a later sighting
-  resolved. The history job discovers members from `getAllCycleResults` (each status filter, paged, user id only),
-  fetches each unseen member's profile (`md_phd` plus the history's school slug and secondary/interview/decision dates,
-  nothing else), maps every entry to an event (SECONDARY, INTERVIEW, and the decision as
-  ACCEPTANCE/WAITLIST/REJECTION/WITHDRAWN/HOLD; a decision with no date or an unknown decision is counted, never
-  guessed) with `cycleYearOf` and the alias matching, and rolls up. The live feed ingests the history of any member it
-  meets for the first time from the lookup it already made. Progress is `MedAdmitMember` (a keyed hash of the member id,
-  a different HMAC input from any event key, plus DONE/FAILED and attempts; pruned after 400 days); the raw id lives in
-  memory for one run, discovery is repeated each run, and DONE members are skipped, so a deploy resumes. Three failed
-  lookups park a member for a week.
+  keeps the per-update key. **First report wins, earliest day kept** (`scrape/admit-events.ts`, `replacesTime`): when a
+  later sighting of an existing key falls on an earlier calendar day (UTC), the stored date moves back; a smaller
+  timestamp on the same day never does (a profile-history date is day-only, stored at UTC midnight by the adapter, and
+  must not displace an exact live-feed time; on the same day an exact time replaces a midnight). Arrivals leave out
+  ADMIT and SDN events stored at exactly 00:00 UTC (day-only), so the live feed's own exact times still count. When it
+  moves, the roll-up re-rolls both days; the roll-up now deletes a cell whose events are gone, so a moved event is never
+  counted on two days (the key holds the cycle year, so a move never changes cycle). A stored event with no program
+  takes the program a later sighting resolved. The history job discovers members from `getAllCycleResults` (each status
+  filter, paged, user id only), fetches each unseen member's profile (`md_phd` plus the history's school slug and
+  secondary/interview/decision dates, nothing else), maps every entry to an event (SECONDARY, INTERVIEW, and the
+  decision as ACCEPTANCE/WAITLIST/REJECTION/WITHDRAWN/HOLD; a decision with no date or an unknown decision is counted,
+  never guessed) with `cycleYearOf` and the alias matching, and rolls up. The live feed ingests the history of any
+  member it meets for the first time from the lookup it already made. Progress is `MedAdmitMember` (a keyed hash of the
+  member id, a different HMAC input from any event key, plus DONE/FAILED and attempts; pruned after 400 days); the raw
+  id lives in memory for one run, discovery is repeated each run, and DONE members are skipped, so a deploy resumes.
+  Three failed lookups park a member for a week.
 - **One-time ADMIT re-key (`scrape/admit-rekey.ts`).** Old ADMIT rows used the per-update key and would be recounted by
   the backfill. Before the first live write under the new key and before the first history run, `ensureAdmitRekey`
-  deletes every ADMIT `MedCycleEvent` and ADMIT `MedCycleCount` cell (an ADMIT cell holds nothing but its events) and, in the same
-  transaction, every `MedAdmitMember` progress row and `MedAdmitForumThread` cursor (progress that says "already read"
-  would otherwise stop the events refilling: a DONE member is never re-fetched, a caught-up thread never re-read), and
-  records a `MedSourceRun` (job `admit-rekey`, status OK) as the done flag, inside that transaction too. At most once; a failed attempt is retried
-  and the Admit event jobs write nothing until it succeeds. Mention it in the PR text: public Admit series are empty
-  until the feed and the backfill refill them (the first history run is queued at worker start).
+  deletes every ADMIT `MedCycleEvent` and ADMIT `MedCycleCount` cell (an ADMIT cell holds nothing but its events) and,
+  in the same transaction, every `MedAdmitMember` progress row and `MedAdmitForumThread` cursor (progress that says
+  "already read" would otherwise stop the events refilling: a DONE member is never re-fetched, a caught-up thread never
+  re-read), and records a `MedSourceRun` (job `admit-rekey`, status OK) as the done flag, inside that transaction too.
+  At most once; a failed attempt is retried and the Admit event jobs write nothing until it succeeds. Mention it in the
+  PR text: public Admit series are empty until the feed and the backfill refill them (the first history run is queued at
+  worker start).
 - **Politeness budgets (owner 2026-11-23).** The history job uses `backfillSpacingMs` 3 s plus 0-1 s random jitter
   (`createPoliteHost` takes `jitterMs`; live sessions keep their spacing); the SDN forums host is 3 s plus jitter for
   every session. Every host has a persisted DAILY request budget (`scrape/request-budget.ts`, `MedRequestBudget`, UTC
@@ -179,12 +181,12 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
 - **Admit school forums (owner 2026-11-23, `scrape/run-admit-forums.ts`, queue `medschools.admit-forums`, every 3
   hours).** From June 1 through August 31 the run lists and reads the previous cycle's threads too (`forumYearsFor`:
   decisions roll over only on September 1), inside the same per-run request cap. Admit's school forums are a native
-  thread per school per cycle (GraphQL `getAllSchoolThreads` and
-  `getSchoolThread`, oldest first; findings in the endpoint inventory). The job lists every thread's post count (three
-  requests), and reads a thread only from its persisted cursor (`MedAdmitForumThread`: `cursorOffset` plus a keyed hash
-  of the last post, read one post early as an anchor; no text, author or id stored). Rules a reader of the data depends
-  on: (1) a post mirrored from SDN is skipped (`isSdnMirror` in `adapters/admit/forum.ts`; Admit has no source field, so
-  it is a fail-closed content-and-shape check) because SDN already counts it; (2) a native post's events key on
+  thread per school per cycle (GraphQL `getAllSchoolThreads` and `getSchoolThread`, oldest first; findings in the
+  endpoint inventory). The job lists every thread's post count (three requests), and reads a thread only from its
+  persisted cursor (`MedAdmitForumThread`: `cursorOffset` plus a keyed hash of the last post, read one post early as an
+  anchor; no text, author or id stored). Rules a reader of the data depends on: (1) a post mirrored from SDN is skipped
+  (`isSdnMirror` in `adapters/admit/forum.ts`; Admit has no source field, so it is a fail-closed content-and-shape
+  check) because SDN already counts it; (2) a native post's events key on
   `hash(admit:author:<user id>:<schoolId>:<cycleYear>:<type>)`, built by `adapters/admit/member-key.ts` which the feed
   and the history now share, so one member counts once per type per school per cycle across the tracker, the history and
   the forum (the writer is `admit-events.ts`: first report wins, earliest date kept, a known program is kept); a post
@@ -203,9 +205,9 @@ hand-rolled (`engine/search.ts`) because zod is forbidden in the entry.
 Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and rulings (R1-R12) are in
 `docs/superpowers/plans/2026-11-23-rmh-medschool-phase5-forecast.md`.
 
-- **One floor.** `engine/floor.ts` (`floorWhere`, `publicSum`; pure, no Prisma) is the only definition of what is public;
-  the readers and the forecast job both import it, and `run-forecast.ts` is pinned to read counts only through it. A band
-  fitted on a looser floor would publish an unpublished or sub-k RMH figure.
+- **One floor.** `engine/floor.ts` (`floorWhere`, `publicSum`; pure, no Prisma) is the only definition of what is
+  public; the readers and the forecast job both import it, and `run-forecast.ts` is pinned to read counts only through
+  it. A band fitted on a looser floor would publish an unpublished or sub-k RMH figure.
 - **The model (D3, D4; `engine/stats/`, pure, server-side only; `stats-boundary.test.ts` keeps it out of the client
   graph).** Fitted **per program to the primary series, never summed** (REG and PHD; `ALL` on the page reads REG, D12).
   Day `d` is days since the cycle's `dayZeroOn`; the fit sees counts through yesterday UTC (`asOf`, a partial day biases
@@ -213,43 +215,50 @@ Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and r
   season reported by day `d` is weighted `0.5^k` (newest first, renormalised). FULL (weighted share at `asOf` at least
   0.05): the implied total is the count so far over that share; 600 draws with a stratified cycle choice and a Poisson
   remainder, paths `C + R * q(d)`, per-day p10/p50/p90, a summary of the total and the day half of the invites are in
-  (`halfDay`). EARLY: the same with the cycle's own total as the Poisson mean and p10/p90 widened 1.5x around the median.
-  NONE: no band, the row still exists. A seeded `mulberry32` (`fnv1a` of school, program, type, cycle, `asOf`) makes a
-  re-run the same day change nothing. Constants: `engine/stats/constants.ts`, `MODEL_VERSION` 1.
+  (`halfDay`). EARLY: the same with the cycle's own total as the Poisson mean and p10/p90 widened 1.5x around the
+  median. NONE: no band, the row still exists. A seeded `mulberry32` (`fnv1a` of school, program, type, cycle, `asOf`)
+  makes a re-run the same day change nothing. Constants: `engine/stats/constants.ts`, `MODEL_VERSION` 1.
 - **The job** is the queue `medschools.forecast` (`FORECAST_CRON`, 06:40 UTC, `MEDSCHOOLS_FORECAST_CRON`; no flag, no
   secret, no model call; detail `server/CLAUDE.md`). It writes `MedForecast` (one row per school, program, cycle and
   type; rows for finished cycles stay, a record of what was predicted, D11) and then `MedWaitCurve`.
 - **`MedWaitCurve` is precomputed by the worker (D7).** A request that computed the curve would read other members'
-  `COMPLETE` and `INTERVIEW` rows inside a per-user handler (one bad `where` and a stranger's row is on the wire), a member
-  back-dating a milestone could move a curve a neighbour is looking at (the once-a-day publish closes only same-day
-  differencing; R13 closes the rest), and the scan would be O(all tracker rows) per view. The row holds `members`,
-  `invited`, `maxDay` and `{ t, s, n }` steps (`n` = members at risk at the step); nothing about one contribution.
-- **R13: the curve is coarse (privacy review).** Times are whole weeks (`7 * ceil(t/7)`, `binObs`) before Kaplan-Meier, so
-  steps sit only at multiples of 7; `maxDay` is the last week with at least 10 members at risk (`KM_MIN_AT_RISK`), and
-  `inviteChance` is null for a target past it (which also puts 10 at risk at the caller's week); the request maps
-  `elapsed` to its week and the horizon to whole weeks, so every day of a week has one answer. No curve with fewer than 10
-  invite events (`KM_MIN_INVITES`) on top of 20 members. `runWaitCurves` replaces a stored row only when invites or members
-  moved by at least 3 (`KM_REFRESH_DELTA`, `worthRefreshing`); below any floor the row is deleted at once, and a row in an
-  older shape is rebuilt. The chance is rounded to the nearest 5%, the basis down to 10. An end date before COMPLETE drops
-  the observation; a COMPLETE in the future is status `not-complete-yet`. All constants in `engine/stats/constants.ts`.
-- **Each category ends on its own day.** `cycleEndOn(cycleYear, type)` is the day before `cycleYearOf` rolls the type over:
-  secondaries May 31, interviews June 30, decisions (acceptance, waitlist, rejection) August 31. The forecast job draws each
-  category to its own end, so the path, the total and `halfDay` match the implied total; the response's `endOn` is the
-  category's, and the chart's x axis follows the stored band.
-- **The observed line and the band agree.** `getForecast` cumulates the live series through the row's `asOf`; when a source
-  revised past days since the job ran, the band (and the total) shifts by the difference, never below what is observed.
-- **Live and Activity waves agree.** Both read REG + PHD summed, the primary source chosen over the whole cycle; the live
-  feed reads the page schools' cycle rows from the cycle's first report (a window would miss a burst after a quiet spell).
+  `COMPLETE` and `INTERVIEW` rows inside a per-user handler (one bad `where` and a stranger's row is on the wire), a
+  member back-dating a milestone could move a curve a neighbour is looking at (the once-a-day publish closes only
+  same-day differencing; R13 closes the rest), and the scan would be O(all tracker rows) per view. The row holds
+  `members`, `invited`, `maxDay` and `{ t, s, n }` steps (`n` = members at risk at the step); nothing about one
+  contribution.
+- **R13: the curve is coarse (privacy review).** Times are whole weeks (`7 * ceil(t/7)`, `binObs`) before Kaplan-Meier,
+  so steps sit only at multiples of 7; `maxDay` is the last week with at least 10 members at risk (`KM_MIN_AT_RISK`),
+  and `inviteChance` is null for a target past it (which also puts 10 at risk at the caller's week); the request maps
+  `elapsed` to its week and the horizon to whole weeks, so every day of a week has one answer. No curve with fewer than
+  10 invite events (`KM_MIN_INVITES`) on top of 20 members. `runWaitCurves` replaces a stored row only when invites or
+  members moved by at least 3 (`KM_REFRESH_DELTA`, `worthRefreshing`); a row is CREATED only at 23 members and 13
+  invites (`KM_CREATE_MEMBERS`/`KM_CREATE_INVITES`, `worthCreating`: hysteresis, so delete-below-20-then-recreate-at-20
+  cannot yield a figure one member from the last); below any floor the row is deleted at once, and a row in an older
+  shape is rebuilt. The chance is rounded to the nearest 5%, the basis down to 10. An end date before COMPLETE drops the
+  observation; a COMPLETE in the future is status `not-complete-yet`. All constants in `engine/stats/constants.ts`.
+- **Each category ends on its own day.** `cycleEndOn(cycleYear, type)` is the day before `cycleYearOf` rolls the type
+  over: secondaries May 31, interviews June 30, decisions (acceptance, waitlist, rejection) August 31. The forecast job
+  draws each category to its own end, so the path, the total and `halfDay` match the implied total; the response's
+  `endOn` is the category's, and the chart's x axis follows the stored band.
+- **The observed line and the band agree.** `getForecast` cumulates the live series through the row's `asOf`; when a
+  source revised past days since the job ran, the band (and the total) shifts by the difference, never below what is
+  observed.
+- **Live and Activity waves agree.** Both read REG + PHD summed, the primary source chosen over the whole cycle; the
+  live feed reads the page schools' cycle rows from the cycle's first report (a window would miss a burst after a quiet
+  spell).
 - **Opt-in, and 20 distinct members (D5, D6, R1, R4).** Only cycles with `shareAnonymously` feed the curve; a pair with
   fewer than 20 distinct members with a valid observation has no row (a member with two cycles counts once). The basis
-  shown is rounded down to a multiple of 10 so it does not reveal each new member. Every signed-in member sees the chance,
-  sharer or not (R2); the sharing switch's copy says the wait between complete date and invite feeds an aggregate.
+  shown is rounded down to a multiple of 10 so it does not reveal each new member. Every signed-in member sees the
+  chance, sharer or not (R2); the sharing switch's copy says the wait between complete date and invite feeds an
+  aggregate.
 - **Per-event sources do not enter the curve (D9).** An Admit, SDN or RMH event has no person and no complete date;
   joining events to people is exactly what spec section 6 forbids. The engine's input is `{ days, event }` per
   observation, so a future source that carries pairs needs no model change.
 - **Waves (D10).** A day of the INTERVIEW primary series whose count is more than 3x the median of the previous 14 days
   (zeros included), at least 5, with 7 previous days of data. Today's partial count is included.
-- **Endpoints.** The public ones are now eight (`schools/$slug/forecast` joined) and `SCHOOL_TABS` has four tabs. Private: `me/chances`, which is one more `me/**` route, signed in, never cached, no id parameter.
+- **Endpoints.** The public ones are now eight (`schools/$slug/forecast` joined) and `SCHOOL_TABS` has four tabs.
+  Private: `me/chances`, which is one more `me/**` route, signed in, never cached, no id parameter.
 
 ## The Forecast tab, waves and the personal chance (phase 5, UI and endpoints)
 
@@ -259,17 +268,18 @@ label and a branch of the switch in `ui/SchoolPage.tsx` (the strip comes from `S
 tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts/ForecastBand.tsx`.
 
 - **Endpoints.** Public `GET schools/$slug/forecast` (`getForecast` in `api/read.server.ts`: the stored `MedForecast`
-  row plus the floored observed series cumulated through the row's `asOf`; `ALL` reads REG; status `ready | early |
-  no-history | no-data | pending`). Private `GET me/chances` (`api/chances.server.ts`: the caller's own applications
-  from `getTracker`, one `MedWaitCurve` row per school x program, no id parameter, never cached).
+  row plus the floored observed series cumulated through the row's `asOf`; `ALL` reads REG; status
+  `ready | early | no-history | no-data | pending`). Private `GET me/chances` (`api/chances.server.ts`: the caller's own
+  applications from `getTracker`, one `MedWaitCurve` row per school x program, no id parameter, never cached).
 - **Chart.** The observed line is the category's colour, solid 2px; the median is dashed 2px; the 10th and 90th
-  percentiles are 1px dotted boundaries; nothing is filled or translucent (R1). The x axis is calendar dates, the y
-  axis starts at 0 and tweens. `ui/charts/charts.test.tsx` holds the markup.
+  percentiles are 1px dotted boundaries; nothing is filled or translucent (R1). The x axis is calendar dates, the y axis
+  starts at 0 and tweens. `ui/charts/charts.test.tsx` holds the markup.
 - **Waves.** `waves` on the Activity response and `wave` on live rows come from `engine/stats/waves.ts` (server only).
   Ticks sit on `CategoryLines` (only while Interview is on) and `DailyBars` (Interview only); `WaveNote` is the
   non-visual reading; a live row says "Part of a wave".
 - **The chance** shows on the tracker (`tracker/ChanceLine.tsx`, one query for the cycle under `ME_KEY`) and under the
-  Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is an addition: signed out, loading or failed, the page is whole without it.
+  Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is
+  an addition: signed out, loading or failed, the page is whole without it.
 
 ## AI Q&A (phase 6)
 
@@ -292,74 +302,181 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   markup, and a segment citing only forum text (`untrusted`) holds no number. A number is every maximal digit run
   whatever precedes it (CJK and Arabic glue digits to letters; `engine/qa/numbers.ts`), digits normalised, percents
   (`%`, `percent`, `per cent`), `k`/`m` suffixes and a leading minus part of the token, dates, years, ranges; and a
-  spelled-out number (`engine/qa/number-words.ts`: English parsed to its value, "a dozen", "half"; es/fr/pt/ru/ar/hi/zh/ja
-  listed best-effort as unverifiable, so those sentences are dropped). Bidi and zero-width characters (`\p{Cf}`) are
-  removed from the sentence before it is checked and shown; lookalike dots (`。` `．` `﹒` `[.]` `(dot)`, `evil . com`)
-  count as dots for the domain check. A sentence citing facts of several schools takes a number only from a cited fact
-  of a school it names (`schoolNames`). **What it does not guarantee:** that digit-free prose is true. A sentence may
-  paraphrase member-reported text (interview questions, feedback, the profile's style and length notes, all
-  `untrusted`), because that is what such an answer is; the page says members wrote it and RMH checks figures, not
-  words. Dropped segments are not repaired or re-asked: `notice: 'removed-ungrounded'`, and nothing left is `no-data`.
-  No derived figures: a computed number is simply not found.
+  spelled-out number (`engine/qa/number-words.ts`: English parsed to its value, "a dozen", "half";
+  es/fr/pt/ru/ar/hi/zh/ja listed best-effort as unverifiable, so those sentences are dropped). Bidi and zero-width
+  characters (`\p{Cf}`) are removed from the sentence before it is checked and shown; lookalike dots (`。` `．` `﹒`
+  `[.]` `(dot)`, `evil . com`) count as dots for the domain check. A sentence citing facts of several schools takes a
+  number only from a cited fact of a school it names (`schoolNames`). **What it does not guarantee:** that digit-free
+  prose is true. A sentence may paraphrase member-reported text (interview questions, feedback, the profile's style and
+  length notes, all `untrusted`), because that is what such an answer is; the page says members wrote it and RMH checks
+  figures, not words. Dropped segments are not repaired or re-asked: `notice: 'removed-ungrounded'`, and nothing left is
+  `no-data`. No derived figures: a computed number is simply not found.
 - **Injection (R8).** Facts reach the model only inside `asData(...)`; forum text is cleaned again (`cleanForPrompt`),
   capped and flagged untrusted. A model that obeys planted text still produces nothing the validator keeps
   (`testing/integration/medschools-ask.test.ts` proves it end to end with a fake provider).
 - **My chance (R4).** Only on a `my-chance` question: the server runs `getChances(userId, ...)` for the resolved schools
   and returns the rows as `mine`; the model never sees a milestone, date or percent from the tracker. `mine: []` means
-  no application; `mine: null` with `notice: 'mine-unavailable'` means the read failed (R18); the UI renders it through `ChanceLine` even when the answer is thin. This is the one personal read in
-  `me/**` that is not an aggregate of tracker rows, and it reads only the caller's own.
+  no application; `mine: null` with `notice: 'mine-unavailable'` means the read failed (R18); the UI renders it through
+  `ChanceLine` even when the answer is thin. This is the one personal read in `me/**` that is not an aggregate of
+  tracker rows, and it reads only the caller's own.
 - **Ceilings (R9-R11, R18), in this order before any model call.** Rate limit `ai` 6 per minute per user;
   `isAiConfigured` (503 `AI_UNAVAILABLE`); the shared gate (503 `MEDSCHOOLS_QA_PAUSED`: Q&A may spend
   `MEDSCHOOLS_QA_AI_SHARE`, default 0.25, of `MEDSCHOOLS_AI_MONTHLY_USD`; the scrape gates get the rest,
   `features/medschools/ai-budget.ts`); `assertAiBudget` (402); then the atomic reservation (`reserveQuestion` in
   `api/qa/budget.server.ts`): one transaction under `pg_advisory_xact_lock` on the member writes a `medschools-qa-ask`
   row (the day's count, the tier's cap since UTC midnight, below: 429 `MEDSCHOOLS_QA_DAILY_CAP`) and a
-  `medschools-qa-lock` row (the in-flight lease, 120 s since R20, deleted when the question ends: 429 `MEDSCHOOLS_QA_BUSY`).
-  Both are zero-token, zero-cost, text-free `AiUsage` rows, so the cap and the lease hold across every web process and do
-  not depend on the provider's metering write. Any ledger error fails closed (503 paused, unavailable). The one thing a
-  lost provider metering write can still do is under-count spend (it is logged by `meter`); the daily count cannot slip.
-  The whole question has a 50 s deadline (`QA_DEADLINE_MS`, under the client's 60 s `AI_TIMEOUT_MS`) plus the request's
-  own `signal`; both model calls take it and never retry. The web tier needs `DEEPSEEK_API_KEY`.
+  `medschools-qa-lock` row (the in-flight lease, 120 s since R20, deleted when the question ends: 429
+  `MEDSCHOOLS_QA_BUSY`). Both are zero-token, zero-cost, text-free `AiUsage` rows, so the cap and the lease hold across
+  every web process and do not depend on the provider's metering write. Any ledger error fails closed (503 paused,
+  unavailable). The one thing a lost provider metering write can still do is under-count spend (it is logged by
+  `meter`); the daily count cannot slip. The whole question has a 50 s deadline (`QA_DEADLINE_MS`, under the client's 60
+  s `AI_TIMEOUT_MS`) plus the request's own `signal`; both model calls take it and never retry. The web tier needs
+  `DEEPSEEK_API_KEY`.
 - **Think it through (R20).** `think: true` in the ask body (optional) switches DeepSeek thinking on for the **answer
   call only** (`runTask` option `thinking`, same `medschools-qa` task and JSON mode; the route call stays flash). Only
   `message.content` is read: the reasoning text is dropped inside the provider and is never returned, stored, metered or
-  logged (it is ungrounded, so it would bypass the validator); the response carries `thinking: boolean` and the page says
-  "Thought for N s" (the question's own wall time, measured in `askRun`). `MEDSCHOOLS_QA_THINKING` (default on) gates it
-  and `GET me/ask` returns `thinkingAvailable`. Deadlines: whole question 90 s (`QA_THINK_DEADLINE_MS`, answer call gets
-  the remainder through the shared signal and a 90 s request timeout), the client's per-call timeout 97 s
-  (`QA_THINK_CLIENT_TIMEOUT_MS`; `AI_TIMEOUT_MS` is unchanged), the lease (member and admin) 120 s (`QA_LEASE_MS`).
-  Both stay under Cloudflare's 100 s cut of a proxied request, so a long think ends in the app's own refusal, not a 524.
-- **Limit tiers, the admin bypass and limit requests (R19).** The daily cap depends on the caller's tier, resolved on the
-  server per request by `resolveQaTier` (`api/qa/budget.server.ts`): **admin** is the session's `isAdmin` (the
+  logged (it is ungrounded, so it would bypass the validator); the response carries `thinking: boolean` and the page
+  says "Thought for N s" (the question's own wall time, measured in `askRun`). `MEDSCHOOLS_QA_THINKING` (default on)
+  gates it and `GET me/ask` returns `thinkingAvailable`. Deadlines: whole question 90 s (`QA_THINK_DEADLINE_MS`, answer
+  call gets the remainder through the shared signal and a 90 s request timeout), the client's per-call timeout 97 s
+  (`QA_THINK_CLIENT_TIMEOUT_MS`; `AI_TIMEOUT_MS` is unchanged), the lease (member and admin) 120 s (`QA_LEASE_MS`). Both
+  stay under Cloudflare's 100 s cut of a proxied request, so a long think ends in the app's own refusal, not a 524.
+- **Limit tiers, the admin bypass and limit requests (R19).** The daily cap depends on the caller's tier, resolved on
+  the server per request by `resolveQaTier` (`api/qa/budget.server.ts`): **admin** is the session's `isAdmin` (the
   `defineHandler` ctx field, the same flag `auth: 'admin'` checks), **member** is `getUserTier(userId) !== 'free'` (the
-  Stripe subscription or a gift membership, the source `assertAiBudget` uses; automatic, highest after admin), **approved**
-  is an `APPROVED` `MedQaLimitRequest` row, else **free**. Caps: free 25 `MEDSCHOOLS_QA_DAILY_CAP`, approved 40
-  `..._APPROVED`, member 100 `..._MEMBER` (invalid closes that tier). An admin skips the daily cap, the one-in-flight
-  lease, the 6 per minute rate limit (`rateLimitExemptAdmin: true` on the ask `POST`) and the member's own monthly
-  allowance, and writes no daily-count row; the shared monthly pause (R11) still applies, and so does a ceiling of 3 questions in flight per admin (`QA_ADMIN_MAX_IN_FLIGHT`, `medschools-qa-admin-lock` leases under an advisory lock keyed on the admin; 429 `MEDSCHOOLS_QA_BUSY`). A decision (approve, decline, revoke) sends the applicant a notice; a revoke is recorded in `revokedAt/By/Note` and leaves the approval fields alone; the admin list always includes every `APPROVED` row as `active`. `GET me/ask` returns
-  `{ tier, remainingToday, dailyCap }`, null and null for an admin ("Admin: no daily limit"). Limit requests
-  (`MedQaLimitRequest`, `api/qa-limit.server.ts`, outside `api/qa/` so the privacy pins on that folder stay literal): one
-  PENDING and one APPROVED per member (partial unique indexes in the migration), reason at most 500 characters, a decline
-  or revoke blocks a new request for 30 days, admins and paying members never see the form (`LimitRequest.tsx`, under the
-  Ask form, not an ink button). Endpoints `me/qa-limit-request` (GET, POST) and `admin/medschools/qa-limit-requests`
-  (GET, POST: approve, decline, revoke with an optional note), reviewed in the "Q&A limits" tab of `/admin/medschools`.
-  Erased with the account; the schema test pins the model's exact columns, none of which can hold a question.
+  Stripe subscription or a gift membership, the source `assertAiBudget` uses; automatic, highest after admin),
+  **approved** is an `APPROVED` `MedQaLimitRequest` row, else **free**. Caps: free 25 `MEDSCHOOLS_QA_DAILY_CAP`,
+  approved 40 `..._APPROVED`, member 100 `..._MEMBER` (invalid closes that tier). An admin skips the daily cap, the
+  one-in-flight lease, the 6 per minute rate limit (`rateLimitExemptAdmin: true` on the ask `POST`) and the member's own
+  monthly allowance, and writes no daily-count row; the shared monthly pause (R11) still applies, and so does a ceiling
+  of 3 questions in flight per admin (`QA_ADMIN_MAX_IN_FLIGHT`, `medschools-qa-admin-lock` leases under an advisory lock
+  keyed on the admin; 429 `MEDSCHOOLS_QA_BUSY`). A decision (approve, decline, revoke) sends the applicant a notice; a
+  revoke is recorded in `revokedAt/By/Note` and leaves the approval fields alone; the admin list always includes every
+  `APPROVED` row as `active`. `GET me/ask` returns `{ tier, remainingToday, dailyCap }`, null and null for an admin
+  ("Admin: no daily limit"). Limit requests (`MedQaLimitRequest`, `api/qa-limit.server.ts`, outside `api/qa/` so the
+  privacy pins on that folder stay literal): one PENDING and one APPROVED per member (partial unique indexes in the
+  migration), reason at most 500 characters, a decline or revoke blocks a new request for 30 days, admins and paying
+  members never see the form (`LimitRequest.tsx`, under the Ask form, not an ink button). Endpoints
+  `me/qa-limit-request` (GET, POST) and `admin/medschools/qa-limit-requests` (GET, POST: approve, decline, revoke with
+  an optional note), reviewed in the "Q&A limits" tab of `/admin/medschools`. Erased with the account; the schema test
+  pins the model's exact columns, none of which can hold a question.
 - **What is and is not kept (R12).** The question and the answer exist in memory for the call. No table, no cache, no
   response micro-cache, no log line holds them (logs carry intent, counts and status). The only trace is the `AiUsage`
   row every AI call already writes (user id, task, prompt id, tokens, cost, time; no text), kept under that table's
-  existing erasure decision (`lib/account/erasure-registry.ts`). So no erasure operation was added for it (the limit request of R19 is its own model with its own erasure op). Pinned by
-  `engine/schema.test.ts` (no `Med*` column can hold a question), `api/qa/privacy.server.test.ts` (no writes, no caches,
-  no logging of text) and `scripts/medschools/verify-erasure.ts`. The provider receives the question text; the form says
-  so in one line.
+  existing erasure decision (`lib/account/erasure-registry.ts`). So no erasure operation was added for it (the limit
+  request of R19 is its own model with its own erasure op). Pinned by `engine/schema.test.ts` (no `Med*` column can hold
+  a question), `api/qa/privacy.server.test.ts` (no writes, no caches, no logging of text) and
+  `scripts/medschools/verify-erasure.ts`. The provider receives the question text; the form says so in one line.
 - **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
   `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
   (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
-  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
+  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred
+  (R13): a question may name a state and an interview format instead.
 - **Tests.** Unit:
   `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
   `testing/integration/medschools-ask.test.ts` with `testing/integration/lib/fake-deepseek.ts` (the app is started with
   `DEEPSEEK_API_KEY=integration-fake`, `DEEPSEEK_BASE_URL=http://127.0.0.1:$INTEGRATION_AI_FAKE_PORT/v1`; the
   model-dependent cases skip without `INTEGRATION_AI_FAKE_PORT`, and CI sets it). Visual: `visual-check.mjs --fake-ai`.
+
+## Secondaries (owner 2026-11-23)
+
+Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner answers" override its rulings).
+
+- **Tab and endpoints.** `?tab=secondaries` (`ui/SecondariesTab.tsx`, `ui/secondaries/*`; a school tab is the four edits
+  above). Public `GET schools/$slug/secondaries` (`api/secondaries.server.ts`, public cache 300/900/3600 s,
+  user-independent): groups by program (REG then PHD, no empty heading), prompts with `cycles` (integers, ascending),
+  `status`, `previousText`, sources and last check; school-level `sources` (url + check time), `admissions` and
+  `turnaround`. Private `GET me/secondaries/overlap` (`source=list&list=<id>` or `source=tracker`, never cached; another
+  member's list id is the same 404 as an unknown one). Admin `POST admin/medschools/secondaries` corrects a school's own
+  prompts (URL stored, never fetched).
+- **Model.** `MedSecondaryPrompt` (unique school x program x `secondaryKey`), `MedSecondaryObservation` (unique prompt x
+  cycle x source: `ADMIT`, `SDN`, `SCHOOL`), `MedSecondaryCheck`. Cycles are the distinct `cycleYear`s (entry year; 2027
+  is 2026-2027), so two sources in one cycle count once. Marks (`same`, `reworded` at Dice >= `SIM_REWORDED` 0.5, `new`,
+  `gone`, `last-cycle`, `null` for a first year) are computed at read by `engine/secondaries/view.ts`; `gone` reads "Not
+  seen this cycle" because absence is not proof. Themes are keyword rules (`THEMES_VERSION`). Observations are never
+  deleted. **No draft, note or text field exists anywhere** (schema test, no-input tests).
+- **Sources and politeness.** Admit secondary-essays page and SDN essay-questions page (`medschools.secondaries`,
+  `ADMIT_WEB` host, no model), SDN forum posts (off-peak, own 10% AI share `medschools-extract:secondaries`,
+  reject-not-redact), and the school's own pages as a one-time curated import. See `server/CLAUDE.md` for the queue,
+  cron and env.
+- **School pages: one-time import (no scraper).** `data/medschools/school-pages.json` (221 schools, each school's own
+  secondary and admissions pages, read by hand and verified verbatim on 2026-11-23; a header records source and method)
+  is validated by `scrape/school-pages.ts` (https, school-owned hosts only, every slug in the registry) and loaded by
+  the medschools worker at start (`ensureSchoolPagesImported`, bundled into the worker like the other seed files; a
+  `MedSourceRun` with job `school-pages-import` and the file's hash is the done flag, so it runs once per version of the
+  file and a deploy needs no operator step): `SCHOOL` observations (`sourceRef` the page url; a page naming no cycle
+  goes in the cycle in progress on the check date), one `MedSecondaryCheck` per school and one
+  `MedSchoolAdmissionsPolicy` per school and program where the page says whether decisions are rolling. Idempotent. The
+  tab shows "Rolling admissions" or "Decisions on set dates", the quote and "Source: <school> admissions page, checked
+  <date>". `scripts/medschools/import-school-pages.ts` runs the same import by hand from a full checkout (it needs `tsx`
+  and the `features/` source, which the production web image does not carry; `--dry-run` validates only). Editing the
+  file and deploying is the way to change the data in production: the worker re-imports a changed file at start.
+- **Turnaround.** The tracker's `SECONDARY` milestone reads "Secondary received" and `SECONDARY_SUBMITTED` ("Secondary
+  submitted") is offered; it is never shared as a public event (`SHAREABLE`, `share-sync.test.ts`, the integration
+  suite). The daily forecast job (`scrape/run-turnaround.ts`, after the wait curves) writes `MedSecondaryTurnaround`:
+  one value per member, at least 20 distinct sharing members per school x program (`TURNAROUND_MIN_MEMBERS`), pairs
+  negative or over 120 days dropped before the floor, whole-day 25th / median / 75th, replaced only when the member
+  count moves by 3, created only at 23 (`TURNAROUND_CREATE_MEMBERS`), deleted at once under 20. The sharing row says so.
+- **Overlap view.** `ui/secondaries/OverlapSection.tsx` (a native `<details>` on each list and on the tracker's current
+  cycle; the query is enabled only once opened) over presentational `OverlapView`. A PHD item brings the regular prompts
+  too.
+- **Verification.** `testing/integration/medschools-public.test.ts` and `-private.test.ts` (secondaries, overlap,
+  turnaround floors); `scripts/medschools/visual-check.mjs` (`--page secondaries`, `--page overlap`) after
+  `seed-visual.ts`.
+
+## Tracker import (owner 2026-11-23)
+
+A member uploads a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` (2 MB), or pastes text; DeepSeek flash reads it into
+tracker dates; the member reviews a preview and presses "Add to my tracker". Endpoints `POST me/tracker/import/parse`
+(multipart `file` or JSON `{ text }`; `parseMedImportFileApi` / `parseMedImportTextApi`) and
+`POST me/tracker/import/save` (`saveMedImportApi`), both signed in and `no-store`.
+
+- **Bounded input.** The body is read as a stream with a byte cap (`api/import/body.server.ts`: 2 MB plus form overhead,
+  chunked uploads included). `.xlsx`/`.docx` are read by `lib/zip/bounded-zip.server.ts`, which inflates with a real
+  limit (the sizes an archive declares are the sender's) and a per-file total; sheet XML is walked by a linear `indexOf`
+  scanner (`elements()` in `xlsx.server.ts`) with caps on rows, cells and strings, because the lazy regexes it replaced
+  were quadratic. A PDF read has a wall-clock deadline, the request signal and a page cap.
+- **Only dates, and nothing is kept.** The file is read in memory (`api/import/extract.server.ts`, the generalised
+  resume reader plus `xlsx.server.ts` and a CSV parser), its cleaned text goes to one call under the `medschools-import`
+  task (prompt `MEDSCHOOLS_IMPORT`), and the preview is returned. No bytes, text or filename is stored, cached or logged
+  (the log line is counts and a status); the only trace is the text-free `AiUsage` row. The model's `notes` is read by
+  nothing. Pinned by `api/import/privacy.server.test.ts` and the integration test's scan of every table.
+- **The server is the validator** (`api/import/validate.ts`, pure): the envelope and each row and date are checked on
+  their own; a date is kept only when its `raw` quote is in the text AND holds a date token that reads as exactly that
+  month and day (`rawSupportsDate`: ISO year-first, M/D/Y, D/M, or a month name either way round; two numbers that
+  merely appear never count) and a school name is shown only if the text holds it (else "Unrecognised school" and the
+  picker); an invented date is dropped and counted in `dropped`; a year the file never wrote is chosen by the cycle
+  rules (`engine/import.ts`, `inferYear`, flagged `yearInferred`); a numeric date that reads two ways is flagged
+  `ambiguous`; the date must be inside the cycle's window; schools resolve by written name and alias, never by a slug
+  from the model (no unique match: `school: null`, the member picks). The cycle is the one most dated milestones belong
+  to, else the model's hint, else the current one.
+- **Gates are the Q&A's** (`admitQuestion`, `api/qa/lease.server.ts` `runUnderLease`): rate limit `ai`,
+  `isAiConfigured`, the shared monthly pause, the member's allowance, then one of the day's questions and the in-flight
+  lease. One import is one daily question; spend counts against the Q&A share; admin bypass and the pause apply. A reply
+  the server cannot read as JSON (cut off at the token limit, or prose) is a fixed-message 503 `AI_UNAVAILABLE`
+  (`UnreadableReplyError`, never the parser's message, which quotes the model's echo of the file) and refunds the day's
+  question (`Reservation.refund()`); a provider failure or the deadline does not (the call was made). The model gets at
+  most 300 rows (`IMPORT_LIMITS.rows`), returns at most 60 schools and may use 8000 output tokens. A file the reader
+  cannot read (415 `MEDSCHOOLS_IMPORT_UNSUPPORTED`), over 2 MB (413 `..._TOO_LARGE`) or with no digit or no date found
+  (422 `..._EMPTY`) ends before, or without spending, the model call where it can. The sentences are in
+  `components/errors/refusal-sentence.ts`; the view renders every refusal through `useRefusalText`.
+- **Save** (`importMilestones` in `api/tracker.server.ts`) goes through share-sync's row writers in one `withShared`
+  transaction, so a date is shared only if the cycle's sharing is already on and only the shareable types. The body
+  names schools by slug and never an application, cycle or user (strict schema). Conflict rule: an existing different
+  date is kept unless that date carries `overwrite: true`; the same date is `unchanged`; an out-of-window date or a
+  school that is not active is `invalid`. A cycle is created (unshared) only when the first school needs it.
+- **UI (`ui/tracker/import/`).** "Import from a file" on the tracker opens `TrackerImport` (a `lazy` chunk, so it is off
+  the tracker's critical path); while open it is the whole view, so "Add to my tracker" is the one ink primary (R4). The
+  upload uses `api(parseMedImportFileApi, { body: FormData })` (`lib/contract/client.ts` sends multipart with no
+  content-type), so no raw `fetch` was added. `model.ts` holds every rule the preview applies (pure, tested): which
+  dates are new, same, conflicting or invalid, what `saveBody` writes (an unticked row or date is simply absent), and
+  `retarget` when the cycle changes (a year the file wrote stays; a hand-edited date is final). `ImportPreview.tsx` is
+  rows on rules, 44 px targets on touch, the picker for an unmatched school. Strings are `import-*` keys. A file the
+  browser can see is unsupported or too large is refused before it is sent, with the server's own sentence.
+- **Tests.** Unit:
+  `pnpm exec vitest run features/medschools/ui/tracker/import features/medschools/api/import features/medschools/engine/import.test.ts features/medschools/api/tracker-import.server.test.ts`.
+  Black box: `testing/integration/medschools-import.test.ts` (fake provider, needs `MEDSCHOOLS_DEDUPE_SECRET` for the
+  sharing case). Visual: `visual-check.mjs --fake-ai --page import`.
 
 ## Testing and verification
 
@@ -396,13 +513,14 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they are ordinary
   `_site` pages and `lib/prepaint/theme-routes.ts` does not exclude them.
 - **Ask pages in the visual pass (phase 6).** `visual-check.mjs --fake-ai` also shoots the Ask page (signed out, idle,
-  answered, partial, declined, my-chance, the wait, the cap reached and the 429 refusal) and the school page's panel (idle,
-  answered). It hosts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` itself, so the app must be started
-  with `DEEPSEEK_API_KEY=integration-fake DEEPSEEK_BASE_URL=http://127.0.0.1:7798/v1` and `RATE_LIMIT_MULTIPLIER=50`, and
-  `DATABASE_URL` must name the scratch database (it clears and plants the member's `ai_usage` rows). It asserts no
-  sideways scroll, 44 px controls, and Steel R1 on the page content (no shadow, gradient, filter or backdrop filter).
-  Without the flag only the signed-out and idle pages run. It found that the grounding validator dropped every sentence
-  naming "Admit.org" (a domain-shaped source name); a domain is now allowed when it is in our own fact text.
+  answered, partial, declined, my-chance, the wait, the cap reached and the 429 refusal) and the school page's panel
+  (idle, answered). It hosts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` itself, so the app must be
+  started with `DEEPSEEK_API_KEY=integration-fake DEEPSEEK_BASE_URL=http://127.0.0.1:7798/v1` and
+  `RATE_LIMIT_MULTIPLIER=50`, and `DATABASE_URL` must name the scratch database (it clears and plants the member's
+  `ai_usage` rows). It asserts no sideways scroll, 44 px controls, and Steel R1 on the page content (no shadow,
+  gradient, filter or backdrop filter). Without the flag only the signed-out and idle pages run. It found that the
+  grounding validator dropped every sentence naming "Admit.org" (a domain-shaped source name); a domain is now allowed
+  when it is in our own fact text.
 - i18n: namespace `medschools`; new keys carry a prefix (`index-`, `live-`, `school-`, `chart-`, `event-`, `program-`,
   `source-`); the hub row's two strings are `nav-rmh-medschools` and `services-medschools-desc` in `feed`.
 
@@ -431,13 +549,13 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
 
 ## Private: the tracker, sharing, lists and preferences (phase 4)
 
-Pages `/rmh-medschool/tracker`, `/rmh-medschool/lists` and (phase 6) `/rmh-medschool/ask` (signed out they show a sign-in prompt, `noindex`; neither is
-a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO with a user, cycle or event id:
-`me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
-DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),
-`me/list-order`, `me/list-items` (save a school, creating "My schools" on first use), `me/lists/$id/items/$itemId`,
-`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/prefs` (GET, PUT). Another member's id is a 404, never
-a 403.
+Pages `/rmh-medschool/tracker`, `/rmh-medschool/lists` and (phase 6) `/rmh-medschool/ask` (signed out they show a
+sign-in prompt, `noindex`; neither is a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO
+with a user, cycle or event id: `me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST),
+`.../applications/$id` (PATCH, DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST),
+`me/lists/$id` (PATCH, DELETE), `me/list-order`, `me/list-items` (save a school, creating "My schools" on first use),
+`me/lists/$id/items/$itemId`, `me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/prefs` (GET, PUT). Another
+member's id is a 404, never a 403.
 
 - **One writer (D1).** `api/share-sync.server.ts` is the only module that writes the tracker rows or an RMH event or
   count (`share-ratchet.test.ts`). The database cascade deletes milestones without application code seeing it, and an
@@ -457,7 +575,9 @@ a 403.
   the read rules above).
 - **Account deletion (D9, Q3).** `eraseSharedMedEvents` runs at the deletion request and again before the erasure
   transaction (idempotent; a missing secret with events present fails loudly and leaves the account scheduled);
-  `medschoolsErasureOps` deletes the four user-keyed models (`MedTrackerCycle`, `MedSchoolList`, `MedUserPrefs`, `MedQaLimitRequest`), children by cascade, and nulls `decidedBy` and `revokedBy` on the limit requests the member decided or revoked as an admin. `pnpm docs:deletion` lists them.
+  `medschoolsErasureOps` deletes the four user-keyed models (`MedTrackerCycle`, `MedSchoolList`, `MedUserPrefs`,
+  `MedQaLimitRequest`), children by cascade, and nulls `decidedBy` and `revokedBy` on the limit requests the member
+  decided or revoked as an admin. `pnpm docs:deletion` lists them.
 - **Preferences (D13, D14).** They apply only where the URL is silent, decided in the route loader; `?program=ALL` is an
   explicit choice and beats a stored `PHD`. A page whose defaults came from preferences says so in one line.
 - **Rotating `MEDSCHOOLS_DEDUPE_SECRET` orphans every shared event** (the hashes are keyed by the old secret). Do it

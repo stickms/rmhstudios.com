@@ -8,16 +8,24 @@
  * filter: the in-memory test fake cannot evaluate those, and a flat read cannot silently match everything.
  */
 import { prisma } from '@/lib/prisma.server';
-import type { TrackerApplicationDto, TrackerCycleDto, TrackerDto, TrackerSchoolDto } from '../medschools.contract';
+import type {
+  MedImportSaveRes,
+  TrackerApplicationDto,
+  TrackerCycleDto,
+  TrackerDto,
+  TrackerSchoolDto,
+} from '../medschools.contract';
 import {
   LIMITS,
   MILESTONE_TYPES,
   cleanText,
+  cycleYearProblem,
   milestoneDateProblem,
   normalizeHomeState,
   type MilestoneType,
 } from '../engine/tracker';
 import type { MedProgram } from '../engine/types';
+import { getPrefs } from './prefs.server';
 import {
   assertMayShare,
   createApplicationRow,
@@ -244,4 +252,115 @@ export async function deleteMilestone(
     return true;
   });
   return ok ? applicationDto(userId, id) : null;
+}
+
+/**
+ * Write the rows of a tracker import (owner 2026-11-23), through the same row writers and the same transaction as a
+ * manual entry, so sharing follows the cycle's own flag: a cycle that shares shares these dates exactly as it would the
+ * same dates typed by hand, and a cycle created here starts unshared. The rows name a school by slug and never an
+ * application or a cycle id, so everything lands in the caller's own cycle.
+ *
+ * The conflict rule (one rule, decided by the member in the preview): a date that is already on the tracker and differs
+ * is left alone unless the row carries `overwrite: true`; the same date is `unchanged`. A date outside the cycle's window
+ * or in the future, and a school that is not an active school, are `invalid` and nothing else is lost. The cap on schools
+ * per cycle is all-or-nothing, as for "add a list to the tracker".
+ */
+export async function importMilestones(
+  userId: string,
+  i: {
+    cycleYear: number;
+    rows: { slug: string; program: MedProgram; milestones: { type: MilestoneType; date: string; overwrite: boolean }[] }[];
+  },
+  now: Date = new Date(),
+): Promise<MedImportSaveRes | { cap: { existing: number; adding: number } } | null> {
+  if (cycleYearProblem(i.cycleYear, now)) return null;
+  const homeState = (await getPrefs(userId)).homeState;
+  const result = await withShared(
+    userId,
+    { cycleYear: i.cycleYear },
+    async (tx) => {
+      const out: MedImportSaveRes = {
+        cycleYear: i.cycleYear,
+        schoolsAdded: 0,
+        added: 0,
+        overwritten: 0,
+        unchanged: 0,
+        conflicts: 0,
+        invalid: 0,
+      };
+      // The same school and program twice in the body is one application.
+      const wanted = new Map<string, { slug: string; program: MedProgram; milestones: Map<MilestoneType, { date: string; overwrite: boolean }> }>();
+      for (const r of i.rows) {
+        const key = `${r.slug}|${r.program}`;
+        const w = wanted.get(key) ?? { slug: r.slug, program: r.program, milestones: new Map() };
+        for (const m of r.milestones) if (!w.milestones.has(m.type)) w.milestones.set(m.type, { date: m.date, overwrite: m.overwrite });
+        wanted.set(key, w);
+      }
+      const schools = await tx.medSchool.findMany({
+        where: { slug: { in: [...new Set([...wanted.values()].map((w) => w.slug))] }, active: true },
+        select: { id: true, slug: true },
+      });
+      const idOf = new Map(schools.map((s) => [s.slug, s.id]));
+
+      let cycle = await tx.medTrackerCycle.findFirst({ where: { userId, cycleYear: i.cycleYear }, select: { id: true } });
+      const existing = cycle
+        ? await tx.medTrackerApplication.findMany({
+            where: { cycleId: cycle.id },
+            select: { id: true, schoolId: true, program: true },
+          })
+        : [];
+      const appOf = new Map(existing.map((a) => [`${a.schoolId}|${a.program}`, a.id]));
+      const known = [...wanted.values()].filter((w) => idOf.has(w.slug));
+      // Only a school that would get at least one writable date adds an application (the loop below skips the rest), so
+      // only those count against the cap: an import that would add nothing is never refused for its size.
+      const hasWritableDate = (w: { milestones: Map<MilestoneType, { date: string }> }) =>
+        [...w.milestones.values()].some((m) => milestoneDateProblem(i.cycleYear, m.date, now) === null);
+      const toCreate = known.filter((w) => !appOf.has(`${idOf.get(w.slug)}|${w.program}`) && hasWritableDate(w));
+      if (existing.length + toCreate.length > LIMITS.applicationsPerCycle) {
+        return { cap: { existing: existing.length, adding: toCreate.length } };
+      }
+      for (const w of wanted.values()) if (!idOf.has(w.slug)) out.invalid += w.milestones.size;
+
+      for (const w of known) {
+        const schoolId = idOf.get(w.slug)!;
+        const key = `${schoolId}|${w.program}`;
+        let appId = appOf.get(key);
+        // Dates first: a school none of whose dates is writable is not added for nothing.
+        const dates = [...w.milestones].map(([type, m]) => ({ type, ...m, bad: milestoneDateProblem(i.cycleYear, m.date, now) !== null }));
+        out.invalid += dates.filter((d) => d.bad).length;
+        const good = dates.filter((d) => !d.bad);
+        if (good.length === 0) continue;
+        if (!appId) {
+          // The cycle is made when the first school needs it: an import with nothing to write makes nothing.
+          if (!cycle) {
+            await upsertCycleRow(tx, userId, i.cycleYear, { shareAnonymously: false, homeState });
+            cycle = await tx.medTrackerCycle.findFirst({ where: { userId, cycleYear: i.cycleYear }, select: { id: true } });
+            if (!cycle) throw new Error('cycle was not created');
+          }
+          appId = (await createApplicationRow(tx, { cycleId: cycle.id, schoolId, program: w.program })).id;
+          out.schoolsAdded += 1;
+        }
+        const have = new Map(
+          (await tx.medTrackerMilestone.findMany({ where: { applicationId: appId }, select: { type: true, date: true } })).map((m) => [
+            m.type as MilestoneType,
+            day(m.date),
+          ]),
+        );
+        for (const d of good) {
+          const was = have.get(d.type);
+          if (was === d.date) out.unchanged += 1;
+          else if (was !== undefined && !d.overwrite) out.conflicts += 1;
+          else {
+            await upsertMilestoneRow(tx, appId, d.type, new Date(`${d.date}T00:00:00.000Z`));
+            if (was === undefined) out.added += 1;
+            else out.overwritten += 1;
+          }
+        }
+      }
+      return out;
+    },
+    prisma,
+    now,
+  );
+  return result;
 }

@@ -6,13 +6,21 @@
  * that school x program (one member with two cycles counts once) and at least `KM_MIN_INVITES` (10) of the observations
  * are invites. Times are whole weeks, the steps carry their at-risk count, `maxDay` is the last week with at least 10 at
  * risk, and a stored curve is replaced only when invites or members moved by at least `KM_REFRESH_DELTA` (3), so one new
- * invite never shows up as a new step the next day. What is stored is a count of members, a count of invites and
+ * invite never shows up as a new step the next day. Hysteresis: a curve is CREATED only at `KM_CREATE_MEMBERS` (23) members and
+ * `KM_CREATE_INVITES` (13) invites, while it is deleted below 20 and 10, so delete-then-recreate cannot yield a new curve one
+ * member away from the last. What is stored is a count of members, a count of invites and
  * the step function; no row, member, application or date of any one contribution survives this module. The member id in
  * a `TrackerObservationRow` lives in memory for one run and is never logged, stored or thrown; a failing query is
  * reported with a fixed message because a database error can carry bound values.
  */
 import type { PrismaClient } from '@prisma/client';
-import { KM_MIN_INVITES, KM_MIN_MEMBERS, KM_REFRESH_DELTA } from '../engine/stats/constants';
+import {
+  KM_CREATE_INVITES,
+  KM_CREATE_MEMBERS,
+  KM_MIN_INVITES,
+  KM_MIN_MEMBERS,
+  KM_REFRESH_DELTA,
+} from '../engine/stats/constants';
 import { binObs, kaplanMeier, maxDayOf, observationOf, type Obs, type SurvivalCurve } from '../engine/stats/km';
 import type { Logger, MedPrisma } from './types';
 
@@ -107,6 +115,11 @@ const currentShape = (json: unknown): boolean => {
 };
 
 /** Delta k-anonymity (R13): replace only when at least 3 invites or members differ from the stored curve. */
+/** A new curve (no stored row) needs the floors plus the refresh delta; a stored one follows `worthRefreshing` (hysteresis). */
+export function worthCreating(next: { invited: number; members: number }): boolean {
+  return next.members >= KM_CREATE_MEMBERS && next.invited >= KM_CREATE_INVITES;
+}
+
 export function worthRefreshing(
   stored: { invited: number; members: number; curve: unknown },
   next: { invited: number; members: number },
@@ -137,6 +150,7 @@ export async function runWaitCurves(deps: {
       let keptRows = 0;
       for (const c of curves) {
         const old = had.get(`${c.schoolId}|${c.program}`);
+        if (!old && !worthCreating(c)) continue; // over the floors, not yet over the creation margin: no row
         if (old && !worthRefreshing(old, c)) {
           keptRows += 1; // unchanged on purpose: the stored curve stays exactly as the members last saw it
           continue;

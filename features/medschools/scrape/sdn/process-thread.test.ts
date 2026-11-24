@@ -6,6 +6,7 @@ import type { Logger, MedSdnThreadRow } from '../types';
 import type { BudgetGate } from './budget';
 import type { SdnAi } from './extract';
 import { processThread, type ThreadDeps } from './process-thread';
+import { createPromptSink } from './secondaries';
 
 const SECRET = 'unit-test-secret-0123456789';
 const SLUG = 'test-thread';
@@ -898,5 +899,119 @@ describe('processThread', () => {
     const everything = [s.writes, s.payloads, s.logs, r];
     assertNoLeak(everything, [...NEEDLES, ...hostileIds, 'authorzz']);
     expect(s.run).toHaveBeenCalled();
+  });
+});
+
+describe('processThread: the secondary-prompt sink', () => {
+  const PEAK = new Date('2026-11-24T02:00:00Z');
+  const THREAD_URL = `https://forums.studentdoctor.net/threads/${SLUG}.${TID}/`;
+  const noEvents: Answer = () => ({ posts: [] });
+  const sinkAnswer = JSON.stringify({
+    prompts: [
+      { postRef: 0, text: 'Describe a challenge you have faced and how you responded. (250 words)' },
+      { postRef: 0, text: 'Why are you interested in our school and our mission? (300 words)' },
+      // Quoted in the page but a person's narrative: rejected, never stored.
+      { postRef: 1, text: 'I finished the secondary and wrote about my grandmother.' },
+    ],
+  });
+
+  function withSink(
+    over: {
+      sinkRun?: (system: string, user: string) => Promise<string>;
+      sinkNow?: Date;
+      limits?: { maxPages: number; maxLlmCalls: number };
+      allow?: () => Promise<boolean>;
+    } = {},
+  ) {
+    const s = setup({
+      routes: { [path(1)]: readFixture('thread-secondary-prompts.html') },
+      answer: noEvents,
+      ...(over.limits ? { limits: over.limits } : {}),
+      ...(over.allow ? { allow: over.allow } : {}),
+    });
+    const sinkRun = vi.fn<(system: string, user: string) => Promise<string>>(over.sinkRun ?? (async () => sinkAnswer));
+    const sink = createPromptSink({
+      ai: { configured: () => true, run: sinkRun },
+      budget: { allow: async () => true },
+      prisma: s.prisma,
+      now: () => over.sinkNow ?? new Date('2026-11-21T12:00:00Z'),
+    });
+    const deps: ThreadDeps = { ...s.deps, prompts: sink };
+    return { ...s, deps, sinkRun };
+  }
+
+  it('stores the quoted prompts once, under the thread, and leaves the event extraction untouched', async () => {
+    const plain = setup({ routes: { [path(1)]: readFixture('thread-secondary-prompts.html') }, answer: noEvents });
+    const base = await processThread(plain.deps, await plain.seed());
+
+    const s = withSink();
+    const r = await processThread(s.deps, await s.seed());
+    expect(r.outcome).toBe('caught-up');
+    expect(r.promptsStored).toBe(2);
+    expect(r.promptsRejected).toBe(1);
+    expect(r.counters).toEqual(base.counters);
+    expect(r.eventsCreated).toBe(base.eventsCreated);
+    expect(r.questionsCreated).toBe(base.questionsCreated);
+    // The sink's call counts against the run's cap; the event extraction's own counters do not include it.
+    expect(s.state.llmCalls).toBe(plain.state.llmCalls + 1);
+    expect(s.sinkRun).toHaveBeenCalledTimes(1);
+
+    const prompts = s.tables.medSecondaryPrompt as Array<Record<string, unknown>>;
+    const obs = s.tables.medSecondaryObservation as Array<Record<string, unknown>>;
+    expect(prompts.map((p) => p.text).sort()).toEqual([
+      'Describe a challenge you have faced and how you responded.',
+      'Why are you interested in our school and our mission?',
+    ]);
+    expect(obs).toHaveLength(2);
+    expect(obs.every((o) => o.source === 'SDN' && o.cycleYear === 2027 && o.sourceRef === THREAD_URL)).toBe(true);
+    // Nothing person-shaped was written, and the thread's cursor moved exactly as before.
+    assertNoLeak(s.writes, [...NEEDLES, 'grandmother', 'author-00', 'post-910']);
+    expect((await s.fresh()).postsProcessed).toBe((await plain.fresh()).postsProcessed);
+  });
+
+  it('the model sees the quoted posts only, with no author, id or hash', async () => {
+    const s = withSink();
+    await processThread(s.deps, await s.seed());
+    const user = String(s.sinkRun.mock.calls[0]?.[1] ?? '');
+    expect(user).toContain('Secondary prompts are out');
+    expect(user).not.toMatch(/author-00|user-00|post-910|js-post|data-content/);
+    expect(user).not.toContain('Got an interview invite today');
+  });
+
+  it("stops asking when the run's model-call cap is spent, without touching the event extraction", async () => {
+    const s = withSink({ limits: { maxPages: 50, maxLlmCalls: 1 } });
+    const r = await processThread(s.deps, await s.seed());
+    expect(r.outcome).toBe('caught-up');
+    expect(s.sinkRun).not.toHaveBeenCalled();
+    expect(r.promptsStored).toBe(0);
+    expect(s.state.llmCalls).toBe(1);
+  });
+
+  it('makes no model call at DeepSeek peak, and the thread still advances as the existing code does', async () => {
+    const s = withSink({ sinkNow: PEAK });
+    const r = await processThread(s.deps, await s.seed());
+    expect(r.outcome).toBe('caught-up');
+    expect(s.sinkRun).not.toHaveBeenCalled();
+    expect(r.promptsStored).toBe(0);
+    expect((await s.fresh()).postsProcessed).toBe(3);
+  });
+
+  it('a paused-budget outcome of the event extraction never reaches the sink', async () => {
+    const s = withSink({ allow: async () => false });
+    const r = await processThread(s.deps, await s.seed());
+    expect(r.outcome).toBe('paused-budget');
+    expect(s.sinkRun).not.toHaveBeenCalled();
+  });
+
+  it('a sink that fails never loses events or moves the cursor back', async () => {
+    const s = withSink({
+      sinkRun: async () => {
+        throw new Error('provider down');
+      },
+    });
+    const r = await processThread(s.deps, await s.seed());
+    expect(r.outcome).toBe('caught-up');
+    expect(r.promptsStored).toBe(0);
+    expect((await s.fresh()).postsProcessed).toBe(3);
   });
 });

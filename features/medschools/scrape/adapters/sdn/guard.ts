@@ -15,7 +15,8 @@ export class SdnPageError extends Error {
   }
 }
 
-const OWN_MARKER = /message--post|structItem--thread|<channel[\s>]|interview-feedback-data|schools-database-data/i;
+const OWN_MARKER =
+  /message--post|structItem--thread|<channel[\s>]|interview-feedback-data|schools-database-data|essay-questions-data/i;
 const TITLE_CHALLENGE = /<title>\s*(?:Just a moment|Attention Required! \| Cloudflare|Access denied)/i;
 const BODY_CHALLENGE =
   /Just a moment|_cf_chl_opt|Enable JavaScript and cookies to continue|Error 1020|Access denied \|[^<]*used Cloudflare/i;

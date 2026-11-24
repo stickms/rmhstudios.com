@@ -11,7 +11,7 @@ const m = vi.hoisted(() => {
       (w.userId === undefined || r.userId === w.userId) &&
       (w.task === undefined || r.task === w.task) &&
       (w.promptId === undefined || r.promptId === w.promptId) &&
-      (w.id === undefined || r.id === w.id) &&
+      (w.id === undefined || r.id === w.id || (typeof w.id === 'object' && (w.id as { in: bigint[] }).in.includes(r.id))) &&
       (!at || r.createdAt >= at.gte)
     );
   };
@@ -75,11 +75,12 @@ import {
 const NOW = new Date('2026-11-23T15:30:00Z');
 const ENV = ['MEDSCHOOLS_QA_DAILY_CAP', 'MEDSCHOOLS_QA_DAILY_CAP_APPROVED', 'MEDSCHOOLS_QA_DAILY_CAP_MEMBER', 'MEDSCHOOLS_AI_MONTHLY_USD', 'MEDSCHOOLS_QA_AI_SHARE'] as const;
 
-/** Month-to-date spend in micro-dollars: Q&A alone, and Q&A plus extraction. */
+/** Month-to-date spend in micro-dollars: Q&A (with the import), and that plus extraction. */
 function spend(qa: number | null, both: number | null = qa) {
   m.aiUsage.aggregate.mockImplementation(async (...a: unknown[]) => {
-    const where = (a[0] as { where: { task: unknown } }).where;
-    return { _sum: { costMicros: where.task === 'medschools-qa' ? qa : both } };
+    const where = (a[0] as { where: { task: { in: string[] } } }).where;
+    // Q&A's own total is Q&A plus the import (they share one slice); the whole is those two and the extraction.
+    return { _sum: { costMicros: where.task.in.includes('medschools-extract') ? both : qa } };
   });
 }
 const code = async (p: Promise<unknown>) => ((await p.catch((e: unknown) => e)) as AppError).code;
@@ -129,6 +130,18 @@ describe('the daily cap and the in-flight lease (reserveQuestion)', () => {
     expect(last).toMatchObject({ remainingToday: 0, dailyCap: 25 });
     expect(await code(reserveQuestion('u1', NOW))).toBe('MEDSCHOOLS_QA_DAILY_CAP');
     expect((await dailyStatus('u1', NOW)).remainingToday).toBe(0);
+  });
+  it('refund gives the day\'s question back and frees the lease; release alone keeps the question', async () => {
+    const kept = await reserveQuestion('u1', NOW);
+    await kept.release();
+    expect(await questionsToday('u1', NOW)).toBe(1);
+    const second = await reserveQuestion('u1', NOW);
+    expect(await questionsToday('u1', NOW)).toBe(2);
+    await second.refund();
+    expect(await questionsToday('u1', NOW)).toBe(1);
+    // The lease went with it: the next question is not busy.
+    await (await reserveQuestion('u1', NOW)).release();
+    expect(await questionsToday('u1', NOW)).toBe(2);
   });
   it('refuses a second question while the first is in flight, on any process, and frees it on release', async () => {
     const first = await reserveQuestion('u1', NOW);

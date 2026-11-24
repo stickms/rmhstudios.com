@@ -25,6 +25,11 @@ const UNIQUE_KEYS: Record<string, string[]> = {
   medUserPrefs: ['userId'],
   medForecast: ['schoolId', 'program', 'cycleYear', 'eventType'],
   medWaitCurve: ['schoolId', 'program'],
+  medSecondaryPrompt: ['schoolId', 'program', 'key'],
+  medSecondaryObservation: ['promptId', 'cycleYear', 'source'],
+  medSecondaryCheck: ['schoolId', 'source'],
+  medSchoolAdmissionsPolicy: ['schoolId', 'program'],
+  medSecondaryTurnaround: ['schoolId', 'program'],
 };
 
 /** `onDelete: Cascade` edges: deleting a row of the key removes the child rows whose `fk` equals its id. */
@@ -48,7 +53,12 @@ const CASCADES: Record<string, { child: string; fk: string }[]> = {
     { child: 'medSchoolListItem', fk: 'schoolId' },
     { child: 'medForecast', fk: 'schoolId' },
     { child: 'medWaitCurve', fk: 'schoolId' },
+    { child: 'medSecondaryPrompt', fk: 'schoolId' },
+    { child: 'medSecondaryCheck', fk: 'schoolId' },
+    { child: 'medSchoolAdmissionsPolicy', fk: 'schoolId' },
+    { child: 'medSecondaryTurnaround', fk: 'schoolId' },
   ],
+  medSecondaryPrompt: [{ child: 'medSecondaryObservation', fk: 'promptId' }],
   medTrackerCycle: [{ child: 'medTrackerApplication', fk: 'cycleId' }],
   medTrackerApplication: [{ child: 'medTrackerMilestone', fk: 'applicationId' }],
   medSchoolList: [{ child: 'medSchoolListItem', fk: 'listId' }],
@@ -337,6 +347,11 @@ export function createFakePrisma(options: FakePrismaOptions = {}): {
     'medSchoolListItem',
     'medUserPrefs',
     'medQaLimitRequest',
+    'medSecondaryPrompt',
+    'medSecondaryObservation',
+    'medSecondaryCheck',
+    'medSchoolAdmissionsPolicy',
+    'medSecondaryTurnaround',
     'user',
     'aiUsage',
   ];
@@ -491,14 +506,14 @@ export function createFakeHost(
   host: PoliteHost;
   requested: string[];
   requestedPosts: Array<{ op: string; variables: unknown }>;
-  sessions: Array<{ spacingMs?: number } | undefined>;
+  sessions: Array<{ spacingMs?: number; jitterMs?: number } | undefined>;
 } {
   const requested: string[] = [];
   const requestedPosts: Array<{ op: string; variables: unknown }> = [];
-  const sessions: Array<{ spacingMs?: number } | undefined> = [];
+  const sessions: Array<{ spacingMs?: number; jitterMs?: number } | undefined> = [];
   const lookup = typeof routes === 'function' ? routes : (p: string) => routes[p] ?? null;
   const host: PoliteHost = {
-    session(opts?: { spacingMs?: number }): PoliteClient {
+    session(opts?: { spacingMs?: number; jitterMs?: number }): PoliteClient {
       sessions.push(opts);
       let failures = 0;
       let last: string | null = null;

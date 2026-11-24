@@ -24,8 +24,8 @@ export const SHORT_SOURCE_NAMES: Record<MedSource, string> = {
   MDAPPLICANTS: 'MDApplicants',
 };
 
-export type SchoolTab = 'activity' | 'history' | 'forecast' | 'interviews';
-export const SCHOOL_TABS: readonly SchoolTab[] = ['activity', 'history', 'forecast', 'interviews'];
+export type SchoolTab = 'activity' | 'history' | 'forecast' | 'interviews' | 'secondaries';
+export const SCHOOL_TABS: readonly SchoolTab[] = ['activity', 'history', 'forecast', 'interviews', 'secondaries'];
 
 export interface CountCell {
   source: MedSource;

@@ -15,6 +15,8 @@ import {
   getMedSchoolArrivalsApi,
   getMedSchoolForecastApi,
   getMedSchoolHistoryApi,
+  getMedSchoolSecondariesApi,
+  getMedSecondaryOverlapApi,
   getMedTrackerApi,
   listMedSchoolsApi,
   type MedChartedTypeId,
@@ -63,6 +65,15 @@ export const forecastQuery = (slug: string, q: { program: 'REG' | 'PHD'; type: M
     { staleTime: 5 * 60_000 },
   );
 
+/** The Secondaries tab: prompts, marks and attribution. Public, so the loader prefetches the same key as anyone's. */
+export const secondariesQuery = (slug: string, q: { program: MedProgramFilter }) =>
+  contractQuery(
+    ['medschools', 'secondaries', slug, q],
+    getMedSchoolSecondariesApi,
+    { params: { slug }, query: q },
+    { staleTime: 5 * 60_000 },
+  );
+
 export const arrivalsQuery = (slug: string, q: { program: MedProgramFilter; type: MedChartedTypeId }) =>
   contractQuery(
     ['medschools', 'arrivals', slug, q],
@@ -95,6 +106,18 @@ export async function loadPrefs(queryClient: QueryClient): Promise<Prefs | null>
   await prefetchRouteQuery(queryClient, prefsQuery());
   return queryClient.getQueryData(prefsQuery().queryKey) ?? null;
 }
+
+/**
+ * The essay overlap of one of the caller's lists, or of their tracker. Under `ME_KEY` and never cached by the server;
+ * the list id is a query value, so it never appears in a path another member could share.
+ */
+export const overlapQuery = (q: { source: 'list'; list: string } | { source: 'tracker' }) =>
+  contractQuery(
+    [...ME_KEY, 'secondaries-overlap', q] as const,
+    getMedSecondaryOverlapApi,
+    { query: q },
+    { staleTime: 60_000 },
+  );
 
 /** The tracker for one cycle year, or the newest the user has when `cycle` is omitted. Never cached by the server. */
 export const trackerQuery = (cycle?: number) =>
@@ -220,6 +243,8 @@ export async function loadSchoolHead(
     // The same key the tab asks for (ALL reads REG, D12; a category the charts do not draw reads Interview).
     const type = (CHARTED.includes(deps.type as MedChartedTypeId) ? deps.type : 'INTERVIEW') as MedChartedTypeId;
     await prefetchRouteQuery(queryClient, forecastQuery(slug, { program: program === 'PHD' ? 'PHD' : 'REG', type }));
+  } else if (deps.tab === 'secondaries') {
+    await prefetchRouteQuery(queryClient, secondariesQuery(slug, { program }));
   }
   const { school } = detail;
   return {

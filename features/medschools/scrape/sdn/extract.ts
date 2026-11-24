@@ -204,7 +204,7 @@ export type ExtractFailure = {
 };
 
 /** Slices a model reply to its outer braces and parses it; undefined for prose or malformed JSON. */
-function parseModelText(raw: string): unknown {
+export function parseModelText(raw: string): unknown {
   const t = raw
     .trim()
     .replace(/^```(?:json)?\s*/i, '')

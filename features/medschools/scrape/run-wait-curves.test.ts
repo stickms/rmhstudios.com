@@ -101,7 +101,7 @@ describe('runWaitCurves', () => {
   const stored = (f: ReturnType<typeof createFakePrisma>) => f.tables.medWaitCurve as Record<string, unknown>[];
 
   it('stores only aggregates: the write has exactly the pinned key sets', async () => {
-    const s = setup(() => members(21));
+    const s = setup(() => members(26));
     expect(await s.run()).toEqual({ curves: 1, removed: 0, kept: 0 });
     const w = s.f.writes[0] as { create: Record<string, unknown>; update: Record<string, unknown> };
     expect(Object.keys(w.create).sort()).toEqual([
@@ -115,13 +115,13 @@ describe('runWaitCurves', () => {
     ]);
     expect(Object.keys(w.update).sort()).toEqual(['asOf', 'computedAt', 'curve', 'invited', 'maxDay', 'members']);
     const row = stored(s.f)[0] as { members: number; curve: Record<string, unknown> };
-    expect(row.members).toBe(21);
+    expect(row.members).toBe(26);
     expect(Object.keys(row.curve).sort()).toEqual(['n', 's', 't']);
     expect(JSON.stringify(s.f.writes)).not.toContain('member-secret');
   });
 
-  it('a member switching sharing off drops 20 to 19 and the next run deletes the row; a pair that never reached 20 has nothing to delete', async () => {
-    let n = 20;
+  it('a member switching sharing off drops the pair to 19 and the next run deletes the row; a pair that never reached the creation margin has nothing to delete', async () => {
+    let n = 26;
     const s = setup(() => [...members(n), ...members(5, { schoolId: 's2' })]);
     expect(await s.run()).toEqual({ curves: 1, removed: 0, kept: 0 });
     expect(stored(s.f)).toHaveLength(1);
@@ -131,8 +131,8 @@ describe('runWaitCurves', () => {
   });
 
   it('keeps the stored curve until at least 3 more invites (or members) have arrived, then replaces it (delta k-anonymity)', async () => {
-    // 21 members, 11 of them invited, then one new invited member per run.
-    const base = members(21);
+    // 26 members, 13 of them invited, then one new invited member per run.
+    const base = members(26);
     let extra: TrackerObservationRow[] = [];
     const s = setup(() => [...base, ...extra]);
     await s.run();
@@ -150,16 +150,16 @@ describe('runWaitCurves', () => {
     // The third new invite crosses the delta: the curve is rebuilt.
     extra = [row(100, { inviteOn: '2026-09-15' }), row(101, { inviteOn: '2026-09-16' }), row(102, { inviteOn: '2026-09-17' })];
     expect(await s.run()).toEqual({ curves: 1, removed: 0, kept: 0 });
-    expect(stored(s.f)[0]).toMatchObject({ invited: 14, members: 24 });
+    expect(stored(s.f)[0]).toMatchObject({ invited: 16, members: 29 });
   });
 
   it('three new members who are still waiting also cross the delta, and a stored row in the old shape is rebuilt', async () => {
     let extra: TrackerObservationRow[] = [];
-    const s = setup(() => [...members(21), ...extra]);
+    const s = setup(() => [...members(26), ...extra]);
     await s.run();
     extra = [100, 101, 102].map((i) => row(i, { inviteOn: null }));
     await s.run();
-    expect(stored(s.f)[0]).toMatchObject({ invited: 11, members: 24 });
+    expect(stored(s.f)[0]).toMatchObject({ invited: 13, members: 29 });
     // A row written before R13 (no `n`) is replaced even with no change.
     (stored(s.f)[0] as { curve: unknown }).curve = { t: [14], s: [0.5] };
     expect(await s.run()).toEqual({ curves: 1, removed: 0, kept: 0 });
@@ -167,21 +167,50 @@ describe('runWaitCurves', () => {
   });
 
   it('a row below a floor is deleted at once, however small the change, and one delete serves every pair', async () => {
-    let n = 21;
+    let n = 26;
     let invites = true;
     const s = setup(() => [
       ...members(n),
-      ...members(21, { schoolId: 's2', inviteOn: null }).map((r, i) =>
-        invites && i < 10 ? { ...r, inviteOn: addDays('2026-09-01', 12) } : r,
+      ...members(26, { schoolId: 's2', inviteOn: null }).map((r, i) =>
+        invites && i < 13 ? { ...r, inviteOn: addDays('2026-09-01', 12) } : r,
       ),
     ]);
     expect(await s.run()).toEqual({ curves: 2, removed: 0, kept: 0 });
     invites = false; // s2 drops to zero invites: under the invite floor
-    n = 21;
+    n = 26;
     const before = s.f.writes.length;
     expect(await s.run()).toEqual({ curves: 1, removed: 1, kept: 1 });
     expect(stored(s.f)).toHaveLength(1);
     expect(s.f.writes.slice(before).filter((w) => 'where' in (w as object) && !('data' in (w as object)))).toHaveLength(1);
+  });
+
+  it('delete-then-recreate cannot show a new curve one member away: a pair under the creation margin gets no row (hysteresis)', async () => {
+    // 24 members, 13 invited: a stored curve. Sharing is switched off by 5 members (19) and the row goes. When members
+    // return, a curve at 20-22 members is NOT created; it needs 23 members and 13 invites.
+    const withInvites = (n: number, invited: number) =>
+      Array.from({ length: n }, (_, i) => row(i, { inviteOn: i < invited ? addDays('2026-09-01', 10 + i) : null }));
+    let rows = withInvites(24, 13);
+    const s = setup(() => rows);
+    await s.run();
+    expect(stored(s.f)).toHaveLength(1);
+    rows = withInvites(19, 13);
+    expect(await s.run()).toMatchObject({ curves: 0, removed: 1 });
+    expect(stored(s.f)).toHaveLength(0);
+    rows = withInvites(20, 13); // over the floor: a curve is built, but not stored
+    expect(await s.run()).toMatchObject({ curves: 1, removed: 0 });
+    rows = withInvites(22, 13);
+    await s.run();
+    expect(stored(s.f)).toHaveLength(0);
+    rows = withInvites(23, 12); // members enough, invites 12 < 13
+    await s.run();
+    expect(stored(s.f)).toHaveLength(0);
+    rows = withInvites(23, 13);
+    await s.run();
+    expect(stored(s.f)).toHaveLength(1);
+    // Once it exists, the refresh delta governs it again: 20 members is not a change of 3 more... 23 -> 21 is under 3.
+    rows = withInvites(21, 13);
+    expect(await s.run()).toMatchObject({ curves: 1, kept: 1 });
+    expect(stored(s.f)[0]).toMatchObject({ members: 23 });
   });
 
   it('opens the interactive transaction with a 60 s timeout and a 10 s wait', async () => {

@@ -1,0 +1,5233 @@
+{
+  "source": "Each school's own official secondary-application and admissions pages (the school's own website).",
+  "method": "Read once by hand on 2026-11-23. Every prompt text and every admissions quotation was verified verbatim against the live official page. A fact that could not be verified was dropped (null), never guessed. This is a one-time curated import, not a scraper: no job fetches school websites. cycleYear is the entry year (2027 is the 2026-2027 cycle) and is null when the page does not name a cycle.",
+  "checkedOn": "2026-11-23",
+  "schools": [
+    {
+      "slug": "a-t-still-arizona",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "a-t-still-kirksville",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "alabama",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.uab.edu/medicine/home/admissions/application-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admissions decisions are made on a rolling basis starting Oct. 15.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "alabama-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "albany",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.amc.edu/admissions/md-program-admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Albany Medical College offers rolling admission",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "albert-einstein",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "alice-walton",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.alwmedschool.org/admissions/admissions-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admission will be offered on a rolling basis until the class of 48 is full.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "arizona-phoenix",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "arizona-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.asu.edu/future-students/admissions/applying",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "ASU follows a rolling admissions process, and admissions decisions will be made between October and April.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "arizona-tucson",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.arizona.edu/education/degree-programs/md-program/admissions",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "arkansas",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "arkansas-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "baptist-health-sciences-university-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "baylor",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "belmont-university",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.belmont.edu/medicine/admissions/application.html",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Please select which value you find most energizing and why. Discuss how this value has impacted your life.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Discuss how your spiritual experiences, faith, or personal beliefs have influenced your life and your decision to pursue medicine as a career.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reflect on a time when you embraced ambiguity, sharing specific examples where you contributed to creating a culture of growth, collaboration, and adaptability.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe the changes to your application from previous cycles - include developments to your academics, experiences, and/or personal attributes.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": true
+          }
+        ]
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "boston",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "brown",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://admission.med.brown.edu/apply/decision-process",
+        "rolling": {
+          "REG": true,
+          "PHD": false
+        },
+        "evidence": {
+          "REG": "The Warren Alpert Medical School notifies interviewees of committee decisions on a rolling basis.",
+          "PHD": "All MD/PhD decisions are announced in March."
+        }
+      }
+    },
+    {
+      "slug": "buffalo",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.buffalo.edu/education/md/admissions/admission_process.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We will issue our Regular MD decisions at the end of December and rolling thereafter.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "burrell-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "california-health-sciences",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://osteopathic.chsu.edu/admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "CHSU-COM uses a rolling admissions process in which applications are reviewed",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "california-northstate",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.cnsu.edu/admissions/FAQs.php",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers of admission will be made until all seats are filled.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "california-university-of-science-and-medicine",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://cusm.edu/academics/md/application-process/index.php",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "CUSM practices a rolling admissions process, and students are offered acceptance throughout the interview season.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "campbell",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.campbell.edu/admissions/osteopathic-medicine-admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "as CUSOM offers a rolling admissions cycle",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "caribe",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "carle-illinois",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medicine.illinois.edu/admissions/how-to-apply",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Why is engineering-infused medicine right for you and how will you use it to change the world?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "case-western",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://case.edu/medicine/md/admission/secondary-application-questions",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Please describe a significant personal challenge you have faced that helped shape you as a person.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe an experience (or experiences) that changed how you understand the relationship between a person's health",
+            "limitKind": "CHARS",
+            "limitValue": 1500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Please tell us about ONE research project to which you made a significant contribution.",
+            "limitKind": "CHARS",
+            "limitValue": 3500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What does your ideal career entail fifteen years after medical school graduation?",
+            "limitKind": "CHARS",
+            "limitValue": 1000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Have you participated in research or a scholarly project (capstone project, honors thesis, etc.)? (Yes or No)",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Briefly describe your research/scholarly project and your role in it.",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "What did you learn from the project?",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "If you worked in a team, what did you learn about team dynamics?",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "What challenges, if any, manifested during the project and how were they overcome?",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "If applicable, please reflect on the time you are taking between college graduation and medical school matriculation",
+            "limitKind": "CHARS",
+            "limitValue": 1000,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Is there any further information that you wish to share with the Admissions Committee",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": true
+          },
+          {
+            "program": "PHD",
+            "text": "What do you look for in a PhD advisor, and who at CWRU would interest you?",
+            "limitKind": "CHARS",
+            "limitValue": 800,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "What is your specific interest in the MSTP at CWRU?",
+            "limitKind": "CHARS",
+            "limitValue": 800,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "What is the hardest academic or research challenge you've faced so far? How did you handle it?",
+            "limitKind": "CHARS",
+            "limitValue": 1000,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://case.edu/medicine/mstp/admissions-and-outcomes/admissions-procedure",
+        "rolling": {
+          "REG": null,
+          "PHD": true
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": "The MSTP utilizes a rolling admissions process and accepts applicants throughout the year."
+        }
+      }
+    },
+    {
+      "slug": "central-michigan",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.cmich.edu/academics/colleges/college-of-medicine/education/md/admissions/prospective/process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "will be offered admission on a rolling (ongoing) basis throughout the admission cycle.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "charles-r-drew",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.cdrewu.edu/academics/program/cdumd/admissions-process/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers of admission: After February 15, 2027 , until class has 60 spots filled.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "charles-r-drew-ucla",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "chicago",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://pritzker.uchicago.edu/page/admissions-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Rolling Acceptances begin after October 15",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "cincinnati",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://med.uc.edu/admissions/medical-student-admissions/how-to-apply/secondary-application-questions",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Describe your interest in the University of Cincinnati College of Medicine. Which opportunities or resources would you pursue as a student, and why are they important to your goals?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Are you a UCCOM re-applicant? Explain how you and your application have changed since your previous submission, and tell us what you have learned along the way. You may answer N/A if not a re-applicant.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Discuss any elements of your application that you feel might be concerning to the Admissions Committee. (This could include explanation of metric trends, institutional actions, legal violations, etc.). You may answer N/A if there are no concerns you would like to discuss.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "city-university-of-new-york",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "cleveland-clinic-lerner",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://my.clevelandclinic.org/lerner-college-medicine/admissions/how-to-apply",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Acceptance offers are provided on a rolling basis with all initial offers made by mid-February.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "colorado",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "columbia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.vagelos.columbia.edu/education/academic-programs/md-program/admissions/apply/process-and-timeline",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "connecticut",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.uconn.edu/admissions/applying-to-the-mdph-d-program/",
+        "rolling": {
+          "REG": null,
+          "PHD": true
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": "Offers of acceptance issued on a rolling basis."
+        }
+      }
+    },
+    {
+      "slug": "cooper-rowan",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://cmsru.rowan.edu/admissions/important-dates-and-deadlines/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers of admission to regular M.D. applicants are made on a rolling basis",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "cornell",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "creighton",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.creighton.edu/medicine/programs/medicine-md/application-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admissions decisions are made on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "dartmouth",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "des-moines",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://dmu.edu/do/admissions-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "It's to your advantage to apply as early in the cycle as possible due to rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "drexel",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "duke",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.duke.edu/education/health-professions-education-programs/doctor-medicine-md-program/admissions/admissions-0",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "duquesne-university-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "east-carolina",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "east-tennessee",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "eastern-virginia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.odu.edu/eastern-virginia-medical-school/application-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "General pool applicants are notified on a rolling basis beginning Oct. 15.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "edward-via-auburn",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.vcom.edu/admissions/applying/step-by-step",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Classes may be filled by early spring due to rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "edward-via-carolinas",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.vcom.edu/admissions/applying/step-by-step",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Classes may be filled by early spring due to rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "edward-via-louisiana",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.vcom.edu/admissions/applying/step-by-step",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Classes may be filled by early spring due to rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "edward-via-virginia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.vcom.edu/admissions/applying/step-by-step",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Classes may be filled by early spring due to rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "emory",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.emory.edu/education/admissions/md/faq.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We operate on a rolling admissions cycle",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "florida",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://admissions.med.ufl.edu/admission-requirements/regular-admission-requirements/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Beginning October 15, acceptance follows a rolling admission process",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "florida-atlantic",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.fau.edu/medicine/md/admissions/requirements/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The admissions committee uses a rolling process to reach admissions decisions for applicants.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "florida-international",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.fiu.edu/academics/doctor-of-medicine/admissions/application-process/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We have a rolling admissions policy—admission decisions are communicated approximately one month after the interview.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "florida-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "geisinger-commonwealth",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "george-washington",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "georgetown",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://meded.georgetown.edu/faq-2/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "GUSOM does have a rolling admissions policy.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "georgia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medicine.uga.edu/future-students/admissions/admissions-process/",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "What draws you to the University of Georgia School of Medicine",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Imagine you've reached the end of a fulfilling and impactful career.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Tell us about the decisions and experiences that have defined your academic journey.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What are the core values that guide you?",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "If you are a reapplicant, use this space to highlight aspects of your application",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": true
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medicine.uga.edu/future-students/admissions/admissions-process/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "UGA School of Medicine uses rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "hackensack-meridian",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "harvard",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "hawaii",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "hofstra",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.hofstra.edu/admission/md/faqs.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Yes. Rolling Admission are used, with offers typically extended from mid-December through mid-July.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "houston",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "howard",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "idaho-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "illinois",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://chicago.medicine.uic.edu/education/masters-doctoral/mstp/how-to-apply",
+        "rolling": {
+          "REG": null,
+          "PHD": true
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": "The MSTP has a rolling admissions process which means offers could be made at the latter part of the admissions cycle."
+        }
+      }
+    },
+    {
+      "slug": "illinois-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.thechicagoschool.edu/programs/medicine/do/apply/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "IllinoisCOM employs a rolling application and admissions process.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "incarnate-word",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://osteopathic-medicine.uiw.edu/admissions/doctor-of-osteopathic-medicine/frequently-asked-questions.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "UIWSOM operates on a rolling admissions basis, meaning applications are reviewed as they are completed",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "indiana",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.iu.edu/md/admissions/class-selection",
+        "rolling": {
+          "REG": false,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "IU School of Medicine Admissions Office sends acceptance letters on the 15th day of each month of the application period.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "indiana-university-of-pennsylvania-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "iowa",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://mstp.medicine.uiowa.edu/admissions",
+        "rolling": {
+          "REG": null,
+          "PHD": true
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": "The MSTP admissions process is done on a rolling basis"
+        }
+      }
+    },
+    {
+      "slug": "jefferson",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "johns-hopkins",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "kaiser-permanente",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.kp.org/admissions/application-timeline",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The school sends offers of admission on a rolling basis beginning October 2026.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "kansas",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.kumc.edu/school-of-medicine/academics/degree-programs/m.d.-ph.d.-program/admissions-and-aid.html",
+        "cycleYear": 2026,
+        "prompts": [
+          {
+            "program": "PHD",
+            "text": "Why are you interested in an MD-PhD Program?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "Describe your research experience(s) to date, including the location and time frame for each, and your research mentor(s).",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "Personal Statement",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://www.kumc.edu/school-of-medicine/academics/degree-programs/m.d.-program/admission-and-aid/how-to-apply.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The KU School of Medicine uses a conservative rolling admissions process, which means that your application receives notice soon after it is received.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "kansas-city-university-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://osteopathic-medicine-program.kansascity.edu/admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The KCU College of Osteopathic Medicine admits on a rolling admissions process.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "kansas-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "kentucky",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medicine.uky.edu/sites/meded/how-apply",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Applicants will also be asked to explain in a brief essay why they chose their first-choice campus.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": null
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medicine.uky.edu/sites/meded/how-apply",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "interviews and acceptances are offered on a rolling basis",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "kentucky-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.upike.edu/osteopathic-medicine/kycom-admissions/application-selection/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "KYCOM admits students on a continuous or rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "lake-erie",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://lecom.edu/college-of-osteopathic-medicine/com-apply/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The college uses a rolling admission cycle.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "lake-erie-bradenton",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://lecom.edu/college-of-osteopathic-medicine/com-apply/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The college uses a rolling admission cycle.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "liberty",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "lincoln-memorial",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://dcomcatalog.lmunet.edu/lmudcom-supplemental-secondary-application",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The admissions process operates on a rolling acceptance policy;",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "loma-linda",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.llu.edu/admissions/medicine-md-program/admission-requirements-and-application-process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Regular MD decisions are made on a rolling basis from November through April.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "louisville",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.louisville.edu/admission/md-program-admissions",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admission decisions are made on a rolling basis, with acceptances beginning in mid-October.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "loyola",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.luc.edu/stritch/admissions/howtoapply/doctorofmedicineapplicationguide/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admissions decisions are communicated on a rolling basis following interviews.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "lsu-new-orleans",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.medschool.lsuhsc.edu/admissions/criteria.aspx",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "lsu-shreveport",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "marian",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "marshall",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://jcesom.marshall.edu/admissions/how-to-apply/",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "maryland",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.medschool.umaryland.edu/admissions/your-path-to-medical-school/frequently-asked-questions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "since admissions is a rolling process",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "massachussetts",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "mayo",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://college.mayo.edu/academics/mayo-clinic-alix-school-of-medicine/md-program/how-to-apply/",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "At Mayo Clinic Alix School of Medicine, we seek students whose values align with our mission to put the needs of the patient first. Please share why you would like to study medicine at our school, including specifically why at the top campus track you selected.",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reflect on how your professional and lived experiences have shaped your identity. Tell us how these experiences will help you contribute to a collaborative learning environment, support your patients and colleagues, and advance Mayo Clinic's commitment to excellence.",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Mayo Clinic's Bold. Forward. strategy integrates digital innovation with a deeply humanistic approach to transform healthcare. What role do you see yourself playing in shaping this future? Describe the skills, experiences, or aspirations in artificial intelligence and innovation that prepare you to contribute meaningfully to this transformation.",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://college.mayo.edu/academics/mayo-clinic-alix-school-of-medicine/md-program/how-to-apply/",
+        "rolling": {
+          "REG": false,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Mayo Clinic Alix School of Medicine does not have an early decision program or rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "medical-college-of-georgia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.augusta.edu/mcg/admissions/reg-decision-program.php",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Regular Decision applicants are following a rolling admissions timeline.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "medical-college-of-wisconsin",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.mcw.edu/education/medical-school/prospective-students/admissions",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "At MCW, we are guided by the values of acting in caring ways, engaging in collaborative efforts, approaching our world with curiosity , advancing inclusive practices, demonstrating integrity in all that we do, and treating everyone with respect . Describe how your unique experiences, interests, and talents have embodied one or more of these values, and how they will shape the way you plan to contribute to the MCW learning community.",
+            "limitKind": "CHARS",
+            "limitValue": 1000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "How will MCW uniquely prepare you for your future goals?",
+            "limitKind": "CHARS",
+            "limitValue": 1000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Recount a time when you made a decision you regret. How did it affect you, and what did you learn from the experience?",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "MCW is committed to its missions of community engagement and improving health for all. MCW medical students play an important role in advancing these missions by working with and within various communities throughout Wisconsin which requires adaptability and a willingness to learn from new experiences. Describe a time where you entered a new environment or situation, how you adapted, what you learned, and how that experience helped you grow in your ability to serve others and contribute to MCW's missions during your education.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Please explain how your application has changed since your last application to MCW Medical School. How have you enhanced your preparation for medical school and future career as a physician (e.g., additional academic work, employment, volunteer experience, etc.)? You may wish to elaborate on the process you employed to critique your application's strengths and weaknesses or share life changes or circumstances that have impacted your application.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe the experiences that have contributed to your motivation to pursue a primary care focused, community-based medical education program.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe the community in which you envision yourself living and practicing medicine. Address the benefits and challenges of life in your specified community.",
+            "limitKind": "CHARS",
+            "limitValue": 2000,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://www.mcw.edu/education/medical-school/prospective-students/admissions",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Applications are generally reviewed by the Admissions Committee on a rolling basis by date of completion.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "medical-university-of-south-carolina",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.musc.edu/programs/doctor-medicine/admissions/apply",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admissions decisions are made on a rolling basis beginning in October.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "meharry",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "mercer",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.mercer.edu/admissions/doctor-of-medicine/admissions-process/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Yes. This means that completed applications are reviewed sequentially as they arrive.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "meritus-som",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "methodist-university",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "miami",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.miami.edu/graduate-studies/doctoral-programs/medical-scientist-training-program/application-process",
+        "rolling": {
+          "REG": null,
+          "PHD": true
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": "Acceptances are generally made on a rolling basis, but many alternate list candidates receive offers later in the admissions process."
+        }
+      }
+    },
+    {
+      "slug": "michigan",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "michigan-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "michigan-state-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "midwestern-arizona",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://catalog.az.midwestern.edu/admissions-22",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Interviews are conducted and selection decisions for the College are made until the class is filled.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "midwestern-chicago",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://catalog.il.midwestern.edu/admissions-0",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "CCOM uses a rolling admissions process in which applications are reviewed",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "minnesota",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "mississippi",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "missouri-columbia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "missouri-kansas-city",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "morehouse",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "mount-sinai",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://icahn.mssm.edu/education/admissions/md-phd",
+        "rolling": {
+          "REG": null,
+          "PHD": true
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": "Admissions decisions for the Icahn School's MSTP are released on a rolling basis starting in January or February."
+        }
+      }
+    },
+    {
+      "slug": "nebraska",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "nevada-reno",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://med.unr.edu/education/medical-education/md-admissions-process/secondary-application",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Please share why you want to pursue your medical education at UNR Med. Describe any connections to Northern Nevada communities and how you are prepared to contribute to UNR Med’s vision of “A Healthy Nevada.”",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe a time when you were part of a team that was struggling to meet objectives. How did you react? What would you do differently? What did you take away from this experience that will influence your approach to working on a team in the future?",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reflect on and describe an experience where you provided care or service to individuals from populations that commonly experience healthcare disparities. Discuss what you learned about the socio-cultural or economic factors that affect underserved populations and describe how your interactions with these individuals motivated or prepared you for a future in medicine.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe a time when you faced a significant life crisis or an academic, personal, or professional failure. How did you respond, what did you learn, and how did the experience influence your future actions?",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Please share an example of how you have used critical thinking and communication skills to develop a creative or innovative solution to a challenging problem.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "You are invited to provide a brief statement regarding anything not previously addressed or disclosed in your application that you would like considered during the review of your application. If you are a re-applicant to UNR Med, we encourage you to outline any significant changes or new experiences from your previous application.",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": true
+          }
+        ]
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "new-england",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.une.edu/com/admissions/criteria-procedures",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "new-mexico",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://hsc.unm.edu/medicine/education/md/admissions/apply/applications-and-deadlines.html",
+        "rolling": {
+          "REG": false,
+          "PHD": false
+        },
+        "evidence": {
+          "REG": "Admissions Decisions Sent October 1 March 15 March 15",
+          "PHD": "Admissions Decisions Sent October 1 March 15 March 15"
+        }
+      }
+    },
+    {
+      "slug": "new-york-institute-of-technology",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://catalog.nyit.edu/medicine/admissions/application_procedure/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "NYITCOM accepts applicants on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "new-york-medical-college",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.nymc.edu/som/admissions--aid/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The Admissions Committee selects students on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "new-york-university-grossman",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://med.nyu.edu/education/md-degree/sites/default/files/md-degree-how-to-apply-secondary-application-materials.pdf",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "If applicable, please comment on significant fluctuations in your academic record.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "If you have taken any time off from your studies- before, during, or after college- please describe what you did during that time and your reasons for doing so.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "At your option, please provide the following information not contained in the AMCAS primary application. Answers to the following questions will not be included in the application materials reviewed by committee members and are used for reporting purposes following completion of the admissions cycle.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Tell us about a long-term goal you pursued over several years. What obstacles did you encounter, and what sustained your motivation when progress was slow?",
+            "limitKind": "CHARS",
+            "limitValue": 2500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Medical training demands continuous improvement. Share an example of feedback you received that was difficult to hear. How did you act on it, and what changed as a result?",
+            "limitKind": "CHARS",
+            "limitValue": 2500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Conflicts arise daily from differences in perspectives, priorities, worldviews, and traditions. How do you define respect? Describe a situation where you found it challenging to remain respectful while facing differences.",
+            "limitKind": "CHARS",
+            "limitValue": 2500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe a situation in which you faced an ethical dilemma or pressure to compromise your values. How did you navigate the situation, and hat guided your decision.",
+            "limitKind": "CHARS",
+            "limitValue": 2500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Some of the most meaningful achievements are non-academic in nature. Describe the personal accomplishment that makes you most proud. Why is this important to you?",
+            "limitKind": "CHARS",
+            "limitValue": 2500,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://med.nyu.edu/education/md-degree/md-admissions/admissions-timeline",
+        "rolling": {
+          "REG": false,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "All MD applicants notified of admissions decision January",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "new-york-university-long-island",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medli.nyu.edu/education/md-degree/sites/default/files/nyulisom-secondary-application-questions.pdf",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Please indicate the specific residency track for which you wish to be considered and explain the reason(s) for your choice, including those experiences listed on your AMCAS application that have confirmed your decision to pursue this field of medicine in the context of primary care. If applicable, please also discuss any other factors –such as your personal journey, academic interests or activities not listed on your application— that have influenced your choice.",
+            "limitKind": "WORDS",
+            "limitValue": 400,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Please comment on any significant fluctuations in your academic record or inconsistencies in your MCAT score; if you took a leave of absence for any reason during college; or any application irregularities that you feel would be helpful for the admissions committee to consider when conducting its holistic review of your credentials.",
+            "limitKind": "WORDS",
+            "limitValue": 400,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Please feel free to share any other information that you have not already included in your AMCAS application or secondary responses that you believe would be relevant for the admissions committee to know about.",
+            "limitKind": "WORDS",
+            "limitValue": 400,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Please provide the response that applies to you:  If you are still in school, please tell us your planned academic, extracurricular, research, community service and/or work activities for the application cycle.  If you have graduated from college, please tell us what you have been doing since that time up until the present and your reasons for doing so. Please be sure to account for all your time since graduating.",
+            "limitKind": "WORDS",
+            "limitValue": 400,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medli.nyu.edu/education/md-degree/md-admissions/admissions-deadlines-policies",
+        "rolling": {
+          "REG": false,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "All MD applicants are notified of admissions decision February 2027",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "noorda",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.noorda.edu/admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Noorda-COM utilizes a rolling admissions process, and verified applications are reviewed as they are received.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "north-carolina",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "north-dakota",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://med.und.edu/admissions/student-affairs-admissions/prospective-students/how-to-apply.html",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "The primary purpose of the UND School of Medicine & Health Sciences is to educate physicians and other health professionals for subsequent service in North Dakota and to enhance the quality of life of its people. Please explain how your past medical/clinical and community service experiences and your career goals are consistent with this purpose.",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe an ethical dilemma that presented itself to you. Identify your choices, potential consequences and your resolution of the dilemma. In hindsight, what did you learn about yourself?",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe and reflect on a specific experience you have had with people of a different socioeconomic, ethnic, racial, cultural or religious/spiritual background than yourself. What preconceived notions did you have prior to the experience? How did the experience challenge your preconceived notions?",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "The UND School of Medicine & Health Sciences invests in the discovery of knowledge that benefits the people of this state and enhances the quality of their lives. Reflect on your personal experience with the process of scientific discovery. What aspect was most frustrating? Most rewarding? How might these lessons be transferable to the practice of medicine?",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reflect on an experience in which you demonstrated creativity and innovation, where you generated an idea and implemented it to achieve an outcome. Examples may include a musical or theatrical performance, work of art, publication, invention, start-up, public service or any other major production or installation. How did it contribute to your personal growth? What skills did you gain that will help you as a future physician?",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "The UND School of Medicine & Health Sciences is a community-based medical school, and because of the unique circumstances of our regional location, we place special emphasis on the unique skills needed to provide care for patients and populations in rural and Native American communities across all competencies. Reflect on a specific health care disparity affecting rural and/or Native American populations that you may have engaged with or studied and how you, as a future physician, might help to alleviate that disparity.",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reflect on your role in a particularly impactful leadership or team experience in which your efforts resulted in a meaningful outcome.",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What are your career plans if you do not ever get admitted to medical school?",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "If needed, update the information in your AMCAS application (i.e., grades in recent courses, alterations in your proposed coursework or graduation, additions to extracurricular activities, unreported legal and institutional infractions, etc.).",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Are you currently enrolled in a grant-funded and/or degree-granting postbaccalaureate program and/or advanced degree? If so, what is your timeline for completion?",
+            "limitKind": "CHARS",
+            "limitValue": 600,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "UND SMHS Reapplicants Only: When was your previous application, and, subsequently, what steps have you taken to strengthen your candidacy? Note any relevant academic, employment, clinical, and personal experience and/or development. If you requested feedback from the Office of Student Affairs & Admissions regarding a previous application, please list how you addressed that feedback.",
+            "limitKind": "CHARS",
+            "limitValue": 1200,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "north-texas",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "northeast-ohio",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.neomed.edu/medicine/admissions/paths/traditional-admission/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Notification to the applicant regarding admission is given on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "northern-colorado",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.unco.edu/osteopathic-medicine/admission/apply/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers are extended on a rolling basis from December through March.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "northwestern",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.feinberg.northwestern.edu/admissions/faq/admissions-requirements-faq.html",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "nova-southeastern",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://md.nova.edu/admissions/md/timeline.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Rolling Admission Decisions December - July",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "nova-southeastern-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://osteopathic.nova.edu/admissions/do.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Acceptance is on a “rolling” or periodic schedule",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "oakland",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.oakland.edu/medicine/admissions/frequently-asked-questions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "decisions are made and communicated on a rolling basis beginning in mid-October until the class is full.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "ohio-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medicine.osu.edu/education/md/admissions/how-to-apply",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Describe an experience that shaped your understanding of health inequities in the United States. What factors were involved, and how did this experience influence your perspective or actions?",
+            "limitKind": "WORDS",
+            "limitValue": 250,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "The mission statement of The Ohio State University College of Medicine is to \"improve people's lives\" through innovation in research, medical education, and patient care. Describe experiences that best demonstrate your potential to contribute meaningfully to two of these areas. What did you learn through these experiences, and how do they shape your goals as a future physician?",
+            "limitKind": "WORDS",
+            "limitValue": 250,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What interests you about training in a smaller city in a rural setting? Have you ever lived in a similar setting? How do you hope this environment will shape your development as a physician?",
+            "limitKind": "WORDS",
+            "limitValue": 250,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What has influenced your interest in family medicine at this stage of your training? Describe experiences that have helped you understand the scope and values of family medicine, and how these experiences inform your goal of becoming a future family physician.",
+            "limitKind": "WORDS",
+            "limitValue": 250,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What factors have influenced your interest in an accelerated curriculum in preparation for a career in family medicine? How does this training model align with your learning style, professional goals, and approach to patient care?",
+            "limitKind": "WORDS",
+            "limitValue": 250,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medicine.osu.edu/education/md/admissions/before-you-apply/deadlines",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "ohio-university",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.ohio.edu/medicine/med-admissions/apply/app",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "There are philosophical and tangible differences between osteopathic and allopathic medicine.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe the community in which you were nurtured or spent the majority of your early development.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "There are multiple paths that lead to medical school and many obstacles along the way.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What has been your most meaningful life experience (I.e., family situation, clinical or shadowing experience,",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://www.ohio.edu/medicine/med-admissions/requirements",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "the HCOM selection committee offers seats to the incoming class on a WEEKLY basis once interviews begin in September.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "oklahoma",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "oklahoma-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "oregon-health-and-science",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.ohsu.edu/school-of-medicine/md-program/admissions",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "orlando-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://ocom.org/admissionsfaq",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Because OCOM uses a rolling admissions process, we encourage applicants to apply early.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "pacific-northwest",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.pnwu.edu/admissions/doctor-of-osteopathic-medicine/do-frequently-asked-admissions-questions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "PNWU-COM uses a “rolling admissions” process.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "penn-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.psu.edu/education/degree-programs/md-doctor-medicine/apply/process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Applicants will be notified of acceptance into the class entering in July of the entering year after Oct. 15 and as late as required until the class is filled.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "pennsylvania",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.med.upenn.edu/mstp/preview-supplemental-app.html",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "PHD",
+            "text": "In your anthropological statement of purpose, we ask you to include a discussion of your 1) background in anthropology, social sciences and/or other related disciplines, 2) theoretical/topical interests and potential directions for dissertation work (most students change their topics during their training--but a statement of purpose should reveal an ability to think and frame questions anthropologically/theoretically), and 3) personal experience or previous employment/career that informs your topical/theoretical interests.",
+            "limitKind": "CHARS",
+            "limitValue": 6000,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "Please provide a personal statement addressing the factors that have encouraged you to seek an education from the History and Sociology of Science Graduate Group and a statement of your research interests. The latter could include potential directions for dissertation work (understanding we do not expect students to commit to a particular direction until much later in their training) and/or problems, time periods, scientific disciplines, geographic areas, etc. which interest you.",
+            "limitKind": "CHARS",
+            "limitValue": 6000,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "philadelphia-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.pcom.edu/do/apply.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Early submission is strongly recommended as interviewees are selected and decisions are rendered on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "philadelphia-com-georgia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.pcom.edu/do/apply.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Early submission is strongly recommended as interviewees are selected and decisions are rendered on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "philadelphia-com-south-georgia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.pcom.edu/do/apply.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Early submission is strongly recommended as interviewees are selected and decisions are rendered on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "pittsburgh",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "ponce-health-sciences",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "quinnipiac",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rochester",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rocky-vista",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.rvu.edu/doctor-of-osteopathic-medicine/rvucom/admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Please note that due to the rolling admission process, it is feasible that all interviews will be awarded prior to this date.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rocky-vista-montana",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.rvu.edu/doctor-of-osteopathic-medicine/mcom/",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rosalind-franklin",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "roseman",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.roseman.edu/academic-programs/college-of-medicine/doctor-of-medicine-md/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Applicants will begin receiving final decision notifications starting October 15, 2026, continuing on a rolling basis",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rowan",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rush",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.rushu.rush.edu/rush-medical-college/admissions/applying-doctor-medicine-md-program/process-timeline",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We continue to extend admission offers until the class is full but no later than the first day of orientation.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rutgers-new-jersey",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://njms.rutgers.edu/admissions/apply.php",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Due to our rolling admissions process, we encourage applicants to have all requirements submitted as soon as possible, but no later than the following dates: Early Decision: August 1 ( supporting materials are due by 9/1 and decisions begin in July ) Regular MD: December 1 (this includes all joint degree applications) Secondary Application: December 15 Letters of Recommendation: December 15 MCAT Scores: Applicants must take the MCAT by October Application Requirements Application screening commences as soon as applicants have a completed application file. A completed file includes: Verified AMCAS Application Secondary Application (along with the paid fee or fee waiver) Letters of Recommendation Most recent MCAT results We do not require the PREview or CASPer tests AMCAS Applications are reviewed from July through March. Due to our rolling admissions process, we encourage applicants to have all requirements submitted as soon as possible.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "rutgers-robert-wood-johnson",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "saint-louis",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "sam-houston",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.shsu.edu/academics/colleges/osteopathic-medicine/admissions/faqs",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "SHSU-COM uses rolling admissions after the TMDSAS Match. Seats are filled continuously as they become available.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "san-juan-bautista",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.sanjuanbautista.edu/admissions/md-program-admissions",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers of Admission are made on a rolling basis until class is filled",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "south-alabama",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.southalabama.edu/colleges/com/futurestudents/timeline.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Acceptances will begin being offered on a rolling basis starting in mid-November.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "south-carolina-columbia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://sc.edu/study/colleges_schools/medicine/education/md_program/admission_and_application/index.php",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Beginning October 15, 2026, and on a rolling basis through March 2027",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "south-carolina-greenville",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://sc.edu/study/colleges_schools/medicine_greenville/admissions/learn_how_to_apply/application_timeline/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admissions decisions outside of the early decision program are made on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "south-dakota",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "southern-illinois",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "stanford",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.stanford.edu/md-admissions/how-to-apply.html",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "stony-brook",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://renaissance.stonybrookmedicine.edu/admissions/faq",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Yes. First acceptances are made in mid-October and will continue until the interview process is completed in mid-March.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "suny-downstate",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.downstate.edu/education-training/college-of-medicine/admissions/application-procedures.html",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "suny-upstate",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "temple",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "tennessee",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "texas-a-m",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.tamu.edu/degrees/md/apply.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers are made on a rolling basis until January 27.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "texas-christian-university",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://mdschool.tcu.edu/admissions/how-to-prepare-a-competitive-application/",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "The Burnett School of Medicine defines empathic scholars with these eight traits: Compassion, Teachability, Altruism, Insight, Humility, Collaboration, Integrity, & Respect. Which trait do you think you embody most and how will that be valuable to patient care? Which trait might you need to improve upon? How will you improve in this area and how will this be of value in your role as a physician?",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Characteristics of an aspiring MD. Describe any personal qualities and/or lived experiences that add context to your application that shape who you are as an individual and aspiring healthcare leader.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "Tell us why you want an MD/PhD in Biomedical Engineering and how you envision valuing and using this degree in your professional career progression.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          },
+          {
+            "program": "PHD",
+            "text": "Provide a summary of your past formal and informal training and experiences in biomedical engineering that will equip you to thrive in the doctoral program as a clinician-scientist.",
+            "limitKind": "WORDS",
+            "limitValue": 300,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://mdschool.tcu.edu/admissions/how-to-apply/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "decisions are communicated on a rolling basis after October 15 until the class of 60 students is filled in the Spring.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "texas-tech-foster",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://ttuhscep.edu/som/admissions/dates-and-events.aspx",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Applicant match results are announced; a rolling admissions process fills remaining positions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "texas-tech-lubbock",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.ttuhsc.edu/medicine/admissions/secondary",
+        "cycleYear": null,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Have you experienced any road bumps in your academic career?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "If yes, please explain your circumstance.",
+            "limitKind": "WORDS",
+            "limitValue": 250,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Describe a meaningful setback in your academic, professional, or personal journey.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Have you experienced any hardship or adversity; personally or professionally?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "If yes, please share your experience with us.",
+            "limitKind": "WORDS",
+            "limitValue": 200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "TTUHSC has a values-based culture. Its core values are One Team, Kindhearted, Integrity, Visionary, and Beyond Service. Choose one core value that you believe represents your greatest strength.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Please share with us your ideal practice.",
+            "limitKind": "WORDS",
+            "limitValue": 100,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Do you consider yourself from West Texas or as having West Texas ties?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "If yes, what town or county did you reside in, or what other factors would you cite?",
+            "limitKind": "WORDS",
+            "limitValue": 100,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Select the area(s) of interest that you have experience or related activities with (please check all that apply). For each selected area, please list your experience and/or activities; completed, current or planned.",
+            "limitKind": "WORDS",
+            "limitValue": 150,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What motivates you to participate in the FMAT program?",
+            "limitKind": "WORDS",
+            "limitValue": 200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What experiences have you had that would prepare you for this intensive program?",
+            "limitKind": "WORDS",
+            "limitValue": 200,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "What, in your opinion, distinguishes Family Medicine from other medical specialties?",
+            "limitKind": "WORDS",
+            "limitValue": 200,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://www.ttuhsc.edu/medicine/admissions/faq",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "toledo",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "touro-california",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://tu.edu/programs/osteopathic-medicine/admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Applications are considered on a rolling basis and deadlines are subject to change.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "touro-nevada",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://tun.touro.edu/programs/osteopathic-medicine/-do-application--requirements/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Yes, the application process is on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "touro-new-york",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://tourocom.touro.edu/admissions--aid/do-admissions",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "tufts",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "tulane",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.tulane.edu/admissions/md/faqs",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We operate on a \"rolling\" admissions cycle,",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "uniformed-services",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.usuhs.edu/admissions/application-requirements",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We work on a rolling admissions basis. This means that an applicant's file is advanced onto the next phase as soon as the previous phase is completed.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-california-davis",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://health.ucdavis.edu/medical-school/admissions/how-to-apply",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Decisions are released on a rolling basis:",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-california-irvine",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.uci.edu/education/medical-education/medical-degree-program/admissions/how-to-apply",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The UCI School of Medicine has a rolling acceptance with the first acceptances issued by Nov. 1.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-california-los-angeles",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.ucla.edu/education/md-education/admissions/after-applying",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We have a rolling admissions process, which means that every applicant's timeline is different.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-california-riverside",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://somsa.ucr.edu/admissionsapplying",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admission decisions are made on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-california-san-diego",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.ucsd.edu/education/md-combined/admissions/application-process.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We do have \"rolling\" admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-california-san-francisco",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-central-florida",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.ucf.edu/admissions/application-timeline/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admission decisions are made on a rolling basis",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-nevada-las-vegas",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.unlv.edu/medicine/admissions/faq",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "The admissions committee at the Kerkorian School of Medicine at UNLV practices rolling admissions.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-puerto-rico",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-south-florida",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://health.usf.edu/medicine/mdprogram/mdadmissions/process",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Acceptances are offered on a \"rolling\" basis from mid-October to May.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-southern-california",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://keck.usc.edu/md-program/admissions/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers of admission are made beginning on Oct 15, and continue to be made on a rolling basis.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-austin",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-houston",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.uth.edu/admissions/why-mcgovern/admissions-faq/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "McGovern Medical School does have a rolling admissions policy",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-medical-branch",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.utmb.edu/som/admissions-information/ready-to-apply-info",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Rolling Admissions February - July",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-rio-grande",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-san-antonio",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-southwestern",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.utsouthwestern.edu/admissions/timeline/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Match results announced and rolling admission period begins.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "university-of-texas-tyler",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://www.uttyler.edu/academics/colleges-schools/medicine/admissions/faq/",
+        "cycleYear": 2026,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Please indicate (select one) your connection to East Texas as outlined in our county map and explain below:",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Please describe a significant personal challenge you have faced, one which you feel has helped to shape you as a person. Please include how you got through the experience and what you learned about yourself as a result",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Optional question(highly recommend): Please use this space to share with the committee any additional information that may help us evaluate your candidacy that is not addressed elsewhere in the application.",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Review our mission & vision . Why are you interested in applying to UT Tyler’s School of Medicine (500 word limit)?",
+            "limitKind": "WORDS",
+            "limitValue": 500,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://www.uttyler.edu/academics/colleges-schools/medicine/admissions/index.php",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Rolling Admissions period begins.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "utah",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medicine.utah.edu/programs/md/admissions/requirements",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Applicants will be asked to explain what element of the SFESOM Mission Statement stands out most to them and how they have demonstrated alignment with that mission element in their preparation for medical school.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Applicants will be asked to address a healthcare challenge they have experienced in their communities or in communities they have served and consider contributing to a solution as a future physician.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reapplicants to the Spencer Fox Eccles School of Medicine at the University of Utah will be asked to share how they have reshaped and reaffirmed their goals to become a physician and what motivates them to reapply to the SFESOM.",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medicine.utah.edu/programs/md/admissions/requirements",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "with screening, reviews, interviews, and acceptances occurring on a rolling basis throughout the cycle.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "valley-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "vanderbilt",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medschool.vanderbilt.edu/md/admissions/process/",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Tell us about a time when you interacted with someone who is different than you.",
+            "limitKind": "WORDS",
+            "limitValue": 600,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Optional: Please briefly summarize your activities since graduating from college.",
+            "limitKind": "WORDS",
+            "limitValue": 200,
+            "optional": true
+          },
+          {
+            "program": "REG",
+            "text": "Please reflect on the upbringing, background, and experiences in your life that have shaped who you are as a person and will help define the person you want to be in the future. In other words, what makes you who you are?",
+            "limitKind": "WORDS",
+            "limitValue": 800,
+            "optional": false
+          },
+          {
+            "program": "REG",
+            "text": "Reflecting on the last five years, describe a time you asked for help and what you gained from that experience that has influenced your approach to asking for help.",
+            "limitKind": "WORDS",
+            "limitValue": 600,
+            "optional": false
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medschool.vanderbilt.edu/md/admissions/process/",
+        "rolling": {
+          "REG": false,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Admissions decisions will be released in two waves: late December and late February.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "vermont",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.uvm.edu/larnermed/admissions/application",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Interviews will be held between August and March, with acceptances offered on a rolling basis through orientation.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "virginia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://med.virginia.edu/md-program/admissions/admissions-to-uva-school-of-medicine/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We use a rolling admission process. Early application is encouraged.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "virginia-commonwealth",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medschool.vcu.edu/admissions/prospective/",
+        "rolling": {
+          "REG": false,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Regular M.D. acceptance notifications: Oct. 16, Dec. 16, Feb. 1 and March 15",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "virginia-tech",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": "https://medicine.vtc.vt.edu/admissions/application-process.html",
+        "cycleYear": 2027,
+        "prompts": [
+          {
+            "program": "REG",
+            "text": "Reflect on a trait or characteristic you are proud of that you feel is most vulnerable to being lost on your journey to becoming a physician. How do you plan to protect it?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": null
+          },
+          {
+            "program": "REG",
+            "text": "Describe a time when doing the \"right\" thing conflicted with rules, authority, or expectations. How did you handle it?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": null
+          },
+          {
+            "program": "REG",
+            "text": "Beyond the rise of AI, what do you consider the greatest challenge facing your generation, and how do you plan to address it?",
+            "limitKind": null,
+            "limitValue": null,
+            "optional": null
+          }
+        ]
+      },
+      "admissions": {
+        "url": "https://medicine.vtc.vt.edu/admissions/admissions-overview.html",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "We use a rolling admissions process and send out acceptance notifications on several occasions throughout the cycle.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "wake-forest",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://school.wakehealth.edu/education-and-training/md-program/how-to-apply",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "washington",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "washington-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "washington-university-saint-louis",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://mdadmissions.wustl.edu/how-to-apply/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "WashU Medicine uses a rolling admission calendar.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "wayne-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "west-virginia",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.hsc.wvu.edu/md-admissions/admissions-timeline/",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "October: Applicants will start being notified of their admissions status on a rolling basis",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "west-virginia-som",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "western-michigan",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "western-university-california",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "western-university-oregon",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "william-carey",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "wisconsin",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": null,
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "wright-state",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.wright.edu/admissions/prerequisites-and-application",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Offers of acceptance are sent electronically and on a rolling basis beginning October 15.",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "xavier-com",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://www.xavier.edu/college-of-medicine/admission/do-admission/decision-and-deposit-timelines",
+        "rolling": {
+          "REG": true,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": "Our rolling admissions process allows us to review applications as they are received",
+          "PHD": null
+        }
+      }
+    },
+    {
+      "slug": "yale",
+      "checkedOn": "2026-11-23",
+      "secondary": {
+        "url": null,
+        "cycleYear": null,
+        "prompts": []
+      },
+      "admissions": {
+        "url": "https://medicine.yale.edu/md-program/admissions/how-to-apply/",
+        "rolling": {
+          "REG": null,
+          "PHD": null
+        },
+        "evidence": {
+          "REG": null,
+          "PHD": null
+        }
+      }
+    }
+  ]
+}

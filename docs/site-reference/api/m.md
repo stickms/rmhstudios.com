@@ -40,17 +40,21 @@ See the [API inventory](../api.md) for how to read the tables.
 | `/api/medschools/me/lists/:id/items/:itemId` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.lists.$id.items.$itemId.server.ts` |
 | `/api/medschools/me/prefs` | `GET` `PUT` | `features/medschools/api/medschools.me.prefs.server.ts` |
 | `/api/medschools/me/qa-limit-request` | `GET` `POST` | `features/medschools/api/medschools.me.qa-limit-request.server.ts` |
+| `/api/medschools/me/secondaries/overlap` | `GET` | `features/medschools/api/medschools.me.secondaries.overlap.server.ts` |
 | `/api/medschools/me/tracker` | `GET` | `features/medschools/api/medschools.me.tracker.server.ts` |
 | `/api/medschools/me/tracker/applications` | `POST` | `features/medschools/api/medschools.me.tracker.applications.server.ts` |
 | `/api/medschools/me/tracker/applications/:id` | `DELETE` `PATCH` | `features/medschools/api/medschools.me.tracker.applications.$id.server.ts` |
 | `/api/medschools/me/tracker/applications/:id/milestones/:type` | `DELETE` `PUT` | `features/medschools/api/medschools.me.tracker.applications.$id.milestones.$type.server.ts` |
 | `/api/medschools/me/tracker/cycle` | `DELETE` `PUT` | `features/medschools/api/medschools.me.tracker.cycle.server.ts` |
+| `/api/medschools/me/tracker/import/parse` | `POST` | `features/medschools/api/medschools.me.tracker.import.parse.server.ts` |
+| `/api/medschools/me/tracker/import/save` | `POST` | `features/medschools/api/medschools.me.tracker.import.save.server.ts` |
 | `/api/medschools/schools` | `GET` | `features/medschools/api/medschools.schools.server.ts` |
 | `/api/medschools/schools/:slug` | `GET` | `features/medschools/api/medschools.schools.$slug.server.ts` |
 | `/api/medschools/schools/:slug/activity` | `GET` | `features/medschools/api/medschools.schools.$slug.activity.server.ts` |
 | `/api/medschools/schools/:slug/arrivals` | `GET` | `features/medschools/api/medschools.schools.$slug.arrivals.server.ts` |
 | `/api/medschools/schools/:slug/forecast` | `GET` | `features/medschools/api/medschools.schools.$slug.forecast.server.ts` |
 | `/api/medschools/schools/:slug/history` | `GET` | `features/medschools/api/medschools.schools.$slug.history.server.ts` |
+| `/api/medschools/schools/:slug/secondaries` | `GET` | `features/medschools/api/medschools.schools.$slug.secondaries.server.ts` |
 | `/api/medschools/today` | `GET` | `features/medschools/api/medschools.today.server.ts` |
 
 ## `/api/memory`

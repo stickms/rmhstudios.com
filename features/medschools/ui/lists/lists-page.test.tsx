@@ -146,6 +146,14 @@ describe('ListsPage', () => {
       expect(html.match(/Add this list to my tracker/g)).toHaveLength(2);
     });
 
+    it('each list with schools has a closed Essay overlap disclosure, and an empty list has none', () => {
+      h.session = { user: { id: 'u1' } };
+      expect(render().match(/Essay overlap/g)).toHaveLength(2);
+      const empty = render({ lists: [{ id: 'e', name: 'Empty', position: 0, items: [] }] });
+      expect(empty).not.toContain('Essay overlap');
+      expect(render()).not.toMatch(/<details[^>]* open/);
+    });
+
     it('Preferences: the program set (four toggles), home state and the category toggles, at #preferences', () => {
       h.session = { user: { id: 'u1' } };
       const html = render();

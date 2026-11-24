@@ -10,12 +10,15 @@
  * has 40 and goes back to 25 when it is revoked; a decline blocks a new request for 30 days; a pending request is
  * one per member; the admin routes are 401 signed out and 403 for a member.
  *
- * It signs up no one. Sign-up is limited to 10 a minute per IP and the suite's other files already use most of that, so
- * the roles are the global cast's: alice is made an admin for this file (and put back in `afterAll`), bob is the free
- * member and, with his requests cleared in between, the declined one, and carol is the paying member.
+ * It signs up no one (sign-up is limited to 10 a minute per IP and the suite's other files already use most of that),
+ * and it does not borrow the global cast either: the app caches a member's tier for 60 s, so a cast member the earlier
+ * files already asked as would still read 'free' after this file gives them a Subscription row. The four roles are
+ * fresh members (`lib/fresh-member.ts`): an admin, a free member who is also the declined one (with his requests cleared
+ * in between) and a paying member. They are deleted in `afterAll`.
  */
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { Client, PASSWORD, closeDb, db, type TestUser } from './lib/client';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { Client, closeDb, db } from './lib/client';
+import { createFreshMember, removeFreshMembers, type FreshMember } from './lib/fresh-member';
 import { startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
 import { removeAskFixture, removeMedSchoolsFixture, seedAskFixture, seedMedSchoolsFixture } from './lib/medschools-fixture';
 
@@ -25,7 +28,7 @@ const REQ = '/api/medschools/me/qa-limit-request';
 const ADMIN_REQ = '/api/admin/medschools/qa-limit-requests';
 const DAY = 86_400_000;
 
-type Member = TestUser & { client: Client };
+type Member = FreshMember;
 
 interface Status {
   configured: boolean;
@@ -51,10 +54,6 @@ let paying: Member;
 let decline: Member;
 const everyone = () => [admin.id, free.id, paying.id, decline.id];
 const SUB_ID = 'it-sub-medschools-qa-limits';
-const cast = (name: 'alice' | 'bob' | 'carol'): Member => {
-  const u = inject(name);
-  return { ...u, client: new Client(u.cookies) };
-};
 
 /** Reservation rows (`medschools-qa-ask`) are the day's count; a priced row is Q&A spend. */
 async function insertRows(userId: string | null, n: number, cost = 0, promptId = 'medschools-qa-ask') {
@@ -91,14 +90,14 @@ const decide = (id: string, action: 'approve' | 'decline' | 'revoke', adminNote?
   admin.client.post(ADMIN_REQ, { id, action, ...(adminNote ? { adminNote } : {}) });
 
 beforeAll(async () => {
-  [admin, free, paying] = [cast('alice'), cast('bob'), cast('carol')];
+  // Made admin in the row itself, so the first session already carries the flag (a session's cookie cache keeps the
+  // flag it was created with).
+  admin = await createFreshMember('qa-admin', { isAdmin: true });
+  free = await createFreshMember('qa-free');
+  paying = await createFreshMember('qa-paying');
   decline = free;
-  // A session's cookie cache carries the admin flag it was created with, so flip it in the database and sign in again.
-  await db().query(`update "user" set "isAdmin" = true where id = $1`, [admin.id]);
-  admin.client = new Client();
-  const res = await admin.client.post('/api/auth/sign-in/email', { email: admin.email, password: PASSWORD });
-  expect(res.status).toBe(200);
-  // A paying member is a Subscription row, the one the Stripe webhook writes.
+  // A paying member is a Subscription row, the one the Stripe webhook writes. The member is new, so the app has not
+  // cached a tier for them yet and the first read sees it.
   await db().query(`insert into "Subscription" (id, plan, "referenceId", status) values ($1, 'starter', $2, 'active')`, [
     SUB_ID,
     paying.id,
@@ -107,10 +106,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await clearLedger();
-  await clearRequests();
+  if (admin && free && paying) {
+    await clearLedger();
+    await clearRequests();
+  }
   await db().query(`delete from "Subscription" where id = $1`, [SUB_ID]);
-  await db().query(`update "user" set "isAdmin" = false where id = $1`, [admin.id]);
+  await removeFreshMembers([admin, free, paying]);
   await closeDb();
 });
 

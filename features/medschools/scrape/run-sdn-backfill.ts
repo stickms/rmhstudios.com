@@ -25,6 +25,7 @@ import { SOURCES } from './sources';
 import type { BudgetGate } from './sdn/budget';
 import type { SdnAi } from './sdn/extract';
 import { processThread, type ThreadDeps } from './sdn/process-thread';
+import type { PromptSink } from './sdn/secondaries';
 import { addPendingCells, cellKey, readPendingCells } from './sdn/rollup-pending';
 import type { Logger, MedPrisma, MedSdnThreadRow } from './types';
 
@@ -56,6 +57,8 @@ export interface SdnBackfillDeps {
   maxPages?: number;
   /** Model calls per run (default 150). */
   maxLlmCalls?: number;
+  /** The secondary-prompt extractor (secondaries plan, Task 10); absent, a thread is read exactly as before. */
+  prompts?: PromptSink;
 }
 
 export interface SdnBackfillSummary {
@@ -652,6 +655,7 @@ export async function runSdnBackfill(
       },
       state,
       shouldStop: deps.shouldStop,
+      ...(deps.prompts ? { prompts: deps.prompts } : {}),
     };
     const parkedCutoff = now().getTime() - DAY_MS;
     const rows = await prisma.medSdnThread.findMany({
