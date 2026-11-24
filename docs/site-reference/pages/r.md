@@ -31,6 +31,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmh-medschool/ask` | Ask the data | public | `app/routes/_site/rmh-medschool/ask.tsx` |
 | `/rmh-medschool/lists` | My lists | public | `app/routes/_site/rmh-medschool/lists.tsx` |
 | `/rmh-medschool/live` | Live reported events \| RMH Med Schools | public | `app/routes/_site/rmh-medschool/live.tsx` |
+| `/rmh-medschool/practice` | Interview practice | public | `app/routes/_site/rmh-medschool/practice.tsx` |
 | `/rmh-medschool/tracker` | My tracker | public | `app/routes/_site/rmh-medschool/tracker.tsx` |
 | `/rmhbox-packs` | RMHBox Prompt Packs | public | `app/routes/_site/rmhbox-packs.tsx` |
 | `/rmhladder` | RMH Ladder \| Verified Early-Career Jobs | public | `app/routes/_site/rmhladder/index.tsx` |

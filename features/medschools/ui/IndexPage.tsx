@@ -71,21 +71,27 @@ export function IndexPage() {
 
   return (
     <PageLayout title={t('index-title', { defaultValue: 'RMH Med Schools' })}>
-      {signedIn ? (
-        <p className="t-meta m-0">
-          <Link to="/rmh-medschool/tracker" className="underline">
-            {t('index-my-tracker', { defaultValue: 'My tracker' })}
-          </Link>
-          {' · '}
-          <Link to="/rmh-medschool/ask" className="underline">
-            {t('index-ask', { defaultValue: 'Ask' })}
-          </Link>
-          {' · '}
-          <Link to="/rmh-medschool/lists" className="underline">
-            {t('index-my-lists', { defaultValue: 'My lists' })}
-          </Link>
-        </p>
-      ) : null}
+      <p className="t-meta m-0">
+        {signedIn ? (
+          <>
+            <Link to="/rmh-medschool/tracker" className="underline">
+              {t('index-my-tracker', { defaultValue: 'My tracker' })}
+            </Link>
+            {' · '}
+            <Link to="/rmh-medschool/ask" className="underline">
+              {t('index-ask', { defaultValue: 'Ask' })}
+            </Link>
+            {' · '}
+            <Link to="/rmh-medschool/lists" className="underline">
+              {t('index-my-lists', { defaultValue: 'My lists' })}
+            </Link>
+            {' · '}
+          </>
+        ) : null}
+        <Link to="/rmh-medschool/practice" className="underline">
+          {t('index-practice', { defaultValue: 'Interview practice' })}
+        </Link>
+      </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <SearchField
