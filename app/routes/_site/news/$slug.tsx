@@ -16,6 +16,8 @@ import { setResponseHeader } from '@tanstack/react-start/server';
 import { isAdminRequest } from '@/lib/auth/server-fn-guards.server';
 import { getNewsArticleBySlug, getRelatedNews } from '@/lib/news';
 import { storedSummary } from '@/lib/news-wire/summary.server';
+import { getDiscussionState } from '@/lib/news-wire/discussion.server';
+import { EMPTY_DISCUSSION } from '@/lib/news-wire/discussion';
 import { parsePassageSearch } from '@/lib/library/passage-search';
 import { buildCanonical, buildMeta, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
@@ -33,6 +35,7 @@ import { categoryLabel, NewsMeta, NewsPicture } from '@/components/news/NewsPart
 import { isNewsCategory } from '@/lib/news-wire/categorize';
 import { NewsStoryRow } from '@/components/news/NewsStoryRow';
 import { NewsSummary } from '@/components/news/NewsSummary';
+import { NewsDiscussion } from '@/components/news/NewsDiscussion';
 import { ExternalLink } from 'lucide-react';
 
 const fetchArticle = createServerFn({ method: 'GET' })
@@ -48,13 +51,21 @@ const fetchArticle = createServerFn({ method: 'GET' })
     }
     const { summary: rawSummary, discordMessageId: _discord, ...rest } = article;
     void _discord;
-    const [story, related] = await Promise.all([
+    const [story, related, discussion] = await Promise.all([
       // L5: "Part of story: X" is part of the server HTML, so it never shifts the layout.
       getStoryForArticle(slug),
       getRelatedNews(article.category, slug, 5),
+      // The public counts only (no viewer): this HTML is cached for every anonymous reader.
+      getDiscussionState(slug, null),
     ]);
     // The cached summary rides in the HTML; a missing one is requested by the browser after paint, never here.
-    return { ...rest, summary: storedSummary({ summary: rawSummary }), story, related };
+    return {
+      ...rest,
+      summary: storedSummary({ summary: rawSummary }),
+      story,
+      related,
+      discussion: discussion ?? EMPTY_DISCUSSION,
+    };
   });
 
 export const Route = createFileRoute('/_site/news/$slug')({
@@ -187,6 +198,8 @@ function NewsArticlePage() {
             <ArticleBody kind="news" slug={slug} content={article.content} title={article.title} passage={passage} />
           </>
         )}
+
+        <NewsDiscussion slug={slug} initial={article.discussion} />
 
         {/* Below the body, after the reader has the article. Renders nothing for members / un-consented visitors; see
             lib/ads/adsense.ts. */}

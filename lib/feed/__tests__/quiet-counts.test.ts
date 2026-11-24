@@ -537,6 +537,11 @@ const EXEMPT: Record<string, string> = {
   'lib/bulk/types.ts': "bulk-action filters on one's own posts",
   'lib/trash/trash.server.ts': "the member's own bin",
   // Writes, ranking and zeros: no number leaves for another viewer.
+  // RMH News discussions: the only post read is the RMH News account's own, and that site account never hides its numbers.
+  'lib/news-wire/discussion.ts': "the RMH News account's discussion post (a site account that never quiets its counts)",
+  'lib/news-wire/discussion.server.ts':
+    "the RMH News account's discussion post (a site account that never quiets its counts)",
+  'lib/news-wire/feed-pick.server.ts': 'ranking which story to feature; no number leaves for a viewer',
   'lib/admin/sweeps.ts': 'a sweep’s own tally of the replies it removes, not a count on any post',
   'lib/admin/sweeps.server.ts': 'a sweep’s own tally of the replies it removes, not a count on any post',
   'lib/feed/api/rmharks.server.ts': 'creating a post: zeros, and the quote card goes through mapQuotedOriginal',
