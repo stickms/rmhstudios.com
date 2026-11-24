@@ -5,12 +5,15 @@ import { MAX_TEXT } from '../engine/secondaries/text';
 import { buildSchoolView, type StoredPrompt } from '../engine/secondaries/view';
 import {
   importSchoolPages,
+  ensureSchoolPagesImported,
+  SCHOOL_PAGES_JOB,
   isThirdPartyHost,
   promptsOf,
   schoolPagesFileSchema,
   type SchoolPagesFile,
 } from './school-pages';
 import { createFakePrisma } from './test-support';
+import shipped from '../../../data/medschools/school-pages.json';
 import type { MedSecondaryObservationRow, MedSecondaryPromptRow } from './types';
 
 const read = <T>(name: string): T =>
@@ -169,7 +172,9 @@ describe('importSchoolPages', () => {
     await importSchoolPages(fake.prisma, file(entry({ checkedOn: '2026-12-01' })), log);
     const obs = fake.tables.medSecondaryObservation as MedSecondaryObservationRow[];
     for (const o of obs) expect(o.lastCheckedAt).toEqual(new Date('2026-12-01T00:00:00Z'));
-    expect((fake.tables.medSecondaryCheck as { checkedAt: Date }[])[0]!.checkedAt).toEqual(new Date('2026-12-01T00:00:00Z'));
+    expect((fake.tables.medSecondaryCheck as { checkedAt: Date }[])[0]!.checkedAt).toEqual(
+      new Date('2026-12-01T00:00:00Z'),
+    );
   });
 
   it('puts a page that names no cycle in the cycle in progress on the day it was read', async () => {
@@ -239,5 +244,37 @@ describe('importSchoolPages', () => {
     const c = entry();
     c.secondary.url = null;
     expect(bad(c)).toBe(false);
+  });
+});
+
+describe('ensureSchoolPagesImported (worker bootstrap)', () => {
+  const logs = { info: () => undefined, warn: () => undefined, error: () => undefined };
+
+  it('imports a new file once, and a restart with the same file does nothing', async () => {
+    const fake = setup();
+    const raw = file(entry());
+    expect(await ensureSchoolPagesImported(fake.prisma, raw, logs)).toBe('imported');
+    const runs = () =>
+      (fake.tables.medSourceRun as Array<{ job: string; status: string }>).filter((r) => r.job === SCHOOL_PAGES_JOB);
+    expect(runs().map((r) => r.status)).toEqual(['OK']);
+    expect(await ensureSchoolPagesImported(fake.prisma, raw, logs)).toBe('current');
+    expect(runs()).toHaveLength(1);
+  });
+
+  it('a changed file imports again', async () => {
+    const fake = setup();
+    await ensureSchoolPagesImported(fake.prisma, file(entry()), logs);
+    const changed = file({ ...entry(), checkedOn: '2026-11-24' });
+    expect(await ensureSchoolPagesImported(fake.prisma, changed, logs)).toBe('imported');
+  });
+
+  it('an invalid file imports nothing and records no run', async () => {
+    const fake = setup();
+    expect(await ensureSchoolPagesImported(fake.prisma, { schools: 'nope' }, logs)).toBe('invalid');
+    expect((fake.tables.medSourceRun as unknown[] | undefined) ?? []).toHaveLength(0);
+  });
+
+  it('the shipped data file is valid', () => {
+    expect(schoolPagesFileSchema.safeParse(shipped).success).toBe(true);
   });
 });

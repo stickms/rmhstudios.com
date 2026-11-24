@@ -63,6 +63,8 @@ import { admitHistoryOwed, runAdmitHistory } from '../../features/medschools/scr
 import admitAliasesJson from '../../data/medschools/admit-aliases.json';
 import sdnAliasesJson from '../../data/medschools/sdn-aliases.json';
 import sdnForumsJson from '../../data/medschools/sdn-forums.json';
+import schoolPagesJson from '../../data/medschools/school-pages.json';
+import { ensureSchoolPagesImported } from '../../features/medschools/scrape/school-pages';
 import { runSdnLive, sdnBackfillOwed, type SdnForumsFile } from '../../features/medschools/scrape/run-sdn-live';
 import { runSdnBackfill } from '../../features/medschools/scrape/run-sdn-backfill';
 import { runSdnInterviews } from '../../features/medschools/scrape/run-sdn-interviews';
@@ -766,6 +768,13 @@ async function bootstrap(): Promise<boolean> {
       if (sdnIgnored > 0) log.info(`Bootstrap: pre-ignored ${sdnIgnored} unmapped SDN stems`);
     } catch (e) {
       log.error(`Bootstrap: SDN alias seed failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    // The curated school pages (secondary prompts and admissions facts, read by hand from each school's own site):
+    // imported once per version of the file, so a deploy needs no operator step. Own try/catch, like the seeds above.
+    try {
+      await ensureSchoolPagesImported(medPrisma, schoolPagesJson, log);
+    } catch (e) {
+      log.error(`Bootstrap: school pages import failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     return (
       CYCLETRACK_ENABLED &&

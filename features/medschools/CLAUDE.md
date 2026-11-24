@@ -232,12 +232,11 @@ Model and privacy first, then the UI. The plan's decision numbers (D1-D12) and r
   and `inviteChance` is null for a target past it (which also puts 10 at risk at the caller's week); the request maps
   `elapsed` to its week and the horizon to whole weeks, so every day of a week has one answer. No curve with fewer than
   10 invite events (`KM_MIN_INVITES`) on top of 20 members. `runWaitCurves` replaces a stored row only when invites or
-  members moved by at least 3 (`KM_REFRESH_DELTA`, `worthRefreshing`); a row is CREATED only at 23 members and 13 invites
-  (`KM_CREATE_MEMBERS`/`KM_CREATE_INVITES`, `worthCreating`: hysteresis, so delete-below-20-then-recreate-at-20 cannot
-  yield a figure one member from the last); below any floor the row is deleted at once, and a
-  row in an older shape is rebuilt. The chance is rounded to the nearest 5%, the basis down to 10. An end date before
-  COMPLETE drops the observation; a COMPLETE in the future is status `not-complete-yet`. All constants in
-  `engine/stats/constants.ts`.
+  members moved by at least 3 (`KM_REFRESH_DELTA`, `worthRefreshing`); a row is CREATED only at 23 members and 13
+  invites (`KM_CREATE_MEMBERS`/`KM_CREATE_INVITES`, `worthCreating`: hysteresis, so delete-below-20-then-recreate-at-20
+  cannot yield a figure one member from the last); below any floor the row is deleted at once, and a row in an older
+  shape is rebuilt. The chance is rounded to the nearest 5%, the basis down to 10. An end date before COMPLETE drops the
+  observation; a COMPLETE in the future is status `not-complete-yet`. All constants in `engine/stats/constants.ts`.
 - **Each category ends on its own day.** `cycleEndOn(cycleYear, type)` is the day before `cycleYearOf` rolls the type
   over: secondaries May 31, interviews June 30, decisions (acceptance, waitlist, rejection) August 31. The forecast job
   draws each category to its own end, so the path, the total and `halfDay` match the implied total; the response's
@@ -403,14 +402,15 @@ Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner a
 - **School pages: one-time import (no scraper).** `data/medschools/school-pages.json` (221 schools, each school's own
   secondary and admissions pages, read by hand and verified verbatim on 2026-11-23; a header records source and method)
   is validated by `scrape/school-pages.ts` (https, school-owned hosts only, every slug in the registry) and loaded by
-  `scripts/medschools/import-school-pages.ts`: `SCHOOL` observations (`sourceRef` the page url; a page naming no cycle
+  the medschools worker at start (`ensureSchoolPagesImported`, bundled into the worker like the other seed files; a
+  `MedSourceRun` with job `school-pages-import` and the file's hash is the done flag, so it runs once per version of the
+  file and a deploy needs no operator step): `SCHOOL` observations (`sourceRef` the page url; a page naming no cycle
   goes in the cycle in progress on the check date), one `MedSecondaryCheck` per school and one
   `MedSchoolAdmissionsPolicy` per school and program where the page says whether decisions are rolling. Idempotent. The
   tab shows "Rolling admissions" or "Decisions on set dates", the quote and "Source: <school> admissions page, checked
-  <date>". One prompt in the file (Mayo) is a whole-page blob over the 1500 character limit; the store rejects it and
-  the summary counts it. **Production import (one-off, in the web container, which carries `data/`):**
-  `docker compose exec web pnpm exec tsx scripts/medschools/import-school-pages.ts` (add `--dry-run` to validate only).
-  It needs `DATABASE_URL` (already set there) and is safe to rerun.
+  <date>". `scripts/medschools/import-school-pages.ts` runs the same import by hand from a full checkout (it needs `tsx`
+  and the `features/` source, which the production web image does not carry; `--dry-run` validates only). Editing the
+  file and deploying is the way to change the data in production: the worker re-imports a changed file at start.
 - **Turnaround.** The tracker's `SECONDARY` milestone reads "Secondary received" and `SECONDARY_SUBMITTED` ("Secondary
   submitted") is offered; it is never shared as a public event (`SHAREABLE`, `share-sync.test.ts`, the integration
   suite). The daily forecast job (`scrape/run-turnaround.ts`, after the wait curves) writes `MedSecondaryTurnaround`:
@@ -426,56 +426,57 @@ Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner a
 
 ## Tracker import (owner 2026-11-23)
 
-A member uploads a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` (2 MB), or pastes text; DeepSeek flash reads it into tracker
-dates; the member reviews a preview and presses "Add to my tracker". Endpoints `POST me/tracker/import/parse` (multipart
-`file` or JSON `{ text }`; `parseMedImportFileApi` / `parseMedImportTextApi`) and `POST me/tracker/import/save`
-(`saveMedImportApi`), both signed in and `no-store`.
+A member uploads a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` (2 MB), or pastes text; DeepSeek flash reads it into
+tracker dates; the member reviews a preview and presses "Add to my tracker". Endpoints `POST me/tracker/import/parse`
+(multipart `file` or JSON `{ text }`; `parseMedImportFileApi` / `parseMedImportTextApi`) and
+`POST me/tracker/import/save` (`saveMedImportApi`), both signed in and `no-store`.
 
 - **Bounded input.** The body is read as a stream with a byte cap (`api/import/body.server.ts`: 2 MB plus form overhead,
   chunked uploads included). `.xlsx`/`.docx` are read by `lib/zip/bounded-zip.server.ts`, which inflates with a real
   limit (the sizes an archive declares are the sender's) and a per-file total; sheet XML is walked by a linear `indexOf`
-  scanner (`elements()` in `xlsx.server.ts`) with caps on rows, cells and strings, because the lazy regexes it replaced were
-  quadratic. A PDF read has a wall-clock deadline, the request signal and a page cap.
-- **Only dates, and nothing is kept.** The file is read in memory (`api/import/extract.server.ts`, the generalised resume
-  reader plus `xlsx.server.ts` and a CSV parser), its cleaned text goes to one call under the `medschools-import` task
-  (prompt `MEDSCHOOLS_IMPORT`), and the preview is returned. No bytes, text or filename is stored, cached or logged (the log
-  line is counts and a status); the only trace is the text-free `AiUsage` row. The model's `notes` is read by nothing.
-  Pinned by `api/import/privacy.server.test.ts` and the integration test's scan of every table.
-- **The server is the validator** (`api/import/validate.ts`, pure): the envelope and each row and date are checked on their
-  own; a date is kept only when its `raw` quote is in the text AND holds a date token that reads as exactly that month and day
-  (`rawSupportsDate`: ISO year-first, M/D/Y, D/M, or a month name either way round; two numbers that merely appear never
-  count) and a school name is shown only if the text holds it (else "Unrecognised school" and the picker); an invented date is dropped and
-  counted in `dropped`; a year the file never wrote is chosen by the cycle rules (`engine/import.ts`, `inferYear`, flagged
-  `yearInferred`); a numeric date that reads two ways is flagged `ambiguous`; the date must be inside the cycle's window;
-  schools resolve by written name and alias, never by a slug from the model (no unique match: `school: null`, the member
-  picks). The cycle is the one most dated milestones belong to, else the model's hint, else the current one.
-- **Gates are the Q&A's** (`admitQuestion`, `api/qa/lease.server.ts` `runUnderLease`): rate limit `ai`, `isAiConfigured`,
-  the shared monthly pause, the member's allowance, then one of the day's questions and the in-flight lease. One import is
-  one daily question; spend counts against the Q&A share; admin bypass and the pause apply. A reply the server cannot read as JSON
-  (cut off at the token limit, or prose) is a fixed-message 503 `AI_UNAVAILABLE` (`UnreadableReplyError`, never the parser's
-  message, which quotes the model's echo of the file) and refunds the day's question (`Reservation.refund()`); a provider
-  failure or the deadline does not (the call was made). The model gets at most 300 rows (`IMPORT_LIMITS.rows`), returns at
-  most 60 schools and may use 8000 output tokens. A file the reader cannot read
-  (415 `MEDSCHOOLS_IMPORT_UNSUPPORTED`), over 2 MB (413 `..._TOO_LARGE`) or with no digit or no date found (422
-  `..._EMPTY`) ends before, or without spending, the model call where it can. The sentences are in
+  scanner (`elements()` in `xlsx.server.ts`) with caps on rows, cells and strings, because the lazy regexes it replaced
+  were quadratic. A PDF read has a wall-clock deadline, the request signal and a page cap.
+- **Only dates, and nothing is kept.** The file is read in memory (`api/import/extract.server.ts`, the generalised
+  resume reader plus `xlsx.server.ts` and a CSV parser), its cleaned text goes to one call under the `medschools-import`
+  task (prompt `MEDSCHOOLS_IMPORT`), and the preview is returned. No bytes, text or filename is stored, cached or logged
+  (the log line is counts and a status); the only trace is the text-free `AiUsage` row. The model's `notes` is read by
+  nothing. Pinned by `api/import/privacy.server.test.ts` and the integration test's scan of every table.
+- **The server is the validator** (`api/import/validate.ts`, pure): the envelope and each row and date are checked on
+  their own; a date is kept only when its `raw` quote is in the text AND holds a date token that reads as exactly that
+  month and day (`rawSupportsDate`: ISO year-first, M/D/Y, D/M, or a month name either way round; two numbers that
+  merely appear never count) and a school name is shown only if the text holds it (else "Unrecognised school" and the
+  picker); an invented date is dropped and counted in `dropped`; a year the file never wrote is chosen by the cycle
+  rules (`engine/import.ts`, `inferYear`, flagged `yearInferred`); a numeric date that reads two ways is flagged
+  `ambiguous`; the date must be inside the cycle's window; schools resolve by written name and alias, never by a slug
+  from the model (no unique match: `school: null`, the member picks). The cycle is the one most dated milestones belong
+  to, else the model's hint, else the current one.
+- **Gates are the Q&A's** (`admitQuestion`, `api/qa/lease.server.ts` `runUnderLease`): rate limit `ai`,
+  `isAiConfigured`, the shared monthly pause, the member's allowance, then one of the day's questions and the in-flight
+  lease. One import is one daily question; spend counts against the Q&A share; admin bypass and the pause apply. A reply
+  the server cannot read as JSON (cut off at the token limit, or prose) is a fixed-message 503 `AI_UNAVAILABLE`
+  (`UnreadableReplyError`, never the parser's message, which quotes the model's echo of the file) and refunds the day's
+  question (`Reservation.refund()`); a provider failure or the deadline does not (the call was made). The model gets at
+  most 300 rows (`IMPORT_LIMITS.rows`), returns at most 60 schools and may use 8000 output tokens. A file the reader
+  cannot read (415 `MEDSCHOOLS_IMPORT_UNSUPPORTED`), over 2 MB (413 `..._TOO_LARGE`) or with no digit or no date found
+  (422 `..._EMPTY`) ends before, or without spending, the model call where it can. The sentences are in
   `components/errors/refusal-sentence.ts`; the view renders every refusal through `useRefusalText`.
 - **Save** (`importMilestones` in `api/tracker.server.ts`) goes through share-sync's row writers in one `withShared`
-  transaction, so a date is shared only if the cycle's sharing is already on and only the shareable types. The body names
-  schools by slug and never an application, cycle or user (strict schema). Conflict rule: an existing different date is
-  kept unless that date carries `overwrite: true`; the same date is `unchanged`; an out-of-window date or a school that is
-  not active is `invalid`. A cycle is created (unshared) only when the first school needs it.
+  transaction, so a date is shared only if the cycle's sharing is already on and only the shareable types. The body
+  names schools by slug and never an application, cycle or user (strict schema). Conflict rule: an existing different
+  date is kept unless that date carries `overwrite: true`; the same date is `unchanged`; an out-of-window date or a
+  school that is not active is `invalid`. A cycle is created (unshared) only when the first school needs it.
 - **UI (`ui/tracker/import/`).** "Import from a file" on the tracker opens `TrackerImport` (a `lazy` chunk, so it is off
   the tracker's critical path); while open it is the whole view, so "Add to my tracker" is the one ink primary (R4). The
   upload uses `api(parseMedImportFileApi, { body: FormData })` (`lib/contract/client.ts` sends multipart with no
-  content-type), so no raw `fetch` was added. `model.ts` holds every rule the preview applies (pure, tested): which dates
-  are new, same, conflicting or invalid, what `saveBody` writes (an unticked row or date is simply absent), and
-  `retarget` when the cycle changes (a year the file wrote stays; a hand-edited date is final). `ImportPreview.tsx` is rows
-  on rules, 44 px targets on touch, the picker for an unmatched school. Strings are `import-*` keys. A file the browser
-  can see is unsupported or too large is refused before it is sent, with the server's own sentence.
-- **Tests.** Unit: `pnpm exec vitest run features/medschools/ui/tracker/import features/medschools/api/import
-  features/medschools/engine/import.test.ts features/medschools/api/tracker-import.server.test.ts`. Black box:
-  `testing/integration/medschools-import.test.ts` (fake provider, needs `MEDSCHOOLS_DEDUPE_SECRET` for the sharing case).
-  Visual: `visual-check.mjs --fake-ai --page import`.
+  content-type), so no raw `fetch` was added. `model.ts` holds every rule the preview applies (pure, tested): which
+  dates are new, same, conflicting or invalid, what `saveBody` writes (an unticked row or date is simply absent), and
+  `retarget` when the cycle changes (a year the file wrote stays; a hand-edited date is final). `ImportPreview.tsx` is
+  rows on rules, 44 px targets on touch, the picker for an unmatched school. Strings are `import-*` keys. A file the
+  browser can see is unsupported or too large is refused before it is sent, with the server's own sentence.
+- **Tests.** Unit:
+  `pnpm exec vitest run features/medschools/ui/tracker/import features/medschools/api/import features/medschools/engine/import.test.ts features/medschools/api/tracker-import.server.test.ts`.
+  Black box: `testing/integration/medschools-import.test.ts` (fake provider, needs `MEDSCHOOLS_DEDUPE_SECRET` for the
+  sharing case). Visual: `visual-check.mjs --fake-ai --page import`.
 
 ## Testing and verification
 
