@@ -2,8 +2,8 @@
  * RMH Datacenter — the overview.
  *
  * On the site's own design language: `PageLayout`, the shared tab strip, and
- * glass by role (`Card`for repeated content,`.`for the singular
- * panels). The section shipped first as a microsite with its own palette,
+ * the divider primitives (`Section`, `Cells`, `Columns`; S7 to S11) for every
+ * group, with rows on rules rather than boxes. The section shipped first as a microsite with its own palette,
  * typography and chrome; that was a second design system inside one product,
  * and every figure on it had to be re-styled to say what a figure says
  * everywhere else. The numbers now come from `--site-*` like every other number
@@ -17,8 +17,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Check } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Cells, Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { CAMPUSES, FLEET_PUE, TOTAL_MW } from '@/lib/datacenter/campuses';
 import { CapacityMeter } from './CapacityMeter';
 import { DatacenterTabs } from './DatacenterTabs';
@@ -88,8 +88,8 @@ export default function HomePage() {
     >
       <DatacenterTabs active="/rmh-datacenter" />
 
-      <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="rounded-site p-5 sm:p-6">
+      <div className="px-4 pt-4 pb-12">
+        <Section>
           <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="min-w-0">
               <h2 className="t-heading">
@@ -137,9 +137,9 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-        </section>
+        </Section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Cells columns={4} className="mt-6">
           <Stat
             label={t('stat-sites-label', { defaultValue: 'Campuses' })}
             value={String(CAMPUSES.length)}
@@ -161,9 +161,9 @@ export default function HomePage() {
             value="99.999%"
             note={t('stat-uptime-desc', { defaultValue: 'Power and cooling availability SLA' })}
           />
-        </div>
+        </Cells>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('s01-kicker', { defaultValue: 'The floor' })}
             heading={t('s01-heading', {
@@ -189,22 +189,22 @@ export default function HomePage() {
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
 
-        <section>
+        <Section>
           <SectionHeading
             kicker={t('s02-kicker', { defaultValue: 'Platform' })}
             heading={t('s02-heading', {
               defaultValue: 'Five ways to take delivery of the same building',
             })}
           />
-          <div className="mt-4 grid gap-3">
+          <ul className="mt-4">
             {platform.map((p) => (
-              <Card key={p.hash} interactive className="p-0">
+              <li key={p.hash} className="border-b border-site-border">
                 <Link
                   to="/rmh-datacenter/platform"
                   hash={p.hash}
-                  className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:gap-6"
+                  className="row-hover flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-6"
                 >
                   <span className="w-20 shrink-0 text-xs font-medium text-site-accent">
                     {p.code}
@@ -217,25 +217,25 @@ export default function HomePage() {
                   </span>
                   <ArrowRight className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                 </Link>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </ul>
+        </Section>
 
-        <section>
+        <Section>
           <SectionHeading
             kicker={t('s03-kicker', { defaultValue: 'Campuses' })}
             heading={t('s03-heading', {
               defaultValue: 'Six sites, and none of them a leased suite',
             })}
           />
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Cells columns={3} className="mt-4">
             {CAMPUSES.slice(0, 3).map((c) => (
-              <Card key={c.id} interactive className="p-0">
+              <li key={c.id}>
                 <Link
                   to="/rmh-datacenter/facilities"
                   hash={c.id}
-                  className="flex flex-col gap-3 p-4"
+                  className="row-hover flex flex-col gap-3"
                 >
                   <span className="text-site-accent">
                     <HallDiagram spec={c.hall} className="h-20 w-full" label="" />
@@ -253,9 +253,9 @@ export default function HomePage() {
                     pressure={c.pressure}
                   />
                 </Link>
-              </Card>
+              </li>
             ))}
-          </div>
+          </Cells>
           <div className="mt-4">
             <Button asChild variant="default">
               <Link to="/rmh-datacenter/facilities">
@@ -264,9 +264,9 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
-        </section>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('cta-kicker', { defaultValue: 'Next step' })}
             heading={t('cta-heading', { defaultValue: 'Tell us the load, not the product name' })}
@@ -290,7 +290,7 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
-        </section>
+        </Section>
       </div>
     </PageLayout>
   );

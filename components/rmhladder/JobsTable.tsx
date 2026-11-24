@@ -5,7 +5,6 @@ import type { JobActionValue } from '@/lib/rmhladder/server/actions';
 import { ARRIVE, useArrivingKeys } from '@/components/ui/arrive';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDateShort } from '@/lib/core/format';
 import { cn } from '@/lib/utils';
 import { PayBadge } from './PayBadge';
@@ -162,12 +161,12 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
         {t('ladder.resultsCount', { defaultValue: '{{count}} verified jobs', count: rows.length })}
       </p>
 
-      <div className="space-y-3 md:hidden">
+      <div className="md:hidden">
         {rows.map((row) => {
           const job = jobFields(row);
           return (
-            <Card key={job.id} className={cn('gap-4 py-5', isNew(job.id) && ARRIVE)}>
-              <CardHeader className="gap-3 px-5">
+            <div key={job.id} className={cn('grid gap-4 border-b border-site-border py-5', isNew(job.id) && ARRIVE)}>
+              <div className="grid gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <VerificationBadge status={job.verification?.status} />
                   <Badge variant="default">
@@ -180,13 +179,13 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                   )}
                 </div>
                 <button type="button" className="text-left" onClick={() => onRowClick(row)}>
-                  <CardTitle className="text-base leading-snug text-site-text">
+                  <span className="block text-base leading-snug font-semibold tracking-tight text-site-text">
                     {job.title}
-                  </CardTitle>
+                  </span>
                   <p className="mt-1 text-sm font-medium text-site-text-muted">{job.company}</p>
                 </button>
-              </CardHeader>
-              <CardContent className="space-y-3 px-5">
+              </div>
+              <div className="space-y-3">
                 <p className="flex items-center gap-2 text-sm text-site-text-muted">
                   <MapPin className="size-4" aria-hidden />
                   {job.location}
@@ -198,8 +197,8 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                     {t('ladder.relevance', { defaultValue: 'Relevance' })}: {row.finalRelevance}
                   </span>
                 </div>
-              </CardContent>
-              <CardFooter className="flex-wrap justify-between gap-2 px-5">
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <JobActions
                   jobId={job.id}
                   userAction={row.userAction}
@@ -223,8 +222,8 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                     </a>
                   </Button>
                 )}
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>

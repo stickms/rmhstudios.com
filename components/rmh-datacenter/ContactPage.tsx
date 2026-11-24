@@ -20,8 +20,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Cells, Columns, Notice, Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -89,18 +89,18 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
     >
       <DatacenterTabs active="/rmh-datacenter/contact" />
 
-      <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="rounded-site p-5 sm:p-6">
+      <div className="px-4 pt-4 pb-12">
+        <Section>
           <p className="max-w-prose text-site-text-muted">
             {t('con-lede', {
               defaultValue:
                 'Kilowatts, cabinets, where your users are and what you have to be compliant with. That is enough to answer with the halls that fit — and the ones that do not, which is usually the more useful half.',
             })}
           </p>
-        </section>
+        </Section>
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          <Card className="p-4">
+        <Columns>
+          <div>
             <SectionHeading
               kicker={t('con-desks', {
                 defaultValue: 'Desks',
@@ -139,8 +139,8 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
                 abuse@rmhdatacenter.com
               </SpecRow>
             </dl>
-          </Card>
-          <Card className="p-4">
+          </div>
+          <div>
             <SectionHeading
               kicker={t('con-response', {
                 defaultValue: 'What happens next',
@@ -161,11 +161,11 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
                   'Site tours run on weekday mornings and are escorted by the engineer who runs that floor. Bring photo ID that matches the name on the request.',
               })}
             </p>
-          </Card>
-        </div>
+          </div>
+        </Columns>
 
         {sent ? (
-          <section className="rounded-site border border-site-accent p-5 sm:p-6" role="status">
+          <Notice tone="success">
             <h2 className="text-xl font-semibold text-site-text">
               {t('con-sent-heading', {
                 defaultValue: 'Handed to your mail client',
@@ -177,10 +177,10 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
                   'Your enquiry was composed as an email to capacity@rmhdatacenter.com — send it from there and an engineer replies within two working days. If no mail window opened, your browser has no mail client registered: copy what you wrote to that address instead.',
               })}
             </p>
-          </section>
+          </Notice>
         ) : null}
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('con-form-kicker', {
               defaultValue: 'Capacity request',
@@ -277,9 +277,9 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
               </p>
             </div>
           </form>
-        </section>
+        </Section>
 
-        <section>
+        <Section>
           <SectionHeading
             kicker={t('con-faq-kicker', {
               defaultValue: 'Asked first, usually',
@@ -288,7 +288,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
               defaultValue: 'Four answers before you write',
             })}
           />
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Cells columns={2} className="mt-4">
             {[
               [
                 t('con-q1', {
@@ -327,13 +327,13 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
                 }),
               ],
             ].map(([q, a]) => (
-              <Card key={q} className="flex flex-col gap-2 p-4">
+              <li key={q} className="flex flex-col gap-2">
                 <h3 className="text-lg font-semibold text-site-text">{q}</h3>
                 <p className="text-sm text-site-text-muted">{a}</p>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </Cells>
+        </Section>
       </div>
     </PageLayout>
   );

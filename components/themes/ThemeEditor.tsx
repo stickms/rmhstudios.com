@@ -158,14 +158,14 @@ export function ThemeEditor({
 
           {/* Contrast guardrails */}
           {issues.length > 0 ? (
-            <ul className="rounded-site border border-site-warning/40 bg-site-warning/5 p-4 text-xs text-site-warning">
+            <div className="border-b border-site-border py-3"><ul className="space-y-1 text-xs text-site-warning">
               {issues.map((i) => (
                 <li key={i.pair}>
                   {knownLabel(pairLabels, i.pair) ?? i.pair}:{' '}
                   {i.ratio}:1 ({t('contrast-need', { defaultValue: 'need' })} {i.need}:1)
                 </li>
               ))}
-            </ul>
+            </ul></div>
           ) : (
             <p className="text-xs text-site-success">
               {t('gate-pass', { defaultValue: 'Passes contrast checks ✓' })}

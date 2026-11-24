@@ -18,6 +18,7 @@ import { Link } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
 import { appealStrikeApi } from '@/lib/moderation/standing.contract';
 import { accountStandingQuery } from '@/lib/moderation/standing.queries';
+import { Notice } from '@/components/ui/rules';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -228,7 +229,7 @@ export function AccountStandingPanel() {
         </dl>
 
         {standing.banned && (
-          <div className="rounded-site border border-site-danger/20 bg-site-danger/10 px-4 py-3">
+          <Notice tone="danger">
             <p className="text-sm font-semibold text-site-danger">
               {t('standing-suspended', {
                 defaultValue: 'Account suspended',
@@ -248,7 +249,7 @@ export function AccountStandingPanel() {
                 })}
               </p>
             )}
-          </div>
+          </Notice>
         )}
       </SettingsSection>
 

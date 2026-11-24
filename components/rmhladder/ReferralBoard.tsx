@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -138,12 +137,12 @@ export function ReferralBoard() {
                 {t('rb-mine', { defaultValue: 'Your offers' })}
               </h2>
               {data.mine.map((o) => (
-                <Card key={o.id} className="gap-3 py-4">
-                  <CardHeader className="flex-row items-center justify-between gap-2 px-5">
-                    <CardTitle className="text-base">
+                <div key={o.id} className="grid gap-3 border-b border-site-border py-4">
+                  <div className="flex flex-row items-center justify-between gap-2">
+                    <div className="text-base font-semibold tracking-tight">
                       {o.companyName}{' '}
                       <span className="font-normal text-site-text-muted">· {o.roles}</span>
-                    </CardTitle>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={o.status === 'open' ? 'success' : 'default'}>
                         {o.status === 'open'
@@ -163,8 +162,8 @@ export function ReferralBoard() {
                         </Button>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 px-5">
+                  </div>
+                  <div className="space-y-2">
                     {o.requests.length === 0 ? (
                       <p className="text-sm text-site-text-muted">
                         {t('rb-no-requests', { defaultValue: 'No requests yet.' })}
@@ -208,8 +207,8 @@ export function ReferralBoard() {
                         </div>
                       ))
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </section>
           )}
