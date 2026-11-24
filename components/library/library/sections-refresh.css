@@ -942,8 +942,7 @@
     height: 40px;
   }
   .lib-reader__eyebrow,
-  .lib-reader__desktop-action,
-  .lib-reader__count {
+  .lib-reader__desktop-action {
     display: none;
   }
   .lib-reader__identity .lib-reader__title {
