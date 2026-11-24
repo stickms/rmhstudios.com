@@ -59,6 +59,9 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   'void-breaker',
   // The `--app-*` full-screen app tier
   'rmhbox',
+  // RMH Med Schools: `rmh-medschool.tsx` + `rmh-medschool/**`, the layout and its pages (owner, roadmap item 11;
+  // see the note beside `medschools` above).
+  'rmh-medschool',
   'rmhmusic',
   'rmhstudy',
   'rmhtube',
@@ -110,6 +113,11 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   // The games library — a literal Steam palette, flat, in `components/steam/steam.css`
   // (`--stm-*` tokens); no site glass, jelly or `--site-*` surfaces.
   'steam',
+  // RMH Med Schools: a full-screen app, in the `--app-*` tier with its own paper palette (`--app-med-*`,
+  // `features/medschools/ui/medschools.css`). Owner decision, roadmap item 11 (approved 2026-11-23, moved up and
+  // confirmed 2026-11-24): the redesign replaces the Steel treatment of these pages. The admin UI that used to share
+  // `features/medschools/ui/` moved to `components/admin/medschools/` and stays Steel.
+  'medschools',
 ]);
 
 /** Top-level route trees that are full-screen experiences, not `_site` pages. */

@@ -5,7 +5,7 @@ import { parseLiveSearch, validateLiveSearch } from '@features/medschools/engine
 import { liveSearchOf, loadPrefs, prefetchLivePage } from '@features/medschools/medschools.queries';
 import { LivePage } from '@features/medschools/ui/LivePage';
 
-export const Route = createFileRoute('/_site/rmh-medschool/live')({
+export const Route = createFileRoute('/rmh-medschool/live')({
   head: definePage({
     path: '/rmh-medschool/live',
     title: 'Live reported events | RMH Med Schools | RMH Studios',

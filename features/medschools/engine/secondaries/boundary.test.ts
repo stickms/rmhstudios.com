@@ -49,13 +49,16 @@ describe('engine/secondaries boundaries', () => {
 
   it('the client imports only cycle-ranges and theme-ids from engine/secondaries', () => {
     const offenders: string[] = [];
-    const dirs = [join(ROOT, 'ui'), 'app/routes/_site/rmh-medschool'].filter((d) => {
+    const dirs = [join(ROOT, 'ui'), 'app/routes/rmh-medschool'].filter((d) => {
       try {
         return statSync(d).isDirectory();
       } catch {
         return false;
       }
     });
+    // Both roots must exist: the routes moved out of `_site/` (roadmap item 11), and a missing root would leave this
+    // boundary checking nothing while the test stayed green.
+    expect(dirs).toHaveLength(2);
     for (const dir of dirs) {
       for (const file of walk(dir)) {
         if (!/\.(ts|tsx)$/.test(file) || /\.test\.(ts|tsx)$/.test(file)) continue;

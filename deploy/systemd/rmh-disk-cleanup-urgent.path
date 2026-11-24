@@ -1,0 +1,23 @@
+# rmhstudios — start a root disk cleanup when a deploy asks for one.
+#
+# deploy.sh runs sandboxed (ProtectSystem=strict) and cannot clean core dumps, journald,
+# the apt cache or stale temp files. When it is short of disk it writes a request file
+# here — a directory inside the repo checkout, which the sandbox can write and root can
+# read — and rmh-disk-cleanup-urgent.service does the cleanup as root. The service
+# validates the request strictly and only ever runs the safe cleanup (deploy/disk-cleanup.sh).
+#
+# ── Install (once, as root) ──────────────────────────────────────────────────
+#   sudo cp deploy/systemd/rmh-disk-cleanup-urgent.{path,service} /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now rmh-disk-cleanup-urgent.path
+# ─────────────────────────────────────────────────────────────────────────────
+[Unit]
+Description=rmhstudios urgent disk cleanup requested by a deploy
+
+[Path]
+# Repo checkout path on the VPS (deploy.sh REPO_DIR) + /.deploy-run (gitignored).
+PathExists=/home/rmhstudios/rmhstudios.com/.deploy-run/disk-request
+Unit=rmh-disk-cleanup-urgent.service
+
+[Install]
+WantedBy=multi-user.target

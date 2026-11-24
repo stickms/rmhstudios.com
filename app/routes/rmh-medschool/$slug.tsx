@@ -8,7 +8,7 @@ import { SchoolPage } from '@features/medschools/ui/SchoolPage';
 type SchoolHeadData = SchoolHead | null;
 type SchoolParams = { slug: string };
 
-export const Route = createFileRoute('/_site/rmh-medschool/$slug')({
+export const Route = createFileRoute('/rmh-medschool/$slug')({
   validateSearch: validateSchoolSearch,
   // Only `tab` and `type` defaults are stripped: `program` and `show` absent means "the viewer's preferences",
   // present (even the default) is a choice (D14).

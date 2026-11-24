@@ -102,6 +102,8 @@ MODULE.bazel.lock
 
 # deploy.sh content-addressed build-skip hashes (host-local)
 .deploy/
+# deploy.sh <-> root disk-cleanup request/answer files (rmh-disk-cleanup-urgent.path)
+.deploy-run/
 .prisma-engines/
 
 # Sphinx / Read the Docs local builds

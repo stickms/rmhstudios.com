@@ -11,7 +11,7 @@ public pages (phase 3) read it.
 
 ## What is public (phase 3)
 
-Signed-out readable, in the `_site` shell (Steel), not a full-screen app:
+Signed-out readable, in the full-screen app frame of the redesign (see "Design"), not the `_site` shell:
 
 | Route                  | Page                                                                                           |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
@@ -36,6 +36,41 @@ but not an aggregate of tracker rows: see "AI Q&A (phase 6)".
 (`lib/search/catalog.ts`), **not** in the games/apps catalog. There is no `catalog.ts`, no card art, no image manifest
 row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts` pins this. `/rmh-medschool` and
 `/rmh-medschool/live` are `STATIC_ROUTES` in `lib/sitemap.ts`; school pages are the `medschools` sitemap chunk.
+
+## Design: a full-screen app (roadmap item 11, phase A)
+
+Owner-approved 2026-11-23 and moved up 2026-11-24 (roadmap item 11; Steel §18 D13 is answered by it). The pages left the
+`_site` Steel shell for the `--app-*` app tier, so the Steel content rules (rows on rules, no radius, no shadow) **no
+longer govern this feature**; the admin page does not move with it (`components/admin/medschools/`, still Steel). Plan:
+`docs/superpowers/plans/2026-11-24-rmh-medschool-redesign.md`.
+
+- **Routes.** `app/routes/rmh-medschool.tsx` is a top-level layout (`MedApp` around an `<Outlet/>`, its own
+  `errorComponent` and `notFoundComponent`, no auth gate); the pages are `app/routes/rmh-medschool/*` with unchanged
+  URLs. `features/medschools` is in `FULLSCREEN_TIER_DIRS` and `rmh-medschool` in `FULLSCREEN_ROUTE_SEGMENTS`
+  (`eslint-local-rules/design-scope.js`) and in `APP_TIER_DIRS` (`lib/__tests__/css-tiers.ts`, so the CSS stays under
+  the `!important`, keyframes and hex gates). `/rmh-medschool` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes
+  the lean site stylesheet, not the app superset (`--app-*` utilities are already in it).
+- **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, the live rail at >= 1280px), `MedTopBar`
+  (44px round back button, always present: the session's history, else `/services` from the index and the index from
+  everywhere else; Fraunces title; the light/dark toggle), `useMedMode` and `ThemeToggle`. The Steel shell's overlays
+  (command palette, "/" shortcut, what's-new) are not here, as in the other apps; the margin takeover entry is gone and
+  `ActivityRail` is mounted by `MedApp`.
+- **Mode.** Light or dark, device-local (`rmh-medschool-mode`, `{"dark":boolean}`, `engine/mode.ts`), defaulting to the
+  OS preference; it does not follow the site Day/Night edition. RMH Music's design: `APP_ROUTE_THEME_BG` entry, the
+  `lib/prepaint/theme-routes.ts` list, the device registry, `data-app-dark`.
+- **Tokens (`ui/medschools.css`).** `--app-*` for light and dark; `--app-med-*` for the wash, the seven status pairs
+  (`swatch`, `ink`, `text`; plus a neutral `withdrawn`) and the chart series (`-n` line, `-n-fill` pastel fill). Every
+  colour is a token (the hex gate strips only `--app-*` declarations). A `--site-*` **bridge** points the Steel names at
+  this palette (and `--site-chart-n` at `--app-med-chart-n`), also on `<html>` while the app is open so portaled dialogs
+  match; phase B restyles the components onto `--app-*` and the bridge goes when the last one has moved.
+- **Type.** Body is DM Sans (the site font); Fraunces for headings only (`--app-font-display`), self-hosted
+  (`app/fonts/fraunces.css`, preloaded by the layout).
+- **The wash.** `public/images/medschools/wash-{light,dark}.webp`, pre-rendered by `scripts/medschools/render-wash.mjs`
+  from the mockup's blobs; a `background-image` of `.medapp-page`, in the flow, never fixed, never animated, fading to
+  the exact ground at each tile's top and bottom (iOS fills its bars from the ground). Dropped under
+  `prefers-reduced-data`.
+- **Left for B.** The pages keep their Steel markup (`PageLayout`, `t-*`); B1 to B3 restyle them. `PageLayout`'s own
+  title and back link duplicate the top bar until then.
 
 ## The read rules (`engine/public-read.ts`, pure and client-safe)
 
@@ -381,8 +416,8 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
 - **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
   `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
   (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
-  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred
-  (R13): a question may name a state and an interview format instead.
+  The admin page is `components/admin/medschools/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed
+  (R1); embeddings deferred (R13): a question may name a state and an interview format instead.
 - **Tests.** Unit:
   `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
   `testing/integration/medschools-ask.test.ts` with `testing/integration/lib/fake-deepseek.ts` (the app is started with
@@ -519,8 +554,8 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
 
 ## Testing and verification
 
-- Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds Steel, i18n
-  and bundle rules for every ui file and the three routes.
+- Unit: colocated `*.test.ts(x)` (`pnpm exec vitest run features/medschools`); `ui/ui-rules.test.ts` holds the app-tier,
+  i18n and bundle rules for every ui file and the route files.
 - Black box, public: `testing/integration/medschools-public.test.ts` (pinned key sets, no RMH or `contributors` in
   responses, no hashes in the HTML, the `programs` set on the index and live feed, the removed "today" block, 404 for
   unknown slugs, sitemap). It writes its own fixture school; CI's database is empty.
@@ -549,8 +584,9 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   `localStorage['rmh-style']` (`graphite` is Night), but a signed-in visit paints the ACCOUNT's saved edition over the
   device's (`lib/prepaint/account-seed.ts`), and the idle sync saves whatever the last visit used, so a Night pass that
   follows a Day pass paints Day on the tracker and lists pages unless the account is set first
-  (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they are ordinary
-  `_site` pages and `lib/prepaint/theme-routes.ts` does not exclude them.
+  (`PUT /api/preferences/appearance`; the script does). Nothing is wrong with Night on these routes: they were ordinary
+  `_site` pages when this was written; since phase A they are an app route whose light/dark is `rmh-medschool-mode`, so
+  `visual-check.mjs` still asserts Steel R1 and edition classes and is due an update (phase B).
 - **Ask pages in the visual pass (phase 6).** `visual-check.mjs --fake-ai` also shoots the Ask page (signed out, idle,
   answered, partial, declined, my-chance, the wait, the cap reached and the 429 refusal) and the school page's panel
   (idle, answered). It hosts the fake DeepSeek of `testing/integration/lib/fake-deepseek.ts` itself, so the app must be
@@ -575,11 +611,11 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
   preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/rmh-medschool/lists` holds
   the lists and the preferences (`#preferences`).
-- **Activity rail.** `components/shell/margin-takeover.ts` maps a path prefix to a lazy rail that replaces the shell
-  margin's search and lists (>= 1280px only; neither rendered nor fetched below). `ui/rail/ActivityRail.tsx` uses
-  `useLiveFeed` (60 s head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to
-  load older pages: data loading only, so B3's no-decorative-observer rule is untouched. Server side it is the live
-  endpoint with `q` (name, short name or an exact state code), `state` and `types`.
+- **Activity rail.** `ui/shell/MedApp.tsx` mounts the lazy rail beside the page (>= 1280px only; neither rendered nor
+  fetched below; it used to be the Steel shell's margin takeover). `ui/rail/ActivityRail.tsx` uses `useLiveFeed` (60 s
+  head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to load older pages: data
+  loading only, so B3's no-decorative-observer rule is untouched. Server side it is the live endpoint with `q` (name,
+  short name or an exact state code), `state` and `types`.
 - **When results arrive.** `GET /schools/$slug/arrivals`: weekday and Eastern-hour counts and per-cycle first and median
   report days, aggregated in SQL from ADMIT and SDN events with an exact time (SDN midnights are day-only and excluded).
   Aggregates only; a cycle needs 3 events; the arrays are empty (and the section hidden) under 10 events.

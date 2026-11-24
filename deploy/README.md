@@ -22,7 +22,7 @@ Terraform DNS config.
 | `docker/`                        | Docker daemon config / helpers                                      |
 | `postgres/`                      | Postgres tuning + host setup (DB runs on the host, reached via `host.docker.internal`) |
 | `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
-| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service` |
+| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-disk-cleanup-urgent.{path,service}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service` |
 | `terraform/`                     | Cloudflare **DNS** as code — see [`terraform/README.md`](./terraform/README.md) |
 | `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | idempotent host/CDN tuning helpers with `VERIFY_ONLY=1` drift checks |
 | `disk-report.sh`, `move-docker-storage.sh` | disk diagnostics + moving Docker's data-root onto a separate volume |
@@ -164,6 +164,33 @@ never touches `:latest`, `:rollback`, a running container's image or anything in
 directory, and does nothing while a deploy holds the lock. Builds happen on GitHub's runners
 with a registry cache, so none of this slows a build or a pull. Anything it cannot safely
 automate is listed in the journal (`journalctl -u rmh-disk-cleanup.service`).
+
+**Deploys ask for more space themselves.** The webhook's sandbox stops `deploy.sh` from
+touching host files (core dumps, journald, the apt cache, stale deploy temp files), so a
+second pair of units lets a deploy that is short of disk request a root cleanup:
+
+```bash
+sudo cp deploy/systemd/rmh-disk-cleanup-urgent.{path,service} /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now rmh-disk-cleanup-urgent.path
+```
+
+When free space is under `DEPLOY_HEADROOM_GB + DEPLOY_PULL_RESERVE_GB` after the gentle
+pass (and again if a pull dies on "no space left"), `deploy.sh` steps through these tiers
+and stops the moment the target is free, logging the free space after each:
+
+1. all BuildKit cache;
+2. host cleanup as root (`.deploy-run/disk-request` → `rmh-disk-cleanup-urgent.path` →
+   `disk-cleanup-urgent.sh` → `disk-cleanup.sh` with `DISK_CLEANUP_TARGET_GB`), itself
+   progressive: BuildKit cache, every core dump, journald down to 200M, apt clean, stale
+   deploy temp files (not the live lock or the running deploy's log), SHA release images
+   beyond the newest 2 per repository, then beyond the newest 1;
+3. rollback images trimmed to 1;
+4. every unused image (last resort; removes `:rollback`).
+
+The deploy waits up to `DEPLOY_HOST_CLEANUP_WAIT_SECONDS` (300) for the answer in
+`.deploy-run/disk-done`. The request is validated as `<integer> <hex nonce>` and the target
+is clamped to the disk size, so the root side can only ever run the safe cleanup. If the
+path unit is not installed the deploy logs the install line and carries on with tiers 1, 3
+and 4 as before. A refusal ("insufficient disk") names the host-cleanup outcome.
 
 The usual real culprit is non-Docker cruft in `/home` (dev-tool caches like
 `~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) that `docker system df` won't

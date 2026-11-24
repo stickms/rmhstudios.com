@@ -6,7 +6,7 @@ import { parseIndexSearch, validateIndexSearch } from '@features/medschools/engi
 import { indexQuery, listsQuery, loadPrefs, schoolsQuery } from '@features/medschools/medschools.queries';
 import { IndexPage } from '@features/medschools/ui/IndexPage';
 
-export const Route = createFileRoute('/_site/rmh-medschool/')({
+export const Route = createFileRoute('/rmh-medschool/')({
   head: definePage({
     path: '/rmh-medschool',
     title: 'RMH Med Schools | RMH Studios',
