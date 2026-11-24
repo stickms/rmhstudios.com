@@ -27,11 +27,13 @@ import {
   type TrackerDto,
 } from '../../medschools.contract';
 import { ME_KEY, chancesQuery, trackerQuery } from '../../medschools.queries';
+import { RollingSection } from '../rolling/RollingSection';
 import { OverlapSection } from '../secondaries/OverlapSection';
 import { SkeletonSwap } from '../skeletons';
 import { AddSchool } from './AddSchool';
 import { ApplicationRow } from './ApplicationRow';
 import { SharingRow } from './SharingRow';
+import { Timeline } from './Timeline';
 
 /** The import view is its own chunk: it loads when "Import from a file" is pressed, never with the tracker. */
 const TrackerImport = lazy(() => import('./import/TrackerImport'));
@@ -210,7 +212,9 @@ export function TrackerPage() {
                 <Button variant="primary" onClick={() => setAdding('cycle')}>
                   {t('tracker-cycle-add', { defaultValue: 'Add cycle' })}
                 </Button>
-                <Button onClick={() => setAdding('import')}>{t('import-open', { defaultValue: 'Import from a file' })}</Button>
+                <Button onClick={() => setAdding('import')}>
+                  {t('import-open', { defaultValue: 'Import from a file' })}
+                </Button>
               </div>
             }
           />
@@ -285,7 +289,9 @@ export function TrackerPage() {
         <div className="mt-6 flex items-center justify-between gap-3">
           <h2 className="t-heading m-0">{t('tracker-schools-heading', { defaultValue: 'Schools' })}</h2>
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => setAdding('import')}>{t('import-open', { defaultValue: 'Import from a file' })}</Button>
+            <Button onClick={() => setAdding('import')}>
+              {t('import-open', { defaultValue: 'Import from a file' })}
+            </Button>
             <Button variant="primary" onClick={() => setAdding('school')}>
               {t('tracker-add-school', { defaultValue: 'Add school' })}
             </Button>
@@ -341,9 +347,11 @@ export function TrackerPage() {
             ))}
           </ul>
         )}
+        {cycle.applications.length > 0 ? <Timeline applications={cycle.applications} /> : null}
         {/* the overlap reads the current cycle's schools, so it is offered on that cycle only */}
         {cycle.applications.length > 0 && cycle.cycleYear === cycleYearOf(new Date(), 'SECONDARY') ? (
           <div className="mt-6">
+            <RollingSection source={{ source: 'tracker' }} />
             <OverlapSection source={{ source: 'tracker' }} />
           </div>
         ) : null}

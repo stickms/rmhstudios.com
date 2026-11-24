@@ -10,7 +10,7 @@ import type { ChanceDto, ChanceStatus, MedChancesRes } from '../medschools.contr
 import { utcDayOf } from '../engine/public-read';
 import { CHANCE_HORIZONS } from '../engine/stats/constants';
 import { addDays, dayIndex } from '../engine/stats/days';
-import { inviteChance, type SurvivalCurve } from '../engine/stats/km';
+import { inviteChance, typicalWait, type SurvivalCurve } from '../engine/stats/km';
 import { getTracker } from './tracker.server';
 
 const day = (d: Date): string => d.toISOString().slice(0, 10);
@@ -100,6 +100,8 @@ export async function getChances(
       asOf: null,
       basis: null,
       points: [],
+      waitingWeeks: null,
+      typical: null,
       ...extra,
     });
     if (invitedOn) return dto('invited');
@@ -108,14 +110,18 @@ export async function getChances(
     // A COMPLETE date in the future is not a wait yet; it must not pick a week of the curve (R13).
     if (completeOn > today) return dto('not-complete-yet');
     const hit = curves.get(`${a.school.slug}|${a.program}`);
-    if (!hit) return dto('thin');
     const elapsed = Math.max(0, dayIndex(today) - dayIndex(completeOn));
+    const waitingWeeks = Math.floor(elapsed / 7);
+    if (!hit) return dto('thin', { waitingWeeks });
+    const basis = Math.max(20, Math.floor(hit.members / 10) * 10);
+    const range = typicalWait(hit.curve, hit.maxDay);
+    const typical = range ? { ...range, basis } : null;
     const points = CHANCE_HORIZONS.flatMap((h) => {
       const c = inviteChance(hit.curve, hit.maxDay, elapsed, h);
       return c === null ? [] : [{ on: addDays(today, h), percent: Math.round(100 * c) }];
     });
-    if (points.length === 0) return dto('beyond');
-    return dto('estimate', { asOf: hit.asOf, basis: Math.max(20, Math.floor(hit.members / 10) * 10), points });
+    if (points.length === 0) return dto('beyond', { waitingWeeks, typical });
+    return dto('estimate', { asOf: hit.asOf, basis, points, waitingWeeks, typical });
   });
   return { cycleYear: cycle.cycleYear, chances };
 }

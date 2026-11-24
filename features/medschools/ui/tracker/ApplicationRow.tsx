@@ -17,6 +17,7 @@ import type { ChanceDto, TrackerApplicationDto } from '../../medschools.contract
 import { useMedLabels } from '../labels';
 import { ChanceLine } from './ChanceLine';
 import { MilestoneForm } from './MilestoneForm';
+import { SilenceLine } from './SilenceLine';
 
 type Panel =
   { kind: 'none' } | { kind: 'milestone'; editing?: { type: MilestoneType; date: string } } | { kind: 'notes' };
@@ -185,6 +186,7 @@ export function ApplicationRow({
         </ul>
       ) : null}
 
+      <SilenceLine chance={chance} />
       <ChanceLine chance={chance} />
 
       {app.notes && panel.kind !== 'notes' ? <p className="t-meta m-0 mt-2 whitespace-pre-wrap">{app.notes}</p> : null}

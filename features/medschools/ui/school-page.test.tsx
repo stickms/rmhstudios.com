@@ -618,6 +618,8 @@ describe('Forecast tab', () => {
             asOf: '2026-11-19',
             basis: 20,
             points: [{ on: '2026-11-27', percent: 29 }],
+            waitingWeeks: null,
+            typical: null,
           },
         ],
       });
@@ -641,6 +643,8 @@ describe('Forecast tab', () => {
             asOf: null,
             basis: null,
             points: [],
+            waitingWeeks: null,
+            typical: null,
           },
         ],
       });

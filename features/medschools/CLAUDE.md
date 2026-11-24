@@ -281,6 +281,17 @@ tab component in `ui/`. The Forecast tab is `ui/ForecastTab.tsx` with `ui/charts
   Forecast chart (`SchoolChances.tsx`, which passes the site cycle the tab shows, not the newest tracker cycle). It is
   an addition: signed out, loading or failed, the page is whole without it.
 
+## Timeline and silence check (roadmap item 4)
+
+Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-timeline-silence.md`. On the tracker page, no new endpoint.
+`engine/timeline.ts` (pure, client-safe): `buildTimeline` turns the caller's own `TrackerApplicationDto` rows into one
+dated line with each step's wait since the step before it; `silenceOf` reads a `ChanceDto`. `getChances` now also
+returns `waitingWeeks` and `typical` (`halfWeek`, `mostWeek`, `lastWeek`, `basis`), derived from the one `MedWaitCurve`
+row it already read by `typicalWait` (`engine/stats/km.ts`): the first week the invite share reaches 50% and 80% of its
+value at `maxDay`, nothing read past `maxDay`; null when no step is in range. No new aggregate, the R13 floors
+unchanged. A school with no curve says "Not enough shared data for this school yet" and is never compared. UI:
+`ui/tracker/Timeline.tsx`, `SilenceLine.tsx` (under each row, above `ChanceLine`).
+
 ## AI Q&A (phase 6)
 
 `/rmh-medschool/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt
@@ -423,6 +434,19 @@ Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner a
 - **Verification.** `testing/integration/medschools-public.test.ts` and `-private.test.ts` (secondaries, overlap,
   turnaround floors); `scripts/medschools/visual-check.mjs` (`--page secondaries`, `--page overlap`) after
   `seed-visual.ts`.
+
+## Rolling guidance (roadmap item 5)
+
+"Where applying early matters": a native disclosure under each list and the tracker's current cycle
+(`ui/rolling/RollingSection.tsx`, query enabled only once opened) over presentational `RollingView`. Private, never
+cached `GET me/rolling` (`source=list&list=<id>` or `source=tracker`; `overlapQuery` validates it; another member's list
+is the same 404 as an unknown one), `api/rolling-guidance.server.ts`, which reads the caller's own items plus the public
+`MedSchoolAdmissionsPolicy` rows and nothing else; no fetch of a school's page. **A program never borrows the other's
+fact** (`engine/rolling.ts`, `policyProgramOf`): a PHD item or application reads the PHD row only, REG and ANY read the
+REG row only, and a missing row is "The school's page does not say". Order: rolling, set dates, unknown; inside each a
+tracker school with no step recorded first, then the member's own order. Wording is always "the school says" with the
+page's verbatim quote and a dated link, one neutral context sentence, no advice. Plan:
+`docs/superpowers/plans/2026-11-24-rmh-medschool-rolling-guidance.md`.
 
 ## Tracker import (owner 2026-11-23)
 

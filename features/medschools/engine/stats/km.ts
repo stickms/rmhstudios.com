@@ -125,3 +125,40 @@ export function inviteChance(c: SurvivalCurve, maxDay: number, elapsed: number, 
   const step = CHANCE_STEP_PERCENT / 100;
   return Math.round(Math.round(raw / step) * step * 100) / 100;
 }
+
+/** The share of the eventual invites that marks "half" and "most" in `typicalWait`. */
+export const TYPICAL_HALF = 0.5;
+export const TYPICAL_MOST = 0.8;
+
+/**
+ * Where the invites of a school fall in the wait, read only from the stored curve and cut at `maxDay` (the last week
+ * with at least 10 members at risk; past it nothing is read, R13). Let F(w) = 1 - S(w), the share invited by week w.
+ * Among the invites the curve sees by `maxDay` (F(maxDay)), `halfWeek` is the first week F reaches 50% of F(maxDay),
+ * `mostWeek` the first it reaches 80%. Both are whole weeks, because the curve's steps sit on multiples of 7, and
+ * `halfWeek <= mostWeek <= lastWeek`.
+ *
+ * This is a statement about invites that arrived inside the observed range, not about every applicant: members who
+ * were never invited, or were invited after `maxDay`, are in the curve as still waiting (censored), so the quantiles
+ * are conditional on an invite coming within `lastWeek` weeks. Null when the curve has no step within the range
+ * (nothing to compare against), so a thin school never gets a guessed number.
+ */
+export function typicalWait(
+  c: SurvivalCurve,
+  maxDay: number,
+): { halfWeek: number; mostWeek: number; lastWeek: number } | null {
+  if (maxDay <= 0) return null;
+  const last = 1 - survivalAt(c, maxDay);
+  if (!(last > 0)) return null;
+  const weekAt = (share: number): number | null => {
+    for (let i = 0; i < c.t.length; i++) {
+      const t = c.t[i] ?? 0;
+      if (t > maxDay) return null;
+      if (1 - (c.s[i] ?? 1) >= share * last - 1e-9) return Math.round(t / KM_BIN_DAYS);
+    }
+    return null;
+  };
+  const half = weekAt(TYPICAL_HALF);
+  const most = weekAt(TYPICAL_MOST);
+  if (half === null || most === null) return null;
+  return { halfWeek: half, mostWeek: most, lastWeek: Math.round(maxDay / KM_BIN_DAYS) };
+}
