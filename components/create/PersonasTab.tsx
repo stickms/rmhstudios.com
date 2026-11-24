@@ -152,6 +152,7 @@ export function PersonasTab() { const fmt = useLocaleFormat().number;
         coverUrl: p.avatarUrl ?? null,
         emoji: p.emoji,
         cta: t('chat', { defaultValue: 'Chat' }),
+        shape: 'square' as const,
         to: `/personas/${p.id}`,
         meta: personaMeta(p, true),
       })),
@@ -317,6 +318,7 @@ export function PersonasTab() { const fmt = useLocaleFormat().number;
                       </div>
                       <div
                         data-persona-avatar
+                        data-shape="square"
                         className="store-art store-row__art flex items-center justify-center text-3xl"
                       >
                         {p.avatarUrl ? (
