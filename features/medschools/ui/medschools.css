@@ -415,6 +415,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 1.2;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition: background-color 90ms var(--app-ease);
@@ -1102,9 +1103,9 @@
 }
 
 /* ── Controls (phase B3): buttons, fields, search, select, switch ────────── */
-/* One button shape: the chip. A ghost chip has no border or fill; a danger chip names its action in the danger colour. */
+/* One button shape: the chip. A ghost chip keeps the border but has no fill, so it still reads as a control beside text;
+   a danger chip names its action in the danger colour. */
 .medapp-chip--quiet {
-  border-color: transparent;
   background-color: transparent;
 }
 .medapp-chip--quiet:hover {
