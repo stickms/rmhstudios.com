@@ -10,17 +10,16 @@
  *  - a retired surface role: `surface-card` or `surface-panel` in that class text;
  *  - the retired wrapper: an import of `components/ui/card`.
  *
- * The frozen violators live in `steel-rules-baseline.ts`: per file, the wave that removes it and how many violations it
- * has now. A file may not exceed its recorded count (a new violation in an old file fails), a file not in the baseline
- * may not have one, a file whose count fell must lower its recorded number, and an entry with no violations left must be
- * deleted. To regenerate after a change, run `STEEL_RULES_UPDATE=1 pnpm exec vitest run lib/__tests__/steel-rules.test.ts`
- * and read the `STEEL_RULES_AT` lines it prints.
+ * The gate has no allowlist: every site-tier file is clean (the baseline of pages that still had boxes was worked
+ * down to nothing, one wave at a time, and deleted). Three kinds of element are not group boxes and are never flagged:
+ * a control, picture or overlay (by class marker or tag); a keycap (`kbd`), a `figure` (it holds a picture) and an
+ * element with an inline `style` colour (a swatch of the user's own colour); and a class string that uses the app-tier
+ * (`*-app-*`, `rounded-app*`) or a brand (`*-rebar-*`) palette, which is another tier's look (L8), not the site's.
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isSiteTier } from '../../eslint-local-rules/design-scope.js';
-import { STEEL_RULES_BASELINE } from './steel-rules-baseline';
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ['components', 'features', join('app', 'routes')];
@@ -43,7 +42,19 @@ export interface SteelRuleViolation {
 }
 
 /** Tags whose border is the control itself (or a picture, or a dialog), not a group box. */
-const CONTROL_TAGS = new Set(['Button', 'Input', 'Select', 'Textarea', 'button', 'input', 'select', 'textarea', 'img']);
+const CONTROL_TAGS = new Set([
+  'Button',
+  'Input',
+  'Select',
+  'Textarea',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'img',
+  'kbd',
+  'figure',
+]);
 const OVERLAY_TAG_PREFIXES = ['Dialog', 'Popover', 'Menu'];
 
 /** A class token, optionally behind variant prefixes (`md:`, `hover:`, `[&>*]:`). */
@@ -68,11 +79,17 @@ function isControlOrPicture(classes: string): boolean {
   return FIXED_H.test(classes) && FIXED_W.test(classes);
 }
 
-/** True when the element is a control, a picture or an overlay by its tag name. */
+/** An inline colour on the element: a swatch of a colour the user chose, which has to keep its own edge (S4). */
+const INLINE_COLOUR = /\bstyle=\{\{[^}]*\b(?:color|backgroundColor|background)\b/;
+
+/** True when the element is a control, a picture, a swatch or an overlay by its tag. */
 function isControlTag(tag: string): boolean {
   const name = /^<([A-Za-z][\w.]*)/.exec(tag)?.[1] ?? '';
-  return CONTROL_TAGS.has(name) || OVERLAY_TAG_PREFIXES.some((p) => name.startsWith(p));
+  return CONTROL_TAGS.has(name) || OVERLAY_TAG_PREFIXES.some((p) => name.startsWith(p)) || INLINE_COLOUR.test(tag);
 }
+
+/** App-tier (`rounded-app`, `text-app-*`) and brand (`border-rebar-*`) palettes belong to other tiers (L8). */
+const OTHER_PALETTE = /(?:^|\s)(?:\S*:)*(?:rounded-app|[a-z]+-app-|[a-z]+-rebar-)/;
 
 /** 1-based line number for a source index. */
 function lineAt(src: string, idx: number): number {
@@ -205,6 +222,7 @@ export function scanSteelRules(src: string, file: string): SteelRuleViolation[] 
 
   const check = (text: string, at: number) => {
     const line = lineAt(code, at);
+    if (OTHER_PALETTE.test(text)) return;
     if (RETIRED_ROLE.test(text)) {
       out.push({
         file,
@@ -318,6 +336,26 @@ describe('scanSteelRules (the scanner itself)', () => {
     const v = scanSteelRules("<div className={cn('border rounded-site', 'bg-site-bg-subtle')} />", 'x.tsx');
     expect(v).toEqual([]);
   });
+  it('does not flag a keycap, a figure or a swatch with an inline colour', () => {
+    expect(scanSteelRules('<kbd className="border rounded-site px-1">K</kbd>', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<figure className="m-0 border rounded-site"><img src="q" /></figure>', 'x.tsx')).toEqual([]);
+    expect(
+      scanSteelRules('<div className="border rounded-site p-5" style={{ color: fg, backgroundColor: bg }} />', 'x.tsx'),
+    ).toEqual([]);
+  });
+
+  it('does not flag a class string on the app-tier or a brand palette', () => {
+    expect(scanSteelRules('<div className="surface-card rounded-app p-4" />', 'x.tsx')).toEqual([]);
+    expect(scanSteelRules('<div className="surface-panel rounded-app-sm text-app-text" />', 'x.tsx')).toEqual([]);
+    expect(
+      scanSteelRules('<header className="rounded-site border border-rebar-line bg-rebar-paper" />', 'x.tsx'),
+    ).toEqual([]);
+  });
+
+  it('still flags a site-palette box and a bare surface-card', () => {
+    expect(scanSteelRules('<div className="border rounded-site border-site-border p-4" />', 'x.tsx')).toHaveLength(1);
+    expect(scanSteelRules('<div className="surface-card p-4" />', 'x.tsx')).toHaveLength(1);
+  });
 });
 
 describe('steel rules on the site tier', () => {
@@ -326,54 +364,17 @@ describe('steel rules on the site tier', () => {
     expect(SITE_FILES).toContain(join('components', 'feed', 'PageLayout.tsx'));
   });
 
-  it('no file outside the baseline has a violation (no new bordered group boxes, retired roles or ui/card imports)', () => {
-    const offenders: string[] = [];
-    for (const [file, violations] of scanAll()) {
-      if (STEEL_RULES_BASELINE[file] !== undefined) continue;
-      for (const v of violations) offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
-    }
-    expect(offenders, offenders.join('\n')).toEqual([]);
-  }, SCAN_TIMEOUT_MS);
-
-  it('no baselined file has more violations than its recorded count (the ratchet only goes down)', () => {
-    const byFile = scanAll();
-    const grew: string[] = [];
-    for (const [file, violations] of byFile) {
-      const entry = STEEL_RULES_BASELINE[file];
-      if (entry && violations.length > entry.count) {
-        grew.push(`${file}: ${violations.length} violations, recorded ${entry.count}. ${POINTER}`);
+  it(
+    'no site-tier file has a bordered group box, a retired surface role or a ui/card import',
+    () => {
+      const offenders: string[] = [];
+      for (const [file, violations] of scanAll()) {
+        for (const v of violations) offenders.push(`${file}:${v.line} ${v.kind}: ${v.detail}. ${POINTER}`);
       }
-    }
-    expect(grew, grew.join('\n')).toEqual([]);
-  }, SCAN_TIMEOUT_MS);
-
-  it('every baseline entry still matches its recorded count (a clean file leaves the list; a smaller count is lowered)', () => {
-    const byFile = scanAll();
-    const problems: string[] = [];
-    for (const [file, entry] of Object.entries(STEEL_RULES_BASELINE)) {
-      const now = byFile.get(file)?.length ?? 0;
-      if (now === 0) problems.push(`${file}: clean now, delete the entry`);
-      else if (now < entry.count)
-        problems.push(`${file}: ${now} violations now, lower its recorded count from ${entry.count}`);
-    }
-    expect(problems, problems.join('\n')).toEqual([]);
-  }, SCAN_TIMEOUT_MS);
-
-  it('every baseline entry names a wave and a positive count', () => {
-    const bad = Object.entries(STEEL_RULES_BASELINE).filter(
-      ([, e]) => !/^wave \d+$/.test(e.wave) || !Number.isInteger(e.count) || e.count < 1,
-    );
-    expect(bad.map(([f]) => f)).toEqual([]);
-  });
-
-  it('prints each violation when STEEL_RULES_UPDATE=1 (baseline regeneration only)', () => {
-    if (process.env.STEEL_RULES_UPDATE !== '1') return;
-    const lines: string[] = [];
-    for (const [file, violations] of scanAll()) {
-      for (const v of violations) lines.push(`STEEL_RULES_AT ${file}:${v.line}:${v.kind}`);
-    }
-    process.stdout.write(lines.join('\n') + '\n');
-  });
+      expect(offenders, offenders.join('\n')).toEqual([]);
+    },
+    SCAN_TIMEOUT_MS,
+  );
 });
 
 describe('steel rules in the stylesheet', () => {
