@@ -6,7 +6,7 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { Prefs } from './engine/prefs';
 import type { MilestoneType } from './engine/tracker';
 import type { importSaveBody, importTextBody } from './api/import-schemas';
-import type { askBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
+import type { askBody, followupsBody, limitDecisionBody, limitRequestBody } from './api/qa-schemas';
 import type {
   addApplicationBody,
   addListToTrackerBody,
@@ -623,6 +623,32 @@ export const askMedQuestionApi = endpoint<{ body: z.infer<typeof askBody>; res: 
 export const getMedAskStatusApi = endpoint<{ res: MedAskStatusRes }>()({
   method: 'GET',
   path: '/api/medschools/me/ask',
+});
+
+/* ------------------------- Interview prep (roadmap item 6) ------------------------- */
+
+/** Two or three follow-up questions, and where the caller stands on the day's questions. Nothing in it is stored. */
+export interface MedInterviewFollowupsRes {
+  followups: string[];
+  tier: MedQaTier;
+  /** Questions left today, this one counted; `null` for an admin. */
+  remainingToday: number | null;
+  dailyCap: number | null;
+  /** True when the call ran with thinking on. */
+  thinking: boolean;
+}
+
+/**
+ * Signed in. One generation is one of the member's daily Q&A questions and runs inside the Q&A share of the monthly
+ * budget: 429 `MEDSCHOOLS_QA_DAILY_CAP` or `MEDSCHOOLS_QA_BUSY`, 503 `MEDSCHOOLS_QA_PAUSED` or `AI_UNAVAILABLE`, 402
+ * `AI_BUDGET_EXCEEDED`, 403 for a suspended account, 400 for an unknown or inactive school. Never cached.
+ */
+export const postMedInterviewFollowupsApi = endpoint<{
+  body: z.infer<typeof followupsBody>;
+  res: MedInterviewFollowupsRes;
+}>()({
+  method: 'POST',
+  path: '/api/medschools/me/interview/followups',
 });
 
 /* ------------------------- Q&A limit requests (phase 6, R19) ------------------------- */

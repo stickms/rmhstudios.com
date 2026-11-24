@@ -692,6 +692,30 @@ export const MEDSCHOOLS_QA_ANSWER: PromptSpec = {
   forbid: ['As an AI', 'Here is', 'applicants'],
 };
 
+export const MEDSCHOOLS_INTERVIEW_FOLLOWUPS_ID = 'medschools-interview-followups';
+
+/**
+ * RMH Med Schools interview prep: follow-up questions an interviewer might ask. The user turn is
+ * `{ question, notes?, examples: string[] }` as data (`features/medschools/engine/followups.ts`): `examples` are other
+ * questions stored for the same school and are for style only. Output is filtered by `parseFollowups` (only strings that
+ * are questions survive), so this wording is guidance and not the only guard. Metered under the `medschools-qa` task.
+ */
+export const MEDSCHOOLS_INTERVIEW_FOLLOWUPS: PromptSpec = {
+  id: MEDSCHOOLS_INTERVIEW_FOLLOWUPS_ID,
+  version: 1,
+  task: 'medschools-qa',
+  instructions: [
+    'The input is JSON: { "question": string, "notes"?: string, "examples"?: string[] }. "question" is one medical school interview question. "notes" are what the applicant plans to say. "examples" are other interview questions, shown only so you can match their style.',
+    'Return ONLY a JSON object, no prose and no markdown:',
+    '{"followups":["...?","...?","...?"]}',
+    'Write 2 or 3 follow-up questions an interviewer might ask next, after hearing an answer to "question". If "notes" are given, let them shape what is asked next.',
+    'Every item is a question that ends with a question mark. Never write an answer, advice, feedback, a model response or a fact about any school, program or person.',
+    'Do not repeat the question or the examples. One sentence each, plain words, in the language of the question.',
+  ].join('\n'),
+  maxChars: 800,
+  forbid: ['As an AI', 'Here is'],
+};
+
 export const MEDSCHOOLS_IMPORT_ID = 'medschools-import';
 
 /**
@@ -766,6 +790,7 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   MEDSCHOOLS_SECONDARIES,
   MEDSCHOOLS_QA_ROUTE,
   MEDSCHOOLS_QA_ANSWER,
+  MEDSCHOOLS_INTERVIEW_FOLLOWUPS,
   MEDSCHOOLS_IMPORT,
   NEWS_SUMMARY,
 ] as const;

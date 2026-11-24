@@ -389,6 +389,21 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
   `DEEPSEEK_API_KEY=integration-fake`, `DEEPSEEK_BASE_URL=http://127.0.0.1:$INTEGRATION_AI_FAKE_PORT/v1`; the
   model-dependent cases skip without `INTEGRATION_AI_FAKE_PORT`, and CI sets it). Visual: `visual-check.mjs --fake-ai`.
 
+## Interview prep (roadmap item 6)
+
+Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-interview-prep.md`. Practice mode (`ui/practice/`:
+`PracticePanel`, `PracticeTimer`, `FollowupsSection`, presentational) is the school page's `?itab=practice` and
+`/rmh-medschool/practice` (general questions by program, noindex, `EXCLUDED_ROUTES`, readable signed out). Timer and
+picking are pure (`engine/practice.ts`); it starts only on the member's press and ticks on one 1 s interval. **Notes are
+component state:** not stored, not in localStorage, cleared on a new question. **General questions are a static
+versioned module** (`engine/general-questions.ts`, zod shape in `.schema.ts`, no table: nothing per user or school);
+text is i18n `gq-<id>`, and the dynamic keys are NOT found by `i18n:extract`, so add a key to
+`locales/en/medschools.json` by hand (the test checks it). **Follow-ups:** `POST me/interview/followups`
+(`api/qa/followups.server.ts`) reuses `admitQuestion` (shared budget fail closed, allowance, one daily question, lease),
+`runUnderLease`, the thinking switch and the `medschools-qa` task; the model sees only `{ question, notes?, examples }`
+(other stored questions of an active school), `parseFollowups` keeps only question-shaped strings (2 or 3, else
+unreadable and the day's question is refunded). Nothing is stored or logged beyond counts.
+
 ## Secondaries (owner 2026-11-23)
 
 Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner answers" override its rulings).

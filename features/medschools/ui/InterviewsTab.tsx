@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -12,6 +13,7 @@ import { CATEGORY_COLOR } from './charts/chartColors';
 import { useMedLabels } from './labels';
 import { OptionGroup } from './OptionGroup';
 import type { SchoolSearch, SetSchoolSearch } from './school-search';
+import { PracticePanel } from './practice/PracticePanel';
 import { SourceLinks } from './SourceLinks';
 
 type Row = { key: string; label: string; value: string };
@@ -67,6 +69,8 @@ export function InterviewsTab({
         return t('interviews-tab-questions', { defaultValue: 'Questions' });
       case 'format':
         return t('interviews-tab-format', { defaultValue: 'Format and feedback' });
+      case 'practice':
+        return t('interviews-tab-practice', { defaultValue: 'Practice' });
     }
   };
   return (
@@ -81,6 +85,8 @@ export function InterviewsTab({
         <Overview slug={slug} detail={detail} search={search} />
       ) : itab === 'questions' ? (
         <Questions detail={detail} />
+      ) : itab === 'practice' ? (
+        <Practice slug={slug} detail={detail} />
       ) : (
         <FormatAndFeedback detail={detail} />
       )}
@@ -224,6 +230,31 @@ function Overview({ slug, detail, search }: { slug: string; detail: MedSchoolDet
             );
           }),
       )}
+    </div>
+  );
+}
+
+/** Practice mode over this school's stored questions. Notes and the clock stay in the page. */
+function Practice({ slug, detail }: { slug: string; detail: MedSchoolDetailDto }) {
+  const { t } = useTranslation('medschools');
+  const questions = useMemo(
+    () => detail.questions.map((q, i) => ({ key: `q-${i}`, text: q.text })),
+    [detail.questions],
+  );
+  return (
+    <div className="flex flex-col gap-4">
+      {questions.length === 0 ? (
+        <EmptyState
+          title={t('practice-school-empty', { defaultValue: 'No questions have been collected for this school yet.' })}
+        />
+      ) : (
+        <PracticePanel questions={questions} slug={slug} />
+      )}
+      <p className="t-meta m-0">
+        <Link to="/rmh-medschool/practice" className="underline">
+          {t('practice-general-link', { defaultValue: 'General questions for any school' })}
+        </Link>
+      </p>
     </div>
   );
 }

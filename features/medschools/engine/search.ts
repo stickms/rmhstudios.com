@@ -28,7 +28,7 @@ export const showParam = (types: readonly MedEventType[]): string =>
     .map((t) => t.toLowerCase())
     .join(',');
 /** The Interviews tab's sub-tabs (`?itab=`); Overview is the default and is never written to the URL. */
-export const INTERVIEW_TABS = ['overview', 'questions', 'format'] as const;
+export const INTERVIEW_TABS = ['overview', 'questions', 'format', 'practice'] as const;
 export type InterviewTab = (typeof INTERVIEW_TABS)[number];
 export const SCHOOL_SEARCH_DEFAULTS = {
   tab: 'activity',
