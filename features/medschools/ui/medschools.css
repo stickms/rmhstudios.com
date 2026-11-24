@@ -365,8 +365,12 @@
 }
 .medapp-title {
   margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--app-font-display);
-  font-size: var(--app-med-text-section);
+  font-size: clamp(18px, 5.4vw, var(--app-med-text-section));
   font-weight: 600;
   line-height: 1.2;
   color: var(--app-text);
@@ -1004,8 +1008,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--app-med-space-5);
-  /* At least a screen tall, so switching to a shorter section (or one still loading) never shortens the document under
-     the reader and clamps the scroll back up the page. */
+}
+/* A section's body, under the section links: at least a screen tall, so switching to a shorter section (or one still
+   loading) never shortens the document under the reader and clamps the scroll back up the page. */
+.medapp-tabbody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
   min-block-size: 100dvh;
 }
 .medapp-tab {
@@ -1560,12 +1569,13 @@ input.medapp-field[type='date'] {
 /* A field with a button on the same line (the cycle and "Add cycle"): one height, one centre line. */
 .medapp-inline {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--app-med-space-2);
   min-inline-size: 0;
 }
 .medapp-inline > :first-child {
-  flex: 1 1 auto;
+  flex: 1 1 140px;
   min-inline-size: 0;
 }
 /* Fields side by side from 640px, stacked on a phone; each column the same width, aligned on their labels. */
@@ -2406,4 +2416,36 @@ span.medapp-check {
 }
 .medapp-plot--zoomed:active {
   cursor: grabbing;
+}
+
+/* One level of panel: a panel that lands inside another (the sign-in prompt in the Ask panel, an empty state in a
+   section) loses its own box and keeps only its spacing. */
+:is(.medapp-panel, .medapp-section--panel, .medapp-chart) :is(.medapp-panel, .medapp-section--panel) {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  padding-inline: 0;
+}
+
+/* On a phone the newest status takes its own line under the school, past the crest, so the name keeps the width. */
+@media (max-width: 479px) {
+  .medapp-row:has(> .medapp-latest) {
+    flex-wrap: wrap;
+    row-gap: var(--app-med-space-2);
+  }
+  .medapp-row:has(> .medapp-latest) > .medapp-row__body {
+    flex: 1 1 0;
+  }
+  .medapp-latest {
+    order: 3;
+    flex-basis: 100%;
+    max-inline-size: none;
+    padding-inline-start: 52px;
+  }
+  .medapp-latest__text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 6px;
+  }
 }

@@ -169,13 +169,15 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   out at render, never on a timer: the server and the hydrating render print the day.
 - **The rail:** its heading, search and the two multi-selects (event types, programs) are sticky inside the rail panel
   (`.medapp-rail-top`) while the list scrolls under them.
-- **Settings change in place (owner 2026-11-24):** every `navigate()` passes `replace: true, resetScroll: false`, the
-  section links `resetScroll={false}`; the filtered queries keep their previous answer while the next loads
-  (`placeholderData`: `keepPreviousData`, or `keepWithinSchool` so another school's figures never show), dimmed by
-  `SkeletonSwap`'s `stale` (`.medapp-stale`, opacity, `aria-busy`), never a skeleton; the loaders do not wait on a
-  search change (`waitUnlessStay(cause, …)`: `cause: 'stay'`), so the router's pending frame never replaces the page.
-  The live feed keeps one list across filter changes (`useLiveFeed` replaces its rows when the new filter's first page
-  lands). `ui/keep-place.test.ts` holds the static half.
+- **Settings change in place (owner 2026-11-24):** every `navigate()` first calls `holdScroll()` (`ui/hold-scroll.ts`:
+  the site's `useScrollRestoration` would otherwise read the new href as a fresh navigation and scroll to the top) and
+  passes `replace: true, resetScroll: false`; the section body (`.medapp-tabbody`) is at least a screen tall, so a
+  shorter section never clamps the scroll; the section links `resetScroll={false}`; the filtered queries keep their
+  previous answer while the next loads (`placeholderData`: `keepPreviousData`, or `keepWithinSchool` so another school's
+  figures never show), dimmed by `SkeletonSwap`'s `stale` (`.medapp-stale`, opacity, `aria-busy`), never a skeleton; the
+  loaders do not wait on a search change (`waitUnlessStay(cause, …)`: `cause: 'stay'`), so the router's pending frame
+  never replaces the page. The live feed keeps one list across filter changes (`useLiveFeed` replaces its rows when the
+  new filter's first page lands). `ui/keep-place.test.ts` holds the static half.
 
 ## The read rules (`engine/public-read.ts`, pure and client-safe)
 
@@ -236,6 +238,13 @@ ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays o
   is requested at a time and the last requests none (the `useTween.ts` entry in
   `lib/__tests__/raf-loop-allowlist.test.ts`), and `prefers-reduced-motion: reduce` makes it instant, which is M7's rule
   applied to this tween and nothing more. A clip keeps a mid-tween line inside the plot.
+- **Zoom and pan (owner 2026-11-24).** The five time charts pass their x `domain` to `ResponsivePlot`, which keeps a
+  view over it (`engine/chart-zoom.ts`: `zoomView`, `panView`, `clampView`, a 7-unit minimum) and hands it to `render`
+  and the probe's `x`; DailyBars zooms over its day indexes. Zoom: the three buttons over the plot (shown once
+  hydrated), `+` / `-` / `0` on the focused plot, a pinch or ctrl / cmd + wheel (a non-passive listener bound in the
+  wrapper's ref callback; a plain wheel scrolls the page). Pan: a mouse drag or two fingers once zoomed; one finger
+  still scrubs the probe (`touch-pan-y`). The view is component state, so a toggle or a setting keeps it. No charting
+  library: the SVG stays server-rendered and nothing is added to the bundle.
 - **Zero start (O7.4).** `withZeroStart` prepends a 0 at the cycle's first day (or the first report, if earlier) to
   every cumulative series, History included.
 - **Probe (O7.5).** Hover, touch or focus on the plot (`ResponsivePlot` in `ChartFrame.tsx`): a crosshair at the nearest
