@@ -38,9 +38,38 @@ export function deprioritizeModulePreloads(tags: readonly RouterManagedTag[]): R
   );
 }
 
+/**
+ * Marks every stylesheet link with a React 19 `precedence`, which makes it a resource React loads
+ * BEFORE it commits the render that needs it.
+ *
+ * Why. A route links its own sheet from `head()` (`import css from './x.css?url'`). A plain
+ * `<link rel="stylesheet">` does not gate the commit, so on a client navigation the new page
+ * rendered and painted unstyled for a frame (or many, on a slow link) before its sheet arrived and
+ * the layout snapped into place: services to med schools, anywhere to games. With a precedence the
+ * router's transition suspends until the sheet is in, so the old page stays on screen and the new
+ * one's first paint is styled; `RoutePending` takes over after 400 ms as for a slow loader. Hard
+ * loads are unchanged (the sheet is in the server HTML and render-blocking, and React hydrates it
+ * as the same resource). Every sheet shares the one group, so their order is the order the router
+ * emits them. React keeps a precedence sheet once it has inserted it, as Vite's chunk CSS already
+ * is, so a route's sheet stays loaded after you leave it.
+ */
+export function gateStylesheets(tags: readonly RouterManagedTag[]): RouterManagedTag[] {
+  return tags.map((tag) =>
+    tag.tag === 'link' && tag.attrs?.rel === 'stylesheet' && tag.attrs.href && tag.attrs.precedence === undefined
+      ? {
+          ...tag,
+          attrs: {
+            ...tag.attrs,
+            precedence: 'default',
+          },
+        }
+      : tag,
+  );
+}
+
 export function SiteHeadContent() {
   const staticDocument = useIsStaticDocument();
-  const all = deprioritizeModulePreloads(useTags());
+  const all = gateStylesheets(deprioritizeModulePreloads(useTags()));
   // A static document (lib/static-document.ts) boots no client app: no entry
   // module and nothing preloaded for one.
   const tags = staticDocument
