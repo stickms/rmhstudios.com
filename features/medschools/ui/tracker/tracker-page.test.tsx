@@ -400,8 +400,10 @@ describe('TrackerPage invite chance', () => {
     const current = cycleYearOf(new Date(), 'SECONDARY');
     const d = dto({ cycles: [current], cycle: { ...dto().cycle!, cycleYear: current } });
     expect(render(d, true, undefined, current)).toContain('Essay overlap');
+    expect(render(d, true, undefined, current)).toContain('Where applying early matters');
     const old = dto({ cycles: [current - 1], cycle: { ...dto().cycle!, cycleYear: current - 1 } });
     expect(render(old, true, undefined, current - 1)).not.toContain('Essay overlap');
+    expect(render(old, true, undefined, current - 1)).not.toContain('Where applying early matters');
     expect(render(d, true, undefined, current)).toContain(
       'Your secondary received and submitted dates are never shared as events.',
     );

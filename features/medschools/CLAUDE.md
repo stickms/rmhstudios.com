@@ -435,6 +435,19 @@ Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-secondaries.md` ("Owner a
   turnaround floors); `scripts/medschools/visual-check.mjs` (`--page secondaries`, `--page overlap`) after
   `seed-visual.ts`.
 
+## Rolling guidance (roadmap item 5)
+
+"Where applying early matters": a native disclosure under each list and the tracker's current cycle
+(`ui/rolling/RollingSection.tsx`, query enabled only once opened) over presentational `RollingView`. Private, never
+cached `GET me/rolling` (`source=list&list=<id>` or `source=tracker`; `overlapQuery` validates it; another member's list
+is the same 404 as an unknown one), `api/rolling-guidance.server.ts`, which reads the caller's own items plus the public
+`MedSchoolAdmissionsPolicy` rows and nothing else; no fetch of a school's page. **A program never borrows the other's
+fact** (`engine/rolling.ts`, `policyProgramOf`): a PHD item or application reads the PHD row only, REG and ANY read the
+REG row only, and a missing row is "The school's page does not say". Order: rolling, set dates, unknown; inside each a
+tracker school with no step recorded first, then the member's own order. Wording is always "the school says" with the
+page's verbatim quote and a dated link, one neutral context sentence, no advice. Plan:
+`docs/superpowers/plans/2026-11-24-rmh-medschool-rolling-guidance.md`.
+
 ## Tracker import (owner 2026-11-23)
 
 A member uploads a `.xlsx`, `.csv`, `.docx`, `.pdf` or `.txt` (2 MB), or pastes text; DeepSeek flash reads it into

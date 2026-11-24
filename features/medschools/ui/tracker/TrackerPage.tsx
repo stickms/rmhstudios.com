@@ -27,6 +27,7 @@ import {
   type TrackerDto,
 } from '../../medschools.contract';
 import { ME_KEY, chancesQuery, trackerQuery } from '../../medschools.queries';
+import { RollingSection } from '../rolling/RollingSection';
 import { OverlapSection } from '../secondaries/OverlapSection';
 import { SkeletonSwap } from '../skeletons';
 import { AddSchool } from './AddSchool';
@@ -350,6 +351,7 @@ export function TrackerPage() {
         {/* the overlap reads the current cycle's schools, so it is offered on that cycle only */}
         {cycle.applications.length > 0 && cycle.cycleYear === cycleYearOf(new Date(), 'SECONDARY') ? (
           <div className="mt-6">
+            <RollingSection source={{ source: 'tracker' }} />
             <OverlapSection source={{ source: 'tracker' }} />
           </div>
         ) : null}

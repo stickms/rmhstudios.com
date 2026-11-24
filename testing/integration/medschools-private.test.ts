@@ -161,6 +161,7 @@ const ME_ENDPOINTS: Array<[string, string, unknown?]> = [
   ['POST', '/api/medschools/me/lists/x/add-to-tracker', {}],
   ['GET', '/api/medschools/me/chances'],
   ['GET', '/api/medschools/me/secondaries/overlap?source=tracker'],
+  ['GET', '/api/medschools/me/rolling?source=tracker'],
   ['GET', '/api/medschools/me/prefs'],
   ['PUT', '/api/medschools/me/prefs', { chartCategories: [] }],
   ['POST', '/api/medschools/me/tracker/import/parse', { text: 'Duke submitted 2026-06-12' }],
@@ -964,6 +965,61 @@ describe('the essay overlap', () => {
     const none = await a.client.get(`${OVERLAP}?source=tracker`);
     expect(none.status).toBe(200);
     expect(none.body).toMatchObject({ groups: [], schoolCount: 0, withoutPrompts: [] });
+  });
+});
+
+/* --------------------------- rolling-admissions guidance (me/**) --------------------------- */
+
+describe('the rolling guidance', () => {
+  const ROLLING = '/api/medschools/me/rolling';
+  let listId = '';
+
+  beforeAll(async () => {
+    await seedMedSchoolsFixture();
+    const first = await a.client.post('/api/medschools/me/list-items', {
+      schoolSlug: MEDSCHOOL_FIXTURE_SLUG,
+      newListName: 'Alice rolling secret list',
+    });
+    expect(first.status, JSON.stringify(first.body)).toBe(200);
+    listId = first.body.id as string;
+  });
+  afterAll(async () => {
+    await a.client.delete(`/api/medschools/me/lists/${listId}`);
+  });
+
+  it('is 401 without a session and never publicly cached', async () => {
+    expect((await anon.get(`${ROLLING}?source=list&list=${listId}`)).status).toBe(401);
+    const ok = await a.client.get(`${ROLLING}?source=list&list=${listId}`);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('cache-control') ?? '').not.toMatch(/public|s-maxage/i);
+    expect(ok.headers.get('etag')).toBeNull();
+  });
+
+  it('answers with a pinned key set and no list name, id or user', async () => {
+    const res = await a.client.get(`${ROLLING}?source=list&list=${listId}`);
+    expect(Object.keys(res.body).sort()).toEqual(['cycleYear', 'entries', 'schoolCount', 'source']);
+    expect(res.body.schoolCount).toBe(1);
+    expect(res.body.entries).toHaveLength(1);
+    expect(Object.keys(res.body.entries[0]).sort()).toEqual(
+      ['checkedOn', 'degree', 'evidence', 'kind', 'program', 'schoolName', 'slug', 'submitted', 'url'].sort(),
+    );
+    const text = JSON.stringify(res.body);
+    for (const f of [listId, 'Alice rolling secret list', a.id, 'userId', 'position', 'note'])
+      expect(text).not.toContain(f);
+  });
+
+  it("another member's list is a 404 with the same body as an unknown id", async () => {
+    const foreign = await b.client.get(`${ROLLING}?source=list&list=${listId}`);
+    const unknown = await b.client.get(`${ROLLING}?source=list&list=does-not-exist`);
+    expect(foreign.status).toBe(404);
+    expect(unknown.status).toBe(404);
+    expect(JSON.stringify(foreign.body)).toBe(JSON.stringify(unknown.body));
+  });
+
+  it('rejects a list source with no list and a tracker source with one', async () => {
+    expect((await a.client.get(`${ROLLING}?source=list`)).status).toBe(400);
+    expect((await a.client.get(`${ROLLING}?source=tracker&list=${listId}`)).status).toBe(400);
+    expect((await a.client.get(`${ROLLING}`)).status).toBe(400);
   });
 });
 

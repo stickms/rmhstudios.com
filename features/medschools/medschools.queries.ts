@@ -16,6 +16,7 @@ import {
   getMedSchoolForecastApi,
   getMedSchoolHistoryApi,
   getMedSchoolSecondariesApi,
+  getMedRollingGuidanceApi,
   getMedSecondaryOverlapApi,
   getMedTrackerApi,
   listMedSchoolsApi,
@@ -118,6 +119,10 @@ export const overlapQuery = (q: { source: 'list'; list: string } | { source: 'tr
     { query: q },
     { staleTime: 60_000 },
   );
+
+/** What the member's own list or tracker schools say about rolling decisions. Personal, so under `ME_KEY` and never cached by the server. */
+export const rollingQuery = (q: { source: 'list'; list: string } | { source: 'tracker' }) =>
+  contractQuery([...ME_KEY, 'rolling', q] as const, getMedRollingGuidanceApi, { query: q }, { staleTime: 60_000 });
 
 /** The tracker for one cycle year, or the newest the user has when `cycle` is omitted. Never cached by the server. */
 export const trackerQuery = (cycle?: number) =>

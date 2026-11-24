@@ -154,6 +154,13 @@ describe('ListsPage', () => {
       expect(render()).not.toMatch(/<details[^>]* open/);
     });
 
+    it('each list with schools has a closed Where applying early matters disclosure, and an empty list has none', () => {
+      h.session = { user: { id: 'u1' } };
+      expect(render().match(/Where applying early matters/g)).toHaveLength(2);
+      const empty = render({ lists: [{ id: 'e', name: 'Empty', position: 0, items: [] }] });
+      expect(empty).not.toContain('Where applying early matters');
+    });
+
     it('Preferences: the program set (four toggles), home state and the category toggles, at #preferences', () => {
       h.session = { user: { id: 'u1' } };
       const html = render();
