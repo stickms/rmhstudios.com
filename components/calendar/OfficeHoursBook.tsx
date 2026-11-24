@@ -171,7 +171,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
               ? t('oh-upcoming-host', { defaultValue: 'Upcoming bookings' })
               : t('oh-upcoming-mine', { defaultValue: 'Your bookings' })}
           </h3>
-          <ul className="space-y-3">
+          <ul>
             {view.bookings.map((b) => (
               <BookingRow
                 key={b.id}

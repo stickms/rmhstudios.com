@@ -93,7 +93,7 @@ export function TranslatePage() {
           'Missing or untranslated strings for your language. Suggest wording and vote; admins review accepted ones.',
       })}
     >
-      <div className="max-w-3xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+      <div className="max-w-3xl space-y-[var(--site-section-gap)] pt-4 pb-12">
         {!session ? (
           <SignedOutPrompt
             icon={Languages}
@@ -178,7 +178,7 @@ export function TranslatePage() {
               />
             ) : (
               <>
-                <ul className={cn('space-y-3', arrival)}>
+                <ul className={arrival}>
                   {q.data.page.items.map((it) => (
                     <StringRow
                       key={`${locale}/${ns}/${it.key}/${offset}`}
@@ -247,7 +247,7 @@ function StringRow({
   const mine = item.suggestions.find((s) => s.mine);
   const [text, setText] = useState(mine?.text ?? '');
   return (
-    <li className="space-y-3 rounded-site px-4 py-3">
+    <li className="rule-row space-y-3 py-3">
       <p className="text-xs text-site-text-muted">{item.key}</p>
       <p className="text-site-text">{item.en}</p>
       {item.current && (

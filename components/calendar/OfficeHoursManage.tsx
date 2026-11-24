@@ -139,7 +139,7 @@ export default function OfficeHoursManage() {
 
   return (
     <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
-      <form onSubmit={save} className="space-y-4 rounded-site p-5">
+      <form onSubmit={save} className="space-y-4 py-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-medium text-site-text">
             {t('oh-manage-title', { defaultValue: 'Your office hours' })}
@@ -313,7 +313,7 @@ export default function OfficeHoursManage() {
             {t('oh-none-host', { defaultValue: 'No one has booked you yet.' })}
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul>
             {asHost.map((b) => (
               <BookingRow
                 key={b.id}
@@ -335,7 +335,7 @@ export default function OfficeHoursManage() {
             {t('oh-none-guest', { defaultValue: 'You have not booked anyone.' })}
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul>
             {asGuest.map((b) => (
               <BookingRow
                 key={b.id}

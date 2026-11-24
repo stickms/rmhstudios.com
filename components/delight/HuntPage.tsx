@@ -108,7 +108,7 @@ export function HuntPage() {
         defaultValue: 'Clues are hidden on pages across the site. Find one, work out the answer, and enter it here.',
       })}
     >
-      <div className="space-y-6 px-4 pt-4 pb-12">
+      <div className="space-y-6 pt-4 pb-12">
         {!session ? (
           <SignedOutPrompt
             icon={Compass}
@@ -132,7 +132,7 @@ export function HuntPage() {
           />
         ) : (
           <>
-            <section className={cn('space-y-3 rounded-site p-5', arrival)}>
+            <section className={cn('space-y-3 py-5', arrival)}>
               <h2 className="text-lg font-semibold text-site-text">{s.title}</h2>
               <p className="text-sm text-site-text-muted">
                 {t('hunt-progress', {
@@ -194,9 +194,9 @@ export function HuntPage() {
                 })}
               </h2>
               {q.data?.board?.rows.length ? (
-                <ol className="space-y-2">
+                <ol>
                   {q.data.board.rows.map((r, i) => (
-                    <li key={r.user.id} className="flex items-center gap-3 rounded-site px-4 py-3">
+                    <li key={r.user.id} className="rule-row flex items-center gap-3 py-3">
                       <span className="w-6 text-sm text-site-text-muted">{i + 1}</span>
                       <UserAvatar src={r.user.image} alt="" size={28} fallbackName={r.user.name ?? ''} />
                       <span className="min-w-0 flex-1 truncate text-sm text-site-text">{r.user.name}</span>

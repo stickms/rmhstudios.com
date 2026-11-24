@@ -308,7 +308,7 @@ export default function PollPage({ id }: { id: string }) {
       </header>
 
       {locked && (
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-site p-5">
+        <section className="flex flex-wrap items-center justify-between gap-3 py-5">
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-xs font-medium text-site-text-muted">
               <Lock className="size-3.5" aria-hidden />
@@ -357,7 +357,7 @@ export default function PollPage({ id }: { id: string }) {
       </div>
 
       {tab === 'mine' && !locked && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-site p-4">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 py-4">
           <Tabs
             tabs={[
               { id: '1', label: t('brush-yes', { defaultValue: 'Available' }), icon: Check },
@@ -411,7 +411,7 @@ export default function PollPage({ id }: { id: string }) {
       />
 
       {tab === 'group' && selected != null && (
-        <section className="rounded-site p-4"aria-live="polite">
+        <section className="py-4" aria-live="polite">
           <h3 className="site-section-label">
             {new Intl.DateTimeFormat(i18n.language, {
               weekday: 'long',
@@ -455,11 +455,11 @@ export default function PollPage({ id }: { id: string }) {
               : t('shortlist-empty', { defaultValue: 'No times yet. Mark when you are free.' })}
           </p>
         ) : (
-          <ol className="space-y-2">
+          <ol>
             {ranked.runs.map((run, i) => (
               <li
                 key={run.startMin}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-site p-4"
+                className="rule-row flex flex-wrap items-center justify-between gap-3 py-4"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-site-text">
