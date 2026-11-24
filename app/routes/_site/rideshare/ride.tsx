@@ -548,7 +548,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative py-5"
+                  className="rule-row relative py-5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">

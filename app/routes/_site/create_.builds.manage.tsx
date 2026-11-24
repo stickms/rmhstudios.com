@@ -141,7 +141,7 @@ function ManageContent() {
             }
           />
         ) : (
-          <div className={cn(arrival)}>
+          <div className={arrival}>
             {builds.map((build) => (
               <div
                 key={build.id}

@@ -720,7 +720,7 @@ function LoginPage() {
       className={cn('flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8', arrival)}
     >
       {/* The sign-in form: a plain block, full-viewport on a phone and a narrow column from the sm breakpoint. */}
-      <div className="relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:py-8">
+      <div className="relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:px-0 sm:py-8">
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
           <img src="/favicon.svg" alt="" width={48} height={48} className="mb-3 size-12" />
