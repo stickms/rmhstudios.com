@@ -107,11 +107,11 @@ longer govern this feature**; the admin page does not move with it (`components/
   uses these, `MedEmpty` and `MedSignedOut`, never the site's `Button`, `Select`, `SearchField`, `Switch`, `Textarea`,
   `PageLayout` or `SignedOutPrompt` (the rules test fails on the import).
 - **Status (`ui/status/`).** `status.ts` maps the public `MedEventType` and the tracker milestones onto eight keys:
-  acceptance green, rejection red, hold dark blue, secondary light blue, waitlist yellow, matriculation purple,
-  interview orange, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
+  acceptance green, rejection red, hold dark purple, secondary orange, waitlist yellow, matriculation rose, interview
+  light blue, withdrawn neutral. `StatusIcon` is the round swatch and stroke icon in the status ink (`aria-hidden`
   beside its words), `StatusText` the words in the same hue; colour is never the only cue, the label always prints. The
   public feed's `SECONDARY` is "secondary **received**" (the school sent one), so it reads "Secondary"; only the private
-  `SECONDARY_SUBMITTED` milestone reads "Secondary submitted", in the same light blue. `status.test.tsx` reads
+  `SECONDARY_SUBMITTED` milestone reads "Secondary submitted", in the same orange. `status.test.tsx` reads
   `medschools.css` and holds text at 4.5:1 and icon ink at 3:1 on the paper, the ground and (ink) its own swatch, light
   and dark; none of the mockup's values needed darkening.
 - **Matriculating.** `MATRICULATED` is a private tracker milestone, added after `ACCEPTANCE` by the additive migration
@@ -298,8 +298,8 @@ ink-only style for these pages; Steel §18 D13 carries the note, and D10 stays o
 - **Colour (O7.1; status colours, owner 2026-11-24).** A category draws in its STATUS colour: `CATEGORY_COLOR` in
   `ui/charts/chartColors.ts` is `var(--app-med-<stem>-text)` (the stem from `ui/status/status.ts`), the token the row's
   status words use, and its bar body is `var(--app-med-<stem>-fill)` (`fillOf`), so a category's line, bar and legend
-  swatch match its row icon everywhere (acceptance green, rejection red, hold dark blue, secondary light blue, waitlist
-  yellow, interview orange, matriculation purple, withdrawn neutral). Sources (per-type charts: CycleTrack 1, Admit 2,
+  swatch match its row icon everywhere (acceptance green, rejection red, hold dark purple, secondary orange, waitlist
+  yellow, interview light blue, matriculation rose, withdrawn neutral). Sources (per-type charts: CycleTrack 1, Admit 2,
   SDN 3, RMH 4, MDApplicants 5) and History cycles (newest first 1..5) are a different concept and keep the slots
   `--app-med-chart-1`..`-5`. `charts.test.tsx` holds both from `medschools.css`: every slot and every category colour at
   least 3:1 on paper and ground in both modes, and every category with a fill. A component never writes a hex. Dash and
@@ -764,7 +764,7 @@ status and its curriculum timeline.
   not split preclinical), `segmentShares` makes widths proportional only when every segment has a length (else equal,
   "Length not stated"). One CSS grid holds the segments and the names and lengths under them; the whole figure is one
   `role="img"` named by the sentence ("Preclinical 2 years, then PhD research 4 years, then clinical 2 years"). Colours
-  are `--app-med-phase-*` (aliases of the status pastels: preclinical the neutral pair, research the secondary blue,
+  are `--app-med-phase-*` (aliases of the status pastels: preclinical the neutral pair, research the interview blue,
   clinical the acceptance green), each segment edged in its ink; `ui/facts/mdphd.test.tsx` holds the edge at 3:1 on
   paper and on its fill in both modes.
 - **MSTP from RePORTER.** Funded reads "Funded · T32GM… · FY 2026" with the grant's RePORTER page as the source; a
