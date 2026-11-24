@@ -6,8 +6,8 @@
  * uniform grid, items are laid out as:
  *
  *   1. a big rotating HERO banner (one spotlighted item, landscape art + CTA),
- *   2. a horizontally-scrollable SPOTLIGHT rail of a few featured items, and
- *   3. the catalog GRID, the same tile size as the rail (storefront.css).
+ *   2. a few featured items, and
+ *   3. the catalogue, both drawn as news-style rows on rules, two to a row where they fit (storefront.css).
  *
  * The storefront never reorders what it is given. The caller's list arrives ranked
  * (`lib/ranking/best.ts`: Best by default), so the first item is the hero, the next
@@ -269,27 +269,45 @@ function HeroCard({ item, className }: { item: StoreItem; className?: string | u
   );
 }
 
-/** A medium card for the horizontal "featured" rail. */
-function SpotlightCard({ item }: { item: StoreItem }) {
-  return (
-    <div className="store-spot">
-      <PrimaryWrapper item={item} className="store-spot__link" ariaLabel={item.title}>
-        <div className="store-art store-spot__art">
-          <Art item={item} {...coverFor(item)} />
-          {item.badge && <span className="store-art__badge">{item.badge}</span>}
-        </div>
-        <div className="store-spot__body">
-          <p className="store-spot__title t-heading">{item.title}</p>
-          {item.description && <p className="store-spot__desc t-body">{item.description}</p>}
-          {item.meta && <p className="store-spot__meta t-meta">{item.meta}</p>}
-        </div>
-      </PrimaryWrapper>
-    </div>
-  );
+/** A description longer than this needs the full row to read; shorter ones pair up, two to a row. */
+const WIDE_DESCRIPTION = 100;
+
+type RowSlot = { item: StoreItem; wide: boolean; col: 0 | 1; last: boolean };
+
+/**
+ * Lay the items out two to a row where they fit, in the order given. An item with a long description takes a whole
+ * row; a short one before it, left without a partner, takes a whole row too, so no row has a hole. `col` says which
+ * side of a pair an item is on (the second side draws the vertical rule) and `last` marks the items of the final row,
+ * which draw no rule under them.
+ */
+export function layoutRows(items: StoreItem[]): RowSlot[] {
+  const slots: RowSlot[] = [];
+  let col: 0 | 1 = 0;
+  for (const item of items) {
+    const wide = (item.description?.length ?? 0) > WIDE_DESCRIPTION;
+    if (wide) {
+      const lone = slots[slots.length - 1];
+      if (col === 1 && lone) lone.wide = true;
+      slots.push({ item, wide: true, col: 0, last: false });
+      col = 0;
+    } else {
+      slots.push({ item, wide: false, col, last: false });
+      col = col === 0 ? 1 : 0;
+    }
+  }
+  const final = slots[slots.length - 1];
+  if (final) {
+    if (col === 1) final.wide = true;
+    final.last = true;
+    const partner = slots[slots.length - 2];
+    if (!final.wide && final.col === 1 && partner) partner.last = true;
+  }
+  return slots;
 }
 
-/** A catalog tile: picture, title, description and meta line, the same size as every other tile. */
-function MosaicCard({ item, className }: { item: StoreItem; className?: string | undefined }) {
+/** One catalogue entry as a news-style row: title, description and meta on the start side, a small picture at the end. */
+function StoreRow({ slot, className }: { slot: RowSlot; className?: string | undefined }) {
+  const { item, wide, col, last } = slot;
   const { t } = useTranslation('feed');
   const detailsLabel =
     item.detailsLabel ??
@@ -297,28 +315,55 @@ function MosaicCard({ item, className }: { item: StoreItem; className?: string |
       defaultValue: 'Details',
     });
   return (
-    <div className={cn('store-card', className)}>
-      <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
-        <div className="store-art store-card__art">
+    <li
+      className={cn('store-row', className)}
+      data-wide={wide ? '' : undefined}
+      data-col={col}
+      data-last={last ? '' : undefined}
+    >
+      <PrimaryWrapper item={item} className="store-row__link" ariaLabel={item.title}>
+        <div className="store-row__text">
+          {item.meta && <p className="store-row__meta t-meta">{item.meta}</p>}
+          <p className="store-row__title t-heading">{item.title}</p>
+          {item.description && <p className="store-row__desc t-body">{item.description}</p>}
+        </div>
+        <div className="store-art store-row__art">
           <Art item={item} {...coverFor(item)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
-        </div>
-        <div className="store-card__body">
-          <p className="store-card__title t-heading">{item.title}</p>
-          {item.description && <p className="store-card__desc t-body">{item.description}</p>}
-          {item.meta && <p className="store-card__meta t-meta">{item.meta}</p>}
         </div>
       </PrimaryWrapper>
       {item.detailsTo && (
         <Link
           to={item.detailsTo as string}
-          className="store-card__details"
+          className="store-row__details"
           aria-label={detailsLabel}
           title={detailsLabel}
         >
           <Info size={15} aria-hidden />
         </Link>
       )}
+    </li>
+  );
+}
+
+/** A list of catalogue rows, two to a row where the container is wide enough (storefront.css). */
+function StoreRows({
+  items,
+  className,
+  isNew,
+}: {
+  items: StoreItem[];
+  className?: string | undefined;
+  isNew?: ((id: string) => boolean) | undefined;
+}) {
+  const slots = useMemo(() => layoutRows(items), [items]);
+  return (
+    <div className="store-rows-wrap">
+      <ul className={cn('store-rows', className)}>
+        {slots.map((slot) => (
+          <StoreRow key={slot.item.id} slot={slot} className={isNew?.(slot.item.id) ? ARRIVE : undefined} />
+        ))}
+      </ul>
     </div>
   );
 }
@@ -381,16 +426,12 @@ export function Storefront({
 
           {spotlight.length > 0 && (
             <section
-              className={cn('store-rail', arrival)}
+              className={arrival}
               aria-label={t('store-featured', {
                 defaultValue: 'Featured',
               })}
             >
-              <div className="store-rail__track">
-                {spotlight.map((item) => (
-                  <SpotlightCard key={item.id} item={item} />
-                ))}
-              </div>
+              <StoreRows items={spotlight} />
             </section>
           )}
 
@@ -398,11 +439,7 @@ export function Storefront({
               the page's DOM — so on a page switch it is built after the hero
               has painted rather than inside the same commit. */}
           <DeferOnNavigate enabled={Boolean(hero)} minHeight="60vh">
-            <div className={cn('store-mosaic', arrival)}>
-              {mosaic.map((item) => (
-                <MosaicCard key={item.id} item={item} className={isNew(item.id) ? ARRIVE : undefined} />
-              ))}
-            </div>
+            <StoreRows items={mosaic} className={arrival} isNew={isNew} />
           </DeferOnNavigate>
         </>
       )}

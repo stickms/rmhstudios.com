@@ -34,22 +34,15 @@
    Grid/flex children default to min-width:auto, which lets unbreakable content
    (e.g. a long vibe-page title that's one giant word) force horizontal overflow
    past the viewport. Pin everything to min-width:0 and let long titles wrap. */
-.store-rail,
-.store-mosaic,
-.store-card,
-.store-spot,
+.store-rows,
+.store-row,
 .store-hero {
   min-width: 0;
 }
-.store-rail__track {
-  max-width: 100%;
-}
 .store-hero__title,
-.store-spot__title,
-.store-card__title,
+.store-row__title,
 .store-hero__desc,
-.store-spot__desc,
-.store-card__desc {
+.store-row__desc {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -281,71 +274,59 @@
   }
 }
 
-/* ── Spotlight rail ─────────────────────────────────────────────────────────── */
-.store-rail {
+/* ── Story rows ─────────────────────────────────────────────────────────────── */
+/* The catalogue reads like the news front page (components/news/NewsStoryRow.tsx): a row on a rule with the title and
+   description on the start side and a small picture at the end, the whole row one link. Two to a row where the
+   container is wide enough; a row whose description is long (data-wide, set by layoutRows in storefront.tsx) takes the
+   full width instead. The rules are the inset, floating ones of steel-rules.css (--rule-inset, --rule-gap). */
+.store-rows-wrap {
+  container-type: inline-size;
   margin-bottom: var(--store-gap-y);
 }
 
-.store-rail__track {
-  /* A wrapping grid rather than a horizontal scroller. The mobile drawer reserves
-     horizontal swipes (touch-action: pan-y) for opening the sidebar, which also
-     disables horizontal touch-scrolling of nested carousels — a scroll rail here
-     would leave its off-screen cards permanently cut off and unreachable on
-     mobile. Wrapping keeps every featured card visible without any sideways
-     scroll. */
+.store-rows {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--store-tile-min)), 1fr));
-  gap: var(--store-gap-y) var(--store-gap-x);
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.store-spot__link {
+.store-row {
+  --row-end: 0px;
+  position: relative;
+  min-width: 0;
+}
+.store-row::after {
+  content: '';
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: var(--rule-inset, 0.75rem);
+  block-size: 1px;
+  background: var(--site-border);
+}
+.store-row:last-child::after {
+  display: none;
+}
+
+.store-row__link {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-block: 1rem;
   text-decoration: none;
   color: inherit;
 }
 
-.store-spot__art {
-  aspect-ratio: 16 / 9;
-}
-
-/* A tile is a bordered card: picture on top, caption inside the same edge, so neighbouring tiles read as separate
-   items instead of captions floating between pictures. The picture drops its own box and sits flush under a rule. */
-.store-spot,
-.store-card {
-  overflow: hidden;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  transition: border-color 90ms linear;
-}
-.store-spot .store-art,
-.store-card .store-art {
-  border: 0;
-  border-bottom: 1px solid var(--site-border);
-  border-radius: 0;
-}
-/* The one hover, focus and press cue of a tile: its edge turns ink (M1). */
-.store-spot:has(.store-spot__link:is(:hover, :focus-visible, :active)),
-.store-card:has(.store-card__link:is(:hover, :focus-visible, :active)) {
-  border-color: var(--site-text);
-}
-
-/* The rail tile and the catalog tile share their caption: type from the t-* classes
-   in storefront.tsx (t-heading title, t-body description, t-meta line), the title and
-   the description each wrapping to two lines at most, and the meta line pinned to the
-   bottom so the captions in a row line up. */
-.store-spot__body,
-.store-card__body {
-  padding: 12px 14px 14px;
+.store-row__text {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
+  min-width: 0;
 }
 
-.store-spot__title,
-.store-card__title {
+.store-row__title {
   color: var(--site-text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -353,9 +334,12 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* The one hover, focus and press cue of a row is its title underlined, as on the news page (M1). */
+.store-row__link:is(:hover, :focus-visible, :active) .store-row__title {
+  text-decoration: underline;
+}
 
-.store-spot__desc,
-.store-card__desc {
+.store-row__desc {
   color: var(--site-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -363,45 +347,53 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-.store-spot__meta,
-.store-card__meta {
-  margin-top: auto;
-  padding-top: 4px;
+.store-row[data-wide] .store-row__desc {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
-/* ── Catalog grid ───────────────────────────────────────────────────────────── */
-/* One grid, one tile size: the same track as the rail above it, every tile a 16:9
-   picture with its caption. (It used to be a dense mosaic of 3:4 tiles with every
-   fifth one spanning two columns, four and five columns across, which squeezed the
-   titles to a word or two and gave each row a different shape.) */
-.store-mosaic {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--store-tile-min)), 1fr));
-  gap: var(--store-gap-y) var(--store-gap-x);
+.store-row__art {
+  flex: none;
+  width: 6rem;
+  aspect-ratio: 4 / 3;
+}
+@container (min-width: 36rem) {
+  .store-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .store-row[data-wide] {
+    grid-column: 1 / -1;
+  }
+  .store-row[data-wide] .store-row__art {
+    width: 9rem;
+  }
+  /* A pair shares a row: the first row of the pair keeps a gap before the rule, the second a gap after it. */
+  .store-row[data-col='0']:not([data-wide]) {
+    --row-end: 1rem;
+    padding-inline-end: 1rem;
+  }
+  .store-row[data-col='1']:not([data-wide]) {
+    padding-inline-start: 1rem;
+  }
+  .store-row[data-col='1']:not([data-wide])::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--rule-gap, 0.75rem);
+    inset-inline-start: 0;
+    inline-size: 1px;
+    background: var(--site-border);
+  }
+  /* The last row, which is one or two items, draws no rule under it. */
+  .store-row[data-last]::after {
+    display: none;
+  }
 }
 
-.store-card {
-  position: relative;
-}
-
-.store-card__link {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  text-decoration: none;
-  color: inherit;
-}
-
-.store-card__art {
-  aspect-ratio: 16 / 9;
-}
-
-/* ⓘ details button (curated builds), top corner of the art. */
-.store-card__details {
+/* ⓘ details button (curated builds), over the corner of the picture. */
+.store-row__details {
   position: absolute;
-  top: 8px;
-  inset-inline-end: 8px;
+  inset-block-start: calc(1rem + 6px);
+  inset-inline-end: calc(var(--row-end) + 6px);
   z-index: 4;
   display: grid;
   place-items: center;
@@ -415,15 +407,15 @@
   opacity: 0;
   transition: opacity 90ms linear;
 }
-.store-card:hover .store-card__details,
-.store-card:focus-within .store-card__details {
+.store-row:hover .store-row__details,
+.store-row:focus-within .store-row__details {
   opacity: 1;
 }
-.store-card__details:hover {
+.store-row__details:hover {
   background: var(--site-surface-hover);
 }
 @media (hover: none) {
-  .store-card__details {
+  .store-row__details {
     opacity: 1;
   }
 }
@@ -434,22 +426,6 @@
   display: flex;
   justify-content: flex-end;
   margin-bottom: 14px;
-}
-
-.store-personas__mine {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-@media (min-width: 640px) {
-  .store-personas__mine {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (min-width: 1100px) {
-  .store-personas__mine {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 .store-persona-meta {

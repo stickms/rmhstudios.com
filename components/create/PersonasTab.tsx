@@ -19,7 +19,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
-import { Storefront, type StoreItem } from '@/components/create/storefront';
+import { Storefront, layoutRows, type StoreItem } from '@/components/create/storefront';
+import { Section } from '@/components/ui/rules';
 import { SortSelect, useCreationSortOptions } from '@/components/create/SortSelect';
 import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
 import '@/components/builds/builds.css';
@@ -183,7 +184,7 @@ export function PersonasTab() { const fmt = useLocaleFormat().number;
       )}
 
       {showForm && (
-        <div className="mb-6 space-y-3 rounded-site p-5">
+        <Section className="mb-6 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="site-section-label">
               {t('new-persona', { defaultValue: 'New persona' })}
@@ -273,59 +274,64 @@ export function PersonasTab() { const fmt = useLocaleFormat().number;
               </Button>
             </div>
           </div>
-        </div>
+        </Section>
       )}
 
       {mine.length > 0 && (
-        <section className="mb-6 space-y-3">
-          <h2 className="site-section-label">
-            {t('your-personas', { defaultValue: 'Your personas' })}
-          </h2>
-          <div className="store-personas__mine">
-            {mine.map((p) => (
-              <Link
-                key={p.id}
-                to={`/personas/${p.id}` as string}
-                // §5.48: the tile avatar liquidly expands into the chat header
-                // avatar. Name set only at click time (tag the avatar child).
-                onClick={(e) => {
-                  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                  e.preventDefault();
-                  const avatar = e.currentTarget.querySelector(
-                    '[data-persona-avatar]',
-                  ) as HTMLElement | null;
-                  runLiquidOpen(avatar, liquidVTName('persona', p.id), () =>
-                    navigate({ to: `/personas/${p.id}` } as never),
-                  );
-                }}
-                className="surface-press flex items-center gap-3 rounded-site border border-site-border p-3 hover:bg-site-bg-subtle"
-              >
-                <div
-                  data-persona-avatar
-                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-bg-subtle text-xl"
-                >
-                  {p.avatarUrl ? (
-                    <img
-                      src={p.avatarUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    p.emoji || <Bot className="size-5 text-site-accent" aria-hidden />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-site-text">{p.name}</p>
-                  {p.tagline && (
-                    <p className="truncate text-xs text-site-text-muted">{p.tagline}</p>
-                  )}
-                  <p className="mt-0.5 text-xs text-site-text-muted">{personaMeta(p, false)}</p>
-                </div>
-              </Link>
-            ))}
+        <Section title={t('your-personas', { defaultValue: 'Your personas' })} className="mb-6">
+          <div className="store-rows-wrap">
+            <ul className="store-rows">
+              {layoutRows(
+                mine.map((p) => ({ id: p.id, title: p.name, description: p.tagline ?? undefined })),
+              ).map(({ item, wide, col, last }) => {
+                const p = mine.find((m) => m.id === item.id);
+                if (!p) return null;
+                return (
+                  <li
+                    key={p.id}
+                    className="store-row"
+                    data-wide={wide ? '' : undefined}
+                    data-col={col}
+                    data-last={last ? '' : undefined}
+                  >
+                    <Link
+                      to={`/personas/${p.id}` as string}
+                      // §5.48: the tile avatar liquidly expands into the chat header
+                      // avatar. Name set only at click time (tag the avatar child).
+                      onClick={(e) => {
+                        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                        e.preventDefault();
+                        const avatar = e.currentTarget.querySelector(
+                          '[data-persona-avatar]',
+                        ) as HTMLElement | null;
+                        runLiquidOpen(avatar, liquidVTName('persona', p.id), () =>
+                          navigate({ to: `/personas/${p.id}` } as never),
+                        );
+                      }}
+                      className="store-row__link"
+                    >
+                      <div className="store-row__text">
+                        <p className="store-row__meta t-meta">{personaMeta(p, false)}</p>
+                        <p className="store-row__title t-heading">{p.name}</p>
+                        {p.tagline && <p className="store-row__desc t-body">{p.tagline}</p>}
+                      </div>
+                      <div
+                        data-persona-avatar
+                        className="store-art store-row__art flex items-center justify-center text-3xl"
+                      >
+                        {p.avatarUrl ? (
+                          <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          p.emoji || <Bot className="size-7 text-site-accent" aria-hidden />
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-        </section>
+        </Section>
       )}
 
       <Storefront
