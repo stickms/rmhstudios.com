@@ -59,13 +59,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-capital/insights` | — | public | `app/routes/rmh-capital/insights.tsx` |
 | `/rmh-internal-affairs` | — | public | `app/routes/rmh-internal-affairs.ts` |
 | `/rmh-internal-affairs/:page` | — | public | `app/routes/rmh-internal-affairs.$page.ts` |
-| `/rmh-medschool` | RMH Med Schools | public | `app/routes/rmh-medschool/index.tsx` |
-| `/rmh-medschool/:slug` | — | public | `app/routes/rmh-medschool/$slug.tsx` |
-| `/rmh-medschool/ask` | Ask the data | public | `app/routes/rmh-medschool/ask.tsx` |
-| `/rmh-medschool/lists` | My lists | public | `app/routes/rmh-medschool/lists.tsx` |
-| `/rmh-medschool/live` | Live reported events \| RMH Med Schools | public | `app/routes/rmh-medschool/live.tsx` |
-| `/rmh-medschool/practice` | Interview practice | public | `app/routes/rmh-medschool/practice.tsx` |
-| `/rmh-medschool/tracker` | My tracker | public | `app/routes/rmh-medschool/tracker.tsx` |
 | `/rmh-pmc` | — | public | `app/routes/rmh-pmc/index.tsx` |
 | `/rmh-pmc/capabilities` | — | public | `app/routes/rmh-pmc/capabilities.tsx` |
 | `/rmh-pmc/command` | — | public | `app/routes/rmh-pmc/command.tsx` |

@@ -4,7 +4,7 @@ import { parseAskSearch } from '../engine/search';
 import { AskPanel } from './ask/AskPanel';
 import { PageHead } from './shell/PageHead';
 
-/** /rmh-medschool/ask. The panel owns the signed-out prompt, so a signed-out visitor sends nothing. */
+/** /med/ask. The panel owns the signed-out prompt, so a signed-out visitor sends nothing. */
 export function AskPage() {
   const { t } = useTranslation('medschools');
   const search = parseAskSearch(useSearch({ strict: false }) as Record<string, unknown>);
@@ -18,7 +18,7 @@ export function AskPage() {
               defaultValue:
                 'Ask about schools, cycles, interviews or timing. Answers use only RMH’s public data and cite the rows they use.',
             })}{' '}
-            <Link to="/rmh-medschool" className="medapp-link">
+            <Link to="/med" className="medapp-link">
               {t('ask-browse', { defaultValue: 'Browse schools' })}
             </Link>
           </>

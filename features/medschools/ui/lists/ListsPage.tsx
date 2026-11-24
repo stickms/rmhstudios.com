@@ -37,7 +37,7 @@ const inOrder = (lists: MedListDto[], ids: string[] | null): MedListDto[] =>
   ids ? ids.flatMap((id) => lists.filter((l) => l.id === id)) : lists;
 
 /**
- * /rmh-medschool/lists: the member's saved lists and, below them, their preferences. Signed out: the sign-in prompt and
+ * /med/lists: the member's saved lists and, below them, their preferences. Signed out: the sign-in prompt and
  * no request (a 401 after load turns into the same prompt). Nothing is optimistic except a reorder, which shows the
  * dragged order until the server answers; a stale order (409) refetches and says so once.
  */
@@ -76,7 +76,7 @@ export function ListsPage() {
           description={t('lists-signed-out-body', {
             defaultValue: 'Your lists and preferences are private to your account.',
           })}
-          callbackURL="/rmh-medschool/lists"
+          callbackURL="/med/lists"
         />
       </>
     );

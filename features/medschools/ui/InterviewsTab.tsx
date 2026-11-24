@@ -248,7 +248,7 @@ function Practice({ slug, detail }: { slug: string; detail: MedSchoolDetailDto }
         <PracticePanel questions={questions} slug={slug} />
       )}
       <p className="medapp-meta">
-        <Link to="/rmh-medschool/practice" className="medapp-link">
+        <Link to="/med/practice" className="medapp-link">
           {t('practice-general-link', { defaultValue: 'General questions for any school' })}
         </Link>
       </p>

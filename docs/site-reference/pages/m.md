@@ -21,3 +21,17 @@ Standard pages, rendered inside the sidebar shell.
 | `/messages/requests` | Message requests | public | `app/routes/_site/messages/requests.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
+
+## Full-screen
+
+Games, apps and standalone pages that intentionally render without the site shell.
+
+| URL | Title | Access | Source |
+| --- | ----- | ------ | ------ |
+| `/med` | RMH Med Schools | public | `app/routes/med/index.tsx` |
+| `/med/:slug` | — | public | `app/routes/med/$slug.tsx` |
+| `/med/ask` | Ask the data | public | `app/routes/med/ask.tsx` |
+| `/med/lists` | My lists | public | `app/routes/med/lists.tsx` |
+| `/med/live` | Live reported events \| RMH Med Schools | public | `app/routes/med/live.tsx` |
+| `/med/practice` | Interview practice | public | `app/routes/med/practice.tsx` |
+| `/med/tracker` | My tracker | public | `app/routes/med/tracker.tsx` |

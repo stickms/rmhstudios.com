@@ -13,11 +13,11 @@ const ICON: Record<MedPlace, LucideIcon> = {
   practice: Mic,
 };
 const TO = {
-  live: '/rmh-medschool/live',
-  tracker: '/rmh-medschool/tracker',
-  ask: '/rmh-medschool/ask',
-  lists: '/rmh-medschool/lists',
-  practice: '/rmh-medschool/practice',
+  live: '/med/live',
+  tracker: '/med/tracker',
+  ask: '/med/ask',
+  lists: '/med/lists',
+  practice: '/med/practice',
 } as const;
 
 /**

@@ -27,7 +27,7 @@ import { Places } from './shell/Places';
 import { SkeletonSwap } from './skeletons';
 import type { SchoolSearch, SchoolSearchPatch } from './school-search';
 
-/** /rmh-medschool/$slug. A tab is an entry in `SCHOOL_TABS`, a label below and a branch of the switch at the end. */
+/** /med/$slug. A tab is an entry in `SCHOOL_TABS`, a label below and a branch of the switch at the end. */
 /**
  * On a phone the section links are one line that scrolls sideways: bring the current one into that line's view when the
  * page opens on a later section (Facts, Secondaries). Moves only the row's own scroll, never the page.
@@ -64,7 +64,7 @@ export function SchoolPage() {
     const own = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     holdScroll();
     void navigate({
-      to: '/rmh-medschool/$slug',
+      to: '/med/$slug',
       params: { slug },
       // Only the keys the viewer changed are rewritten; `tab` and `type` defaults are stripped by the route.
       search: ((prev: Record<string, unknown>) => ({
@@ -153,7 +153,7 @@ export function SchoolPage() {
               {SCHOOL_TABS.map((id) => (
                 <Link
                   key={id}
-                  to="/rmh-medschool/$slug"
+                  to="/med/$slug"
                   params={{ slug }}
                   search={((prev: Record<string, unknown>) => ({ ...prev, tab: id })) as never}
                   replace

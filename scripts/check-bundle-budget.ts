@@ -319,8 +319,8 @@ const BUDGETS = {
   //
   // RMH Med Schools public pages (2026-11-22): entry RAISED 711,300 -> 716,000 B, critical path RAISED 933,500 ->
   // 938,200 B raw and 245,700 -> 246,500 B brotli (OPT-01 line); site CSS unchanged (it measures 31,287 B, under its
-  // line). The feature that bought the bytes is the public RMH Med Schools pages (/rmh-medschool,
-  // /rmh-medschool/live, /rmh-medschool/$slug): three route records with their head() and search parsers, the
+  // line). The feature that bought the bytes is the public RMH Med Schools pages (/med,
+  // /med/live, /med/$slug): three route records with their head() and search parsers, the
   // contract, the query factories and the pure read rules those import (features/medschools/engine/{public-read,
   // search,cycle}.ts), all of which the router registers for every page. Per-module sourcemap attribution of the
   // entry puts 6,157 B on features/medschools and the three routes (136 B of it the phase 1 admin route); no zod, no
@@ -331,7 +331,7 @@ const BUDGETS = {
   // the feature's bytes plus about 0.9 KB raw (0.4 KB brotli) of headroom, as the lines above did.
   siteCssBrotli: 32_800,
   // RMH Med Schools design polish (2026-11-24): entry RAISED 716,000 -> 716,800 B (OPT-01, named in the PR body).
-  // The feature that bought the bytes is "settings change in place": the four /rmh-medschool route loaders read
+  // The feature that bought the bytes is "settings change in place": the four /med route loaders read
   // TanStack's `cause` and import `waitUnlessStay` (features/medschools/medschools.queries.ts), so a filter, tab or
   // toggle change keeps the page on screen instead of the pending screen. CI measured the entry at 699.2 KB against a
   // 699.2 KB line (+0.0%), i.e. a few hundred bytes over; no library, page component or chart entered the entry

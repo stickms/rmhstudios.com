@@ -109,7 +109,7 @@ const SERVICES: ServiceDef[] = [
     id: 'medschools',
     panel: 'summary',
     icon: GraduationCap,
-    href: '/rmh-medschool',
+    href: '/med',
     navKey: 'nav-rmh-medschools',
     name: 'RMH Med Schools',
     descKey: 'services-medschools-desc',

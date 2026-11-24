@@ -13,11 +13,11 @@ public pages (phase 3) read it.
 
 Signed-out readable, in the full-screen app frame of the redesign (see "Design"), not the `_site` shell:
 
-| Route                  | Page                                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------------------------------------- |
-| `/rmh-medschool`       | School index (rows on rules) with search, degree, state and program                                   |
-| `/rmh-medschool/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging                                |
-| `/rmh-medschool/$slug` | One school: Activity, History, Forecast, Interviews, Secondaries, Facts tabs (`?tab=`, `?program=` …) |
+| Route        | Page                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| `/med`       | School index (rows on rules) with search, degree, state and program                                   |
+| `/med/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging                                |
+| `/med/$slug` | One school: Activity, History, Forecast, Interviews, Secondaries, Facts tabs (`?tab=`, `?program=` …) |
 
 Ten anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
 rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
@@ -34,8 +34,8 @@ but not an aggregate of tracker rows: see "AI Q&A (phase 6)".
 
 **Placement (owner O1):** listed in the Services hub (`app/routes/_site/services/index.tsx`) and site search
 (`lib/search/catalog.ts`), **not** in the games/apps catalog. There is no `catalog.ts`, no card art, no image manifest
-row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts` pins this. `/rmh-medschool` and
-`/rmh-medschool/live` are `STATIC_ROUTES` in `lib/sitemap.ts`; school pages are the `medschools` sitemap chunk.
+row; the manifest has `catalog` unset and `listed: false`; `ui/ui-rules.test.ts` pins this. `/med` and `/med/live` are
+`STATIC_ROUTES` in `lib/sitemap.ts`; school pages are the `medschools` sitemap chunk.
 
 ## Design: a full-screen app (roadmap item 11, phase A)
 
@@ -44,12 +44,12 @@ Owner-approved 2026-11-23 and moved up 2026-11-24 (roadmap item 11; Steel §18 D
 longer govern this feature**; the admin page does not move with it (`components/admin/medschools/`, still Steel). Plan:
 `docs/superpowers/plans/2026-11-24-rmh-medschool-redesign.md`.
 
-- **Routes.** `app/routes/rmh-medschool.tsx` is a top-level layout (`MedApp` around an `<Outlet/>`, its own
-  `errorComponent` and `notFoundComponent`, no auth gate); the pages are `app/routes/rmh-medschool/*` with unchanged
-  URLs. `features/medschools` is in `FULLSCREEN_TIER_DIRS` and `rmh-medschool` in `FULLSCREEN_ROUTE_SEGMENTS`
-  (`eslint-local-rules/design-scope.js`) and in `APP_TIER_DIRS` (`lib/__tests__/css-tiers.ts`, so the CSS stays under
-  the `!important`, keyframes and hex gates). `/rmh-medschool` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes
-  the lean site stylesheet, not the app superset (`--app-*` utilities are already in it).
+- **Routes.** `app/routes/med.tsx` is a top-level layout (`MedApp` around an `<Outlet/>`, its own `errorComponent` and
+  `notFoundComponent`, no auth gate); the pages are `app/routes/med/*` with unchanged URLs. `features/medschools` is in
+  `FULLSCREEN_TIER_DIRS` and `med` in `FULLSCREEN_ROUTE_SEGMENTS` (`eslint-local-rules/design-scope.js`) and in
+  `APP_TIER_DIRS` (`lib/__tests__/css-tiers.ts`, so the CSS stays under the `!important`, keyframes and hex gates).
+  `/med` is in `SITE_SHEET_ROUTES` (`lib/style-tier.ts`): it takes the lean site stylesheet, not the app superset
+  (`--app-*` utilities are already in it).
 - **Shell (`ui/shell/`).** `MedApp` (AppShell + `.app-page`, the cookie notice, the live rail at >= 1280px), `MedTopBar`
   (44px round back button, always present: the session's history, else `/services` from the index and the index from
   everywhere else; Fraunces title; the light/dark toggle), `useMedMode` and `ThemeToggle`. The Steel shell's overlays
@@ -442,8 +442,8 @@ unchanged. A school with no curve says "Not enough shared data for this school y
 
 ## AI Q&A (phase 6)
 
-`/rmh-medschool/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt
-and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md` (rulings R1-R19).
+`/med/ask` and a panel at the foot of every school page (signed in; signed out the page is the sign-in prompt and sends
+nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase6-ai-qa.md` (rulings R1-R19).
 `POST/GET /api/medschools/me/ask` (`api/medschools.me.ask.server.ts`), never cached.
 
 - **Two model calls, one task (R2, R3).** `runTaskJson` under the `medschools-qa` `AiTask` (`lib/ai/provider.server.ts`,
@@ -541,16 +541,16 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
 
 Plan: `docs/superpowers/plans/2026-11-24-rmh-medschool-interview-prep.md`. Practice mode (`ui/practice/`:
 `PracticePanel`, `PracticeTimer`, `FollowupsSection`, presentational) is the school page's `?itab=practice` and
-`/rmh-medschool/practice` (general questions by program, noindex, `EXCLUDED_ROUTES`, readable signed out). Timer and
-picking are pure (`engine/practice.ts`); it starts only on the member's press and ticks on one 1 s interval. **Notes are
-component state:** not stored, not in localStorage, cleared on a new question. **General questions are a static
-versioned module** (`engine/general-questions.ts`, zod shape in `.schema.ts`, no table: nothing per user or school);
-text is i18n `gq-<id>`, and the dynamic keys are NOT found by `i18n:extract`, so add a key to
-`locales/en/medschools.json` by hand (the test checks it). **Follow-ups:** `POST me/interview/followups`
-(`api/qa/followups.server.ts`) reuses `admitQuestion` (shared budget fail closed, allowance, one daily question, lease),
-`runUnderLease`, the thinking switch and the `medschools-qa` task; the model sees only `{ question, notes?, examples }`
-(other stored questions of an active school), `parseFollowups` keeps only question-shaped strings (2 or 3, else
-unreadable and the day's question is refunded). Nothing is stored or logged beyond counts.
+`/med/practice` (general questions by program, noindex, `EXCLUDED_ROUTES`, readable signed out). Timer and picking are
+pure (`engine/practice.ts`); it starts only on the member's press and ticks on one 1 s interval. **Notes are component
+state:** not stored, not in localStorage, cleared on a new question. **General questions are a static versioned module**
+(`engine/general-questions.ts`, zod shape in `.schema.ts`, no table: nothing per user or school); text is i18n
+`gq-<id>`, and the dynamic keys are NOT found by `i18n:extract`, so add a key to `locales/en/medschools.json` by hand
+(the test checks it). **Follow-ups:** `POST me/interview/followups` (`api/qa/followups.server.ts`) reuses
+`admitQuestion` (shared budget fail closed, allowance, one daily question, lease), `runUnderLease`, the thinking switch
+and the `medschools-qa` task; the model sees only `{ question, notes?, examples }` (other stored questions of an active
+school), `parseFollowups` keeps only question-shaped strings (2 or 3, else unreadable and the day's question is
+refunded). Nothing is stored or logged beyond counts.
 
 ## Secondaries (owner 2026-11-23)
 
@@ -777,8 +777,8 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
   `ProgramSetToggles`; the school page keeps `ProgramToggles` for its own degree (`ALL | REG | PHD`).
 - **Preferences and lists on the public pages (plan task 12).** Each route loader awaits `loadPrefs` first, then
   prefetches the public queries with explicit parameters, so the public cache keys never carry a list, user or
-  preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/rmh-medschool/lists` holds
-  the lists and the preferences (`#preferences`).
+  preference. `?list=<id>|all` on the index is a client filter over the returned schools. `/med/lists` holds the lists
+  and the preferences (`#preferences`).
 - **Activity rail.** `ui/shell/MedApp.tsx` mounts the lazy rail beside the page (>= 1280px only; neither rendered nor
   fetched below; it used to be the Steel shell's margin takeover). `ui/rail/ActivityRail.tsx` uses `useLiveFeed` (60 s
   head refetch, M9 fade) and one `IntersectionObserver` on the sentinel through `useSentinel` to load older pages: data
@@ -792,13 +792,13 @@ tracker dates; the member reviews a preview and presses "Add to my tracker". End
 
 ## Private: the tracker, sharing, lists and preferences (phase 4)
 
-Pages `/rmh-medschool/tracker`, `/rmh-medschool/lists` and (phase 6) `/rmh-medschool/ask` (signed out they show a
-sign-in prompt, `noindex`; neither is a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO
-with a user, cycle or event id: `me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST),
-`.../applications/$id` (PATCH, DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST),
-`me/lists/$id` (PATCH, DELETE), `me/list-order`, `me/list-items` (save a school, creating "My schools" on first use),
-`me/lists/$id/items/$itemId`, `me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/prefs` (GET, PUT). Another
-member's id is a 404, never a 403.
+Pages `/med/tracker`, `/med/lists` and (phase 6) `/med/ask` (signed out they show a sign-in prompt, `noindex`; neither
+is a school slug). Endpoints, all signed in, `Cache-Control` never public, no DTO with a user, cycle or event id:
+`me/tracker` (GET), `me/tracker/cycle` (PUT, DELETE), `me/tracker/applications` (POST), `.../applications/$id` (PATCH,
+DELETE), `.../applications/$id/milestones/$type` (PUT, DELETE), `me/lists` (GET, POST), `me/lists/$id` (PATCH, DELETE),
+`me/list-order`, `me/list-items` (save a school, creating "My schools" on first use), `me/lists/$id/items/$itemId`,
+`me/lists/$id/item-order`, `me/lists/$id/add-to-tracker`, `me/prefs` (GET, PUT). Another member's id is a 404, never
+a 403.
 
 - **One writer (D1).** `api/share-sync.server.ts` is the only module that writes the tracker rows or an RMH event or
   count (`share-ratchet.test.ts`). The database cascade deletes milestones without application code seeing it, and an

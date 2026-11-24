@@ -213,7 +213,7 @@ describe('RMH Med Schools, public and anonymous', () => {
   });
 
   it('server-renders the school page with charts, the unit and the source, and nothing identifying', async () => {
-    const res = await anon.get(`/rmh-medschool/${SLUG}`);
+    const res = await anon.get(`/med/${SLUG}`);
     expect(res.status).toBe(200);
     const html = String(res.body);
     expect(html).toContain('<svg');
@@ -224,7 +224,7 @@ describe('RMH Med Schools, public and anonymous', () => {
   });
 
   it('serves the index and the live page as HTML', async () => {
-    for (const path of ['/rmh-medschool', '/rmh-medschool/live']) {
+    for (const path of ['/med', '/med/live']) {
       const res = await anon.get(path);
       expect(res.status, path).toBe(200);
       expect(String(res.body)).toContain('<html');
@@ -235,7 +235,7 @@ describe('RMH Med Schools, public and anonymous', () => {
 
   it('answers an unknown school with a 404 page', async () => {
     for (const slug of ['does-not-exist', 'Harvard', 'a'.repeat(300)]) {
-      const res = await anon.get(`/rmh-medschool/${slug}`);
+      const res = await anon.get(`/med/${slug}`);
       expect(res.status, slug).toBe(404);
     }
   });
@@ -247,7 +247,7 @@ describe('RMH Med Schools, public and anonymous', () => {
     const chunk = await anon.get('/sitemaps/medschools.xml');
     expect(chunk.status).toBe(200);
     const xml = String(chunk.body);
-    expect(xml).toContain(`/rmh-medschool/${SLUG}`);
+    expect(xml).toContain(`/med/${SLUG}`);
   });
 });
 
@@ -387,7 +387,7 @@ describe('the public forecast', () => {
   });
 
   it('server-renders the Forecast tab with the chart and its legend, no script needed', async () => {
-    const res = await anon.get(`/rmh-medschool/${SLUG}?tab=forecast`);
+    const res = await anon.get(`/med/${SLUG}?tab=forecast`);
     expect(res.status).toBe(200);
     const html = String(res.body);
     expect(html).toContain('<svg');
@@ -504,7 +504,7 @@ describe('the public secondaries endpoint', () => {
   });
 
   it('server-renders the tab with a prompt and its source line, no script needed, and no text field', async () => {
-    const res = await anon.get(`/rmh-medschool/${SLUG}?tab=secondaries`);
+    const res = await anon.get(`/med/${SLUG}?tab=secondaries`);
     expect(res.status).toBe(200);
     const html = String(res.body);
     expect(html).toContain(SECONDARIES_TEXT.same);
@@ -614,7 +614,7 @@ describe('the public school facts endpoint', () => {
   });
 
   it('renders Curriculum and Admissions facts in the server HTML of the Facts tab, each with its source line', async () => {
-    const res = await anon.get(`/rmh-medschool/${SLUG}?tab=facts`);
+    const res = await anon.get(`/med/${SLUG}?tab=facts`);
     expect(res.status).toBe(200);
     expect(String(res.body)).toContain('Admissions facts');
     expect(String(res.body)).toContain('Source: AAMC MSAR Report for Applicants and Advisors, 2027 entering class');
@@ -624,7 +624,7 @@ describe('the public school facts endpoint', () => {
   });
 
   it('keeps the Activity tab to activity: the facts moved to their own tab', async () => {
-    const res = await anon.get(`/rmh-medschool/${SLUG}`);
+    const res = await anon.get(`/med/${SLUG}`);
     expect(res.status).toBe(200);
     expect(String(res.body)).not.toContain('Admissions facts');
   });

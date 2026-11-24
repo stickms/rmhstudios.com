@@ -213,7 +213,8 @@ export const APP_ROUTE_THEME_BG: Record<
   // mockup's cream paper by day, ink-navy by night). Same shape as RMH Music: a first visit follows
   // `prefers-color-scheme`; the top bar's toggle stores `{"dark":true|false}` under this key
   // (`features/medschools/engine/mode.ts`), device-local, and the boolean wins once it is there.
-  '/rmh-medschool': {
+  '/med': {
+    // Storage key keeps its pre-rename name (the route is now /med) so saved choices survive.
     key: 'rmh-medschool-mode',
     darkFlag: 'dark',
     dark: '#1b1e2a',

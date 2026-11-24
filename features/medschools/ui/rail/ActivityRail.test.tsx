@@ -55,7 +55,7 @@ describe('ActivityRail', () => {
   it('shows the newest events with school, event, program, place and time, and no source line', () => {
     const html = render([ev('a1'), ev('a2')]);
     expect(html).toContain('Live activity');
-    expect(html).toContain('href="/rmh-medschool/duke"');
+    expect(html).toContain('href="/med/duke"');
     expect(html).toContain('Acceptance');
     expect(html).toContain('MD-PhD · Durham, NC');
     expect(html).not.toContain('Admit.org');

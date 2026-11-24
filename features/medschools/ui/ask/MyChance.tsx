@@ -31,7 +31,7 @@ export function MyChance({ mine }: { mine: readonly ChanceDto[] }) {
       {shown.length === 0 ? (
         <p className="medapp-text mt-2">
           {t('ask-mine-none', { defaultValue: 'You have no open application at this school.' })}{' '}
-          <Link to="/rmh-medschool/tracker" className="medapp-link">
+          <Link to="/med/tracker" className="medapp-link">
             {t('ask-mine-add', { defaultValue: 'Add this school to your tracker' })}
           </Link>
         </p>
