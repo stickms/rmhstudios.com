@@ -979,10 +979,12 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
   }
+  /* Page count left, format (PDF) right, on one line. */
   .lib-book__facts {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
   }
   .lib-book__description {
     -webkit-line-clamp: 2;
@@ -1225,4 +1227,18 @@
 /* A catalogue of readable covers and metadata; inspection stays in the viewer. */
 .lib-playground[data-library-layout='shelves'] .lib__shelf {
   align-items: start;
+}
+
+/* Cover shelves are Cells (rules between tiles): the cover height the tiles read, and no fixed caption row. */
+.lib-cells {
+  --cover-h: 280px;
+  --cap-h: auto;
+}
+@media (max-width: 560px) {
+  .lib-cells {
+    --cover-h: 236px;
+  }
+}
+.lib-blog__tags {
+  margin-top: 8px;
 }

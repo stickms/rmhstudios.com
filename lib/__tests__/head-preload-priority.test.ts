@@ -17,7 +17,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { RouterManagedTag } from '@tanstack/react-router';
-import { deprioritizeModulePreloads } from '@/components/SiteHeadContent';
+import { deprioritizeModulePreloads, gateStylesheets } from '@/components/SiteHeadContent';
 
 describe('deprioritizeModulePreloads', () => {
   it('lowers modulepreload links and leaves every other tag untouched', () => {
@@ -83,6 +83,25 @@ describe('deprioritizeModulePreloads', () => {
       },
     };
     expect(deprioritizeModulePreloads([tag])[0]).toBe(tag);
+  });
+});
+
+describe('gateStylesheets', () => {
+  it('gives every stylesheet link a precedence, so a navigation waits for its sheet', () => {
+    const sheet: RouterManagedTag = { tag: 'link', attrs: { rel: 'stylesheet', href: '/assets/med.css' } };
+    const preload: RouterManagedTag = { tag: 'link', attrs: { rel: 'modulepreload', href: '/a.js' } };
+    const set: RouterManagedTag = {
+      tag: 'link',
+      attrs: { rel: 'stylesheet', href: '/b.css', precedence: 'high' },
+    };
+    const out = gateStylesheets([sheet, preload, set]);
+    expect(out[0]).toEqual({
+      tag: 'link',
+      attrs: { rel: 'stylesheet', href: '/assets/med.css', precedence: 'default' },
+    });
+    expect(out[1]).toBe(preload);
+    expect(out[2]).toBe(set);
+    expect(sheet.attrs).toEqual({ rel: 'stylesheet', href: '/assets/med.css' });
   });
 });
 

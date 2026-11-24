@@ -86,7 +86,7 @@ const FLAT_BASELINE: Record<string, FlatCount> = {
   'components/library/library/catalog-reader.css': {
     bf: 17,
     fl: 0,
-    gr: 7,
+    gr: 6,
   },
   'components/library/library/sections-refresh.css': {
     bf: 10,

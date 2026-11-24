@@ -11,6 +11,7 @@
  * and to migrate the bundled catalog into object storage.
  */
 
+import { Cells } from '@/components/ui/rules';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
@@ -748,7 +749,7 @@ function Section({
           {t('book-count', { count: books.length, defaultValue_one: '{{count}} book', defaultValue: '{{count}} books' })}
         </span>
       </div>
-      <div className="lib__shelf lib__shelf--catalog" role="list">
+      <Cells columns={3} className="lib-cells">
         {books.map((book) => {
           const managedIdx = managed.findIndex((b) => b.id === book.id);
           return (
@@ -766,7 +767,7 @@ function Section({
             />
           );
         })}
-      </div>
+      </Cells>
     </section>
   );
 }
@@ -781,7 +782,9 @@ function BookSpine({
   onEdit,
   onChanged,
   dnd,
+  ...rest
 }: {
+  'data-last-row'?: string;
   book: LibraryBook;
   isAdmin: boolean;
   showAttribution?: boolean;
@@ -818,10 +821,10 @@ function BookSpine({
     .join(' ');
 
   return (
-    <div
+    <li
+      {...rest}
       ref={revealRef}
       className={wrapClass}
-      role="listitem"
       draggable={dnd?.draggable}
       onDragStart={dnd?.onDragStart}
       onDragEnter={dnd?.onDragEnter}
@@ -860,6 +863,9 @@ function BookSpine({
                 fit="cover"
                 width={380}
                 sizes="(max-width: 560px) 148px, 184px"
+                // Lazy images inside the cover's preserve-3d / will-change layer never
+                // intersect on iOS Safari, so mobile covers stayed blank.
+                loading="eager"
                 className="absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]"
                 imgClassName="h-full w-full object-top"
               />
@@ -915,6 +921,6 @@ function BookSpine({
           onChanged={onChanged}
         />
       )}
-    </div>
+    </li>
   );
 }

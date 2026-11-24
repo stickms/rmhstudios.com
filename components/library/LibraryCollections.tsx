@@ -10,6 +10,7 @@
  * by the page (which owns the collection list so the main shelf can hide books that
  * already live in a collection) and calls `onChanged` after each change.
  */
+import { Cells } from '@/components/ui/rules';
 import { useRefusalText } from '@/components/errors/useRefusalText';
 import { useEffect, useMemo, useState } from 'react';
 import { BookLeaves } from './BookLeaves';
@@ -170,7 +171,7 @@ export function LibraryCollections({
   const userMade = visible.filter((c) => !c.official);
 
   const renderGroup = (group: CollectionView[]) => (
-    <div className="lib__shelf" role="list">
+    <Cells columns={3} className="lib-cells">
       {group.map((c) => (
         <CollectionTile
           key={c.id}
@@ -183,7 +184,7 @@ export function LibraryCollections({
           onCover={() => generateCover(c)}
         />
       ))}
-    </div>
+    </Cells>
   );
 
   // Live versions of the collections referenced by open modals (so edits reflect).
@@ -271,7 +272,9 @@ function CollectionTile({
   onRename,
   onDelete,
   onCover,
+  ...rest
 }: {
+  'data-last-row'?: string;
   collection: CollectionView;
   generating: boolean;
   onOpen: () => void;
@@ -316,10 +319,10 @@ function CollectionTile({
   ];
 
   return (
-    <div
+    <li
+      {...rest}
       ref={revealRef}
       className="lib-book__wrap lib-coll-tile lib-reveal"
-      role="listitem"
       onContextMenu={c.canEdit ? menu.openAt : undefined}
     >
       <button
@@ -329,7 +332,27 @@ function CollectionTile({
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
       >
         <div className="lib-book__3d">
-          <span className="lib-coll-tile__stack" aria-hidden="true" />
+          {/* Up to two more books fanned out behind the cover, so the collection reads as three. */}
+          {c.books.slice(0, Math.min(2, Math.max(count - 1, 0))).map((b, i) => (
+            <span
+              key={b.slug}
+              className={`lib-coll-tile__back lib-coll-tile__back--${i + 1}`}
+              aria-hidden="true"
+            >
+              {b.coverUrl && (
+                <BlurImage
+                  src={b.coverUrl}
+                  alt=""
+                  fit="cover"
+                  width={150}
+                  sizes="150px"
+                  loading="eager"
+                  className="absolute inset-0 h-full w-full rounded-[3px_6px_6px_3px]"
+                  imgClassName="h-full w-full object-top"
+                />
+              )}
+            </span>
+          ))}
           <div className={`lib-book__cover ${c.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
             {c.coverUrl ? (
@@ -370,7 +393,7 @@ function CollectionTile({
           label={t('manage', { defaultValue: 'Manage' })}
         />
       )}
-    </div>
+    </li>
   );
 }
 
@@ -457,6 +480,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
               fit="cover"
               width={150}
               sizes="150px"
+              loading="eager"
               className={COVER_WRAP}
               imgClassName={COVER_IMG}
             />
