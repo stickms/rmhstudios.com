@@ -483,7 +483,7 @@ const CSS_DEBT: Record<
   }
 > = {
   'components/library/library/catalog-reader.css': {
-    hex: 7,
+    hex: 6,
     radius: 10,
   },
   'components/library/library/sections-refresh.css': {
