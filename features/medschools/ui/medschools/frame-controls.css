@@ -407,3 +407,130 @@
 .medapp-chip svg {
   flex: none;
 }
+
+/* ── The live page's "Today" column (owner 2026-11-24) ───────────────────── */
+/* The rail's frame (`.medapp-panel--rail`: sticky, the main column's height, scrolling inside itself) with no sticky
+   head: four blocks, each a heading and rows on rules. Compact: 14px rows, 13px meta, tabular counts. */
+.medapp-panel--rail.medapp-today {
+  padding: var(--app-med-space-4);
+}
+.medapp-today__blocks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-5);
+  min-inline-size: 0;
+}
+.medapp-today__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-med-space-1);
+  min-inline-size: 0;
+}
+.medapp-today__h {
+  margin: 0 0 var(--app-med-space-1);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--app-text);
+}
+.medapp-today__item {
+  border-bottom: 1px solid var(--app-border);
+}
+.medapp-rows > .medapp-today__item:last-child {
+  border-bottom: 0;
+}
+.medapp-today__row {
+  display: flex;
+  align-items: center;
+  gap: var(--app-med-space-3);
+  min-block-size: 40px;
+  padding-block: 6px;
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.35;
+}
+/* A count row is a toggle that filters the page: the whole row, a quiet tonal hover, the paper well when pressed. */
+.medapp-today__btn {
+  box-sizing: border-box;
+  inline-size: calc(100% + 2 * var(--app-med-space-2));
+  margin-inline: calc(-1 * var(--app-med-space-2));
+  padding-inline: var(--app-med-space-2);
+  border: 0;
+  border-radius: var(--app-med-radius-sm);
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 90ms var(--app-ease);
+}
+.medapp-today__btn:hover {
+  background-color: var(--app-med-tonal-hover);
+}
+.medapp-today__btn[aria-pressed='true'] {
+  background-color: var(--app-med-tonal);
+}
+.medapp-today__btn[aria-pressed='true'] .medapp-today__count {
+  font-weight: 600;
+}
+.medapp-today__label {
+  min-inline-size: 0;
+}
+.medapp-today__count {
+  margin-inline-start: auto;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--app-text);
+}
+.medapp-today__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+.medapp-today__name {
+  font-weight: 500;
+  color: var(--app-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.medapp-today__name:hover {
+  text-decoration: underline;
+}
+.medapp-today__meta {
+  font-size: var(--app-med-text-meta);
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.medapp-today__row > .medapp-latest {
+  margin-inline-start: auto;
+}
+.medapp-today__none {
+  margin: 0;
+  padding-block: var(--app-med-space-2);
+  font-size: var(--app-med-text-secondary);
+  line-height: 1.45;
+  color: var(--app-text-muted);
+}
+.medapp-skeleton--disc {
+  flex: none;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 50%;
+}
+/* The count rows' status discs at the crests' 24px, so every row of the column shares one leading edge. */
+.medapp-today__btn > .medapp-status-icon {
+  inline-size: 24px;
+  block-size: 24px;
+}
+.medapp-today__btn > .medapp-status-icon svg {
+  inline-size: 13px;
+  block-size: 13px;
+}
+/* A toggle on a touch screen keeps the 44px target. */
+@media (pointer: coarse) {
+  .medapp-today__btn {
+    min-block-size: 44px;
+  }
+}

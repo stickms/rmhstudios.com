@@ -764,16 +764,32 @@ async function liveWaveDays(
   page: readonly { eventType: MedEventType; occurredAt: Date; school: { slug: string } }[],
   now: Date,
 ): Promise<Map<string, Set<string>>> {
-  const out = new Map<string, Set<string>>();
   const invites = page.filter((r) => r.eventType === 'INTERVIEW');
-  if (invites.length === 0) return out;
+  if (invites.length === 0) return new Map();
   const cycleYears = [...new Set(invites.map((r) => cycleYearOf(r.occurredAt, 'INTERVIEW')))];
   const slugs = [...new Set(invites.map((r) => r.school.slug))];
+  const waves = await schoolWaves(slugs, cycleYears, now);
+  return new Map([...waves].map(([slug, days]) => [slug, new Set(days.keys())]));
+}
+
+/**
+ * Each school's wave days (D10) in the given cycles, keyed by slug, then by UTC day, with that day's count on the
+ * primary series. One batched read of the schools' INTERVIEW count rows for those cycles, from each cycle's first
+ * report, through the floor and the primary-source rule of the Activity chart (REG + PHD summed). The live feed's row
+ * flag and the live summary's "Waves now" both read it, so they cannot disagree.
+ */
+export async function schoolWaves(
+  slugs: readonly string[],
+  cycleYears: readonly number[],
+  now: Date,
+): Promise<Map<string, Map<string, number>>> {
+  const out = new Map<string, Map<string, number>>();
+  if (slugs.length === 0 || cycleYears.length === 0) return out;
   const rows = await prisma.medCycleCount.findMany({
     where: {
       eventType: 'INTERVIEW',
-      cycleYear: { in: cycleYears },
-      school: { slug: { in: slugs }, active: true },
+      cycleYear: { in: [...cycleYears] },
+      school: { slug: { in: [...slugs] }, active: true },
       ...floorWhere(now),
     },
     select: {
@@ -789,7 +805,7 @@ async function liveWaveDays(
     },
   });
   for (const slug of slugs) {
-    const found = new Set<string>();
+    const found = new Map<string, number>();
     for (const cycleYear of cycleYears) {
       const cells = sumPrograms(
         rows
@@ -801,12 +817,32 @@ async function liveWaveDays(
       const primary = series.sources.find((s) => s.source === series.primary);
       const base = primary?.days[0]?.date;
       if (!primary || !base) continue;
-      for (const w of detectWaves(toDayCounts(primary.days, base))) found.add(addDays(base, w.day));
+      for (const w of detectWaves(toDayCounts(primary.days, base))) found.set(addDays(base, w.day), w.count);
     }
     out.set(slug, found);
   }
   return out;
 }
+
+/**
+ * The live feed's program filter for a program set: (degree, program) pairs; every program on (or no set) is no
+ * filter, and includes the events that did not report a program. Shared with the live summary.
+ */
+export function liveProgramWhere(set: readonly ProgramKey[] | undefined) {
+  return set && !isAllPrograms(set)
+    ? [
+        {
+          OR: set.map((k) => {
+            const p = programPair(k);
+            return { program: p.program, school: { degree: p.degree } };
+          }),
+        },
+      ]
+    : [];
+}
+
+/** `CA,NY` -> the codes, deduped and sorted; for the live summary. */
+export const liveStatesOf = statesOf;
 
 export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<MedLiveRes> {
   const limit = q.limit ?? 50;
@@ -816,17 +852,7 @@ export async function getLive(q: LiveQuery, now: Date = new Date()): Promise<Med
   const types = q.types ? q.types.split(',').map((w) => w.toUpperCase() as MedEventType) : undefined;
   // The program filter: a set maps to (degree, program) pairs; every program on is no filter and includes the events
   // that did not report one. The older `program` / `degree` parameters keep their meaning when no set is given.
-  const programWhere =
-    set && !isAllPrograms(set)
-      ? [
-          {
-            OR: set.map((k) => {
-              const p = programPair(k);
-              return { program: p.program, school: { degree: p.degree } };
-            }),
-          },
-        ]
-      : [];
+  const programWhere = liveProgramWhere(set);
   const legacyWhere =
     set || legacyProgram === 'ALL' ? {} : legacyProgram === 'NONE' ? { program: null } : { program: legacyProgram };
   const text = q.q?.trim();
