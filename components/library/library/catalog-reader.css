@@ -859,8 +859,7 @@
   cursor: pointer;
   text-align: inherit;
 }
-/* Two more books fanned out behind the cover (member covers), each with the same soft depth
-   shadow as a book, so a collection reads as a set of three. */
+/* Two more books fanned out behind the cover (member covers), each with a book's depth shadow. */
 .lib-coll-tile__back {
   position: absolute;
   bottom: 0;
@@ -882,7 +881,6 @@
 }
 .lib-coll-tile__back--2 {
   transform: translateX(14px) rotate(6deg);
-  z-index: 0;
 }
 .lib-coll-tile .lib-book__cover {
   position: relative;
