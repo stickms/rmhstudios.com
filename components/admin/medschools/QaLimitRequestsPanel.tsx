@@ -11,12 +11,12 @@ import { api, apiQuery } from '@/lib/contract/client';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-import { QA_LIMIT_NOTE_MAX } from '../ai-budget';
+import { QA_LIMIT_NOTE_MAX } from '@features/medschools/ai-budget';
 import {
   decideMedQaLimitRequestApi,
   listMedQaLimitRequestsApi,
   type MedQaLimitRequestRowDto,
-} from '../medschools.contract';
+} from '@features/medschools/medschools.contract';
 
 type Action = 'approve' | 'decline' | 'revoke';
 

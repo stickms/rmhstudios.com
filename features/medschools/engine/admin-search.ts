@@ -1,5 +1,5 @@
 /**
- * The /admin/medschools search params. Kept apart from `ui/AdminMedSchoolsPage.tsx` because the route's
+ * The /admin/medschools search params. Kept apart from `components/admin/medschools/AdminMedSchoolsPage.tsx` because the route's
  * `validateSearch` is not code-split: importing it from the page module would put the whole admin page (and what it
  * imports) on every page's critical path.
  */

@@ -18,7 +18,7 @@ import {
   mapAliasMissApi,
   type AliasMissDto,
   type SchoolOptionDto,
-} from '../medschools.contract';
+} from '@features/medschools/medschools.contract';
 
 /**
  * The alias tab of /admin/medschools: source names the scrapers could not match to a school. An admin maps each one to a

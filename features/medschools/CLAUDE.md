@@ -381,7 +381,7 @@ and sends nothing). Plan: `docs/superpowers/plans/2026-11-23-rmh-medschool-phase
 - **UI (`ui/ask/`).** `AskPanel` (page or section, pins `slug`), `AskForm` (the one ink button, counter, suggestions),
   `AnswerView` (rows on rules with source numbers), `Citations`, `MyChance`; `askRun.ts` is the pure run controller
   (cancel, one at a time). `ui/` imports `engine/qa` as types only (`qa-boundary.test.ts`). Strings are `ask-*` keys.
-  The admin page is `ui/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred
+  The admin page is `components/admin/medschools/AdminMedSchoolsPage.tsx` (tabs: Aliases, Q&A limits). Not streamed (R1); embeddings deferred
   (R13): a question may name a state and an interview format instead.
 - **Tests.** Unit:
   `pnpm exec vitest run features/medschools/engine/qa features/medschools/api/qa features/medschools/ui/ask`. Black box:
