@@ -19,7 +19,7 @@ import { listUserResumes, type ResumePrisma } from '@/lib/rmhladder/resume/servi
 import type { CandidateProfile } from '@/lib/rmhladder/resume/schemas';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Section } from '@/components/ui/rules';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -113,13 +113,10 @@ function ResumePage() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-site-accent" aria-hidden />{t('ladder.resume.title', { defaultValue: 'Resume reviewer' })}</CardTitle>
-          <CardDescription>{t('ladder.resume.description', { defaultValue: 'Upload a PDF or DOCX. Contact details are redacted before AI review, files and extracted text are encrypted, and matches only use a profile after you confirm it.' })}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-3 rounded-site border border-dashed border-site-border bg-site-surface-hover p-6 text-center hover:border-site-accent">
+      <Section title={<span className="flex items-center gap-2"><FileText className="size-5 text-site-accent" aria-hidden />{t('ladder.resume.title', { defaultValue: 'Resume reviewer' })}</span>}>
+        <p className="mt-2 text-sm leading-relaxed text-site-text-muted">{t('ladder.resume.description', { defaultValue: 'Upload a PDF or DOCX. Contact details are redacted before AI review, files and extracted text are encrypted, and matches only use a profile after you confirm it.' })}</p>
+        <div className="mt-4">
+          <label className="surface-field flex min-h-32 cursor-pointer flex-col items-center justify-center gap-3 border-dashed p-6 text-center hover:border-site-accent">
             <Upload className="size-7 text-site-accent" aria-hidden />
             <span className="font-medium">{uploading ? t('ladder.resume.uploading', { defaultValue: 'Encrypting and uploading…' }) : t('ladder.resume.choose', { defaultValue: 'Choose a PDF or DOCX resume' })}</span>
             <span className="text-sm text-site-text-muted">{t('ladder.resume.limit', { defaultValue: 'Up to 10 MiB' })}</span>
@@ -142,8 +139,8 @@ function ResumePage() {
             />
             <span>{t('ladder.resume.aiConsent', { defaultValue: 'I agree to send a contact-redacted copy to the configured AI provider for review. The provider never receives the original file.' })}</span>
           </label>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
       {resumes.length === 0 ? (
         <EmptyState
@@ -175,16 +172,18 @@ function ResumeCard({
   const review = version.latestReview;
   const draftProfile = review?.profile as CandidateProfile | null;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{resume.name}</CardTitle>
-        <CardDescription>{version.filename} · {formatBytes(version.sizeBytes)} · {t('ladder.resume.version', { defaultValue: 'Version {{version}}', version: version.versionNumber })}</CardDescription>
-        <CardAction className="flex gap-2">
+    <Section>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="t-heading text-site-text">{resume.name}</h2>
+          <p className="text-sm leading-relaxed text-site-text-muted">{version.filename} · {formatBytes(version.sizeBytes)} · {t('ladder.resume.version', { defaultValue: 'Version {{version}}', version: version.versionNumber })}</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
           <Button asChild variant="ghost" size="icon-sm"><a href={`/api/rmhladder/resume/${resume.id}`} aria-label={t('ladder.resume.download', { defaultValue: 'Download resume' })}><Download aria-hidden /></a></Button>
           <Button variant="ghost" size="icon-sm" loading={busyId === `delete-${resume.id}`} aria-label={t('ladder.resume.delete', { defaultValue: 'Delete resume' })} onClick={() => void onDelete(resume)}><Trash2 aria-hidden /></Button>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="space-y-5">
+        </div>
+      </div>
+      <div className="mt-4 space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <Badge variant="default">{version.parseStatus.replace(/_/g, ' ')}</Badge>
           <Button disabled={!aiConsent} loading={busyId === `analyze-${version.id}`} loadingText={t('ladder.resume.reviewing', { defaultValue: 'Reviewing…' })} onClick={() => void onAnalyze(resume, version)}>
@@ -212,8 +211,8 @@ function ResumeCard({
             </div>
           </section>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   );
 }
 

@@ -29,6 +29,7 @@ import { HttpError } from '@/lib/http';
 import { buildPrepSheetApi } from '@/lib/rmhladder/prep.contract';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Section } from '@/components/ui/rules';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { useLocaleFormat } from '@/hooks/useLocaleFormat';
@@ -97,7 +98,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
   }, [applicationId, t, refusalText]);
 
   return (
-    <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-prep-heading">
+    <Section labelledBy="ladder-prep-heading">
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles className="size-4 text-site-accent" aria-hidden />
         <h2 id="ladder-prep-heading" className="site-section-label">
@@ -212,9 +213,9 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                   defaultValue: 'Likely questions',
                 })}
               </h3>
-              <ul className="mt-2 grid gap-2">
+              <ul className="mt-2">
                 {sheet.questions.map((q, i) => (
-                  <li key={i} className="surface-card p-3">
+                  <li key={i} className="border-b border-site-border py-3 last:border-b-0">
                     <div className="flex flex-wrap items-start gap-2">
                       <p className="min-w-0 flex-1 text-sm font-medium text-site-text">{q.question}</p>
                       <Badge variant="default">{CATEGORY_LABELS[q.category] ?? q.category}</Badge>
@@ -233,9 +234,9 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                   defaultValue: 'Your stories to use',
                 })}
               </h3>
-              <ul className="mt-2 grid gap-2">
+              <ul className="mt-2">
                 {sheet.storyMatches.map((m, i) => (
-                  <li key={i} className="surface-card p-3">
+                  <li key={i} className="border-b border-site-border py-3 last:border-b-0">
                     <p className="text-sm font-medium text-site-text">{m.storyTitle}</p>
                     {m.question && (
                       <p className="mt-1 text-xs text-site-text-muted">
@@ -271,6 +272,6 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
           )}
         </div>
       )}
-    </section>
+    </Section>
   );
 }

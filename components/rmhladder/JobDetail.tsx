@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import type { JobActionValue } from '@/lib/rmhladder/server/actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { InterviewReports } from './InterviewReports';
 import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
@@ -78,8 +77,8 @@ export function JobDetail({
 
   return (
     <div className="max-w-3xl space-y-4">
-      <Card className="gap-5">
-        <CardHeader className="gap-4">
+      <div className="flex flex-col gap-5 py-5 text-site-text sm:py-6">
+        <div className="grid items-start gap-4 px-5 sm:px-6">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="success">
               <ShieldCheck aria-hidden />
@@ -90,7 +89,7 @@ export function JobDetail({
             {programType && <Badge variant="default">{programType.replaceAll('_', ' ')}</Badge>}
           </div>
           <div>
-            <CardTitle className="text-xl leading-snug sm:text-2xl">{job.title as string}</CardTitle>
+            <div className="text-xl leading-snug font-semibold tracking-tight sm:text-2xl">{job.title as string}</div>
             <p className="mt-2 font-medium text-site-text-muted">
               {company?.name ??
                 t('ladder.unknownCompany', {
@@ -103,9 +102,9 @@ export function JobDetail({
             {location}
           </p>
           <PayBadge job={job} className="text-base font-semibold text-site-text" />
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
+        <div className="space-y-6 px-5 sm:px-6">
           <section aria-labelledby="ladder-match-heading" className="surface-field rounded-site-sm p-4">
             <h2 id="ladder-match-heading" className="site-section-label">
               {t('ladder.roleRelevance', {
@@ -170,9 +169,9 @@ export function JobDetail({
               isAuthenticated={isAuthenticated}
             />
           )}
-        </CardContent>
+        </div>
 
-        <CardFooter className="flex-col items-stretch gap-3 border-t border-site-border sm:flex-row sm:items-center">
+        <div className="flex flex-col items-stretch gap-3 border-t border-site-border px-5 pt-5 sm:flex-row sm:items-center sm:px-6 sm:pt-6">
           {applyUrl ? (
             <Button asChild size="lg" className="sm:mr-auto">
               <a
@@ -248,8 +247,8 @@ export function JobDetail({
               </Link>
             </Button>
           )}
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

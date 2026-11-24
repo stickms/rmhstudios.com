@@ -189,7 +189,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
       </h2>
 
       {newKey && (
-        <div className="space-y-2 rounded-site border border-site-accent/40 bg-site-accent/5 px-4 py-3">
+        <div className="space-y-2 border-b border-site-border py-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-site-accent">
               {t('keys-copy-now', { defaultValue: "Copy your key now — it won't be shown again." })}
@@ -328,7 +328,7 @@ export function KeysManager() { const fmt = useLocaleFormat();
       />
 
       {keys.length === 0 ? (
-        <p className="rounded-site border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
+        <p className="border-b border-site-border py-6 text-center text-sm text-site-text-muted">
           {t('keys-empty', { defaultValue: 'No keys yet. Create one to get started.' })}
         </p>
       ) : (

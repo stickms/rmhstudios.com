@@ -15,8 +15,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Cells, Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { CAMPUSES, FLEET_PUE } from '@/lib/datacenter/campuses';
 import { CapacityMeter } from './CapacityMeter';
 import { DatacenterTabs } from './DatacenterTabs';
@@ -49,17 +49,17 @@ export default function PowerPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/power" />
 
-      <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="rounded-site p-5 sm:p-6">
+      <div className="px-4 pt-4 pb-12">
+        <Section>
           <p className="max-w-prose text-site-text-muted">
             {t('pow-lede', {
               defaultValue:
                 'Two utility feeds, two UPS trains, two generator plants and a cooling loop designed to survive losing half of itself. Everything below is a trailing twelve-month figure, which means it includes the heat waves.',
             })}
           </p>
-        </section>
+        </Section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Cells columns={2} className="mt-6">
           <Stat
             label={t('pow-stat-pue', {
               defaultValue: 'Fleet PUE',
@@ -98,9 +98,9 @@ export default function PowerPage() {
             })}
             tone="load"
           />
-        </div>
+        </Cells>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('pow-s1-kicker', {
               defaultValue: 'The train',
@@ -157,9 +157,9 @@ export default function PowerPage() {
               })}
             </SpecRow>
           </dl>
-        </section>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('pow-s2-kicker', {
               defaultValue: 'Efficiency',
@@ -191,9 +191,9 @@ export default function PowerPage() {
                 'The bar is total facility power divided by IT load, measured at the utility intake and averaged over the trailing twelve months, plotted against a 1.40 floor. A fuller bar is a better ratio, and a campus above 1.20 is drawn in the warning tone rather than the accent.',
             })}
           </p>
-        </section>
+        </Section>
 
-        <section>
+        <Section>
           <SectionHeading
             kicker={t('pow-s3-kicker', {
               defaultValue: 'Cooling',
@@ -208,7 +208,7 @@ export default function PowerPage() {
                 'There is no single right cooling design; there is a right one for the ambient outside the wall. Each campus was built for its own climate rather than to a group standard.',
             })}
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Cells columns={3} className="mt-4">
             {[
               [
                 'C-01',
@@ -241,16 +241,16 @@ export default function PowerPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-4">
+              <li key={code} className="flex flex-col gap-2">
                 <span className="text-xs font-medium text-site-accent">{code}</span>
                 <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </Cells>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('pow-s4-kicker', {
               defaultValue: 'Afterwards',
@@ -287,9 +287,9 @@ export default function PowerPage() {
               })}
             </SpecRow>
           </dl>
-        </section>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('pow-cta-kicker', {
               defaultValue: 'Reporting',
@@ -319,7 +319,7 @@ export default function PowerPage() {
               </Link>
             </Button>
           </div>
-        </section>
+        </Section>
       </div>
     </PageLayout>
   );

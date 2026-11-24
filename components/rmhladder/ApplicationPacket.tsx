@@ -36,7 +36,7 @@ import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
-import { cn } from '@/lib/utils';
+import { Section } from '@/components/ui/rules';
 
 export interface ApplicationPacketProps {
   applicant: PacketApplicant;
@@ -120,7 +120,7 @@ export function ApplicationPacket({
 
   if (loading) {
     return (
-      <section className="surface-panel flex min-h-32 items-center justify-center p-5">
+      <div className="flex min-h-32 items-center justify-center">
         <Spinner
           size={20}
           className="text-site-text-muted"
@@ -128,12 +128,12 @@ export function ApplicationPacket({
             defaultValue: 'Loading…',
           })}
         />
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className={cn('surface-panel p-4 sm:p-5', arrival)} aria-labelledby="ladder-packet-heading">
+    <Section className={arrival} labelledBy="ladder-packet-heading">
       <div className="flex flex-wrap items-center gap-2">
         <ClipboardList className="size-4 text-site-accent" aria-hidden />
         <h2 id="ladder-packet-heading" className="site-section-label">
@@ -172,11 +172,14 @@ export function ApplicationPacket({
           })}`}
       </p>
 
-      <ol className="mt-4 grid gap-2">
+      <ol className="mt-4">
         {fields.map((field, index) => {
           const isHidden = field.sensitive && field.filled && !revealed.has(field.id);
           return (
-            <li key={field.id} className="surface-card flex flex-wrap items-start gap-2 p-3">
+            <li
+              key={field.id}
+              className="flex flex-wrap items-start gap-2 border-b border-site-border py-3 last:border-b-0"
+            >
               <span aria-hidden className="mt-0.5 w-6 shrink-0 font-mono text-xs text-site-text-muted">
                 {index + 1}
               </span>
@@ -244,6 +247,6 @@ export function ApplicationPacket({
             'RMHLadder never submits an application for you. Nothing is sent to the employer from here — you paste these answers and press submit yourself.',
         })}
       </p>
-    </section>
+    </Section>
   );
 }

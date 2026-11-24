@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Coins, Users, Sparkles } from 'lucide-react';
 import { studioOverviewQuery } from '@/lib/creator/earnings.queries';
-import { Card } from '@/components/ui/card';
+import { Cells, Section } from '@/components/ui/rules';
 import { Spinner } from '@/components/ui/spinner';
 import { useArrival } from '@/components/ui/arrive';
 import { cn, relativeTimeShort } from '@/lib/utils';
@@ -50,22 +50,22 @@ function StatTile({
   label,
   value,
   icon: Icon,
+  'data-last-row': dataLastRow,
 }: {
   label: string;
   value: number;
   icon?: typeof Coins;
+  /** Set by `Cells` on the last row of a grid. */
+  'data-last-row'?: string;
 }) { const fmt = useLocaleFormat(); 
-  // L1 fill, not a pane: a stat tile is repeated content, and repeated content
-  // carries no backdrop blur (design-language §5 budget) — each blurred tile
-  // was re-blurred on every scroll frame (perf audit 2026-10-08, scroll).
   return (
-    <Card className="p-4">
+    <li data-last-row={dataLastRow}>
       <div className="text-xs font-medium text-site-text-muted">{label}</div>
       <div className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {fmt.number(value)}
       </div>
-    </Card>
+    </li>
   );
 }
 
@@ -97,7 +97,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
   return (
     <div className="space-y-[var(--site-section-gap)]">
       {/* Headline stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <Cells columns={2} className="mt-4">
         <StatTile
           label={t('supporters', { defaultValue: 'Supporters' })}
           value={supporterCount}
@@ -118,10 +118,10 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
           value={earnings.spendable}
           icon={Coins}
         />
-      </div>
+      </Cells>
 
       {/* Per-source split (window) */}
-      <Card className="space-y-4 p-4" pane>
+      <Section className="space-y-4">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="site-section-label">
             {t('earnings-by-source', { defaultValue: 'Earnings by source' })}
@@ -186,7 +186,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) { co
             {t('no-earnings-window', { defaultValue: 'No earnings in this window yet.' })}
           </p>
         )}
-      </Card>
+      </Section>
 
       {/* Recent tips */}
       <div className="space-y-3">

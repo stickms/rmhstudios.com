@@ -12,8 +12,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Cells, Section } from '@/components/ui/rules';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { CAMPUSES } from '@/lib/datacenter/campuses';
 import { DatacenterTabs } from './DatacenterTabs';
 import { SectionHeading, SpecRow, Stat } from './parts';
@@ -61,17 +61,17 @@ export default function NetworkPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/network" />
 
-      <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="rounded-site p-5 sm:p-6">
+      <div className="px-4 pt-4 pb-12">
+        <Section>
           <p className="max-w-prose text-site-text-muted">
             {t('net-lede', {
               defaultValue:
                 'The campuses are not six unrelated facilities that happen to share a logo. They sit on one autonomous system with lit fibre between them, so traffic between two RMH halls never touches the public internet and is never billed as egress.',
             })}
           </p>
-        </section>
+        </Section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Cells columns={2} className="mt-6">
           <Stat
             label={t('net-stat-backbone', {
               defaultValue: 'Backbone',
@@ -109,9 +109,9 @@ export default function NetworkPage() {
             })}
             tone="load"
           />
-        </div>
+        </Cells>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('net-s1-kicker', {
               defaultValue: 'Latency',
@@ -180,9 +180,9 @@ export default function NetworkPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </Section>
 
-        <section>
+        <Section>
           <SectionHeading
             kicker={t('net-s2-kicker', {
               defaultValue: 'Connectivity',
@@ -191,7 +191,7 @@ export default function NetworkPage() {
               defaultValue: 'How traffic actually leaves the building',
             })}
           />
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Cells columns={2} className="mt-4">
             {[
               [
                 'NT-01',
@@ -234,16 +234,16 @@ export default function NetworkPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-4">
+              <li key={code} className="flex flex-col gap-2">
                 <span className="text-xs font-medium text-site-accent">{code}</span>
                 <h3 className="text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
-              </Card>
+              </li>
             ))}
-          </div>
-        </section>
+          </Cells>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('net-s3-kicker', {
               defaultValue: 'Under attack',
@@ -300,9 +300,9 @@ export default function NetworkPage() {
               })}
             </SpecRow>
           </dl>
-        </section>
+        </Section>
 
-        <section className="rounded-site p-5 sm:p-6">
+        <Section>
           <SectionHeading
             kicker={t('net-cta-kicker', {
               defaultValue: 'Peering',
@@ -332,7 +332,7 @@ export default function NetworkPage() {
               </Link>
             </Button>
           </div>
-        </section>
+        </Section>
       </div>
     </PageLayout>
   );
