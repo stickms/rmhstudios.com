@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { binObs, inviteChance, kaplanMeier, maxDayOf, observationOf, survivalAt, weekCeil, type Obs } from './km';
+import {
+  binObs,
+  inviteChance,
+  kaplanMeier,
+  maxDayOf,
+  observationOf,
+  survivalAt,
+  typicalWait,
+  weekCeil,
+  type Obs,
+} from './km';
 
 const e = (days: number): Obs => ({ days, event: true });
 const c = (days: number): Obs => ({ days, event: false });
@@ -99,7 +109,12 @@ describe('maxDayOf: the last week with at least 10 at risk', () => {
 
 describe('inviteChance', () => {
   // 20 members: 4 invited in week 1, 4 in week 3, 4 in week 6; the rest wait to week 12.
-  const obs: Obs[] = [...Array(4).fill(e(7)), ...Array(4).fill(e(21)), ...Array(4).fill(e(42)), ...Array(8).fill(c(84))];
+  const obs: Obs[] = [
+    ...Array(4).fill(e(7)),
+    ...Array(4).fill(e(21)),
+    ...Array(4).fill(e(42)),
+    ...Array(8).fill(c(84)),
+  ];
   const k = kaplanMeier(obs);
   const max = maxDayOf(obs);
   it('max day is the last week with 10 at risk', () => expect(max).toBe(42));
@@ -138,5 +153,28 @@ describe('inviteChance', () => {
           expect(v).toBeLessThanOrEqual(1);
         }
       }
+  });
+});
+
+describe('typicalWait', () => {
+  // F = 0.3, 0.5, 0.7 at weeks 2, 4, 6.
+  const curve = { t: [14, 28, 42], s: [0.7, 0.5, 0.3], n: [27, 20, 12] };
+  it('first week F reaches 50% and 80% of F(maxDay)', () => {
+    // F(90) = 0.7: half = 0.35 -> week 4; most = 0.56 -> week 6.
+    expect(typicalWait(curve, 90)).toEqual({ halfWeek: 4, mostWeek: 6, lastWeek: 13 });
+  });
+  it('truncates at maxDay: steps past it are never read', () => {
+    // F(28) = 0.5: half = 0.25 -> week 2; most = 0.4 -> week 4. The week-6 step is out of range.
+    expect(typicalWait(curve, 28)).toEqual({ halfWeek: 2, mostWeek: 4, lastWeek: 4 });
+  });
+  it('is null with no step in range or no horizon, never a guess', () => {
+    expect(typicalWait({ t: [], s: [], n: [] }, 90)).toBeNull();
+    expect(typicalWait(curve, 7)).toBeNull();
+    expect(typicalWait(curve, 0)).toBeNull();
+  });
+  it('quantiles are ordered and weekly', () => {
+    const t = typicalWait(curve, 90)!;
+    expect(t.halfWeek).toBeLessThanOrEqual(t.mostWeek);
+    expect(t.mostWeek).toBeLessThanOrEqual(t.lastWeek);
   });
 });
