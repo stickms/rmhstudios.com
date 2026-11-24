@@ -47,13 +47,12 @@ beforeEach(() => {
 });
 
 describe('getLiveSummary', () => {
-  it("reads the live feed's events only: Admit and SDN, active schools, the site cycle, the last 24 hours", async () => {
+  it("reads the live feed's events only: Admit and SDN, active schools, the last 24 hours, no cycle filter", async () => {
     await getLiveSummary({}, NOW);
     const args = m.medCycleEvent.groupBy.mock.calls[0]![0] as { by: string[]; where: Record<string, unknown> };
     expect(args.by).toEqual(['schoolId', 'eventType']);
     expect(args.where).toEqual({
       source: { in: ['ADMIT', 'SDN'] },
-      cycleYear: 2028,
       occurredAt: { gte: new Date('2027-11-20T15:00:00Z'), lte: NOW },
       school: { active: true },
     });

@@ -21,7 +21,7 @@ const byCountThenName = (
 
 /**
  * The live page's "Today" column (owner 2026-11-24). The live feed's event source and rules: `MedCycleEvent`, Admit and
- * SDN only (an RMH event is never public one by one, D5), active schools, the site cycle, the live feed's `programs` and
+ * SDN only (an RMH event is never public one by one, D5), active schools (no cycle filter, as the feed has none), the live feed's `programs` and
  * `state` filters, and `occurredAt` within the last 24 hours. One `groupBy` (school x type) answers both the counts by
  * type and the most active schools; the schools are then read with an explicit `select`; "Waves now" is the live
  * feed's own wave rule (`schoolWaves`) on today's UTC day, for the schools that had an invite in the window. Nothing
@@ -38,7 +38,8 @@ export async function getLiveSummary(q: LiveSummaryQuery, now: Date = new Date()
     where: {
       // RMH events are never public one by one (D5); they reach the public only as floored counts.
       source: { in: ['ADMIT', 'SDN'] },
-      cycleYear,
+      // No cycle filter, as the live feed beside it has none: the 24-hour window is the bound, so the counts equal the
+      // feed's rows across the June rollover. Waves (below) are per cycle and read the site cycle.
       occurredAt: { gte: since, lte: now },
       school: { active: true, ...(states ? { state: { in: states } } : {}) },
       ...(and.length > 0 ? { AND: and } : {}),
