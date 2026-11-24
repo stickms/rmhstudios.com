@@ -67,6 +67,7 @@ describe('a setting change keeps the reader in place', () => {
 
   it('the filtered queries keep their previous answer while the next one loads, and the loaders do not wait on a change', () => {
     const queries = readFileSync(join(root, '..', 'medschools.queries.ts'), 'utf8');
+    expect(queries).toMatch(/const schoolScoped = [\s\S]*?placeholderData: keepWithinSchool\(slug\)/);
     for (const name of [
       'schoolsQuery',
       'liveQuery',
@@ -79,7 +80,8 @@ describe('a setting change keeps the reader in place', () => {
       const at = queries.indexOf(`export const ${name}`);
       expect(at, name).toBeGreaterThan(-1);
       expect(queries.slice(at, queries.indexOf('\nexport', at + 1)), name).toMatch(
-        /keeping\([\s\S]*(keepPreviousData|keepWithinSchool\(slug\)),?\s*\)/,
+        // `schoolScoped` is `keeping` with `keepWithinSchool(slug)` and the school cache lifetime.
+        /keeping\([\s\S]*(keepPreviousData|keepWithinSchool\(slug\)),?\s*\)|schoolScoped\([\s\S]*slug,?\s*\)/,
       );
     }
     for (const route of ['index.tsx', 'live.tsx', '$slug.tsx', 'tracker.tsx']) {

@@ -25,7 +25,7 @@ export const Route = createFileRoute('/med/')({
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps, cause }) => {
     // Preferences first (private, quiet when signed out), then the public query with explicit parameters (D13).
-    const prefs = await loadPrefs(context.queryClient);
+    const prefs = await loadPrefs(context.queryClient, cause);
     const search = parseIndexSearch(deps);
     const view = resolveView('index', search, prefs);
     // A filter change (`cause: 'stay'`) does not wait: the list stays on screen, dimmed, until the new one lands.

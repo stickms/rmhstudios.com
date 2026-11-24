@@ -63,7 +63,7 @@ vi.mock('@/components/ui/select', () => ({
 
 import { IndexPage } from './IndexPage';
 import { LivePage } from './LivePage';
-import { liveQuery, listsQuery, prefsQuery, resolveLiveFilters, schoolsQuery } from '../medschools.queries';
+import { liveQuery, listsQuery, loadPrefs, prefsQuery, resolveLiveFilters, schoolsQuery } from '../medschools.queries';
 import type { LiveEventDto, MedListDto, MedSchoolListItemDto } from '../medschools.contract';
 import type { Prefs } from '../engine/prefs';
 import { programsQueryValue } from '../engine/programs';
@@ -373,6 +373,21 @@ describe('route files', () => {
     const body = q.slice(q.indexOf('export async function loadPrefs'));
     expect(body.indexOf('prefetchRouteQuery(queryClient, prefsQuery())')).toBeGreaterThan(-1);
   });
+    // A change on the same page (`cause: 'stay'`) reads the cached prefs and never waits (owner 2026-11-24: tab
+    // switches must not put the router's pending frame up).
+    for (const file of ['index', 'live', '$slug'])
+      expect(root(`../../../app/routes/med/${file}.tsx`), file).toContain('loadPrefs(context.queryClient, cause)');
+  });
+
+  it('loadPrefs: a stay reads the cache and makes no request; a first visit fetches', async () => {
+    const qc = new QueryClient();
+    const fetchSpy = vi.fn();
+    qc.setQueryDefaults(prefsQuery().queryKey, { queryFn: fetchSpy });
+    expect(await loadPrefs(qc, 'stay')).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const prefs = { programs: ['md'], programFilter: 'ALL', degree: null, homeState: null, chartCategories: [] };
+    qc.setQueryData(prefsQuery().queryKey, prefs as never);
+    expect(await loadPrefs(qc, 'stay')).toEqual(prefs);
 
   it('the public endpoint requests the loaders make carry only documented public keys', () => {
     const key = JSON.stringify(schoolsQuery({ q: 'x', state: 'NC', programs: 'md' }).queryKey);

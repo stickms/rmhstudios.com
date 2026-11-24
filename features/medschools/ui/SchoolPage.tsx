@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { holdScroll } from './hold-scroll';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
 import { useTranslation } from 'react-i18next';
 import { CHARTED_TYPES, SCHOOL_TABS, type SchoolTab } from '../engine/public-read';
@@ -12,6 +13,7 @@ import { AskPanel } from './ask/AskPanel';
 import { MedEmpty } from './MedEmpty';
 import { PrefsNote } from './PrefsNote';
 import { useEffectiveView } from './useEffectiveView';
+import { prefetchSchoolTabs } from './prefetch-tabs';
 import { ForecastTab } from './ForecastTab';
 import { HistoryTab } from './HistoryTab';
 import { InterviewsTab } from './InterviewsTab';
@@ -57,6 +59,16 @@ export function SchoolPage() {
     program: view.program,
     show: view.show,
   };
+  // One background wave per school (and program) once the page has its school: the other tabs' public data, so a tab
+  // switch renders from the cache. Not keyed on the tab: switching tabs neither restarts nor cancels it.
+  const qc = useQueryClient();
+  const ready = !!detail;
+  useEffect(
+    () => (ready ? prefetchSchoolTabs(qc, slug, search) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one wave per school and program, not per search change
+    [ready, qc, slug, search.program],
+  );
+
 
   const setSearch = (patch: SchoolSearchPatch) => {
     const { program, show, daily, ...rest } = patch;
