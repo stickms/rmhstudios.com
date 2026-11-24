@@ -131,6 +131,19 @@ function LoginPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // `handleSocial` stays pending on success, on the assumption the page is about
+  // to unload. If the reader presses Back from the provider, the browser restores
+  // this page from its back/forward cache with the React state intact, so the
+  // provider button would spin forever. A restored page means the redirect was
+  // abandoned: unlock it.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setPending(null);
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
