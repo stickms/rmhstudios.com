@@ -4,10 +4,6 @@
  * file whose count fell must lower its number, and an entry with none left must be deleted. Entries only come out.
  */
 export const STEEL_GHOST_BASELINE: Record<string, { batch: string; count: number }> = {
-  'app/routes/_site/create_.builds.manage.tsx': { batch: 'E2 routes', count: 1 },
-  'app/routes/_site/create_.builds.submit.tsx': { batch: 'E2 routes', count: 2 },
-  'app/routes/_site/emoji-packs.tsx': { batch: 'E2 routes', count: 4 },
-  'app/routes/_site/tournaments.$id.tsx': { batch: 'E2 routes', count: 1 },
   'app/routes/login.tsx': { batch: 'E2 routes', count: 1 },
   'components/admin/insights/CohortsTab.tsx': { batch: 'E4 rest', count: 1 },
   'components/arcade/AchievementTipsDialog.tsx': { batch: 'E4 rest', count: 1 },

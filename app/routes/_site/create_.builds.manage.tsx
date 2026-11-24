@@ -141,11 +141,11 @@ function ManageContent() {
             }
           />
         ) : (
-          <div className={cn('space-y-3', arrival)}>
+          <div className={cn(arrival)}>
             {builds.map((build) => (
               <div
                 key={build.id}
-                className={`flex items-center gap-3 rounded-site px-4 py-3`}
+                className="rule-row flex items-center gap-3 py-3"
               >
                 {build.thumbnailUrl ? (
                   <img
