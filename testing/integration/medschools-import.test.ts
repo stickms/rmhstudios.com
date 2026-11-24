@@ -12,10 +12,13 @@
  * the day's questions (the cap stops it before any model call); a date the model invented (not in the text) is dropped;
  * and nothing of the file (its text, its name, the essay in it) is in any row of any table.
  *
- * It signs up no one: the roles are the global cast's (alice imports, bob has an import of his own, carol is the cap's).
+ * It signs up no one and borrows no one from the global cast: the roles are fresh members (`lib/fresh-member.ts`, made 30
+days old for sharing), so the `ai` rate-limit buckets, daily-cap rows, leases and tier caches the other files filled for
+alice, bob and carol are not this file's (a imports, b has an import of his own, c is the cap's).
  */
-import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
-import { Client, closeDb, db, type TestUser } from './lib/client';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { Client, closeDb, db } from './lib/client';
+import { createFreshMember, removeFreshMembers, type FreshMember } from './lib/fresh-member';
 import { startFakeDeepseek, userJson, type FakeCall, type FakeDeepseek, type FakeScript } from './lib/fake-deepseek';
 import {
   PRIVATE_MD_ID,
@@ -35,13 +38,11 @@ const TRACKER = '/api/medschools/me/tracker';
 const NOT_PUBLIC = /public|s-maxage|max-age=[1-9]/i;
 const DAY = 86_400_000;
 
-type Member = TestUser & { client: Client };
-const member = (u: TestUser): Member => ({ ...u, client: new Client(u.cookies) });
+type Member = FreshMember;
 let a: Member;
 let b: Member;
 let c: Member;
 const anon = new Client();
-const originalCreated = new Map<string, Date>();
 
 /** A calendar day `ago` days before now, so every date is real, in the window and not in the future whenever this runs. */
 const dayAgo = (ago: number) => new Date(Date.now() - ago * DAY).toISOString().slice(0, 10);
@@ -133,20 +134,20 @@ const wipe = (ids: string[]) => db().query('delete from med_tracker_cycle where 
 const rowFor = (p: Preview, slug: string) => p.rows.find((r) => r.school?.slug === slug);
 
 beforeAll(async () => {
-  [a, b, c] = [member(inject('alice')), member(inject('bob')), member(inject('carol'))];
+  // Sharing needs an account at least 7 days old.
+  const old = new Date(Date.now() - 30 * DAY);
+  a = await createFreshMember('import-a', { createdAt: old });
+  b = await createFreshMember('import-b', { createdAt: old });
+  c = await createFreshMember('import-c', { createdAt: old });
   await seedTrackerFixture([a.id, b.id, c.id]);
-  const ids = [a.id, b.id, c.id];
-  const was = await db().query('select id, "createdAt" from "user" where id = any($1)', [ids]);
-  for (const r of was.rows) originalCreated.set(r.id, r.createdAt);
-  // Sharing needs an account at least 7 days old; put it back after.
-  await db().query(`update "user" set "createdAt" = now() - interval '30 days' where id = any($1)`, [ids]);
 });
 afterAll(async () => {
   const ids = [a?.id, b?.id, c?.id].filter((x): x is string => !!x);
-  await clearLedger(ids);
-  await removeTrackerFixture(ids);
-  for (const [id, createdAt] of originalCreated)
-    await db().query('update "user" set "createdAt" = $2 where id = $1', [id, createdAt]);
+  if (ids.length) {
+    await clearLedger(ids);
+    await removeTrackerFixture(ids);
+  }
+  await removeFreshMembers([a, b, c]);
   await closeDb();
 });
 
@@ -278,7 +279,9 @@ describe.skipIf(!PORT)('tracker import: with the fake provider', () => {
   });
 
   it('parse then save writes the ticked rows; an unticked school is not written; the file is in no table', async () => {
-    const preview = (await parseFile(a)).body;
+    const parsed = await parseFile(a);
+    expect(parsed.status, JSON.stringify(parsed.body)).toBe(200);
+    const preview = parsed.body;
     const fixture = rowFor(preview, 'it-medschools-fixture')!;
     // The member unticks the private school and the unmatched one: the body simply does not carry them. They also
     // untick the fixture's COMPLETE date.
@@ -316,7 +319,9 @@ describe.skipIf(!PORT)('tracker import: with the fake provider', () => {
   });
 
   it('a different date already on the tracker is kept unless the row is ticked; the same date changes nothing', async () => {
-    const preview = (await parseText(a)).body;
+    const parsed = await parseText(a);
+    expect(parsed.status, JSON.stringify(parsed.body)).toBe(200);
+    const preview = parsed.body;
     const slug = PRIVATE_MD_SLUG;
     const first = (overwrite: boolean, date: string) => ({
       cycleYear: preview.cycleYear,
@@ -339,7 +344,9 @@ describe.skipIf(!PORT)('tracker import: with the fake provider', () => {
 
   it('saving goes through share-sync: shared only when the cycle already shares, and only the shareable types', async () => {
     if (SECRET.length < 16) return; // the app cannot share without it; the private suite requires it
-    const preview = (await parseText(b)).body;
+    const parsed = await parseText(b);
+    expect(parsed.status, JSON.stringify(parsed.body)).toBe(200);
+    const preview = parsed.body;
     const body = (slugRow: string) => ({
       cycleYear: preview.cycleYear,
       rows: [
