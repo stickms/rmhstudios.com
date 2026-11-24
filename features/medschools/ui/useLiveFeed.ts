@@ -5,17 +5,20 @@ import { api } from '@/lib/contract/client';
 import { mergeLiveHead } from '../engine/public-read';
 import { getMedLiveApi, type LiveEventDto } from '../medschools.contract';
 import { liveQuery, type LiveFilters } from '../medschools.queries';
+import { livePollInterval, useLiveSignal } from './useLiveSignal';
 
 /**
- * The live feed for one filter set, shared by the live page and the activity rail: the newest page refetched every
- * 60 s and merged by id (rows already shown, and their fade, stay put), plus older pages appended on request. Key the
+ * The live feed for one filter set, shared by the live page and the activity rail: the newest page refetched on each
+ * live signal (`useLiveSignal`: one shared stream, debounced) and on a poll (60 s, 5 min while the stream is up), merged by id (rows already shown, and their fade, stay put), plus older pages appended on request. Key the
  * component that calls it by the filters, so a new filter set starts with its own rows.
  */
 export function useLiveFeed(filters: LiveFilters, opts: { enabled?: boolean } = {}) {
+  const enabled = opts.enabled ?? true;
+  const connected = useLiveSignal(enabled);
   const query = useQuery({
     ...liveQuery(filters),
-    enabled: opts.enabled ?? true,
-    refetchInterval: 60_000,
+    enabled,
+    refetchInterval: livePollInterval(connected),
     refetchIntervalInBackground: false,
   });
   const data = query.data;

@@ -170,7 +170,10 @@ Consequences:
   UTC, `HOMES_CRON_SCHEDULE`, default every 6h), same `scheduled-consumer` pattern as the ladder worker. Aggregates
   public housing feeds (Craigslist/RSS) into `EXTERNAL` `HomeListing` rows and notifies watchers. Self-bootstraps
   default sources + a first run on an empty DB. Built by `pnpm build` and run as its own compose service.
-- **`medschools-worker/`** — RMH Med Schools CycleTrack ingest consumer. No port. Two pg-boss crons (queues
+- **`medschools-worker/`** — RMH Med Schools CycleTrack ingest consumer. No port. **Live signal:** after committing
+  new Admit or SDN events the jobs publish a bare `{ at }` on the realtime bus (`rt:medschools:live`, coalesced to one
+  per 5 s, never throwing; `features/medschools/live-signal.server.ts`), which web's `/api/medschools/live/stream`
+  relays to open `/med` pages; the service gets web's `REDIS_URL` in `docker-compose.yml` for it. Two pg-boss crons (queues
   `medschools.cycletrack`, hourly at :20, `MEDSCHOOLS_CYCLETRACK_CRON`; and `medschools.backfill`, a yearly no-op safety
   net because a cron is mandatory), both `exclusive`, UTC, same `scheduled-consumer` pattern as the homes worker. Both
   jobs share one `createPoliteHost(SOURCES.CYCLETRACK)`, so they never overlap on CycleTrack. Bootstraps by seeding the

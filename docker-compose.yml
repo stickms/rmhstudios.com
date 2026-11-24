@@ -471,6 +471,10 @@ services:
       # server/medschools-worker/index.ts) and lib/prisma.server, which lib/ai/provider.server pulls in to meter
       # each model call (one aiUsage insert at a time), sized here. The pool only connects when it is used.
       - DATABASE_POOL_SIZE=1
+      # The live signal (features/medschools/live-signal.server.ts): after committing new Admit or SDN events the
+      # worker publishes a bare "new events" hint on the realtime bus, which web's /api/medschools/live/stream relays
+      # to open /med pages. Same cache-plane Redis as web; unset or unreachable, the pages keep polling.
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       # 75% of mem_limit, the repo's heap rule (see the ladder-worker block).
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/medschools-worker/index.cjs']

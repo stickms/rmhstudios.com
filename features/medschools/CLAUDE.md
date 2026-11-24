@@ -16,13 +16,14 @@ Signed-out readable, in the full-screen app frame of the redesign (see "Design")
 | Route        | Page                                                                                                  |
 | ------------ | ----------------------------------------------------------------------------------------------------- |
 | `/med`       | School index (rows on rules) with search, degree, state and program                                   |
-| `/med/live`  | Live feed of recent reported events, 60 s refetch, "show older" paging                                |
+| `/med/live`  | Live feed of recent reported events, refreshed by the live signal (SSE), "show older" paging          |
 | `/med/$slug` | One school: Activity, History, Forecast, Interviews, Secondaries, Facts tabs (`?tab=`, `?program=` …) |
 
 Eleven anonymous `GET` endpoints (`api/medschools.*.server.ts`, registered `apiRoute` modules, `auth: 'optional'`, read
 rate limit, public cache): `schools`, `schools/$slug`, `schools/$slug/activity`, `schools/$slug/history`,
 `schools/$slug/arrivals`, `schools/$slug/forecast` (phase 5), `schools/$slug/secondaries`, `schools/$slug/facts` (phase
-C), `live`, `live/summary`, `today`. Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
+C), `live`, `live/summary`, `today`. One more is a route file, not a registered module, because it is a stream:
+`GET /api/medschools/live/stream` (the live signal, see "The live signal" below). Contracts live in `medschools.contract.ts`; loaders in `api/read.server.ts`; query factories in
 `medschools.queries.ts` (no `createServerFn`). Route loaders seed React Query with `contractQuery`, so the charts exist
 in the server HTML with scripting off.
 
@@ -201,6 +202,34 @@ few borders, no wall of identical cards, no pill soup, no panels in panels.
   (ringed in the paper, `aria-hidden`: the status is written out), the name, the status in its colour, and the time at
   the row's end on its centre line. The live page adds one muted line, program · city, state · source; the rail has
   none. On a phone the live page's time moves under the words.
+- **The live signal (SSE, owner 2026-11-24):** the pages refresh when new reports land instead of waiting for a poll.
+  Signal only, never data: (1) **publish** — after the worker COMMITS new Admit or SDN events (`commitAdmitEvents`'s
+  `newestCreated`, read by `run-admit-live`, `run-admit-history` and, after its transaction, `run-admit-forums`; the
+  SDN thread commit in `scrape/sdn/process-thread.ts`, after its transaction; never RMH, whose events are never public
+  one by one) it calls `signalNewLiveEvents(newest)` (`live-signal.server.ts`): `{ at }` on the realtime bus, channel
+  `rt:medschools:live` (`createBus('medschools')`, key `live`), at most one per 5 s per process (the first at once, a
+  burst as one trailing signal), and only when the newest created event is under 7 days old (a backfill of old events
+  cannot change any page's head). It never throws; without Redis the bus is in-process and nothing reaches web (the
+  compose file gives the worker web's `REDIS_URL`). (2) **stream** — `app/routes/api/medschools/live/stream.ts` over
+  `api/live-stream.server.ts`: `auth: 'none'`, no session read, `text/event-stream`, `Cache-Control: no-store,
+  no-transform`, `X-Accel-Buffering: no`; `retry: 15000` first, `event: new` / `data: {}` per signal, a `: ping`
+  comment every 25 s (below Cloudflare's 100 s idle limit and Apache's `ProxyTimeout 300`), a self-close after 30-35
+  min; at most 2000 streams per web process (503, `Retry-After: 120`) and 4 per address (429, `Retry-After: 60`),
+  answered before subscribing; every exit (abort, cancel, failed write, lifetime) unsubscribes and frees the slot.
+  (3) **client** — `ui/useLiveSignal.ts`: ONE `EventSource` per tab (a module singleton), open while some consumer is
+  mounted and enabled and the document is visible; closed on hidden and on `pagehide` (bfcache), reopened on visible /
+  a persisted `pageshow`, and a reopen after any gap invalidates once (signals may have been missed). Consumers: the
+  index (`IndexPage`, every width), `useLiveFeed` (the live page's list; the rail's `RailFeed`, mounted only from
+  1280px) and `TodaySummary` (`enabled` only from 1280px). On `new` it invalidates `['medschools','live']`,
+  `['medschools','live-summary']` and `['medschools','schools']` (the index's `latest`), debounced 2 s plus up to 3 s of
+  jitter, one refetch per window. React Query refetches only ACTIVE queries, and a disabled or unmounted one is not, so
+  at 390px only the page's own list refetches and the rail makes no request (checked in a browser). New live rows take
+  `useLiveFeed`'s arrival fade; a refetch keeps the rows (same key: no placeholder, no skeleton, no scroll change); an
+  index row's status changes in place. Polling stays as the fallback: 60 s without the stream, 5 min while it is
+  connected (a safety net for a signal lost in transit; the signal is how news arrives, and 60 s polls from every open
+  tab are the load the stream replaces). A refused stream (429 / 503) is retried after 1 min, doubling to 10, polling
+  meanwhile. No `EventSource` on the server render. Apache needs no SSE rule: `mod_deflate` compresses only its listed
+  types (not `text/event-stream`), and the feed's SSE works through the same `ProxyPass /`.
 - **Event times (`EventTime`, owner 2026-11-24):** every short event date (the index's newest status, live and rail
   rows, the tracker's steps and timeline) is a focusable `<time>` that shows the exact time on hover, focus or tap, in
   the viewer's own zone ("Tue, Nov 24, 2026, 3:42 PM EST"). The server does not know that zone, so the tooltip is
