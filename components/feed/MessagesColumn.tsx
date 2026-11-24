@@ -2,7 +2,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTranslation } from 'react-i18next';
-import { Search } from 'lucide-react';
+import { CheckCheck, Moon, Search, SquarePen } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
 import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -315,10 +316,10 @@ export function MessagesColumn({
 
   return (
     <div className="flex flex-col">
-      {/* The search field, and the two actions as words: New chat, Mark all as read. No primary here (section 10). */}
+      {/* The search field, and the actions as icons: New chat, Mark all as read, Set an away message. No primary here (section 10). */}
       <div className="flex flex-wrap items-center gap-2 pb-3">
         <SearchField
-          containerClassName="min-w-full sm:min-w-0 sm:flex-1"
+          containerClassName="min-w-full sm:min-w-48 sm:flex-1"
           value={query}
           onValueChange={setQuery}
           placeholder={t('search-messages-placeholder', {
@@ -326,16 +327,23 @@ export function MessagesColumn({
           })}
           aria-label={t('search-messages', { defaultValue: 'Search messages' })}
         />
-        <Button variant="ghost" onClick={() => setNewChatOpen(true)}>
-          {t('new-chat', { defaultValue: 'New chat' })}
-        </Button>
-        <Button variant="ghost" onClick={markAllAsRead} disabled={!hasUnread || markingAll}>
-          {t('mark-all-as-read', { defaultValue: 'Mark all as read' })}
-        </Button>
+        <IconButton
+          icon={SquarePen}
+          label={t('new-chat', { defaultValue: 'New chat' })}
+          onClick={() => setNewChatOpen(true)}
+        />
+        <IconButton
+          icon={CheckCheck}
+          label={t('mark-all-as-read', { defaultValue: 'Mark all as read' })}
+          onClick={markAllAsRead}
+          disabled={!hasUnread || markingAll}
+        />
         {!awayQuery.data?.away && (
-          <Button variant="ghost" onClick={() => setAwayOpen(true)}>
-            {t('set-away-message', { ns: 'away-message', defaultValue: 'Set an away message' })}
-          </Button>
+          <IconButton
+            icon={Moon}
+            label={t('set-away-message', { ns: 'away-message', defaultValue: 'Set an away message' })}
+            onClick={() => setAwayOpen(true)}
+          />
         )}
       </div>
       <AwayInboxLine onEdit={() => setAwayOpen(true)} />

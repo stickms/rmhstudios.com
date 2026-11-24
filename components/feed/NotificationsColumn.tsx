@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { AlarmClock, Bell } from 'lucide-react';
+import { AlarmClock, Bell, BellOff, BellRing, CheckCheck, Settings } from 'lucide-react';
+import { IconButton } from '@/components/ui/icon-button';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -464,12 +465,16 @@ export function NotificationsColumn({
           {t('notifications-heading', { defaultValue: 'Notifications' })}
         </h1>
       )}
-      {/* The toolbar: three words, no primary (section 10, Inbox). */}
-      {/* -ms-4 pulls the row out by the ghost buttons' own padding: the first label sits on the column edge and only the hover fill overhangs it. */}
-      <div className="-ms-4 flex flex-wrap items-center gap-1 pb-3">
+      {/* The toolbar: three icons with hover labels, no primary (section 10, Inbox). */}
+      <div className="flex flex-wrap items-center gap-1 pb-3">
         {push.supported && (
-          <Button
-            variant="ghost"
+          <IconButton
+            icon={push.subscribed ? BellOff : BellRing}
+            label={
+              push.subscribed
+                ? t('push-off', { defaultValue: 'Disable push' })
+                : t('push-on', { defaultValue: 'Enable push' })
+            }
             disabled={push.busy}
             onClick={async () => {
               if (push.subscribed) {
@@ -495,27 +500,25 @@ export function NotificationsColumn({
                   );
               }
             }}
-            title={
-              push.subscribed
-                ? t('push-toggle-off', { defaultValue: 'Turn off push notifications' })
-                : t('push-toggle-on', { defaultValue: 'Turn on push notifications' })
-            }
-          >
-            {push.subscribed
-              ? t('push-off', { defaultValue: 'Disable push' })
-              : t('push-on', { defaultValue: 'Enable push' })}
-          </Button>
+          />
         )}
-        <Button variant="ghost" onClick={markAllRead}>
-          {filter === 'all'
-            ? t('mark-all-read', { defaultValue: 'Mark all read' })
-            : tn('mark-filter-read', { defaultValue: 'Mark these read' })}
-        </Button>
-        <Button asChild variant="ghost">
+        <IconButton
+          icon={CheckCheck}
+          label={
+            filter === 'all'
+              ? t('mark-all-read', { defaultValue: 'Mark all read' })
+              : tn('mark-filter-read', { defaultValue: 'Mark these read' })
+          }
+          onClick={markAllRead}
+        />
+        <IconButton
+          asChild
+          label={t('notification-prefs-toggle', { defaultValue: 'Notification preferences' })}
+        >
           <Link to="/settings/notifications">
-            {t('notification-prefs-toggle', { defaultValue: 'Notification preferences' })}
+            <Settings aria-hidden />
           </Link>
-        </Button>
+        </IconButton>
       </div>
 
       {/* Filter and Unread: the inbox tab strip is above, so the filter is a select, not a second strip. */}
