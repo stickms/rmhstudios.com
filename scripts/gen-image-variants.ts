@@ -78,8 +78,13 @@ const SOURCE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp']);
  *
  * `medschools/` holds the school crests: 96x96 WebPs that are already final size (shown at 20-40 px), one per school,
  * drawn by a plain lazy <img>; ~230 manifest rows would only bloat the client entry.
+ *
+ * `login/` holds the login page's paintings: three sizes of each, already final (written by
+ * scripts/gen-login-painting.ts at the widths the page asks for, 320 / 800 / 1600), chosen by a <picture> element on
+ * /login only. They are not run through the variant ladder, and their manifest rows would sit in the client entry on
+ * every page of the site and put it over the bundle budget.
  */
-const EXCLUDED = ['_variants', 'og', 'social', 'icons', 'brand', 'site-history', 'medschools'];
+const EXCLUDED = ['_variants', 'og', 'social', 'icons', 'brand', 'site-history', 'medschools', 'login'];
 
 /** A source small enough that a 320w variant would not save anything. */
 const MIN_SOURCE_WIDTH = 400;
